@@ -520,6 +520,7 @@ async function buildAll() {
 		'assets/js/chat-transcription-service.js',
 		'assets/js/chat-memory-service.js',
 		'assets/js/chat.js',
+		'assets/js/chat-memory-drawer.js',
 	];
 
 	for (const config of builds) {

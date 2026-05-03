@@ -1,0 +1,801 @@
+/**
+ * Chat Memory Drawer for NV oOS Chat (Phase 3).
+ *
+ * Self-contained side panel that lets the user view, edit, delete, and
+ * scope long-term memories from inside the chat surface. Auto-injects
+ * itself into every initialized chat container when the chat-memory
+ * bridge (`window.wpMcpAiChatMemory`) reports as available; degrades
+ * gracefully (no toggle button rendered) when it isn't.
+ *
+ * Surface:
+ *   - Toggle button injected next to `.wp-mcp-ai-chat__transcript-controls`.
+ *   - Side panel (role="dialog", aria-modal="false") with two tabs:
+ *       Memories — paginated list of recent records with edit/delete inline.
+ *       Scope    — wing/room selector (writes to `state.config.memoryWing/Room`).
+ *   - Single page-level ARIA-live toast region (`#wp-mcp-ai-memory-toasts`)
+ *     used to announce memory events to assistive tech.
+ *
+ * Accessibility:
+ *   - role="dialog", labelled by an explicit heading, `aria-modal="false"`
+ *     (the dialog is non-blocking — chat remains interactive behind it).
+ *   - ESC closes the panel and returns focus to the toggle button.
+ *   - Focus is moved into the dialog on open and trapped via a tab cycle.
+ *   - All strings use `wp.i18n.__()`.
+ *   - Respects `prefers-reduced-motion` via CSS.
+ *
+ * @since 1.6.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+(function(window, document) {
+	'use strict';
+
+	const i18n = (window.wp && window.wp.i18n) || {
+		__: function(text) { return text; },
+		sprintf: function(format) {
+			const args = Array.prototype.slice.call(arguments, 1);
+			let i = 0;
+			return String(format).replace(/%s/g, function() { return args[i++]; });
+		}
+	};
+	const __ = i18n.__;
+
+	const TOAST_REGION_ID = 'wp-mcp-ai-memory-toasts';
+	const TOOLS_THAT_RETRIEVE_MEMORY = [
+		'recall_memory',
+		'wake_up_context',
+		'semantic_context_search',
+		'retrieve_agent_memory'
+	];
+	const TOOLS_THAT_STORE_MEMORY = [
+		'store_agent_context',
+		'update_agent_memory',
+		'capture_memory'
+	];
+
+	function memoryService() {
+		return window.wpMcpAiChatMemory || null;
+	}
+
+	function isAvailable() {
+		const svc = memoryService();
+		return !!(svc && svc.isAvailable && svc.isAvailable());
+	}
+
+	/**
+	 * Ensure a singleton ARIA-live region exists and return it.
+	 *
+	 * @return {HTMLElement}
+	 */
+	function ensureToastRegion() {
+		let region = document.getElementById(TOAST_REGION_ID);
+		if (region) {
+			return region;
+		}
+		region = document.createElement('div');
+		region.id = TOAST_REGION_ID;
+		region.className = 'wp-mcp-ai-memory-toasts';
+		region.setAttribute('aria-live', 'polite');
+		region.setAttribute('aria-atomic', 'true');
+		region.setAttribute('role', 'status');
+		document.body.appendChild(region);
+		return region;
+	}
+
+	/**
+	 * Announce a transient toast message in the live region.
+	 *
+	 * @param {string} message
+	 * @param {string} variant 'info' | 'success' | 'error'
+	 */
+	function announceToast(message, variant) {
+		if (!message) {
+			return;
+		}
+		const region = ensureToastRegion();
+		const toast = document.createElement('div');
+		toast.className = 'wp-mcp-ai-memory-toast wp-mcp-ai-memory-toast--' + (variant || 'info');
+		toast.setAttribute('data-testid', 'wp-mcp-ai-memory-toast');
+		toast.textContent = String(message);
+		region.appendChild(toast);
+		// Auto-dismiss after 4s; CSS handles the fade.
+		window.setTimeout(function() {
+			if (toast.parentNode) {
+				toast.parentNode.removeChild(toast);
+			}
+		}, 4000);
+	}
+
+	/**
+	 * Decorate an assistant message bubble with a "🧠 Memory" badge when
+	 * the message's tool calls touched the memory subsystem (G3).
+	 *
+	 * Idempotent: skips bubbles already decorated.
+	 *
+	 * @param {HTMLElement} bubble Assistant message DOM node.
+	 * @param {Object[]}    toolCalls Array of tool-call descriptors.
+	 */
+	function decorateMessageWithBadge(bubble, toolCalls) {
+		if (!bubble || !Array.isArray(toolCalls) || !toolCalls.length) {
+			return;
+		}
+		if (bubble.querySelector('.wp-mcp-ai-memory-badge')) {
+			return;
+		}
+
+		const used = toolCalls.some(function(call) {
+			const name = call && (call.tool || call.name || (call.function && call.function.name));
+			return name && (
+				TOOLS_THAT_RETRIEVE_MEMORY.indexOf(name) !== -1 ||
+				TOOLS_THAT_STORE_MEMORY.indexOf(name) !== -1
+			);
+		});
+		if (!used) {
+			return;
+		}
+
+		const badge = document.createElement('span');
+		badge.className = 'wp-mcp-ai-memory-badge';
+		badge.setAttribute('data-testid', 'wp-mcp-ai-memory-badge');
+		badge.setAttribute('title', __( 'This response used long-term memory.', 'mcp-ai-wpoos' ));
+		badge.setAttribute('aria-label', __( 'Memory in use', 'mcp-ai-wpoos' ));
+		badge.innerHTML = '<span class="wp-mcp-ai-memory-badge__icon" aria-hidden="true">🧠</span>'
+			+ '<span class="wp-mcp-ai-memory-badge__label">' + __( 'Memory', 'mcp-ai-wpoos' ) + '</span>';
+
+		// Prefer attaching alongside the message header / metadata if present;
+		// otherwise prepend to the bubble itself.
+		const header = bubble.querySelector('.wp-mcp-ai-chat__message-header')
+			|| bubble.querySelector('.wp-mcp-ai-chat__message-meta');
+		if (header) {
+			header.appendChild(badge);
+		} else {
+			bubble.insertBefore(badge, bubble.firstChild);
+		}
+	}
+
+	/**
+	 * Lightweight focus-trap. Returns a teardown function.
+	 *
+	 * @param {HTMLElement} root
+	 * @return {Function}
+	 */
+	function trapFocus(root) {
+		function focusables() {
+			return Array.prototype.slice.call(root.querySelectorAll(
+				'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+			));
+		}
+		function onKey(e) {
+			if (e.key !== 'Tab') {
+				return;
+			}
+			const f = focusables();
+			if (!f.length) {
+				return;
+			}
+			const first = f[0];
+			const last = f[f.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}
+		root.addEventListener('keydown', onKey);
+		return function teardown() {
+			root.removeEventListener('keydown', onKey);
+		};
+	}
+
+	/**
+	 * Build a single memory item element (read-only by default; toggles into
+	 * an edit form when the user clicks "Edit").
+	 *
+	 * @param {Object}   memory   Memory record from recall_memory.
+	 * @param {Function} onUpdate Callback after successful edit.
+	 * @param {Function} onDelete Callback after successful delete.
+	 * @return {HTMLElement}
+	 */
+	function renderMemoryItem(memory, onUpdate, onDelete) {
+		const id = memory.context_id || memory.id || memory.uuid || '';
+		const title = memory.title || (memory.context_data && memory.context_data.title) || __( 'Untitled memory', 'mcp-ai-wpoos' );
+		const content = memory.content || (memory.context_data && memory.context_data.content) || '';
+		const tags = (memory.tags || (memory.context_data && memory.context_data.tags)) || [];
+		const tier = memory.tier || memory.memory_tier || '';
+		const importance = memory.importance || (memory.context_data && memory.context_data.importance) || '';
+
+		const item = document.createElement('li');
+		item.className = 'wp-mcp-ai-memory-item';
+		item.setAttribute('data-context-id', id);
+		item.setAttribute('data-testid', 'wp-mcp-ai-memory-item');
+
+		const header = document.createElement('div');
+		header.className = 'wp-mcp-ai-memory-item__header';
+
+		const titleEl = document.createElement('h4');
+		titleEl.className = 'wp-mcp-ai-memory-item__title';
+		titleEl.textContent = title;
+		header.appendChild(titleEl);
+
+		if (tier || importance) {
+			const meta = document.createElement('span');
+			meta.className = 'wp-mcp-ai-memory-item__meta';
+			meta.textContent = [tier, importance].filter(Boolean).join(' · ');
+			header.appendChild(meta);
+		}
+
+		item.appendChild(header);
+
+		const body = document.createElement('p');
+		body.className = 'wp-mcp-ai-memory-item__content';
+		body.textContent = content;
+		item.appendChild(body);
+
+		if (Array.isArray(tags) && tags.length) {
+			const tagList = document.createElement('div');
+			tagList.className = 'wp-mcp-ai-memory-item__tags';
+			tags.forEach(function(tag) {
+				const chip = document.createElement('span');
+				chip.className = 'wp-mcp-ai-memory-item__tag';
+				chip.textContent = String(tag);
+				tagList.appendChild(chip);
+			});
+			item.appendChild(tagList);
+		}
+
+		const actions = document.createElement('div');
+		actions.className = 'wp-mcp-ai-memory-item__actions';
+
+		const editBtn = document.createElement('button');
+		editBtn.type = 'button';
+		editBtn.className = 'wp-mcp-ai-memory-item__edit';
+		editBtn.textContent = __( 'Edit', 'mcp-ai-wpoos' );
+		editBtn.setAttribute('data-testid', 'wp-mcp-ai-memory-edit');
+		editBtn.addEventListener('click', function() {
+			renderEditForm(item, memory, onUpdate);
+		});
+
+		const deleteBtn = document.createElement('button');
+		deleteBtn.type = 'button';
+		deleteBtn.className = 'wp-mcp-ai-memory-item__delete';
+		deleteBtn.textContent = __( 'Delete', 'mcp-ai-wpoos' );
+		deleteBtn.setAttribute('data-testid', 'wp-mcp-ai-memory-delete');
+		deleteBtn.addEventListener('click', function() {
+			if (!id) {
+				announceToast(__( 'This memory has no ID and cannot be deleted.', 'mcp-ai-wpoos' ), 'error');
+				return;
+			}
+			if (!window.confirm(__( 'Delete this memory? This cannot be undone.', 'mcp-ai-wpoos' ))) {
+				return;
+			}
+			memoryService().remove(id, { agentId: memory.agent_id }).then(function() {
+				announceToast(__( 'Memory deleted.', 'mcp-ai-wpoos' ), 'success');
+				onDelete(id);
+			}).catch(function(err) {
+				announceToast(
+					(err && err.message) || __( 'Could not delete memory.', 'mcp-ai-wpoos' ),
+					'error'
+				);
+			});
+		});
+
+		actions.appendChild(editBtn);
+		actions.appendChild(deleteBtn);
+		item.appendChild(actions);
+
+		return item;
+	}
+
+	/**
+	 * Replace a list item's content with an inline edit form.
+	 */
+	function renderEditForm(item, memory, onUpdate) {
+		const id = memory.context_id || memory.id || memory.uuid || '';
+		if (!id) {
+			announceToast(__( 'This memory has no ID and cannot be edited.', 'mcp-ai-wpoos' ), 'error');
+			return;
+		}
+		const currentTitle = memory.title || (memory.context_data && memory.context_data.title) || '';
+		const currentContent = memory.content || (memory.context_data && memory.context_data.content) || '';
+
+		while (item.firstChild) {
+			item.removeChild(item.firstChild);
+		}
+
+		const form = document.createElement('form');
+		form.className = 'wp-mcp-ai-memory-item__edit-form';
+		form.setAttribute('data-testid', 'wp-mcp-ai-memory-edit-form');
+
+		const titleLabel = document.createElement('label');
+		titleLabel.className = 'wp-mcp-ai-memory-item__edit-label';
+		titleLabel.textContent = __( 'Title', 'mcp-ai-wpoos' );
+		const titleInput = document.createElement('input');
+		titleInput.type = 'text';
+		titleInput.className = 'wp-mcp-ai-memory-item__edit-title';
+		titleInput.value = currentTitle;
+		titleLabel.appendChild(titleInput);
+
+		const contentLabel = document.createElement('label');
+		contentLabel.className = 'wp-mcp-ai-memory-item__edit-label';
+		contentLabel.textContent = __( 'Content', 'mcp-ai-wpoos' );
+		const contentInput = document.createElement('textarea');
+		contentInput.className = 'wp-mcp-ai-memory-item__edit-content';
+		contentInput.rows = 4;
+		contentInput.value = currentContent;
+		contentLabel.appendChild(contentInput);
+
+		const buttons = document.createElement('div');
+		buttons.className = 'wp-mcp-ai-memory-item__edit-buttons';
+
+		const save = document.createElement('button');
+		save.type = 'submit';
+		save.className = 'wp-mcp-ai-memory-item__edit-save';
+		save.textContent = __( 'Save', 'mcp-ai-wpoos' );
+
+		const cancel = document.createElement('button');
+		cancel.type = 'button';
+		cancel.className = 'wp-mcp-ai-memory-item__edit-cancel';
+		cancel.textContent = __( 'Cancel', 'mcp-ai-wpoos' );
+		cancel.addEventListener('click', function() {
+			onUpdate(memory, false);
+		});
+
+		buttons.appendChild(save);
+		buttons.appendChild(cancel);
+
+		form.appendChild(titleLabel);
+		form.appendChild(contentLabel);
+		form.appendChild(buttons);
+
+		form.addEventListener('submit', function(e) {
+			e.preventDefault();
+			save.disabled = true;
+			memoryService().update(id, {
+				agentId: memory.agent_id,
+				title: titleInput.value,
+				content: contentInput.value
+			}).then(function() {
+				announceToast(__( 'Memory updated.', 'mcp-ai-wpoos' ), 'success');
+				onUpdate(Object.assign({}, memory, {
+					title: titleInput.value,
+					content: contentInput.value
+				}), true);
+			}).catch(function(err) {
+				save.disabled = false;
+				announceToast(
+					(err && err.message) || __( 'Could not update memory.', 'mcp-ai-wpoos' ),
+					'error'
+				);
+			});
+		});
+
+		item.appendChild(form);
+		titleInput.focus();
+	}
+
+	/**
+	 * Build the drawer DOM, attach to the container, and return a controller.
+	 *
+	 * @param {HTMLElement} container Chat container element.
+	 * @param {Object}      state     Chat widget state object.
+	 * @return {{open:Function, close:Function, isOpen:Function, root:HTMLElement}}
+	 */
+	function buildDrawer(container, state) {
+		const config = (state && state.config) || {};
+		const agentId = config.embeddedAssistantId || config.assistantId || 0;
+
+		const drawer = document.createElement('aside');
+		drawer.className = 'wp-mcp-ai-memory-drawer';
+		drawer.setAttribute('role', 'dialog');
+		drawer.setAttribute('aria-modal', 'false');
+		drawer.setAttribute('aria-hidden', 'true');
+		drawer.setAttribute('data-testid', 'wp-mcp-ai-memory-drawer');
+		drawer.hidden = true;
+
+		const heading = document.createElement('h3');
+		heading.className = 'wp-mcp-ai-memory-drawer__heading';
+		heading.id = 'wp-mcp-ai-memory-drawer-heading-' + Math.floor(Math.random() * 1e9);
+		heading.textContent = __( 'Long-term memory', 'mcp-ai-wpoos' );
+		drawer.setAttribute('aria-labelledby', heading.id);
+
+		const closeBtn = document.createElement('button');
+		closeBtn.type = 'button';
+		closeBtn.className = 'wp-mcp-ai-memory-drawer__close';
+		closeBtn.setAttribute('aria-label', __( 'Close memory drawer', 'mcp-ai-wpoos' ));
+		closeBtn.textContent = '×';
+
+		const tabs = document.createElement('div');
+		tabs.className = 'wp-mcp-ai-memory-drawer__tabs';
+		tabs.setAttribute('role', 'tablist');
+
+		const memoriesTab = document.createElement('button');
+		memoriesTab.type = 'button';
+		memoriesTab.className = 'wp-mcp-ai-memory-drawer__tab is-active';
+		memoriesTab.setAttribute('role', 'tab');
+		memoriesTab.setAttribute('aria-selected', 'true');
+		memoriesTab.textContent = __( 'Memories', 'mcp-ai-wpoos' );
+
+		const scopeTab = document.createElement('button');
+		scopeTab.type = 'button';
+		scopeTab.className = 'wp-mcp-ai-memory-drawer__tab';
+		scopeTab.setAttribute('role', 'tab');
+		scopeTab.setAttribute('aria-selected', 'false');
+		scopeTab.textContent = __( 'Scope', 'mcp-ai-wpoos' );
+
+		tabs.appendChild(memoriesTab);
+		tabs.appendChild(scopeTab);
+
+		// Memories panel.
+		const memoriesPanel = document.createElement('div');
+		memoriesPanel.className = 'wp-mcp-ai-memory-drawer__panel';
+		memoriesPanel.setAttribute('role', 'tabpanel');
+
+		const filterRow = document.createElement('div');
+		filterRow.className = 'wp-mcp-ai-memory-drawer__filter';
+
+		const queryInput = document.createElement('input');
+		queryInput.type = 'search';
+		queryInput.className = 'wp-mcp-ai-memory-drawer__query';
+		queryInput.placeholder = __( 'Filter memories…', 'mcp-ai-wpoos' );
+		queryInput.setAttribute('aria-label', __( 'Search memories', 'mcp-ai-wpoos' ));
+		queryInput.setAttribute('data-testid', 'wp-mcp-ai-memory-query');
+		filterRow.appendChild(queryInput);
+
+		const refreshBtn = document.createElement('button');
+		refreshBtn.type = 'button';
+		refreshBtn.className = 'wp-mcp-ai-memory-drawer__refresh';
+		refreshBtn.textContent = __( 'Refresh', 'mcp-ai-wpoos' );
+		filterRow.appendChild(refreshBtn);
+
+		const list = document.createElement('ul');
+		list.className = 'wp-mcp-ai-memory-drawer__list';
+		list.setAttribute('data-testid', 'wp-mcp-ai-memory-list');
+
+		const emptyState = document.createElement('p');
+		emptyState.className = 'wp-mcp-ai-memory-drawer__empty';
+		emptyState.hidden = true;
+		emptyState.textContent = __( 'No memories yet.', 'mcp-ai-wpoos' );
+
+		const errorState = document.createElement('p');
+		errorState.className = 'wp-mcp-ai-memory-drawer__error';
+		errorState.setAttribute('role', 'alert');
+		errorState.hidden = true;
+
+		memoriesPanel.appendChild(filterRow);
+		memoriesPanel.appendChild(emptyState);
+		memoriesPanel.appendChild(errorState);
+		memoriesPanel.appendChild(list);
+
+		// Scope panel.
+		const scopePanel = document.createElement('div');
+		scopePanel.className = 'wp-mcp-ai-memory-drawer__panel';
+		scopePanel.setAttribute('role', 'tabpanel');
+		scopePanel.hidden = true;
+
+		const scopeForm = document.createElement('form');
+		scopeForm.className = 'wp-mcp-ai-memory-drawer__scope-form';
+		scopeForm.setAttribute('data-testid', 'wp-mcp-ai-memory-scope-form');
+
+		const wingLabel = document.createElement('label');
+		wingLabel.textContent = __( 'Wing (project / matter)', 'mcp-ai-wpoos' );
+		const wingInput = document.createElement('input');
+		wingInput.type = 'text';
+		wingInput.className = 'wp-mcp-ai-memory-drawer__wing';
+		wingInput.value = config.memoryWing || '';
+		wingLabel.appendChild(wingInput);
+
+		const roomLabel = document.createElement('label');
+		roomLabel.textContent = __( 'Room (topic)', 'mcp-ai-wpoos' );
+		const roomInput = document.createElement('input');
+		roomInput.type = 'text';
+		roomInput.className = 'wp-mcp-ai-memory-drawer__room';
+		roomInput.value = config.memoryRoom || '';
+		roomLabel.appendChild(roomInput);
+
+		const scopeSaveBtn = document.createElement('button');
+		scopeSaveBtn.type = 'submit';
+		scopeSaveBtn.textContent = __( 'Apply scope', 'mcp-ai-wpoos' );
+
+		scopeForm.appendChild(wingLabel);
+		scopeForm.appendChild(roomLabel);
+		scopeForm.appendChild(scopeSaveBtn);
+
+		scopeForm.addEventListener('submit', function(e) {
+			e.preventDefault();
+			config.memoryWing = wingInput.value || '';
+			config.memoryRoom = roomInput.value || '';
+			announceToast(
+				config.memoryWing
+					? i18n.sprintf(__( 'Scope set to wing "%s".', 'mcp-ai-wpoos' ), config.memoryWing)
+					: __( 'Scope cleared.', 'mcp-ai-wpoos' ),
+				'success'
+			);
+			loadMemories(); // refresh list under new scope
+		});
+
+		scopePanel.appendChild(scopeForm);
+
+		drawer.appendChild(closeBtn);
+		drawer.appendChild(heading);
+		drawer.appendChild(tabs);
+		drawer.appendChild(memoriesPanel);
+		drawer.appendChild(scopePanel);
+
+		container.appendChild(drawer);
+
+		function setTab(name) {
+			const isMemories = name === 'memories';
+			memoriesTab.classList.toggle('is-active', isMemories);
+			memoriesTab.setAttribute('aria-selected', isMemories ? 'true' : 'false');
+			scopeTab.classList.toggle('is-active', !isMemories);
+			scopeTab.setAttribute('aria-selected', isMemories ? 'false' : 'true');
+			memoriesPanel.hidden = !isMemories;
+			scopePanel.hidden = isMemories;
+		}
+
+		memoriesTab.addEventListener('click', function() { setTab('memories'); });
+		scopeTab.addEventListener('click', function() { setTab('scope'); });
+
+		function clearList() {
+			while (list.firstChild) {
+				list.removeChild(list.firstChild);
+			}
+		}
+
+		function showError(message) {
+			errorState.textContent = message;
+			errorState.hidden = false;
+		}
+
+		function loadMemories() {
+			if (!isAvailable()) {
+				return;
+			}
+			errorState.hidden = true;
+			emptyState.hidden = true;
+			clearList();
+
+			const loading = document.createElement('li');
+			loading.className = 'wp-mcp-ai-memory-drawer__loading';
+			loading.textContent = __( 'Loading memories…', 'mcp-ai-wpoos' );
+			list.appendChild(loading);
+
+			const filters = {
+				agentId: agentId,
+				wing: config.memoryWing || '',
+				room: config.memoryRoom || '',
+				limit: 25
+			};
+
+			memoryService().recall(queryInput.value || '', filters).then(function(response) {
+				clearList();
+				const records = extractRecords(response);
+				if (!records.length) {
+					emptyState.hidden = false;
+					return;
+				}
+				records.forEach(function(record) {
+					attachItem(record);
+				});
+			}).catch(function(err) {
+				clearList();
+				showError((err && err.message) || __( 'Could not load memories.', 'mcp-ai-wpoos' ));
+			});
+		}
+
+		function removeItemById(id) {
+			const node = list.querySelector('[data-context-id="' + window.CSS.escape(id) + '"]');
+			if (node && node.parentNode) {
+				node.parentNode.removeChild(node);
+			}
+			if (!list.children.length) {
+				emptyState.hidden = false;
+			}
+		}
+
+		/**
+		 * Render and append (or replace) a memory list item with handlers
+		 * that re-render itself in place after edit/cancel.
+		 */
+		function attachItem(record, replaceNode) {
+			let item;
+			const onUpdate = function(updated, applied) {
+				const next = applied ? updated : record;
+				const replacement = renderMemoryItem(next, function(u, a) {
+					// Recurse on the replacement node.
+					attachItem(a ? u : next, replacement);
+				}, function(deletedId) {
+					removeItemById(deletedId);
+				});
+				if (item && item.parentNode) {
+					item.parentNode.replaceChild(replacement, item);
+				}
+				item = replacement;
+				record = next;
+			};
+			const onDelete = function(deletedId) {
+				removeItemById(deletedId);
+			};
+			item = renderMemoryItem(record, onUpdate, onDelete);
+			if (replaceNode && replaceNode.parentNode) {
+				replaceNode.parentNode.replaceChild(item, replaceNode);
+			} else {
+				list.appendChild(item);
+			}
+		}
+
+		function extractRecords(response) {
+			if (!response || typeof response !== 'object') {
+				return [];
+			}
+			if (Array.isArray(response.contexts)) { return response.contexts; }
+			if (Array.isArray(response.results))  { return response.results; }
+			if (Array.isArray(response.memories)) { return response.memories; }
+			if (response.data && Array.isArray(response.data.contexts)) { return response.data.contexts; }
+			if (response.data && Array.isArray(response.data.results))  { return response.data.results; }
+			if (response.data && Array.isArray(response.data.memories)) { return response.data.memories; }
+			return [];
+		}
+
+		// Debounced filter.
+		let filterTimer = null;
+		queryInput.addEventListener('input', function() {
+			window.clearTimeout(filterTimer);
+			filterTimer = window.setTimeout(loadMemories, 250);
+		});
+		refreshBtn.addEventListener('click', loadMemories);
+
+		let opened = false;
+		let releaseTrap = null;
+		let lastFocus = null;
+
+		function open(returnTarget) {
+			if (opened) { return; }
+			drawer.hidden = false;
+			drawer.setAttribute('aria-hidden', 'false');
+			drawer.classList.add('is-open');
+			opened = true;
+			lastFocus = returnTarget || document.activeElement;
+			loadMemories();
+			releaseTrap = trapFocus(drawer);
+			window.setTimeout(function() {
+				memoriesTab.focus();
+			}, 0);
+		}
+
+		function close() {
+			if (!opened) { return; }
+			drawer.classList.remove('is-open');
+			drawer.setAttribute('aria-hidden', 'true');
+			drawer.hidden = true;
+			opened = false;
+			if (releaseTrap) { releaseTrap(); releaseTrap = null; }
+			if (lastFocus && typeof lastFocus.focus === 'function') {
+				lastFocus.focus();
+			}
+		}
+
+		closeBtn.addEventListener('click', close);
+		drawer.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') {
+				close();
+			}
+		});
+
+		return {
+			open: open,
+			close: close,
+			isOpen: function() { return opened; },
+			root: drawer,
+			refresh: loadMemories
+		};
+	}
+
+	/**
+	 * Inject the toggle button into the container's transcript controls.
+	 *
+	 * @param {HTMLElement} container
+	 * @param {Object}      controller Drawer controller from buildDrawer.
+	 */
+	function injectToggle(container, controller) {
+		const controls = container.querySelector('.wp-mcp-ai-chat__transcript-controls');
+		if (!controls) {
+			return;
+		}
+		if (controls.querySelector('.wp-mcp-ai-memory-toggle')) {
+			return;
+		}
+		const toggle = document.createElement('button');
+		toggle.type = 'button';
+		toggle.className = 'wp-mcp-ai-memory-toggle';
+		toggle.setAttribute('aria-haspopup', 'dialog');
+		toggle.setAttribute('aria-expanded', 'false');
+		toggle.setAttribute('aria-label', __( 'Open long-term memory drawer', 'mcp-ai-wpoos' ));
+		toggle.setAttribute('data-testid', 'wp-mcp-ai-memory-toggle');
+		toggle.innerHTML = '<span aria-hidden="true">🧠</span><span class="screen-reader-text">'
+			+ __( 'Memory', 'mcp-ai-wpoos' ) + '</span>';
+		toggle.addEventListener('click', function() {
+			if (controller.isOpen()) {
+				controller.close();
+				toggle.setAttribute('aria-expanded', 'false');
+			} else {
+				controller.open(toggle);
+				toggle.setAttribute('aria-expanded', 'true');
+			}
+		});
+		controls.appendChild(toggle);
+	}
+
+	/**
+	 * Initialize the drawer for one chat container. Idempotent.
+	 *
+	 * @param {HTMLElement} container
+	 */
+	function attach(container) {
+		if (!container || container.__wpMcpAiMemoryDrawer) {
+			return;
+		}
+		if (!isAvailable()) {
+			return;
+		}
+		const state = container.__wpMcpAiChatState;
+		if (!state) {
+			return;
+		}
+		const controller = buildDrawer(container, state);
+		container.__wpMcpAiMemoryDrawer = controller;
+		injectToggle(container, controller);
+	}
+
+	/**
+	 * Scan the document for initialised chat containers and attach the drawer.
+	 */
+	function attachAll() {
+		const containers = document.querySelectorAll('[data-wp-mcp-ai-chat][data-wp-mcp-ai-initialized="true"]');
+		for (let i = 0; i < containers.length; i++) {
+			attach(containers[i]);
+		}
+	}
+
+	// Public surface.
+	window.wpMcpAiChatMemoryDrawer = {
+		attach: attach,
+		attachAll: attachAll,
+		decorateMessageWithBadge: decorateMessageWithBadge,
+		announceToast: announceToast,
+		ensureToastRegion: ensureToastRegion,
+		isAvailable: isAvailable
+	};
+
+	// Auto-attach on DOMContentLoaded and on a short interval thereafter to
+	// catch chat containers that initialise asynchronously.
+	function bootstrap() {
+		ensureToastRegion();
+		attachAll();
+		// Observe future chat containers.
+		const observer = new window.MutationObserver(function(mutations) {
+			for (let i = 0; i < mutations.length; i++) {
+				const m = mutations[i];
+				if (m.type === 'attributes' && m.target && m.target.getAttribute && m.target.getAttribute('data-wp-mcp-ai-initialized') === 'true') {
+					attach(m.target);
+				}
+			}
+		});
+		observer.observe(document.body, {
+			subtree: true,
+			attributes: true,
+			attributeFilter: ['data-wp-mcp-ai-initialized']
+		});
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', bootstrap);
+	} else {
+		// Already past DOMContentLoaded — schedule on next tick.
+		window.setTimeout(bootstrap, 0);
+	}
+})(window, document);

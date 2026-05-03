@@ -144,17 +144,92 @@ kill-switch checks so a disabled site or user receives a friendly error.
 - **i18n.** All strings use `__( …, 'mcp-ai-wpoos' )`; the JS service ships
   with no user-visible strings.
 
+## Memory Drawer UI (Phase 3)
+
+A self-contained side panel ships with the chat surface and auto-attaches
+to every initialised chat container the moment the bridge reports as
+available. The drawer module lives at
+[`assets/js/chat-memory-drawer.js`](../../../assets/js/chat-memory-drawer.js)
+and is bundled into `chat-bundle.min.js`. It degrades gracefully — no toggle
+button is rendered when the bridge is missing (e.g. on a Base build with no
+`recall_memory` tool, or for guests).
+
+### Surface
+
+- **Toggle button** — `🧠` button injected into the chat's
+  `.wp-mcp-ai-chat__transcript-controls` row.
+- **Side panel** — `role="dialog"`, `aria-modal="false"` (chat remains
+  interactive behind it), labelled by an explicit heading. ESC closes the
+  drawer and returns focus to the toggle. Tab cycles inside the dialog.
+- **Tabs**:
+  - **Memories** — paginated list of recent records (calls
+    `recall_memory` with the user's filter input and the active scope), with
+    inline edit/delete. Empty / error / loading states are announced.
+  - **Scope** — wing/room form. Submitting writes
+    `state.config.memoryWing` and `state.config.memoryRoom` and re-runs the
+    recall.
+- **ARIA-live toasts** — a singleton `#wp-mcp-ai-memory-toasts` region is
+  appended to `<body>` and used to announce memory store/update/delete
+  results to assistive tech (`aria-live="polite"`, `role="status"`).
+  Respects `prefers-reduced-motion`.
+
+### Public API
+
+The drawer module exposes a small surface on `window` for adapters and tests:
+
+```js
+window.wpMcpAiChatMemoryDrawer = {
+    attach(container),                       // attach to one container
+    attachAll(),                             // scan + attach to all initialised chats
+    decorateMessageWithBadge(bubble, calls), // add 🧠 Memory badge when tool calls touched memory
+    announceToast(message, variant),         // 'info' | 'success' | 'error'
+    ensureToastRegion(),                     // returns the singleton ARIA-live region
+    isAvailable(),                           // mirrors window.wpMcpAiChatMemory.isAvailable()
+};
+```
+
+### In-chat "🧠 Memory" badge
+
+`decorateMessageWithBadge(bubble, toolCalls)` is exposed for downstream
+renderers to call when an assistant message's tool calls included any of:
+
+- `recall_memory`
+- `wake_up_context`
+- `semantic_context_search`
+- `retrieve_agent_memory`
+- `store_agent_context`
+- `update_agent_memory`
+- `capture_memory`
+
+It is **idempotent** (skips bubbles already decorated), accepts both
+`{ tool: '…' }` and OpenAI-shaped `{ function: { name: '…' } }` records,
+and prefers attaching to a `.wp-mcp-ai-chat__message-header` /
+`.wp-mcp-ai-chat__message-meta` if present.
+
+### Accessibility checklist
+
+- `role="dialog"` + `aria-labelledby` on the drawer.
+- `role="tablist"` + `aria-selected` on the tab buttons.
+- `role="status"` + `aria-live="polite"` on the toast region.
+- Focus is moved into the dialog on open; ESC closes and restores focus.
+- A simple Tab/Shift-Tab cycle keeps focus inside the dialog.
+- All strings use `wp.i18n.__( …, 'mcp-ai-wpoos' )`.
+- `prefers-reduced-motion` short-circuits the slide-in and toast fade.
+
+
+
 ## Roadmap (deferred)
 
-These items from the original gap analysis were intentionally out of scope for
-the initial integration to keep the surface area auditable. They are tracked
-as follow-up work:
+These items from the original gap analysis were intentionally out of scope
+for the initial integration to keep the surface area auditable. They are
+tracked as follow-up work:
 
-- **G2 Memory Drawer UI** — full panel with Memories / Audit / Scope tabs.
-  The REST surface and JS service are already in place to power it.
-- **G3 In-chat "memory updated" toast and "memory in use" badge** — the
-  detection helper (`isMemoryRetrievalResult`) is shipped on the JS service,
-  but the badge is not yet wired into the message renderer.
+- **G2 Audit tab** inside the drawer — read-only feed of `wp_mcp_ai_memory_audit`
+  events. The Memories and Scope tabs are shipped; Audit is deferred.
+- **G3 Auto-wired in-chat "🧠 Memory" badge** — the helper
+  `wpMcpAiChatMemoryDrawer.decorateMessageWithBadge()` is shipped, but the
+  call site inside the message renderer is deferred until the assistant
+  payload exposes tool calls on the rendered DOM node.
 - **G6 Auto-summarise transcript** at conversation close — the
   `wp_mcp_ai_chat_memory_autosummarize` user-meta toggle exists; the
   end-of-session capture flow itself is deferred.

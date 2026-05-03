@@ -224,4 +224,25 @@ Endpoints are localized into `wpMcpAiChat.memoryEndpoints` by
 service silently no-ops (rejects with `chat_memory_disabled`) when they are
 absent — guests therefore never call the bridge.
 
+### Memory Drawer (Phase 3)
+
+The chat surface ships with a side-panel UI module
+(`assets/js/chat-memory-drawer.js`, bundled into `chat-bundle.min.js`) that
+auto-attaches to every initialised chat container the moment
+`window.wpMcpAiChatMemory.isAvailable()` returns `true`. It exposes:
+
+```js
+window.wpMcpAiChatMemoryDrawer = {
+    attach(container), attachAll(),
+    decorateMessageWithBadge(bubble, toolCalls), // 🧠 badge, idempotent
+    announceToast(message, variant),             // 'info' | 'success' | 'error'
+    ensureToastRegion(), isAvailable(),
+};
+```
+
+The drawer is `role="dialog"` + `aria-modal="false"`, ESC-dismissable, and
+uses a singleton `#wp-mcp-ai-memory-toasts` ARIA-live region. The chat
+container needs `position: relative`; the CSS rule for that lives at the
+bottom of `assets/css/chat.css`.
+
 See `docs/features/memory/chat-client-integration.md` for the full reference.
