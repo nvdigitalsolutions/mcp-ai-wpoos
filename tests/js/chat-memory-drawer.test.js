@@ -794,6 +794,8 @@ describe( 'chat-memory-drawer', () => {
 			expect( payload.content ).toContain( 'User: hi' );
 			expect( payload.content ).toContain( 'Assistant: hello there' );
 			expect( payload.title ).toMatch( /Conversation summary/ );
+			// G6 Phase 2 — auto-capture opts into LLM summarisation.
+			expect( payload.summarize ).toBe( true );
 
 			// Second pagehide is suppressed by the sessionStorage one-shot flag.
 			window.dispatchEvent( new Event( 'pagehide' ) );

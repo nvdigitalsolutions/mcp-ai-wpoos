@@ -1175,7 +1175,12 @@
 				tags: [ 'transcript-summary', 'autosummary' ],
 				contextType: 'transcript_summary',
 				importance: 'medium',
-				verbatim: true
+				verbatim: true,
+				// G6 Phase 2 — ask the server to LLM-summarise the
+				// verbatim transcript before persisting. Server falls
+				// back to verbatim on any failure (no API key, HTTP
+				// error, malformed response) so data is never lost.
+				summarize: true
 			};
 			try {
 				memoryService().storeBeacon(payload).catch(function() { /* fire-and-forget */ });

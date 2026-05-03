@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/research-chat-client-memory-gaps',
         'version' => 'dev-copilot/research-chat-client-memory-gaps',
-        'reference' => '1c27a9d09224756e723537a13961ffb94631ae6a',
+        'reference' => '6cde8f8ce4de8a723018b91d9c0cc0a0700a2894',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/research-chat-client-memory-gaps',
             'version' => 'dev-copilot/research-chat-client-memory-gaps',
-            'reference' => '1c27a9d09224756e723537a13961ffb94631ae6a',
+            'reference' => '6cde8f8ce4de8a723018b91d9c0cc0a0700a2894',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -61,6 +61,18 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 	);
 
 	/**
+	 * Minimum content length, in bytes, before LLM summarisation is attempted.
+	 * Below this, the round-trip costs more tokens than it would save.
+	 */
+	const SUMMARIZE_MIN_INPUT_BYTES = 200;
+
+	/**
+	 * Hard cap on input size sent to the OpenAI summarisation endpoint.
+	 * Defends against malicious callers running up an unbounded token bill.
+	 */
+	const SUMMARIZE_MAX_INPUT_BYTES = 16384;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function register_routes() {
@@ -174,6 +186,11 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 								'type'     => 'boolean',
 								'required' => false,
 								'default'  => true,
+							),
+							'summarize'    => array(
+								'type'     => 'boolean',
+								'required' => false,
+								'default'  => false,
 							),
 						)
 					),
@@ -540,12 +557,37 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		}
 		$tags = array_values( array_filter( array_map( 'sanitize_text_field', $tags ) ) );
 
+		// G6 Phase 2 — optional LLM summarisation. Falls back to verbatim
+		// silently on any failure (no API key, HTTP error, malformed JSON)
+		// so the auto-capture path on `pagehide` never loses data.
+		$summarize          = (bool) $request->get_param( 'summarize' );
+		$summary_metadata   = null;
+		$original_length    = strlen( $content );
+		if ( $summarize ) {
+			$summary = $this->maybe_summarize_content( $content );
+			if ( is_array( $summary ) && ! empty( $summary['text'] ) ) {
+				$content = $summary['text'];
+				if ( ! in_array( 'summarized', $tags, true ) ) {
+					$tags[] = 'summarized';
+				}
+				$summary_metadata = array(
+					'summarized'      => true,
+					'original_length' => $original_length,
+					'summary_length'  => strlen( $summary['text'] ),
+					'model'           => isset( $summary['model'] ) ? (string) $summary['model'] : '',
+				);
+			}
+		}
+
 		$context_data = array(
 			'title'      => $title,
 			'content'    => $content,
 			'importance' => (string) ( $request->get_param( 'importance' ) ?: 'medium' ),
 			'tags'       => $tags,
 		);
+		if ( null !== $summary_metadata ) {
+			$context_data['summary_metadata'] = $summary_metadata;
+		}
 
 		$context_type = (string) ( $request->get_param( 'context_type' ) ?: 'user_note' );
 
@@ -753,5 +795,98 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		}
 
 		return $this->success( is_array( $result ) ? $result : array( 'result' => $result ) );
+	}
+
+	/**
+	 * Summarise the given content using the configured OpenAI key.
+	 *
+	 * Used by `handle_store()` (G6 Phase 2) when the caller passes
+	 * `summarize=true`. Designed to be a graceful enhancement: any failure
+	 * (missing API key, content too short, HTTP error, malformed JSON,
+	 * timeout) returns `null` so the calling code can fall through to
+	 * verbatim storage and never lose the user's transcript.
+	 *
+	 * The input is hard-capped at {@see self::SUMMARIZE_MAX_INPUT_BYTES}
+	 * before sending so a malicious caller can't run up an arbitrary token
+	 * bill on a single request.
+	 *
+	 * @since 1.1.14
+	 *
+	 * @param string $content Raw memory content (already kses-sanitised).
+	 * @return array<string,string>|null `array{ text:string, model:string }` on success, `null` on any failure.
+	 */
+	protected function maybe_summarize_content( $content ) {
+		// Don't bother summarising trivially short content — round-trip
+		// would cost more tokens than it saves.
+		if ( strlen( $content ) < self::SUMMARIZE_MIN_INPUT_BYTES ) {
+			return null;
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$api_key  = is_array( $settings ) && isset( $settings['openai_api_key'] ) ? (string) $settings['openai_api_key'] : '';
+		if ( '' === $api_key ) {
+			return null;
+		}
+
+		// Cap input so a single beacon can't trigger an unbounded token bill.
+		if ( strlen( $content ) > self::SUMMARIZE_MAX_INPUT_BYTES ) {
+			$content = substr( $content, 0, self::SUMMARIZE_MAX_INPUT_BYTES );
+		}
+
+		$model = 'gpt-4o-mini';
+		$body  = array(
+			'model'       => $model,
+			'messages'    => array(
+				array(
+					'role'    => 'system',
+					'content' => 'You summarise chat transcripts into a single concise paragraph (max 4 sentences) capturing the key topic, decisions, and any actionable follow-ups. Plain text only — no markdown, no headings.',
+				),
+				array(
+					'role'    => 'user',
+					'content' => $content,
+				),
+			),
+			'temperature' => 0.3,
+			'max_tokens'  => 300,
+		);
+
+		$response = wp_remote_post(
+			'https://api.openai.com/v1/chat/completions',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $body ),
+				'timeout' => 30,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only, gated by WP_DEBUG.
+				error_log( '[NV oOS Chat Memory] Summarisation HTTP error: ' . $response->get_error_message() );
+			}
+			return null;
+		}
+
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			return null;
+		}
+
+		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $decoded ) || empty( $decoded['choices'][0]['message']['content'] ) ) {
+			return null;
+		}
+
+		$summary = trim( (string) $decoded['choices'][0]['message']['content'] );
+		if ( '' === $summary ) {
+			return null;
+		}
+
+		return array(
+			'text'  => $summary,
+			'model' => isset( $decoded['model'] ) ? (string) $decoded['model'] : $model,
+		);
 	}
 }

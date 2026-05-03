@@ -249,16 +249,30 @@ tracked as follow-up work:
   each event as `[timestamp] action — context_id`. Permission gate is the
   same `permissions_check_logged_in` callback used by `/recall`, so the
   per-user toggle and site-wide kill-switch both apply.
-- **G6 Auto-summarise transcript** at conversation close — **partial (Phase 1
-  shipped).** A `pagehide` (+ `visibilitychange→hidden`) handler in the
-  Memory Drawer fires a single `storeBeacon()` per page session when both
-  the site-wide kill-switch and the per-user `autosummarize` toggle are on.
-  The captured payload is the verbatim transcript (truncated to 4 KB,
-  keeping the most recent turns) tagged `transcript-summary` /
-  `autosummary` with `context_type: 'transcript_summary'`. Reuses
-  `POST /chat-memory/store` so the existing permission gates and audit
-  trail apply. **Phase 2** (true LLM-side summarisation instead of
-  verbatim capture) is still deferred.
+- **G6 Auto-summarise transcript** at conversation close — **shipped.** A
+  `pagehide` (+ `visibilitychange→hidden`) handler in the Memory Drawer
+  fires a single `storeBeacon()` per page session when both the site-wide
+  kill-switch and the per-user `autosummarize` toggle are on. The captured
+  payload is the verbatim transcript (truncated to 4 KB, keeping the most
+  recent turns) tagged `transcript-summary` / `autosummary` with
+  `context_type: 'transcript_summary'`. Reuses `POST /chat-memory/store`
+  so the existing permission gates and audit trail apply.
+
+  **Phase 2 — true LLM-side summarisation.** The auto-capture payload now
+  sets `summarize: true`, which opts the request into server-side
+  summarisation in the `/chat-memory/store` controller. When the OpenAI
+  key is configured, the controller calls `gpt-4o-mini` with a terse
+  "summarise this transcript" system prompt, replaces the verbatim
+  content with the resulting paragraph, appends a `summarized` tag, and
+  records `{ original_length, summary_length, model }` in
+  `context_data.summary_metadata` so the drawer can display "summarised
+  from N bytes". The helper is a graceful enhancement — every failure
+  path (no API key, content under {@see SUMMARIZE_MIN_INPUT_BYTES} bytes,
+  HTTP error, non-200, malformed JSON, blank summary, `WP_Error` from
+  `wp_remote_post`) returns `null` and the verbatim 4 KB capture is
+  stored as before, so a user's transcript is never lost. Inputs are
+  hard-capped at {@see SUMMARIZE_MAX_INPUT_BYTES} bytes before sending
+  to defend against malicious callers running up an unbounded token bill.
 - **G8 SSE `memory_event` frames** — **shipped.** Two paths now feed the
   same "🧠 Memory" toast:
   1. **End-of-stream (inline metadata).** `decorateMessageWithBadge` inspects

@@ -93,7 +93,27 @@ describe( 'chat-memory-service', () => {
 		expect( body.agent_id ).toBe( 7 );
 		expect( body.content ).toBe( 'remember this' );
 		expect( body.verbatim ).toBe( true );
+		expect( body.summarize ).toBe( false );
 		expect( body.tags ).toEqual( [ 'todo' ] );
+	} );
+
+	test( 'store() forwards summarize:true when caller opts in (G6 Phase 2)', async () => {
+		window.wpMcpAiChat = { nonce: 'abc', memoryEndpoints: ENDPOINTS };
+		const fetchMock = jest.fn().mockResolvedValue( {
+			ok: true,
+			json: () => Promise.resolve( { success: true } ),
+		} );
+		window.fetch = fetchMock;
+
+		await memory.store( {
+			agentId: 7,
+			content: 'a long transcript that should be summarised',
+			summarize: true,
+		} );
+
+		const [ , options ] = fetchMock.mock.calls[ 0 ];
+		const body = JSON.parse( options.body );
+		expect( body.summarize ).toBe( true );
 	} );
 
 	test( 'remove() DELETEs the right URL', async () => {

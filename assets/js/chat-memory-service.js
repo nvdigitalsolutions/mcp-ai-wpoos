@@ -185,7 +185,8 @@
 			tags: payload && payload.tags,
 			importance: payload && payload.importance,
 			context_type: payload && payload.contextType,
-			verbatim: payload && payload.verbatim !== undefined ? !!payload.verbatim : true
+			verbatim: payload && payload.verbatim !== undefined ? !!payload.verbatim : true,
+			summarize: payload && payload.summarize !== undefined ? !!payload.summarize : false
 		};
 		return request(eps.store, { method: 'POST', body: body });
 	}
@@ -215,7 +216,8 @@
 			tags: payload && payload.tags,
 			importance: payload && payload.importance,
 			context_type: payload && payload.contextType,
-			verbatim: payload && payload.verbatim !== undefined ? !!payload.verbatim : true
+			verbatim: payload && payload.verbatim !== undefined ? !!payload.verbatim : true,
+			summarize: payload && payload.summarize !== undefined ? !!payload.summarize : false
 		};
 		return window.fetch(eps.store, {
 			method: 'POST',
