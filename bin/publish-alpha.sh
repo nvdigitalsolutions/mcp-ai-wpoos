@@ -74,7 +74,7 @@ echo -e "${BLUE}📍 Current branch: ${CURRENT_BRANCH}${NC}"
 echo ""
 echo -e "${YELLOW}📝 Updating package.json files...${NC}"
 
-PACKAGES="nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher"
+PACKAGES="nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client nvoos-client-tools nvoos-chat-memory nvoos-attachments nvoos-cron-status nvoos-transcription"
 
 for pkg in $PACKAGES; do
   cd packages/${pkg}
@@ -115,6 +115,14 @@ Packages included (9 total):
 - @nvdigitalsolutions/nvoos-slash-commands@${VERSION}
 - @nvdigitalsolutions/nvoos-audio@${VERSION}
 - @nvdigitalsolutions/nvoos-dom-batcher@${VERSION}
+- @nvdigitalsolutions/nvoos-llm-worker@${VERSION}
+- @nvdigitalsolutions/nvoos-model-loader@${VERSION}
+- @nvdigitalsolutions/nvoos-transformers-client@${VERSION}
+- @nvdigitalsolutions/nvoos-client-tools@${VERSION}
+- @nvdigitalsolutions/nvoos-chat-memory@${VERSION}
+- @nvdigitalsolutions/nvoos-attachments@${VERSION}
+- @nvdigitalsolutions/nvoos-cron-status@${VERSION}
+- @nvdigitalsolutions/nvoos-transcription@${VERSION}
 
 This is an alpha release for testing purposes.
 Use 'npm install <package>@alpha' to install."
