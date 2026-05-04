@@ -956,7 +956,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					if ( '' !== $think_extracted ) {
 						// Only overwrite reasoning_content when none was already set.
 						if ( empty( $response['choices'][ $index ]['message']['reasoning_content'] ) ) {
-							$response['choices'][ $index ]['message']['reasoning_content'] = trim( $think_extracted );
+							// Sanitize the extracted reasoning text: strip any HTML tags that
+							// a model might embed inside its thinking block before it is
+							// stored or forwarded to the chat UI.
+							$response['choices'][ $index ]['message']['reasoning_content'] = wp_kses_post( trim( $think_extracted ) );
 						}
 						$response['choices'][ $index ]['message']['content'] = trim( (string) $cleaned_content );
 						// Re-read cleaned content for the array conversion below.
@@ -991,6 +994,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 							$response['choices'][ $index ]['message']['tool_calls'][ $tc_idx ]['function']['arguments'] = wp_json_encode( $args );
 						} elseif ( is_string( $args ) ) {
 							// Validate and attempt to repair truncated JSON.
+							// Note: this is a narrow repair for the most common LM Studio
+							// failure mode — a trailing-truncated object (missing `}`).
+							// Other malformations (missing quotes, trailing commas, nested
+							// truncation) are not repaired and will be logged as-is.
+							// If repair cannot be applied the original string is preserved
+							// so the caller can decide how to handle the invalid JSON.
 							json_decode( $args );
 							if ( JSON_ERROR_NONE !== json_last_error() ) {
 								// Append a closing brace as a minimal repair strategy for
@@ -1070,7 +1079,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$accumulated_content    = '';
 			$accumulated_reasoning  = '';
-			$tool_calls_index       = array(); // Indexed by tool_call index for delta accumulation.
+			$tool_calls_by_index    = array(); // Maps SSE delta index → accumulated tool-call object.
 			$response_id            = '';
 			$finish_reason          = null;
 			$usage                  = null;
@@ -1140,8 +1149,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 						$tc_idx = (int) $tc_delta['index'];
 
-						if ( ! isset( $tool_calls_index[ $tc_idx ] ) ) {
-							$tool_calls_index[ $tc_idx ] = array(
+						if ( ! isset( $tool_calls_by_index[ $tc_idx ] ) ) {
+							$tool_calls_by_index[ $tc_idx ] = array(
 								'index'    => $tc_idx,
 								'id'       => '',
 								'type'     => 'function',
@@ -1153,16 +1162,16 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 						}
 
 						if ( isset( $tc_delta['id'] ) ) {
-							$tool_calls_index[ $tc_idx ]['id'] = (string) $tc_delta['id'];
+							$tool_calls_by_index[ $tc_idx ]['id'] = (string) $tc_delta['id'];
 						}
 						if ( isset( $tc_delta['type'] ) ) {
-							$tool_calls_index[ $tc_idx ]['type'] = (string) $tc_delta['type'];
+							$tool_calls_by_index[ $tc_idx ]['type'] = (string) $tc_delta['type'];
 						}
 						if ( isset( $tc_delta['function']['name'] ) ) {
-							$tool_calls_index[ $tc_idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+							$tool_calls_by_index[ $tc_idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
 						}
 						if ( isset( $tc_delta['function']['arguments'] ) ) {
-							$tool_calls_index[ $tc_idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
+							$tool_calls_by_index[ $tc_idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
 						}
 					}
 				}
@@ -1194,9 +1203,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$message['reasoning_content'] = $accumulated_reasoning;
 			}
 
-			if ( ! empty( $tool_calls_index ) ) {
-				ksort( $tool_calls_index );
-				$message['tool_calls'] = array_values( $tool_calls_index );
+			if ( ! empty( $tool_calls_by_index ) ) {
+				ksort( $tool_calls_by_index );
+				$message['tool_calls'] = array_values( $tool_calls_by_index );
 			}
 
 			// Assemble into a chat.completion-shaped response and normalize.
