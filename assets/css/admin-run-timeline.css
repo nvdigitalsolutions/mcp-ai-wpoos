@@ -1,0 +1,214 @@
+/**
+ * Run Timeline admin page — styles.
+ *
+ * @package WP_MCP_AI
+ * @since 1.5.0
+ */
+
+/* Layout */
+.wp-mcp-ai-run-timeline #wp-mcp-ai-run-timeline-app {
+	display: flex;
+	gap: 20px;
+	margin-top: 16px;
+}
+
+.wp-mcp-ai-run-timeline .rt-sidebar {
+	width: 320px;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-run-timeline .rt-detail {
+	flex: 1;
+	min-width: 0;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	padding: 20px;
+}
+
+/* Run list */
+.wp-mcp-ai-run-timeline .rt-run-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	background: #fff;
+	max-height: 600px;
+	overflow-y: auto;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-item {
+	display: flex;
+	flex-direction: column;
+	padding: 10px 12px;
+	border-bottom: 1px solid #f0f0f0;
+	cursor: pointer;
+	font-size: 12px;
+	transition: background 0.1s;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-item:last-child {
+	border-bottom: none;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-item:hover {
+	background: #f7f9fc;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-item--selected {
+	background: #e8f0fe;
+	border-left: 3px solid #4285f4;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-id {
+	font-family: monospace;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-when {
+	color: #666;
+	font-size: 11px;
+}
+
+.wp-mcp-ai-run-timeline .rt-run-tokens,
+.wp-mcp-ai-run-timeline .rt-run-cost,
+.wp-mcp-ai-run-timeline .rt-run-latency {
+	color: #444;
+}
+
+/* Pagination */
+#rt-pagination {
+	margin-top: 8px;
+	display: flex;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+/* Filters */
+.wp-mcp-ai-run-timeline .rt-filters {
+	margin-bottom: 12px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wp-mcp-ai-run-timeline .rt-filters label {
+	font-weight: 600;
+	font-size: 13px;
+}
+
+/* Detail pane */
+.wp-mcp-ai-run-timeline .rt-empty-state {
+	text-align: center;
+	padding: 40px 20px;
+	color: #888;
+}
+
+.wp-mcp-ai-run-timeline .rt-empty-state .dashicons {
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+	display: block;
+	margin: 0 auto 12px;
+	color: #ccc;
+}
+
+.wp-mcp-ai-run-timeline .rt-detail-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.wp-mcp-ai-run-timeline .rt-detail-header h2 {
+	margin: 0;
+}
+
+.wp-mcp-ai-run-timeline .rt-section {
+	margin-bottom: 24px;
+}
+
+.wp-mcp-ai-run-timeline .rt-section h3 {
+	font-size: 14px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #555;
+	border-bottom: 1px solid #eee;
+	padding-bottom: 6px;
+	margin-bottom: 12px;
+}
+
+/* Trace table */
+.wp-mcp-ai-run-timeline .rt-trace-table th {
+	width: 180px;
+	text-transform: capitalize;
+	font-weight: 600;
+}
+
+/* Timeline */
+.wp-mcp-ai-run-timeline .rt-timeline {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	position: relative;
+}
+
+.wp-mcp-ai-run-timeline .rt-timeline::before {
+	content: '';
+	position: absolute;
+	left: 10px;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: #e0e0e0;
+}
+
+.wp-mcp-ai-run-timeline .rt-step {
+	position: relative;
+	padding: 8px 12px 8px 30px;
+	margin-bottom: 6px;
+	background: #f9f9f9;
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+.wp-mcp-ai-run-timeline .rt-step::before {
+	content: '';
+	position: absolute;
+	left: 6px;
+	top: 12px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #4285f4;
+}
+
+.wp-mcp-ai-run-timeline .rt-step ul {
+	margin: 4px 0 0 0;
+	padding-left: 16px;
+	color: #555;
+}
+
+/* Loading / error states */
+.wp-mcp-ai-run-timeline .rt-loading,
+.wp-mcp-ai-run-timeline .rt-error,
+.wp-mcp-ai-run-timeline .rt-empty {
+	padding: 16px;
+	color: #888;
+	font-style: italic;
+}
+
+.wp-mcp-ai-run-timeline .rt-error {
+	color: #c00;
+}
+
+@media ( max-width: 960px ) {
+	.wp-mcp-ai-run-timeline #wp-mcp-ai-run-timeline-app {
+		flex-direction: column;
+	}
+	.wp-mcp-ai-run-timeline .rt-sidebar {
+		width: 100%;
+	}
+}
