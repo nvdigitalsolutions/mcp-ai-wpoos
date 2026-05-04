@@ -115,6 +115,13 @@ class NV_oOS_Graphify_Settings {
 		add_settings_field( 'embeddings_enabled', __( 'Enable Embeddings', 'nvoos-graphify' ), array( __CLASS__, 'field_embeddings_enabled' ), self::PAGE_SLUG, 'nvoos_graphify_embeddings' );
 		add_settings_field( 'embeddings_model', __( 'Embeddings Model', 'nvoos-graphify' ), array( __CLASS__, 'field_embeddings_model' ), self::PAGE_SLUG, 'nvoos_graphify_embeddings' );
 
+		// --- Sources section (NV oOS bridge post types + external tables) ---
+		add_settings_section( 'nvoos_graphify_sources_cpts', __( 'NV oOS Post Types', 'nvoos-graphify' ), array( __CLASS__, 'section_sources_cpts_intro' ), self::PAGE_SLUG );
+		add_settings_field( 'nvoos_post_types', __( 'Indexed Post Types', 'nvoos-graphify' ), array( __CLASS__, 'field_nvoos_post_types' ), self::PAGE_SLUG, 'nvoos_graphify_sources_cpts' );
+
+		add_settings_section( 'nvoos_graphify_sources_ext', __( 'NV oOS Internal Tables', 'nvoos-graphify' ), array( __CLASS__, 'section_sources_ext_intro' ), self::PAGE_SLUG );
+		add_settings_field( 'nvoos_external_tables', __( 'Indexed Tables', 'nvoos-graphify' ), array( __CLASS__, 'field_nvoos_external_tables' ), self::PAGE_SLUG, 'nvoos_graphify_sources_ext' );
+
 		// --- Display section ---
 		add_settings_section( 'nvoos_graphify_display', __( 'Display', 'nvoos-graphify' ), '__return_false', self::PAGE_SLUG );
 		add_settings_field( 'schema_injection', __( 'Schema.org Injection', 'nvoos-graphify' ), array( __CLASS__, 'field_schema' ), self::PAGE_SLUG, 'nvoos_graphify_display' );
@@ -158,6 +165,13 @@ class NV_oOS_Graphify_Settings {
 			'embeddings' => array(
 				'embeddings_enabled',
 				'embeddings_model',
+			),
+			// "Sources" tab — NV oOS CPTs, CCT slugs, external tables.
+			'sources'    => array(
+				'excluded_post_types',
+				'extra_post_types',
+				'external_tables',
+				'disabled_external_tables',
 			),
 		);
 	}
@@ -212,6 +226,16 @@ class NV_oOS_Graphify_Settings {
 				$allowed = array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' );
 				$value   = isset( $raw[ $key ] ) ? $raw[ $key ] : '';
 				return in_array( $value, $allowed, true ) ? $value : 'text-embedding-3-small';
+
+			case 'excluded_post_types':
+			case 'extra_post_types':
+			case 'external_tables':
+			case 'disabled_external_tables':
+				// These are arrays of sanitize_key strings.
+				if ( empty( $raw[ $key ] ) || ! is_array( $raw[ $key ] ) ) {
+					return array();
+				}
+				return array_values( array_filter( array_map( 'sanitize_key', $raw[ $key ] ) ) );
 		}
 
 		// Defensive default: any key not explicitly handled above is not part
@@ -284,6 +308,38 @@ class NV_oOS_Graphify_Settings {
 				continue;
 			}
 			$merged[ $key ] = $value;
+		}
+
+		// Handle the Sources tab CPT checkboxes, which are submitted as
+		// nvoos_cpt_include[slug]=1. Translate that into excluded_post_types
+		// and extra_post_types arrays.
+		if ( 'sources' === $tab && class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' ) ) {
+			$checked_slugs = array();
+			if ( isset( $raw['nvoos_cpt_include'] ) && is_array( $raw['nvoos_cpt_include'] ) ) {
+				$checked_slugs = array_keys( array_filter( $raw['nvoos_cpt_include'] ) );
+				$checked_slugs = array_values( array_map( 'sanitize_key', $checked_slugs ) );
+			}
+
+			$registry        = NV_oOS_Graphify_NV_oOS_Bridge::get_cpt_registry();
+			$new_excluded    = array();
+			$new_extra       = array();
+
+			foreach ( $registry as $entry ) {
+				$slug = sanitize_key( $entry['slug'] );
+				if ( $entry['default_include'] ) {
+					// Default-on: if NOT checked, add to excluded.
+					if ( ! in_array( $slug, $checked_slugs, true ) ) {
+						$new_excluded[] = $slug;
+					}
+				} else {
+					// Default-off: if checked, add to extra.
+					if ( in_array( $slug, $checked_slugs, true ) ) {
+						$new_extra[] = $slug;
+					}
+				}
+			}
+			$merged['excluded_post_types'] = $new_excluded;
+			$merged['extra_post_types']    = $new_extra;
 		}
 
 		return $merged;
@@ -445,6 +501,146 @@ class NV_oOS_Graphify_Settings {
 		}
 		echo '</select>';
 		echo '<p class="description">' . esc_html__( 'OpenAI embedding model used when generating node vectors.', 'nvoos-graphify' ) . '</p>';
+	}
+
+	// -------------------------------------------------------------------------
+	// Sources tab field renderers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Intro paragraph for the NV oOS Post Types section.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @return void
+	 */
+	public static function section_sources_cpts_intro() {
+		echo '<p>' . esc_html__( 'Control which NV oOS internal post types (assistants, workflow runs, approvals, audit entries, etc.) are included in the knowledge graph. Default-on types are already included; default-off types are sensitive or high-volume and require explicit opt-in.', 'nvoos-graphify' ) . '</p>';
+	}
+
+	/**
+	 * Intro paragraph for the NV oOS Internal Tables section.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @return void
+	 */
+	public static function section_sources_ext_intro() {
+		echo '<p>' . esc_html__( 'Control which NV oOS custom database tables (slash-command audit, metric events, compliance evidence, risks, etc.) are indexed. All tables here are opt-in by default.', 'nvoos-graphify' ) . '</p>';
+	}
+
+	/**
+	 * Render the NV oOS post-type inclusion checkboxes.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @return void
+	 */
+	public static function field_nvoos_post_types() {
+		if ( ! class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' ) ) {
+			echo '<p class="description">' . esc_html__( 'The NV oOS bridge is not active (NV oOS base plugin not detected).', 'nvoos-graphify' ) . '</p>';
+			return;
+		}
+
+		$s        = NV_oOS_Graphify::get_settings();
+		$excluded = isset( $s['excluded_post_types'] ) && is_array( $s['excluded_post_types'] ) ? $s['excluded_post_types'] : array();
+		$extra    = isset( $s['extra_post_types'] ) && is_array( $s['extra_post_types'] ) ? $s['extra_post_types'] : array();
+		$registry = NV_oOS_Graphify_NV_oOS_Bridge::get_cpt_registry();
+
+		echo '<table class="widefat striped" style="max-width:700px">';
+		echo '<thead><tr><th>' . esc_html__( 'Post Type', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Include', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Notes', 'nvoos-graphify' ) . '</th></tr></thead>';
+		echo '<tbody>';
+		foreach ( $registry as $entry ) {
+			$slug    = esc_attr( $entry['slug'] );
+			$label   = esc_html( $entry['label'] );
+			$default = $entry['default_include'];
+
+			if ( $default ) {
+				// Default-on: show as enabled unless explicitly excluded.
+				$checked = ! in_array( $entry['slug'], $excluded, true );
+				$note    = esc_html__( 'Included by default', 'nvoos-graphify' );
+				$name    = esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[excluded_post_types][]';
+				// For default-on, the admin sends the slug in `excluded_post_types` to opt OUT.
+				$checked_attr = $checked ? ' checked' : '';
+				// Invert: checkbox checked = include, but value stored in excluded list.
+				echo '<tr>';
+				echo '<td><strong>' . $label . '</strong> <code style="font-size:11px">' . $slug . '</code></td>';
+				echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[nvoos_cpt_include][' . $slug . ']" value="1"' . $checked_attr . '></td>';
+				echo '<td>' . $note . '</td>';
+				echo '</tr>';
+			} else {
+				// Default-off: show as disabled unless explicitly opted in.
+				$checked      = in_array( $entry['slug'], $extra, true );
+				$note         = esc_html__( 'Opt-in (sensitive / high-volume)', 'nvoos-graphify' );
+				$checked_attr = $checked ? ' checked' : '';
+				echo '<tr>';
+				echo '<td><strong>' . $label . '</strong> <code style="font-size:11px">' . $slug . '</code></td>';
+				echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[nvoos_cpt_include][' . $slug . ']" value="1"' . $checked_attr . '></td>';
+				echo '<td>' . $note . '</td>';
+				echo '</tr>';
+			}
+		}
+		echo '</tbody></table>';
+		echo '<p class="description">' . esc_html__( 'Uncheck to exclude a post type; check to include it. Changes take effect on the next graph build.', 'nvoos-graphify' ) . '</p>';
+	}
+
+	/**
+	 * Render the NV oOS external table inclusion checkboxes.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @return void
+	 */
+	public static function field_nvoos_external_tables() {
+		if ( ! class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' ) ) {
+			echo '<p class="description">' . esc_html__( 'The NV oOS bridge is not active.', 'nvoos-graphify' ) . '</p>';
+			return;
+		}
+
+		$s       = NV_oOS_Graphify::get_settings();
+		$enabled = isset( $s['external_tables'] ) && is_array( $s['external_tables'] ) ? $s['external_tables'] : array();
+
+		$all_descriptors = array();
+		foreach ( array(
+			array( 'table' => 'mcp_ai_slash_command_audit', 'label' => __( 'Slash Command Audit', 'nvoos-graphify' ),   'default_include' => false, 'sensitive' => false ),
+			array( 'table' => 'mcp_ai_metric_events',        'label' => __( 'Metric Events', 'nvoos-graphify' ),          'default_include' => false, 'sensitive' => false ),
+			array( 'table' => 'mcp_ai_hourly_token_usage',   'label' => __( 'Hourly Token Usage', 'nvoos-graphify' ),     'default_include' => false, 'sensitive' => false ),
+			array( 'table' => 'mcp_ai_job_queue',            'label' => __( 'Job Queue', 'nvoos-graphify' ),              'default_include' => false, 'sensitive' => false ),
+			array( 'table' => 'mcp_ai_controls',             'label' => __( 'Compliance Controls', 'nvoos-graphify' ),    'default_include' => false, 'sensitive' => true ),
+			array( 'table' => 'mcp_ai_evidence',             'label' => __( 'Compliance Evidence', 'nvoos-graphify' ),    'default_include' => false, 'sensitive' => true ),
+			array( 'table' => 'mcp_ai_risks',                'label' => __( 'Risk Register', 'nvoos-graphify' ),          'default_include' => false, 'sensitive' => true ),
+			array( 'table' => 'mcp_ai_audit_trail',          'label' => __( 'Audit Trail', 'nvoos-graphify' ),            'default_include' => false, 'sensitive' => true ),
+			array( 'table' => 'mcp_ai_compliance_checks',    'label' => __( 'Compliance Checks', 'nvoos-graphify' ),      'default_include' => false, 'sensitive' => true ),
+			array( 'table' => 'mcp_ai_custom_metrics',       'label' => __( 'Custom Metrics', 'nvoos-graphify' ),         'default_include' => false, 'sensitive' => false ),
+			array( 'table' => 'mcp_ai_events',               'label' => __( 'NV oOS Events', 'nvoos-graphify' ),          'default_include' => false, 'sensitive' => false ),
+		) as $desc ) {
+			$all_descriptors[] = $desc;
+		}
+
+		global $wpdb;
+
+		echo '<table class="widefat striped" style="max-width:700px">';
+		echo '<thead><tr><th>' . esc_html__( 'Table', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Index', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Status', 'nvoos-graphify' ) . '</th></tr></thead>';
+		echo '<tbody>';
+		foreach ( $all_descriptors as $desc ) {
+			$table_key  = sanitize_key( $desc['table'] );
+			$checked    = in_array( $table_key, $enabled, true );
+			$table_full = $wpdb->prefix . $desc['table'];
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_full ) ) === $table_full;
+			$status_text  = $table_exists
+				? esc_html__( 'Table exists', 'nvoos-graphify' )
+				: '<em>' . esc_html__( 'Table not found', 'nvoos-graphify' ) . '</em>';
+			$sensitive_badge = $desc['sensitive'] ? ' <span style="background:#d63638;color:#fff;padding:0 4px;border-radius:2px;font-size:10px">' . esc_html__( 'Sensitive', 'nvoos-graphify' ) . '</span>' : '';
+
+			echo '<tr>';
+			echo '<td><strong>' . esc_html( $desc['label'] ) . '</strong>' . wp_kses_post( $sensitive_badge ) . ' <code style="font-size:11px">' . esc_html( $table_full ) . '</code></td>';
+			echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[external_tables][]" value="' . esc_attr( $table_key ) . '"' . checked( $checked, true, false ) . ( ! $table_exists ? ' disabled' : '' ) . '></td>';
+			echo '<td>' . wp_kses_post( $status_text ) . '</td>';
+			echo '</tr>';
+		}
+		echo '</tbody></table>';
+		echo '<p class="description">' . esc_html__( 'Check each table you want indexed. Tables marked Sensitive contain compliance/audit data. All opt-in. Changes apply on next build.', 'nvoos-graphify' ) . '</p>';
 	}
 
 	// -------------------------------------------------------------------------
