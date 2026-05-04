@@ -301,6 +301,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php';
 add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_cpt' ), 6 );
 add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 6 );
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php';
 
 // ---------------------------------------------------------------------------
 // Phase 4 — Workflow Run CPT (durable execution event log)

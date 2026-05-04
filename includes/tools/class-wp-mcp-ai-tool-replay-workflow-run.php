@@ -119,11 +119,11 @@ class WP_MCP_AI_Tool_Replay_Workflow_Run implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$events         = $run['event_log'];
-		$events_replayed = count( $events );
-		$original_input  = isset( $run['input'] ) && is_array( $run['input'] ) ? $run['input'] : array();
+		$events           = $run['event_log'];
+		$events_replayed  = count( $events );
+		$original_input   = isset( $run['input'] ) && is_array( $run['input'] ) ? $run['input'] : array();
 		$original_context = isset( $run['context'] ) && is_array( $run['context'] ) ? $run['context'] : array();
-		$workflow_id     = (int) $run['workflow_id'];
+		$workflow_id      = (int) $run['workflow_id'];
 
 		if ( $dry_run ) {
 			// Simulate — describe what would be replayed without executing.
@@ -139,26 +139,27 @@ class WP_MCP_AI_Tool_Replay_Workflow_Run implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			return array(
-				'success'          => true,
-				'run_id'           => null,
-				'original_run_id'  => $run_id,
-				'events_replayed'  => $events_replayed,
-				'dry_run'          => true,
-				'message'          => sprintf(
+				'success'         => true,
+				'run_id'          => null,
+				'original_run_id' => $run_id,
+				'events_replayed' => $events_replayed,
+				'dry_run'         => true,
+				'message'         => sprintf(
 					/* translators: 1: event count, 2: original run ID */
 					__( 'Dry run: %1$d event(s) would be replayed from run #%2$d.', 'mcp-ai-wpoos' ),
 					$events_replayed,
 					$run_id
 				),
-				'event_summary'    => $summary,
+				'event_summary'   => $summary,
 			);
 		}
 
-		// Live replay — requires `requires-approval` to be honoured upstream.
-		if ( ! class_exists( 'WP_MCP_AI_Workflow_Engine_V2' ) || ! WP_MCP_AI_Workflow_Engine_V2::is_enabled() ) {
+		// Live replay — route through the pluggable dispatcher so Pro / third-
+		// party executors can take ownership when their workflow type matches.
+		if ( ! class_exists( 'WP_MCP_AI_Workflow_Dispatcher' ) ) {
 			return new WP_Error(
-				'engine_v2_unavailable',
-				__( 'Workflow Engine V2 is not available or not enabled.', 'mcp-ai-wpoos' )
+				'dispatcher_unavailable',
+				__( 'Workflow dispatcher is not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -181,11 +182,15 @@ class WP_MCP_AI_Tool_Replay_Workflow_Run implements WP_MCP_AI_Tool_Interface, WP
 			$replay_context['run_budget'] = $run['budget'];
 		}
 
-		$result = WP_MCP_AI_Workflow_Engine_V2::execute(
+		$result = WP_MCP_AI_Workflow_Dispatcher::dispatch(
 			$workflow_id,
 			$original_input,
 			$replay_context
 		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 
 		$new_run_id = isset( $result['run_id'] ) ? $result['run_id'] : null;
 

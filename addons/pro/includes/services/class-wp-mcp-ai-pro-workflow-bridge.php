@@ -89,6 +89,12 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		// Phase 4 — run-log mirror.
 		add_action( 'wp_mcp_ai_pro_workflow_node_executed', array( $this, 'mirror_node_event' ), 10, 5 );
 		add_action( 'wp_mcp_ai_pro_workflow_execution_saved', array( $this, 'finalize_run' ), 10, 1 );
+
+		// Phase 8 — pluggable executor handoff for Pro string-keyed workflows.
+		add_filter( 'wp_mcp_ai_workflow_executor', array( $this, 'handle_pro_workflow_dispatch' ), 10, 4 );
+
+		// Phase 8 — hide base DAG Builder admin page in favour of the Pro builder.
+		add_action( 'admin_menu', array( $this, 'maybe_remove_base_dag_builder' ), 99 );
 	}
 
 	/* ------------------------------------------------------------------ *
@@ -385,5 +391,79 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 	private function lookup_run( $execution_id ) {
 		$run_id = get_transient( self::RUN_MAP_PREFIX . md5( (string) $execution_id ) );
 		return $run_id ? (int) $run_id : 0;
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Phase 8 — Pluggable executor + admin-menu unification
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Resolve string-keyed Pro workflow IDs through the dispatcher.
+	 *
+	 * The Pro builder stores workflows in WP option `wp_mcp_ai_pro_workflows`
+	 * keyed by `sanitize_key()` strings; the React UI executes them per-node
+	 * via AJAX, so there is no synchronous server-side `execute()` to call.
+	 * Returning a `WP_Error` here gives callers (triggers, replay) a clear
+	 * signal while leaving the door open for a future server-side traversal.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @param array|WP_Error|null $result      Executor result, or null to defer.
+	 * @param int|string          $workflow_id Workflow identifier.
+	 * @param array               $input       Runtime input (unused).
+	 * @param array               $context     Execution context (unused).
+	 * @return array|WP_Error|null
+	 */
+	public function handle_pro_workflow_dispatch( $result, $workflow_id, $input, $context ) {
+		// Defer if a previous filter already handled it, or if the workflow
+		// looks numeric (base CPT post id).
+		if ( null !== $result || is_numeric( $workflow_id ) || ! is_string( $workflow_id ) || '' === $workflow_id ) {
+			return $result;
+		}
+
+		$workflows = get_option( 'wp_mcp_ai_pro_workflows', array() );
+		if ( ! is_array( $workflows ) || ! isset( $workflows[ $workflow_id ] ) ) {
+			return $result;
+		}
+
+		// Pro workflow exists, but the builder is client-driven — no server-
+		// side execution path is available yet. Surface a clear error.
+		return new WP_Error(
+			'pro_workflow_client_only',
+			sprintf(
+				/* translators: %s: workflow ID */
+				__( 'Pro workflow "%s" can only be executed from the Pro Workflow Builder admin UI; server-side dispatch is not yet supported.', 'mcp-ai-wpoos' ),
+				$workflow_id
+			),
+			array( 'workflow_id' => $workflow_id )
+		);
+	}
+
+	/**
+	 * Hide the base "DAG Builder" submenu when the Pro Workflow Builder is
+	 * available, so site owners see a single canonical authoring UI.
+	 *
+	 * Site owners can opt back in by:
+	 *
+	 *   add_filter( 'wp_mcp_ai_show_base_dag_builder', '__return_true' );
+	 *
+	 * @since 1.6.0
+	 *
+	 * @return void
+	 */
+	public function maybe_remove_base_dag_builder() {
+		/**
+		 * Whether to keep the base DAG Builder submenu visible alongside the
+		 * Pro Workflow Builder. Defaults to false (Pro replaces the base UI).
+		 *
+		 * @since 1.6.0
+		 *
+		 * @param bool $show True to keep the base DAG Builder visible.
+		 */
+		if ( apply_filters( 'wp_mcp_ai_show_base_dag_builder', false ) ) {
+			return;
+		}
+
+		remove_submenu_page( 'wp-mcp-ai-dashboard', 'wp-mcp-ai-dag-builder' );
 	}
 }

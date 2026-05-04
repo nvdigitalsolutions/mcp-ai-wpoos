@@ -41,20 +41,20 @@ class WP_MCP_AI_Workflow_Trigger_CPT {
 		register_post_type(
 			self::CPT,
 			array(
-				'label'               => __( 'Workflow Triggers', 'mcp-ai-wpoos' ),
-				'labels'              => array(
+				'label'              => __( 'Workflow Triggers', 'mcp-ai-wpoos' ),
+				'labels'             => array(
 					'name'          => __( 'Workflow Triggers', 'mcp-ai-wpoos' ),
 					'singular_name' => __( 'Workflow Trigger', 'mcp-ai-wpoos' ),
 				),
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => false,
-				'show_in_menu'        => false,
-				'show_in_rest'        => false,
-				'query_var'           => false,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'capabilities'        => array(
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => false,
+				'show_in_menu'       => false,
+				'show_in_rest'       => false,
+				'query_var'          => false,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'capabilities'       => array(
 					'edit_post'          => 'manage_options',
 					'read_post'          => 'manage_options',
 					'delete_post'        => 'manage_options',
@@ -63,9 +63,9 @@ class WP_MCP_AI_Workflow_Trigger_CPT {
 					'publish_posts'      => 'manage_options',
 					'read_private_posts' => 'manage_options',
 				),
-				'map_meta_cap'        => false,
-				'supports'            => array( 'title' ),
-				'has_archive'         => false,
+				'map_meta_cap'       => false,
+				'supports'           => array( 'title' ),
+				'has_archive'        => false,
 			)
 		);
 	}
@@ -79,11 +79,31 @@ class WP_MCP_AI_Workflow_Trigger_CPT {
 	 */
 	public static function register_meta() {
 		$fields = array(
-			'_wp_mcp_ai_trigger_type'          => array( 'type' => 'string', 'single' => true, 'default' => '' ),
-			'_wp_mcp_ai_trigger_config'        => array( 'type' => 'string', 'single' => true, 'default' => '' ),
-			'_wp_mcp_ai_trigger_workflow_id'   => array( 'type' => 'integer', 'single' => true, 'default' => 0 ),
-			'_wp_mcp_ai_trigger_enabled'       => array( 'type' => 'boolean', 'single' => true, 'default' => true ),
-			'_wp_mcp_ai_trigger_last_fired_at' => array( 'type' => 'integer', 'single' => true, 'default' => 0 ),
+			'_wp_mcp_ai_trigger_type'          => array(
+				'type'    => 'string',
+				'single'  => true,
+				'default' => '',
+			),
+			'_wp_mcp_ai_trigger_config'        => array(
+				'type'    => 'string',
+				'single'  => true,
+				'default' => '',
+			),
+			'_wp_mcp_ai_trigger_workflow_id'   => array(
+				'type'    => 'integer',
+				'single'  => true,
+				'default' => 0,
+			),
+			'_wp_mcp_ai_trigger_enabled'       => array(
+				'type'    => 'boolean',
+				'single'  => true,
+				'default' => true,
+			),
+			'_wp_mcp_ai_trigger_last_fired_at' => array(
+				'type'    => 'integer',
+				'single'  => true,
+				'default' => 0,
+			),
 		);
 
 		foreach ( $fields as $key => $args ) {
@@ -164,7 +184,15 @@ class WP_MCP_AI_Workflow_Trigger_CPT {
 						if ( '*' !== $to_status && $new_status !== $to_status ) {
 							return;
 						}
-						self::fire_trigger( $trigger_id, $workflow_id, array( 'post_id' => $post->ID, 'new_status' => $new_status, 'old_status' => $old_status ) );
+						self::fire_trigger(
+							$trigger_id,
+							$workflow_id,
+							array(
+								'post_id'    => $post->ID,
+								'new_status' => $new_status,
+								'old_status' => $old_status,
+							)
+						);
 					},
 					10,
 					3
@@ -253,7 +281,21 @@ class WP_MCP_AI_Workflow_Trigger_CPT {
 		 */
 		do_action( 'wp_mcp_ai_trigger_fired', $trigger_id, $workflow_id, $payload );
 
-		// Start the workflow engine if available.
+		// Hand off to the pluggable dispatcher (Engine V2 by default; Pro and
+		// third-party executors can register via wp_mcp_ai_workflow_executor).
+		if ( class_exists( 'WP_MCP_AI_Workflow_Dispatcher' ) ) {
+			WP_MCP_AI_Workflow_Dispatcher::dispatch(
+				$workflow_id,
+				$payload,
+				array(
+					'source'     => 'trigger',
+					'trigger_id' => $trigger_id,
+				)
+			);
+			return;
+		}
+
+		// Fallback for environments where the dispatcher is unavailable.
 		if ( class_exists( 'WP_MCP_AI_Workflow_Engine_V2' ) ) {
 			$engine = new WP_MCP_AI_Workflow_Engine_V2();
 			$engine->run( $workflow_id, $payload );
