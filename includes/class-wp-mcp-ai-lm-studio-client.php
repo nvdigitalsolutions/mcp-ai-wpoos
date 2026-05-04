@@ -21,6 +21,13 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 	class WP_MCP_AI_LM_Studio_Client {
 
 		/**
+		 * Transient key used to cache per-model capability flags (5 min).
+		 *
+		 * @var string
+		 */
+		const CAPABILITIES_TRANSIENT = 'wp_mcp_ai_lm_studio_capabilities';
+
+		/**
 		 * Get the configured network interface for HTTP requests.
 		 *
 		 * @return string
@@ -53,7 +60,73 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		}
 
 		/**
+		 * Retrieve the optional LM Studio API key.
+		 *
+		 * LM Studio 0.3.6+ supports optional bearer-token authentication.
+		 * When a key is set in Settings → NV oOS → Providers → LM Studio, it is
+		 * sent as `Authorization: Bearer <key>` on every request.
+		 *
+		 * @return string Empty string when no key is configured.
+		 */
+		public function get_api_key() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			return isset( $settings['lm_studio_api_key'] ) ? (string) $settings['lm_studio_api_key'] : '';
+		}
+
+		/**
+		 * Return the API path prefix to use for chat/completion/model endpoints.
+		 *
+		 * When the `lm_studio_use_native_api` setting is enabled the native
+		 * `/api/v0` surface is used, which returns richer metadata fields
+		 * (`stats`, `model_info`, `capabilities`).  The default `/v1` prefix
+		 * keeps full backwards compatibility.
+		 *
+		 * A per-request filter is available for callers that need to override
+		 * the global setting:
+		 *
+		 *   add_filter( 'wp_mcp_ai_lm_studio_native_endpoint', '__return_true' );
+		 *
+		 * @param array $options Optional request options forwarded to the filter.
+		 * @return string '/api/v0' or '/v1'.
+		 */
+		public function get_api_prefix( array $options = array() ) {
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+			$use_native = ! empty( $settings['lm_studio_use_native_api'] );
+
+			/**
+			 * Filter whether to use the LM Studio native `/api/v0` endpoint surface.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param bool  $use_native True to use /api/v0, false to use /v1 (default).
+			 * @param array $options    Request options.
+			 */
+			$use_native = (bool) apply_filters( 'wp_mcp_ai_lm_studio_native_endpoint', $use_native, $options );
+
+			return $use_native ? '/api/v0' : '/v1';
+		}
+
+		/**
+		 * Build the Authorization header array when an API key is configured.
+		 *
+		 * @return array Empty array when no key is set, otherwise ['Authorization' => 'Bearer …'].
+		 */
+		protected function build_auth_headers() {
+			$api_key = $this->get_api_key();
+			if ( '' === $api_key ) {
+				return array();
+			}
+			return array( 'Authorization' => 'Bearer ' . $api_key );
+		}
+
+		/**
 		 * Test the connection to the LM Studio instance.
+		 *
+		 * Tries `/v1/models` first (OpenAI-compatible surface).  If that returns
+		 * a 404 — which older LM Studio builds emit — the method transparently
+		 * falls back to `/api/v0/models` (native REST surface).  The LM Studio
+		 * version string is included in the success result when the server
+		 * returns an `x-lm-studio-version` response header.
 		 *
 		 * @return array|WP_Error
 		 */
@@ -68,16 +141,22 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				);
 			}
 
-			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
-
 			// Use a minimum of 30 seconds for connection tests to local providers.
 			// Local network connections may have higher latency than localhost.
 			$timeout = max( 30, $this->resolve_timeout( array() ) );
 
+			$headers = array_merge(
+				array( 'Accept' => 'application/json' ),
+				$this->build_auth_headers()
+			);
+
 			$request_args = array(
 				'timeout' => $timeout,
-				'headers' => array( 'Accept' => 'application/json' ),
+				'headers' => $headers,
 			);
+
+			// Try the OpenAI-compatible endpoint first.
+			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
 
 			WP_MCP_AI_Logger::log_event(
 				'lm_studio_test_connection',
@@ -103,6 +182,32 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$code = wp_remote_retrieve_response_code( $response );
 
+			// If /v1/models returned 404, fall back to the native /api/v0/models endpoint.
+			if ( 404 === $code ) {
+				$fallback_url = untrailingslashit( $endpoint_url ) . '/api/v0/models';
+
+				WP_MCP_AI_Logger::log_event(
+					'lm_studio_test_connection',
+					'Falling back to native /api/v0/models endpoint.',
+					array( 'url' => $fallback_url )
+				);
+
+				$response = wp_remote_get( $fallback_url, $request_args );
+
+				if ( is_wp_error( $response ) ) {
+					WP_MCP_AI_Logger::log_error( 'LM Studio fallback connection test failed.', array( 'error' => $response->get_error_message() ) );
+
+					return WP_MCP_AI_HTTP::prepare_transport_error(
+						$response,
+						'wp_mcp_ai_http_error',
+						__( 'The LM Studio connection test failed to complete.', 'mcp-ai-wpoos' ),
+						__( 'LM Studio', 'mcp-ai-wpoos' )
+					);
+				}
+
+				$code = wp_remote_retrieve_response_code( $response );
+			}
+
 			if ( $code < 200 || $code >= 300 ) {
 				WP_MCP_AI_Logger::log_error(
 					'LM Studio returned an error response.',
@@ -118,14 +223,34 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_test_connection', 'LM Studio connection successful.' );
 
-			return array(
+			$result = array(
 				'success' => true,
 				'message' => __( 'Successfully connected to LM Studio instance.', 'mcp-ai-wpoos' ),
 			);
+
+			// Include the server version string when present.
+			$version = wp_remote_retrieve_header( $response, 'x-lm-studio-version' );
+			if ( ! empty( $version ) ) {
+				$result['version'] = sanitize_text_field( $version );
+				$result['message'] = sprintf(
+					/* translators: %s: LM Studio version number */
+					__( 'Successfully connected to LM Studio instance (version %s).', 'mcp-ai-wpoos' ),
+					$result['version']
+				);
+			}
+
+			return $result;
 		}
 
 		/**
 		 * List available models from the LM Studio instance.
+		 *
+		 * When the native API is enabled (`lm_studio_use_native_api`) the
+		 * `/api/v0/models` endpoint is used, which returns richer per-model
+		 * metadata: architecture, quantization, loaded state, context window
+		 * sizes, and a `capabilities` array.  The additional fields are passed
+		 * through so the model picker can surface capability information (e.g.
+		 * disabling non-tool-capable models when an assistant has tools enabled).
 		 *
 		 * @return array|WP_Error
 		 */
@@ -140,7 +265,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				);
 			}
 
-			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
+			$prefix = $this->get_api_prefix();
+			$url    = untrailingslashit( $endpoint_url ) . $prefix . '/models';
 
 			// Use a minimum of 30 seconds for connection tests to local providers.
 			// Local network connections may have higher latency than localhost.
@@ -148,7 +274,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$request_args = array(
 				'timeout' => $timeout,
-				'headers' => array( 'Accept' => 'application/json' ),
+				'headers' => array_merge(
+					array( 'Accept' => 'application/json' ),
+					$this->build_auth_headers()
+				),
 			);
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_list_models', 'Fetching models from LM Studio.', array( 'url' => $url ) );
@@ -202,19 +331,48 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$models = array();
 
 			// LM Studio uses OpenAI-compatible format: a data array of objects each containing an id field.
+			// The native /api/v0/models endpoint returns additional metadata fields.
 			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
 				foreach ( $decoded['data'] as $model ) {
-					if ( isset( $model['id'] ) ) {
-						$models[] = array(
-							'id'       => $model['id'],
-							'owned_by' => isset( $model['owned_by'] ) ? $model['owned_by'] : '',
-							'created'  => isset( $model['created'] ) ? $model['created'] : 0,
-						);
+					if ( ! isset( $model['id'] ) ) {
+						continue;
 					}
+
+					$entry = array(
+						'id'       => $model['id'],
+						'owned_by' => isset( $model['owned_by'] ) ? $model['owned_by'] : '',
+						'created'  => isset( $model['created'] ) ? $model['created'] : 0,
+					);
+
+					// Native /api/v0/models fields (present when lm_studio_use_native_api is on).
+					if ( isset( $model['arch'] ) ) {
+						$entry['arch'] = sanitize_text_field( $model['arch'] );
+					}
+					if ( isset( $model['quantization'] ) ) {
+						$entry['quantization'] = sanitize_text_field( $model['quantization'] );
+					}
+					if ( isset( $model['state'] ) ) {
+						// 'loaded' or 'not-loaded'.
+						$entry['state'] = sanitize_text_field( $model['state'] );
+					}
+					if ( isset( $model['max_context_length'] ) ) {
+						$entry['max_context_length'] = absint( $model['max_context_length'] );
+					}
+					if ( isset( $model['loaded_context_length'] ) ) {
+						$entry['loaded_context_length'] = absint( $model['loaded_context_length'] );
+					}
+					if ( isset( $model['capabilities'] ) && is_array( $model['capabilities'] ) ) {
+						$entry['capabilities'] = array_map( 'sanitize_text_field', $model['capabilities'] );
+					}
+
+					$models[] = $entry;
 				}
 			}
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_list_models', 'LM Studio models retrieved.', array( 'count' => count( $models ) ) );
+
+			// Cache capability information for the tools guard.
+			$this->cache_capabilities_from_model_list( $models );
 
 			return $models;
 		}
@@ -222,8 +380,15 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		/**
 		 * Perform a chat completion request against LM Studio.
 		 *
+		 * Supports both non-streaming and SSE streaming responses.  When
+		 * `$options['stream']` is truthy the method sends the request with
+		 * `stream: true` in the JSON payload and parses the Server-Sent Events
+		 * response body, invoking `$options['stream_callback']` for each chunk.
+		 * The final return value always uses the same OpenAI-compatible shape
+		 * regardless of whether streaming was used.
+		 *
 		 * @param array $messages Message payload to send to LM Studio.
-		 * @param array $options  Additional options (model, temperature, tools, timeout).
+		 * @param array $options  Additional options (model, temperature, tools, timeout, stream, stream_callback).
 		 * @return array|WP_Error
 		 */
 		public function create_chat_completion( array $messages, array $options = array() ) {
@@ -257,24 +422,60 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				);
 			}
 
+			// Phase 5: Capability guard — skip tool-calling payload for models
+			// that don't advertise the tool_use capability (prevents LM Studio 400s).
+			if ( ! empty( $options['tools'] ) ) {
+				$capability_check = $this->check_tool_capability( $model );
+				if ( is_wp_error( $capability_check ) ) {
+					return $capability_check;
+				}
+			}
+
 			$payload = $this->build_payload( $messages, $options, $model );
 
 			if ( is_wp_error( $payload ) ) {
 				return $payload;
 			}
 
-			$url = untrailingslashit( $endpoint_url ) . '/v1/chat/completions';
+			$prefix = $this->get_api_prefix( $options );
+			$url    = untrailingslashit( $endpoint_url ) . $prefix . '/chat/completions';
+
+			$is_streaming = ! empty( $payload['stream'] );
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type' => 'application/json',
+				'headers' => array_merge(
+					array( 'Content-Type' => 'application/json' ),
+					$this->build_auth_headers()
 				),
 				'body'    => wp_json_encode( $payload ),
 				// Use higher minimum timeout for local AI models which need more time to generate responses.
 				'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 			);
 
-			WP_MCP_AI_Logger::log_event( 'lm_studio_request', 'Sending request to LM Studio.', array( 'model' => $model ) );
+			if ( $is_streaming ) {
+				/**
+				 * Filter the HTTP request arguments for LM Studio streaming requests.
+				 *
+				 * Allows tuning the timeout, headers, or other transport options for
+				 * SSE streaming requests to LM Studio.
+				 *
+				 * @since 1.5.0
+				 *
+				 * @param array $request_args wp_remote_post() arguments.
+				 * @param array $options      Original request options.
+				 * @param array $payload      JSON payload being sent.
+				 */
+				$request_args = apply_filters( 'wp_mcp_ai_lm_studio_stream_request_args', $request_args, $options, $payload );
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'lm_studio_request',
+				'Sending request to LM Studio.',
+				array(
+					'model'     => $model,
+					'streaming' => $is_streaming,
+				)
+			);
 
 			$response = wp_remote_post( $url, $request_args );
 
@@ -291,6 +492,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$code = wp_remote_retrieve_response_code( $response );
 			$body = wp_remote_retrieve_body( $response );
+
+			// For SSE streaming, delegate to the dedicated parser.
+			if ( $is_streaming ) {
+				$stream_callback = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				return $this->handle_sse_streaming_response( $body, $model, $code, $stream_callback );
+			}
 
 			$decoded  = json_decode( $body, true );
 			$json_err = json_last_error();
@@ -539,8 +746,25 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
 			);
+
+			// Honour streaming flag — default false for backwards compatibility.
+			$payload['stream'] = isset( $options['stream'] ) && $options['stream'];
+
+			// JIT auto-unload: pass through ttl (seconds) when provided so LM Studio
+			// automatically unloads the model after the specified idle period.
+			if ( isset( $options['ttl'] ) && is_numeric( $options['ttl'] ) ) {
+				$payload['ttl'] = absint( $options['ttl'] );
+			}
+
+			// Structured outputs: pass through response_format when it's a valid
+			// json_schema descriptor (LM Studio supports stricter schemas than OpenAI).
+			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
+				$fmt_type = isset( $options['response_format']['type'] ) ? $options['response_format']['type'] : '';
+				if ( in_array( $fmt_type, array( 'json_schema', 'json_object', 'text' ), true ) ) {
+					$payload['response_format'] = $options['response_format'];
+				}
+			}
 
 			// Add tools if provided (OpenAI-compatible function calling).
 			if ( ! empty( $options['tools'] ) ) {
@@ -639,7 +863,13 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 		/**
 		 * Normalize LM Studio response to match our standard format.
-		 * Since LM Studio uses OpenAI format, minimal transformation is needed.
+		 *
+		 * Handles:
+		 * - OpenAI-compatible `/v1` responses (minimal transformation).
+		 * - Native `/api/v0` responses which add `stats` and `model_info` fields.
+		 * - Reasoning models (DeepSeek-R1, Qwen-QwQ) that emit `reasoning_content`
+		 *   or wrap thinking in `<think>…</think>` tags inside `content`.
+		 * - Malformed tool-call `arguments` JSON that LM Studio occasionally emits.
 		 *
 		 * @param array  $response Decoded LM Studio response.
 		 * @param string $model    Model identifier.
@@ -652,15 +882,142 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$response['choices'] = array();
 			}
 
-			// Normalize content to array format if it's a string.
+			// Phase 2: Extract native API telemetry stats when present.
+			// The /api/v0 surface adds a top-level `stats` object with timing data.
+			if ( isset( $response['stats'] ) && is_array( $response['stats'] ) ) {
+				$stats = $response['stats'];
+				$usage_stats = array();
+
+				if ( isset( $stats['tokens_per_second'] ) ) {
+					$usage_stats['tokens_per_second'] = (float) $stats['tokens_per_second'];
+				}
+				if ( isset( $stats['time_to_first_token'] ) ) {
+					$usage_stats['time_to_first_token_ms'] = (float) $stats['time_to_first_token'];
+				}
+				if ( isset( $stats['generation_time'] ) ) {
+					$usage_stats['generation_time_ms'] = (float) $stats['generation_time'];
+				}
+				if ( isset( $stats['stop_reason'] ) ) {
+					$usage_stats['stop_reason'] = sanitize_text_field( $stats['stop_reason'] );
+				}
+
+				if ( ! empty( $usage_stats ) ) {
+					$response['usage_stats'] = $usage_stats;
+
+					/**
+					 * Fires after LM Studio native-API performance stats are parsed.
+					 *
+					 * Allows the cost/performance dashboard to record per-request
+					 * telemetry without coupling to the response normalization path.
+					 *
+					 * @since 1.5.0
+					 *
+					 * @param array  $usage_stats Parsed stats array.
+					 * @param string $model       Model identifier.
+					 * @param array  $response    Full decoded response.
+					 */
+					do_action( 'wp_mcp_ai_lm_studio_provider_stats', $usage_stats, $model, $response );
+				}
+			}
+
+			// Phase 5: Normalize choices — content, reasoning, and tool-call repairs.
 			foreach ( $response['choices'] as $index => $choice ) {
-				if ( isset( $choice['message']['content'] ) && is_string( $choice['message']['content'] ) ) {
+				if ( ! isset( $choice['message'] ) || ! is_array( $choice['message'] ) ) {
+					continue;
+				}
+
+				$message = $choice['message'];
+
+				// --- Reasoning content passthrough ---------------------------------
+				// Some models (DeepSeek-R1, Qwen-QwQ) place extended thinking in a
+				// dedicated `reasoning_content` field.  We preserve it so the REST
+				// layer can stream it as a separate thinking block to the chat UI.
+				if ( ! empty( $message['reasoning_content'] ) ) {
+					$response['choices'][ $index ]['message']['reasoning_content'] = (string) $message['reasoning_content'];
+				}
+
+				// --- <think>…</think> extraction -----------------------------------
+				// Some open-source reasoning models inline their thinking inside
+				// `<think>…</think>` tags in the main content field.  Extract the
+				// block into `reasoning_content` and remove it from `content` so the
+				// agentic loop receives clean assistant text.
+				$raw_content = isset( $message['content'] ) ? $message['content'] : '';
+				if ( is_string( $raw_content ) && false !== strpos( $raw_content, '<think>' ) ) {
+					$think_extracted = '';
+					$cleaned_content = preg_replace_callback(
+						'/<think>(.*?)<\/think>/s',
+						function ( $m ) use ( &$think_extracted ) {
+							$think_extracted .= $m[1];
+							return '';
+						},
+						$raw_content
+					);
+
+					if ( '' !== $think_extracted ) {
+						// Only overwrite reasoning_content when none was already set.
+						if ( empty( $response['choices'][ $index ]['message']['reasoning_content'] ) ) {
+							// Sanitize the extracted reasoning text: strip all HTML tags that
+							// a model might embed inside its thinking block before it is
+							// stored or forwarded to the chat UI.
+							$response['choices'][ $index ]['message']['reasoning_content'] = wp_strip_all_tags( trim( $think_extracted ) );
+						}
+						$response['choices'][ $index ]['message']['content'] = trim( (string) $cleaned_content );
+						// Re-read cleaned content for the array conversion below.
+						$raw_content = $response['choices'][ $index ]['message']['content'];
+					}
+				}
+
+				// --- Content array normalization -----------------------------------
+				if ( is_string( $raw_content ) ) {
 					$response['choices'][ $index ]['message']['content'] = array(
 						array(
 							'type' => 'text',
-							'text' => $choice['message']['content'],
+							'text' => $raw_content,
 						),
 					);
+				}
+
+				// --- Tool-call argument repair ------------------------------------
+				// LM Studio occasionally emits tool-call `arguments` as a nested
+				// object instead of a JSON-encoded string, or produces truncated
+				// JSON strings.  Normalize to the expected string format.
+				if ( ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+					foreach ( $response['choices'][ $index ]['message']['tool_calls'] as $tc_idx => $tc ) {
+						if ( ! isset( $tc['function']['arguments'] ) ) {
+							continue;
+						}
+
+						$args = $tc['function']['arguments'];
+
+						if ( is_array( $args ) || is_object( $args ) ) {
+							// Already decoded — re-encode as string.
+							$response['choices'][ $index ]['message']['tool_calls'][ $tc_idx ]['function']['arguments'] = wp_json_encode( $args );
+						} elseif ( is_string( $args ) ) {
+							// Validate and attempt to repair truncated JSON.
+							// Note: this is a narrow repair for the most common LM Studio
+							// failure mode — a trailing-truncated object (missing `}`).
+							// Other malformations (missing quotes, trailing commas, nested
+							// truncation) are not repaired and will be logged as-is.
+							// If repair cannot be applied the original string is preserved
+							// so the caller can decide how to handle the invalid JSON.
+							json_decode( $args );
+							if ( JSON_ERROR_NONE !== json_last_error() ) {
+								// Append a closing brace as a minimal repair strategy for
+								// truncated objects, which is the most common failure mode.
+								$repaired = $args . '}';
+								json_decode( $repaired );
+								if ( JSON_ERROR_NONE === json_last_error() ) {
+									$response['choices'][ $index ]['message']['tool_calls'][ $tc_idx ]['function']['arguments'] = $repaired;
+
+									WP_MCP_AI_Logger::log_event(
+										'lm_studio_tool_call_repair',
+										'Repaired malformed tool-call arguments.',
+										array( 'tool_call_id' => isset( $tc['id'] ) ? $tc['id'] : '' )
+									);
+								}
+							}
+						}
+					}
 				}
 			}
 
@@ -671,6 +1028,429 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			return $response;
+		}
+
+
+		/**
+		 * Parse an SSE (Server-Sent Events) response body from LM Studio and
+		 * assemble it into a single OpenAI-compatible chat completion object.
+		 *
+		 * LM Studio's OpenAI-compatible streaming endpoint emits lines of the
+		 * form `data: {JSON}` followed by a terminal `data: [DONE]` line.
+		 * Each JSON chunk carries a `choices[0].delta` with incremental
+		 * `content` and/or `tool_calls` fragments.
+		 *
+		 * The `$stream_callback` receives each raw chunk array as it is parsed,
+		 * which lets the SSE handler forward tokens to the browser immediately.
+		 *
+		 * @param string        $body            Raw SSE response body.
+		 * @param string        $model           Model identifier.
+		 * @param int           $http_code       HTTP status code from wp_remote_post.
+		 * @param callable|null $stream_callback Optional per-chunk callback.
+		 * @return array|WP_Error Assembled and normalized response, or WP_Error on failure.
+		 */
+		protected function handle_sse_streaming_response( $body, $model, $http_code, $stream_callback = null ) {
+			if ( empty( $body ) ) {
+				WP_MCP_AI_Logger::log_error( 'Empty SSE response from LM Studio.', array( 'model' => $model ) );
+				return new WP_Error(
+					'wp_mcp_ai_empty_streaming_response',
+					__( 'Empty streaming response from LM Studio.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Surface HTTP-level errors before attempting to parse SSE.
+			if ( $http_code >= 400 ) {
+				// Body may be a plain JSON error object rather than SSE.
+				$decoded = json_decode( $body, true );
+				$msg     = ( is_array( $decoded ) && isset( $decoded['error']['message'] ) )
+					? $decoded['error']['message']
+					: __( 'LM Studio returned an error during streaming.', 'mcp-ai-wpoos' );
+
+				WP_MCP_AI_Logger::log_error( 'LM Studio streaming error response.', array( 'code' => $http_code ) );
+
+				return new WP_Error(
+					'wp_mcp_ai_stream_error',
+					$msg,
+					array( 'status' => $http_code )
+				);
+			}
+
+			$lines = explode( "\n", $body );
+
+			$accumulated_content    = '';
+			$accumulated_reasoning  = '';
+			$tool_calls_by_index    = array(); // Maps SSE delta index → accumulated tool-call object.
+			$response_id            = '';
+			$finish_reason          = null;
+			$usage                  = null;
+			$found_done             = false;
+
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+
+				if ( '' === $line ) {
+					continue;
+				}
+
+				// SSE comment lines (keep-alive pings).
+				if ( ':' === $line[0] ) {
+					continue;
+				}
+
+				if ( 'data: [DONE]' === $line ) {
+					$found_done = true;
+					break;
+				}
+
+				if ( 0 !== strpos( $line, 'data: ' ) ) {
+					continue;
+				}
+
+				$json  = substr( $line, 6 ); // Strip 'data: ' prefix.
+				$chunk = json_decode( $json, true );
+
+				if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+					continue;
+				}
+
+				// Capture response ID from first chunk.
+				if ( '' === $response_id && isset( $chunk['id'] ) ) {
+					$response_id = (string) $chunk['id'];
+				}
+
+				// Invoke the per-chunk callback so the SSE handler can forward tokens.
+				if ( null !== $stream_callback ) {
+					call_user_func( $stream_callback, $chunk );
+				}
+
+				if ( empty( $chunk['choices'] ) || ! is_array( $chunk['choices'] ) ) {
+					continue;
+				}
+
+				$choice = $chunk['choices'][0];
+				$delta  = isset( $choice['delta'] ) ? $choice['delta'] : array();
+
+				// Accumulate content text.
+				if ( isset( $delta['content'] ) && is_string( $delta['content'] ) ) {
+					$accumulated_content .= $delta['content'];
+				}
+
+				// Accumulate reasoning_content (reasoning models).
+				if ( isset( $delta['reasoning_content'] ) && is_string( $delta['reasoning_content'] ) ) {
+					$accumulated_reasoning .= $delta['reasoning_content'];
+				}
+
+				// Accumulate tool_calls deltas.
+				if ( isset( $delta['tool_calls'] ) && is_array( $delta['tool_calls'] ) ) {
+					foreach ( $delta['tool_calls'] as $tc_delta ) {
+						if ( ! is_array( $tc_delta ) || ! isset( $tc_delta['index'] ) ) {
+							continue;
+						}
+
+						$tc_idx = (int) $tc_delta['index'];
+
+						if ( ! isset( $tool_calls_by_index[ $tc_idx ] ) ) {
+							$tool_calls_by_index[ $tc_idx ] = array(
+								'index'    => $tc_idx,
+								'id'       => '',
+								'type'     => 'function',
+								'function' => array(
+									'name'      => '',
+									'arguments' => '',
+								),
+							);
+						}
+
+						if ( isset( $tc_delta['id'] ) ) {
+							$tool_calls_by_index[ $tc_idx ]['id'] = (string) $tc_delta['id'];
+						}
+						if ( isset( $tc_delta['type'] ) ) {
+							$tool_calls_by_index[ $tc_idx ]['type'] = (string) $tc_delta['type'];
+						}
+						if ( isset( $tc_delta['function']['name'] ) ) {
+							$tool_calls_by_index[ $tc_idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+						}
+						if ( isset( $tc_delta['function']['arguments'] ) ) {
+							$tool_calls_by_index[ $tc_idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
+						}
+					}
+				}
+
+				// Capture finish_reason and usage from the last data chunk.
+				if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+					$finish_reason = $choice['finish_reason'];
+				}
+				if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
+					$usage = $chunk['usage'];
+				}
+			}
+
+			if ( ! $found_done ) {
+				WP_MCP_AI_Logger::log_event(
+					'lm_studio_stream',
+					'SSE stream ended without [DONE] sentinel (model may have been interrupted).',
+					array( 'model' => $model )
+				);
+			}
+
+			// Build the assembled message.
+			$message = array(
+				'role'    => 'assistant',
+				'content' => $accumulated_content,
+			);
+
+			if ( '' !== $accumulated_reasoning ) {
+				$message['reasoning_content'] = $accumulated_reasoning;
+			}
+
+			if ( ! empty( $tool_calls_by_index ) ) {
+				ksort( $tool_calls_by_index );
+				$message['tool_calls'] = array_values( $tool_calls_by_index );
+			}
+
+			// Assemble into a chat.completion-shaped response and normalize.
+			$assembled = array(
+				'id'      => $response_id,
+				'object'  => 'chat.completion',
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => $message,
+						'finish_reason' => $finish_reason,
+					),
+				),
+			);
+
+			if ( null !== $usage ) {
+				$assembled['usage'] = $usage;
+			}
+
+			WP_MCP_AI_Logger::log_event( 'lm_studio_stream', 'SSE streaming response assembled.', array( 'model' => $model ) );
+
+			return $this->normalize_response( $assembled, $model );
+		}
+
+		/**
+		 * Retrieve and cache per-model capability flags from the LM Studio
+		 * native `/api/v0/models` endpoint.
+		 *
+		 * Results are stored in a 5-minute transient keyed by
+		 * `wp_mcp_ai_lm_studio_capabilities` to avoid a round-trip on every
+		 * chat request.  The cached value is a map of model ID → capabilities[].
+		 *
+		 * @return array Map of model_id => string[] capabilities.  Empty array on failure or
+		 *               when native API is disabled.
+		 */
+		public function get_model_capabilities() {
+			$cached = get_transient( self::CAPABILITIES_TRANSIENT );
+			if ( is_array( $cached ) ) {
+				return $cached;
+			}
+
+			// Only the native /api/v0/models endpoint includes capabilities.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( empty( $settings['lm_studio_use_native_api'] ) ) {
+				return array();
+			}
+
+			$models = $this->list_models();
+			if ( is_wp_error( $models ) ) {
+				return array();
+			}
+
+			$map = array();
+			foreach ( $models as $model ) {
+				if ( ! empty( $model['id'] ) && isset( $model['capabilities'] ) ) {
+					$map[ $model['id'] ] = $model['capabilities'];
+				}
+			}
+
+			set_transient( self::CAPABILITIES_TRANSIENT, $map, 5 * MINUTE_IN_SECONDS );
+
+			return $map;
+		}
+
+		/**
+		 * Warm the capabilities transient from a freshly-fetched model list.
+		 *
+		 * Called by list_models() so a single model-list fetch also populates
+		 * the capability cache without a second HTTP request.
+		 *
+		 * @param array $models Normalised model list from list_models().
+		 */
+		protected function cache_capabilities_from_model_list( array $models ) {
+			$map = array();
+			foreach ( $models as $model ) {
+				if ( ! empty( $model['id'] ) && isset( $model['capabilities'] ) ) {
+					$map[ $model['id'] ] = (array) $model['capabilities'];
+				}
+			}
+			if ( ! empty( $map ) ) {
+				set_transient( self::CAPABILITIES_TRANSIENT, $map, 5 * MINUTE_IN_SECONDS );
+			}
+		}
+
+		/**
+		 * Guard function that checks whether the given model supports tool_use.
+		 *
+		 * Returns `null` when the check passes (either because the capability
+		 * cache confirms support, or because capability data is unavailable and
+		 * we give the model the benefit of the doubt).
+		 *
+		 * Returns `WP_Error( 'wp_mcp_ai_tools_unsupported_by_model' )` when the
+		 * native API confirms the model does NOT list `tool_use` in its
+		 * capabilities, preventing an avoidable 400 from LM Studio.
+		 *
+		 * @param string $model_id Model identifier.
+		 * @return null|WP_Error
+		 */
+		protected function check_tool_capability( $model_id ) {
+			$capabilities = $this->get_model_capabilities();
+
+			if ( empty( $capabilities ) || ! isset( $capabilities[ $model_id ] ) ) {
+				// No capability data available — give the model the benefit of the doubt.
+				return null;
+			}
+
+			if ( in_array( 'tool_use', (array) $capabilities[ $model_id ], true ) ) {
+				return null; // Model supports tools.
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'lm_studio_capability_guard',
+				'Skipping tools payload: model does not advertise tool_use capability.',
+				array( 'model' => $model_id )
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_tools_unsupported_by_model',
+				sprintf(
+					/* translators: %s: model identifier */
+					__( 'LM Studio model "%s" does not support tool calling. Load a tool-capable model or disable the capability guard.', 'mcp-ai-wpoos' ),
+					$model_id
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		/**
+		 * Generate embeddings for one or more text inputs using LM Studio's
+		 * OpenAI-compatible `/v1/embeddings` endpoint.
+		 *
+		 * LM Studio requires an embedding-capable model to be loaded (e.g.
+		 * `nomic-embed-text`).  The `model` option must match the loaded model
+		 * identifier or LM Studio will return an error.
+		 *
+		 * @param string|array $input   A single string or an array of strings.
+		 * @param array        $options Optional parameters: model, encoding_format, timeout.
+		 * @return array|WP_Error OpenAI-compatible embeddings response or WP_Error.
+		 */
+		public function create_embedding( $input, array $options = array() ) {
+			$endpoint_url = $this->get_endpoint_url();
+
+			if ( empty( $endpoint_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_lm_studio_endpoint',
+					__( 'No LM Studio endpoint URL has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_input',
+					__( 'Input text must be provided for embeddings.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Resolve model: options override, then lm_studio_model, then empty string
+			// (LM Studio will use the currently loaded embedding model).
+			$model = $this->resolve_model( $options );
+
+			$payload = array(
+				'input' => $input,
+			);
+
+			if ( '' !== $model ) {
+				$payload['model'] = $model;
+			}
+
+			if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
+				$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
+			}
+
+			// Embeddings always use the OpenAI-compatible /v1 surface.
+			$url = untrailingslashit( $endpoint_url ) . '/v1/embeddings';
+
+			$request_args = array(
+				'headers' => array_merge(
+					array( 'Content-Type' => 'application/json' ),
+					$this->build_auth_headers()
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => max( 60, $this->resolve_timeout( $options ) ),
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'lm_studio_embeddings',
+				'Requesting embeddings from LM Studio.',
+				array(
+					'model'      => $model,
+					'input_type' => is_array( $input ) ? 'array' : 'string',
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'LM Studio embeddings request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The LM Studio embeddings request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'LM Studio', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			$decoded  = json_decode( $body, true );
+			$json_err = json_last_error();
+
+			if ( JSON_ERROR_NONE !== $json_err ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio embeddings response.', array( 'body' => $body ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio embeddings API returned malformed JSON.', 'mcp-ai-wpoos' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio embeddings.', 'mcp-ai-wpoos' );
+
+				WP_MCP_AI_Logger::log_error(
+					'LM Studio embeddings returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			$decoded['provider'] = 'lm_studio';
+
+			WP_MCP_AI_Logger::log_event( 'lm_studio_embeddings', 'LM Studio embeddings request completed.' );
+
+			return $decoded;
 		}
 
 		/**
@@ -729,7 +1509,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'  => $model,
 				'prompt' => wp_kses_post( (string) $prompt ),
-				'stream' => false, // Explicitly disable streaming to prevent chunked responses.
+				'stream' => false, // Completions endpoint: streaming not implemented; keep off.
 			);
 
 			// Add temperature if specified.
@@ -760,8 +1540,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$url = untrailingslashit( $endpoint_url ) . '/v1/completions';
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type' => 'application/json',
+				'headers' => array_merge(
+					array( 'Content-Type' => 'application/json' ),
+					$this->build_auth_headers()
 				),
 				'body'    => wp_json_encode( $payload ),
 				// Use higher minimum timeout for local AI models which need more time to generate responses.

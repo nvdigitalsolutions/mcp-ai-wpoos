@@ -852,6 +852,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
+				'lm_studio_api_key'                  => array(
+					'type'        => 'password',
+					'label'       => __( 'LM Studio API Key (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional bearer token for LM Studio authentication (LM Studio 0.3.6+). Leave empty if your server does not require authentication.', 'mcp-ai-wpoos' ),
+					'placeholder' => '',
+				),
+				'lm_studio_use_native_api'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Use LM Studio Native API (/api/v0)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use the /api/v0 endpoint surface for richer model metadata and telemetry stats', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, model listing uses /api/v0/models which returns architecture, quantization, loaded context size, and per-model capability flags. Chat completions use /api/v0/chat/completions which returns performance stats (tokens/sec, TTFT). Default: off (uses /v1 for full backwards compatibility).', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
@@ -1149,7 +1162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'lm_studio',
 					'label'  => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
+					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_api_key', 'lm_studio_use_native_api', 'lm_studio_network_interface' ),
 				),
 				'huggingface'          => array(
 					'id'     => 'huggingface',
