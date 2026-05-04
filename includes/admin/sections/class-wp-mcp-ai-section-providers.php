@@ -59,7 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI).', 'mcp-ai-wpoos' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI, DeepSeek).', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -166,8 +166,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get DeepSeek models from Model Config.
+			$deepseek_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$deepseek_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'deepseek' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $deepseek_models ) ) {
+				$deepseek_models = array(
+					'deepseek-chat'     => 'DeepSeek-V3 (Recommended, supports tools)',
+					'deepseek-reasoner' => 'DeepSeek-R1 (Chain-of-thought, no tools)',
+					'deepseek-coder'    => 'DeepSeek Coder',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1106,6 +1121,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'meta/llama-3.1-8b-instruct',
 				),
 
+				// DeepSeek Provider Settings.
+				'enable_deepseek'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DeepSeek Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DeepSeek as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When disabled, DeepSeek will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'deepseek_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'DeepSeek API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: DeepSeek Platform API keys URL */
+						__( 'Your DeepSeek API key. Get one from <a href="%s" target="_blank">DeepSeek Platform</a>. The same key works for all DeepSeek models.', 'mcp-ai-wpoos' ),
+						'https://platform.deepseek.com/api_keys'
+					),
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
+				),
+				'deepseek_model'                     => array(
+					'type'        => 'select',
+					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-chat (DeepSeek-V3) is the general-purpose model with tool calling support. deepseek-reasoner (DeepSeek-R1) provides chain-of-thought reasoning but does not support tool/function calling.', 'mcp-ai-wpoos' ),
+					'options'     => $deepseek_models,
+					'default'     => 'deepseek-chat',
+				),
+				'deepseek_base_url'                  => array(
+					'type'        => 'url',
+					'label'       => __( 'DeepSeek API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for DeepSeek API requests. Leave empty to use the default (https://api.deepseek.com). Useful for regional proxies (e.g., Volcano Engine) or DeepSeek-compatible services. Note: DeepSeek offers discounted off-peak pricing during UTC 16:30–00:30.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.deepseek.com',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1187,6 +1235,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'NVIDIA', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-superhero',
 					'fields' => array( 'enable_nvidia', 'nvidia_api_key', 'nvidia_endpoint_url', 'nvidia_model' ),
+				),
+				'deepseek'             => array(
+					'id'     => 'deepseek',
+					'label'  => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-superhero',
+					'fields' => array( 'enable_deepseek', 'deepseek_api_key', 'deepseek_model', 'deepseek_base_url' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1400,6 +1454,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+				'deepseek'    => __( 'DeepSeek', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
@@ -1527,7 +1582,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

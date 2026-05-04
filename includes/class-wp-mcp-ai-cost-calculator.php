@@ -254,6 +254,25 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 0.00,
 			),
 		),
+		'deepseek'    => array(
+			// DeepSeek-V3 general-purpose + tool-calling model.
+			// Standard pricing: $0.27/$1.10 per 1M tokens.
+			// Off-peak (UTC 16:30-00:30): $0.135/$0.55 per 1M tokens.
+			'deepseek-chat'     => array(
+				'input'  => 0.27,   // $0.27 per 1M input tokens (standard).
+				'output' => 1.10,   // $1.10 per 1M output tokens (standard).
+			),
+			// DeepSeek-R1 chain-of-thought reasoning model (no tool calling).
+			'deepseek-reasoner' => array(
+				'input'  => 0.55,   // $0.55 per 1M input tokens.
+				'output' => 2.19,   // $2.19 per 1M output tokens.
+			),
+			// DeepSeek Coder variant.
+			'deepseek-coder'    => array(
+				'input'  => 0.27,
+				'output' => 1.10,
+			),
+		),
 		'huggingface' => array(
 			// DeepSeek V3.2 (January 2026).
 			'deepseek-ai/DeepSeek-V3.2'          => array(

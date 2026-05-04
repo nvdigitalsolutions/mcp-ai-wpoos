@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
-        'version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
-        'reference' => '5522886b35e2d1ad84ad2f8cabb807600af38ed1',
+        'pretty_version' => 'dev-copilot/add-deepseek-provider',
+        'version' => 'dev-copilot/add-deepseek-provider',
+        'reference' => '6c179809926509df8d893a1a1a1c9c604ff5b078',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
-            'version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
-            'reference' => '5522886b35e2d1ad84ad2f8cabb807600af38ed1',
+            'pretty_version' => 'dev-copilot/add-deepseek-provider',
+            'version' => 'dev-copilot/add-deepseek-provider',
+            'reference' => '6c179809926509df8d893a1a1a1c9c604ff5b078',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

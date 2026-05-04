@@ -1048,6 +1048,15 @@ Initial release. Welcome to Open Operator System!
 * **Terms of Service:** https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/
 * **Privacy Policy:** https://www.nvidia.com/en-us/about-nvidia/privacy-policy/
 
+**6b. DeepSeek API**
+* **Purpose:** Cloud AI inference via DeepSeek's OpenAI-compatible API (deepseek-chat, deepseek-reasoner, deepseek-coder)
+* **Data Sent:** Chat messages, system prompts, tool definitions, and tool results
+* **When:** Every time an AI assistant is used with DeepSeek as the provider
+* **Service URL:** https://api.deepseek.com (default; supports custom base URL for proxies or regional endpoints)
+* **Terms of Service:** https://platform.deepseek.com/terms
+* **Privacy Policy:** https://platform.deepseek.com/privacy
+* **Data Usage:** See DeepSeek's privacy policy for data handling details
+
 = Optional Third-Party Service Integrations =
 
 These services are only contacted when specific tools/features are used:
