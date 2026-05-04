@@ -1214,6 +1214,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'observability' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'observability' === $active_view ? 'active' : '' ); ?>">
+<span class="dashicons dashicons-visibility"></span>
+			<?php esc_html_e( 'Observability', 'mcp-ai-wpoos' ); ?>
+</a>
 			<?php
 			// Conditionally show Agents tab if agent roles are enabled.
 			$enable_agent_roles = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_roles', true );
@@ -1268,6 +1272,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'tools':
 					$this->render_tools_view();
+					break;
+				case 'observability':
+					$this->render_observability_view();
 					break;
 				case 'agents':
 					// Check if agent roles are enabled.
@@ -2155,7 +2162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 */
 		protected function get_view_groups() {
 			return array(
-				'overview'    => array(
+				'overview'      => array(
 					'label'  => __( 'Overview', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'orchestration_intro',
@@ -2164,7 +2171,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'orchestration_stats',
 					),
 				),
-				'settings'    => array(
+				'settings'      => array(
 					'label'  => __( 'Settings', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'enable_budget_management',
@@ -2176,7 +2183,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'cron_job_retention_period',
 					),
 				),
-				'thresholds'  => array(
+				'thresholds'    => array(
 					'label'  => __( 'Thresholds', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'slider_section_health',
@@ -2204,19 +2211,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'prediction_safety_buffer',
 					),
 				),
-				'tools'       => array(
+				'tools'         => array(
 					'label'  => __( 'Tools', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Tools view is read-only, no editable fields.
 					),
 				),
-				'agents'      => array(
+				'observability' => array(
+					'label'  => __( 'Observability', 'mcp-ai-wpoos' ),
+					'fields' => array(
+						// Observability view is read-only, no editable fields.
+					),
+				),
+				'agents'        => array(
 					'label'  => __( 'Agents', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Agents view is read-only, no editable fields.
 					),
 				),
-				'professions' => array(
+				'professions'   => array(
 					'label'  => __( 'Professions', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Professions view is read-only, no editable fields.
@@ -2251,6 +2264,99 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			// Delegate rendering to the renderer class (SoC).
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML including inline admin script; wp_kses_post() must not be used here as it strips <script> tags.
 			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
+		}
+
+		/**
+		 * Render observability view.
+		 *
+		 * Surfaces the per-run observability tooling (Run Timeline, Measurement
+		 * Dashboard) and shows the current OTLP/OpenTelemetry exporter status.
+		 * This view is read-only — it links out to the dedicated tooling rather
+		 * than duplicating settings forms.
+		 */
+		private function render_observability_view() {
+			$run_timeline_url     = admin_url( 'admin.php?page=mcp-ai-run-timeline' );
+			$measurement_dash_url = admin_url( 'admin.php?page=wp-mcp-ai-measurement' );
+			$exporter_available   = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' );
+			$otel_enabled         = $exporter_available && WP_MCP_AI_Otel_Span_Exporter::is_enabled();
+			$otel_endpoint        = $exporter_available
+				? (string) get_option( WP_MCP_AI_Otel_Span_Exporter::OPTION_ENDPOINT, '' )
+				: '';
+			?>
+			<div class="wp-mcp-ai-observability-view">
+				<h2><?php esc_html_e( 'Observability', 'mcp-ai-wpoos' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Inspect per-run token usage, tool latency, cost breakdown, and harness layer activations. Export spans to any OpenTelemetry collector (Jaeger, Grafana Tempo, Honeycomb, etc.) over OTLP/HTTP.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Run Timeline', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<a href="<?php echo esc_url( $run_timeline_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Open Run Timeline', 'mcp-ai-wpoos' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Per-chat-run timeline with per-step token usage, tool execution latency, and cost breakdown.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Measurement Dashboard', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<a href="<?php echo esc_url( $measurement_dash_url ); ?>" class="button">
+								<?php esc_html_e( 'Open Measurement Dashboard', 'mcp-ai-wpoos' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Aggregate metrics with OTel-compatible naming, plus OTLP/JSON export of the rolling buffer.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'OTLP Exporter', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<?php if ( $otel_enabled ) : ?>
+								<p>
+									<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span>
+									<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></strong>
+									<?php if ( '' !== $otel_endpoint ) : ?>
+										— <code><?php echo esc_html( $otel_endpoint ); ?></code>
+									<?php endif; ?>
+								</p>
+								<p class="description">
+									<?php esc_html_e( 'Spans for chat turns, tool calls, and SSE streams are being exported.', 'mcp-ai-wpoos' ); ?>
+								</p>
+							<?php else : ?>
+								<p>
+									<span class="dashicons dashicons-warning" style="color:#dba617;"></span>
+									<strong><?php esc_html_e( 'Not configured', 'mcp-ai-wpoos' ); ?></strong>
+								</p>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: 1: option name, 2: env var name */
+										esc_html__( 'Set the WordPress option %1$s (or environment variable %2$s) to your OTLP/HTTP endpoint URL — for example, %3$s.', 'mcp-ai-wpoos' ),
+										'<code>wp_mcp_ai_otel_endpoint</code>',
+										'<code>WP_MCP_AI_OTEL_ENDPOINT</code>',
+										'<code>http://localhost:4318/v1/traces</code>'
+									);
+									?>
+								</p>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: option name */
+										esc_html__( 'Optional bearer token: %s.', 'mcp-ai-wpoos' ),
+										'<code>wp_mcp_ai_otel_token</code>'
+									);
+									?>
+								</p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<?php
 		}
 
 		/**

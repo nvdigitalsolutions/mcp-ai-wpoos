@@ -164,7 +164,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 						__( '<strong>Tip:</strong> Configure an OTLP endpoint in <a href="%1$s">NV oOS Settings → Observability</a> to export spans to Jaeger, Grafana Tempo, or any OpenTelemetry collector.', 'mcp-ai-wpoos' ),
 						array( 'strong' => array(), 'a' => array( 'href' => array() ) )
 					),
-					esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=observability' ) )
+					esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration&view=observability' ) )
 				);
 				?>
 			</p>
