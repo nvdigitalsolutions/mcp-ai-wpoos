@@ -2,7 +2,7 @@
 
 > **Comprehensive reference for all action and filter hooks in the NV oOS plugin.**
 > Use hooks to extend, customize, or integrate with the plugin without modifying core code.
-> Last reviewed: April 2026.
+> Last reviewed: May 2026.
 
 ---
 
@@ -23,6 +23,9 @@
 13. [Video Generation Hooks](#video-generation-hooks)
 14. [Erlang C & Queue Operations Hooks](#erlang-c--queue-operations-hooks)
 15. [Markup Subsystem Hooks](#markup-subsystem-hooks)
+16. [LLM Harnessing Hooks](#llm-harnessing-subsystem-hooks)
+17. [Chat Memory Bridge Hooks](#chat-memory-bridge-hooks)
+18. [Transcript Mining Hooks](#transcript-mining-hooks)
 
 ---
 
@@ -1032,7 +1035,7 @@ Not markup-specific, but the markup-init bootstrap appends `markup_created`, `ma
 
 ---
 
-## LLM Harness Hooks
+## LLM Harnessing Subsystem Hooks
 
 The LLM harnessing subsystem (`includes/harness/`) exposes hooks for every layer so addons can override prompt selection, scoring, retrieval ranking, and PII filtering without touching the base implementation.
 
@@ -1086,6 +1089,84 @@ Mutates the score the Tool Router computes for a candidate tool against a task c
 | `$tool` | `WP_MCP_AI_Tool_Interface` | Tool instance. |
 | `$task_class` | `string` | Task class. |
 | `$assistant_prefs` | `array` | Per-assistant tool preferences (slug → weight). |
+| `$preset_weights` | `array` | Resolved preset-family weight map (`preset_slug → float [-5, 5]`). |
+
+### Filter: `wp_mcp_ai_harness_eval_generator`
+
+Supplies the eval generator callable used by the eval scheduler to produce test cases for a given eval suite. Return `null` (the default) to skip the suite without logging an error.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$generator` | `callable\|null` | Default `null` — no built-in generator; Pro registers its own. |
+| `$suite_slug` | `string` | Eval suite slug. |
+| `$assistant_id` | `int` | Assistant post ID. |
+
+### Action: `wp_mcp_ai_harness_eval_tick`
+
+WP-Cron action hook fired by `WP_MCP_AI_Harness_Eval_Scheduler` on its daily schedule. Receives no arguments; the scheduler discovers eligible assistants internally and dispatches suites via `wp_mcp_ai_harness_eval_generator`.
+
+---
+
+## Chat Memory Bridge Hooks
+
+The chat-client memory bridge (`WP_MCP_AI_REST_Chat_Memory_Controller` + `assets/js/chat-memory-drawer.js`) exposes hooks so developers can gate or modify memory bridge behaviour.
+
+### Filter: `wp_mcp_ai_chat_memory_enabled`
+
+Site-wide kill-switch for the chat-client memory bridge. Return `false` to disable all `/mcp-ai/v1/chat-memory/*` routes and the Memory Drawer for every user.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$enabled` | `bool` | Default `true`. |
+| `$user_id` | `int` | The requesting user ID (available from v1.x context). |
+
+```php
+// Disable chat memory on GDPR opt-out.
+add_filter( 'wp_mcp_ai_chat_memory_enabled', function ( $enabled, $user_id ) {
+    return ! user_has_opted_out_of_memory( $user_id );
+}, 10, 2 );
+```
+
+---
+
+## Transcript Mining Hooks
+
+The retroactive transcript mining subsystem (`WP_MCP_AI_Transcript_Mining_Job` + `mine_agent_memory` `transcripts` source) exposes filters for session selection, message processing, and de-duplication.
+
+### Filter: `wp_mcp_ai_mine_transcripts_sessions`
+
+Mutates the session list before retroactive transcript mining begins. Useful for excluding specific session types (e.g. guest sessions) or injecting additional keys.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$sessions` | `array` | Session key list (may include `'__auto__'` sentinel). |
+| `$query_args` | `array` | Raw `transcript_query` args from the job or tool call. |
+
+### Filter: `wp_mcp_ai_mine_transcripts_session_messages`
+
+Mutates the raw message array for a session before item extraction. Use this for redaction or filtering.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$messages` | `array` | Message objects for the session. |
+| `$session_key` | `string` | Session key. |
+
+### Filter: `wp_mcp_ai_mine_transcripts_dedupe_scan_limit`
+
+Overrides the number of most-recent memories scanned for de-duplication during `mine_agent_memory` with `source=transcripts`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$limit` | `int` | Default `1000`. |
+
+### Filter: `wp_mcp_ai_pro_curriculum_per_case_char_cap`
+
+(Pro) Overrides the maximum character count for a single fine-tune curriculum case exported by `WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$cap` | `int` | Default `16000`. |
+| `$suite_slug` | `string` | Eval suite slug. |
 
 ### Filter: `wp_mcp_ai_retrieval_passages`
 

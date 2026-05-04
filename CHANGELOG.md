@@ -2,6 +2,106 @@
 
 ## [Unreleased]
 
+### May 3–4, 2026 — LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat-client Memory Bridge, Retroactive Transcript Mining, Pro Packages Tier 5
+
+A major capabilities pass landing the remaining work from the previous sprint. Headline additions: (1) **LLM Harnessing Subsystem (Layers A–H)** ships end-to-end — seven per-request epistemic layers (cues, reasoning traces, tool routing, retrieval, self-refine, memory scoping, profile-driven evals) plus the Pro Layer H fine-tune curriculum exporter; (2) **19 new slash commands** (11 base + 8 Pro, bringing base total to 24) nearly double the in-chat CLI surface; (3) the **Chat-client ⇄ Memory Bridge G-series** completes the durable memory drawer — REST proxy, JS service, Memories / Scope / Audit tabs, 🧠 badge, SSE `memory_event` frames, pagehide auto-capture, and drawer export; (4) **Retroactive Transcript Mining** — a queued background job, three REST endpoints, and the new `transcripts` source on `mine_agent_memory` with provenance + de-dupe; (5) **Pro Packages Tier 5** — five new browser-native chat-service NPM packages.
+
+#### Added — LLM Harnessing Subsystem (Base + Pro, `includes/harness/`)
+
+Seven opt-in layers that improve response quality without modifying existing tool behaviour. Every layer is off by default; activation is per assistant via the **LLM Harness** metabox on the assistant edit screen. Full reference: [`docs/llm-harness.md`](docs/llm-harness.md).
+
+- **Layer A — Prompt / Cue** (`WP_MCP_AI_Prompt_Cue_Library`): registry of seven named, versioned cue templates (Chain-of-Thought, Failure-Modes-First, Plan-Then-Solve, Cite-or-Abstain, Tool-or-Abstain, Clarify-First, State-Uncertainty) that prepend to — never replace — the assistant's existing system prompt. Extensible via `wp_mcp_ai_register_prompt_cues`. Selected per task class via `wp_mcp_ai_select_prompt_cue`.
+- **Layer B — Reasoning / Rehearsal** (`WP_MCP_AI_Reasoning_Trace`): canonical trace schema (`assumptions → constraints → plan → intermediate_results → verification → answer`) plus a self-consistency vote primitive (best-of-N sampling with configurable N).
+- **Layer C — Tool Routing** (`WP_MCP_AI_Tool_Router_Harness`): scores candidate tools by task-class-aware capability flags + per-assistant preferences. Supports a `preset_weights` map (preset slug → float `[-5, 5]`) for broad family biases. Filterable via `wp_mcp_ai_harness_tool_score` (now receives resolved preset weights as 5th argument). Renders a **Preferred tool families** disclosure under the Tool Router fieldset in the LLM Harness metabox.
+- **Layer D — Retrieval** (`WP_MCP_AI_Retrieval_Harness`): single entry point that fans out to `recall_memory`, `semantic_context_search`, and `retrieve_agent_memory`; deduplicates by content hash, attaches provenance and freshness, and verifies citations. Filterable via `wp_mcp_ai_retrieval_passages` and `wp_mcp_ai_retrieval_claim_supported`.
+- **Layer E — Feedback / Self-Refine** (`WP_MCP_AI_Self_Refine_Loop`): synchronous, bounded `generate → critique → revise` loop with hard caps on iterations and cost. Reflexion-style verbal reflections persisted via `record_reflection` after PII scrubbing (Layer F).
+- **Layer F — Memory Scoping** (`WP_MCP_AI_Tool_Scope_Memory` + `WP_MCP_AI_Pii_Filter`): task-class buckets so reflections from one task don't pollute another; conservative regex sweep for emails, phones, SSNs, credit-card-shaped digits, and common API key prefixes before any reflection write. Patterns filterable via `wp_mcp_ai_pii_filter_patterns`.
+- **Layer G — Evaluation** (`WP_MCP_AI_Harness_Eval_Scheduler`): profile-driven eval scheduler walks every assistant with `harness_profile.enabled` + non-empty `evals_enabled` on a daily cron (`wp_mcp_ai_harness_eval_tick`), runs each suite via `WP_MCP_AI_Eval_Runner` using a generator wired through `wp_mcp_ai_harness_eval_generator`, and records summaries to the `WP_MCP_AI_Eval_Run_Store` + per-assistant `_wp_mcp_ai_harness_last_evals` meta. No generator → run is skipped, never errored. Direct invocation available via `run_suite_for_assistant()`.
+- **Layer H — Curriculum / Fine-tune Export (Pro)** (`WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum`): walks the assistant's `harness_profile.evals_enabled` eval suites and emits one OpenAI chat-format JSONL row per case. Supports `dry_run`, `max_cases` cap (hard ceiling 5000), and per-case character cap (filter `wp_mcp_ai_pro_curriculum_per_case_char_cap`, default 16 000). Output written to `wp-content/uploads/mcp-ai/harness-curriculum/` with `.htaccess`/`index.php` guards. Registered via `wp_mcp_ai_pro_tools` filter from `addons/pro/includes/harness-init.php`.
+- **Harness profile schema** (stored in `_wp_mcp_ai_harness_profile` post meta): `enabled` (bool), `layers` (A–G flags), `cost_ceiling_usd` (float), `tools.router_mode` (`scored`|`default`), `tools.preset_weights` (map), `evals_enabled` (array of suite slugs), `pii_filter` (bool).
+- **Hooks summary**: `wp_mcp_ai_register_prompt_cues` (action), `wp_mcp_ai_select_prompt_cue` (filter), `wp_mcp_ai_harness_profile` (filter), `wp_mcp_ai_harness_tool_score` (filter), `wp_mcp_ai_retrieval_passages` (filter), `wp_mcp_ai_retrieval_claim_supported` (filter), `wp_mcp_ai_pii_filter_patterns` (filter), `wp_mcp_ai_harness_eval_generator` (filter), `wp_mcp_ai_harness_eval_tick` (cron action).
+
+#### Added — 19 new slash commands (11 base + 8 Pro, 32 total)
+
+The slash command surface nearly doubled — from ~13 to 32 commands (24 base + 8 Pro). New base commands are registered in `includes/slash-commands/slash-commands-init.php`; Pro commands are registered via the `wp_mcp_ai_slash_commands_initialized` action from `addons/pro/includes/slash-commands/slash-commands-init.php`.
+
+**New base commands (since v1.1.13):**
+
+| Command | Aliases | Capability | Description |
+|---------|---------|-----------|-------------|
+| `/jobs` | — | `edit_posts` | List and manage async background jobs |
+| `/status` | — | `edit_posts` | System health: async health, job counts, tool registry |
+| `/cost` | — | `edit_posts` | Token usage and cost summary |
+| `/diagnose` | `debug` | `manage_options` | Diagnostic bundle for support |
+| `/tools` | — | `edit_posts` | Browse, filter, and inspect registered tools |
+| `/skills` | — | `edit_posts` | List, inspect, and install agent skill packs |
+| `/preset` | — | `edit_posts` | List, inspect, and apply orchestration presets |
+| `/model` | — | `edit_posts` | List available models; view or set the model for an assistant |
+| `/markup-stats` | `mstats` | `manage_options` | Show aggregate markup telemetry counters |
+| `/remember` | `memorize` | `edit_posts` | Store verbatim long-term memory for the current assistant |
+| `/forget` | — | `edit_posts` | Delete a stored memory by `context_id` |
+| `/scope` | — | `edit_posts` | Set the active wing/room scope for memory operations |
+| `/compact` | — | `read` | Proactive context compaction (summarize, trim-tools, keep-recent, full) |
+| `/context` | `ctx` | `read` | Show context budget: token usage, message count, remaining capacity |
+| `/clear` | — | `read` | Clear the chat window (front-end signal only) |
+| `/reset` | — | `read` | Reset the current session context |
+| `/resume` | — | `read` | Resume the most recent saved session transcript |
+| `/workflow` | — | `edit_posts` | Execute and manage custom automation workflows |
+| `/sync-docs` | `docs` | `edit_posts` | Documentation drift detection and synchronization |
+| `/optimize-perf` | `perf` | `manage_options` | Automated performance analysis and optimization |
+
+**Pre-existing base commands** (shipped in earlier versions): `/help`, `/next-task`, `/ship`, `/clean-content`, `/memory` (sub-commands: `remember`, `forget`, `scope`).
+
+**New Pro commands:**
+
+| Command | Aliases | Capability | Description |
+|---------|---------|-----------|-------------|
+| `/schedule` | `sched` | `edit_posts` | Manage Pro schedules: list, show, create, pause, resume, delete, run, history |
+| `/schedule-preset` | `sched-preset` | `edit_posts` | Browse and install Pro schedule presets |
+| `/workflow-preset` | — | `edit_posts` | Browse and install Pro workflow presets |
+| `/run` | — | `edit_posts` | Trigger a Pro autonomous run or workflow |
+| `/agent` | — | `edit_posts` | Agent-to-Agent (A2A) dispatch: call a peer assistant |
+| `/mcp-app` | — | `edit_posts` | Manage per-assistant MCP App connections |
+| `/persona` | — | `edit_posts` | Switch the active assistant persona |
+| `/broadcast` | — | `manage_options` | Broadcast a message across configured channels |
+
+- **Fixed — `/status` render bug** — the `/status` command could emit a PHP notice on sites where the async health check returns an unexpected shape; the output normalisation path now coerces all status values to strings before markdown rendering.
+
+#### Added — Chat-client ⇄ Memory Bridge (G-series completion)
+
+Completes the durable chat-client memory integration. REST proxy and JS service were first introduced as stubs; the G-series ships the full visible surface.
+
+- **G2 — Audit tab** (`chat-memory-drawer.js` + `WP_MCP_AI_REST_Chat_Memory_Controller::audit()`): third tab inside the Memory Drawer; lazy-loads on first activation via `memoryService().audit()`; carries `data-testid` attributes for Jest.
+- **G3 — Auto badge** — every assistant message bubble that touched a memory tool call automatically gains a 🧠 badge via `decorateMessageWithBadge()` in `chat.js`.
+- **G6 — Pagehide auto-capture** — `pagehide` + `visibilitychange→hidden` event handler in the Memory Drawer auto-captures the current session state to the REST proxy; uses `mb_strcut` for UTF-8-safe truncation and falls back to an LLM summarisation pass when the payload exceeds the per-message cap.
+- **G8 — SSE `memory_event` frame** — the agentic loop now emits a `memory_event` SSE frame (`{ action, tool_name, tool_id }`) whenever a memory tool call completes; the chat client shows a 🧠 toast in real time.
+- **G11 — Drawer export** — the Memory Drawer "Export" button downloads the visible memory set as a JSON archive.
+- **REST proxy** (`WP_MCP_AI_REST_Chat_Memory_Controller`): six routes under `/mcp-ai/v1/chat-memory/` — `preferences`, `wake-up`, `recall`, `store`, `audit`, `/{context_id}`. Delegating to base tools (`wake_up_context`, `recall_memory`, `store_agent_context`, `memory_audit_trail`, `manage_context_lifecycle`). Endpoints localized into `window.wpMcpAiChat.memoryEndpoints` via the shortcode inline script.
+- **Two gates**: (1) site-wide filter `wp_mcp_ai_chat_memory_enabled` (return `false` to disable globally); (2) per-user meta `wp_mcp_ai_chat_memory_enabled` (user can opt out from the drawer Preferences tab).
+- Reference: [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md).
+
+#### Added — Retroactive Transcript Mining
+
+- **Background job** (`WP_MCP_AI_Transcript_Mining_Job`): queued worker with transient state (prefix `wp_mcp_ai_tx_mine_job_`, 6h TTL), maximum 500 sessions per job, default 10 sessions/tick. Cron hook: `wp_mcp_ai_transcript_mining_tick`. Sentinel `__auto__` in the session queue means "let the underlying `mine_agent_memory` tool resolve its own session set per tick" — useful for broad-sweep jobs where the session list is not known in advance.
+- **REST controller** (`WP_MCP_AI_REST_Transcript_Mining_Controller`): three admin-only (`manage_options`) endpoints:
+  - `POST /mcp-ai/v1/transcript-mining/jobs` — enqueue a new job.
+  - `GET /mcp-ai/v1/transcript-mining/jobs/{id}` — poll progress.
+  - `POST /mcp-ai/v1/transcript-mining/jobs/{id}/cancel` — cancel a running job.
+- **`mine_agent_memory` `transcripts` source** — new source value alongside existing `posts|urls|text`. Uses `transcript_query` (fields: `assistant_id`, `user_id`, `since`, `until`, `session_keys`, `min_messages`, `only_unextracted`, `posts_per_page` max 50). Emits items with provenance metadata: `transcript_session_key`, `assistant_id`, `message_range`, `content_hash`. Filters: `wp_mcp_ai_mine_transcripts_sessions`, `wp_mcp_ai_mine_transcripts_session_messages`, `wp_mcp_ai_mine_transcripts_dedupe_scan_limit` (default 1000).
+- Reference: [`docs/features/memory/transcript-mining.md`](docs/features/memory/transcript-mining.md).
+
+#### Added — Pro Packages Tier 5 (Chat Service Utilities)
+
+Five new browser-native NPM packages published under `@nvdigitalsolutions/` and surfaced on the **NV oOS → Pro Packages** admin screen:
+
+| Package | Description | License |
+|---------|-------------|---------|
+| `@nvdigitalsolutions/nvoos-client-tools` | Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) | MIT |
+| `@nvdigitalsolutions/nvoos-chat-memory` | Promise-based REST client for the AI chat memory bridge (wake-up, recall, store, audit, preferences) | MIT |
+| `@nvdigitalsolutions/nvoos-attachments` | File attachment helpers: type detection, validation, normalisation | MIT |
+| `@nvdigitalsolutions/nvoos-cron-status` | SSE-first cron/job status monitor with REST polling fallback | MIT |
+| `@nvdigitalsolutions/nvoos-transcription` | MediaRecorder-based audio recording + tool-call transcription pipeline | MIT |
+
 ## [1.1.14] - 2026-05-02
 
 ### May 1–2, 2026 — Agent Skills v2 (progressive disclosure + skill packs + remote catalogues), Markup Subsystem (Base), MemPalace Capture Framework Phases A + B1, Graphify CPT/CCT integration suite, follow-up fixes

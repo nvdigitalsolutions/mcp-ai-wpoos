@@ -276,6 +276,44 @@ governed by the providers' respective Terms of Service.
 
 ---
 
+## NV oOS First-Party Standalone Packages (`packages/`)
+
+These packages are published separately under `@nvdigitalsolutions/` and bundled with the Pro addon's chat service layer. All are © NV Digital Solutions, MIT-licensed.
+
+### Tier 5 — Chat Service Utilities (added May 2026)
+
+| Package | Description | License |
+|---------|-------------|---------|
+| `@nvdigitalsolutions/nvoos-client-tools` | Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) | MIT |
+| `@nvdigitalsolutions/nvoos-chat-memory` | Promise-based REST client for the AI chat memory bridge (wake-up, recall, store, audit, preferences) | MIT |
+| `@nvdigitalsolutions/nvoos-attachments` | File attachment helpers: type detection, validation, normalisation | MIT |
+| `@nvdigitalsolutions/nvoos-cron-status` | SSE-first cron/job status monitor with REST polling fallback | MIT |
+| `@nvdigitalsolutions/nvoos-transcription` | MediaRecorder-based audio recording + tool-call transcription pipeline | MIT |
+
+### Tier 4 — Browser-AI Runtime Packages (added April 2026)
+
+| Package | Description | License |
+|---------|-------------|---------|
+| `@nvdigitalsolutions/nvoos-llm-worker` | SharedWorker wrapper for in-browser LLM inference | MIT |
+| `@nvdigitalsolutions/nvoos-model-loader` | Browser-side model caching and loader for WebGPU/WebAssembly backends | MIT |
+| `@nvdigitalsolutions/nvoos-transformers-client` | Thin type-safe wrapper around `@huggingface/transformers` | MIT |
+
+### Earlier tiers (Tiers 1–3) — Core Chat Utilities
+
+| Package | Description | License |
+|---------|-------------|---------|
+| `@nvdigitalsolutions/nvoos-storage` | Storage utilities (localStorage, IndexedDB wrappers) | MIT |
+| `@nvdigitalsolutions/nvoos-markdown` | Markdown rendering utilities | MIT |
+| `@nvdigitalsolutions/nvoos-events` | Event system helpers | MIT |
+| `@nvdigitalsolutions/nvoos-clipboard` | Clipboard management | MIT |
+| `@nvdigitalsolutions/nvoos-http-client` | Typed HTTP client with retry support | MIT |
+| `@nvdigitalsolutions/nvoos-offline-sync` | Offline sync primitives | MIT |
+| `@nvdigitalsolutions/nvoos-slash-commands` | Slash command parsing + registration | MIT |
+| `@nvdigitalsolutions/nvoos-audio` | Audio recording and playback utilities | MIT |
+| `@nvdigitalsolutions/nvoos-dom-batcher` | DOM batching utilities | MIT |
+
+---
+
 ## Vendored JavaScript — Base Plugin
 
 | Location | Component | Version | License | Upstream |
