@@ -280,9 +280,51 @@ require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
 // harness profile that ships in the "off" state.
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/harness/harness-init.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-otel-span-exporter.php';
+// Register span exporter — no-op unless `wp_mcp_ai_otel_endpoint` is configured.
+WP_MCP_AI_Otel_Span_Exporter::register();
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
+
+// ---------------------------------------------------------------------------
+// HITL Approval Queue (Phase 2 — Human-in-the-Loop)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-approval-queue.php';
+add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 5 );
+WP_MCP_AI_Approval_Queue::register_cron();
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Workflow CPT + Engine V2
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_cpt' ), 6 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 6 );
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php';
+
+// ---------------------------------------------------------------------------
+// Phase 4 — Workflow Run CPT (durable execution event log)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-run-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_cpt' ), 7 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_meta' ), 7 );
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Triggers, Webhooks, Sub-Agents
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_cpt' ), 8 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_meta' ), 8 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_all_triggers' ), 20 );
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-outbound-webhook.php';
+add_action(
+	'init',
+	function () {
+		WP_MCP_AI_Outbound_Webhook::get_instance();
+	}
+);
 
 // ---------------------------------------------------------------------------
 // A2A Protocol system
@@ -319,6 +361,38 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-approval-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Approval_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Workflow_CPT_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-run-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Workflow_Run_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-triggers-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Triggers_Controller();
+		$controller->register_routes();
+	}
+);
 
 // ---------------------------------------------------------------------------
 // Third-party plugin integrations (full version only, or when Pro is active)
@@ -405,9 +479,19 @@ if ( is_admin() ) {
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-run-timeline.php';
+	new WP_MCP_AI_Admin_Run_Timeline();
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-approvals.php';
+	new WP_MCP_AI_Admin_Approvals();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
 	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
+
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dag-builder.php';
+	new WP_MCP_AI_Admin_DAG_Builder();
+
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-workflow-triggers.php';
+	new WP_MCP_AI_Admin_Workflow_Triggers();
 
 	// ISO 27001 compliance systems.
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
