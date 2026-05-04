@@ -197,7 +197,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$table = self::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date = %s ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
 
 		return $row ? $row : null;
 	}
@@ -239,7 +239,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			// accumulate into their own no-time row and never overwrite timed
 			// vital-sign rows from the same day.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND (measurement_time = '' OR measurement_time IS NULL) ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date = %s AND (measurement_time = '' OR measurement_time IS NULL) ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
 			return $row ? $row : null;
 		}
 
@@ -250,7 +250,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND measurement_time != '' AND measurement_time IS NOT NULL ORDER BY _ID ASC", $member_id, $date ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date = %s AND measurement_time != '' AND measurement_time IS NOT NULL ORDER BY _ID ASC", $member_id, $date ) );
 
 		$window = self::SAME_SESSION_WINDOW_MINUTES;
 		foreach ( $rows as $row ) {
@@ -713,19 +713,19 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			$after_date = sanitize_text_field( $after_date );
 			if ( $limit > 0 ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $after_date, $limit ) );
+				return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $after_date, $limit ) );
 			}
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC", $member_id, $after_date ) );
+			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d AND measurement_date >= %s ORDER BY measurement_date DESC, _ID DESC", $member_id, $after_date ) );
 		}
 
 		if ( $limit > 0 ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $limit ) );
+			return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC LIMIT %d", $member_id, $limit ) );
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC", $member_id ) );
+		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE member_id = %d ORDER BY measurement_date DESC, _ID DESC", $member_id ) );
 	}
 
 	/**
@@ -755,7 +755,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$table = self::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE _ID = %d LIMIT 1", $item_id ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE _ID = %d LIMIT 1", $item_id ) );
 
 		return $row ? $row : null;
 	}
