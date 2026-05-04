@@ -124,10 +124,10 @@ class WP_MCP_AI_Transcript_Repository {
 			$where_values[]  = (string) $assistant_id;
 		}
 
-		$where_sql = ! empty( $where_clauses ) ? implode( ' AND ', $where_clauses ) : '1=1';
+		$where_part = ! empty( $where_clauses ) ? 'WHERE ' . implode( ' AND ', $where_clauses ) : '';
 
 		$query_values = array_merge( $where_values, array( $per_page, $offset ) );
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_part contains only hardcoded placeholders.
 		$query_template = "SELECT session_key,
                 MIN(request_started_at) AS started_at,
                 MAX(response_completed_at) AS completed_at,
@@ -137,7 +137,7 @@ class WP_MCP_AI_Transcript_Repository {
                 MAX(assistant_model) AS assistant_model,
                 COUNT(*) AS turn_count
          FROM {$table}
-         WHERE {$where_sql}
+         {$where_part}
          GROUP BY session_key
          ORDER BY MAX(cct_created) DESC, session_key ASC
          LIMIT %d OFFSET %d";
@@ -196,10 +196,10 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Get total count using the same WHERE clause as the primary query.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
-		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_part contains only hardcoded placeholders.
+		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} {$where_part}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
-		$total_query = empty( $where_values ) ? $wpdb->prepare( $total_query_template, array() ) : $wpdb->prepare( $total_query_template, $where_values );
+		$total_query = $wpdb->prepare( $total_query_template, $where_values );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 		$total = (int) $wpdb->get_var( $total_query );
