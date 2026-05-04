@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-9e03100e-c564-43cc-849f-388c98adb77e',
-        'version' => 'dev-copilot/rebuild-all-zips-with-script-9e03100e-c564-43cc-849f-388c98adb77e',
-        'reference' => '0a227b8b3d00ccac3cc65546bd0888df29b3e496',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-9a4c4a80-ff42-4d24-9bb0-5f950bfceea7',
+        'version' => 'dev-copilot/rebuild-all-zips-script-9a4c4a80-ff42-4d24-9bb0-5f950bfceea7',
+        'reference' => '89a72c2b170939804e3f3a7de2adbceb7bcbf498',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-9e03100e-c564-43cc-849f-388c98adb77e',
-            'version' => 'dev-copilot/rebuild-all-zips-with-script-9e03100e-c564-43cc-849f-388c98adb77e',
-            'reference' => '0a227b8b3d00ccac3cc65546bd0888df29b3e496',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-9a4c4a80-ff42-4d24-9bb0-5f950bfceea7',
+            'version' => 'dev-copilot/rebuild-all-zips-script-9a4c4a80-ff42-4d24-9bb0-5f950bfceea7',
+            'reference' => '89a72c2b170939804e3f3a7de2adbceb7bcbf498',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
