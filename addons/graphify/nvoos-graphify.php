@@ -85,6 +85,21 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings.php
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings-on-ingest.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-memory-bridge.php';
 
+// Load NV oOS data bridge (only when the base plugin is active).
+// Delay to plugins_loaded so WP_MCP_AI_VERSION is defined before we test.
+add_action(
+	'plugins_loaded',
+	static function () {
+		if ( defined( 'WP_MCP_AI_VERSION' )
+			&& ! class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' )
+		) {
+			require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-nvoos-bridge.php';
+			NV_oOS_Graphify_NV_oOS_Bridge::register();
+		}
+	},
+	20
+);
+
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 
 // Load admin classes.
