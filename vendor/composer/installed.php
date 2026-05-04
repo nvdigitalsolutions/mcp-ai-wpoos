@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-deepseek-provider',
-        'version' => 'dev-copilot/add-deepseek-provider',
-        'reference' => '6c179809926509df8d893a1a1a1c9c604ff5b078',
+        'pretty_version' => 'dev-copilot/check-member-data-management-tool',
+        'version' => 'dev-copilot/check-member-data-management-tool',
+        'reference' => '824cfa77749bb59f332211af2b24c0f00c4e5842',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-deepseek-provider',
-            'version' => 'dev-copilot/add-deepseek-provider',
-            'reference' => '6c179809926509df8d893a1a1a1c9c604ff5b078',
+            'pretty_version' => 'dev-copilot/check-member-data-management-tool',
+            'version' => 'dev-copilot/check-member-data-management-tool',
+            'reference' => '824cfa77749bb59f332211af2b24c0f00c4e5842',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
