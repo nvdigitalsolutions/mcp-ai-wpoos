@@ -94,7 +94,7 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 		 */
 		do_action( 'wp_mcp_ai_workflow_v2_before_execute', $workflow_post_id, $input );
 
-		$run_id = 'wf2-' . $workflow_post_id . '-' . wp_generate_password( 8, false );
+		$run_id = 'wf2-' . $workflow_post_id . '-' . bin2hex( random_bytes( 6 ) );
 		$graph  = WP_MCP_AI_Workflow_CPT::get_graph( $workflow_post_id );
 
 		// Build a description from graph nodes for the underlying engine.
