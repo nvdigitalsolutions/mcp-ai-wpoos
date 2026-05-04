@@ -247,6 +247,8 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		// Register in Cron Manager so the job is visible and monitorable.
+		// user_id may be 0 for unattributed/system-initiated jobs; record_job
+		// accepts 0 (shows the job without user attribution in the UI).
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 			WP_MCP_AI_Cron_Manager::record_job(
