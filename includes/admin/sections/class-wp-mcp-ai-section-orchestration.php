@@ -2277,9 +2277,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function render_observability_view() {
 			$run_timeline_url     = admin_url( 'admin.php?page=mcp-ai-run-timeline' );
 			$measurement_dash_url = admin_url( 'admin.php?page=wp-mcp-ai-measurement' );
-			$otel_enabled         = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' )
-				&& WP_MCP_AI_Otel_Span_Exporter::is_enabled();
-			$otel_endpoint        = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' )
+			$exporter_available   = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' );
+			$otel_enabled         = $exporter_available && WP_MCP_AI_Otel_Span_Exporter::is_enabled();
+			$otel_endpoint        = $exporter_available
 				? (string) get_option( WP_MCP_AI_Otel_Span_Exporter::OPTION_ENDPOINT, '' )
 				: '';
 			?>
