@@ -275,38 +275,6 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= Unreleased - May 4, 2026 =
-
-**LM Studio provider parity with May 2026 capabilities (Phases 1–7)**
-
-*Added — Real SSE Streaming (Phase 1)*
-
-`create_chat_completion()` now honours `$options['stream']`. When truthy the payload contains `stream: true`, the SSE response body is parsed line-by-line, and `$options['stream_callback']` is invoked for each chunk. Content and tool-call deltas are accumulated; the final return value is a standard OpenAI-shaped response. New filter: `wp_mcp_ai_lm_studio_stream_request_args`.
-
-*Added — Native /api/v0 Opt-in (Phase 2)*
-
-New setting `lm_studio_use_native_api` (default off). When on, chat completions use `/api/v0/chat/completions` and model listing uses `/api/v0/models`. Native responses include performance stats (tokens/sec, TTFT, generation time) surfaced as `usage_stats` and via new action `wp_mcp_ai_lm_studio_provider_stats`. Model list returns arch, quantization, state, context lengths, and capabilities. New per-request filter: `wp_mcp_ai_lm_studio_native_endpoint`.
-
-*Added — Embeddings (Phase 3)*
-
-New public method `create_embedding( $input, $options )` on `WP_MCP_AI_LM_Studio_Client`. Calls `/v1/embeddings` with optional model, encoding format, and auth headers.
-
-*Added — Optional Bearer-Token Auth (Phase 4)*
-
-New setting `lm_studio_api_key`. When set, `Authorization: Bearer <key>` is included on all requests. Keys are never logged.
-
-*Added — Capability Gating + Reasoning + Argument Repair (Phase 5)*
-
-When native API reports model capabilities, results are cached in a 5-min transient. Models without `tool_use` return a `wp_mcp_ai_tools_unsupported_by_model` WP_Error instead of forwarding tools. `reasoning_content` fields are preserved; `<think>…</think>` blocks are extracted into `reasoning_content` and stripped from the visible response. Malformed tool-call `arguments` (decoded object or truncated JSON) are automatically repaired.
-
-*Added — TTL + Structured Outputs (Phase 6)*
-
-`$options['ttl']` is forwarded in the payload. `$options['response_format']` with `json_schema`, `json_object`, or `text` type is forwarded unchanged.
-
-*Improved — test_connection() + docs (Phase 7)*
-
-`test_connection()` falls back to `/api/v0/models` when `/v1/models` returns 404 and includes the LM Studio version string from `x-lm-studio-version` response header in the success result. Integration guide and quick-start guide updated.
-
 = Unreleased - May 3-4, 2026 =
 
 **LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat Memory Drawer, Retroactive Transcript Mining, Pro Packages Tier 5**
