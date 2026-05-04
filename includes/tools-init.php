@@ -35,7 +35,7 @@ add_action(
 			return;
 		}
 		if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) ) {
-			require_once WP_MCP_AI_TOOLS_PATH . 'class-wp-mcp-ai-tool-replay-workflow-run.php';
+			require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-replay-workflow-run.php';
 			$registry->register_tool( new WP_MCP_AI_Tool_Replay_Workflow_Run() );
 		}
 	},
@@ -49,7 +49,7 @@ function ( $registry ) {
 if ( ! $registry instanceof WP_MCP_AI_Tool_Registry ) {
 return;
 }
-require_once WP_MCP_AI_TOOLS_PATH . 'class-wp-mcp-ai-tool-spawn-sub-agent.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-spawn-sub-agent.php';
 $registry->register_tool( new WP_MCP_AI_Tool_Spawn_Sub_Agent() );
 },
 32
