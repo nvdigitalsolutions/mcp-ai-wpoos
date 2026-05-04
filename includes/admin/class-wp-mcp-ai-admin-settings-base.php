@@ -294,6 +294,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'ollama_use_openai_compatible_endpoint' => false,
 				'lm_studio_endpoint_url'               => '',
 				'lm_studio_model'                      => '',
+				'lm_studio_api_key'                    => '',
+				'lm_studio_use_native_api'             => false,
 				'default_assistant'                    => 0,
 				'enable_logging'                       => false,
 				'markup_enabled'                       => true,
