@@ -199,6 +199,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nvidia-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deepseek-client.php';
 // WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
 // Provider interface adapters (thin delegates over the concrete clients above).
