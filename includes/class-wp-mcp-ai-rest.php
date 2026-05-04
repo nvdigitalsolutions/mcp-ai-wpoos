@@ -8282,7 +8282,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return '';
 			}
 
-			return $wpdb->prefix . 'jet_cct_' . $slug;
+			return $wpdb->prefix . 'jet-cct-' . $slug;
 		}
 
 		/**
@@ -8509,7 +8509,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-			// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant slug.
+			// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant slug.
 			$table = esc_sql( $this->get_transcript_table_name() );
 
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql() above.

@@ -741,7 +741,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * mapping and type coercion specific to that CCT.
 	 *
 	 * For all other CCTs, a direct $wpdb->insert() is attempted against the
-	 * standard JetEngine table `{prefix}jet_cct_{slug}` whenever that table
+	 * standard JetEngine table `{prefix}jet-cct-{slug}` whenever that table
 	 * exists.  This bypasses JetEngine's form-submission handler, which reads
 	 * field values from $_POST/$_REQUEST and silently discards the supplied
 	 * $fields array when invoked outside of a form context.
@@ -1115,7 +1115,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Return the standard JetEngine table name for a CCT slug.
 	 *
-	 * JetEngine stores CCT records in `{wpdb_prefix}jet_cct_{slug}`.
+	 * JetEngine stores CCT records in `{wpdb_prefix}jet-cct-{slug}`.
 	 * The returned string is safe to pass directly to $wpdb->insert() and
 	 * $wpdb->update(), which handle their own escaping.  When interpolating
 	 * into a raw SQL string, wrap the result with esc_sql() first.
@@ -1125,7 +1125,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	protected function get_cct_table_name( $slug ) {
 		global $wpdb;
-		return $wpdb->prefix . 'jet_cct_' . $slug;
+		return $wpdb->prefix . 'jet-cct-' . $slug;
 	}
 
 	/**

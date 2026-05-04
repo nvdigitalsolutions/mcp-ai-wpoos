@@ -136,7 +136,20 @@ class WP_MCP_AI_Transcript_Mining_Job {
 
 		// Schedule the first tick. Use 1s in the future so the request
 		// returns before the worker fires (WP cron is opportunistic).
-		wp_schedule_single_event( time() + 1, self::CRON_HOOK, array( $job_id ) );
+		$tick_timestamp = time() + 1;
+		wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
+
+		// Register the tick with the Cron Manager so it is visible in the
+		// admin Cron Manager page and can be monitored/cancelled from there.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			WP_MCP_AI_Cron_Manager::record_job(
+				self::CRON_HOOK,
+				array( $job_id ),
+				'single',
+				$tick_timestamp,
+				$state['user_id']
+			);
+		}
 
 		return $state;
 	}
@@ -221,7 +234,19 @@ class WP_MCP_AI_Transcript_Mining_Job {
 			$state['status'] = 'completed';
 		} else {
 			// Re-schedule the next tick.
-			wp_schedule_single_event( time() + 1, self::CRON_HOOK, array( $job_id ) );
+			$tick_timestamp = time() + 1;
+			wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
+
+			// Update the Cron Manager entry so the tick remains visible.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				WP_MCP_AI_Cron_Manager::record_job(
+					self::CRON_HOOK,
+					array( $job_id ),
+					'single',
+					$tick_timestamp,
+					isset( $state['user_id'] ) ? (int) $state['user_id'] : 0
+				);
+			}
 		}
 
 		self::save_state( $state );

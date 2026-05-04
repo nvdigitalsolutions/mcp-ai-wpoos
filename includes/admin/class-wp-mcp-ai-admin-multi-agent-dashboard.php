@@ -509,7 +509,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 
 		// Query most recent chat transcript for this assistant.
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'jet_cct_mcp_ai_chat_transcripts';
+		$table_name = $wpdb->prefix . 'jet-cct-ai_chat_transcripts';
 
 		// Check if table exists.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.

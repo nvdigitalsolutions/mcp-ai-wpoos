@@ -232,6 +232,17 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 			array( $job_id, $command, $context )
 		);
 
+		// Register in Cron Manager so the job is visible and monitorable.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			WP_MCP_AI_Cron_Manager::record_job(
+				'wp_mcp_ai_execute_async_slash_command',
+				array( $job_id ),
+				'single',
+				time(),
+				get_current_user_id()
+			);
+		}
+
 		return new WP_REST_Response(
 			array(
 				'success' => true,
