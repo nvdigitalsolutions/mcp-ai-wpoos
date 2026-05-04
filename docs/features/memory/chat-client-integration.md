@@ -68,14 +68,27 @@ Guests are denied (HTTP 403). The site-wide kill-switch
 `apply_filters( 'wp_mcp_ai_chat_memory_enabled', $enabled, $user_id )` lets
 hardened deployments disable the surface entirely.
 
-## Per-user toggles
+## Per-user toggles and site-wide gate
 
-Two user-meta keys gate the surface for end users:
+Two gates control access to the chat-memory bridge:
+
+### Gate 1 — Site-wide filter
+
+```php
+// Disable chat memory entirely (e.g. GDPR region).
+add_filter( 'wp_mcp_ai_chat_memory_enabled', '__return_false' );
+```
+
+When this filter returns `false`, **every** `/mcp-ai/v1/chat-memory/*` route returns HTTP 403 regardless of user state.
+
+### Gate 2 — Per-user meta
+
+Two user-meta keys gate the surface for individual users:
 
 - `wp_mcp_ai_chat_memory_enabled` (default: `true`) — master toggle for the
-  whole bridge. When disabled, every route returns 403.
+  whole bridge for this user. When disabled, every route returns 403.
 - `wp_mcp_ai_chat_memory_autosummarize` (default: `false`) — opt-in for
-  end-of-conversation transcript summarisation (Phase 6, see roadmap).
+  end-of-conversation transcript summarisation (G6 auto-capture).
 
 Read/written via the `/preferences` endpoint or programmatically:
 
@@ -305,5 +318,6 @@ tracked as follow-up work:
 ## Related docs
 
 - [`docs/AGENT-MEMORY-COMPLETE-GUIDE.md`](../../AGENT-MEMORY-COMPLETE-GUIDE.md)
+- [`docs/features/memory/transcript-mining.md`](./transcript-mining.md)
 - [`.context/chat-ui.md`](../../../.context/chat-ui.md)
 - [`docs/rest-api.md`](../../rest-api.md)

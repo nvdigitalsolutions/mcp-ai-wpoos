@@ -275,6 +275,34 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= Unreleased - May 3-4, 2026 =
+
+**LLM Harnessing Subsystem GA, 28 new slash commands, Chat Memory Drawer, Retroactive Transcript Mining, Pro Packages Tier 5**
+
+*Added — LLM Harnessing Subsystem (Layers A-H)*
+
+Seven opt-in per-request layers in `includes/harness/` improve response quality without changing existing tool behaviour: Layer A (Prompt/Cue Library with 7 named templates), Layer B (Reasoning Trace + self-consistency vote), Layer C (Tool Routing with preset_weights), Layer D (Retrieval fan-out + citation verification), Layer E (Self-Refine loop with cost caps), Layer F (Memory Scoping + PII Filter), Layer G (Eval Scheduler cron). Pro Layer H exports fine-tune curricula as OpenAI JSONL. Profile stored in `_wp_mcp_ai_harness_profile` post meta. Reference: `docs/llm-harness.md`.
+
+*Added — 28 new base slash commands + 8 Pro slash commands*
+
+New base commands: `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/markup-stats`, `/remember`, `/forget`, `/scope`, `/compact`, `/context`, `/clear`, `/reset`, `/resume`, `/workflow`, `/sync-docs`, `/optimize-perf`. New Pro commands: `/schedule`, `/schedule-preset`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`.
+
+*Added — Chat-client Memory Bridge (G-series)*
+
+Memory Drawer with three tabs (Memories / Scope / Audit), auto-badge on memory-touching messages, SSE `memory_event` frame, pagehide auto-capture, drawer export. REST proxy at `/mcp-ai/v1/chat-memory/`. Two gates: `wp_mcp_ai_chat_memory_enabled` filter + per-user meta.
+
+*Added — Retroactive Transcript Mining*
+
+`WP_MCP_AI_Transcript_Mining_Job` background worker with REST API (`/mcp-ai/v1/transcript-mining/jobs*`). New `transcripts` source on `mine_agent_memory` tool with provenance metadata and dedupe.
+
+*Added — Pro Packages Tier 5*
+
+Five new NPM packages: `nvoos-client-tools`, `nvoos-chat-memory`, `nvoos-attachments`, `nvoos-cron-status`, `nvoos-transcription`.
+
+*Fixed — /status render bug*
+
+PHP notice on async health-check shape mismatch.
+
 = 1.1.14 - May 2, 2026 =
 
 **Agent Skills v2 (progressive disclosure + skill packs + remote catalogues), Markup Subsystem (Base), MemPalace Capture Framework Phases A + B1, Graphify CPT/CCT integration suite, follow-up fixes**

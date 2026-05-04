@@ -85,6 +85,8 @@ Every agent session loads these two files:
 | [`.context/chat-ui.md`](.context/chat-ui.md) | Working on frontend chat interface |
 | [`.context/testing.md`](.context/testing.md) | Writing or reviewing tests |
 | [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
+| [`docs/llm-harness.md`](docs/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
+| [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md) | Working on the Chat-client Memory Bridge or Memory Drawer |
 
 ### Feature context (loaded per active feature)
 
