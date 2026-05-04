@@ -25,8 +25,6 @@ require_once __DIR__ . '/class-wp-mcp-ai-retrieval-harness.php';
 require_once __DIR__ . '/class-wp-mcp-ai-self-refine-loop.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-prompt-injector.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-eval-scheduler.php';
-require_once __DIR__ . '/class-wp-mcp-ai-prompt-injection-detector.php';
-require_once __DIR__ . '/class-wp-mcp-ai-structured-output-guardrail.php';
 
 // Register the chat-client cue injector. Off by default at the profile
 // level — this is just the subscriber wiring.
@@ -36,10 +34,6 @@ WP_MCP_AI_Harness_Prompt_Injector::register();
 // assistant has `evals_enabled` populated and a generator is wired up
 // via `wp_mcp_ai_harness_eval_generator`.
 WP_MCP_AI_Harness_Eval_Scheduler::register();
-
-// Register the Layer I prompt injection detector.
-// Off by default — enabled per-assistant via harness profile `injection_detector.enabled`.
-WP_MCP_AI_Prompt_Injection_Detector::register();
 
 // Tools shipped with the harness subsystem.
 require_once WP_MCP_AI_PATH . 'includes/tools/harness/class-wp-mcp-ai-tool-list-prompt-cues.php';
