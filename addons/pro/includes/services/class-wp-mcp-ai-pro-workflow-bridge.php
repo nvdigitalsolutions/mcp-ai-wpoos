@@ -274,6 +274,8 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		WP_MCP_AI_Workflow_Run_CPT::append_event(
 			$run_id,
 			$type,
+			// Fall back to a synthetic id only when the Pro builder did not pass a node_id;
+			// this is unexpected but keeps the run-log consistent rather than dropping the event.
 			$node_id !== '' ? $node_id : ( $node_type . '_' . wp_generate_uuid4() ),
 			$node_type,
 			$is_error
@@ -303,15 +305,14 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 			return;
 		}
 
+		$status_key = isset( $execution['status'] ) ? (string) $execution['status'] : '';
 		$status_map = array(
 			'completed' => 'completed',
 			'failed'    => 'failed',
 			'cancelled' => 'cancelled',
 			'unknown'   => 'failed',
 		);
-		$status = isset( $status_map[ $execution['status'] ?? '' ] )
-			? $status_map[ $execution['status'] ?? '' ]
-			: 'completed';
+		$status     = isset( $status_map[ $status_key ] ) ? $status_map[ $status_key ] : 'completed';
 
 		WP_MCP_AI_Workflow_Run_CPT::append_event(
 			$run_id,

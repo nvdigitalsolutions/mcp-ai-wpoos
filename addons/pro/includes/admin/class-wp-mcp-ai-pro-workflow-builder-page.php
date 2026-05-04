@@ -1003,7 +1003,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		 * Listeners (e.g. WP_MCP_AI_Pro_Workflow_Bridge) use this to mirror
 		 * Pro execution into the base Workflow Run CPT for observability.
 		 *
-		 * @since 1.5.0
+		 * @since 1.6.0
 		 *
 		 * @param string         $node_type   Node type: action|tool|agent.
 		 * @param string         $node_id     Workflow-scoped node identifier.
@@ -1105,7 +1105,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		 * Returning a non-null value (array or WP_Error) skips registry
 		 * execution entirely.
 		 *
-		 * @since 1.5.0
+		 * @since 1.6.0
 		 *
 		 * @param array|WP_Error|null $short_circuit Pre-execute result, or null to proceed normally.
 		 * @param string              $tool_name     Tool name.
@@ -1329,7 +1329,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		 * the corresponding base Workflow Run CPT record (set status,
 		 * record terminal cost/token totals).
 		 *
-		 * @since 1.5.0
+		 * @since 1.6.0
 		 *
 		 * @param array $sanitized Sanitized execution record (id, workflow_id, status, etc.).
 		 */
