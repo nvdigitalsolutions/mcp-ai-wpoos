@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-transcripts-connection-issue',
-        'version' => 'dev-copilot/fix-chat-transcripts-connection-issue',
-        'reference' => 'a26e6d39dc1b8715b98cc1bdaceeadfbcc7d86f8',
+        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
+        'version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
+        'reference' => '5522886b35e2d1ad84ad2f8cabb807600af38ed1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-transcripts-connection-issue',
-            'version' => 'dev-copilot/fix-chat-transcripts-connection-issue',
-            'reference' => 'a26e6d39dc1b8715b98cc1bdaceeadfbcc7d86f8',
+            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
+            'version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
+            'reference' => '5522886b35e2d1ad84ad2f8cabb807600af38ed1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

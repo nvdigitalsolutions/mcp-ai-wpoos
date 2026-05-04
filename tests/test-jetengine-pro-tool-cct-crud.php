@@ -1180,10 +1180,10 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$result = $method->invokeArgs( $tool, array( 'vitals_log' ) );
-		$this->assertSame( $wpdb->prefix . 'jet_cct_vitals_log', $result );
+		$this->assertSame( $wpdb->prefix . 'jet-cct-vitals_log', $result );
 
 		$result2 = $method->invokeArgs( $tool, array( 'my_custom_cct' ) );
-		$this->assertSame( $wpdb->prefix . 'jet_cct_my_custom_cct', $result2 );
+		$this->assertSame( $wpdb->prefix . 'jet-cct-my_custom_cct', $result2 );
 	}
 
 	/**
@@ -1214,7 +1214,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Create a temporary test table to simulate an existing CCT.
-		$table = $wpdb->prefix . 'jet_cct_test_generic_cct';
+		$table = $wpdb->prefix . 'jet-cct-test_generic_cct';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-only temp table; direct DDL required.
 		$wpdb->query( "CREATE TABLE IF NOT EXISTS `{$table}` ( `_ID` int(11) NOT NULL AUTO_INCREMENT, `name` varchar(255) DEFAULT '', PRIMARY KEY (`_ID`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8" );
 
