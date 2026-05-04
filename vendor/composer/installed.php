@@ -1,12 +1,6 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-lm-studio-client',
-        'version' => 'dev-copilot/enhance-lm-studio-client',
-        'reference' => 'fcc3ebfaa827324134c5c72122ee3eae19ef14b3',
-        'pretty_version' => 'dev-copilot/review-plugin-feature-set',
-        'version' => 'dev-copilot/review-plugin-feature-set',
-        'reference' => '309827758e54b0add82640f3d073a152e2050848',
         'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
         'version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
         'reference' => '5522886b35e2d1ad84ad2f8cabb807600af38ed1',
@@ -53,12 +47,6 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-lm-studio-client',
-            'version' => 'dev-copilot/enhance-lm-studio-client',
-            'reference' => 'fcc3ebfaa827324134c5c72122ee3eae19ef14b3',
-            'pretty_version' => 'dev-copilot/review-plugin-feature-set',
-            'version' => 'dev-copilot/review-plugin-feature-set',
-            'reference' => '309827758e54b0add82640f3d073a152e2050848',
             'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
             'version' => 'dev-copilot/run-rebuild-all-zips-script-149b04ea-cebc-4f7b-89df-c192ec8126eb',
             'reference' => '5522886b35e2d1ad84ad2f8cabb807600af38ed1',

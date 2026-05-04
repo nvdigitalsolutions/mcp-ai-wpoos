@@ -2,36 +2,6 @@
 
 ## [Unreleased]
 
-### May 4, 2026 — LM Studio provider brought to parity with May 2026 capabilities
-
-Full feature pass for `WP_MCP_AI_LM_Studio_Client` aligned with the existing OpenAI / Ollama client patterns. All new behaviour is opt-in via settings; default behaviour is unchanged.
-
-#### Added
-
-- **Real SSE streaming** (Phase 1): `create_chat_completion()` now honours `$options['stream']`. When truthy, the JSON payload contains `stream: true` and the response body is parsed as Server-Sent Events. `$options['stream_callback']` is invoked for each `data: {…}` chunk. Content tokens and tool-call argument deltas are accumulated and the final return value uses the standard OpenAI-shaped format. New filter `wp_mcp_ai_lm_studio_stream_request_args` lets callers tune timeouts and headers for streaming requests.
-- **Native `/api/v0` opt-in** (Phase 2): new setting `lm_studio_use_native_api` (default `false`). When on, `create_chat_completion` posts to `/api/v0/chat/completions` and `list_models` reads `/api/v0/models`. Native responses include a `stats` block (tokens/sec, TTFT, generation_time) surfaced as `usage_stats` and emitted via the new `wp_mcp_ai_lm_studio_provider_stats` action. `list_models()` now returns `arch`, `quantization`, `state`, `max_context_length`, `loaded_context_length`, and `capabilities` fields from the native endpoint. New per-request filter `wp_mcp_ai_lm_studio_native_endpoint` allows callers to override the global setting.
-- **Embeddings** (Phase 3): new public method `create_embedding( $input, $options )` calling `/v1/embeddings`. Supports single-string and array inputs; returns a standard OpenAI-shaped embeddings response.
-- **Optional bearer-token auth** (Phase 4): new setting `lm_studio_api_key` (stored as a password field). When non-empty, every request includes `Authorization: Bearer <key>`. Keys are never logged.
-- **Capability-aware tool calling** (Phase 5): when `/api/v0/models` reports capabilities, the results are cached in a 5-minute transient (`wp_mcp_ai_lm_studio_capabilities`). Models that don't advertise `tool_use` return `WP_Error( 'wp_mcp_ai_tools_unsupported_by_model' )` instead of forwarding a tools payload that would cause LM Studio to 400.
-- **Reasoning content passthrough** (Phase 5): `normalize_response()` preserves `reasoning_content` fields and extracts `<think>…</think>` blocks from `content` into `reasoning_content` (matching how DeepSeek-R1/Qwen-QwQ are handled by the REST layer).
-- **Malformed tool-call argument repair** (Phase 5): tool-call `arguments` that arrive as a decoded PHP array/object are re-encoded to JSON string. Truncated JSON strings receive a minimal closing-brace repair if the result parses cleanly.
-- **TTL pass-through** (Phase 6): `$options['ttl']` is forwarded in the payload so LM Studio can auto-unload the model after the specified idle period.
-- **Structured outputs pass-through** (Phase 6): `$options['response_format']` with types `json_schema`, `json_object`, or `text` is forwarded unchanged.
-- **Improved `test_connection()`** (Phase 7): falls back to `/api/v0/models` when `/v1/models` returns 404 (older builds vs. newer). Includes the LM Studio version string (`x-lm-studio-version` header) in the success message when available.
-- **`CAPABILITIES_TRANSIENT` class constant** on `WP_MCP_AI_LM_Studio_Client` for external cache invalidation.
-
-#### Changed
-
-- `create_completion()`: updated headers to include optional bearer-token auth; comment on the hard-coded `stream: false` clarified (completions endpoint; not streaming).
-- `list_models()`: now uses `get_api_prefix()` so it queries `/api/v0/models` when the native API is enabled; returns additional metadata fields; populates the capabilities transient as a side-effect.
-- Settings: two new fields in **Settings → NV oOS → Providers → LM Studio** — `lm_studio_api_key` (password) and `lm_studio_use_native_api` (checkbox).
-
-#### Tests
-
-- 22 new PHPUnit test cases in `tests/test-lm-studio-client.php` covering all phases: streaming + callback fan-out + assembled response, tool-call delta accumulation, non-streaming `stream: false` default, native API URL routing, native stats normalisation, richer `list_models` fields, embeddings round-trip, bearer-auth headers, absence of auth header when key is empty, `reasoning_content` preservation, `<think>` stripping, malformed-arguments repair, capability guard block + pass, TTL/`response_format` payload forwarding, `test_connection` version header + 404 fallback, and `get_api_prefix` / `get_api_key` accessors.
-
----
-
 ### May 3–4, 2026 — LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat-client Memory Bridge, Retroactive Transcript Mining, Pro Packages Tier 5
 
 A major capabilities pass landing the remaining work from the previous sprint. Headline additions: (1) **LLM Harnessing Subsystem (Layers A–H)** ships end-to-end — seven per-request epistemic layers (cues, reasoning traces, tool routing, retrieval, self-refine, memory scoping, profile-driven evals) plus the Pro Layer H fine-tune curriculum exporter; (2) **19 new slash commands** (11 base + 8 Pro, bringing base total to 24) nearly double the in-chat CLI surface; (3) the **Chat-client ⇄ Memory Bridge G-series** completes the durable memory drawer — REST proxy, JS service, Memories / Scope / Audit tabs, 🧠 badge, SSE `memory_event` frames, pagehide auto-capture, and drawer export; (4) **Retroactive Transcript Mining** — a queued background job, three REST endpoints, and the new `transcripts` source on `mine_agent_memory` with provenance + de-dupe; (5) **Pro Packages Tier 5** — five new browser-native chat-service NPM packages.
