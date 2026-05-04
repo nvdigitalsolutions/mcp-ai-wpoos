@@ -20,7 +20,9 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-bas
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-memory-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-transcript-mining-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
@@ -421,9 +423,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tools_controller = new WP_MCP_AI_REST_Tools_Controller( $this, $this->authenticator, $this->validator );
 			$tools_controller->register_routes();
 
+			// Delegate chat-client ⇄ memory bridge to Chat Memory Controller (Phase 1).
+			$chat_memory_controller = new WP_MCP_AI_REST_Chat_Memory_Controller( $this->authenticator, $this->validator );
+			$chat_memory_controller->register_routes();
+
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
 			$teams_controller->register_routes();
+
+			// Delegate retroactive transcript-to-memory mining job routes.
+			$transcript_mining_controller = new WP_MCP_AI_REST_Transcript_Mining_Controller();
+			$transcript_mining_controller->register_routes();
 
 			// Delegate A2A protocol routes to A2A Controller.
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -2480,6 +2490,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			/**
+			 * Filter the resolved system prompt just before it is consumed by
+			 * the chat path. The harness Prompt Cue injector subscribes to
+			 * this hook to prepend cues from the assistant's harness profile.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param string $system_prompt The system prompt as resolved so far.
+			 * @param int    $assistant_id  Assistant post ID (0 if none).
+			 * @param array  $context       Surface context: { surface: 'rest_chat', request: WP_REST_Request }.
+			 */
+			$assistant_config['system_prompt'] = (string) apply_filters(
+				'wp_mcp_ai_resolved_system_prompt',
+				isset( $assistant_config['system_prompt'] ) ? (string) $assistant_config['system_prompt'] : '',
+				isset( $assistant_id ) ? (int) $assistant_id : 0,
+				array(
+					'surface' => 'rest_chat',
+					'request' => $request,
+				)
+			);
+
 			// If additional_tools are provided (for context-specific tools like research pages), merge them into the assistant's tools.
 			$additional_tools = $request->get_param( 'additional_tools' );
 			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
@@ -3518,6 +3549,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
+					// G8 Phase 2 — emit a `memory_event` SSE frame mid-stream
+					// when the tool that just ran touched the agent-memory
+					// subsystem, so the chat client can announce a transient
+					// "🧠 Used / saved long-term memory." toast immediately
+					// instead of waiting for the assistant message to render.
+					$memory_event_action = $this->classify_memory_tool_action( $tool_name );
+					if ( null !== $memory_event_action ) {
+						$this->send_sse_event(
+							'memory_event',
+							array(
+								'action'    => $memory_event_action,
+								'tool_name' => $tool_name,
+								'tool_id'   => $tool_call_id,
+							)
+						);
+					}
+
 					// Create full tool message for frontend.
 					// JSON-encode the content to match the non-streaming path format.
 					// This ensures consistent handling in the JavaScript SSE processor.
@@ -4047,6 +4095,44 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->send_sse_done();
 
 			$this->finish_sse();
+		}
+
+		/**
+		 * Classify a tool name as a memory-retrieving / memory-storing op.
+		 *
+		 * Mirrors the JS lists in `assets/js/chat-memory-drawer.js`. Used by the
+		 * SSE streaming path to emit `memory_event` frames mid-stream so the
+		 * chat client can announce a "🧠 Memory" toast as soon as the tool runs
+		 * (G8 Phase 2), rather than waiting for the assistant bubble to render.
+		 *
+		 * @since 1.1.14
+		 *
+		 * @param string $tool_name OpenAI-style tool function name.
+		 * @return string|null 'retrieved' / 'stored' / null when the tool is not
+		 *                     a memory tool.
+		 */
+		protected function classify_memory_tool_action( $tool_name ) {
+			if ( ! is_string( $tool_name ) || '' === $tool_name ) {
+				return null;
+			}
+			$retrieve_tools = array(
+				'recall_memory',
+				'wake_up_context',
+				'semantic_context_search',
+				'retrieve_agent_memory',
+			);
+			$store_tools    = array(
+				'store_agent_context',
+				'update_agent_memory',
+				'capture_memory',
+			);
+			if ( in_array( $tool_name, $retrieve_tools, true ) ) {
+				return 'retrieved';
+			}
+			if ( in_array( $tool_name, $store_tools, true ) ) {
+				return 'stored';
+			}
+			return null;
 		}
 
 		/**
@@ -8196,7 +8282,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return '';
 			}
 
-			return $wpdb->prefix . 'jet_cct_' . $slug;
+			return $wpdb->prefix . 'jet-cct-' . $slug;
 		}
 
 		/**
@@ -8423,7 +8509,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-			// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant slug.
+			// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant slug.
 			$table = esc_sql( $this->get_transcript_table_name() );
 
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql() above.

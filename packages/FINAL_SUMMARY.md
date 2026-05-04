@@ -95,15 +95,27 @@ Package candidates were evaluated against these industry-standard criteria
 
 ## Additional Candidates Identified (Future Work)
 
-These files scored 6–8/10 on portability but require more refactoring
-(UI coupling, jQuery dependencies, or need splitting):
+> **Status update (2026-05-03):** The Tier 5 cohort below was extracted in a follow-up PR.
+> The "Future Work" table now reflects only the genuinely-deferred candidates.
+
+### ✅ Tier 5 — Shipped 2026-05-03 (5 packages)
+
+| File | LOC | Package | Notes |
+|------|-----|---------|-------|
+| `client-tools.js` | 249 | [`nvoos-client-tools`](./nvoos-client-tools/) | Browser-AI tool registry; pipeline factory injectable |
+| `chat-memory-service.js` | 379 | [`nvoos-chat-memory`](./nvoos-chat-memory/) | REST proxy for `/mcp-ai/v1/chat-memory/*`; endpoints + headers via `configure()` |
+| `chat-attachments-service.js` | 589 | [`nvoos-attachments`](./nvoos-attachments/) | 17 file-validation/segment helpers; pure functions over plain data |
+| `cron-status-service.js` | 498 | [`nvoos-cron-status`](./nvoos-cron-status/) | SSE-first with REST polling fallback; SSE adapter + job bus injected |
+| `chat-transcription-service.js` | 782 | [`nvoos-transcription`](./nvoos-transcription/) | MediaRecorder pipeline; CSS class + selector configurable |
+
+### ⏳ Still deferred
 
 | File | LOC | Candidate Package | Blocker |
 |------|-----|------------------|---------|
-| `chat-audio-service.js` | 2112 | `nvoos-audio-recorder` + `nvoos-speech-synthesis` | Needs splitting into 2–3 packages |
-| `chat-transcription-service.js` | 779 | `nvoos-transcription` | Depends on chat state object |
-| `chat-attachments-service.js` | 586 | `nvoos-file-validator` | Validation logic good; rendering is WP-coupled |
-| `cron-status-service.js` | 485 | `nvoos-job-status` | High value; needs SSE/polling abstraction |
+| `chat-audio-service.js` | 2112 | `nvoos-audio-recorder` + `nvoos-speech-synthesis` | Already partially covered by `nvoos-audio`; remaining bits need splitting into 2–3 packages |
+| `chat-memory-drawer.js` | 1299 | `nvoos-chat-memory-ui` | Depends on `nvoos-chat-memory`; may need a UI-vs-state split |
+| `chat-ui-utilities-service.js` | 802 | *(fold into `nvoos-dom-batcher@next`)* | Substantially overlaps with the existing `nvoos-dom-batcher` — extending wins over duplicate publishing |
+| `ajax-error-service.js` | 437 | `nvoos-error-toaster` | jQuery dependency — needs full rewrite |
 | `accessibility-enhancements.js` | 503 | `nvoos-a11y` | jQuery dependency |
 
 ---

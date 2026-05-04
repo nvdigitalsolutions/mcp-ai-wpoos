@@ -57,7 +57,14 @@ import './chat-audio-service.js';
 import './chat-attachments-service.js';
 // eslint-disable-next-line no-unused-vars
 import './chat-transcription-service.js';
+// eslint-disable-next-line no-unused-vars
+import './chat-memory-service.js';
 
 // 5. Main chat application (depends on all above)
 // eslint-disable-next-line no-unused-vars
 import './chat.js';
+
+// 6. Memory drawer UI (depends on chat-memory-service and chat.js;
+//    auto-attaches to initialised chat containers when available).
+// eslint-disable-next-line no-unused-vars
+import './chat-memory-drawer.js';

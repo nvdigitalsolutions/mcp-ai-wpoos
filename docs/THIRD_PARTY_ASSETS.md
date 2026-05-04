@@ -93,6 +93,150 @@ npm update @neplex/vectorizer
 
 ---
 
+### Konva (2D Canvas Framework)
+
+**Version:** 9.3.16
+**Location:** `assets/js/vendor/konva/konva-9.3.16.min.js`
+**Source:** https://github.com/konvajs/konva
+**License:** MIT
+**Used By:** Markup subsystem (interactive canvas overlays in chat UI), `addons/canvas/` rendering helpers.
+
+**Update Process:**
+
+```bash
+# Pin to a specific Konva release on the unpkg CDN, then commit locally:
+curl -L "https://unpkg.com/konva@<NEW_VERSION>/konva.min.js" \
+  -o assets/js/vendor/konva/konva-<NEW_VERSION>.min.js
+# Update the constant referencing the file (e.g. WP_MCP_AI_KONVA_VERSION) and remove the old version.
+```
+
+---
+
+### @strudel/web (Live-Coding Music Engine — Algorave addon)
+
+**Version:** 1.2.5
+**Location:** `addons/algorave/assets/js/vendor/strudel/strudel-web-1.2.5.js` and the SharedWorker companion `addons/algorave/assets/js/vendor/strudel/assets/clockworker-ZDiUtESR.js`
+**Source:** https://github.com/tidalcycles/strudel
+**License:** AGPL-3.0
+**Used By:** `addons/algorave/` pattern engine (Strudel REPL embedded in NV oOS).
+
+**Update Process:**
+
+```bash
+# Inside addons/algorave/:
+npm install @strudel/web@<NEW_VERSION>
+cp node_modules/@strudel/web/dist/index.js \
+   assets/js/vendor/strudel/strudel-web-<NEW_VERSION>.js
+cp node_modules/@strudel/web/dist/assets/clockworker-*.js \
+   assets/js/vendor/strudel/assets/
+# Bump NVOOS_ALGORAVE_STRUDEL_VERSION in addons/algorave/nvoos-algorave.php
+```
+
+**Note:** Strudel is a JavaScript port of TidalCycles by Felix Roos and contributors. AGPL applies to the bundled JS file as redistributed.
+
+---
+
+### Cytoscape stack (Graph Rendering — Graphify addon)
+
+| Library | Version | Location | License | Source |
+|---------|---------|----------|---------|--------|
+| Cytoscape | bundled minified build (© 2016–2023 The Cytoscape Consortium) | `addons/graphify/assets/vendor/cytoscape/cytoscape.min.js` | MIT | https://github.com/cytoscape/cytoscape.js |
+| cytoscape-fcose | bundled (UMD) | `addons/graphify/assets/vendor/cytoscape-fcose/cytoscape-fcose.js` | MIT | https://github.com/iVis-at-Bilkent/cytoscape.js-fcose |
+| cose-base | bundled (UMD) | `addons/graphify/assets/vendor/cose-base/cose-base.js` | MIT | https://github.com/iVis-at-Bilkent/cose-base |
+| layout-base | bundled (UMD) | `addons/graphify/assets/vendor/layout-base/layout-base.js` | MIT | https://github.com/iVis-at-Bilkent/layout-base |
+
+Each directory carries the upstream `LICENSE` file unmodified.
+
+**Update Process:**
+
+```bash
+# Inside addons/graphify/:
+npm install cytoscape cytoscape-fcose cose-base layout-base
+cp node_modules/cytoscape/dist/cytoscape.min.js                  assets/vendor/cytoscape/
+cp node_modules/cytoscape-fcose/cytoscape-fcose.js              assets/vendor/cytoscape-fcose/
+cp node_modules/cose-base/cose-base.js                          assets/vendor/cose-base/
+cp node_modules/layout-base/layout-base.js                      assets/vendor/layout-base/
+# Re-copy each LICENSE file alongside its bundle.
+```
+
+---
+
+### Cornerstone3D (Medical Imaging — `addons/cornerstone3d/`)
+
+| Package | Version | Location | License | Source |
+|---------|---------|----------|---------|--------|
+| @cornerstonejs/core | 1.86.1 | `addons/cornerstone3d/assets/cornerstone/cornerstone-core.esm.js` | MIT | https://github.com/cornerstonejs/cornerstone3D |
+| @cornerstonejs/tools | 1.86.1 | `addons/cornerstone3d/assets/cornerstone/cornerstone-tools.esm.js` | MIT | https://github.com/cornerstonejs/cornerstone3D |
+| @cornerstonejs/dicom-image-loader | 1.86.0 | `addons/cornerstone3d/assets/cornerstone/cornerstone-dicom-loader.esm.js` | MIT | https://github.com/cornerstonejs/cornerstone3D |
+| dicom-parser | 1.8.21 | `addons/cornerstone3d/assets/cornerstone/dicom-parser.esm.js` | MIT | https://github.com/cornerstonejs/dicomParser |
+| xmlbuilder2 | 3.0.2 | `addons/cornerstone3d/assets/cornerstone/xmlbuilder2.esm.js` | MIT | https://github.com/oozcitak/xmlbuilder2 |
+
+The bundles are pre-built ESM modules redistributed verbatim with the original
+copyright headers intact. See `addons/cornerstone3d/README.md` for the
+update procedure.
+
+---
+
+### ExcelJS (Pro addon)
+
+**Version:** 4.4.0
+**Location:** `addons/pro/assets/vendor/exceljs/`
+**Source:** https://github.com/exceljs/exceljs
+**License:** MIT (© 2014–2019 Guyon Roche)
+**Used By:** Pro spreadsheet generation tools.
+
+**Update Process:**
+
+```bash
+# Inside addons/pro/:
+npm update exceljs
+# Run the Pro vendor-bundling script that mirrors node_modules/exceljs/ into assets/vendor/exceljs/.
+```
+
+---
+
+### Sharp (Pro addon)
+
+**Version:** 0.33.5
+**Location:** `addons/pro/assets/vendor/sharp/` (with platform-specific binaries under `node_modules/@img/sharp-*`)
+**Source:** https://github.com/lovell/sharp
+**License:** Apache-2.0 (© Lovell Fuller and contributors)
+**Used By:** High-performance image processing (resize, convert, optimize) for the Pro media toolkit.
+
+**Update Process:**
+
+```bash
+# Inside addons/pro/:
+npm install sharp@<NEW_VERSION> --legacy-peer-deps
+# Re-bundle assets/vendor/sharp/ via the Pro packaging script. Sharp ships
+# platform-specific native binaries — Linux x64 is pre-packaged; other
+# platforms install via `npm install` on the host.
+```
+
+---
+
+### Pro addon vendored JavaScript (full list)
+
+`addons/pro/assets/vendor/` contains hand-vendored copies of every npm package
+declared in `addons/pro/package.json`. Each subdirectory carries its own
+`LICENSE` (or `package.json` with a `license` field). The complete index —
+upstream URL, version, copyright holder — is maintained in the project-wide
+[`CREDITS.md`](../CREDITS.md) at the repository root.
+
+When adding or updating any Pro vendor library:
+
+1. Update `addons/pro/package.json` and run `npm install --legacy-peer-deps`.
+2. Re-bundle into `addons/pro/assets/vendor/<name>/` (the existing build
+   step copies `node_modules/<name>/` minus tests and the upstream node
+   binaries that are excluded from distribution).
+3. Append / update the matching row in `CREDITS.md`.
+4. Append / update the matching row in the **Pro Packages** admin settings
+   page (`addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php`)
+   if the package is user-relevant — that page is the in-product credits
+   surface for Pro npm packages.
+
+---
+
 ## Maintenance Schedule
 
 **Quarterly Review (Every 3 Months):**
@@ -200,6 +344,14 @@ All bundled libraries must be:
 - DOMPurify: MPL-2.0 OR Apache-2.0 ✅
 - @microsoft/fetch-event-source: MIT ✅
 - @neplex/vectorizer: MIT ✅
+- Konva: MIT ✅
+- @strudel/web (algorave addon): AGPL-3.0 ✅ — bundled into the algorave addon ZIP only; AGPL applies to that bundled file
+- Cytoscape + cytoscape-fcose / cose-base / layout-base (graphify addon): MIT ✅
+- Cornerstone3D + dicom-parser + xmlbuilder2 (cornerstone3d addon): MIT ✅
+- ExcelJS (Pro addon): MIT ✅
+- Sharp (Pro addon): Apache-2.0 ✅
+
+For the canonical, repo-wide cross-reference of every third-party resource (PHP, JS, fonts, bundled skills, methodology), see [`CREDITS.md`](../CREDITS.md) at the repository root.
 
 ---
 
@@ -285,6 +437,7 @@ npm dedupe
 
 ## Changelog
 
+- **2026-05**: Expanded coverage to include Konva, @strudel/web (algorave), Cytoscape stack (graphify), Cornerstone3D (cornerstone3d), ExcelJS, Sharp; added pointer to root-level `CREDITS.md` as the canonical cross-reference for **all** third-party resources (PHP + JS + fonts + bundled skills).
 - **2026-01**: Migrated Chart.js from CDN to local bundle
 - **2026-01**: Added automated Dependabot monitoring
 - **2025-12**: Initial document created

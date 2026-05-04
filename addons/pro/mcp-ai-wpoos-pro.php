@@ -542,6 +542,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Skill Manager (always enabled - provides skill upload, install, and editor UI).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/skills-manager-init.php';
 
+		// Load Pro Harness Layer H — fine-tune curriculum exporter (always enabled when harness subsystem is active).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/harness-init.php';
+
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
@@ -652,6 +655,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Register Pro tool categories for recommendations.
 		add_filter( 'wp_mcp_ai_tool_categories', 'wp_mcp_ai_pro_tool_categories', 20 );
+
+		// Load Pro slash commands.
+		$pro_slash_init = WP_MCP_AI_PRO_PATH . 'includes/slash-commands/slash-commands-init.php';
+		if ( file_exists( $pro_slash_init ) ) {
+			require_once $pro_slash_init;
+		}
 
 		/**
 		 * Fires after Open Operator System Pro has completed initialization.

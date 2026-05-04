@@ -2,7 +2,7 @@
 
 > **Comprehensive reference for all action and filter hooks in the NV oOS plugin.**
 > Use hooks to extend, customize, or integrate with the plugin without modifying core code.
-> Last reviewed: April 2026.
+> Last reviewed: May 2026.
 
 ---
 
@@ -23,6 +23,9 @@
 13. [Video Generation Hooks](#video-generation-hooks)
 14. [Erlang C & Queue Operations Hooks](#erlang-c--queue-operations-hooks)
 15. [Markup Subsystem Hooks](#markup-subsystem-hooks)
+16. [LLM Harnessing Hooks](#llm-harnessing-subsystem-hooks)
+17. [Chat Memory Bridge Hooks](#chat-memory-bridge-hooks)
+18. [Transcript Mining Hooks](#transcript-mining-hooks)
 
 ---
 
@@ -1029,3 +1032,175 @@ Mutates the artifacts produced by `WP_MCP_AI_Markup_Rasterizer::rasterize()` bef
 
 ### Filter: `wp_mcp_ai_recent_activity_types`
 Not markup-specific, but the markup-init bootstrap appends `markup_created`, `markup_submitted`, `markup_validated`, `markup_completed`, `markup_cancelled`, `markup_invalid`, and `markup_tool_error` to this list so the activity feed surfaces markup events when logging is enabled.
+
+---
+
+## LLM Harnessing Subsystem Hooks
+
+The LLM harnessing subsystem (`includes/harness/`) exposes hooks for every layer so addons can override prompt selection, scoring, retrieval ranking, and PII filtering without touching the base implementation.
+
+### Action: `wp_mcp_ai_register_prompt_cues`
+
+Fires the first time the `WP_MCP_AI_Prompt_Cue_Library` is touched, after the seven default cues are seeded. Register additional cue templates here.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$library` | `WP_MCP_AI_Prompt_Cue_Library` | Library singleton. Call `register()` to add cues. |
+
+```php
+add_action( 'wp_mcp_ai_register_prompt_cues', function ( $library ) {
+    $library->register( array(
+        'slug'         => 'show_your_work',
+        'label'        => 'Show Your Work',
+        'description'  => 'Require explicit derivation for math problems.',
+        'template'     => 'For every numeric step, show the derivation, not just the result.',
+        'task_classes' => array( 'math' ),
+    ) );
+} );
+```
+
+### Filter: `wp_mcp_ai_select_prompt_cue`
+
+Selects the cue slug applied for a given task class. Return an empty string to apply no cue.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$cue_slug` | `string` | Default cue slug (first registered cue for the task class). |
+| `$task_class` | `string` | Task class slug (`math`, `code`, `qa`, `rag`, `research`, `agentic`, `general`). |
+| `$assistant_id` | `int` | Assistant post ID, or `0` for global. |
+| `$model` | `string` | Model identifier (e.g. `gpt-4o`). |
+
+### Filter: `wp_mcp_ai_harness_profile`
+
+Mutates the resolved per-assistant harness profile after sanitization. Use this to enforce site-wide policy (e.g. force `cost_ceiling_usd` to a fixed value).
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$profile` | `array` | Sanitized harness profile. |
+| `$assistant_id` | `int` | Assistant post ID (`0` = global). |
+
+### Filter: `wp_mcp_ai_harness_tool_score`
+
+Mutates the score the Tool Router computes for a candidate tool against a task class. Pro overrides this with a learned model.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$score` | `float` | Default score from the base scoring rules. |
+| `$tool` | `WP_MCP_AI_Tool_Interface` | Tool instance. |
+| `$task_class` | `string` | Task class. |
+| `$assistant_prefs` | `array` | Per-assistant tool preferences (slug → weight). |
+| `$preset_weights` | `array` | Resolved preset-family weight map (`preset_slug → float [-5, 5]`). |
+
+### Filter: `wp_mcp_ai_harness_eval_generator`
+
+Supplies the eval generator callable used by the eval scheduler to produce test cases for a given eval suite. Return `null` (the default) to skip the suite without logging an error.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$generator` | `callable\|null` | Default `null` — no built-in generator; Pro registers its own. |
+| `$suite_slug` | `string` | Eval suite slug. |
+| `$assistant_id` | `int` | Assistant post ID. |
+
+### Action: `wp_mcp_ai_harness_eval_tick`
+
+WP-Cron action hook fired by `WP_MCP_AI_Harness_Eval_Scheduler` on its daily schedule. Receives no arguments; the scheduler discovers eligible assistants internally and dispatches suites via `wp_mcp_ai_harness_eval_generator`.
+
+---
+
+## Chat Memory Bridge Hooks
+
+The chat-client memory bridge (`WP_MCP_AI_REST_Chat_Memory_Controller` + `assets/js/chat-memory-drawer.js`) exposes hooks so developers can gate or modify memory bridge behaviour.
+
+### Filter: `wp_mcp_ai_chat_memory_enabled`
+
+Site-wide kill-switch for the chat-client memory bridge. Return `false` to disable all `/mcp-ai/v1/chat-memory/*` routes and the Memory Drawer for every user.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$enabled` | `bool` | Default `true`. |
+| `$user_id` | `int` | The requesting user ID (available from v1.x context). |
+
+```php
+// Disable chat memory on GDPR opt-out.
+add_filter( 'wp_mcp_ai_chat_memory_enabled', function ( $enabled, $user_id ) {
+    return ! user_has_opted_out_of_memory( $user_id );
+}, 10, 2 );
+```
+
+---
+
+## Transcript Mining Hooks
+
+The retroactive transcript mining subsystem (`WP_MCP_AI_Transcript_Mining_Job` + `mine_agent_memory` `transcripts` source) exposes filters for session selection, message processing, and de-duplication.
+
+### Filter: `wp_mcp_ai_mine_transcripts_sessions`
+
+Mutates the session list before retroactive transcript mining begins. Useful for excluding specific session types (e.g. guest sessions) or injecting additional keys.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$sessions` | `array` | Session key list (may include `'__auto__'` sentinel). |
+| `$query_args` | `array` | Raw `transcript_query` args from the job or tool call. |
+
+### Filter: `wp_mcp_ai_mine_transcripts_session_messages`
+
+Mutates the raw message array for a session before item extraction. Use this for redaction or filtering.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$messages` | `array` | Message objects for the session. |
+| `$session_key` | `string` | Session key. |
+
+### Filter: `wp_mcp_ai_mine_transcripts_dedupe_scan_limit`
+
+Overrides the number of most-recent memories scanned for de-duplication during `mine_agent_memory` with `source=transcripts`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$limit` | `int` | Default `1000`. |
+
+### Filter: `wp_mcp_ai_pro_curriculum_per_case_char_cap`
+
+(Pro) Overrides the maximum character count for a single fine-tune curriculum case exported by `WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$cap` | `int` | Default `16000`. |
+| `$suite_slug` | `string` | Eval suite slug. |
+
+### Filter: `wp_mcp_ai_retrieval_passages`
+
+Mutates the final ranked passages produced by `WP_MCP_AI_Retrieval_Harness::retrieve()` before they leave the harness. Useful for deduplicating against an external index or enforcing per-passage redaction.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$passages` | `array` | Top-k passages (each with `text`, `source`, `score`, `freshness`, `citation`). |
+| `$query` | `string` | Original query string. |
+| `$scope` | `array` | Scope hash (`wing`, `room`, `assistant_id`, `task_class`). |
+| `$context` | `array` | Tool execution context. |
+
+### Filter: `wp_mcp_ai_retrieval_claim_supported`
+
+Per-sentence predicate used by `WP_MCP_AI_Retrieval_Harness::verify_citations()`. Default implementation requires a shared 5-gram between the sentence and at least one passage. Override to substitute a semantic check.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$is_supported` | `bool` | Default decision. |
+| `$sentence` | `string` | Sentence under test. |
+| `$passages` | `array` | Passage list. |
+
+### Filter: `wp_mcp_ai_pii_filter_patterns`
+
+Adds or replaces the regex patterns used by `WP_MCP_AI_Pii_Filter::scrub()`. Each entry is an array of `[ regex, replacement_token ]`. Defaults cover emails, phones, SSNs, credit cards, and common API key prefixes.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$patterns` | `array` | Default patterns. |
+
+```php
+add_filter( 'wp_mcp_ai_pii_filter_patterns', function ( $patterns ) {
+    // Redact internal ticket IDs before persistence.
+    $patterns[] = array( '/JIRA-\d{3,}/', '[REDACTED_TICKET]' );
+    return $patterns;
+} );
+```

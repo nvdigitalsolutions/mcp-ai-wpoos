@@ -65,3 +65,4 @@ Before opening a PR that adds or edits a `*.agent.md` file, verify:
 - [`CLAUDE.md`](../../CLAUDE.md) — Claude Code per-turn context (PHP compat, naming, security, tool patterns, architecture).
 - [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md) — Copilot repo-level context, including the Multi-Agent Awareness block.
 - [`.context/templates/agent-file-template.md`](../../.context/templates/agent-file-template.md) — empty canonical template.
+- [`.zed/settings.json`](../../.zed/settings.json) + [`.zed/README.md`](../../.zed/README.md) — Zed editor mirror of this roster as native agent profiles. If you change a `tools:` line below, update the matching profile in `.zed/settings.json` in the same PR.

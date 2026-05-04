@@ -3355,3 +3355,334 @@
     background-color: transparent;
     padding: 0;
 }
+
+/* ============================================================
+ * Memory Drawer (Phase 3)
+ * Side panel + toggle button + per-message badge + ARIA toasts.
+ * ============================================================ */
+
+.wp-mcp-ai-memory-toggle {
+    background: transparent;
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+    margin-left: 8px;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wp-mcp-ai-memory-toggle:hover,
+.wp-mcp-ai-memory-toggle:focus-visible {
+    background: rgba(0, 0, 0, 0.05);
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.4);
+}
+
+.wp-mcp-ai-memory-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(380px, 100%);
+    background: #fff;
+    border-left: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+    padding: 16px;
+    overflow: auto;
+    z-index: 20;
+    transform: translateX(100%);
+    transition: transform 200ms ease;
+}
+
+.wp-mcp-ai-memory-drawer.is-open {
+    transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wp-mcp-ai-memory-drawer {
+        transition: none;
+    }
+}
+
+.wp-mcp-ai-memory-drawer__close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.wp-mcp-ai-memory-drawer__heading {
+    margin: 0 0 12px;
+    font-size: 16px;
+    padding-right: 32px;
+}
+
+.wp-mcp-ai-memory-drawer__tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    margin-bottom: 12px;
+}
+
+.wp-mcp-ai-memory-drawer__tab {
+    background: transparent;
+    border: 0;
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.wp-mcp-ai-memory-drawer__tab.is-active {
+    border-bottom-color: #2271b1;
+    font-weight: 600;
+}
+
+.wp-mcp-ai-memory-drawer__filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.wp-mcp-ai-memory-drawer__query {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    border-radius: 4px;
+}
+
+.wp-mcp-ai-memory-drawer__refresh {
+    padding: 6px 10px;
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    background: #f6f7f7;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.wp-mcp-ai-memory-drawer__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.wp-mcp-ai-memory-drawer__empty,
+.wp-mcp-ai-memory-drawer__error,
+.wp-mcp-ai-memory-drawer__loading {
+    margin: 12px 0;
+    font-size: 13px;
+    color: #50575e;
+}
+
+.wp-mcp-ai-memory-drawer__error {
+    color: #b32d2e;
+}
+
+.wp-mcp-ai-memory-item {
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.wp-mcp-ai-memory-item__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.wp-mcp-ai-memory-item__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.wp-mcp-ai-memory-item__meta {
+    font-size: 11px;
+    color: #50575e;
+}
+
+.wp-mcp-ai-memory-item__content {
+    margin: 6px 0;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.wp-mcp-ai-memory-item__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0;
+}
+
+.wp-mcp-ai-memory-item__tag {
+    background: #f0f0f1;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+.wp-mcp-ai-memory-item__actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.wp-mcp-ai-memory-item__edit,
+.wp-mcp-ai-memory-item__delete,
+.wp-mcp-ai-memory-item__edit-save,
+.wp-mcp-ai-memory-item__edit-cancel {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    background: #f6f7f7;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.wp-mcp-ai-memory-item__delete {
+    color: #b32d2e;
+}
+
+.wp-mcp-ai-memory-item__edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wp-mcp-ai-memory-item__edit-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.wp-mcp-ai-memory-item__edit-title,
+.wp-mcp-ai-memory-item__edit-content {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    border-radius: 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.wp-mcp-ai-memory-item__edit-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.wp-mcp-ai-memory-drawer__scope-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wp-mcp-ai-memory-drawer__scope-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.wp-mcp-ai-memory-drawer__scope-form input[type="text"] {
+    padding: 6px 8px;
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    border-radius: 4px;
+}
+
+.wp-mcp-ai-memory-drawer__scope-form button[type="submit"] {
+    padding: 6px 10px;
+    border: 1px solid #2271b1;
+    background: #2271b1;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+/* In-chat "🧠 Memory" badge (G3). Public API:
+   window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge(bubble, toolCalls). */
+.wp-mcp-ai-memory-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(34, 113, 177, 0.08);
+    color: #2271b1;
+    border: 1px solid rgba(34, 113, 177, 0.3);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0 4px;
+    vertical-align: middle;
+}
+
+.wp-mcp-ai-memory-badge__icon {
+    font-size: 11px;
+}
+
+/* Page-level ARIA-live toast region. */
+.wp-mcp-ai-memory-toasts {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100000;
+    pointer-events: none;
+}
+
+.wp-mcp-ai-memory-toast {
+    background: #1d2327;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    max-width: 320px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: wp-mcp-ai-memory-toast-fade 4s ease forwards;
+    pointer-events: auto;
+}
+
+.wp-mcp-ai-memory-toast--success {
+    background: #00a32a;
+}
+
+.wp-mcp-ai-memory-toast--error {
+    background: #b32d2e;
+}
+
+@keyframes wp-mcp-ai-memory-toast-fade {
+    0%   { opacity: 0; transform: translateY(8px); }
+    10%  { opacity: 1; transform: translateY(0); }
+    85%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wp-mcp-ai-memory-toast {
+        animation: none;
+        opacity: 1;
+    }
+}
+
+/* The chat container needs `position: relative` for the absolutely-positioned
+ * memory drawer (above) to anchor inside the chat surface. Kept here, next
+ * to the drawer rules, so the relationship is obvious to future editors. */
+.wp-mcp-ai-chat__container {
+    position: relative;
+}

@@ -1749,6 +1749,20 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$memory_files  = isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) ? $assistant_config['memory_files'] : array();
 		$vector_store  = isset( $assistant_config['vector_store_id'] ) ? sanitize_text_field( $assistant_config['vector_store_id'] ) : '';
 
+		/**
+		 * Apply the harness Prompt Cue injector to the embedded-config
+		 * system prompt so that WebLLM-style clients also receive the cue
+		 * augmentation when their assistant has the harness profile turned on.
+		 *
+		 * @since 1.4.0
+		 */
+		$system_prompt = (string) apply_filters(
+			'wp_mcp_ai_resolved_system_prompt',
+			(string) $system_prompt,
+			(int) $assistant_id,
+			array( 'surface' => 'embedded_config' )
+		);
+
 		// Build professional prompt if a profession ID was provided.
 		$professional_prompt = '';
 		if ( $profession_id > 0 && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {

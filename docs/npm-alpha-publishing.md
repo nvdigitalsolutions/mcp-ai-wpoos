@@ -4,17 +4,34 @@ This guide explains how to publish alpha versions of the NPM packages from this 
 
 ## 📦 Packages
 
-Nine standalone NPM packages are published from this repository:
+Seventeen standalone NPM packages are published from this repository:
 
+**Tier 1 — Core**
 - **@nvdigitalsolutions/nvoos-storage** - Async storage utilities with Web Worker optimization
 - **@nvdigitalsolutions/nvoos-markdown** - Security-hardened markdown renderer with XSS protection
 - **@nvdigitalsolutions/nvoos-events** - Real-time event coordination with SSE client and job event bus
+
+**Tier 2 — Extended**
 - **@nvdigitalsolutions/nvoos-http-client** - Resilient HTTP client with retry and exponential backoff
 - **@nvdigitalsolutions/nvoos-clipboard** - Clipboard copy utilities with Clipboard API fallback
 - **@nvdigitalsolutions/nvoos-offline-sync** - IndexedDB-backed offline-first sync manager
+
+**Tier 3 — Chat UI**
 - **@nvdigitalsolutions/nvoos-slash-commands** - Slash command system with fuzzy-search autocomplete
 - **@nvdigitalsolutions/nvoos-audio** - Browser audio I/O: TTS, STT, translation, and voice chat with VAD
 - **@nvdigitalsolutions/nvoos-dom-batcher** - RAF DOM batcher, scroll batcher, and streaming UI utilities
+
+**Tier 4 — Browser AI Runtime**
+- **@nvdigitalsolutions/nvoos-llm-worker** - Web Worker manager for non-blocking LLM operations
+- **@nvdigitalsolutions/nvoos-model-loader** - Progressive 4-stage AI model loading UI
+- **@nvdigitalsolutions/nvoos-transformers-client** - HuggingFace Transformers.js task wrapper
+
+**Tier 5 — Chat Services**
+- **@nvdigitalsolutions/nvoos-client-tools** - Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio)
+- **@nvdigitalsolutions/nvoos-chat-memory** - Promise-based REST client for an AI chat memory bridge
+- **@nvdigitalsolutions/nvoos-attachments** - File attachment helpers: type detection, validation, normalisation
+- **@nvdigitalsolutions/nvoos-cron-status** - SSE-first cron/job status monitor with REST polling fallback
+- **@nvdigitalsolutions/nvoos-transcription** - MediaRecorder-based audio recording + tool-call transcription pipeline
 
 All packages are published under the `@nvdigitalsolutions` NPM organization.
 
@@ -51,7 +68,7 @@ The easiest way to publish an alpha version is using the provided script:
 # 1. Validate the version format
 # 2. Check for uncommitted changes
 # 3. Update all package.json files
-# 4. Build all nine packages
+# 4. Build all seventeen packages
 # 5. Create a commit and tag
 # 6. Push the tag to trigger the GitHub Actions workflow
 ```
@@ -69,12 +86,12 @@ If you prefer to do it manually:
 
 ```bash
 # 1. Update package versions
-for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client nvoos-client-tools nvoos-chat-memory nvoos-attachments nvoos-cron-status nvoos-transcription; do
   (cd packages/$pkg && npm version 0.1.0-alpha.2 --no-git-tag-version)
 done
 
 # 2. Build all packages
-for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client nvoos-client-tools nvoos-chat-memory nvoos-attachments nvoos-cron-status nvoos-transcription; do
   (cd packages/$pkg && npm run build)
 done
 
@@ -112,6 +129,14 @@ After pushing an alpha tag:
    - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-slash-commands
    - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-audio
    - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-dom-batcher
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-llm-worker
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-model-loader
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-transformers-client
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-client-tools
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-chat-memory
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-attachments
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-cron-status
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-transcription
 
 ## 📥 Installing Alpha Versions
 
@@ -138,6 +163,18 @@ npm install @nvdigitalsolutions/nvoos-http-client@alpha \
 npm install @nvdigitalsolutions/nvoos-slash-commands@alpha \
             @nvdigitalsolutions/nvoos-audio@alpha \
             @nvdigitalsolutions/nvoos-dom-batcher@alpha
+
+# Install Tier 4 — Browser AI Runtime
+npm install @nvdigitalsolutions/nvoos-llm-worker@alpha \
+            @nvdigitalsolutions/nvoos-model-loader@alpha \
+            @nvdigitalsolutions/nvoos-transformers-client@alpha
+
+# Install Tier 5 — Chat Services
+npm install @nvdigitalsolutions/nvoos-client-tools@alpha \
+            @nvdigitalsolutions/nvoos-chat-memory@alpha \
+            @nvdigitalsolutions/nvoos-attachments@alpha \
+            @nvdigitalsolutions/nvoos-cron-status@alpha \
+            @nvdigitalsolutions/nvoos-transcription@alpha
 ```
 
 ## 🧪 Testing Alpha Packages
@@ -146,7 +183,7 @@ Before publishing, you can test the packages locally:
 
 ```bash
 # Build all packages
-for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client nvoos-client-tools nvoos-chat-memory nvoos-attachments nvoos-cron-status nvoos-transcription; do
   (cd packages/$pkg && npm run build)
 done
 

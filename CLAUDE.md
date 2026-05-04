@@ -75,6 +75,22 @@ Every code change must:
 - **ABSPATH guard**: Every non-root PHP file starts with `if ( ! defined( 'ABSPATH' ) ) { exit; }`
 - **Prepared queries**: Always `$wpdb->prepare()` — never string-concatenate SQL
 
+## Third-Party Attribution
+
+When a file is **derived from**, **heavily inspired by**, or **wraps** an upstream open-source project, add `@link` and `@credit` tags to the file-level PHPDoc:
+
+```php
+/**
+ * Class summary.
+ *
+ * @link    <upstream URL>
+ * @credit  <upstream project name> by <author> (<license>)
+ * @package WP_MCP_AI
+ */
+```
+
+The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
+
 ## Tool Implementation Pattern
 
 ```php
@@ -153,6 +169,14 @@ Pattern: class with `execute( $args, $flags, $context )` returning string/array/
 Registration via `$handler->register( 'name', array( 'handler' => ..., 'capability' => ..., 'aliases' => ... ) )`.
 Located in `includes/slash-commands/commands/`.
 
+### LLM Harnessing Subsystem
+
+Seven opt-in per-request layers (`includes/harness/`) that improve response quality without modifying existing tool behaviour. All layers are off by default and activated per-assistant via the **LLM Harness** metabox on the assistant edit screen. Harness profile stored in `_wp_mcp_ai_harness_profile` post meta (keys: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`). Pro Layer H (`addons/pro/includes/harness/`) exports fine-tune curricula as OpenAI JSONL — loaded via `addons/pro/includes/harness-init.php`. Key hooks: `wp_mcp_ai_register_prompt_cues`, `wp_mcp_ai_harness_profile`, `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_eval_generator`, `wp_mcp_ai_harness_eval_tick`. Reference: `docs/llm-harness.md`.
+
+### Chat-client Memory Bridge
+
+REST proxy (`WP_MCP_AI_REST_Chat_Memory_Controller`) exposes `/mcp-ai/v1/chat-memory/` (6 routes: preferences, wake-up, recall, store, audit, /{context_id}). JS service (`assets/js/chat-memory-service.js`) and Memory Drawer (`assets/js/chat-memory-drawer.js` — three tabs: Memories / Scope / Audit). The agentic loop emits `memory_event` SSE frames; the drawer handles them in real time. Two gates: site-wide filter `wp_mcp_ai_chat_memory_enabled` and per-user meta `wp_mcp_ai_chat_memory_enabled`. Endpoints localized via `window.wpMcpAiChat.memoryEndpoints`. Reference: `docs/features/memory/chat-client-integration.md`.
+
 ### SSE Streaming
 
 RFC 6202-compliant: `STREAMING_CHUNK_SIZE = 50`, `RETRY_INTERVAL_MS = 3000`.
@@ -208,6 +232,8 @@ test(scope): brief description
 | `.context/testing.md` | Writing PHPUnit tests |
 | `.context/pro-vs-base.md` | Base vs Pro decisions |
 | `docs/hooks-reference.md` | Working with plugin hooks |
+| `docs/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
+| `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
 
 ## OpenAI Schema Compatibility
 

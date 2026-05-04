@@ -164,6 +164,14 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
+		// Inject the chat-memory bridge endpoints so chat-memory-service.js can find them.
+		// Runs once per page (after each wp_localize_script call on this handle), so the data
+		// is available no matter which surface enqueued the bundle (block, shortcode, widget).
+		$memory_endpoints = self::get_chat_memory_endpoints_inline_script();
+		if ( '' !== $memory_endpoints ) {
+			wp_add_inline_script( self::SCRIPT_HANDLE, $memory_endpoints, 'after' );
+		}
+
 		// Register chat bubble assets (floating chat widget).
 		$bubble_script_relative = 'assets/js/chat-bubble.js';
 		$bubble_style_relative  = 'assets/css/chat-bubble.css';
@@ -999,7 +1007,23 @@ class WP_MCP_AI_Shortcode {
 			// Add assistant defaults (system_prompt, temperature) for client-side execution.
 			// This ensures embedded providers have access to the same defaults as server-side providers.
 			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
-				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+				$resolved_assistant_id = is_numeric( $assistant_id ) ? (int) $assistant_id : 0;
+
+				/**
+				 * Apply the harness Prompt Cue injector to the system prompt
+				 * pre-localised into the page render. This is the third
+				 * (initial) chat surface alongside the REST chat path and
+				 * embedded-config endpoint; running the same filter here
+				 * keeps the three surfaces in sync.
+				 *
+				 * @since 1.4.0
+				 */
+				$config['systemPrompt'] = (string) apply_filters(
+					'wp_mcp_ai_resolved_system_prompt',
+					(string) $assistant_config_for_provider['system_prompt'],
+					$resolved_assistant_id,
+					array( 'surface' => 'shortcode_bootstrap' )
+				);
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
@@ -2066,6 +2090,54 @@ class WP_MCP_AI_Shortcode {
 
 		$async_timeout_seconds = isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) : self::ASYNC_TOOL_TIMEOUT_DEFAULT;
 		return max( self::ASYNC_TOOL_TIMEOUT_MIN, $async_timeout_seconds ) * 1000;
+	}
+
+	/**
+	 * Build an inline JS snippet that augments the localized `wpMcpAiChat`
+	 * object with the chat-client ⇄ memory bridge endpoints.
+	 *
+	 * The snippet is appended after every `wp_localize_script( SCRIPT_HANDLE, 'wpMcpAiChat', ... )`
+	 * call in the plugin (block render, shortcode, Elementor widget, embedded
+	 * client), so the chat-memory-service.js can locate the REST routes.
+	 *
+	 * Returns an empty string when the user is not logged in (the bridge
+	 * disallows guest access) or when the kill-switch filter disables it.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @return string Inline JS snippet ready for wp_add_inline_script.
+	 */
+	public static function get_chat_memory_endpoints_inline_script() {
+		$user_id = get_current_user_id();
+		if ( $user_id <= 0 ) {
+			return '';
+		}
+
+		if (
+			class_exists( 'WP_MCP_AI_REST_Chat_Memory_Controller' )
+			&& ! WP_MCP_AI_REST_Chat_Memory_Controller::is_chat_memory_enabled( $user_id )
+		) {
+			return '';
+		}
+
+		$base = WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-memory' ) );
+		$base = esc_url_raw( $base );
+
+		$endpoints = array(
+			'preferences' => $base . '/preferences',
+			'wakeUp'      => $base . '/wake-up',
+			'recall'      => $base . '/recall',
+			'store'       => $base . '/store',
+			'audit'       => $base . '/audit',
+			'itemBase'    => $base . '/',
+		);
+
+		$json = wp_json_encode( $endpoints );
+		if ( false === $json ) {
+			return '';
+		}
+
+		return 'window.wpMcpAiChat = window.wpMcpAiChat || {}; window.wpMcpAiChat.memoryEndpoints = ' . $json . ';';
 	}
 
 	/**

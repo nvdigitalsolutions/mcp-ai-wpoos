@@ -164,6 +164,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Enable specialized tools for multi-agent coordination: create_agent_team (compose teams), delegate_to_agent (task delegation), and aggregate_agent_results (result merging). These tools allow AI assistants to orchestrate other AI assistants for complex workflows.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'section_agent_memory'            => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Agent Memory', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Control the chat-client long-term memory surface. When enabled, logged-in users can store and recall memories across sessions using the memory drawer in the chat interface.', 'mcp-ai-wpoos' ) . '</p>',
+				),
+				'enable_chat_memory'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Chat-Client Memory', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable long-term memory for the chat client', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allow logged-in users to use the long-term memory surface in the chat client. When disabled, the memory drawer, recall, and store endpoints are suppressed site-wide regardless of per-user preferences.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 				'profession_default_provider'     => array(
 					'type'        => 'select',
 					'label'       => __( 'Professions Default Provider', 'mcp-ai-wpoos' ),
@@ -1965,6 +1976,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_professions',
 				'enable_multi_agent_teams',
 				'enable_agent_coordination_tools',
+				'section_agent_memory', // Section header.
+				'enable_chat_memory',
 				'profession_default_provider',
 				'profession_default_model',
 				'profession_default_temperature',

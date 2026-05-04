@@ -272,6 +272,14 @@ require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 require_once WP_MCP_AI_PATH . 'includes/markup-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
+
+// ---------------------------------------------------------------------------
+// LLM Harnessing subsystem (Layers A-F: prompt cues, reasoning trace,
+// tool router scoring, retrieval facade, self-refine loop, memory scoping).
+// Behaviour-preserving by default — every layer is gated by a per-assistant
+// harness profile that ships in the "off" state.
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/harness/harness-init.php';
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';

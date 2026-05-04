@@ -309,6 +309,17 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
+## 🆕 May 2026 — LLM Harnessing GA, Slash Commands, Chat Memory Drawer, Transcript Mining, Pro Packages Tier 5
+
+### New and updated documents (May 3–4, 2026)
+
+- **[docs/llm-harness.md](llm-harness.md)** ⭐ **UPDATED** — LLM Harnessing Subsystem Layers A–H end-to-end reference, Quick Start, harness profile schema, all hooks, Pro Layer H curriculum export.
+- **[docs/features/memory/transcript-mining.md](features/memory/transcript-mining.md)** ⭐ **NEW** — Retroactive Transcript Mining: background job, REST API (3 endpoints), `mine_agent_memory` `transcripts` source, provenance metadata, de-duplication, filters, admin UI, PHPUnit coverage.
+- **[docs/features/memory/chat-client-integration.md](features/memory/chat-client-integration.md)** ⭐ **UPDATED** — G-series completion (G2 audit tab, G3 badge, G6 pagehide, G8 SSE frame, G11 export); two-gates section (`wp_mcp_ai_chat_memory_enabled` filter + per-user meta).
+- **[docs/features/slash-commands-guide.md](features/slash-commands-guide.md)** ⭐ **NEW** — Complete reference for all 24 base + 8 Pro slash commands with capability, aliases, and description. Replaces the dated Phase 1 guide for day-to-day reference.
+
+---
+
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
 
 ### WordPress.org Plugin Check Review Complete (January 31, 2026) ✅ **LATEST** ⭐

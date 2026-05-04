@@ -11774,6 +11774,11 @@
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
 
+            // Phase 2 — session-boot recall: prepend the wake-up system block to the
+            // first turn when the chat-memory bridge is available and enabled. The
+            // call is non-blocking and silently no-ops when the surface is disabled.
+            requestWakeUpContext(state);
+
             // Pre-load vector store metadata if the assistant has one configured.
             // This ensures the vector store status and file counts are immediately
             // available for the agentic workflow without waiting for the first tool call.
@@ -11784,6 +11789,62 @@
             // Mark container as initialized to prevent double-initialization
             container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
+    }
+
+    /**
+     * Phase 2 — session-boot recall.
+     *
+     * Calls the chat-memory bridge's wake-up endpoint to fetch a top-N
+     * memory block, then stashes it on `state.wakeUpSystemBlock` so the
+     * first outgoing chat turn can prepend it to the system prompt. Silent
+     * no-op when the bridge is unavailable, disabled, or returns nothing.
+     *
+     * @param {Object} state Chat widget state.
+     */
+    function requestWakeUpContext(state) {
+        try {
+            const memoryService = window.wpMcpAiChatMemory;
+            if (!memoryService || !memoryService.isAvailable || !memoryService.isAvailable()) {
+                return;
+            }
+
+            const cfg = state && state.config ? state.config : {};
+            const agentId = cfg.embeddedAssistantId || cfg.assistantId;
+            if (!agentId) {
+                return;
+            }
+
+            // Already loaded once for this widget session.
+            if (state.wakeUpSystemBlock) {
+                return;
+            }
+
+            memoryService
+                .wakeUp({
+                    agentId: agentId,
+                    wing: cfg.memoryWing || '',
+                    room: cfg.memoryRoom || ''
+                })
+                .then(function(response) {
+                    if (!response || typeof response !== 'object') {
+                        return;
+                    }
+                    const block = response.system_block
+                        || (response.data && response.data.system_block)
+                        || '';
+                    if (typeof block === 'string' && block.length > 0) {
+                        state.wakeUpSystemBlock = block;
+                    }
+                })
+                .catch(function(error) {
+                    // Soft-fail: log but never disrupt the chat.
+                    if (window.console && window.console.debug) {
+                        window.console.debug('[NV oOS] wake-up context skipped:', error && error.message);
+                    }
+                });
+        } catch (error) {
+            // Defensive: any unexpected throw must not block chat init.
+        }
     }
 
     function restoreConversationFromStorage(state) {
@@ -14224,6 +14285,21 @@
                             handleStatusEvent(state, data);
                         } else if (eventType === 'tool_execution') {
                             handleToolExecutionEvent(state, data);
+                        } else if (eventType === 'memory_event') {
+                            // G8 Phase 2 — mid-stream "🧠 Memory" toast.
+                            // The server emits this frame as soon as a memory
+                            // tool runs; the drawer's end-of-stream decorator
+                            // suppresses its own toast for the same turn.
+                            if (window.wpMcpAiChatMemoryDrawer
+                                && typeof window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent === 'function') {
+                                try {
+                                    window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent(data);
+                                } catch (e) {
+                                    if (window.console && console.warn) {
+                                        console.warn('[NV oOS] memory_event SSE handler failed:', e);
+                                    }
+                                }
+                            }
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
                         } else if (eventType === 'message' || !eventType) {
@@ -15309,6 +15385,14 @@
         const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
         let hasDisplayContent = hasDisplayText || hasDisplayAttachments;
         const hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
+
+        // Surface tool_calls on the display payload so appendMessage can render
+        // the "🧠 Memory" badge (chat-memory-drawer auto-wire). Restore path
+        // already does this at the assistantPayload-build site; this covers the
+        // live agentic-loop path.
+        if (hasToolCalls) {
+            assistantDisplay.tool_calls = message.tool_calls;
+        }
 
         if (!hasDisplayContent) {
             let fallbackText = '';
@@ -17240,6 +17324,23 @@
             // Attach capability flag badges if data is available
             const capabilityFlags = options && options.capabilityFlags ? options.capabilityFlags : null;
             attachCapabilityFlagBadges(entry, capabilityFlags);
+
+            // Auto-attach the "🧠 Memory" badge when this message's tool calls
+            // touched the agent-memory subsystem. The decorator is shipped by
+            // chat-memory-drawer.js (Phase 3) and is itself idempotent + a no-op
+            // when no relevant tool was called or when the drawer is disabled.
+            if (payload && Array.isArray(payload.tool_calls) && payload.tool_calls.length
+                && window.wpMcpAiChatMemoryDrawer
+                && typeof window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge === 'function') {
+                try {
+                    window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge(entry, payload.tool_calls);
+                } catch (e) {
+                    // Never let badge decoration break message rendering.
+                    if (window.console && console.warn) {
+                        console.warn('[NV oOS] memory badge decoration failed:', e);
+                    }
+                }
+            }
 
             // Auto-play speech if voice chat mode is active
             if (speechState && speechState.voiceChatModeActive) {
