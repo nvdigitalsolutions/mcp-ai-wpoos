@@ -87,7 +87,7 @@ class WP_MCP_AI_Tool_Replay_Workflow_Run implements WP_MCP_AI_Tool_Interface, WP
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos' ) );
 		}
