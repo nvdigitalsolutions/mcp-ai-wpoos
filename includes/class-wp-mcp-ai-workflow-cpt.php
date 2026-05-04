@@ -78,7 +78,7 @@ class WP_MCP_AI_Workflow_CPT {
 					'publish_posts'      => 'manage_options',
 					'read_private_posts' => 'manage_options',
 				),
-				'map_meta_cap'        => true,
+				'map_meta_cap'        => false,
 				'hierarchical'        => false,
 				'supports'            => array( 'title', 'editor', 'revisions', 'custom-fields' ),
 				'has_archive'         => false,
