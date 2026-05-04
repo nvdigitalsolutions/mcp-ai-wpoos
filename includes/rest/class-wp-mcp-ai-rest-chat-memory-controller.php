@@ -73,9 +73,26 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 	const SUMMARIZE_MAX_INPUT_BYTES = 16384;
 
 	/**
+	 * Apply the site-wide `enable_chat_memory` admin setting.
+	 *
+	 * Hooked to `wp_mcp_ai_chat_memory_enabled` at priority 5. When the admin
+	 * has disabled the feature via Orchestration → Settings, this overrides
+	 * the per-user preference and returns `false` for every user.
+	 *
+	 * @param bool $enabled Per-user enabled state.
+	 * @return bool
+	 */
+	public static function apply_site_setting( $enabled ) {
+		return $enabled && (bool) WP_MCP_AI_Settings_Registry::get_setting( 'enable_chat_memory', true );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function register_routes() {
+		if ( ! has_filter( 'wp_mcp_ai_chat_memory_enabled', array( 'WP_MCP_AI_REST_Chat_Memory_Controller', 'apply_site_setting' ) ) ) {
+			add_filter( 'wp_mcp_ai_chat_memory_enabled', array( 'WP_MCP_AI_REST_Chat_Memory_Controller', 'apply_site_setting' ), 5 );
+		}
 		register_rest_route(
 			self::REST_NAMESPACE,
 			'/chat-memory/preferences',
