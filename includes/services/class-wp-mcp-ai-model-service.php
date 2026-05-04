@@ -533,6 +533,7 @@ class WP_MCP_AI_Model_Service {
 				'deepseek-r1'   => 'DeepSeek R1 (Reasoning)',
 				'deepseek-v3'   => 'DeepSeek V3',
 				'qwen3'         => 'Qwen 3',
+				'qwen3.6'       => 'Qwen 3.6',
 				// Established models.
 				'llama3.3'      => 'Llama 3.3',
 				'llama3.2'      => 'Llama 3.2',
@@ -552,6 +553,7 @@ class WP_MCP_AI_Model_Service {
 				'gemma4:31b-cloud'   => 'Gemma 4 31B ☁ (Cloud)',
 				'qwen3.5:397b-cloud' => 'Qwen 3.5 397B ☁ (Cloud)',
 				'kimi-k2.5:cloud'    => 'Kimi K2.5 ☁ (Cloud)',
+				'kimi-k2.6:cloud'    => 'Kimi K2.6 ☁ (Cloud)',
 				'glm-5:cloud'        => 'GLM-5 ☁ (Cloud)',
 				'minimax-m2.7:cloud' => 'MiniMax M2.7 ☁ (Cloud)',
 				'gpt-oss:120b-cloud' => 'GPT-OSS 120B ☁ (Cloud)',
@@ -594,6 +596,9 @@ class WP_MCP_AI_Model_Service {
 			'qwen/qwen3-30b-a3b'                        => 'Qwen 3 30B A3B',
 			'qwen/qwen3-14b'                            => 'Qwen 3 14B',
 			'qwen/qwen3-8b'                             => 'Qwen 3 8B',
+			// Qwen 3.6 (latest Qwen release).
+			'qwen/qwen3.6-27b'                          => 'Qwen 3.6 27B',
+			'qwen/qwen3.6-35b-a3b'                      => 'Qwen 3.6 35B A3B (MoE)',
 			// Qwen 2.5 (coding and multilingual models).
 			'qwen/qwen3-coder-30b'                      => 'Qwen 3 Coder 30B',
 			'qwen/qwen2.5-coder-32b'                    => 'Qwen 2.5 Coder 32B',
