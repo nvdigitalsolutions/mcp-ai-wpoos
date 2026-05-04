@@ -956,10 +956,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					if ( '' !== $think_extracted ) {
 						// Only overwrite reasoning_content when none was already set.
 						if ( empty( $response['choices'][ $index ]['message']['reasoning_content'] ) ) {
-							// Sanitize the extracted reasoning text: strip any HTML tags that
+							// Sanitize the extracted reasoning text: strip all HTML tags that
 							// a model might embed inside its thinking block before it is
 							// stored or forwarded to the chat UI.
-							$response['choices'][ $index ]['message']['reasoning_content'] = wp_kses_post( trim( $think_extracted ) );
+							$response['choices'][ $index ]['message']['reasoning_content'] = wp_strip_all_tags( trim( $think_extracted ) );
 						}
 						$response['choices'][ $index ]['message']['content'] = trim( (string) $cleaned_content );
 						// Re-read cleaned content for the array conversion below.
