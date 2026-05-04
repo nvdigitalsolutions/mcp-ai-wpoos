@@ -483,8 +483,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->test_connection();
 
-		// Verify URL is correctly formed: http://localhost:1234/v1/models
-		// NOT: http://localhost:1234/v1/v1/models
+		// Verify URL is correctly formed: http://localhost:1234/v1/models, NOT http://localhost:1234/v1/v1/models.
 		$this->assertNotNull( $captured_url, 'URL should be captured' );
 		$this->assertStringEndsWith( '/v1/models', $captured_url, 'URL should end with /v1/models' );
 		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should NOT contain /v1/v1/ (double v1)' );
@@ -1835,14 +1834,29 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$callback_chunks   = array();
 
 		// Compose a minimal SSE body with two content chunks + [DONE].
-		$chunk1 = wp_json_encode( array(
-			'id'      => 'chatcmpl-stream1',
-			'choices' => array( array( 'delta' => array( 'content' => 'Hello' ), 'index' => 0 ) ),
-		) );
-		$chunk2 = wp_json_encode( array(
-			'id'      => 'chatcmpl-stream1',
-			'choices' => array( array( 'delta' => array( 'content' => ' world' ), 'index' => 0, 'finish_reason' => 'stop' ) ),
-		) );
+		$chunk1 = wp_json_encode(
+			array(
+				'id'      => 'chatcmpl-stream1',
+				'choices' => array(
+					array(
+						'delta' => array( 'content' => 'Hello' ),
+						'index' => 0,
+					),
+				),
+			)
+		);
+		$chunk2 = wp_json_encode(
+			array(
+				'id'      => 'chatcmpl-stream1',
+				'choices' => array(
+					array(
+						'delta'         => array( 'content' => ' world' ),
+						'index'         => 0,
+						'finish_reason' => 'stop',
+					),
+				),
+			)
+		);
 
 		$sse_body = "data: {$chunk1}\n\ndata: {$chunk2}\n\ndata: [DONE]\n\n";
 
@@ -1851,7 +1865,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( $sse_body, &$captured_payload ) {
 				$captured_payload = json_decode( $args['body'], true );
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'body'     => $sse_body,
 				);
 			},
@@ -1859,7 +1876,12 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			3
 		);
 
-		$messages = array( array( 'role' => 'user', 'content' => 'Hi' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
+		);
 
 		$result = $this->client->create_chat_completion(
 			$messages,
@@ -1911,39 +1933,72 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
-		$tc_chunk1 = wp_json_encode( array(
-			'choices' => array( array( 'delta' => array(
-				'tool_calls' => array( array(
-					'index'    => 0,
-					'id'       => 'call_abc',
-					'type'     => 'function',
-					'function' => array( 'name' => 'my_func', 'arguments' => '{"p' ),
-				) ),
-			), 'index' => 0 ) ),
-		) );
+		$tc_chunk1 = wp_json_encode(
+			array(
+				'choices' => array(
+					array(
+						'delta' => array(
+							'tool_calls' => array(
+								array(
+									'index'    => 0,
+									'id'       => 'call_abc',
+									'type'     => 'function',
+									'function' => array(
+										'name'      => 'my_func',
+										'arguments' => '{"p',
+									),
+								),
+							),
+						),
+						'index' => 0,
+					),
+				),
+			)
+		);
 
-		$tc_chunk2 = wp_json_encode( array(
-			'choices' => array( array( 'delta' => array(
-				'tool_calls' => array( array(
-					'index'    => 0,
-					'function' => array( 'arguments' => 'aram":"val"}' ),
-				) ),
-			), 'index' => 0, 'finish_reason' => 'tool_calls' ) ),
-		) );
+		$tc_chunk2 = wp_json_encode(
+			array(
+				'choices' => array(
+					array(
+						'delta' => array(
+							'tool_calls' => array(
+								array(
+									'index'    => 0,
+									'function' => array( 'arguments' => 'aram":"val"}' ),
+								),
+							),
+						),
+						'index'         => 0,
+						'finish_reason' => 'tool_calls',
+					),
+				),
+			)
+		);
 
 		$sse_body = "data: {$tc_chunk1}\n\ndata: {$tc_chunk2}\n\ndata: [DONE]\n\n";
 
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( $sse_body ) {
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $sse_body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $sse_body,
+				);
 			},
 			10,
 			3
 		);
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'call a tool' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'call a tool',
+				),
+			),
 			array( 'stream' => true )
 		);
 
@@ -1977,15 +2032,37 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
 				$captured_payload = json_decode( $args['body'], true );
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
 			3
 		);
 
-		$this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'hello' ) ) );
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2019,15 +2096,37 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_url ) {
 				$captured_url = $url;
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
 			3
 		);
 
-		$this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'hello' ) ) );
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2049,27 +2148,49 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
-		$native_body = wp_json_encode( array(
-			'id'      => 'x',
-			'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ),
-			'stats'   => array(
-				'tokens_per_second'    => 42.5,
-				'time_to_first_token'  => 150.0,
-				'generation_time'      => 1200.0,
-				'stop_reason'          => 'stop',
-			),
-		) );
+		$native_body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'hi',
+						),
+					),
+				),
+				'stats'   => array(
+					'tokens_per_second'   => 42.5,
+					'time_to_first_token' => 150.0,
+					'generation_time'     => 1200.0,
+					'stop_reason'         => 'stop',
+				),
+			)
+		);
 
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( $native_body ) {
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $native_body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $native_body,
+				);
 			},
 			10,
 			3
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'hello' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2093,24 +2214,32 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
-		$models_body = wp_json_encode( array(
-			'data' => array(
-				array(
-					'id'                    => 'llama-3-8b',
-					'arch'                  => 'llama',
-					'quantization'          => 'Q4_K_M',
-					'state'                 => 'loaded',
-					'max_context_length'    => 8192,
-					'loaded_context_length' => 4096,
-					'capabilities'          => array( 'completion', 'tool_use' ),
+		$models_body = wp_json_encode(
+			array(
+				'data' => array(
+					array(
+						'id'                    => 'llama-3-8b',
+						'arch'                  => 'llama',
+						'quantization'          => 'Q4_K_M',
+						'state'                 => 'loaded',
+						'max_context_length'    => 8192,
+						'loaded_context_length' => 4096,
+						'capabilities'          => array( 'completion', 'tool_use' ),
+					),
 				),
-			),
-		) );
+			)
+		);
 
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( $models_body ) {
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $models_body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $models_body,
+				);
 			},
 			10,
 			3
@@ -2148,17 +2277,19 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
-		$embed_body = wp_json_encode( array(
-			'object' => 'list',
-			'data'   => array(
-				array(
-					'object'    => 'embedding',
-					'index'     => 0,
-					'embedding' => array( 0.1, 0.2, 0.3 ),
+		$embed_body = wp_json_encode(
+			array(
+				'object' => 'list',
+				'data'   => array(
+					array(
+						'object'    => 'embedding',
+						'index'     => 0,
+						'embedding' => array( 0.1, 0.2, 0.3 ),
+					),
 				),
-			),
-			'model'  => 'nomic-embed-text',
-		) );
+				'model'  => 'nomic-embed-text',
+			)
+		);
 
 		$captured_url  = '';
 		$captured_body = null;
@@ -2168,7 +2299,13 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( $embed_body, &$captured_url, &$captured_body ) {
 				$captured_url  = $url;
 				$captured_body = json_decode( $args['body'], true );
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $embed_body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $embed_body,
+				);
 			},
 			10,
 			3
@@ -2242,15 +2379,37 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_headers ) {
 				$captured_headers = $args['headers'];
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
 			3
 		);
 
-		$this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'hello' ) ) );
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2279,15 +2438,37 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_headers ) {
 				$captured_headers = $args['headers'];
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
 			3
 		);
 
-		$this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'hello' ) ) );
+		$this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2312,25 +2493,44 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
-		$body = wp_json_encode( array(
-			'id'      => 'x',
-			'choices' => array( array( 'message' => array(
-				'role'              => 'assistant',
-				'content'           => 'The answer is 42.',
-				'reasoning_content' => 'I thought about it carefully.',
-			) ) ),
-		) );
+		$body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'              => 'assistant',
+							'content'           => 'The answer is 42.',
+							'reasoning_content' => 'I thought about it carefully.',
+						),
+					),
+				),
+			)
+		);
 
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( $body ) {
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $body,
+				);
 			},
 			10,
 			3
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'what is the answer?' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'what is the answer?',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2354,24 +2554,43 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
-		$body = wp_json_encode( array(
-			'id'      => 'x',
-			'choices' => array( array( 'message' => array(
-				'role'    => 'assistant',
-				'content' => "<think>Let me think step by step.</think>\nThe answer is 42.",
-			) ) ),
-		) );
+		$body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => "<think>Let me think step by step.</think>\nThe answer is 42.",
+						),
+					),
+				),
+			)
+		);
 
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( $body ) {
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $body,
+				);
 			},
 			10,
 			3
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'What?' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'What?',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2400,32 +2619,54 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		);
 
 		// LM Studio occasionally sends arguments as a decoded object rather than a JSON string.
-		$body = wp_json_encode( array(
-			'id'      => 'x',
-			'choices' => array( array( 'message' => array(
-				'role'       => 'assistant',
-				'content'    => '',
-				'tool_calls' => array( array(
-					'id'       => 'call_1',
-					'type'     => 'function',
-					'function' => array(
-						'name'      => 'my_tool',
-						'arguments' => array( 'param' => 'value' ), // Wrong: should be a string.
+		$body = wp_json_encode(
+			array(
+				'id'      => 'x',
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'       => 'assistant',
+							'content'    => '',
+							'tool_calls' => array(
+								array(
+									'id'       => 'call_1',
+									'type'     => 'function',
+									'function' => array(
+										'name'      => 'my_tool',
+										// Wrong: should be a string.
+										'arguments' => array( 'param' => 'value' ),
+									),
+								),
+							),
+						),
 					),
-				) ),
-			) ) ),
-		) );
+				),
+			)
+		);
 
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( $body ) {
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => $body );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => $body,
+				);
 			},
 			10,
 			3
 		);
 
-		$result = $this->client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'call tool' ) ) );
+		$result = $this->client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'call tool',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -2460,8 +2701,20 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		);
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'use a tool' ) ),
-			array( 'tools' => array( array( 'type' => 'function', 'function' => array( 'name' => 'noop' ) ) ) )
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'use a tool',
+				),
+			),
+			array(
+				'tools' => array(
+					array(
+						'type'     => 'function',
+						'function' => array( 'name' => 'noop' ),
+					),
+				),
+			)
 		);
 
 		delete_transient( WP_MCP_AI_LM_Studio_Client::CAPABILITIES_TRANSIENT );
@@ -2499,8 +2752,23 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$http_called ) {
 				$http_called = true;
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'done' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'done',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
@@ -2508,8 +2776,20 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		);
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'use a tool' ) ),
-			array( 'tools' => array( array( 'type' => 'function', 'function' => array( 'name' => 'noop' ) ) ) )
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'use a tool',
+				),
+			),
+			array(
+				'tools' => array(
+					array(
+						'type'     => 'function',
+						'function' => array( 'name' => 'noop' ),
+					),
+				),
+			)
 		);
 
 		delete_transient( WP_MCP_AI_LM_Studio_Client::CAPABILITIES_TRANSIENT );
@@ -2546,8 +2826,23 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
 				$captured_payload = json_decode( $args['body'], true );
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
@@ -2555,7 +2850,12 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		);
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			),
 			array( 'ttl' => 300 )
 		);
 
@@ -2587,18 +2887,45 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
 				$captured_payload = json_decode( $args['body'], true );
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => '{}' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => '{}',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
 			3
 		);
 
-		$schema = array( 'type' => 'json_schema', 'json_schema' => array( 'name' => 'my_schema', 'strict' => true, 'schema' => array( 'type' => 'object' ) ) );
+		$schema = array(
+			'type'        => 'json_schema',
+			'json_schema' => array(
+				'name'   => 'my_schema',
+				'strict' => true,
+				'schema' => array( 'type' => 'object' ),
+			),
+		);
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'give me json' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'give me json',
+				),
+			),
 			array( 'response_format' => $schema )
 		);
 
@@ -2630,8 +2957,23 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
 				$captured_payload = json_decode( $args['body'], true );
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => 'x', 'choices' => array( array( 'message' => array( 'role' => 'assistant', 'content' => 'hi' ) ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'x',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'hi',
+									),
+								),
+							),
+						)
+					),
 				);
 			},
 			10,
@@ -2639,7 +2981,12 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		);
 
 		$this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'hello' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hello',
+				),
+			),
 			array( 'response_format' => array( 'type' => 'invalid_type' ) )
 		);
 
@@ -2667,7 +3014,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			'pre_http_request',
 			function ( $preempt, $args, $url ) {
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'headers'  => new WP_HTTP_Headers( array( 'x-lm-studio-version' => '0.3.15' ) ),
 					'body'     => wp_json_encode( array( 'data' => array() ) ),
 				);
@@ -2704,10 +3054,22 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$requests ) {
 				$requests[] = $url;
 				if ( false !== strpos( $url, '/v1/models' ) ) {
-					return array( 'response' => array( 'code' => 404, 'message' => 'Not Found' ), 'body' => '' );
+					return array(
+						'response' => array(
+							'code'    => 404,
+							'message' => 'Not Found',
+						),
+						'body'     => '',
+					);
 				}
 				// /api/v0/models succeeds.
-				return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => wp_json_encode( array( 'data' => array() ) ) );
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode( array( 'data' => array() ) ),
+				);
 			},
 			10,
 			3
