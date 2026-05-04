@@ -608,7 +608,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-		// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant 'ai_chat_transcripts'.
+		// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant 'ai_chat_transcripts'.
 		$table        = esc_sql( $this->get_table_name() );
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );

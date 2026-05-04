@@ -1640,7 +1640,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		global $wpdb;
 		$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
-		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+		$table = $wpdb->prefix . 'jet-cct-' . $slug;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
@@ -1681,9 +1681,9 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		global $wpdb;
 		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
-		// Table name comes from the JetEngine convention `{prefix}jet_cct_{slug}`
+		// Table name comes from the JetEngine convention `{prefix}jet-cct-{slug}`
 		// where `$slug` is a class constant.
-		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+		$table = $wpdb->prefix . 'jet-cct-' . $slug;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
