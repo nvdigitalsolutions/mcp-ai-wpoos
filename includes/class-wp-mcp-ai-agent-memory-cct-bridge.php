@@ -310,8 +310,8 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 		global $wpdb;
 		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
 		// Table name is constructed from the JetEngine convention
-		// `{prefix}jet-cct-{slug}` and `$slug` comes from a class constant.
-		$table = $wpdb->prefix . 'jet-cct-' . $slug;
+		// `{prefix}jet_cct_{slug}` and `$slug` comes from a class constant.
+		$table = $wpdb->prefix . 'jet_cct_' . $slug;
 
 		// Confirm the table exists before querying (CCT may not be registered yet).
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared

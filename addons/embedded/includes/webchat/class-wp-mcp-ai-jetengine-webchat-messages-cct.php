@@ -319,7 +319,7 @@ class WP_MCP_AI_JetEngine_WebChat_Messages_CCT {
 	 */
 	public static function get_table_name() {
 		global $wpdb;
-		return $wpdb->prefix . 'jet-cct-' . self::SLUG;
+		return $wpdb->prefix . 'jet_cct_' . self::SLUG;
 	}
 
 	/**
