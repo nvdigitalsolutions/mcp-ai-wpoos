@@ -7,7 +7,7 @@
  * @package WP_MCP_AI
  * @since 1.5.0
  */
-/* global wpMcpAiRunTimeline, jQuery */
+/* global jQuery */
 ( function ( $ ) {
 	'use strict';
 

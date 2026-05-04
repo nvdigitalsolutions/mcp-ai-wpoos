@@ -4,17 +4,17 @@
  * @package WP_MCP_AI
  * @since   2.2.0
  */
-/* global wpMcpAiTriggers */
+// (window globals accessed via `window.wpMcpAiTriggers`)
 ( function () {
 	'use strict';
 
-	var cfg     = window.wpMcpAiTriggers || {};
-	var apiBase = cfg.apiBase || '';
-	var nonce   = cfg.nonce   || '';
-	var i18n    = cfg.i18n   || {};
+	const cfg     = window.wpMcpAiTriggers || {};
+	const apiBase = cfg.apiBase || '';
+	const nonce   = cfg.nonce   || '';
+	const i18n    = cfg.i18n   || {};
 
 	function restRequest( method, url, body, callback ) {
-		var xhr = new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 		xhr.open( method, url, true );
 		xhr.setRequestHeader( 'Content-Type', 'application/json' );
 		xhr.setRequestHeader( 'X-WP-Nonce', nonce );
@@ -37,9 +37,9 @@
 	}
 
 	function buildRow( trigger ) {
-		var enabled     = trigger.enabled;
-		var enabledText = enabled ? ( i18n.labelEnabled || 'Enabled' ) : ( i18n.labelDisabled || 'Disabled' );
-		var lastFired   = trigger.last_fired_at
+		const enabled     = trigger.enabled;
+		const enabledText = enabled ? ( i18n.labelEnabled || 'Enabled' ) : ( i18n.labelDisabled || 'Disabled' );
+		const lastFired   = trigger.last_fired_at
 			? new Date( trigger.last_fired_at * 1000 ).toISOString().replace( 'T', ' ' ).slice( 0, 16 )
 			: '\u2014';
 		return '<tr data-trigger-id="' + trigger.id + '">' +
@@ -55,48 +55,48 @@
 	}
 
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-toggle-trigger' );
+		const btn = e.target.closest( '.wp-mcp-ai-toggle-trigger' );
 		if ( ! btn ) { return; }
-		var id     = btn.getAttribute( 'data-id' );
-		var newVal = '0' === btn.getAttribute( 'data-enabled' );
+		const id     = btn.getAttribute( 'data-id' );
+		const newVal = '0' === btn.getAttribute( 'data-enabled' );
 		restRequest( 'PUT', apiBase + '/' + id, { enabled: newVal }, function ( err ) {
 			if ( err ) { alert( i18n.errorGeneric || 'Error' ); return; }
 			btn.setAttribute( 'data-enabled', newVal ? '1' : '0' );
 			btn.textContent = newVal ? 'Disable' : 'Enable';
-			var row = btn.closest( 'tr' );
-			var statusTd = row ? row.querySelector( '.trigger-status' ) : null;
+			const row = btn.closest( 'tr' );
+			const statusTd = row ? row.querySelector( '.trigger-status' ) : null;
 			if ( statusTd ) { statusTd.textContent = newVal ? ( i18n.labelEnabled || 'Enabled' ) : ( i18n.labelDisabled || 'Disabled' ); }
 		} );
 	} );
 
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-delete-trigger' );
+		const btn = e.target.closest( '.wp-mcp-ai-delete-trigger' );
 		if ( ! btn ) { return; }
 		if ( ! window.confirm( i18n.confirmDelete || 'Delete this trigger?' ) ) { return; }
-		var id = btn.getAttribute( 'data-id' );
+		const id = btn.getAttribute( 'data-id' );
 		restRequest( 'DELETE', apiBase + '/' + id, null, function ( err ) {
 			if ( err ) { alert( i18n.errorGeneric || 'Error' ); return; }
-			var row = btn.closest( 'tr' );
+			const row = btn.closest( 'tr' );
 			if ( row ) { row.parentNode.removeChild( row ); }
 		} );
 	} );
 
-	var form = document.getElementById( 'wp-mcp-ai-add-trigger-form' );
+	const form = document.getElementById( 'wp-mcp-ai-add-trigger-form' );
 	if ( form ) {
 		form.addEventListener( 'submit', function ( e ) {
 			e.preventDefault();
-			var name       = ( form.elements.name.value || '' ).trim();
-			var type       = form.elements.type.value;
-			var workflowId = parseInt( form.elements.workflow_id.value, 10 );
-			var msg        = document.getElementById( 'wp-mcp-ai-trigger-form-msg' );
+			const name       = ( form.elements.name.value || '' ).trim();
+			const type       = form.elements.type.value;
+			const workflowId = parseInt( form.elements.workflow_id.value, 10 );
+			const msg        = document.getElementById( 'wp-mcp-ai-trigger-form-msg' );
 			if ( ! name || ! type || ! workflowId ) {
 				if ( msg ) { msg.textContent = 'Please fill in all fields.'; }
 				return;
 			}
 			restRequest( 'POST', apiBase, { name: name, type: type, workflow_id: workflowId, config: {} }, function ( err, data ) {
 				if ( err || ! data ) { if ( msg ) { msg.textContent = i18n.errorGeneric || 'Error'; } return; }
-				var tbody = document.getElementById( 'wp-mcp-ai-triggers-body' );
-				var noRow = document.getElementById( 'wp-mcp-ai-no-triggers-row' );
+				const tbody = document.getElementById( 'wp-mcp-ai-triggers-body' );
+				const noRow = document.getElementById( 'wp-mcp-ai-no-triggers-row' );
 				if ( noRow ) { noRow.parentNode.removeChild( noRow ); }
 				if ( tbody ) { tbody.insertAdjacentHTML( 'beforeend', buildRow( data ) ); }
 				form.reset();

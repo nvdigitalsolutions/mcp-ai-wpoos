@@ -13,14 +13,14 @@
 	/* -------------------------------------------------------------------------
 	 * i18n helpers (use wp.i18n if available, else inline strings)
 	 * ---------------------------------------------------------------------- */
-	var __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ )
+	const __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ )
 		? window.wp.i18n.__
 		: function ( str ) { return str; };
 
 	/* -------------------------------------------------------------------------
 	 * String constants
 	 * ---------------------------------------------------------------------- */
-	var STR = {
+	const STR = {
 		SAVE:            __( 'Save', 'mcp-ai-wpoos' ),
 		EXPORT:          __( 'Export JSON', 'mcp-ai-wpoos' ),
 		IMPORT:          __( 'Import JSON', 'mcp-ai-wpoos' ),
@@ -45,7 +45,7 @@
 	/* -------------------------------------------------------------------------
 	 * Node type definitions
 	 * ---------------------------------------------------------------------- */
-	var NODE_TYPES = [
+	const NODE_TYPES = [
 		{ type: 'agent',     label: __( 'Agent', 'mcp-ai-wpoos' ),     color: '#2271b1' },
 		{ type: 'tool',      label: __( 'Tool', 'mcp-ai-wpoos' ),      color: '#1e7e34' },
 		{ type: 'condition', label: __( 'Condition', 'mcp-ai-wpoos' ), color: '#e67e22' },
@@ -54,31 +54,31 @@
 		{ type: 'parallel',  label: __( 'Parallel', 'mcp-ai-wpoos' ),  color: '#16a085' },
 	];
 
-	var NODE_TYPE_MAP = {};
+	const NODE_TYPE_MAP = {};
 	NODE_TYPES.forEach( function ( t ) { NODE_TYPE_MAP[ t.type ] = t; } );
 
 	/* -------------------------------------------------------------------------
 	 * State
 	 * ---------------------------------------------------------------------- */
-	var config      = window.mcpAiDagBuilder || {};
-	var restUrl     = config.restUrl || '';
-	var nonce       = config.nonce  || '';
-	var workflowId  = parseInt( config.workflowId, 10 ) || 0;
+	const config      = window.mcpAiDagBuilder || {};
+	const restUrl     = config.restUrl || '';
+	const nonce       = config.nonce  || '';
+	let workflowId  = parseInt( config.workflowId, 10 ) || 0;
 
-	var nodes       = [];   // { id, type, label, x, y, config }
-	var edges       = [];   // { id, from, to }
-	var nextId      = 1;
-	var selectedId  = null;
-	var connectFrom = null; // node id waiting for shift+click target
+	let nodes       = [];   // { id, type, label, x, y, config }
+	let edges       = [];   // { id, from, to }
+	let nextId      = 1;
+	let selectedId  = null;
+	let connectFrom = null; // node id waiting for shift+click target
 
-	var svgEl, svgEdgesGroup, svgNodesGroup;
-	var inspectorContent;
+	let svgEl, svgEdgesGroup, svgNodesGroup;
+	let inspectorContent;
 
 	/* -------------------------------------------------------------------------
 	 * Bootstrap
 	 * ---------------------------------------------------------------------- */
 	document.addEventListener( 'DOMContentLoaded', function () {
-		var root = document.getElementById( 'mcp-ai-dag-builder-root' );
+		const root = document.getElementById( 'mcp-ai-dag-builder-root' );
 		if ( ! root ) { return; }
 
 		root.innerHTML = '';
@@ -95,15 +95,15 @@
 	 * Build editor DOM
 	 * ---------------------------------------------------------------------- */
 	function buildEditor() {
-		var wrap = el( 'div', { className: 'dag-editor-wrap' } );
+		const wrap = el( 'div', { className: 'dag-editor-wrap' } );
 
 		// Toolbar
-		var toolbar = el( 'div', { className: 'dag-toolbar' } );
-		var btnSave   = el( 'button', { className: 'button button-primary dag-btn-save', textContent: STR.SAVE } );
-		var btnExport = el( 'button', { className: 'button dag-btn-export', textContent: STR.EXPORT } );
-		var btnImport = el( 'button', { className: 'button dag-btn-import', textContent: STR.IMPORT } );
-		var btnRun    = el( 'button', { className: 'button button-secondary dag-btn-run', textContent: STR.RUN } );
-		var statusMsg = el( 'span', { className: 'dag-status-msg' } );
+		const toolbar = el( 'div', { className: 'dag-toolbar' } );
+		const btnSave   = el( 'button', { className: 'button button-primary dag-btn-save', textContent: STR.SAVE } );
+		const btnExport = el( 'button', { className: 'button dag-btn-export', textContent: STR.EXPORT } );
+		const btnImport = el( 'button', { className: 'button dag-btn-import', textContent: STR.IMPORT } );
+		const btnRun    = el( 'button', { className: 'button button-secondary dag-btn-run', textContent: STR.RUN } );
+		const statusMsg = el( 'span', { className: 'dag-status-msg' } );
 
 		btnSave.addEventListener( 'click', onSave );
 		btnExport.addEventListener( 'click', onExport );
@@ -118,14 +118,14 @@
 		wrap.appendChild( toolbar );
 
 		// Body (palette | canvas | inspector)
-		var body = el( 'div', { className: 'dag-body' } );
+		const body = el( 'div', { className: 'dag-body' } );
 
 		// Palette
-		var palette = el( 'div', { className: 'dag-palette' } );
-		var pTitle   = el( 'h3', { textContent: STR.PALETTE_TITLE } );
+		const palette = el( 'div', { className: 'dag-palette' } );
+		const pTitle   = el( 'h3', { textContent: STR.PALETTE_TITLE } );
 		palette.appendChild( pTitle );
 		NODE_TYPES.forEach( function ( nt ) {
-			var btn = el( 'button', {
+			const btn = el( 'button', {
 				className:   'dag-palette-btn',
 				textContent: nt.label,
 				title:       nt.type,
@@ -134,28 +134,28 @@
 			btn.addEventListener( 'click', function () { addNode( nt.type ); } );
 			palette.appendChild( btn );
 		} );
-		var hint = el( 'p', { className: 'dag-connect-hint', textContent: STR.CONNECT_HINT } );
+		const hint = el( 'p', { className: 'dag-connect-hint', textContent: STR.CONNECT_HINT } );
 		palette.appendChild( hint );
 		body.appendChild( palette );
 
 		// Canvas
-		var canvasWrap = el( 'div', { className: 'dag-canvas-wrap' } );
-		var canvasHint = el( 'p', { className: 'dag-canvas-hint', textContent: STR.CANVAS_TITLE } );
+		const canvasWrap = el( 'div', { className: 'dag-canvas-wrap' } );
+		const canvasHint = el( 'p', { className: 'dag-canvas-hint', textContent: STR.CANVAS_TITLE } );
 		svgEl = document.createElementNS( 'http://www.w3.org/2000/svg', 'svg' );
 		svgEl.setAttribute( 'class', 'dag-canvas-svg' );
 		svgEl.setAttribute( 'width', '100%' );
 		svgEl.setAttribute( 'height', '600' );
 
 		// Defs: arrowhead marker
-		var defs   = document.createElementNS( 'http://www.w3.org/2000/svg', 'defs' );
-		var marker = document.createElementNS( 'http://www.w3.org/2000/svg', 'marker' );
+		const defs   = document.createElementNS( 'http://www.w3.org/2000/svg', 'defs' );
+		const marker = document.createElementNS( 'http://www.w3.org/2000/svg', 'marker' );
 		marker.setAttribute( 'id', 'dag-arrow' );
 		marker.setAttribute( 'markerWidth', '10' );
 		marker.setAttribute( 'markerHeight', '7' );
 		marker.setAttribute( 'refX', '10' );
 		marker.setAttribute( 'refY', 3.5 );
 		marker.setAttribute( 'orient', 'auto' );
-		var poly = document.createElementNS( 'http://www.w3.org/2000/svg', 'polygon' );
+		const poly = document.createElementNS( 'http://www.w3.org/2000/svg', 'polygon' );
 		poly.setAttribute( 'points', '0 0, 10 3.5, 0 7' );
 		poly.setAttribute( 'fill', '#888' );
 		marker.appendChild( poly );
@@ -175,8 +175,8 @@
 		body.appendChild( canvasWrap );
 
 		// Inspector
-		var inspector = el( 'div', { className: 'dag-inspector' } );
-		var iTitle    = el( 'h3', { textContent: STR.INSPECTOR_TITLE } );
+		const inspector = el( 'div', { className: 'dag-inspector' } );
+		const iTitle    = el( 'h3', { textContent: STR.INSPECTOR_TITLE } );
 		inspectorContent = el( 'div', { className: 'dag-inspector-content', textContent: STR.NO_SELECTION } );
 		inspector.appendChild( iTitle );
 		inspector.appendChild( inspectorContent );
@@ -194,10 +194,10 @@
 		// Edges
 		while ( svgEdgesGroup.firstChild ) { svgEdgesGroup.removeChild( svgEdgesGroup.firstChild ); }
 		edges.forEach( function ( edge ) {
-			var fromNode = findNode( edge.from );
-			var toNode   = findNode( edge.to );
+			const fromNode = findNode( edge.from );
+			const toNode   = findNode( edge.to );
 			if ( ! fromNode || ! toNode ) { return; }
-			var line = document.createElementNS( 'http://www.w3.org/2000/svg', 'line' );
+			const line = document.createElementNS( 'http://www.w3.org/2000/svg', 'line' );
 			line.setAttribute( 'x1', fromNode.x + 60 );
 			line.setAttribute( 'y1', fromNode.y + 20 );
 			line.setAttribute( 'x2', toNode.x );
@@ -216,17 +216,17 @@
 	}
 
 	function renderNode( node ) {
-		var nt    = NODE_TYPE_MAP[ node.type ] || { color: '#888', label: node.type };
-		var isSelected = node.id === selectedId;
-		var isConnFrom = node.id === connectFrom;
+		const nt    = NODE_TYPE_MAP[ node.type ] || { color: '#888', label: node.type };
+		const isSelected = node.id === selectedId;
+		const isConnFrom = node.id === connectFrom;
 
-		var g = document.createElementNS( 'http://www.w3.org/2000/svg', 'g' );
+		const g = document.createElementNS( 'http://www.w3.org/2000/svg', 'g' );
 		g.setAttribute( 'transform', 'translate(' + node.x + ',' + node.y + ')' );
 		g.setAttribute( 'class', 'dag-node' + ( isSelected ? ' dag-node--selected' : '' ) );
 		g.setAttribute( 'data-node-id', node.id );
 		g.style.cursor = 'pointer';
 
-		var rect = document.createElementNS( 'http://www.w3.org/2000/svg', 'rect' );
+		const rect = document.createElementNS( 'http://www.w3.org/2000/svg', 'rect' );
 		rect.setAttribute( 'width', 120 );
 		rect.setAttribute( 'height', 40 );
 		rect.setAttribute( 'rx', 6 );
@@ -236,7 +236,7 @@
 		rect.setAttribute( 'stroke-width', isSelected ? '2' : '0' );
 		g.appendChild( rect );
 
-		var typeLabel = document.createElementNS( 'http://www.w3.org/2000/svg', 'text' );
+		const typeLabel = document.createElementNS( 'http://www.w3.org/2000/svg', 'text' );
 		typeLabel.setAttribute( 'x', 60 );
 		typeLabel.setAttribute( 'y', 14 );
 		typeLabel.setAttribute( 'text-anchor', 'middle' );
@@ -245,7 +245,7 @@
 		typeLabel.textContent = node.type.toUpperCase();
 		g.appendChild( typeLabel );
 
-		var nameLabel = document.createElementNS( 'http://www.w3.org/2000/svg', 'text' );
+		const nameLabel = document.createElementNS( 'http://www.w3.org/2000/svg', 'text' );
 		nameLabel.setAttribute( 'x', 60 );
 		nameLabel.setAttribute( 'y', 30 );
 		nameLabel.setAttribute( 'text-anchor', 'middle' );
@@ -265,8 +265,8 @@
 	 * Drag logic
 	 * ---------------------------------------------------------------------- */
 	function makeDraggable( g, node ) {
-		var dragging = false;
-		var startX, startY, origX, origY;
+		let dragging = false;
+		let startX, startY, origX, origY;
 
 		g.addEventListener( 'mousedown', function ( e ) {
 			if ( e.shiftKey ) {
@@ -336,19 +336,19 @@
 		inspectorContent.innerHTML = '';
 
 		// Name
-		var nameGroup  = el( 'div', { className: 'dag-field-group' } );
-		var nameLabel  = el( 'label', { textContent: STR.NODE_NAME } );
-		var nameInput  = el( 'input', { type: 'text', value: node.label, className: 'dag-inspector-input' } );
+		const nameGroup  = el( 'div', { className: 'dag-field-group' } );
+		const nameLabel  = el( 'label', { textContent: STR.NODE_NAME } );
+		const nameInput  = el( 'input', { type: 'text', value: node.label, className: 'dag-inspector-input' } );
 		nameGroup.appendChild( nameLabel );
 		nameGroup.appendChild( nameInput );
 		inspectorContent.appendChild( nameGroup );
 
 		// Type
-		var typeGroup  = el( 'div', { className: 'dag-field-group' } );
-		var typeLabel  = el( 'label', { textContent: STR.NODE_TYPE } );
-		var typeSelect = el( 'select', { className: 'dag-inspector-select' } );
+		const typeGroup  = el( 'div', { className: 'dag-field-group' } );
+		const typeLabel  = el( 'label', { textContent: STR.NODE_TYPE } );
+		const typeSelect = el( 'select', { className: 'dag-inspector-select' } );
 		NODE_TYPES.forEach( function ( nt ) {
-			var opt = el( 'option', { value: nt.type, textContent: nt.label } );
+			const opt = el( 'option', { value: nt.type, textContent: nt.label } );
 			if ( nt.type === node.type ) { opt.selected = true; }
 			typeSelect.appendChild( opt );
 		} );
@@ -357,9 +357,9 @@
 		inspectorContent.appendChild( typeGroup );
 
 		// Config
-		var cfgGroup   = el( 'div', { className: 'dag-field-group' } );
-		var cfgLabel   = el( 'label', { textContent: STR.NODE_CONFIG } );
-		var cfgArea    = el( 'textarea', {
+		const cfgGroup   = el( 'div', { className: 'dag-field-group' } );
+		const cfgLabel   = el( 'label', { textContent: STR.NODE_CONFIG } );
+		const cfgArea    = el( 'textarea', {
 			className: 'dag-inspector-textarea',
 			value:     node.config ? JSON.stringify( node.config, null, 2 ) : '',
 		} );
@@ -368,7 +368,7 @@
 		inspectorContent.appendChild( cfgGroup );
 
 		// Apply
-		var btnApply   = el( 'button', { className: 'button dag-btn-apply', textContent: STR.APPLY } );
+		const btnApply   = el( 'button', { className: 'button dag-btn-apply', textContent: STR.APPLY } );
 		btnApply.addEventListener( 'click', function () {
 			node.label = nameInput.value.trim() || node.label;
 			node.type  = typeSelect.value;
@@ -383,7 +383,7 @@
 		inspectorContent.appendChild( btnApply );
 
 		// Delete
-		var btnDelete  = el( 'button', { className: 'button dag-btn-delete', textContent: STR.DELETE_NODE } );
+		const btnDelete  = el( 'button', { className: 'button dag-btn-delete', textContent: STR.DELETE_NODE } );
 		btnDelete.addEventListener( 'click', function () {
 			deleteNode( node.id );
 		} );
@@ -394,9 +394,9 @@
 	 * Data helpers
 	 * ---------------------------------------------------------------------- */
 	function addNode( type ) {
-		var nt  = NODE_TYPE_MAP[ type ] || NODE_TYPES[0];
-		var id  = 'n' + ( nextId++ );
-		var svgRect = svgEl.getBoundingClientRect();
+		const nt  = NODE_TYPE_MAP[ type ] || NODE_TYPES[0];
+		const id  = 'n' + ( nextId++ );
+		const svgRect = svgEl.getBoundingClientRect();
 		nodes.push( {
 			id:     id,
 			type:   type,
@@ -411,7 +411,7 @@
 
 	function addEdge( fromId, toId ) {
 		// Prevent duplicates
-		for ( var i = 0; i < edges.length; i++ ) {
+		for ( let i = 0; i < edges.length; i++ ) {
 			if ( edges[i].from === fromId && edges[i].to === toId ) { return; }
 		}
 		edges.push( { id: 'e' + ( nextId++ ), from: fromId, to: toId } );
@@ -426,7 +426,7 @@
 	}
 
 	function findNode( id ) {
-		for ( var i = 0; i < nodes.length; i++ ) {
+		for ( let i = 0; i < nodes.length; i++ ) {
 			if ( nodes[i].id === id ) { return nodes[i]; }
 		}
 		return null;
@@ -458,11 +458,11 @@
 			return { id: e.id || ( 'e' + ( nextId++ ) ), from: e.from, to: e.to };
 		} );
 		// Compute next free id
-		var allIds = nodes.map( function ( n ) { return n.id; } ).concat(
+		const allIds = nodes.map( function ( n ) { return n.id; } ).concat(
 			edges.map( function ( e ) { return e.id; } )
 		);
 		allIds.forEach( function ( rawId ) {
-			var num = parseInt( String( rawId ).replace( /\D/g, '' ), 10 );
+			const num = parseInt( String( rawId ).replace( /\D/g, '' ), 10 );
 			if ( num >= nextId ) { nextId = num + 1; }
 		} );
 		renderGraph();
@@ -480,8 +480,8 @@
 	}
 
 	function onSave() {
-		var graph = getGraph();
-		var statusEl = document.querySelector( '.dag-status-msg' );
+		const graph = getGraph();
+		const statusEl = document.querySelector( '.dag-status-msg' );
 
 		if ( workflowId > 0 ) {
 			apiFetch( restUrl + '/' + workflowId, 'PUT', { graph: graph }, function ( res ) {
@@ -492,7 +492,7 @@
 				showStatus( statusEl, STR.SAVE_FAILED, true );
 			} );
 		} else {
-			var name = window.prompt( STR.ENTER_NAME, STR.NEW_WORKFLOW );
+			const name = window.prompt( STR.ENTER_NAME, STR.NEW_WORKFLOW );
 			if ( ! name ) { return; }
 			apiFetch( restUrl, 'POST', { name: name, graph: graph }, function ( res ) {
 				if ( res && res.id ) {
@@ -500,7 +500,7 @@
 					showStatus( statusEl, STR.SAVED, false );
 					// Update URL without reload
 					if ( window.history && window.history.replaceState ) {
-						var url = window.location.href.replace( /([?&])workflow_id=\d+/, '' );
+						let url = window.location.href.replace( /([?&])workflow_id=\d+/, '' );
 						url += ( url.indexOf( '?' ) >= 0 ? '&' : '?' ) + 'workflow_id=' + res.id;
 						window.history.replaceState( {}, '', url );
 					}
@@ -513,7 +513,7 @@
 
 	function onExport() {
 		if ( workflowId <= 0 ) {
-			var g = getGraph();
+			const g = getGraph();
 			download( 'workflow.json', JSON.stringify( { graph: g }, null, 2 ) );
 			return;
 		}
@@ -523,16 +523,16 @@
 	}
 
 	function onImport() {
-		var input = document.createElement( 'input' );
+		const input = document.createElement( 'input' );
 		input.type = 'file';
 		input.accept = '.json,application/json';
 		input.addEventListener( 'change', function () {
-			var file = input.files && input.files[0];
+			const file = input.files && input.files[0];
 			if ( ! file ) { return; }
-			var reader = new FileReader();
+			const reader = new FileReader();
 			reader.onload = function ( e ) {
 				try {
-					var data = JSON.parse( e.target.result );
+					const data = JSON.parse( e.target.result );
 					if ( data.graph ) {
 						loadFromGraph( data.graph );
 					}
@@ -555,7 +555,7 @@
 			'POST',
 			{},
 			function ( res ) {
-				var msg = ( res && res.message ) ? res.message : JSON.stringify( res );
+				const msg = ( res && res.message ) ? res.message : JSON.stringify( res );
 				window.alert( msg );
 			},
 			function ( errMsg ) {
@@ -568,7 +568,7 @@
 	 * Utility
 	 * ---------------------------------------------------------------------- */
 	function apiFetch( url, method, body, onSuccess, onError ) {
-		var opts = {
+		const opts = {
 			method:  method || 'GET',
 			headers: {
 				'Content-Type':  'application/json',
@@ -582,7 +582,7 @@
 			.then( function ( res ) {
 				return res.json().then( function ( data ) {
 					if ( ! res.ok ) {
-						var msg = ( data && data.message ) ? data.message : 'HTTP ' + res.status;
+						const msg = ( data && data.message ) ? data.message : 'HTTP ' + res.status;
 						if ( onError ) { onError( msg ); }
 						return;
 					}
@@ -595,7 +595,7 @@
 	}
 
 	function el( tag, props ) {
-		var e = document.createElement( tag );
+		const e = document.createElement( tag );
 		if ( props ) {
 			Object.keys( props ).forEach( function ( k ) {
 				if ( k === 'textContent' ) {
@@ -616,7 +616,7 @@
 	}
 
 	function download( filename, text ) {
-		var a    = document.createElement( 'a' );
+		const a    = document.createElement( 'a' );
 		a.href   = 'data:application/json;charset=utf-8,' + encodeURIComponent( text );
 		a.download = filename;
 		a.click();
