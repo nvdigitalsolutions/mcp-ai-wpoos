@@ -427,7 +427,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 			$last_used = $this->get_last_used_time( $post_id );
 
 			// Determine workflow pattern based on slug and roles.
-			$workflow_pattern = $this->detect_workflow_pattern( $post->post_name, $primary_roles );
+			$workflow_pattern = $this->detect_workflow_pattern( $post->post_name, is_array( $primary_roles ) ? $primary_roles : array() );
 
 			$agent_data = array(
 				'id'               => $post_id,
