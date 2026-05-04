@@ -313,7 +313,7 @@ class NV_oOS_Graphify_Detector {
 	/**
 	 * Return JetEngine Custom Content Type items that should be indexed.
 	 *
-	 * JetEngine CCTs live in dedicated `{prefix}jet-cct-{slug}` tables and
+	 * JetEngine CCTs live in dedicated `{prefix}jet_cct_{slug}` tables and
 	 * are invisible to {@see get_post_types()} / {@see get_posts()}, so they
 	 * have to be enumerated through the JetEngine API.
 	 *
