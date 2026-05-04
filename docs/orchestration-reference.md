@@ -15,7 +15,7 @@ NV oOS (Open Operator System) is a WordPress-native AI orchestration platform th
 2. [Feature Documentation](#2-feature-documentation)
 3. [Phase 1 — Observability](#3-phase-1--observability)
 4. [Phase 2 — Human-in-the-Loop (HITL)](#4-phase-2--human-in-the-loop-hitl)
-5. [Future TODOs — Phase 3 / Engine V2 enhancements](#5-future-todos--phase-3--engine-v2-enhancements)
+5. [Pro Workflow Builder ↔ Base Orchestration Bridge](#5-pro-workflow-builder--base-orchestration-bridge)
 6. [Roadmap: Phases 4–6](#6-roadmap-phases-46)
 7. [Further Reading](#7-further-reading)
 
@@ -184,18 +184,31 @@ A real-time admin screen that lists pending, approved, and rejected requests. Re
 
 ---
 
-## 5. Future TODOs — Phase 3 / Engine V2 enhancements
+## 5. Pro Workflow Builder ↔ Base Orchestration Bridge
 
-The Phase 3 base classes (`WP_MCP_AI_Workflow_CPT`, `WP_MCP_AI_Workflow_Engine_V2`, `WP_MCP_AI_Admin_DAG_Builder`, and the `mcp-ai/v1/orchestration/workflows/*` REST routes) ship as a complete vanilla-SVG "lite" workflow surface. They co-exist with the established **Pro Workflow Builder** (React UI under `addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php`), which is Pro's primary authoring experience and stores workflows in JetEngine CCTs rather than the base `mcp_ai_workflow` CPT.
+The Pro Workflow Builder (`addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php` + the React UI under `addons/pro/build/workflow-builder/`) is the canonical authoring surface for Pro sites. It stores workflows as keyed entries in the WordPress option `wp_mcp_ai_pro_workflows` and per-workflow execution history in `wp_mcp_ai_workflow_executions_{workflow_id}`.
 
-These are deliberately deferred until the Pro builder evolves to consume the base infrastructure. None of them are required for the current opt-in feature flag (`wp_mcp_ai_workflow_v2_enabled`, default `false`) to work as documented.
+The base orchestration primitives (Phases 1, 2, 4, 5) plug into the Pro builder through a thin bridge service (`WP_MCP_AI_Pro_Workflow_Bridge`, in `addons/pro/includes/services/`) and four hooks added to the Pro builder:
 
-- [ ] **Bridge the Pro CCT-backed workflows into Engine V2** — add a thin adapter so the React builder can opt-in to executing through `WP_MCP_AI_Workflow_Engine_V2` (durable run-log, HITL approvals, trigger system) without rewriting its store.
-- [ ] **Single canonical authoring surface** — once the bridge is stable, hide the base "DAG Builder" admin page when Pro is active and deep-link the Pro page from the same submenu slot.
+| Hook | Kind | Wired by bridge to |
+|---|---|---|
+| `wp_mcp_ai_workflow_execute_agent` | filter | Phase 1 — runs `WP_MCP_AI_Prompt_Injection_Detector::analyze()` on the agent prompt and short-circuits with a `WP_Error` when `flagged && (block-on-detect set)`. |
+| `wp_mcp_ai_pro_workflow_pre_execute_tool` | filter | Phase 2 — when the tool advertises the `requires-approval` capability flag, enqueues a HITL approval via `WP_MCP_AI_Approval_Queue::enqueue()` and returns `status=awaiting_approval` instead of executing. |
+| `wp_mcp_ai_pro_workflow_node_executed` | action | Phase 4 — appends a `node_completed` / `node_failed` event to `WP_MCP_AI_Workflow_Run_CPT`, lazily creating the run on the first node and tying it to the front-end's `execution_id`. |
+| `wp_mcp_ai_pro_workflow_execution_saved` | action | Phase 4 — appends a final `execution_summary` event and calls `WP_MCP_AI_Workflow_Run_CPT::set_status()` with the terminal status (`completed` / `failed` / `cancelled`). |
+
+Because the Pro builder uses string workflow IDs (sanitize-key form) and the base run-log expects an int post ID, the mirrored run records use `workflow_id = 0` and stash the original Pro string ID in the run's `context.pro_workflow_id` along with `pro_execution_id`. Consumers of `/mcp-ai/v1/orchestration/runs/*` and the Run Timeline admin page can correlate the two systems through that context.
+
+### Future TODOs — Phase 3 / Engine V2 enhancements
+
+The Phase 3 base classes (`WP_MCP_AI_Workflow_CPT`, `WP_MCP_AI_Workflow_Engine_V2`, `WP_MCP_AI_Admin_DAG_Builder`, and the `mcp-ai/v1/orchestration/workflows/*` REST routes) ship as a complete vanilla-SVG "lite" workflow surface. The bridge above gives the Pro builder durability, HITL, and observability today; the items below converge the two stores so the Pro builder eventually becomes the only authoring UI:
+
+- [ ] **Native CCT-backed Pro workflow store** — migrate the `wp_mcp_ai_pro_workflows` option into a JetEngine CCT (or the base `mcp_ai_workflow` CPT) so workflows benefit from revisions, RBAC, and import/export round-tripping.
+- [ ] **Single canonical authoring surface** — once the store is unified, hide the base "DAG Builder" admin page when Pro is active and deep-link the Pro page from the same submenu slot.
 - [ ] **Shared import/export schema** — converge the base `workflow.json` round-trip with the Pro builder's JSON export so a workflow authored in either UI is portable to the other.
-- [ ] **Engine V2 ↔ Pro presets** — let `WP_MCP_AI_Pro_Workflow_Presets` instantiate workflows directly into the `mcp_ai_workflow` CPT (or its CCT successor) so presets benefit from semver auto-bump and post-revisions.
-- [ ] **Trigger → executor handoff** — the trigger CPT currently dispatches via `wp_mcp_ai_trigger_fired` and falls back to `WP_MCP_AI_Workflow_Engine_V2` if present. Long-term, route through a single `wp_mcp_ai_workflow_executor` filter so any backend (Pro builder, Engine V2, third-party) can register itself.
-- [ ] **Replay tool — pluggable executor** — generalise `replay_workflow_run` so it does not hard-depend on `WP_MCP_AI_Workflow_Engine_V2::execute()`, mirroring the trigger handoff above.
+- [ ] **Engine V2 ↔ Pro presets** — let `WP_MCP_AI_Pro_Workflow_Presets` instantiate workflows directly into the unified store so presets benefit from semver auto-bump and post-revisions.
+- [ ] **Trigger → executor handoff** — the trigger CPT currently dispatches via `wp_mcp_ai_trigger_fired` and falls back to `WP_MCP_AI_Workflow_Engine_V2` if present. Long-term, route through a single `wp_mcp_ai_workflow_executor` filter so any backend (Pro builder, Engine V2, third-party) can register itself; Pro workflows would be addressable by their string ID through the same code path.
+- [ ] **Replay tool — pluggable executor** — generalise `replay_workflow_run` so it does not hard-depend on `WP_MCP_AI_Workflow_Engine_V2::execute()`, mirroring the trigger handoff above. Replaying a Pro execution should drive the Pro builder's per-node AJAX endpoint (or a server-side equivalent).
 - [ ] **Visual DAG parity** — eventually deprecate the base vanilla-SVG canvas in favour of the React UI once Pro coverage matches the base node palette (agent / tool / condition / parallel / approval / loop).
 
 ---

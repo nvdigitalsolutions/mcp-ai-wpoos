@@ -992,6 +992,27 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 				return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via check_ajax_referer().
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_key( wp_unslash( $_POST['workflow_id'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via check_ajax_referer().
+		$node_id     = isset( $_POST['node_id'] ) ? sanitize_text_field( wp_unslash( $_POST['node_id'] ) ) : '';
+
+		/**
+		 * Fires after a Pro workflow node has been executed.
+		 *
+		 * Listeners (e.g. WP_MCP_AI_Pro_Workflow_Bridge) use this to mirror
+		 * Pro execution into the base Workflow Run CPT for observability.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string         $node_type   Node type: action|tool|agent.
+		 * @param string         $node_id     Workflow-scoped node identifier.
+		 * @param string         $workflow_id Pro workflow ID (sanitize_key form).
+		 * @param array|WP_Error $result      Execution result or error.
+		 * @param array          $context     Execution context from previous nodes.
+		 */
+		do_action( 'wp_mcp_ai_pro_workflow_node_executed', $node_type, $node_id, $workflow_id, $result, $context );
+
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		} else {
@@ -1075,6 +1096,27 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		// Apply context variable substitution.
 		$arguments = $this->apply_context_to_params( $arguments, $context );
+
+		/**
+		 * Pre-execute filter to allow short-circuiting tool execution.
+		 *
+		 * Used by the Pro Workflow Bridge to enforce HITL approvals and the
+		 * prompt-injection guardrail before the tool registry is invoked.
+		 * Returning a non-null value (array or WP_Error) skips registry
+		 * execution entirely.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param array|WP_Error|null $short_circuit Pre-execute result, or null to proceed normally.
+		 * @param string              $tool_name     Tool name.
+		 * @param array               $arguments     Tool arguments after context substitution.
+		 * @param array               $context       Execution context.
+		 */
+		$short_circuit = apply_filters( 'wp_mcp_ai_pro_workflow_pre_execute_tool', null, $tool_name, $arguments, $context );
+
+		if ( null !== $short_circuit ) {
+			return $short_circuit;
+		}
 
 		// Try to execute via the tool registry.
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
@@ -1279,6 +1321,19 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		update_option( $log_key, $log );
+
+		/**
+		 * Fires after a Pro workflow execution record has been persisted.
+		 *
+		 * Listeners (e.g. WP_MCP_AI_Pro_Workflow_Bridge) use this to finalize
+		 * the corresponding base Workflow Run CPT record (set status,
+		 * record terminal cost/token totals).
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param array $sanitized Sanitized execution record (id, workflow_id, status, etc.).
+		 */
+		do_action( 'wp_mcp_ai_pro_workflow_execution_saved', $sanitized );
 
 		wp_send_json_success( array( 'message' => __( 'Execution saved.', 'mcp-ai-wpoos' ) ) );
 	}
