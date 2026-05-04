@@ -459,6 +459,12 @@ class WP_MCP_AI_Model_Config {
 			$providers['nvidia'] = __( 'NVIDIA NIM', 'mcp-ai-wpoos' );
 		}
 
+		// Check enable_deepseek setting (defaults to false if not set).
+		$enable_deepseek = isset( $settings['enable_deepseek'] ) ? $settings['enable_deepseek'] : false;
+		if ( $enable_deepseek && ! empty( $settings['deepseek_api_key'] ) ) {
+			$providers['deepseek'] = __( 'DeepSeek', 'mcp-ai-wpoos' );
+		}
+
 		// Check enable_huggingface setting (defaults to false if not set).
 		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
 		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {
