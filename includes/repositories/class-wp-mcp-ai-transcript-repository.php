@@ -46,7 +46,7 @@ class WP_MCP_AI_Transcript_Repository {
 			return '';
 		}
 
-		return $wpdb->prefix . 'jet_cct_' . $slug;
+		return $wpdb->prefix . 'jet-cct-' . $slug;
 	}
 
 	/**
@@ -99,7 +99,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-		// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant 'ai_chat_transcripts'.
+		// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant 'ai_chat_transcripts'.
 		$table        = esc_sql( $this->get_table_name() );
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
@@ -107,16 +107,24 @@ class WP_MCP_AI_Transcript_Repository {
 		$page         = max( 1, (int) $page );
 		$offset       = ( $page - 1 ) * $per_page;
 
-		// Try with user_id first (custom field defined in CCT schema).
-		$where_clauses = array( 'user_id = %d' );
-		$where_values  = array( $user_id );
+		// When user_id = 0 (e.g. background mining job, no specific user), skip the
+		// user filter entirely so all users' sessions for the assistant are returned.
+		// When user_id > 0 we first try the custom `user_id` field, then fall back
+		// to JetEngine's built-in `cct_author_id` field.
+		if ( $user_id > 0 ) {
+			$where_clauses = array( 'user_id = %d' );
+			$where_values  = array( $user_id );
+		} else {
+			$where_clauses = array();
+			$where_values  = array();
+		}
 
 		if ( $assistant_id > 0 ) {
 			$where_clauses[] = 'assistant_id = %s';
 			$where_values[]  = (string) $assistant_id;
 		}
 
-		$where_sql = implode( ' AND ', $where_clauses );
+		$where_sql = ! empty( $where_clauses ) ? implode( ' AND ', $where_clauses ) : '1=1';
 
 		$query_values = array_merge( $where_values, array( $per_page, $offset ) );
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
@@ -145,9 +153,10 @@ class WP_MCP_AI_Transcript_Repository {
 			$rows = array();
 		}
 
-		// Fallback: If no rows found with user_id, try with cct_author_id.
-		// This handles JetEngine's built-in author tracking field.
-		if ( empty( $rows ) ) {
+		// Fallback: If user_id > 0 and no rows found, try with JetEngine's built-in
+		// cct_author_id field. Skipped when user_id = 0 because we already queried
+		// all users above.
+		if ( empty( $rows ) && $user_id > 0 ) {
 			$fallback_where_clauses = array( 'cct_author_id = %d' );
 			$fallback_where_values  = array( $user_id );
 
@@ -186,17 +195,18 @@ class WP_MCP_AI_Transcript_Repository {
 			}
 		}
 
-		// Get total count.
+		// Get total count using the same WHERE clause as the primary query.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
 		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
-		$total_query = $wpdb->prepare( $total_query_template, $where_values );
+		$total_query = empty( $where_values ) ? $wpdb->prepare( $total_query_template, array() ) : $wpdb->prepare( $total_query_template, $where_values );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 		$total = (int) $wpdb->get_var( $total_query );
 
-		// If we used fallback for rows, also use fallback for total count.
-		if ( 0 === $total && ! empty( $rows ) ) {
+		// If user_id > 0 and we got rows from the cct_author_id fallback but total
+		// count is still 0, re-run the count with the fallback WHERE clause.
+		if ( 0 === $total && ! empty( $rows ) && $user_id > 0 ) {
 			$fallback_where_clauses = array( 'cct_author_id = %d' );
 			$fallback_where_values  = array( $user_id );
 
@@ -255,7 +265,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-		// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant 'ai_chat_transcripts'.
+		// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant 'ai_chat_transcripts'.
 		$table        = esc_sql( $this->get_table_name() );
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
@@ -263,8 +273,14 @@ class WP_MCP_AI_Transcript_Repository {
 		$select_fields = $this->get_select_fields();
 
 		// Query 1: Try with session_key + user_id + assistant_id (custom user_id field).
-		$where_clauses = array( 'session_key = %s', 'user_id = %d' );
-		$where_values  = array( $session_key, $user_id );
+		// When user_id = 0 (background mining), skip the user filter so we match any user.
+		if ( $user_id > 0 ) {
+			$where_clauses = array( 'session_key = %s', 'user_id = %d' );
+			$where_values  = array( $session_key, $user_id );
+		} else {
+			$where_clauses = array( 'session_key = %s' );
+			$where_values  = array( $session_key );
+		}
 
 		if ( $assistant_id > 0 ) {
 			$where_clauses[] = 'assistant_id = %s';
@@ -313,8 +329,9 @@ class WP_MCP_AI_Transcript_Repository {
 			);
 		}
 
-		// Query 2: If no rows, try with cct_author_id (JetEngine built-in field).
-		if ( empty( $rows ) ) {
+		// Query 2: If user_id > 0 and no rows, try with cct_author_id (JetEngine built-in field).
+		// Skipped when user_id = 0 because Query 1 already matched without a user filter.
+		if ( empty( $rows ) && $user_id > 0 ) {
 			$author_where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
 			$author_where_values  = array( $session_key, $user_id );
 
