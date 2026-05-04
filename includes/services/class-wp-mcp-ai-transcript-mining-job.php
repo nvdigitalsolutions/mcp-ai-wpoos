@@ -134,9 +134,11 @@ class WP_MCP_AI_Transcript_Mining_Job {
 
 		self::save_state( $state );
 
-		// Schedule the first tick. Use 1s in the future so the request
-		// returns before the worker fires (WP cron is opportunistic).
-		$tick_timestamp = time() + 1;
+		// Schedule the first tick in the immediate past so wp_get_ready_cron_jobs()
+		// returns it and spawn_cron() can fire it without waiting for the next organic
+		// page load. Scheduling 1s in the future guarantees spawn_cron() skips the
+		// event (it only dispatches events whose timestamp is <= time()).
+		$tick_timestamp = time() - 1;
 		wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
 
 		// Register the tick with the Cron Manager so it is visible in the
@@ -149,6 +151,13 @@ class WP_MCP_AI_Transcript_Mining_Job {
 				$tick_timestamp,
 				$state['user_id']
 			);
+		}
+
+		// Kick WordPress cron immediately so the first tick runs even if no page
+		// load follows this request. spawn_cron() returning false is not an error —
+		// it means another cron spawn is already in flight and will pick up the event.
+		if ( function_exists( 'spawn_cron' ) ) {
+			spawn_cron();
 		}
 
 		return $state;
@@ -233,8 +242,9 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		if ( empty( $state['queue'] ) ) {
 			$state['status'] = 'completed';
 		} else {
-			// Re-schedule the next tick.
-			$tick_timestamp = time() + 1;
+			// Re-schedule the next tick in the immediate past so spawn_cron()
+			// can fire it without waiting for the next organic page load.
+			$tick_timestamp = time() - 1;
 			wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
 
 			// Update the Cron Manager entry so the tick remains visible.
@@ -246,6 +256,11 @@ class WP_MCP_AI_Transcript_Mining_Job {
 					$tick_timestamp,
 					isset( $state['user_id'] ) ? (int) $state['user_id'] : 0
 				);
+			}
+
+			// Drive the next tick immediately.
+			if ( function_exists( 'spawn_cron' ) ) {
+				spawn_cron();
 			}
 		}
 
