@@ -15,8 +15,9 @@ NV oOS (Open Operator System) is a WordPress-native AI orchestration platform th
 2. [Feature Documentation](#2-feature-documentation)
 3. [Phase 1 — Observability](#3-phase-1--observability)
 4. [Phase 2 — Human-in-the-Loop (HITL)](#4-phase-2--human-in-the-loop-hitl)
-5. [Roadmap: Phases 3–6](#5-roadmap-phases-36)
-6. [Further Reading](#6-further-reading)
+5. [Future TODOs — Phase 3 / Engine V2 enhancements](#5-future-todos--phase-3--engine-v2-enhancements)
+6. [Roadmap: Phases 4–6](#6-roadmap-phases-46)
+7. [Further Reading](#7-further-reading)
 
 ---
 
@@ -183,18 +184,33 @@ A real-time admin screen that lists pending, approved, and rejected requests. Re
 
 ---
 
-## 5. Roadmap: Phases 3–6
+## 5. Future TODOs — Phase 3 / Engine V2 enhancements
+
+The Phase 3 base classes (`WP_MCP_AI_Workflow_CPT`, `WP_MCP_AI_Workflow_Engine_V2`, `WP_MCP_AI_Admin_DAG_Builder`, and the `mcp-ai/v1/orchestration/workflows/*` REST routes) ship as a complete vanilla-SVG "lite" workflow surface. They co-exist with the established **Pro Workflow Builder** (React UI under `addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php`), which is Pro's primary authoring experience and stores workflows in JetEngine CCTs rather than the base `mcp_ai_workflow` CPT.
+
+These are deliberately deferred until the Pro builder evolves to consume the base infrastructure. None of them are required for the current opt-in feature flag (`wp_mcp_ai_workflow_v2_enabled`, default `false`) to work as documented.
+
+- [ ] **Bridge the Pro CCT-backed workflows into Engine V2** — add a thin adapter so the React builder can opt-in to executing through `WP_MCP_AI_Workflow_Engine_V2` (durable run-log, HITL approvals, trigger system) without rewriting its store.
+- [ ] **Single canonical authoring surface** — once the bridge is stable, hide the base "DAG Builder" admin page when Pro is active and deep-link the Pro page from the same submenu slot.
+- [ ] **Shared import/export schema** — converge the base `workflow.json` round-trip with the Pro builder's JSON export so a workflow authored in either UI is portable to the other.
+- [ ] **Engine V2 ↔ Pro presets** — let `WP_MCP_AI_Pro_Workflow_Presets` instantiate workflows directly into the `mcp_ai_workflow` CPT (or its CCT successor) so presets benefit from semver auto-bump and post-revisions.
+- [ ] **Trigger → executor handoff** — the trigger CPT currently dispatches via `wp_mcp_ai_trigger_fired` and falls back to `WP_MCP_AI_Workflow_Engine_V2` if present. Long-term, route through a single `wp_mcp_ai_workflow_executor` filter so any backend (Pro builder, Engine V2, third-party) can register itself.
+- [ ] **Replay tool — pluggable executor** — generalise `replay_workflow_run` so it does not hard-depend on `WP_MCP_AI_Workflow_Engine_V2::execute()`, mirroring the trigger handoff above.
+- [ ] **Visual DAG parity** — eventually deprecate the base vanilla-SVG canvas in favour of the React UI once Pro coverage matches the base node palette (agent / tool / condition / parallel / approval / loop).
+
+---
+
+## 6. Roadmap: Phases 4–6
 
 | Phase | Title | Summary |
 |---|---|---|
-| **3** | Visual Workflow DAG Builder | Drag-and-drop editor for assembling multi-agent pipelines as directed acyclic graphs — visual execution preview, branch/condition support, and export as workflow JSON. The Pro precursor is documented in [`docs/pro-workflow-builder.md`](pro-workflow-builder.md). |
 | **4** | Durable / Replayable Execution | Checkpoint-based execution so long-running agentic runs survive PHP timeouts, server restarts, and partial tool failures. Replay from any saved checkpoint. Builds on the existing async-jobs infrastructure (`docs/features/async-jobs/`). |
 | **5** | Federated Multi-Site Orchestration | Distribute agent runs across a WordPress multisite network or across independent sites via the existing A2A protocol. Planned: central coordinator assistant, per-site sub-agents, and network-wide observability on a single Measurement dashboard. |
 | **6** | Adaptive Fine-Tune & Curriculum Export | Harness Layer H (Pro): failure clustering, counterfactual runner output, and JSONL curriculum export for human-reviewed fine-tuning. Extends the existing eval harness and Measurement subsystem. |
 
 ---
 
-## 6. Further Reading
+## 7. Further Reading
 
 | Resource | Description |
 |---|---|
