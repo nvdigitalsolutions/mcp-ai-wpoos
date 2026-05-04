@@ -77,9 +77,18 @@ class WP_MCP_AI_Harness_Profile {
 				'task_class' => 'general',
 				'pii_filter' => true,
 			),
-			'evals_enabled'    => array(),
-			'verifiers'        => array(),
-			'cost_ceiling_usd' => self::DEFAULT_COST_CEILING_USD,
+			'evals_enabled'       => array(),
+			'verifiers'           => array(),
+			'cost_ceiling_usd'    => self::DEFAULT_COST_CEILING_USD,
+			'injection_detector'  => array(
+				'enabled'              => false,
+				'use_moderation_api'   => false,
+				'block_severity'       => 'high',
+			),
+			'structured_output'   => array(
+				'enabled'   => false,
+				'max_iters' => 1,
+			),
 		);
 	}
 
@@ -222,6 +231,25 @@ class WP_MCP_AI_Harness_Profile {
 				$ceiling = 1000.0;
 			}
 			$out['cost_ceiling_usd'] = $ceiling;
+		}
+
+		if ( isset( $raw['injection_detector'] ) && is_array( $raw['injection_detector'] ) ) {
+			$id                                               = $raw['injection_detector'];
+			$out['injection_detector']['enabled']             = ! empty( $id['enabled'] );
+			$out['injection_detector']['use_moderation_api'] = ! empty( $id['use_moderation_api'] );
+			$allowed_severities                               = array( 'low', 'medium', 'high', 'critical', 'never' );
+			$block_severity                                   = isset( $id['block_severity'] ) ? sanitize_key( (string) $id['block_severity'] ) : 'high';
+			$out['injection_detector']['block_severity']      = in_array( $block_severity, $allowed_severities, true ) ? $block_severity : 'high';
+		}
+
+		if ( isset( $raw['structured_output'] ) && is_array( $raw['structured_output'] ) ) {
+			$so                                   = $raw['structured_output'];
+			$out['structured_output']['enabled']  = ! empty( $so['enabled'] );
+			$out['structured_output']['max_iters'] = self::clamp_int(
+				isset( $so['max_iters'] ) ? $so['max_iters'] : 1,
+				1,
+				self::MAX_REFINE_ITERATIONS
+			);
 		}
 
 		return $out;
