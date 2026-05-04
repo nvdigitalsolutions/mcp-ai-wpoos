@@ -230,7 +230,7 @@ class WP_MCP_AI_Channel_Messages_CCT {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				"SELECT direction, content FROM {$table}
+				"SELECT direction, content FROM `{$table}`
 				 WHERE channel = %s
 				   AND channel_contact_id = %s
 				   AND connection_id = %s
