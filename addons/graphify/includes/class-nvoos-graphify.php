@@ -256,8 +256,13 @@ class NV_oOS_Graphify {
 		return wp_parse_args(
 			get_option( self::OPTION_KEY, array() ),
 			array(
-				'enabled'              => true,
-				'post_types'           => NV_oOS_Graphify_Detector::get_default_post_types(),
+				'enabled'             => true,
+				// 'post_types' is intentionally NOT listed here as a computed default.
+				// detect_posts() calls get_default_post_types() directly when the key
+				// is absent. Including it here would cause infinite recursion because
+				// get_default_post_types() applies the nvoos_graphify_indexed_post_types
+				// filter, which (when the NV oOS bridge is active) calls back into
+				// get_settings() via filter_indexed_post_types().
 				'semantic_extraction'  => true,
 				'incremental_builds'   => true,
 				'auto_rebuild'         => false,
