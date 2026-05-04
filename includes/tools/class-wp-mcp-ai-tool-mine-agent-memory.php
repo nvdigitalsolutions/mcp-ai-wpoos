@@ -675,11 +675,10 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 		$args['only_unextracted'] = (bool) $args['only_unextracted'];
 		$args['posts_per_page']   = max( 1, min( 50, (int) $args['posts_per_page'] ) );
 
-		// Default user scope to the current user when not provided. This
-		// matches every other admin-triggered transcript query in the plugin.
-		if ( 0 === $args['user_id'] ) {
-			$args['user_id'] = get_current_user_id();
-		}
+		// user_id = 0 means "no user filter" (all users). This is intentional
+		// for background mining jobs where get_current_user_id() returns 0
+		// (cron context has no authenticated user). Callers that want to scope
+		// to a specific user must pass user_id explicitly.
 
 		// Resolve the session list. The filter lets tests inject mock
 		// sessions without a live JetEngine CCT, and lets external code

@@ -334,6 +334,18 @@ trait WP_MCP_AI_Tool_WordPress_Native {
 					'context'   => $context,
 				)
 			);
+
+			// Register in Cron Manager so the job is visible and monitorable.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+				WP_MCP_AI_Cron_Manager::record_job(
+					$hook,
+					array( $this->get_slug() ),
+					'single',
+					time(),
+					$user_id
+				);
+			}
 		}
 
 		return true;

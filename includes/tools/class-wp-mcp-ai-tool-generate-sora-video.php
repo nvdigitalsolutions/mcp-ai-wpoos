@@ -246,6 +246,18 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			array( $job_id )
 		);
 
+		// Register in Cron Manager so the job is visible and monitorable.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			WP_MCP_AI_Cron_Manager::record_job(
+				'wp_mcp_ai_sora_video_generate',
+				array( $job_id ),
+				'single',
+				time(),
+				$user_id
+			);
+		}
+
 		WP_MCP_AI_Logger::log_event(
 			'sora_video_queued',
 			'Sora video generation queued',
