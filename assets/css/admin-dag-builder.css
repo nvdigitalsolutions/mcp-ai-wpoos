@@ -1,0 +1,358 @@
+/**
+ * Workflow DAG Builder — admin page styles.
+ *
+ * Flex layout: palette (200px) | canvas (flex-1) | inspector (300px).
+ * Node type colour-coding, toolbar, and responsive fallback.
+ */
+
+/* ── Outer wrap ── */
+.mcp-ai-dag-wrap {
+	padding-top: 12px;
+}
+
+.mcp-ai-dag-wrap h1 {
+	margin-bottom: 12px;
+}
+
+/* ── Editor shell ── */
+.dag-editor-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+/* ── Toolbar ── */
+.dag-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background: #f0f0f1;
+	border: 1px solid #c3c4c7;
+	border-bottom: none;
+	border-radius: 4px 4px 0 0;
+	flex-wrap: wrap;
+}
+
+.dag-toolbar .button {
+	min-width: 90px;
+}
+
+.dag-status-msg {
+	font-size: 13px;
+	margin-left: 8px;
+}
+
+/* ── Body ── */
+.dag-body {
+	display: flex;
+	height: 640px;
+	border: 1px solid #c3c4c7;
+	border-radius: 0 0 4px 4px;
+	overflow: hidden;
+}
+
+/* ── Palette ── */
+.dag-palette {
+	width: 200px;
+	min-width: 160px;
+	background: #fafafa;
+	border-right: 1px solid #c3c4c7;
+	padding: 12px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	overflow-y: auto;
+}
+
+.dag-palette h3 {
+	margin: 0 0 8px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #50575e;
+}
+
+.dag-palette-btn {
+	display: block;
+	width: 100%;
+	padding: 7px 10px;
+	text-align: left;
+	font-size: 13px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #888;
+	border-radius: 3px;
+	cursor: pointer;
+	transition: background 0.15s, transform 0.1s;
+}
+
+.dag-palette-btn:hover {
+	background: #f0f6fc;
+	transform: translateX(2px);
+}
+
+/* Node type accent colours */
+.dag-palette-btn[title="agent"]     { border-left-color: #2271b1; }
+.dag-palette-btn[title="tool"]      { border-left-color: #1e7e34; }
+.dag-palette-btn[title="condition"] { border-left-color: #e67e22; }
+.dag-palette-btn[title="approval"]  { border-left-color: #c0392b; }
+.dag-palette-btn[title="loop"]      { border-left-color: #8e44ad; }
+.dag-palette-btn[title="parallel"]  { border-left-color: #16a085; }
+
+.dag-connect-hint {
+	font-size: 11px;
+	color: #777;
+	margin: 8px 0 0;
+	line-height: 1.5;
+}
+
+/* ── Canvas ── */
+.dag-canvas-wrap {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	background: #1e1e2e;
+	overflow: hidden;
+	position: relative;
+}
+
+.dag-canvas-hint {
+	font-size: 11px;
+	color: #6b6b8a;
+	padding: 4px 10px;
+	margin: 0;
+	background: #16161f;
+	border-bottom: 1px solid #2e2e44;
+}
+
+.dag-canvas-svg {
+	flex: 1;
+	display: block;
+	width: 100%;
+	height: 100%;
+	cursor: default;
+}
+
+/* SVG node selection ring */
+.dag-node--selected rect {
+	filter: drop-shadow( 0 0 6px rgba(255,255,255,0.6) );
+}
+
+/* ── Inspector ── */
+.dag-inspector {
+	width: 300px;
+	min-width: 220px;
+	background: #fff;
+	border-left: 1px solid #c3c4c7;
+	padding: 12px 14px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.dag-inspector h3 {
+	margin: 0 0 12px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #50575e;
+}
+
+.dag-inspector-content {
+	font-size: 13px;
+	color: #50575e;
+	flex: 1;
+}
+
+.dag-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 14px;
+}
+
+.dag-field-group label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.dag-inspector-input,
+.dag-inspector-select {
+	width: 100%;
+	padding: 5px 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	font-size: 13px;
+}
+
+.dag-inspector-textarea {
+	width: 100%;
+	height: 110px;
+	padding: 5px 8px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	font-family: monospace;
+	font-size: 12px;
+	resize: vertical;
+}
+
+.dag-btn-apply {
+	margin-top: 4px;
+	margin-right: 6px;
+}
+
+.dag-btn-delete {
+	margin-top: 4px;
+	color: #c0392b;
+	border-color: #c0392b;
+}
+
+.dag-btn-delete:hover {
+	background: #fbeaea;
+}
+
+/* ── Sidebar (PHP-rendered workflow list) ── */
+.mcp-ai-dag-layout {
+	display: flex;
+	gap: 0;
+	align-items: flex-start;
+}
+
+.mcp-ai-dag-sidebar {
+	width: 260px;
+	min-width: 200px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 14px 12px;
+	margin-right: 16px;
+	flex-shrink: 0;
+}
+
+.mcp-ai-dag-sidebar h2 {
+	margin: 0 0 10px;
+	font-size: 14px;
+}
+
+.mcp-ai-dag-new-btn {
+	display: block;
+	width: 100%;
+	margin-bottom: 12px;
+	text-align: center;
+}
+
+.mcp-ai-dag-workflow-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.mcp-ai-dag-workflow-item {
+	padding: 8px 10px;
+	border: 1px solid #e0e0e0;
+	border-radius: 3px;
+	background: #fafafa;
+}
+
+.mcp-ai-dag-workflow-item.is-active {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.mcp-ai-dag-workflow-item strong {
+	display: block;
+	font-size: 13px;
+}
+
+.mcp-ai-dag-workflow-item small {
+	font-size: 11px;
+	color: #777;
+}
+
+.mcp-ai-dag-workflow-actions {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.mcp-ai-dag-empty {
+	color: #777;
+	font-size: 13px;
+	font-style: italic;
+}
+
+/* Loading placeholder */
+.mcp-ai-dag-loading {
+	color: #50575e;
+	font-style: italic;
+	padding: 20px;
+}
+
+/* Canvas fill when sidebar is visible */
+.mcp-ai-dag-main {
+	flex: 1;
+	min-width: 0;
+}
+
+/* ── Responsive ── */
+@media ( max-width: 1200px ) {
+	.dag-inspector {
+		width: 240px;
+		min-width: 180px;
+	}
+}
+
+@media ( max-width: 960px ) {
+	.dag-body {
+		flex-direction: column;
+		height: auto;
+	}
+
+	.dag-palette {
+		width: 100%;
+		flex-direction: row;
+		flex-wrap: wrap;
+		border-right: none;
+		border-bottom: 1px solid #c3c4c7;
+	}
+
+	.dag-palette-btn {
+		width: auto;
+		flex: 1 1 auto;
+	}
+
+	.dag-canvas-wrap {
+		height: 400px;
+	}
+
+	.dag-inspector {
+		width: 100%;
+		border-left: none;
+		border-top: 1px solid #c3c4c7;
+	}
+
+	.mcp-ai-dag-layout {
+		flex-direction: column;
+	}
+
+	.mcp-ai-dag-sidebar {
+		width: 100%;
+		margin-right: 0;
+		margin-bottom: 14px;
+	}
+
+	.mcp-ai-dag-workflow-list {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.mcp-ai-dag-workflow-item {
+		flex: 1 1 200px;
+	}
+}

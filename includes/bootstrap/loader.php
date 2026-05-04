@@ -295,6 +295,14 @@ add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 5 );
 WP_MCP_AI_Approval_Queue::register_cron();
 
 // ---------------------------------------------------------------------------
+// Phase 3 — Workflow CPT + Engine V2
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_cpt' ), 6 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 6 );
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
+
+// ---------------------------------------------------------------------------
 // A2A Protocol system
 // ---------------------------------------------------------------------------
 
@@ -334,6 +342,14 @@ add_action(
 	'rest_api_init',
 	function () {
 		$controller = new WP_MCP_AI_REST_Approval_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Workflow_CPT_Controller();
 		$controller->register_routes();
 	}
 );
@@ -430,6 +446,9 @@ if ( is_admin() ) {
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
 	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
+
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dag-builder.php';
+	new WP_MCP_AI_Admin_DAG_Builder();
 
 	// ISO 27001 compliance systems.
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
