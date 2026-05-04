@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
-### May 3–4, 2026 — LLM Harnessing Subsystem GA, 28 new slash commands, Chat-client Memory Bridge, Retroactive Transcript Mining, Pro Packages Tier 5
+### May 3–4, 2026 — LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat-client Memory Bridge, Retroactive Transcript Mining, Pro Packages Tier 5
 
-A major capabilities pass landing the remaining work from the previous sprint. Headline additions: (1) **LLM Harnessing Subsystem (Layers A–H)** ships end-to-end — seven per-request epistemic layers (cues, reasoning traces, tool routing, retrieval, self-refine, memory scoping, profile-driven evals) plus the Pro Layer H fine-tune curriculum exporter; (2) **28 new base slash commands** (plus 8 Pro commands) nearly double the in-chat CLI surface; (3) the **Chat-client ⇄ Memory Bridge G-series** completes the durable memory drawer — REST proxy, JS service, Memories / Scope / Audit tabs, 🧠 badge, SSE `memory_event` frames, pagehide auto-capture, and drawer export; (4) **Retroactive Transcript Mining** — a queued background job, three REST endpoints, and the new `transcripts` source on `mine_agent_memory` with provenance + de-dupe; (5) **Pro Packages Tier 5** — five new browser-native chat-service NPM packages.
+A major capabilities pass landing the remaining work from the previous sprint. Headline additions: (1) **LLM Harnessing Subsystem (Layers A–H)** ships end-to-end — seven per-request epistemic layers (cues, reasoning traces, tool routing, retrieval, self-refine, memory scoping, profile-driven evals) plus the Pro Layer H fine-tune curriculum exporter; (2) **19 new slash commands** (11 base + 8 Pro, bringing base total to 24) nearly double the in-chat CLI surface; (3) the **Chat-client ⇄ Memory Bridge G-series** completes the durable memory drawer — REST proxy, JS service, Memories / Scope / Audit tabs, 🧠 badge, SSE `memory_event` frames, pagehide auto-capture, and drawer export; (4) **Retroactive Transcript Mining** — a queued background job, three REST endpoints, and the new `transcripts` source on `mine_agent_memory` with provenance + de-dupe; (5) **Pro Packages Tier 5** — five new browser-native chat-service NPM packages.
 
 #### Added — LLM Harnessing Subsystem (Base + Pro, `includes/harness/`)
 
@@ -21,9 +21,9 @@ Seven opt-in layers that improve response quality without modifying existing too
 - **Harness profile schema** (stored in `_wp_mcp_ai_harness_profile` post meta): `enabled` (bool), `layers` (A–G flags), `cost_ceiling_usd` (float), `tools.router_mode` (`scored`|`default`), `tools.preset_weights` (map), `evals_enabled` (array of suite slugs), `pii_filter` (bool).
 - **Hooks summary**: `wp_mcp_ai_register_prompt_cues` (action), `wp_mcp_ai_select_prompt_cue` (filter), `wp_mcp_ai_harness_profile` (filter), `wp_mcp_ai_harness_tool_score` (filter), `wp_mcp_ai_retrieval_passages` (filter), `wp_mcp_ai_retrieval_claim_supported` (filter), `wp_mcp_ai_pii_filter_patterns` (filter), `wp_mcp_ai_harness_eval_generator` (filter), `wp_mcp_ai_harness_eval_tick` (cron action).
 
-#### Added — 28 base slash commands + 8 Pro slash commands
+#### Added — 19 new slash commands (11 base + 8 Pro, 32 total)
 
-The slash command surface nearly doubled. All new base commands are registered in `includes/slash-commands/slash-commands-init.php`; Pro commands are registered via the `wp_mcp_ai_slash_commands_initialized` action from `addons/pro/includes/slash-commands/slash-commands-init.php`.
+The slash command surface nearly doubled — from ~13 to 32 commands (24 base + 8 Pro). New base commands are registered in `includes/slash-commands/slash-commands-init.php`; Pro commands are registered via the `wp_mcp_ai_slash_commands_initialized` action from `addons/pro/includes/slash-commands/slash-commands-init.php`.
 
 **New base commands (since v1.1.13):**
 

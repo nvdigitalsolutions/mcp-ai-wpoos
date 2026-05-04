@@ -277,13 +277,13 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 = Unreleased - May 3-4, 2026 =
 
-**LLM Harnessing Subsystem GA, 28 new slash commands, Chat Memory Drawer, Retroactive Transcript Mining, Pro Packages Tier 5**
+**LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat Memory Drawer, Retroactive Transcript Mining, Pro Packages Tier 5**
 
 *Added — LLM Harnessing Subsystem (Layers A-H)*
 
 Seven opt-in per-request layers in `includes/harness/` improve response quality without changing existing tool behaviour: Layer A (Prompt/Cue Library with 7 named templates), Layer B (Reasoning Trace + self-consistency vote), Layer C (Tool Routing with preset_weights), Layer D (Retrieval fan-out + citation verification), Layer E (Self-Refine loop with cost caps), Layer F (Memory Scoping + PII Filter), Layer G (Eval Scheduler cron). Pro Layer H exports fine-tune curricula as OpenAI JSONL. Profile stored in `_wp_mcp_ai_harness_profile` post meta. Reference: `docs/llm-harness.md`.
 
-*Added — 28 new base slash commands + 8 Pro slash commands*
+*Added — 19 new slash commands (11 base + 8 Pro, 32 total)*
 
 New base commands: `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/markup-stats`, `/remember`, `/forget`, `/scope`, `/compact`, `/context`, `/clear`, `/reset`, `/resume`, `/workflow`, `/sync-docs`, `/optimize-perf`. New Pro commands: `/schedule`, `/schedule-preset`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`.
 

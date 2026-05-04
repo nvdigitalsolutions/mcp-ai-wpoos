@@ -1,6 +1,6 @@
 # Slash Commands Reference
 
-> **Status:** Current as of NV oOS unreleased (May 3–4 2026 sprint) — base plugin ships 24 commands; Pro addon adds 8 more.  
+> **Status:** Current as of NV oOS unreleased (May 3–4 2026 sprint) — base plugin ships 24 commands total (13 pre-existing + 11 added May 3–4 sprint); Pro addon adds 8 new commands.  
 > **Last reviewed:** May 2026 · Version: 1.x
 
 Slash commands let users trigger powerful, structured operations directly from the chat input box by typing `/command [args] [--flags]`. The system is extensible: third-party plugins can register their own commands via the `wp_mcp_ai_default_slash_commands_loaded` action hook.
