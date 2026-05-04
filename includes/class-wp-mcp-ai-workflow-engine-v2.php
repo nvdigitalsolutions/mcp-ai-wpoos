@@ -94,7 +94,36 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 		 */
 		do_action( 'wp_mcp_ai_workflow_v2_before_execute', $workflow_post_id, $input );
 
-		$run_id = 'wf2-' . $workflow_post_id . '-' . bin2hex( random_bytes( 6 ) );
+		$run_id      = 'wf2-' . $workflow_post_id . '-' . bin2hex( random_bytes( 6 ) );
+		$cpt_run_id  = null;
+		$budget      = array();
+
+		// Phase 4 — create durable run record.
+		if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) ) {
+			if ( isset( $context['run_budget'] ) && is_array( $context['run_budget'] ) ) {
+				$budget = $context['run_budget'];
+			}
+
+			$cpt_run_id_or_error = WP_MCP_AI_Workflow_Run_CPT::create_run(
+				$workflow_post_id,
+				$input,
+				$budget,
+				$context
+			);
+
+			if ( ! is_wp_error( $cpt_run_id_or_error ) ) {
+				$cpt_run_id = $cpt_run_id_or_error;
+				WP_MCP_AI_Workflow_Run_CPT::set_status( $cpt_run_id, 'running' );
+				WP_MCP_AI_Workflow_Run_CPT::append_event(
+					$cpt_run_id,
+					'step_started',
+					'workflow-root',
+					'agent',
+					array( 'workflow_id' => $workflow_post_id, 'run_id' => $run_id )
+				);
+			}
+		}
+
 		$graph  = WP_MCP_AI_Workflow_CPT::get_graph( $workflow_post_id );
 
 		// Build a description from graph nodes for the underlying engine.
@@ -137,25 +166,74 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 
 				if ( is_wp_error( $tool_result ) ) {
 					$message = $tool_result->get_error_message();
+
+					// Phase 4 — record failure.
+					if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) && $cpt_run_id ) {
+						WP_MCP_AI_Workflow_Run_CPT::set_status( $cpt_run_id, 'failed' );
+						WP_MCP_AI_Workflow_Run_CPT::append_event(
+							$cpt_run_id,
+							'step_errored',
+							'workflow-root',
+							'agent',
+							array( 'error' => $message )
+						);
+					}
 				} else {
 					$success = isset( $tool_result['success'] ) ? (bool) $tool_result['success'] : true;
 					$results = is_array( $tool_result ) ? $tool_result : array();
 					$message = isset( $tool_result['message'] ) ? $tool_result['message'] : __( 'Workflow completed.', 'mcp-ai-wpoos' );
+
+					// Phase 4 — record success.
+					if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) && $cpt_run_id ) {
+						WP_MCP_AI_Workflow_Run_CPT::set_status( $cpt_run_id, $success ? 'completed' : 'failed' );
+						WP_MCP_AI_Workflow_Run_CPT::append_event(
+							$cpt_run_id,
+							$success ? 'step_finished' : 'step_errored',
+							'workflow-root',
+							'agent',
+							array( 'message' => $message )
+						);
+					}
 				}
 			} else {
 				$success = true;
 				$message = __( 'Graph executed (no execute_workflow tool registered).', 'mcp-ai-wpoos' );
 				$results = array( 'graph' => $graph, 'input' => $input );
+
+				// Phase 4 — record success (no tool needed).
+				if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) && $cpt_run_id ) {
+					WP_MCP_AI_Workflow_Run_CPT::set_status( $cpt_run_id, 'completed' );
+					WP_MCP_AI_Workflow_Run_CPT::append_event(
+						$cpt_run_id,
+						'step_finished',
+						'workflow-root',
+						'agent',
+						array( 'message' => $message )
+					);
+				}
 			}
 		} else {
 			$success = true;
 			$message = __( 'Graph executed (tool registry unavailable).', 'mcp-ai-wpoos' );
 			$results = array( 'graph' => $graph, 'input' => $input );
+
+			// Phase 4 — record success (registry unavailable).
+			if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) && $cpt_run_id ) {
+				WP_MCP_AI_Workflow_Run_CPT::set_status( $cpt_run_id, 'completed' );
+				WP_MCP_AI_Workflow_Run_CPT::append_event(
+					$cpt_run_id,
+					'step_finished',
+					'workflow-root',
+					'agent',
+					array( 'message' => $message )
+				);
+			}
 		}
 
 		$result = array(
 			'success' => $success,
 			'run_id'  => $run_id,
+			'cpt_run_id' => $cpt_run_id,
 			'results' => $results,
 			'message' => $message,
 		);
