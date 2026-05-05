@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### May 5, 2026 — NV oOS Cloud — hosted "Managed Tokens" service (Pro)
+
+A new **Pro-only** subsystem that lets a site route inference through NV's
+master OpenRouter account via a Cloudflare AI Gateway proxy — no per-provider
+key management required. Sits alongside the existing free BYOK flow.
+
+- **Brand:** NV oOS Cloud · **Hosting:** Cloudflare Worker → Cloudflare AI Gateway → OpenRouter · **Geographic scope:** worldwide (Stripe Tax handles VAT/GST/sales tax).
+- **Pricing:** wholesale × **1.07** (7% service fee) + Stripe processor pass-through (2.9% + $0.30) shown as a transparent line item. Minimum top-up $25 USD.
+- **New base filter** `wp_mcp_ai_route_to_provider` (in `WP_MCP_AI_Language_Model_Router::route_to_provider()`) that lets any add-on register a custom provider id without forking the router.
+- **New Pro module** under `addons/pro/includes/`:
+  - `services/class-wp-mcp-ai-nv-cloud-service.php` — singleton with encrypted Connect Token storage (AES-256-CBC keyed by `AUTH_KEY`+`SECURE_AUTH_KEY`), balance cache, prefs, markup math, ledger.
+  - `providers/class-wp-mcp-ai-nv-cloud-client.php` — OpenAI-compatible HTTP client (subclass of the existing OpenRouter client) targeting `cloud.nvoos.com/v1`.
+  - `providers/class-wp-mcp-ai-nv-cloud-provider-client.php` — `Interface_WP_MCP_AI_Provider_Client` adapter.
+  - `services/class-wp-mcp-ai-nv-cloud-billing-observer.php` — hooks `wp_mcp_ai_cost_calculated`, writes wholesale + 7% + total ledger entries (200-entry cap).
+  - `rest/class-wp-mcp-ai-nv-cloud-rest-controller.php` — `/mcp-ai-pro/v1/cloud/{status,connect,disconnect,refresh-balance,topup-url,ledger,prefs}` (all `manage_options`-gated).
+  - `admin/class-wp-mcp-ai-nv-cloud-settings-page.php` — admin UI (Connect, Balance, Top-up via Stripe Checkout, Auto-top-up, Ledger, low-balance banner).
+  - `nv-cloud-init.php` — bootstrap (router filter, REST registration, daily balance-refresh cron).
+- **Documentation:** `docs/features/nv-cloud.md` (architecture, Worker contract, security model, Cloudways vs Cloudflare comparison).
+- **Tests:** `addons/pro/tests/test-nv-cloud.php` — service round-trip, encryption-at-rest verification, markup math, Stripe pass-through math, ledger cap, billing-observer gating, REST permission gates, top-up minimum, router-filter wiring.
+
 ### May 4, 2026 — LM Studio provider brought to parity with May 2026 capabilities
 
 Full feature pass for `WP_MCP_AI_LM_Studio_Client` aligned with the existing OpenAI / Ollama client patterns. All new behaviour is opt-in via settings; default behaviour is unchanged.

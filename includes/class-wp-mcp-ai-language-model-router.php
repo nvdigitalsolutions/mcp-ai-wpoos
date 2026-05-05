@@ -266,6 +266,26 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @return array|WP_Error
 		 */
 		protected function route_to_provider( $provider, array $messages, array $options ) {
+			/**
+			 * Filter to allow add-ons to handle routing for custom provider IDs.
+			 *
+			 * Return a non-null value (chat-completion array or WP_Error) to short-circuit
+			 * the default routing switch. Used by the NV oOS Cloud Pro module to register
+			 * the `nv_hosted` provider, but available to any add-on that wants to add a
+			 * new provider id without forking the base router.
+			 *
+			 * @since 2026.05
+			 *
+			 * @param array|WP_Error|null $result   Pre-routed result. Default null = fall through to switch.
+			 * @param string              $provider Sanitised provider key.
+			 * @param array               $messages Chat messages array.
+			 * @param array               $options  Request options.
+			 */
+			$pre = apply_filters( 'wp_mcp_ai_route_to_provider', null, $provider, $messages, $options );
+			if ( null !== $pre ) {
+				return $pre;
+			}
+
 			switch ( $provider ) {
 				case 'anthropic':
 					return $this->anthropic_client->create_chat_completion( $messages, $options );

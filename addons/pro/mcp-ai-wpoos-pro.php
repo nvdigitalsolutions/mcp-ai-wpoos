@@ -548,6 +548,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Phase 6 — Vector-store adapter + per-team budgets (always enabled).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/services-init-phase6.php';
 
+		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
+		// Pro-only: paid third-party billing (Stripe merchant of record).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
+
 		// Load Pro Workflow Builder ↔ Base Orchestration bridge (always enabled when Pro is active).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-workflow-bridge.php';
 		add_action( 'init', array( 'WP_MCP_AI_Pro_Workflow_Bridge', 'get_instance' ), 27 );
