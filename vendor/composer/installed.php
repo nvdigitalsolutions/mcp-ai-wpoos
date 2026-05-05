@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-f05357ad-fc26-475a-be52-11240039cdcf',
-        'version' => 'dev-copilot/run-rebuild-all-zips-script-f05357ad-fc26-475a-be52-11240039cdcf',
-        'reference' => '864830278f31333011443aab4968f5efb338c178',
+        'pretty_version' => 'dev-copilot/check-enable-sse-responses',
+        'version' => 'dev-copilot/check-enable-sse-responses',
+        'reference' => '2258f7a1367a70f621226e76b8ab5291ad892254',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-f05357ad-fc26-475a-be52-11240039cdcf',
-            'version' => 'dev-copilot/run-rebuild-all-zips-script-f05357ad-fc26-475a-be52-11240039cdcf',
-            'reference' => '864830278f31333011443aab4968f5efb338c178',
+            'pretty_version' => 'dev-copilot/check-enable-sse-responses',
+            'version' => 'dev-copilot/check-enable-sse-responses',
+            'reference' => '2258f7a1367a70f621226e76b8ab5291ad892254',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
