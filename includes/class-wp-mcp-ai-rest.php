@@ -3315,10 +3315,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$messages = $preflight['messages'];
 			$options  = $preflight['options'];
 
+			// Resolved provider slug, used for LM Studio native streaming checks below.
+			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+
 			// Enable LM Studio real-time SSE streaming: inject stream_callback so that
 			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each
 			// content/reasoning token to the browser as it is generated.
-			if ( function_exists( 'curl_init' ) && 'lm_studio' === sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' ) ) {
+			if ( function_exists( 'curl_init' ) && 'lm_studio' === $resolved_provider ) {
 				$native_streaming_used      = true;
 				$options['stream']          = true;
 				$options['stream_callback'] = function ( $chunk ) {
@@ -3786,7 +3789,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Call LLM again with tool results.
 				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
-				if ( $native_streaming_used && 'lm_studio' === sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' ) ) {
+				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
 					$options['stream']          = true;
 					$options['stream_callback'] = function ( $chunk ) {
 						$this->send_sse_event( 'message', $chunk );

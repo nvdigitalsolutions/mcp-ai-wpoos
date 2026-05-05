@@ -1273,9 +1273,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		 */
 		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
 			// Build cURL-style header list: ['Authorization: Bearer ...', 'Content-Type: application/json'].
+			// Use raw header values — cURL validates/rejects headers with unsafe characters internally,
+			// and sanitize_text_field() would corrupt valid bearer token characters.
 			$curl_headers = array( 'Content-Type: application/json' );
 			foreach ( $this->build_auth_headers() as $header_name => $header_value ) {
-				$curl_headers[] = sanitize_text_field( $header_name ) . ': ' . sanitize_text_field( $header_value );
+				$curl_headers[] = $header_name . ': ' . $header_value;
 			}
 
 			// Mirror the SSL-bypass behaviour from WP_MCP_AI_HTTP_Helper for local endpoints.
@@ -1320,7 +1322,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					CURLOPT_SSL_VERIFYHOST => $skip_ssl ? 0 : 2,
 
 					// Capture the HTTP status code from the response header line.
-					CURLOPT_HEADERFUNCTION => function ( $curl_handle, $header ) use ( &$http_status ) {
+					CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status ) {
 						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $matches ) ) {
 							$http_status = (int) $matches[1];
 						}
@@ -1330,7 +1332,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					// Process SSE data as it arrives — this is what achieves real-time streaming.
 					// The closure receives raw bytes from the LM Studio socket; it maintains a
 					// line-oriented buffer and parses complete SSE events on the fly.
-					CURLOPT_WRITEFUNCTION  => function ( $curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
 
 						// Walk through all complete lines in the accumulated buffer.
