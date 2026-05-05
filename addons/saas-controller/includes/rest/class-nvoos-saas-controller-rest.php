@@ -109,6 +109,33 @@ class NVOOS_SaaS_Controller_REST {
 				'args'                => self::credentials_schema(),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/deployment',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_get_deployment' ),
+					'permission_callback' => array( __CLASS__, 'check_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_set_deployment' ),
+					'permission_callback' => array( __CLASS__, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/plan',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_run_plan' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -271,6 +298,77 @@ class NVOOS_SaaS_Controller_REST {
 			array(
 				'ok'      => self::all_ok( $results ),
 				'results' => $results,
+			)
+		);
+	}
+
+	/**
+	 * GET /deployment handler.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_get_deployment() {
+		$config = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		return rest_ensure_response(
+			array(
+				'deployment' => $config->get(),
+			)
+		);
+	}
+
+	/**
+	 * POST /deployment handler — replaces the desired config with the supplied
+	 * (sanitised) value. Body is parsed as JSON.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function route_set_deployment( WP_REST_Request $request ) {
+		$body = $request->get_json_params();
+		if ( ! is_array( $body ) ) {
+			$body = array();
+		}
+		$config  = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$updated = $config->set( $body );
+		return rest_ensure_response(
+			array(
+				'ok'         => true,
+				'deployment' => $updated,
+			)
+		);
+	}
+
+	/**
+	 * POST /plan handler — runs the reconcile-plan generator against live
+	 * Cloudflare state and returns the structured plan. Read-only.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_run_plan() {
+		$config_store = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$desired      = $config_store->get();
+
+		$account_override = ! empty( $desired['account_id'] ) ? (string) $desired['account_id'] : null;
+		$client           = NVOOS_SaaS_Controller_Cloudflare_Client::from_credential_store( $account_override );
+		if ( is_wp_error( $client ) ) {
+			$client->add_data( array( 'status' => 412 ) );
+			return $client;
+		}
+
+		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $client );
+		$plan      = $generator->generate( $desired );
+
+		return rest_ensure_response(
+			array(
+				'ok'      => empty( $plan['errors'] ),
+				'desired' => $desired,
+				'plan'    => $plan,
 			)
 		);
 	}

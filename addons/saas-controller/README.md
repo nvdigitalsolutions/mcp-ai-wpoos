@@ -4,21 +4,28 @@
 
 This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cloud-worker` is the deployed runtime, the **SaaS Controller** is the WordPress plugin that lets a maintainer **provision, plan/apply changes to, drift-check, and audit** that runtime — without leaving WP-Admin.
 
-> **Status:** v0.1.0 — Phases 2 & 3 (WP-Admin & REST plumbing + interactive credentials wizard with live preflight) landed. Subsequent PRs will land the Plan/Apply dashboard, drift banner, audit-log viewer, and smoke tests.
+> **Status:** v0.1.0 — Phases 2, 3, & 4 landed (WP-Admin & REST plumbing + interactive credentials wizard with live preflight + read-only Reconcile-Plan generator). Subsequent PRs will land the Apply step (HITL-gated), drift banner, audit-log viewer, and smoke tests.
 
-## What's available today (Phases 2 & 3)
+## What's available today (Phases 2 / 3 / 4)
 
-- **Top-level admin menu** — `WP-Admin → NV oOS SaaS` (capability: `manage_options`) with two tabs:
+- **Top-level admin menu** — `WP-Admin → NV oOS SaaS` (capability: `manage_options`) with three tabs:
   - **Overview** — interactive React **Credentials Wizard** (Credentials → Validate → Save) plus a static masked-credentials table fallback for no-JS environments.
+  - **Deployment** — desired Cloudflare topology editor (Worker name, account ID override, AI Gateway slug, D1 databases, KV namespaces) plus a **Run Plan** button that calls `POST /nvoos-saas/v1/plan` and renders the structured plan in-place. Read-only — no mutation occurs on this tab.
   - **Packages** — in-product credits surface listing every bundled npm dependency with upstream homepage, license, and copyright.
 - **Encrypted credential store** (`nvoos_saas_controller_credentials` option) — AES-256-CBC at rest, derived from `AUTH_KEY + SECURE_AUTH_KEY`. Allowed keys: `cloudflare_account_id`, `cloudflare_api_token`, `stripe_secret_key`, `stripe_webhook_secret`, `openrouter_api_key`.
+- **Deployment-config store** (`nvoos_saas_controller_deployment` option) — desired Cloudflare topology, persisted as plaintext JSON (no secrets). Per-field sanitisation enforces Worker-name slug rules and Workers binding identifier rules (`[A-Z][A-Z0-9_]*`).
 - **Connection tester** (`NVOOS_SaaS_Controller_Connection_Tester`) — performs read-only HTTPS preflights against Cloudflare (`/accounts/{id}`), Stripe (`/v1/account`), and OpenRouter (`/auth/key`). 10 s per-request timeout, normalised `{ ok, latency_ms, status, message }` shape, never echoes secrets.
+- **Cloudflare client** (`NVOOS_SaaS_Controller_Cloudflare_Client`) — read-only wrapper around `GET /accounts/{id}/d1/database`, `…/storage/kv/namespaces`, `…/workers/scripts`, `…/ai-gateway/gateways`. No mutation methods exist on this client; the Phase 5 Apply step will use a separate mutating client behind the HITL gate.
+- **Plan generator** (`NVOOS_SaaS_Controller_Plan_Generator`) — diffs the desired config against live Cloudflare state. Output is a structured plan with `creates` / `updates` / `noops` / `orphans` / `errors` arrays plus a `summary` count map. Cloudflare API failures are recorded in `errors[]` (never thrown), so a partial network outage on one section still produces a useful plan for the rest.
 - **REST namespace** `/wp-json/nvoos-saas/v1/` (every route requires `manage_options` + REST nonce):
   - `GET    /healthz` — addon version + base-plugin liveness probe.
   - `GET    /credentials` — masked snapshot (never returns plaintext).
   - `POST   /credentials` — set/update one or more credentials.
   - `DELETE /credentials` — clear all credentials.
   - `POST   /connections/test` — run live preflight against the three providers (uses supplied values or falls back to stored).
+  - `GET    /deployment` — current desired config.
+  - `POST   /deployment` — replace desired config (JSON body).
+  - `POST   /plan` — run the reconcile-plan generator against live Cloudflare state.
 
 ## Features (planned)
 

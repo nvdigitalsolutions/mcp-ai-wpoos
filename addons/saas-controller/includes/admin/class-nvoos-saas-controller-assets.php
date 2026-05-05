@@ -67,6 +67,10 @@ class NVOOS_SaaS_Controller_Assets {
 			return;
 		}
 
+		// Always available on this admin page — needed by inline scripts (e.g. the
+		// Deployment tab's "Run Plan" button) even when the React bundle is absent.
+		wp_enqueue_script( 'wp-api-fetch' );
+
 		$build_dir  = NVOOS_SAAS_CONTROLLER_PATH . 'assets/build/';
 		$build_url  = NVOOS_SAAS_CONTROLLER_URL . 'assets/build/';
 		$asset_file = $build_dir . 'index.asset.php';

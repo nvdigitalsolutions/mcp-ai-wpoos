@@ -82,7 +82,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	protected static function get_active_tab() {
 		// Read-only navigation; no nonce required for tab selection per WP core convention.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$allowed = array( 'overview', 'packages' );
+		$allowed = array( 'overview', 'deployment', 'packages' );
 		return in_array( $tab, $allowed, true ) ? $tab : 'overview';
 	}
 
@@ -100,8 +100,9 @@ class NVOOS_SaaS_Controller_Admin_Page {
 
 		$active = self::get_active_tab();
 		$tabs   = array(
-			'overview' => __( 'Overview', 'nvoos-saas-controller' ),
-			'packages' => __( 'Packages', 'nvoos-saas-controller' ),
+			'overview'   => __( 'Overview', 'nvoos-saas-controller' ),
+			'deployment' => __( 'Deployment', 'nvoos-saas-controller' ),
+			'packages'   => __( 'Packages', 'nvoos-saas-controller' ),
 		);
 		?>
 		<div class="wrap nvoos-saas-controller-wrap">
@@ -126,6 +127,9 @@ class NVOOS_SaaS_Controller_Admin_Page {
 
 			<?php
 			switch ( $active ) {
+				case 'deployment':
+					self::render_deployment_tab();
+					break;
 				case 'packages':
 					self::render_packages_tab();
 					break;
@@ -211,12 +215,243 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			<ul style="list-style:disc;padding-left:1.5em;">
 				<li>✅ <strong><?php esc_html_e( 'Phase 1 — Scaffolding', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'package layout, attribution, build hooks.', 'nvoos-saas-controller' ); ?></li>
 				<li>🚧 <strong><?php esc_html_e( 'Phase 2 — WP-Admin & REST plumbing', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'this menu, the Packages tab, the credential store, and the /nvoos-saas/v1 REST namespace.', 'nvoos-saas-controller' ); ?></li>
-				<li>⏳ <strong><?php esc_html_e( 'Phase 3 — One-Click Wizard', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'collect credentials, validate, provision D1 + KV + Worker bindings.', 'nvoos-saas-controller' ); ?></li>
-				<li>⏳ <strong><?php esc_html_e( 'Phase 4 — Plan / Apply', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'terraform-style preview of every reconcile action.', 'nvoos-saas-controller' ); ?></li>
-				<li>⏳ <strong><?php esc_html_e( 'Phase 5 — Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'periodic reconciliation and observability.', 'nvoos-saas-controller' ); ?></li>
+				<li>✅ <strong><?php esc_html_e( 'Phase 3 — One-Click Wizard', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'collect credentials, validate, provision D1 + KV + Worker bindings.', 'nvoos-saas-controller' ); ?></li>
+				<li>🚧 <strong><?php esc_html_e( 'Phase 4 — Plan / Apply', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'terraform-style preview of every reconcile action — read-only plan generator on the Deployment tab.', 'nvoos-saas-controller' ); ?></li>
+				<li>⏳ <strong><?php esc_html_e( 'Phase 5 — Apply, Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'execute the plan behind a HITL approval gate; periodic reconciliation and observability.', 'nvoos-saas-controller' ); ?></li>
 			</ul>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render the Deployment tab — desired-config form + plan preview.
+	 *
+	 * The form is server-rendered (no JS required to save the desired
+	 * config); the **Run Plan** button posts to `/nvoos-saas/v1/plan` via a
+	 * small inline script and renders the structured plan in-place.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	protected static function render_deployment_tab() {
+		$config_store = NVOOS_SaaS_Controller_Deployment_Config::instance();
+
+		// Handle form submission (server-side, no React required for editing).
+		if ( ! empty( $_POST['nvoos_saas_deployment_nonce'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			&& wp_verify_nonce(
+				sanitize_text_field( wp_unslash( $_POST['nvoos_saas_deployment_nonce'] ) ),
+				'nvoos_saas_deployment_save'
+			)
+		) {
+			$incoming = array(
+				'worker_name'     => isset( $_POST['worker_name'] ) ? wp_unslash( $_POST['worker_name'] ) : '',
+				'account_id'      => isset( $_POST['account_id'] ) ? wp_unslash( $_POST['account_id'] ) : '',
+				'ai_gateway_slug' => isset( $_POST['ai_gateway_slug'] ) ? wp_unslash( $_POST['ai_gateway_slug'] ) : '',
+				'd1_databases'    => self::parse_pairs_from_post( 'd1', 'name', 'binding' ),
+				'kv_namespaces'   => self::parse_pairs_from_post( 'kv', 'title', 'binding' ),
+			);
+			$config_store->set( $incoming );
+			echo '<div class="notice notice-success is-dismissible inline"><p>'
+				. esc_html__( 'Desired deployment config saved.', 'nvoos-saas-controller' )
+				. '</p></div>';
+		}
+
+		$config = $config_store->get();
+		?>
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;">
+			<h2><?php esc_html_e( 'Desired Cloudflare Topology', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'The plan generator will diff this config against your live Cloudflare account and tell you exactly what would change. No mutation happens on this tab — Apply is a separate Phase 5 surface gated on HITL approval.', 'nvoos-saas-controller' ); ?>
+			</p>
+
+			<form method="post" action="">
+				<?php wp_nonce_field( 'nvoos_saas_deployment_save', 'nvoos_saas_deployment_nonce' ); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="nvoos_worker_name"><?php esc_html_e( 'Worker name', 'nvoos-saas-controller' ); ?></label></th>
+						<td><input name="worker_name" id="nvoos_worker_name" type="text" class="regular-text" value="<?php echo esc_attr( $config['worker_name'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="nvoos_account_id"><?php esc_html_e( 'Account ID override', 'nvoos-saas-controller' ); ?></label></th>
+						<td>
+							<input name="account_id" id="nvoos_account_id" type="text" class="regular-text" value="<?php echo esc_attr( $config['account_id'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Leave blank to use the account ID from the credential store.', 'nvoos-saas-controller' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="nvoos_ai_gateway"><?php esc_html_e( 'AI Gateway slug', 'nvoos-saas-controller' ); ?></label></th>
+						<td><input name="ai_gateway_slug" id="nvoos_ai_gateway" type="text" class="regular-text" value="<?php echo esc_attr( $config['ai_gateway_slug'] ); ?>" /></td>
+					</tr>
+				</table>
+
+				<h3><?php esc_html_e( 'D1 Databases', 'nvoos-saas-controller' ); ?></h3>
+				<?php self::render_pairs_editor( 'd1', $config['d1_databases'], 'name', __( 'Database name', 'nvoos-saas-controller' ), 'binding', __( 'Binding', 'nvoos-saas-controller' ) ); ?>
+
+				<h3><?php esc_html_e( 'KV Namespaces', 'nvoos-saas-controller' ); ?></h3>
+				<?php self::render_pairs_editor( 'kv', $config['kv_namespaces'], 'title', __( 'Namespace title', 'nvoos-saas-controller' ), 'binding', __( 'Binding', 'nvoos-saas-controller' ) ); ?>
+
+				<p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Save Desired Config', 'nvoos-saas-controller' ); ?></button></p>
+			</form>
+		</div>
+
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
+			<h2><?php esc_html_e( 'Reconcile Plan (read-only)', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Click Run Plan to call POST /nvoos-saas/v1/plan and see what would change. Listing live resources requires a Cloudflare API token with read scopes on Account, D1, KV, Workers, and AI Gateway.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<button type="button" class="button button-secondary" id="nvoos-saas-run-plan"><?php esc_html_e( 'Run Plan', 'nvoos-saas-controller' ); ?></button>
+			<div id="nvoos-saas-plan-output" style="margin-top:1em;"></div>
+		</div>
+
+		<script>
+		(function() {
+			var btn = document.getElementById( 'nvoos-saas-run-plan' );
+			var out = document.getElementById( 'nvoos-saas-plan-output' );
+			if ( ! btn || ! window.wp || ! window.wp.apiFetch ) {
+				if ( btn ) {
+					btn.disabled = true;
+					btn.title = 'wp.apiFetch unavailable on this admin page.';
+				}
+				return;
+			}
+			function clear( el ) { while ( el.firstChild ) { el.removeChild( el.firstChild ); } }
+			function notice( type, msg ) {
+				clear( out );
+				var div = document.createElement( 'div' );
+				div.className = 'notice notice-' + type + ' inline';
+				var p = document.createElement( 'p' );
+				p.textContent = msg;
+				div.appendChild( p );
+				out.appendChild( div );
+			}
+			btn.addEventListener( 'click', function() {
+				clear( out );
+				var em = document.createElement( 'em' );
+				em.textContent = <?php echo wp_json_encode( __( 'Running plan…', 'nvoos-saas-controller' ) ); ?>;
+				out.appendChild( em );
+				btn.disabled = true;
+				wp.apiFetch( { path: '/nvoos-saas/v1/plan', method: 'POST' } ).then( function( resp ) {
+					btn.disabled = false;
+					var plan = resp && resp.plan ? resp.plan : null;
+					if ( ! plan ) {
+						notice( 'error', <?php echo wp_json_encode( __( 'No plan returned.', 'nvoos-saas-controller' ) ); ?> );
+						return;
+					}
+					clear( out );
+					var table = document.createElement( 'table' );
+					table.className = 'widefat striped';
+					var thead = document.createElement( 'thead' );
+					var theadRow = document.createElement( 'tr' );
+					[ 'Section', 'Count' ].forEach( function( h ) {
+						var th = document.createElement( 'th' );
+						th.textContent = h;
+						theadRow.appendChild( th );
+					} );
+					thead.appendChild( theadRow );
+					table.appendChild( thead );
+					var tbody = document.createElement( 'tbody' );
+					[ 'creates', 'updates', 'noops', 'orphans', 'errors' ].forEach( function( k ) {
+						var tr = document.createElement( 'tr' );
+						var td1 = document.createElement( 'td' );
+						var strong = document.createElement( 'strong' );
+						strong.textContent = k;
+						td1.appendChild( strong );
+						var td2 = document.createElement( 'td' );
+						td2.textContent = String( ( plan.summary && plan.summary[ k ] ) || 0 );
+						tr.appendChild( td1 );
+						tr.appendChild( td2 );
+						tbody.appendChild( tr );
+					} );
+					table.appendChild( tbody );
+					out.appendChild( table );
+					var pre = document.createElement( 'pre' );
+					pre.style.cssText = 'margin-top:1em;background:#f6f7f7;padding:1em;border:1px solid #ccd0d4;overflow:auto;max-height:480px;';
+					pre.textContent = JSON.stringify( plan, null, 2 );
+					out.appendChild( pre );
+				} ).catch( function( err ) {
+					btn.disabled = false;
+					var msg = ( err && err.message ) ? err.message : 'Plan failed.';
+					notice( 'error', msg );
+				} );
+			} );
+		})();
+		</script>
+		<?php
+	}
+
+	/**
+	 * Helper: render a paired text-input editor for D1/KV style rows.
+	 *
+	 * @param string $prefix    Form prefix (e.g. `d1`).
+	 * @param array  $rows      Existing rows.
+	 * @param string $key_a     First field key.
+	 * @param string $label_a   First field label.
+	 * @param string $key_b     Second field key.
+	 * @param string $label_b   Second field label.
+	 * @return void
+	 */
+	protected static function render_pairs_editor( $prefix, array $rows, $key_a, $label_a, $key_b, $label_b ) {
+		// Always render at least one blank row so the operator can add an entry on first visit.
+		if ( empty( $rows ) ) {
+			$rows[] = array( $key_a => '', $key_b => '' );
+		}
+		// Add an extra blank row at the end so adding entries doesn't require JS.
+		$rows[] = array( $key_a => '', $key_b => '' );
+		?>
+		<table class="widefat striped" style="max-width:780px;">
+			<thead>
+				<tr>
+					<th><?php echo esc_html( $label_a ); ?></th>
+					<th><?php echo esc_html( $label_b ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $rows as $i => $row ) : ?>
+					<tr>
+						<td><input type="text" class="regular-text" name="<?php echo esc_attr( $prefix . '[' . $i . '][' . $key_a . ']' ); ?>" value="<?php echo esc_attr( isset( $row[ $key_a ] ) ? $row[ $key_a ] : '' ); ?>" /></td>
+						<td><input type="text" class="regular-text" name="<?php echo esc_attr( $prefix . '[' . $i . '][' . $key_b . ']' ); ?>" value="<?php echo esc_attr( isset( $row[ $key_b ] ) ? $row[ $key_b ] : '' ); ?>" /></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Parse a `$_POST['<prefix>']` array of `{ key_a, key_b }` rows.
+	 *
+	 * Empty rows are dropped; the per-field sanitiser in
+	 * {@see NVOOS_SaaS_Controller_Deployment_Config::sanitize()} runs after.
+	 *
+	 * @param string $prefix POST array key.
+	 * @param string $key_a  First field name.
+	 * @param string $key_b  Second field name.
+	 * @return array
+	 */
+	protected static function parse_pairs_from_post( $prefix, $key_a, $key_b ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified by caller.
+		if ( empty( $_POST[ $prefix ] ) || ! is_array( $_POST[ $prefix ] ) ) {
+			return array();
+		}
+		$raw = wp_unslash( $_POST[ $prefix ] );
+		// phpcs:enable
+		$out = array();
+		foreach ( $raw as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$a = isset( $row[ $key_a ] ) ? (string) $row[ $key_a ] : '';
+			$b = isset( $row[ $key_b ] ) ? (string) $row[ $key_b ] : '';
+			if ( '' === trim( $a ) || '' === trim( $b ) ) {
+				continue;
+			}
+			$out[] = array(
+				$key_a => $a,
+				$key_b => $b,
+			);
+		}
+		return $out;
 	}
 
 	/**
