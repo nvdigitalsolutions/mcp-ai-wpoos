@@ -274,6 +274,26 @@ No bundled third-party JavaScript. PHP-only addon under GPL-3.0-or-later. ESPN
 and Yahoo Fantasy APIs are accessed at runtime over HTTPS; their use is
 governed by the providers' respective Terms of Service.
 
+### `addons/cloud-worker/` — NV oOS Cloud SaaS backend (Cloudflare Worker)
+
+This addon is **not a WordPress plugin**. It is the SaaS-side counterpart to
+the Pro plugin module that ships in `addons/pro/`. Deployed independently to
+`cloud.nvoos.com` as a Cloudflare Worker.
+
+| Package | License | Purpose |
+|---|---|---|
+| [`hono`](https://hono.dev/) ^4.12.4 | MIT | Edge-friendly HTTP router. |
+| [`stripe`](https://github.com/stripe/stripe-node) ^17.4.0 | MIT | Type definitions only — at request-time we use the bare HTTPS API to keep the bundle small. |
+| [`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) ^4 | Apache-2.0 | Type definitions for the Workers runtime. |
+| [`wrangler`](https://github.com/cloudflare/workers-sdk) ^3.114.17 | MIT OR Apache-2.0 | Build / deploy CLI. |
+| [`vitest`](https://vitest.dev/) ^2.1.9 + [`@cloudflare/vitest-pool-workers`](https://www.npmjs.com/package/@cloudflare/vitest-pool-workers) | MIT | Test runner against Miniflare. |
+
+External services consumed at runtime:
+
+- [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) — inference proxy (revenue-share metering, caching, rate limiting).
+- [OpenRouter](https://openrouter.ai/) — multi-provider model router.
+- [Stripe](https://stripe.com/) — payments + tax (Stripe Tax handles VAT / GST / sales tax worldwide).
+
 ---
 
 ## NV oOS First-Party Standalone Packages (`packages/`)
