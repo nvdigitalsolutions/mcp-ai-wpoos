@@ -338,7 +338,11 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		$body    = wp_json_encode( $payload );
 		$headers = array( 'Content-Type' => 'application/json' );
 
-		$token = get_option( self::OPTION_TOKEN, '' );
+		// Token resolution: settings array (UI) first, standalone option as fallback.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$token    = isset( $settings['otel_token'] ) && '' !== $settings['otel_token']
+			? $settings['otel_token']
+			: (string) get_option( self::OPTION_TOKEN, '' );
 		if ( ! empty( $token ) ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
 		}
@@ -369,6 +373,14 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	/**
 	 * Get the OTLP endpoint URL.
 	 *
+	 * Resolution order:
+	 *  1. Environment variable WP_MCP_AI_OTEL_ENDPOINT.
+	 *  2. Settings array (wp_mcp_ai_settings['otel_endpoint']) — set via the
+	 *     Tools → Connections → OpenTelemetry admin page.
+	 *  3. Standalone option wp_mcp_ai_otel_endpoint — for backward
+	 *     compatibility with sites that set the option directly via WP-CLI
+	 *     or code before the admin UI was available.
+	 *
 	 * @return string
 	 */
 	public static function get_endpoint() {
@@ -376,7 +388,10 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		if ( false !== $env && '' !== $env ) {
 			$candidate = esc_url_raw( $env );
 		} else {
-			$candidate = (string) get_option( self::OPTION_ENDPOINT, '' );
+			// Check the main settings array first (UI-configured value).
+			$settings  = get_option( 'wp_mcp_ai_settings', array() );
+			$from_ui   = isset( $settings['otel_endpoint'] ) ? (string) $settings['otel_endpoint'] : '';
+			$candidate = '' !== $from_ui ? $from_ui : (string) get_option( self::OPTION_ENDPOINT, '' );
 		}
 
 		/**
