@@ -34,6 +34,7 @@
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
+  - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 - [⚙️ Configuration Checklist](-#%EF%B8%8F-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
@@ -842,7 +843,7 @@ All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capabil
 - ✅ **Copy shortcode**: One-click copy of `[mcp_ai_chat]` shortcode on the finish screen with clipboard fallback.
 - ✅ **Filterable presets**: `wp_mcp_ai_onboarding_presets` filter lets addons add custom presets.
 - ✅ **22 PHPUnit tests** for presets, seeding, model resolution, and accessibility.
-- [Getting Started Wizard →](#-installation)
+- [Getting Started Wizard →](#-installation) · [Beginner 3-Step Install →](#-beginner-3-step-install-try-it-on-your-pc)
 
 ### Pro Schedule Manager — Full Cron-Backed Scheduler with AI Tools & Admin UI (March 26, 2026) ⭐ **NEW**
 
@@ -1931,6 +1932,18 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 > **🚀 Getting Started Wizard**  
 > After activating the plugin, you'll be redirected to a **4-step setup wizard** that walks you through connecting an AI provider, choosing a use case, and creating your first assistant — all in under 2 minutes. The wizard creates fully-configured assistants with tools, system prompts, and tuned temperatures so your site is working out of the box. You can access the wizard any time at **NV oOS → Getting Started** or directly at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`.
+
+### 🌱 Beginner 3-Step Install (Try it on Your PC)
+
+> **No live site. No API costs. No risk.** The fastest way to try NV oOS is on your own computer using a free local WordPress environment. Follow the full walkthrough on the NV Digital Solutions blog: **[How to Test NV oOS on Your Own PC Using Local + Downloading the Plugin →](https://nvdigitalsolutions.com/ai-llm/how-to-test-nv-oos-on-your-own-pc-using-local-downloading-plugin/)**
+
+1. **Install a local WordPress environment** — [Local by WP Engine](https://localwp.com/) is the easiest option (one-click install, no server config). Alternatives: [XAMPP](https://www.apachefriends.org/), [MAMP](https://www.mamp.info/), or [DevKinsta](https://kinsta.com/devkinsta/).
+
+2. **Download the NV oOS plugin zip** — grab the latest release from [GitHub Releases](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases) (look for `mcp-ai-wpoos-x.x.x.zip`), or use the **Code → Download ZIP** button for the current development snapshot.
+
+3. **Upload, activate, and run the wizard** — in your local WordPress dashboard go to **Plugins → Add New → Upload Plugin**, select the zip, activate it, and follow the [🚀 Getting Started Wizard](#-installation). For a free local AI model (no API key needed), install [LM Studio](https://lmstudio.ai/) and point the wizard at `http://localhost:1234`.
+
+> **🗺 Single-file auto-installer (roadmap)** — A single cross-platform installer that bootstraps the entire stack automatically is on the roadmap. See the [App / Plugin Distribution Proposal](docs/proposals/NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md) for current status and the plan.
 
 ### Requirements
 
