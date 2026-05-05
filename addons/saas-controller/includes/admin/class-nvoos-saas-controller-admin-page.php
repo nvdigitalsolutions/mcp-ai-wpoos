@@ -150,6 +150,14 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
 		$masked = $store->get_masked();
 		?>
+		<div id="nvoos-saas-controller-wizard-root" data-mounted="false">
+			<noscript>
+				<div class="notice notice-info inline">
+					<p><?php esc_html_e( 'JavaScript is disabled. The interactive credentials wizard is unavailable, but the static status table below still works.', 'nvoos-saas-controller' ); ?></p>
+				</div>
+			</noscript>
+		</div>
+
 		<div class="card" style="max-width:780px;padding:1em 1.5em;">
 			<h2><?php esc_html_e( 'Status', 'nvoos-saas-controller' ); ?></h2>
 			<table class="widefat striped">

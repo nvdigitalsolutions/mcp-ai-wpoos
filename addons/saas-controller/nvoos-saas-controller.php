@@ -82,13 +82,16 @@ function nvoos_saas_controller_bootstrap() {
 	}
 
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-credential-store.php';
+	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-connection-tester.php';
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/rest/class-nvoos-saas-controller-rest.php';
 
 	NVOOS_SaaS_Controller_REST::init();
 
 	if ( is_admin() ) {
 		require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/admin/class-nvoos-saas-controller-admin-page.php';
+		require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/admin/class-nvoos-saas-controller-assets.php';
 		NVOOS_SaaS_Controller_Admin_Page::init();
+		NVOOS_SaaS_Controller_Assets::init();
 	}
 }
 add_action( 'plugins_loaded', 'nvoos_saas_controller_bootstrap', 20 );

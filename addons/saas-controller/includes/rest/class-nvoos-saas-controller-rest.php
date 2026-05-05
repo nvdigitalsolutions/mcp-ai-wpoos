@@ -12,10 +12,11 @@
  *   GET    /credentials            — masked credentials (never returns plaintext).
  *   POST   /credentials            — set/update one or more credentials.
  *   DELETE /credentials            — clear all credentials.
+ *   POST   /connections/test       — live preflight against Cloudflare/Stripe/OpenRouter.
  *
- * Subsequent phases will add `/connections/test`, `/plan`, `/apply`,
- * `/drift`, `/audit-log`, and `/smoke-tests` routes — all under the same
- * namespace and the same capability gate.
+ * Subsequent phases will add `/plan`, `/apply`, `/drift`, `/audit-log`, and
+ * `/smoke-tests` routes — all under the same namespace and the same
+ * capability gate.
  *
  * @package NV_oOS_SaaS_Controller
  * @since   0.1.0
@@ -95,6 +96,17 @@ class NVOOS_SaaS_Controller_REST {
 					'callback'            => array( __CLASS__, 'route_clear_credentials' ),
 					'permission_callback' => array( __CLASS__, 'check_permission' ),
 				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/connections/test',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_test_connections' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => self::credentials_schema(),
 			)
 		);
 	}
@@ -224,5 +236,59 @@ class NVOOS_SaaS_Controller_REST {
 				'credentials' => $store->get_masked(),
 			)
 		);
+	}
+
+	/**
+	 * POST /connections/test handler.
+	 *
+	 * Runs live preflight checks against Cloudflare, Stripe, and OpenRouter
+	 * using either the supplied credentials (when provided in the body) or
+	 * the values currently in the credential store. Never echoes secrets.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function route_test_connections( WP_REST_Request $request ) {
+		$supplied = array();
+		foreach ( NVOOS_SaaS_Controller_Credential_Store::ALLOWED_KEYS as $key ) {
+			$value = $request->get_param( $key );
+			if ( null === $value ) {
+				continue;
+			}
+			$supplied[ $key ] = (string) $value;
+		}
+
+		if ( ! class_exists( 'NVOOS_SaaS_Controller_Connection_Tester' ) ) {
+			require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-connection-tester.php';
+		}
+
+		$tester  = new NVOOS_SaaS_Controller_Connection_Tester();
+		$results = $tester->test_all( $supplied );
+
+		return rest_ensure_response(
+			array(
+				'ok'      => self::all_ok( $results ),
+				'results' => $results,
+			)
+		);
+	}
+
+	/**
+	 * Helper: did every preflight succeed?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $results Preflight results.
+	 * @return bool
+	 */
+	protected static function all_ok( array $results ) {
+		foreach ( $results as $r ) {
+			if ( empty( $r['ok'] ) ) {
+				return false;
+			}
+		}
+		return ! empty( $results );
 	}
 }
