@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 0.5.0
  */
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid -- NV_oOS intentional branding; consistent with all other addon classes.
 class NV_oOS_Graphify_Settings {
 
 	/**
@@ -255,7 +256,7 @@ class NV_oOS_Graphify_Settings {
 	 * @return string One of: 'general', 'remote', 'embeddings'.
 	 */
 	private static function detect_submitted_tab() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Tab detection only; the option update itself is nonce-protected by options.php.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab detection only; the option update itself is nonce-protected by options.php.
 		$referer = isset( $_REQUEST['_wp_http_referer'] ) ? esc_url_raw( wp_unslash( $_REQUEST['_wp_http_referer'] ) ) : '';
 		if ( ! is_string( $referer ) || '' === $referer ) {
 			return 'general';
@@ -331,11 +332,9 @@ class NV_oOS_Graphify_Settings {
 					if ( ! in_array( $slug, $checked_slugs, true ) ) {
 						$new_excluded[] = $slug;
 					}
-				} else {
+				} elseif ( in_array( $slug, $checked_slugs, true ) ) {
 					// Default-off: if checked, add to extra.
-					if ( in_array( $slug, $checked_slugs, true ) ) {
-						$new_extra[] = $slug;
-					}
+					$new_extra[] = $slug;
 				}
 			}
 			$merged['excluded_post_types'] = $new_excluded;
@@ -551,32 +550,25 @@ class NV_oOS_Graphify_Settings {
 		echo '<thead><tr><th>' . esc_html__( 'Post Type', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Include', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Notes', 'nvoos-graphify' ) . '</th></tr></thead>';
 		echo '<tbody>';
 		foreach ( $registry as $entry ) {
-			$slug    = esc_attr( $entry['slug'] );
-			$label   = esc_html( $entry['label'] );
+			$slug    = sanitize_key( $entry['slug'] );
 			$default = $entry['default_include'];
 
 			if ( $default ) {
 				// Default-on: show as enabled unless explicitly excluded.
 				$checked = ! in_array( $entry['slug'], $excluded, true );
-				$note    = esc_html__( 'Included by default', 'nvoos-graphify' );
-				$name    = esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[excluded_post_types][]';
 				// For default-on, the admin sends the slug in `excluded_post_types` to opt OUT.
-				$checked_attr = $checked ? ' checked' : '';
-				// Invert: checkbox checked = include, but value stored in excluded list.
 				echo '<tr>';
-				echo '<td><strong>' . $label . '</strong> <code style="font-size:11px">' . $slug . '</code></td>';
-				echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[nvoos_cpt_include][' . $slug . ']" value="1"' . $checked_attr . '></td>';
-				echo '<td>' . $note . '</td>';
+				echo '<td><strong>' . esc_html( $entry['label'] ) . '</strong> <code style="font-size:11px">' . esc_html( $slug ) . '</code></td>';
+				echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[nvoos_cpt_include][' . esc_attr( $slug ) . ']" value="1"' . checked( $checked, true, false ) . '></td>';
+				echo '<td>' . esc_html__( 'Included by default', 'nvoos-graphify' ) . '</td>';
 				echo '</tr>';
 			} else {
 				// Default-off: show as disabled unless explicitly opted in.
-				$checked      = in_array( $entry['slug'], $extra, true );
-				$note         = esc_html__( 'Opt-in (sensitive / high-volume)', 'nvoos-graphify' );
-				$checked_attr = $checked ? ' checked' : '';
+				$checked = in_array( $entry['slug'], $extra, true );
 				echo '<tr>';
-				echo '<td><strong>' . $label . '</strong> <code style="font-size:11px">' . $slug . '</code></td>';
-				echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[nvoos_cpt_include][' . $slug . ']" value="1"' . $checked_attr . '></td>';
-				echo '<td>' . $note . '</td>';
+				echo '<td><strong>' . esc_html( $entry['label'] ) . '</strong> <code style="font-size:11px">' . esc_html( $slug ) . '</code></td>';
+				echo '<td><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[nvoos_cpt_include][' . esc_attr( $slug ) . ']" value="1"' . checked( $checked, true, false ) . '></td>';
+				echo '<td>' . esc_html__( 'Opt-in (sensitive / high-volume)', 'nvoos-graphify' ) . '</td>';
 				echo '</tr>';
 			}
 		}
@@ -600,22 +592,74 @@ class NV_oOS_Graphify_Settings {
 		$s       = NV_oOS_Graphify::get_settings();
 		$enabled = isset( $s['external_tables'] ) && is_array( $s['external_tables'] ) ? $s['external_tables'] : array();
 
-		$all_descriptors = array();
-		foreach ( array(
-			array( 'table' => 'mcp_ai_slash_command_audit', 'label' => __( 'Slash Command Audit', 'nvoos-graphify' ),   'default_include' => false, 'sensitive' => false ),
-			array( 'table' => 'mcp_ai_metric_events',        'label' => __( 'Metric Events', 'nvoos-graphify' ),          'default_include' => false, 'sensitive' => false ),
-			array( 'table' => 'mcp_ai_hourly_token_usage',   'label' => __( 'Hourly Token Usage', 'nvoos-graphify' ),     'default_include' => false, 'sensitive' => false ),
-			array( 'table' => 'mcp_ai_job_queue',            'label' => __( 'Job Queue', 'nvoos-graphify' ),              'default_include' => false, 'sensitive' => false ),
-			array( 'table' => 'mcp_ai_controls',             'label' => __( 'Compliance Controls', 'nvoos-graphify' ),    'default_include' => false, 'sensitive' => true ),
-			array( 'table' => 'mcp_ai_evidence',             'label' => __( 'Compliance Evidence', 'nvoos-graphify' ),    'default_include' => false, 'sensitive' => true ),
-			array( 'table' => 'mcp_ai_risks',                'label' => __( 'Risk Register', 'nvoos-graphify' ),          'default_include' => false, 'sensitive' => true ),
-			array( 'table' => 'mcp_ai_audit_trail',          'label' => __( 'Audit Trail', 'nvoos-graphify' ),            'default_include' => false, 'sensitive' => true ),
-			array( 'table' => 'mcp_ai_compliance_checks',    'label' => __( 'Compliance Checks', 'nvoos-graphify' ),      'default_include' => false, 'sensitive' => true ),
-			array( 'table' => 'mcp_ai_custom_metrics',       'label' => __( 'Custom Metrics', 'nvoos-graphify' ),         'default_include' => false, 'sensitive' => false ),
-			array( 'table' => 'mcp_ai_events',               'label' => __( 'NV oOS Events', 'nvoos-graphify' ),          'default_include' => false, 'sensitive' => false ),
-		) as $desc ) {
-			$all_descriptors[] = $desc;
-		}
+		$all_descriptors = array(
+			array(
+				'table'           => 'mcp_ai_slash_command_audit',
+				'label'           => __( 'Slash Command Audit', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => false,
+			),
+			array(
+				'table'           => 'mcp_ai_metric_events',
+				'label'           => __( 'Metric Events', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => false,
+			),
+			array(
+				'table'           => 'mcp_ai_hourly_token_usage',
+				'label'           => __( 'Hourly Token Usage', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => false,
+			),
+			array(
+				'table'           => 'mcp_ai_job_queue',
+				'label'           => __( 'Job Queue', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => false,
+			),
+			array(
+				'table'           => 'mcp_ai_controls',
+				'label'           => __( 'Compliance Controls', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => true,
+			),
+			array(
+				'table'           => 'mcp_ai_evidence',
+				'label'           => __( 'Compliance Evidence', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => true,
+			),
+			array(
+				'table'           => 'mcp_ai_risks',
+				'label'           => __( 'Risk Register', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => true,
+			),
+			array(
+				'table'           => 'mcp_ai_audit_trail',
+				'label'           => __( 'Audit Trail', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => true,
+			),
+			array(
+				'table'           => 'mcp_ai_compliance_checks',
+				'label'           => __( 'Compliance Checks', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => true,
+			),
+			array(
+				'table'           => 'mcp_ai_custom_metrics',
+				'label'           => __( 'Custom Metrics', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => false,
+			),
+			array(
+				'table'           => 'mcp_ai_events',
+				'label'           => __( 'NV oOS Events', 'nvoos-graphify' ),
+				'default_include' => false,
+				'sensitive'       => false,
+			),
+		);
 
 		global $wpdb;
 
