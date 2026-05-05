@@ -3,6 +3,48 @@
 ## [1.1.15] - 2026-05-05
 
 ### May 3–5, 2026 — New Providers (OpenRouter + DeepSeek), LM Studio Parity, Orchestration Phases 1–7, LLM Harnessing GA, 19 New Slash Commands, Memory Bridge G-series, Retroactive Transcript Mining, Graphify NV oOS Data-source Bridge, Observability UI, Stability Sweep
+### May 5, 2026 — NV oOS Cloud Worker (SaaS backend, `addons/cloud-worker/`)
+
+The Cloudflare-Worker counterpart to the Pro plugin module shipped on May 5.
+Lives in this monorepo for review convenience and is deployed independently
+to `cloud.nvoos.com`.
+
+- **Stack:** TypeScript + Hono router + Stripe (HTTPS API, no Node SDK at request-time) + D1 + KV.
+- **Endpoints:**
+  - `POST /v1/chat/completions`, `POST /v1/embeddings`, `GET /v1/models` — OpenAI-compatible passthrough through Cloudflare AI Gateway → OpenRouter, with SSE streaming preserved.
+  - `GET /v1/account/balance`, `POST /v1/account/topup`, `POST /v1/account/revoke`, `GET /v1/account/ledger` — wallet management.
+  - `POST /connect/start` / `POST /connect/finish` — public connect flow that issues a Connect Token after the first paid Stripe Checkout session.
+  - `POST /stripe/webhook` — signature-verified (`Stripe-Signature` t/v1 scheme, 5-minute tolerance, constant-time HMAC-SHA-256 compare), idempotent against `event.id`.
+- **Money math:** all balances stored as integer micro-USD to eliminate float drift across many small per-request debits. Markup matches the plugin to the cent (`wholesale × 1.07`).
+- **Security:**
+  - Master OpenRouter key is a Wrangler secret, never exposed.
+  - Connect tokens stored as SHA-256 hashes; plaintext shown to the user once.
+  - Site-binding via `X-NV-Site-Url` verified on every request (HTTP 403 on mismatch).
+  - No PII in ledger — token counts only, never message bodies.
+- **Schema:** `addons/cloud-worker/schema.sql` with four tables (`wallets`, `connect_tokens`, `ledger`, `topup_sessions`) + indexes.
+- **Tests:** 16 vitest tests in the `@cloudflare/vitest-pool-workers` Miniflare environment — pricing math, micro-USD round-trip, site-URL normalization, SHA-256 stability, token entropy, Stripe webhook signature accept/reject (signature mismatch, body tamper, timestamp out of tolerance, missing header).
+
+### May 5, 2026 — NV oOS Cloud — hosted "Managed Tokens" service (Pro)
+
+A new **Pro-only** subsystem that lets a site route inference through NV's
+master OpenRouter account via a Cloudflare AI Gateway proxy — no per-provider
+key management required. Sits alongside the existing free BYOK flow.
+
+- **Brand:** NV oOS Cloud · **Hosting:** Cloudflare Worker → Cloudflare AI Gateway → OpenRouter · **Geographic scope:** worldwide (Stripe Tax handles VAT/GST/sales tax).
+- **Pricing:** wholesale × **1.07** (7% service fee) + Stripe processor pass-through (2.9% + $0.30) shown as a transparent line item. Minimum top-up $25 USD.
+- **New base filter** `wp_mcp_ai_route_to_provider` (in `WP_MCP_AI_Language_Model_Router::route_to_provider()`) that lets any add-on register a custom provider id without forking the router.
+- **New Pro module** under `addons/pro/includes/`:
+  - `services/class-wp-mcp-ai-nv-cloud-service.php` — singleton with encrypted Connect Token storage (AES-256-CBC keyed by `AUTH_KEY`+`SECURE_AUTH_KEY`), balance cache, prefs, markup math, ledger.
+  - `providers/class-wp-mcp-ai-nv-cloud-client.php` — OpenAI-compatible HTTP client (subclass of the existing OpenRouter client) targeting `cloud.nvoos.com/v1`.
+  - `providers/class-wp-mcp-ai-nv-cloud-provider-client.php` — `Interface_WP_MCP_AI_Provider_Client` adapter.
+  - `services/class-wp-mcp-ai-nv-cloud-billing-observer.php` — hooks `wp_mcp_ai_cost_calculated`, writes wholesale + 7% + total ledger entries (200-entry cap).
+  - `rest/class-wp-mcp-ai-nv-cloud-rest-controller.php` — `/mcp-ai-pro/v1/cloud/{status,connect,disconnect,refresh-balance,topup-url,ledger,prefs}` (all `manage_options`-gated).
+  - `admin/class-wp-mcp-ai-nv-cloud-settings-page.php` — admin UI (Connect, Balance, Top-up via Stripe Checkout, Auto-top-up, Ledger, low-balance banner).
+  - `nv-cloud-init.php` — bootstrap (router filter, REST registration, daily balance-refresh cron).
+- **Documentation:** `docs/features/nv-cloud.md` (architecture, Worker contract, security model, Cloudways vs Cloudflare comparison).
+- **Tests:** `addons/pro/tests/test-nv-cloud.php` — service round-trip, encryption-at-rest verification, markup math, Stripe pass-through math, ledger cap, billing-observer gating, REST permission gates, top-up minimum, router-filter wiring.
+
+### May 4, 2026 — LM Studio provider brought to parity with May 2026 capabilities
 
 A major capabilities + stability release building on 1.1.14. Headline additions: (1) **Three new AI providers** — OpenRouter (unified multi-provider gateway), DeepSeek, plus Kimi K2.6 + Qwen 3.6 in the model catalog; (2) **LM Studio parity** — native cURL SSE streaming plus seven phases of May 2026 capability alignment; (3) **Orchestration roadmap Phases 1–7** re-landed with JetEngine CCT init-priority compat — HITL approvals, prompt-injection guardrail, structured output, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, and Pro team budget manager; (4) **LLM Harnessing Subsystem (Layers A–H)** ships GA; (5) **19 new slash commands** (11 base + 8 Pro); (6) **Chat-client Memory Bridge G-series** complete with site-wide toggle; (7) **Retroactive Transcript Mining** stuck-job root causes fixed; (8) **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace edges, external `$wpdb` tables; (9) **Observability UI** surfaced under the Orchestration tab with OTLP configuration; (10) stability sweep covering transcript-mining, credential nonces, JetEngine CCT prefix, workflow tab, multi-agent dashboard, and site-health polyfill.
 
