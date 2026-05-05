@@ -1,0 +1,14 @@
+{
+	"name": "nvdigitalsolutions/nvoos-skote",
+	"description": "NV oOS Skote — embed the Skote React admin template inside WordPress and bridge to NV oOS Pro REST.",
+	"type": "wordpress-plugin",
+	"license": "GPL-3.0-or-later",
+	"require": {
+		"php": ">=7.4"
+	},
+	"autoload": {
+		"classmap": [
+			"includes/"
+		]
+	}
+}
