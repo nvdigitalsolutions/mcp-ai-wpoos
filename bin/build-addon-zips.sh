@@ -8,7 +8,6 @@
 #   build/nvoos-fantasy-football-vX.Y.Z.zip
 #   build/nvoos-cornerstone3d-vX.Y.Z.zip
 #   build/nvoos-graphify-vX.Y.Z.zip
-#   build/nvoos-skote-vX.Y.Z.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
@@ -92,8 +91,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/skote" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, and addons/skote must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, and addons/graphify must exist."
 exit 1
 fi
 
@@ -114,17 +113,16 @@ FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
 CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
 EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${VERSION}.zip"
 GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${VERSION}.zip"
-SKOTE_ZIP="${OUTPUT_DIR}/nvoos-skote-v${VERSION}.zip"
 
-rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP" "$SKOTE_ZIP"
+rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP"
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$CANVAS_ZIP"
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=6
+TOTAL_STEPS=5
 else
-TOTAL_STEPS=7
+TOTAL_STEPS=6
 fi
 
 echo "=========================================="
@@ -231,34 +229,6 @@ GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
 echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
 echo ""
 
-echo "[6/${TOTAL_STEPS}] Building nvoos-skote-v${VERSION}.zip"
-# Skote does NOT bundle the licensed Skote React source — only the WP host
-# plugin, REST surface, and (when present) the prebuilt dist/ produced by
-# `npm run build` inside addons/skote/.
-mkdir -p "${TMP_DIR}/skote-stage/nvoos-skote"
-rsync -a "addons/skote/" "${TMP_DIR}/skote-stage/nvoos-skote/" \
---exclude 'node_modules/' \
---exclude '.git/' \
---exclude '.DS_Store' \
---exclude 'tests/' \
---exclude 'src/' \
---exclude 'scripts/' \
---exclude 'bin/' \
---exclude 'package.json' \
---exclude 'package-lock.json' \
---exclude 'tsconfig.json' \
---exclude 'vite.config.ts' \
---exclude 'composer.json' \
---exclude '.gitignore' \
---exclude '.distignore'
-(
-cd "${TMP_DIR}/skote-stage"
-zip -r -q "${ROOT_DIR}/${SKOTE_ZIP}" nvoos-skote/
-)
-SKOTE_SIZE=$(du -h "$SKOTE_ZIP" | cut -f1)
-echo "✅ ${SKOTE_ZIP} (${SKOTE_SIZE})"
-echo ""
-
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
 # container. This step is best-effort:
 #   - Canvas is platform-specific and is NOT part of the WordPress.org
@@ -281,7 +251,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[7/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[6/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -368,7 +338,6 @@ echo "  - ${EMBEDDED_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
 echo "  - ${GRAPHIFY_ZIP}"
-echo "  - ${SKOTE_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then
