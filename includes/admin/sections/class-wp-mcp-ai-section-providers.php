@@ -181,8 +181,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get OpenRouter models from Model Config.
+			$openrouter_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$openrouter_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openrouter' );
+			}
+
+			// Fallback to a curated short list. The full catalogue is
+			// discovered live from /api/v1/models when the API key is set.
+			if ( empty( $openrouter_models ) ) {
+				$openrouter_models = array(
+					'openrouter/auto'                          => 'OpenRouter Auto (router picks)',
+					'openai/gpt-4o-mini'                       => 'OpenAI GPT-4o Mini',
+					'openai/gpt-4o'                            => 'OpenAI GPT-4o',
+					'anthropic/claude-3.5-sonnet'              => 'Anthropic Claude 3.5 Sonnet',
+					'anthropic/claude-3-haiku'                 => 'Anthropic Claude 3 Haiku',
+					'google/gemini-pro-1.5'                    => 'Google Gemini 1.5 Pro',
+					'meta-llama/llama-3.3-70b-instruct'        => 'Meta Llama 3.3 70B Instruct',
+					'mistralai/mistral-large'                  => 'Mistral Large',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1154,6 +1175,51 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'https://api.deepseek.com',
 				),
 
+				// OpenRouter Provider Settings.
+				'enable_openrouter'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OpenRouter Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable OpenRouter as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'OpenRouter is a unified gateway in front of OpenAI, Anthropic, Google, Meta, Mistral and many other providers — all reachable through a single API key with OpenAI-compatible requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'openrouter_api_key'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'OpenRouter API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: OpenRouter API keys URL */
+						__( 'Your OpenRouter API key. Get one from <a href="%s" target="_blank">OpenRouter Keys</a>. The same key works for every model in the OpenRouter catalogue.', 'mcp-ai-wpoos' ),
+						'https://openrouter.ai/keys'
+					),
+					'placeholder'  => 'sk-or-v1-...',
+					'autocomplete' => 'new-password',
+				),
+				'openrouter_model'                   => array(
+					'type'        => 'select',
+					'label'       => __( 'Default OpenRouter Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for OpenRouter requests. Use the namespaced form, e.g. "openai/gpt-4o-mini" or "anthropic/claude-3.5-sonnet". Pick "openrouter/auto" to let OpenRouter choose a recommended model on each request.', 'mcp-ai-wpoos' ),
+					'options'     => $openrouter_models,
+					'default'     => 'openrouter/auto',
+				),
+				'openrouter_base_url'                => array(
+					'type'        => 'url',
+					'label'       => __( 'OpenRouter API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for OpenRouter API requests. Leave empty to use the default (https://openrouter.ai/api/v1). Useful when proxying OpenRouter through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://openrouter.ai/api/v1',
+				),
+				'openrouter_site_url'                => array(
+					'type'        => 'url',
+					'label'       => __( 'Site URL (HTTP-Referer)', 'mcp-ai-wpoos' ),
+					'description' => __( 'OpenRouter sends this value in the HTTP-Referer header to identify your application on its leaderboard and dashboard. Leave empty to use this site\'s home URL.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://example.com',
+				),
+				'openrouter_app_title'               => array(
+					'type'        => 'text',
+					'label'       => __( 'Application Title (X-Title)', 'mcp-ai-wpoos' ),
+					'description' => __( 'OpenRouter sends this value in the X-Title header to label requests in its dashboard. Leave empty to use this site\'s title.', 'mcp-ai-wpoos' ),
+					'placeholder' => __( 'My WordPress Site', 'mcp-ai-wpoos' ),
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1241,6 +1307,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'DeepSeek', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-superhero',
 					'fields' => array( 'enable_deepseek', 'deepseek_api_key', 'deepseek_model', 'deepseek_base_url' ),
+				),
+				'openrouter'           => array(
+					'id'     => 'openrouter',
+					'label'  => __( 'OpenRouter', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-randomize',
+					'fields' => array( 'enable_openrouter', 'openrouter_api_key', 'openrouter_model', 'openrouter_base_url', 'openrouter_site_url', 'openrouter_app_title' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1455,6 +1527,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'deepseek'    => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+				'openrouter'  => __( 'OpenRouter (Multi-provider gateway)', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
@@ -1582,7 +1655,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

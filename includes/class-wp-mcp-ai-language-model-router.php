@@ -82,6 +82,13 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $deepseek_client;
 
 		/**
+		 * OpenRouter client instance.
+		 *
+		 * @var WP_MCP_AI_OpenRouter_Client
+		 */
+		protected $openrouter_client;
+
+		/**
 		 * Embedded LLM client instance (server-side GGUF inference, Pro-only).
 		 *
 		 * Null when the Pro addon is not present.
@@ -103,8 +110,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @param object|null                  $embedded_client      Embedded LLM client instance (Pro-only, optional).
 		 * @param WP_MCP_AI_Nvidia_Client      $nvidia_client        NVIDIA NIM client instance (optional).
 		 * @param WP_MCP_AI_DeepSeek_Client    $deepseek_client      DeepSeek client instance (optional).
+		 * @param WP_MCP_AI_OpenRouter_Client  $openrouter_client    OpenRouter client instance (optional).
 		 */
-		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null, WP_MCP_AI_DeepSeek_Client $deepseek_client = null ) {
+		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null, WP_MCP_AI_DeepSeek_Client $deepseek_client = null, WP_MCP_AI_OpenRouter_Client $openrouter_client = null ) {
 			$this->openai_client      = $openai_client;
 			$this->gemini_client      = $gemini_client;
 			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
@@ -114,6 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->cloudflare_client  = $cloudflare_client ? $cloudflare_client : new WP_MCP_AI_Cloudflare_Client();
 			$this->nvidia_client      = $nvidia_client ? $nvidia_client : new WP_MCP_AI_Nvidia_Client();
 			$this->deepseek_client    = $deepseek_client ? $deepseek_client : new WP_MCP_AI_DeepSeek_Client();
+			$this->openrouter_client  = $openrouter_client ? $openrouter_client : new WP_MCP_AI_OpenRouter_Client();
 			// Embedded client is Pro-only; only instantiate when the class is available.
 			$this->embedded_client    = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
 		}
@@ -161,7 +170,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			$last_error = null;
 
@@ -281,6 +290,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 
 				case 'deepseek':
 					return $this->deepseek_client->create_chat_completion( $messages, $options );
+
+				case 'openrouter':
+					return $this->openrouter_client->create_chat_completion( $messages, $options );
 
 				case 'embedded':
 					// Server-side embedded LLM using GGUF models via llama.cpp.

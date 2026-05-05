@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-openrouter-provider',
+        'version' => 'dev-copilot/add-openrouter-provider',
+        'reference' => 'c4b411c06e45fee4acbea76c271b918f72eeda14',
         'pretty_version' => 'dev-copilot/check-enable-sse-responses',
         'version' => 'dev-copilot/check-enable-sse-responses',
         'reference' => '2258f7a1367a70f621226e76b8ab5291ad892254',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-openrouter-provider',
+            'version' => 'dev-copilot/add-openrouter-provider',
+            'reference' => 'c4b411c06e45fee4acbea76c271b918f72eeda14',
             'pretty_version' => 'dev-copilot/check-enable-sse-responses',
             'version' => 'dev-copilot/check-enable-sse-responses',
             'reference' => '2258f7a1367a70f621226e76b8ab5291ad892254',

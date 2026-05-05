@@ -325,6 +325,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'client.openrouter',
+			function () {
+				return new WP_MCP_AI_OpenRouter_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
@@ -339,7 +346,8 @@ class WP_MCP_AI_Container {
 					null,
 					null,
 					$container->get( 'client.nvidia' ),
-					$container->get( 'client.deepseek' )
+					$container->get( 'client.deepseek' ),
+					$container->get( 'client.openrouter' )
 				);
 			}
 		);
