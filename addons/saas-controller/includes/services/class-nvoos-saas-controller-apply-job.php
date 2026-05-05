@@ -86,9 +86,9 @@ if ( class_exists( 'NVOOS_SaaS_Controller_Apply_Job' ) ) {
 class NVOOS_SaaS_Controller_Apply_Job {
 
 	/**
-	 * Cron hook for tick processing. Filterable via `cron_schedules` is
-	 * not needed — every tick is a single-event reschedule, never a
-	 * recurring schedule.
+	 * Cron hook for tick processing. The `cron_schedules` filter is not
+	 * needed — every tick is a single-event reschedule, never a recurring
+	 * schedule.
 	 *
 	 * @var string
 	 */
@@ -240,7 +240,15 @@ class NVOOS_SaaS_Controller_Apply_Job {
 			);
 		}
 
-		// Schedule the first tick 1s in the past so spawn_cron() picks it up.
+		// Schedule the first tick 1s in the past so spawn_cron() picks it
+		// up immediately. WordPress's wp_get_ready_cron_jobs() returns
+		// any single-event whose timestamp is <= time(), and spawn_cron()
+		// then dispatches it via a non-blocking loopback request. This
+		// mirrors the pattern used by the base plugin's
+		// WP_MCP_AI_Transcript_Mining_Job (see includes/services/
+		// class-wp-mcp-ai-transcript-mining-job.php). Scheduling at
+		// time() + N would require an organic page load N seconds later
+		// before the job moves at all.
 		$tick_timestamp = time() - 1;
 		wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
 		if ( function_exists( 'spawn_cron' ) ) {
@@ -318,7 +326,12 @@ class NVOOS_SaaS_Controller_Apply_Job {
 		$state['last_message'] = isset( $result['message'] ) ? (string) $result['message'] : '';
 		if ( 'error' === $status && isset( $result['message'] ) ) {
 			$state['errors'][] = (string) $result['message'];
-			// Cap the error log to keep the transient bounded.
+			// Internal storage cap (10): keeps the transient bounded but
+			// retains a slightly larger forensic window than the public
+			// projection exposes. The projection trims to the last 5
+			// (see self::project()) so the admin UI stays compact while
+			// `get_state()` still has the older entries available for
+			// diagnostics.
 			if ( count( $state['errors'] ) > 10 ) {
 				$state['errors'] = array_slice( $state['errors'], -10 );
 			}
@@ -331,7 +344,8 @@ class NVOOS_SaaS_Controller_Apply_Job {
 			return;
 		}
 
-		// Re-schedule next tick.
+		// Re-schedule next tick. Past timestamp by design — see the same
+		// rationale in self::enqueue_plan() above.
 		$tick_timestamp = time() - 1;
 		wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
 		if ( function_exists( 'spawn_cron' ) ) {
