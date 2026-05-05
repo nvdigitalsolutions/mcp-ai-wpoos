@@ -618,6 +618,76 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- OpenRouter -->
+				<div class="card">
+					<h2><?php esc_html_e( '10. OpenRouter', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_openrouter'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['openrouter_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['openrouter_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['openrouter_model'] ) && '' !== $settings['openrouter_model'] ? $settings['openrouter_model'] : 'openrouter/auto' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['openrouter_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['openrouter_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://openrouter.ai/api/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="openrouter-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="openrouter"
+						<?php echo esc_attr( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test OpenRouter Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_openrouter'] ) || empty( $settings['openrouter_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your OpenRouter settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=openrouter' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'OpenRouter is a unified gateway in front of OpenAI, Anthropic, Google, Meta, Mistral and many other providers — all reachable through a single OpenAI-compatible API key.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
@@ -894,6 +964,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['enable_deepseek'] ) && ! empty( $settings['deepseek_api_key'] ) ) {
 						$configured[] = 'DeepSeek';
+					}
+					if ( ! empty( $settings['enable_openrouter'] ) && ! empty( $settings['openrouter_api_key'] ) ) {
+						$configured[] = 'OpenRouter';
 					}
 					if ( ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
@@ -1173,6 +1246,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'deepseek':
 					self::test_deepseek( $settings );
+					break;
+
+				case 'openrouter':
+					self::test_openrouter( $settings );
 					break;
 
 				case 'embedded':
@@ -1844,6 +1921,125 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'details' => array(
 							__( 'Model', 'mcp-ai-wpoos' )       => $model,
 							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test OpenRouter connection.
+		 *
+		 * Sends a minimal chat completion request to verify the API key and
+		 * network connectivity to openrouter.ai. Includes the recommended
+		 * `HTTP-Referer` and `X-Title` headers per OpenRouter best practices.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_openrouter( $settings ) {
+			if ( empty( $settings['enable_openrouter'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'OpenRouter provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['openrouter_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'OpenRouter API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'OpenRouter client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_OpenRouter_Client();
+				$model  = isset( $settings['openrouter_model'] ) && '' !== $settings['openrouter_model']
+					? $settings['openrouter_model']
+					: WP_MCP_AI_OpenRouter_Client::DEFAULT_MODEL;
+
+				$base_url = isset( $settings['openrouter_base_url'] ) && '' !== trim( $settings['openrouter_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['openrouter_base_url'] ) )
+					: WP_MCP_AI_OpenRouter_Client::DEFAULT_BASE_URL;
+
+				$site_url = ! empty( $settings['openrouter_site_url'] )
+					? esc_url_raw( $settings['openrouter_site_url'] )
+					: home_url( '/' );
+
+				$app_title = ! empty( $settings['openrouter_app_title'] )
+					? sanitize_text_field( $settings['openrouter_app_title'] )
+					: get_bloginfo( 'name' );
+
+				$response = wp_remote_post(
+					$base_url . '/chat/completions',
+					array(
+						'headers' => array(
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . $settings['openrouter_api_key'],
+							'User-Agent'    => 'WP-MCP-AI-OpenRouter-Client/1.0',
+							'HTTP-Referer'  => $site_url,
+							'X-Title'       => $app_title,
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 5,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hi',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'OpenRouter connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' )        => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+							__( 'Referer', 'mcp-ai-wpoos' )      => $site_url,
+							__( 'App Title', 'mcp-ai-wpoos' )    => $app_title,
 						),
 					)
 				);

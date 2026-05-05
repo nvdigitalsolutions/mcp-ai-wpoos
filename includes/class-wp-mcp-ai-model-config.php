@@ -465,6 +465,12 @@ class WP_MCP_AI_Model_Config {
 			$providers['deepseek'] = __( 'DeepSeek', 'mcp-ai-wpoos' );
 		}
 
+		// Check enable_openrouter setting (defaults to false if not set).
+		$enable_openrouter = isset( $settings['enable_openrouter'] ) ? $settings['enable_openrouter'] : false;
+		if ( $enable_openrouter && ! empty( $settings['openrouter_api_key'] ) ) {
+			$providers['openrouter'] = __( 'OpenRouter', 'mcp-ai-wpoos' );
+		}
+
 		// Check enable_huggingface setting (defaults to false if not set).
 		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
 		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {
