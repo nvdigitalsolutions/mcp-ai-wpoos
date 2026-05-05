@@ -28,11 +28,12 @@ class Test_NVOOS_SaaS_Controller_Credential_Store extends WP_UnitTestCase {
 	public function test_set_and_get_round_trip() {
 		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
 		$input = array(
-			'cloudflare_account_id' => 'abc123',
-			'cloudflare_api_token'  => 'cf_token_super_secret_value',
-			'stripe_secret_key'     => 'sk_test_1234567890ABCDEF',
-			'stripe_webhook_secret' => 'whsec_xxxxxxxxxxxxxxxxxxxx',
-			'openrouter_api_key'    => 'or_key_zzzzzzzzzzzzz',
+			'cloudflare_account_id'       => 'abc123',
+			'cloudflare_api_token'        => 'cf_token_super_secret_value',
+			'stripe_secret_key'           => 'sk_test_1234567890ABCDEF',
+			'stripe_webhook_secret'       => 'whsec_xxxxxxxxxxxxxxxxxxxx',
+			'openrouter_api_key'          => 'or_key_zzzzzzzzzzzzz',
+			'openrouter_provisioning_key' => 'or_pk_provisioning_yyyyy',
 		);
 		$this->assertTrue( $store->set( $input ) );
 

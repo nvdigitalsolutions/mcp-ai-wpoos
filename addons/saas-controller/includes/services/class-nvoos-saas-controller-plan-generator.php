@@ -52,14 +52,38 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 	protected $client;
 
 	/**
+	 * Optional Stripe client (Phase 6). When null, the Stripe section of
+	 * the plan is silently skipped — the operator hasn't opted in.
+	 *
+	 * @var NVOOS_SaaS_Controller_Stripe_Client|null
+	 */
+	protected $stripe;
+
+	/**
+	 * Optional OpenRouter client (Phase 6). When null, the OpenRouter
+	 * section of the plan is silently skipped.
+	 *
+	 * @var NVOOS_SaaS_Controller_OpenRouter_Client|null
+	 */
+	protected $openrouter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param NVOOS_SaaS_Controller_Cloudflare_Client $client Cloudflare client.
+	 * @param NVOOS_SaaS_Controller_Cloudflare_Client      $client     Cloudflare client.
+	 * @param NVOOS_SaaS_Controller_Stripe_Client|null     $stripe     Optional Stripe client.
+	 * @param NVOOS_SaaS_Controller_OpenRouter_Client|null $openrouter Optional OpenRouter client.
 	 */
-	public function __construct( NVOOS_SaaS_Controller_Cloudflare_Client $client ) {
-		$this->client = $client;
+	public function __construct(
+		NVOOS_SaaS_Controller_Cloudflare_Client $client,
+		$stripe = null,
+		$openrouter = null
+	) {
+		$this->client     = $client;
+		$this->stripe     = ( $stripe instanceof NVOOS_SaaS_Controller_Stripe_Client ) ? $stripe : null;
+		$this->openrouter = ( $openrouter instanceof NVOOS_SaaS_Controller_OpenRouter_Client ) ? $openrouter : null;
 	}
 
 	/**
@@ -83,6 +107,9 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 		$plan = $this->plan_kv( $desired, $plan );
 		$plan = $this->plan_workers( $desired, $plan );
 		$plan = $this->plan_ai_gateway( $desired, $plan );
+		$plan = $this->plan_stripe_products( $desired, $plan );
+		$plan = $this->plan_stripe_prices( $desired, $plan );
+		$plan = $this->plan_openrouter_keys( $desired, $plan );
 
 		$plan['summary'] = array(
 			'creates' => count( $plan['creates'] ),
@@ -299,6 +326,197 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 			'kind' => 'ai_gateway',
 			'slug' => $slug,
 		);
+		return $plan;
+	}
+
+	/**
+	 * Stripe products plan section — match desired by id (Phase 6).
+	 *
+	 * Skipped silently when no Stripe client is configured (operator has
+	 * not opted in to the Stripe surface). Live API failures are recorded
+	 * in `errors[]` rather than thrown, mirroring the Cloudflare sections.
+	 *
+	 * @param array $desired Desired config.
+	 * @param array $plan    Plan accumulator.
+	 * @return array
+	 */
+	protected function plan_stripe_products( array $desired, array $plan ) {
+		$desired_products = isset( $desired['stripe_products'] ) ? (array) $desired['stripe_products'] : array();
+		if ( empty( $desired_products ) ) {
+			return $plan;
+		}
+		if ( null === $this->stripe ) {
+			$plan['errors'][] = array(
+				'kind'    => 'stripe_product',
+				'message' => __( 'Stripe products are configured but no Stripe secret key is set; configure the Stripe credential to plan/apply this section.', 'nvoos-saas-controller' ),
+			);
+			return $plan;
+		}
+
+		$ids = array();
+		foreach ( $desired_products as $row ) {
+			if ( is_array( $row ) && ! empty( $row['id'] ) ) {
+				$ids[] = (string) $row['id'];
+			}
+		}
+		$live = $this->stripe->list_products( $ids );
+		if ( is_wp_error( $live ) ) {
+			$plan['errors'][] = array(
+				'kind'    => 'stripe_product',
+				'message' => $live->get_error_message(),
+			);
+			return $plan;
+		}
+
+		foreach ( $desired_products as $row ) {
+			if ( ! is_array( $row ) || empty( $row['id'] ) ) {
+				continue;
+			}
+			$id   = (string) $row['id'];
+			$name = isset( $row['name'] ) ? (string) $row['name'] : '';
+			if ( isset( $live[ $id ] ) ) {
+				$plan['noops'][] = array(
+					'kind'      => 'stripe_product',
+					'id'        => $id,
+					'name'      => $name,
+					'live_name' => isset( $live[ $id ]['name'] ) ? (string) $live[ $id ]['name'] : '',
+				);
+			} else {
+				$entry = array(
+					'kind' => 'stripe_product',
+					'id'   => $id,
+					'name' => $name,
+				);
+				if ( ! empty( $row['description'] ) ) {
+					$entry['description'] = (string) $row['description'];
+				}
+				$plan['creates'][] = $entry;
+			}
+		}
+
+		return $plan;
+	}
+
+	/**
+	 * Stripe prices plan section — match desired by lookup_key (Phase 6).
+	 *
+	 * @param array $desired Desired config.
+	 * @param array $plan    Plan accumulator.
+	 * @return array
+	 */
+	protected function plan_stripe_prices( array $desired, array $plan ) {
+		$desired_prices = isset( $desired['stripe_prices'] ) ? (array) $desired['stripe_prices'] : array();
+		if ( empty( $desired_prices ) ) {
+			return $plan;
+		}
+		if ( null === $this->stripe ) {
+			$plan['errors'][] = array(
+				'kind'    => 'stripe_price',
+				'message' => __( 'Stripe prices are configured but no Stripe secret key is set; configure the Stripe credential to plan/apply this section.', 'nvoos-saas-controller' ),
+			);
+			return $plan;
+		}
+
+		$lookup_keys = array();
+		foreach ( $desired_prices as $row ) {
+			if ( is_array( $row ) && ! empty( $row['lookup_key'] ) ) {
+				$lookup_keys[] = (string) $row['lookup_key'];
+			}
+		}
+		$live = $this->stripe->list_prices_by_lookup_keys( $lookup_keys );
+		if ( is_wp_error( $live ) ) {
+			$plan['errors'][] = array(
+				'kind'    => 'stripe_price',
+				'message' => $live->get_error_message(),
+			);
+			return $plan;
+		}
+
+		foreach ( $desired_prices as $row ) {
+			if ( ! is_array( $row ) || empty( $row['lookup_key'] ) ) {
+				continue;
+			}
+			$lookup_key = (string) $row['lookup_key'];
+			if ( isset( $live[ $lookup_key ] ) ) {
+				$plan['noops'][] = array(
+					'kind'        => 'stripe_price',
+					'lookup_key'  => $lookup_key,
+					'product_id'  => isset( $row['product_id'] ) ? (string) $row['product_id'] : '',
+					'live_id'     => isset( $live[ $lookup_key ]['id'] ) ? (string) $live[ $lookup_key ]['id'] : '',
+				);
+			} else {
+				$entry = array(
+					'kind'        => 'stripe_price',
+					'lookup_key'  => $lookup_key,
+					'product_id'  => isset( $row['product_id'] ) ? (string) $row['product_id'] : '',
+					'currency'    => isset( $row['currency'] ) ? (string) $row['currency'] : '',
+					'unit_amount' => isset( $row['unit_amount'] ) ? (int) $row['unit_amount'] : 0,
+				);
+				if ( ! empty( $row['recurring_interval'] ) ) {
+					$entry['recurring_interval'] = (string) $row['recurring_interval'];
+				}
+				if ( ! empty( $row['nickname'] ) ) {
+					$entry['nickname'] = (string) $row['nickname'];
+				}
+				$plan['creates'][] = $entry;
+			}
+		}
+
+		return $plan;
+	}
+
+	/**
+	 * OpenRouter keys plan section — match desired by label (Phase 6).
+	 *
+	 * @param array $desired Desired config.
+	 * @param array $plan    Plan accumulator.
+	 * @return array
+	 */
+	protected function plan_openrouter_keys( array $desired, array $plan ) {
+		$desired_keys = isset( $desired['openrouter_keys'] ) ? (array) $desired['openrouter_keys'] : array();
+		if ( empty( $desired_keys ) ) {
+			return $plan;
+		}
+		if ( null === $this->openrouter ) {
+			$plan['errors'][] = array(
+				'kind'    => 'openrouter_key',
+				'message' => __( 'OpenRouter keys are configured but no provisioning key is set; configure the OpenRouter provisioning credential to plan/apply this section.', 'nvoos-saas-controller' ),
+			);
+			return $plan;
+		}
+
+		$live = $this->openrouter->list_keys();
+		if ( is_wp_error( $live ) ) {
+			$plan['errors'][] = array(
+				'kind'    => 'openrouter_key',
+				'message' => $live->get_error_message(),
+			);
+			return $plan;
+		}
+
+		foreach ( $desired_keys as $row ) {
+			if ( ! is_array( $row ) || empty( $row['label'] ) ) {
+				continue;
+			}
+			$label = (string) $row['label'];
+			if ( isset( $live[ $label ] ) ) {
+				$plan['noops'][] = array(
+					'kind'  => 'openrouter_key',
+					'label' => $label,
+					'hash'  => isset( $live[ $label ]['hash'] ) ? (string) $live[ $label ]['hash'] : '',
+				);
+			} else {
+				$entry = array(
+					'kind'  => 'openrouter_key',
+					'label' => $label,
+				);
+				if ( isset( $row['limit_usd'] ) ) {
+					$entry['limit_usd'] = (float) $row['limit_usd'];
+				}
+				$plan['creates'][] = $entry;
+			}
+		}
+
 		return $plan;
 	}
 }

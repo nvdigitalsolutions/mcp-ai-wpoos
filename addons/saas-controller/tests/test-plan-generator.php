@@ -135,4 +135,158 @@ class Test_NVOOS_SaaS_Controller_Plan_Generator extends WP_UnitTestCase {
 		$worker_creates = array_filter( $plan['creates'], function ( $r ) { return 'worker' === $r['kind']; } );
 		$this->assertCount( 1, $worker_creates );
 	}
+
+	public function test_stripe_section_skipped_silently_when_no_credential_and_no_desired_rows() {
+		$stub  = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$plan  = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, null, null ) )
+			->generate( NVOOS_SaaS_Controller_Deployment_Config::defaults() );
+		$this->assertSame( 0, $plan['summary']['errors'] );
+	}
+
+	public function test_stripe_section_emits_error_row_when_desired_rows_but_no_credential() {
+		$stub    = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$desired = array_merge(
+			NVOOS_SaaS_Controller_Deployment_Config::defaults(),
+			array(
+				'stripe_products' => array( array( 'id' => 'prod_x', 'name' => 'X' ) ),
+			)
+		);
+		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, null, null ) )->generate( $desired );
+		$this->assertSame( 1, $plan['summary']['errors'] );
+		$this->assertSame( 'stripe_product', $plan['errors'][0]['kind'] );
+	}
+
+	public function test_stripe_products_diff_creates_vs_noops() {
+		$stub   = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$stripe = new NVOOS_SaaS_Stub_Stripe_Client();
+		$stripe->products = array(
+			'prod_existing' => array( 'id' => 'prod_existing', 'name' => 'Existing' ),
+		);
+		$desired = array_merge(
+			NVOOS_SaaS_Controller_Deployment_Config::defaults(),
+			array(
+				'stripe_products' => array(
+					array( 'id' => 'prod_existing', 'name' => 'Existing' ),
+					array( 'id' => 'prod_new',      'name' => 'New' ),
+				),
+			)
+		);
+		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, $stripe, null ) )->generate( $desired );
+
+		$noops = array_values( array_filter( $plan['noops'], function ( $r ) { return 'stripe_product' === $r['kind']; } ) );
+		$creates = array_values( array_filter( $plan['creates'], function ( $r ) { return 'stripe_product' === $r['kind']; } ) );
+		$this->assertCount( 1, $noops );
+		$this->assertSame( 'prod_existing', $noops[0]['id'] );
+		$this->assertCount( 1, $creates );
+		$this->assertSame( 'prod_new', $creates[0]['id'] );
+	}
+
+	public function test_stripe_prices_match_by_lookup_key() {
+		$stub   = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$stripe = new NVOOS_SaaS_Stub_Stripe_Client();
+		$stripe->prices = array(
+			'pro_monthly' => array( 'id' => 'price_live', 'lookup_key' => 'pro_monthly', 'product' => 'prod_pro' ),
+		);
+		$desired = array_merge(
+			NVOOS_SaaS_Controller_Deployment_Config::defaults(),
+			array(
+				'stripe_prices' => array(
+					array( 'lookup_key' => 'pro_monthly', 'product_id' => 'prod_pro', 'currency' => 'usd', 'unit_amount' => 1500 ),
+					array( 'lookup_key' => 'starter_yearly', 'product_id' => 'prod_starter', 'currency' => 'usd', 'unit_amount' => 9900 ),
+				),
+			)
+		);
+		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, $stripe, null ) )->generate( $desired );
+
+		$noops   = array_values( array_filter( $plan['noops'],   function ( $r ) { return 'stripe_price' === $r['kind']; } ) );
+		$creates = array_values( array_filter( $plan['creates'], function ( $r ) { return 'stripe_price' === $r['kind']; } ) );
+		$this->assertCount( 1, $noops );
+		$this->assertSame( 'pro_monthly', $noops[0]['lookup_key'] );
+		$this->assertCount( 1, $creates );
+		$this->assertSame( 'starter_yearly', $creates[0]['lookup_key'] );
+	}
+
+	public function test_openrouter_keys_match_by_label() {
+		$stub       = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$openrouter = new NVOOS_SaaS_Stub_OpenRouter_Client();
+		$openrouter->keys = array(
+			'production' => array( 'label' => 'production', 'hash' => 'h1' ),
+		);
+		$desired = array_merge(
+			NVOOS_SaaS_Controller_Deployment_Config::defaults(),
+			array(
+				'openrouter_keys' => array(
+					array( 'label' => 'production' ),
+					array( 'label' => 'staging', 'limit_usd' => 50.0 ),
+				),
+			)
+		);
+		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, null, $openrouter ) )->generate( $desired );
+
+		$noops   = array_values( array_filter( $plan['noops'],   function ( $r ) { return 'openrouter_key' === $r['kind']; } ) );
+		$creates = array_values( array_filter( $plan['creates'], function ( $r ) { return 'openrouter_key' === $r['kind']; } ) );
+		$this->assertCount( 1, $noops );
+		$this->assertSame( 'production', $noops[0]['label'] );
+		$this->assertCount( 1, $creates );
+		$this->assertSame( 'staging', $creates[0]['label'] );
+		$this->assertSame( 50.0, $creates[0]['limit_usd'] );
+	}
+
+	public function test_stripe_list_error_surfaces_in_errors_section() {
+		$stub   = new NVOOS_SaaS_Stub_Cloudflare_Client();
+		$stripe = new NVOOS_SaaS_Stub_Stripe_Client();
+		$stripe->products_error = new WP_Error( 'stripe_http_500', 'Boom' );
+		$desired = array_merge(
+			NVOOS_SaaS_Controller_Deployment_Config::defaults(),
+			array(
+				'stripe_products' => array( array( 'id' => 'prod_x', 'name' => 'X' ) ),
+			)
+		);
+		$plan = ( new NVOOS_SaaS_Controller_Plan_Generator( $stub, $stripe, null ) )->generate( $desired );
+		$this->assertSame( 1, $plan['summary']['errors'] );
+		$this->assertSame( 'stripe_product', $plan['errors'][0]['kind'] );
+	}
+}
+
+/**
+ * Stub Stripe client returning fixed payloads — extends the real class so
+ * the plan generator's `instanceof` check accepts it without a HTTP layer.
+ */
+class NVOOS_SaaS_Stub_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_Client {
+	public $products        = array();
+	public $prices          = array();
+	public $products_error  = null;
+	public $prices_error    = null;
+
+	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+
+	public function list_products( array $ids ) {
+		if ( null !== $this->products_error ) {
+			return $this->products_error;
+		}
+		return $this->products;
+	}
+	public function list_prices_by_lookup_keys( array $lookup_keys ) {
+		if ( null !== $this->prices_error ) {
+			return $this->prices_error;
+		}
+		return $this->prices;
+	}
+}
+
+/**
+ * Stub OpenRouter client.
+ */
+class NVOOS_SaaS_Stub_OpenRouter_Client extends NVOOS_SaaS_Controller_OpenRouter_Client {
+	public $keys       = array();
+	public $keys_error = null;
+
+	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+
+	public function list_keys() {
+		if ( null !== $this->keys_error ) {
+			return $this->keys_error;
+		}
+		return $this->keys;
+	}
 }

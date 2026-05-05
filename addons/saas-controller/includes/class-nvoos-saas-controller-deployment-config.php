@@ -64,12 +64,19 @@ class NVOOS_SaaS_Controller_Deployment_Config {
 	 */
 	public static function defaults() {
 		return array(
-			'worker_name'     => '',
-			'account_id'      => '',
-			'd1_databases'    => array(),
-			'kv_namespaces'   => array(),
-			'ai_gateway_slug' => '',
-			'routes'          => array(),
+			'worker_name'      => '',
+			'account_id'       => '',
+			'd1_databases'     => array(),
+			'kv_namespaces'    => array(),
+			'ai_gateway_slug'  => '',
+			'routes'           => array(),
+			// Phase 6: desired Stripe + OpenRouter topology. Each section is
+			// optional and skipped at plan time when its credentials aren't
+			// configured (no SSRF / spurious-failure surface for operators
+			// who only use the Cloudflare side of the addon).
+			'stripe_products'  => array(),
+			'stripe_prices'    => array(),
+			'openrouter_keys'  => array(),
 		);
 	}
 
@@ -203,6 +210,112 @@ class NVOOS_SaaS_Controller_Deployment_Config {
 					'pattern'   => $pattern,
 					'zone_name' => $zone_name,
 				);
+			}
+		}
+
+		// Phase 6 — Stripe products. Each row matches Stripe's product
+		// model loosely: `id` is operator-supplied so create-or-update is
+		// idempotent across replays. `name` and `description` are free-form
+		// text. We reject ids that don't match Stripe's (loose) slug rules
+		// so a typo can't smuggle a colon-prefixed expandable parameter
+		// like `price:auto` into the upstream call.
+		if ( ! empty( $config['stripe_products'] ) && is_array( $config['stripe_products'] ) ) {
+			foreach ( $config['stripe_products'] as $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$id   = isset( $row['id'] ) ? sanitize_text_field( (string) $row['id'] ) : '';
+				$name = isset( $row['name'] ) ? sanitize_text_field( (string) $row['name'] ) : '';
+				if ( '' === $id || '' === $name ) {
+					continue;
+				}
+				if ( ! preg_match( '/^[A-Za-z0-9][A-Za-z0-9_\-]{0,99}$/', $id ) ) {
+					continue;
+				}
+				$entry = array(
+					'id'   => $id,
+					'name' => $name,
+				);
+				if ( ! empty( $row['description'] ) ) {
+					$entry['description'] = sanitize_text_field( (string) $row['description'] );
+				}
+				$out['stripe_products'][] = $entry;
+			}
+		}
+
+		// Phase 6 — Stripe prices. Each row references a `product_id` from
+		// the products array (or any product already provisioned in
+		// Stripe), with explicit `currency`, `unit_amount` (in the
+		// currency's smallest unit), and either `recurring_interval` for
+		// subscriptions or unset for one-shot prices. A `lookup_key` is
+		// required so we can match desired-vs-live without depending on
+		// the provider-assigned price id.
+		if ( ! empty( $config['stripe_prices'] ) && is_array( $config['stripe_prices'] ) ) {
+			foreach ( $config['stripe_prices'] as $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$lookup_key = isset( $row['lookup_key'] ) ? sanitize_text_field( (string) $row['lookup_key'] ) : '';
+				$product_id = isset( $row['product_id'] ) ? sanitize_text_field( (string) $row['product_id'] ) : '';
+				$currency   = isset( $row['currency'] ) ? strtolower( sanitize_text_field( (string) $row['currency'] ) ) : '';
+				$amount     = isset( $row['unit_amount'] ) ? (int) $row['unit_amount'] : 0;
+				if ( '' === $lookup_key || '' === $product_id || '' === $currency || $amount <= 0 ) {
+					continue;
+				}
+				if ( ! preg_match( '/^[a-z0-9][a-z0-9_\-]{0,99}$/', $lookup_key ) ) {
+					continue;
+				}
+				if ( ! preg_match( '/^[A-Za-z0-9][A-Za-z0-9_\-]{0,99}$/', $product_id ) ) {
+					continue;
+				}
+				if ( ! preg_match( '/^[a-z]{3}$/', $currency ) ) {
+					continue;
+				}
+				$entry = array(
+					'lookup_key'  => $lookup_key,
+					'product_id'  => $product_id,
+					'currency'    => $currency,
+					'unit_amount' => $amount,
+				);
+				if ( ! empty( $row['recurring_interval'] ) ) {
+					$interval = sanitize_text_field( (string) $row['recurring_interval'] );
+					if ( in_array( $interval, array( 'day', 'week', 'month', 'year' ), true ) ) {
+						$entry['recurring_interval'] = $interval;
+					}
+				}
+				if ( ! empty( $row['nickname'] ) ) {
+					$entry['nickname'] = sanitize_text_field( (string) $row['nickname'] );
+				}
+				$out['stripe_prices'][] = $entry;
+			}
+		}
+
+		// Phase 6 — OpenRouter runtime keys. `label` is the matching key
+		// used by the plan generator to decide create-vs-noop; the
+		// optional `limit_usd` is forwarded to OpenRouter as the per-key
+		// dollar budget cap. We don't store the actual key value (it is
+		// returned only at create time and surfaces in the apply result
+		// row exactly once for the operator to copy out).
+		if ( ! empty( $config['openrouter_keys'] ) && is_array( $config['openrouter_keys'] ) ) {
+			foreach ( $config['openrouter_keys'] as $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$label = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
+				if ( '' === $label ) {
+					continue;
+				}
+				if ( ! preg_match( '/^[A-Za-z0-9][A-Za-z0-9_\- ]{0,99}$/', $label ) ) {
+					continue;
+				}
+				$entry = array( 'label' => $label );
+				if ( isset( $row['limit_usd'] ) ) {
+					$limit = (float) $row['limit_usd'];
+					if ( $limit > 0 ) {
+						$entry['limit_usd'] = $limit;
+					}
+				}
+				$out['openrouter_keys'][] = $entry;
 			}
 		}
 

@@ -580,7 +580,18 @@ class NVOOS_SaaS_Controller_REST {
 			return $client;
 		}
 
-		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $client );
+		// Phase 6 — optional Stripe / OpenRouter clients. Returning `null`
+		// from `from_credential_store()` indicates the operator hasn't
+		// opted in to that surface; the plan generator will silently skip
+		// the corresponding section unless desired-config rows exist.
+		$stripe     = class_exists( 'NVOOS_SaaS_Controller_Stripe_Client' )
+			? NVOOS_SaaS_Controller_Stripe_Client::from_credential_store()
+			: null;
+		$openrouter = class_exists( 'NVOOS_SaaS_Controller_OpenRouter_Client' )
+			? NVOOS_SaaS_Controller_OpenRouter_Client::from_credential_store()
+			: null;
+
+		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $client, $stripe, $openrouter );
 		$plan      = $generator->generate( $desired );
 
 		if ( ! empty( $plan['errors'] ) ) {
@@ -629,7 +640,15 @@ class NVOOS_SaaS_Controller_REST {
 			return $mutating;
 		}
 
-		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $mutating );
+		// Phase 6 — same optional-client pattern as the preview route.
+		$stripe     = class_exists( 'NVOOS_SaaS_Controller_Stripe_Client' )
+			? NVOOS_SaaS_Controller_Stripe_Client::from_credential_store()
+			: null;
+		$openrouter = class_exists( 'NVOOS_SaaS_Controller_OpenRouter_Client' )
+			? NVOOS_SaaS_Controller_OpenRouter_Client::from_credential_store()
+			: null;
+
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $mutating, $stripe, $openrouter );
 		$out    = $engine->apply( $plan );
 
 		$out['ok'] = empty( $out['summary']['error'] );

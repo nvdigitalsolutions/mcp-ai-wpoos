@@ -129,14 +129,38 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	protected $client;
 
 	/**
+	 * Optional Stripe client (Phase 6). When null, `kind=stripe_*` rows
+	 * are recorded as `skipped`.
+	 *
+	 * @var NVOOS_SaaS_Controller_Stripe_Client|null
+	 */
+	protected $stripe;
+
+	/**
+	 * Optional OpenRouter client (Phase 6). When null, `kind=openrouter_key`
+	 * rows are recorded as `skipped`.
+	 *
+	 * @var NVOOS_SaaS_Controller_OpenRouter_Client|null
+	 */
+	protected $openrouter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param NVOOS_SaaS_Controller_Cloudflare_Mutating_Client $client Mutating client.
+	 * @param NVOOS_SaaS_Controller_Cloudflare_Mutating_Client $client     Mutating Cloudflare client.
+	 * @param NVOOS_SaaS_Controller_Stripe_Client|null         $stripe     Optional Stripe client.
+	 * @param NVOOS_SaaS_Controller_OpenRouter_Client|null     $openrouter Optional OpenRouter client.
 	 */
-	public function __construct( NVOOS_SaaS_Controller_Cloudflare_Mutating_Client $client ) {
-		$this->client = $client;
+	public function __construct(
+		NVOOS_SaaS_Controller_Cloudflare_Mutating_Client $client,
+		$stripe = null,
+		$openrouter = null
+	) {
+		$this->client     = $client;
+		$this->stripe     = ( $stripe instanceof NVOOS_SaaS_Controller_Stripe_Client ) ? $stripe : null;
+		$this->openrouter = ( $openrouter instanceof NVOOS_SaaS_Controller_OpenRouter_Client ) ? $openrouter : null;
 	}
 
 	/**
@@ -337,6 +361,12 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 				return $this->apply_create_ai_gateway( $row );
 			case 'worker':
 				return $this->apply_worker_upload( $row, 'created' );
+			case 'stripe_product':
+				return $this->apply_create_stripe_product( $row );
+			case 'stripe_price':
+				return $this->apply_create_stripe_price( $row );
+			case 'openrouter_key':
+				return $this->apply_create_openrouter_key( $row );
 			default:
 				return array(
 					'kind'    => $kind,
@@ -629,6 +659,133 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			'target'  => $slug,
 			'status'  => 'ok',
 			'message' => __( 'Created AI Gateway.', 'nvoos-saas-controller' ),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Apply a single Stripe product create row (Phase 6).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Plan row.
+	 * @return array
+	 */
+	protected function apply_create_stripe_product( array $row ) {
+		$id = isset( $row['id'] ) ? (string) $row['id'] : '';
+		if ( null === $this->stripe ) {
+			return array(
+				'kind'    => 'stripe_product',
+				'target'  => $id,
+				'status'  => 'skipped',
+				'message' => __( 'Stripe credential is not configured; cannot apply Stripe product row.', 'nvoos-saas-controller' ),
+			);
+		}
+		$result = $this->stripe->create_product( $row );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'stripe_product',
+				'target'  => $id,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'stripe_product',
+			'target'  => isset( $result['id'] ) ? (string) $result['id'] : $id,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: Stripe product id. */
+				__( 'Provisioned Stripe product %s.', 'nvoos-saas-controller' ),
+				isset( $result['id'] ) ? $result['id'] : $id
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Apply a single Stripe price create row (Phase 6).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Plan row.
+	 * @return array
+	 */
+	protected function apply_create_stripe_price( array $row ) {
+		$lookup_key = isset( $row['lookup_key'] ) ? (string) $row['lookup_key'] : '';
+		if ( null === $this->stripe ) {
+			return array(
+				'kind'    => 'stripe_price',
+				'target'  => $lookup_key,
+				'status'  => 'skipped',
+				'message' => __( 'Stripe credential is not configured; cannot apply Stripe price row.', 'nvoos-saas-controller' ),
+			);
+		}
+		$result = $this->stripe->create_price( $row );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'stripe_price',
+				'target'  => $lookup_key,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'stripe_price',
+			'target'  => $lookup_key,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: 1: lookup key, 2: Stripe price id. */
+				__( 'Provisioned Stripe price "%1$s" (id %2$s).', 'nvoos-saas-controller' ),
+				$lookup_key,
+				isset( $result['id'] ) ? $result['id'] : ''
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Apply a single OpenRouter runtime-key create row (Phase 6).
+	 *
+	 * The plaintext key value is surfaced exactly once in the result row
+	 * and is never persisted by the addon — the operator is expected to
+	 * copy it into their downstream secret store (Cloudflare Worker
+	 * secrets, Vault, etc.).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Plan row.
+	 * @return array
+	 */
+	protected function apply_create_openrouter_key( array $row ) {
+		$label = isset( $row['label'] ) ? (string) $row['label'] : '';
+		if ( null === $this->openrouter ) {
+			return array(
+				'kind'    => 'openrouter_key',
+				'target'  => $label,
+				'status'  => 'skipped',
+				'message' => __( 'OpenRouter provisioning credential is not configured; cannot apply OpenRouter key row.', 'nvoos-saas-controller' ),
+			);
+		}
+		$limit  = isset( $row['limit_usd'] ) ? (float) $row['limit_usd'] : null;
+		$result = $this->openrouter->create_key( $label, $limit );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'openrouter_key',
+				'target'  => $label,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'openrouter_key',
+			'target'  => $label,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: OpenRouter key label. */
+				__( 'Created OpenRouter runtime key "%s". The plaintext value is in detail.key — copy it now; it will not be returned again.', 'nvoos-saas-controller' ),
+				$label
+			),
 			'detail'  => $result,
 		);
 	}

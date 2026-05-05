@@ -314,4 +314,164 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'internal', $entries[0]['channel'] );
 		$this->assertSame( 'apply_token_issued', $entries[0]['action'] );
 	}
+
+	public function test_stripe_product_row_dispatches_to_stripe_client() {
+		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
+		$stripe = new NVOOS_SaaS_Stub_Engine_Stripe_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, $stripe, null );
+		$out    = $engine->apply(
+			array(
+				'creates' => array( array( 'kind' => 'stripe_product', 'id' => 'prod_x', 'name' => 'X' ) ),
+				'updates' => array(),
+				'noops'   => array(),
+				'orphans' => array(),
+				'errors'  => array(),
+			)
+		);
+		$this->assertSame( 1, $out['summary']['ok'] );
+		$this->assertCount( 1, $stripe->product_calls );
+		$this->assertSame( 'prod_x', $stripe->product_calls[0]['id'] );
+	}
+
+	public function test_stripe_product_row_skipped_when_no_stripe_client() {
+		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, null, null );
+		$out    = $engine->apply(
+			array(
+				'creates' => array( array( 'kind' => 'stripe_product', 'id' => 'prod_x', 'name' => 'X' ) ),
+				'updates' => array(),
+				'noops'   => array(),
+				'orphans' => array(),
+				'errors'  => array(),
+			)
+		);
+		$this->assertSame( 1, $out['summary']['skipped'] );
+		$this->assertSame( 'skipped', $out['results'][0]['status'] );
+	}
+
+	public function test_stripe_price_row_dispatches_to_stripe_client() {
+		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
+		$stripe = new NVOOS_SaaS_Stub_Engine_Stripe_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, $stripe, null );
+		$out    = $engine->apply(
+			array(
+				'creates' => array(
+					array(
+						'kind'        => 'stripe_price',
+						'lookup_key'  => 'pro_monthly',
+						'product_id'  => 'prod_pro',
+						'currency'    => 'usd',
+						'unit_amount' => 1500,
+					),
+				),
+				'updates' => array(),
+				'noops'   => array(),
+				'orphans' => array(),
+				'errors'  => array(),
+			)
+		);
+		$this->assertSame( 1, $out['summary']['ok'] );
+		$this->assertCount( 1, $stripe->price_calls );
+		$this->assertSame( 'pro_monthly', $stripe->price_calls[0]['lookup_key'] );
+	}
+
+	public function test_openrouter_key_row_dispatches_to_openrouter_client() {
+		$cf         = new NVOOS_SaaS_Stub_Mutating_Client();
+		$openrouter = new NVOOS_SaaS_Stub_Engine_OpenRouter_Client();
+		$engine     = new NVOOS_SaaS_Controller_Apply_Engine( $cf, null, $openrouter );
+		$out        = $engine->apply(
+			array(
+				'creates' => array(
+					array( 'kind' => 'openrouter_key', 'label' => 'production', 'limit_usd' => 250.0 ),
+				),
+				'updates' => array(),
+				'noops'   => array(),
+				'orphans' => array(),
+				'errors'  => array(),
+			)
+		);
+		$this->assertSame( 1, $out['summary']['ok'] );
+		$this->assertCount( 1, $openrouter->calls );
+		$this->assertSame( 'production', $openrouter->calls[0]['label'] );
+		$this->assertSame( 250.0, $openrouter->calls[0]['limit'] );
+		// Plaintext key value surfaces in detail.
+		$this->assertNotEmpty( $out['results'][0]['detail']['key'] );
+	}
+
+	public function test_openrouter_key_row_records_error_status_on_upstream_failure() {
+		$cf         = new NVOOS_SaaS_Stub_Mutating_Client();
+		$openrouter = new NVOOS_SaaS_Stub_Engine_OpenRouter_Client();
+		$openrouter->next_error = new WP_Error( 'openrouter_unauthorized', 'Bad provisioning key.' );
+		$engine     = new NVOOS_SaaS_Controller_Apply_Engine( $cf, null, $openrouter );
+		$out        = $engine->apply(
+			array(
+				'creates' => array( array( 'kind' => 'openrouter_key', 'label' => 'foo' ) ),
+				'updates' => array(),
+				'noops'   => array(),
+				'orphans' => array(),
+				'errors'  => array(),
+			)
+		);
+		$this->assertSame( 1, $out['summary']['error'] );
+		$this->assertSame( 'error', $out['results'][0]['status'] );
+		$this->assertStringContainsString( 'Bad provisioning key.', $out['results'][0]['message'] );
+	}
+}
+
+/**
+ * Stub Stripe client for the apply-engine tests — extends the real class
+ * so the engine's `instanceof` check accepts it without HTTP I/O.
+ */
+class NVOOS_SaaS_Stub_Engine_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_Client {
+	public $product_calls = array();
+	public $price_calls   = array();
+	public $next_product_error = null;
+	public $next_price_error   = null;
+
+	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+
+	public function create_product( array $product ) {
+		$this->product_calls[] = $product;
+		if ( null !== $this->next_product_error ) {
+			return $this->next_product_error;
+		}
+		return array(
+			'id'   => $product['id'],
+			'name' => $product['name'],
+		);
+	}
+
+	public function create_price( array $price ) {
+		$this->price_calls[] = $price;
+		if ( null !== $this->next_price_error ) {
+			return $this->next_price_error;
+		}
+		return array(
+			'id'         => 'price_' . substr( hash( 'sha256', $price['lookup_key'] ), 0, 8 ),
+			'lookup_key' => $price['lookup_key'],
+			'product'    => $price['product_id'],
+		);
+	}
+}
+
+/**
+ * Stub OpenRouter client for the apply-engine tests.
+ */
+class NVOOS_SaaS_Stub_Engine_OpenRouter_Client extends NVOOS_SaaS_Controller_OpenRouter_Client {
+	public $calls      = array();
+	public $next_error = null;
+
+	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+
+	public function create_key( $label, $limit_usd = null ) {
+		$this->calls[] = array( 'label' => (string) $label, 'limit' => $limit_usd );
+		if ( null !== $this->next_error ) {
+			return $this->next_error;
+		}
+		return array(
+			'label' => (string) $label,
+			'hash'  => 'h-' . substr( hash( 'sha256', (string) $label ), 0, 8 ),
+			'key'   => 'sk-or-stub-' . (string) $label,
+		);
+	}
 }

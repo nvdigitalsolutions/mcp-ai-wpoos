@@ -85,4 +85,83 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertCount( 1, $saved['kv_namespaces'] );
 		$this->assertSame( 'cache', $saved['kv_namespaces'][0]['title'] );
 	}
+
+	public function test_stripe_products_sanitised() {
+		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
+			array(
+				'stripe_products' => array(
+					array( 'id' => 'prod_basic', 'name' => 'Basic', 'description' => 'Basic plan' ),
+					array( 'id' => '', 'name' => 'Empty id' ),
+					array( 'id' => 'prod_with bad chars!', 'name' => 'X' ),
+					array( 'id' => 'prod_no_name' ),
+				),
+			)
+		);
+		$this->assertCount( 1, $saved['stripe_products'] );
+		$this->assertSame( 'prod_basic', $saved['stripe_products'][0]['id'] );
+		$this->assertSame( 'Basic plan', $saved['stripe_products'][0]['description'] );
+	}
+
+	public function test_stripe_prices_require_full_tuple() {
+		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
+			array(
+				'stripe_prices' => array(
+					// Valid: monthly recurring.
+					array(
+						'lookup_key'         => 'pro_monthly',
+						'product_id'         => 'prod_pro',
+						'currency'           => 'USD',
+						'unit_amount'        => 1500,
+						'recurring_interval' => 'month',
+					),
+					// Invalid: missing currency.
+					array(
+						'lookup_key'  => 'starter',
+						'product_id' => 'prod_starter',
+						'unit_amount' => 100,
+					),
+					// Invalid: zero amount.
+					array(
+						'lookup_key'  => 'free',
+						'product_id'  => 'prod_free',
+						'currency'    => 'usd',
+						'unit_amount' => 0,
+					),
+					// Invalid: bad currency.
+					array(
+						'lookup_key'  => 'bad_curr',
+						'product_id'  => 'prod_x',
+						'currency'    => 'xxx_too_long',
+						'unit_amount' => 500,
+					),
+				),
+			)
+		);
+		$this->assertCount( 1, $saved['stripe_prices'] );
+		$this->assertSame( 'pro_monthly', $saved['stripe_prices'][0]['lookup_key'] );
+		// Currency lower-cased.
+		$this->assertSame( 'usd', $saved['stripe_prices'][0]['currency'] );
+		$this->assertSame( 'month', $saved['stripe_prices'][0]['recurring_interval'] );
+	}
+
+	public function test_openrouter_keys_sanitised_and_limit_validated() {
+		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
+			array(
+				'openrouter_keys' => array(
+					array( 'label' => 'production', 'limit_usd' => 250.0 ),
+					array( 'label' => 'staging' ),
+					array( 'label' => '', 'limit_usd' => 100 ),
+					array( 'label' => 'with-zero-limit', 'limit_usd' => -5 ),
+				),
+			)
+		);
+		$this->assertCount( 3, $saved['openrouter_keys'] );
+		$this->assertSame( 'production', $saved['openrouter_keys'][0]['label'] );
+		$this->assertSame( 250.0, $saved['openrouter_keys'][0]['limit_usd'] );
+		$this->assertSame( 'staging', $saved['openrouter_keys'][1]['label'] );
+		$this->assertArrayNotHasKey( 'limit_usd', $saved['openrouter_keys'][1] );
+		// Negative limit dropped, but label preserved.
+		$this->assertSame( 'with-zero-limit', $saved['openrouter_keys'][2]['label'] );
+		$this->assertArrayNotHasKey( 'limit_usd', $saved['openrouter_keys'][2] );
+	}
 }

@@ -47,6 +47,12 @@ class NVOOS_SaaS_Controller_Credential_Store {
 		'stripe_secret_key',
 		'stripe_webhook_secret',
 		'openrouter_api_key',
+		// Phase 6: optional provisioning key used by the OpenRouter mutating
+		// client to create / list runtime API keys. Distinct from the
+		// regular `openrouter_api_key` (which is a runtime key itself and
+		// cannot manage other keys). Only the provisioning key has scope
+		// over `/api/v1/keys`.
+		'openrouter_provisioning_key',
 	);
 
 	/**
