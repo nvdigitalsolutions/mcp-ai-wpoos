@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "NV oOS Cloud — Cloudflare Worker SaaS backend for managed-tokens (proxy → Cloudflare AI Gateway → OpenRouter).",
-  "license": "GPL-3.0-or-later",
+  "license": "UNLICENSED",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

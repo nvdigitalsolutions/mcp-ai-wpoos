@@ -327,3 +327,7 @@ Graphify ships pre-bundled, unmodified copies of the Cytoscape.js graph-renderin
 | layout-base | MIT — © iVis Lab, Bilkent University | https://github.com/iVis-at-Bilkent/layout-base |
 
 For the full repo-wide attribution index, see [`CREDITS.md`](../../CREDITS.md) at the repository root.
+
+## License
+
+Graphify itself is **proprietary** — © 2025-2026 NV Digital Solutions, all rights reserved. Bundled third-party libraries listed above retain their upstream MIT licenses. See [`CREDITS.md`](../../CREDITS.md) at the repository root for the full attribution index.

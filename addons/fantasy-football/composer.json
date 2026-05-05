@@ -2,7 +2,7 @@
 	"name": "nvdigitalsolutions/nvoos-fantasy-football",
 	"description": "Fantasy Football extension for NV oOS — ESPN and Yahoo Fantasy Sports API integration with team management, player research, and trade analysis",
 	"type": "wordpress-plugin",
-	"license": "GPL-3.0-or-later",
+	"license": "proprietary",
 	"require": {
 		"php": ">=7.4"
 	},
