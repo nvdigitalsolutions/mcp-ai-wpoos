@@ -124,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->deepseek_client    = $deepseek_client ? $deepseek_client : new WP_MCP_AI_DeepSeek_Client();
 			$this->openrouter_client  = $openrouter_client ? $openrouter_client : new WP_MCP_AI_OpenRouter_Client();
 			// Embedded client is Pro-only; only instantiate when the class is available.
-			$this->embedded_client = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
+			$this->embedded_client    = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
 		}
 
 		/**
