@@ -232,6 +232,53 @@ class NVOOS_SaaS_Controller_REST {
 				'permission_callback' => array( __CLASS__, 'check_permission' ),
 			)
 		);
+
+		// Phase 7 — Stripe webhook receiver.
+		// `POST /webhooks/stripe` is the only route in this namespace that
+		// is **not** capability-gated: Stripe is the caller and there is no
+		// signed-in WP user. Authentication is performed inside the handler
+		// by verifying the `Stripe-Signature` header against the stored
+		// `stripe_webhook_secret`. Until the receiver verifies the
+		// signature it treats the request as untrusted (returns 401 / 400
+		// without persisting anything).
+		register_rest_route(
+			self::NAMESPACE,
+			'/webhooks/stripe',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_stripe_webhook' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/webhooks/events',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_get_webhook_events' ),
+					'permission_callback' => array( __CLASS__, 'check_permission' ),
+					'args'                => array(
+						'limit'  => array(
+							'type'              => 'integer',
+							'default'           => 50,
+							'sanitize_callback' => 'absint',
+						),
+						'offset' => array(
+							'type'              => 'integer',
+							'default'           => 0,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( __CLASS__, 'route_clear_webhook_events' ),
+					'permission_callback' => array( __CLASS__, 'check_permission' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -281,11 +328,11 @@ class NVOOS_SaaS_Controller_REST {
 	public static function route_healthz() {
 		return rest_ensure_response(
 			array(
-				'ok'           => true,
-				'addon'        => 'nvoos-saas-controller',
-				'version'      => defined( 'NVOOS_SAAS_CONTROLLER_VERSION' ) ? NVOOS_SAAS_CONTROLLER_VERSION : 'dev',
-				'base_active'  => class_exists( 'WP_MCP_AI_Plugin' ),
-				'time'         => time(),
+				'ok'          => true,
+				'addon'       => 'nvoos-saas-controller',
+				'version'     => defined( 'NVOOS_SAAS_CONTROLLER_VERSION' ) ? NVOOS_SAAS_CONTROLLER_VERSION : 'dev',
+				'base_active' => class_exists( 'WP_MCP_AI_Plugin' ),
+				'time'        => time(),
 			)
 		);
 	}
@@ -553,7 +600,12 @@ class NVOOS_SaaS_Controller_REST {
 	public static function route_get_last_smoke_test() {
 		$tester = new NVOOS_SaaS_Controller_Smoke_Tester();
 		$last   = $tester->get_last_result();
-		return rest_ensure_response( null === $last ? array( 'ok' => null, 'checks' => array() ) : $last );
+		return rest_ensure_response(
+			null === $last ? array(
+				'ok'     => null,
+				'checks' => array(),
+			) : $last
+		);
 	}
 
 	/**
@@ -691,5 +743,247 @@ class NVOOS_SaaS_Controller_REST {
 			);
 		}
 		return rest_ensure_response( $last );
+	}
+
+	/**
+	 * POST /webhooks/stripe — Stripe webhook receiver (Phase 7).
+	 *
+	 * The route is publicly reachable (Stripe is the caller and has no WP
+	 * session) but every request is gated by an HMAC-SHA256 signature
+	 * check against the stored `stripe_webhook_secret`. The handler:
+	 *
+	 *  1. Loads the secret. If unconfigured → 412 (so the operator gets a
+	 *     clear "configure the receiver before pointing Stripe at it"
+	 *     signal during onboarding).
+	 *  2. Verifies the `Stripe-Signature` header against the raw request
+	 *     body. Returns 401 on signature failure / replay, 400 on
+	 *     malformed payloads.
+	 *  3. Records the event in the webhook event store (idempotent by
+	 *     `event.id`) and mirrors a one-line summary to the audit log on
+	 *     the `stripe` channel.
+	 *  4. Returns `{ ok: true, event_id, duplicate }` with HTTP 200 — the
+	 *     receiver intentionally returns 2xx as fast as possible so Stripe
+	 *     doesn't queue retries.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_stripe_webhook( WP_REST_Request $request ) {
+		$store     = NVOOS_SaaS_Controller_Credential_Store::instance();
+		$plain     = $store->get_all();
+		$secret    = isset( $plain['stripe_webhook_secret'] ) ? (string) $plain['stripe_webhook_secret'] : '';
+		$audit     = NVOOS_SaaS_Controller_Audit_Log::instance();
+		$event_bag = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
+
+		if ( '' === $secret ) {
+			$audit->record(
+				array(
+					'channel' => 'stripe',
+					'action'  => 'webhook_received',
+					'status'  => 'error',
+					'message' => __( 'Webhook rejected: stripe_webhook_secret is not configured.', 'nvoos-saas-controller' ),
+				)
+			);
+			return new WP_Error(
+				'stripe_webhook_secret_missing',
+				__( 'Stripe webhook secret is not configured.', 'nvoos-saas-controller' ),
+				array( 'status' => 412 )
+			);
+		}
+
+		$raw_body  = (string) $request->get_body();
+		$signature = (string) $request->get_header( 'stripe_signature' );
+		if ( '' === $signature ) {
+			// `WP_REST_Request::get_header()` translates the header name —
+			// most setups receive `Stripe-Signature` and look it up via the
+			// canonical lower-snake form, but some custom transports keep
+			// the dashed form. Try the alternate key as a fallback.
+			$signature = (string) $request->get_header( 'STRIPE-SIGNATURE' );
+		}
+
+		$verification = NVOOS_SaaS_Controller_Stripe_Webhook_Verifier::verify( $raw_body, $signature, $secret );
+		if ( empty( $verification['ok'] ) ) {
+			$audit->record(
+				array(
+					'channel' => 'stripe',
+					'action'  => 'webhook_rejected',
+					'status'  => 'error',
+					'target'  => self::reason_to_target( $verification['reason'] ),
+					'message' => self::reason_to_message( $verification['reason'] ),
+				)
+			);
+			$status = self::reason_to_http_status( $verification['reason'] );
+			return new WP_Error(
+				'stripe_webhook_' . sanitize_key( $verification['reason'] ),
+				self::reason_to_message( $verification['reason'] ),
+				array( 'status' => $status )
+			);
+		}
+
+		$existing = $event_bag->find_by_event_id( 'stripe', $verification['event_id'] );
+		$entry    = $event_bag->record(
+			array(
+				'provider'         => 'stripe',
+				'event_id'         => $verification['event_id'],
+				'event_type'       => $verification['event_type'],
+				'timestamp'        => $verification['timestamp'],
+				'signature_status' => 'verified',
+				'message'          => sprintf(
+					/* translators: %s: Stripe event type, e.g. "invoice.paid" */
+					__( 'Verified Stripe webhook (%s).', 'nvoos-saas-controller' ),
+					$verification['event_type']
+				),
+			)
+		);
+
+		$is_duplicate = ( null !== $existing );
+
+		// Only record the audit-log entry on first delivery. Stripe retries
+		// the same event id on transient 5xx errors; double-recording would
+		// flood the ring buffer.
+		if ( ! $is_duplicate ) {
+			$audit->record(
+				array(
+					'channel' => 'stripe',
+					'action'  => 'webhook_received',
+					'status'  => 'ok',
+					'target'  => $verification['event_type'],
+					'message' => sprintf(
+						/* translators: %s: Stripe event id (e.g. evt_…) */
+						__( 'Recorded Stripe webhook %s.', 'nvoos-saas-controller' ),
+						$verification['event_id']
+					),
+				)
+			);
+		}
+
+		$response = rest_ensure_response(
+			array(
+				'ok'         => true,
+				'event_id'   => $verification['event_id'],
+				'event_type' => $verification['event_type'],
+				'duplicate'  => $is_duplicate,
+				'recorded'   => null !== $entry,
+			)
+		);
+		$response->set_status( 200 );
+		return $response;
+	}
+
+	/**
+	 * GET /webhooks/events — paginated, newest-first.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function route_get_webhook_events( $request ) {
+		$limit  = (int) $request->get_param( 'limit' );
+		$offset = (int) $request->get_param( 'offset' );
+		$store  = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
+		return rest_ensure_response(
+			array(
+				'entries' => $store->get_recent( $limit > 0 ? $limit : 50, $offset ),
+				'total'   => $store->count(),
+			)
+		);
+	}
+
+	/**
+	 * DELETE /webhooks/events — clear the webhook event store.
+	 *
+	 * Recorded as an audit-log entry of its own (action
+	 * `clear_webhook_events`, channel `internal`) before the clear.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_clear_webhook_events() {
+		$audit = NVOOS_SaaS_Controller_Audit_Log::instance();
+		$audit->record(
+			array(
+				'channel' => 'internal',
+				'action'  => 'clear_webhook_events',
+				'status'  => 'ok',
+				'message' => __( 'Webhook event store cleared.', 'nvoos-saas-controller' ),
+			)
+		);
+		NVOOS_SaaS_Controller_Webhook_Event_Store::instance()->clear();
+		return rest_ensure_response( array( 'ok' => true ) );
+	}
+
+	/**
+	 * Map a verifier `reason` code to the audit-log `target` value.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $reason Verifier reason code.
+	 * @return string
+	 */
+	protected static function reason_to_target( $reason ) {
+		return is_string( $reason ) && '' !== $reason ? $reason : 'unknown';
+	}
+
+	/**
+	 * Map a verifier `reason` code to a human-readable message.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $reason Verifier reason code.
+	 * @return string
+	 */
+	protected static function reason_to_message( $reason ) {
+		switch ( (string) $reason ) {
+			case 'missing_signature':
+				return __( 'Missing Stripe-Signature header.', 'nvoos-saas-controller' );
+			case 'malformed_signature':
+				return __( 'Stripe-Signature header is malformed.', 'nvoos-saas-controller' );
+			case 'empty_body':
+				return __( 'Webhook body is empty.', 'nvoos-saas-controller' );
+			case 'invalid_timestamp':
+				return __( 'Webhook timestamp is invalid.', 'nvoos-saas-controller' );
+			case 'timestamp_outside_tolerance':
+				return __( 'Webhook timestamp is outside the tolerance window (replay protection).', 'nvoos-saas-controller' );
+			case 'signature_mismatch':
+				return __( 'Webhook signature did not match the stored secret.', 'nvoos-saas-controller' );
+			case 'invalid_json':
+				return __( 'Webhook body is not valid JSON.', 'nvoos-saas-controller' );
+			case 'missing_secret':
+				return __( 'Stripe webhook secret is not configured.', 'nvoos-saas-controller' );
+			default:
+				return __( 'Webhook verification failed.', 'nvoos-saas-controller' );
+		}
+	}
+
+	/**
+	 * Map a verifier `reason` code to an HTTP status.
+	 *
+	 * Signature failures and replays return 401 (unauthorised — the caller
+	 * could not prove they hold the shared secret). Schema-level problems
+	 * (malformed header, empty body, invalid JSON) return 400.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $reason Verifier reason code.
+	 * @return int
+	 */
+	protected static function reason_to_http_status( $reason ) {
+		switch ( (string) $reason ) {
+			case 'missing_signature':
+			case 'signature_mismatch':
+			case 'timestamp_outside_tolerance':
+				return 401;
+			case 'malformed_signature':
+			case 'empty_body':
+			case 'invalid_timestamp':
+			case 'invalid_json':
+				return 400;
+			default:
+				return 400;
+		}
 	}
 }

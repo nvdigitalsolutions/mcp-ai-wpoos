@@ -25,9 +25,11 @@ if ( ! defined( 'NVOOS_SAAS_CONTROLLER_PATH' ) ) {
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-credential-store.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-deployment-config.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-audit-log.php';
+require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-webhook-event-store.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-connection-tester.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-cloudflare-client.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-stripe-client.php';
+require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-stripe-webhook-verifier.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-openrouter-client.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-plan-generator.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-cloudflare-mutating-client.php';
