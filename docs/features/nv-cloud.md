@@ -36,8 +36,10 @@ distribution split: a paid hosted service belongs in the paid distribution.
 
 ## Hosting / backend
 
-The SaaS proxy (a separate repo, not in this plugin) is a **Cloudflare Worker
-in front of the Cloudflare AI Gateway**, which in turn routes to OpenRouter:
+The SaaS proxy lives at [`addons/cloud-worker/`](../../addons/cloud-worker/) in
+this monorepo (for review convenience) but is **deployed independently** as a
+Cloudflare Worker — it is not a WordPress plugin and does not run inside
+WordPress. The architecture:
 
 ```
 WordPress (NV oOS plugin)

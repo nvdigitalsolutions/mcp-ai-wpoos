@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### May 5, 2026 — NV oOS Cloud Worker (SaaS backend, `addons/cloud-worker/`)
+
+The Cloudflare-Worker counterpart to the Pro plugin module shipped on May 5.
+Lives in this monorepo for review convenience and is deployed independently
+to `cloud.nvoos.com`.
+
+- **Stack:** TypeScript + Hono router + Stripe (HTTPS API, no Node SDK at request-time) + D1 + KV.
+- **Endpoints:**
+  - `POST /v1/chat/completions`, `POST /v1/embeddings`, `GET /v1/models` — OpenAI-compatible passthrough through Cloudflare AI Gateway → OpenRouter, with SSE streaming preserved.
+  - `GET /v1/account/balance`, `POST /v1/account/topup`, `POST /v1/account/revoke`, `GET /v1/account/ledger` — wallet management.
+  - `POST /connect/start` / `POST /connect/finish` — public connect flow that issues a Connect Token after the first paid Stripe Checkout session.
+  - `POST /stripe/webhook` — signature-verified (`Stripe-Signature` t/v1 scheme, 5-minute tolerance, constant-time HMAC-SHA-256 compare), idempotent against `event.id`.
+- **Money math:** all balances stored as integer micro-USD to eliminate float drift across many small per-request debits. Markup matches the plugin to the cent (`wholesale × 1.07`).
+- **Security:**
+  - Master OpenRouter key is a Wrangler secret, never exposed.
+  - Connect tokens stored as SHA-256 hashes; plaintext shown to the user once.
+  - Site-binding via `X-NV-Site-Url` verified on every request (HTTP 403 on mismatch).
+  - No PII in ledger — token counts only, never message bodies.
+- **Schema:** `addons/cloud-worker/schema.sql` with four tables (`wallets`, `connect_tokens`, `ledger`, `topup_sessions`) + indexes.
+- **Tests:** 16 vitest tests in the `@cloudflare/vitest-pool-workers` Miniflare environment — pricing math, micro-USD round-trip, site-URL normalization, SHA-256 stability, token entropy, Stripe webhook signature accept/reject (signature mismatch, body tamper, timestamp out of tolerance, missing header).
+
 ### May 5, 2026 — NV oOS Cloud — hosted "Managed Tokens" service (Pro)
 
 A new **Pro-only** subsystem that lets a site route inference through NV's
