@@ -134,6 +134,73 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'mcp-router', $body['id'] );
 	}
 
+	public function test_upload_worker_script_success_persists_etag_and_audit() {
+		$this->canned['/workers/scripts/mcp-oos-worker'] = array(
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => wp_json_encode( array(
+				'success' => true,
+				'result'  => array( 'id' => 'mcp-oos-worker', 'modified_on' => '2026-05-05T00:00:00Z' ),
+			) ),
+			'headers'  => array( 'etag' => '"abc123def456"' ),
+		);
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->upload_worker_script(
+			'mcp-oos-worker',
+			"export default { fetch() { return new Response('ok'); } };\n",
+			array(
+				'main_module'        => 'index.js',
+				'compatibility_date' => '2024-12-30',
+				'bindings'           => array(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'mcp-oos-worker', $result['id'] );
+		$this->assertSame( 'abc123def456', $result['etag'], 'etag header should be surfaced and unquoted.' );
+
+		// Multipart preconditions.
+		$args = $this->captured[0]['args'];
+		$this->assertSame( 'PUT', $args['method'] );
+		$this->assertSame( 'Bearer tok', $args['headers']['Authorization'] );
+		$this->assertStringStartsWith( 'multipart/form-data; boundary="', $args['headers']['Content-Type'] );
+		$this->assertStringContainsString( 'Content-Disposition: form-data; name="metadata"', $args['body'] );
+		$this->assertStringContainsString( 'Content-Disposition: form-data; name="index.js"', $args['body'] );
+		$this->assertStringContainsString( '"main_module":"index.js"', $args['body'] );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertCount( 1, $entries );
+		$this->assertSame( 'cloudflare', $entries[0]['channel'] );
+		$this->assertSame( 'upload_worker_script', $entries[0]['action'] );
+		$this->assertSame( 'mcp-oos-worker', $entries[0]['target'] );
+		$this->assertSame( 'ok', $entries[0]['status'] );
+	}
+
+	public function test_upload_worker_script_rejects_empty_body_without_http_call() {
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->upload_worker_script( 'mcp-oos-worker', '', array( 'main_module' => 'index.js' ) );
+		$this->assertWPError( $result );
+		$this->assertSame( 'empty_script', $result->get_error_code() );
+		$this->assertCount( 0, $this->captured );
+	}
+
+	public function test_upload_worker_script_records_error_on_4xx() {
+		$this->canned['/workers/scripts/mcp-oos-worker'] = $this->err( 403, 10000, 'Forbidden' );
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->upload_worker_script(
+			'mcp-oos-worker',
+			"export default {};\n",
+			array( 'main_module' => 'index.js' )
+		);
+
+		$this->assertWPError( $result );
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertCount( 1, $entries );
+		$this->assertSame( 'error', $entries[0]['status'] );
+		$this->assertSame( 'upload_worker_script', $entries[0]['action'] );
+	}
+
 	public function test_from_credential_store_missing_creds() {
 		// Fresh credential store has no values.
 		$result = NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::from_credential_store();

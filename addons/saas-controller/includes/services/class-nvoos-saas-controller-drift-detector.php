@@ -13,10 +13,15 @@
  *
  * The build pipeline writes `worker/drift-manifest.json` with the shape
  * `{ expected_sha256, expected_etag, version, built_at, worker_dist_path }`.
- * Until Phase 5d lands the build that produces `worker/dist/index.js`,
- * the manifest ships with both fingerprints set to `null` — in which case
- * the detector returns `status=unknown` rather than ever flashing a
- * spurious "drift detected" banner.
+ * After a successful Phase 5d Apply the engine *also* writes the actual
+ * upload fingerprint to the WP option `nvoos_saas_controller_deployed_worker`,
+ * which the detector falls back to whenever the on-disk manifest still
+ * ships with `null` pins. The order of preference is therefore:
+ *
+ *   1. on-disk `worker/drift-manifest.json` (release-time pin)
+ *   2. `nvoos_saas_controller_deployed_worker` option (post-Apply pin)
+ *   3. neither → `status=unknown` (no false-positive banners on a fresh
+ *      install that has neither built nor applied yet).
  *
  * # Comparison precedence
  *
@@ -78,6 +83,20 @@ class NVOOS_SaaS_Controller_Drift_Detector {
 	const MANIFEST_PATH = 'worker/drift-manifest.json';
 
 	/**
+	 * WP option key holding the most recent successful Worker upload's
+	 * fingerprint, written by the Phase 5d Apply step. Used as a fallback
+	 * source of truth when the on-disk manifest still ships with `null`
+	 * pins (i.e. before the build pipeline has stamped it at release time).
+	 *
+	 * Lazy-defined here as a string literal rather than a `use` of the
+	 * apply-engine constant so this class still loads in tests that
+	 * don't pull the apply engine in.
+	 *
+	 * @var string
+	 */
+	const DEPLOYED_OPTION = 'nvoos_saas_controller_deployed_worker';
+
+	/**
 	 * Optional Cloudflare client override (test injection).
 	 *
 	 * @var NVOOS_SaaS_Controller_Cloudflare_Client|null
@@ -136,16 +155,37 @@ class NVOOS_SaaS_Controller_Drift_Detector {
 		$manifest    = $this->load_manifest();
 		$worker_name = $this->resolve_worker_name();
 
+		// Phase 5d hand-off: when the on-disk manifest still has null
+		// pins (the pre-release default) but the operator has already run
+		// Apply, prefer the Apply-time fingerprint stored in the
+		// deployed-worker option. This is what flips a fresh install
+		// from `unknown` → `synced` immediately after the first upload,
+		// without waiting for a manifest-stamping rebuild.
+		$expected_sha256 = isset( $manifest['expected_sha256'] ) ? $manifest['expected_sha256'] : null;
+		$expected_etag   = isset( $manifest['expected_etag'] ) ? $manifest['expected_etag'] : null;
+		$source          = 'manifest';
+		if ( null === $expected_sha256 && null === $expected_etag ) {
+			$deployed = get_option( self::DEPLOYED_OPTION, null );
+			if ( is_array( $deployed ) ) {
+				$expected_sha256 = ! empty( $deployed['sha256'] ) ? (string) $deployed['sha256'] : null;
+				$expected_etag   = ! empty( $deployed['etag'] ) ? (string) $deployed['etag'] : null;
+				if ( null !== $expected_sha256 || null !== $expected_etag ) {
+					$source = 'deployed_option';
+				}
+			}
+		}
+
 		$result = array(
 			'ok'                => false,
 			'status'            => 'unknown',
 			'worker_name'       => $worker_name,
-			'expected_sha256'   => isset( $manifest['expected_sha256'] ) ? $manifest['expected_sha256'] : null,
-			'expected_etag'     => isset( $manifest['expected_etag'] ) ? $manifest['expected_etag'] : null,
+			'expected_sha256'   => $expected_sha256,
+			'expected_etag'     => $expected_etag,
 			'actual_sha256'     => null,
 			'actual_etag'       => null,
 			'manifest_version'  => isset( $manifest['version'] ) ? $manifest['version'] : null,
 			'manifest_built_at' => isset( $manifest['built_at'] ) ? $manifest['built_at'] : null,
+			'source'            => $source,
 			'message'           => '',
 			'duration_ms'       => 0,
 			'ts'                => time(),
@@ -155,7 +195,7 @@ class NVOOS_SaaS_Controller_Drift_Detector {
 		if ( null === $result['expected_sha256'] && null === $result['expected_etag'] ) {
 			$result['status']  = 'unknown';
 			$result['ok']      = false;
-			$result['message'] = __( 'No pinned fingerprint in worker/drift-manifest.json — drift detection requires a built Worker (`npm run build:worker`).', 'nvoos-saas-controller' );
+			$result['message'] = __( 'No pinned fingerprint available — run `npm run build:worker` to stamp worker/drift-manifest.json, or run Apply once to record a deployed fingerprint.', 'nvoos-saas-controller' );
 			return $this->finalize( $result, $started_us );
 		}
 

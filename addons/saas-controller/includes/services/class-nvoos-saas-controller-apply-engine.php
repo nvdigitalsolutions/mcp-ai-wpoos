@@ -1,10 +1,10 @@
 <?php
 /**
- * Apply Engine for the NV oOS SaaS Controller (Phase 5b).
+ * Apply Engine for the NV oOS SaaS Controller (Phases 5b + 5d).
  *
  * Consumes a Plan produced by {@see NVOOS_SaaS_Controller_Plan_Generator}
- * and executes its `creates[]` against Cloudflare, gated on an explicit
- * Human-in-the-Loop (HITL) approval token.
+ * and executes its `creates[]` and Worker `updates[]` against Cloudflare,
+ * gated on an explicit Human-in-the-Loop (HITL) approval token.
  *
  * # Token flow
  *
@@ -35,15 +35,24 @@
  *
  * # What is *not* applied yet
  *
- * - `plan.updates[]` — the only `updates` row the plan emits today is for
- *   Workers (the script needs re-uploading), and Worker upload requires the
- *   built `worker/dist/index.js` artefact + multipart metadata, which is
- *   the remit of Phase 5d. We mark these `skipped` with a clear reason.
  * - `plan.orphans[]` — never deleted automatically. Cloudflare resources
  *   are persistent state with sometimes-irrecoverable data (D1 contents in
  *   particular); orphan deletion will arrive behind a separate explicit
  *   "Prune Orphans" surface in Phase 5e, never as a side effect of Apply.
- * - `kind=worker` creates — same Phase 5d carve-out as updates above.
+ *
+ * # Phase 5d — Worker upload
+ *
+ * `kind=worker` rows in `creates[]` and the Worker re-upload row in
+ * `updates[]` invoke {@see NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::upload_worker_script()}
+ * with the built `worker/dist/index.js` body and a multipart metadata
+ * descriptor derived from the deployment config (D1 + KV bindings, plus
+ * an AI-Gateway env var when configured). On success we persist the
+ * actual sha256 + Cloudflare-assigned etag to the WP option
+ * {@see self::DEPLOYED_OPTION} so the Phase 5c drift detector flips from
+ * `unknown` → `synced` without a rebuild. If the dist artefact is missing
+ * (e.g. the operator hasn't run `npm run build:worker` yet) the row is
+ * recorded with `status=error` and a clear remediation message — Apply
+ * never half-deploys.
  *
  * @package NV_oOS_SaaS_Controller
  * @since   0.1.0
@@ -79,6 +88,38 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	 * @var int
 	 */
 	const DEFAULT_TOKEN_TTL = 900; // 15 minutes.
+
+	/**
+	 * Option key used to persist the most recent successful Worker upload
+	 * fingerprint (Phase 5d). Read by
+	 * {@see NVOOS_SaaS_Controller_Drift_Detector} as a fallback when the
+	 * on-disk `worker/drift-manifest.json` still ships with `null` pins
+	 * (i.e. before the build pipeline has stamped the manifest at release
+	 * time).
+	 *
+	 * Shape: `[ 'sha256' => …, 'etag' => …, 'worker_name' => …, 'uploaded_at' => UNIX-ts ]`.
+	 *
+	 * @var string
+	 */
+	const DEPLOYED_OPTION = 'nvoos_saas_controller_deployed_worker';
+
+	/**
+	 * Default Worker module-worker compatibility date used when the
+	 * deployment config does not pin one. Matches `wrangler`'s recommended
+	 * default for new Workers and can be overridden via the
+	 * `nvoos_saas_controller_worker_compatibility_date` filter.
+	 *
+	 * @var string
+	 */
+	const DEFAULT_COMPATIBILITY_DATE = '2024-12-30';
+
+	/**
+	 * Default relative path inside the addon to the built ESM Worker
+	 * bundle. Filterable via `nvoos_saas_controller_worker_dist_path`.
+	 *
+	 * @var string
+	 */
+	const DEFAULT_WORKER_DIST = 'worker/dist/index.js';
 
 	/**
 	 * Mutating Cloudflare client.
@@ -243,12 +284,21 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
-			$results[] = array(
-				'kind'    => isset( $row['kind'] ) ? (string) $row['kind'] : 'unknown',
-				'target'  => isset( $row['name'] ) ? (string) $row['name'] : '',
-				'status'  => 'skipped',
-				'message' => __( 'Updates are not applied in Phase 5b — Worker re-upload arrives in Phase 5d.', 'nvoos-saas-controller' ),
-			);
+			$kind = isset( $row['kind'] ) ? (string) $row['kind'] : '';
+			if ( 'worker' === $kind ) {
+				$results[] = $this->apply_worker_upload( $row, 'updated' );
+			} else {
+				$results[] = array(
+					'kind'    => $kind ? $kind : 'unknown',
+					'target'  => isset( $row['name'] ) ? (string) $row['name'] : '',
+					'status'  => 'skipped',
+					'message' => sprintf(
+						/* translators: %s: plan-row kind. */
+						__( 'Updates for "%s" are not applied automatically.', 'nvoos-saas-controller' ),
+						$kind
+					),
+				);
+			}
 		}
 
 		$summary = array( 'ok' => 0, 'error' => 0, 'skipped' => 0 );
@@ -286,12 +336,7 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			case 'ai_gateway':
 				return $this->apply_create_ai_gateway( $row );
 			case 'worker':
-				return array(
-					'kind'    => 'worker',
-					'target'  => isset( $row['name'] ) ? (string) $row['name'] : '',
-					'status'  => 'skipped',
-					'message' => __( 'Worker upload is deferred to Phase 5d (requires built dist/index.js).', 'nvoos-saas-controller' ),
-				);
+				return $this->apply_worker_upload( $row, 'created' );
 			default:
 				return array(
 					'kind'    => $kind,
@@ -304,6 +349,196 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 					),
 				);
 		}
+	}
+
+	/**
+	 * Apply a Worker create or re-upload row (Phase 5d).
+	 *
+	 * Reads the built ESM bundle from `worker/dist/index.js`, builds the
+	 * module-worker metadata (entrypoint + compatibility date + bindings
+	 * derived from the deployment config), uploads, and on success
+	 * persists the actual sha256 + Cloudflare etag to
+	 * {@see self::DEPLOYED_OPTION} so the drift detector can flip to
+	 * `synced` immediately.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array  $row  Plan row.
+	 * @param string $verb Past-tense verb to use in the success message
+	 *                     (`created` for new uploads, `updated` for
+	 *                     re-uploads of an existing Worker).
+	 * @return array Result row.
+	 */
+	protected function apply_worker_upload( array $row, $verb ) {
+		$name = isset( $row['name'] ) ? (string) $row['name'] : '';
+		if ( '' === $name ) {
+			return array(
+				'kind'    => 'worker',
+				'target'  => '',
+				'status'  => 'error',
+				'message' => __( 'Worker plan row has no name; cannot upload.', 'nvoos-saas-controller' ),
+			);
+		}
+
+		$dist = $this->load_worker_dist();
+		if ( is_wp_error( $dist ) ) {
+			return array(
+				'kind'    => 'worker',
+				'target'  => $name,
+				'status'  => 'error',
+				'message' => $dist->get_error_message(),
+			);
+		}
+
+		$metadata = $this->build_worker_metadata();
+		$result   = $this->client->upload_worker_script( $name, $dist, $metadata );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'worker',
+				'target'  => $name,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+
+		$sha256 = hash( 'sha256', $dist );
+		update_option(
+			self::DEPLOYED_OPTION,
+			array(
+				'worker_name' => $name,
+				'sha256'      => $sha256,
+				'etag'        => isset( $result['etag'] ) ? (string) $result['etag'] : '',
+				'size'        => isset( $result['size'] ) ? (int) $result['size'] : strlen( $dist ),
+				'uploaded_at' => time(),
+			),
+			false
+		);
+
+		return array(
+			'kind'    => 'worker',
+			'target'  => $name,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: 1: created|updated, 2: worker name, 3: short sha256. */
+				__( 'Worker %1$s "%2$s" (sha256 %3$s).', 'nvoos-saas-controller' ),
+				(string) $verb,
+				$name,
+				substr( $sha256, 0, 12 )
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Read `worker/dist/index.js` from disk.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string|WP_Error Raw bytes on success.
+	 */
+	protected function load_worker_dist() {
+		$relative = (string) apply_filters( 'nvoos_saas_controller_worker_dist_path', self::DEFAULT_WORKER_DIST );
+		$base     = defined( 'NVOOS_SAAS_CONTROLLER_PATH' ) ? NVOOS_SAAS_CONTROLLER_PATH : dirname( __DIR__, 2 ) . '/';
+		$path     = $base . ltrim( $relative, '/' );
+
+		if ( ! is_readable( $path ) ) {
+			return new WP_Error(
+				'worker_dist_missing',
+				sprintf(
+					/* translators: %s: relative path to the missing artefact. */
+					__( 'Built Worker bundle not found at %s. Run `npm run build:worker` inside addons/saas-controller before applying.', 'nvoos-saas-controller' ),
+					$relative
+				)
+			);
+		}
+
+		$bytes = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		if ( false === $bytes || '' === $bytes ) {
+			return new WP_Error(
+				'worker_dist_unreadable',
+				sprintf(
+					/* translators: %s: relative path. */
+					__( 'Worker bundle at %s is unreadable or empty.', 'nvoos-saas-controller' ),
+					$relative
+				)
+			);
+		}
+
+		return $bytes;
+	}
+
+	/**
+	 * Build the module-worker metadata payload from the deployment config.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	protected function build_worker_metadata() {
+		$config = array();
+		if ( class_exists( 'NVOOS_SaaS_Controller_Deployment_Config' ) ) {
+			$stored = NVOOS_SaaS_Controller_Deployment_Config::instance()->get();
+			if ( is_array( $stored ) ) {
+				$config = $stored;
+			}
+		}
+
+		$bindings = array();
+		if ( ! empty( $config['d1_databases'] ) && is_array( $config['d1_databases'] ) ) {
+			foreach ( $config['d1_databases'] as $row ) {
+				if ( ! is_array( $row ) || empty( $row['binding'] ) || empty( $row['name'] ) ) {
+					continue;
+				}
+				$bindings[] = array(
+					'type'          => 'd1',
+					'name'          => (string) $row['binding'],
+					'database_name' => (string) $row['name'],
+				);
+			}
+		}
+		if ( ! empty( $config['kv_namespaces'] ) && is_array( $config['kv_namespaces'] ) ) {
+			foreach ( $config['kv_namespaces'] as $row ) {
+				if ( ! is_array( $row ) || empty( $row['binding'] ) || empty( $row['title'] ) ) {
+					continue;
+				}
+				$bindings[] = array(
+					'type'         => 'kv_namespace',
+					'name'         => (string) $row['binding'],
+					'namespace_id' => (string) $row['title'],
+				);
+			}
+		}
+		if ( ! empty( $config['ai_gateway_slug'] ) ) {
+			$bindings[] = array(
+				'type' => 'plain_text',
+				'name' => 'AI_GATEWAY_SLUG',
+				'text' => (string) $config['ai_gateway_slug'],
+			);
+		}
+
+		$compat_date = (string) apply_filters(
+			'nvoos_saas_controller_worker_compatibility_date',
+			self::DEFAULT_COMPATIBILITY_DATE
+		);
+
+		$metadata = array(
+			'main_module'        => 'index.js',
+			'compatibility_date' => $compat_date,
+			'bindings'           => $bindings,
+		);
+
+		/**
+		 * Filter the module-worker metadata payload before upload.
+		 *
+		 * Use this to add custom bindings (R2, Queues, secrets) without
+		 * forking the engine.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array $metadata Metadata payload.
+		 * @param array $config   Deployment config.
+		 */
+		return (array) apply_filters( 'nvoos_saas_controller_worker_upload_metadata', $metadata, $config );
 	}
 
 	/**

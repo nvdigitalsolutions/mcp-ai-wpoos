@@ -222,7 +222,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 				<li>🚧 <strong><?php esc_html_e( 'Phase 2 — WP-Admin & REST plumbing', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'this menu, the Packages tab, the credential store, and the /nvoos-saas/v1 REST namespace.', 'nvoos-saas-controller' ); ?></li>
 				<li>✅ <strong><?php esc_html_e( 'Phase 3 — One-Click Wizard', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'collect credentials, validate, provision D1 + KV + Worker bindings.', 'nvoos-saas-controller' ); ?></li>
 				<li>🚧 <strong><?php esc_html_e( 'Phase 4 — Plan / Apply', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'terraform-style preview of every reconcile action — read-only plan generator on the Deployment tab.', 'nvoos-saas-controller' ); ?></li>
-				<li>🚧 <strong><?php esc_html_e( 'Phase 5 — Apply, Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( '5a (audit log + smoke tests), 5b (HITL-gated Apply) and 5c (drift detector) shipped; 5d (Worker upload) is the remaining piece.', 'nvoos-saas-controller' ); ?></li>
+				<li>✅ <strong><?php esc_html_e( 'Phase 5 — Apply, Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( '5a (audit log + smoke tests), 5b (HITL-gated Apply), 5c (drift detector) and 5d (Worker upload) all shipped.', 'nvoos-saas-controller' ); ?></li>
 			</ul>
 		</div>
 		<?php

@@ -29,6 +29,7 @@ class Test_NVOOS_SaaS_Controller_Drift_Detector extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( NVOOS_SaaS_Controller_Drift_Detector::LAST_RESULT_OPTION );
+		delete_option( NVOOS_SaaS_Controller_Drift_Detector::DEPLOYED_OPTION );
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
 		delete_option( NVOOS_SaaS_Controller_Deployment_Config::OPTION_NAME );
 		NVOOS_SaaS_Controller_Audit_Log::reset_for_tests();
@@ -36,6 +37,7 @@ class Test_NVOOS_SaaS_Controller_Drift_Detector extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		delete_option( NVOOS_SaaS_Controller_Drift_Detector::LAST_RESULT_OPTION );
+		delete_option( NVOOS_SaaS_Controller_Drift_Detector::DEPLOYED_OPTION );
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
 		delete_option( NVOOS_SaaS_Controller_Deployment_Config::OPTION_NAME );
 		NVOOS_SaaS_Controller_Audit_Log::reset_for_tests();
@@ -259,5 +261,60 @@ class Test_NVOOS_SaaS_Controller_Drift_Detector extends WP_UnitTestCase {
 		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
 		$result   = $detector->check();
 		$this->assertSame( 'unknown', $result['status'] );
+	}
+
+	public function test_falls_back_to_deployed_option_when_manifest_pins_are_null() {
+		// Phase 5d hand-off: when the manifest is unstamped but Apply has
+		// recorded a deployed fingerprint, the detector should pick it up.
+		update_option(
+			NVOOS_SaaS_Controller_Drift_Detector::DEPLOYED_OPTION,
+			array(
+				'worker_name' => 'mcp-oos-worker',
+				'sha256'      => str_repeat( 'a', 64 ),
+				'etag'        => 'deploy-etag-1',
+				'uploaded_at' => time(),
+			)
+		);
+
+		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
+		$detector->set_manifest( array( 'expected_etag' => null, 'expected_sha256' => null ) );
+		$detector->set_cloudflare_client( new NVOOS_SaaS_Stub_Cloudflare_Client_For_Drift( array(
+			'body'        => 'console.log("hi");',
+			'etag'        => 'deploy-etag-1',
+			'modified_on' => '',
+			'size'        => 18,
+		) ) );
+
+		$result = $detector->check();
+
+		$this->assertSame( 'synced', $result['status'] );
+		$this->assertSame( 'deployed_option', $result['source'] );
+		$this->assertSame( 'deploy-etag-1', $result['expected_etag'] );
+	}
+
+	public function test_deployed_option_with_drifted_etag_reports_drift() {
+		update_option(
+			NVOOS_SaaS_Controller_Drift_Detector::DEPLOYED_OPTION,
+			array(
+				'worker_name' => 'mcp-oos-worker',
+				'sha256'      => str_repeat( 'a', 64 ),
+				'etag'        => 'deploy-etag-1',
+				'uploaded_at' => time(),
+			)
+		);
+
+		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
+		$detector->set_manifest( array( 'expected_etag' => null, 'expected_sha256' => null ) );
+		$detector->set_cloudflare_client( new NVOOS_SaaS_Stub_Cloudflare_Client_For_Drift( array(
+			'body'        => 'console.log("hi");',
+			'etag'        => 'someone-redeployed-out-of-band',
+			'modified_on' => '',
+			'size'        => 18,
+		) ) );
+
+		$result = $detector->check();
+
+		$this->assertSame( 'drift', $result['status'] );
+		$this->assertSame( 'deployed_option', $result['source'] );
 	}
 }

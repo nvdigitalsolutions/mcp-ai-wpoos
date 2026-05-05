@@ -1,18 +1,16 @@
 <?php
 /**
- * Mutating Cloudflare API client for the NV oOS SaaS Controller (Phase 5b).
+ * Mutating Cloudflare API client for the NV oOS SaaS Controller
+ * (Phases 5b + 5d).
  *
  * Companion to the read-only {@see NVOOS_SaaS_Controller_Cloudflare_Client}.
  * This class exposes only the writes the Apply step needs:
  *
- *   • POST /accounts/{account_id}/d1/database          — create a D1 database.
+ *   • POST /accounts/{account_id}/d1/database           — create a D1 database.
  *   • POST /accounts/{account_id}/storage/kv/namespaces — create a KV namespace.
- *   • POST /accounts/{account_id}/ai-gateway/gateways  — create an AI Gateway.
- *
- * Worker script upload is intentionally out of scope: it requires the built
- * `worker/dist/index.js` artefact and metadata multipart body, which is the
- * remit of Phase 5d (Worker upload + drift detector). Until then the apply
- * engine records `skipped` for `kind=worker` rows.
+ *   • POST /accounts/{account_id}/ai-gateway/gateways   — create an AI Gateway.
+ *   • PUT  /accounts/{account_id}/workers/scripts/{name} — upload a Worker
+ *     script (module-worker, multipart/form-data; Phase 5d).
  *
  * Every call records exactly one entry in
  * {@see NVOOS_SaaS_Controller_Audit_Log} on the `cloudflare` channel —
@@ -201,6 +199,146 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 			'id'   => isset( $result['id'] ) ? (string) $result['id'] : $slug,
 			'slug' => isset( $result['slug'] ) ? (string) $result['slug'] : $slug,
 		);
+	}
+
+	/**
+	 * Upload a Worker script (Phase 5d).
+	 *
+	 * Performs a multipart/form-data PUT against
+	 * `/accounts/{id}/workers/scripts/{name}` with two parts:
+	 *
+	 *  • `metadata` — application/json describing the module entrypoint,
+	 *    compatibility date, and the bindings (D1, KV, AI Gateway, …) the
+	 *    operator's deployment config requires.
+	 *  • `index.js` — application/javascript+module body — the built ESM
+	 *    Worker bundle (`worker/dist/index.js`).
+	 *
+	 * Cloudflare returns the saved script descriptor including an `etag`
+	 * which we surface so the caller can persist it for the drift detector
+	 * (see {@see NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION}).
+	 *
+	 * Like every other write on this client, exactly one audit-log entry
+	 * is recorded — success or failure.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $name        Worker script slug.
+	 * @param string $script_body Raw bytes of `worker/dist/index.js`.
+	 * @param array  $metadata    Module-worker metadata (must include
+	 *                            `main_module`; may include `compatibility_date`
+	 *                            and `bindings[]`).
+	 * @return array|WP_Error `[ 'id' => …, 'etag' => …, 'modified_on' => …, 'size' => N ]`.
+	 */
+	public function upload_worker_script( $name, $script_body, array $metadata ) {
+		$slug = (string) $name;
+		if ( '' === $slug ) {
+			return new WP_Error(
+				'invalid_name',
+				__( 'Worker script name is required.', 'nvoos-saas-controller' )
+			);
+		}
+		if ( ! is_string( $script_body ) || '' === $script_body ) {
+			return new WP_Error(
+				'empty_script',
+				__( 'Worker script body is empty — has the build pipeline produced worker/dist/index.js?', 'nvoos-saas-controller' )
+			);
+		}
+		if ( empty( $metadata['main_module'] ) ) {
+			$metadata['main_module'] = 'index.js';
+		}
+		$module_filename = (string) $metadata['main_module'];
+
+		$path     = '/accounts/' . rawurlencode( $this->account_id ) . '/workers/scripts/' . rawurlencode( $slug );
+		$boundary = '----nvoos-saas-' . wp_generate_password( 24, false, false );
+
+		$body = $this->build_multipart_body(
+			$boundary,
+			array(
+				array(
+					'name'         => 'metadata',
+					'filename'     => 'metadata.json',
+					'content_type' => 'application/json',
+					'body'         => wp_json_encode( $metadata ),
+				),
+				array(
+					'name'         => $module_filename,
+					'filename'     => $module_filename,
+					'content_type' => 'application/javascript+module',
+					'body'         => $script_body,
+				),
+			)
+		);
+
+		$started_us = microtime( true );
+		$response   = wp_remote_request(
+			self::BASE_URL . $path,
+			array(
+				'method'    => 'PUT',
+				'timeout'   => self::TIMEOUT,
+				'sslverify' => true,
+				'headers'   => array(
+					'Authorization' => 'Bearer ' . $this->api_token,
+					'Accept'        => 'application/json',
+					'Content-Type'  => 'multipart/form-data; boundary="' . $boundary . '"',
+				),
+				'body'      => $body,
+			)
+		);
+
+		$result = $this->parse_response( $response, $path );
+
+		// Cloudflare returns the saved script descriptor; on success we
+		// also surface the response `etag` header (the drift detector's
+		// preferred fingerprint).
+		if ( ! is_wp_error( $result ) ) {
+			$etag = is_array( $response ) ? (string) wp_remote_retrieve_header( $response, 'etag' ) : '';
+			$result = array(
+				'id'          => isset( $result['id'] ) ? (string) $result['id'] : $slug,
+				'etag'        => trim( $etag, '"' ),
+				'modified_on' => isset( $result['modified_on'] ) ? (string) $result['modified_on'] : '',
+				'size'        => strlen( $script_body ),
+			);
+		}
+
+		$this->record_audit( 'upload_worker_script', $slug, $result, $started_us );
+		return $result;
+	}
+
+	/**
+	 * Assemble an RFC 7578 multipart/form-data body from a flat list of
+	 * parts. Each part is `[ name, filename?, content_type, body ]`.
+	 *
+	 * Kept tiny and dependency-free on purpose: we only ever use it for
+	 * the two-part Worker upload payload, so the more elaborate options
+	 * (nested boundaries, transfer-encoding) aren't needed.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $boundary Boundary string (without the `--` prefix).
+	 * @param array  $parts    List of part descriptors.
+	 * @return string
+	 */
+	protected function build_multipart_body( $boundary, array $parts ) {
+		$crlf = "\r\n";
+		$out  = '';
+		foreach ( $parts as $part ) {
+			$name         = isset( $part['name'] ) ? (string) $part['name'] : '';
+			$filename     = isset( $part['filename'] ) ? (string) $part['filename'] : '';
+			$content_type = isset( $part['content_type'] ) ? (string) $part['content_type'] : 'application/octet-stream';
+			$body         = isset( $part['body'] ) ? (string) $part['body'] : '';
+
+			$disposition = 'form-data; name="' . $name . '"';
+			if ( '' !== $filename ) {
+				$disposition .= '; filename="' . $filename . '"';
+			}
+
+			$out .= '--' . $boundary . $crlf;
+			$out .= 'Content-Disposition: ' . $disposition . $crlf;
+			$out .= 'Content-Type: ' . $content_type . $crlf . $crlf;
+			$out .= $body . $crlf;
+		}
+		$out .= '--' . $boundary . '--' . $crlf;
+		return $out;
 	}
 
 	/**

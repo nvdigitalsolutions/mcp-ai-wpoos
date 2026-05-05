@@ -22,6 +22,7 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 	public $next_d1     = null;
 	public $next_kv     = null;
 	public $next_gw     = null;
+	public $next_worker = null;
 
 	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
 
@@ -45,6 +46,18 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 			? array( 'id' => 'gw-' . $slug, 'slug' => $slug )
 			: $this->next_gw;
 	}
+
+	public function upload_worker_script( $name, $script_body, array $metadata ) {
+		$this->calls[] = array( 'worker', $name, strlen( $script_body ), $metadata );
+		return null === $this->next_worker
+			? array(
+				'id'          => $name,
+				'etag'        => 'etag-' . substr( hash( 'sha256', $script_body ), 0, 12 ),
+				'modified_on' => '2026-05-05T00:00:00Z',
+				'size'        => strlen( $script_body ),
+			)
+			: $this->next_worker;
+	}
 }
 
 /**
@@ -55,12 +68,54 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
+		delete_option( NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION );
 		NVOOS_SaaS_Controller_Audit_Log::reset_for_tests();
+		$this->ensure_worker_dist();
 	}
 
 	public function tearDown(): void {
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
+		delete_option( NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION );
+		$this->cleanup_worker_dist();
 		parent::tearDown();
+	}
+
+	/**
+	 * Drop a tiny placeholder `worker/dist/index.js` into the addon
+	 * directory so the apply engine has something to read. We track
+	 * whether we created the file so tearDown can reverse it cleanly.
+	 *
+	 * @var bool
+	 */
+	private $created_dist = false;
+
+	private function worker_dist_path() {
+		return NVOOS_SAAS_CONTROLLER_PATH . 'worker/dist/index.js';
+	}
+
+	private function ensure_worker_dist() {
+		$path = $this->worker_dist_path();
+		if ( file_exists( $path ) ) {
+			$this->created_dist = false;
+			return;
+		}
+		wp_mkdir_p( dirname( $path ) );
+		file_put_contents( $path, "export default { fetch() { return new Response('test'); } };\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
+		$this->created_dist = true;
+	}
+
+	private function cleanup_worker_dist() {
+		if ( $this->created_dist ) {
+			$path = $this->worker_dist_path();
+			if ( file_exists( $path ) ) {
+				unlink( $path );
+			}
+			$dir = dirname( $path );
+			if ( is_dir( $dir ) && false === ( new \FilesystemIterator( $dir ) )->valid() ) {
+				rmdir( $dir );
+			}
+			$this->created_dist = false;
+		}
 	}
 
 	private function plan_with_creates() {
@@ -116,7 +171,7 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'invalid_apply_token', $result->get_error_code() );
 	}
 
-	public function test_apply_dispatches_d1_kv_ai_gateway_and_skips_worker() {
+	public function test_apply_dispatches_d1_kv_ai_gateway_and_uploads_worker() {
 		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
 		$result = $engine->apply( $this->plan_with_creates() );
@@ -128,12 +183,19 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'ok', $result['results'][0]['status'] );
 		$this->assertSame( 'ok', $result['results'][1]['status'] );
 		$this->assertSame( 'ok', $result['results'][2]['status'] );
-		$this->assertSame( 'skipped', $result['results'][3]['status'] );
+		$this->assertSame( 'ok', $result['results'][3]['status'] );
 
-		$this->assertSame( 3, $result['summary']['ok'] );
+		$this->assertSame( 4, $result['summary']['ok'] );
 		$this->assertSame( 0, $result['summary']['error'] );
-		$this->assertSame( 1, $result['summary']['skipped'] );
-		$this->assertSame( 3, count( $stub->calls ) );
+		$this->assertArrayNotHasKey( 'skipped', array_filter( $result['summary'] ) ); // No skipped rows now.
+		$this->assertSame( 4, count( $stub->calls ) );
+
+		// The Worker upload row should have persisted a deployed-fingerprint option.
+		$deployed = get_option( NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION );
+		$this->assertIsArray( $deployed );
+		$this->assertSame( 'mcp-oos-worker', $deployed['worker_name'] );
+		$this->assertNotEmpty( $deployed['sha256'] );
+		$this->assertNotEmpty( $deployed['etag'] );
 	}
 
 	public function test_apply_records_partial_failure_when_one_call_errors() {
@@ -143,9 +205,8 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
 		$result = $engine->apply( $this->plan_with_creates() );
 
-		$this->assertSame( 2, $result['summary']['ok'] );
+		$this->assertSame( 3, $result['summary']['ok'] );
 		$this->assertSame( 1, $result['summary']['error'] );
-		$this->assertSame( 1, $result['summary']['skipped'] );
 
 		$kv_row = $result['results'][1];
 		$this->assertSame( 'kv', $kv_row['kind'] );
@@ -153,7 +214,7 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Forbidden', $kv_row['message'] );
 	}
 
-	public function test_apply_marks_updates_as_skipped() {
+	public function test_apply_uploads_worker_on_update_row() {
 		$plan = array(
 			'creates' => array(),
 			'updates' => array( array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ) ),
@@ -168,8 +229,82 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$result = $engine->apply( $plan );
 
 		$this->assertCount( 1, $result['results'] );
-		$this->assertSame( 'skipped', $result['results'][0]['status'] );
-		$this->assertCount( 0, $stub->calls );
+		$this->assertSame( 'worker', $result['results'][0]['kind'] );
+		$this->assertSame( 'ok', $result['results'][0]['status'] );
+		$this->assertStringContainsString( 'updated', $result['results'][0]['message'] );
+		$this->assertCount( 1, $stub->calls );
+		$this->assertSame( 'worker', $stub->calls[0][0] );
+	}
+
+	public function test_apply_records_error_when_worker_dist_missing() {
+		// Wipe the placeholder dist created in setUp to simulate a fresh
+		// install that has not yet run `npm run build:worker`.
+		$this->cleanup_worker_dist();
+		$this->created_dist = false;
+		if ( file_exists( $this->worker_dist_path() ) ) {
+			unlink( $this->worker_dist_path() );
+		}
+		// Override the dist-path filter to a guaranteed-missing path so we
+		// don't depend on the addon already shipping (or not shipping) a
+		// real `worker/dist/index.js`.
+		$override = function () { return 'worker/dist/__missing-on-purpose__.js'; };
+		add_filter( 'nvoos_saas_controller_worker_dist_path', $override );
+
+		$plan = array(
+			'creates' => array( array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ) ),
+			'updates' => array(),
+			'noops'   => array(),
+			'orphans' => array(),
+			'errors'  => array(),
+			'summary' => array( 'creates' => 1, 'updates' => 0, 'noops' => 0, 'orphans' => 0, 'errors' => 0 ),
+		);
+
+		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
+		$result = $engine->apply( $plan );
+
+		remove_filter( 'nvoos_saas_controller_worker_dist_path', $override );
+
+		$this->assertSame( 'error', $result['results'][0]['status'] );
+		$this->assertStringContainsString( 'build:worker', $result['results'][0]['message'] );
+		$this->assertCount( 0, $stub->calls ); // Never reached the client.
+	}
+
+	public function test_apply_worker_metadata_carries_d1_and_kv_bindings() {
+		// Stash the deployment config so the metadata builder picks it up.
+		$cfg = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$cfg->save(
+			array(
+				'worker_name'     => 'mcp-oos-worker',
+				'd1_databases'    => array( array( 'name' => 'mcp-oos', 'binding' => 'DB' ) ),
+				'kv_namespaces'   => array( array( 'title' => 'cache', 'binding' => 'CACHE' ) ),
+				'ai_gateway_slug' => 'mcp-router',
+			)
+		);
+
+		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
+		$engine->apply(
+			array(
+				'creates' => array( array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ) ),
+				'updates' => array(),
+				'noops'   => array(),
+				'orphans' => array(),
+				'errors'  => array(),
+				'summary' => array( 'creates' => 1, 'updates' => 0, 'noops' => 0, 'orphans' => 0, 'errors' => 0 ),
+			)
+		);
+
+		$cfg->clear();
+
+		$this->assertCount( 1, $stub->calls );
+		$call_meta = $stub->calls[0][3];
+		$this->assertSame( 'index.js', $call_meta['main_module'] );
+		$bindings = $call_meta['bindings'];
+		$types    = array_column( $bindings, 'type' );
+		$this->assertContains( 'd1', $types );
+		$this->assertContains( 'kv_namespace', $types );
+		$this->assertContains( 'plain_text', $types );
 	}
 
 	public function test_issue_token_records_internal_audit_entry() {
