@@ -442,6 +442,27 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$is_streaming = ! empty( $payload['stream'] );
 
+			// Real-time SSE: if a stream_callback is provided AND cURL is available,
+			// bypass wp_remote_post entirely.  wp_remote_post always buffers the full
+			// response body before returning, so its stream_callback fires only after
+			// the complete download — not while the model is generating tokens.
+			// CURLOPT_WRITEFUNCTION fires for every incoming network chunk, forwarding
+			// each content/reasoning delta to the browser the moment it arrives.
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					WP_MCP_AI_Logger::log_event(
+						'lm_studio_request',
+						'Sending real-time streaming request to LM Studio via cURL.',
+						array(
+							'model'    => $model,
+							'realtime' => true,
+						)
+					);
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $this->resolve_timeout( $options ), $realtime_cb );
+				}
+			}
+
 			$request_args = array(
 				'headers' => array_merge(
 					array( 'Content-Type' => 'application/json' ),
@@ -885,7 +906,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			// Phase 2: Extract native API telemetry stats when present.
 			// The /api/v0 surface adds a top-level `stats` object with timing data.
 			if ( isset( $response['stats'] ) && is_array( $response['stats'] ) ) {
-				$stats = $response['stats'];
+				$stats       = $response['stats'];
 				$usage_stats = array();
 
 				if ( isset( $stats['tokens_per_second'] ) ) {
@@ -1077,13 +1098,13 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$lines = explode( "\n", $body );
 
-			$accumulated_content    = '';
-			$accumulated_reasoning  = '';
-			$tool_calls_by_index    = array(); // Maps SSE delta index → accumulated tool-call object.
-			$response_id            = '';
-			$finish_reason          = null;
-			$usage                  = null;
-			$found_done             = false;
+			$accumulated_content   = '';
+			$accumulated_reasoning = '';
+			$tool_calls_by_index   = array(); // Maps SSE delta index → accumulated tool-call object.
+			$response_id           = '';
+			$finish_reason         = null;
+			$usage                 = null;
+			$found_done            = false;
 
 			foreach ( $lines as $line ) {
 				$line = trim( $line );
@@ -1226,6 +1247,272 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_stream', 'SSE streaming response assembled.', array( 'model' => $model ) );
+
+			return $this->normalize_response( $assembled, $model );
+		}
+
+		/**
+		 * Perform a real-time SSE stream request to LM Studio using direct cURL.
+		 *
+		 * Unlike the `wp_remote_post` path (which buffers the full response body
+		 * before returning), this method uses `CURLOPT_WRITEFUNCTION` to process
+		 * each network chunk as it arrives from LM Studio.  Every `delta.content`
+		 * or `delta.reasoning_content` token is forwarded to `$stream_callback`
+		 * immediately, so the browser SSE connection receives tokens in real time
+		 * as the local model generates them.
+		 *
+		 * Tool-call argument deltas are accumulated silently (they do not contain
+		 * visible content) and included in the assembled response at the end.
+		 *
+		 * @param string   $url             Full `chat/completions` endpoint URL.
+		 * @param array    $payload         Request payload (`stream: true` already set).
+		 * @param string   $model           Resolved model identifier (for normalization).
+		 * @param int      $timeout         Request timeout in seconds.
+		 * @param callable $stream_callback Invoked with each content/reasoning chunk array.
+		 * @return array|WP_Error Normalized response on success, WP_Error on failure.
+		 */
+		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
+			// Build cURL-style header list: ['Authorization: Bearer ...', 'Content-Type: application/json'].
+			$curl_headers = array( 'Content-Type: application/json' );
+			foreach ( $this->build_auth_headers() as $header_name => $header_value ) {
+				$curl_headers[] = sanitize_text_field( $header_name ) . ': ' . sanitize_text_field( $header_value );
+			}
+
+			// Mirror the SSL-bypass behaviour from WP_MCP_AI_HTTP_Helper for local endpoints.
+			$parsed_url = wp_parse_url( $url );
+			$host       = ! empty( $parsed_url['host'] ) ? $parsed_url['host'] : '';
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+			$bypass_ssl = isset( $settings['enable_loopback_ssl_bypass'] ) ? (bool) $settings['enable_loopback_ssl_bypass'] : true;
+			$skip_ssl   = $bypass_ssl && class_exists( 'WP_MCP_AI_HTTP_Helper' ) && WP_MCP_AI_HTTP_Helper::is_loopback_address( $host );
+
+			// Accumulator state shared between the CURLOPT_WRITEFUNCTION closure
+			// and the assembly code that runs after curl_exec() completes.
+			$sse_buffer          = '';
+			$http_status         = 0;
+			$accumulated_content = '';
+			$accumulated_reason  = '';
+			$tool_calls_by_idx   = array();
+			$response_id         = '';
+			$finish_reason       = null;
+			$usage               = null;
+			$found_done          = false;
+
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_exec
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+			// Direct cURL is required here: wp_remote_post() buffers the full body before
+			// returning and cannot forward individual tokens to the browser in real time.
+			$ch = curl_init();
+
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_URL            => $url,
+					CURLOPT_POST           => true,
+					CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
+					CURLOPT_HTTPHEADER     => $curl_headers,
+					CURLOPT_TIMEOUT        => max( 120, $timeout ),
+					CURLOPT_RETURNTRANSFER => false,
+					CURLOPT_SSL_VERIFYPEER => ! $skip_ssl,
+					CURLOPT_SSL_VERIFYHOST => $skip_ssl ? 0 : 2,
+
+					// Capture the HTTP status code from the response header line.
+					CURLOPT_HEADERFUNCTION => function ( $curl_handle, $header ) use ( &$http_status ) {
+						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $matches ) ) {
+							$http_status = (int) $matches[1];
+						}
+						return strlen( $header );
+					},
+
+					// Process SSE data as it arrives — this is what achieves real-time streaming.
+					// The closure receives raw bytes from the LM Studio socket; it maintains a
+					// line-oriented buffer and parses complete SSE events on the fly.
+					CURLOPT_WRITEFUNCTION  => function ( $curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+						$sse_buffer .= $data;
+
+						// Walk through all complete lines in the accumulated buffer.
+						while ( false !== ( $newline_pos = strpos( $sse_buffer, "\n" ) ) ) {
+							$line       = trim( substr( $sse_buffer, 0, $newline_pos ) );
+							$sse_buffer = substr( $sse_buffer, $newline_pos + 1 );
+
+							if ( '' === $line || ':' === $line[0] ) {
+								continue; // Blank separator lines and SSE keep-alive comment pings.
+							}
+
+							if ( 'data: [DONE]' === $line ) {
+								$found_done = true;
+								continue;
+							}
+
+							if ( 0 !== strpos( $line, 'data: ' ) ) {
+								continue;
+							}
+
+							$chunk = json_decode( substr( $line, 6 ), true );
+							if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+								continue;
+							}
+
+							// Capture response ID from first chunk.
+							if ( '' === $response_id && isset( $chunk['id'] ) ) {
+								$response_id = (string) $chunk['id'];
+							}
+
+							$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
+							$delta  = isset( $choice['delta'] ) ? $choice['delta'] : array();
+
+							// Forward content tokens to the browser immediately.
+							if ( isset( $delta['content'] ) && is_string( $delta['content'] ) && '' !== $delta['content'] ) {
+								$accumulated_content .= $delta['content'];
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'content' => $delta['content'] ) ),
+										),
+									)
+								);
+							}
+
+							// Forward reasoning tokens (DeepSeek-R1 / Qwen-QwQ style models).
+							if ( isset( $delta['reasoning_content'] ) && is_string( $delta['reasoning_content'] ) && '' !== $delta['reasoning_content'] ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ),
+										),
+									)
+								);
+							}
+
+							// Accumulate tool-call argument deltas silently.
+							if ( isset( $delta['tool_calls'] ) && is_array( $delta['tool_calls'] ) ) {
+								foreach ( $delta['tool_calls'] as $tc_delta ) {
+									if ( ! is_array( $tc_delta ) || ! isset( $tc_delta['index'] ) ) {
+										continue;
+									}
+									$idx = (int) $tc_delta['index'];
+									if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
+										$tool_calls_by_idx[ $idx ] = array(
+											'index'    => $idx,
+											'id'       => '',
+											'type'     => 'function',
+											'function' => array(
+												'name' => '',
+												'arguments' => '',
+											),
+										);
+									}
+									if ( isset( $tc_delta['id'] ) ) {
+										$tool_calls_by_idx[ $idx ]['id'] = (string) $tc_delta['id'];
+									}
+									if ( isset( $tc_delta['type'] ) ) {
+										$tool_calls_by_idx[ $idx ]['type'] = (string) $tc_delta['type'];
+									}
+									if ( isset( $tc_delta['function']['name'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+									}
+									if ( isset( $tc_delta['function']['arguments'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
+									}
+								}
+							}
+
+							if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+								$finish_reason = $choice['finish_reason'];
+							}
+							if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
+								$usage = $chunk['usage'];
+							}
+						}
+
+						return strlen( $data ); // Must return consumed byte count to cURL.
+					},
+				)
+			);
+
+			curl_exec( $ch );
+			$curl_errno = curl_errno( $ch );
+			$curl_error = curl_error( $ch );
+			curl_close( $ch );
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_init
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_exec
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_errno
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_error
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_close
+
+			if ( $curl_errno ) {
+				WP_MCP_AI_Logger::log_error(
+					'LM Studio real-time streaming failed.',
+					array(
+						'error' => $curl_error,
+						'errno' => $curl_errno,
+					)
+				);
+				return new WP_Error(
+					'wp_mcp_ai_http_error',
+					$curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( $http_status >= 400 ) {
+				WP_MCP_AI_Logger::log_error(
+					'LM Studio real-time streaming returned HTTP error.',
+					array( 'code' => $http_status )
+				);
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					__( 'LM Studio returned an error during streaming.', 'mcp-ai-wpoos' ),
+					array( 'status' => $http_status )
+				);
+			}
+
+			if ( ! $found_done ) {
+				WP_MCP_AI_Logger::log_event(
+					'lm_studio_realtime_stream',
+					'Real-time SSE stream ended without [DONE] sentinel (model may have been interrupted).',
+					array( 'model' => $model )
+				);
+			}
+
+			// Assemble the chat.completion-shaped response from accumulated streaming data.
+			$message = array(
+				'role'    => 'assistant',
+				'content' => $accumulated_content,
+			);
+
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
+			}
+
+			if ( ! empty( $tool_calls_by_idx ) ) {
+				ksort( $tool_calls_by_idx );
+				$message['tool_calls'] = array_values( $tool_calls_by_idx );
+			}
+
+			$assembled = array(
+				'id'      => $response_id,
+				'object'  => 'chat.completion',
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => $message,
+						'finish_reason' => $finish_reason,
+					),
+				),
+			);
+
+			if ( null !== $usage ) {
+				$assembled['usage'] = $usage;
+			}
+
+			WP_MCP_AI_Logger::log_event( 'lm_studio_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
 
 			return $this->normalize_response( $assembled, $model );
 		}
