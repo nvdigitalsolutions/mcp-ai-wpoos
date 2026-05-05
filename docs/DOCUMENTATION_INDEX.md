@@ -1154,6 +1154,14 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [REMOTE_CLIENT_TESTING_SUMMARY.md](implementation-history/2025/summaries/REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
 | [lm-studio-testing.md](getting-started/quick-starts/lm-studio-testing.md) | LM Studio specific testing | Developers |
 
+### SaaS Setup (NV oOS Cloud)
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [SAAS_SETUP_GUIDE.md](SAAS_SETUP_GUIDE.md) | **NEW:** Industry-standard SaaS install/setup guide for NV oOS Cloud — prerequisites, account provisioning, connect tokens, billing, security, runbook | Operators/Admins |
+| [features/nv-cloud.md](features/nv-cloud.md) | NV oOS Cloud feature spec (plugin contract, hooks, constants) | Developers |
+| [../addons/cloud-worker/README.md](../addons/cloud-worker/README.md) | Cloudflare Worker source-of-truth (deploy commands, D1 schema) | Operators |
+
 ### Security & Authentication
 
 | Document | Description | Audience |
