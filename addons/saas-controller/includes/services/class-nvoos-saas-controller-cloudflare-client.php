@@ -223,7 +223,8 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 	 * @return array|WP_Error
 	 */
 	protected function get( $path ) {
-		$response = wp_remote_get(
+		$started_us = microtime( true );
+		$response   = wp_remote_get(
 			self::BASE_URL . $path,
 			array(
 				'timeout'   => self::TIMEOUT,
@@ -235,6 +236,25 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 			)
 		);
 
+		$result = $this->parse_response( $response, $path );
+		$this->maybe_record_audit( $path, $result, $started_us );
+		return $result;
+	}
+
+	/**
+	 * Decode the wp_remote_get response into either the Cloudflare `result`
+	 * array or a `WP_Error`.
+	 *
+	 * Extracted from {@see get()} so the request and the bookkeeping stay
+	 * separable and testable.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array|WP_Error $response Raw `wp_remote_get` return.
+	 * @param string         $path     Request path (for error messages).
+	 * @return array|WP_Error
+	 */
+	protected function parse_response( $response, $path ) {
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
@@ -269,5 +289,54 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 		}
 
 		return isset( $json['result'] ) && is_array( $json['result'] ) ? $json['result'] : array();
+	}
+
+	/**
+	 * Record one audit-log entry per Cloudflare API call.
+	 *
+	 * Skipped when the audit-log class is not loaded (e.g. in PHPUnit
+	 * tests that exercise the client in isolation). The action is derived
+	 * from the URL path so the operator sees `list_d1_databases` instead
+	 * of a raw URL.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string         $path       Request path.
+	 * @param array|WP_Error $result     Parsed result.
+	 * @param float          $started_us Microsecond timestamp from `microtime(true)` at request start.
+	 * @return void
+	 */
+	protected function maybe_record_audit( $path, $result, $started_us ) {
+		if ( ! class_exists( 'NVOOS_SaaS_Controller_Audit_Log' ) ) {
+			return;
+		}
+
+		$action = 'cloudflare_api';
+		if ( false !== strpos( $path, '/d1/database' ) ) {
+			$action = 'list_d1_databases';
+		} elseif ( false !== strpos( $path, '/storage/kv/namespaces' ) ) {
+			$action = 'list_kv_namespaces';
+		} elseif ( false !== strpos( $path, '/workers/scripts' ) ) {
+			$action = 'list_workers';
+		} elseif ( false !== strpos( $path, '/ai-gateway/gateways' ) ) {
+			$action = 'list_ai_gateways';
+		}
+
+		$is_error  = is_wp_error( $result );
+		$message   = $is_error
+			? (string) $result->get_error_message()
+			: sprintf( /* translators: %d: number of items returned */ __( '%d item(s) returned.', 'nvoos-saas-controller' ), is_array( $result ) ? count( $result ) : 0 );
+		$latency_ms = (int) round( ( microtime( true ) - $started_us ) * 1000 );
+
+		NVOOS_SaaS_Controller_Audit_Log::instance()->record(
+			array(
+				'channel'    => 'cloudflare',
+				'action'     => $action,
+				'target'     => $this->account_id,
+				'status'     => $is_error ? 'error' : 'ok',
+				'latency_ms' => $latency_ms,
+				'message'    => $message,
+			)
+		);
 	}
 }

@@ -82,7 +82,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	protected static function get_active_tab() {
 		// Read-only navigation; no nonce required for tab selection per WP core convention.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$allowed = array( 'overview', 'deployment', 'packages' );
+		$allowed = array( 'overview', 'deployment', 'operations', 'packages' );
 		return in_array( $tab, $allowed, true ) ? $tab : 'overview';
 	}
 
@@ -102,6 +102,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		$tabs   = array(
 			'overview'   => __( 'Overview', 'nvoos-saas-controller' ),
 			'deployment' => __( 'Deployment', 'nvoos-saas-controller' ),
+			'operations' => __( 'Operations', 'nvoos-saas-controller' ),
 			'packages'   => __( 'Packages', 'nvoos-saas-controller' ),
 		);
 		?>
@@ -129,6 +130,9 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			switch ( $active ) {
 				case 'deployment':
 					self::render_deployment_tab();
+					break;
+				case 'operations':
+					self::render_operations_tab();
 					break;
 				case 'packages':
 					self::render_packages_tab();
@@ -452,6 +456,151 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			);
 		}
 		return $out;
+	}
+
+	/**
+	 * Render the Operations tab — recent audit log + smoke-test runner.
+	 *
+	 * The tab is intentionally lightweight: a "Run Smoke Tests" button
+	 * (drives `POST /smoke-tests/run` via `wp.apiFetch`), the last
+	 * cached result rendered server-side, and a recent audit-log table.
+	 * No third-party JS framework — same pattern as the Deployment tab.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	protected static function render_operations_tab() {
+		$audit_log    = NVOOS_SaaS_Controller_Audit_Log::instance();
+		$entries      = $audit_log->get_recent( 50 );
+		$tester       = new NVOOS_SaaS_Controller_Smoke_Tester();
+		$last_result  = $tester->get_last_result();
+		$rest_url     = esc_url_raw( rest_url( 'nvoos-saas/v1/' ) );
+		?>
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;">
+			<h2><?php esc_html_e( 'Smoke Tests', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Runs a fixed sequence of read-only health checks: credential presence, live Cloudflare workers list, plan dry-run, and base-plugin liveness.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p>
+				<button type="button" class="button button-primary" id="nvoos-saas-run-smoke-tests"><?php esc_html_e( 'Run Smoke Tests', 'nvoos-saas-controller' ); ?></button>
+				<span id="nvoos-saas-smoke-status" style="margin-left:0.75em;" aria-live="polite"></span>
+			</p>
+			<?php if ( null !== $last_result ) : ?>
+				<h3><?php esc_html_e( 'Last Result', 'nvoos-saas-controller' ); ?></h3>
+				<p>
+					<strong><?php echo esc_html( ! empty( $last_result['ok'] ) ? __( '✅ All checks passed', 'nvoos-saas-controller' ) : __( '⚠️ One or more checks failed', 'nvoos-saas-controller' ) ); ?></strong>
+					<span style="color:#666;margin-left:0.5em;">
+						<?php
+						printf(
+							/* translators: 1: timestamp, 2: duration in ms */
+							esc_html__( 'at %1$s · %2$d ms', 'nvoos-saas-controller' ),
+							esc_html( gmdate( 'Y-m-d H:i:s', (int) $last_result['ts'] ) . ' UTC' ),
+							(int) ( isset( $last_result['duration_ms'] ) ? $last_result['duration_ms'] : 0 )
+						);
+						?>
+					</span>
+				</p>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Check', 'nvoos-saas-controller' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'nvoos-saas-controller' ); ?></th>
+							<th><?php esc_html_e( 'Latency', 'nvoos-saas-controller' ); ?></th>
+							<th><?php esc_html_e( 'Message', 'nvoos-saas-controller' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( (array) $last_result['checks'] as $check ) : ?>
+							<tr>
+								<td><code><?php echo esc_html( isset( $check['name'] ) ? (string) $check['name'] : '' ); ?></code></td>
+								<td><?php echo ! empty( $check['ok'] ) ? '<span style="color:#0a7d18;">✅</span>' : '<span style="color:#b32d2e;">❌</span>'; ?></td>
+								<td><?php echo (int) ( isset( $check['latency_ms'] ) ? $check['latency_ms'] : 0 ); ?> ms</td>
+								<td><?php echo esc_html( isset( $check['message'] ) ? (string) $check['message'] : '' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
+			<h2><?php esc_html_e( 'Audit Log', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Most recent 50 entries. The log is a ring buffer capped at 200 entries; older entries are discarded automatically.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p>
+				<button type="button" class="button" id="nvoos-saas-clear-audit-log"><?php esc_html_e( 'Clear Audit Log', 'nvoos-saas-controller' ); ?></button>
+			</p>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Time (UTC)', 'nvoos-saas-controller' ); ?></th>
+						<th><?php esc_html_e( 'Actor', 'nvoos-saas-controller' ); ?></th>
+						<th><?php esc_html_e( 'Channel', 'nvoos-saas-controller' ); ?></th>
+						<th><?php esc_html_e( 'Action', 'nvoos-saas-controller' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'nvoos-saas-controller' ); ?></th>
+						<th><?php esc_html_e( 'Latency', 'nvoos-saas-controller' ); ?></th>
+						<th><?php esc_html_e( 'Message', 'nvoos-saas-controller' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $entries ) ) : ?>
+						<tr><td colspan="7"><em><?php esc_html_e( 'No audit-log entries yet.', 'nvoos-saas-controller' ); ?></em></td></tr>
+					<?php else : ?>
+						<?php foreach ( $entries as $row ) : ?>
+							<tr>
+								<td><?php echo esc_html( gmdate( 'Y-m-d H:i:s', (int) ( isset( $row['ts'] ) ? $row['ts'] : 0 ) ) ); ?></td>
+								<td><?php echo esc_html( isset( $row['actor'] ) ? (string) $row['actor'] : '' ); ?></td>
+								<td><code><?php echo esc_html( isset( $row['channel'] ) ? (string) $row['channel'] : '' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $row['action'] ) ? (string) $row['action'] : '' ); ?></code></td>
+								<td>
+									<?php
+									$status = isset( $row['status'] ) ? (string) $row['status'] : '';
+									if ( 'ok' === $status ) {
+										echo '<span style="color:#0a7d18;">ok</span>';
+									} else {
+										echo '<span style="color:#b32d2e;">' . esc_html( $status ) . '</span>';
+									}
+									?>
+								</td>
+								<td><?php echo (int) ( isset( $row['latency_ms'] ) ? $row['latency_ms'] : 0 ); ?> ms</td>
+								<td><?php echo esc_html( isset( $row['message'] ) ? (string) $row['message'] : '' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+
+		<script>
+		( function () {
+			if ( ! window.wp || ! wp.apiFetch ) { return; }
+			var statusEl = document.getElementById( 'nvoos-saas-smoke-status' );
+			var runBtn   = document.getElementById( 'nvoos-saas-run-smoke-tests' );
+			var clearBtn = document.getElementById( 'nvoos-saas-clear-audit-log' );
+			if ( runBtn ) {
+				runBtn.addEventListener( 'click', function () {
+					runBtn.disabled = true;
+					if ( statusEl ) { statusEl.textContent = <?php echo wp_json_encode( __( 'Running…', 'nvoos-saas-controller' ) ); ?>; }
+					wp.apiFetch( { path: 'nvoos-saas/v1/smoke-tests/run', method: 'POST' } )
+						.then( function () { window.location.reload(); } )
+						.catch( function ( err ) {
+							runBtn.disabled = false;
+							if ( statusEl ) { statusEl.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Smoke test failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
+				} );
+			}
+			if ( clearBtn ) {
+				clearBtn.addEventListener( 'click', function () {
+					if ( ! window.confirm( <?php echo wp_json_encode( __( 'Clear all audit-log entries?', 'nvoos-saas-controller' ) ); ?> ) ) { return; }
+					wp.apiFetch( { path: 'nvoos-saas/v1/audit-log', method: 'DELETE' } )
+						.then( function () { window.location.reload(); } );
+				} );
+			}
+		} )();
+		</script>
+		<?php
 	}
 
 	/**

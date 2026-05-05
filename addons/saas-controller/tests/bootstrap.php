@@ -24,9 +24,11 @@ if ( ! defined( 'NVOOS_SAAS_CONTROLLER_PATH' ) ) {
 
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-credential-store.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-deployment-config.php';
+require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-audit-log.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-connection-tester.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-cloudflare-client.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-plan-generator.php';
+require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-smoke-tester.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/admin/class-nvoos-saas-controller-admin-page.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/admin/class-nvoos-saas-controller-assets.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/rest/class-nvoos-saas-controller-rest.php';

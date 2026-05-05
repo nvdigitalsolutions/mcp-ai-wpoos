@@ -136,6 +136,55 @@ class NVOOS_SaaS_Controller_REST {
 				'permission_callback' => array( __CLASS__, 'check_permission' ),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/audit-log',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_get_audit_log' ),
+					'permission_callback' => array( __CLASS__, 'check_permission' ),
+					'args'                => array(
+						'limit'  => array(
+							'type'              => 'integer',
+							'default'           => 50,
+							'sanitize_callback' => 'absint',
+						),
+						'offset' => array(
+							'type'              => 'integer',
+							'default'           => 0,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( __CLASS__, 'route_clear_audit_log' ),
+					'permission_callback' => array( __CLASS__, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/smoke-tests/run',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_run_smoke_tests' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/smoke-tests/last',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'route_get_last_smoke_test' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -388,5 +437,75 @@ class NVOOS_SaaS_Controller_REST {
 			}
 		}
 		return ! empty( $results );
+	}
+
+	/**
+	 * GET /audit-log — paginated, newest-first.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function route_get_audit_log( $request ) {
+		$limit  = (int) $request->get_param( 'limit' );
+		$offset = (int) $request->get_param( 'offset' );
+		$log    = NVOOS_SaaS_Controller_Audit_Log::instance();
+		return rest_ensure_response(
+			array(
+				'entries' => $log->get_recent( $limit > 0 ? $limit : 50, $offset ),
+				'total'   => $log->count(),
+			)
+		);
+	}
+
+	/**
+	 * DELETE /audit-log — clear the audit log.
+	 *
+	 * Recorded as an audit-log entry of its own (action `clear_audit_log`,
+	 * channel `internal`) before the clear, so the operator can see who
+	 * cleared it from the next run onward.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_clear_audit_log() {
+		$log = NVOOS_SaaS_Controller_Audit_Log::instance();
+		$log->record(
+			array(
+				'channel' => 'internal',
+				'action'  => 'clear_audit_log',
+				'status'  => 'ok',
+				'message' => __( 'Audit log cleared.', 'nvoos-saas-controller' ),
+			)
+		);
+		$log->clear();
+		return rest_ensure_response( array( 'ok' => true ) );
+	}
+
+	/**
+	 * POST /smoke-tests/run — execute the full smoke-test sequence.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_run_smoke_tests() {
+		$tester = new NVOOS_SaaS_Controller_Smoke_Tester();
+		return rest_ensure_response( $tester->run() );
+	}
+
+	/**
+	 * GET /smoke-tests/last — return the most recent smoke-test result.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_get_last_smoke_test() {
+		$tester = new NVOOS_SaaS_Controller_Smoke_Tester();
+		$last   = $tester->get_last_result();
+		return rest_ensure_response( null === $last ? array( 'ok' => null, 'checks' => array() ) : $last );
 	}
 }
