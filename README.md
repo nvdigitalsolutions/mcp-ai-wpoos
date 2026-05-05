@@ -26,7 +26,6 @@
 
 ### Getting Started
 - [🆕 Latest Updates (v1.1.15 — May 2026)](#-latest-updates-v1115--may-2026)
-- [🆕 Latest Updates (v1.1.14 — May 2026)](#-latest-updates-v1114--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
