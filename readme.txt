@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.14
+Stable tag: 1.1.15
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -275,41 +275,27 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= Unreleased - May 4, 2026 =
+= 1.1.15 - May 5, 2026 =
 
-**LM Studio provider parity with May 2026 capabilities (Phases 1–7)**
+**New providers (OpenRouter, DeepSeek), Orchestration Phases 1–7 re-landed, LLM Harnessing GA, 19 new slash commands, Memory Bridge G-series, Retroactive Transcript Mining, Graphify NV oOS data-source bridge, stability sweep**
 
-*Added — Real SSE Streaming (Phase 1)*
+*Added — New AI providers*
 
-`create_chat_completion()` now honours `$options['stream']`. When truthy the payload contains `stream: true`, the SSE response body is parsed line-by-line, and `$options['stream_callback']` is invoked for each chunk. Content and tool-call deltas are accumulated; the final return value is a standard OpenAI-shaped response. New filter: `wp_mcp_ai_lm_studio_stream_request_args`.
+* **OpenRouter** — `WP_MCP_AI_OpenRouter_Client`, a unified OpenAI-compatible gateway in front of OpenAI, Anthropic, Google, Meta, Mistral, and others via a single API key. Selectable from Settings → Providers. PR #4840.
+* **DeepSeek** — `WP_MCP_AI_DeepSeek_Client`, first-class provider with model selection and `reasoning_content` passthrough. PR #4820.
+* **Kimi K2.6 + Qwen 3.6** — added to the model catalog and provider dropdowns. PR #4810.
 
-*Added — Native /api/v0 Opt-in (Phase 2)*
+*Added — LM Studio parity (May 2026 LM Studio capabilities)*
 
-New setting `lm_studio_use_native_api` (default off). When on, chat completions use `/api/v0/chat/completions` and model listing uses `/api/v0/models`. Native responses include performance stats (tokens/sec, TTFT, generation time) surfaced as `usage_stats` and via new action `wp_mcp_ai_lm_studio_provider_stats`. Model list returns arch, quantization, state, context lengths, and capabilities. New per-request filter: `wp_mcp_ai_lm_studio_native_endpoint`.
+Real-time token streaming via native cURL SSE (#4839) plus full provider parity: native `/api/v0` endpoint opt-in (#4818), embeddings, bearer-token auth, capability-aware tool gating, `reasoning_content` passthrough, malformed-argument repair, TTL + structured-output pass-through, and improved `test_connection()` fallback to `/api/v0/models`. New filter: `wp_mcp_ai_lm_studio_stream_request_args`.
 
-*Added — Embeddings (Phase 3)*
+*Added — Orchestration roadmap Phases 1–7 (re-landed with JetEngine CCT init-priority fix)*
 
-New public method `create_embedding( $input, $options )` on `WP_MCP_AI_LM_Studio_Client`. Calls `/v1/embeddings` with optional model, encoding format, and auth headers.
+HITL approval queue (`WP_MCP_AI_Approval_Queue`, CPT `mcp_ai_approval`, REST `/mcp-ai/v1/approvals/*`), prompt-injection guardrail (Layer I, `WP_MCP_AI_Prompt_Injection_Detector`), structured-output guardrail, OTel span exporter, visual DAG builder, durable run store, trigger CPTs + webhooks, sub-agent dispatch, Pro vector-store adapter (openai/pgvector/qdrant), and Pro team budget manager (per-team daily caps). All CCT bootstraps now register on `init` at priority 11+ to avoid racing JetEngine's cache hydration. PRs #4816, #4821.
 
-*Added — Optional Bearer-Token Auth (Phase 4)*
+*Added — Observability UI*
 
-New setting `lm_studio_api_key`. When set, `Authorization: Bearer <key>` is included on all requests. Keys are never logged.
-
-*Added — Capability Gating + Reasoning + Argument Repair (Phase 5)*
-
-When native API reports model capabilities, results are cached in a 5-min transient. Models without `tool_use` return a `wp_mcp_ai_tools_unsupported_by_model` WP_Error instead of forwarding tools. `reasoning_content` fields are preserved; `<think>…</think>` blocks are extracted into `reasoning_content` and stripped from the visible response. Malformed tool-call `arguments` (decoded object or truncated JSON) are automatically repaired.
-
-*Added — TTL + Structured Outputs (Phase 6)*
-
-`$options['ttl']` is forwarded in the payload. `$options['response_format']` with `json_schema`, `json_object`, or `text` type is forwarded unchanged.
-
-*Improved — test_connection() + docs (Phase 7)*
-
-`test_connection()` falls back to `/api/v0/models` when `/v1/models` returns 404 and includes the LM Studio version string from `x-lm-studio-version` response header in the success result. Integration guide and quick-start guide updated.
-
-= Unreleased - May 3-4, 2026 =
-
-**LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat Memory Drawer, Retroactive Transcript Mining, Pro Packages Tier 5**
+Observability dashboard surfaced under the **Orchestration** tab (#4833). OpenTelemetry OTLP endpoint and token configurable under **Tools → Connections** (#4837).
 
 *Added — LLM Harnessing Subsystem (Layers A-H)*
 
@@ -319,21 +305,45 @@ Seven opt-in per-request layers in `includes/harness/` improve response quality 
 
 New base commands: `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/markup-stats`, `/remember`, `/forget`, `/scope`, `/compact`, `/context`, `/clear`, `/reset`, `/resume`, `/workflow`, `/sync-docs`, `/optimize-perf`. New Pro commands: `/schedule`, `/schedule-preset`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`.
 
-*Added — Chat-client Memory Bridge (G-series)*
+*Added — Chat-client Memory Bridge (G-series completion)*
 
-Memory Drawer with three tabs (Memories / Scope / Audit), auto-badge on memory-touching messages, SSE `memory_event` frame, pagehide auto-capture, drawer export. REST proxy at `/mcp-ai/v1/chat-memory/`. Two gates: `wp_mcp_ai_chat_memory_enabled` filter + per-user meta.
+Memory Drawer with three tabs (Memories / Scope / Audit), auto-badge on memory-touching messages, SSE `memory_event` frame, pagehide auto-capture, drawer export. REST proxy at `/mcp-ai/v1/chat-memory/`. Three gates: `wp_mcp_ai_chat_memory_enabled` filter, per-user meta, and a new site-wide **Enable Chat-Client Memory** toggle in **Orchestration → Settings** (#4802).
 
 *Added — Retroactive Transcript Mining*
 
 `WP_MCP_AI_Transcript_Mining_Job` background worker with REST API (`/mcp-ai/v1/transcript-mining/jobs*`). New `transcripts` source on `mine_agent_memory` tool with provenance metadata and dedupe.
 
+*Added — Graphify NV oOS data-source bridge*
+
+Private CPTs, JetEngine CCT resolvers, MemPalace edges, and external `$wpdb` tables are now first-class Graphify data sources. A new **Sources (CPT / CCT)** tab on the Knowledge Graph settings page exposes per-source control. PR #4834.
+
 *Added — Pro Packages Tier 5*
 
 Five new NPM packages: `nvoos-client-tools`, `nvoos-chat-memory`, `nvoos-attachments`, `nvoos-cron-status`, `nvoos-transcription`.
 
-*Fixed — /status render bug*
+*Added — DX*
 
-PHP notice on async health-check shape mismatch.
+* Custom devcontainer image for WordPress plugin development (#4811).
+* `examples/agents/` roster mirrored as native Zed agent profiles in `.zed/settings.json` (#4808).
+
+*Fixed*
+
+* Transcript-mining queued job never executed — future cron timestamp + missing `spawn_cron()` call. Three-root-cause sweep (#4804, #4826).
+* "Workflow not found" error on admin Workflows tab for orchestrator-managed workflows (#4803).
+* `workflow-cpt` `map_meta_cap=false` blocked JetEngine on WP 6.1 delete_post notice (#4822).
+* Graphify `get_settings()` infinite recursion causing 502 on admin page (#4835).
+* Graphify Sources (CPT / CCT) tab missing from Knowledge Graph settings page (#4836).
+* Graphify admin settings file PHP linting CI failure (#4838).
+* Multi-agent dashboard TypeError when `primary_roles` post meta is unset (#4823).
+* Nonce field-name mismatches breaking Generate Credential, Revoke, and Delete credential buttons (#4824, #4825).
+* JetEngine CCT table prefix corrected to `jet_cct_` (underscores) in transcript repository and all direct SQL paths; chat channel SQL queries now backtick-quote hyphenated table names to satisfy MySQL (#4827, #4828, #4830).
+* Site-health polyfill `wp_is_auto_update_forced_for_item` added before early-return guard (#4832).
+* README TOC anchor links corrected (#4807).
+* `/status` slash command PHP notice on malformed async health-check shape.
+
+*Versioning*
+
+Bumped to 1.1.15 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
 
 = 1.1.14 - May 2, 2026 =
 
@@ -958,6 +968,9 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
+
+= 1.1.15 =
+**OpenRouter + DeepSeek** added as first-class providers; **Kimi K2.6 + Qwen 3.6** in model catalog. **LM Studio** gains native cURL SSE streaming. **Orchestration Phases 1–7** re-landed with JetEngine CCT init-priority fix: HITL approval queue, prompt-injection guardrail, structured output, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, and team budget manager. **LLM Harnessing Subsystem (Layers A–H)** ships GA. **19 new slash commands** (11 base + 8 Pro). **Chat-client Memory Bridge G-series** complete with site-wide toggle. **Retroactive Transcript Mining** stuck-job root causes fixed. **Graphify NV oOS data-source bridge** with private CPTs, CCT resolvers, and MemPalace edges. Multiple stability fixes (transcript-mining, workflow tab, credential nonces, JetEngine CCT prefix, site-health polyfill). Safe upgrade.
 
 = 1.1.14 =
 **Markup Subsystem (Base)** — tools can now pause the agentic loop, surface a Konva canvas in the chat for the user to draw on, and resume with the rasterised mask / crop / region. Three tools (`edit_openai_image`, `crop_image`, `edit_gemini_image`) are markup-aware out of the box. New **NV oOS → Markup Telemetry** dashboard, `/markup-stats` slash command, and 4 actions + 4 filters. **Agent Skills v2** ships progressive disclosure (`load_skill` tool), curated skill packs, and remote skill catalogues (Pro). **MemPalace Capture Framework Phases A + B1** layer five capture tools onto the durable agent-memory bridge from 1.1.13. **Graphify** now treats JetEngine CPTs and CCTs as first-class citizens in the knowledge graph, Graph Explorer, related-content widget, and embeddings re-index path. Plus follow-up fixes to the orchestration dashboard, the Pro Mini App Builder enqueue path, the skill-catalogue cURL fetcher, the Pro Medical Imaging Viewer bundle, and the stored-embeddings admin display. Safe upgrade.

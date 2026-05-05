@@ -1,7 +1,7 @@
 # NV oOS Orchestration — Documentation Hub
 
 > **Phase 7 Gap-Fill — Canonical Navigation Index**  
-> Last Updated: May 2026 · Plugin Version: 1.1.11+
+> Last Updated: May 2026 · Plugin Version: 1.1.15+
 
 NV oOS (Open Operator System) is a WordPress-native AI orchestration platform that connects 9 language-model providers to an extensible tool registry through the Model Context Protocol (MCP), the Agent-to-Agent (A2A) protocol, Server-Sent Events streaming, and a 6-agent hierarchical supervisor pattern. It runs entirely inside WordPress — no separate Python runtime, no external cloud infrastructure, and no additional managed service required. Every feature on this page is deployed as a standard WordPress plugin on PHP 7.4+ infrastructure; see [`CLAUDE.md`](../CLAUDE.md) for the canonical PHP-compatibility and naming rules.
 

@@ -1,14 +1,23 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 27, 2026  
-**Plugin Version:** 1.1.11  
+**Last Updated:** May 5, 2026  
+**Plugin Version:** 1.1.15  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
-> **📌 APRIL 27, 2026 UPDATE:** 🛡️ **APRIL 2026 SECURITY AUDIT SUMMARY, PRODUCTION VENDOR AUTOLOAD, VEO 3.1 SEED FIX**
+> **📌 MAY 5, 2026 UPDATE (v1.1.15):** 🔌 **NEW PROVIDERS (OPENROUTER + DEEPSEEK), ORCHESTRATION PHASES 1–7, LLM HARNESSING GA, OBSERVABILITY UI, GRAPHIFY DATA-SOURCE BRIDGE**
+> - **New AI providers** — OpenRouter (`WP_MCP_AI_OpenRouter_Client`), DeepSeek (`WP_MCP_AI_DeepSeek_Client`), Kimi K2.6, Qwen 3.6 added. LM Studio gains native cURL SSE streaming.
+> - **Orchestration Phases 1–7 re-landed** — HITL approval queue, prompt-injection guardrail (Layer I), structured output, OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, Pro team budget manager. All JetEngine CCT bootstraps now on `init` priority 11+.
+> - **Observability UI** — Observability dashboard under **Orchestration** tab; OTLP endpoint + token configurable in **Tools → Connections**.
+> - **LLM Harnessing Subsystem (Layers A–H)** ships GA — seven opt-in epistemic layers. Reference: [`docs/llm-harness.md`](llm-harness.md).
+> - **Chat-client Memory Bridge G-series** — complete with site-wide admin toggle in **Orchestration → Settings**.
+> - **Retroactive Transcript Mining** — three stuck-job root causes fixed (PRs #4804 #4826). Troubleshooting guide added to [`docs/features/memory/transcript-mining.md`](features/memory/transcript-mining.md).
+> - **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace edges, external `$wpdb` tables. New **Sources (CPT / CCT)** tab on Knowledge Graph settings page.
+> - **Stability sweep** — workflow-not-found, JetEngine CCT prefix, credential nonces, multi-agent dashboard TypeError, site-health polyfill, README TOC anchors.
+> - **Versioning** — bumped to 1.1.15 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`, `docs/QUICK_REFERENCE.md`, `docs/orchestration-reference.md`.
 > - **April 2026 Security Audit Summary** (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](compliance/SECURITY_AUDIT_2026_04.md) publishes the consolidated summary of the nine audit deliverables under [`docs/audit/2026-04/`](audit/2026-04/). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
 > - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
 > - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0; Veo 3.1 rejects it (PR #4735).
