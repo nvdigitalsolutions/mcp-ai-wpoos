@@ -274,32 +274,6 @@ No bundled third-party JavaScript. PHP-only addon under GPL-3.0-or-later. ESPN
 and Yahoo Fantasy APIs are accessed at runtime over HTTPS; their use is
 governed by the providers' respective Terms of Service.
 
-### `addons/skote/` — Skote React UI for WordPress
-
-This addon embeds the [Skote React](https://themesbrand.com/skote-react/)
-admin template inside WordPress. **Skote is a commercial product owned by
-[Themesbrand](https://themesbrand.com/) and distributed through
-[Envato / ThemeForest](https://themeforest.net/). It is NOT bundled with this
-repository.** Site owners must hold their own Themesbrand Regular or
-Extended license; the addon's `bin/import-skote.sh` helper copies a
-developer-supplied Skote checkout into `addons/skote/src/` at build time.
-
-The addon itself is GPLv3. Build-time / runtime JavaScript dependencies
-declared in `addons/skote/package.json`:
-
-| Package | License | Upstream |
-|---------|---------|----------|
-| `react` ^18.3 | MIT — © Meta Platforms, Inc. | <https://github.com/facebook/react> |
-| `react-dom` ^18.3 | MIT | <https://github.com/facebook/react> |
-| `@tanstack/react-query` ^5.51 | MIT — © Tanner Linsley | <https://github.com/TanStack/query> |
-| `axios` ^1.15 | MIT | <https://github.com/axios/axios> |
-| `vite` ^5.4 | MIT | <https://github.com/vitejs/vite> |
-| `@vitejs/plugin-react` ^4.3 | MIT | <https://github.com/vitejs/vite-plugin-react> |
-| `typescript` ^5.5 | Apache-2.0 — © Microsoft | <https://github.com/microsoft/TypeScript> |
-
-Reference URL kept for documentation only:
-<https://themesbrand.com/skote-react/docs/reactjs/fakebackend.html>.
-
 ### `addons/cloud-worker/` — NV oOS Cloud SaaS backend (Cloudflare Worker)
 
 This addon is **not a WordPress plugin**. It is the SaaS-side counterpart to
