@@ -186,6 +186,104 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 	}
 
 	/**
+	 * GET /accounts/{account_id}/workers/scripts/{name}
+	 *
+	 * Fetches the deployed Worker script body and the Cloudflare-supplied
+	 * `etag` header (which Cloudflare derives from the uploaded script
+	 * payload and is therefore the most reliable cross-deploy fingerprint).
+	 * Used by the drift detector (Phase 5c) to compare the deployed code
+	 * against the addon's pinned `worker/dist/index.js` checksum.
+	 *
+	 * Unlike the other read-only endpoints this one does **not** return a
+	 * Cloudflare JSON envelope on success — the response body **is** the
+	 * Worker script (raw JS for service-worker format, multipart/form-data
+	 * for module-worker format). Errors still return JSON envelopes, so we
+	 * only attempt envelope parsing on non-2xx responses.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $name Worker script name (slug).
+	 * @return array{body:string,etag:string,modified_on:string,size:int}|WP_Error
+	 */
+	public function get_worker_script( $name ) {
+		$slug = (string) $name;
+		if ( '' === $slug ) {
+			return new WP_Error(
+				'missing_worker_name',
+				__( 'A non-empty Worker script name is required.', 'nvoos-saas-controller' )
+			);
+		}
+
+		$path       = '/accounts/' . rawurlencode( $this->account_id ) . '/workers/scripts/' . rawurlencode( $slug );
+		$started_us = microtime( true );
+
+		$response = wp_remote_get(
+			self::BASE_URL . $path,
+			array(
+				'timeout'   => self::TIMEOUT,
+				'sslverify' => true,
+				'headers'   => array(
+					'Authorization' => 'Bearer ' . $this->api_token,
+				),
+			)
+		);
+
+		$result = $this->parse_worker_script_response( $response, $path );
+		$this->maybe_record_audit( $path, $result, $started_us );
+		return $result;
+	}
+
+	/**
+	 * Decode the raw `wp_remote_get` response from the Worker-script
+	 * endpoint. On 2xx the body is the Worker source itself (not an
+	 * envelope), so we return `{body, etag, modified_on, size}`. On non-2xx
+	 * we attempt the standard Cloudflare error envelope parse so the
+	 * drift detector gets the same `WP_Error` shape as the other endpoints.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array|WP_Error $response Raw response.
+	 * @param string         $path     Request path (for error messages).
+	 * @return array|WP_Error
+	 */
+	protected function parse_worker_script_response( $response, $path ) {
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		$body   = (string) wp_remote_retrieve_body( $response );
+
+		if ( $status < 200 || $status >= 300 ) {
+			$json    = json_decode( $body, true );
+			$message = sprintf(
+				/* translators: 1: HTTP status, 2: path */
+				__( 'Cloudflare API returned HTTP %1$d for %2$s.', 'nvoos-saas-controller' ),
+				$status,
+				$path
+			);
+			$code = 'cloudflare_http_' . $status;
+			if ( is_array( $json ) && ! empty( $json['errors'][0]['message'] ) ) {
+				$message .= ' ' . wp_strip_all_tags( (string) $json['errors'][0]['message'] );
+				if ( ! empty( $json['errors'][0]['code'] ) ) {
+					$code = 'cloudflare_' . sanitize_key( (string) $json['errors'][0]['code'] );
+				}
+			}
+			return new WP_Error( $code, $message, array( 'status' => $status ) );
+		}
+
+		$etag        = (string) wp_remote_retrieve_header( $response, 'etag' );
+		$modified_on = (string) wp_remote_retrieve_header( $response, 'last-modified' );
+
+		return array(
+			'body'        => $body,
+			'etag'        => trim( $etag, '"' ),
+			'modified_on' => $modified_on,
+			'size'        => strlen( $body ),
+		);
+	}
+
+	/**
 	 * GET /accounts/{account_id}/ai-gateway/gateways
 	 *
 	 * @since 0.1.0
@@ -316,16 +414,30 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 			$action = 'list_d1_databases';
 		} elseif ( false !== strpos( $path, '/storage/kv/namespaces' ) ) {
 			$action = 'list_kv_namespaces';
+		} elseif ( false !== strpos( $path, '/workers/scripts/' ) ) {
+			$action = 'get_worker_script';
 		} elseif ( false !== strpos( $path, '/workers/scripts' ) ) {
 			$action = 'list_workers';
 		} elseif ( false !== strpos( $path, '/ai-gateway/gateways' ) ) {
 			$action = 'list_ai_gateways';
 		}
 
-		$is_error  = is_wp_error( $result );
-		$message   = $is_error
-			? (string) $result->get_error_message()
-			: sprintf( /* translators: %d: number of items returned */ __( '%d item(s) returned.', 'nvoos-saas-controller' ), is_array( $result ) ? count( $result ) : 0 );
+		$is_error = is_wp_error( $result );
+		if ( $is_error ) {
+			$message = (string) $result->get_error_message();
+		} elseif ( 'get_worker_script' === $action && is_array( $result ) && isset( $result['size'] ) ) {
+			$message = sprintf(
+				/* translators: %d: script size in bytes */
+				__( 'Worker script fetched (%d bytes).', 'nvoos-saas-controller' ),
+				(int) $result['size']
+			);
+		} else {
+			$message = sprintf(
+				/* translators: %d: number of items returned */
+				__( '%d item(s) returned.', 'nvoos-saas-controller' ),
+				is_array( $result ) ? count( $result ) : 0
+			);
+		}
 		$latency_ms = (int) round( ( microtime( true ) - $started_us ) * 1000 );
 
 		NVOOS_SaaS_Controller_Audit_Log::instance()->record(

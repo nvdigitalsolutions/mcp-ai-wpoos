@@ -51,6 +51,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_render_drift_banner' ) );
 	}
 
 	/**
@@ -221,7 +222,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 				<li>🚧 <strong><?php esc_html_e( 'Phase 2 — WP-Admin & REST plumbing', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'this menu, the Packages tab, the credential store, and the /nvoos-saas/v1 REST namespace.', 'nvoos-saas-controller' ); ?></li>
 				<li>✅ <strong><?php esc_html_e( 'Phase 3 — One-Click Wizard', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'collect credentials, validate, provision D1 + KV + Worker bindings.', 'nvoos-saas-controller' ); ?></li>
 				<li>🚧 <strong><?php esc_html_e( 'Phase 4 — Plan / Apply', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'terraform-style preview of every reconcile action — read-only plan generator on the Deployment tab.', 'nvoos-saas-controller' ); ?></li>
-				<li>⏳ <strong><?php esc_html_e( 'Phase 5 — Apply, Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'execute the plan behind a HITL approval gate; periodic reconciliation and observability.', 'nvoos-saas-controller' ); ?></li>
+				<li>🚧 <strong><?php esc_html_e( 'Phase 5 — Apply, Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( '5a (audit log + smoke tests), 5b (HITL-gated Apply) and 5c (drift detector) shipped; 5d (Worker upload) is the remaining piece.', 'nvoos-saas-controller' ); ?></li>
 			</ul>
 		</div>
 		<?php
@@ -490,6 +491,8 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			<div id="nvoos-saas-apply-output"></div>
 		</div>
 
+		<?php self::render_drift_card(); ?>
+
 		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
 			<h2><?php esc_html_e( 'Smoke Tests', 'nvoos-saas-controller' ); ?></h2>
 			<p class="description">
@@ -735,6 +738,175 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		} )();
 		</script>
 		<?php
+	}
+
+	/**
+	 * Render the Drift Detector card inside the Operations tab.
+	 *
+	 * Pulls the cached last-result via the detector singleton-style API
+	 * (no fresh API call here — the operator has to click the "Run Drift
+	 * Check" button to trigger Cloudflare traffic). The card colour-codes
+	 * the status row so `drift` jumps off the page.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	protected static function render_drift_card() {
+		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
+		$last     = $detector->get_last_result();
+		?>
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
+			<h2><?php esc_html_e( 'Drift Detector', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Compares the deployed Cloudflare Worker against the addon\'s pinned worker/dist/index.js fingerprint. Read-only — never mutates Cloudflare. A red banner is shown across all NV oOS SaaS screens when drift is detected.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p>
+				<button type="button" class="button button-primary" id="nvoos-saas-run-drift-check"><?php esc_html_e( 'Run Drift Check', 'nvoos-saas-controller' ); ?></button>
+				<span id="nvoos-saas-drift-status" style="margin-left:0.75em;" aria-live="polite"></span>
+			</p>
+			<?php if ( null !== $last ) : ?>
+				<table class="widefat striped">
+					<tbody>
+						<tr>
+							<th scope="row" style="width:200px;"><?php esc_html_e( 'Status', 'nvoos-saas-controller' ); ?></th>
+							<td><?php echo self::render_drift_status_badge( isset( $last['status'] ) ? (string) $last['status'] : 'unknown' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- helper escapes ?></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Worker', 'nvoos-saas-controller' ); ?></th>
+							<td><code><?php echo esc_html( isset( $last['worker_name'] ) ? (string) $last['worker_name'] : '' ); ?></code></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Pinned (etag)', 'nvoos-saas-controller' ); ?></th>
+							<td><code><?php echo esc_html( ! empty( $last['expected_etag'] ) ? (string) $last['expected_etag'] : '—' ); ?></code></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Deployed (etag)', 'nvoos-saas-controller' ); ?></th>
+							<td><code><?php echo esc_html( ! empty( $last['actual_etag'] ) ? (string) $last['actual_etag'] : '—' ); ?></code></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Pinned (sha256)', 'nvoos-saas-controller' ); ?></th>
+							<td><code style="word-break:break-all;"><?php echo esc_html( ! empty( $last['expected_sha256'] ) ? (string) $last['expected_sha256'] : '—' ); ?></code></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Deployed (sha256)', 'nvoos-saas-controller' ); ?></th>
+							<td><code style="word-break:break-all;"><?php echo esc_html( ! empty( $last['actual_sha256'] ) ? (string) $last['actual_sha256'] : '—' ); ?></code></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Message', 'nvoos-saas-controller' ); ?></th>
+							<td><?php echo esc_html( isset( $last['message'] ) ? (string) $last['message'] : '' ); ?></td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Last Checked', 'nvoos-saas-controller' ); ?></th>
+							<td>
+								<?php
+								printf(
+									/* translators: 1: timestamp, 2: duration in ms */
+									esc_html__( '%1$s · %2$d ms', 'nvoos-saas-controller' ),
+									esc_html( gmdate( 'Y-m-d H:i:s', (int) ( isset( $last['ts'] ) ? $last['ts'] : 0 ) ) . ' UTC' ),
+									(int) ( isset( $last['duration_ms'] ) ? $last['duration_ms'] : 0 )
+								);
+								?>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p><em><?php esc_html_e( 'No drift check has been run yet.', 'nvoos-saas-controller' ); ?></em></p>
+			<?php endif; ?>
+			<script>
+			( function () {
+				if ( ! window.wp || ! wp.apiFetch ) { return; }
+				var btn = document.getElementById( 'nvoos-saas-run-drift-check' );
+				var status = document.getElementById( 'nvoos-saas-drift-status' );
+				if ( ! btn ) { return; }
+				btn.addEventListener( 'click', function () {
+					btn.disabled = true;
+					if ( status ) { status.textContent = <?php echo wp_json_encode( __( 'Checking…', 'nvoos-saas-controller' ) ); ?>; }
+					wp.apiFetch( { path: 'nvoos-saas/v1/drift/check', method: 'POST' } )
+						.then( function () { window.location.reload(); } )
+						.catch( function ( err ) {
+							btn.disabled = false;
+							if ( status ) { status.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Drift check failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
+				} );
+			}() );
+			</script>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render an inline status badge for a drift state.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $status One of synced/drift/unknown/error.
+	 * @return string Pre-escaped HTML.
+	 */
+	protected static function render_drift_status_badge( $status ) {
+		$colors = array(
+			'synced'  => '#0a7d18',
+			'drift'   => '#b32d2e',
+			'error'   => '#b32d2e',
+			'unknown' => '#666',
+		);
+		$icons  = array(
+			'synced'  => '✅',
+			'drift'   => '⚠️',
+			'error'   => '❌',
+			'unknown' => '❔',
+		);
+		$labels = array(
+			'synced'  => __( 'In sync', 'nvoos-saas-controller' ),
+			'drift'   => __( 'Drift detected', 'nvoos-saas-controller' ),
+			'error'   => __( 'Error', 'nvoos-saas-controller' ),
+			'unknown' => __( 'Unknown', 'nvoos-saas-controller' ),
+		);
+		$key   = isset( $colors[ $status ] ) ? $status : 'unknown';
+		$color = $colors[ $key ];
+		$icon  = $icons[ $key ];
+		$label = $labels[ $key ];
+		return '<strong style="color:' . esc_attr( $color ) . ';">' . esc_html( $icon . ' ' . $label ) . '</strong>';
+	}
+
+	/**
+	 * Print an admin-wide drift banner when the cached drift state is
+	 * `drift`. Shown only on NV oOS SaaS screens (matches the page slug
+	 * via the current screen's `id`) so other admin pages stay quiet.
+	 *
+	 * Never makes a live Cloudflare call — reads only the cached option.
+	 * The operator has to explicitly click "Run Drift Check" for new
+	 * data, which means the banner cannot disappear without an action
+	 * (acknowledged design: drift should be visible until acted on).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public static function maybe_render_drift_banner() {
+		if ( ! current_user_can( self::CAPABILITY ) ) {
+			return;
+		}
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen || empty( $screen->id ) || false === strpos( (string) $screen->id, self::PAGE_SLUG ) ) {
+			return;
+		}
+		if ( ! class_exists( 'NVOOS_SaaS_Controller_Drift_Detector' ) ) {
+			return;
+		}
+		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
+		$last     = $detector->get_last_result();
+		if ( ! is_array( $last ) || empty( $last['status'] ) || 'drift' !== $last['status'] ) {
+			return;
+		}
+		echo '<div class="notice notice-error"><p>';
+		echo '<strong>' . esc_html__( 'NV oOS SaaS — Cloudflare Worker drift detected.', 'nvoos-saas-controller' ) . '</strong> ';
+		echo esc_html( isset( $last['message'] ) ? (string) $last['message'] : '' );
+		echo '</p></div>';
 	}
 
 	/**

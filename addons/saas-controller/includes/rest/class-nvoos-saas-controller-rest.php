@@ -212,6 +212,26 @@ class NVOOS_SaaS_Controller_REST {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/drift/check',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_drift_check' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/drift/last',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'route_drift_last' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -614,5 +634,43 @@ class NVOOS_SaaS_Controller_REST {
 
 		$out['ok'] = empty( $out['summary']['error'] );
 		return rest_ensure_response( $out );
+	}
+
+	/**
+	 * POST /drift/check — run a fresh drift check against the deployed
+	 * Worker and return the result. Always succeeds (drift / unknown /
+	 * error all come back as 200 with a structured body); transport-level
+	 * failures inside the detector surface as `status=error`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_drift_check() {
+		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
+		return rest_ensure_response( $detector->check() );
+	}
+
+	/**
+	 * GET /drift/last — return the most recent cached drift-check result,
+	 * or `{ status: 'unknown', message: ... }` when no run has happened.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function route_drift_last() {
+		$detector = new NVOOS_SaaS_Controller_Drift_Detector();
+		$last     = $detector->get_last_result();
+		if ( null === $last ) {
+			return rest_ensure_response(
+				array(
+					'ok'      => false,
+					'status'  => 'unknown',
+					'message' => __( 'Drift check has not been run yet.', 'nvoos-saas-controller' ),
+				)
+			);
+		}
+		return rest_ensure_response( $last );
 	}
 }
