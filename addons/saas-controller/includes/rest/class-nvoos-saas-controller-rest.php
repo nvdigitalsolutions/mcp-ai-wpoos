@@ -213,6 +213,58 @@ class NVOOS_SaaS_Controller_REST {
 			)
 		);
 
+		// Phase 8 — background async Apply.
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/enqueue',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_apply_enqueue' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'apply_token' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/jobs/(?P<id>[a-zA-Z0-9-]+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'route_apply_job_get' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'id' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/jobs/(?P<id>[a-zA-Z0-9-]+)/cancel',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_apply_job_cancel' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'id' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
 		register_rest_route(
 			self::NAMESPACE,
 			'/drift/check',
@@ -705,6 +757,86 @@ class NVOOS_SaaS_Controller_REST {
 
 		$out['ok'] = empty( $out['summary']['error'] );
 		return rest_ensure_response( $out );
+	}
+
+	/**
+	 * POST /apply/enqueue — consume an apply token and start a background
+	 * apply job (Phase 8).
+	 *
+	 * Returns the freshly-created job state projection (status, totals,
+	 * empty results buffer). The admin UI polls `/apply/jobs/{id}` to
+	 * watch progress until `status` reaches `completed | cancelled |
+	 * failed`. The token is single-use exactly like `/apply/run`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_enqueue( WP_REST_Request $request ) {
+		$token = (string) $request->get_param( 'apply_token' );
+		$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_from_token( $token );
+		if ( is_wp_error( $state ) ) {
+			return $state;
+		}
+		return rest_ensure_response(
+			array(
+				'ok'  => true,
+				'job' => $state,
+			)
+		);
+	}
+
+	/**
+	 * GET /apply/jobs/{id} — return the current progress projection for
+	 * a background apply job (Phase 8). Returns 404 if the job is
+	 * unknown or the state transient has expired.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_job_get( WP_REST_Request $request ) {
+		$id    = (string) $request->get_param( 'id' );
+		$state = NVOOS_SaaS_Controller_Apply_Job::get_progress( $id );
+		if ( null === $state ) {
+			return new WP_Error(
+				'apply_job_not_found',
+				__( 'Apply job not found or expired.', 'nvoos-saas-controller' ),
+				array( 'status' => 404 )
+			);
+		}
+		return rest_ensure_response(
+			array(
+				'ok'  => true,
+				'job' => $state,
+			)
+		);
+	}
+
+	/**
+	 * POST /apply/jobs/{id}/cancel — cancel a queued or running
+	 * background apply job (Phase 8). An already-firing tick will
+	 * finish its current row before the cancelled status is observed.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_job_cancel( WP_REST_Request $request ) {
+		$id    = (string) $request->get_param( 'id' );
+		$state = NVOOS_SaaS_Controller_Apply_Job::cancel( $id );
+		if ( is_wp_error( $state ) ) {
+			return $state;
+		}
+		return rest_ensure_response(
+			array(
+				'ok'  => true,
+				'job' => $state,
+			)
+		);
 	}
 
 	/**

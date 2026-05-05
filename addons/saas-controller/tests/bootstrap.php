@@ -34,6 +34,7 @@ require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-co
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-plan-generator.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-cloudflare-mutating-client.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-apply-engine.php';
+require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-apply-job.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-smoke-tester.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-drift-detector.php';
 require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/admin/class-nvoos-saas-controller-admin-page.php';

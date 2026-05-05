@@ -239,9 +239,9 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			);
 		}
 
-		$hash    = hash( 'sha256', $token );
-		$key     = self::TRANSIENT_PREFIX . $hash;
-		$stored  = get_transient( $key );
+		$hash   = hash( 'sha256', $token );
+		$key    = self::TRANSIENT_PREFIX . $hash;
+		$stored = get_transient( $key );
 		if ( ! is_array( $stored ) || empty( $stored['plan'] ) || ! is_array( $stored['plan'] ) ) {
 			return new WP_Error(
 				'expired_apply_token',
@@ -267,7 +267,13 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 		}
 		set_transient(
 			$key,
-			array_merge( $stored, array( 'used' => true, 'used_at' => time() ) ),
+			array_merge(
+				$stored,
+				array(
+					'used'    => true,
+					'used_at' => time(),
+				)
+			),
 			$ttl_remaining
 		);
 
@@ -300,7 +306,7 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
-			$results[] = $this->apply_create( $row );
+			$results[] = $this->apply_row( $row, 'create' );
 		}
 
 		$updates = isset( $plan['updates'] ) && is_array( $plan['updates'] ) ? $plan['updates'] : array();
@@ -308,30 +314,20 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
-			$kind = isset( $row['kind'] ) ? (string) $row['kind'] : '';
-			if ( 'worker' === $kind ) {
-				$results[] = $this->apply_worker_upload( $row, 'updated' );
-			} else {
-				$results[] = array(
-					'kind'    => $kind ? $kind : 'unknown',
-					'target'  => isset( $row['name'] ) ? (string) $row['name'] : '',
-					'status'  => 'skipped',
-					'message' => sprintf(
-						/* translators: %s: plan-row kind. */
-						__( 'Updates for "%s" are not applied automatically.', 'nvoos-saas-controller' ),
-						$kind
-					),
-				);
-			}
+			$results[] = $this->apply_row( $row, 'update' );
 		}
 
-		$summary = array( 'ok' => 0, 'error' => 0, 'skipped' => 0 );
+		$summary = array(
+			'ok'      => 0,
+			'error'   => 0,
+			'skipped' => 0,
+		);
 		foreach ( $results as $r ) {
 			$status = isset( $r['status'] ) ? (string) $r['status'] : 'error';
 			if ( ! isset( $summary[ $status ] ) ) {
 				$summary[ $status ] = 0;
 			}
-			$summary[ $status ]++;
+			++$summary[ $status ];
 		}
 
 		return array(
@@ -340,6 +336,48 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			'duration_ms' => (int) round( ( microtime( true ) - $started ) * 1000 ),
 			'ts'          => time(),
 		);
+	}
+
+	/**
+	 * Apply a single plan row.
+	 *
+	 * Public per-row entry point used by both the synchronous
+	 * {@see self::apply()} loop and the background-tick worker
+	 * {@see NVOOS_SaaS_Controller_Apply_Job} (Phase 8). Always returns a
+	 * structured result row of the shape
+	 * `{ kind, target, status: ok|error|skipped, message, detail? }`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array  $row     One plan row from `creates[]` or `updates[]`.
+	 * @param string $section `'create'` for `creates[]` rows, `'update'`
+	 *                        for `updates[]` rows. Determines whether
+	 *                        non-worker `update` rows are recorded as
+	 *                        `skipped` (creates dispatch every supported
+	 *                        kind; updates only re-upload the Worker).
+	 * @return array Result row.
+	 */
+	public function apply_row( array $row, $section = 'create' ) {
+		$section = ( 'update' === $section ) ? 'update' : 'create';
+
+		if ( 'update' === $section ) {
+			$kind = isset( $row['kind'] ) ? (string) $row['kind'] : '';
+			if ( 'worker' === $kind ) {
+				return $this->apply_worker_upload( $row, 'updated' );
+			}
+			return array(
+				'kind'    => $kind ? $kind : 'unknown',
+				'target'  => isset( $row['name'] ) ? (string) $row['name'] : '',
+				'status'  => 'skipped',
+				'message' => sprintf(
+					/* translators: %s: plan-row kind. */
+					__( 'Updates for "%s" are not applied automatically.', 'nvoos-saas-controller' ),
+					$kind
+				),
+			);
+		}
+
+		return $this->apply_create( $row );
 	}
 
 	/**

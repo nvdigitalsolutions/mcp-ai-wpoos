@@ -4,9 +4,9 @@
 
 This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cloud-worker` is the deployed runtime, the **SaaS Controller** is the WordPress plugin that lets a maintainer **provision, plan/apply changes to, drift-check, and audit** that runtime — without leaving WP-Admin.
 
-> **Status:** v0.1.0 — Phases 2, 3, 4, 5a, 5b, 5c, 5d, 6 & 7 landed (WP-Admin & REST plumbing + credentials wizard with live preflight + read-only Reconcile-Plan generator + audit log & smoke tester + HITL-gated Apply step + drift detector + Worker upload + Stripe / OpenRouter mutating surfaces + Stripe webhook receiver).
+> **Status:** v0.1.0 — Phases 2, 3, 4, 5a, 5b, 5c, 5d, 6, 7 & 8 landed (WP-Admin & REST plumbing + credentials wizard with live preflight + read-only Reconcile-Plan generator + audit log & smoke tester + HITL-gated Apply step + drift detector + Worker upload + Stripe / OpenRouter mutating surfaces + Stripe webhook receiver + background async Apply).
 
-## What's available today (Phases 2 / 3 / 4 / 5a / 5b / 5c / 5d / 6 / 7)
+## What's available today (Phases 2 / 3 / 4 / 5a / 5b / 5c / 5d / 6 / 7 / 8)
 
 - **Top-level admin menu** — `WP-Admin → NV oOS SaaS` (capability: `manage_options`) with four tabs:
   - **Overview** — interactive React **Credentials Wizard** (Credentials → Validate → Save) plus a static masked-credentials table fallback for no-JS environments.
@@ -27,6 +27,7 @@ This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cl
 - **Smoke tester** (`NVOOS_SaaS_Controller_Smoke_Tester`) — runs four read-only checks in sequence: (1) Cloudflare credential presence, (2) live `list_workers` call, (3) plan dry-run against the current desired config, (4) base-plugin liveness. Returns `{ ok, checks[], duration_ms, ts }`; the last result is cached in `nvoos_saas_controller_last_smoke_test`. Each check writes one entry to the audit log.
 - **Stripe webhook verifier** (`NVOOS_SaaS_Controller_Stripe_Webhook_Verifier`, Phase 7) — stateless verifier that reproduces Stripe's official library algorithm: parses the `Stripe-Signature` header (`t=…,v1=…`), recomputes the HMAC-SHA256 of `{timestamp}.{raw_body}` against the stored `stripe_webhook_secret`, and accepts only when at least one `v1=` value matches in constant time (`hash_equals`). Default tolerance window is 300 seconds — outside that window, deliveries are rejected as replays. Multiple `v1=` values are honoured (Stripe ships them during a secret rotation). Returns a stable structured verdict: `{ ok, reason, timestamp, event_id, event_type }`.
 - **Webhook event store** (`NVOOS_SaaS_Controller_Webhook_Event_Store`, Phase 7) — append-only ring buffer (option `nvoos_saas_controller_webhook_events`, last 200 entries; filterable via `nvoos_saas_controller_webhook_events_max_entries`). Idempotent by `provider` + `event_id` so Stripe retries do not flood the buffer. Stores only `event.id`, `event.type`, the provider-supplied event timestamp, signature status, and a short message — never PII (no customer email, billing address, or card-fingerprint data).
+- **Background async Apply** (`NVOOS_SaaS_Controller_Apply_Job`, Phase 8) — queued, cron-tick driven worker that consumes a single-use `apply_token` and processes a previewed plan **one row per tick**, so a multi-DB + KV + Stripe + Worker-upload apply never hits `max_execution_time` on shared hosts. Each tick pops one row, dispatches it through `Apply_Engine::apply_row()`, persists a structured result, and re-schedules itself via `wp_schedule_single_event`. State (queue + accumulated `results[]` + `summary` + `errors[]`) is held in a 6 h transient (filterable via `nvoos_saas_controller_apply_job_state_ttl`); a hard `MAX_TOTAL_ROWS` ceiling (200) bounds a single job. The synchronous `/apply/run` route is still available for small applies.
 - **REST namespace** `/wp-json/nvoos-saas/v1/` (every route requires `manage_options` + REST nonce **except `POST /webhooks/stripe`**, which is signature-gated):
   - `GET    /healthz` — addon version + base-plugin liveness probe.
   - `GET    /credentials` — masked snapshot (never returns plaintext).
@@ -42,6 +43,9 @@ This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cl
   - `GET    /smoke-tests/last` — most recent cached smoke-test result.
   - `POST   /apply/preview` — re-run the plan against live Cloudflare and issue a single-use HITL `apply_token` (15-minute TTL). Returns 409 if the plan reports any errors.
   - `POST   /apply/run` — consume an `apply_token` and execute its cached plan against Cloudflare. Returns `{ ok, results[], summary, duration_ms, ts }`. 410 if the token is unknown/expired, 409 if it has already been used.
+  - `POST   /apply/enqueue` — Phase 8. Consume an `apply_token` and enqueue a background apply job. Returns `{ ok, job: { id, status: queued, total, processed: 0, ... } }`. Same single-use token semantics as `/apply/run`.
+  - `GET    /apply/jobs/{id}` — Phase 8. Poll a background apply job's progress projection (`{ status, total, processed, percent, summary, results[], errors[], last_message, created_at, updated_at }`). 404 if the job is unknown or its 6 h state transient has expired.
+  - `POST   /apply/jobs/{id}/cancel` — Phase 8. Cancel a queued or running apply job. An already-firing tick will finish its current row before the cancelled status is observed.
   - `POST   /drift/check` — run a fresh drift check against the deployed Worker. Always returns 200 with the structured drift result (transport-level errors surface as `status=error`).
   - `GET    /drift/last` — most recent cached drift-check result, or `{ status: 'unknown', message: ... }` if none has run yet.
   - `POST   /webhooks/stripe` — **public, signature-gated** (Phase 7). Verifies the `Stripe-Signature` header against `stripe_webhook_secret`. Returns 200 fast on first delivery and on Stripe-driven retries (idempotent by `event.id`); 401 on missing/mismatched/replayed signatures; 400 on malformed payloads; 412 if the secret is not configured. Recorded summary is written to the webhook event store and mirrored once to the audit log on the `stripe` channel.
@@ -51,7 +55,7 @@ This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cl
 
 ## Features (planned)
 
-- **Background async Apply** — large applies (multiple D1 DBs + KV namespaces + Stripe products/prices + Worker upload) currently run in a single `/apply/run` request, which can exceed `max_execution_time` on shared hosts. A follow-up phase will split the engine into `enqueue` + cron-driven tick worker (mirroring the base plugin's `WP_MCP_AI_Transcript_Mining_Job` pattern) and stream per-resource progress via the existing audit log + a new `/apply/jobs/{id}` polling endpoint.
+- **Admin UI for the background async Apply** — Phase 8 ships the server-side queue + REST surface; a follow-up will add a "Run in background" toggle on the Operations tab that calls `/apply/enqueue` and polls `/apply/jobs/{id}` so the operator can see per-row progress without leaving the page.
 
 ## Requirements
 
