@@ -104,7 +104,7 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 
 // Load admin classes.
 if ( is_admin() ) {
-	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-settings.php';
+	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nv-oos-graphify-settings.php';
 	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-remote-admin.php';
 }
 
