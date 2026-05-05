@@ -14,6 +14,7 @@
 #   - addons/pro/composer.lock       (Pro PHP packages)
 #   - package.json                   (base npm dependencies — top-level only)
 #   - addons/algorave/package.json
+#   - addons/saas-controller/package.json
 #   - addons/pro/package.json
 #   - assets/js/vendor/*             (vendored JS at base)
 #   - addons/*/assets/{js/,}vendor/* (vendored JS in addons)
@@ -105,6 +106,9 @@ check_list "npm/base" "${base_npm[@]}"
 
 mapfile -t algorave_npm < <(extract_npm_dependencies "$ROOT/addons/algorave/package.json")
 check_list "npm/algorave" "${algorave_npm[@]}"
+
+mapfile -t saas_controller_npm < <(extract_npm_dependencies "$ROOT/addons/saas-controller/package.json")
+check_list "npm/saas-controller" "${saas_controller_npm[@]}"
 
 mapfile -t pro_npm < <(extract_npm_dependencies "$ROOT/addons/pro/package.json")
 check_list "npm/pro" "${pro_npm[@]}"

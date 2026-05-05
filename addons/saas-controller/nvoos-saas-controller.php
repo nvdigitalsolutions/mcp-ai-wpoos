@@ -1,0 +1,85 @@
+<?php
+/**
+ * Plugin Name: NV oOS SaaS Controller
+ * Plugin URI:  https://nvdigitalsolutions.com/wpoos
+ * Description: Operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter). Provides a One-Click Wizard, Plan/Apply dashboard, drift detector, audit log, and smoke tests inside WP-Admin. Requires NV oOS base plugin.
+ * Version:     0.1.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Tested up to: 6.9
+ * Author: NV Digital Solutions
+ * Author URI:  https://nvdigitalsolutions.com
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: nvoos-saas-controller
+ * Domain Path: /languages
+ *
+ * @package NV_oOS_SaaS_Controller
+ *
+ * Copyright (c) 2026 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * This plugin is licensed under the GNU General Public License v3 or later.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/** Plugin version. */
+define( 'NVOOS_SAAS_CONTROLLER_VERSION', '0.1.0' );
+
+/** Absolute path to this plugin file. */
+define( 'NVOOS_SAAS_CONTROLLER_FILE', __FILE__ );
+
+/** Absolute path to this plugin directory (trailing slash). */
+define( 'NVOOS_SAAS_CONTROLLER_PATH', plugin_dir_path( __FILE__ ) );
+
+/** URL to this plugin directory (trailing slash). */
+define( 'NVOOS_SAAS_CONTROLLER_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * Check whether the NV oOS base plugin is active.
+ *
+ * @since 0.1.0
+ *
+ * @return bool True if the base plugin is detected.
+ */
+function nvoos_saas_controller_base_is_active() {
+	return class_exists( 'WP_MCP_AI_Plugin' );
+}
+
+/**
+ * Print an admin notice when the base plugin is missing.
+ *
+ * @since 0.1.0
+ *
+ * @return void
+ */
+function nvoos_saas_controller_base_missing_notice() {
+	echo '<div class="notice notice-error"><p>';
+	echo esc_html__(
+		'NV oOS SaaS Controller requires the NV oOS base plugin to be installed and activated.',
+		'nvoos-saas-controller'
+	);
+	echo '</p></div>';
+}
+
+/**
+ * Bootstrap the addon once all plugins are loaded.
+ *
+ * Subsequent PRs will require_once the controller, REST, and admin classes
+ * here. The scaffolding PR intentionally only wires the dependency check
+ * so that the addon can be activated without fatal errors.
+ *
+ * @since 0.1.0
+ *
+ * @return void
+ */
+function nvoos_saas_controller_bootstrap() {
+	if ( ! nvoos_saas_controller_base_is_active() ) {
+		add_action( 'admin_notices', 'nvoos_saas_controller_base_missing_notice' );
+		return;
+	}
+
+	// Future PRs: require_once includes/* admin, REST, services.
+}
+add_action( 'plugins_loaded', 'nvoos_saas_controller_bootstrap', 20 );

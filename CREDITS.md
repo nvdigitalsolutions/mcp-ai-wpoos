@@ -294,6 +294,43 @@ External services consumed at runtime:
 - [OpenRouter](https://openrouter.ai/) — multi-provider model router.
 - [Stripe](https://stripe.com/) — payments + tax (Stripe Tax handles VAT / GST / sales tax worldwide).
 
+### `addons/saas-controller/` — NV oOS Cloud SaaS Controller (operator-side WP plugin)
+
+Operator-side WordPress plugin that provisions, plan/applies, drift-detects,
+and audits the `addons/cloud-worker/` runtime — without leaving WP-Admin.
+
+The addon ships **two compiled artifacts**: `assets/build/index.js`
+(`@wordpress/scripts` bundle, the WP-Admin UI) and
+`worker/dist/index.js` (esbuild bundle, the Cloudflare Worker). Sources and
+`node_modules/` are excluded from the distribution ZIP.
+
+**Bundled at runtime — Admin UI** (`assets/build/index.js`):
+
+| Package | License | Purpose |
+|---|---|---|
+| [`@tanstack/react-query`](https://tanstack.com/query) ^5.62.0 | MIT | Polling reconcile-job status, drift results, audit log. |
+| [`zod`](https://zod.dev/) ^3.24.1 | MIT | Client-side schema validation of credentials & reconcile-plan JSON. |
+| [`diff`](https://github.com/kpdecker/jsdiff) ^7.0.0 | BSD-3-Clause | Plan-preview before/after rendering. |
+| [`date-fns`](https://date-fns.org/) ^4.1.0 | MIT | Audit-log timestamps and "last checked X ago" labels. |
+| [`clsx`](https://github.com/lukeed/clsx) ^2.1.1 | MIT | Conditional className helper. |
+
+WordPress core externals (`@wordpress/element`, `@wordpress/components`,
+`@wordpress/api-fetch`, `@wordpress/i18n`, `@wordpress/data`,
+`@wordpress/icons`, `@wordpress/url`) are auto-externalized by
+`@wordpress/scripts` and are not bundled.
+
+**Build-time / dev-only — never shipped**:
+[`wrangler`](https://github.com/cloudflare/workers-sdk) ^4.59.1 (MIT OR Apache-2.0; pinned at this floor because earlier versions are affected by a published GHSA OS-command-injection advisory in `wrangler pages deploy`),
+[`esbuild`](https://github.com/evanw/esbuild) ^0.24.2 (MIT),
+[`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) ^4.x (Apache-2.0),
+[`miniflare`](https://github.com/cloudflare/workers-sdk) ^4.x (MIT),
+[`@wordpress/scripts`](https://github.com/WordPress/gutenberg/tree/trunk/packages/scripts) ^30 (GPL-2.0-or-later),
+[`typescript`](https://github.com/microsoft/TypeScript) ^5.7 (Apache-2.0),
+[`npm-run-all`](https://github.com/mysticatea/npm-run-all) ^4 (MIT).
+
+The full per-package license + copyright table is in
+[`addons/saas-controller/THIRD_PARTY_NOTICES.md`](addons/saas-controller/THIRD_PARTY_NOTICES.md).
+
 ---
 
 ## NV oOS First-Party Standalone Packages (`packages/`)

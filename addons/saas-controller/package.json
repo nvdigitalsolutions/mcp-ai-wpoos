@@ -1,0 +1,52 @@
+{
+	"name": "nvoos-saas-controller",
+	"version": "0.1.0",
+	"private": true,
+	"description": "NV oOS SaaS Controller — operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter).",
+	"license": "GPL-3.0-or-later",
+	"author": "NV Digital Solutions",
+	"engines": {
+		"node": ">=18.17.0"
+	},
+	"scripts": {
+		"build": "run-s build:worker build:admin",
+		"build:worker": "esbuild worker/src/index.ts --bundle --format=esm --target=es2022 --outfile=worker/dist/index.js",
+		"build:admin": "wp-scripts build --webpack-src-dir=assets/src --output-path=assets/build",
+		"start": "wp-scripts start --webpack-src-dir=assets/src --output-path=assets/build",
+		"lint:js": "wp-scripts lint-js assets/src worker/src",
+		"test": "wp-scripts test-unit-js",
+		"typecheck": "tsc --noEmit",
+		"worker:dryrun": "wrangler deploy --dry-run --outdir=worker/dist"
+	},
+	"dependencies": {
+		"@tanstack/react-query": "^5.62.0",
+		"clsx": "^2.1.1",
+		"date-fns": "^4.1.0",
+		"diff": "^7.0.0",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250109.0",
+		"@types/diff": "^7.0.0",
+		"@types/wordpress__components": "^23.0.0",
+		"@wordpress/eslint-plugin": "^21.0.0",
+		"@wordpress/jest-preset-default": "^12.0.0",
+		"@wordpress/prettier-config": "^4.0.0",
+		"@wordpress/scripts": "^30.0.0",
+		"esbuild": "^0.24.2",
+		"miniflare": "^4.20250109.0",
+		"npm-run-all": "^4.1.5",
+		"typescript": "^5.7.2",
+		"wrangler": "^4.59.1"
+	},
+	"keywords": [
+		"wordpress",
+		"nv-oos",
+		"saas",
+		"cloudflare",
+		"workers",
+		"d1",
+		"stripe",
+		"openrouter"
+	]
+}
