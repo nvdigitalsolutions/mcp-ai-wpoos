@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Intentional: addon uses nvoos prefix without hyphen.
 /**
  * NV oOS Graphify — Admin Settings Page
  *
@@ -253,7 +254,7 @@ class NV_oOS_Graphify_Settings {
 	 *
 	 * @since 0.7.10
 	 *
-	 * @return string One of: 'general', 'remote', 'embeddings'.
+	 * @return string One of: 'general', 'remote', 'embeddings', 'sources'.
 	 */
 	private static function detect_submitted_tab() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab detection only; the option update itself is nonce-protected by options.php.
@@ -321,9 +322,9 @@ class NV_oOS_Graphify_Settings {
 				$checked_slugs = array_values( array_map( 'sanitize_key', $checked_slugs ) );
 			}
 
-			$registry        = NV_oOS_Graphify_NV_oOS_Bridge::get_cpt_registry();
-			$new_excluded    = array();
-			$new_extra       = array();
+			$registry     = NV_oOS_Graphify_NV_oOS_Bridge::get_cpt_registry();
+			$new_excluded = array();
+			$new_extra    = array();
 
 			foreach ( $registry as $entry ) {
 				$slug = sanitize_key( $entry['slug'] );
@@ -667,9 +668,9 @@ class NV_oOS_Graphify_Settings {
 		echo '<thead><tr><th>' . esc_html__( 'Table', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Index', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Status', 'nvoos-graphify' ) . '</th></tr></thead>';
 		echo '<tbody>';
 		foreach ( $all_descriptors as $desc ) {
-			$table_key  = sanitize_key( $desc['table'] );
-			$checked    = in_array( $table_key, $enabled, true );
-			$table_full = $wpdb->prefix . $desc['table'];
+			$table_key    = sanitize_key( $desc['table'] );
+			$checked      = in_array( $table_key, $enabled, true );
+			$table_full   = $wpdb->prefix . $desc['table'];
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_full ) ) === $table_full;
 			$status_text  = $table_exists
@@ -838,6 +839,7 @@ class NV_oOS_Graphify_Settings {
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
 		$tabs        = array(
 			'general'    => __( 'General', 'nvoos-graphify' ),
+			'sources'    => __( 'Sources (CPT / CCT)', 'nvoos-graphify' ),
 			'remote'     => __( 'Remote Sources', 'nvoos-graphify' ),
 			'embeddings' => __( 'Embeddings', 'nvoos-graphify' ),
 		);
@@ -918,7 +920,18 @@ class NV_oOS_Graphify_Settings {
 				<?php endforeach; ?>
 			</h2>
 
-			<?php if ( 'remote' === $current_tab ) : ?>
+			<?php if ( 'sources' === $current_tab ) : ?>
+				<form method="post" action="options.php">
+					<?php
+					settings_fields( 'nvoos_graphify_settings_group' );
+					self::do_settings_sections_filtered(
+						self::PAGE_SLUG,
+						array( 'nvoos_graphify_sources_cpts', 'nvoos_graphify_sources_ext' )
+					);
+					submit_button( __( 'Save Sources Settings', 'nvoos-graphify' ) );
+					?>
+				</form>
+			<?php elseif ( 'remote' === $current_tab ) : ?>
 				<?php NV_oOS_Graphify_Remote_Admin::render_tab(); ?>
 				<form method="post" action="options.php" style="margin-top:20px;">
 					<?php
