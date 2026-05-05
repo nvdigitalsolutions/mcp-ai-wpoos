@@ -40,10 +40,11 @@ This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cl
   - `POST   /apply/run` — consume an `apply_token` and execute its cached plan against Cloudflare. Returns `{ ok, results[], summary, duration_ms, ts }`. 410 if the token is unknown/expired, 409 if it has already been used.
   - `POST   /drift/check` — run a fresh drift check against the deployed Worker. Always returns 200 with the structured drift result (transport-level errors surface as `status=error`).
   - `GET    /drift/last` — most recent cached drift-check result, or `{ status: 'unknown', message: ... }` if none has run yet.
+- **Drift-manifest stamping** (`scripts/stamp-drift-manifest.mjs`, Phase 5e) — invoked automatically by `npm run build:worker` (and therefore by `bin/build-addon-zips.sh`). Computes `sha256(worker/dist/index.js)`, reads `version` from `package.json`, and writes both — plus an ISO `built_at` timestamp — into `worker/drift-manifest.json` so a fresh release ZIP always ships with a pinned fingerprint before any Apply has run. `expected_etag` stays `null` until Apply records the Cloudflare-returned etag (etags can only be observed post-deploy, so the build never invents one). Pass `npm run check:drift-manifest` (which calls the script with `--check`) to verify in CI without rewriting the file.
 
 ## Features (planned)
 
-- **Drift-manifest stamping in CI** — once the build pipeline writes `expected_sha256` / `expected_etag` into `worker/drift-manifest.json` on tagged releases, the drift detector will prefer the manifest pin over the runtime `nvoos_saas_controller_deployed_worker` fallback (the precedence is already wired; only the build-time stamping step remains).
+- **Stripe + OpenRouter mutating surfaces** — Apply currently mutates only Cloudflare (D1 / KV / AI Gateway / Worker upload). A follow-up phase will add idempotent Stripe Product/Price provisioning and OpenRouter API-key rotation behind the same single-use HITL token, with `creates[]` / `updates[]` rows for `kind=stripe_product`, `kind=stripe_price`, and `kind=openrouter_key`.
 
 ## Requirements
 
