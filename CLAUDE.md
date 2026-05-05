@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -163,6 +163,24 @@ In `class-wp-mcp-ai-rest.php` (lines ~2578-2950):
 - Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.)
 - Capability flags: `'read-only'`, `'write'`, `'state-changing'`, `'cacheable'`, `'external-api'`
 
+### Orchestration Phases (1–7)
+
+All seven orchestration phases are active as of v1.1.15. Key components:
+- **HITL** (`WP_MCP_AI_Approval_Queue`, CPT `mcp_ai_approval`, REST `/mcp-ai/v1/approvals/*`)
+- **Prompt Injection Detector** (`WP_MCP_AI_Prompt_Injection_Detector`, harness profile key `injection_detector.enabled`, action `wp_mcp_ai_prompt_injection_detected`)
+- **OTel** — OTLP endpoint + token configurable under **Tools → Connections**
+- **Observability dashboard** — surfaced under the **Orchestration** tab
+- **Sub-agents** (`WP_MCP_AI_Sub_Agent_Dispatcher`), **durable runs** (`WP_MCP_AI_Durable_Run_Store`), **triggers** (`WP_MCP_AI_Workflow_Trigger_CPT`)
+- **JetEngine CCT init priority** — all CCT bootstraps must use `init` at priority 11+ to avoid racing JetEngine's table-cache hydration (priorities 1–10)
+- Pro: `WP_MCP_AI_Vector_Store_Adapter` (openai/pgvector/qdrant), `WP_MCP_AI_Team_Budget_Manager`
+
+### Provider Clients
+
+Nine providers supported. New in v1.1.15:
+- **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
+- **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) — `reasoning_content` / `<think>…</think>` passthrough
+- **LM Studio** — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
+
 ### Slash Commands
 
 Pattern: class with `execute( $args, $flags, $context )` returning string/array/WP_Error.
@@ -175,7 +193,7 @@ Seven opt-in per-request layers (`includes/harness/`) that improve response qual
 
 ### Chat-client Memory Bridge
 
-REST proxy (`WP_MCP_AI_REST_Chat_Memory_Controller`) exposes `/mcp-ai/v1/chat-memory/` (6 routes: preferences, wake-up, recall, store, audit, /{context_id}). JS service (`assets/js/chat-memory-service.js`) and Memory Drawer (`assets/js/chat-memory-drawer.js` — three tabs: Memories / Scope / Audit). The agentic loop emits `memory_event` SSE frames; the drawer handles them in real time. Two gates: site-wide filter `wp_mcp_ai_chat_memory_enabled` and per-user meta `wp_mcp_ai_chat_memory_enabled`. Endpoints localized via `window.wpMcpAiChat.memoryEndpoints`. Reference: `docs/features/memory/chat-client-integration.md`.
+REST proxy (`WP_MCP_AI_REST_Chat_Memory_Controller`) exposes `/mcp-ai/v1/chat-memory/` (6 routes: preferences, wake-up, recall, store, audit, /{context_id}). JS service (`assets/js/chat-memory-service.js`) and Memory Drawer (`assets/js/chat-memory-drawer.js` — three tabs: Memories / Scope / Audit). The agentic loop emits `memory_event` SSE frames; the drawer handles them in real time. Three gates: (1) site-wide admin toggle in **Orchestration → Settings** (`Enable Chat-Client Memory`); (2) site-wide filter `wp_mcp_ai_chat_memory_enabled`; (3) per-user meta `wp_mcp_ai_chat_memory_enabled`. Endpoints localized via `window.wpMcpAiChat.memoryEndpoints`. Reference: `docs/features/memory/chat-client-integration.md`.
 
 ### SSE Streaming
 

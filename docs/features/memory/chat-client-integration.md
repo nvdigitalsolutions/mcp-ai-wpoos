@@ -70,9 +70,13 @@ hardened deployments disable the surface entirely.
 
 ## Per-user toggles and site-wide gate
 
-Two gates control access to the chat-memory bridge:
+Three gates control access to the chat-memory bridge:
 
-### Gate 1 — Site-wide filter
+### Gate 1 — Site-wide admin toggle (v1.1.15+)
+
+A **Enable Chat-Client Memory** checkbox is available in **NV oOS → Orchestration → Settings**. When unchecked, chat-memory is disabled for the entire site regardless of the filter or per-user meta below. This is the recommended way to disable chat-memory for a whole site without writing code.
+
+### Gate 2 — Site-wide filter
 
 ```php
 // Disable chat memory entirely (e.g. GDPR region).
@@ -81,7 +85,7 @@ add_filter( 'wp_mcp_ai_chat_memory_enabled', '__return_false' );
 
 When this filter returns `false`, **every** `/mcp-ai/v1/chat-memory/*` route returns HTTP 403 regardless of user state.
 
-### Gate 2 — Per-user meta
+### Gate 3 — Per-user meta
 
 Two user-meta keys gate the surface for individual users:
 

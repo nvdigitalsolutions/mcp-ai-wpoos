@@ -243,3 +243,48 @@ A **Mine Transcripts** button on the dashboard opens a modal to configure and en
 | `tests/test-transcript-mining-job.php` | 12 | `enqueue`, `handle_tick`, `cancel`, `get_progress`, state TTL, `__auto__` sentinel, `MAX_TOTAL_SESSIONS` guard |
 | `tests/test-rest-transcript-mining.php` | 9 | POST, GET, cancel endpoints; capability checks; invalid job ID; malformed body |
 | `tests/test-mine-transcripts-source.php` | 8 | `collect_from_transcripts`, `build_transcript_items_from_messages`, de-dupe hash, provenance fields, `only_unextracted` filter |
+
+
+---
+
+## Troubleshooting
+
+### Job stays at "queued" and never executes
+
+Three compounding root causes were identified in PRs #4804 and #4826 (fixed in v1.1.15). If you are running an older version, check all three:
+
+**Root cause 1 — Future cron timestamp**
+
+`wp_schedule_single_event()` was called with a timestamp in the future (e.g. `time() + 30`), causing WordPress to defer firing the event by one full cron cycle (typically 1 minute) rather than executing it immediately.
+
+*Fix:* The job now schedules with `time()` as the timestamp (i.e., "fire as soon as WP-Cron next runs").
+
+**Root cause 2 — Missing `spawn_cron()` call**
+
+After scheduling the cron event the code did not call `spawn_cron()`, so the cron hook only ran on the next natural page load. On low-traffic sites this could delay execution indefinitely.
+
+*Fix:* `spawn_cron()` is now called immediately after `wp_schedule_single_event()` to kick off the cron runner without waiting for a page load.
+
+**Root cause 3 — Transient key namespace collision**
+
+The tick handler looked up the job state using a slightly different key than the enqueue handler wrote it under. The result was that `get_transient()` returned `false` and the tick handler silently skipped the job.
+
+*Fix:* Both the enqueue and tick code paths now use the canonical `wp_mcp_ai_tx_mine_job_{$job_id}` key via the `STATE_PREFIX` constant.
+
+### How to verify a job is running
+
+1. Enqueue a job via `POST /mcp-ai/v1/transcript-mining/jobs`.
+2. Poll `GET /mcp-ai/v1/transcript-mining/jobs/{id}` every 5 seconds.
+3. The `status` field should transition `queued → running → completed` within 60–90 seconds on a standard WP-Cron setup.
+4. If the job remains `queued` after 2 minutes, inspect the cron queue:
+   ```bash
+   wp cron event list | grep wp_mcp_ai_transcript_mining_tick
+   ```
+   If the hook is listed but not firing, ensure WP-Cron is active (`DISABLE_WP_CRON` is not `true` in `wp-config.php`) or configure a real system cron.
+
+### Job completes with 0 sessions extracted
+
+- Confirm the assistant has at least one transcript stored in the JetEngine `ai_chat_transcripts` CCT.
+- Verify the `only_unextracted` flag is `false` if you want to re-extract already-processed sessions.
+- Check that the `posts_per_page` parameter does not exceed 50 (the enforced maximum).
+- Review the `wp_mcp_ai_mine_transcripts_sessions` filter — a third-party hook may be filtering all sessions out.
