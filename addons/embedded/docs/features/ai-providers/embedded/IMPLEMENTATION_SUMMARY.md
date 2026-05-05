@@ -314,4 +314,4 @@ tests/test-cloudways-detection.php   # Platform detection
 **Status**: ✅ Feature Complete (Beta)
 **Version**: 1.1.0+
 **Target Release**: Q1 2026
-**License**: GPLv3 or later
+**License**: Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved.

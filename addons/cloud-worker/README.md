@@ -148,3 +148,12 @@ This Worker uses:
 See the root [`CREDITS.md`](../../CREDITS.md) for the canonical attribution
 index. Any new dependency added here must also be added there and to
 [`docs/THIRD_PARTY_ASSETS.md`](../../docs/THIRD_PARTY_ASSETS.md).
+
+## License
+
+Proprietary — © 2025-2026 NV Digital Solutions, all rights reserved. This
+Cloud Worker is the SaaS-side backend for the NV oOS Pro addon and is **not
+distributed to end users**; it is shipped in this monorepo for review and
+reference only. Bundled third-party dependencies retain their upstream MIT /
+Apache-2.0 licenses (see `## Credits` above and the repository-wide
+[`CREDITS.md`](../../CREDITS.md)).

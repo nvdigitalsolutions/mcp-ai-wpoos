@@ -16,13 +16,23 @@
 | **Project** | Open Operator System (NV oOS) |
 | **Maintainer** | [NV Digital Solutions](https://nvdigitalsolutions.com/) |
 | **Base plugin license** | [GPLv3 or later](LICENSE) |
-| **Pro addon license** | Proprietary — © NV Digital Solutions, all rights reserved |
+| **Algorave addon license** | AGPL-3.0-or-later (bundles `@strudel/web` AGPL-3.0) |
+| **Pro addon + 6 proprietary addons license** | Proprietary — © NV Digital Solutions, all rights reserved |
 | **Repository** | <https://github.com/nvdigitalsolutions/mcp-ai-wpoos> |
 
-The base plugin is GPLv3. The Pro addon (`addons/pro/`) is a separate,
-optionally-installed plugin under a proprietary license. The third-party
-attributions below apply to whichever distribution actually bundles each
-resource — see the **Location** column on each table.
+NV oOS ships under a three-tier license model:
+
+1. **Base plugin** (root `mcp-ai-wpoos.php`, `includes/`) — **GPLv3 or later**.
+2. **Open community addon** — `addons/algorave/` is **AGPL-3.0-or-later**
+   (the combined-work license is AGPL because it bundles the AGPL-3.0
+   `@strudel/web` live-coding engine).
+3. **Proprietary addons** — `addons/pro/`, `addons/graphify/`,
+   `addons/embedded/`, `addons/cornerstone3d/`, `addons/canvas/`,
+   `addons/cloud-worker/`, and `addons/fantasy-football/` are separate,
+   optionally-installed components under a **proprietary** license. Their
+   third-party dependencies retain their upstream licenses (mostly MIT or
+   Apache-2.0); the table-column on each entry below indicates exactly which
+   distribution bundles which resource.
 
 ---
 
@@ -266,13 +276,17 @@ Vendored under `addons/graphify/assets/vendor/`, each with its own
 
 ### `addons/embedded/`
 
-No external bundled JS libraries; CSS/JS authored in-house. License: GPLv3.
+No external bundled JS libraries; CSS/JS authored in-house. **License:**
+proprietary — © NV Digital Solutions, all rights reserved. WebLLM
+(Apache-2.0) is loaded from a CDN at runtime; llama.cpp (MIT) is invoked as
+an external system binary.
 
 ### `addons/fantasy-football/`
 
-No bundled third-party JavaScript. PHP-only addon under GPL-3.0-or-later. ESPN
-and Yahoo Fantasy APIs are accessed at runtime over HTTPS; their use is
-governed by the providers' respective Terms of Service.
+No bundled third-party JavaScript. PHP-only addon under a **proprietary**
+license — © NV Digital Solutions, all rights reserved. ESPN and Yahoo
+Fantasy APIs are accessed at runtime over HTTPS; their use is governed by
+the providers' respective Terms of Service.
 
 ### `addons/cloud-worker/` — NV oOS Cloud SaaS backend (Cloudflare Worker)
 

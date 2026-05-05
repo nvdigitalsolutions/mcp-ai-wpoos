@@ -9,15 +9,19 @@
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: Proprietary
+ * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: nvoos-embedded
  * Domain Path: /languages
  *
  * @package NV_oOS_Embedded
  *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * All rights reserved. This is proprietary software.
+ *
+ * Bundled / referenced third-party engines (WebLLM Apache-2.0, llama.cpp MIT)
+ * retain their upstream licenses; see readme.txt and the repository-wide
+ * CREDITS.md for the full attribution index.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -4096,9 +4096,17 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 ## 📄 License
 
-This plugin is licensed under the GNU General Public License v3.0 or later.
+NV oOS ships under a **three-tier license model**:
 
-See [LICENSE](LICENSE) for full text.
+| Component | License |
+|-----------|---------|
+| **Base plugin** (root + `includes/`) | [GPL-3.0-or-later](LICENSE) |
+| `addons/algorave/` | **AGPL-3.0-or-later** (bundles `@strudel/web` AGPL-3.0) |
+| `addons/pro/`, `addons/graphify/`, `addons/embedded/`, `addons/cornerstone3d/`, `addons/canvas/`, `addons/cloud-worker/`, `addons/fantasy-football/` | **Proprietary** — © NV Digital Solutions, all rights reserved |
+
+The base plugin's GPL-3 grant is in [LICENSE](LICENSE). Bundled third-party
+dependencies retain their upstream licenses; see [`CREDITS.md`](CREDITS.md)
+for the full attribution index.
 
 ---
 

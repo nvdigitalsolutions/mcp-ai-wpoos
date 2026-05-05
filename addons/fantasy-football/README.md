@@ -45,7 +45,7 @@ Standalone addon for the NV oOS (Open Operator System) WordPress plugin that pro
 
 ## License
 
-GPLv3 or later
+Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved. See `CREDITS.md` at the repository root for full attribution.
 
 ## Credits
 
