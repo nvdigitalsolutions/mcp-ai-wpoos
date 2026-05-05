@@ -87,6 +87,8 @@ function nvoos_saas_controller_bootstrap() {
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-connection-tester.php';
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-cloudflare-client.php';
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-plan-generator.php';
+	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-cloudflare-mutating-client.php';
+	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-apply-engine.php';
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-smoke-tester.php';
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/rest/class-nvoos-saas-controller-rest.php';
 

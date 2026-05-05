@@ -185,6 +185,33 @@ class NVOOS_SaaS_Controller_REST {
 				'permission_callback' => array( __CLASS__, 'check_permission' ),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/preview',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_apply_preview' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/run',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_apply_run' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'apply_token' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -507,5 +534,85 @@ class NVOOS_SaaS_Controller_REST {
 		$tester = new NVOOS_SaaS_Controller_Smoke_Tester();
 		$last   = $tester->get_last_result();
 		return rest_ensure_response( null === $last ? array( 'ok' => null, 'checks' => array() ) : $last );
+	}
+
+	/**
+	 * POST /apply/preview — re-run the plan against live state and issue a
+	 * single-use HITL apply token bound to the resulting plan.
+	 *
+	 * The plaintext token is returned only in this response (and is also
+	 * never logged in plaintext — only its SHA-256 hash prefix appears in
+	 * the audit log). The operator must echo it back via /apply/run within
+	 * the configured TTL to actually mutate Cloudflare.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_preview() {
+		$config_store = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$desired      = $config_store->get();
+
+		$account_override = ! empty( $desired['account_id'] ) ? (string) $desired['account_id'] : null;
+		$client           = NVOOS_SaaS_Controller_Cloudflare_Client::from_credential_store( $account_override );
+		if ( is_wp_error( $client ) ) {
+			$client->add_data( array( 'status' => 412 ) );
+			return $client;
+		}
+
+		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $client );
+		$plan      = $generator->generate( $desired );
+
+		if ( ! empty( $plan['errors'] ) ) {
+			return new WP_Error(
+				'plan_has_errors',
+				__( 'Cannot issue an apply token while the plan reports errors. Resolve the errors and run preview again.', 'nvoos-saas-controller' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$issued = NVOOS_SaaS_Controller_Apply_Engine::issue_token( $plan );
+
+		return rest_ensure_response(
+			array(
+				'ok'          => true,
+				'desired'     => $desired,
+				'plan'        => $plan,
+				'apply_token' => $issued['token'],
+				'expires_in'  => $issued['expires_in'],
+			)
+		);
+	}
+
+	/**
+	 * POST /apply/run — consume an apply token and mutate Cloudflare.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_run( WP_REST_Request $request ) {
+		$token = (string) $request->get_param( 'apply_token' );
+		$plan  = NVOOS_SaaS_Controller_Apply_Engine::consume_token( $token );
+		if ( is_wp_error( $plan ) ) {
+			return $plan;
+		}
+
+		$config_store     = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$desired          = $config_store->get();
+		$account_override = ! empty( $desired['account_id'] ) ? (string) $desired['account_id'] : null;
+
+		$mutating = NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::from_credential_store( $account_override );
+		if ( is_wp_error( $mutating ) ) {
+			$mutating->add_data( array( 'status' => 412 ) );
+			return $mutating;
+		}
+
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $mutating );
+		$out    = $engine->apply( $plan );
+
+		$out['ok'] = empty( $out['summary']['error'] );
+		return rest_ensure_response( $out );
 	}
 }

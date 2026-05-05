@@ -478,6 +478,19 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		$rest_url     = esc_url_raw( rest_url( 'nvoos-saas/v1/' ) );
 		?>
 		<div class="card" style="max-width:1080px;padding:1em 1.5em;">
+			<h2><?php esc_html_e( 'Apply (HITL-gated)', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Two-step approval: Preview re-runs the plan and issues a single-use apply token (15-minute TTL). Apply consumes that token and mutates Cloudflare. Each Cloudflare write records one audit-log entry.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p>
+				<button type="button" class="button" id="nvoos-saas-apply-preview"><?php esc_html_e( 'Preview Apply', 'nvoos-saas-controller' ); ?></button>
+				<button type="button" class="button button-primary" id="nvoos-saas-apply-run" disabled><?php esc_html_e( 'Apply…', 'nvoos-saas-controller' ); ?></button>
+				<span id="nvoos-saas-apply-status" style="margin-left:0.75em;" aria-live="polite"></span>
+			</p>
+			<div id="nvoos-saas-apply-output"></div>
+		</div>
+
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
 			<h2><?php esc_html_e( 'Smoke Tests', 'nvoos-saas-controller' ); ?></h2>
 			<p class="description">
 				<?php esc_html_e( 'Runs a fixed sequence of read-only health checks: credential presence, live Cloudflare workers list, plan dry-run, and base-plugin liveness.', 'nvoos-saas-controller' ); ?>
@@ -596,6 +609,127 @@ class NVOOS_SaaS_Controller_Admin_Page {
 					if ( ! window.confirm( <?php echo wp_json_encode( __( 'Clear all audit-log entries?', 'nvoos-saas-controller' ) ); ?> ) ) { return; }
 					wp.apiFetch( { path: 'nvoos-saas/v1/audit-log', method: 'DELETE' } )
 						.then( function () { window.location.reload(); } );
+				} );
+			}
+
+			var previewBtn = document.getElementById( 'nvoos-saas-apply-preview' );
+			var applyBtn   = document.getElementById( 'nvoos-saas-apply-run' );
+			var applyOut   = document.getElementById( 'nvoos-saas-apply-output' );
+			var applyMsg   = document.getElementById( 'nvoos-saas-apply-status' );
+			var pendingToken = null;
+
+			function renderPlanSummary( plan ) {
+				while ( applyOut.firstChild ) { applyOut.removeChild( applyOut.firstChild ); }
+				if ( ! plan || ! plan.summary ) { return; }
+				var table = document.createElement( 'table' );
+				table.className = 'widefat striped';
+				table.style.marginTop = '1em';
+				var thead = document.createElement( 'thead' );
+				var hr = document.createElement( 'tr' );
+				[ 'Section', 'Count' ].forEach( function ( h ) {
+					var th = document.createElement( 'th' );
+					th.textContent = h;
+					hr.appendChild( th );
+				} );
+				thead.appendChild( hr );
+				table.appendChild( thead );
+				var tbody = document.createElement( 'tbody' );
+				[ 'creates', 'updates', 'noops', 'orphans', 'errors' ].forEach( function ( k ) {
+					var tr = document.createElement( 'tr' );
+					var td1 = document.createElement( 'td' );
+					var s = document.createElement( 'strong' );
+					s.textContent = k;
+					td1.appendChild( s );
+					var td2 = document.createElement( 'td' );
+					td2.textContent = String( ( plan.summary && plan.summary[ k ] ) || 0 );
+					tr.appendChild( td1 );
+					tr.appendChild( td2 );
+					tbody.appendChild( tr );
+				} );
+				table.appendChild( tbody );
+				applyOut.appendChild( table );
+			}
+
+			function renderApplyResults( result ) {
+				if ( ! result || ! result.results ) { return; }
+				var h = document.createElement( 'h3' );
+				h.textContent = <?php echo wp_json_encode( __( 'Apply Result', 'nvoos-saas-controller' ) ); ?>;
+				applyOut.appendChild( h );
+				var table = document.createElement( 'table' );
+				table.className = 'widefat striped';
+				var thead = document.createElement( 'thead' );
+				var hr = document.createElement( 'tr' );
+				[ 'Kind', 'Target', 'Status', 'Message' ].forEach( function ( label ) {
+					var th = document.createElement( 'th' );
+					th.textContent = label;
+					hr.appendChild( th );
+				} );
+				thead.appendChild( hr );
+				table.appendChild( thead );
+				var tbody = document.createElement( 'tbody' );
+				result.results.forEach( function ( row ) {
+					var tr = document.createElement( 'tr' );
+					[ row.kind || '', row.target || '', row.status || '', row.message || '' ].forEach( function ( v ) {
+						var td = document.createElement( 'td' );
+						td.textContent = String( v );
+						tr.appendChild( td );
+					} );
+					tbody.appendChild( tr );
+				} );
+				table.appendChild( tbody );
+				applyOut.appendChild( table );
+			}
+
+			if ( previewBtn ) {
+				previewBtn.addEventListener( 'click', function () {
+					previewBtn.disabled = true;
+					if ( applyBtn ) { applyBtn.disabled = true; }
+					pendingToken = null;
+					if ( applyMsg ) { applyMsg.textContent = <?php echo wp_json_encode( __( 'Generating plan…', 'nvoos-saas-controller' ) ); ?>; }
+					wp.apiFetch( { path: 'nvoos-saas/v1/apply/preview', method: 'POST' } )
+						.then( function ( resp ) {
+							previewBtn.disabled = false;
+							pendingToken = resp && resp.apply_token ? String( resp.apply_token ) : null;
+							renderPlanSummary( resp && resp.plan );
+							if ( applyBtn ) { applyBtn.disabled = ! pendingToken; }
+							if ( applyMsg ) {
+								var ttl = resp && resp.expires_in ? Number( resp.expires_in ) : 0;
+								applyMsg.textContent = pendingToken
+									? <?php echo wp_json_encode( __( 'Token issued. Click Apply within ', 'nvoos-saas-controller' ) ); ?> + Math.floor( ttl / 60 ) + 'm.'
+									: <?php echo wp_json_encode( __( 'No token issued.', 'nvoos-saas-controller' ) ); ?>;
+							}
+						} )
+						.catch( function ( err ) {
+							previewBtn.disabled = false;
+							if ( applyBtn ) { applyBtn.disabled = true; }
+							if ( applyMsg ) { applyMsg.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Preview failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
+				} );
+			}
+			if ( applyBtn ) {
+				applyBtn.addEventListener( 'click', function () {
+					if ( ! pendingToken ) { return; }
+					if ( ! window.confirm( <?php echo wp_json_encode( __( 'Apply the previewed plan to Cloudflare? This will create live resources.', 'nvoos-saas-controller' ) ); ?> ) ) { return; }
+					applyBtn.disabled = true;
+					if ( applyMsg ) { applyMsg.textContent = <?php echo wp_json_encode( __( 'Applying…', 'nvoos-saas-controller' ) ); ?>; }
+					var token = pendingToken;
+					pendingToken = null;
+					wp.apiFetch( {
+						path:   'nvoos-saas/v1/apply/run',
+						method: 'POST',
+						data:   { apply_token: token }
+					} )
+						.then( function ( resp ) {
+							renderApplyResults( resp );
+							if ( applyMsg ) {
+								applyMsg.textContent = ( resp && resp.ok )
+									? <?php echo wp_json_encode( __( 'Apply complete.', 'nvoos-saas-controller' ) ); ?>
+									: <?php echo wp_json_encode( __( 'Apply finished with errors — see results.', 'nvoos-saas-controller' ) ); ?>;
+							}
+						} )
+						.catch( function ( err ) {
+							if ( applyMsg ) { applyMsg.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Apply failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
 				} );
 			}
 		} )();
