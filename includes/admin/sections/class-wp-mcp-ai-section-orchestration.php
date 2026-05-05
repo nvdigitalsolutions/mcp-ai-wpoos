@@ -2277,11 +2277,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function render_observability_view() {
 			$run_timeline_url     = admin_url( 'admin.php?page=mcp-ai-run-timeline' );
 			$measurement_dash_url = admin_url( 'admin.php?page=wp-mcp-ai-measurement' );
+			$otel_settings_url    = admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=opentelemetry' );
 			$exporter_available   = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' );
 			$otel_enabled         = $exporter_available && WP_MCP_AI_Otel_Span_Exporter::is_enabled();
-			$otel_endpoint        = $exporter_available
-				? (string) get_option( WP_MCP_AI_Otel_Span_Exporter::OPTION_ENDPOINT, '' )
-				: '';
+			$otel_endpoint        = $exporter_available ? WP_MCP_AI_Otel_Span_Exporter::get_endpoint() : '';
 			?>
 			<div class="wp-mcp-ai-observability-view">
 				<h2><?php esc_html_e( 'Observability', 'mcp-ai-wpoos' ); ?></h2>
@@ -2326,6 +2325,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<p class="description">
 									<?php esc_html_e( 'Spans for chat turns, tool calls, and SSE streams are being exported.', 'mcp-ai-wpoos' ); ?>
 								</p>
+								<p class="description">
+									<a href="<?php echo esc_url( $otel_settings_url ); ?>">
+										<?php esc_html_e( 'Edit OpenTelemetry connection settings', 'mcp-ai-wpoos' ); ?>
+									</a>
+								</p>
 							<?php else : ?>
 								<p>
 									<span class="dashicons dashicons-warning" style="color:#dba617;"></span>
@@ -2334,20 +2338,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<p class="description">
 									<?php
 									printf(
-										/* translators: 1: option name, 2: env var name */
-										esc_html__( 'Set the WordPress option %1$s (or environment variable %2$s) to your OTLP/HTTP endpoint URL — for example, %3$s.', 'mcp-ai-wpoos' ),
-										'<code>wp_mcp_ai_otel_endpoint</code>',
-										'<code>WP_MCP_AI_OTEL_ENDPOINT</code>',
-										'<code>http://localhost:4318/v1/traces</code>'
+										/* translators: %s: link to the OpenTelemetry connection settings page */
+										wp_kses(
+											__( 'Configure your OTLP/HTTP endpoint on the %s page.', 'mcp-ai-wpoos' ),
+											array( 'a' => array( 'href' => array() ) )
+										),
+										'<a href="' . esc_url( $otel_settings_url ) . '">' . esc_html__( 'Tools → Connections → OpenTelemetry', 'mcp-ai-wpoos' ) . '</a>'
 									);
 									?>
 								</p>
 								<p class="description">
 									<?php
 									printf(
-										/* translators: %s: option name */
-										esc_html__( 'Optional bearer token: %s.', 'mcp-ai-wpoos' ),
-										'<code>wp_mcp_ai_otel_token</code>'
+										/* translators: %s: environment variable name */
+										esc_html__( 'You can also set the environment variable %s to configure the endpoint without using the admin UI.', 'mcp-ai-wpoos' ),
+										'<code>WP_MCP_AI_OTEL_ENDPOINT</code>'
 									);
 									?>
 								</p>

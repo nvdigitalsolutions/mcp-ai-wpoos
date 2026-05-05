@@ -235,7 +235,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// PayHere, Flowhub, iSAMS, and QuickBooks connections have been moved to Remote Sites.
+				// OpenTelemetry (OTLP/HTTP span exporter).
+				'otel_endpoint'                 => array(
+					'type'         => 'url',
+					'label'        => __( 'OTLP/HTTP Endpoint', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OTLP/HTTP endpoint URL for exporting OpenTelemetry spans (e.g. http://localhost:4318/v1/traces). Leave blank to disable span export. The environment variable WP_MCP_AI_OTEL_ENDPOINT takes precedence when set.', 'mcp-ai-wpoos' ),
+					'placeholder'  => 'http://localhost:4318/v1/traces',
+					'autocomplete' => 'url',
+				),
+				'otel_token'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'OTLP Bearer Token', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Optional bearer token sent in the Authorization header with each export request. Leave blank if your collector does not require authentication.', 'mcp-ai-wpoos' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
+				// PayHare, Flowhub, iSAMS, and QuickBooks connections have been moved to Remote Sites.
 				// These settings have been removed. Please use Remote Sites page to manage these connections.
 
 				// ITA Tariff Rate API.
@@ -423,11 +439,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-share',
 					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				),
-				'tiktok'       => array(
+				'tiktok'        => array(
 					'id'     => 'tiktok',
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+				'opentelemetry' => array(
+					'id'     => 'opentelemetry',
+					'label'  => __( 'OpenTelemetry', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-chart-area',
+					'fields' => array( 'otel_endpoint', 'otel_token' ),
 				),
 				// iSAMS moved to Remote Sites.
 			);
@@ -547,6 +569,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'tiktok':
 					$this->render_tiktok_footer();
+					break;
+				case 'opentelemetry':
+					$this->render_opentelemetry_footer();
 					break;
 				// QuickBooks and iSAMS moved to Remote Sites.
 				case 'cloudways':
@@ -1795,6 +1820,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Supports accounting, invoicing, and financial reporting', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render OpenTelemetry connection footer.
+		 */
+		private function render_opentelemetry_footer() {
+			$otel_enabled = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' ) && WP_MCP_AI_Otel_Span_Exporter::is_enabled();
+			$endpoint     = class_exists( 'WP_MCP_AI_Otel_Span_Exporter' )
+				? WP_MCP_AI_Otel_Span_Exporter::get_endpoint()
+				: '';
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Export Status', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<?php if ( $otel_enabled ) : ?>
+						<p>
+							<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span>
+							<strong><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( '' !== $endpoint ) : ?>
+								&mdash; <code><?php echo esc_html( $endpoint ); ?></code>
+							<?php endif; ?>
+						</p>
+						<p class="description"><?php esc_html_e( 'Spans for chat turns, tool calls, and SSE streams are being exported.', 'mcp-ai-wpoos' ); ?></p>
+					<?php else : ?>
+						<p>
+							<span class="dashicons dashicons-minus" style="color:#aaa;"></span>
+							<strong><?php esc_html_e( 'Inactive', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<p class="description"><?php esc_html_e( 'Enter an OTLP/HTTP endpoint above and save to enable span export.', 'mcp-ai-wpoos' ); ?></p>
+					<?php endif; ?>
 				</td>
 			</tr>
 			<?php
