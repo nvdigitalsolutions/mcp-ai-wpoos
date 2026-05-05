@@ -4,7 +4,19 @@
 
 This addon is the operator-side counterpart to `addons/cloud-worker/`. Where `cloud-worker` is the deployed runtime, the **SaaS Controller** is the WordPress plugin that lets a maintainer **provision, plan/apply changes to, drift-check, and audit** that runtime — without leaving WP-Admin.
 
-> **Status:** v0.1.0 scaffolding. Subsequent PRs will land the One-Click Wizard, Plan/Apply dashboard, drift banner, audit-log viewer, and smoke tests.
+> **Status:** v0.1.0 — Phase 2 (WP-Admin & REST plumbing) landed. Subsequent PRs will land the One-Click Wizard, Plan/Apply dashboard, drift banner, audit-log viewer, and smoke tests.
+
+## What's available today (Phase 2)
+
+- **Top-level admin menu** — `WP-Admin → NV oOS SaaS` (capability: `manage_options`) with two tabs:
+  - **Overview** — addon version, base-plugin liveness, masked credential status, phased roadmap.
+  - **Packages** — in-product credits surface listing every bundled npm dependency with upstream homepage, license, and copyright.
+- **Encrypted credential store** (`nvoos_saas_controller_credentials` option) — AES-256-CBC at rest, derived from `AUTH_KEY + SECURE_AUTH_KEY`. Allowed keys: `cloudflare_account_id`, `cloudflare_api_token`, `stripe_secret_key`, `stripe_webhook_secret`, `openrouter_api_key`.
+- **REST namespace** `/wp-json/nvoos-saas/v1/` (every route requires `manage_options` + REST nonce):
+  - `GET    /healthz` — addon version + base-plugin liveness probe.
+  - `GET    /credentials` — masked snapshot (never returns plaintext).
+  - `POST   /credentials` — set/update one or more credentials.
+  - `DELETE /credentials` — clear all credentials.
 
 ## Features (planned)
 

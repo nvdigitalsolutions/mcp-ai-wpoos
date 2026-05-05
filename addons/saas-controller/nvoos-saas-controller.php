@@ -66,9 +66,10 @@ function nvoos_saas_controller_base_missing_notice() {
 /**
  * Bootstrap the addon once all plugins are loaded.
  *
- * Subsequent PRs will require_once the controller, REST, and admin classes
- * here. The scaffolding PR intentionally only wires the dependency check
- * so that the addon can be activated without fatal errors.
+ * Phase 2 wires the credential store, the top-level admin menu (Overview +
+ * Packages tabs), and the `/wp-json/nvoos-saas/v1/` REST namespace.
+ * Subsequent phases (Wizard, Plan/Apply, Drift, Audit Log, Smoke Tests)
+ * will mount onto these surfaces.
  *
  * @since 0.1.0
  *
@@ -80,6 +81,14 @@ function nvoos_saas_controller_bootstrap() {
 		return;
 	}
 
-	// Future PRs: require_once includes/* admin, REST, services.
+	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/class-nvoos-saas-controller-credential-store.php';
+	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/rest/class-nvoos-saas-controller-rest.php';
+
+	NVOOS_SaaS_Controller_REST::init();
+
+	if ( is_admin() ) {
+		require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/admin/class-nvoos-saas-controller-admin-page.php';
+		NVOOS_SaaS_Controller_Admin_Page::init();
+	}
 }
 add_action( 'plugins_loaded', 'nvoos_saas_controller_bootstrap', 20 );
