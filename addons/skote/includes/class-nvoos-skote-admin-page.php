@@ -75,8 +75,8 @@ class NVOOS_Skote_Admin_Page {
 			echo '<div class="notice notice-warning"><p>';
 			echo wp_kses(
 				sprintf(
-					/* translators: 1: code tag for import command, 2: code tag for build command */
-					__( 'The Skote React bundle has not been built yet. From %1$s install your licensed Skote source, then run %2$s.', 'nvoos-skote' ),
+					/* translators: 1: addon directory path, 2: build command. */
+					__( 'The Skote React bundle has not been built yet. From the %1$s directory, run the import script and then build via %2$s.', 'nvoos-skote' ),
 					'<code>addons/skote</code>',
 					'<code>npm run import:skote -- /path/to/skote-react &amp;&amp; npm run build</code>'
 				),

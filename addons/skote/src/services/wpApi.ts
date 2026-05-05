@@ -11,7 +11,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 function getSettings() {
 	const settings = window.nvoosSkote;
 	if (!settings) {
-		throw new Error('window.nvoosSkote is not initialised');
+		throw new Error('window.nvoosSkote is not initialized');
 	}
 	return settings;
 }

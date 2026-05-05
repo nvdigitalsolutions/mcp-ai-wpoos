@@ -120,7 +120,7 @@ class NVOOS_Skote_Assets {
 		$rest_url   = esc_url_raw( rest_url( NVOOS_SKOTE_REST_NAMESPACE . '/' ) );
 		$rest_root  = esc_url_raw( rest_url() );
 		$rest_nonce = wp_create_nonce( 'wp_rest' );
-		$locale     = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+		$locale     = determine_locale();
 
 		$payload = array(
 			'version'           => NVOOS_SKOTE_VERSION,

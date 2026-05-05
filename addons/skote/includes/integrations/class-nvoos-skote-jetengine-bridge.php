@@ -4,10 +4,11 @@
  *
  * Phase-1 stub. Future phases will expose JetEngine Custom Content Type
  * (CCT) records to the SPA. CCT tables use the prefix `jet_cct_` (with
- * UNDERSCORES, not hyphens) — verified via JetEngine's
- * `Jet_Engine\Modules\Custom_Content_Types\DB::table_prefix()`. Hyphens are
- * only ever used in admin slugs and the REST namespace
- * `/wp-json/jet-cct/<slug>`.
+ * UNDERSCORES, not hyphens). Hyphens appear only in admin slugs and the
+ * REST namespace `/wp-json/jet-cct/<slug>`. When JetEngine is active and
+ * we need the canonical value at runtime, call
+ * `Jet_Engine\Modules\Custom_Content_Types\DB::table_prefix()` and prefer
+ * its return value over the hardcoded constant in `get_cct_table_name()`.
  *
  * Any CCT registration done by this bridge MUST attach to `init` at priority
  * 11+ to avoid racing JetEngine's own CCT cache hydration which runs at
