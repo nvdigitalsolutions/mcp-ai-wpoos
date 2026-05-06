@@ -203,6 +203,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 
 	public function test_from_credential_store_missing_creds() {
 		// Fresh credential store has no values.
+		$result = NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::from_credential_store();
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_credentials', $result->get_error_code() );
+	}
+
 	public function test_delete_d1_database_records_audit_entry_on_success() {
 		$this->canned['/d1/database/cccc-1111'] = $this->ok( null );
 
