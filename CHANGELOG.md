@@ -1,5 +1,59 @@
 # oOS – Changelog
 
+## [1.1.16] - 2026-05-06
+
+### May 6, 2026 — SaaS Controller Addon (v0.1.0) + Structured Logging Integration
+
+#### Added — SaaS Controller Addon (`addons/saas-controller/`, v0.1.0)
+
+Operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter) from inside WP-Admin. The operator-facing counterpart to `addons/cloud-worker/` — where the cloud worker is the deployed runtime, the SaaS Controller lets a maintainer provision, plan/apply changes to, drift-check, and audit that runtime without leaving WP-Admin.
+
+**Admin UI** — `WP-Admin → NV oOS SaaS` (`manage_options`), four tabs:
+
+- **Overview** — React Credentials Wizard (Credentials → Validate → Save) with masked-credentials table fallback.
+- **Deployment** — desired Cloudflare topology editor (Worker name, account ID, AI Gateway slug, D1 databases, KV namespaces) + read-only **Run Plan** button.
+- **Operations** — HITL-gated Apply panel (Preview → sync or async background Apply), Drift Detector, Orphan Review, Webhook Events, Smoke Tests, and 50-entry audit-log tail with Clear.
+- **Packages** — in-product credits surface (upstream homepage, license, copyright per npm package).
+
+**Implemented phases:**
+
+- **Phase 2** — WP-Admin & REST scaffolding, encrypted credential store (AES-256-CBC keyed from `AUTH_KEY + SECURE_AUTH_KEY`), deployment-config store (`nvoos_saas_controller_deployment`).
+- **Phase 3** — Connection tester: read-only HTTPS preflights against Cloudflare, Stripe, and OpenRouter (10 s timeout, normalised result shape, never echoes secrets).
+- **Phase 4** — Read-only Cloudflare client (`NVOOS_SaaS_Controller_Cloudflare_Client`) covering D1, KV, Workers scripts, AI Gateway.
+- **Phase 5a–5d** — Reconcile-plan generator (`NVOOS_SaaS_Controller_Plan_Generator`): diffs desired config vs live Cloudflare state; emits `creates / updates / noops / orphans / errors` with summary counts. Phase 5d adds Worker multipart upload via mutating client (`NVOOS_SaaS_Controller_Cloudflare_Mutating_Client`).
+- **Phase 5e** — Drift-manifest stamping (`scripts/stamp-drift-manifest.mjs`); auto-invoked by `npm run build:worker`.
+- **Phase 6** — Stripe client (`NVOOS_SaaS_Controller_Stripe_Client`) + OpenRouter provisioning client (`NVOOS_SaaS_Controller_OpenRouter_Client`); plan rows for `stripe_product`, `stripe_price`, `openrouter_key`.
+- **Phase 7** — Stripe webhook verifier (`NVOOS_SaaS_Controller_Stripe_Webhook_Verifier`, HMAC-SHA256, constant-time, 300 s replay window) + webhook event store (`NVOOS_SaaS_Controller_Webhook_Event_Store`, 200-entry ring buffer, idempotent by provider + event_id).
+- **Phase 8** — Background async Apply (`NVOOS_SaaS_Controller_Apply_Job`): one-row-per-tick cron worker, 6 h state transient, 200-row ceiling, `MAX_TOTAL_ROWS` guard.
+- **Phase 9** — Background-apply admin UI: progress card (`<progress>` bar + counters), 2 s polling, Cancel button.
+- **Phase 10** — Orphan cleanup: separate single-use HITL token (`nvoos_saas_orphan_` namespace), `POST /apply/orphans/preview` + `POST /apply/orphans/run`.
+- **Phase 11** — Webhook Events card under Operations tab (paginated table, Refresh, Clear).
+
+**Audit log** (`NVOOS_SaaS_Controller_Audit_Log`) — append-only 200-entry ring buffer. Channels: `cloudflare` / `stripe` / `openrouter` / `internal`. Filterable via `nvoos_saas_controller_audit_log_max_entries` and `nvoos_saas_controller_audit_log_record`.
+
+**REST namespace** `/wp-json/nvoos-saas/v1/` — all routes require `manage_options` except `POST /webhooks/stripe` (signature-gated). Full route list: `GET /healthz`, `GET|POST|DELETE /credentials`, `POST /connections/test`, `GET|POST /deployment`, `POST /plan`, `GET|DELETE /audit-log`, `POST /smoke-tests/run`, `GET /smoke-tests/last`, `POST /apply/preview`, `POST /apply/run`, `POST /apply/enqueue`, `GET /apply/jobs/{id}`, `POST /apply/jobs/{id}/cancel`, `POST /apply/orphans/preview`, `POST /apply/orphans/run`, `POST /drift/check`, `GET /drift/last`, `POST /webhooks/stripe`, `GET|DELETE /webhooks/events`.
+
+**Key filters:** `nvoos_saas_controller_apply_token_ttl` (default 900 s), `nvoos_saas_controller_audit_log_max_entries` (default 200), `nvoos_saas_controller_audit_log_record` (suppress a log entry), `nvoos_saas_controller_webhook_events_max_entries` (default 200), `nvoos_saas_controller_apply_job_state_ttl` (default 6 h), `nvoos_saas_controller_worker_dist_path`, `nvoos_saas_controller_worker_compatibility_date`, `nvoos_saas_controller_worker_upload_metadata`.
+
+See [`addons/saas-controller/README.md`](addons/saas-controller/README.md) for the full implementation detail, architecture diagram, and build instructions.
+
+#### Added / Improved — Structured Logging Integration (PR #4849)
+
+`WP_MCP_AI_Logger` calls added systematically across the plugin and all addons:
+
+- **`WP_MCP_AI_Agent_Memory_CCT_Bridge`** (Phase 4b-2) — all bridge writes, CCT mirror failures, filter-suppressed writes, and deletions are now routed through `WP_MCP_AI_Logger` at the appropriate level (info / warning / error).
+- **`WP_MCP_AI_Transcript_Mining_Job`** — structured logging throughout the entire job lifecycle: enqueue, each cron tick, per-session processing, job completion, cancellation, and all error paths.
+- **Addons:** Algorave, Canvas, Webchat (`class-wp-mcp-ai-jetengine-webchat-messages-cct.php`, settings page, signaling REST, metaboxes, tools), Fantasy Football (ESPN client, CPTs, tools), Graphify (all nine classes including the NV oOS bridge), SaaS Controller (all admin, service, and REST classes).
+- **Core / Admin:** Run Timeline admin page, Admin Approvals page, Settings Base class, cost calculator, DeepSeek client, encryption class, Erlang C class, JetEngine Agent Memories CCT, model catalog migration, Ollama client, outbound webhook, REST MCP methods, shortcode, tool registry, workflow CPT, workflow engine V2.
+- **Harness:** eval scheduler, harness profile, prompt-cue library, retrieval harness, self-refine loop, tool-router harness.
+- **Services:** transcript-mining REST controller, transcript-mining job, memory slash command, workflow slash command.
+
+**New PHPUnit test classes:**
+- `tests/test-agent-memory-cct-bridge-logging.php` — covers logging on store (success + CCT failure), delete, filter-suppressed store, and absent-class guard.
+- `tests/test-transcript-mining-job-logging.php` — covers logging on enqueue, tick (with and without sessions), per-session success, per-session error, cancellation, and completion.
+
+---
+
 ## [1.1.15] - 2026-05-05
 
 ### May 3–5, 2026 — New Providers (OpenRouter + DeepSeek), LM Studio Parity, Orchestration Phases 1–7, LLM Harnessing GA, 19 New Slash Commands, Memory Bridge G-series, Retroactive Transcript Mining, Graphify NV oOS Data-source Bridge, Observability UI, Stability Sweep
