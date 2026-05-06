@@ -35,7 +35,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Check if this tool is available.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return bool True if WebChat is enabled in settings.
 	 */

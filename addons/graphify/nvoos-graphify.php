@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Graphify
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: WordPress Knowledge Graph addon for NV oOS. Extracts entities and relationships from your content, builds a navigable knowledge graph, and exposes it to AI assistants via oOS tools and a REST API. Requires NV oOS base plugin.
- * Version:     0.5.0
+ * Version:     0.6.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_GRAPHIFY_VERSION', '0.5.0' );
+define( 'NVOOS_GRAPHIFY_VERSION', '0.6.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_GRAPHIFY_FILE', __FILE__ );

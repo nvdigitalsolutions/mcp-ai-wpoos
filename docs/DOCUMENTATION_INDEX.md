@@ -1,12 +1,17 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 5, 2026  
-**Plugin Version:** 1.1.15  
+**Last Updated:** May 6, 2026  
+**Plugin Version:** 1.1.16  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 MAY 6, 2026 UPDATE (v1.1.16):** 🛠️ **SAAS CONTROLLER ADDON (v0.1.0) + STRUCTURED LOGGING INTEGRATION**
+> - **SaaS Controller Addon** (`addons/saas-controller/`, v0.1.0) — operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane. All 11 phases shipped. New reference doc: [`docs/saas-controller.md`](saas-controller.md).
+> - **Structured Logging Integration** (PR #4849) — `WP_MCP_AI_Logger` integrated across `WP_MCP_AI_Agent_Memory_CCT_Bridge`, `WP_MCP_AI_Transcript_Mining_Job`, Algorave, Canvas, Webchat, Fantasy Football, Graphify, SaaS Controller addons, and core admin/service components. New test classes: `test-agent-memory-cct-bridge-logging.php`, `test-transcript-mining-job-logging.php`.
+> - **Versioning** — bumped to 1.1.16 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 5, 2026 UPDATE (v1.1.15):** 🔌 **NEW PROVIDERS (OPENROUTER + DEEPSEEK), ORCHESTRATION PHASES 1–7, LLM HARNESSING GA, OBSERVABILITY UI, GRAPHIFY DATA-SOURCE BRIDGE**
 > - **New AI providers** — OpenRouter (`WP_MCP_AI_OpenRouter_Client`), DeepSeek (`WP_MCP_AI_DeepSeek_Client`), Kimi K2.6, Qwen 3.6 added. LM Studio gains native cURL SSE streaming.
@@ -1167,7 +1172,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [SAAS_SETUP_GUIDE.md](SAAS_SETUP_GUIDE.md) | **NEW:** Industry-standard SaaS install/setup guide for NV oOS Cloud — prerequisites, account provisioning, connect tokens, billing, security, runbook | Operators/Admins |
+| [saas-controller.md](saas-controller.md) | **NEW (v1.1.16):** SaaS Controller Addon reference — all 11 phases, admin UI, REST API (19 routes), filters, data storage, build instructions | Operators/Devs |
+| [SAAS_SETUP_GUIDE.md](SAAS_SETUP_GUIDE.md) | Industry-standard SaaS install/setup guide for NV oOS Cloud — prerequisites, account provisioning, connect tokens, billing, security, runbook | Operators/Admins |
 | [features/nv-cloud.md](features/nv-cloud.md) | NV oOS Cloud feature spec (plugin contract, hooks, constants) | Developers |
 | [../addons/cloud-worker/README.md](../addons/cloud-worker/README.md) | Cloudflare Worker source-of-truth (deploy commands, D1 schema) | Operators |
 
