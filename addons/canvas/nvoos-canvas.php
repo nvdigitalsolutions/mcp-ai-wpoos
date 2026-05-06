@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Canvas Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Platform-specific canvas native binaries for NV oOS Pro. Enables Tesseract PDF OCR by providing the canvas module's native binaries pre-compiled for your server platform. Requires NV oOS Pro addon to be installed and active.
- * Version:     1.0.0
+ * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_CANVAS_VERSION', '1.0.0' );
+define( 'NVOOS_CANVAS_VERSION', '0.1.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_CANVAS_FILE', __FILE__ );

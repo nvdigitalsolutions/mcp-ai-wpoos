@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Fantasy Football Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Fantasy Football extension for NV oOS. Provides ESPN and Yahoo Fantasy Sports API integration with team management, player research, trade analysis, league reports, and AI-powered team logo generation through the oOS chat interface. Requires NV oOS base plugin.
- * Version:     1.0.0
+ * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_FANTASY_FOOTBALL_VERSION', '1.0.0' );
+define( 'NVOOS_FANTASY_FOOTBALL_VERSION', '0.1.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_FANTASY_FOOTBALL_FILE', __FILE__ );
@@ -55,7 +55,7 @@ if ( is_admin() ) {
 /**
  * Check whether the NV oOS base plugin is active.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the base plugin is available.
  */
@@ -66,7 +66,7 @@ function nvoos_fantasy_football_is_base_active() {
 /**
  * Check whether the fantasy football addon is fully ready.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the addon is operational.
  */

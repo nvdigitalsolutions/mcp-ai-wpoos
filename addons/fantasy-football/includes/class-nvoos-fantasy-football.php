@@ -6,7 +6,7 @@
  * CPT initialization, and settings for the Fantasy Football addon.
  *
  * @package NV_oOS_Fantasy_Football
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Core singleton for the NV oOS Fantasy Football Addon.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Fantasy_Football {
 
@@ -30,7 +30,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Register all WordPress hooks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -42,7 +42,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Fired on plugins_loaded — verify base plugin, register tools, and init CPTs.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -75,7 +75,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Check whether the fantasy football addon is enabled in settings.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */
@@ -87,7 +87,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Get addon settings.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return array
 	 */
@@ -103,7 +103,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * List of all tool class names provided by this addon.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return array
 	 */
@@ -133,7 +133,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Register fantasy football tools with the oOS tool registry.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param object $registry WP_MCP_AI_Tool_Registry instance.
 	 * @return void
@@ -155,7 +155,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Load tools via the Pro-style lazy loading hook.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -184,7 +184,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Require all tool class files.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -222,7 +222,7 @@ class NV_oOS_Fantasy_Football {
 	/**
 	 * Display admin notices about addon status.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */

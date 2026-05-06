@@ -22,7 +22,7 @@ class WP_MCP_AI_Tool_Save_WebChat_Message implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Check if this tool is available.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return bool True if WebChat is enabled and JetEngine is active.
 	 */

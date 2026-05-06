@@ -6,7 +6,7 @@
  * Supports both public and private leagues with cookie-based authentication.
  *
  * @package WP_MCP_AI
- * @since 1.0.0
+ * @since 0.1.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -35,7 +35,7 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 	 *
 	 * ESPN API Base URL: https://fantasy.espn.com/apis/v3/games/ffl/seasons/{seasonId}/segments/0/leagues/{leagueId}
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 */
 	class WP_MCP_AI_ESPN_Fantasy_Client {
 		/**
