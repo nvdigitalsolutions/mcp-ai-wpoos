@@ -354,6 +354,23 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 	}
 
 	/**
+	 * Per-request flag set used by `warn_once`.
+	 *
+	 * @var array<string,bool>
+	 */
+	protected static $warned_reasons = array();
+
+	/**
+	 * Reset the rate-limited warning state. Used by tests to assert
+	 * "logs exactly once per request" semantics across multiple cases.
+	 *
+	 * @return void
+	 */
+	public static function reset_warn_state() {
+		self::$warned_reasons = array();
+	}
+
+	/**
 	 * Emit a single warning per (reason) per request to the activity log.
 	 *
 	 * Prevents a 50-item mining batch from spamming `wp_mcp_ai_recent_errors`
@@ -365,13 +382,11 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 	 * @return void
 	 */
 	protected static function warn_once( $reason, $message, array $context = array() ) {
-		static $emitted = array();
-
 		$reason = (string) $reason;
-		if ( '' === $reason || isset( $emitted[ $reason ] ) ) {
+		if ( '' === $reason || isset( self::$warned_reasons[ $reason ] ) ) {
 			return;
 		}
-		$emitted[ $reason ] = true;
+		self::$warned_reasons[ $reason ] = true;
 
 		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			return;
