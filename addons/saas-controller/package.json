@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"description": "NV oOS SaaS Controller — operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter).",
-	"license": "GPL-3.0-or-later",
+	"license": "UNLICENSED",
 	"author": "NV Digital Solutions",
 	"engines": {
 		"node": ">=18.17.0"

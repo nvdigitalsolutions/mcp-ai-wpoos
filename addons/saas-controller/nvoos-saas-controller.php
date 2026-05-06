@@ -9,15 +9,21 @@
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: Proprietary — NV Digital Solutions, All Rights Reserved
+ * License URI: https://nvdigitalsolutions.com/wpoos/license/saas-controller
  * Text Domain: nvoos-saas-controller
  * Domain Path: /languages
  *
  * @package NV_oOS_SaaS_Controller
  *
- * Copyright (c) 2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * Copyright (c) 2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+ * All rights reserved.
+ *
+ * This addon is PROPRIETARY software of NV Digital Solutions. It is NOT
+ * licensed under the GPL that covers the rest of the NV oOS repository,
+ * and it is NOT distributed via WordPress.org. Use, reproduction, modification,
+ * and redistribution are governed by the addon-local `LICENSE` file shipped in
+ * this directory. See `LICENSE` for the full terms.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

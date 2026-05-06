@@ -117,4 +117,15 @@ Build-time and dev-only packages (e.g. `wrangler`, `esbuild`, `@cloudflare/worke
 
 ## License
 
-GPL-3.0-or-later. See the repository root `LICENSE`.
+**Proprietary — © 2026 NV Digital Solutions. All rights reserved.**
+
+Unlike the rest of the NV oOS repository (which is GPLv3), this addon is
+proprietary software of NV Digital Solutions. It is **not** licensed under
+the repo-root `LICENSE` (GPLv3) and is **not** distributed via WordPress.org.
+Use, reproduction, modification, and redistribution are governed by the
+addon-local [`LICENSE`](LICENSE) file in this directory.
+
+The third-party packages listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+remain under their own upstream licenses (MIT / BSD-3-Clause / Apache-2.0 /
+GPL-2.0-or-later as applicable); their inclusion does not relicense any
+NV Digital Solutions code.

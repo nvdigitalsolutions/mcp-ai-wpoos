@@ -5,6 +5,14 @@ The canonical, repo-wide attribution index is the root [`CREDITS.md`](../../CRED
 this file mirrors the SaaS-Controller-specific entries with full
 name / version / license / copyright / homepage metadata.
 
+> **License of the addon itself:** the NV Digital Solutions code in this
+> addon is **proprietary** (see [`LICENSE`](LICENSE) in this directory). The
+> third-party components listed below remain governed by their own upstream
+> licenses (MIT / BSD-3-Clause / Apache-2.0 / GPL-2.0-or-later as applicable);
+> their inclusion does not relicense any NV Digital Solutions code, and the
+> proprietary `LICENSE` does not modify the terms of those upstream
+> components.
+
 > **Last reviewed:** May 2026
 
 ---

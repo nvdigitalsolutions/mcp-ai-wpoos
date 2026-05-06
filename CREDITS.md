@@ -296,6 +296,13 @@ External services consumed at runtime:
 
 ### `addons/saas-controller/` — NV oOS Cloud SaaS Controller (operator-side WP plugin)
 
+**License: Proprietary — © 2026 NV Digital Solutions, All Rights Reserved.**
+Unlike the rest of this repository (GPLv3), this addon is proprietary and is
+**not** distributed via WordPress.org. See
+[`addons/saas-controller/LICENSE`](addons/saas-controller/LICENSE) for the
+governing terms; the third-party packages listed below remain under their own
+upstream licenses.
+
 Operator-side WordPress plugin that provisions, plan/applies, drift-detects,
 and audits the `addons/cloud-worker/` runtime — without leaving WP-Admin.
 
