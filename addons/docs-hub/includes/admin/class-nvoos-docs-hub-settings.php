@@ -165,6 +165,23 @@ class NV_oOS_Docs_Hub_Settings {
 				'description' => __( 'Include .context/*.md files. Warning: these are only visible to users with manage_options capability.', 'nvoos-docs-hub' ),
 			)
 		);
+
+		// Remote repositories section.
+		add_settings_section(
+			'nvoos_docs_hub_remote',
+			__( 'Remote Repositories', 'nvoos-docs-hub' ),
+			array( __CLASS__, 'render_remote_section_intro' ),
+			'nvoos-docs-hub'
+		);
+
+		add_settings_field(
+			'remote_repos',
+			__( 'Public GitHub Repositories', 'nvoos-docs-hub' ),
+			array( __CLASS__, 'render_remote_repos' ),
+			'nvoos-docs-hub',
+			'nvoos_docs_hub_remote',
+			array()
+		);
 	}
 
 	/**
@@ -237,7 +254,7 @@ class NV_oOS_Docs_Hub_Settings {
 		$raw_theme                  = sanitize_text_field( $input['default_theme'] ?? 'auto' );
 		$sanitized['default_theme'] = in_array( $raw_theme, $allowed_themes, true ) ? $raw_theme : 'auto';
 
-		$allowed_sources   = array( 'base', 'addons', 'root', 'context' );
+		$allowed_sources   = array( 'base', 'addons', 'root', 'context', 'remote' );
 		$raw_sources       = isset( $input['sources'] ) && is_array( $input['sources'] ) ? $input['sources'] : array();
 		$sanitized['sources'] = array_values(
 			array_filter(
@@ -247,6 +264,38 @@ class NV_oOS_Docs_Hub_Settings {
 				}
 			)
 		);
+
+		// Sanitize remote repos.
+		// Preserve existing tokens when the password field is left blank on re-save.
+		$existing_settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$existing_repos    = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
+
+		$sanitized['remote_repos'] = array();
+		$raw_repos = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
+		foreach ( $raw_repos as $i => $repo ) {
+			$owner = sanitize_text_field( $repo['owner'] ?? '' );
+			$repo_name = sanitize_text_field( $repo['repo'] ?? '' );
+			if ( '' === $owner || '' === $repo_name ) {
+				continue;
+			}
+			// Enforce safe characters: letters, digits, hyphens, underscores, dots only.
+			if ( ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $owner ) || ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $repo_name ) ) {
+				continue;
+			}
+			$new_token = sanitize_text_field( $repo['token'] ?? '' );
+			// When the token field is submitted blank, keep the previously saved token.
+			if ( '' === $new_token && isset( $existing_repos[ $i ]['token'] ) ) {
+				$new_token = $existing_repos[ $i ]['token'];
+			}
+			$sanitized['remote_repos'][] = array(
+				'owner' => $owner,
+				'repo'  => $repo_name,
+				'ref'   => sanitize_text_field( $repo['ref'] ?? 'HEAD' ),
+				'label' => sanitize_text_field( $repo['label'] ?? $owner . '/' . $repo_name ),
+				'path'  => sanitize_text_field( $repo['path'] ?? '' ),
+				'token' => $new_token,
+			);
+		}
 
 		return $sanitized;
 	}
@@ -395,6 +444,7 @@ class NV_oOS_Docs_Hub_Settings {
 			'addons'  => __( 'Addons (<code>addons/*/docs/</code> and <code>README.md</code>)', 'nvoos-docs-hub' ),
 			'root'    => __( 'Repository root files (<code>README.md</code>, <code>CHANGELOG.md</code>, etc.) — only when WP_DEBUG is on', 'nvoos-docs-hub' ),
 			'context' => __( 'Context files (<code>.context/*.md</code>) — only visible to manage_options users', 'nvoos-docs-hub' ),
+			'remote'  => __( 'Remote GitHub repositories (configured in the section below)', 'nvoos-docs-hub' ),
 		);
 
 		foreach ( $sources as $key => $label ) :
@@ -408,6 +458,186 @@ class NV_oOS_Docs_Hub_Settings {
 			</label>
 			<?php
 		endforeach;
+	}
+
+	/**
+	 * Render introductory text for the Remote Repositories section.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	public static function render_remote_section_intro() {
+		echo '<p>';
+		esc_html_e(
+			'Add public GitHub repositories whose Markdown documentation you want to include in the browser. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported.',
+			'nvoos-docs-hub'
+		);
+		echo '</p>';
+	}
+
+	/**
+	 * Render the remote repositories repeatable list UI.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	public static function render_remote_repos() {
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] ) ? $settings['remote_repos'] : array();
+
+		// Always render at least one (empty) row so the UI is usable.
+		if ( empty( $repos ) ) {
+			$repos = array( array( 'owner' => '', 'repo' => '', 'ref' => 'HEAD', 'label' => '', 'path' => '', 'token' => '' ) );
+		}
+
+		$option_key = NV_oOS_Docs_Hub_Plugin::OPTION_KEY;
+
+		echo '<div id="nvoos-dh-remote-repos-wrap">';
+
+		foreach ( $repos as $i => $r ) :
+			$owner = esc_attr( $r['owner'] ?? '' );
+			$repo  = esc_attr( $r['repo']  ?? '' );
+			$ref   = esc_attr( $r['ref']   ?? 'HEAD' );
+			$label = esc_attr( $r['label'] ?? '' );
+			$path  = esc_attr( $r['path']  ?? '' );
+			// Token: never echo saved token back for security — show placeholder.
+			$has_token = ! empty( $r['token'] );
+			?>
+			<div class="nvoos-dh-remote-repo-row" style="border:1px solid #ccd0d4; border-radius:4px; padding:12px; margin-bottom:10px; background:#fafafa;">
+				<table class="widefat" style="background:transparent; border:none;">
+					<tr>
+						<td style="width:110px; font-weight:600; padding:4px 8px 4px 0;"><?php esc_html_e( 'Owner *', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<input type="text"
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][owner]" ); ?>"
+								value="<?php echo $owner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+								placeholder="e.g. nvdigitalsolutions"
+								class="regular-text" required />
+						</td>
+					</tr>
+					<tr>
+						<td style="font-weight:600; padding:4px 8px 4px 0;"><?php esc_html_e( 'Repository *', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<input type="text"
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][repo]" ); ?>"
+								value="<?php echo $repo; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+								placeholder="e.g. mcp-ai-wpoos"
+								class="regular-text" required />
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:4px 8px 4px 0;"><?php esc_html_e( 'Branch / Tag', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<input type="text"
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][ref]" ); ?>"
+								value="<?php echo $ref; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+								placeholder="HEAD"
+								class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Branch name, tag, or commit SHA. Default: HEAD (latest commit on default branch).', 'nvoos-docs-hub' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:4px 8px 4px 0;"><?php esc_html_e( 'Label', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<input type="text"
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][label]" ); ?>"
+								value="<?php echo $label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+								placeholder="<?php esc_attr_e( 'e.g. My Plugin Docs', 'nvoos-docs-hub' ); ?>"
+								class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Human-readable name shown in the sidebar.', 'nvoos-docs-hub' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:4px 8px 4px 0;"><?php esc_html_e( 'Path prefix', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<input type="text"
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][path]" ); ?>"
+								value="<?php echo $path; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+								placeholder="e.g. docs"
+								class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Optional: restrict to a subdirectory (e.g. "docs"). Leave blank to index the whole repo.', 'nvoos-docs-hub' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:4px 8px 4px 0;"><?php esc_html_e( 'Access Token', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<input type="password"
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][token]" ); ?>"
+								value=""
+								placeholder="<?php echo $has_token ? esc_attr__( '(saved — enter new value to change)', 'nvoos-docs-hub' ) : esc_attr__( 'Optional GitHub PAT', 'nvoos-docs-hub' ); ?>"
+								class="regular-text"
+								autocomplete="new-password" />
+							<p class="description">
+								<?php esc_html_e( 'Optional GitHub Personal Access Token. Raises the rate limit from 60 to 5000 req/hr. Required for private repositories.', 'nvoos-docs-hub' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td style="padding:4px 0;">
+							<button type="button" class="button nvoos-dh-remove-repo" style="color:#a00;">
+								<?php esc_html_e( '✕ Remove this repository', 'nvoos-docs-hub' ); ?>
+							</button>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<?php
+		endforeach;
+
+		echo '</div><!-- #nvoos-dh-remote-repos-wrap -->';
+		echo '<p>';
+		echo '<button type="button" id="nvoos-dh-add-repo" class="button">' . esc_html__( '+ Add Repository', 'nvoos-docs-hub' ) . '</button>';
+		echo '</p>';
+		echo '<p class="description">';
+		esc_html_e(
+			'Fetched files are cached for 24 hours. Click "Rebuild Documentation Index" after adding or removing repos to refresh immediately.',
+			'nvoos-docs-hub'
+		);
+		echo '</p>';
+
+		// Inline JS for add/remove without requiring a separate asset.
+		?>
+		<script>
+		( function() {
+			var wrap = document.getElementById( 'nvoos-dh-remote-repos-wrap' );
+			var addBtn = document.getElementById( 'nvoos-dh-add-repo' );
+			var optionKey = <?php echo wp_json_encode( $option_key ); ?>;
+
+			addBtn.addEventListener( 'click', function() {
+				var rows = wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' );
+				var idx = rows.length;
+				var tpl = rows[ 0 ].cloneNode( true );
+				tpl.querySelectorAll( 'input' ).forEach( function( el ) {
+					el.value = el.getAttribute( 'placeholder' ) ? '' : el.value;
+					el.setAttribute( 'name', el.getAttribute( 'name' ).replace( /\[\d+\]/, '[' + idx + ']' ) );
+					el.value = '';
+				} );
+				wrap.appendChild( tpl );
+			} );
+
+			wrap.addEventListener( 'click', function( e ) {
+				if ( e.target && e.target.classList.contains( 'nvoos-dh-remove-repo' ) ) {
+					var row = e.target.closest( '.nvoos-dh-remote-repo-row' );
+					if ( wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' ).length > 1 ) {
+						row.remove();
+						// Re-index remaining rows.
+						wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' ).forEach( function( r, i ) {
+							r.querySelectorAll( 'input' ).forEach( function( el ) {
+								el.setAttribute( 'name', el.getAttribute( 'name' ).replace( /\[\d+\]/, '[' + i + ']' ) );
+							} );
+						} );
+					} else {
+						// Last row — just clear it.
+						row.querySelectorAll( 'input' ).forEach( function( el ) { el.value = ''; } );
+					}
+				}
+			} );
+		} )();
+		</script>
+		<?php
 	}
 }
 

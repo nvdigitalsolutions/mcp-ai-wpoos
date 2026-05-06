@@ -74,6 +74,10 @@ class NV_oOS_Docs_Hub_Scanner {
 			$entries = array_merge( $entries, $this->scan_context( $settings ) );
 		}
 
+		if ( in_array( 'remote', $enabled_sources, true ) ) {
+			$entries = array_merge( $entries, $this->scan_remote_repos( $settings ) );
+		}
+
 		$excluded = apply_filters( 'nvoos_docs_hub_excluded_globs', array() );
 		if ( ! empty( $excluded ) ) {
 			$entries = $this->apply_exclusions( $entries, $excluded );
@@ -409,6 +413,44 @@ class NV_oOS_Docs_Hub_Scanner {
 				return true;
 			}
 		);
+	}
+
+	/**
+	 * Scan remote repositories configured in the addon settings.
+	 *
+	 * Delegates to NV_oOS_Docs_Hub_Remote_Repo for each configured repo.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $settings Plugin settings.
+	 * @return array
+	 */
+	private function scan_remote_repos( $settings ) {
+		$remote_repos = isset( $settings['remote_repos'] ) ? (array) $settings['remote_repos'] : array();
+		if ( empty( $remote_repos ) ) {
+			return array();
+		}
+
+		$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
+		$entries = array();
+
+		foreach ( $remote_repos as $repo_config ) {
+			if ( empty( $repo_config['owner'] ) || empty( $repo_config['repo'] ) ) {
+				continue;
+			}
+
+			$result = $fetcher->fetch_entries( $repo_config );
+
+			if ( is_wp_error( $result ) ) {
+				// Log error but continue with other repos.
+				do_action( 'nvoos_docs_hub_remote_fetch_error', $result, $repo_config );
+				continue;
+			}
+
+			$entries = array_merge( $entries, $result );
+		}
+
+		return $entries;
 	}
 
 	/**

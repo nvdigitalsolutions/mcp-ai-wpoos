@@ -94,6 +94,7 @@ class NV_oOS_Docs_Hub_Plugin {
 				'sidebar_enabled' => true,
 				'default_home'    => 'readme',
 				'github_repo_url' => '',
+				'remote_repos'    => array(),
 			)
 		);
 	}
