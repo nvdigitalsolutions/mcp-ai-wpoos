@@ -94,12 +94,12 @@ class WP_MCP_AI_Admin_Run_Timeline {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_run_timeline' ),
 				'i18n'    => array(
-					'loading'     => __( 'Loading…', 'mcp-ai-wpoos' ),
-					'noRuns'      => __( 'No runs recorded yet.', 'mcp-ai-wpoos' ),
+					'loading'      => __( 'Loading…', 'mcp-ai-wpoos' ),
+					'noRuns'       => __( 'No runs recorded yet.', 'mcp-ai-wpoos' ),
 					'downloadJSON' => __( 'Download JSON', 'mcp-ai-wpoos' ),
-					'tokens'      => __( 'tokens', 'mcp-ai-wpoos' ),
-					'ms'          => __( 'ms', 'mcp-ai-wpoos' ),
-					'usd'         => __( 'USD', 'mcp-ai-wpoos' ),
+					'tokens'       => __( 'tokens', 'mcp-ai-wpoos' ),
+					'ms'           => __( 'ms', 'mcp-ai-wpoos' ),
+					'usd'          => __( 'USD', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -158,13 +158,21 @@ class WP_MCP_AI_Admin_Run_Timeline {
 		<div class="notice notice-info is-dismissible">
 			<p>
 				<?php
-				printf(
-					/* translators: 1: settings page URL */
-					wp_kses(
-						__( '<strong>Tip:</strong> Configure an OTLP endpoint in <a href="%1$s">NV oOS Settings → Observability</a> to export spans to Jaeger, Grafana Tempo, or any OpenTelemetry collector.', 'mcp-ai-wpoos' ),
-						array( 'strong' => array(), 'a' => array( 'href' => array() ) )
-					),
-					esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration&view=observability' ) )
+				$settings_url = esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration&view=observability' ) );
+				$tip_text     = sprintf(
+					/* translators: 1: opening strong tag, 2: closing strong tag, 3: opening anchor tag with URL, 4: closing anchor tag */
+					__( '%1$sTip:%2$s Configure an OTLP endpoint in %3$sNV oOS Settings → Observability%4$s to export spans to Jaeger, Grafana Tempo, or any OpenTelemetry collector.', 'mcp-ai-wpoos' ),
+					'<strong>',
+					'</strong>',
+					'<a href="' . esc_url( $settings_url ) . '">',
+					'</a>'
+				);
+				echo wp_kses(
+					$tip_text,
+					array(
+						'strong' => array(),
+						'a'      => array( 'href' => array() ),
+					)
 				);
 				?>
 			</p>
@@ -176,14 +184,16 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 * Render assistant <option> elements for the filter dropdown.
 	 */
 	private function render_assistant_options() {
-		$assistants = get_posts( array(
-			'post_type'      => 'mcp_ai_assistant',
-			'post_status'    => 'publish',
-			'posts_per_page' => 100,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-			'fields'         => 'ids',
-		) );
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'fields'         => 'ids',
+			)
+		);
 
 		foreach ( $assistants as $id ) {
 			$title = get_the_title( $id );
@@ -199,40 +209,120 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 * AJAX: list recent runs (lightweight summaries).
 	 */
 	public function ajax_list_runs() {
-		check_ajax_referer( 'wp_mcp_ai_run_timeline', 'nonce' );
+		try {
+			check_ajax_referer( 'wp_mcp_ai_run_timeline', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
+			if ( ! current_user_can( 'manage_options' ) ) {
+				$this->log_warning_safe(
+					'Run Timeline: permission denied for ajax_list_runs.',
+					array( 'user_id' => get_current_user_id() )
+				);
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
+			}
+
+			$page         = max( 1, (int) sanitize_text_field( wp_unslash( isset( $_GET['page'] ) ? $_GET['page'] : '1' ) ) );
+			$assistant_id = (int) sanitize_text_field( wp_unslash( isset( $_GET['assistant_id'] ) ? $_GET['assistant_id'] : '0' ) );
+
+			$runs = $this->load_run_summaries( $page, $assistant_id );
+			wp_send_json_success( $runs );
+		} catch ( Throwable $e ) {
+			$this->log_error_safe(
+				'Run Timeline: ajax_list_runs threw an exception.',
+				array(
+					'message' => $e->getMessage(),
+					'file'    => $e->getFile(),
+					'line'    => $e->getLine(),
+				)
+			);
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Run Timeline failed to load runs: %s', 'mcp-ai-wpoos' ),
+						$e->getMessage()
+					),
+				),
+				500
+			);
 		}
-
-		$page         = max( 1, (int) ( $_GET['page'] ?? 1 ) );
-		$assistant_id = (int) ( $_GET['assistant_id'] ?? 0 );
-
-		$runs = $this->load_run_summaries( $page, $assistant_id );
-		wp_send_json_success( $runs );
 	}
 
 	/**
 	 * AJAX: get full detail for a single run.
 	 */
 	public function ajax_get_run() {
-		check_ajax_referer( 'wp_mcp_ai_run_timeline', 'nonce' );
+		try {
+			check_ajax_referer( 'wp_mcp_ai_run_timeline', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
+			if ( ! current_user_can( 'manage_options' ) ) {
+				$this->log_warning_safe(
+					'Run Timeline: permission denied for ajax_get_run.',
+					array( 'user_id' => get_current_user_id() )
+				);
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
+			}
+
+			$run_id = sanitize_text_field( wp_unslash( $_GET['run_id'] ?? '' ) );
+			if ( '' === $run_id ) {
+				$this->log_warning_safe( 'Run Timeline: ajax_get_run missing run_id.' );
+				wp_send_json_error( array( 'message' => __( 'run_id is required.', 'mcp-ai-wpoos' ) ), 400 );
+			}
+
+			$detail = $this->load_run_detail( $run_id );
+			if ( null === $detail ) {
+				$this->log_warning_safe(
+					'Run Timeline: run not found.',
+					array( 'run_id' => $run_id )
+				);
+				wp_send_json_error( array( 'message' => __( 'Run not found.', 'mcp-ai-wpoos' ) ), 404 );
+			}
+
+			wp_send_json_success( $detail );
+		} catch ( Throwable $e ) {
+			$this->log_error_safe(
+				'Run Timeline: ajax_get_run threw an exception.',
+				array(
+					'run_id'  => isset( $_GET['run_id'] ) ? sanitize_text_field( wp_unslash( $_GET['run_id'] ) ) : '',
+					'message' => $e->getMessage(),
+					'file'    => $e->getFile(),
+					'line'    => $e->getLine(),
+				)
+			);
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Run Timeline failed to load run detail: %s', 'mcp-ai-wpoos' ),
+						$e->getMessage()
+					),
+				),
+				500
+			);
 		}
+	}
 
-		$run_id = sanitize_text_field( wp_unslash( $_GET['run_id'] ?? '' ) );
-		if ( '' === $run_id ) {
-			wp_send_json_error( array( 'message' => __( 'run_id is required.', 'mcp-ai-wpoos' ) ), 400 );
+	/**
+	 * Defensively log an error through WP_MCP_AI_Logger when available.
+	 *
+	 * @param string $message Message.
+	 * @param array  $context Optional context.
+	 */
+	private function log_error_safe( $message, $context = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error( $message, $context );
 		}
+	}
 
-		$detail = $this->load_run_detail( $run_id );
-		if ( null === $detail ) {
-			wp_send_json_error( array( 'message' => __( 'Run not found.', 'mcp-ai-wpoos' ) ), 404 );
+	/**
+	 * Defensively log a warning through WP_MCP_AI_Logger when available.
+	 *
+	 * @param string $message Message.
+	 * @param array  $context Optional context.
+	 */
+	private function log_warning_safe( $message, $context = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_warning( $message, $context );
 		}
-
-		wp_send_json_success( $detail );
 	}
 
 	/**
@@ -246,45 +336,61 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	private function load_run_summaries( $page, $assistant_id ) {
 		$summaries = array();
 
-		// Pull from the metric event store if available.
+		// Pull from the metric event store if available and the table is provisioned.
 		if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
-			$store  = WP_MCP_AI_Metric_Event_Store::get_instance();
-			$events = $store->query( array(
-				'metric_ids'   => array( 'chat.turn.latency_ms', 'token_usage.total_tokens', 'cost.usd' ),
-				'limit'        => self::RUNS_PER_PAGE * 3,
-				'assistant_id' => $assistant_id > 0 ? $assistant_id : null,
-			) );
+			$store = WP_MCP_AI_Metric_Event_Store::get_instance();
+			if ( method_exists( $store, 'table_exists' ) && $store->table_exists() ) {
+				$metric_ids = array( 'chat.turn.latency_ms', 'token_usage.total_tokens', 'cost.usd' );
+				$row_cap    = self::RUNS_PER_PAGE * 3;
 
-			$grouped = array();
-			foreach ( $events as $event ) {
-				$run_id = $event['run_id'] ?? '';
-				if ( '' === $run_id ) {
-					continue;
+				$grouped = array();
+				foreach ( $metric_ids as $metric_id ) {
+					$rows = $store->query_by_metric( $metric_id, null, null, $row_cap );
+					foreach ( $rows as $row ) {
+						$context = isset( $row['context'] ) && is_array( $row['context'] ) ? $row['context'] : array();
+						$run_id  = isset( $context['run_id'] ) ? (string) $context['run_id'] : '';
+						if ( '' === $run_id ) {
+							continue;
+						}
+						$row_assistant = isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0;
+						if ( $assistant_id > 0 && $row_assistant !== $assistant_id ) {
+							continue;
+						}
+						$recorded_at = isset( $row['recorded_at'] ) ? strtotime( (string) $row['recorded_at'] . ' UTC' ) : 0;
+						if ( ! isset( $grouped[ $run_id ] ) ) {
+							$grouped[ $run_id ] = array(
+								'run_id'       => $run_id,
+								'assistant_id' => $row_assistant,
+								'started_at'   => $recorded_at ? $recorded_at : 0,
+								'total_tokens' => 0,
+								'cost_usd'     => 0.0,
+								'latency_ms'   => 0,
+							);
+						} elseif ( $recorded_at && ( 0 === $grouped[ $run_id ]['started_at'] || $recorded_at < $grouped[ $run_id ]['started_at'] ) ) {
+							$grouped[ $run_id ]['started_at'] = $recorded_at;
+						}
+						switch ( (string) ( $row['metric_id'] ?? '' ) ) {
+							case 'token_usage.total_tokens':
+								$grouped[ $run_id ]['total_tokens'] += (int) ( $row['metric_value'] ?? 0 );
+								break;
+							case 'cost.usd':
+								$grouped[ $run_id ]['cost_usd'] += (float) ( $row['metric_value'] ?? 0.0 );
+								break;
+							case 'chat.turn.latency_ms':
+								$grouped[ $run_id ]['latency_ms'] = (int) ( $row['metric_value'] ?? 0 );
+								break;
+						}
+					}
 				}
-				if ( ! isset( $grouped[ $run_id ] ) ) {
-					$grouped[ $run_id ] = array(
-						'run_id'       => $run_id,
-						'assistant_id' => $event['assistant_id'] ?? 0,
-						'started_at'   => $event['recorded_at'] ?? 0,
-						'total_tokens' => 0,
-						'cost_usd'     => 0.0,
-						'latency_ms'   => 0,
-					);
-				}
-				switch ( $event['metric_id'] ?? '' ) {
-					case 'token_usage.total_tokens':
-						$grouped[ $run_id ]['total_tokens'] += (int) ( $event['value'] ?? 0 );
-						break;
-					case 'cost.usd':
-						$grouped[ $run_id ]['cost_usd'] += (float) ( $event['value'] ?? 0.0 );
-						break;
-					case 'chat.turn.latency_ms':
-						$grouped[ $run_id ]['latency_ms'] = (int) ( $event['value'] ?? 0 );
-						break;
-				}
+
+				$summaries = array_values( $grouped );
+				usort(
+					$summaries,
+					static function ( $a, $b ) {
+						return ( $b['started_at'] ?? 0 ) <=> ( $a['started_at'] ?? 0 );
+					}
+				);
 			}
-
-			$summaries = array_values( $grouped );
 		}
 
 		// Fall back to reasoning trace post meta scan when no metric store data.
@@ -326,8 +432,8 @@ class WP_MCP_AI_Admin_Run_Timeline {
 			$args['include'] = array( $assistant_id );
 		}
 
-		$posts      = get_posts( $args );
-		$summaries  = array();
+		$posts     = get_posts( $args );
+		$summaries = array();
 
 		foreach ( $posts as $post ) {
 			$raw   = get_post_meta( $post->ID, WP_MCP_AI_Reasoning_Trace::META_KEY, true );
@@ -356,41 +462,59 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 */
 	private function load_run_detail( $run_id ) {
 		$detail = array(
-			'run_id'    => $run_id,
-			'steps'     => array(),
-			'summary'   => array(),
-			'trace'     => array(),
+			'run_id'  => $run_id,
+			'steps'   => array(),
+			'summary' => array(),
+			'trace'   => array(),
 		);
 
-		// Load from metric event store.
+		// Load from metric event store. Iterate the same metric ids as the
+		// list view and filter rows by `context.run_id`. The store schema
+		// has no top-level run_id column, so per-run queries must scan and
+		// post-filter; the row cap below keeps this bounded.
 		if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
-			$store  = WP_MCP_AI_Metric_Event_Store::get_instance();
-			$events = $store->query( array( 'run_id' => $run_id ) );
-
-			$steps = array();
-			foreach ( $events as $event ) {
-				$step_key = $event['step'] ?? 'root';
-				if ( ! isset( $steps[ $step_key ] ) ) {
-					$steps[ $step_key ] = array(
-						'step'        => $step_key,
-						'metrics'     => array(),
-						'recorded_at' => $event['recorded_at'] ?? 0,
-					);
-				}
-				$steps[ $step_key ]['metrics'][] = array(
-					'id'    => $event['metric_id'] ?? '',
-					'value' => $event['value'] ?? null,
-					'unit'  => $event['unit'] ?? '',
+			$store = WP_MCP_AI_Metric_Event_Store::get_instance();
+			if ( method_exists( $store, 'table_exists' ) && $store->table_exists() ) {
+				$metric_ids = array(
+					'chat.turn.latency_ms',
+					'token_usage.total_tokens',
+					'cost.usd',
+					'tool.execution.latency_ms',
+					'tool.execution.errors',
 				);
+
+				$steps = array();
+				foreach ( $metric_ids as $metric_id ) {
+					$rows = $store->query_by_metric( $metric_id, null, null, 5000 );
+					foreach ( $rows as $row ) {
+						$context = isset( $row['context'] ) && is_array( $row['context'] ) ? $row['context'] : array();
+						if ( ( isset( $context['run_id'] ) ? (string) $context['run_id'] : '' ) !== $run_id ) {
+							continue;
+						}
+						$step_key = isset( $context['step'] ) ? (string) $context['step'] : 'root';
+						if ( ! isset( $steps[ $step_key ] ) ) {
+							$steps[ $step_key ] = array(
+								'step'        => $step_key,
+								'metrics'     => array(),
+								'recorded_at' => isset( $row['recorded_at'] ) ? strtotime( (string) $row['recorded_at'] . ' UTC' ) : 0,
+							);
+						}
+						$steps[ $step_key ]['metrics'][] = array(
+							'id'    => isset( $row['metric_id'] ) ? (string) $row['metric_id'] : '',
+							'value' => isset( $row['metric_value'] ) ? (float) $row['metric_value'] : null,
+							'unit'  => isset( $row['metric_unit'] ) ? (string) $row['metric_unit'] : '',
+						);
+					}
+				}
+				$detail['steps'] = array_values( $steps );
 			}
-			$detail['steps'] = array_values( $steps );
 		}
 
 		// Load reasoning trace from post meta if run_id is a meta-based ID.
 		if ( 0 === strpos( $run_id, 'meta:' ) ) {
 			$post_id = (int) substr( $run_id, 5 );
 			if ( $post_id > 0 && class_exists( 'WP_MCP_AI_Reasoning_Trace' ) ) {
-				$raw           = get_post_meta( $post_id, WP_MCP_AI_Reasoning_Trace::META_KEY, true );
+				$raw             = get_post_meta( $post_id, WP_MCP_AI_Reasoning_Trace::META_KEY, true );
 				$detail['trace'] = WP_MCP_AI_Reasoning_Trace::sanitize( $raw );
 			}
 		}

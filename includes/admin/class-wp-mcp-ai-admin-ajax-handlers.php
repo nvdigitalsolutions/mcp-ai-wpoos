@@ -99,8 +99,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
-				'wp_ajax_wp_mcp_ai_clear_test_files'        => 'handle_clear_test_files',
-				'wp_ajax_wp_mcp_ai_clear_dev_files'         => 'handle_clear_dev_files',
+				'wp_ajax_wp_mcp_ai_clear_test_files'       => 'handle_clear_test_files',
+				'wp_ajax_wp_mcp_ai_clear_dev_files'        => 'handle_clear_dev_files',
 			);
 
 			$action          = current_action();
@@ -3903,8 +3903,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => sprintf(
 						/* translators: %d: number of paths removed */
 						_n(
-							'Successfully removed %d test path: %s',
-							'Successfully removed %d test paths: %s',
+							'Successfully removed %1$d test path: %2$s',
+							'Successfully removed %1$d test paths: %2$s',
 							count( $removed ),
 							'mcp-ai-wpoos'
 						),
@@ -4022,8 +4022,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => sprintf(
 						/* translators: %d: number of paths removed */
 						_n(
-							'Successfully removed %d dev/build path: %s',
-							'Successfully removed %d dev/build paths: %s',
+							'Successfully removed %1$d dev/build path: %2$s',
+							'Successfully removed %1$d dev/build paths: %2$s',
 							count( $removed ),
 							'mcp-ai-wpoos'
 						),

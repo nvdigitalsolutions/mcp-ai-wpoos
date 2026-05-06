@@ -269,7 +269,7 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 		$found = false;
 		foreach ( $live as $row ) {
 			if ( $row['id'] === $desired_name ) {
-				$found = true;
+				$found             = true;
 				$plan['updates'][] = array(
 					'kind'        => 'worker',
 					'name'        => $desired_name,
@@ -439,10 +439,10 @@ class NVOOS_SaaS_Controller_Plan_Generator {
 			$lookup_key = (string) $row['lookup_key'];
 			if ( isset( $live[ $lookup_key ] ) ) {
 				$plan['noops'][] = array(
-					'kind'        => 'stripe_price',
-					'lookup_key'  => $lookup_key,
-					'product_id'  => isset( $row['product_id'] ) ? (string) $row['product_id'] : '',
-					'live_id'     => isset( $live[ $lookup_key ]['id'] ) ? (string) $live[ $lookup_key ]['id'] : '',
+					'kind'       => 'stripe_price',
+					'lookup_key' => $lookup_key,
+					'product_id' => isset( $row['product_id'] ) ? (string) $row['product_id'] : '',
+					'live_id'    => isset( $live[ $lookup_key ]['id'] ) ? (string) $live[ $lookup_key ]['id'] : '',
 				);
 			} else {
 				$entry = array(

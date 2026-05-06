@@ -61,14 +61,14 @@ class WP_MCP_AI_Workflow_CPT {
 		register_post_type(
 			self::CPT,
 			array(
-				'labels'              => $labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => false,
-				'show_in_rest'        => false,
-				'capability_type'     => 'post',
-				'capabilities'        => array(
+				'labels'             => $labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => false,
+				'show_in_rest'       => false,
+				'capability_type'    => 'post',
+				'capabilities'       => array(
 					'edit_post'          => 'manage_options',
 					'read_post'          => 'manage_options',
 					'delete_post'        => 'manage_options',
@@ -78,12 +78,12 @@ class WP_MCP_AI_Workflow_CPT {
 					'publish_posts'      => 'manage_options',
 					'read_private_posts' => 'manage_options',
 				),
-				'map_meta_cap'        => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'editor', 'revisions', 'custom-fields' ),
-				'has_archive'         => false,
-				'rewrite'             => false,
-				'query_var'           => false,
+				'map_meta_cap'       => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'editor', 'revisions', 'custom-fields' ),
+				'has_archive'        => false,
+				'rewrite'            => false,
+				'query_var'          => false,
 			)
 		);
 	}
@@ -148,13 +148,19 @@ class WP_MCP_AI_Workflow_CPT {
 		$raw     = get_post_meta( $post_id, self::META_GRAPH, true );
 
 		if ( empty( $raw ) ) {
-			return array( 'nodes' => array(), 'edges' => array() );
+			return array(
+				'nodes' => array(),
+				'edges' => array(),
+			);
 		}
 
 		$decoded = json_decode( wp_unslash( $raw ), true );
 
 		if ( ! is_array( $decoded ) ) {
-			return array( 'nodes' => array(), 'edges' => array() );
+			return array(
+				'nodes' => array(),
+				'edges' => array(),
+			);
 		}
 
 		return array(
@@ -244,7 +250,10 @@ class WP_MCP_AI_Workflow_CPT {
 		$title        = sanitize_text_field( $data['name'] );
 		$description  = isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '';
 		$version      = isset( $data['version'] ) ? sanitize_text_field( $data['version'] ) : '1.0.0';
-		$graph        = isset( $data['graph'] ) && is_array( $data['graph'] ) ? $data['graph'] : array( 'nodes' => array(), 'edges' => array() );
+		$graph        = isset( $data['graph'] ) && is_array( $data['graph'] ) ? $data['graph'] : array(
+			'nodes' => array(),
+			'edges' => array(),
+		);
 
 		$tags = array();
 		if ( isset( $data['tags'] ) && is_array( $data['tags'] ) ) {
@@ -300,14 +309,14 @@ class WP_MCP_AI_Workflow_CPT {
 		$patch = isset( $parts[2] ) ? absint( $parts[2] ) : 0;
 
 		if ( 'major' === $bump ) {
-			$major++;
+			++$major;
 			$minor = 0;
 			$patch = 0;
 		} elseif ( 'minor' === $bump ) {
-			$minor++;
+			++$minor;
 			$patch = 0;
 		} else {
-			$patch++;
+			++$patch;
 		}
 
 		$new_version = $major . '.' . $minor . '.' . $patch;

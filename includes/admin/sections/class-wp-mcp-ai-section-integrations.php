@@ -373,50 +373,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'gmail'        => array(
+				'gmail'         => array(
 					'id'     => 'gmail',
 					'label'  => __( 'Gmail', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
 				),
-				'google_drive' => array(
+				'google_drive'  => array(
 					'id'     => 'google_drive',
 					'label'  => __( 'Google Drive', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'google_drive_client_id', 'google_drive_client_secret' ),
 				),
-				'crawl4ai'     => array(
+				'crawl4ai'      => array(
 					'id'     => 'crawl4ai',
 					'label'  => __( 'Crawl4AI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'crawl4ai_base_url', 'crawl4ai_api_key' ),
 				),
-				'brave_search' => array(
+				'brave_search'  => array(
 					'id'     => 'brave_search',
 					'label'  => __( 'Brave Search', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
 				),
-				'tavily'       => array(
+				'tavily'        => array(
 					'id'     => 'tavily',
 					'label'  => __( 'Tavily', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'tavily_api_key' ),
 				),
-				'mubert'       => array(
+				'mubert'        => array(
 					'id'     => 'mubert',
 					'label'  => __( 'Mubert', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-audio',
 					'fields' => array( 'mubert_api_key' ),
 				),
 				// PayHere, Flowhub, iSAMS, and QuickBooks have been moved to Remote Sites.
-				'removebg'     => array(
+				'removebg'      => array(
 					'id'     => 'removebg',
 					'label'  => __( 'remove.bg', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'removebg_api_key' ),
 				),
-				'cloudflare'   => array(
+				'cloudflare'    => array(
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
@@ -427,13 +427,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						? array( 'cloudflare_api_token', 'cloudflare_zone_id', 'enable_cloudflare_pro_toolkit' )
 						: array( 'cloudflare_api_token', 'cloudflare_zone_id' ),
 				),
-				'cloudways'    => array(
+				'cloudways'     => array(
 					'id'     => 'cloudways',
 					'label'  => __( 'Cloudways', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud-upload',
 					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
-				'meta'         => array(
+				'meta'          => array(
 					'id'     => 'meta',
 					'label'  => __( 'Meta', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-share',

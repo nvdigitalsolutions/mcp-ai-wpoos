@@ -66,10 +66,10 @@ spl_autoload_register(
 		// Add Pro sections if Pro addon is loaded.
 		// Pro sections are only available when WP_MCP_AI_PRO_VERSION is defined.
 		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$section_files['WP_MCP_AI_Section_Performance']       = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-			$section_files['WP_MCP_AI_Section_Pro_Providers']     = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
-			$section_files['WP_MCP_AI_Section_Pro_Integrations']  = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
-			$section_files['WP_MCP_AI_Section_Schedule_Manager']  = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
+			$section_files['WP_MCP_AI_Section_Performance']      = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			$section_files['WP_MCP_AI_Section_Pro_Providers']    = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
+			$section_files['WP_MCP_AI_Section_Pro_Integrations'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+			$section_files['WP_MCP_AI_Section_Schedule_Manager'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
 		}
 
 		// Check if this is a section class we should autoload.

@@ -94,9 +94,9 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 		 */
 		do_action( 'wp_mcp_ai_workflow_v2_before_execute', $workflow_post_id, $input );
 
-		$run_id      = 'wf2-' . $workflow_post_id . '-' . bin2hex( random_bytes( 6 ) );
-		$cpt_run_id  = null;
-		$budget      = array();
+		$run_id     = 'wf2-' . $workflow_post_id . '-' . bin2hex( random_bytes( 6 ) );
+		$cpt_run_id = null;
+		$budget     = array();
 
 		// Phase 4 — create durable run record.
 		if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) ) {
@@ -119,12 +119,15 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 					'step_started',
 					'workflow-root',
 					'agent',
-					array( 'workflow_id' => $workflow_post_id, 'run_id' => $run_id )
+					array(
+						'workflow_id' => $workflow_post_id,
+						'run_id'      => $run_id,
+					)
 				);
 			}
 		}
 
-		$graph  = WP_MCP_AI_Workflow_CPT::get_graph( $workflow_post_id );
+		$graph = WP_MCP_AI_Workflow_CPT::get_graph( $workflow_post_id );
 
 		// Build a description from graph nodes for the underlying engine.
 		$node_descriptions = array();
@@ -198,7 +201,10 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 			} else {
 				$success = true;
 				$message = __( 'Graph executed (no execute_workflow tool registered).', 'mcp-ai-wpoos' );
-				$results = array( 'graph' => $graph, 'input' => $input );
+				$results = array(
+					'graph' => $graph,
+					'input' => $input,
+				);
 
 				// Phase 4 — record success (no tool needed).
 				if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) && $cpt_run_id ) {
@@ -215,7 +221,10 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 		} else {
 			$success = true;
 			$message = __( 'Graph executed (tool registry unavailable).', 'mcp-ai-wpoos' );
-			$results = array( 'graph' => $graph, 'input' => $input );
+			$results = array(
+				'graph' => $graph,
+				'input' => $input,
+			);
 
 			// Phase 4 — record success (registry unavailable).
 			if ( class_exists( 'WP_MCP_AI_Workflow_Run_CPT' ) && $cpt_run_id ) {
@@ -231,11 +240,11 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 		}
 
 		$result = array(
-			'success' => $success,
-			'run_id'  => $run_id,
+			'success'    => $success,
+			'run_id'     => $run_id,
 			'cpt_run_id' => $cpt_run_id,
-			'results' => $results,
-			'message' => $message,
+			'results'    => $results,
+			'message'    => $message,
 		);
 
 		/**

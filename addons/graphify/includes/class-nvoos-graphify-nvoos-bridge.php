@@ -216,49 +216,264 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	 * @var array[]
 	 */
 	const PRO_CPT_REGISTRY = array(
-		array( 'slug' => 'mcp_vault_item',       'default_include' => false, 'label' => 'Vault Items',           'content_meta' => '' ),
-		array( 'slug' => 'mcp_vault_folder',      'default_include' => false, 'label' => 'Vault Folders',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_service',           'default_include' => true,  'label' => 'Booking Services',      'content_meta' => '' ),
-		array( 'slug' => 'mcp_staff',             'default_include' => true,  'label' => 'Staff',                 'content_meta' => '' ),
-		array( 'slug' => 'mcp_appointment',       'default_include' => false, 'label' => 'Appointments',          'content_meta' => '' ),
-		array( 'slug' => 'mcp_chan_contact',       'default_include' => true,  'label' => 'Channel Contacts',      'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_company',        'default_include' => true,  'label' => 'Companies',             'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_project',        'default_include' => true,  'label' => 'Projects',              'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_event',          'default_include' => true,  'label' => 'Events',                'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_place',          'default_include' => true,  'label' => 'Places',                'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_eca',            'default_include' => true,  'label' => 'ECA Programmes',        'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_student',        'default_include' => false, 'label' => 'Students',              'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_member',         'default_include' => false, 'label' => 'Members',               'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_policy',         'default_include' => true,  'label' => 'Policies',              'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_med_record',     'default_include' => false, 'label' => 'Medical Records',       'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_checkup',        'default_include' => false, 'label' => 'Checkups',              'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_prescription',   'default_include' => false, 'label' => 'Prescriptions',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_allergy',        'default_include' => false, 'label' => 'Allergies',             'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_arch_spec',      'default_include' => true,  'label' => 'Arch. Specifications',  'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_arch_draw',      'default_include' => true,  'label' => 'Arch. Drawings',        'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_arch_proj',      'default_include' => true,  'label' => 'Arch. Projects',        'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_arch_precedent', 'default_include' => true,  'label' => 'Arch. Precedents',      'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_doc_tpl',        'default_include' => true,  'label' => 'Document Templates',    'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_image_tpl',      'default_include' => true,  'label' => 'Image Templates',       'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_media_tpl',      'default_include' => true,  'label' => 'Media Templates',       'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_media_coll',     'default_include' => true,  'label' => 'Media Collections',     'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_lf_matter',      'default_include' => false, 'label' => 'Legal Matters',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_lf_client',      'default_include' => false, 'label' => 'Legal Clients',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_lf_document',    'default_include' => false, 'label' => 'Legal Documents',       'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_lf_time_entry',  'default_include' => false, 'label' => 'Legal Time Entries',    'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_lf_trust_txn',   'default_include' => false, 'label' => 'Legal Trust TXNs',      'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_cre_loan',       'default_include' => false, 'label' => 'CRE Loans',             'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_cre_property',   'default_include' => false, 'label' => 'CRE Properties',        'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_fin_account',    'default_include' => false, 'label' => 'Financial Accounts',    'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_reg_product',    'default_include' => false, 'label' => 'Reg. Products',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_registration',   'default_include' => false, 'label' => 'Registrations',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_reg_document',   'default_include' => false, 'label' => 'Reg. Documents',        'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_reg_country',    'default_include' => false, 'label' => 'Reg. Countries',        'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_requirement',    'default_include' => false, 'label' => 'Requirements',          'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_doc_record',     'default_include' => false, 'label' => 'QMS Doc. Records',      'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_hc_vital_log',   'default_include' => false, 'label' => 'HC Vital Logs',         'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_imaging_study',  'default_include' => false, 'label' => 'Imaging Studies',       'content_meta' => '' ),
-		array( 'slug' => 'mcp_ai_area',           'default_include' => true,  'label' => 'PARA Areas',            'content_meta' => '' ),
+		array(
+			'slug'            => 'mcp_vault_item',
+			'default_include' => false,
+			'label'           => 'Vault Items',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_vault_folder',
+			'default_include' => false,
+			'label'           => 'Vault Folders',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_service',
+			'default_include' => true,
+			'label'           => 'Booking Services',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_staff',
+			'default_include' => true,
+			'label'           => 'Staff',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_appointment',
+			'default_include' => false,
+			'label'           => 'Appointments',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_chan_contact',
+			'default_include' => true,
+			'label'           => 'Channel Contacts',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_company',
+			'default_include' => true,
+			'label'           => 'Companies',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_project',
+			'default_include' => true,
+			'label'           => 'Projects',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_event',
+			'default_include' => true,
+			'label'           => 'Events',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_place',
+			'default_include' => true,
+			'label'           => 'Places',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_eca',
+			'default_include' => true,
+			'label'           => 'ECA Programmes',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_student',
+			'default_include' => false,
+			'label'           => 'Students',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_member',
+			'default_include' => false,
+			'label'           => 'Members',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_policy',
+			'default_include' => true,
+			'label'           => 'Policies',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_med_record',
+			'default_include' => false,
+			'label'           => 'Medical Records',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_checkup',
+			'default_include' => false,
+			'label'           => 'Checkups',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_prescription',
+			'default_include' => false,
+			'label'           => 'Prescriptions',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_allergy',
+			'default_include' => false,
+			'label'           => 'Allergies',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_arch_spec',
+			'default_include' => true,
+			'label'           => 'Arch. Specifications',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_arch_draw',
+			'default_include' => true,
+			'label'           => 'Arch. Drawings',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_arch_proj',
+			'default_include' => true,
+			'label'           => 'Arch. Projects',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_arch_precedent',
+			'default_include' => true,
+			'label'           => 'Arch. Precedents',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_doc_tpl',
+			'default_include' => true,
+			'label'           => 'Document Templates',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_image_tpl',
+			'default_include' => true,
+			'label'           => 'Image Templates',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_media_tpl',
+			'default_include' => true,
+			'label'           => 'Media Templates',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_media_coll',
+			'default_include' => true,
+			'label'           => 'Media Collections',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_lf_matter',
+			'default_include' => false,
+			'label'           => 'Legal Matters',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_lf_client',
+			'default_include' => false,
+			'label'           => 'Legal Clients',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_lf_document',
+			'default_include' => false,
+			'label'           => 'Legal Documents',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_lf_time_entry',
+			'default_include' => false,
+			'label'           => 'Legal Time Entries',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_lf_trust_txn',
+			'default_include' => false,
+			'label'           => 'Legal Trust TXNs',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_cre_loan',
+			'default_include' => false,
+			'label'           => 'CRE Loans',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_cre_property',
+			'default_include' => false,
+			'label'           => 'CRE Properties',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_fin_account',
+			'default_include' => false,
+			'label'           => 'Financial Accounts',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_reg_product',
+			'default_include' => false,
+			'label'           => 'Reg. Products',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_registration',
+			'default_include' => false,
+			'label'           => 'Registrations',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_reg_document',
+			'default_include' => false,
+			'label'           => 'Reg. Documents',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_reg_country',
+			'default_include' => false,
+			'label'           => 'Reg. Countries',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_requirement',
+			'default_include' => false,
+			'label'           => 'Requirements',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_doc_record',
+			'default_include' => false,
+			'label'           => 'QMS Doc. Records',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_hc_vital_log',
+			'default_include' => false,
+			'label'           => 'HC Vital Logs',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_imaging_study',
+			'default_include' => false,
+			'label'           => 'Imaging Studies',
+			'content_meta'    => '',
+		),
+		array(
+			'slug'            => 'mcp_ai_area',
+			'default_include' => true,
+			'label'           => 'PARA Areas',
+			'content_meta'    => '',
+		),
 	);
 
 	// -------------------------------------------------------------------------
@@ -278,11 +493,11 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	 */
 	public static function register() {
 		// CCT label/content field lists — per-slug overrides.
-		add_filter( 'nvoos_graphify_cct_label_fields',   array( __CLASS__, 'filter_cct_label_fields' ),   10, 3 );
+		add_filter( 'nvoos_graphify_cct_label_fields', array( __CLASS__, 'filter_cct_label_fields' ), 10, 3 );
 		add_filter( 'nvoos_graphify_cct_content_fields', array( __CLASS__, 'filter_cct_content_fields' ), 10, 2 );
 
 		// Higher-precedence resolver callbacks for JSON-envelope types.
-		add_filter( 'nvoos_graphify_cct_resolve_label',   array( __CLASS__, 'resolve_transcript_label' ),   10, 3 );
+		add_filter( 'nvoos_graphify_cct_resolve_label', array( __CLASS__, 'resolve_transcript_label' ), 10, 3 );
 		add_filter( 'nvoos_graphify_cct_resolve_content', array( __CLASS__, 'resolve_transcript_content' ), 10, 3 );
 
 		// MemPalace: emit wing/room/agent edges for agent_memories CCT rows.
@@ -364,8 +579,8 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 
 		$parts    = array();
 		$asst_id  = ! empty( $item['assistant_id'] ) ? (string) $item['assistant_id'] : '';
-		$sess_key = ! empty( $item['session_key'] )  ? (string) $item['session_key']  : '';
-		$date     = ! empty( $item['cct_created'] )  ? substr( (string) $item['cct_created'], 0, 10 ) : '';
+		$sess_key = ! empty( $item['session_key'] ) ? (string) $item['session_key'] : '';
+		$date     = ! empty( $item['cct_created'] ) ? substr( (string) $item['cct_created'], 0, 10 ) : '';
 
 		if ( '' !== $asst_id ) {
 			$parts[] = 'Assistant ' . $asst_id;
@@ -504,7 +719,7 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 					}
 				}
 				if ( ! empty( $text_parts ) ) {
-					$role  = isset( $msg['role'] ) ? sanitize_text_field( (string) $msg['role'] ) : $default_role;
+					$role    = isset( $msg['role'] ) ? sanitize_text_field( (string) $msg['role'] ) : $default_role;
 					$texts[] = ( '' !== $role ? "[$role] " : '' ) . wp_strip_all_tags( implode( ' ', $text_parts ) );
 				}
 			}
@@ -541,8 +756,8 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 			return $edges_out;
 		}
 
-		$wing     = ! empty( $item['wing'] )     ? sanitize_text_field( (string) $item['wing'] ) : '';
-		$room     = ! empty( $item['room'] )     ? sanitize_text_field( (string) $item['room'] ) : '';
+		$wing     = ! empty( $item['wing'] ) ? sanitize_text_field( (string) $item['wing'] ) : '';
+		$room     = ! empty( $item['room'] ) ? sanitize_text_field( (string) $item['room'] ) : '';
 		$agent_id = ! empty( $item['agent_id'] ) ? sanitize_text_field( (string) $item['agent_id'] ) : '';
 
 		// Wing edge.
@@ -567,7 +782,10 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 					'relation'       => 'MEMBER_OF',
 					'confidence'     => 1.0,
 					'provenance'     => 'EXTRACTED',
-					'properties'     => array( 'wing' => $wing, 'room' => $room ),
+					'properties'     => array(
+						'wing' => $wing,
+						'room' => $room,
+					),
 				);
 				// Room → Wing containment.
 				$edges_out[] = array(
@@ -597,9 +815,9 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 		// separate target).  We propagate it via a self-referential 'HAS_TIER'
 		// edge so the tier shows up in edge queries.
 		if ( ! empty( $item['memory_tier'] ) ) {
-			$tier_label    = sanitize_text_field( (string) $item['memory_tier'] );
-			$tier_node_id  = 'tier:' . $tier_label;
-			$edges_out[]   = array(
+			$tier_label   = sanitize_text_field( (string) $item['memory_tier'] );
+			$tier_node_id = 'tier:' . $tier_label;
+			$edges_out[]  = array(
 				'source_node_id' => $node_id,
 				'target_node_id' => $tier_node_id,
 				'relation'       => 'HAS_TIER',
@@ -741,8 +959,8 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 	public static function register_external_tables( $tables ) {
 		global $wpdb;
 
-		$settings        = NV_oOS_Graphify::get_settings();
-		$enabled_tables  = isset( $settings['external_tables'] ) && is_array( $settings['external_tables'] )
+		$settings       = NV_oOS_Graphify::get_settings();
+		$enabled_tables = isset( $settings['external_tables'] ) && is_array( $settings['external_tables'] )
 			? array_map( 'sanitize_key', $settings['external_tables'] )
 			: array();
 
@@ -750,166 +968,166 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 			// --- Base-plugin tables (non-sensitive, on by default) ---
 
 			array(
-				'table'           => 'mcp_ai_slash_command_audit',
-				'primary_key'     => 'id',
-				'label_field'     => 'command',
-				'label_callback'  => null,
-				'content_field'   => 'result',
-				'content_callback'=> null,
-				'modified_field'  => 'timestamp',
-				'default_include' => false,
-				'label'           => __( 'Slash Command Audit', 'nvoos-graphify' ),
-				'node_type'       => 'ext_slash_cmd_audit',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_slash_command_audit',
+				'primary_key'      => 'id',
+				'label_field'      => 'command',
+				'label_callback'   => null,
+				'content_field'    => 'result',
+				'content_callback' => null,
+				'modified_field'   => 'timestamp',
+				'default_include'  => false,
+				'label'            => __( 'Slash Command Audit', 'nvoos-graphify' ),
+				'node_type'        => 'ext_slash_cmd_audit',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_metric_events',
-				'primary_key'     => 'id',
-				'label_field'     => 'event_name',
-				'label_callback'  => null,
-				'content_field'   => 'context',
-				'content_callback'=> null,
-				'modified_field'  => 'occurred_at',
-				'default_include' => false,
-				'label'           => __( 'Metric Events', 'nvoos-graphify' ),
-				'node_type'       => 'ext_metric_events',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_metric_events',
+				'primary_key'      => 'id',
+				'label_field'      => 'event_name',
+				'label_callback'   => null,
+				'content_field'    => 'context',
+				'content_callback' => null,
+				'modified_field'   => 'occurred_at',
+				'default_include'  => false,
+				'label'            => __( 'Metric Events', 'nvoos-graphify' ),
+				'node_type'        => 'ext_metric_events',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_hourly_token_usage',
-				'primary_key'     => 'id',
-				'label_field'     => 'model',
-				'label_callback'  => null,
-				'content_field'   => '',
-				'content_callback'=> null,
-				'modified_field'  => 'period_start',
-				'default_include' => false,
-				'label'           => __( 'Hourly Token Usage', 'nvoos-graphify' ),
-				'node_type'       => 'ext_token_usage',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_hourly_token_usage',
+				'primary_key'      => 'id',
+				'label_field'      => 'model',
+				'label_callback'   => null,
+				'content_field'    => '',
+				'content_callback' => null,
+				'modified_field'   => 'period_start',
+				'default_include'  => false,
+				'label'            => __( 'Hourly Token Usage', 'nvoos-graphify' ),
+				'node_type'        => 'ext_token_usage',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_job_queue',
-				'primary_key'     => 'id',
-				'label_field'     => 'job_type',
-				'label_callback'  => null,
-				'content_field'   => 'payload',
-				'content_callback'=> null,
-				'modified_field'  => 'created_at',
-				'default_include' => false,
-				'label'           => __( 'Job Queue', 'nvoos-graphify' ),
-				'node_type'       => 'ext_job_queue',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_job_queue',
+				'primary_key'      => 'id',
+				'label_field'      => 'job_type',
+				'label_callback'   => null,
+				'content_field'    => 'payload',
+				'content_callback' => null,
+				'modified_field'   => 'created_at',
+				'default_include'  => false,
+				'label'            => __( 'Job Queue', 'nvoos-graphify' ),
+				'node_type'        => 'ext_job_queue',
+				'foreign_keys'     => array(),
 			),
 
 			// --- Pro / compliance tables (sensitive, off by default) ---
 
 			array(
-				'table'           => 'mcp_ai_controls',
-				'primary_key'     => 'id',
-				'label_field'     => 'control_name',
-				'label_callback'  => null,
-				'content_field'   => 'description',
-				'content_callback'=> null,
-				'modified_field'  => 'updated_at',
-				'default_include' => false,
-				'label'           => __( 'Compliance Controls', 'nvoos-graphify' ),
-				'node_type'       => 'ext_compliance_controls',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_controls',
+				'primary_key'      => 'id',
+				'label_field'      => 'control_name',
+				'label_callback'   => null,
+				'content_field'    => 'description',
+				'content_callback' => null,
+				'modified_field'   => 'updated_at',
+				'default_include'  => false,
+				'label'            => __( 'Compliance Controls', 'nvoos-graphify' ),
+				'node_type'        => 'ext_compliance_controls',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_evidence',
-				'primary_key'     => 'id',
-				'label_field'     => 'title',
-				'label_callback'  => null,
-				'content_field'   => 'description',
-				'content_callback'=> null,
-				'modified_field'  => 'created_at',
-				'default_include' => false,
-				'label'           => __( 'Compliance Evidence', 'nvoos-graphify' ),
-				'node_type'       => 'ext_compliance_evidence',
-				'foreign_keys'    => array(
+				'table'            => 'mcp_ai_evidence',
+				'primary_key'      => 'id',
+				'label_field'      => 'title',
+				'label_callback'   => null,
+				'content_field'    => 'description',
+				'content_callback' => null,
+				'modified_field'   => 'created_at',
+				'default_include'  => false,
+				'label'            => __( 'Compliance Evidence', 'nvoos-graphify' ),
+				'node_type'        => 'ext_compliance_evidence',
+				'foreign_keys'     => array(
 					array(
-						'local_column'   => 'control_id',
-						'target_type'    => 'ext_compliance_controls',
-						'target_table'   => 'mcp_ai_controls',
-						'target_pk'      => 'id',
-						'relation'       => 'EVIDENCE_FOR',
+						'local_column' => 'control_id',
+						'target_type'  => 'ext_compliance_controls',
+						'target_table' => 'mcp_ai_controls',
+						'target_pk'    => 'id',
+						'relation'     => 'EVIDENCE_FOR',
 					),
 				),
 			),
 			array(
-				'table'           => 'mcp_ai_risks',
-				'primary_key'     => 'id',
-				'label_field'     => 'risk_name',
-				'label_callback'  => null,
-				'content_field'   => 'description',
-				'content_callback'=> null,
-				'modified_field'  => 'updated_at',
-				'default_include' => false,
-				'label'           => __( 'Risk Register', 'nvoos-graphify' ),
-				'node_type'       => 'ext_risk_register',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_risks',
+				'primary_key'      => 'id',
+				'label_field'      => 'risk_name',
+				'label_callback'   => null,
+				'content_field'    => 'description',
+				'content_callback' => null,
+				'modified_field'   => 'updated_at',
+				'default_include'  => false,
+				'label'            => __( 'Risk Register', 'nvoos-graphify' ),
+				'node_type'        => 'ext_risk_register',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_audit_trail',
-				'primary_key'     => 'id',
-				'label_field'     => 'action',
-				'label_callback'  => null,
-				'content_field'   => 'details',
-				'content_callback'=> null,
-				'modified_field'  => 'created_at',
-				'default_include' => false,
-				'label'           => __( 'Audit Trail', 'nvoos-graphify' ),
-				'node_type'       => 'ext_audit_trail',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_audit_trail',
+				'primary_key'      => 'id',
+				'label_field'      => 'action',
+				'label_callback'   => null,
+				'content_field'    => 'details',
+				'content_callback' => null,
+				'modified_field'   => 'created_at',
+				'default_include'  => false,
+				'label'            => __( 'Audit Trail', 'nvoos-graphify' ),
+				'node_type'        => 'ext_audit_trail',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_compliance_checks',
-				'primary_key'     => 'id',
-				'label_field'     => 'check_name',
-				'label_callback'  => null,
-				'content_field'   => 'result_details',
-				'content_callback'=> null,
-				'modified_field'  => 'checked_at',
-				'default_include' => false,
-				'label'           => __( 'Compliance Checks', 'nvoos-graphify' ),
-				'node_type'       => 'ext_compliance_checks',
-				'foreign_keys'    => array(
+				'table'            => 'mcp_ai_compliance_checks',
+				'primary_key'      => 'id',
+				'label_field'      => 'check_name',
+				'label_callback'   => null,
+				'content_field'    => 'result_details',
+				'content_callback' => null,
+				'modified_field'   => 'checked_at',
+				'default_include'  => false,
+				'label'            => __( 'Compliance Checks', 'nvoos-graphify' ),
+				'node_type'        => 'ext_compliance_checks',
+				'foreign_keys'     => array(
 					array(
-						'local_column'   => 'control_id',
-						'target_type'    => 'ext_compliance_controls',
-						'target_table'   => 'mcp_ai_controls',
-						'target_pk'      => 'id',
-						'relation'       => 'CHECKS',
+						'local_column' => 'control_id',
+						'target_type'  => 'ext_compliance_controls',
+						'target_table' => 'mcp_ai_controls',
+						'target_pk'    => 'id',
+						'relation'     => 'CHECKS',
 					),
 				),
 			),
 			array(
-				'table'           => 'mcp_ai_custom_metrics',
-				'primary_key'     => 'id',
-				'label_field'     => 'metric_name',
-				'label_callback'  => null,
-				'content_field'   => 'description',
-				'content_callback'=> null,
-				'modified_field'  => 'created_at',
-				'default_include' => false,
-				'label'           => __( 'Custom Metrics', 'nvoos-graphify' ),
-				'node_type'       => 'ext_custom_metrics',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_custom_metrics',
+				'primary_key'      => 'id',
+				'label_field'      => 'metric_name',
+				'label_callback'   => null,
+				'content_field'    => 'description',
+				'content_callback' => null,
+				'modified_field'   => 'created_at',
+				'default_include'  => false,
+				'label'            => __( 'Custom Metrics', 'nvoos-graphify' ),
+				'node_type'        => 'ext_custom_metrics',
+				'foreign_keys'     => array(),
 			),
 			array(
-				'table'           => 'mcp_ai_events',
-				'primary_key'     => 'id',
-				'label_field'     => 'event_type',
-				'label_callback'  => null,
-				'content_field'   => 'payload',
-				'content_callback'=> null,
-				'modified_field'  => 'created_at',
-				'default_include' => false,
-				'label'           => __( 'NV oOS Events', 'nvoos-graphify' ),
-				'node_type'       => 'ext_nvoos_events',
-				'foreign_keys'    => array(),
+				'table'            => 'mcp_ai_events',
+				'primary_key'      => 'id',
+				'label_field'      => 'event_type',
+				'label_callback'   => null,
+				'content_field'    => 'payload',
+				'content_callback' => null,
+				'modified_field'   => 'created_at',
+				'default_include'  => false,
+				'label'            => __( 'NV oOS Events', 'nvoos-graphify' ),
+				'node_type'        => 'ext_nvoos_events',
+				'foreign_keys'     => array(),
 			),
 		);
 

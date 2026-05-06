@@ -122,18 +122,18 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 		$sender_name = isset( $arguments['sender_name'] ) ? sanitize_text_field( $arguments['sender_name'] ) : 'WordPress Assistant';
 
 		// Get WebChat settings.
-		$settings        = get_option( 'wp_mcp_ai_settings', array() );
-		$signaling_url   = isset( $settings['webchat_signaling_url'] ) ? $settings['webchat_signaling_url'] : '';
-		$api_key         = isset( $settings['webchat_api_key'] ) ? $settings['webchat_api_key'] : '';
-		$use_rest_api    = ! empty( $settings['webchat_use_rest_api'] );
+		$settings      = get_option( 'wp_mcp_ai_settings', array() );
+		$signaling_url = isset( $settings['webchat_signaling_url'] ) ? $settings['webchat_signaling_url'] : '';
+		$api_key       = isset( $settings['webchat_api_key'] ) ? $settings['webchat_api_key'] : '';
+		$use_rest_api  = ! empty( $settings['webchat_use_rest_api'] );
 
 		// WebChat message payload.
 		$payload = array(
-			'type'    => 'message',
-			'content' => $message,
-			'sender'  => $sender_name,
-			'room'    => $room_id ? $room_id : get_option( 'siteurl' ),
-			'site'    => get_option( 'siteurl' ),
+			'type'      => 'message',
+			'content'   => $message,
+			'sender'    => $sender_name,
+			'room'      => $room_id ? $room_id : get_option( 'siteurl' ),
+			'site'      => get_option( 'siteurl' ),
 			'timestamp' => time(),
 		);
 
@@ -141,9 +141,9 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			'webchat_send_message',
 			'Sending WebChat P2P message.',
 			array(
-				'room'        => $room_id ? $room_id : 'all',
-				'sender'      => $sender_name,
-				'use_api'     => $use_rest_api,
+				'room'    => $room_id ? $room_id : 'all',
+				'sender'  => $sender_name,
+				'use_api' => $use_rest_api,
 			)
 		);
 
@@ -197,14 +197,27 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$code = wp_remote_retrieve_response_code( $response );
-		$body = wp_remote_retrieve_body( $response );
+		$code    = wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
 		$decoded = json_decode( $body, true );
 
 		if ( 200 !== $code && 201 !== $code ) {
 			$message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'WebChat signaling server returned an error.', 'mcp-ai-wpoos-pro' );
-			WP_MCP_AI_Logger::log_error( 'WebChat message broadcast failed.', array( 'http_code' => $code, 'error' => $message ) );
-			return new WP_Error( 'wp_mcp_ai_webchat_api_error', esc_html( $message ), array( 'code' => $code, 'response' => $decoded ) );
+			WP_MCP_AI_Logger::log_error(
+				'WebChat message broadcast failed.',
+				array(
+					'http_code' => $code,
+					'error'     => $message,
+				)
+			);
+			return new WP_Error(
+				'wp_mcp_ai_webchat_api_error',
+				esc_html( $message ),
+				array(
+					'code'     => $code,
+					'response' => $decoded,
+				)
+			);
 		}
 
 		$result = array(
@@ -305,7 +318,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 		);
 
 		// Initialize save tool.
-		$save_tool = new WP_MCP_AI_Tool_Save_WebChat_Message();
+		$save_tool   = new WP_MCP_AI_Tool_Save_WebChat_Message();
 		$save_result = $save_tool->execute( $save_args, $context );
 
 		if ( is_wp_error( $save_result ) ) {
@@ -319,7 +332,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			$result['cct_save_error'] = $save_result->get_error_message();
 		} else {
 			$result['saved_to_cct'] = true;
-			$result['message_id'] = isset( $save_result['message_id'] ) ? $save_result['message_id'] : null;
+			$result['message_id']   = isset( $save_result['message_id'] ) ? $save_result['message_id'] : null;
 		}
 	}
 

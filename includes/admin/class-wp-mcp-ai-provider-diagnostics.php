@@ -761,14 +761,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php
 					$embedded_client   = class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null;
 					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array(
-						'found' => false,
-						'path' => '',
+						'found'    => false,
+						'path'     => '',
 						'platform' => '',
-						'message' => '',
+						'message'  => '',
 					);
 					$shared_libs       = $embedded_client ? $embedded_client->get_shared_libs_status() : array(
-						'found' => false,
-						'libs' => array(),
+						'found'   => false,
+						'libs'    => array(),
 						'bin_dir' => '',
 					);
 					$downloaded_models = $embedded_client ? $embedded_client->get_downloaded_models() : array();
@@ -1919,7 +1919,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'DeepSeek connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
-							__( 'Model', 'mcp-ai-wpoos' )       => $model,
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
 							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
 						),
 					)
@@ -2036,10 +2036,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'OpenRouter connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
-							__( 'Model', 'mcp-ai-wpoos' )        => $model,
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
 							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
-							__( 'Referer', 'mcp-ai-wpoos' )      => $site_url,
-							__( 'App Title', 'mcp-ai-wpoos' )    => $app_title,
+							__( 'Referer', 'mcp-ai-wpoos' ) => $site_url,
+							__( 'App Title', 'mcp-ai-wpoos' ) => $app_title,
 						),
 					)
 				);
@@ -2082,22 +2082,22 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				// Get available WebLLM models (client-side).
 				// All available models are listed. Models marked with * support function calling.
 				$available_models = array(
-					'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC'      => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
-					'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'        => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
+					'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
+					'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'   => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
 					'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Llama 8B (~5GB)', 'mcp-ai-wpoos' ),
-					'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC'  => __( 'DeepSeek R1 Distill Qwen 7B (~5.1GB)', 'mcp-ai-wpoos' ),
-					'Qwen3-8B-q4f16_1-MLC'                     => __( 'Qwen3 8B (~5GB)*', 'mcp-ai-wpoos' ),
-					'Qwen2.5-7B-Instruct-q4f16_1-MLC'          => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
-					'Qwen3-4B-q4f16_1-MLC'                     => __( 'Qwen3 4B (~2.5GB)*', 'mcp-ai-wpoos' ),
-					'Phi-3.5-mini-instruct-q4f16_1-MLC'        => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
-					'gemma-2-2b-it-q4f16_1-MLC'                => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
-					'Llama-3.2-3B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
-					'SmolLM2-1.7B-Instruct-q4f16_1-MLC'        => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
-					'Qwen3-1.7B-q4f16_1-MLC'                   => __( 'Qwen3 1.7B (~1.1GB)*', 'mcp-ai-wpoos' ),
-					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
-					'Llama-3.2-1B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
-					'Qwen3-0.6B-q4f16_1-MLC'                   => __( 'Qwen3 0.6B (~400MB)', 'mcp-ai-wpoos' ),
-					'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
+					'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Qwen 7B (~5.1GB)', 'mcp-ai-wpoos' ),
+					'Qwen3-8B-q4f16_1-MLC'                => __( 'Qwen3 8B (~5GB)*', 'mcp-ai-wpoos' ),
+					'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+					'Qwen3-4B-q4f16_1-MLC'                => __( 'Qwen3 4B (~2.5GB)*', 'mcp-ai-wpoos' ),
+					'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
+					'gemma-2-2b-it-q4f16_1-MLC'           => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
+					'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+					'SmolLM2-1.7B-Instruct-q4f16_1-MLC'   => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
+					'Qwen3-1.7B-q4f16_1-MLC'              => __( 'Qwen3 1.7B (~1.1GB)*', 'mcp-ai-wpoos' ),
+					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
+					'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+					'Qwen3-0.6B-q4f16_1-MLC'              => __( 'Qwen3 0.6B (~400MB)', 'mcp-ai-wpoos' ),
+					'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 				);
 
 				$model_count    = count( $available_models );

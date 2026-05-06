@@ -109,10 +109,10 @@ class NVOOS_SaaS_Controller_Assets {
 			self::SCRIPT_HANDLE,
 			'nvoosSaasController',
 			array(
-				'restRoot'        => esc_url_raw( rest_url( NVOOS_SaaS_Controller_REST::NAMESPACE . '/' ) ),
-				'nonce'           => wp_create_nonce( 'wp_rest' ),
-				'credentialKeys'  => NVOOS_SaaS_Controller_Credential_Store::ALLOWED_KEYS,
-				'addonVersion'    => defined( 'NVOOS_SAAS_CONTROLLER_VERSION' ) ? NVOOS_SAAS_CONTROLLER_VERSION : 'dev',
+				'restRoot'       => esc_url_raw( rest_url( NVOOS_SaaS_Controller_REST::NAMESPACE . '/' ) ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+				'credentialKeys' => NVOOS_SaaS_Controller_Credential_Store::ALLOWED_KEYS,
+				'addonVersion'   => defined( 'NVOOS_SAAS_CONTROLLER_VERSION' ) ? NVOOS_SAAS_CONTROLLER_VERSION : 'dev',
 			)
 		);
 

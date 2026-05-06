@@ -360,10 +360,10 @@ class WP_MCP_AI_Retrieval_Harness {
 				'score'     => max( 0.0, min( 1.0, $score ) ),
 				'freshness' => self::freshness_score( $timestamp ),
 				'citation'  => array(
-					'source'        => $slug,
-					'source_id'     => $source_id,
-					'timestamp'     => $timestamp,
-					'content_hash'  => $content_hash,
+					'source'       => $slug,
+					'source_id'    => $source_id,
+					'timestamp'    => $timestamp,
+					'content_hash' => $content_hash,
 				),
 			);
 		}
@@ -407,8 +407,8 @@ class WP_MCP_AI_Retrieval_Harness {
 		}
 		$grams = array();
 		for ( $i = 0; $i <= $count - $n; ++$i ) {
-			$gram             = implode( ' ', array_slice( $tokens, $i, $n ) );
-			$grams[ $gram ]   = true;
+			$gram           = implode( ' ', array_slice( $tokens, $i, $n ) );
+			$grams[ $gram ] = true;
 		}
 		return $grams;
 	}

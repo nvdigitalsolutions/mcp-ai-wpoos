@@ -385,7 +385,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 			$attributes['save_transcript'] = 'false';
 		}
 
-		$enable_streaming                = ! empty( $settings['enable_streaming'] ) && 'yes' === $settings['enable_streaming'];
+		$enable_streaming               = ! empty( $settings['enable_streaming'] ) && 'yes' === $settings['enable_streaming'];
 		$attributes['enable_streaming'] = $enable_streaming ? 'true' : 'false';
 
 		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'yes' === $settings['allow_sensitive_tools'];

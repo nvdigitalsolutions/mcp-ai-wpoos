@@ -235,12 +235,12 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		$default_provider = isset( $plugin['default_provider'] ) ? $plugin['default_provider'] : '';
 
 		$provider_key_map = array(
-			'openai'     => 'openai_api_key',
-			'anthropic'  => 'anthropic_api_key',
-			'gemini'     => 'gemini_api_key',
+			'openai'      => 'openai_api_key',
+			'anthropic'   => 'anthropic_api_key',
+			'gemini'      => 'gemini_api_key',
 			'huggingface' => 'huggingface_api_key',
-			'nvidia'     => 'nvidia_api_key',
-			'cloudflare' => 'cloudflare_api_token',
+			'nvidia'      => 'nvidia_api_key',
+			'cloudflare'  => 'cloudflare_api_token',
 		);
 
 		$provider_endpoint_map = array(

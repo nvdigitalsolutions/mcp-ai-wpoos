@@ -85,11 +85,11 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 			: implode( ', ', $summary_parts ) . '.';
 
 		return array(
-			'success'          => true,
-			'gaps'             => $gaps,
-			'recommendations'  => $suggestions,
-			'surprising'       => $surprising,
-			'summary'          => $summary,
+			'success'         => true,
+			'gaps'            => $gaps,
+			'recommendations' => $suggestions,
+			'surprising'      => $surprising,
+			'summary'         => $summary,
 		);
 	}
 }

@@ -72,6 +72,30 @@
 	}
 
 	/**
+	 * Extract a human-readable error message from a jQuery xhr object,
+	 * falling back to a default string.
+	 *
+	 * @param {Object} xhr     jQuery XHR.
+	 * @param {string} defaultMessage Default message.
+	 * @return {string}
+	 */
+	function extractError( xhr, defaultMessage ) {
+		if ( xhr && xhr.responseJSON ) {
+			const r = xhr.responseJSON;
+			if ( r.data && r.data.message ) {
+				return r.data.message;
+			}
+			if ( r.message ) {
+				return r.message;
+			}
+		}
+		if ( xhr && typeof xhr.responseText === 'string' && xhr.responseText.length && xhr.responseText.length < 500 ) {
+			return xhr.responseText;
+		}
+		return defaultMessage;
+	}
+
+	/**
 	 * Fetch and render the run list.
 	 */
 	function loadRunList() {
@@ -98,8 +122,9 @@
 				renderRunList( data.runs );
 				renderPagination( data.total, data.page );
 			} )
-			.fail( function () {
-				$list.html( '<li class="rt-error">Request failed.</li>' );
+			.fail( function ( xhr ) {
+				const msg = extractError( xhr, 'Request failed.' );
+				$list.html( $( '<li>' ).addClass( 'rt-error' ).text( msg ) );
 			} );
 	}
 
@@ -188,8 +213,9 @@
 				}
 				renderRunDetail( response.data );
 			} )
-			.fail( function () {
-				$detail.html( '<div class="rt-error">Request failed.</div>' );
+			.fail( function ( xhr ) {
+				const msg = extractError( xhr, 'Request failed.' );
+				$detail.html( $( '<div>' ).addClass( 'rt-error' ).text( msg ) );
 			} );
 	}
 

@@ -627,7 +627,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			if ( $orchestrator ) {
 				foreach ( $orchestrator->get_workflows() as $slug => $info ) {
 					if ( ! isset( $workflows[ $slug ] ) ) {
-						$full = $orchestrator->get_workflow( $slug );
+						$full               = $orchestrator->get_workflow( $slug );
 						$workflows[ $slug ] = array(
 							'title'       => $info['name'],
 							'description' => $info['description'],

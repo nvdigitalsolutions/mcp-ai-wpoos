@@ -89,7 +89,10 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( ! $community_id ) {
-			return array( 'success' => false, 'error' => __( 'Community not found. Provide a valid community_id, node_id, or label.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'Community not found. Provide a valid community_id, node_id, or label.', 'nvoos-graphify' ),
+			);
 		}
 
 		$nodes = NV_oOS_Graphify_DB::list_nodes(

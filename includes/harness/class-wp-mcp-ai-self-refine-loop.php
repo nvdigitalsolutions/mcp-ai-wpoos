@@ -95,7 +95,7 @@ class WP_MCP_AI_Self_Refine_Loop {
 			if ( is_wp_error( $verdict_raw ) ) {
 				return $verdict_raw;
 			}
-			$verdict = self::sanitize_verdict( $verdict_raw );
+			$verdict    = self::sanitize_verdict( $verdict_raw );
 			$verdicts[] = $verdict['verdict'];
 			$feedback[] = $verdict['feedback'];
 
@@ -190,8 +190,8 @@ class WP_MCP_AI_Self_Refine_Loop {
 			$task_class = 'general';
 		}
 
-		$scrub          = WP_MCP_AI_Pii_Filter::scrub( $reflection );
-		$cleaned        = $scrub['text'];
+		$scrub           = WP_MCP_AI_Pii_Filter::scrub( $reflection );
+		$cleaned         = $scrub['text'];
 		$redaction_count = $scrub['redactions'];
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {

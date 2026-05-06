@@ -48,9 +48,20 @@ class WP_MCP_AI_JetEngine_Agent_Memories_CCT {
 
 	/**
 	 * Hook into JetEngine to provision the agent memories content type.
+	 *
+	 * Registration runs at `init` priority **11** so it lands *after*
+	 * JetEngine's CCT manager has hydrated its internal table cache during
+	 * priorities 1–10 (see PR #4816). Registering at priority 0 races
+	 * JetEngine's bootstrap and leaves `get_item_handler()` returning null
+	 * for the rest of the request — which silently empties the
+	 * `ai_chat_agent_memories` CCT.
+	 *
+	 * `maybe_enable_data_stores` stays at priority 0 because the data-stores
+	 * module must be activated *before* JetEngine's own bootstrap so the
+	 * CCT module loads at all.
 	 */
 	public static function bootstrap() {
-		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
+		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
 		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 0 );
 	}
 
@@ -77,7 +88,15 @@ class WP_MCP_AI_JetEngine_Agent_Memories_CCT {
 		$module = self::get_cct_module();
 
 		if ( ! $module || empty( $module->manager ) ) {
-			return null;
+			// CCT module didn't load. Most likely the data-stores module
+			// hasn't been activated yet — try once more so a late call
+			// (e.g. on shutdown after a transcript-mining tick) can still
+			// recover and write a row.
+			self::maybe_enable_data_stores();
+			$module = self::get_cct_module();
+			if ( ! $module || empty( $module->manager ) ) {
+				return null;
+			}
 		}
 
 		// Ensure CCT is registered before retrieving its handler.

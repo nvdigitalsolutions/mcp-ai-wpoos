@@ -668,12 +668,12 @@ class NV_oOS_Graphify_Settings {
 		echo '<thead><tr><th>' . esc_html__( 'Table', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Index', 'nvoos-graphify' ) . '</th><th>' . esc_html__( 'Status', 'nvoos-graphify' ) . '</th></tr></thead>';
 		echo '<tbody>';
 		foreach ( $all_descriptors as $desc ) {
-			$table_key    = sanitize_key( $desc['table'] );
-			$checked      = in_array( $table_key, $enabled, true );
-			$table_full   = $wpdb->prefix . $desc['table'];
+			$table_key  = sanitize_key( $desc['table'] );
+			$checked    = in_array( $table_key, $enabled, true );
+			$table_full = $wpdb->prefix . $desc['table'];
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_full ) ) === $table_full;
-			$status_text  = $table_exists
+			$table_exists    = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_full ) ) === $table_full;
+			$status_text     = $table_exists
 				? esc_html__( 'Table exists', 'nvoos-graphify' )
 				: '<em>' . esc_html__( 'Table not found', 'nvoos-graphify' ) . '</em>';
 			$sensitive_badge = $desc['sensitive'] ? ' <span style="background:#d63638;color:#fff;padding:0 4px;border-radius:2px;font-size:10px">' . esc_html__( 'Sensitive', 'nvoos-graphify' ) . '</span>' : '';

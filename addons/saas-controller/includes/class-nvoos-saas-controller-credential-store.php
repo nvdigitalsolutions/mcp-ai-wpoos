@@ -81,7 +81,7 @@ class NVOOS_SaaS_Controller_Credential_Store {
 		$envelope = get_option( self::OPTION_KEY, array() );
 		$out      = array();
 		foreach ( self::ALLOWED_KEYS as $key ) {
-			$cipher    = isset( $envelope[ $key ] ) ? (string) $envelope[ $key ] : '';
+			$cipher      = isset( $envelope[ $key ] ) ? (string) $envelope[ $key ] : '';
 			$out[ $key ] = '' === $cipher ? '' : $this->decrypt( $cipher );
 		}
 		return $out;
@@ -101,8 +101,8 @@ class NVOOS_SaaS_Controller_Credential_Store {
 		$plain = $this->get_all();
 		$out   = array();
 		foreach ( self::ALLOWED_KEYS as $key ) {
-			$value      = $plain[ $key ];
-			$configured = '' !== $value;
+			$value       = $plain[ $key ];
+			$configured  = '' !== $value;
 			$out[ $key ] = array(
 				'configured' => $configured,
 				'masked'     => $configured ? $this->mask( $value ) : '',

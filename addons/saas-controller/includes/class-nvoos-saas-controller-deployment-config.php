@@ -64,19 +64,19 @@ class NVOOS_SaaS_Controller_Deployment_Config {
 	 */
 	public static function defaults() {
 		return array(
-			'worker_name'      => '',
-			'account_id'       => '',
-			'd1_databases'     => array(),
-			'kv_namespaces'    => array(),
-			'ai_gateway_slug'  => '',
-			'routes'           => array(),
+			'worker_name'     => '',
+			'account_id'      => '',
+			'd1_databases'    => array(),
+			'kv_namespaces'   => array(),
+			'ai_gateway_slug' => '',
+			'routes'          => array(),
 			// Phase 6: desired Stripe + OpenRouter topology. Each section is
 			// optional and skipped at plan time when its credentials aren't
 			// configured (no SSRF / spurious-failure surface for operators
 			// who only use the Cloudflare side of the addon).
-			'stripe_products'  => array(),
-			'stripe_prices'    => array(),
-			'openrouter_keys'  => array(),
+			'stripe_products' => array(),
+			'stripe_prices'   => array(),
+			'openrouter_keys' => array(),
 		);
 	}
 

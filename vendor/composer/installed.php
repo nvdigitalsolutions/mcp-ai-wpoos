@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-saas-controller-toolkit',
-        'version' => 'dev-copilot/create-saas-controller-toolkit',
-        'reference' => '5705ea44fe6e1b883199cb9324d0c37d61ecb247',
+        'pretty_version' => 'dev-copilot/integrate-logging-system',
+        'version' => 'dev-copilot/integrate-logging-system',
+        'reference' => '74dc829570c03fccd344b9434d37101e70b720d0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-saas-controller-toolkit',
-            'version' => 'dev-copilot/create-saas-controller-toolkit',
-            'reference' => '5705ea44fe6e1b883199cb9324d0c37d61ecb247',
+            'pretty_version' => 'dev-copilot/integrate-logging-system',
+            'version' => 'dev-copilot/integrate-logging-system',
+            'reference' => '74dc829570c03fccd344b9434d37101e70b720d0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

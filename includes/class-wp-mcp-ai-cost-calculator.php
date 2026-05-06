@@ -32,124 +32,124 @@ class WP_MCP_AI_Cost_Calculator {
 	const PRICING = array(
 		'openai'      => array(
 			// GPT-5.5 series (April 2026 flagship).
-			'gpt-5.5'                                 => array(
+			'gpt-5.5'                      => array(
 				'input'        => 5.00,  // $5 per 1M input tokens.
 				'output'       => 30.00, // $30 per 1M output tokens.
 				'cached_input' => 0.50,  // $0.50 per 1M cached input tokens (90% off).
 			),
 			// GPT-5.4 series (April 2026).
-			'gpt-5.4'                                 => array(
+			'gpt-5.4'                      => array(
 				'input'        => 2.50,  // $2.50 per 1M input tokens.
 				'output'       => 15.00, // $15 per 1M output tokens.
 				'cached_input' => 0.25,  // $0.25 per 1M cached input tokens (90% off).
 			),
-			'gpt-5.4-mini'                            => array(
+			'gpt-5.4-mini'                 => array(
 				'input'        => 0.75,  // $0.75 per 1M input tokens.
 				'output'       => 4.50,  // $4.50 per 1M output tokens.
 				'cached_input' => 0.075, // $0.075 per 1M cached input tokens (90% off).
 			),
-			'gpt-5.4-nano'                            => array(
+			'gpt-5.4-nano'                 => array(
 				'input'        => 0.20,  // $0.20 per 1M input tokens.
 				'output'       => 1.25,  // $1.25 per 1M output tokens.
 				'cached_input' => 0.02,  // $0.02 per 1M cached input tokens (90% off).
 			),
-			'gpt-5.4-pro'                             => array(
+			'gpt-5.4-pro'                  => array(
 				'input'        => 30.00,  // $30 per 1M input tokens.
 				'output'       => 180.00, // $180 per 1M output tokens.
 				'cached_input' => 3.00,   // $3 per 1M cached input tokens (90% off).
 			),
-			'gpt-5.4-codex'                           => array(
+			'gpt-5.4-codex'                => array(
 				'input'        => 2.50,  // $2.50 per 1M input tokens.
 				'output'       => 12.00, // $12 per 1M output tokens.
 				'cached_input' => 0.25,  // $0.25 per 1M cached input tokens (90% off).
 			),
 			// GPT-5.3 Codex (updated April 2026).
-			'gpt-5.3-codex'                           => array(
+			'gpt-5.3-codex'                => array(
 				'input'        => 3.00,  // $3 per 1M input tokens.
 				'output'       => 15.00, // $15 per 1M output tokens.
 				'cached_input' => 0.30,  // $0.30 per 1M cached input tokens (90% off).
 			),
-			'gpt-5'                                   => array(
+			'gpt-5'                        => array(
 				'input'  => 1.25,
 				'output' => 10.00,
 			),
-			'gpt-5-mini'                              => array(
+			'gpt-5-mini'                   => array(
 				'input'  => 0.25,
 				'output' => 2.00,
 			),
-			'gpt-5-nano'                              => array(
+			'gpt-5-nano'                   => array(
 				'input'  => 0.05,
 				'output' => 0.40,
 			),
-			'gpt-4.1'                                 => array(
+			'gpt-4.1'                      => array(
 				'input'  => 2.00,
 				'output' => 8.00,
 			),
-			'gpt-4.1-mini'                            => array(
+			'gpt-4.1-mini'                 => array(
 				'input'  => 0.40,
 				'output' => 1.60,
 			),
-			'gpt-4.1-nano'                            => array(
+			'gpt-4.1-nano'                 => array(
 				'input'  => 0.10,
 				'output' => 0.40,
 			),
-			'gpt-4o'                                  => array(
+			'gpt-4o'                       => array(
 				'input'  => 2.50,
 				'output' => 10.00,
 			),
-			'gpt-4o-mini'                             => array(
+			'gpt-4o-mini'                  => array(
 				'input'  => 0.15,
 				'output' => 0.60,
 			),
 			// o-series reasoning models (December 2025 - updated pricing).
-			'o3'                                      => array(
+			'o3'                           => array(
 				'input'        => 2.00, // $2 per 1M tokens.
 				'output'       => 8.00, // $8 per 1M tokens.
 				'cached_input' => 0.50, // $0.50 per 1M tokens.
 			),
-			'o3-pro'                                  => array(
+			'o3-pro'                       => array(
 				'input'  => 20.00, // $20 per 1M tokens.
 				'output' => 80.00, // $80 per 1M tokens.
 			),
-			'o3-mini'                                 => array(
+			'o3-mini'                      => array(
 				'input'        => 1.10, // $1.10 per 1M tokens.
 				'output'       => 4.40, // $4.40 per 1M tokens.
 				'cached_input' => 0.55, // $0.55 per 1M tokens.
 			),
-			'o4-mini'                                 => array(
+			'o4-mini'                      => array(
 				'input'        => 1.10,
 				'output'       => 4.40,
 				'cached_input' => 0.275,
 			),
 			// GPT-4o Realtime models (audio/speech).
 			// December 2024 update: 60% cheaper pricing, WebRTC support.
-			'gpt-4o-realtime-preview'                 => array(
+			'gpt-4o-realtime-preview'      => array(
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
 				'output'       => 200.00, // Audio output: $200 per 1M tokens.
 				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
 			),
-			'gpt-4o-mini-realtime-preview'            => array(
+			'gpt-4o-mini-realtime-preview' => array(
 				'input'        => 10.00, // Audio input: ~$10 per 1M tokens (10x cheaper).
 				'output'       => 20.00, // Audio output: ~$20 per 1M tokens.
 				'cached_input' => 2.00,  // Cached audio input: ~$2 per 1M tokens.
 			),
-			'gpt-4o-audio-preview'                    => array(
+			'gpt-4o-audio-preview'         => array(
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
 				'output'       => 200.00, // Audio output: $200 per 1M tokens.
 				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
 			),
 			// GPT Realtime Mini (December 2025 - new naming convention).
-			'gpt-realtime-mini'                       => array(
+			'gpt-realtime-mini'            => array(
 				'input'        => 10.00, // Audio input: $10 per 1M tokens.
 				'output'       => 20.00, // Audio output: $20 per 1M tokens.
 				'cached_input' => 0.30,  // Cached audio input: $0.30 per 1M tokens.
 			),
 			// Sora video generation models.
 			// Pricing is per second of generated video.
-			'sora-2'                                  => array(
+			'sora-2'                       => array(
 				'per_second' => 0.10, // $0.10 per second of generated video (estimated).
 			),
-			'sora-2-pro'                              => array(
+			'sora-2-pro'                   => array(
 				'per_second' => 0.20, // $0.20 per second of generated video (estimated).
 			),
 		),

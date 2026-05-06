@@ -123,8 +123,8 @@ class WP_MCP_AI_Slash_Command_Memory {
 			}
 		}
 
-		$importance       = isset( $flags['importance'] ) ? sanitize_key( (string) $flags['importance'] ) : 'medium';
-		$allowed_levels   = array( 'low', 'medium', 'high', 'critical' );
+		$importance     = isset( $flags['importance'] ) ? sanitize_key( (string) $flags['importance'] ) : 'medium';
+		$allowed_levels = array( 'low', 'medium', 'high', 'critical' );
 		if ( ! in_array( $importance, $allowed_levels, true ) ) {
 			$importance = 'medium';
 		}
@@ -154,7 +154,13 @@ class WP_MCP_AI_Slash_Command_Memory {
 			$args_for_tool['room'] = sanitize_text_field( (string) $flags['room'] );
 		}
 
-		$result = $tool->execute( $args_for_tool, array( 'user_id' => get_current_user_id(), 'source' => 'slash:remember' ) );
+		$result = $tool->execute(
+			$args_for_tool,
+			array(
+				'user_id' => get_current_user_id(),
+				'source'  => 'slash:remember',
+			)
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -200,7 +206,10 @@ class WP_MCP_AI_Slash_Command_Memory {
 				'agent_id'   => $this->resolve_agent_id( $context ),
 				'context_id' => $context_id,
 			),
-			array( 'user_id' => get_current_user_id(), 'source' => 'slash:forget' )
+			array(
+				'user_id' => get_current_user_id(),
+				'source'  => 'slash:forget',
+			)
 		);
 
 		if ( is_wp_error( $result ) ) {

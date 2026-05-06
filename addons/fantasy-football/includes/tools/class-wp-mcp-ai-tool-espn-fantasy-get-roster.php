@@ -198,9 +198,9 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 			$entries = array();
 		}
 
-		$starters    = array();
-		$bench       = array();
-		$ir          = array();
+		$starters     = array();
+		$bench        = array();
+		$ir           = array();
 		$total_points = 0;
 
 		foreach ( $entries as $entry ) {
@@ -217,19 +217,19 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 				$ir[] = $player_data;
 			} else {
 				// Starter.
-				$starters[] = $player_data;
+				$starters[]    = $player_data;
 				$total_points += $player_data['points'];
 			}
 		}
 
 		return array(
-			'starters'      => $starters,
-			'bench'         => $bench,
+			'starters'        => $starters,
+			'bench'           => $bench,
 			'injured_reserve' => $ir,
-			'total_starters' => count( $starters ),
-			'total_bench'   => count( $bench ),
-			'total_points'  => round( $total_points, 2 ),
-			'players'       => array_merge( $starters, $bench, $ir ),
+			'total_starters'  => count( $starters ),
+			'total_bench'     => count( $bench ),
+			'total_points'    => round( $total_points, 2 ),
+			'players'         => array_merge( $starters, $bench, $ir ),
 		);
 	}
 

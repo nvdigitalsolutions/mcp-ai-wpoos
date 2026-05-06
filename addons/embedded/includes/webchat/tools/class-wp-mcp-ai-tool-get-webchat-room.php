@@ -122,8 +122,8 @@ class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MC
 		$signaling_server    = get_post_meta( $room_id, '_mcp_ai_webchat_signaling_server', true );
 
 		// Calculate availability.
-		$is_full       = absint( $active_participants ) >= absint( $max_participants );
-		$is_available  = 'active' === $status && ! $is_full;
+		$is_full      = absint( $active_participants ) >= absint( $max_participants );
+		$is_available = 'active' === $status && ! $is_full;
 
 		return array(
 			'summary'             => sprintf(

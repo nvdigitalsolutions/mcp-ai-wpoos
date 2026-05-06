@@ -84,8 +84,8 @@ class NVOOS_SaaS_Controller_Cloudflare_Client {
 	 * @return self|WP_Error WP_Error('missing_credentials') if either credential is unset.
 	 */
 	public static function from_credential_store( $account_override = null ) {
-		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
-		$creds = $store->get_all();
+		$store      = NVOOS_SaaS_Controller_Credential_Store::instance();
+		$creds      = $store->get_all();
 		$account_id = $account_override
 			? (string) $account_override
 			: ( isset( $creds['cloudflare_account_id'] ) ? (string) $creds['cloudflare_account_id'] : '' );

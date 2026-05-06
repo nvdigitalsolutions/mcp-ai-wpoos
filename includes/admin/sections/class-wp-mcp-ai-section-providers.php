@@ -112,10 +112,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-opus-4-7'    => 'Claude Opus 4.7 (Flagship)',
-					'claude-opus-4-6'    => 'Claude Opus 4.6',
-					'claude-sonnet-4-6'  => 'Claude Sonnet 4.6 (Recommended)',
-					'claude-haiku-4-5'   => 'Claude Haiku 4.5 (Fastest)',
+					'claude-opus-4-7'   => 'Claude Opus 4.7 (Flagship)',
+					'claude-opus-4-6'   => 'Claude Opus 4.6',
+					'claude-sonnet-4-6' => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-haiku-4-5'  => 'Claude Haiku 4.5 (Fastest)',
 				);
 			}
 
@@ -191,14 +191,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// discovered live from /api/v1/models when the API key is set.
 			if ( empty( $openrouter_models ) ) {
 				$openrouter_models = array(
-					'openrouter/auto'                          => 'OpenRouter Auto (router picks)',
-					'openai/gpt-4o-mini'                       => 'OpenAI GPT-4o Mini',
-					'openai/gpt-4o'                            => 'OpenAI GPT-4o',
-					'anthropic/claude-3.5-sonnet'              => 'Anthropic Claude 3.5 Sonnet',
-					'anthropic/claude-3-haiku'                 => 'Anthropic Claude 3 Haiku',
-					'google/gemini-pro-1.5'                    => 'Google Gemini 1.5 Pro',
-					'meta-llama/llama-3.3-70b-instruct'        => 'Meta Llama 3.3 70B Instruct',
-					'mistralai/mistral-large'                  => 'Mistral Large',
+					'openrouter/auto'                   => 'OpenRouter Auto (router picks)',
+					'openai/gpt-4o-mini'                => 'OpenAI GPT-4o Mini',
+					'openai/gpt-4o'                     => 'OpenAI GPT-4o',
+					'anthropic/claude-3.5-sonnet'       => 'Anthropic Claude 3.5 Sonnet',
+					'anthropic/claude-3-haiku'          => 'Anthropic Claude 3 Haiku',
+					'google/gemini-pro-1.5'             => 'Google Gemini 1.5 Pro',
+					'meta-llama/llama-3.3-70b-instruct' => 'Meta Llama 3.3 70B Instruct',
+					'mistralai/mistral-large'           => 'Mistral Large',
 				);
 			}
 
@@ -1031,13 +1031,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Flux-2 Dev offers the best balanced quality. Flux-1 Schnell is fastest. SDXL models are legacy options.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev (Recommended)',
-						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell (Fast)',
+						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev (Recommended)',
+						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell (Fast)',
 						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Legacy)',
-						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Legacy Fast)',
-						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
+						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Legacy Fast)',
+						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
 					),
 					'default'     => '@cf/black-forest-labs/flux-2-dev',
 				),

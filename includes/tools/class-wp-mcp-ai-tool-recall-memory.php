@@ -62,27 +62,27 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'agent_id'    => array(
+				'agent_id'      => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier.', 'mcp-ai-wpoos' ),
 				),
-				'wing'        => array(
+				'wing'          => array(
 					'type'        => 'string',
 					'description' => __( 'Hierarchical scope to recall from (e.g. "patient/jane-doe", "matter/123", "deal/acme-tower"). Required to honour MemPalace "this client\'s drawers" semantics.', 'mcp-ai-wpoos' ),
 				),
-				'room'        => array(
+				'room'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional sub-scope inside the wing (e.g. "vitals", "covenants", "decisions").', 'mcp-ai-wpoos' ),
 				),
-				'query'       => array(
+				'query'         => array(
 					'type'        => 'string',
 					'description' => __( 'Optional semantic search query, applied AFTER the wing/room pre-filter.', 'mcp-ai-wpoos' ),
 				),
-				'as_of'       => array(
+				'as_of'         => array(
 					'type'        => 'string',
 					'description' => __( 'Bi-temporal query timestamp (ISO 8601 / MySQL datetime). Returns records whose valid_from <= as_of < valid_until. Defaults to now.', 'mcp-ai-wpoos' ),
 				),
-				'limit'       => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum ranked results to return (excluding always-on core-tier records).', 'mcp-ai-wpoos' ),
 					'default'     => 10,
@@ -179,8 +179,8 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Step 4: split out always-on core records of the wing.
-		$core_records   = array();
-		$rankable       = array();
+		$core_records = array();
+		$rankable     = array();
 		foreach ( $valid_now as $rec ) {
 			$tier = isset( $rec['tier'] ) ? (string) $rec['tier'] : 'recall';
 			if ( WP_MCP_AI_Memory_Capture_Service::TIER_CORE === $tier ) {

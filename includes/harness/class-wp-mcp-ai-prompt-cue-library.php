@@ -215,8 +215,8 @@ class WP_MCP_AI_Prompt_Cue_Library {
 	 * cue text prepended to the original prompt with a blank line between
 	 * each section. Existing assistant prompts are preserved verbatim.
 	 *
-	 * @param string         $system_prompt Original system prompt.
-	 * @param string|array   $cue_slugs     Single slug or array of slugs (applied in order).
+	 * @param string       $system_prompt Original system prompt.
+	 * @param string|array $cue_slugs     Single slug or array of slugs (applied in order).
 	 * @return string Augmented system prompt.
 	 */
 	public function apply( $system_prompt, $cue_slugs ) {
@@ -238,7 +238,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 			return (string) $system_prompt;
 		}
 
-		$prefix = implode( "\n\n", $prefix_parts );
+		$prefix        = implode( "\n\n", $prefix_parts );
 		$system_prompt = (string) $system_prompt;
 
 		if ( '' === trim( $system_prompt ) ) {
@@ -291,7 +291,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 				'slug'         => 'failure_modes_first',
 				'label'        => 'Failure Modes First',
 				'description'  => 'Pre-mortem: identify what would make the answer wrong before solving.',
-				'template'     => "Before answering, list the top three ways this answer could be wrong. Then solve the problem. Finally, check the proposed answer against each failure mode and revise if any of them apply.",
+				'template'     => 'Before answering, list the top three ways this answer could be wrong. Then solve the problem. Finally, check the proposed answer against each failure mode and revise if any of them apply.',
 				'task_classes' => array( 'general', 'qa', 'reasoning' ),
 				'citation'     => 'Pre-mortem cue (LLM harnessing brief)',
 			),
@@ -299,7 +299,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 				'slug'         => 'plan_then_solve',
 				'label'        => 'Plan Then Solve',
 				'description'  => 'Produce an explicit plan, then execute it.',
-				'template'     => "First, produce a numbered plan listing the sub-steps required. Second, execute each sub-step in order. Third, summarize the result.",
+				'template'     => 'First, produce a numbered plan listing the sub-steps required. Second, execute each sub-step in order. Third, summarize the result.',
 				'task_classes' => array( 'general', 'code', 'reasoning' ),
 				'citation'     => 'Wang et al. 2023 — Plan-and-Solve Prompting',
 			),
@@ -315,7 +315,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 				'slug'         => 'tool_or_abstain',
 				'label'        => 'Tool or Abstain',
 				'description'  => 'Require a tool call when the answer depends on current data or computation.',
-				'template'     => "If the answer depends on the current state of the system, external data, or precise computation, call the appropriate tool first. Do not guess. If no suitable tool exists, say so explicitly.",
+				'template'     => 'If the answer depends on the current state of the system, external data, or precise computation, call the appropriate tool first. Do not guess. If no suitable tool exists, say so explicitly.',
 				'task_classes' => array( 'general', 'code', 'agentic' ),
 				'citation'     => 'ReAct (Yao et al. 2022) + Toolformer (Schick et al. 2023)',
 			),
@@ -323,7 +323,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 				'slug'         => 'clarify_first',
 				'label'        => 'Clarify First',
 				'description'  => 'Ask one clarifying question only when the request is ambiguous.',
-				'template'     => "If the request is ambiguous in a way that materially changes the answer, ask exactly one clarifying question before proceeding. Otherwise, answer directly.",
+				'template'     => 'If the request is ambiguous in a way that materially changes the answer, ask exactly one clarifying question before proceeding. Otherwise, answer directly.',
 				'task_classes' => array( 'general', 'qa' ),
 				'citation'     => 'InstructGPT-style instruction tuning guidance',
 			),
@@ -331,7 +331,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 				'slug'         => 'state_uncertainty',
 				'label'        => 'State Uncertainty',
 				'description'  => 'Disclose uncertainty when evidence is weak.',
-				'template'     => "Where evidence is incomplete, state your confidence level explicitly using one of: high, medium, low. Do not present low-confidence claims as facts.",
+				'template'     => 'Where evidence is incomplete, state your confidence level explicitly using one of: high, medium, low. Do not present low-confidence claims as facts.',
 				'task_classes' => array( 'general', 'qa', 'research' ),
 				'citation'     => 'Calibration / honesty literature',
 			),

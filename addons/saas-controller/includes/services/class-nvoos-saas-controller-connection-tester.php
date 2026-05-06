@@ -166,13 +166,13 @@ class NVOOS_SaaS_Controller_Connection_Tester {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string                $url      Endpoint URL.
-	 * @param array<string,string>  $headers  Request headers (must include Authorization).
-	 * @param string                $provider Provider slug for {@see extract_message()}.
+	 * @param string               $url      Endpoint URL.
+	 * @param array<string,string> $headers  Request headers (must include Authorization).
+	 * @param string               $provider Provider slug for {@see extract_message()}.
 	 * @return array
 	 */
 	protected function preflight( $url, array $headers, $provider ) {
-		$started = microtime( true );
+		$started  = microtime( true );
 		$response = wp_remote_get(
 			$url,
 			array(
@@ -181,14 +181,18 @@ class NVOOS_SaaS_Controller_Connection_Tester {
 				'sslverify' => true,
 			)
 		);
-		$latency = (int) round( ( microtime( true ) - $started ) * 1000 );
+		$latency  = (int) round( ( microtime( true ) - $started ) * 1000 );
 
 		if ( is_wp_error( $response ) ) {
-			return $this->failure( $latency, 0, sprintf(
+			return $this->failure(
+				$latency,
+				0,
+				sprintf(
 				/* translators: %s: provider error message */
-				__( 'Network error contacting upstream: %s', 'nvoos-saas-controller' ),
-				$response->get_error_message()
-			) );
+					__( 'Network error contacting upstream: %s', 'nvoos-saas-controller' ),
+					$response->get_error_message()
+				)
+			);
 		}
 
 		$status = (int) wp_remote_retrieve_response_code( $response );

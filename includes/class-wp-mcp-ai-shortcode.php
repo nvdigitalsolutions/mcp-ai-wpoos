@@ -1729,10 +1729,10 @@ class WP_MCP_AI_Shortcode {
 			);
 
 			$tags['circle'] = array(
-				'cx'   => true,
-				'cy'   => true,
-				'r'    => true,
-				'fill' => true,
+				'cx'    => true,
+				'cy'    => true,
+				'r'     => true,
+				'fill'  => true,
 				'class' => true,
 			);
 
