@@ -1304,7 +1304,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 				} )
 					.then( function ( resp ) {
 						if ( statusEl ) { statusEl.textContent = ''; }
-						renderTable( ( resp && resp.entries ) || [], parseInt( resp && resp.total, 10 ) || 0 );
+						renderTable( ( resp && resp.entries ) || [], parseInt( ( resp && resp.total ) || 0, 10 ) || 0 );
 					} )
 					.catch( function ( err ) {
 						if ( statusEl ) { statusEl.textContent = ( err && err.message ) ? String( err.message ) : T.failed; }
