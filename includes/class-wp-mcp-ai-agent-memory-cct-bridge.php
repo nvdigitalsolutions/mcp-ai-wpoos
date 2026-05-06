@@ -425,7 +425,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 			global $wpdb;
 			$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
 			$table = $wpdb->prefix . 'jet_cct_' . $slug;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 			$found                          = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$status['agent_memories_table'] = ( $found === $table );
 		}

@@ -243,17 +243,6 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'mine_agent_memory tool is not registered in this build.' );
 		}
 
-		// Define the stub class once across the test suite to avoid redeclare.
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Mine_Agent_Memory_Failure_Stub', false ) ) {
-			eval( // phpcs:ignore Squiz.PHP.Eval.Discouraged
-				'class WP_MCP_AI_Tool_Mine_Agent_Memory_Failure_Stub extends WP_MCP_AI_Tool_Mine_Agent_Memory {
-					public function execute( array $arguments = array(), array $context = array() ) {
-						return new WP_Error( "simulated_failure", "Simulated mining failure for test." );
-					}
-				}'
-			);
-		}
-
 		$registry->register_tool( new WP_MCP_AI_Tool_Mine_Agent_Memory_Failure_Stub() );
 
 		// Clear so assertions reflect only this tick.
@@ -275,5 +264,34 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 
 		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
 		$this->assertSame( 1, $progress['failed_count'] );
+	}
+}
+
+/**
+ * Test fixture: tool stub that always returns WP_Error.
+ *
+ * Declared at file scope so PHP allows the class declaration.
+ * Used by WP_MCP_AI_Transcript_Mining_Job_Logging_Test::test_failing_tick_writes_recent_error_entry().
+ */
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- test-only fixture below.
+if ( ! class_exists( 'WP_MCP_AI_Tool_Mine_Agent_Memory_Failure_Stub', false ) ) {
+	/**
+	 * Stub tool that always returns a WP_Error from execute().
+	 *
+	 * Test-only fixture declared at file scope so PHP allows the class declaration.
+	 * Used by WP_MCP_AI_Transcript_Mining_Job_Logging_Test::test_failing_tick_writes_recent_error_entry().
+	 */
+	class WP_MCP_AI_Tool_Mine_Agent_Memory_Failure_Stub extends WP_MCP_AI_Tool_Mine_Agent_Memory {
+
+		/**
+		 * Always returns a WP_Error to simulate a failed mining run.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return WP_Error
+		 */
+		public function execute( array $arguments = array(), array $context = array() ) {
+			return new WP_Error( 'simulated_failure', 'Simulated mining failure for test.' );
+		}
 	}
 }
