@@ -2326,6 +2326,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								stopPolling();
 								$('#wp-mcp-ai-tx-mine-start-btn').prop('disabled', false);
 								$('#wp-mcp-ai-tx-mine-cancel-btn').prop('disabled', true);
+
+								if (progress.status === 'completed') {
+									var mined = progress.mined_count || 0;
+									var failed = progress.failed_count || 0;
+									if (failed > 0) {
+										var errorsUrl = <?php echo wp_json_encode( esc_url_raw( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=logging' ) ) ); ?>;
+										showMessage(
+											'error',
+											<?php echo wp_json_encode( __( 'Mining job completed with errors.', 'mcp-ai-wpoos' ) ); ?> +
+											' ' +
+											<?php echo wp_json_encode( __( 'Check NV oOS → Settings → Advanced → Recent Errors.', 'mcp-ai-wpoos' ) ); ?>
+										);
+										$('#wp-mcp-ai-tx-mine-message')
+											.find('p')
+											.append(' ')
+											.append($('<a></a>').attr('href', errorsUrl).text(<?php echo wp_json_encode( __( 'Open Recent Errors', 'mcp-ai-wpoos' ) ); ?>));
+									} else if (mined === 0) {
+										showMessage(
+											'warning',
+											<?php echo wp_json_encode( __( 'Job completed but no new memories were extracted. Common causes: (1) all eligible transcripts have already been mined — uncheck "Skip transcripts that have already been mined" to re-process them; (2) the assistant has no stored transcripts yet; (3) JetEngine data-stores is inactive — check Settings → NV oOS → Recent Errors for details.', 'mcp-ai-wpoos' ) ); ?>
+										);
+									}
+								}
 							}
 						}).fail(function(xhr) {
 							stopPolling();

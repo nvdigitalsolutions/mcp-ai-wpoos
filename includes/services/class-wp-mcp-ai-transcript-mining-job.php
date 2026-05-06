@@ -141,6 +141,26 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		$tick_timestamp = time() - 1;
 		wp_schedule_single_event( $tick_timestamp, self::CRON_HOOK, array( $job_id ) );
 
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'transcript_mining',
+				sprintf(
+					/* translators: 1: assistant id, 2: total session count */
+					__( 'Transcript mining job enqueued for assistant %1$s (%2$d sessions queued).', 'mcp-ai-wpoos' ),
+					$state['agent_id'],
+					$state['total']
+				),
+				array(
+					'job_id'        => $job_id,
+					'agent_id'      => $state['agent_id'],
+					'batch_size'    => $batch_size,
+					'total'         => $state['total'],
+					'auto_resolved' => ( 1 === count( $session_keys ) && '__auto__' === $session_keys[0] ),
+					'dry_run'       => ! empty( $state['args']['dry_run'] ),
+				)
+			);
+		}
+
 		// Register the tick with the Cron Manager so it is visible in the
 		// admin Cron Manager page and can be monitored/cancelled from there.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
@@ -222,18 +242,63 @@ class WP_MCP_AI_Transcript_Mining_Job {
 
 		$result = $tool->execute( $args, array() );
 
+		$mined_this_tick   = 0;
+		$skipped_this_tick = 0;
+		$failed_this_tick  = 0;
+		$tick_message      = '';
+
 		if ( is_wp_error( $result ) ) {
 			$state['failed_count'] += count( $batch );
 			$state['errors'][]      = $result->get_error_message();
 			$state['last_message']  = $result->get_error_message();
+			$failed_this_tick       = count( $batch );
+			$tick_message           = $result->get_error_message();
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					sprintf(
+						/* translators: %s: error message from mine_agent_memory tool */
+						__( 'Transcript mining tick failed: %s', 'mcp-ai-wpoos' ),
+						$result->get_error_message()
+					),
+					array(
+						'job_id'     => $job_id,
+						'agent_id'   => isset( $state['agent_id'] ) ? $state['agent_id'] : '',
+						'batch_size' => count( $batch ),
+						'error_code' => $result->get_error_code(),
+					)
+				);
+			}
 		} elseif ( is_array( $result ) ) {
-			$state['mined_count']   += isset( $result['count'] ) ? (int) $result['count'] : 0;
-			$state['skipped_count'] += isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
-			$state['failed_count']  += isset( $result['failed'] ) ? (int) $result['failed'] : 0;
+			$mined_this_tick        = isset( $result['count'] ) ? (int) $result['count'] : 0;
+			$skipped_this_tick      = isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
+			$failed_this_tick       = isset( $result['failed'] ) ? (int) $result['failed'] : 0;
+			$state['mined_count']   += $mined_this_tick;
+			$state['skipped_count'] += $skipped_this_tick;
+			$state['failed_count']  += $failed_this_tick;
 			$state['last_message']   = isset( $result['message'] ) ? (string) $result['message'] : '';
+			$tick_message            = $state['last_message'];
 			if ( empty( $result['success'] ) && ! empty( $result['message'] ) ) {
 				$state['errors'][] = (string) $result['message'];
 			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) && ! is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'transcript_mining',
+				$tick_message !== ''
+					? $tick_message
+					: __( 'Transcript mining tick completed.', 'mcp-ai-wpoos' ),
+				array(
+					'job_id'     => $job_id,
+					'agent_id'   => isset( $state['agent_id'] ) ? $state['agent_id'] : '',
+					'batch_size' => count( $batch ),
+					'mined'      => $mined_this_tick,
+					'skipped'    => $skipped_this_tick,
+					'failed'     => $failed_this_tick,
+					'dry_run'    => ! empty( $state['args']['dry_run'] ),
+				)
+			);
 		}
 
 		$state['processed'] += count( $batch );

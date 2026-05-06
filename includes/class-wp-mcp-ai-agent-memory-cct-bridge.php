@@ -184,12 +184,31 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			self::warn_once(
+				'jetengine_cct_class_missing',
+				__( 'Agent memory CCT bridge: WP_MCP_AI_JetEngine_Agent_Memories_CCT class is missing — memory not mirrored to JetEngine CCT.', 'mcp-ai-wpoos' ),
+				array(
+					'context_id' => isset( $event['context_id'] ) ? (string) $event['context_id'] : '',
+					'agent_id'   => isset( $event['agent_id'] ) ? (string) $event['agent_id'] : '',
+				)
+			);
 			return;
 		}
 
 		$handler = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_item_handler();
 
 		if ( ! is_object( $handler ) || ! method_exists( $handler, 'update_item' ) ) {
+			self::warn_once(
+				'jetengine_handler_unavailable',
+				__( 'Agent memory CCT bridge: JetEngine item handler unavailable — memory not mirrored to JetEngine CCT.', 'mcp-ai-wpoos' ),
+				array_merge(
+					array(
+						'context_id' => isset( $event['context_id'] ) ? (string) $event['context_id'] : '',
+						'agent_id'   => isset( $event['agent_id'] ) ? (string) $event['agent_id'] : '',
+					),
+					self::collect_jetengine_status()
+				)
+			);
 			return;
 		}
 
@@ -332,6 +351,71 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 
 		$cache[ $context_id ] = $row_id ? (int) $row_id : null;
 		return $cache[ $context_id ];
+	}
+
+	/**
+	 * Emit a single warning per (reason) per request to the activity log.
+	 *
+	 * Prevents a 50-item mining batch from spamming `wp_mcp_ai_recent_errors`
+	 * with the same "JetEngine handler missing" message 50 times.
+	 *
+	 * @param string $reason  Stable reason key (used for de-duplication).
+	 * @param string $message Human-readable warning message.
+	 * @param array  $context Additional structured context for the log entry.
+	 * @return void
+	 */
+	protected static function warn_once( $reason, $message, array $context = array() ) {
+		static $emitted = array();
+
+		$reason = (string) $reason;
+		if ( '' === $reason || isset( $emitted[ $reason ] ) ) {
+			return;
+		}
+		$emitted[ $reason ] = true;
+
+		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+			return;
+		}
+
+		$context['reason'] = $reason;
+		WP_MCP_AI_Logger::log_warning( $message, $context );
+	}
+
+	/**
+	 * Collect a snapshot of the JetEngine module status to attach to bridge
+	 * warnings. All keys are best-effort; absence is normal when JetEngine
+	 * isn't installed.
+	 *
+	 * @return array<string,mixed>
+	 */
+	protected static function collect_jetengine_status() {
+		$status = array(
+			'jet_engine_loaded'      => function_exists( 'jet_engine' ),
+			'data_stores_active'     => false,
+			'cct_module_loaded'      => false,
+			'agent_memories_table'   => false,
+		);
+
+		if ( $status['jet_engine_loaded'] ) {
+			$engine = jet_engine();
+			if ( ! empty( $engine->modules ) && method_exists( $engine->modules, 'is_module_active' ) ) {
+				$status['data_stores_active'] = (bool) $engine->modules->is_module_active( 'data-stores' );
+			}
+			if ( class_exists( '\\Jet_Engine\\Modules\\Custom_Content_Types\\Module' ) ) {
+				$status['cct_module_loaded'] = true;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			global $wpdb;
+			$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+			$table = $wpdb->prefix . 'jet_cct_' . $slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$found                          = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			$status['agent_memories_table'] = ( $found === $table );
+		}
+
+		return $status;
 	}
 }
 
