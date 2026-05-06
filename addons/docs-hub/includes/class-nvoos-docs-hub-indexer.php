@@ -228,7 +228,7 @@ class NV_oOS_Docs_Hub_Indexer {
 	public function extract_frontmatter( $content ) {
 		$frontmatter = array();
 
-		if ( ! preg_match( '/^\-{3}\r?\n(.*?)\r?\n\-{3}/s', $content, $matches ) ) {
+		if ( ! preg_match( '/^-{3}\r?\n(.*?)\r?\n-{3}/s', $content, $matches ) ) {
 			return $frontmatter;
 		}
 
