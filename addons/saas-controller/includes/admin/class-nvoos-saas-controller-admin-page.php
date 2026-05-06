@@ -526,6 +526,8 @@ class NVOOS_SaaS_Controller_Admin_Page {
 
 		<?php self::render_orphans_card(); ?>
 
+		<?php self::render_webhooks_card(); ?>
+
 		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
 			<h2><?php esc_html_e( 'Smoke Tests', 'nvoos-saas-controller' ); ?></h2>
 			<p class="description">
@@ -1113,6 +1115,290 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			}
 		} )();
 		</script>
+		<?php
+	}
+
+	/**
+	 * Render the Webhook Events card inside the Operations tab (Phase 11).
+	 *
+	 * Read-only paginated view of the webhook event store
+	 * ({@see NVOOS_SaaS_Controller_Webhook_Event_Store}) — currently the
+	 * Stripe receiver is the only producer. The first page is rendered
+	 * server-side so the panel works without JS; the Refresh / Next /
+	 * Previous controls fetch additional pages via
+	 * `GET nvoos-saas/v1/webhooks/events?limit=&offset=`. The Clear button
+	 * calls `DELETE nvoos-saas/v1/webhooks/events`, which records its own
+	 * audit-log entry server-side before clearing the store.
+	 *
+	 * Privacy: the table only renders fields the store keeps
+	 * (event_id / event_type / ts / signature_status / message). The store
+	 * never persists PII, so there is nothing for the UI to leak.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	protected static function render_webhooks_card() {
+		$store     = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
+		$page_size = 20;
+		$entries   = $store->get_recent( $page_size, 0 );
+		$total     = $store->count();
+		?>
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
+			<h2><?php esc_html_e( 'Webhook Events', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Most recent inbound webhook deliveries (Stripe today). The store is a ring buffer capped at 200 entries and is idempotent by event_id, so Stripe retries do not flood the buffer. Only event_id, event_type, timestamp, signature status and a short message are kept — never PII.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p>
+				<button type="button" class="button" id="nvoos-saas-webhooks-refresh"><?php esc_html_e( 'Refresh', 'nvoos-saas-controller' ); ?></button>
+				<button type="button" class="button button-link-delete" id="nvoos-saas-webhooks-clear"><?php esc_html_e( 'Clear Events', 'nvoos-saas-controller' ); ?></button>
+				<span id="nvoos-saas-webhooks-status" style="margin-left:0.75em;" aria-live="polite"></span>
+			</p>
+			<div id="nvoos-saas-webhooks-output">
+				<?php self::render_webhooks_table( $entries, $total, 0 ); ?>
+			</div>
+		</div>
+
+		<script>
+		( function () {
+			if ( ! window.wp || ! wp.apiFetch ) { return; }
+			var refreshBtn = document.getElementById( 'nvoos-saas-webhooks-refresh' );
+			var clearBtn   = document.getElementById( 'nvoos-saas-webhooks-clear' );
+			var statusEl   = document.getElementById( 'nvoos-saas-webhooks-status' );
+			var outEl      = document.getElementById( 'nvoos-saas-webhooks-output' );
+			if ( ! outEl ) { return; }
+
+			var pageSize = <?php echo (int) $page_size; ?>;
+			var offset   = 0;
+
+			var T = {
+				eventId:   <?php echo wp_json_encode( __( 'Event ID', 'nvoos-saas-controller' ) ); ?>,
+				type:      <?php echo wp_json_encode( __( 'Type', 'nvoos-saas-controller' ) ); ?>,
+				ts:        <?php echo wp_json_encode( __( 'Time (UTC)', 'nvoos-saas-controller' ) ); ?>,
+				signature: <?php echo wp_json_encode( __( 'Signature', 'nvoos-saas-controller' ) ); ?>,
+				message:   <?php echo wp_json_encode( __( 'Message', 'nvoos-saas-controller' ) ); ?>,
+				empty:     <?php echo wp_json_encode( __( 'No webhook events recorded yet.', 'nvoos-saas-controller' ) ); ?>,
+				prev:      <?php echo wp_json_encode( __( 'Previous', 'nvoos-saas-controller' ) ); ?>,
+				next:      <?php echo wp_json_encode( __( 'Next', 'nvoos-saas-controller' ) ); ?>,
+				summary:   <?php /* translators: 1: first row, 2: last row, 3: total entries. */ echo wp_json_encode( __( 'Showing %1$d–%2$d of %3$d', 'nvoos-saas-controller' ) ); ?>,
+				loading:   <?php echo wp_json_encode( __( 'Loading…', 'nvoos-saas-controller' ) ); ?>,
+				cleared:   <?php echo wp_json_encode( __( 'Webhook event store cleared.', 'nvoos-saas-controller' ) ); ?>,
+				confirm:   <?php echo wp_json_encode( __( 'Clear all webhook event entries? This cannot be undone.', 'nvoos-saas-controller' ) ); ?>,
+				failed:    <?php echo wp_json_encode( __( 'Request failed.', 'nvoos-saas-controller' ) ); ?>
+			};
+
+			function fmtTs( ts ) {
+				var n = parseInt( ts, 10 );
+				if ( ! n || n < 0 ) { return ''; }
+				var d = new Date( n * 1000 );
+				return d.toISOString().replace( 'T', ' ' ).replace( /\.\d+Z$/, '' );
+			}
+
+			function badge( status ) {
+				var span = document.createElement( 'span' );
+				span.textContent = status || '';
+				if ( status === 'verified' ) {
+					span.style.color = '#0a7d18';
+				} else if ( status ) {
+					span.style.color = '#b32d2e';
+				}
+				return span;
+			}
+
+			function renderTable( entries, total ) {
+				while ( outEl.firstChild ) { outEl.removeChild( outEl.firstChild ); }
+				if ( ! entries || ! entries.length ) {
+					var p = document.createElement( 'p' );
+					var em = document.createElement( 'em' );
+					em.textContent = T.empty;
+					p.appendChild( em );
+					outEl.appendChild( p );
+					return;
+				}
+				var table = document.createElement( 'table' );
+				table.className = 'widefat striped';
+				var thead = document.createElement( 'thead' );
+				var hr = document.createElement( 'tr' );
+				[ T.eventId, T.type, T.ts, T.signature, T.message ].forEach( function ( h ) {
+					var th = document.createElement( 'th' );
+					th.textContent = h;
+					hr.appendChild( th );
+				} );
+				thead.appendChild( hr );
+				table.appendChild( thead );
+				var tbody = document.createElement( 'tbody' );
+				entries.forEach( function ( row ) {
+					var tr = document.createElement( 'tr' );
+
+					var tdId = document.createElement( 'td' );
+					var code = document.createElement( 'code' );
+					code.textContent = String( row.event_id || '' );
+					tdId.appendChild( code );
+					tr.appendChild( tdId );
+
+					var tdType = document.createElement( 'td' );
+					var typeCode = document.createElement( 'code' );
+					typeCode.textContent = String( row.event_type || '' );
+					tdType.appendChild( typeCode );
+					tr.appendChild( tdType );
+
+					var tdTs = document.createElement( 'td' );
+					tdTs.textContent = fmtTs( row.ts );
+					tr.appendChild( tdTs );
+
+					var tdSig = document.createElement( 'td' );
+					tdSig.appendChild( badge( String( row.signature_status || '' ) ) );
+					tr.appendChild( tdSig );
+
+					var tdMsg = document.createElement( 'td' );
+					tdMsg.textContent = String( row.message || '' );
+					tr.appendChild( tdMsg );
+
+					tbody.appendChild( tr );
+				} );
+				table.appendChild( tbody );
+				outEl.appendChild( table );
+
+				var nav = document.createElement( 'p' );
+				nav.style.marginTop = '0.5em';
+				var prevBtn = document.createElement( 'button' );
+				prevBtn.type = 'button';
+				prevBtn.className = 'button';
+				prevBtn.textContent = T.prev;
+				prevBtn.disabled = offset <= 0;
+				prevBtn.addEventListener( 'click', function () {
+					offset = Math.max( 0, offset - pageSize );
+					load();
+				} );
+				nav.appendChild( prevBtn );
+
+				var nextBtn = document.createElement( 'button' );
+				nextBtn.type = 'button';
+				nextBtn.className = 'button';
+				nextBtn.style.marginLeft = '0.5em';
+				nextBtn.textContent = T.next;
+				nextBtn.disabled = ( offset + entries.length ) >= total;
+				nextBtn.addEventListener( 'click', function () {
+					offset = offset + pageSize;
+					load();
+				} );
+				nav.appendChild( nextBtn );
+
+				var summary = document.createElement( 'span' );
+				summary.style.marginLeft = '1em';
+				summary.style.color = '#666';
+				var first = entries.length ? ( offset + 1 ) : 0;
+				var last  = offset + entries.length;
+				summary.textContent = T.summary
+					.replace( '%1$d', String( first ) )
+					.replace( '%2$d', String( last ) )
+					.replace( '%3$d', String( total ) );
+				nav.appendChild( summary );
+				outEl.appendChild( nav );
+			}
+
+			function load() {
+				if ( statusEl ) { statusEl.textContent = T.loading; }
+				wp.apiFetch( {
+					path: 'nvoos-saas/v1/webhooks/events?limit=' + pageSize + '&offset=' + offset
+				} )
+					.then( function ( resp ) {
+						if ( statusEl ) { statusEl.textContent = ''; }
+						renderTable( ( resp && resp.entries ) || [], parseInt( resp && resp.total, 10 ) || 0 );
+					} )
+					.catch( function ( err ) {
+						if ( statusEl ) { statusEl.textContent = ( err && err.message ) ? String( err.message ) : T.failed; }
+					} );
+			}
+
+			if ( refreshBtn ) {
+				refreshBtn.addEventListener( 'click', function () {
+					offset = 0;
+					load();
+				} );
+			}
+			if ( clearBtn ) {
+				clearBtn.addEventListener( 'click', function () {
+					if ( ! window.confirm( T.confirm ) ) { return; }
+					if ( statusEl ) { statusEl.textContent = T.loading; }
+					wp.apiFetch( { path: 'nvoos-saas/v1/webhooks/events', method: 'DELETE' } )
+						.then( function () {
+							offset = 0;
+							if ( statusEl ) { statusEl.textContent = T.cleared; }
+							load();
+						} )
+						.catch( function ( err ) {
+							if ( statusEl ) { statusEl.textContent = ( err && err.message ) ? String( err.message ) : T.failed; }
+						} );
+				} );
+			}
+		} )();
+		</script>
+		<?php
+	}
+
+	/**
+	 * Render a server-side webhook events table (no-JS fallback / first paint).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $entries Page of entries (newest first).
+	 * @param int   $total   Total entries in the store.
+	 * @param int   $offset  Current zero-based offset.
+	 * @return void
+	 */
+	protected static function render_webhooks_table( array $entries, $total, $offset ) {
+		?>
+		<table class="widefat striped">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Event ID', 'nvoos-saas-controller' ); ?></th>
+					<th><?php esc_html_e( 'Type', 'nvoos-saas-controller' ); ?></th>
+					<th><?php esc_html_e( 'Time (UTC)', 'nvoos-saas-controller' ); ?></th>
+					<th><?php esc_html_e( 'Signature', 'nvoos-saas-controller' ); ?></th>
+					<th><?php esc_html_e( 'Message', 'nvoos-saas-controller' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php if ( empty( $entries ) ) : ?>
+					<tr><td colspan="5"><em><?php esc_html_e( 'No webhook events recorded yet.', 'nvoos-saas-controller' ); ?></em></td></tr>
+				<?php else : ?>
+					<?php foreach ( $entries as $row ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( isset( $row['event_id'] ) ? (string) $row['event_id'] : '' ); ?></code></td>
+							<td><code><?php echo esc_html( isset( $row['event_type'] ) ? (string) $row['event_type'] : '' ); ?></code></td>
+							<td><?php echo esc_html( gmdate( 'Y-m-d H:i:s', (int) ( isset( $row['ts'] ) ? $row['ts'] : 0 ) ) ); ?></td>
+							<td>
+								<?php
+								$sig = isset( $row['signature_status'] ) ? (string) $row['signature_status'] : '';
+								if ( 'verified' === $sig ) {
+									echo '<span style="color:#0a7d18;">' . esc_html( $sig ) . '</span>';
+								} elseif ( '' !== $sig ) {
+									echo '<span style="color:#b32d2e;">' . esc_html( $sig ) . '</span>';
+								}
+								?>
+							</td>
+							<td><?php echo esc_html( isset( $row['message'] ) ? (string) $row['message'] : '' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</tbody>
+		</table>
+		<?php if ( $total > 0 ) : ?>
+			<p style="margin-top:0.5em;color:#666;">
+				<?php
+				$first = empty( $entries ) ? 0 : ( (int) $offset + 1 );
+				$last  = (int) $offset + count( $entries );
+				printf(
+					/* translators: 1: first row index, 2: last row index, 3: total entries */
+					esc_html__( 'Showing %1$d–%2$d of %3$d', 'nvoos-saas-controller' ),
+					(int) $first,
+					(int) $last,
+					(int) $total
+				);
+				?>
+			</p>
+		<?php endif; ?>
 		<?php
 	}
 
