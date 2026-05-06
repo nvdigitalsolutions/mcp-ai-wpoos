@@ -1002,10 +1002,9 @@ class NVOOS_SaaS_Controller_Admin_Page {
 
 					var td3 = document.createElement( 'td' );
 					var detailParts = [];
-					if ( row.uuid )  { detailParts.push( 'uuid=' + row.uuid ); }
-					if ( row.id && row.kind !== 'kv' ) { detailParts.push( 'id=' + row.id ); }
-					if ( row.id && row.kind === 'kv' ) { detailParts.push( 'id=' + row.id ); }
-					if ( row.hash )  { detailParts.push( 'hash=' + row.hash ); }
+					if ( row.uuid ) { detailParts.push( 'uuid=' + row.uuid ); }
+					if ( row.id )   { detailParts.push( 'id=' + row.id ); }
+					if ( row.hash ) { detailParts.push( 'hash=' + row.hash ); }
 					td3.textContent = detailParts.join( ' · ' );
 					tr.appendChild( td3 );
 

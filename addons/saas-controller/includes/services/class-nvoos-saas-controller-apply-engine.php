@@ -451,7 +451,7 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			if ( '' === $key || ! isset( $index[ $key ] ) ) {
 				$results[] = array(
 					'kind'    => isset( $row['kind'] ) ? (string) $row['kind'] : 'unknown',
-					'target'  => isset( $row['name'] ) ? (string) $row['name'] : ( isset( $row['title'] ) ? (string) $row['title'] : ( isset( $row['slug'] ) ? (string) $row['slug'] : ( isset( $row['id'] ) ? (string) $row['id'] : '' ) ) ),
+					'target'  => $this->orphan_target_label( $row ),
 					'status'  => 'rejected',
 					'message' => __( 'Selected row does not match any reviewed orphan; refusing to delete.', 'nvoos-saas-controller' ),
 				);
@@ -480,6 +480,26 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 			'duration_ms' => (int) round( ( microtime( true ) - $started ) * 1000 ),
 			'ts'          => time(),
 		);
+	}
+
+	/**
+	 * Best-effort human-readable label for an orphan row, used in
+	 * `'rejected'` result rows where we don't have the cached entry to
+	 * fall back on. Walks the kind-agnostic fields in priority order:
+	 * `name` → `title` → `slug` → `label` → `id` → `hash`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row.
+	 * @return string
+	 */
+	protected function orphan_target_label( array $row ) {
+		foreach ( array( 'name', 'title', 'slug', 'label', 'id', 'hash' ) as $field ) {
+			if ( isset( $row[ $field ] ) && '' !== (string) $row[ $field ] ) {
+				return (string) $row[ $field ];
+			}
+		}
+		return '';
 	}
 
 	/**
