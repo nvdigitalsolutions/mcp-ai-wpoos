@@ -126,7 +126,7 @@ class NVOOS_SaaS_Controller_Stripe_Client {
 			return $result;
 		}
 
-		$out = array();
+		$out  = array();
 		$data = isset( $result['data'] ) && is_array( $result['data'] ) ? $result['data'] : array();
 		foreach ( $data as $row ) {
 			if ( ! is_array( $row ) || empty( $row['id'] ) ) {
@@ -268,10 +268,10 @@ class NVOOS_SaaS_Controller_Stripe_Client {
 		}
 
 		$body = array(
-			'lookup_key'         => $lookup_key,
-			'product'            => $product_id,
-			'currency'           => $currency,
-			'unit_amount'        => (string) $amount,
+			'lookup_key'          => $lookup_key,
+			'product'             => $product_id,
+			'currency'            => $currency,
+			'unit_amount'         => (string) $amount,
 			'transfer_lookup_key' => 'true',
 		);
 		if ( ! empty( $price['recurring_interval'] ) ) {
@@ -295,6 +295,77 @@ class NVOOS_SaaS_Controller_Stripe_Client {
 			'id'         => isset( $result['id'] ) ? (string) $result['id'] : '',
 			'lookup_key' => $lookup_key,
 			'product'    => isset( $result['product'] ) ? (string) $result['product'] : $product_id,
+		);
+	}
+
+	/**
+	 * Archive a Stripe product (Phase 10 — orphan cleanup).
+	 *
+	 * Stripe never permanently deletes products that have ever had a price
+	 * or transaction attached; the documented "delete" semantics are
+	 * actually `POST /v1/products/{id}` with `active=false`. We use the
+	 * same call here because the orphan workflow is reconcile-driven:
+	 * archived products do not appear in `/v1/products` listings (live
+	 * mode is `active=true` by default), which is what `list_products()`
+	 * relies on.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $id Stripe product id (`prod_…`).
+	 * @return array|WP_Error `[ 'id' => …, 'active' => false ]` on success.
+	 */
+	public function archive_product( $id ) {
+		$id = (string) $id;
+		if ( '' === $id ) {
+			return new WP_Error(
+				'invalid_product',
+				__( 'Stripe product id is required to archive.', 'nvoos-saas-controller' )
+			);
+		}
+
+		$body            = array( 'active' => 'false' );
+		$idempotency_key = 'nvoos-product-archive-' . $id;
+		$result          = $this->post( '/products/' . rawurlencode( $id ), $body, 'archive_stripe_product', $id, $idempotency_key );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'id'     => isset( $result['id'] ) ? (string) $result['id'] : $id,
+			'active' => ! empty( $result['active'] ),
+		);
+	}
+
+	/**
+	 * Archive a Stripe price (Phase 10 — orphan cleanup).
+	 *
+	 * Stripe forbids deleting prices for the same reason as products
+	 * (history immutability). The idiomatic equivalent is
+	 * `POST /v1/prices/{id}` with `active=false`, which removes the price
+	 * from active listings without breaking historical invoices.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $id Stripe price id (`price_…`).
+	 * @return array|WP_Error
+	 */
+	public function archive_price( $id ) {
+		$id = (string) $id;
+		if ( '' === $id ) {
+			return new WP_Error(
+				'invalid_price',
+				__( 'Stripe price id is required to archive.', 'nvoos-saas-controller' )
+			);
+		}
+
+		$body            = array( 'active' => 'false' );
+		$idempotency_key = 'nvoos-price-archive-' . $id;
+		$result          = $this->post( '/prices/' . rawurlencode( $id ), $body, 'archive_stripe_price', $id, $idempotency_key );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'id'     => isset( $result['id'] ) ? (string) $result['id'] : $id,
+			'active' => ! empty( $result['active'] ),
 		);
 	}
 
@@ -334,9 +405,9 @@ class NVOOS_SaaS_Controller_Stripe_Client {
 	protected function post( $path, array $body, $action, $target, $idempotency_key ) {
 		$started_us = microtime( true );
 
-		$headers                       = $this->auth_headers();
-		$headers['Content-Type']        = 'application/x-www-form-urlencoded';
-		$headers['Idempotency-Key']    = (string) $idempotency_key;
+		$headers                    = $this->auth_headers();
+		$headers['Content-Type']    = 'application/x-www-form-urlencoded';
+		$headers['Idempotency-Key'] = (string) $idempotency_key;
 
 		$response = wp_remote_post(
 			self::BASE_URL . $path,

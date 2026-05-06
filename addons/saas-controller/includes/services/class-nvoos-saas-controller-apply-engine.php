@@ -82,6 +82,18 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	const TRANSIENT_PREFIX = 'nvoos_saas_apply_';
 
 	/**
+	 * Transient key prefix for orphan-cleanup HITL tokens (Phase 10).
+	 *
+	 * Intentionally distinct from {@see self::TRANSIENT_PREFIX} so a token
+	 * issued for `POST /apply/preview` cannot be accidentally (or
+	 * maliciously) replayed against `POST /apply/orphans/run` — and vice
+	 * versa. Each surface keeps its own single-use namespace.
+	 *
+	 * @var string
+	 */
+	const ORPHAN_TRANSIENT_PREFIX = 'nvoos_saas_orphan_';
+
+	/**
 	 * Default token TTL, seconds. Filterable via
 	 * `nvoos_saas_controller_apply_token_ttl`.
 	 *
@@ -281,6 +293,239 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	}
 
 	/**
+	 * Issue a single-use HITL token for orphan cleanup (Phase 10).
+	 *
+	 * Orphan deletes are deliberately gated on a *separate* token namespace
+	 * from {@see self::issue_token()} / {@see self::consume_token()}: a
+	 * token good for `POST /apply/run` cannot be replayed against
+	 * `POST /apply/orphans/run`, and vice versa. This makes the
+	 * destructive surface impossible to confuse with the create surface
+	 * even if a careless operator presses the wrong button.
+	 *
+	 * The cached payload includes the *full* set of orphans the operator
+	 * reviewed — the run call says which subset to delete, and the engine
+	 * verifies every selected row matches one in the cached set, so the
+	 * browser cannot extend the delete set after issuance.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $orphans `plan.orphans[]` rows from the freshly-run plan.
+	 * @return array `[ 'token' => string, 'expires_in' => int ]`.
+	 */
+	public static function issue_orphan_token( array $orphans ) {
+		$token = self::generate_token();
+		$hash  = hash( 'sha256', $token );
+		$key   = self::ORPHAN_TRANSIENT_PREFIX . $hash;
+		$ttl   = (int) apply_filters( 'nvoos_saas_controller_apply_token_ttl', self::DEFAULT_TOKEN_TTL );
+		if ( $ttl <= 60 ) {
+			$ttl = self::DEFAULT_TOKEN_TTL;
+		}
+
+		set_transient(
+			$key,
+			array(
+				'orphans'   => array_values( array_filter( $orphans, 'is_array' ) ),
+				'issued_at' => time(),
+				'used'      => false,
+			),
+			$ttl
+		);
+
+		if ( class_exists( 'NVOOS_SaaS_Controller_Audit_Log' ) ) {
+			NVOOS_SaaS_Controller_Audit_Log::instance()->record(
+				array(
+					'channel' => 'internal',
+					'action'  => 'orphan_token_issued',
+					'target'  => substr( $hash, 0, 12 ),
+					'status'  => 'ok',
+					'message' => sprintf(
+						/* translators: 1: TTL seconds, 2: orphan count */
+						__( 'Orphan-cleanup token issued; TTL %1$d seconds, %2$d candidate rows.', 'nvoos-saas-controller' ),
+						$ttl,
+						count( $orphans )
+					),
+				)
+			);
+		}
+
+		return array(
+			'token'      => $token,
+			'expires_in' => $ttl,
+		);
+	}
+
+	/**
+	 * Validate, single-use-mark, and return the cached orphan list for a
+	 * Phase 10 orphan token.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $token Plaintext orphan token.
+	 * @return array|WP_Error Cached `orphans[]` on success.
+	 */
+	public static function consume_orphan_token( $token ) {
+		$token = is_scalar( $token ) ? (string) $token : '';
+		if ( '' === $token || strlen( $token ) < 32 ) {
+			return new WP_Error(
+				'invalid_orphan_token',
+				__( 'Orphan-cleanup token is missing or malformed.', 'nvoos-saas-controller' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$hash   = hash( 'sha256', $token );
+		$key    = self::ORPHAN_TRANSIENT_PREFIX . $hash;
+		$stored = get_transient( $key );
+		if ( ! is_array( $stored ) || ! isset( $stored['orphans'] ) || ! is_array( $stored['orphans'] ) ) {
+			return new WP_Error(
+				'expired_orphan_token',
+				__( 'Orphan-cleanup token is unknown or has expired. Re-run the Review Orphans flow.', 'nvoos-saas-controller' ),
+				array( 'status' => 410 )
+			);
+		}
+
+		if ( ! empty( $stored['used'] ) ) {
+			return new WP_Error(
+				'consumed_orphan_token',
+				__( 'Orphan-cleanup token has already been used. Tokens are single-use.', 'nvoos-saas-controller' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$ttl_remaining = self::transient_remaining_ttl( $key );
+		if ( $ttl_remaining < 60 ) {
+			$ttl_remaining = 60;
+		}
+		set_transient(
+			$key,
+			array_merge(
+				$stored,
+				array(
+					'used'    => true,
+					'used_at' => time(),
+				)
+			),
+			$ttl_remaining
+		);
+
+		return $stored['orphans'];
+	}
+
+	/**
+	 * Apply a vetted set of orphan-row deletes (Phase 10).
+	 *
+	 * Each `$selected` row is matched against the cached `$cached_orphans`
+	 * list by an exact identity-key tuple (kind + the kind-specific
+	 * mutating identifier — e.g. d1.uuid, kv.id, ai_gateway.slug,
+	 * stripe_product.id, stripe_price.id, openrouter_key.hash). Rows that
+	 * don't match the cached set are recorded as `'rejected'` (never sent
+	 * upstream), so even a tampered run payload cannot delete a resource
+	 * the operator never reviewed.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $selected       Per-row delete selections submitted by the operator.
+	 * @param array $cached_orphans Orphans cached against the consumed token.
+	 * @return array Same shape as {@see self::apply()}.
+	 */
+	public function apply_orphans( array $selected, array $cached_orphans ) {
+		$started = microtime( true );
+		$results = array();
+
+		$index = array();
+		foreach ( $cached_orphans as $orphan ) {
+			if ( ! is_array( $orphan ) ) {
+				continue;
+			}
+			$key = $this->orphan_identity_key( $orphan );
+			if ( '' !== $key ) {
+				$index[ $key ] = $orphan;
+			}
+		}
+
+		foreach ( $selected as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$key = $this->orphan_identity_key( $row );
+			if ( '' === $key || ! isset( $index[ $key ] ) ) {
+				$results[] = array(
+					'kind'    => isset( $row['kind'] ) ? (string) $row['kind'] : 'unknown',
+					'target'  => isset( $row['name'] ) ? (string) $row['name'] : ( isset( $row['title'] ) ? (string) $row['title'] : ( isset( $row['slug'] ) ? (string) $row['slug'] : ( isset( $row['id'] ) ? (string) $row['id'] : '' ) ) ),
+					'status'  => 'rejected',
+					'message' => __( 'Selected row does not match any reviewed orphan; refusing to delete.', 'nvoos-saas-controller' ),
+				);
+				continue;
+			}
+			$results[] = $this->apply_row( $index[ $key ], 'delete' );
+		}
+
+		$summary = array(
+			'ok'       => 0,
+			'error'    => 0,
+			'skipped'  => 0,
+			'rejected' => 0,
+		);
+		foreach ( $results as $r ) {
+			$status = isset( $r['status'] ) ? (string) $r['status'] : 'error';
+			if ( ! isset( $summary[ $status ] ) ) {
+				$summary[ $status ] = 0;
+			}
+			++$summary[ $status ];
+		}
+
+		return array(
+			'results'     => $results,
+			'summary'     => $summary,
+			'duration_ms' => (int) round( ( microtime( true ) - $started ) * 1000 ),
+			'ts'          => time(),
+		);
+	}
+
+	/**
+	 * Build the deterministic identity-key tuple used to match a selected
+	 * orphan row against the cached preview list.
+	 *
+	 * Per-kind identifier:
+	 *   • d1              — uuid
+	 *   • kv              — id
+	 *   • ai_gateway      — slug
+	 *   • stripe_product  — id
+	 *   • stripe_price    — id
+	 *   • openrouter_key  — hash
+	 *
+	 * Returns an empty string when the row is missing the required field;
+	 * the caller then records `status=rejected` for that row.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row.
+	 * @return string
+	 */
+	protected function orphan_identity_key( array $row ) {
+		$kind = isset( $row['kind'] ) ? (string) $row['kind'] : '';
+		switch ( $kind ) {
+			case 'd1':
+				$id = isset( $row['uuid'] ) ? (string) $row['uuid'] : '';
+				break;
+			case 'kv':
+			case 'stripe_product':
+			case 'stripe_price':
+				$id = isset( $row['id'] ) ? (string) $row['id'] : '';
+				break;
+			case 'ai_gateway':
+				$id = isset( $row['slug'] ) ? (string) $row['slug'] : '';
+				break;
+			case 'openrouter_key':
+				$id = isset( $row['hash'] ) ? (string) $row['hash'] : '';
+				break;
+			default:
+				return '';
+		}
+		return '' === $id ? '' : $kind . ':' . $id;
+	}
+
+	/**
 	 * Apply the supplied plan against Cloudflare.
 	 *
 	 * Iterates `plan.creates[]`, dispatches each row to the mutating client
@@ -358,6 +603,9 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 	 * @return array Result row.
 	 */
 	public function apply_row( array $row, $section = 'create' ) {
+		if ( 'delete' === $section ) {
+			return $this->apply_delete( $row );
+		}
 		$section = ( 'update' === $section ) ? 'update' : 'create';
 
 		if ( 'update' === $section ) {
@@ -417,6 +665,269 @@ class NVOOS_SaaS_Controller_Apply_Engine {
 					),
 				);
 		}
+	}
+
+	/**
+	 * Dispatch a single orphan row to the appropriate delete call (Phase 10).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row One entry from the cached `plan.orphans` list,
+	 *                   already matched to the operator's selection.
+	 * @return array Result row.
+	 */
+	protected function apply_delete( array $row ) {
+		$kind = isset( $row['kind'] ) ? (string) $row['kind'] : '';
+		switch ( $kind ) {
+			case 'd1':
+				return $this->apply_delete_d1( $row );
+			case 'kv':
+				return $this->apply_delete_kv( $row );
+			case 'ai_gateway':
+				return $this->apply_delete_ai_gateway( $row );
+			case 'stripe_product':
+				return $this->apply_delete_stripe_product( $row );
+			case 'stripe_price':
+				return $this->apply_delete_stripe_price( $row );
+			case 'openrouter_key':
+				return $this->apply_delete_openrouter_key( $row );
+			default:
+				return array(
+					'kind'    => $kind,
+					'target'  => '',
+					'status'  => 'skipped',
+					'message' => sprintf(
+						/* translators: %s: orphan-row kind. */
+						__( 'Unknown orphan kind "%s"; skipped.', 'nvoos-saas-controller' ),
+						$kind
+					),
+				);
+		}
+	}
+
+	/**
+	 * Delete a single orphan D1 database (Phase 10).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row (`{ kind:'d1', name, uuid }`).
+	 * @return array
+	 */
+	protected function apply_delete_d1( array $row ) {
+		$name   = isset( $row['name'] ) ? (string) $row['name'] : '';
+		$uuid   = isset( $row['uuid'] ) ? (string) $row['uuid'] : '';
+		$result = $this->client->delete_d1_database( $uuid, $name );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'd1',
+				'target'  => '' !== $name ? $name : $uuid,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'd1',
+			'target'  => '' !== $name ? $name : $uuid,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: D1 database name. */
+				__( 'Deleted orphan D1 database "%s".', 'nvoos-saas-controller' ),
+				'' !== $name ? $name : $uuid
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Delete a single orphan KV namespace (Phase 10).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row (`{ kind:'kv', title, id }`).
+	 * @return array
+	 */
+	protected function apply_delete_kv( array $row ) {
+		$title  = isset( $row['title'] ) ? (string) $row['title'] : '';
+		$id     = isset( $row['id'] ) ? (string) $row['id'] : '';
+		$result = $this->client->delete_kv_namespace( $id, $title );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'kv',
+				'target'  => '' !== $title ? $title : $id,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'kv',
+			'target'  => '' !== $title ? $title : $id,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: KV namespace title. */
+				__( 'Deleted orphan KV namespace "%s".', 'nvoos-saas-controller' ),
+				'' !== $title ? $title : $id
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Delete a single orphan AI Gateway (Phase 10).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row.
+	 * @return array
+	 */
+	protected function apply_delete_ai_gateway( array $row ) {
+		$slug   = isset( $row['slug'] ) ? (string) $row['slug'] : '';
+		$result = $this->client->delete_ai_gateway( $slug );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'ai_gateway',
+				'target'  => $slug,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'ai_gateway',
+			'target'  => $slug,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: AI Gateway slug. */
+				__( 'Deleted orphan AI Gateway "%s".', 'nvoos-saas-controller' ),
+				$slug
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Archive a single orphan Stripe product (Phase 10).
+	 *
+	 * Stripe forbids permanent deletion of products with attached prices
+	 * or transactions; the {@see NVOOS_SaaS_Controller_Stripe_Client::archive_product()}
+	 * call sets `active=false`, which removes the product from active
+	 * listings (and from `list_products()` reconcile output) without
+	 * breaking historical invoices.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row.
+	 * @return array
+	 */
+	protected function apply_delete_stripe_product( array $row ) {
+		$id = isset( $row['id'] ) ? (string) $row['id'] : '';
+		if ( null === $this->stripe ) {
+			return array(
+				'kind'    => 'stripe_product',
+				'target'  => $id,
+				'status'  => 'skipped',
+				'message' => __( 'Stripe credential is not configured; cannot archive Stripe product orphan.', 'nvoos-saas-controller' ),
+			);
+		}
+		$result = $this->stripe->archive_product( $id );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'stripe_product',
+				'target'  => $id,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'stripe_product',
+			'target'  => $id,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: Stripe product id. */
+				__( 'Archived orphan Stripe product %s (active=false).', 'nvoos-saas-controller' ),
+				$id
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Archive a single orphan Stripe price (Phase 10).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row.
+	 * @return array
+	 */
+	protected function apply_delete_stripe_price( array $row ) {
+		$id = isset( $row['id'] ) ? (string) $row['id'] : '';
+		if ( null === $this->stripe ) {
+			return array(
+				'kind'    => 'stripe_price',
+				'target'  => $id,
+				'status'  => 'skipped',
+				'message' => __( 'Stripe credential is not configured; cannot archive Stripe price orphan.', 'nvoos-saas-controller' ),
+			);
+		}
+		$result = $this->stripe->archive_price( $id );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'stripe_price',
+				'target'  => $id,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'stripe_price',
+			'target'  => $id,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: Stripe price id. */
+				__( 'Archived orphan Stripe price %s (active=false).', 'nvoos-saas-controller' ),
+				$id
+			),
+			'detail'  => $result,
+		);
+	}
+
+	/**
+	 * Delete a single orphan OpenRouter runtime key (Phase 10).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $row Orphan row (`{ kind:'openrouter_key', label, hash }`).
+	 * @return array
+	 */
+	protected function apply_delete_openrouter_key( array $row ) {
+		$label = isset( $row['label'] ) ? (string) $row['label'] : '';
+		$hash  = isset( $row['hash'] ) ? (string) $row['hash'] : '';
+		if ( null === $this->openrouter ) {
+			return array(
+				'kind'    => 'openrouter_key',
+				'target'  => '' !== $label ? $label : $hash,
+				'status'  => 'skipped',
+				'message' => __( 'OpenRouter provisioning credential is not configured; cannot delete key orphan.', 'nvoos-saas-controller' ),
+			);
+		}
+		$result = $this->openrouter->delete_key( $hash, $label );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'kind'    => 'openrouter_key',
+				'target'  => '' !== $label ? $label : $hash,
+				'status'  => 'error',
+				'message' => $result->get_error_message(),
+			);
+		}
+		return array(
+			'kind'    => 'openrouter_key',
+			'target'  => '' !== $label ? $label : $hash,
+			'status'  => 'ok',
+			'message' => sprintf(
+				/* translators: %s: OpenRouter key label. */
+				__( 'Deleted orphan OpenRouter key "%s".', 'nvoos-saas-controller' ),
+				'' !== $label ? $label : $hash
+			),
+			'detail'  => $result,
+		);
 	}
 
 	/**

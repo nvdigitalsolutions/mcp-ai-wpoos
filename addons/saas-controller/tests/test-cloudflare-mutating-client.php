@@ -203,8 +203,79 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 
 	public function test_from_credential_store_missing_creds() {
 		// Fresh credential store has no values.
-		$result = NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::from_credential_store();
+	public function test_delete_d1_database_records_audit_entry_on_success() {
+		$this->canned['/d1/database/cccc-1111'] = $this->ok( null );
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_d1_database( 'cccc-1111', 'mcp-oos' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'cccc-1111', $result['uuid'] );
+		$this->assertSame( 'DELETE', $this->captured[0]['args']['method'] );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertNotEmpty( $entries );
+		$this->assertSame( 'cloudflare', $entries[0]['channel'] );
+		$this->assertSame( 'delete_d1_database', $entries[0]['action'] );
+		$this->assertSame( 'mcp-oos', $entries[0]['target'] );
+		$this->assertSame( 'ok', $entries[0]['status'] );
+	}
+
+	public function test_delete_d1_database_rejects_empty_uuid() {
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_d1_database( '', 'mcp-oos' );
 		$this->assertWPError( $result );
-		$this->assertSame( 'missing_credentials', $result->get_error_code() );
+		$this->assertSame( 'invalid_uuid', $result->get_error_code() );
+		$this->assertEmpty( $this->captured );
+	}
+
+	public function test_delete_d1_database_records_error_audit_on_4xx() {
+		$this->canned['/d1/database/cccc-1111'] = $this->err( 404, 7404, 'D1 not found' );
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_d1_database( 'cccc-1111', 'mcp-oos' );
+		$this->assertWPError( $result );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'error', $entries[0]['status'] );
+		$this->assertSame( 'delete_d1_database', $entries[0]['action'] );
+	}
+
+	public function test_delete_kv_namespace_records_audit_entry_on_success() {
+		$this->canned['/storage/kv/namespaces/ns-id'] = $this->ok( null );
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_kv_namespace( 'ns-id', 'cache' );
+
+		$this->assertSame( 'ns-id', $result['id'] );
+		$this->assertSame( 'DELETE', $this->captured[0]['args']['method'] );
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'delete_kv_namespace', $entries[0]['action'] );
+		$this->assertSame( 'cache', $entries[0]['target'] );
+	}
+
+	public function test_delete_kv_namespace_rejects_empty_id() {
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_kv_namespace( '' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_namespace_id', $result->get_error_code() );
+	}
+
+	public function test_delete_ai_gateway_records_audit_entry_on_success() {
+		$this->canned['/ai-gateway/gateways/mcp-router'] = $this->ok( null );
+
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_ai_gateway( 'mcp-router' );
+
+		$this->assertSame( 'mcp-router', $result['slug'] );
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'delete_ai_gateway', $entries[0]['action'] );
+		$this->assertSame( 'mcp-router', $entries[0]['target'] );
+	}
+
+	public function test_delete_ai_gateway_rejects_empty_slug() {
+		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
+		$result = $client->delete_ai_gateway( '' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_slug', $result->get_error_code() );
 	}
 }

@@ -47,6 +47,31 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 			: $this->next_gw;
 	}
 
+	public $next_delete_d1 = null;
+	public $next_delete_kv = null;
+	public $next_delete_gw = null;
+
+	public function delete_d1_database( $uuid, $name = '' ) {
+		$this->calls[] = array( 'delete_d1', $uuid, $name );
+		return null === $this->next_delete_d1
+			? array( 'uuid' => $uuid, 'name' => $name )
+			: $this->next_delete_d1;
+	}
+
+	public function delete_kv_namespace( $namespace_id, $title = '' ) {
+		$this->calls[] = array( 'delete_kv', $namespace_id, $title );
+		return null === $this->next_delete_kv
+			? array( 'id' => $namespace_id, 'title' => $title )
+			: $this->next_delete_kv;
+	}
+
+	public function delete_ai_gateway( $slug ) {
+		$this->calls[] = array( 'delete_gw', $slug );
+		return null === $this->next_delete_gw
+			? array( 'slug' => $slug )
+			: $this->next_delete_gw;
+	}
+
 	public function upload_worker_script( $name, $script_body, array $metadata ) {
 		$this->calls[] = array( 'worker', $name, strlen( $script_body ), $metadata );
 		return null === $this->next_worker
@@ -416,6 +441,143 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'error', $out['results'][0]['status'] );
 		$this->assertStringContainsString( 'Bad provisioning key.', $out['results'][0]['message'] );
 	}
+
+	// ============================================================
+	// Phase 10 — orphan cleanup (HITL-gated delete) coverage.
+	// ============================================================
+
+	public function test_orphan_token_round_trip_is_single_use() {
+		$orphans = array(
+			array( 'kind' => 'd1', 'name' => 'old', 'uuid' => 'uuid-old' ),
+		);
+		$issued = NVOOS_SaaS_Controller_Apply_Engine::issue_orphan_token( $orphans );
+		$this->assertNotEmpty( $issued['token'] );
+		$this->assertGreaterThan( 60, $issued['expires_in'] );
+
+		$first = NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( $issued['token'] );
+		$this->assertIsArray( $first );
+		$this->assertCount( 1, $first );
+		$this->assertSame( 'uuid-old', $first[0]['uuid'] );
+
+		$second = NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( $issued['token'] );
+		$this->assertWPError( $second );
+		$this->assertSame( 'consumed_orphan_token', $second->get_error_code() );
+	}
+
+	public function test_consume_orphan_token_rejects_malformed_and_unknown() {
+		$err = NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( 'short' );
+		$this->assertWPError( $err );
+		$this->assertSame( 'invalid_orphan_token', $err->get_error_code() );
+
+		$err = NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( str_repeat( 'a', 64 ) );
+		$this->assertWPError( $err );
+		$this->assertSame( 'expired_orphan_token', $err->get_error_code() );
+	}
+
+	public function test_orphan_and_apply_token_namespaces_are_isolated() {
+		// A token issued for orphans must not be accepted by consume_token(),
+		// and an apply token must not be accepted by consume_orphan_token().
+		$orphan_token = NVOOS_SaaS_Controller_Apply_Engine::issue_orphan_token(
+			array( array( 'kind' => 'd1', 'uuid' => 'u1', 'name' => 'old' ) )
+		)['token'];
+		$apply_token  = NVOOS_SaaS_Controller_Apply_Engine::issue_token(
+			array( 'creates' => array(), 'updates' => array() )
+		)['token'];
+
+		$this->assertWPError( NVOOS_SaaS_Controller_Apply_Engine::consume_token( $orphan_token ) );
+		$this->assertWPError( NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( $apply_token ) );
+	}
+
+	public function test_apply_orphans_dispatches_per_kind_to_clients() {
+		$cf  = new NVOOS_SaaS_Stub_Mutating_Client();
+		$str = new NVOOS_SaaS_Stub_Engine_Stripe_Client();
+		$or  = new NVOOS_SaaS_Stub_Engine_OpenRouter_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, $str, $or );
+
+		$cached = array(
+			array( 'kind' => 'd1', 'name' => 'gone-d1', 'uuid' => 'uuid-d1' ),
+			array( 'kind' => 'kv', 'title' => 'gone-kv', 'id' => 'id-kv' ),
+			array( 'kind' => 'ai_gateway', 'slug' => 'gone-gw' ),
+			array( 'kind' => 'stripe_product', 'id' => 'prod_gone' ),
+			array( 'kind' => 'stripe_price', 'id' => 'price_gone' ),
+			array( 'kind' => 'openrouter_key', 'label' => 'gone-key', 'hash' => 'h-gone' ),
+		);
+
+		// Operator selects every row.
+		$out = $engine->apply_orphans( $cached, $cached );
+
+		$this->assertSame( 6, count( $out['results'] ) );
+		$this->assertSame( 6, $out['summary']['ok'] );
+		$this->assertSame( 0, $out['summary']['error'] );
+		$this->assertSame( 0, $out['summary']['rejected'] );
+
+		// CF stub recorded all three deletes.
+		$cf_delete_actions = array();
+		foreach ( $cf->calls as $call ) {
+			if ( 0 === strpos( $call[0], 'delete_' ) ) {
+				$cf_delete_actions[] = $call[0];
+			}
+		}
+		$this->assertContains( 'delete_d1', $cf_delete_actions );
+		$this->assertContains( 'delete_kv', $cf_delete_actions );
+		$this->assertContains( 'delete_gw', $cf_delete_actions );
+
+		$this->assertSame( array( 'prod_gone' ), $str->archive_product_calls );
+		$this->assertSame( array( 'price_gone' ), $str->archive_price_calls );
+		$this->assertSame( 'h-gone', $or->delete_calls[0]['hash'] );
+	}
+
+	public function test_apply_orphans_rejects_selections_not_in_cached_set() {
+		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf );
+
+		$cached = array(
+			array( 'kind' => 'd1', 'name' => 'reviewed', 'uuid' => 'uuid-reviewed' ),
+		);
+
+		// Forged: the operator's browser submitted a row that was not in
+		// the previewed list. Apply_orphans must refuse to dispatch it.
+		$selected = array(
+			array( 'kind' => 'd1', 'name' => 'evil', 'uuid' => 'uuid-evil' ),
+		);
+
+		$out = $engine->apply_orphans( $selected, $cached );
+
+		$this->assertSame( 1, $out['summary']['rejected'] );
+		$this->assertSame( 'rejected', $out['results'][0]['status'] );
+		// Critically: no delete call was made on the underlying client.
+		foreach ( $cf->calls as $call ) {
+			$this->assertNotEquals( 'delete_d1', $call[0] );
+		}
+	}
+
+	public function test_apply_orphans_skips_stripe_when_credential_missing() {
+		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf ); // no stripe / openrouter
+
+		$cached = array(
+			array( 'kind' => 'stripe_product', 'id' => 'prod_x' ),
+			array( 'kind' => 'openrouter_key', 'label' => 'k', 'hash' => 'h' ),
+		);
+		$out = $engine->apply_orphans( $cached, $cached );
+
+		$this->assertSame( 2, $out['summary']['skipped'] );
+		$this->assertSame( 0, $out['summary']['ok'] );
+		$this->assertSame( 0, $out['summary']['error'] );
+	}
+
+	public function test_apply_orphans_records_error_on_client_failure() {
+		$cf = new NVOOS_SaaS_Stub_Mutating_Client();
+		$cf->next_delete_d1 = new WP_Error( 'cloudflare_http_403', 'Forbidden' );
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf );
+
+		$cached = array( array( 'kind' => 'd1', 'name' => 'gone', 'uuid' => 'u1' ) );
+		$out    = $engine->apply_orphans( $cached, $cached );
+
+		$this->assertSame( 1, $out['summary']['error'] );
+		$this->assertSame( 'error', $out['results'][0]['status'] );
+		$this->assertStringContainsString( 'Forbidden', $out['results'][0]['message'] );
+	}
 }
 
 /**
@@ -452,6 +614,27 @@ class NVOOS_SaaS_Stub_Engine_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_
 			'product'    => $price['product_id'],
 		);
 	}
+
+	public $archive_product_calls   = array();
+	public $archive_price_calls     = array();
+	public $next_archive_prod_error = null;
+	public $next_archive_price_error = null;
+
+	public function archive_product( $id ) {
+		$this->archive_product_calls[] = $id;
+		if ( null !== $this->next_archive_prod_error ) {
+			return $this->next_archive_prod_error;
+		}
+		return array( 'id' => (string) $id, 'active' => false );
+	}
+
+	public function archive_price( $id ) {
+		$this->archive_price_calls[] = $id;
+		if ( null !== $this->next_archive_price_error ) {
+			return $this->next_archive_price_error;
+		}
+		return array( 'id' => (string) $id, 'active' => false );
+	}
 }
 
 /**
@@ -473,5 +656,16 @@ class NVOOS_SaaS_Stub_Engine_OpenRouter_Client extends NVOOS_SaaS_Controller_Ope
 			'hash'  => 'h-' . substr( hash( 'sha256', (string) $label ), 0, 8 ),
 			'key'   => 'sk-or-stub-' . (string) $label,
 		);
+	}
+
+	public $delete_calls       = array();
+	public $next_delete_error  = null;
+
+	public function delete_key( $hash, $label = '' ) {
+		$this->delete_calls[] = array( 'hash' => (string) $hash, 'label' => (string) $label );
+		if ( null !== $this->next_delete_error ) {
+			return $this->next_delete_error;
+		}
+		return array( 'hash' => (string) $hash, 'label' => (string) $label );
 	}
 }

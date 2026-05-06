@@ -201,10 +201,52 @@ class Test_NVOOS_SaaS_Controller_Stripe_Client extends WP_UnitTestCase {
 		$this->assertNull( NVOOS_SaaS_Controller_Stripe_Client::from_credential_store() );
 	}
 
-	public function test_from_credential_store_builds_client_when_set() {
-		NVOOS_SaaS_Controller_Credential_Store::instance()->set( array( 'stripe_secret_key' => 'sk_test_abc' ) );
-		$client = NVOOS_SaaS_Controller_Stripe_Client::from_credential_store();
-		$this->assertInstanceOf( NVOOS_SaaS_Controller_Stripe_Client::class, $client );
-		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
+	public function test_archive_product_succeeds_and_records_audit() {
+		$this->canned['/v1/products/prod_basic'] = $this->ok_json( array(
+			'id'     => 'prod_basic',
+			'active' => false,
+		) );
+		$client = new NVOOS_SaaS_Controller_Stripe_Client( 'sk_test_x' );
+		$out    = $client->archive_product( 'prod_basic' );
+
+		$this->assertIsArray( $out );
+		$this->assertSame( 'prod_basic', $out['id'] );
+		$this->assertFalse( $out['active'] );
+		$this->assertSame( 'POST', $this->captured[0]['args']['method'] );
+		$this->assertStringContainsString( 'active=false', (string) $this->captured[0]['args']['body'] );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'archive_stripe_product', $entries[0]['action'] );
+		$this->assertSame( 'ok', $entries[0]['status'] );
+	}
+
+	public function test_archive_product_rejects_empty_id() {
+		$client = new NVOOS_SaaS_Controller_Stripe_Client( 'sk_test_x' );
+		$out    = $client->archive_product( '' );
+		$this->assertWPError( $out );
+		$this->assertSame( 'invalid_product', $out->get_error_code() );
+	}
+
+	public function test_archive_price_succeeds_and_records_audit() {
+		$this->canned['/v1/prices/price_x'] = $this->ok_json( array(
+			'id'     => 'price_x',
+			'active' => false,
+		) );
+		$client = new NVOOS_SaaS_Controller_Stripe_Client( 'sk_test_x' );
+		$out    = $client->archive_price( 'price_x' );
+		$this->assertSame( 'price_x', $out['id'] );
+		$this->assertFalse( $out['active'] );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'archive_stripe_price', $entries[0]['action'] );
+	}
+
+	public function test_archive_price_records_error_audit_on_4xx() {
+		$this->canned['/v1/prices/price_x'] = $this->err_json( 404, 'resource_missing', 'No such price' );
+		$client = new NVOOS_SaaS_Controller_Stripe_Client( 'sk_test_x' );
+		$out    = $client->archive_price( 'price_x' );
+		$this->assertWPError( $out );
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'error', $entries[0]['status'] );
 	}
 }

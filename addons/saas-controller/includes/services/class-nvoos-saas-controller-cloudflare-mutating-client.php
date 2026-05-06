@@ -88,8 +88,8 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 	 * @return self|WP_Error WP_Error('missing_credentials') when either credential is unset.
 	 */
 	public static function from_credential_store( $account_override = null ) {
-		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
-		$creds = $store->get_all();
+		$store      = NVOOS_SaaS_Controller_Credential_Store::instance();
+		$creds      = $store->get_all();
 		$account_id = $account_override
 			? (string) $account_override
 			: ( isset( $creds['cloudflare_account_id'] ) ? (string) $creds['cloudflare_account_id'] : '' );
@@ -180,13 +180,13 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 		$result = $this->post(
 			'/accounts/' . rawurlencode( $this->account_id ) . '/ai-gateway/gateways',
 			array(
-				'id'                       => $slug,
+				'id'                         => $slug,
 				'cache_invalidate_on_update' => false,
-				'cache_ttl'                => 0,
-				'collect_logs'             => true,
-				'rate_limiting_interval'   => 0,
-				'rate_limiting_limit'      => 0,
-				'rate_limiting_technique'  => 'fixed',
+				'cache_ttl'                  => 0,
+				'collect_logs'               => true,
+				'rate_limiting_interval'     => 0,
+				'rate_limiting_limit'        => 0,
+				'rate_limiting_technique'    => 'fixed',
 			),
 			'create_ai_gateway',
 			$slug
@@ -291,7 +291,7 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 		// also surface the response `etag` header (the drift detector's
 		// preferred fingerprint).
 		if ( ! is_wp_error( $result ) ) {
-			$etag = is_array( $response ) ? (string) wp_remote_retrieve_header( $response, 'etag' ) : '';
+			$etag   = is_array( $response ) ? (string) wp_remote_retrieve_header( $response, 'etag' ) : '';
 			$result = array(
 				'id'          => isset( $result['id'] ) ? (string) $result['id'] : $slug,
 				'etag'        => trim( $etag, '"' ),
@@ -301,6 +301,115 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 		}
 
 		$this->record_audit( 'upload_worker_script', $slug, $result, $started_us );
+		return $result;
+	}
+
+	/**
+	 * Delete a D1 database by uuid (Phase 10 — orphan cleanup).
+	 *
+	 * Cloudflare's D1 API exposes destructive deletion at
+	 * `DELETE /accounts/{id}/d1/database/{uuid}`. The uuid is mandatory
+	 * (the friendly name alone is not sufficient — Cloudflare addresses
+	 * the row by uuid) and is provided by the plan generator's orphan row.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $uuid Cloudflare D1 database uuid.
+	 * @param string $name Friendly database name (for audit-log target only).
+	 * @return array|WP_Error `[ 'uuid' => …, 'name' => … ]` on success.
+	 */
+	public function delete_d1_database( $uuid, $name = '' ) {
+		$uuid = (string) $uuid;
+		if ( '' === $uuid ) {
+			return new WP_Error( 'invalid_uuid', __( 'D1 database uuid is required to delete.', 'nvoos-saas-controller' ) );
+		}
+		$path   = '/accounts/' . rawurlencode( $this->account_id ) . '/d1/database/' . rawurlencode( $uuid );
+		$target = '' !== (string) $name ? (string) $name : $uuid;
+		$result = $this->delete( $path, 'delete_d1_database', $target );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'uuid' => $uuid,
+			'name' => '' !== (string) $name ? (string) $name : '',
+		);
+	}
+
+	/**
+	 * Delete a KV namespace by id (Phase 10 — orphan cleanup).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $namespace_id Cloudflare KV namespace id.
+	 * @param string $title        Friendly namespace title (audit target only).
+	 * @return array|WP_Error
+	 */
+	public function delete_kv_namespace( $namespace_id, $title = '' ) {
+		$namespace_id = (string) $namespace_id;
+		if ( '' === $namespace_id ) {
+			return new WP_Error( 'invalid_namespace_id', __( 'KV namespace id is required to delete.', 'nvoos-saas-controller' ) );
+		}
+		$path   = '/accounts/' . rawurlencode( $this->account_id ) . '/storage/kv/namespaces/' . rawurlencode( $namespace_id );
+		$target = '' !== (string) $title ? (string) $title : $namespace_id;
+		$result = $this->delete( $path, 'delete_kv_namespace', $target );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'id'    => $namespace_id,
+			'title' => '' !== (string) $title ? (string) $title : '',
+		);
+	}
+
+	/**
+	 * Delete an AI Gateway by slug (Phase 10 — orphan cleanup).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $slug AI Gateway slug.
+	 * @return array|WP_Error
+	 */
+	public function delete_ai_gateway( $slug ) {
+		$slug = (string) $slug;
+		if ( '' === $slug ) {
+			return new WP_Error( 'invalid_slug', __( 'AI Gateway slug is required to delete.', 'nvoos-saas-controller' ) );
+		}
+		$path   = '/accounts/' . rawurlencode( $this->account_id ) . '/ai-gateway/gateways/' . rawurlencode( $slug );
+		$result = $this->delete( $path, 'delete_ai_gateway', $slug );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array( 'slug' => $slug );
+	}
+
+	/**
+	 * Issue a single DELETE request, parse the Cloudflare envelope, and
+	 * record exactly one audit-log entry regardless of outcome.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $path   API path (must start with `/`).
+	 * @param string $action Audit-log `action` verb.
+	 * @param string $target Audit-log `target`.
+	 * @return array|WP_Error
+	 */
+	protected function delete( $path, $action, $target ) {
+		$started_us = microtime( true );
+		$response   = wp_remote_request(
+			self::BASE_URL . $path,
+			array(
+				'method'    => 'DELETE',
+				'timeout'   => self::TIMEOUT,
+				'sslverify' => true,
+				'headers'   => array(
+					'Authorization' => 'Bearer ' . $this->api_token,
+					'Accept'        => 'application/json',
+				),
+			)
+		);
+
+		$result = $this->parse_response( $response, $path );
+		$this->record_audit( $action, $target, $result, $started_us );
 		return $result;
 	}
 
@@ -440,10 +549,14 @@ class NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
 			return;
 		}
 
-		$is_error   = is_wp_error( $result );
-		$message    = $is_error
-			? (string) $result->get_error_message()
-			: __( 'Cloudflare resource created.', 'nvoos-saas-controller' );
+		$is_error = is_wp_error( $result );
+		if ( $is_error ) {
+			$message = (string) $result->get_error_message();
+		} elseif ( 0 === strpos( $action, 'delete_' ) ) {
+			$message = __( 'Cloudflare resource deleted.', 'nvoos-saas-controller' );
+		} else {
+			$message = __( 'Cloudflare resource created.', 'nvoos-saas-controller' );
+		}
 		$latency_ms = (int) round( ( microtime( true ) - $started_us ) * 1000 );
 
 		NVOOS_SaaS_Controller_Audit_Log::instance()->record(

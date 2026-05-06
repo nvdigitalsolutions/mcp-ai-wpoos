@@ -265,6 +265,41 @@ class NVOOS_SaaS_Controller_REST {
 			)
 		);
 
+		// Phase 10 — orphan cleanup (HITL-gated delete).
+		// Distinct token namespace from /apply/preview + /apply/run; the
+		// destructive surface is intentionally separable so a careless
+		// click on the regular Apply button can never delete a resource.
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/orphans/preview',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_apply_orphans_preview' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/apply/orphans/run',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'route_apply_orphans_run' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'orphan_token' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'selected'     => array(
+						'type'     => 'array',
+						'required' => true,
+					),
+				),
+			)
+		);
+
 		register_rest_route(
 			self::NAMESPACE,
 			'/drift/check',
@@ -837,6 +872,115 @@ class NVOOS_SaaS_Controller_REST {
 				'job' => $state,
 			)
 		);
+	}
+
+	/**
+	 * POST /apply/orphans/preview — re-run the plan and issue a separate
+	 * single-use HITL token good only for {@see self::route_apply_orphans_run()}
+	 * (Phase 10 — orphan cleanup).
+	 *
+	 * Returns the full `plan.orphans[]` list plus the orphan token. The
+	 * caller is expected to render checkboxes (defaulting to *unchecked*)
+	 * and only submit the operator's explicit selection in the run call.
+	 *
+	 * Plan-level errors do not block orphan preview: a Cloudflare list
+	 * call that 5xx'd produces no orphans for that section, but the rest
+	 * of the orphan list is still actionable. The structured `errors[]`
+	 * array is surfaced to the caller for transparency.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_orphans_preview() {
+		$config_store = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$desired      = $config_store->get();
+
+		$account_override = ! empty( $desired['account_id'] ) ? (string) $desired['account_id'] : null;
+		$client           = NVOOS_SaaS_Controller_Cloudflare_Client::from_credential_store( $account_override );
+		if ( is_wp_error( $client ) ) {
+			$client->add_data( array( 'status' => 412 ) );
+			return $client;
+		}
+
+		$stripe     = class_exists( 'NVOOS_SaaS_Controller_Stripe_Client' )
+			? NVOOS_SaaS_Controller_Stripe_Client::from_credential_store()
+			: null;
+		$openrouter = class_exists( 'NVOOS_SaaS_Controller_OpenRouter_Client' )
+			? NVOOS_SaaS_Controller_OpenRouter_Client::from_credential_store()
+			: null;
+
+		$generator = new NVOOS_SaaS_Controller_Plan_Generator( $client, $stripe, $openrouter );
+		$plan      = $generator->generate( $desired );
+		$orphans   = isset( $plan['orphans'] ) && is_array( $plan['orphans'] ) ? $plan['orphans'] : array();
+
+		$issued = NVOOS_SaaS_Controller_Apply_Engine::issue_orphan_token( $orphans );
+
+		return rest_ensure_response(
+			array(
+				'ok'           => true,
+				'orphans'      => $orphans,
+				'errors'       => isset( $plan['errors'] ) ? $plan['errors'] : array(),
+				'orphan_token' => $issued['token'],
+				'expires_in'   => $issued['expires_in'],
+			)
+		);
+	}
+
+	/**
+	 * POST /apply/orphans/run — consume the orphan token and delete the
+	 * operator's selected subset of orphans (Phase 10).
+	 *
+	 * The body is `{ orphan_token: string, selected: array }`. Each
+	 * `selected[]` entry is matched against the cached preview list by an
+	 * exact identity-key tuple so the browser cannot extend the delete
+	 * set after issuance — see
+	 * {@see NVOOS_SaaS_Controller_Apply_Engine::apply_orphans()}.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function route_apply_orphans_run( WP_REST_Request $request ) {
+		$token   = (string) $request->get_param( 'orphan_token' );
+		$orphans = NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( $token );
+		if ( is_wp_error( $orphans ) ) {
+			return $orphans;
+		}
+
+		$selected_raw = $request->get_param( 'selected' );
+		$selected     = is_array( $selected_raw ) ? $selected_raw : array();
+		if ( empty( $selected ) ) {
+			return new WP_Error(
+				'no_orphans_selected',
+				__( 'No orphans selected for deletion.', 'nvoos-saas-controller' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$config_store     = NVOOS_SaaS_Controller_Deployment_Config::instance();
+		$desired          = $config_store->get();
+		$account_override = ! empty( $desired['account_id'] ) ? (string) $desired['account_id'] : null;
+
+		$mutating = NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::from_credential_store( $account_override );
+		if ( is_wp_error( $mutating ) ) {
+			$mutating->add_data( array( 'status' => 412 ) );
+			return $mutating;
+		}
+
+		$stripe     = class_exists( 'NVOOS_SaaS_Controller_Stripe_Client' )
+			? NVOOS_SaaS_Controller_Stripe_Client::from_credential_store()
+			: null;
+		$openrouter = class_exists( 'NVOOS_SaaS_Controller_OpenRouter_Client' )
+			? NVOOS_SaaS_Controller_OpenRouter_Client::from_credential_store()
+			: null;
+
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $mutating, $stripe, $openrouter );
+		$out    = $engine->apply_orphans( $selected, $orphans );
+
+		$out['ok'] = empty( $out['summary']['error'] ) && empty( $out['summary']['rejected'] );
+		return rest_ensure_response( $out );
 	}
 
 	/**

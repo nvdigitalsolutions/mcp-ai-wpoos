@@ -182,6 +182,40 @@ class NVOOS_SaaS_Controller_OpenRouter_Client {
 	}
 
 	/**
+	 * Delete a runtime API key by its hash (Phase 10 — orphan cleanup).
+	 *
+	 * OpenRouter addresses keys by their server-side hash on the
+	 * `/api/v1/keys/{hash}` URL. The `list_keys()` response only exposes
+	 * `hash` (never the plaintext key value), which is exactly what the
+	 * orphan-row caller has in hand.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $hash  Key hash returned by `list_keys()`.
+	 * @param string $label Friendly label (used as audit-log target only).
+	 * @return array|WP_Error `[ 'hash' => …, 'label' => … ]` on success.
+	 */
+	public function delete_key( $hash, $label = '' ) {
+		$hash = (string) $hash;
+		if ( '' === $hash ) {
+			return new WP_Error(
+				'invalid_hash',
+				__( 'OpenRouter key hash is required to delete.', 'nvoos-saas-controller' )
+			);
+		}
+
+		$target = '' !== (string) $label ? (string) $label : $hash;
+		$result = $this->delete_request( '/keys/' . rawurlencode( $hash ), 'delete_openrouter_key', $target );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'hash'  => $hash,
+			'label' => '' !== (string) $label ? (string) $label : '',
+		);
+	}
+
+	/**
 	 * Issue a single GET request and parse the OpenRouter envelope.
 	 *
 	 * @since 0.1.0
@@ -225,6 +259,33 @@ class NVOOS_SaaS_Controller_OpenRouter_Client {
 				'sslverify' => true,
 				'headers'   => $headers,
 				'body'      => wp_json_encode( $body ),
+			)
+		);
+
+		$result = $this->parse_response( $response, $path );
+		$this->record_audit( $action, $target, $result, $started_us );
+		return $result;
+	}
+
+	/**
+	 * Issue a single DELETE request and record exactly one audit-log entry.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $path   API path.
+	 * @param string $action Audit-log action verb.
+	 * @param string $target Audit-log target.
+	 * @return array|WP_Error
+	 */
+	protected function delete_request( $path, $action, $target ) {
+		$started_us = microtime( true );
+		$response   = wp_remote_request(
+			self::BASE_URL . $path,
+			array(
+				'method'    => 'DELETE',
+				'timeout'   => self::TIMEOUT,
+				'sslverify' => true,
+				'headers'   => $this->auth_headers(),
 			)
 		);
 
@@ -302,10 +363,14 @@ class NVOOS_SaaS_Controller_OpenRouter_Client {
 			return;
 		}
 
-		$is_error   = is_wp_error( $result );
-		$message    = $is_error
-			? (string) $result->get_error_message()
-			: __( 'OpenRouter runtime key created.', 'nvoos-saas-controller' );
+		$is_error = is_wp_error( $result );
+		if ( $is_error ) {
+			$message = (string) $result->get_error_message();
+		} elseif ( 'delete_openrouter_key' === $action ) {
+			$message = __( 'OpenRouter runtime key deleted.', 'nvoos-saas-controller' );
+		} else {
+			$message = __( 'OpenRouter runtime key created.', 'nvoos-saas-controller' );
+		}
 		$latency_ms = (int) round( ( microtime( true ) - $started_us ) * 1000 );
 
 		NVOOS_SaaS_Controller_Audit_Log::instance()->record(

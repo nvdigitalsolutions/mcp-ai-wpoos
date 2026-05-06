@@ -135,4 +135,39 @@ class Test_NVOOS_SaaS_Controller_OpenRouter_Client extends WP_UnitTestCase {
 		$this->assertInstanceOf( NVOOS_SaaS_Controller_OpenRouter_Client::class, $client );
 		NVOOS_SaaS_Controller_Credential_Store::instance()->clear_all();
 	}
+
+	public function test_delete_key_succeeds_and_records_audit() {
+		$this->canned['/keys/abc123'] = $this->ok_json( array( 'data' => array( 'hash' => 'abc123' ) ) );
+		$client = new NVOOS_SaaS_Controller_OpenRouter_Client( 'pk_x' );
+		$out    = $client->delete_key( 'abc123', 'tenant-acme' );
+
+		$this->assertIsArray( $out );
+		$this->assertSame( 'abc123', $out['hash'] );
+		$this->assertSame( 'tenant-acme', $out['label'] );
+		$this->assertSame( 'DELETE', $this->captured[0]['args']['method'] );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'openrouter', $entries[0]['channel'] );
+		$this->assertSame( 'delete_openrouter_key', $entries[0]['action'] );
+		$this->assertSame( 'tenant-acme', $entries[0]['target'] );
+		$this->assertSame( 'ok', $entries[0]['status'] );
+	}
+
+	public function test_delete_key_rejects_empty_hash() {
+		$client = new NVOOS_SaaS_Controller_OpenRouter_Client( 'pk_x' );
+		$out    = $client->delete_key( '' );
+		$this->assertWPError( $out );
+		$this->assertSame( 'invalid_hash', $out->get_error_code() );
+	}
+
+	public function test_delete_key_records_error_audit_on_4xx() {
+		$this->canned['/keys/abc123'] = $this->err_json( 404, 'not_found', 'No such key' );
+		$client = new NVOOS_SaaS_Controller_OpenRouter_Client( 'pk_x' );
+		$out    = $client->delete_key( 'abc123', 'tenant-acme' );
+		$this->assertWPError( $out );
+
+		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
+		$this->assertSame( 'error', $entries[0]['status'] );
+		$this->assertSame( 'delete_openrouter_key', $entries[0]['action'] );
+	}
 }

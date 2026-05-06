@@ -82,7 +82,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	 */
 	protected static function get_active_tab() {
 		// Read-only navigation; no nonce required for tab selection per WP core convention.
-		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tab     = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$allowed = array( 'overview', 'deployment', 'operations', 'packages' );
 		return in_array( $tab, $allowed, true ) ? $tab : 'overview';
 	}
@@ -121,7 +121,19 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			<h2 class="nav-tab-wrapper">
 				<?php foreach ( $tabs as $slug => $label ) : ?>
 					<a
-						href="<?php echo esc_url( add_query_arg( array( 'page' => self::PAGE_SLUG, 'tab' => $slug ), admin_url( 'admin.php' ) ) ); ?>"
+						href="
+						<?php
+						echo esc_url(
+							add_query_arg(
+								array(
+									'page' => self::PAGE_SLUG,
+									'tab'  => $slug,
+								),
+								admin_url( 'admin.php' )
+							)
+						);
+						?>
+								"
 						class="nav-tab<?php echo $active === $slug ? ' nav-tab-active' : ''; ?>"
 					><?php echo esc_html( $label ); ?></a>
 				<?php endforeach; ?>
@@ -156,7 +168,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	 * @return void
 	 */
 	protected static function render_overview_tab() {
-		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
+		$store  = NVOOS_SaaS_Controller_Credential_Store::instance();
 		$masked = $store->get_masked();
 		?>
 		<div id="nvoos-saas-controller-wizard-root" data-mounted="false">
@@ -399,10 +411,16 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	protected static function render_pairs_editor( $prefix, array $rows, $key_a, $label_a, $key_b, $label_b ) {
 		// Always render at least one blank row so the operator can add an entry on first visit.
 		if ( empty( $rows ) ) {
-			$rows[] = array( $key_a => '', $key_b => '' );
+			$rows[] = array(
+				$key_a => '',
+				$key_b => '',
+			);
 		}
 		// Add an extra blank row at the end so adding entries doesn't require JS.
-		$rows[] = array( $key_a => '', $key_b => '' );
+		$rows[] = array(
+			$key_a => '',
+			$key_b => '',
+		);
 		?>
 		<table class="widefat striped" style="max-width:780px;">
 			<thead>
@@ -472,11 +490,11 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	 * @return void
 	 */
 	protected static function render_operations_tab() {
-		$audit_log    = NVOOS_SaaS_Controller_Audit_Log::instance();
-		$entries      = $audit_log->get_recent( 50 );
-		$tester       = new NVOOS_SaaS_Controller_Smoke_Tester();
-		$last_result  = $tester->get_last_result();
-		$rest_url     = esc_url_raw( rest_url( 'nvoos-saas/v1/' ) );
+		$audit_log   = NVOOS_SaaS_Controller_Audit_Log::instance();
+		$entries     = $audit_log->get_recent( 50 );
+		$tester      = new NVOOS_SaaS_Controller_Smoke_Tester();
+		$last_result = $tester->get_last_result();
+		$rest_url    = esc_url_raw( rest_url( 'nvoos-saas/v1/' ) );
 		?>
 		<div class="card" style="max-width:1080px;padding:1em 1.5em;">
 			<h2><?php esc_html_e( 'Apply (HITL-gated)', 'nvoos-saas-controller' ); ?></h2>
@@ -505,6 +523,8 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		</div>
 
 		<?php self::render_drift_card(); ?>
+
+		<?php self::render_orphans_card(); ?>
 
 		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
 			<h2><?php esc_html_e( 'Smoke Tests', 'nvoos-saas-controller' ); ?></h2>
@@ -866,6 +886,238 @@ class NVOOS_SaaS_Controller_Admin_Page {
 	}
 
 	/**
+	 * Render the Review Orphans card inside the Operations tab (Phase 10).
+	 *
+	 * The card is opt-in by design: every checkbox starts *unchecked* and
+	 * a per-row delete confirmation is required before the destructive
+	 * REST call. The orphan token namespace is separate from the regular
+	 * Apply token (see {@see NVOOS_SaaS_Controller_Apply_Engine::ORPHAN_TRANSIENT_PREFIX})
+	 * so a careless click on the Apply button can never nuke production
+	 * resources.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	protected static function render_orphans_card() {
+		?>
+		<div class="card" style="max-width:1080px;padding:1em 1.5em;margin-top:1em;">
+			<h2><?php esc_html_e( 'Review Orphans (HITL-gated delete)', 'nvoos-saas-controller' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Cloudflare D1 / KV / AI-Gateway, Stripe, and OpenRouter resources that exist live but no longer appear in the desired config. The list is read-only until you tick the boxes you want to delete and click "Delete Selected" — Stripe rows are archived (active=false), every other row is permanently deleted. Each click issues a separate single-use token (15-minute TTL) distinct from the Apply token, so it cannot be replayed against the regular Apply surface.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p>
+				<button type="button" class="button" id="nvoos-saas-orphans-review"><?php esc_html_e( 'Review Orphans', 'nvoos-saas-controller' ); ?></button>
+				<button type="button" class="button button-link-delete" id="nvoos-saas-orphans-delete" disabled><?php esc_html_e( 'Delete Selected…', 'nvoos-saas-controller' ); ?></button>
+				<span id="nvoos-saas-orphans-status" style="margin-left:0.75em;" aria-live="polite"></span>
+			</p>
+			<div id="nvoos-saas-orphans-output"></div>
+		</div>
+
+		<script>
+		( function () {
+			if ( ! window.wp || ! wp.apiFetch ) { return; }
+			var reviewBtn = document.getElementById( 'nvoos-saas-orphans-review' );
+			var deleteBtn = document.getElementById( 'nvoos-saas-orphans-delete' );
+			var statusEl  = document.getElementById( 'nvoos-saas-orphans-status' );
+			var outEl     = document.getElementById( 'nvoos-saas-orphans-output' );
+			var pendingToken   = null;
+			var pendingOrphans = [];
+
+			function clearOut() {
+				while ( outEl.firstChild ) { outEl.removeChild( outEl.firstChild ); }
+			}
+
+			function identityFor( row ) {
+				if ( ! row || ! row.kind ) { return ''; }
+				switch ( row.kind ) {
+					case 'd1':             return 'd1:' + ( row.uuid || '' );
+					case 'kv':             return 'kv:' + ( row.id || '' );
+					case 'ai_gateway':     return 'ai_gateway:' + ( row.slug || '' );
+					case 'stripe_product': return 'stripe_product:' + ( row.id || '' );
+					case 'stripe_price':   return 'stripe_price:' + ( row.id || '' );
+					case 'openrouter_key': return 'openrouter_key:' + ( row.hash || '' );
+				}
+				return '';
+			}
+
+			function labelFor( row ) {
+				if ( ! row ) { return ''; }
+				return String( row.name || row.title || row.slug || row.label || row.id || row.hash || '' );
+			}
+
+			function updateDeleteEnabled() {
+				if ( ! deleteBtn ) { return; }
+				var anyChecked = !! outEl.querySelector( 'input[type="checkbox"][data-nvoos-orphan]:checked' );
+				deleteBtn.disabled = ! ( anyChecked && pendingToken );
+			}
+
+			function renderOrphansTable( orphans ) {
+				clearOut();
+				if ( ! orphans || ! orphans.length ) {
+					var p = document.createElement( 'p' );
+					p.innerHTML = '<em>' + <?php echo wp_json_encode( __( 'No orphans detected — your live infrastructure matches the desired config.', 'nvoos-saas-controller' ) ); ?> + '</em>';
+					outEl.appendChild( p );
+					return;
+				}
+				var table = document.createElement( 'table' );
+				table.className = 'widefat striped';
+				table.style.marginTop = '1em';
+				var thead = document.createElement( 'thead' );
+				var hr = document.createElement( 'tr' );
+				[
+					<?php echo wp_json_encode( __( 'Delete?', 'nvoos-saas-controller' ) ); ?>,
+					<?php echo wp_json_encode( __( 'Kind', 'nvoos-saas-controller' ) ); ?>,
+					<?php echo wp_json_encode( __( 'Identifier', 'nvoos-saas-controller' ) ); ?>,
+					<?php echo wp_json_encode( __( 'Detail', 'nvoos-saas-controller' ) ); ?>
+				].forEach( function ( label ) {
+					var th = document.createElement( 'th' );
+					th.textContent = label;
+					hr.appendChild( th );
+				} );
+				thead.appendChild( hr );
+				table.appendChild( thead );
+				var tbody = document.createElement( 'tbody' );
+				orphans.forEach( function ( row, idx ) {
+					var tr = document.createElement( 'tr' );
+
+					var td0 = document.createElement( 'td' );
+					var cb = document.createElement( 'input' );
+					cb.type = 'checkbox';
+					cb.checked = false; // never default-on — operator must opt in per row.
+					cb.setAttribute( 'data-nvoos-orphan', identityFor( row ) );
+					cb.addEventListener( 'change', updateDeleteEnabled );
+					td0.appendChild( cb );
+					tr.appendChild( td0 );
+
+					var td1 = document.createElement( 'td' );
+					var c = document.createElement( 'code' );
+					c.textContent = String( row.kind || '' );
+					td1.appendChild( c );
+					tr.appendChild( td1 );
+
+					var td2 = document.createElement( 'td' );
+					td2.textContent = labelFor( row );
+					tr.appendChild( td2 );
+
+					var td3 = document.createElement( 'td' );
+					var detailParts = [];
+					if ( row.uuid )  { detailParts.push( 'uuid=' + row.uuid ); }
+					if ( row.id && row.kind !== 'kv' ) { detailParts.push( 'id=' + row.id ); }
+					if ( row.id && row.kind === 'kv' ) { detailParts.push( 'id=' + row.id ); }
+					if ( row.hash )  { detailParts.push( 'hash=' + row.hash ); }
+					td3.textContent = detailParts.join( ' · ' );
+					tr.appendChild( td3 );
+
+					tbody.appendChild( tr );
+				} );
+				table.appendChild( tbody );
+				outEl.appendChild( table );
+			}
+
+			function renderOrphansResult( resp ) {
+				if ( ! resp || ! resp.results ) { return; }
+				clearOut();
+				var h = document.createElement( 'h3' );
+				h.textContent = <?php echo wp_json_encode( __( 'Orphan Cleanup Result', 'nvoos-saas-controller' ) ); ?>;
+				outEl.appendChild( h );
+				var table = document.createElement( 'table' );
+				table.className = 'widefat striped';
+				var thead = document.createElement( 'thead' );
+				var hr = document.createElement( 'tr' );
+				[ 'Kind', 'Target', 'Status', 'Message' ].forEach( function ( label ) {
+					var th = document.createElement( 'th' );
+					th.textContent = label;
+					hr.appendChild( th );
+				} );
+				thead.appendChild( hr );
+				table.appendChild( thead );
+				var tbody = document.createElement( 'tbody' );
+				resp.results.forEach( function ( row ) {
+					var tr = document.createElement( 'tr' );
+					[ row.kind || '', row.target || '', row.status || '', row.message || '' ].forEach( function ( v ) {
+						var td = document.createElement( 'td' );
+						td.textContent = String( v );
+						tr.appendChild( td );
+					} );
+					tbody.appendChild( tr );
+				} );
+				table.appendChild( tbody );
+				outEl.appendChild( table );
+			}
+
+			if ( reviewBtn ) {
+				reviewBtn.addEventListener( 'click', function () {
+					reviewBtn.disabled = true;
+					if ( deleteBtn ) { deleteBtn.disabled = true; }
+					pendingToken = null;
+					pendingOrphans = [];
+					if ( statusEl ) { statusEl.textContent = <?php echo wp_json_encode( __( 'Generating orphan list…', 'nvoos-saas-controller' ) ); ?>; }
+					wp.apiFetch( { path: 'nvoos-saas/v1/apply/orphans/preview', method: 'POST' } )
+						.then( function ( resp ) {
+							reviewBtn.disabled = false;
+							pendingToken   = resp && resp.orphan_token ? String( resp.orphan_token ) : null;
+							pendingOrphans = ( resp && resp.orphans ) || [];
+							renderOrphansTable( pendingOrphans );
+							updateDeleteEnabled();
+							if ( statusEl ) {
+								var ttl = resp && resp.expires_in ? Number( resp.expires_in ) : 0;
+								statusEl.textContent = pendingToken
+									? <?php echo wp_json_encode( __( 'Orphan token issued. Tick the rows you want to delete (TTL ', 'nvoos-saas-controller' ) ); ?> + Math.floor( ttl / 60 ) + 'm).'
+									: <?php echo wp_json_encode( __( 'No orphan token issued.', 'nvoos-saas-controller' ) ); ?>;
+							}
+						} )
+						.catch( function ( err ) {
+							reviewBtn.disabled = false;
+							if ( statusEl ) { statusEl.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Orphan preview failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
+				} );
+			}
+
+			if ( deleteBtn ) {
+				deleteBtn.addEventListener( 'click', function () {
+					if ( ! pendingToken ) { return; }
+					var checked = outEl.querySelectorAll( 'input[type="checkbox"][data-nvoos-orphan]:checked' );
+					if ( ! checked.length ) { return; }
+					var ids = {};
+					Array.prototype.forEach.call( checked, function ( cb ) {
+						ids[ cb.getAttribute( 'data-nvoos-orphan' ) ] = true;
+					} );
+					var selected = pendingOrphans.filter( function ( row ) {
+						return !! ids[ identityFor( row ) ];
+					} );
+					if ( ! selected.length ) { return; }
+					var msg = <?php echo wp_json_encode( __( 'Permanently delete the selected orphans? Stripe rows are archived (active=false); every other row is permanently deleted from Cloudflare / OpenRouter. This cannot be undone.', 'nvoos-saas-controller' ) ); ?>
+						+ '\n\n' + selected.map( function ( r ) { return '• ' + r.kind + ' — ' + labelFor( r ); } ).join( '\n' );
+					if ( ! window.confirm( msg ) ) { return; }
+					deleteBtn.disabled = true;
+					if ( statusEl ) { statusEl.textContent = <?php echo wp_json_encode( __( 'Deleting…', 'nvoos-saas-controller' ) ); ?>; }
+					var token = pendingToken;
+					pendingToken = null;
+					wp.apiFetch( {
+						path:   'nvoos-saas/v1/apply/orphans/run',
+						method: 'POST',
+						data:   { orphan_token: token, selected: selected }
+					} )
+						.then( function ( resp ) {
+							renderOrphansResult( resp );
+							if ( statusEl ) {
+								statusEl.textContent = ( resp && resp.ok )
+									? <?php echo wp_json_encode( __( 'Orphan cleanup complete.', 'nvoos-saas-controller' ) ); ?>
+									: <?php echo wp_json_encode( __( 'Orphan cleanup finished with errors — see results.', 'nvoos-saas-controller' ) ); ?>;
+							}
+						} )
+						.catch( function ( err ) {
+							if ( statusEl ) { statusEl.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Orphan cleanup failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
+				} );
+			}
+		} )();
+		</script>
+		<?php
+	}
+
+	/**
 	 * Render the Drift Detector card inside the Operations tab.
 	 *
 	 * Pulls the cached last-result via the detector singleton-style API
@@ -988,10 +1240,10 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			'error'   => __( 'Error', 'nvoos-saas-controller' ),
 			'unknown' => __( 'Unknown', 'nvoos-saas-controller' ),
 		);
-		$key   = isset( $colors[ $status ] ) ? $status : 'unknown';
-		$color = $colors[ $key ];
-		$icon  = $icons[ $key ];
-		$label = $labels[ $key ];
+		$key    = isset( $colors[ $status ] ) ? $status : 'unknown';
+		$color  = $colors[ $key ];
+		$icon   = $icons[ $key ];
+		$label  = $labels[ $key ];
 		return '<strong style="color:' . esc_attr( $color ) . ';">' . esc_html( $icon . ' ' . $label ) . '</strong>';
 	}
 
