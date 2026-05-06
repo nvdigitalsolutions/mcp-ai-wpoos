@@ -16,6 +16,11 @@
  *
  * @package NV_oOS_Embedded
  *
+ * ⚠️ PROPRIETARY SOFTWARE
+ * This is commercial software licensed for authorized users only.
+ * Patent Pending (Application #19/410,504)
+ * © 2025 NV Digital Solutions - All Rights Reserved
+ *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
  * All rights reserved. This is proprietary software.
  *
