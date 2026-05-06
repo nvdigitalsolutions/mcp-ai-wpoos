@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/integrate-logging-system',
         'version' => 'dev-copilot/integrate-logging-system',
-        'reference' => '3f16f4e77412cad964cc11e18de302b9fa96c47d',
+        'reference' => '1e15d01b498d4db9a93dc0e9404ff54cdb26c19b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/integrate-logging-system',
             'version' => 'dev-copilot/integrate-logging-system',
-            'reference' => '3f16f4e77412cad964cc11e18de302b9fa96c47d',
+            'reference' => '1e15d01b498d4db9a93dc0e9404ff54cdb26c19b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
