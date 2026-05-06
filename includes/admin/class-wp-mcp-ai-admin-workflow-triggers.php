@@ -138,7 +138,8 @@ class WP_MCP_AI_Admin_Workflow_Triggers {
 						<td colspan="6"><?php esc_html_e( 'No triggers found. Add one below.', 'mcp-ai-wpoos' ); ?></td>
 					</tr>
 				<?php else : ?>
-					<?php foreach ( $trigger_posts as $trigger ) :
+					<?php
+					foreach ( $trigger_posts as $trigger ) :
 						$type       = (string) get_post_meta( $trigger->ID, '_wp_mcp_ai_trigger_type', true );
 						$enabled    = (bool) get_post_meta( $trigger->ID, '_wp_mcp_ai_trigger_enabled', true );
 						$wf_id      = (int) get_post_meta( $trigger->ID, '_wp_mcp_ai_trigger_workflow_id', true );
@@ -146,7 +147,7 @@ class WP_MCP_AI_Admin_Workflow_Triggers {
 						$wf_post    = $wf_id ? get_post( $wf_id ) : null;
 						$type_def   = $registry->get_trigger( $type );
 						$type_label = $type_def ? esc_html( $type_def['label'] ) : esc_html( $type );
-					?>
+						?>
 					<tr data-trigger-id="<?php echo esc_attr( $trigger->ID ); ?>">
 						<td><?php echo $type_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 						<td class="trigger-label"><?php echo esc_html( $trigger->post_title ); ?></td>

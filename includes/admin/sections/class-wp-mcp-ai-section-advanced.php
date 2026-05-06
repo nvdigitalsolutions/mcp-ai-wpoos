@@ -1815,8 +1815,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				if ( ! class_exists( 'WP_MCP_AI_Skill_Pack_Registry' ) ) {
 					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-pack-registry.php';
 				}
-				$skill_packs       = WP_MCP_AI_Skill_Pack_Registry::instance()->get_packs();
-				$skill_pack_nonce  = wp_create_nonce( 'wp_mcp_ai_install_skill_pack' );
+				$skill_packs             = WP_MCP_AI_Skill_Pack_Registry::instance()->get_packs();
+				$skill_pack_nonce        = wp_create_nonce( 'wp_mcp_ai_install_skill_pack' );
 				$installed_skills_lookup = array();
 				foreach ( $installed_skills as $_iskill ) {
 					if ( isset( $_iskill['name'] ) ) {
@@ -1841,7 +1841,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							</tr>
 						</thead>
 						<tbody>
-							<?php foreach ( $skill_packs as $pack ) :
+							<?php
+							foreach ( $skill_packs as $pack ) :
 								$pack_skill_count = count( $pack['skills'] );
 								$pack_installed   = 0;
 								foreach ( $pack['skills'] as $member ) {

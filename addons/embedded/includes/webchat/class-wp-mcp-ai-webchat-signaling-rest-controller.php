@@ -251,13 +251,13 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 	 */
 	protected function get_register_peer_args() {
 		return array(
-			'peer_id' => array(
+			'peer_id'   => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_peer_id' ),
 			),
-			'room_id' => array(
+			'room_id'   => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -284,24 +284,24 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_peer_id' ),
 			),
-			'to_peer' => array(
+			'to_peer'   => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_peer_id' ),
 			),
-			'room_id' => array(
+			'room_id'   => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'type' => array(
+			'type'      => array(
 				'required'          => true,
 				'type'              => 'string',
 				'enum'              => array( 'offer', 'answer' ),
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'sdp' => array(
+			'sdp'       => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_textarea_field',
@@ -322,20 +322,20 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_peer_id' ),
 			),
-			'to_peer' => array(
+			'to_peer'   => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 				'validate_callback' => array( $this, 'validate_peer_id' ),
 			),
-			'room_id' => array(
+			'room_id'   => array(
 				'required'          => true,
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'candidate' => array(
-				'required'          => true,
-				'type'              => 'object',
+				'required' => true,
+				'type'     => 'object',
 			),
 		);
 	}
@@ -374,17 +374,24 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		$this->store_peer( $room_id, $peer_id, $peer_data );
 
 		// Notify other peers.
-		$this->queue_event( $room_id, 'peer_joined', array(
-			'peer_id'   => $peer_id,
-			'user_name' => $user_name,
-		), $peer_id );
+		$this->queue_event(
+			$room_id,
+			'peer_joined',
+			array(
+				'peer_id'   => $peer_id,
+				'user_name' => $user_name,
+			),
+			$peer_id
+		);
 
-		return rest_ensure_response( array(
-			'success'  => true,
-			'peer_id'  => $peer_id,
-			'room_id'  => $room_id,
-			'peers'    => $this->get_peer_list( $room_id, $peer_id ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'peer_id' => $peer_id,
+				'room_id' => $room_id,
+				'peers'   => $this->get_peer_list( $room_id, $peer_id ),
+			)
+		);
 	}
 
 	/**
@@ -409,10 +416,12 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		$peer_data['last_seen'] = time();
 		$this->store_peer( $room_id, $peer_id, $peer_data );
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'peer_id' => $peer_id,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'peer_id' => $peer_id,
+			)
+		);
 	}
 
 	/**
@@ -427,11 +436,13 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 
 		$peers = $this->get_peer_list( $room_id, $peer_id );
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'room_id' => $room_id,
-			'peers'   => $peers,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'room_id' => $room_id,
+				'peers'   => $peers,
+			)
+		);
 	}
 
 	/**
@@ -479,16 +490,24 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Queue signal event for target peer.
-		$this->queue_event( $room_id, 'signal', array(
-			'from_peer' => $from_peer,
-			'type'      => $type,
-			'sdp'       => $sdp,
-		), null, $to_peer );
+		$this->queue_event(
+			$room_id,
+			'signal',
+			array(
+				'from_peer' => $from_peer,
+				'type'      => $type,
+				'sdp'       => $sdp,
+			),
+			null,
+			$to_peer
+		);
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'queued'  => true,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'queued'  => true,
+			)
+		);
 	}
 
 	/**
@@ -535,15 +554,23 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Queue ICE candidate event.
-		$this->queue_event( $room_id, 'ice_candidate', array(
-			'from_peer' => $from_peer,
-			'candidate' => $candidate,
-		), null, $to_peer );
+		$this->queue_event(
+			$room_id,
+			'ice_candidate',
+			array(
+				'from_peer' => $from_peer,
+				'candidate' => $candidate,
+			),
+			null,
+			$to_peer
+		);
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'queued'  => true,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'queued'  => true,
+			)
+		);
 	}
 
 	/**
@@ -594,10 +621,13 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		$last_heartbeat = $start_time;
 
 		// Send initial connection message.
-		$stream .= $this->format_sse_event( 'connected', array(
-			'peer_id' => $peer_id,
-			'room_id' => $room_id,
-		) );
+		$stream .= $this->format_sse_event(
+			'connected',
+			array(
+				'peer_id' => $peer_id,
+				'room_id' => $room_id,
+			)
+		);
 
 		// Poll for events.
 		while ( ( time() - $start_time ) < $max_duration ) {
@@ -608,7 +638,7 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 
 			// Send heartbeat.
 			if ( ( time() - $last_heartbeat ) >= 15 ) {
-				$stream .= $this->format_sse_event( 'heartbeat', array( 'timestamp' => time() ) );
+				$stream        .= $this->format_sse_event( 'heartbeat', array( 'timestamp' => time() ) );
 				$last_heartbeat = time();
 			}
 

@@ -738,7 +738,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 				'gpt-oss:120b-cloud',
 				'gpt-oss:20b-cloud',
 			);
-			$vision_patterns = array_merge( $local_vision_patterns, $cloud_vision_patterns );
+			$vision_patterns       = array_merge( $local_vision_patterns, $cloud_vision_patterns );
 			foreach ( $vision_patterns as $pattern ) {
 				if ( false !== strpos( $model_id, $pattern ) ) {
 					$capability_flags[] = 'vision';

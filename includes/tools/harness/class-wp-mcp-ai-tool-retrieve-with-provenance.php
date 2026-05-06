@@ -50,29 +50,29 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'query'        => array(
+				'query'         => array(
 					'type'        => 'string',
 					'description' => 'The retrieval query.',
 				),
-				'k'            => array(
+				'k'             => array(
 					'type'        => 'integer',
 					'description' => 'Number of passages to return (1-50). Defaults to 5.',
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'wing'         => array(
+				'wing'          => array(
 					'type'        => 'string',
 					'description' => 'Optional MemPalace wing (project / client / matter / patient / deal).',
 				),
-				'room'         => array(
+				'room'          => array(
 					'type'        => 'string',
 					'description' => 'Optional MemPalace room.',
 				),
-				'assistant_id' => array(
+				'assistant_id'  => array(
 					'type'        => 'integer',
 					'description' => 'Optional assistant post ID to scope retrieval.',
 				),
-				'task_class'   => array(
+				'task_class'    => array(
 					'type'        => 'string',
 					'description' => 'Optional task class hint.',
 				),
@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 		$result = WP_MCP_AI_Retrieval_Harness::retrieve( $query, $scope, $k, $context );
 
 		if ( isset( $arguments['verify_answer'] ) && '' !== trim( (string) $arguments['verify_answer'] ) ) {
-			$verification        = WP_MCP_AI_Retrieval_Harness::verify_citations( (string) $arguments['verify_answer'], $result['passages'] );
+			$verification           = WP_MCP_AI_Retrieval_Harness::verify_citations( (string) $arguments['verify_answer'], $result['passages'] );
 			$result['verification'] = $verification;
 		}
 

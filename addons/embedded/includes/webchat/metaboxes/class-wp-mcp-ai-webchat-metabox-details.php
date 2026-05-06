@@ -68,11 +68,11 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 		}
 
 		// Get existing values.
-		$room_id              = get_post_meta( $post->ID, '_mcp_ai_webchat_room_id', true );
-		$room_status          = get_post_meta( $post->ID, '_mcp_ai_webchat_status', true );
-		$signaling_server     = get_post_meta( $post->ID, '_mcp_ai_webchat_signaling_server', true );
-		$max_participants     = get_post_meta( $post->ID, '_mcp_ai_webchat_max_participants', true );
-		$allow_anonymous      = get_post_meta( $post->ID, '_mcp_ai_webchat_allow_anonymous', true );
+		$room_id          = get_post_meta( $post->ID, '_mcp_ai_webchat_room_id', true );
+		$room_status      = get_post_meta( $post->ID, '_mcp_ai_webchat_status', true );
+		$signaling_server = get_post_meta( $post->ID, '_mcp_ai_webchat_signaling_server', true );
+		$max_participants = get_post_meta( $post->ID, '_mcp_ai_webchat_max_participants', true );
+		$allow_anonymous  = get_post_meta( $post->ID, '_mcp_ai_webchat_allow_anonymous', true );
 
 		// Set defaults.
 		if ( empty( $room_id ) ) {
@@ -280,7 +280,7 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 	 * @return string Generated room ID.
 	 */
 	private function generate_room_id( $post_id ) {
-		$site_url = get_site_url();
+		$site_url  = get_site_url();
 		$site_hash = substr( md5( $site_url ), 0, 8 );
 		$timestamp = time();
 		return sprintf( 'room_%s_%d_%d', $site_hash, $post_id, $timestamp );

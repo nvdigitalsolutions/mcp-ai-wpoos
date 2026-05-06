@@ -86,14 +86,14 @@ class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$edges     = NV_oOS_Graphify_DB::get_edges_for_node( $node->node_id );
 		$neighbors = array();
 		foreach ( $edges as $edge ) {
-			$nid       = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
-			$nbr_node  = NV_oOS_Graphify_DB::get_node( $nid );
+			$nid         = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
+			$nbr_node    = NV_oOS_Graphify_DB::get_node( $nid );
 			$neighbors[] = array(
-				'node_id'  => $nid,
-				'label'    => $nbr_node ? $nbr_node->label : $nid,
-				'type'     => $nbr_node ? $nbr_node->type : '',
-				'relation' => $edge->relation,
-				'direction'=> ( $edge->source_node_id === $node->node_id ) ? 'outgoing' : 'incoming',
+				'node_id'   => $nid,
+				'label'     => $nbr_node ? $nbr_node->label : $nid,
+				'type'      => $nbr_node ? $nbr_node->type : '',
+				'relation'  => $edge->relation,
+				'direction' => ( $edge->source_node_id === $node->node_id ) ? 'outgoing' : 'incoming',
 			);
 		}
 

@@ -319,10 +319,10 @@ if ( ! function_exists( 'wp_mcp_ai_run_process' ) ) {
 		stream_set_blocking( $pipes[1], false );
 		stream_set_blocking( $pipes[2], false );
 
-		$stdout     = '';
-		$stderr     = '';
-		$start      = microtime( true );
-		$timed_out  = false;
+		$stdout    = '';
+		$stderr    = '';
+		$start     = microtime( true );
+		$timed_out = false;
 
 		while ( true ) {
 			$status = proc_get_status( $process );

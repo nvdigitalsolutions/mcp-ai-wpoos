@@ -260,7 +260,7 @@ class WP_MCP_AI_Harness_Eval_Scheduler {
 	 * @return void
 	 */
 	private static function record_last_run( $assistant_id, $suite_slug, array $report ) {
-		$existing = self::get_last_runs( $assistant_id );
+		$existing                = self::get_last_runs( $assistant_id );
 		$existing[ $suite_slug ] = array(
 			'started_at' => isset( $report['started_at'] ) ? (int) $report['started_at'] : time(),
 			'summary'    => isset( $report['summary'] ) && is_array( $report['summary'] ) ? $report['summary'] : array(),

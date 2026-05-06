@@ -643,9 +643,9 @@ class NV_oOS_Graphify_Detector {
 					if ( empty( $db_row[ $local_col ] ) ) {
 						continue;
 					}
-					$target_pk        = absint( $db_row[ $local_col ] );
-					$target_node_id   = self::external_node_id( sanitize_key( $fk['target_type'] ), $target_pk );
-					$fk_edges[]       = array(
+					$target_pk      = absint( $db_row[ $local_col ] );
+					$target_node_id = self::external_node_id( sanitize_key( $fk['target_type'] ), $target_pk );
+					$fk_edges[]     = array(
 						'source_node_id' => $node_id,
 						'target_node_id' => $target_node_id,
 						'relation'       => sanitize_text_field( $fk['relation'] ),

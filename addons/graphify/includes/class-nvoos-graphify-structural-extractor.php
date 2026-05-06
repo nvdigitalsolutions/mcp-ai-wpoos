@@ -66,12 +66,12 @@ class NV_oOS_Graphify_Structural_Extractor {
 			$post_content = (string) apply_filters( 'nvoos_graphify_post_content_resolver', $post->post_content, $post );
 
 			$nodes[] = array(
-				'node_id'    => $node_id,
-				'label'      => $post->post_title,
-				'type'       => $post->post_type,
-				'post_id'    => $post->ID,
-				'url'        => get_permalink( $post->ID ),
-				'properties' => array(
+				'node_id'      => $node_id,
+				'label'        => $post->post_title,
+				'type'         => $post->post_type,
+				'post_id'      => $post->ID,
+				'url'          => get_permalink( $post->ID ),
+				'properties'   => array(
 					'post_status' => $post->post_status,
 					'post_date'   => $post->post_date,
 					'modified'    => $post->post_modified,

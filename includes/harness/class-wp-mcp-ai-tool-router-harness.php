@@ -61,9 +61,9 @@ class WP_MCP_AI_Tool_Router_Harness {
 				'idempotent' => 1.0,
 			),
 			'agentic'  => array(
-				'read-only'   => 1.0,
-				'reversible'  => 0.8,
-				'idempotent'  => 0.5,
+				'read-only'  => 1.0,
+				'reversible' => 0.8,
+				'idempotent' => 0.5,
 			),
 		);
 	}

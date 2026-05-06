@@ -59,20 +59,20 @@ class WP_MCP_AI_Workflow_Run_CPT {
 		register_post_type(
 			self::CPT,
 			array(
-				'label'               => __( 'Workflow Runs', 'mcp-ai-wpoos' ),
-				'labels'              => array(
+				'label'              => __( 'Workflow Runs', 'mcp-ai-wpoos' ),
+				'labels'             => array(
 					'name'          => __( 'Workflow Runs', 'mcp-ai-wpoos' ),
 					'singular_name' => __( 'Workflow Run', 'mcp-ai-wpoos' ),
 				),
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => false,
-				'show_in_menu'        => false,
-				'show_in_rest'        => false,
-				'query_var'           => false,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'capabilities'        => array(
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => false,
+				'show_in_menu'       => false,
+				'show_in_rest'       => false,
+				'query_var'          => false,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'capabilities'       => array(
 					'edit_post'          => 'manage_options',
 					'read_post'          => 'manage_options',
 					'delete_post'        => 'manage_options',
@@ -81,10 +81,10 @@ class WP_MCP_AI_Workflow_Run_CPT {
 					'publish_posts'      => 'manage_options',
 					'read_private_posts' => 'manage_options',
 				),
-				'map_meta_cap'        => false,
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'custom-fields' ),
+				'map_meta_cap'       => false,
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'custom-fields' ),
 			)
 		);
 	}
@@ -114,16 +114,16 @@ class WP_MCP_AI_Workflow_Run_CPT {
 		);
 
 		$keys = array(
-			'_wp_mcp_ai_run_workflow_id'  => $int_schema,
-			'_wp_mcp_ai_run_status'       => $str_schema,
-			'_wp_mcp_ai_run_input'        => $str_schema,
-			'_wp_mcp_ai_run_context'      => $str_schema,
-			'_wp_mcp_ai_run_event_log'    => $str_schema,
-			'_wp_mcp_ai_run_budget'       => $str_schema,
-			'_wp_mcp_ai_run_cost_usd'     => $num_schema,
-			'_wp_mcp_ai_run_tokens_used'  => $int_schema,
-			'_wp_mcp_ai_run_started_at'   => $int_schema,
-			'_wp_mcp_ai_run_finished_at'  => $int_schema,
+			'_wp_mcp_ai_run_workflow_id' => $int_schema,
+			'_wp_mcp_ai_run_status'      => $str_schema,
+			'_wp_mcp_ai_run_input'       => $str_schema,
+			'_wp_mcp_ai_run_context'     => $str_schema,
+			'_wp_mcp_ai_run_event_log'   => $str_schema,
+			'_wp_mcp_ai_run_budget'      => $str_schema,
+			'_wp_mcp_ai_run_cost_usd'    => $num_schema,
+			'_wp_mcp_ai_run_tokens_used' => $int_schema,
+			'_wp_mcp_ai_run_started_at'  => $int_schema,
+			'_wp_mcp_ai_run_finished_at' => $int_schema,
 		);
 
 		foreach ( $keys as $key => $args ) {
@@ -207,8 +207,8 @@ class WP_MCP_AI_Workflow_Run_CPT {
 	 * @return bool True on success, false if the run does not exist.
 	 */
 	public static function append_event( $run_id, $type, $node_id, $node_type, $data = array() ) {
-		$run_id    = absint( $run_id );
-		$post      = get_post( $run_id );
+		$run_id = absint( $run_id );
+		$post   = get_post( $run_id );
 
 		if ( ! $post || self::CPT !== $post->post_type ) {
 			return false;
@@ -303,18 +303,18 @@ class WP_MCP_AI_Workflow_Run_CPT {
 		$budget  = get_post_meta( $run_id, '_wp_mcp_ai_run_budget', true );
 
 		return array(
-			'id'           => $run_id,
-			'workflow_id'  => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_workflow_id', true ),
-			'status'       => get_post_meta( $run_id, '_wp_mcp_ai_run_status', true ),
-			'input'        => $input ? json_decode( $input, true ) : array(),
-			'context'      => $context ? json_decode( $context, true ) : array(),
-			'event_log'    => self::get_event_log( $run_id ),
-			'budget'       => $budget ? json_decode( $budget, true ) : array(),
-			'cost_usd'     => (float) get_post_meta( $run_id, '_wp_mcp_ai_run_cost_usd', true ),
-			'tokens_used'  => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_tokens_used', true ),
-			'started_at'   => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_started_at', true ),
-			'finished_at'  => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_finished_at', true ),
-			'title'        => $post->post_title,
+			'id'          => $run_id,
+			'workflow_id' => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_workflow_id', true ),
+			'status'      => get_post_meta( $run_id, '_wp_mcp_ai_run_status', true ),
+			'input'       => $input ? json_decode( $input, true ) : array(),
+			'context'     => $context ? json_decode( $context, true ) : array(),
+			'event_log'   => self::get_event_log( $run_id ),
+			'budget'      => $budget ? json_decode( $budget, true ) : array(),
+			'cost_usd'    => (float) get_post_meta( $run_id, '_wp_mcp_ai_run_cost_usd', true ),
+			'tokens_used' => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_tokens_used', true ),
+			'started_at'  => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_started_at', true ),
+			'finished_at' => (int) get_post_meta( $run_id, '_wp_mcp_ai_run_finished_at', true ),
+			'title'       => $post->post_title,
 		);
 	}
 

@@ -260,7 +260,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 			if ( false !== $mtime && $mtime < $cutoff ) {
 				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				if ( @unlink( $file ) ) {
-					$deleted++;
+					++$deleted;
 				}
 			}
 		}
@@ -275,7 +275,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 				),
 				array(
 					'temp_dir' => $temp_dir,
-					'deleted' => $deleted,
+					'deleted'  => $deleted,
 				)
 			);
 		}

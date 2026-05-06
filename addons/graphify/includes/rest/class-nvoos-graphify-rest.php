@@ -777,9 +777,9 @@ class NV_oOS_Graphify_REST {
 			return new WP_Error( 'webhook_invalid_json', __( 'Body must be valid JSON.', 'nvoos-graphify' ), array( 'status' => 400 ) );
 		}
 
-		$nodes      = $driver->payload_to_nodes( $payload );
-		$ingested   = 0;
-		$resolved   = 0;
+		$nodes    = $driver->payload_to_nodes( $payload );
+		$ingested = 0;
+		$resolved = 0;
 		foreach ( $nodes as $node ) {
 			if ( NV_oOS_Graphify_DB::upsert_node( $node ) ) {
 				++$ingested;
@@ -793,10 +793,10 @@ class NV_oOS_Graphify_REST {
 
 		return rest_ensure_response(
 			array(
-				'success'         => true,
-				'received'        => count( $nodes ),
-				'ingested'        => $ingested,
-				'sameAs_emitted'  => $resolved,
+				'success'        => true,
+				'received'       => count( $nodes ),
+				'ingested'       => $ingested,
+				'sameAs_emitted' => $resolved,
 			)
 		);
 	}

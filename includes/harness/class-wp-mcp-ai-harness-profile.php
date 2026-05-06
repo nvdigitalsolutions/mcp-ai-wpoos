@@ -52,27 +52,27 @@ class WP_MCP_AI_Harness_Profile {
 	 */
 	public static function defaults() {
 		return array(
-			'enabled'   => false,
-			'cues'      => array(),
-			'reasoning' => array(
+			'enabled'          => false,
+			'cues'             => array(),
+			'reasoning'        => array(
 				'enabled'   => false,
 				'n_samples' => 1,
 				'max_iters' => 1,
 			),
-			'tools'     => array(
+			'tools'            => array(
 				'router'         => 'fixed',
 				'preset_weights' => array(),
 			),
-			'retrieval' => array(
+			'retrieval'        => array(
 				'enabled'           => false,
 				'k'                 => 5,
 				'require_citations' => false,
 			),
-			'refine'    => array(
+			'refine'           => array(
 				'enabled'   => false,
 				'max_iters' => 1,
 			),
-			'memory'    => array(
+			'memory'           => array(
 				'scoped'     => false,
 				'task_class' => 'general',
 				'pii_filter' => true,

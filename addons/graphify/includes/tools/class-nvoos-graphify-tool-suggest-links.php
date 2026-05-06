@@ -39,7 +39,7 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'limit' => array(
+				'limit'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum link suggestions to return (default: 10, max: 50).', 'nvoos-graphify' ),
 					'minimum'     => 1,
@@ -70,10 +70,10 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 			$node = NV_oOS_Graphify_DB::get_node_by_post_id( $post_id );
 			if ( ! $node || ! $node->community_id ) {
 				return array(
-					'success'      => true,
-					'suggestions'  => array(),
+					'success'          => true,
+					'suggestions'      => array(),
 					'suggestion_count' => 0,
-					'message'      => __( 'No community data available for this post. Run graphify_build_graph first.', 'nvoos-graphify' ),
+					'message'          => __( 'No community data available for this post. Run graphify_build_graph first.', 'nvoos-graphify' ),
 				);
 			}
 		}

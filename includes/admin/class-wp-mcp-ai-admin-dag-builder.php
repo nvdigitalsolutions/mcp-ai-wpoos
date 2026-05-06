@@ -153,7 +153,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 					<h2><?php esc_html_e( 'Workflows', 'mcp-ai-wpoos' ); ?></h2>
 
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dag-builder' ) ); ?>"
-					   class="button button-primary mcp-ai-dag-new-btn">
+						class="button button-primary mcp-ai-dag-new-btn">
 						<?php esc_html_e( 'New Workflow', 'mcp-ai-wpoos' ); ?>
 					</a>
 
@@ -165,12 +165,12 @@ class WP_MCP_AI_Admin_DAG_Builder {
 							<small>v<?php echo esc_html( get_post_meta( $wf->ID, WP_MCP_AI_Workflow_CPT::META_VERSION, true ) ?: '1.0.0' ); ?></small>
 							<div class="mcp-ai-dag-workflow-actions">
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dag-builder&workflow_id=' . $wf->ID ) ); ?>"
-								   class="button button-small">
+									class="button button-small">
 									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
 								</a>
 								<button type="button"
-								        class="button button-small mcp-ai-dag-run-btn"
-								        data-workflow-id="<?php echo esc_attr( $wf->ID ); ?>">
+										class="button button-small mcp-ai-dag-run-btn"
+										data-workflow-id="<?php echo esc_attr( $wf->ID ); ?>">
 									<?php esc_html_e( 'Run', 'mcp-ai-wpoos' ); ?>
 								</button>
 							</div>
@@ -185,7 +185,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 				<!-- Main canvas area -->
 				<main class="mcp-ai-dag-main">
 					<div id="mcp-ai-dag-builder-root"
-					     data-workflow-id="<?php echo esc_attr( $workflow_id ); ?>">
+						data-workflow-id="<?php echo esc_attr( $workflow_id ); ?>">
 						<p class="mcp-ai-dag-loading"><?php esc_html_e( 'Loading…', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				</main>

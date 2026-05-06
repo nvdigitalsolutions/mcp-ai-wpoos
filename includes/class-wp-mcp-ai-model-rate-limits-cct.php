@@ -835,7 +835,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 
 		// Allow site admins to drop a custom catalog into wp-content/uploads/mcp-ai/.
 		if ( function_exists( 'wp_get_upload_dir' ) ) {
-			$uploads  = wp_get_upload_dir();
+			$uploads = wp_get_upload_dir();
 			if ( is_array( $uploads ) && empty( $uploads['error'] ) && ! empty( $uploads['basedir'] ) ) {
 				$override = trailingslashit( $uploads['basedir'] ) . 'mcp-ai/model-catalog.json';
 				if ( $override !== $path && file_exists( $override ) && is_readable( $override ) ) {

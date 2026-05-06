@@ -125,13 +125,13 @@ class NVOOS_SaaS_Controller_Webhook_Event_Store {
 		}
 
 		$sanitised = array(
-			'ts'                => time(),
-			'provider'          => $provider,
-			'event_id'          => $event_id,
-			'event_type'        => self::sanitise_short( isset( $entry['event_type'] ) ? $entry['event_type'] : '' ),
-			'event_timestamp'   => isset( $entry['timestamp'] ) ? max( 0, (int) $entry['timestamp'] ) : 0,
-			'signature_status'  => self::sanitise_short( isset( $entry['signature_status'] ) ? $entry['signature_status'] : '' ),
-			'message'           => self::sanitise_message( isset( $entry['message'] ) ? $entry['message'] : '' ),
+			'ts'               => time(),
+			'provider'         => $provider,
+			'event_id'         => $event_id,
+			'event_type'       => self::sanitise_short( isset( $entry['event_type'] ) ? $entry['event_type'] : '' ),
+			'event_timestamp'  => isset( $entry['timestamp'] ) ? max( 0, (int) $entry['timestamp'] ) : 0,
+			'signature_status' => self::sanitise_short( isset( $entry['signature_status'] ) ? $entry['signature_status'] : '' ),
+			'message'          => self::sanitise_message( isset( $entry['message'] ) ? $entry['message'] : '' ),
 		);
 
 		$entries   = $this->read_entries();

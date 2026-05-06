@@ -75,17 +75,17 @@ class WP_MCP_AI_Admin_Approvals {
 			'wp-mcp-ai-approvals',
 			'wpMcpAiApprovals',
 			array(
-				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-				'nonce'       => wp_create_nonce( 'wp_mcp_ai_approvals' ),
-				'i18n'        => array(
-					'approve'    => __( 'Approve', 'mcp-ai-wpoos' ),
-					'deny'       => __( 'Deny', 'mcp-ai-wpoos' ),
-					'loading'    => __( 'Loading…', 'mcp-ai-wpoos' ),
-					'noPending'  => __( 'No pending approvals.', 'mcp-ai-wpoos' ),
-					'confirm'    => __( 'Please confirm: %s', 'mcp-ai-wpoos' ),
-					'approved'   => __( 'Approved', 'mcp-ai-wpoos' ),
-					'denied'     => __( 'Denied', 'mcp-ai-wpoos' ),
-					'noteLabel'  => __( 'Note (optional):', 'mcp-ai-wpoos' ),
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_approvals' ),
+				'i18n'    => array(
+					'approve'   => __( 'Approve', 'mcp-ai-wpoos' ),
+					'deny'      => __( 'Deny', 'mcp-ai-wpoos' ),
+					'loading'   => __( 'Loading…', 'mcp-ai-wpoos' ),
+					'noPending' => __( 'No pending approvals.', 'mcp-ai-wpoos' ),
+					'confirm'   => __( 'Please confirm: %s', 'mcp-ai-wpoos' ),
+					'approved'  => __( 'Approved', 'mcp-ai-wpoos' ),
+					'denied'    => __( 'Denied', 'mcp-ai-wpoos' ),
+					'noteLabel' => __( 'Note (optional):', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -143,14 +143,16 @@ class WP_MCP_AI_Admin_Approvals {
 	 * Render assistant <option> elements.
 	 */
 	private function render_assistant_options() {
-		$assistants = get_posts( array(
-			'post_type'      => 'mcp_ai_assistant',
-			'post_status'    => 'publish',
-			'posts_per_page' => 100,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-			'fields'         => 'ids',
-		) );
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'fields'         => 'ids',
+			)
+		);
 		foreach ( $assistants as $id ) {
 			printf(
 				'<option value="%s">%s</option>',
@@ -185,15 +187,17 @@ class WP_MCP_AI_Admin_Approvals {
 
 		$assistant_id = (int) ( $_GET['assistant_id'] ?? 0 );
 		$queue        = WP_MCP_AI_Approval_Queue::get_instance();
-		$items        = $queue->get_pending( array(
-			'assistant_id' => $assistant_id,
-			'limit'        => 50,
-		) );
+		$items        = $queue->get_pending(
+			array(
+				'assistant_id' => $assistant_id,
+				'limit'        => 50,
+			)
+		);
 
 		// Enrich with requester display name.
 		foreach ( $items as &$item ) {
-			$user = $item['requester_id'] ? get_userdata( $item['requester_id'] ) : false;
-			$item['requester_name'] = $user ? $user->display_name : __( 'Unknown', 'mcp-ai-wpoos' );
+			$user                         = $item['requester_id'] ? get_userdata( $item['requester_id'] ) : false;
+			$item['requester_name']       = $user ? $user->display_name : __( 'Unknown', 'mcp-ai-wpoos' );
 			$item['created_at_formatted'] = $item['created_at'] ? wp_date( 'Y-m-d H:i', $item['created_at'] ) : '—';
 			$item['expires_at_formatted'] = $item['expires_at'] ? wp_date( 'Y-m-d H:i', $item['expires_at'] ) : '—';
 		}
@@ -234,9 +238,11 @@ class WP_MCP_AI_Admin_Approvals {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
 		}
 
-		wp_send_json_success( array(
-			'approval_id' => $approval_id,
-			'status'      => 'approve' === $action ? 'approved' : 'denied',
-		) );
+		wp_send_json_success(
+			array(
+				'approval_id' => $approval_id,
+				'status'      => 'approve' === $action ? 'approved' : 'denied',
+			)
+		);
 	}
 }

@@ -1324,7 +1324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Agent coordination tools (DeepSeek V4 multi-agent orchestration).
 				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
 				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
-				'WP_MCP_AI_Tool_Delegate_To_A2A_Agent'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-a2a-agent.php',
+				'WP_MCP_AI_Tool_Delegate_To_A2A_Agent'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-a2a-agent.php',
 				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
 				// Agent memory tools (DeepSeek V4 Phase 5: State Management & Memory).
 				'WP_MCP_AI_Tool_Store_Agent_Context'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-store-agent-context.php',

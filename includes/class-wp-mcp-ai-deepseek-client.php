@@ -601,12 +601,12 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$error_code = 'wp_mcp_ai_deepseek_api_error';
 
 			if ( 401 === $code ) {
-				$error_code              = 'wp_mcp_ai_deepseek_auth_error';
-				$error_data['actions']   = array(
+				$error_code            = 'wp_mcp_ai_deepseek_auth_error';
+				$error_data['actions'] = array(
 					'auth_info' => __( 'Verify your DeepSeek API key in NV oOS → Providers → DeepSeek.', 'mcp-ai-wpoos' ),
 				);
 			} elseif ( 429 === $code ) {
-				$error_code = 'wp_mcp_ai_rate_limit_exceeded';
+				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
 				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 				if ( ! empty( $retry_after ) ) {
 					$error_data['retry_after'] = absint( $retry_after );
@@ -645,11 +645,11 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$content = isset( $message['content'] ) ? $message['content'] : '';
 
 			$normalized = array(
-				'content'      => $content,
+				'content'       => $content,
 				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
-				'model'        => isset( $decoded['model'] ) ? $decoded['model'] : '',
-				'usage'        => isset( $decoded['usage'] ) ? $decoded['usage'] : array(),
-				'raw'          => $decoded,
+				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
+				'usage'         => isset( $decoded['usage'] ) ? $decoded['usage'] : array(),
+				'raw'           => $decoded,
 			);
 
 			// Pass through tool_calls when present (function calling).

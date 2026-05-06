@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 							'type'        => 'string',
 							'description' => __( 'Only contexts stored under this wing (project/person scope). Applied before semantic ranking.', 'mcp-ai-wpoos' ),
 						),
-						'room'           => array(
+						'room'          => array(
 							'type'        => 'string',
 							'description' => __( 'Only contexts stored under this room (topic cluster within a wing). Applied before semantic ranking.', 'mcp-ai-wpoos' ),
 						),

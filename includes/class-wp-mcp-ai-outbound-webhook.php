@@ -55,9 +55,9 @@ class WP_MCP_AI_Outbound_Webhook {
 	 */
 	private function __construct() {
 		add_action( 'wp_mcp_ai_workflow_run_completed', array( $this, 'on_workflow_completed' ), 10, 2 );
-		add_action( 'wp_mcp_ai_workflow_run_failed',    array( $this, 'on_workflow_failed' ),    10, 2 );
-		add_action( 'wp_mcp_ai_workflow_run_paused',    array( $this, 'on_workflow_paused' ),    10, 2 );
-		add_action( 'wp_mcp_ai_approval_requested',     array( $this, 'on_approval_requested' ), 10, 2 );
+		add_action( 'wp_mcp_ai_workflow_run_failed', array( $this, 'on_workflow_failed' ), 10, 2 );
+		add_action( 'wp_mcp_ai_workflow_run_paused', array( $this, 'on_workflow_paused' ), 10, 2 );
+		add_action( 'wp_mcp_ai_approval_requested', array( $this, 'on_approval_requested' ), 10, 2 );
 	}
 
 	// ── Subscription Management ───────────────────────────────────────────────
@@ -142,7 +142,7 @@ class WP_MCP_AI_Outbound_Webhook {
 				continue;
 			}
 
-			$body     = wp_json_encode(
+			$body      = wp_json_encode(
 				array(
 					'event'      => $event,
 					'payload'    => $payload,
@@ -196,7 +196,13 @@ class WP_MCP_AI_Outbound_Webhook {
 	 * @return void
 	 */
 	public function on_workflow_completed( $run_id, $run_details ) {
-		$this->dispatch( 'workflow.completed', array( 'run_id' => absint( $run_id ), 'details' => $run_details ) );
+		$this->dispatch(
+			'workflow.completed',
+			array(
+				'run_id'  => absint( $run_id ),
+				'details' => $run_details,
+			)
+		);
 	}
 
 	/**
@@ -207,7 +213,13 @@ class WP_MCP_AI_Outbound_Webhook {
 	 * @return void
 	 */
 	public function on_workflow_failed( $run_id, $run_details ) {
-		$this->dispatch( 'workflow.failed', array( 'run_id' => absint( $run_id ), 'details' => $run_details ) );
+		$this->dispatch(
+			'workflow.failed',
+			array(
+				'run_id'  => absint( $run_id ),
+				'details' => $run_details,
+			)
+		);
 	}
 
 	/**
@@ -218,7 +230,13 @@ class WP_MCP_AI_Outbound_Webhook {
 	 * @return void
 	 */
 	public function on_workflow_paused( $run_id, $run_details ) {
-		$this->dispatch( 'workflow.paused', array( 'run_id' => absint( $run_id ), 'details' => $run_details ) );
+		$this->dispatch(
+			'workflow.paused',
+			array(
+				'run_id'  => absint( $run_id ),
+				'details' => $run_details,
+			)
+		);
 	}
 
 	/**
@@ -229,7 +247,13 @@ class WP_MCP_AI_Outbound_Webhook {
 	 * @return void
 	 */
 	public function on_approval_requested( $approval_id, $details ) {
-		$this->dispatch( 'approval.requested', array( 'approval_id' => absint( $approval_id ), 'details' => $details ) );
+		$this->dispatch(
+			'approval.requested',
+			array(
+				'approval_id' => absint( $approval_id ),
+				'details'     => $details,
+			)
+		);
 	}
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
