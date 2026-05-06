@@ -94,12 +94,12 @@ class WP_MCP_AI_Admin_Run_Timeline {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_run_timeline' ),
 				'i18n'    => array(
-					'loading'     => __( 'Loading…', 'mcp-ai-wpoos' ),
-					'noRuns'      => __( 'No runs recorded yet.', 'mcp-ai-wpoos' ),
+					'loading'      => __( 'Loading…', 'mcp-ai-wpoos' ),
+					'noRuns'       => __( 'No runs recorded yet.', 'mcp-ai-wpoos' ),
 					'downloadJSON' => __( 'Download JSON', 'mcp-ai-wpoos' ),
-					'tokens'      => __( 'tokens', 'mcp-ai-wpoos' ),
-					'ms'          => __( 'ms', 'mcp-ai-wpoos' ),
-					'usd'         => __( 'USD', 'mcp-ai-wpoos' ),
+					'tokens'       => __( 'tokens', 'mcp-ai-wpoos' ),
+					'ms'           => __( 'ms', 'mcp-ai-wpoos' ),
+					'usd'          => __( 'USD', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -158,13 +158,21 @@ class WP_MCP_AI_Admin_Run_Timeline {
 		<div class="notice notice-info is-dismissible">
 			<p>
 				<?php
-				printf(
-					/* translators: 1: settings page URL */
-					wp_kses(
-						__( '<strong>Tip:</strong> Configure an OTLP endpoint in <a href="%1$s">NV oOS Settings → Observability</a> to export spans to Jaeger, Grafana Tempo, or any OpenTelemetry collector.', 'mcp-ai-wpoos' ),
-						array( 'strong' => array(), 'a' => array( 'href' => array() ) )
-					),
-					esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration&view=observability' ) )
+				$settings_url = esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration&view=observability' ) );
+				$tip_text     = sprintf(
+					/* translators: 1: opening strong tag, 2: closing strong tag, 3: opening anchor tag with URL, 4: closing anchor tag */
+					__( '%1$sTip:%2$s Configure an OTLP endpoint in %3$sNV oOS Settings → Observability%4$s to export spans to Jaeger, Grafana Tempo, or any OpenTelemetry collector.', 'mcp-ai-wpoos' ),
+					'<strong>',
+					'</strong>',
+					'<a href="' . $settings_url . '">',
+					'</a>'
+				);
+				echo wp_kses(
+					$tip_text,
+					array(
+						'strong' => array(),
+						'a'      => array( 'href' => array() ),
+					)
 				);
 				?>
 			</p>
@@ -176,14 +184,16 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 * Render assistant <option> elements for the filter dropdown.
 	 */
 	private function render_assistant_options() {
-		$assistants = get_posts( array(
-			'post_type'      => 'mcp_ai_assistant',
-			'post_status'    => 'publish',
-			'posts_per_page' => 100,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-			'fields'         => 'ids',
-		) );
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'fields'         => 'ids',
+			)
+		);
 
 		foreach ( $assistants as $id ) {
 			$title = get_the_title( $id );
@@ -210,8 +220,8 @@ class WP_MCP_AI_Admin_Run_Timeline {
 				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
 			}
 
-			$page         = max( 1, (int) ( $_GET['page'] ?? 1 ) );
-			$assistant_id = (int) ( $_GET['assistant_id'] ?? 0 );
+			$page         = max( 1, (int) sanitize_text_field( wp_unslash( isset( $_GET['page'] ) ? $_GET['page'] : '1' ) ) );
+			$assistant_id = (int) sanitize_text_field( wp_unslash( isset( $_GET['assistant_id'] ) ? $_GET['assistant_id'] : '0' ) );
 
 			$runs = $this->load_run_summaries( $page, $assistant_id );
 			wp_send_json_success( $runs );
@@ -422,8 +432,8 @@ class WP_MCP_AI_Admin_Run_Timeline {
 			$args['include'] = array( $assistant_id );
 		}
 
-		$posts      = get_posts( $args );
-		$summaries  = array();
+		$posts     = get_posts( $args );
+		$summaries = array();
 
 		foreach ( $posts as $post ) {
 			$raw   = get_post_meta( $post->ID, WP_MCP_AI_Reasoning_Trace::META_KEY, true );
@@ -452,10 +462,10 @@ class WP_MCP_AI_Admin_Run_Timeline {
 	 */
 	private function load_run_detail( $run_id ) {
 		$detail = array(
-			'run_id'    => $run_id,
-			'steps'     => array(),
-			'summary'   => array(),
-			'trace'     => array(),
+			'run_id'  => $run_id,
+			'steps'   => array(),
+			'summary' => array(),
+			'trace'   => array(),
 		);
 
 		// Load from metric event store. Iterate the same metric ids as the
@@ -504,7 +514,7 @@ class WP_MCP_AI_Admin_Run_Timeline {
 		if ( 0 === strpos( $run_id, 'meta:' ) ) {
 			$post_id = (int) substr( $run_id, 5 );
 			if ( $post_id > 0 && class_exists( 'WP_MCP_AI_Reasoning_Trace' ) ) {
-				$raw           = get_post_meta( $post_id, WP_MCP_AI_Reasoning_Trace::META_KEY, true );
+				$raw             = get_post_meta( $post_id, WP_MCP_AI_Reasoning_Trace::META_KEY, true );
 				$detail['trace'] = WP_MCP_AI_Reasoning_Trace::sanitize( $raw );
 			}
 		}

@@ -405,10 +405,10 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 	 */
 	protected static function collect_jetengine_status() {
 		$status = array(
-			'jet_engine_loaded'      => function_exists( 'jet_engine' ),
-			'data_stores_active'     => false,
-			'cct_module_loaded'      => false,
-			'agent_memories_table'   => false,
+			'jet_engine_loaded'    => function_exists( 'jet_engine' ),
+			'data_stores_active'   => false,
+			'cct_module_loaded'    => false,
+			'agent_memories_table' => false,
 		);
 
 		if ( $status['jet_engine_loaded'] ) {

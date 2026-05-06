@@ -286,7 +286,7 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) && ! is_wp_error( $result ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'transcript_mining',
-				$tick_message !== ''
+				'' !== $tick_message
 					? $tick_message
 					: __( 'Transcript mining tick completed.', 'mcp-ai-wpoos' ),
 				array(

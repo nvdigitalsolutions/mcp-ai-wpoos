@@ -98,7 +98,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge_Logging_Test extends WP_UnitTestCase {
 	 */
 	public function test_missing_cct_class_logs_once_per_request() {
 		// Ensure the class isn't autoloadable for the duration of this test.
-		// (The bootstrap doesn't ship it — this is just a defensive check.)
+		// The bootstrap doesn't ship it — this is just a defensive check.
 		if ( class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT', false ) ) {
 			$this->markTestSkipped( 'JetEngine agent memories CCT class is loaded; cannot test missing-class path.' );
 		}
