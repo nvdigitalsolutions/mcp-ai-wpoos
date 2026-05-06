@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.15
+Stable tag: 1.1.16
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -274,6 +274,26 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.16 - May 6, 2026 =
+
+**SaaS Controller Addon (v0.1.0) + Structured Logging Integration**
+
+*Added — SaaS Controller Addon (addons/saas-controller/)*
+
+* Operator-side WordPress admin toolkit (WP-Admin → NV oOS SaaS, manage_options) for provisioning and managing the NV oOS Cloud control plane — Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, and OpenRouter — without leaving WP-Admin.
+* Four admin tabs: Overview (React Credentials Wizard + masked-credentials fallback), Deployment (topology editor + Run Plan), Operations (HITL Apply + Drift Detector + Orphan Review + Webhook Events + Smoke Tests + Audit Log), Packages (credits surface).
+* Phases 2–11 shipped: encrypted credential store (AES-256-CBC), deployment-config store, connection tester, read-only Cloudflare client, reconcile-plan generator (creates/updates/noops/orphans/errors), mutating Cloudflare client (D1/KV/AI Gateway/Worker upload), HITL-gated Apply (sync + background async), drift detector (manifest + post-apply fingerprint), orphan cleanup, Stripe webhook verifier (HMAC-SHA256, constant-time, 300 s replay guard), webhook event store (200-entry ring buffer, idempotent), audit log (200-entry ring buffer).
+* REST namespace /wp-json/nvoos-saas/v1/ — all routes require manage_options except POST /webhooks/stripe (signature-gated). 19 routes covering credentials, deployment, plan, audit-log, smoke tests, apply (sync + async + orphans), drift, and webhooks.
+* Key filters: nvoos_saas_controller_apply_token_ttl, nvoos_saas_controller_audit_log_max_entries, nvoos_saas_controller_audit_log_record, nvoos_saas_controller_webhook_events_max_entries, nvoos_saas_controller_apply_job_state_ttl, nvoos_saas_controller_worker_dist_path.
+* See addons/saas-controller/README.md for the full implementation reference.
+
+*Added / Improved — Structured Logging Integration (PR #4849)*
+
+* WP_MCP_AI_Agent_Memory_CCT_Bridge — all bridge writes, CCT mirror failures, filter-suppressed writes, and deletions logged via WP_MCP_AI_Logger.
+* WP_MCP_AI_Transcript_Mining_Job — structured logging for the full job lifecycle (enqueue, tick, completion, cancellation, all error paths).
+* WP_MCP_AI_Logger integrated across Algorave, Canvas, Webchat, Fantasy Football, Graphify, SaaS Controller addons; admin (Run Timeline, Approvals, Settings Base); cost calculator; model catalog migration; workflow engine V2; harness layers; and more.
+* New PHPUnit tests: test-agent-memory-cct-bridge-logging.php and test-transcript-mining-job-logging.php.
 
 = 1.1.15 - May 5, 2026 =
 
