@@ -44,7 +44,16 @@ define( 'NVOOS_SAAS_CONTROLLER_URL', plugin_dir_url( __FILE__ ) );
  * @return bool True if the base plugin is detected.
  */
 function nvoos_saas_controller_base_is_active() {
-	return class_exists( 'WP_MCP_AI_Plugin' );
+	// The base plugin signals readiness via the `wp_mcp_ai_core_loaded()`
+	// helper (defined in `includes/bootstrap/helpers.php`) and registers
+	// the `WP_MCP_AI_Tool_Registry` class as part of its bootstrap. Either
+	// signal is sufficient — mirror the check used by the Pro addon so all
+	// addons agree on what "base is active" means.
+	if ( function_exists( 'wp_mcp_ai_core_loaded' ) && wp_mcp_ai_core_loaded() ) {
+		return true;
+	}
+
+	return class_exists( 'WP_MCP_AI_Tool_Registry' );
 }
 
 /**
