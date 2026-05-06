@@ -91,8 +91,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, and addons/graphify must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/saas-controller" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, and addons/saas-controller must exist."
 exit 1
 fi
 
@@ -113,16 +113,17 @@ FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
 CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
 EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${VERSION}.zip"
 GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${VERSION}.zip"
+SAAS_CONTROLLER_ZIP="${OUTPUT_DIR}/nvoos-saas-controller-v${VERSION}.zip"
 
-rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP"
+rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP" "$SAAS_CONTROLLER_ZIP"
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$CANVAS_ZIP"
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=5
-else
 TOTAL_STEPS=6
+else
+TOTAL_STEPS=7
 fi
 
 echo "=========================================="
@@ -229,6 +230,47 @@ GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
 echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
 echo ""
 
+echo "[6/${TOTAL_STEPS}] Building nvoos-saas-controller-v${VERSION}.zip"
+# Build the addon's two compiled artifacts (admin UI + Cloudflare Worker)
+# from source if Node is available. The release ZIP ships only the built
+# artifacts under assets/build/ and worker/dist/ — never node_modules/ or
+# the TypeScript / TSX sources.
+if [ -d "addons/saas-controller/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/saas-controller/node_modules" ]; then
+echo "  ℹ️  Installing saas-controller npm dependencies (npm ci)..."
+( cd addons/saas-controller && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for saas-controller — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/saas-controller/node_modules" ]; then
+echo "  ℹ️  Building saas-controller artifacts (npm run build)..."
+( cd addons/saas-controller && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for saas-controller — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/build/ and worker/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/saas-controller-stage/nvoos-saas-controller"
+rsync -a "addons/saas-controller/" "${TMP_DIR}/saas-controller-stage/nvoos-saas-controller/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'assets/src/' \
+--exclude 'worker/src/' \
+--exclude '.wrangler/'
+(
+cd "${TMP_DIR}/saas-controller-stage"
+zip -r -q "${ROOT_DIR}/${SAAS_CONTROLLER_ZIP}" nvoos-saas-controller/
+)
+SAAS_CONTROLLER_SIZE=$(du -h "$SAAS_CONTROLLER_ZIP" | cut -f1)
+echo "✅ ${SAAS_CONTROLLER_ZIP} (${SAAS_CONTROLLER_SIZE})"
+echo ""
+
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
 # container. This step is best-effort:
 #   - Canvas is platform-specific and is NOT part of the WordPress.org
@@ -251,7 +293,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[6/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[7/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -338,6 +380,7 @@ echo "  - ${EMBEDDED_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
 echo "  - ${GRAPHIFY_ZIP}"
+echo "  - ${SAAS_CONTROLLER_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

@@ -177,6 +177,42 @@ update procedure.
 
 ---
 
+### SaaS Controller — Admin UI bundle (`addons/saas-controller/`)
+
+The SaaS Controller addon ships a single compiled JS/CSS bundle, produced by
+`@wordpress/scripts` (webpack + Babel + ESLint). Sources live under
+`addons/saas-controller/assets/src/` and the build artifact is
+`addons/saas-controller/assets/build/index.js` (+ `index.asset.php`,
+`index.css`, `style-index.css`).
+
+| Package | Version | Location | License | Source |
+|---------|---------|----------|---------|--------|
+| @tanstack/react-query | ^5.62.0 | embedded in `assets/build/index.js` | MIT | https://tanstack.com/query |
+| zod | ^3.24.1 | embedded in `assets/build/index.js` | MIT | https://zod.dev/ |
+| diff (jsdiff) | ^7.0.0 | embedded in `assets/build/index.js` | BSD-3-Clause | https://github.com/kpdecker/jsdiff |
+| date-fns | ^4.1.0 | embedded in `assets/build/index.js` | MIT | https://date-fns.org/ |
+| clsx | ^2.1.1 | embedded in `assets/build/index.js` | MIT | https://github.com/lukeed/clsx |
+
+The Cloudflare Worker artifact (`addons/saas-controller/worker/dist/index.js`)
+is bundled separately by esbuild and contains no third-party runtime
+dependencies (Cloudflare runtime + WHATWG Fetch only). All build-time
+tooling (`wrangler`, `esbuild`, `@cloudflare/workers-types`, `miniflare`,
+`typescript`, `@wordpress/scripts`) is **not** distributed — it lives only
+in `devDependencies` and is dropped from the addon ZIP. See
+`addons/saas-controller/THIRD_PARTY_NOTICES.md` for the full per-package
+license + copyright table.
+
+**Update Process:**
+```bash
+cd addons/saas-controller
+npm ci
+npm run build         # rebuild assets/build/ and worker/dist/
+npm audit --audit-level=high
+# Update versions in addons/saas-controller/THIRD_PARTY_NOTICES.md and CREDITS.md
+```
+
+---
+
 ### ExcelJS (Pro addon)
 
 **Version:** 4.4.0

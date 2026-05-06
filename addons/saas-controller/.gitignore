@@ -1,0 +1,7 @@
+node_modules/
+package-lock.json
+assets/build/
+worker/dist/
+worker/PROVENANCE.json
+.wrangler/
+*.log

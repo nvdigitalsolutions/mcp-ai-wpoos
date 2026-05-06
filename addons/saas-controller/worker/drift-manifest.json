@@ -1,0 +1,8 @@
+{
+  "$comment": "Drift-detection manifest consumed by NVOOS_SaaS_Controller_Drift_Detector. Populated at build time by `scripts/stamp-drift-manifest.mjs` (run automatically by `npm run build:worker`): `expected_sha256` = sha256(worker/dist/index.js), `version` from package.json, `built_at` ISO timestamp. `expected_etag` stays null here — it's only observable post-deploy and is recorded by the Apply engine into the `nvoos_saas_controller_deployed_worker` option (which the drift detector uses as a fallback). On a fresh checkout where the dist hasn't been built yet, all three fields are null and the drift detector reports `status=unknown` (never `drift`), so the addon ships safely without false-positive drift banners.",
+  "expected_sha256": null,
+  "expected_etag": null,
+  "version": null,
+  "built_at": null,
+  "worker_dist_path": "worker/dist/index.js"
+}
