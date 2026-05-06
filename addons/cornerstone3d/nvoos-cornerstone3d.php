@@ -21,12 +21,18 @@
  * Patent Pending (Application #19/410,504)
  * © 2025 NV Digital Solutions - All Rights Reserved
  *
- * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * All rights reserved. This is proprietary software.
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+ * All rights reserved.
+ *
+ * This addon is PROPRIETARY software of NV Digital Solutions. It is NOT
+ * licensed under the GPL that covers the rest of the NV oOS repository,
+ * and it is NOT distributed via WordPress.org. Use, reproduction, modification,
+ * and redistribution are governed by the addon-local `LICENSE` file shipped in
+ * this directory. See `LICENSE` for the full terms.
  *
  * The bundled Cornerstone3D ESM bundles retain their upstream MIT license.
- * See assets/cornerstone/vendor-meta.json for package versions and CREDITS.md
- * at the repository root for the full attribution index.
+ * See `THIRD_PARTY_NOTICES.md` and the repository-wide `CREDITS.md` for the
+ * full attribution index.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

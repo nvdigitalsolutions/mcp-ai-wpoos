@@ -21,13 +21,19 @@
  * Patent Pending (Application #19/410,504)
  * © 2025 NV Digital Solutions - All Rights Reserved
  *
- * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * All rights reserved. This is proprietary software.
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+ * All rights reserved.
+ *
+ * This addon is PROPRIETARY software of NV Digital Solutions. It is NOT
+ * licensed under the GPL that covers the rest of the NV oOS repository,
+ * and it is NOT distributed via WordPress.org. Use, reproduction, modification,
+ * and redistribution are governed by the addon-local `LICENSE` file shipped in
+ * this directory. See `LICENSE` for the full terms.
  *
  * The bundled canvas native binaries (canvas.node) retain their upstream MIT
- * license; the linked Cairo graphics library is LGPL-2.1 (dynamically linked
- * at runtime). See assets/canvas/package.json and the repository-wide
- * CREDITS.md for the full attribution index.
+ * license; the Cairo graphics library is LGPL-2.1 (dynamically linked at
+ * runtime). See `THIRD_PARTY_NOTICES.md` and the repository-wide `CREDITS.md`
+ * for the full attribution index.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
