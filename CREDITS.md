@@ -274,6 +274,24 @@ Vendored under `addons/graphify/assets/vendor/`, each with its own
 | `cose-base` | MIT | <https://github.com/iVis-at-Bilkent/cose-base> |
 | `layout-base` | MIT | <https://github.com/iVis-at-Bilkent/layout-base> |
 
+### `addons/docs-hub/` — React-based documentation browser
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | ^19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | ^19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-router-dom` | ^7.15.0 | MIT | <https://github.com/remix-run/react-router> |
+| `react-markdown` | ^10.1.0 | MIT | <https://github.com/remarkjs/react-markdown> |
+| `remark-gfm` | ^4.0.1 | MIT | <https://github.com/remarkjs/remark-gfm> |
+| `remark-directive` | ^4.0.0 | MIT | <https://github.com/remarkjs/remark-directive> |
+| `remark-frontmatter` | ^5.0.0 | MIT | <https://github.com/remarkjs/remark-frontmatter> |
+| `rehype-slug` | ^6.0.0 | MIT | <https://github.com/rehypejs/rehype-slug> |
+| `rehype-autolink-headings` | ^7.1.0 | MIT | <https://github.com/rehypejs/rehype-autolink-headings> |
+| `flexsearch` | ^0.8.212 | Apache-2.0 | <https://github.com/nextapps-de/flexsearch> |
+
+All packages are MIT-licensed (except FlexSearch which is Apache-2.0). The React SPA
+is bundled into `addons/docs-hub/assets/dist/docs-hub.js` via esbuild.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**
