@@ -85,6 +85,9 @@ SAAS_VERSION=${SAAS_VERSION:-dev}
 CANVAS_VERSION=$(_read_addon_version "addons/canvas/nvoos-canvas.php")
 CANVAS_VERSION=${CANVAS_VERSION:-dev}
 
+DOCS_HUB_VERSION=$(_read_addon_version "addons/docs-hub/nvoos-docs-hub.php")
+DOCS_HUB_VERSION=${DOCS_HUB_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -113,8 +116,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/saas-controller" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, and addons/saas-controller must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, and addons/saas-controller must exist."
 exit 1
 fi
 
@@ -135,6 +138,7 @@ FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${FF_VERSION}.zip"
 CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${CS3D_VERSION}.zip"
 EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${EMBEDDED_VERSION}.zip"
 GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${GRAPHIFY_VERSION}.zip"
+DOCS_HUB_ZIP="${OUTPUT_DIR}/nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
 SAAS_CONTROLLER_ZIP="${OUTPUT_DIR}/nvoos-saas-controller-v${SAAS_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
@@ -143,15 +147,16 @@ rm -f "$OUTPUT_DIR"/nvoos-fantasy-football-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-cornerstone3d-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-embedded-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-graphify-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-docs-hub-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-saas-controller-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=6
+TOTAL_STEPS=8
 else
-TOTAL_STEPS=7
+TOTAL_STEPS=9
 fi
 
 echo "=========================================="
@@ -258,7 +263,44 @@ GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
 echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
 echo ""
 
-echo "[6/${TOTAL_STEPS}] Building nvoos-saas-controller-v${SAAS_VERSION}.zip"
+echo "[6/${TOTAL_STEPS}] Building nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/docs-hub/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/docs-hub/node_modules" ]; then
+echo "  ℹ️  Installing docs-hub npm dependencies (npm ci)..."
+( cd addons/docs-hub && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for docs-hub — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/docs-hub/node_modules" ]; then
+echo "  ℹ️  Building docs-hub artifacts (npm run build)..."
+( cd addons/docs-hub && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for docs-hub — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub"
+rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/docs-hub-stage"
+zip -r -q "${ROOT_DIR}/${DOCS_HUB_ZIP}" nvoos-docs-hub/
+)
+DOCS_HUB_SIZE=$(du -h "$DOCS_HUB_ZIP" | cut -f1)
+echo "✅ ${DOCS_HUB_ZIP} (${DOCS_HUB_SIZE})"
+echo ""
+
+echo "[7/${TOTAL_STEPS}] Building nvoos-saas-controller-v${SAAS_VERSION}.zip"
 # Build the addon's two compiled artifacts (admin UI + Cloudflare Worker)
 # from source if Node is available. The release ZIP ships only the built
 # artifacts under assets/build/ and worker/dist/ — never node_modules/ or
@@ -321,7 +363,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[7/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+echo "[8/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly

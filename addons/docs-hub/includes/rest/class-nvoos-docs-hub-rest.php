@@ -1,0 +1,420 @@
+<?php
+/**
+ * NV oOS Docs Hub — REST API Controller
+ *
+ * Provides REST endpoints for the documentation browser SPA.
+ *
+ * @package NV_oOS_Docs_Hub
+ * @since   1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * REST API controller for the Docs Hub addon.
+ *
+ * @since 1.0.0
+ */
+class NV_oOS_Docs_Hub_REST {
+
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
+	const NAMESPACE = 'nvoos-docs/v1';
+
+	/**
+	 * Register all REST routes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	public static function register_routes() {
+		register_rest_route(
+			self::NAMESPACE,
+			'/manifest',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_manifest' ),
+				'permission_callback' => array( __CLASS__, 'public_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/pages/(?P<slug>[a-z0-9_\-\/]{1,200})',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_page' ),
+				'permission_callback' => array( __CLASS__, 'public_permission' ),
+				'args'                => array(
+					'slug' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => array( __CLASS__, 'validate_slug' ),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/search',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'search' ),
+				'permission_callback' => array( __CLASS__, 'public_permission' ),
+				'args'                => array(
+					'q'     => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'limit' => array(
+						'type'              => 'integer',
+						'default'           => 20,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'rebuild' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/health',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'health' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Permission callback for public read endpoints.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return bool|WP_Error
+	 */
+	public static function public_permission( $request ) {
+		$slug = $request->get_param( 'slug' );
+
+		/**
+		 * Filter whether the current user can read a documentation section.
+		 *
+		 * Return false to deny access to a specific slug.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool   $can_read Whether the current user can read.
+		 * @param string $slug     The requested page slug (empty for manifest/search).
+		 */
+		$can_read = apply_filters( 'nvoos_docs_hub_can_read_section', true, (string) $slug );
+
+		if ( ! $can_read ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to view this documentation section.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Permission callback for admin-only endpoints.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return bool|WP_Error
+	 */
+	public static function admin_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress REST API.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'Administrator access required.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Validate a page slug parameter.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $slug Slug to validate.
+	 * @return bool
+	 */
+	public static function validate_slug( $slug ) {
+		return (bool) preg_match( '/^[a-z0-9_\-\/]{1,200}$/', (string) $slug );
+	}
+
+	/**
+	 * GET /manifest — returns the documentation manifest.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function get_manifest( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$cache    = new NV_oOS_Docs_Hub_Cache();
+		$manifest = $cache->get_manifest();
+
+		if ( false === $manifest ) {
+			// Attempt a fresh build.
+			$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
+			if ( ! empty( $result['success'] ) ) {
+				$manifest = $cache->get_manifest();
+			}
+		}
+
+		if ( ! is_array( $manifest ) ) {
+			$manifest = array(
+				'version'      => NVOOS_DOCS_HUB_VERSION,
+				'built_at'     => 0,
+				'tree'         => array(),
+				'slug_map'     => array(),
+				'total_pages'  => 0,
+				'broken_links' => array(),
+			);
+		}
+
+		$response = rest_ensure_response( $manifest );
+		$response->header( 'Cache-Control', 'public, max-age=300' );
+		return $response;
+	}
+
+	/**
+	 * GET /pages/{slug} — returns a single page payload.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_page( $request ) {
+		$slug = sanitize_text_field( $request->get_param( 'slug' ) );
+
+		if ( ! preg_match( '/^[a-z0-9_\-\/]{1,200}$/', $slug ) ) {
+			return new WP_Error(
+				'invalid_slug',
+				__( 'Invalid page slug.', 'nvoos-docs-hub' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$cache   = new NV_oOS_Docs_Hub_Cache();
+		$payload = $cache->get_page( $slug );
+
+		if ( false === $payload ) {
+			// Try to build on-demand.
+			$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
+			if ( ! empty( $result['success'] ) ) {
+				$payload = $cache->get_page( $slug );
+			}
+		}
+
+		if ( ! is_array( $payload ) ) {
+			return new WP_Error(
+				'not_found',
+				__( 'Page not found.', 'nvoos-docs-hub' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$response = rest_ensure_response( $payload );
+		$response->header( 'Cache-Control', 'public, max-age=300' );
+		return $response;
+	}
+
+	/**
+	 * GET /search — full-text search over the documentation.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function search( $request ) {
+		$q     = sanitize_text_field( $request->get_param( 'q' ) );
+		$limit = absint( $request->get_param( 'limit' ) );
+
+		if ( '' === $q ) {
+			return new WP_Error(
+				'missing_query',
+				__( 'Search query is required.', 'nvoos-docs-hub' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Enforce maximum lengths.
+		$q     = substr( $q, 0, 100 );
+		$limit = min( $limit, 50 );
+		if ( 0 === $limit ) {
+			$limit = 20;
+		}
+
+		$cache        = new NV_oOS_Docs_Hub_Cache();
+		$search_index = $cache->get_search_index();
+
+		if ( ! is_array( $search_index ) ) {
+			return rest_ensure_response( array( 'results' => array(), 'total' => 0 ) );
+		}
+
+		$results = self::run_search( $q, $limit, $search_index );
+
+		$response = rest_ensure_response(
+			array(
+				'results' => $results,
+				'total'   => count( $results ),
+				'query'   => $q,
+			)
+		);
+		$response->header( 'Cache-Control', 'public, max-age=300' );
+		return $response;
+	}
+
+	/**
+	 * POST /rebuild — triggers a full documentation rebuild.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function rebuild( $request ) {
+		// Verify nonce.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'invalid_nonce',
+				__( 'Nonce verification failed.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
+
+		if ( ! $result['success'] ) {
+			return new WP_Error(
+				'rebuild_failed',
+				__( 'Documentation rebuild failed.', 'nvoos-docs-hub' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * GET /health — returns system health information.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function health( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$cache    = new NV_oOS_Docs_Hub_Cache();
+		$manifest = $cache->get_manifest();
+
+		$total_pages  = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
+		$broken_links = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
+		$last_built   = $cache->get_last_built();
+
+		return rest_ensure_response(
+			array(
+				'total_pages'  => $total_pages,
+				'broken_links' => $broken_links,
+				'last_built'   => $last_built,
+				'version'      => NVOOS_DOCS_HUB_VERSION,
+			)
+		);
+	}
+
+	/**
+	 * Run a simple PHP-based search over the search index.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $q            Search query.
+	 * @param int    $limit        Maximum results to return.
+	 * @param array  $search_index Search index entries.
+	 * @return array
+	 */
+	private static function run_search( $q, $limit, $search_index ) {
+		$q_lower = strtolower( $q );
+		$results = array();
+
+		foreach ( $search_index as $entry ) {
+			$title   = strtolower( $entry['title'] ?? '' );
+			$excerpt = strtolower( $entry['excerpt'] ?? '' );
+			$slug    = $entry['slug'] ?? '';
+
+			$score = 0;
+
+			if ( false !== strpos( $title, $q_lower ) ) {
+				$score += 10;
+			}
+
+			if ( false !== strpos( $excerpt, $q_lower ) ) {
+				$score += 5;
+			}
+
+			if ( $score > 0 ) {
+				// Build a snippet around the match.
+				$match_pos = strpos( $excerpt, $q_lower );
+				$snippet   = $excerpt;
+				if ( false !== $match_pos ) {
+					$start   = max( 0, $match_pos - 60 );
+					$snippet = substr( $excerpt, $start, 200 );
+				}
+
+				$results[] = array(
+					'slug'        => $slug,
+					'title'       => $entry['title'],
+					'excerpt'     => $snippet,
+					'plugin_name' => $entry['plugin_name'] ?? '',
+					'source'      => $entry['source'] ?? '',
+					'score'       => $score,
+				);
+			}
+
+			if ( count( $results ) >= $limit * 3 ) {
+				break;
+			}
+		}
+
+		// Sort by score descending.
+		usort(
+			$results,
+			function ( $a, $b ) {
+				return $b['score'] - $a['score'];
+			}
+		);
+
+		return array_slice( $results, 0, $limit );
+	}
+}
