@@ -210,7 +210,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			 * Third-party plugins or model packs can add additional models
 			 * to the registry using this filter.
 			 *
-			 * @since 1.0.0
+			 * @since 0.1.0
 			 *
 			 * @param array $models Keyed by model slug.
 			 */

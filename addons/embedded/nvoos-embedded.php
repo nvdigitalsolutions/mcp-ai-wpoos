@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Embedded AI Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Embedded AI and WebChat extension for NV oOS. Enables server-side LLM inference via llama.cpp (GGUF models), client-side browser inference via WebLLM (WebGPU), and decentralised P2P WebChat rooms with WebRTC signaling. Requires NV oOS base plugin.
- * Version:     1.0.0
+ * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_EMBEDDED_VERSION', '1.0.0' );
+define( 'NVOOS_EMBEDDED_VERSION', '0.1.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_EMBEDDED_FILE', __FILE__ );
@@ -56,7 +56,7 @@ if ( is_admin() ) {
 /**
  * Check whether the NV oOS base plugin is active.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the base plugin is available.
  */
@@ -67,7 +67,7 @@ function nvoos_embedded_is_base_active() {
 /**
  * Check whether the embedded addon is fully ready.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the addon is operational.
  */

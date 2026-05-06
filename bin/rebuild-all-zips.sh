@@ -90,7 +90,7 @@ echo "   Canvas ZIPs are built by the dedicated 'Build Canvas Addon' workflow."
 echo ""
 ADDON_SKIP_CANVAS="--skip-canvas"
 fi
-"$SCRIPT_DIR/build-addon-zips.sh" --version "$VERSION" $ADDON_SKIP_CANVAS
+"$SCRIPT_DIR/build-addon-zips.sh" $ADDON_SKIP_CANVAS
 
 echo ""
 echo "=========================================="
