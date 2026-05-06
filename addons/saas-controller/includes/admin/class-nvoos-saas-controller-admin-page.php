@@ -486,8 +486,21 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			<p>
 				<button type="button" class="button" id="nvoos-saas-apply-preview"><?php esc_html_e( 'Preview Apply', 'nvoos-saas-controller' ); ?></button>
 				<button type="button" class="button button-primary" id="nvoos-saas-apply-run" disabled><?php esc_html_e( 'Apply…', 'nvoos-saas-controller' ); ?></button>
+				<button type="button" class="button" id="nvoos-saas-apply-cancel" hidden><?php esc_html_e( 'Cancel', 'nvoos-saas-controller' ); ?></button>
 				<span id="nvoos-saas-apply-status" style="margin-left:0.75em;" aria-live="polite"></span>
 			</p>
+			<p>
+				<label for="nvoos-saas-apply-background">
+					<input type="checkbox" id="nvoos-saas-apply-background" />
+					<?php esc_html_e( 'Run in background (recommended for large plans — processes one row per cron tick to avoid PHP timeouts)', 'nvoos-saas-controller' ); ?>
+				</label>
+			</p>
+			<div id="nvoos-saas-apply-progress" hidden>
+				<p>
+					<progress id="nvoos-saas-apply-progress-bar" max="100" value="0" style="width:100%;height:1.4em;"></progress>
+				</p>
+				<p id="nvoos-saas-apply-progress-text" style="margin:0;"></p>
+			</div>
 			<div id="nvoos-saas-apply-output"></div>
 		</div>
 
@@ -655,6 +668,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 
 			function renderApplyResults( result ) {
 				if ( ! result || ! result.results ) { return; }
+				while ( applyOut.firstChild ) { applyOut.removeChild( applyOut.firstChild ); }
 				var h = document.createElement( 'h3' );
 				h.textContent = <?php echo wp_json_encode( __( 'Apply Result', 'nvoos-saas-controller' ) ); ?>;
 				applyOut.appendChild( h );
@@ -709,14 +723,108 @@ class NVOOS_SaaS_Controller_Admin_Page {
 						} );
 				} );
 			}
+			var bgCheckbox = document.getElementById( 'nvoos-saas-apply-background' );
+			var cancelBtn  = document.getElementById( 'nvoos-saas-apply-cancel' );
+			var progressEl = document.getElementById( 'nvoos-saas-apply-progress' );
+			var progressBar = document.getElementById( 'nvoos-saas-apply-progress-bar' );
+			var progressText = document.getElementById( 'nvoos-saas-apply-progress-text' );
+			var pollTimer  = null;
+			var activeJobId = null;
+			var POLL_INTERVAL_MS = 2000;
+
+			function setProgressVisible( visible ) {
+				if ( progressEl ) { progressEl.hidden = ! visible; }
+			}
+			function setCancelVisible( visible ) {
+				if ( cancelBtn ) { cancelBtn.hidden = ! visible; }
+			}
+			function renderProgress( job ) {
+				if ( ! job ) { return; }
+				if ( progressBar ) { progressBar.value = Number( job.percent || 0 ); }
+				if ( progressText ) {
+					var parts = [];
+					parts.push( <?php echo wp_json_encode( __( 'Status', 'nvoos-saas-controller' ) ); ?> + ': ' + String( job.status || '' ) );
+					parts.push( String( job.processed || 0 ) + ' / ' + String( job.total || 0 ) + ' (' + String( job.percent || 0 ) + '%)' );
+					if ( job.summary ) {
+						parts.push( 'ok=' + ( job.summary.ok || 0 ) + ' err=' + ( job.summary.error || 0 ) + ' skip=' + ( job.summary.skipped || 0 ) );
+					}
+					if ( job.last_message ) { parts.push( String( job.last_message ) ); }
+					progressText.textContent = parts.join( ' · ' );
+				}
+				if ( job.results && job.results.length ) {
+					renderApplyResults( { results: job.results } );
+				}
+			}
+			function isTerminal( status ) {
+				return status === 'completed' || status === 'cancelled' || status === 'failed';
+			}
+			function stopPolling() {
+				if ( pollTimer ) { window.clearTimeout( pollTimer ); pollTimer = null; }
+			}
+			function pollJob( jobId ) {
+				wp.apiFetch( { path: 'nvoos-saas/v1/apply/jobs/' + encodeURIComponent( jobId ), method: 'GET' } )
+					.then( function ( resp ) {
+						var job = resp && resp.job;
+						renderProgress( job );
+						if ( job && isTerminal( job.status ) ) {
+							stopPolling();
+							setCancelVisible( false );
+							activeJobId = null;
+							if ( applyMsg ) {
+								applyMsg.textContent = ( job.status === 'completed' )
+									? <?php echo wp_json_encode( __( 'Background apply complete.', 'nvoos-saas-controller' ) ); ?>
+									: ( job.status === 'cancelled' )
+										? <?php echo wp_json_encode( __( 'Background apply cancelled.', 'nvoos-saas-controller' ) ); ?>
+										: <?php echo wp_json_encode( __( 'Background apply finished with errors — see results.', 'nvoos-saas-controller' ) ); ?>;
+							}
+							return;
+						}
+						pollTimer = window.setTimeout( function () { pollJob( jobId ); }, POLL_INTERVAL_MS );
+					} )
+					.catch( function ( err ) {
+						stopPolling();
+						setCancelVisible( false );
+						activeJobId = null;
+						if ( applyMsg ) { applyMsg.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Lost contact with apply job.', 'nvoos-saas-controller' ) ); ?>; }
+					} );
+			}
+
 			if ( applyBtn ) {
 				applyBtn.addEventListener( 'click', function () {
 					if ( ! pendingToken ) { return; }
 					if ( ! window.confirm( <?php echo wp_json_encode( __( 'Apply the previewed plan to Cloudflare? This will create live resources.', 'nvoos-saas-controller' ) ); ?> ) ) { return; }
 					applyBtn.disabled = true;
-					if ( applyMsg ) { applyMsg.textContent = <?php echo wp_json_encode( __( 'Applying…', 'nvoos-saas-controller' ) ); ?>; }
+					var runInBackground = bgCheckbox && bgCheckbox.checked;
+					if ( applyMsg ) {
+						applyMsg.textContent = runInBackground
+							? <?php echo wp_json_encode( __( 'Enqueuing background apply…', 'nvoos-saas-controller' ) ); ?>
+							: <?php echo wp_json_encode( __( 'Applying…', 'nvoos-saas-controller' ) ); ?>;
+					}
 					var token = pendingToken;
 					pendingToken = null;
+					if ( runInBackground ) {
+						setProgressVisible( true );
+						wp.apiFetch( {
+							path:   'nvoos-saas/v1/apply/enqueue',
+							method: 'POST',
+							data:   { apply_token: token }
+						} )
+							.then( function ( resp ) {
+								var job = resp && resp.job;
+								if ( ! job || ! job.id ) {
+									if ( applyMsg ) { applyMsg.textContent = <?php echo wp_json_encode( __( 'Enqueue failed: no job id returned.', 'nvoos-saas-controller' ) ); ?>; }
+									return;
+								}
+								activeJobId = job.id;
+								setCancelVisible( true );
+								renderProgress( job );
+								pollJob( job.id );
+							} )
+							.catch( function ( err ) {
+								if ( applyMsg ) { applyMsg.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Enqueue failed.', 'nvoos-saas-controller' ) ); ?>; }
+							} );
+						return;
+					}
 					wp.apiFetch( {
 						path:   'nvoos-saas/v1/apply/run',
 						method: 'POST',
@@ -732,6 +840,23 @@ class NVOOS_SaaS_Controller_Admin_Page {
 						} )
 						.catch( function ( err ) {
 							if ( applyMsg ) { applyMsg.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Apply failed.', 'nvoos-saas-controller' ) ); ?>; }
+						} );
+				} );
+			}
+			if ( cancelBtn ) {
+				cancelBtn.addEventListener( 'click', function () {
+					if ( ! activeJobId ) { return; }
+					if ( ! window.confirm( <?php echo wp_json_encode( __( 'Cancel this background apply? An already-firing tick will finish its current row first.', 'nvoos-saas-controller' ) ); ?> ) ) { return; }
+					var jobId = activeJobId;
+					cancelBtn.disabled = true;
+					wp.apiFetch( { path: 'nvoos-saas/v1/apply/jobs/' + encodeURIComponent( jobId ) + '/cancel', method: 'POST' } )
+						.then( function ( resp ) {
+							cancelBtn.disabled = false;
+							if ( resp && resp.job ) { renderProgress( resp.job ); }
+						} )
+						.catch( function ( err ) {
+							cancelBtn.disabled = false;
+							if ( applyMsg ) { applyMsg.textContent = ( err && err.message ) ? String( err.message ) : <?php echo wp_json_encode( __( 'Cancel failed.', 'nvoos-saas-controller' ) ); ?>; }
 						} );
 				} );
 			}
