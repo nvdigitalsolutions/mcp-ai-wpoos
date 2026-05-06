@@ -111,7 +111,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	 */
 	public static function get_table_name() {
 		global $wpdb;
-		return $wpdb->prefix . 'jet-cct-' . self::SLUG;
+		return $wpdb->prefix . 'jet_cct_' . self::SLUG;
 	}
 
 	/**
@@ -166,7 +166,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$existing_id = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
+						"SELECT _ID FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
 						$channel,
 						$channel_contact_id,
 						$connection_id
@@ -184,7 +184,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$legacy_id = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
+						"SELECT _ID FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
 						$channel,
 						$channel_contact_id
 					)
@@ -210,7 +210,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$existing_id = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+						"SELECT _ID FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
 						$channel,
 						$channel_contact_id
 					)
@@ -303,7 +303,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 		$table = self::get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT tags FROM {$table} WHERE _ID = %d LIMIT 1", absint( $contact_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT tags FROM `{$table}` WHERE _ID = %d LIMIT 1", absint( $contact_id ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( ! $row ) {
 			return;
 		}
@@ -388,7 +388,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			$result = $wpdb->get_var(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
+					"SELECT human_takeover FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
 					$channel,
 					$contact_id,
 					$connection_id
@@ -402,7 +402,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				$result = $wpdb->get_var(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+						"SELECT human_takeover FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
 						$channel,
 						$contact_id
 					)
@@ -413,7 +413,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			$result = $wpdb->get_var(
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+					"SELECT human_takeover FROM `{$table}` WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
 					$channel,
 					$contact_id
 				)

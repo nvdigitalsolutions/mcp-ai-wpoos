@@ -82,10 +82,10 @@ class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_apply_prompt_cue_missing_slugs', __( 'At least one cue_slugs entry is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$library      = WP_MCP_AI_Prompt_Cue_Library::get_instance();
-		$augmented    = $library->apply( $system_prompt, $cue_slugs );
-		$applied      = array();
-		$skipped      = array();
+		$library   = WP_MCP_AI_Prompt_Cue_Library::get_instance();
+		$augmented = $library->apply( $system_prompt, $cue_slugs );
+		$applied   = array();
+		$skipped   = array();
 		foreach ( $cue_slugs as $slug ) {
 			if ( null !== $library->get( $slug ) ) {
 				$applied[] = $slug;
@@ -95,10 +95,10 @@ class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'success'        => true,
-			'system_prompt'  => $augmented,
-			'applied_cues'   => $applied,
-			'skipped_cues'   => $skipped,
+			'success'       => true,
+			'system_prompt' => $augmented,
+			'applied_cues'  => $applied,
+			'skipped_cues'  => $skipped,
 		);
 	}
 

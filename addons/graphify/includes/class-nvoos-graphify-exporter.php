@@ -39,10 +39,10 @@ class NV_oOS_Graphify_Exporter {
 
 		$nodes = NV_oOS_Graphify_DB::list_nodes(
 			array(
-				'limit'       => $max_nodes,
-				'order_by'    => 'degree',
-				'order'       => 'DESC',
-				'community_id'=> isset( $args['community_id'] ) ? sanitize_text_field( $args['community_id'] ) : '',
+				'limit'        => $max_nodes,
+				'order_by'     => 'degree',
+				'order'        => 'DESC',
+				'community_id' => isset( $args['community_id'] ) ? sanitize_text_field( $args['community_id'] ) : '',
 			)
 		);
 
@@ -141,11 +141,11 @@ class NV_oOS_Graphify_Exporter {
 		$cy_json     = wp_json_encode( $cy_elements );
 		$title       = esc_html__( 'Knowledge Graph Export', 'nvoos-graphify' );
 
-		$vendor_url       = esc_url( NVOOS_GRAPHIFY_URL . 'assets/vendor/' );
-		$layout_base_src  = $vendor_url . 'layout-base/layout-base.js';
-		$cose_base_src    = $vendor_url . 'cose-base/cose-base.js';
-		$cytoscape_src    = $vendor_url . 'cytoscape/cytoscape.min.js';
-		$fcose_src        = $vendor_url . 'cytoscape-fcose/cytoscape-fcose.js';
+		$vendor_url      = esc_url( NVOOS_GRAPHIFY_URL . 'assets/vendor/' );
+		$layout_base_src = $vendor_url . 'layout-base/layout-base.js';
+		$cose_base_src   = $vendor_url . 'cose-base/cose-base.js';
+		$cytoscape_src   = $vendor_url . 'cytoscape/cytoscape.min.js';
+		$fcose_src       = $vendor_url . 'cytoscape-fcose/cytoscape-fcose.js';
 
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone export file, not a WP page.
 		return <<<HTML
@@ -275,26 +275,30 @@ HTML;
 	private static function to_csv( array $nodes, array $edges ) {
 		$nodes_csv = "node_id,label,type,post_id,url,degree,community_id\n";
 		foreach ( $nodes as $n ) {
-			$nodes_csv .= self::csv_row( array(
-				$n->node_id,
-				$n->label,
-				$n->type,
-				$n->post_id,
-				$n->url,
-				$n->degree,
-				$n->community_id,
-			) );
+			$nodes_csv .= self::csv_row(
+				array(
+					$n->node_id,
+					$n->label,
+					$n->type,
+					$n->post_id,
+					$n->url,
+					$n->degree,
+					$n->community_id,
+				)
+			);
 		}
 
 		$edges_csv = "source_node_id,target_node_id,relation,confidence,provenance\n";
 		foreach ( $edges as $e ) {
-			$edges_csv .= self::csv_row( array(
-				$e->source_node_id,
-				$e->target_node_id,
-				$e->relation,
-				$e->confidence,
-				$e->provenance,
-			) );
+			$edges_csv .= self::csv_row(
+				array(
+					$e->source_node_id,
+					$e->target_node_id,
+					$e->relation,
+					$e->confidence,
+					$e->provenance,
+				)
+			);
 		}
 
 		return array(
@@ -335,7 +339,7 @@ HTML;
 	 * @return string Cypher script.
 	 */
 	private static function to_neo4j( array $nodes, array $edges ) {
-		$cypher = "// NV oOS Graphify — Neo4j Cypher export\n";
+		$cypher  = "// NV oOS Graphify — Neo4j Cypher export\n";
 		$cypher .= '// Generated: ' . gmdate( 'c' ) . "\n\n";
 
 		foreach ( $nodes as $n ) {
@@ -352,7 +356,7 @@ HTML;
 			$rel     = strtoupper( sanitize_key( str_replace( array( '-', ' ', '.' ), '_', $e->relation ) ) );
 			$cypher .= 'MATCH (s {node_id: ' . wp_json_encode( $e->source_node_id ) . '}), '
 				. '(t {node_id: ' . wp_json_encode( $e->target_node_id ) . '}) '
-				. "CREATE (s)-[:`{$rel}` {confidence: " . floatval( $e->confidence ) . ", provenance: " . wp_json_encode( $e->provenance ) . "}]->(t);\n";
+				. "CREATE (s)-[:`{$rel}` {confidence: " . floatval( $e->confidence ) . ', provenance: ' . wp_json_encode( $e->provenance ) . "}]->(t);\n";
 		}
 
 		return $cypher;
@@ -377,7 +381,7 @@ HTML;
 		// Group nodes by community.
 		$by_community = array();
 		foreach ( $nodes as $n ) {
-			$cid = $n->community_id ? sanitize_key( $n->community_id ) : 'uncategorized';
+			$cid                    = $n->community_id ? sanitize_key( $n->community_id ) : 'uncategorized';
 			$by_community[ $cid ][] = $n;
 		}
 
@@ -387,8 +391,8 @@ HTML;
 			$adjacency[ $e->source_node_id ][] = $e->target_node_id;
 		}
 
-		$files     = array();
-		$node_map  = array();
+		$files    = array();
+		$node_map = array();
 		foreach ( $nodes as $n ) {
 			$node_map[ $n->node_id ] = $n;
 		}
@@ -439,7 +443,7 @@ HTML;
 		}
 
 		global $wpdb;
-		$edges_table = NV_oOS_Graphify_DB::edges_table();
+		$edges_table  = NV_oOS_Graphify_DB::edges_table();
 		$placeholders = implode( ',', array_fill( 0, count( $node_ids ), '%s' ) );
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
@@ -462,7 +466,7 @@ HTML;
 	 * @return array Cytoscape elements array.
 	 */
 	private static function build_cytoscape_elements( array $nodes, array $edges ) {
-		$palette = array( '#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#2980b9','#27ae60','#c0392b' );
+		$palette     = array( '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#2980b9', '#27ae60', '#c0392b' );
 		$type_colors = array();
 		$type_index  = 0;
 
@@ -471,7 +475,7 @@ HTML;
 			$type = $n->type;
 			if ( ! isset( $type_colors[ $type ] ) ) {
 				$type_colors[ $type ] = $palette[ $type_index % count( $palette ) ];
-				$type_index++;
+				++$type_index;
 			}
 			$elements[] = array(
 				'data' => array(

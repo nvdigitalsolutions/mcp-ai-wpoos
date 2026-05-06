@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interf
 
 		foreach ( $standings as $team ) {
 			$formatted_standings[] = $this->format_standing( $team, $rank );
-			$rank++;
+			++$rank;
 		}
 
 		/* translators: %d: number of teams */

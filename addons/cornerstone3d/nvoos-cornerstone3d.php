@@ -3,24 +3,25 @@
  * Plugin Name: NV oOS Cornerstone3D Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Pre-built Cornerstone3D ESM bundles for the NV oOS Pro Medical Imaging Viewer. Eliminates the runtime CDN dependency by providing locally-vendored JavaScript modules for DICOM rendering. Requires NV oOS Pro addon to be installed and active.
- * Version:     1.0.0
+ * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: Proprietary
+ * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: nvoos-cornerstone3d
  * Domain Path: /languages
  *
  * @package NV_oOS_Cornerstone3D
  *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * All rights reserved. This is proprietary software.
  *
- * The bundled Cornerstone3D ESM bundles are MIT-licensed.
- * See assets/cornerstone/vendor-meta.json for package versions.
+ * The bundled Cornerstone3D ESM bundles retain their upstream MIT license.
+ * See assets/cornerstone/vendor-meta.json for package versions and CREDITS.md
+ * at the repository root for the full attribution index.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -28,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_CORNERSTONE3D_VERSION', '1.0.0' );
+define( 'NVOOS_CORNERSTONE3D_VERSION', '0.1.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_CORNERSTONE3D_FILE', __FILE__ );

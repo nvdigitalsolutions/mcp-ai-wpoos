@@ -337,4 +337,4 @@ If `shell_exec` appears in the disabled functions list, it's not available.
 
 **Last Updated**: January 24, 2026  
 **Plugin Version**: 1.1.0+  
-**License**: GPLv3 or later
+**License**: Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved.

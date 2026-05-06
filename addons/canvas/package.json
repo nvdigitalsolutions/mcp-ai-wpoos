@@ -1,6 +1,6 @@
 {
 	"name": "nvoos-canvas-addon",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"description": "Build scripts for the NV oOS Canvas Addon WordPress plugin",
 	"private": true,
 	"scripts": {

@@ -3239,6 +3239,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$iteration             = 0;
 			$tool_result_messages  = array();
 			$agentic_tool_messages = array();
+			$native_streaming_used = false; // True when LM Studio real-time SSE streaming is active.
 
 			// Send status for attachment processing if attachments are present.
 			// This provides user feedback when images or documents are being analyzed.
@@ -3313,6 +3314,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 			$messages = $preflight['messages'];
 			$options  = $preflight['options'];
+
+			// Resolved provider slug, used for LM Studio native streaming checks below.
+			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+
+			// Enable LM Studio real-time SSE streaming: inject stream_callback so that
+			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each
+			// content/reasoning token to the browser as it is generated.
+			if ( function_exists( 'curl_init' ) && 'lm_studio' === $resolved_provider ) {
+				$native_streaming_used      = true;
+				$options['stream']          = true;
+				$options['stream_callback'] = function ( $chunk ) {
+					$this->send_sse_event( 'message', $chunk );
+				};
+			}
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -3404,6 +3419,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->finish_sse();
 				return;
 			}
+
+			// Remove native-streaming options to prevent them from leaking to a
+			// different provider if a TPM-triggered model switch occurs in the loop.
+			unset( $options['stream'], $options['stream_callback'] );
 
 			// Agentic loop with streaming updates.
 			while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
@@ -3769,7 +3788,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Call LLM again with tool results.
+				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
+				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
+					$options['stream']          = true;
+					$options['stream_callback'] = function ( $chunk ) {
+						$this->send_sse_event( 'message', $chunk );
+					};
+				}
 				$response = $this->client->create_chat_completion( $messages, $options );
+				unset( $options['stream'], $options['stream_callback'] );
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
@@ -3884,7 +3912,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
-			if ( is_string( $thinking_text ) && '' !== $thinking_text ) {
+			// Skip when LM Studio native streaming was active — reasoning tokens were
+			// already forwarded in real time via the stream_callback.
+			if ( ! $native_streaming_used && is_string( $thinking_text ) && '' !== $thinking_text ) {
 				// Format thinking chunks based on provider for optimal client compatibility.
 				if ( 'openai' === $thinking_provider_format ) {
 					// Use OpenAI format for reasoning fields.
@@ -3968,7 +3998,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Send text content in chunks to simulate streaming (for better UX).
-			if ( is_string( $text_content ) && '' !== $text_content ) {
+			// Skip when LM Studio native streaming was active — content tokens were
+			// already forwarded in real time via the stream_callback.
+			if ( ! $native_streaming_used && is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
 				$content_formatter = function ( $chunk ) {
 					return array(
@@ -3983,7 +4015,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				};
 
 				$this->stream_text_chunks( $text_content, $content_formatter, 'text', $assistant_id );
-			} else {
+			} elseif ( ! $native_streaming_used ) {
 				// Log when no chunks are sent (helps diagnose streaming issues).
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -8282,7 +8314,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return '';
 			}
 
-			return $wpdb->prefix . 'jet-cct-' . $slug;
+			return $wpdb->prefix . 'jet_cct_' . $slug;
 		}
 
 		/**
@@ -8509,7 +8541,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-			// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant slug.
+			// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant slug.
 			$table = esc_sql( $this->get_transcript_table_name() );
 
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql() above.

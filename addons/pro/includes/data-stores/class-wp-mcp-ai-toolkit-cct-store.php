@@ -79,8 +79,10 @@ class WP_MCP_AI_Toolkit_CCT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 		$this->cct_module    = $this->get_cct_module();
 		$this->field_id_base = $this->get_field_id_base();
 
-		// Register the CCT if JetEngine is available.
-		add_action( 'init', array( $this, 'maybe_register_cct' ), 0 );
+		// Register the CCT if JetEngine is available. JetEngine's CCT module
+		// hydrates its table cache on `init` at priorities 1-10; priority 11
+		// is the safe window that runs after JetEngine has finished.
+		add_action( 'init', array( $this, 'maybe_register_cct' ), 11 );
 	}
 
 	/**

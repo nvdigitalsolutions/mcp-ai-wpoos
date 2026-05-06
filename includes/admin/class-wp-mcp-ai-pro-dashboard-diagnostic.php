@@ -138,15 +138,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 				$pro_dashboard_registered = isset( $wp_scripts->registered['wp-mcp-ai-pro-dashboard'] );
 
 				$results['tests']['scripts_registered'] = array(
-					'name'          => 'Scripts Registered',
-					'status'        => ( $chartjs_registered && $pro_dashboard_registered ) ? 'pass' : 'warning',
-					'message'       => sprintf(
+					'name'              => 'Scripts Registered',
+					'status'            => ( $chartjs_registered && $pro_dashboard_registered ) ? 'pass' : 'warning',
+					'message'           => sprintf(
 						'Chart.js: %s, Pro Dashboard: %s',
 						$chartjs_registered ? 'registered' : 'not registered',
 						$pro_dashboard_registered ? 'registered' : 'not registered'
 					),
-					'wp-mcp-ai-chartjs'       => $chartjs_registered,
-					'pro_dashboard' => $pro_dashboard_registered,
+					'wp-mcp-ai-chartjs' => $chartjs_registered,
+					'pro_dashboard'     => $pro_dashboard_registered,
 				);
 			}
 

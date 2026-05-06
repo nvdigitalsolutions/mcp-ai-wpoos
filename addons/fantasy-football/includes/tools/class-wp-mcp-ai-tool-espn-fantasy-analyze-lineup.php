@@ -208,14 +208,14 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 			}
 		);
 		// Safely calculate score, ensuring we have valid arrays before using array_sum and array_column.
-		$actual_points   = is_array( $actual_starters ) ? array_column( $actual_starters, 'points' ) : array();
-		$actual_score    = is_array( $actual_points ) ? array_sum( $actual_points ) : 0;
+		$actual_points = is_array( $actual_starters ) ? array_column( $actual_starters, 'points' ) : array();
+		$actual_score  = is_array( $actual_points ) ? array_sum( $actual_points ) : 0;
 
 		// Calculate optimal lineup.
-		$optimal_lineup  = $this->calculate_optimal_lineup( $all_players, $roster_requirements );
+		$optimal_lineup = $this->calculate_optimal_lineup( $all_players, $roster_requirements );
 		// Safely calculate optimal score, ensuring we have valid arrays.
-		$optimal_points  = is_array( $optimal_lineup ) ? array_column( $optimal_lineup, 'points' ) : array();
-		$optimal_score   = is_array( $optimal_points ) ? array_sum( $optimal_points ) : 0;
+		$optimal_points = is_array( $optimal_lineup ) ? array_column( $optimal_lineup, 'points' ) : array();
+		$optimal_score  = is_array( $optimal_points ) ? array_sum( $optimal_points ) : 0;
 
 		// Find changes needed.
 		$changes = $this->find_lineup_changes( $actual_starters, $optimal_lineup );
@@ -261,8 +261,8 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 			}
 		}
 
-		$position_id  = isset( $player['defaultPositionId'] ) ? absint( $player['defaultPositionId'] ) : 0;
-		$lineup_slot  = isset( $entry['lineupSlotId'] ) ? absint( $entry['lineupSlotId'] ) : 20;
+		$position_id        = isset( $player['defaultPositionId'] ) ? absint( $player['defaultPositionId'] ) : 0;
+		$lineup_slot        = isset( $entry['lineupSlotId'] ) ? absint( $entry['lineupSlotId'] ) : 20;
 		$eligible_positions = $this->get_eligible_positions( $position_id );
 
 		return array(
@@ -313,9 +313,9 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 			}
 		);
 
-		$lineup   = array();
-		$used     = array();
-		$slots    = $roster_requirements;
+		$lineup = array();
+		$used   = array();
+		$slots  = $roster_requirements;
 
 		// Fill dedicated position slots first.
 		foreach ( array( 'QB', 'TE', 'D/ST', 'K' ) as $position ) {
@@ -330,8 +330,8 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 					}
 
 					if ( $player['position'] === $position ) {
-						$lineup[]  = $player;
-						$used[]    = $idx;
+						$lineup[] = $player;
+						$used[]   = $idx;
 						break;
 					}
 				}
@@ -347,8 +347,8 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 					}
 
 					if ( $player['position'] === 'RB' ) {
-						$lineup[]  = $player;
-						$used[]    = $idx;
+						$lineup[] = $player;
+						$used[]   = $idx;
 						break;
 					}
 				}
@@ -364,8 +364,8 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 					}
 
 					if ( $player['position'] === 'WR' ) {
-						$lineup[]  = $player;
-						$used[]    = $idx;
+						$lineup[] = $player;
+						$used[]   = $idx;
 						break;
 					}
 				}
@@ -398,9 +398,9 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 	 * @return array Suggested changes.
 	 */
 	protected function find_lineup_changes( $actual, $optimal ) {
-		$changes          = array();
-		$actual_names     = array_column( $actual, 'name' );
-		$optimal_names    = array_column( $optimal, 'name' );
+		$changes       = array();
+		$actual_names  = array_column( $actual, 'name' );
+		$optimal_names = array_column( $optimal, 'name' );
 
 		// Find players who should have been benched.
 		$should_bench = array_diff( $actual_names, $optimal_names );

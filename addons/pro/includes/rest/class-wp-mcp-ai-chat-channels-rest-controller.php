@@ -368,13 +368,13 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$where_sql = implode( ' AND ', $where );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", $values ) );
+		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE {$where_sql}", $values ) );
 
 		$values[] = $per_page;
 		$values[] = $offset;
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY last_message_at DESC LIMIT %d OFFSET %d", $values ), ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE {$where_sql} ORDER BY last_message_at DESC LIMIT %d OFFSET %d", $values ), ARRAY_A );
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
@@ -547,7 +547,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$where_sql = implode( ' AND ', $where );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY last_message_at DESC", $values ), ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE {$where_sql} ORDER BY last_message_at DESC", $values ), ARRAY_A );
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
@@ -724,7 +724,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// before the schema was extended). The isset() check below handles the
 		// missing key gracefully.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$contacts_table}` WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( ! empty( $contact ) && '' !== (string) $contact['channel'] && '' !== (string) $contact['channel_contact_id'] ) {
 			$channel            = (string) $contact['channel'];
 			$channel_contact_id = (string) $contact['channel_contact_id'];
@@ -772,7 +772,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// Use SELECT * so the query succeeds even if the optional connection_id
 		// column has not been added yet (older installations).
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$contacts_table}` WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( empty( $contact ) ) {
 			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
@@ -792,7 +792,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = '' OR connection_id IS NULL)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+					"SELECT COUNT(*) FROM `{$messages_table}` WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = '' OR connection_id IS NULL)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 					$contact['channel'],
 					$contact['channel_contact_id'],
 					$scope_connection_id
@@ -802,7 +802,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = '' OR connection_id IS NULL) ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+					"SELECT * FROM `{$messages_table}` WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = '' OR connection_id IS NULL) ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 					$contact['channel'],
 					$contact['channel_contact_id'],
 					$scope_connection_id,
@@ -815,7 +815,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+					"SELECT COUNT(*) FROM `{$messages_table}` WHERE channel = %s AND channel_contact_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 					$contact['channel'],
 					$contact['channel_contact_id']
 				)
@@ -824,7 +824,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+					"SELECT * FROM `{$messages_table}` WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 					$contact['channel'],
 					$contact['channel_contact_id'],
 					$per_page,
@@ -953,7 +953,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = '' OR connection_id IS NULL) ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM `{$messages_table}` WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = '' OR connection_id IS NULL) ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$channel,
 					$channel_contact_id,
 					$connection_id
@@ -964,7 +964,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM `{$messages_table}` WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$channel,
 					$channel_contact_id
 				),
@@ -1122,7 +1122,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			global $wpdb;
 			$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+			$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$contacts_table}` WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
 		}
 
 		if ( empty( $contact ) && $cpt_available ) {
@@ -1425,13 +1425,13 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$where_sql = implode( ' AND ', $where );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", $values ) );
+		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE {$where_sql}", $values ) );
 
 		$values[] = $per_page;
 		$values[] = $offset;
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY last_message_at DESC LIMIT %d OFFSET %d", $values ), ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE {$where_sql} ORDER BY last_message_at DESC LIMIT %d OFFSET %d", $values ), ARRAY_A );
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {

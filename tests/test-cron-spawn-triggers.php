@@ -193,6 +193,53 @@ class Test_Cron_Spawn_Triggers extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that transcript mining job triggers spawn_cron() on enqueue.
+	 */
+	public function test_transcript_mining_job_triggers_spawn_cron() {
+		$file_content = file_get_contents(
+			WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-transcript-mining-job.php'
+		);
+
+		$this->assertStringContainsString(
+			'spawn_cron()',
+			$file_content,
+			'Transcript mining job should call spawn_cron()'
+		);
+
+		// Verify spawn_cron() is called at least twice: once in enqueue() and
+		// once in handle_tick() for the re-schedule path.
+		$count = substr_count( $file_content, 'spawn_cron()' );
+		$this->assertGreaterThanOrEqual(
+			2,
+			$count,
+			'spawn_cron() should be called in both enqueue() and handle_tick() re-schedule'
+		);
+	}
+
+	/**
+	 * Test that transcript mining job schedules in the immediate past so spawn_cron() fires it.
+	 */
+	public function test_transcript_mining_job_schedules_in_past() {
+		$file_content = file_get_contents(
+			WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-transcript-mining-job.php'
+		);
+
+		// Must use time() - 1, not time() + 1, so wp_get_ready_cron_jobs() returns
+		// the event and spawn_cron() can dispatch it immediately.
+		$this->assertStringContainsString(
+			'time() - 1',
+			$file_content,
+			'Transcript mining job must schedule in the immediate past for spawn_cron() to pick it up'
+		);
+
+		$this->assertStringNotContainsString(
+			'time() + 1',
+			$file_content,
+			'Transcript mining job must not schedule in the future (spawn_cron() would skip it)'
+		);
+	}
+
+	/**
 	 * Test that job notifier triggers spawn_cron().
 	 */
 	public function test_job_notifier_triggers_spawn_cron() {

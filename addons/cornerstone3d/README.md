@@ -56,7 +56,7 @@ This downloads the npm packages and bundles them with esbuild into ESM modules.
 
 ## License
 
-GPLv3 or later. The bundled Cornerstone3D libraries are MIT-licensed.
+Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved. The bundled Cornerstone3D libraries retain their upstream MIT license.
 
 ## Credits
 

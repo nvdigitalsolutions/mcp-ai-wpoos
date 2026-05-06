@@ -3940,13 +3940,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Extract post_id before nonce verification to construct proper nonce action.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2506.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after.
 			$post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0;
 			if ( ! $post_id ) {
 				wp_die( esc_html__( 'Invalid assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
 			}
 
-			check_admin_referer( 'wp_mcp_ai_issue_credential_' . $post_id, 'wp_mcp_ai_issue_nonce' );
+			check_admin_referer( 'wp_mcp_ai_issue_credential_' . $post_id, 'wp_mcp_ai_issue_credential_nonce' );
 
 			$post = get_post( $post_id );
 			if ( ! $post || self::POST_TYPE !== $post->post_type ) {
@@ -3991,7 +3991,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'Invalid credential request.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
 			}
 
-			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential_id );
+			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_credential_nonce', $credential_id );
 
 			check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
@@ -4028,7 +4028,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'Invalid credential request.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
 			}
 
-			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential_id );
+			$nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_credential_nonce', $credential_id );
 
 			check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 

@@ -12,6 +12,7 @@
  *   TAGGED_WITH         — post → tag / custom taxonomy term
  *   AUTHORED_BY         — post → author user
  *   HAS_FEATURED_IMAGE  — post → attachment
+ *   (plus per-row edges from nvoos_graphify_emit_cct_edges and ext table FK edges)
  *
  * @package NV_oOS_Graphify
  * @since   0.5.0
@@ -49,18 +50,33 @@ class NV_oOS_Graphify_Structural_Extractor {
 		// Build post nodes.
 		foreach ( $detected['posts'] as $post ) {
 			$node_id = NV_oOS_Graphify_Detector::post_node_id( $post->ID, $post->post_type );
+
+			/**
+			 * Filter the content used for hashing / semantic extraction for a post.
+			 *
+			 * Return non-empty string to override `post_content`. Used by the NV oOS
+			 * bridge to swap in system-prompt meta for `mcp_ai_assistant`, run-summary
+			 * meta for `mcp_ai_workflow_run`, etc.
+			 *
+			 * @since 0.8.0
+			 *
+			 * @param string  $content Current post content.
+			 * @param WP_Post $post    The post.
+			 */
+			$post_content = (string) apply_filters( 'nvoos_graphify_post_content_resolver', $post->post_content, $post );
+
 			$nodes[] = array(
-				'node_id'    => $node_id,
-				'label'      => $post->post_title,
-				'type'       => $post->post_type,
-				'post_id'    => $post->ID,
-				'url'        => get_permalink( $post->ID ),
-				'properties' => array(
+				'node_id'      => $node_id,
+				'label'        => $post->post_title,
+				'type'         => $post->post_type,
+				'post_id'      => $post->ID,
+				'url'          => get_permalink( $post->ID ),
+				'properties'   => array(
 					'post_status' => $post->post_status,
 					'post_date'   => $post->post_date,
 					'modified'    => $post->post_modified,
 				),
-				'content_hash' => hash( 'sha256', $post->post_content . $post->post_title ),
+				'content_hash' => hash( 'sha256', $post_content . $post->post_title ),
 			);
 
 			// --- AUTHORED_BY ---
@@ -191,7 +207,7 @@ class NV_oOS_Graphify_Structural_Extractor {
 					}
 				}
 
-				$content_source = self::resolve_cct_content( $item );
+				$content_source = self::resolve_cct_content( $item, $slug );
 
 				$nodes[] = array(
 					'node_id'      => $node_id,
@@ -213,6 +229,60 @@ class NV_oOS_Graphify_Structural_Extractor {
 						'confidence'     => 1.0,
 						'provenance'     => 'EXTRACTED',
 					);
+				}
+
+				/**
+				 * Filter per-CCT-row to allow bridges to emit extra structural edges.
+				 *
+				 * Third-party addons (and the NV oOS bridge) hook this filter to
+				 * add domain-specific edges (MemPalace wing/room/agent, transcript
+				 * assistant relationships, etc.) alongside the generic AUTHORED_BY
+				 * edge emitted above.
+				 *
+				 * @since 0.8.0
+				 *
+				 * @param array[]  $extra_edges  Edges to merge; initially empty.
+				 * @param string   $slug         CCT slug.
+				 * @param array    $item         CCT row (associative array).
+				 * @param string   $node_id      Node ID for this CCT item.
+				 */
+				$extra_edges = apply_filters( 'nvoos_graphify_emit_cct_edges', array(), $slug, $item, $node_id );
+				if ( is_array( $extra_edges ) && ! empty( $extra_edges ) ) {
+					foreach ( $extra_edges as $extra_edge ) {
+						if ( is_array( $extra_edge )
+							&& ! empty( $extra_edge['source_node_id'] )
+							&& ! empty( $extra_edge['target_node_id'] )
+						) {
+							$edges[] = $extra_edge;
+						}
+					}
+				}
+			}
+		}
+
+		// Build external $wpdb table nodes.
+		if ( ! empty( $detected['external'] ) && is_array( $detected['external'] ) ) {
+			foreach ( $detected['external'] as $ext_row ) {
+				if ( empty( $ext_row['node_id'] ) || empty( $ext_row['node_type'] ) ) {
+					continue;
+				}
+				$nodes[] = array(
+					'node_id'      => $ext_row['node_id'],
+					'label'        => isset( $ext_row['label'] ) ? (string) $ext_row['label'] : $ext_row['node_id'],
+					'type'         => $ext_row['node_type'],
+					'post_id'      => 0,
+					'url'          => '',
+					'properties'   => isset( $ext_row['properties'] ) ? (array) $ext_row['properties'] : array(),
+					'content_hash' => hash( 'sha256', isset( $ext_row['label'] ) ? (string) $ext_row['label'] : $ext_row['node_id'] ),
+				);
+
+				// Emit FK edges.
+				if ( ! empty( $ext_row['fk_edges'] ) && is_array( $ext_row['fk_edges'] ) ) {
+					foreach ( $ext_row['fk_edges'] as $fk_edge ) {
+						if ( is_array( $fk_edge ) && ! empty( $fk_edge['source_node_id'] ) && ! empty( $fk_edge['target_node_id'] ) ) {
+							$edges[] = $fk_edge;
+						}
+					}
 				}
 			}
 		}
@@ -241,6 +311,24 @@ class NV_oOS_Graphify_Structural_Extractor {
 	 */
 	public static function resolve_cct_label( $slug, array $item, $type_name = '' ) {
 		$slug = sanitize_key( $slug );
+
+		/**
+		 * Short-circuit hook: override label resolution entirely for a CCT slug.
+		 *
+		 * Return a non-empty string to bypass the field-list scan below.
+		 * Useful for types whose label must be synthesized from multiple columns
+		 * or decoded from a JSON envelope (e.g. `ai_chat_transcripts`).
+		 *
+		 * @since 0.8.0
+		 *
+		 * @param string $label     '' on first invocation (signals "not yet resolved").
+		 * @param string $slug      CCT slug.
+		 * @param array  $item      CCT item row (associative array).
+		 */
+		$resolved_early = (string) apply_filters( 'nvoos_graphify_cct_resolve_label', '', $slug, $item );
+		if ( '' !== $resolved_early ) {
+			return $resolved_early;
+		}
 
 		$label_fields = array( '_title', 'title', 'name', 'cct_name', 'label' );
 		/**
@@ -287,10 +375,32 @@ class NV_oOS_Graphify_Structural_Extractor {
 	 *
 	 * @since 0.7.1
 	 *
-	 * @param array $item CCT item row (associative array).
+	 * @param array  $item CCT item row (associative array).
+	 * @param string $slug Optional CCT slug (sanitised). Added in 0.8.0 to
+	 *                     enable the slug-aware resolver hook.
 	 * @return string Content text, or '' when no content-like column is populated.
 	 */
-	public static function resolve_cct_content( array $item ) {
+	public static function resolve_cct_content( array $item, $slug = '' ) {
+		$slug = sanitize_key( (string) $slug );
+
+		/**
+		 * Short-circuit hook: override content resolution entirely for a CCT item.
+		 *
+		 * Implementations can inspect `$item` to determine the slug and return
+		 * decoded/synthesized content. Return a non-empty string to skip the
+		 * field-list scan below.
+		 *
+		 * @since 0.8.0
+		 *
+		 * @param string $content '' on first invocation (signals "not yet resolved").
+		 * @param string $slug    CCT slug (may be empty when called without slug param).
+		 * @param array  $item    CCT item row (associative array).
+		 */
+		$resolved_early = (string) apply_filters( 'nvoos_graphify_cct_resolve_content', '', $slug, $item );
+		if ( '' !== $resolved_early ) {
+			return $resolved_early;
+		}
+
 		$content_fields = array( 'content', 'description', 'body', 'message', 'text' );
 		/**
 		 * Filter the ordered list of CCT item fields checked when

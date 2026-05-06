@@ -1,10 +1,134 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.16] - 2026-05-06
 
-### May 3–4, 2026 — LLM Harnessing Subsystem GA, 19 new slash commands (11 base + 8 Pro), Chat-client Memory Bridge, Retroactive Transcript Mining, Pro Packages Tier 5
+### May 6, 2026 — SaaS Controller Addon (v0.1.0) + Structured Logging Integration
 
-A major capabilities pass landing the remaining work from the previous sprint. Headline additions: (1) **LLM Harnessing Subsystem (Layers A–H)** ships end-to-end — seven per-request epistemic layers (cues, reasoning traces, tool routing, retrieval, self-refine, memory scoping, profile-driven evals) plus the Pro Layer H fine-tune curriculum exporter; (2) **19 new slash commands** (11 base + 8 Pro, bringing base total to 24) nearly double the in-chat CLI surface; (3) the **Chat-client ⇄ Memory Bridge G-series** completes the durable memory drawer — REST proxy, JS service, Memories / Scope / Audit tabs, 🧠 badge, SSE `memory_event` frames, pagehide auto-capture, and drawer export; (4) **Retroactive Transcript Mining** — a queued background job, three REST endpoints, and the new `transcripts` source on `mine_agent_memory` with provenance + de-dupe; (5) **Pro Packages Tier 5** — five new browser-native chat-service NPM packages.
+#### Added — SaaS Controller Addon (`addons/saas-controller/`, v0.1.0)
+
+Operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter) from inside WP-Admin. The operator-facing counterpart to `addons/cloud-worker/` — where the cloud worker is the deployed runtime, the SaaS Controller lets a maintainer provision, plan/apply changes to, drift-check, and audit that runtime without leaving WP-Admin.
+
+**Admin UI** — `WP-Admin → NV oOS SaaS` (`manage_options`), four tabs:
+
+- **Overview** — React Credentials Wizard (Credentials → Validate → Save) with masked-credentials table fallback.
+- **Deployment** — desired Cloudflare topology editor (Worker name, account ID, AI Gateway slug, D1 databases, KV namespaces) + read-only **Run Plan** button.
+- **Operations** — HITL-gated Apply panel (Preview → sync or async background Apply), Drift Detector, Orphan Review, Webhook Events, Smoke Tests, and 50-entry audit-log tail with Clear.
+- **Packages** — in-product credits surface (upstream homepage, license, copyright per npm package).
+
+**Implemented phases:**
+
+- **Phase 2** — WP-Admin & REST scaffolding, encrypted credential store (AES-256-CBC keyed from `AUTH_KEY + SECURE_AUTH_KEY`), deployment-config store (`nvoos_saas_controller_deployment`).
+- **Phase 3** — Connection tester: read-only HTTPS preflights against Cloudflare, Stripe, and OpenRouter (10 s timeout, normalised result shape, never echoes secrets).
+- **Phase 4** — Read-only Cloudflare client (`NVOOS_SaaS_Controller_Cloudflare_Client`) covering D1, KV, Workers scripts, AI Gateway.
+- **Phase 5a–5d** — Reconcile-plan generator (`NVOOS_SaaS_Controller_Plan_Generator`): diffs desired config vs live Cloudflare state; emits `creates / updates / noops / orphans / errors` with summary counts. Phase 5d adds Worker multipart upload via mutating client (`NVOOS_SaaS_Controller_Cloudflare_Mutating_Client`).
+- **Phase 5e** — Drift-manifest stamping (`scripts/stamp-drift-manifest.mjs`); auto-invoked by `npm run build:worker`.
+- **Phase 6** — Stripe client (`NVOOS_SaaS_Controller_Stripe_Client`) + OpenRouter provisioning client (`NVOOS_SaaS_Controller_OpenRouter_Client`); plan rows for `stripe_product`, `stripe_price`, `openrouter_key`.
+- **Phase 7** — Stripe webhook verifier (`NVOOS_SaaS_Controller_Stripe_Webhook_Verifier`, HMAC-SHA256, constant-time, 300 s replay window) + webhook event store (`NVOOS_SaaS_Controller_Webhook_Event_Store`, 200-entry ring buffer, idempotent by provider + event_id).
+- **Phase 8** — Background async Apply (`NVOOS_SaaS_Controller_Apply_Job`): one-row-per-tick cron worker, 6 h state transient, 200-row ceiling, `MAX_TOTAL_ROWS` guard.
+- **Phase 9** — Background-apply admin UI: progress card (`<progress>` bar + counters), 2 s polling, Cancel button.
+- **Phase 10** — Orphan cleanup: separate single-use HITL token (`nvoos_saas_orphan_` namespace), `POST /apply/orphans/preview` + `POST /apply/orphans/run`.
+- **Phase 11** — Webhook Events card under Operations tab (paginated table, Refresh, Clear).
+
+**Audit log** (`NVOOS_SaaS_Controller_Audit_Log`) — append-only 200-entry ring buffer. Channels: `cloudflare` / `stripe` / `openrouter` / `internal`. Filterable via `nvoos_saas_controller_audit_log_max_entries` and `nvoos_saas_controller_audit_log_record`.
+
+**REST namespace** `/wp-json/nvoos-saas/v1/` — all routes require `manage_options` except `POST /webhooks/stripe` (signature-gated). Full route list: `GET /healthz`, `GET|POST|DELETE /credentials`, `POST /connections/test`, `GET|POST /deployment`, `POST /plan`, `GET|DELETE /audit-log`, `POST /smoke-tests/run`, `GET /smoke-tests/last`, `POST /apply/preview`, `POST /apply/run`, `POST /apply/enqueue`, `GET /apply/jobs/{id}`, `POST /apply/jobs/{id}/cancel`, `POST /apply/orphans/preview`, `POST /apply/orphans/run`, `POST /drift/check`, `GET /drift/last`, `POST /webhooks/stripe`, `GET|DELETE /webhooks/events`.
+
+**Key filters:** `nvoos_saas_controller_apply_token_ttl` (default 900 s), `nvoos_saas_controller_audit_log_max_entries` (default 200), `nvoos_saas_controller_audit_log_record` (suppress a log entry), `nvoos_saas_controller_webhook_events_max_entries` (default 200), `nvoos_saas_controller_apply_job_state_ttl` (default 6 h), `nvoos_saas_controller_worker_dist_path`, `nvoos_saas_controller_worker_compatibility_date`, `nvoos_saas_controller_worker_upload_metadata`.
+
+See [`addons/saas-controller/README.md`](addons/saas-controller/README.md) for the full implementation detail, architecture diagram, and build instructions.
+
+#### Added / Improved — Structured Logging Integration (PR #4849)
+
+`WP_MCP_AI_Logger` calls added systematically across the plugin and all addons:
+
+- **`WP_MCP_AI_Agent_Memory_CCT_Bridge`** (Phase 4b-2) — all bridge writes, CCT mirror failures, filter-suppressed writes, and deletions are now routed through `WP_MCP_AI_Logger` at the appropriate level (info / warning / error).
+- **`WP_MCP_AI_Transcript_Mining_Job`** — structured logging throughout the entire job lifecycle: enqueue, each cron tick, per-session processing, job completion, cancellation, and all error paths.
+- **Addons:** Algorave, Canvas, Webchat (`class-wp-mcp-ai-jetengine-webchat-messages-cct.php`, settings page, signaling REST, metaboxes, tools), Fantasy Football (ESPN client, CPTs, tools), Graphify (all nine classes including the NV oOS bridge), SaaS Controller (all admin, service, and REST classes).
+- **Core / Admin:** Run Timeline admin page, Admin Approvals page, Settings Base class, cost calculator, DeepSeek client, encryption class, Erlang C class, JetEngine Agent Memories CCT, model catalog migration, Ollama client, outbound webhook, REST MCP methods, shortcode, tool registry, workflow CPT, workflow engine V2.
+- **Harness:** eval scheduler, harness profile, prompt-cue library, retrieval harness, self-refine loop, tool-router harness.
+- **Services:** transcript-mining REST controller, transcript-mining job, memory slash command, workflow slash command.
+
+**New PHPUnit test classes:**
+- `tests/test-agent-memory-cct-bridge-logging.php` — covers logging on store (success + CCT failure), delete, filter-suppressed store, and absent-class guard.
+- `tests/test-transcript-mining-job-logging.php` — covers logging on enqueue, tick (with and without sessions), per-session success, per-session error, cancellation, and completion.
+
+---
+
+## [1.1.15] - 2026-05-05
+
+### May 3–5, 2026 — New Providers (OpenRouter + DeepSeek), LM Studio Parity, Orchestration Phases 1–7, LLM Harnessing GA, 19 New Slash Commands, Memory Bridge G-series, Retroactive Transcript Mining, Graphify NV oOS Data-source Bridge, Observability UI, Stability Sweep
+### May 5, 2026 — NV oOS Cloud Worker (SaaS backend, `addons/cloud-worker/`)
+
+The Cloudflare-Worker counterpart to the Pro plugin module shipped on May 5.
+Lives in this monorepo for review convenience and is deployed independently
+to `cloud.nvoos.com`.
+
+- **Stack:** TypeScript + Hono router + Stripe (HTTPS API, no Node SDK at request-time) + D1 + KV.
+- **Endpoints:**
+  - `POST /v1/chat/completions`, `POST /v1/embeddings`, `GET /v1/models` — OpenAI-compatible passthrough through Cloudflare AI Gateway → OpenRouter, with SSE streaming preserved.
+  - `GET /v1/account/balance`, `POST /v1/account/topup`, `POST /v1/account/revoke`, `GET /v1/account/ledger` — wallet management.
+  - `POST /connect/start` / `POST /connect/finish` — public connect flow that issues a Connect Token after the first paid Stripe Checkout session.
+  - `POST /stripe/webhook` — signature-verified (`Stripe-Signature` t/v1 scheme, 5-minute tolerance, constant-time HMAC-SHA-256 compare), idempotent against `event.id`.
+- **Money math:** all balances stored as integer micro-USD to eliminate float drift across many small per-request debits. Markup matches the plugin to the cent (`wholesale × 1.07`).
+- **Security:**
+  - Master OpenRouter key is a Wrangler secret, never exposed.
+  - Connect tokens stored as SHA-256 hashes; plaintext shown to the user once.
+  - Site-binding via `X-NV-Site-Url` verified on every request (HTTP 403 on mismatch).
+  - No PII in ledger — token counts only, never message bodies.
+- **Schema:** `addons/cloud-worker/schema.sql` with four tables (`wallets`, `connect_tokens`, `ledger`, `topup_sessions`) + indexes.
+- **Tests:** 16 vitest tests in the `@cloudflare/vitest-pool-workers` Miniflare environment — pricing math, micro-USD round-trip, site-URL normalization, SHA-256 stability, token entropy, Stripe webhook signature accept/reject (signature mismatch, body tamper, timestamp out of tolerance, missing header).
+
+### May 5, 2026 — NV oOS Cloud — hosted "Managed Tokens" service (Pro)
+
+A new **Pro-only** subsystem that lets a site route inference through NV's
+master OpenRouter account via a Cloudflare AI Gateway proxy — no per-provider
+key management required. Sits alongside the existing free BYOK flow.
+
+- **Brand:** NV oOS Cloud · **Hosting:** Cloudflare Worker → Cloudflare AI Gateway → OpenRouter · **Geographic scope:** worldwide (Stripe Tax handles VAT/GST/sales tax).
+- **Pricing:** wholesale × **1.07** (7% service fee) + Stripe processor pass-through (2.9% + $0.30) shown as a transparent line item. Minimum top-up $25 USD.
+- **New base filter** `wp_mcp_ai_route_to_provider` (in `WP_MCP_AI_Language_Model_Router::route_to_provider()`) that lets any add-on register a custom provider id without forking the router.
+- **New Pro module** under `addons/pro/includes/`:
+  - `services/class-wp-mcp-ai-nv-cloud-service.php` — singleton with encrypted Connect Token storage (AES-256-CBC keyed by `AUTH_KEY`+`SECURE_AUTH_KEY`), balance cache, prefs, markup math, ledger.
+  - `providers/class-wp-mcp-ai-nv-cloud-client.php` — OpenAI-compatible HTTP client (subclass of the existing OpenRouter client) targeting `cloud.nvoos.com/v1`.
+  - `providers/class-wp-mcp-ai-nv-cloud-provider-client.php` — `Interface_WP_MCP_AI_Provider_Client` adapter.
+  - `services/class-wp-mcp-ai-nv-cloud-billing-observer.php` — hooks `wp_mcp_ai_cost_calculated`, writes wholesale + 7% + total ledger entries (200-entry cap).
+  - `rest/class-wp-mcp-ai-nv-cloud-rest-controller.php` — `/mcp-ai-pro/v1/cloud/{status,connect,disconnect,refresh-balance,topup-url,ledger,prefs}` (all `manage_options`-gated).
+  - `admin/class-wp-mcp-ai-nv-cloud-settings-page.php` — admin UI (Connect, Balance, Top-up via Stripe Checkout, Auto-top-up, Ledger, low-balance banner).
+  - `nv-cloud-init.php` — bootstrap (router filter, REST registration, daily balance-refresh cron).
+- **Documentation:** `docs/features/nv-cloud.md` (architecture, Worker contract, security model, Cloudways vs Cloudflare comparison).
+- **Tests:** `addons/pro/tests/test-nv-cloud.php` — service round-trip, encryption-at-rest verification, markup math, Stripe pass-through math, ledger cap, billing-observer gating, REST permission gates, top-up minimum, router-filter wiring.
+
+### May 4, 2026 — LM Studio provider brought to parity with May 2026 capabilities
+
+A major capabilities + stability release building on 1.1.14. Headline additions: (1) **Three new AI providers** — OpenRouter (unified multi-provider gateway), DeepSeek, plus Kimi K2.6 + Qwen 3.6 in the model catalog; (2) **LM Studio parity** — native cURL SSE streaming plus seven phases of May 2026 capability alignment; (3) **Orchestration roadmap Phases 1–7** re-landed with JetEngine CCT init-priority compat — HITL approvals, prompt-injection guardrail, structured output, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, and Pro team budget manager; (4) **LLM Harnessing Subsystem (Layers A–H)** ships GA; (5) **19 new slash commands** (11 base + 8 Pro); (6) **Chat-client Memory Bridge G-series** complete with site-wide toggle; (7) **Retroactive Transcript Mining** stuck-job root causes fixed; (8) **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace edges, external `$wpdb` tables; (9) **Observability UI** surfaced under the Orchestration tab with OTLP configuration; (10) stability sweep covering transcript-mining, credential nonces, JetEngine CCT prefix, workflow tab, multi-agent dashboard, and site-health polyfill.
+
+#### Added — New AI providers
+
+- **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`, PR #4840): a unified, OpenAI-compatible gateway in front of OpenAI, Anthropic, Google, Meta, Mistral, and others, reachable through a single API key. Selectable from **Settings → NV oOS → Providers → OpenRouter**.
+- **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`, PR #4820): first-class provider with full model selection and `reasoning_content` / `<think>…</think>` passthrough matching the REST-layer handling already in place for DeepSeek-R1/Qwen-QwQ.
+- **Kimi K2.6 + Qwen 3.6** (PR #4810): both models added to the model catalog and provider dropdowns.
+
+#### Added — LM Studio — real-time token streaming + parity (PRs #4818, #4839)
+
+- **Real-time SSE streaming via native cURL** (PR #4839): `create_chat_completion()` now sends `stream: true` and opens a cURL stream directly, invoking `$options['stream_callback']` per `data: {…}` chunk. Content tokens and tool-call argument deltas are accumulated; the final return value is a standard OpenAI-shaped response. New filter: `wp_mcp_ai_lm_studio_stream_request_args`.
+- **Native `/api/v0` opt-in** (Phase 2): new setting `lm_studio_use_native_api`. Native responses include `stats` (tokens/sec, TTFT, generation_time) as `usage_stats` and via `wp_mcp_ai_lm_studio_provider_stats`. `list_models()` returns `arch`, `quantization`, `state`, `max_context_length`, `loaded_context_length`, and `capabilities`. New per-request filter: `wp_mcp_ai_lm_studio_native_endpoint`.
+- **Embeddings** (Phase 3): new `create_embedding( $input, $options )` method calling `/v1/embeddings`.
+- **Bearer-token auth** (Phase 4): new `lm_studio_api_key` setting. Keys are never logged.
+- **Capability gating + reasoning + argument repair** (Phase 5): models without `tool_use` return `WP_Error( 'wp_mcp_ai_tools_unsupported_by_model' )`; `reasoning_content` preserved; `<think>…</think>` stripped into `reasoning_content`; malformed `arguments` auto-repaired.
+- **TTL + structured outputs** (Phase 6): `$options['ttl']` and `$options['response_format']` forwarded in payload.
+- **Improved `test_connection()`** (Phase 7): falls back to `/api/v0/models` on 404; includes `x-lm-studio-version` in success message. `CAPABILITIES_TRANSIENT` class constant exposed for external cache invalidation.
+
+#### Added — Orchestration roadmap Phases 1–7 (PRs #4816, #4821)
+
+Re-lands the full orchestration feature set with a JetEngine CCT init-priority fix: all NV oOS CCT bootstraps now register on `init` at priority 11+ to avoid racing JetEngine's table-cache hydration (priorities 1–10).
+
+- **Phase 1 — Observability**: Run Timeline panel, Layer I Prompt-Injection Detector (`WP_MCP_AI_Prompt_Injection_Detector`, harness profile key `injection_detector.enabled`, action `wp_mcp_ai_prompt_injection_detected`), Structured Output Guardrail, OTel span exporter (OTLP/HTTP). Observability dashboard now surfaced under the **Orchestration** tab (PR #4833). OTLP endpoint + token configurable under **Tools → Connections** (PR #4837).
+- **Phase 2 — HITL**: `WP_MCP_AI_Approval_Queue` (CPT `mcp_ai_approval` — `pending`→`publish`=approved, `private`=denied, `trash`=expired). REST at `/mcp-ai/v1/approvals/*`. `request_user_approval` tool. Admin **Approvals** page. Registered in `bootstrap/loader.php` after repositories-init.
+- **Phase 3 — Structured output**: schema-validated response pass-through; guardrail enforces schema compliance before tool result is accepted.
+- **Phase 4 — DAG builder**: visual DAG workflow builder UI and DAG execution engine.
+- **Phase 5 — Durable runs**: `WP_MCP_AI_Durable_Run_Store` persists run state across HTTP boundaries; supports pause/resume and long-running async tasks.
+- **Phase 6 — Triggers + webhooks**: `WP_MCP_AI_Workflow_Trigger_CPT` fires workflows from WordPress events or inbound webhooks.
+- **Phase 7 — Sub-agents + Pro hardening**: sub-agent dispatch (`WP_MCP_AI_Sub_Agent_Dispatcher`), Pro `WP_MCP_AI_Vector_Store_Adapter` (openai / pgvector / qdrant backends), Pro `WP_MCP_AI_Team_Budget_Manager` (per-team daily caps + namespace prefix). Phase 7 Pro services loaded from `addons/pro/includes/services/services-init-phase6.php`.
 
 #### Added — LLM Harnessing Subsystem (Base + Pro, `includes/harness/`)
 
@@ -25,7 +149,7 @@ Seven opt-in layers that improve response quality without modifying existing too
 
 The slash command surface nearly doubled — from ~13 to 32 commands (24 base + 8 Pro). New base commands are registered in `includes/slash-commands/slash-commands-init.php`; Pro commands are registered via the `wp_mcp_ai_slash_commands_initialized` action from `addons/pro/includes/slash-commands/slash-commands-init.php`.
 
-**New base commands (since v1.1.13):**
+**New base commands (since v1.1.14):**
 
 | Command | Aliases | Capability | Description |
 |---------|---------|-----------|-------------|
@@ -77,7 +201,7 @@ Completes the durable chat-client memory integration. REST proxy and JS service 
 - **G8 — SSE `memory_event` frame** — the agentic loop now emits a `memory_event` SSE frame (`{ action, tool_name, tool_id }`) whenever a memory tool call completes; the chat client shows a 🧠 toast in real time.
 - **G11 — Drawer export** — the Memory Drawer "Export" button downloads the visible memory set as a JSON archive.
 - **REST proxy** (`WP_MCP_AI_REST_Chat_Memory_Controller`): six routes under `/mcp-ai/v1/chat-memory/` — `preferences`, `wake-up`, `recall`, `store`, `audit`, `/{context_id}`. Delegating to base tools (`wake_up_context`, `recall_memory`, `store_agent_context`, `memory_audit_trail`, `manage_context_lifecycle`). Endpoints localized into `window.wpMcpAiChat.memoryEndpoints` via the shortcode inline script.
-- **Two gates**: (1) site-wide filter `wp_mcp_ai_chat_memory_enabled` (return `false` to disable globally); (2) per-user meta `wp_mcp_ai_chat_memory_enabled` (user can opt out from the drawer Preferences tab).
+- **Three gates**: (1) site-wide filter `wp_mcp_ai_chat_memory_enabled` (return `false` to disable globally); (2) site-wide **Enable Chat-Client Memory** toggle in **Orchestration → Settings** (PR #4802); (3) per-user meta `wp_mcp_ai_chat_memory_enabled` (user can opt out from the drawer Preferences tab).
 - Reference: [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md).
 
 #### Added — Retroactive Transcript Mining
@@ -90,6 +214,15 @@ Completes the durable chat-client memory integration. REST proxy and JS service 
 - **`mine_agent_memory` `transcripts` source** — new source value alongside existing `posts|urls|text`. Uses `transcript_query` (fields: `assistant_id`, `user_id`, `since`, `until`, `session_keys`, `min_messages`, `only_unextracted`, `posts_per_page` max 50). Emits items with provenance metadata: `transcript_session_key`, `assistant_id`, `message_range`, `content_hash`. Filters: `wp_mcp_ai_mine_transcripts_sessions`, `wp_mcp_ai_mine_transcripts_session_messages`, `wp_mcp_ai_mine_transcripts_dedupe_scan_limit` (default 1000).
 - Reference: [`docs/features/memory/transcript-mining.md`](docs/features/memory/transcript-mining.md).
 
+#### Added — Graphify NV oOS data-source bridge (PR #4834)
+
+Full integration of NV oOS-owned data into the Graphify knowledge graph.
+
+- **Private CPT resolver**: any CPT registered with `WP_MCP_AI_CPT_*` is automatically discovered and indexed as graph nodes.
+- **JetEngine CCT resolvers**: CCT items are structured as `cct_{slug}` nodes with `AUTHORED_BY` edges, embedded end-to-end, and discoverable from the **Sources (CPT / CCT)** tab on the Knowledge Graph settings page (PR #4836).
+- **MemPalace edges**: `ai_agent_memories` CCT items are linked to source content via `RECALLS` edges, enabling memory-aware graph traversal.
+- **External `$wpdb` tables**: plugin-managed tables (e.g., transcript, approval, metric stores) can be registered as Graphify data sources via the `wp_mcp_ai_graphify_data_sources` filter.
+
 #### Added — Pro Packages Tier 5 (Chat Service Utilities)
 
 Five new browser-native NPM packages published under `@nvdigitalsolutions/` and surfaced on the **NV oOS → Pro Packages** admin screen:
@@ -101,6 +234,29 @@ Five new browser-native NPM packages published under `@nvdigitalsolutions/` and 
 | `@nvdigitalsolutions/nvoos-attachments` | File attachment helpers: type detection, validation, normalisation | MIT |
 | `@nvdigitalsolutions/nvoos-cron-status` | SSE-first cron/job status monitor with REST polling fallback | MIT |
 | `@nvdigitalsolutions/nvoos-transcription` | MediaRecorder-based audio recording + tool-call transcription pipeline | MIT |
+
+#### Added — DX / infra
+
+- **Custom devcontainer image** (PR #4811): `.devcontainer/` configuration with a WordPress plugin dev image, MySQL service, and VS Code extensions pre-configured for PHP + JS development.
+- **Zed agent profiles** (PR #4808): the `examples/agents/` 12-agent roster is mirrored as native Zed agent profiles in `.zed/settings.json`, enabling one-click context switching in the Zed editor's Agent Panel.
+
+#### Fixed
+
+- **Transcript-mining stuck at "queued"** — three compounding root causes fixed in PRs #4804 and #4826: (1) `wp_schedule_single_event()` was called with a future timestamp making the cron fire one interval too late; (2) `spawn_cron()` was never called after scheduling, so the job sat in the queue until the next natural cron cycle; (3) the transient state key had a namespace collision that prevented the tick handler from reading the job record. All three fixed with a codebase-wide sweep.
+- **"Workflow not found" on admin Workflows tab** for orchestrator-managed workflows (PR #4803).
+- **`workflow-cpt` `map_meta_cap=false`** blocked JetEngine on WP 6.1 `delete_post` notice (PR #4822).
+- **Graphify `get_settings()` infinite recursion** causing 502 on admin page (PR #4835).
+- **Graphify Sources (CPT / CCT) tab missing** from Knowledge Graph settings page (PR #4836).
+- **Graphify admin settings file PHP linting CI failure** (PR #4838).
+- **Multi-agent dashboard TypeError** when `primary_roles` post meta is unset (PR #4823).
+- **Credential nonce mismatches** — nonce field names corrected for Generate Credential (#4824), Revoke (#4825), and Delete (#4825) buttons.
+- **JetEngine CCT table prefix** — corrected to `jet_cct_` (underscores) in the transcript repository, all direct SQL paths, and the `get_table_name()` method. Chat channel SQL queries now backtick-quote hyphenated table names to satisfy MySQL strict mode (PRs #4827, #4828, #4830).
+- **Site-health polyfill** — `wp_is_auto_update_forced_for_item` polyfilled before the early-return guard in the site-health integration to prevent fatal errors on sites where the WP core function is not yet defined (PR #4832).
+- **README TOC anchor links** corrected (`#--` → `#-`) (PR #4807).
+
+#### Versioning
+
+Bumped to 1.1.15 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at **~195 base / ~635 Pro / ~830 total** — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
 
 ## [1.1.14] - 2026-05-02
 

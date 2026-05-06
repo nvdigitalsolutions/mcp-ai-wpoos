@@ -46,7 +46,7 @@ class WP_MCP_AI_Transcript_Repository {
 			return '';
 		}
 
-		return $wpdb->prefix . 'jet-cct-' . $slug;
+		return $wpdb->prefix . 'jet_cct_' . $slug;
 	}
 
 	/**
@@ -99,7 +99,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-		// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant 'ai_chat_transcripts'.
+		// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant 'ai_chat_transcripts'.
 		$table        = esc_sql( $this->get_table_name() );
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
@@ -136,7 +136,7 @@ class WP_MCP_AI_Transcript_Repository {
                 MAX(assistant_id) AS assistant_id,
                 MAX(assistant_model) AS assistant_model,
                 COUNT(*) AS turn_count
-         FROM {$table}
+         FROM `{$table}`
          {$where_part}
          GROUP BY session_key
          ORDER BY MAX(cct_created) DESC, session_key ASC
@@ -177,7 +177,7 @@ class WP_MCP_AI_Transcript_Repository {
                 MAX(assistant_id) AS assistant_id,
                 MAX(assistant_model) AS assistant_model,
                 COUNT(*) AS turn_count
-         FROM {$table}
+         FROM `{$table}`
          WHERE {$fallback_where_sql}
          GROUP BY session_key
          ORDER BY MAX(cct_created) DESC, session_key ASC
@@ -197,7 +197,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		// Get total count using the same WHERE clause as the primary query.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_part contains only hardcoded placeholders.
-		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} {$where_part}";
+		$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM `{$table}` {$where_part}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 		$total_query = $wpdb->prepare( $total_query_template, $where_values );
 
@@ -217,7 +217,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $fallback_where_sql contains only hardcoded placeholders.
-			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$fallback_where_sql}";
+			$fallback_total_query_template = "SELECT COUNT(DISTINCT session_key) FROM `{$table}` WHERE {$fallback_where_sql}";
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 			$fallback_total_query = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
 
@@ -265,7 +265,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-		// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant 'ai_chat_transcripts'.
+		// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant 'ai_chat_transcripts'.
 		$table        = esc_sql( $this->get_table_name() );
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
@@ -290,7 +290,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$where_sql = implode( ' AND ', $where_clauses );
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields and $where_sql contain only hardcoded strings/placeholders.
 		$query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE {$where_sql}
          ORDER BY cct_created ASC, _ID ASC";
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -343,7 +343,7 @@ class WP_MCP_AI_Transcript_Repository {
 			$author_where_sql = implode( ' AND ', $author_where_clauses );
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields and $author_where_sql contain only hardcoded strings/placeholders.
 			$author_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE {$author_where_sql}
          ORDER BY cct_created ASC, _ID ASC";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -387,7 +387,7 @@ class WP_MCP_AI_Transcript_Repository {
 			// Try with user_id only.
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields contains only hardcoded strings.
 			$simple_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE session_key = %s AND user_id = %d
          ORDER BY cct_created ASC, _ID ASC";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -414,7 +414,7 @@ class WP_MCP_AI_Transcript_Repository {
 			if ( empty( $rows ) ) {
 				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields contains only hardcoded strings.
 				$simple_author_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE session_key = %s AND cct_author_id = %d
          ORDER BY cct_created ASC, _ID ASC";
 				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -445,7 +445,7 @@ class WP_MCP_AI_Transcript_Repository {
 		if ( empty( $rows ) ) {
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $select_fields contains only hardcoded strings.
 			$session_only_query_template = "SELECT {$select_fields}
-         FROM {$table}
+         FROM `{$table}`
          WHERE session_key = %s
          ORDER BY cct_created ASC, _ID ASC";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -608,7 +608,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Escape table name for defense-in-depth and to satisfy WordPress Plugin Check tool.
-		// Table name is constructed from $wpdb->prefix + 'jet-cct-' + constant 'ai_chat_transcripts'.
+		// Table name is constructed from $wpdb->prefix + 'jet_cct_' + constant 'ai_chat_transcripts'.
 		$table        = esc_sql( $this->get_table_name() );
 		$user_id      = absint( $user_id );
 		$assistant_id = absint( $assistant_id );
@@ -627,7 +627,7 @@ class WP_MCP_AI_Transcript_Repository {
 		// Get the most recent record ID for this session.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders; spread operator used for values.
 		$query = $wpdb->prepare(
-			"SELECT _ID FROM {$table} WHERE {$where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
+			"SELECT _ID FROM `{$table}` WHERE {$where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
 			$where_values
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -652,7 +652,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is escaped with esc_sql(), $author_where_sql contains only hardcoded placeholders; spread operator used for values.
 		$author_query = $wpdb->prepare(
-			"SELECT _ID FROM {$table} WHERE {$author_where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
+			"SELECT _ID FROM `{$table}` WHERE {$author_where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
 			$author_where_values
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared

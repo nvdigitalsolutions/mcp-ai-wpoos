@@ -199,6 +199,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nvidia-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deepseek-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openrouter-client.php';
 // WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
 // Provider interface adapters (thin delegates over the concrete clients above).
@@ -209,6 +211,7 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-cloudflare-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-nvidia-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-lm-studio-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openrouter-provider-client.php';
 
 // ---------------------------------------------------------------------------
 // Tool infrastructure and utilities
@@ -280,9 +283,57 @@ require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
 // harness profile that ships in the "off" state.
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/harness/harness-init.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-otel-span-exporter.php';
+// Register span exporter — no-op unless `wp_mcp_ai_otel_endpoint` is configured.
+WP_MCP_AI_Otel_Span_Exporter::register();
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
+
+// ---------------------------------------------------------------------------
+// HITL Approval Queue (Phase 2 — Human-in-the-Loop)
+//
+// JetEngine compatibility note: CPT registrations are intentionally placed at
+// init priorities 11-14 (above JetEngine's own init window of 1-10) to avoid
+// racing with JetEngine CCT module init. register_cron() is also deferred to
+// an init hook rather than called during file loading, so it does not
+// interfere with JetEngine's cron-based CCT table caching.
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-approval-queue.php';
+add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 11 );
+add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cron' ), 1 );
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Workflow CPT + Engine V2
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_cpt' ), 12 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_CPT', 'register_meta' ), 12 );
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-engine-v2.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-dispatcher.php';
+
+// ---------------------------------------------------------------------------
+// Phase 4 — Workflow Run CPT (durable execution event log)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-run-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_cpt' ), 13 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Run_CPT', 'register_meta' ), 13 );
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Triggers, Webhooks, Sub-Agents
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-trigger-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_cpt' ), 14 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_meta' ), 14 );
+add_action( 'init', array( 'WP_MCP_AI_Workflow_Trigger_CPT', 'register_all_triggers' ), 20 );
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-outbound-webhook.php';
+add_action(
+	'init',
+	function () {
+		WP_MCP_AI_Outbound_Webhook::get_instance();
+	}
+);
 
 // ---------------------------------------------------------------------------
 // A2A Protocol system
@@ -405,6 +456,18 @@ if ( is_admin() ) {
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
+
+	// Phase 2–5 admin UI (approvals queue, workflow run timeline, DAG builder, triggers).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-run-timeline.php';
+	new WP_MCP_AI_Admin_Run_Timeline();
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-approvals.php';
+	new WP_MCP_AI_Admin_Approvals();
+
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dag-builder.php';
+	new WP_MCP_AI_Admin_DAG_Builder();
+
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-workflow-triggers.php';
+	new WP_MCP_AI_Admin_Workflow_Triggers();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
 	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
@@ -533,6 +596,40 @@ if ( is_admin() ) {
 // Pro Dashboard REST API must be registered for all request types (not just admin).
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 new WP_MCP_AI_Pro_Dashboard_REST();
+
+// Phase 2–5 REST controllers.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-approval-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Approval_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-cpt-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Workflow_CPT_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-workflow-run-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Workflow_Run_Controller();
+		$controller->register_routes();
+	}
+);
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-triggers-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Triggers_Controller();
+		$controller->register_routes();
+	}
+);
 
 new WP_MCP_AI_Mesh_Peer_Test_REST();
 

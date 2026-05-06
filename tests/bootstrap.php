@@ -106,6 +106,16 @@ require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
  */
 function wp_mcp_ai_manually_load_plugin() {
 	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
+
+	// Load the SaaS Controller addon if present so its tests can exercise
+	// its classes. The addon is a standalone WP plugin (not auto-loaded by
+	// the base plugin) and ships its own `nvoos_saas_controller_bootstrap`
+	// hook on `plugins_loaded` priority 20 — loading the file here is
+	// equivalent to activating the plugin in a real install.
+	$saas_controller = dirname( __DIR__ ) . '/addons/saas-controller/nvoos-saas-controller.php';
+	if ( file_exists( $saas_controller ) ) {
+		require $saas_controller;
+	}
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );

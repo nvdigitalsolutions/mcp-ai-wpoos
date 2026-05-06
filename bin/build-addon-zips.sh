@@ -2,16 +2,21 @@
 #
 # Build NV oOS standalone addon ZIPs
 #
-# Outputs:
-#   build/nvoos-canvas-linux-x64-vX.Y.Z.zip
-#   build/nvoos-algorave-linux-x64-vX.Y.Z.zip
-#   build/nvoos-fantasy-football-vX.Y.Z.zip
-#   build/nvoos-cornerstone3d-vX.Y.Z.zip
-#   build/nvoos-graphify-vX.Y.Z.zip
+# Each addon ZIP is versioned from its own plugin header (e.g. "Version: 0.6.0"),
+# independent of the base plugin version. Only the base and pro packages share
+# a version number.
+#
+# Outputs (version read from each addon's PHP header):
+#   build/nvoos-canvas-linux-x64-v<canvas-version>.zip
+#   build/nvoos-algorave-linux-x64-v<algorave-version>.zip
+#   build/nvoos-fantasy-football-v<fantasy-football-version>.zip
+#   build/nvoos-cornerstone3d-v<cornerstone3d-version>.zip
+#   build/nvoos-graphify-v<graphify-version>.zip
+#   build/nvoos-embedded-v<embedded-version>.zip
+#   build/nvoos-saas-controller-v<saas-controller-version>.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
-#   ./bin/build-addon-zips.sh --version 1.0.0
 #
 
 set -e
@@ -21,16 +26,11 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
-VERSION=""
 SKIP_CANVAS=false
 STRICT_CANVAS=false
 
 while [[ $# -gt 0 ]]; do
 case $1 in
---version)
-VERSION="$2"
-shift 2
-;;
 --skip-canvas)
 SKIP_CANVAS=true
 shift
@@ -40,7 +40,10 @@ STRICT_CANVAS=true
 shift
 ;;
 -h|--help)
-echo "Usage: $0 [--version X.Y.Z] [--skip-canvas] [--strict-canvas]"
+echo "Usage: $0 [--skip-canvas] [--strict-canvas]"
+echo ""
+echo "  Each addon ZIP is versioned from its own plugin header, independent"
+echo "  of the base plugin version."
 echo ""
 echo "  --skip-canvas    Skip the canvas addon build entirely."
 echo "  --strict-canvas  Exit non-zero if the canvas docker build fails."
@@ -56,12 +59,34 @@ exit 1
 esac
 done
 
-if [ -z "$VERSION" ]; then
-VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
-if [ -z "$VERSION" ]; then
-VERSION="dev"
-fi
-fi
+# Read each standalone addon's version from its own plugin header.
+_read_addon_version() {
+grep -E "^\s*\*\s*Version:" "$1" | sed 's/.*Version:\s*//' | tr -d '[:space:]'
+}
+
+ALGORAVE_VERSION=$(_read_addon_version "addons/algorave/nvoos-algorave.php")
+ALGORAVE_VERSION=${ALGORAVE_VERSION:-dev}
+
+FF_VERSION=$(_read_addon_version "addons/fantasy-football/nvoos-fantasy-football.php")
+FF_VERSION=${FF_VERSION:-dev}
+
+CS3D_VERSION=$(_read_addon_version "addons/cornerstone3d/nvoos-cornerstone3d.php")
+CS3D_VERSION=${CS3D_VERSION:-dev}
+
+EMBEDDED_VERSION=$(_read_addon_version "addons/embedded/nvoos-embedded.php")
+EMBEDDED_VERSION=${EMBEDDED_VERSION:-dev}
+
+GRAPHIFY_VERSION=$(_read_addon_version "addons/graphify/nvoos-graphify.php")
+GRAPHIFY_VERSION=${GRAPHIFY_VERSION:-dev}
+
+SAAS_VERSION=$(_read_addon_version "addons/saas-controller/nvoos-saas-controller.php")
+SAAS_VERSION=${SAAS_VERSION:-dev}
+
+CANVAS_VERSION=$(_read_addon_version "addons/canvas/nvoos-canvas.php")
+CANVAS_VERSION=${CANVAS_VERSION:-dev}
+
+DOCS_HUB_VERSION=$(_read_addon_version "addons/docs-hub/nvoos-docs-hub.php")
+DOCS_HUB_VERSION=${DOCS_HUB_VERSION:-dev}
 
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
@@ -91,8 +116,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, and addons/graphify must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, and addons/saas-controller must exist."
 exit 1
 fi
 
@@ -107,30 +132,39 @@ mkdir -p "$OUTPUT_DIR"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-CANVAS_ZIP="${OUTPUT_DIR}/nvoos-canvas-linux-x64-v${VERSION}.zip"
-ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${VERSION}.zip"
-FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
-CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
-EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${VERSION}.zip"
-GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${VERSION}.zip"
+CANVAS_ZIP="${OUTPUT_DIR}/nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${ALGORAVE_VERSION}.zip"
+FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${FF_VERSION}.zip"
+CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${CS3D_VERSION}.zip"
+EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${EMBEDDED_VERSION}.zip"
+GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${GRAPHIFY_VERSION}.zip"
+DOCS_HUB_ZIP="${OUTPUT_DIR}/nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
+SAAS_CONTROLLER_ZIP="${OUTPUT_DIR}/nvoos-saas-controller-v${SAAS_VERSION}.zip"
 
-rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP"
+# Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
+rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-fantasy-football-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-cornerstone3d-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-embedded-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-graphify-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-docs-hub-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-saas-controller-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
-rm -f "$CANVAS_ZIP"
+rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=5
+TOTAL_STEPS=8
 else
-TOTAL_STEPS=6
+TOTAL_STEPS=9
 fi
 
 echo "=========================================="
-echo "Building Standalone Addon ZIPs v${VERSION}"
+echo "Building Standalone Addon ZIPs"
 echo "=========================================="
 echo ""
 
-echo "[1/${TOTAL_STEPS}] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
+echo "[1/${TOTAL_STEPS}] Building nvoos-algorave-linux-x64-v${ALGORAVE_VERSION}.zip"
 mkdir -p "${TMP_DIR}/algorave-stage/nvoos-algorave"
 rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
@@ -146,7 +180,7 @@ ALGORAVE_SIZE=$(du -h "$ALGORAVE_ZIP" | cut -f1)
 echo "✅ ${ALGORAVE_ZIP} (${ALGORAVE_SIZE})"
 echo ""
 
-echo "[2/${TOTAL_STEPS}] Building nvoos-embedded-v${VERSION}.zip"
+echo "[2/${TOTAL_STEPS}] Building nvoos-embedded-v${EMBEDDED_VERSION}.zip"
 mkdir -p "${TMP_DIR}/embedded-stage/nvoos-embedded"
 rsync -a "addons/embedded/" "${TMP_DIR}/embedded-stage/nvoos-embedded/" \
 --exclude 'node_modules/' \
@@ -162,7 +196,7 @@ EMBEDDED_SIZE=$(du -h "$EMBEDDED_ZIP" | cut -f1)
 echo "✅ ${EMBEDDED_ZIP} (${EMBEDDED_SIZE})"
 echo ""
 
-echo "[3/${TOTAL_STEPS}] Building nvoos-fantasy-football-v${VERSION}.zip"
+echo "[3/${TOTAL_STEPS}] Building nvoos-fantasy-football-v${FF_VERSION}.zip"
 mkdir -p "${TMP_DIR}/ff-stage/nvoos-fantasy-football"
 rsync -a "addons/fantasy-football/" "${TMP_DIR}/ff-stage/nvoos-fantasy-football/" \
 --exclude 'node_modules/' \
@@ -177,7 +211,7 @@ FF_SIZE=$(du -h "$FF_ZIP" | cut -f1)
 echo "✅ ${FF_ZIP} (${FF_SIZE})"
 echo ""
 
-echo "[4/${TOTAL_STEPS}] Building nvoos-cornerstone3d-v${VERSION}.zip"
+echo "[4/${TOTAL_STEPS}] Building nvoos-cornerstone3d-v${CS3D_VERSION}.zip"
 # Build ESM bundles if they don't exist yet.
 VENDOR_CORNERSTONE_DIR="addons/pro/assets/vendor/cornerstone"
 if [ ! -f "${VENDOR_CORNERSTONE_DIR}/cornerstone-core.esm.js" ]; then
@@ -213,7 +247,7 @@ CS3D_SIZE=$(du -h "$CS3D_ZIP" | cut -f1)
 echo "✅ ${CS3D_ZIP} (${CS3D_SIZE})"
 echo ""
 
-echo "[5/${TOTAL_STEPS}] Building nvoos-graphify-v${VERSION}.zip"
+echo "[5/${TOTAL_STEPS}] Building nvoos-graphify-v${GRAPHIFY_VERSION}.zip"
 mkdir -p "${TMP_DIR}/graphify-stage/nvoos-graphify"
 rsync -a "addons/graphify/" "${TMP_DIR}/graphify-stage/nvoos-graphify/" \
 --exclude 'node_modules/' \
@@ -227,6 +261,84 @@ zip -r -q "${ROOT_DIR}/${GRAPHIFY_ZIP}" nvoos-graphify/
 )
 GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
 echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
+echo ""
+
+echo "[6/${TOTAL_STEPS}] Building nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/docs-hub/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/docs-hub/node_modules" ]; then
+echo "  ℹ️  Installing docs-hub npm dependencies (npm ci)..."
+( cd addons/docs-hub && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for docs-hub — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/docs-hub/node_modules" ]; then
+echo "  ℹ️  Building docs-hub artifacts (npm run build)..."
+( cd addons/docs-hub && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for docs-hub — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub"
+rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'esbuild.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/docs-hub-stage"
+zip -r -q "${ROOT_DIR}/${DOCS_HUB_ZIP}" nvoos-docs-hub/
+)
+DOCS_HUB_SIZE=$(du -h "$DOCS_HUB_ZIP" | cut -f1)
+echo "✅ ${DOCS_HUB_ZIP} (${DOCS_HUB_SIZE})"
+echo ""
+
+echo "[7/${TOTAL_STEPS}] Building nvoos-saas-controller-v${SAAS_VERSION}.zip"
+# Build the addon's two compiled artifacts (admin UI + Cloudflare Worker)
+# from source if Node is available. The release ZIP ships only the built
+# artifacts under assets/build/ and worker/dist/ — never node_modules/ or
+# the TypeScript / TSX sources.
+if [ -d "addons/saas-controller/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/saas-controller/node_modules" ]; then
+echo "  ℹ️  Installing saas-controller npm dependencies (npm ci)..."
+( cd addons/saas-controller && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for saas-controller — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/saas-controller/node_modules" ]; then
+echo "  ℹ️  Building saas-controller artifacts (npm run build)..."
+( cd addons/saas-controller && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for saas-controller — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/build/ and worker/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/saas-controller-stage/nvoos-saas-controller"
+rsync -a "addons/saas-controller/" "${TMP_DIR}/saas-controller-stage/nvoos-saas-controller/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'assets/src/' \
+--exclude 'worker/src/' \
+--exclude '.wrangler/'
+(
+cd "${TMP_DIR}/saas-controller-stage"
+zip -r -q "${ROOT_DIR}/${SAAS_CONTROLLER_ZIP}" nvoos-saas-controller/
+)
+SAAS_CONTROLLER_SIZE=$(du -h "$SAAS_CONTROLLER_ZIP" | cut -f1)
+echo "✅ ${SAAS_CONTROLLER_ZIP} (${SAAS_CONTROLLER_SIZE})"
 echo ""
 
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
@@ -251,7 +363,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[6/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[8/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -338,6 +450,7 @@ echo "  - ${EMBEDDED_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
 echo "  - ${GRAPHIFY_ZIP}"
+echo "  - ${SAAS_CONTROLLER_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

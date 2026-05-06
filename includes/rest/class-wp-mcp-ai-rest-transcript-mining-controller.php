@@ -140,53 +140,75 @@ class WP_MCP_AI_REST_Transcript_Mining_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_job( WP_REST_Request $request ) {
-		$agent_id = (string) $request->get_param( 'agent_id' );
-		if ( '' === $agent_id ) {
-			return new WP_Error( 'missing_agent_id', __( 'agent_id is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
-		}
-
-		$args = array( 'agent_id' => $agent_id );
-		foreach ( array( 'wing', 'room' ) as $key ) {
-			$value = $request->get_param( $key );
-			if ( null !== $value && '' !== $value ) {
-				$args[ $key ] = sanitize_text_field( (string) $value );
+		try {
+			$agent_id = (string) $request->get_param( 'agent_id' );
+			if ( '' === $agent_id ) {
+				return new WP_Error( 'missing_agent_id', __( 'agent_id is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
-		}
-		foreach ( array( 'verbatim', 'dry_run' ) as $key ) {
-			$value = $request->get_param( $key );
-			if ( null !== $value ) {
-				$args[ $key ] = (bool) $value;
+
+			$args = array( 'agent_id' => $agent_id );
+			foreach ( array( 'wing', 'room' ) as $key ) {
+				$value = $request->get_param( $key );
+				if ( null !== $value && '' !== $value ) {
+					$args[ $key ] = sanitize_text_field( (string) $value );
+				}
 			}
-		}
-		foreach ( array( 'ttl', 'chunk_size' ) as $key ) {
-			$value = $request->get_param( $key );
-			if ( null !== $value ) {
-				$args[ $key ] = (int) $value;
+			foreach ( array( 'verbatim', 'dry_run' ) as $key ) {
+				$value = $request->get_param( $key );
+				if ( null !== $value ) {
+					$args[ $key ] = (bool) $value;
+				}
 			}
-		}
-		$transcript_query = $request->get_param( 'transcript_query' );
-		if ( is_array( $transcript_query ) ) {
-			$args['transcript_query'] = $transcript_query;
-		}
+			foreach ( array( 'ttl', 'chunk_size' ) as $key ) {
+				$value = $request->get_param( $key );
+				if ( null !== $value ) {
+					$args[ $key ] = (int) $value;
+				}
+			}
+			$transcript_query = $request->get_param( 'transcript_query' );
+			if ( is_array( $transcript_query ) ) {
+				$args['transcript_query'] = $transcript_query;
+			}
 
-		$session_keys = $request->get_param( 'session_keys' );
-		$batch_size   = $request->get_param( 'batch_size' );
+			$session_keys = $request->get_param( 'session_keys' );
+			$batch_size   = $request->get_param( 'batch_size' );
 
-		$config = array();
-		if ( is_array( $session_keys ) && ! empty( $session_keys ) ) {
-			$config['session_keys'] = $session_keys;
-		}
-		if ( null !== $batch_size ) {
-			$config['batch_size'] = (int) $batch_size;
-		}
+			$config = array();
+			if ( is_array( $session_keys ) && ! empty( $session_keys ) ) {
+				$config['session_keys'] = $session_keys;
+			}
+			if ( null !== $batch_size ) {
+				$config['batch_size'] = (int) $batch_size;
+			}
 
-		$state = WP_MCP_AI_Transcript_Mining_Job::enqueue( $args, $config );
-		if ( is_wp_error( $state ) ) {
-			$state->add_data( array( 'status' => 400 ) );
-			return $state;
-		}
+			$state = WP_MCP_AI_Transcript_Mining_Job::enqueue( $args, $config );
+			if ( is_wp_error( $state ) ) {
+				$state->add_data( array( 'status' => 400 ) );
+				return $state;
+			}
 
-		return rest_ensure_response( WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] ) );
+			return rest_ensure_response( WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] ) );
+		} catch ( Throwable $e ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Transcript mining REST: create_job threw an exception.',
+					array(
+						'message' => $e->getMessage(),
+						'file'    => $e->getFile(),
+						'line'    => $e->getLine(),
+					)
+				);
+			}
+			return new WP_Error(
+				'transcript_mining_create_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to enqueue mining job: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				),
+				array( 'status' => 500 )
+			);
+		}
 	}
 
 	/**
@@ -196,12 +218,34 @@ class WP_MCP_AI_REST_Transcript_Mining_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_job( WP_REST_Request $request ) {
-		$id       = (string) $request->get_param( 'id' );
-		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $id );
-		if ( null === $progress ) {
-			return new WP_Error( 'job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
+		try {
+			$id       = (string) $request->get_param( 'id' );
+			$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $id );
+			if ( null === $progress ) {
+				return new WP_Error( 'job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
+			}
+			return rest_ensure_response( $progress );
+		} catch ( Throwable $e ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Transcript mining REST: get_job threw an exception.',
+					array(
+						'message' => $e->getMessage(),
+						'file'    => $e->getFile(),
+						'line'    => $e->getLine(),
+					)
+				);
+			}
+			return new WP_Error(
+				'transcript_mining_get_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to load mining job: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				),
+				array( 'status' => 500 )
+			);
 		}
-		return rest_ensure_response( $progress );
 	}
 
 	/**
@@ -211,12 +255,34 @@ class WP_MCP_AI_REST_Transcript_Mining_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function cancel_job( WP_REST_Request $request ) {
-		$id     = (string) $request->get_param( 'id' );
-		$result = WP_MCP_AI_Transcript_Mining_Job::cancel( $id );
-		if ( is_wp_error( $result ) ) {
-			$result->add_data( array( 'status' => 404 ) );
-			return $result;
+		try {
+			$id     = (string) $request->get_param( 'id' );
+			$result = WP_MCP_AI_Transcript_Mining_Job::cancel( $id );
+			if ( is_wp_error( $result ) ) {
+				$result->add_data( array( 'status' => 404 ) );
+				return $result;
+			}
+			return rest_ensure_response( WP_MCP_AI_Transcript_Mining_Job::get_progress( $id ) );
+		} catch ( Throwable $e ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Transcript mining REST: cancel_job threw an exception.',
+					array(
+						'message' => $e->getMessage(),
+						'file'    => $e->getFile(),
+						'line'    => $e->getLine(),
+					)
+				);
+			}
+			return new WP_Error(
+				'transcript_mining_cancel_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to cancel mining job: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				),
+				array( 'status' => 500 )
+			);
 		}
-		return rest_ensure_response( WP_MCP_AI_Transcript_Mining_Job::get_progress( $id ) );
 	}
 }

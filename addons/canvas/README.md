@@ -66,7 +66,7 @@ Copyright (c) Automattic, Inc. — see `assets/canvas/package.json` for details.
 
 ## Plugin License
 
-GPLv3 or later — see the LICENSE file in the parent repository.
+Proprietary — © 2025-2026 NV Digital Solutions. All rights reserved. The bundled `canvas` npm package retains its MIT license. See [`CREDITS.md`](../../CREDITS.md) at the repository root for full attribution.
 
 ## Credits
 

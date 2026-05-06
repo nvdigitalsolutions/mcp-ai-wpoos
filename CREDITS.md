@@ -16,13 +16,23 @@
 | **Project** | Open Operator System (NV oOS) |
 | **Maintainer** | [NV Digital Solutions](https://nvdigitalsolutions.com/) |
 | **Base plugin license** | [GPLv3 or later](LICENSE) |
-| **Pro addon license** | Proprietary — © NV Digital Solutions, all rights reserved |
+| **Algorave addon license** | AGPL-3.0-or-later (bundles `@strudel/web` AGPL-3.0) |
+| **Pro addon + 6 proprietary addons license** | Proprietary — © NV Digital Solutions, all rights reserved |
 | **Repository** | <https://github.com/nvdigitalsolutions/mcp-ai-wpoos> |
 
-The base plugin is GPLv3. The Pro addon (`addons/pro/`) is a separate,
-optionally-installed plugin under a proprietary license. The third-party
-attributions below apply to whichever distribution actually bundles each
-resource — see the **Location** column on each table.
+NV oOS ships under a three-tier license model:
+
+1. **Base plugin** (root `mcp-ai-wpoos.php`, `includes/`) — **GPLv3 or later**.
+2. **Open community addon** — `addons/algorave/` is **AGPL-3.0-or-later**
+   (the combined-work license is AGPL because it bundles the AGPL-3.0
+   `@strudel/web` live-coding engine).
+3. **Proprietary addons** — `addons/pro/`, `addons/graphify/`,
+   `addons/embedded/`, `addons/cornerstone3d/`, `addons/canvas/`,
+   `addons/cloud-worker/`, and `addons/fantasy-football/` are separate,
+   optionally-installed components under a **proprietary** license. Their
+   third-party dependencies retain their upstream licenses (mostly MIT or
+   Apache-2.0); the table-column on each entry below indicates exactly which
+   distribution bundles which resource.
 
 ---
 
@@ -264,15 +274,101 @@ Vendored under `addons/graphify/assets/vendor/`, each with its own
 | `cose-base` | MIT | <https://github.com/iVis-at-Bilkent/cose-base> |
 | `layout-base` | MIT | <https://github.com/iVis-at-Bilkent/layout-base> |
 
+### `addons/docs-hub/` — React-based documentation browser
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | ^19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | ^19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-router-dom` | ^7.15.0 | MIT | <https://github.com/remix-run/react-router> |
+| `react-markdown` | ^10.1.0 | MIT | <https://github.com/remarkjs/react-markdown> |
+| `remark-gfm` | ^4.0.1 | MIT | <https://github.com/remarkjs/remark-gfm> |
+| `remark-directive` | ^4.0.0 | MIT | <https://github.com/remarkjs/remark-directive> |
+| `remark-frontmatter` | ^5.0.0 | MIT | <https://github.com/remarkjs/remark-frontmatter> |
+| `rehype-slug` | ^6.0.0 | MIT | <https://github.com/rehypejs/rehype-slug> |
+| `rehype-autolink-headings` | ^7.1.0 | MIT | <https://github.com/rehypejs/rehype-autolink-headings> |
+| `flexsearch` | ^0.8.212 | Apache-2.0 | <https://github.com/nextapps-de/flexsearch> |
+
+All packages are MIT-licensed (except FlexSearch which is Apache-2.0). The React SPA
+is bundled into `addons/docs-hub/assets/dist/docs-hub.js` via esbuild.
+
 ### `addons/embedded/`
 
-No external bundled JS libraries; CSS/JS authored in-house. License: GPLv3.
+No external bundled JS libraries; CSS/JS authored in-house. **License:**
+proprietary — © NV Digital Solutions, all rights reserved. WebLLM
+(Apache-2.0) is loaded from a CDN at runtime; llama.cpp (MIT) is invoked as
+an external system binary.
 
 ### `addons/fantasy-football/`
 
-No bundled third-party JavaScript. PHP-only addon under GPL-3.0-or-later. ESPN
-and Yahoo Fantasy APIs are accessed at runtime over HTTPS; their use is
-governed by the providers' respective Terms of Service.
+No bundled third-party JavaScript. PHP-only addon under a **proprietary**
+license — © NV Digital Solutions, all rights reserved. ESPN and Yahoo
+Fantasy APIs are accessed at runtime over HTTPS; their use is governed by
+the providers' respective Terms of Service.
+
+### `addons/cloud-worker/` — NV oOS Cloud SaaS backend (Cloudflare Worker)
+
+This addon is **not a WordPress plugin**. It is the SaaS-side counterpart to
+the Pro plugin module that ships in `addons/pro/`. Deployed independently to
+`cloud.nvoos.com` as a Cloudflare Worker.
+
+| Package | License | Purpose |
+|---|---|---|
+| [`hono`](https://hono.dev/) ^4.12.4 | MIT | Edge-friendly HTTP router. |
+| [`stripe`](https://github.com/stripe/stripe-node) ^17.4.0 | MIT | Type definitions only — at request-time we use the bare HTTPS API to keep the bundle small. |
+| [`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) ^4 | Apache-2.0 | Type definitions for the Workers runtime. |
+| [`wrangler`](https://github.com/cloudflare/workers-sdk) ^3.114.17 | MIT OR Apache-2.0 | Build / deploy CLI. |
+| [`vitest`](https://vitest.dev/) ^2.1.9 + [`@cloudflare/vitest-pool-workers`](https://www.npmjs.com/package/@cloudflare/vitest-pool-workers) | MIT | Test runner against Miniflare. |
+
+External services consumed at runtime:
+
+- [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) — inference proxy (revenue-share metering, caching, rate limiting).
+- [OpenRouter](https://openrouter.ai/) — multi-provider model router.
+- [Stripe](https://stripe.com/) — payments + tax (Stripe Tax handles VAT / GST / sales tax worldwide).
+
+### `addons/saas-controller/` — NV oOS Cloud SaaS Controller (operator-side WP plugin)
+
+**License: Proprietary — © 2026 NV Digital Solutions, All Rights Reserved.**
+Unlike the rest of this repository (GPLv3), this addon is proprietary and is
+**not** distributed via WordPress.org. See
+[`addons/saas-controller/LICENSE`](addons/saas-controller/LICENSE) for the
+governing terms; the third-party packages listed below remain under their own
+upstream licenses.
+
+Operator-side WordPress plugin that provisions, plan/applies, drift-detects,
+and audits the `addons/cloud-worker/` runtime — without leaving WP-Admin.
+
+The addon ships **two compiled artifacts**: `assets/build/index.js`
+(`@wordpress/scripts` bundle, the WP-Admin UI) and
+`worker/dist/index.js` (esbuild bundle, the Cloudflare Worker). Sources and
+`node_modules/` are excluded from the distribution ZIP.
+
+**Bundled at runtime — Admin UI** (`assets/build/index.js`):
+
+| Package | License | Purpose |
+|---|---|---|
+| [`@tanstack/react-query`](https://tanstack.com/query) ^5.62.0 | MIT | Polling reconcile-job status, drift results, audit log. |
+| [`zod`](https://zod.dev/) ^3.24.1 | MIT | Client-side schema validation of credentials & reconcile-plan JSON. |
+| [`diff`](https://github.com/kpdecker/jsdiff) ^7.0.0 | BSD-3-Clause | Plan-preview before/after rendering. |
+| [`date-fns`](https://date-fns.org/) ^4.1.0 | MIT | Audit-log timestamps and "last checked X ago" labels. |
+| [`clsx`](https://github.com/lukeed/clsx) ^2.1.1 | MIT | Conditional className helper. |
+
+WordPress core externals (`@wordpress/element`, `@wordpress/components`,
+`@wordpress/api-fetch`, `@wordpress/i18n`, `@wordpress/data`,
+`@wordpress/icons`, `@wordpress/url`) are auto-externalized by
+`@wordpress/scripts` and are not bundled.
+
+**Build-time / dev-only — never shipped**:
+[`wrangler`](https://github.com/cloudflare/workers-sdk) ^4.59.1 (MIT OR Apache-2.0; pinned at this floor because earlier versions are affected by a published GHSA OS-command-injection advisory in `wrangler pages deploy`),
+[`esbuild`](https://github.com/evanw/esbuild) ^0.24.2 (MIT),
+[`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) ^4.x (Apache-2.0),
+[`miniflare`](https://github.com/cloudflare/workers-sdk) ^4.x (MIT),
+[`@wordpress/scripts`](https://github.com/WordPress/gutenberg/tree/trunk/packages/scripts) ^30 (GPL-2.0-or-later),
+[`typescript`](https://github.com/microsoft/TypeScript) ^5.7 (Apache-2.0),
+[`npm-run-all`](https://github.com/mysticatea/npm-run-all) ^4 (MIT).
+
+The full per-package license + copyright table is in
+[`addons/saas-controller/THIRD_PARTY_NOTICES.md`](addons/saas-controller/THIRD_PARTY_NOTICES.md).
 
 ---
 

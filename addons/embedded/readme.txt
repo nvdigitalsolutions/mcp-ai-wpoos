@@ -5,8 +5,8 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.0.0
-License: GPLv3 or later
-License URI: https://www.gnu.org/licenses/gpl-3.0.html
+License: Proprietary
+License URI: https://nvdigitalsolutions.com/wpoos/license
 
 Embedded AI inference and WebChat P2P extension for NV oOS (Open Operator System).
 
