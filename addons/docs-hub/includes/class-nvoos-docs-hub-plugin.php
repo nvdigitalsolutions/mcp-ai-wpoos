@@ -44,6 +44,10 @@ class NV_oOS_Docs_Hub_Plugin {
 		add_action( 'activated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
 		add_action( 'deactivated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
+
+		// Register the chunked-rebuild tick handler. Settings page
+		// registers itself when its file is loaded (admin context only).
+		NV_oOS_Docs_Hub_Rebuild_Pipeline::register();
 	}
 
 	/**
@@ -86,15 +90,16 @@ class NV_oOS_Docs_Hub_Plugin {
 		return wp_parse_args(
 			get_option( self::OPTION_KEY, array() ),
 			array(
-				'enabled'         => true,
-				'sources'         => array( 'base', 'addons', 'root' ),
-				'context_enabled' => false,
-				'default_theme'   => 'auto',
-				'search_enabled'  => true,
-				'sidebar_enabled' => true,
-				'default_home'    => 'readme',
-				'github_repo_url' => '',
-				'remote_repos'    => array(),
+				'enabled'               => true,
+				'sources'               => array( 'base', 'addons', 'root' ),
+				'context_enabled'       => false,
+				'default_theme'         => 'auto',
+				'search_enabled'        => true,
+				'sidebar_enabled'       => true,
+				'include_addon_readmes' => true,
+				'default_home'          => 'readme',
+				'github_repo_url'       => '',
+				'remote_repos'          => array(),
 			)
 		);
 	}
@@ -135,12 +140,16 @@ class NV_oOS_Docs_Hub_Plugin {
 	/**
 	 * Run the scheduled rebuild via cron.
 	 *
+	 * Daily cron now enqueues the async chunked pipeline instead of
+	 * running the entire rebuild inline (which historically OOM'd on
+	 * large repos).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
 	public static function run_scheduled_rebuild() {
-		NV_oOS_Docs_Hub_Rebuild_Job::run();
+		NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 	}
 
 	/**

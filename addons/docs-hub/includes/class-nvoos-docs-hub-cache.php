@@ -42,11 +42,46 @@ class NV_oOS_Docs_Hub_Cache {
 	const CACHE_DIR = 'nvoos-docs-hub';
 
 	/**
+	 * Sub-directory used as the staging namespace during a chunked rebuild.
+	 *
+	 * Pages are written here first, then atomically swapped into the live
+	 * cache once every phase succeeds. This eliminates the historical
+	 * "blank docs while rebuilding" window.
+	 *
+	 * @var string
+	 */
+	const STAGING_DIR = '_staging';
+
+	/**
 	 * Cached upload directory path.
 	 *
 	 * @var string|null
 	 */
 	private $upload_dir = null;
+
+	/**
+	 * Whether read/write operations target the staging namespace instead of
+	 * the live cache. Toggle via use_staging().
+	 *
+	 * @var bool
+	 */
+	private $staging = false;
+
+	/**
+	 * Switch this instance to read/write the staging namespace.
+	 *
+	 * Subsequent get_/set_ calls go to <upload>/<CACHE_DIR>/_staging/...
+	 * instead of <upload>/<CACHE_DIR>/...
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param bool $on Enable (true) or disable (false).
+	 * @return self
+	 */
+	public function use_staging( $on = true ) {
+		$this->staging = (bool) $on;
+		return $this;
+	}
 
 	/**
 	 * Get the manifest from cache.
@@ -174,7 +209,7 @@ class NV_oOS_Docs_Hub_Cache {
 	 * @return void
 	 */
 	public function clear() {
-		$dir = $this->get_upload_dir();
+		$dir = $this->get_live_dir();
 		if ( ! $dir ) {
 			return;
 		}
@@ -263,11 +298,43 @@ class NV_oOS_Docs_Hub_Cache {
 	/**
 	 * Get the absolute path to the cache upload directory, creating it if needed.
 	 *
+	 * Honours the staging toggle: when staging is on, returns the
+	 * `_staging` sub-directory.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return string|false False on failure.
 	 */
 	private function get_upload_dir() {
+		$base_dir = $this->get_live_dir();
+		if ( false === $base_dir ) {
+			return false;
+		}
+
+		if ( ! $this->staging ) {
+			return $base_dir;
+		}
+
+		$staging = $base_dir . DIRECTORY_SEPARATOR . self::STAGING_DIR;
+		if ( ! wp_mkdir_p( $staging ) ) {
+			return false;
+		}
+		wp_mkdir_p( $staging . DIRECTORY_SEPARATOR . 'pages' );
+
+		return $staging;
+	}
+
+	/**
+	 * Get (and lazily create) the live cache directory.
+	 *
+	 * Always returns the non-staging directory regardless of the staging
+	 * toggle — used by clear_staging() and promote_staging().
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return string|false False on failure.
+	 */
+	private function get_live_dir() {
 		if ( null !== $this->upload_dir ) {
 			return $this->upload_dir;
 		}
@@ -296,6 +363,156 @@ class NV_oOS_Docs_Hub_Cache {
 
 		$this->upload_dir = $dir;
 		return $dir;
+	}
+
+	/**
+	 * Delete every artefact in the staging namespace.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return void
+	 */
+	public function clear_staging() {
+		$live = $this->get_live_dir();
+		if ( ! $live ) {
+			return;
+		}
+		$staging = $live . DIRECTORY_SEPARATOR . self::STAGING_DIR;
+		if ( ! is_dir( $staging ) ) {
+			return;
+		}
+		$this->rm_rf( $staging );
+	}
+
+	/**
+	 * Promote the staging namespace to the live cache atomically.
+	 *
+	 * Writes manifest + search-index + page payloads from `_staging/`
+	 * into the live cache, then clears staging. Existing live files are
+	 * overwritten; orphaned page files (slugs that no longer exist) are
+	 * removed so the live cache cleanly reflects the new manifest.
+	 *
+	 * Transients for the manifest and search index are refreshed to keep
+	 * fast-path reads aligned with the on-disk truth.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return bool True on success, false when staging is empty or unwritable.
+	 */
+	public function promote_staging() {
+		$live = $this->get_live_dir();
+		if ( ! $live ) {
+			return false;
+		}
+		$staging = $live . DIRECTORY_SEPARATOR . self::STAGING_DIR;
+		if ( ! is_dir( $staging ) ) {
+			return false;
+		}
+
+		// 1. Read staged manifest + search index.
+		$manifest     = $this->read_path( $staging . DIRECTORY_SEPARATOR . 'manifest.json' );
+		$search_index = $this->read_path( $staging . DIRECTORY_SEPARATOR . 'search-index.json' );
+
+		if ( ! is_array( $manifest ) ) {
+			return false;
+		}
+
+		// 2. Determine valid page filenames from the staged slug map.
+		$valid_filenames = array();
+		if ( isset( $manifest['slug_map'] ) && is_array( $manifest['slug_map'] ) ) {
+			foreach ( array_keys( $manifest['slug_map'] ) as $slug ) {
+				$valid_filenames[ $this->slug_to_filename( $slug ) . '.json' ] = true;
+			}
+		}
+
+		// 3. Move staged page files into live.
+		$staged_pages = is_dir( $staging . '/pages' ) ? glob( $staging . '/pages/*.json' ) : array();
+		$live_pages   = $live . DIRECTORY_SEPARATOR . 'pages';
+		wp_mkdir_p( $live_pages );
+
+		if ( ! empty( $staged_pages ) ) {
+			foreach ( $staged_pages as $src ) {
+				$basename = basename( $src );
+				$dst      = $live_pages . DIRECTORY_SEPARATOR . $basename;
+				// PHP rename() is atomic on the same filesystem.
+				if ( ! @rename( $src, $dst ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					$contents = file_get_contents( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+					if ( false !== $contents ) {
+						file_put_contents( $dst, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+						wp_delete_file( $src );
+					}
+				}
+			}
+		}
+
+		// 4. Remove orphaned live page files (slugs that disappeared).
+		$existing = glob( $live_pages . '/*.json' );
+		if ( ! empty( $existing ) ) {
+			foreach ( $existing as $file ) {
+				if ( empty( $valid_filenames[ basename( $file ) ] ) ) {
+					wp_delete_file( $file );
+				}
+			}
+		}
+
+		// 5. Write manifest + search-index into live (and refresh transients).
+		$this->write_json( 'manifest.json', $manifest );
+		set_transient( self::TRANSIENT_PREFIX . 'manifest', $manifest, self::TRANSIENT_TTL );
+
+		if ( is_array( $search_index ) ) {
+			$this->write_json( 'search-index.json', $search_index );
+			set_transient( self::TRANSIENT_PREFIX . 'search', $search_index, self::TRANSIENT_TTL );
+		}
+
+		// 6. Tear down staging.
+		$this->rm_rf( $staging );
+
+		return true;
+	}
+
+	/**
+	 * Read and decode a JSON file by absolute path.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $path Absolute file path.
+	 * @return array|false
+	 */
+	private function read_path( $path ) {
+		if ( ! file_exists( $path ) ) {
+			return false;
+		}
+		$contents = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		if ( false === $contents ) {
+			return false;
+		}
+		$decoded = json_decode( $contents, true );
+		return is_array( $decoded ) ? $decoded : false;
+	}
+
+	/**
+	 * Recursively remove a directory.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $dir Absolute directory path.
+	 * @return void
+	 */
+	private function rm_rf( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+		$entries = array_diff( scandir( $dir ), array( '.', '..' ) );
+		foreach ( $entries as $entry ) {
+			$path = $dir . DIRECTORY_SEPARATOR . $entry;
+			if ( is_dir( $path ) ) {
+				$this->rm_rf( $path );
+			} else {
+				wp_delete_file( $path );
+			}
+		}
+		// rmdir is intentionally suppressed — non-empty corner cases shouldn't fatal.
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	}
 
 	/**
