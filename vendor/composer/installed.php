@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-dependabot-alerts',
-        'version' => 'dev-copilot/fix-dependabot-alerts',
-        'reference' => 'b007a133f357e6b7a4a185a645e755d2c6a075da',
+        'pretty_version' => 'dev-copilot/run-build-plugin-zip-script',
+        'version' => 'dev-copilot/run-build-plugin-zip-script',
+        'reference' => 'b421eba22509f86f2becdddf530fcee8a4edac64',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-dependabot-alerts',
-            'version' => 'dev-copilot/fix-dependabot-alerts',
-            'reference' => 'b007a133f357e6b7a4a185a645e755d2c6a075da',
+            'pretty_version' => 'dev-copilot/run-build-plugin-zip-script',
+            'version' => 'dev-copilot/run-build-plugin-zip-script',
+            'reference' => 'b421eba22509f86f2becdddf530fcee8a4edac64',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
