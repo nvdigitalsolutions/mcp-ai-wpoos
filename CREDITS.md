@@ -329,6 +329,32 @@ Initial release ships `mode="flow"` on top of `@xyflow/react`; the
 `whiteboard` (tldraw), `bpmn` (bpmn-js), and `mermaid` modes ship as
 follow-up PRs.
 
+### `addons/document-editor/` — Tiptap rich-text document editor SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `@tiptap/react` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/pm` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/starter-kit` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-link` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-placeholder` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-table` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-table-{cell,header,row}` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/document-editor/THIRD_PARTY_NOTICES.md`](addons/document-editor/THIRD_PARTY_NOTICES.md).
+
+The document-editor addon is the Phase 3 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier C — separate
+addon for rich-text / document surfaces. Initial release ships `mode="editor"` (full
+Tiptap document editor with toolbar + REST `/nvoos-document-editor/v1/documents`
+CRUD backed by the `nvoos_document` CPT). The `site-creator` mode (Tiptap + GrapesJS)
+ships as a follow-up PR.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**
