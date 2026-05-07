@@ -121,7 +121,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # If no build type specified, build all versions (base, pro, combined, and core-only)
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ]; then
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ] && [ "$BUILD_WP_ORG" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
