@@ -21,6 +21,7 @@ import remarkDirective from 'remark-directive';
 import remarkFrontmatter from 'remark-frontmatter';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import { visit } from 'unist-util-visit';
 import CodeBlock from './CodeBlock';
 import Callout from './Callout';
 import type { Components } from 'react-markdown';
@@ -93,8 +94,6 @@ const components: Components = {
 function remarkDirectiveCallouts() {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return ( tree: any ) => {
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
-		const visit = require( 'unist-util-visit' );
 		visit( tree, [ 'containerDirective' ], ( node: { type: string; name: string; data?: object } ) => {
 			if ( ! node.data ) {
 				node.data = {};
