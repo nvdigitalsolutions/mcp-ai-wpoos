@@ -1,6 +1,6 @@
 # Toolkit SPA Blueprint
 
-> **Status:** Foundation (Phase 0). Last reviewed: **May 2026** · Version: **1.0**
+> **Status:** Phases 0–9 complete. Last reviewed: **May 2026** · Version: **1.9**
 >
 > This document formalizes the reusable pattern established by
 > [`addons/docs-hub/`](../../addons/docs-hub/) for shipping a React Single-Page
@@ -687,7 +687,34 @@ limit before a failure.
 
 ---
 
-## 17. Scaffolding a new toolkit-SPA addon
+## 17. Phase 9 — Scaffolder CI auto-patch
+
+The scaffolder (`bin/scaffold-toolkit-spa.sh`) automatically registers every
+new addon in both CI workflow matrices. No manual YAML editing is needed.
+
+### What gets patched
+
+| Workflow | Change |
+|----------|--------|
+| `spa-a11y.yml` | Adds `addons/<slug>/src/**` and `addons/<slug>/eslint.config.js` to both `push` and `pull_request` path filters; appends `- <slug>` to the `matrix.addon` list. |
+| `spa-bundle-size.yml` | Adds `src/**`, `esbuild.config.cjs`, and `package.json` path entries to both triggers; appends `- addon: <slug>\n  limit_kb: 200` to the `matrix.include` list. |
+
+### Bundle-size limit for new addons
+
+New addons scaffolded after Phase 9 default to **200 KB gzip**. If your
+addon ships heavy peer dependencies (a Tier D specialist shell), update
+`spa-bundle-size.yml` manually after scaffolding and explain the higher limit
+in a comment.
+
+### Idempotent
+
+If the scaffolder detects that `addons/<slug>/src/**` is already present in
+the workflow file it skips that file, preventing duplicate entries if the
+patch step is accidentally re-run.
+
+---
+
+## 18. Scaffolding a new toolkit-SPA addon
 
 Run:
 
@@ -710,7 +737,7 @@ scaffolding:
 
 ---
 
-## 18. References
+## 19. References
 
 - [`addons/docs-hub/`](../../addons/docs-hub/) — canonical reference
   implementation

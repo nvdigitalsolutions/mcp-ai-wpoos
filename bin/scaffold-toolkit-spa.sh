@@ -910,6 +910,88 @@ cat > "$ADDON_DIR/languages/.gitkeep" <<'EOF'
 # Generated .pot / .po / .mo files live here.
 EOF
 
+# --- Patch CI workflow files to include the new addon ----------------------
+#
+# spa-a11y.yml  : adds the new addon's src/**  + eslint.config.js to both
+#                 push/pull_request path filters, and appends to the matrix.
+# spa-bundle-size.yml : adds src/**, esbuild.config.cjs, package.json to
+#                 both path filters, and appends a 200 KB matrix entry.
+#
+# Uses Python (always available in CI) to avoid complex multi-line sed
+# escaping.  Variables interpolated via non-quoted heredoc delimiter.
+
+_patch_yml() {
+	local YML_FILE="$1"
+	local ADDON_SLUG="$2"
+
+	if [ ! -f "$YML_FILE" ]; then
+		echo "[scaffold] WARNING: $YML_FILE not found — skipping CI patch."
+		return 0
+	fi
+
+	python3 - "$YML_FILE" "$ADDON_SLUG" <<-'PY'
+		import sys
+
+		path, slug = sys.argv[1], sys.argv[2]
+
+		with open(path) as fh:
+			text = fh.read()
+
+		# Bail out if the addon is already registered (idempotent).
+		if "addons/" + slug + "/src/**" in text:
+			sys.exit(0)
+
+		filename = path.split("/")[-1]
+
+		if filename == "spa-a11y.yml":
+			# Extend both push + pull_request path filters (same anchor appears twice).
+			OLD_PATHS = "      - 'addons/media-studio/eslint.config.js'"
+			NEW_PATHS = (
+				OLD_PATHS
+				+ "\n      - 'addons/" + slug + "/src/**'"
+				+ "\n      - 'addons/" + slug + "/eslint.config.js'"
+			)
+			text = text.replace(OLD_PATHS, NEW_PATHS)
+
+			# Extend the matrix addon list.
+			OLD_MATRIX = "          - media-studio"
+			NEW_MATRIX = OLD_MATRIX + "\n          - " + slug
+			text = text.replace(OLD_MATRIX, NEW_MATRIX, 1)
+
+		elif filename == "spa-bundle-size.yml":
+			# Extend both push + pull_request path filters.
+			OLD_PATHS = "      - 'addons/media-studio/package.json'"
+			NEW_PATHS = (
+				OLD_PATHS
+				+ "\n      - 'addons/" + slug + "/src/**'"
+				+ "\n      - 'addons/" + slug + "/esbuild.config.cjs'"
+				+ "\n      - 'addons/" + slug + "/package.json'"
+			)
+			text = text.replace(OLD_PATHS, NEW_PATHS)
+
+			# Extend the matrix include list after the media-studio entry.
+			OLD_MATRIX = "            limit_kb: 900"
+			NEW_MATRIX = (
+				OLD_MATRIX
+				+ "\n          - addon: " + slug
+				+ "\n            limit_kb: 200"
+			)
+			text = text.replace(OLD_MATRIX, NEW_MATRIX, 1)
+
+		with open(path, "w") as fh:
+			fh.write(text)
+	PY
+
+	echo "[scaffold] Patched ${YML_FILE##*/}"
+}
+
+A11Y_YML="${REPO_ROOT}/.github/workflows/spa-a11y.yml"
+BUNDLE_YML="${REPO_ROOT}/.github/workflows/spa-bundle-size.yml"
+
+_patch_yml "$A11Y_YML"    "$SLUG"
+_patch_yml "$BUNDLE_YML"  "$SLUG"
+
+# ---------------------------------------------------------------------------
 echo ""
 echo "[scaffold] Done. Next steps:"
 echo "  1. cd addons/${SLUG}"
