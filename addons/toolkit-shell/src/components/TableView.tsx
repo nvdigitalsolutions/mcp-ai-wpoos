@@ -9,13 +9,16 @@ import type { Resource } from '../api/types';
 interface TableViewProps {
 	resource: Resource;
 	rows: Array<Record<string, unknown>>;
+	onRowClick?: ( id: string | number ) => void;
+	onDelete?: ( id: string | number ) => void;
 }
 
-export function TableView( { resource, rows }: TableViewProps ) {
+export function TableView( { resource, rows, onRowClick, onDelete }: TableViewProps ) {
 	const fields = resource.fields;
 	if ( fields.length === 0 ) {
 		return <p>No fields declared on resource &ldquo;{ resource.label }&rdquo;.</p>;
 	}
+	const showActions = Boolean( onRowClick || onDelete );
 	return (
 		<table className="nvoos-toolkit-shell-table">
 			<thead>
@@ -25,23 +28,54 @@ export function TableView( { resource, rows }: TableViewProps ) {
 							{ field.label || field.name }
 						</th>
 					) ) }
+					{ showActions && <th scope="col">Actions</th> }
 				</tr>
 			</thead>
 			<tbody>
 				{ rows.length === 0 ? (
 					<tr>
-						<td colSpan={ fields.length }>No rows.</td>
+						<td colSpan={ fields.length + ( showActions ? 1 : 0 ) }>
+							No rows.
+						</td>
 					</tr>
 				) : (
-					rows.map( ( row, idx ) => (
-						<tr key={ String( row[ resource.primary_key ] ?? idx ) }>
-							{ fields.map( ( field ) => (
-								<td key={ field.name }>
-									{ formatCell( row[ field.name ], field.type ) }
-								</td>
-							) ) }
-						</tr>
-					) )
+					rows.map( ( row, idx ) => {
+						const id = row[ resource.primary_key ];
+						const key = String( id ?? idx );
+						return (
+							<tr key={ key }>
+								{ fields.map( ( field ) => (
+									<td key={ field.name }>
+										{ formatCell( row[ field.name ], field.type ) }
+									</td>
+								) ) }
+								{ showActions && (
+									<td className="nvoos-toolkit-shell-table-actions">
+										{ onRowClick && id !== undefined && id !== null && (
+											<button
+												type="button"
+												onClick={ () =>
+													onRowClick( id as string | number )
+												}
+											>
+												View
+											</button>
+										) }
+										{ onDelete && id !== undefined && id !== null && (
+											<button
+												type="button"
+												onClick={ () =>
+													onDelete( id as string | number )
+												}
+											>
+												Delete
+											</button>
+										) }
+									</td>
+								) }
+							</tr>
+						);
+					} )
 				) }
 			</tbody>
 		</table>

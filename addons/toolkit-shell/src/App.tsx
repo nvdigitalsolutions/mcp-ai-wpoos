@@ -1,18 +1,28 @@
 /**
  * NV oOS Toolkit Shell — root component.
  *
- * Loads the manifest for the requested toolkit and renders the appropriate
- * view. Phase-0 implementation: minimal table view + status header. Refine
- * integration and Kanban / Calendar views are layered in by future PRs.
+ * Phase-1: manifest-driven router with table / kanban / detail / form views,
+ * a tab strip to switch between manifest views, and full CRUD flow against
+ * whichever REST namespace the manifest declares.
  *
  * @since 0.1.0
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchManifest } from './api/manifest-client';
-import { fetchResource } from './api/resource-client';
+import {
+	createResource,
+	deleteResource,
+	getResource,
+	listResource,
+	updateResource,
+	type ListResult,
+} from './api/resource-client';
 import type { Manifest, Resource, View } from './api/types';
 import { TableView } from './components/TableView';
+import { KanbanView } from './components/KanbanView';
+import { DetailView } from './components/DetailView';
+import { FormView } from './components/FormView';
 
 interface AppProps {
 	config: {
@@ -23,44 +33,46 @@ interface AppProps {
 	};
 }
 
-type LoadState =
+type ManifestState =
 	| { kind: 'idle' }
 	| { kind: 'loading' }
 	| { kind: 'error'; message: string }
 	| { kind: 'ready'; manifest: Manifest };
 
+type Mode =
+	| { kind: 'list' }
+	| { kind: 'detail'; id: string | number }
+	| { kind: 'create' }
+	| { kind: 'edit'; id: string | number };
+
+const PER_PAGE = 25;
+
 export function App( { config }: AppProps ) {
-	const [ state, setState ] = useState<LoadState>( { kind: 'idle' } );
-	const [ rows, setRows ] = useState<Array<Record<string, unknown>> | null>( null );
+	const [ manifestState, setManifestState ] = useState<ManifestState>( { kind: 'idle' } );
+	const [ activeViewName, setActiveViewName ] = useState<string | undefined>( config.view || undefined );
+	const [ mode, setMode ] = useState<Mode>( { kind: 'list' } );
 
 	useEffect( () => {
 		if ( ! config.toolkit ) {
-			setState( {
+			setManifestState( {
 				kind: 'error',
 				message: 'No toolkit specified. Add toolkit="<slug>" to the shortcode.',
 			} );
 			return;
 		}
-		setState( { kind: 'loading' } );
+		setManifestState( { kind: 'loading' } );
 		fetchManifest( config.toolkit )
 			.then( ( manifest ) => {
-				setState( { kind: 'ready', manifest } );
-				const view = pickView( manifest, config.view );
-				if ( ! view ) {
-					return;
+				setManifestState( { kind: 'ready', manifest } );
+				if ( ! activeViewName ) {
+					setActiveViewName( pickDefaultViewName( manifest ) );
 				}
-				const resource = manifest.resources.find( ( r ) => r.name === view.resource );
-				if ( ! resource ) {
-					return;
-				}
-				fetchResource( manifest.rest_namespace, resource )
-					.then( setRows )
-					.catch( () => setRows( [] ) );
 			} )
-			.catch( ( err: Error ) => {
-				setState( { kind: 'error', message: err.message } );
-			} );
-	}, [ config.toolkit, config.view ] );
+			.catch( ( err: Error ) =>
+				setManifestState( { kind: 'error', message: err.message } )
+			);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ config.toolkit ] );
 
 	const heightStyle = config.height ? { height: config.height } : undefined;
 
@@ -71,18 +83,31 @@ export function App( { config }: AppProps ) {
 			style={ heightStyle }
 		>
 			<header className="nvoos-toolkit-shell-header">
-				<h2>{ headerLabel( state ) }</h2>
+				<h2>{ headerLabel( manifestState ) }</h2>
+				{ manifestState.kind === 'ready' && (
+					<ViewTabs
+						manifest={ manifestState.manifest }
+						active={ activeViewName }
+						onChange={ ( name ) => {
+							setActiveViewName( name );
+							setMode( { kind: 'list' } );
+						} }
+					/>
+				) }
 			</header>
 			<main className="nvoos-toolkit-shell-main">
-				{ state.kind === 'loading' && <p>Loading manifest…</p> }
-				{ state.kind === 'error' && (
-					<p className="nvoos-toolkit-shell-error">Error: { state.message }</p>
+				{ manifestState.kind === 'loading' && <p>Loading manifest…</p> }
+				{ manifestState.kind === 'error' && (
+					<p className="nvoos-toolkit-shell-error">
+						Error: { manifestState.message }
+					</p>
 				) }
-				{ state.kind === 'ready' && (
-					<ToolkitView
-						manifest={ state.manifest }
-						viewName={ config.view }
-						rows={ rows }
+				{ manifestState.kind === 'ready' && activeViewName && (
+					<ViewSurface
+						manifest={ manifestState.manifest }
+						viewName={ activeViewName }
+						mode={ mode }
+						setMode={ setMode }
 					/>
 				) }
 			</main>
@@ -90,51 +115,254 @@ export function App( { config }: AppProps ) {
 	);
 }
 
-function pickView( manifest: Manifest, requested?: string ): View | undefined {
-	if ( requested ) {
-		const match = manifest.views.find( ( v ) => v.name === requested );
-		if ( match ) {
-			return match;
-		}
+function ViewTabs( {
+	manifest,
+	active,
+	onChange,
+}: {
+	manifest: Manifest;
+	active: string | undefined;
+	onChange: ( name: string ) => void;
+} ) {
+	if ( manifest.views.length <= 1 ) {
+		return null;
 	}
-	return manifest.views.find( ( v ) => v.default ) ?? manifest.views[ 0 ];
+	return (
+		<nav className="nvoos-toolkit-shell-tabs" role="tablist">
+			{ manifest.views.map( ( v ) => (
+				<button
+					key={ v.name }
+					type="button"
+					role="tab"
+					aria-selected={ v.name === active }
+					className={
+						v.name === active
+							? 'nvoos-toolkit-shell-tab is-active'
+							: 'nvoos-toolkit-shell-tab'
+					}
+					onClick={ () => onChange( v.name ) }
+				>
+					{ v.label || v.name }
+				</button>
+			) ) }
+		</nav>
+	);
 }
 
-function headerLabel( state: LoadState ): string {
+interface ViewSurfaceProps {
+	manifest: Manifest;
+	viewName: string;
+	mode: Mode;
+	setMode: ( mode: Mode ) => void;
+}
+
+function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) {
+	const view = manifest.views.find( ( v ) => v.name === viewName );
+	const resource = useMemo(
+		() =>
+			view
+				? manifest.resources.find( ( r ) => r.name === view.resource )
+				: undefined,
+		[ manifest, view ]
+	);
+
+	const [ list, setList ] = useState<ListResult>( { items: [] } );
+	const [ listLoading, setListLoading ] = useState( false );
+	const [ listError, setListError ] = useState<string | null>( null );
+	const [ page, setPage ] = useState( 1 );
+	const [ search, setSearch ] = useState( '' );
+
+	const [ detail, setDetail ] = useState<Record<string, unknown> | null>( null );
+	const [ detailLoading, setDetailLoading ] = useState( false );
+	const [ detailError, setDetailError ] = useState<string | null>( null );
+
+	const [ formSaving, setFormSaving ] = useState( false );
+	const [ formError, setFormError ] = useState<string | null>( null );
+
+	const reloadList = useCallback( () => {
+		if ( ! resource ) {
+			return;
+		}
+		setListLoading( true );
+		setListError( null );
+		listResource( manifest.rest_namespace, resource, {
+			page,
+			per_page: PER_PAGE,
+			search: search || undefined,
+		} )
+			.then( ( result ) => setList( result ) )
+			.catch( ( err: Error ) => {
+				setList( { items: [] } );
+				setListError( err.message );
+			} )
+			.finally( () => setListLoading( false ) );
+	}, [ manifest.rest_namespace, resource, page, search ] );
+
+	useEffect( () => {
+		if ( mode.kind === 'list' && resource ) {
+			reloadList();
+		}
+	}, [ mode.kind, reloadList, resource ] );
+
+	useEffect( () => {
+		if ( ( mode.kind === 'detail' || mode.kind === 'edit' ) && resource ) {
+			setDetailLoading( true );
+			setDetailError( null );
+			getResource( manifest.rest_namespace, resource, mode.id )
+				.then( ( row ) => setDetail( row ) )
+				.catch( ( err: Error ) => {
+					setDetail( null );
+					setDetailError( err.message );
+				} )
+				.finally( () => setDetailLoading( false ) );
+		}
+	}, [ mode, manifest.rest_namespace, resource ] );
+
+	if ( ! view ) {
+		return <p>This toolkit has no view named &ldquo;{ viewName }&rdquo;.</p>;
+	}
+	if ( ! resource ) {
+		return (
+			<p>View references unknown resource: <code>{ view.resource }</code>.</p>
+		);
+	}
+
+	if ( mode.kind === 'create' ) {
+		return (
+			<FormView
+				resource={ resource }
+				row={ null }
+				mode="create"
+				saving={ formSaving }
+				error={ formError }
+				onCancel={ () => setMode( { kind: 'list' } ) }
+				onSubmit={ ( values ) => {
+					setFormSaving( true );
+					setFormError( null );
+					createResource( manifest.rest_namespace, resource, values )
+						.then( () => setMode( { kind: 'list' } ) )
+						.catch( ( err: Error ) => setFormError( err.message ) )
+						.finally( () => setFormSaving( false ) );
+				} }
+			/>
+		);
+	}
+
+	if ( mode.kind === 'edit' ) {
+		return (
+			<FormView
+				resource={ resource }
+				row={ detail }
+				mode="edit"
+				saving={ formSaving }
+				error={ formError ?? detailError }
+				onCancel={ () => setMode( { kind: 'detail', id: mode.id } ) }
+				onSubmit={ ( values ) => {
+					setFormSaving( true );
+					setFormError( null );
+					updateResource( manifest.rest_namespace, resource, mode.id, values )
+						.then( () => setMode( { kind: 'detail', id: mode.id } ) )
+						.catch( ( err: Error ) => setFormError( err.message ) )
+						.finally( () => setFormSaving( false ) );
+				} }
+			/>
+		);
+	}
+
+	if ( mode.kind === 'detail' ) {
+		return (
+			<DetailView
+				resource={ resource }
+				row={ detail }
+				loading={ detailLoading }
+				error={ detailError }
+				onClose={ () => setMode( { kind: 'list' } ) }
+				onEdit={ () => setMode( { kind: 'edit', id: mode.id } ) }
+			/>
+		);
+	}
+
+	// Default: list mode.
+	return (
+		<>
+			<div className="nvoos-toolkit-shell-toolbar">
+				<input
+					type="search"
+					placeholder="Search…"
+					value={ search }
+					onChange={ ( e ) => {
+						setPage( 1 );
+						setSearch( e.target.value );
+					} }
+					aria-label="Search"
+				/>
+				<button type="button" onClick={ () => setMode( { kind: 'create' } ) }>
+					+ New
+				</button>
+			</div>
+			{ listError && (
+				<p className="nvoos-toolkit-shell-error">Error: { listError }</p>
+			) }
+			{ listLoading && <p>Loading…</p> }
+			{ ! listLoading && view.type === 'kanban' && (
+				<KanbanView
+					resource={ resource }
+					view={ view }
+					rows={ list.items }
+					onRowClick={ ( id ) => setMode( { kind: 'detail', id } ) }
+				/>
+			) }
+			{ ! listLoading && view.type !== 'kanban' && (
+				<TableView
+					resource={ resource }
+					rows={ list.items }
+					onRowClick={ ( id ) => setMode( { kind: 'detail', id } ) }
+					onDelete={ ( id ) => {
+						if ( ! confirm( 'Delete this record?' ) ) {
+							return;
+						}
+						deleteResource( manifest.rest_namespace, resource, id )
+							.then( () => reloadList() )
+							.catch( ( err: Error ) => setListError( err.message ) );
+					} }
+				/>
+			) }
+			{ ( list.totalPages ?? 0 ) > 1 && (
+				<div className="nvoos-toolkit-shell-pagination">
+					<button
+						type="button"
+						disabled={ page <= 1 }
+						onClick={ () => setPage( ( p ) => Math.max( 1, p - 1 ) ) }
+					>
+						Previous
+					</button>
+					<span>
+						Page { page }
+						{ list.totalPages ? ` of ${ list.totalPages }` : '' }
+					</span>
+					<button
+						type="button"
+						disabled={
+							list.totalPages !== undefined && page >= list.totalPages
+						}
+						onClick={ () => setPage( ( p ) => p + 1 ) }
+					>
+						Next
+					</button>
+				</div>
+			) }
+		</>
+	);
+}
+
+function pickDefaultViewName( manifest: Manifest ): string | undefined {
+	const def = manifest.views.find( ( v: View ) => v.default );
+	return ( def ?? manifest.views[ 0 ] )?.name;
+}
+
+function headerLabel( state: ManifestState ): string {
 	if ( state.kind === 'ready' ) {
 		return state.manifest.label || state.manifest.toolkit;
 	}
 	return 'NV oOS Toolkit';
-}
-
-interface ToolkitViewProps {
-	manifest: Manifest;
-	viewName?: string;
-	rows: Array<Record<string, unknown>> | null;
-}
-
-function ToolkitView( { manifest, viewName, rows }: ToolkitViewProps ) {
-	const view = pickView( manifest, viewName );
-	if ( ! view ) {
-		return <p>This toolkit has no views.</p>;
-	}
-	const resource = manifest.resources.find(
-		( r: Resource ) => r.name === view.resource
-	);
-	if ( ! resource ) {
-		return <p>View references unknown resource: { view.resource }</p>;
-	}
-	if ( view.type === 'table' ) {
-		return <TableView resource={ resource } rows={ rows ?? [] } />;
-	}
-	// Kanban, calendar, chart views are stubbed out for now.
-	return (
-		<div>
-			<p>
-				The <code>{ view.type }</code> view type is not yet implemented in this
-				phase. Falling back to a table.
-			</p>
-			<TableView resource={ resource } rows={ rows ?? [] } />
-		</div>
-	);
 }

@@ -23,14 +23,16 @@ manifests as React surfaces, talking to the toolkit's existing
 | File | Toolkit | Status |
 |------|---------|--------|
 | `crm.json` | CRM | Reference implementation |
+| `calendar-booking.json` | Calendar & Booking | Tier A — table + kanban (status) |
+| `financial-planner.json` | Financial Planner | Tier A — accounts + transactions |
+| `regulatory-registration.json` | Regulatory | Tier A — table + kanban (status) |
+| `analytics.json` | Analytics | Tier A — reports + metrics (read) |
+| `law-firm.json` | Law Firm | Tier A — matters + documents + kanban |
+| `cre-debt.json` | CRE Debt | Tier A — loans + payments + pipeline |
+| `multilingual.json` | Multilingual | Tier A — strings + translations + workflow |
 
 Roadmap (per the [blueprint Tier matrix](../../../../docs/addons/toolkit-spa-blueprint.md#13-tier-matrix-recommended-spa-pieces-per-pro-toolkit)):
 
-- `calendar-booking.json` — `@fullcalendar/react`
-- `financial-planner.json` — refine + `react-financial-charts` + `recharts`
-- `analytics.json` — refine + `recharts` / `visx`
-- `regulatory-registration.json`, `law-firm.json`, `cre-debt.json` — refine
-- `multilingual.json` — refine + Monaco
 - `ecommerce.json`, `social-media.json` — refine + `react-big-calendar`
 
 Specialist toolkits (architectural-design, ai-tool-builder, document-generation,

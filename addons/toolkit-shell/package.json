@@ -1,6 +1,6 @@
 {
   "name": "nvoos-toolkit-shell",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "NV oOS Toolkit Shell — manifest-driven React SPA for Pro toolkits",
   "private": true,
   "license": "GPL-3.0-or-later",

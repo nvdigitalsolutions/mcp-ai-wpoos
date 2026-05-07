@@ -18,7 +18,7 @@ class Test_Toolkit_Shell_Manifest extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! defined( 'NVOOS_TOOLKIT_SHELL_VERSION' ) ) {
-			define( 'NVOOS_TOOLKIT_SHELL_VERSION', '0.1.0' );
+			define( 'NVOOS_TOOLKIT_SHELL_VERSION', '0.2.0' );
 		}
 		if ( ! defined( 'NVOOS_TOOLKIT_SHELL_PATH' ) ) {
 			define( 'NVOOS_TOOLKIT_SHELL_PATH', dirname( __DIR__ ) . '/' );

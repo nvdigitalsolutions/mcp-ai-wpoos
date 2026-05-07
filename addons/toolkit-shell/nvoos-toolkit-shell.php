@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Toolkit Shell
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Manifest-driven React SPA shell for NV oOS Pro toolkits. One bundle, many surfaces — drives CRM, calendar-booking, financial-planner, regulatory-registration, law-firm, cre-debt, multilingual, ecommerce, social-media, and more via per-toolkit JSON manifests under addons/pro/config/spa-manifests/.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version — must match package.json. */
-define( 'NVOOS_TOOLKIT_SHELL_VERSION', '0.1.0' );
+define( 'NVOOS_TOOLKIT_SHELL_VERSION', '0.2.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_TOOLKIT_SHELL_FILE', __FILE__ );
