@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Chat_Spa_Shortcode {
 
-	const SHORTCODE = 'nvoos_chat_spa_app';
+	const SHORTCODE = 'nvoos_chat_spa';
 
 	/**
 	 * Register the shortcode.
@@ -37,10 +37,10 @@ class NV_oOS_Chat_Spa_Shortcode {
 	public static function render( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'toolkit' => '',
-				'theme'   => 'auto',
-				'view'    => '',
-				'height'  => '',
+				'assistant_id' => '',
+				'theme'        => 'auto',
+				'height'       => '',
+				'guest'        => '0',
 			),
 			$atts,
 			self::SHORTCODE
@@ -52,10 +52,10 @@ class NV_oOS_Chat_Spa_Shortcode {
 		}
 
 		$config = array(
-			'toolkit' => sanitize_key( $atts['toolkit'] ),
-			'theme'   => in_array( $atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? $atts['theme'] : 'auto',
-			'view'    => sanitize_key( $atts['view'] ),
-			'height'  => sanitize_text_field( $atts['height'] ),
+			'assistantId' => absint( $atts['assistant_id'] ),
+			'theme'       => in_array( $atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? $atts['theme'] : 'auto',
+			'height'      => sanitize_text_field( $atts['height'] ),
+			'guest'       => ! empty( $atts['guest'] ) && '0' !== (string) $atts['guest'],
 		);
 
 		self::enqueue_assets( $config );
@@ -65,10 +65,13 @@ class NV_oOS_Chat_Spa_Shortcode {
 			$config_json = '{}';
 		}
 
+		$height_attr = '' !== $config['height'] ? 'height:' . $config['height'] . ';' : '';
+
 		return sprintf(
-			'<div class="nvoos-chat-spa-root" role="application" aria-label="%s" data-config="%s"></div>',
-			esc_attr( __( 'Chat SPA', 'nvoos-chat-spa' ) ),
-			esc_attr( $config_json )
+			'<div class="nvoos-chat-spa-root" role="application" aria-label="%1$s" data-config="%2$s" style="%3$s"></div>',
+			esc_attr__( 'Chat', 'nvoos-chat-spa' ),
+			esc_attr( $config_json ),
+			esc_attr( $height_attr )
 		);
 	}
 
@@ -101,10 +104,22 @@ class NV_oOS_Chat_Spa_Shortcode {
 			'nvoos-chat-spa',
 			'NVOOS_CHAT_SPA',
 			array(
-				'apiUrl' => esc_url_raw( rest_url( NV_oOS_Chat_Spa_REST::REST_NAMESPACE ) ),
-				'proApi' => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
-				'nonce'  => wp_create_nonce( 'wp_rest' ),
-				'config' => $config,
+				'apiUrl'    => esc_url_raw( rest_url( NV_oOS_Chat_Spa_REST::REST_NAMESPACE ) ),
+				'proApi'    => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'config'    => $config,
+				/*
+				 * Endpoint map — the SPA POSTs to these existing NV oOS chat REST
+				 * routes via its custom fetch + SSE → AI SDK Data Stream adapter.
+				 * No new chat endpoints are introduced; the WordPress PHP layer
+				 * remains the AI provider gateway and orchestrator.
+				 */
+				'endpoints' => array(
+					'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
+					'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+					'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
+					'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+				),
 			)
 		);
 		wp_enqueue_style( 'nvoos-chat-spa' );

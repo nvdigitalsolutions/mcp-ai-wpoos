@@ -40,10 +40,10 @@ class NV_oOS_Chat_Spa_Block {
 	 */
 	public static function render( $attributes ) {
 		$atts = array(
-			'toolkit' => isset( $attributes['toolkit'] ) ? sanitize_key( $attributes['toolkit'] ) : '',
-			'theme'   => isset( $attributes['theme'] ) ? sanitize_text_field( $attributes['theme'] ) : 'auto',
-			'view'    => isset( $attributes['view'] ) ? sanitize_key( $attributes['view'] ) : '',
-			'height'  => isset( $attributes['height'] ) ? sanitize_text_field( $attributes['height'] ) : '',
+			'assistant_id' => isset( $attributes['assistant_id'] ) ? absint( $attributes['assistant_id'] ) : 0,
+			'theme'        => isset( $attributes['theme'] ) ? sanitize_text_field( $attributes['theme'] ) : 'auto',
+			'height'       => isset( $attributes['height'] ) ? sanitize_text_field( $attributes['height'] ) : '',
+			'guest'        => ! empty( $attributes['guest'] ) ? '1' : '0',
 		);
 		return NV_oOS_Chat_Spa_Shortcode::render( $atts );
 	}

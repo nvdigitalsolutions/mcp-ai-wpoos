@@ -29,6 +29,9 @@ on:
       - 'addons/media-studio/src/**'
       - 'addons/media-studio/esbuild.config.cjs'
       - 'addons/media-studio/package.json'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/esbuild.config.cjs'
+      - 'addons/chat-spa/package.json'
   pull_request:
     paths:
       - 'addons/toolkit-shell/src/**'
@@ -43,6 +46,9 @@ on:
       - 'addons/media-studio/src/**'
       - 'addons/media-studio/esbuild.config.cjs'
       - 'addons/media-studio/package.json'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/esbuild.config.cjs'
+      - 'addons/chat-spa/package.json'
 
 jobs:
   bundle-size:
@@ -61,6 +67,8 @@ jobs:
             limit_kb: 500  # v0.2.0 ships site-creator mode (GrapesJS); heavier than base Tiptap editor
           - addon: media-studio
             limit_kb: 900
+          - addon: chat-spa
+            limit_kb: 350  # Vercel AI SDK UI (@ai-sdk/react) + React 19 baseline
 
     steps:
       - name: Checkout repository

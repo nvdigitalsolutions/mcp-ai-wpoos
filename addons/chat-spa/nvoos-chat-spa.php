@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NV oOS Chat SPA
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
- * Description: NV oOS Chat SPA — React-based SPA surface for the NV oOS plugin. Generated from the Toolkit SPA Blueprint.
+ * Description: NV oOS Chat — modern React chat surface for the NV oOS plugin. Drop-in shortcode + Gutenberg block that talks to the existing NV oOS REST chat endpoints (mcp-ai/v1/chat-client, /chat-transcripts, /chat-memory) via the Vercel AI SDK UI layer (@ai-sdk/react). No Node server is introduced.
  * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4

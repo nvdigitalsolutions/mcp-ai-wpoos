@@ -1,6 +1,6 @@
 # Toolkit SPA Blueprint
 
-> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0. Last reviewed: **May 2026** · Version: **2.1**
+> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0 · chat-spa v0.1.0 (Tier E scaffold). Last reviewed: **May 2026** · Version: **2.2**
 >
 > This document formalizes the reusable pattern established by
 > [`addons/docs-hub/`](../../addons/docs-hub/) for shipping a React Single-Page
@@ -446,6 +446,15 @@ Ships all four canvas modes (v0.2.0):
 | `social-media` | manifest in `toolkit-shell` — [`social-media.json`](../../addons/pro/config/spa-manifests/social-media.json) | refine + react-big-calendar (MIT) overlay |
 | `extended-cognition` | (deferred) | Custom (timeline + visx) |
 
+### Tier E — Chat surfaces
+*Modern React replacements for the legacy `assets/js/chat.js` UI. Uses
+`@ai-sdk/react`'s `useChat` hook on the React side only; the WordPress PHP
+layer remains the orchestrator and AI provider gateway.*
+
+| Toolkit | Addon | Recommended SPA pieces |
+|---------|-------|------------------------|
+| `chat` | [`addons/chat-spa/`](../../addons/chat-spa/) | `@ai-sdk/react` (Apache-2.0) + client-side SSE → AI SDK Data Stream Protocol adapter ([`src/sse-adapter.ts`](../../addons/chat-spa/src/sse-adapter.ts)) |
+
 ---
 
 ## 14. Risks & guardrails
@@ -668,6 +677,7 @@ enforces this automatically on every PR that touches `src/`,
 | `canvas-toolkit` | B — canvas | **1600 KB** | ~1495 KB |
 | `document-editor` | C — document | **500 KB** | ~485 KB |
 | `media-studio` | D — specialist | **900 KB** | ~806 KB |
+| `chat-spa` | E — chat surface | **350 KB** | ~73 KB |
 
 Tier A/C shells must stay under 200 KB gzipped (per §12 gate 2 and §13 Risks).
 `canvas-toolkit` ships four heavy specialist libraries (tldraw, bpmn-js, mermaid,

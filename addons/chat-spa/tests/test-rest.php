@@ -20,4 +20,23 @@ class Test_Chat_Spa_REST extends WP_UnitTestCase {
 		$result = NV_oOS_Chat_Spa_REST::admin_permission();
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}
+
+	public function test_config_payload_includes_chat_endpoints() {
+		$response = NV_oOS_Chat_Spa_REST::config();
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'endpoints', $data );
+		$this->assertArrayHasKey( 'chatClient', $data['endpoints'] );
+		$this->assertArrayHasKey( 'transcripts', $data['endpoints'] );
+		$this->assertArrayHasKey( 'memory', $data['endpoints'] );
+		$this->assertArrayHasKey( 'features', $data );
+	}
+
+	public function test_manifest_payload_describes_addon() {
+		$response = NV_oOS_Chat_Spa_REST::manifest();
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertSame( 'chat-spa', $data['slug'] );
+		$this->assertSame( 'chat', $data['surface'] );
+	}
 }

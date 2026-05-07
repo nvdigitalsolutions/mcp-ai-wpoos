@@ -28,6 +28,17 @@ class Test_Chat_Spa_Shortcode extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-config', $out );
 	}
 
+	public function test_shortcode_sanitizes_assistant_id() {
+		$out = NV_oOS_Chat_Spa_Shortcode::render( array( 'assistant_id' => '42abc' ) );
+		// absint() strips non-digits; 42 should appear in the JSON config.
+		$this->assertStringContainsString( '&quot;assistantId&quot;:42', $out );
+	}
+
+	public function test_shortcode_clamps_unknown_theme_to_auto() {
+		$out = NV_oOS_Chat_Spa_Shortcode::render( array( 'theme' => 'rainbow' ) );
+		$this->assertStringContainsString( '&quot;theme&quot;:&quot;auto&quot;', $out );
+	}
+
 	public function test_shortcode_respects_can_render_filter() {
 		add_filter( 'nvoos_chat_spa_can_render', '__return_false' );
 		$out = NV_oOS_Chat_Spa_Shortcode::render( array() );
