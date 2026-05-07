@@ -309,6 +309,26 @@ The toolkit-shell addon is the canonical Phase 1 implementation of the
 surfaces, driven by per-toolkit JSON manifests under
 `addons/pro/config/spa-manifests/`.
 
+### `addons/canvas-toolkit/` — React canvas / node-graph SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `@xyflow/react` | 12.4.0 | MIT | <https://github.com/xyflow/xyflow> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/canvas-toolkit/THIRD_PARTY_NOTICES.md`](addons/canvas-toolkit/THIRD_PARTY_NOTICES.md).
+
+The canvas-toolkit addon is the Phase 2 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier B — separate
+addon for canvas / whiteboard / node-graph / BPMN surfaces, lazy-loaded by mode.
+Initial release ships `mode="flow"` on top of `@xyflow/react`; the
+`whiteboard` (tldraw), `bpmn` (bpmn-js), and `mermaid` modes ship as
+follow-up PRs.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**
