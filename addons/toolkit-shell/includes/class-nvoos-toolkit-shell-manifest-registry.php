@@ -62,6 +62,13 @@ class NV_oOS_Toolkit_Shell_Manifest_Registry {
 	);
 
 	/**
+	 * Maximum manifest file size in bytes (256 KB).
+	 *
+	 * @var int
+	 */
+	const MAX_MANIFEST_SIZE = 262144;
+
+	/**
 	 * Cached list of manifests, keyed by toolkit slug.
 	 *
 	 * @var array<string, array>|null
@@ -179,9 +186,9 @@ class NV_oOS_Toolkit_Shell_Manifest_Registry {
 			return null;
 		}
 
-		// Cap file size at 256 KB to avoid memory bombs.
+		// Cap file size to avoid memory bombs.
 		$size = filesize( $realpath );
-		if ( false === $size || $size > 262144 ) {
+		if ( false === $size || $size > self::MAX_MANIFEST_SIZE ) {
 			return null;
 		}
 
@@ -223,8 +230,8 @@ class NV_oOS_Toolkit_Shell_Manifest_Registry {
 			'views'          => array(),
 		);
 
-		// rest_namespace must look like 'foo/v1'.
-		if ( ! preg_match( '#^[a-z0-9\-]+/v\d+$#', $out['rest_namespace'] ) ) {
+		// rest_namespace must look like 'foo/v1'..'foo/v999'.
+		if ( ! preg_match( '#^[a-z0-9\-]+/v\d{1,3}$#', $out['rest_namespace'] ) ) {
 			$out['rest_namespace'] = 'mcp-ai-pro/v1';
 		}
 
