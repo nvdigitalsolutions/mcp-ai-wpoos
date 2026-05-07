@@ -716,3 +716,117 @@ color: #eee;
 .nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-memory-toggle {
 border-color: rgba( 255, 255, 255, 0.12 );
 }
+
+/* HITL Approval Bar (Phase 5). */
+.nvoos-chat-spa-hitl-bar {
+padding: 0.5rem 0.75rem;
+background: #fff8e1;
+border-top: 2px solid #f9a825;
+border-bottom: 1px solid rgba( 249, 168, 37, 0.3 );
+}
+
+.nvoos-chat-spa-hitl-bar-heading {
+margin: 0 0 0.4rem;
+font-size: 0.85rem;
+font-weight: 600;
+}
+
+.nvoos-chat-spa-hitl-list {
+list-style: none;
+margin: 0;
+padding: 0;
+display: flex;
+flex-direction: column;
+gap: 0.4rem;
+}
+
+.nvoos-chat-spa-hitl-card {
+display: flex;
+align-items: flex-start;
+gap: 0.6rem;
+padding: 0.4rem 0.5rem;
+background: #fff;
+border: 1px solid rgba( 249, 168, 37, 0.5 );
+border-radius: 6px;
+}
+
+.nvoos-chat-spa-hitl-card-meta {
+flex: 1 1 auto;
+overflow: hidden;
+}
+
+.nvoos-chat-spa-hitl-tool {
+display: block;
+font-size: 0.85rem;
+}
+
+.nvoos-chat-spa-hitl-args {
+display: block;
+margin-top: 0.15rem;
+font-size: 0.74rem;
+color: rgba( 0, 0, 0, 0.55 );
+white-space: pre-wrap;
+overflow-wrap: break-word;
+max-height: 3.5rem;
+overflow: hidden;
+}
+
+.nvoos-chat-spa-hitl-reason {
+display: block;
+margin-top: 0.15rem;
+font-size: 0.78rem;
+color: rgba( 0, 0, 0, 0.65 );
+font-style: italic;
+}
+
+.nvoos-chat-spa-hitl-card-actions {
+flex: 0 0 auto;
+display: flex;
+gap: 0.3rem;
+}
+
+.nvoos-chat-spa-hitl-approve,
+.nvoos-chat-spa-hitl-deny {
+font: inherit;
+font-size: 0.78rem;
+padding: 0.25rem 0.55rem;
+border-radius: 4px;
+cursor: pointer;
+border: 1px solid;
+}
+
+.nvoos-chat-spa-hitl-approve {
+border-color: rgba( 27, 94, 32, 0.5 );
+background: rgba( 27, 94, 32, 0.08 );
+color: #1b5e20;
+}
+
+.nvoos-chat-spa-hitl-approve:hover:not(:disabled) {
+background: rgba( 27, 94, 32, 0.15 );
+}
+
+.nvoos-chat-spa-hitl-deny {
+border-color: rgba( 176, 0, 32, 0.5 );
+background: rgba( 176, 0, 32, 0.06 );
+color: #b00020;
+}
+
+.nvoos-chat-spa-hitl-deny:hover:not(:disabled) {
+background: rgba( 176, 0, 32, 0.12 );
+}
+
+.nvoos-chat-spa-hitl-approve:disabled,
+.nvoos-chat-spa-hitl-deny:disabled {
+opacity: 0.55;
+cursor: not-allowed;
+}
+
+/* Dark theme */
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-hitl-bar {
+background: #2a2200;
+border-top-color: #f9a825;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-hitl-card {
+background: #1a1a1a;
+}

@@ -119,6 +119,9 @@ class NV_oOS_Chat_Spa_Shortcode {
 					'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
 					'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
 					'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+					'approvals'   => current_user_can( 'manage_options' )
+						? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
+						: '',
 				),
 			)
 		);

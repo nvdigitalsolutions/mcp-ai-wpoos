@@ -38,6 +38,7 @@ import { createChatFetch } from './sse-adapter';
 import { MessageView } from './components/MessageView';
 import { MemoryDrawer, type MemoryTab } from './components/MemoryDrawer';
 import { TranscriptsSidebar } from './components/TranscriptsSidebar';
+import { HitlApprovalBar } from './components/HitlApprovalBar';
 import { useTranscriptSession } from './hooks/useTranscriptSession';
 
 interface AppProps {
@@ -263,6 +264,15 @@ export function App( { config }: AppProps ) {
 						</div>
 					) }
 				</div>
+				{ runtime.endpoints.approvals && (
+					<HitlApprovalBar
+						endpoint={ runtime.endpoints.approvals }
+						nonce={ runtime.nonce }
+						assistantId={ assistantId }
+						sessionId={ session.sessionKey ?? undefined }
+						isStreaming={ isStreaming }
+					/>
+				) }
 				<form className="nvoos-chat-spa-composer" onSubmit={ onSubmit }>
 					{ memoryEnabled && (
 						<button

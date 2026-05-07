@@ -18,6 +18,8 @@ export interface ChatSpaEndpoints {
 	chatClient: string;
 	transcripts: string;
 	memory: string;
+	/** Only present (non-empty) for users with manage_options. */
+	approvals: string;
 }
 
 export interface ChatSpaRuntime {
@@ -65,6 +67,7 @@ export function readChatSpaConfig(): ChatSpaRuntime | null {
 			chatClient: e.chatClient,
 			transcripts: e.transcripts,
 			memory: e.memory,
+			approvals: typeof e.approvals === 'string' ? e.approvals : '',
 		},
 	};
 }
