@@ -209,6 +209,10 @@
 }
 
 .dh-sidebar-group-label {
+	background: none;
+	border: none;
+	width: 100%;
+	font-family: inherit;
 	font-size: 0.7rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;

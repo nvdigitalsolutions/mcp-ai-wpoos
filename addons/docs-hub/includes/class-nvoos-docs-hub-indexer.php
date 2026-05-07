@@ -159,7 +159,7 @@ class NV_oOS_Docs_Hub_Indexer {
 		$payload = array(
 			'slug'          => $slug,
 			'title'         => $data['title'],
-			'markdown'      => $content,
+			'content'       => $content,
 			'toc'           => $toc,
 			'frontmatter'   => $frontmatter,
 			'breadcrumbs'   => $breadcrumbs,

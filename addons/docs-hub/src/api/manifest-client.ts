@@ -199,7 +199,7 @@ export async function fetchPage( slug: string ): Promise<DocPage> {
 		return cached;
 	}
 
-	const page = await apiFetch<DocPage>( `pages/${ encodeURIComponent( slug ) }` );
+	const page = await apiFetch<DocPage>( `pages/${ slug.split( '/' ).map( encodeURIComponent ).join( '/' ) }` );
 	cacheSet( CACHE_KEY, page );
 	return page;
 }
