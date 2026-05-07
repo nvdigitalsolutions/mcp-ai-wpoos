@@ -72,6 +72,16 @@ class WP_MCP_AI_Shortcode {
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_assets' ) );
+
+		// Only register the legacy [mcp_ai_chat] shortcode when legacy mode is
+		// active. Set define( 'WP_MCP_AI_LEGACY_CHAT_JS', false ) in wp-config.php
+		// to disable legacy mode and use [nvoos_chat_spa] instead.
+		if ( defined( 'WP_MCP_AI_LEGACY_CHAT_JS' ) && ! WP_MCP_AI_LEGACY_CHAT_JS ) {
+			add_action( 'enqueue_block_assets', array( $this, 'maybe_enqueue_style_for_block_themes' ) );
+			add_action( 'elementor/frontend/after_register_scripts', array( $this, 'register_assets' ) );
+			return;
+		}
+
 		add_shortcode( self::SHORTCODE, array( $this, 'render_shortcode' ) );
 
 		add_action( 'enqueue_block_assets', array( $this, 'maybe_enqueue_style_for_block_themes' ) );

@@ -1,6 +1,6 @@
 # Toolkit SPA Blueprint
 
-> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0 · chat-spa v0.3.0 (Tier E — tool-call cards + memory pills + admin embed + transcripts sidebar). Last reviewed: **May 2026** · Version: **2.4**
+> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0 · chat-spa v0.6.0 (Tier E — memory drawer, HITL bar, attachments, regenerate, branching + legacy opt-out). Last reviewed: **May 2026** · Version: **2.5**
 >
 > This document formalizes the reusable pattern established by
 > [`addons/docs-hub/`](../../addons/docs-hub/) for shipping a React Single-Page
@@ -769,3 +769,45 @@ scaffolding:
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) —
   required reading for every PR that touches the surface
 - [`CREDITS.md`](../../CREDITS.md) — root attribution index
+
+---
+
+## 20. Migrating from legacy `chat.js` to `chat-spa`
+
+The `chat-spa` addon (Tier E, v0.6.0) is a drop-in React replacement for
+`assets/js/chat.js`. Until fully migrated, both can coexist.
+
+### Feature parity matrix
+
+| Feature | `chat.js` | `chat-spa` |
+|---------|-----------|-----------|
+| Text chat (streaming) | ✅ | ✅ |
+| Tool-call display | ✅ | ✅ |
+| Memory events (annotation pills) | ✅ | ✅ |
+| Transcript sidebar | ✅ | ✅ |
+| Memory drawer (Memories / Scope / Audit) | — | ✅ v0.4.0 |
+| HITL approval bar | — | ✅ v0.5.0 |
+| File attachments (base64 data-URL) | ✅ | ✅ v0.6.0 |
+| Regenerate last response | — | ✅ v0.6.0 |
+| Edit + re-submit user message | — | ✅ v0.6.0 |
+| Voice recording | ✅ | planned |
+| Bubble mode | ✅ | planned |
+| Elementor widget | ✅ | planned |
+
+### Migration steps
+
+1. **Install the addon** — activate `addons/chat-spa/nvoos-chat-spa.php`.
+2. **Replace shortcodes** — swap `[mcp_ai_chat assistant_id="X"]` with
+   `[nvoos_chat_spa assistant_id="X"]` on your pages/posts.
+3. **Opt-out of legacy mode** — add to `wp-config.php`:
+   ```php
+   define( 'WP_MCP_AI_LEGACY_CHAT_JS', false );
+   ```
+   This prevents `[mcp_ai_chat]` from being registered and stops
+   `chat-bundle.min.js` from being enqueued, reducing page weight.
+4. **Test** — verify streaming, tool cards, memory drawer, HITL bar, and
+   file attachments work on your site before removing the legacy shortcodes.
+
+> **Note:** Setting `WP_MCP_AI_LEGACY_CHAT_JS = false` without first replacing
+> all `[mcp_ai_chat]` shortcodes will result in those shortcodes rendering as
+> plain text. Always migrate shortcodes first.
