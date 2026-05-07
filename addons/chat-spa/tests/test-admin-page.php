@@ -10,7 +10,7 @@ class Test_Chat_Spa_Admin_Page extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! defined( 'NVOOS_CHAT_SPA_VERSION' ) ) {
-			define( 'NVOOS_CHAT_SPA_VERSION', '0.3.0' );
+			define( 'NVOOS_CHAT_SPA_VERSION', '0.4.0' );
 		}
 		if ( ! defined( 'NVOOS_CHAT_SPA_PATH' ) ) {
 			define( 'NVOOS_CHAT_SPA_PATH', dirname( __DIR__ ) . '/' );

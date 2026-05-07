@@ -8,14 +8,22 @@
  * `./sse-adapter.ts`).
  *
  * As of v0.3.0 this component also owns the transcripts sidebar:
- *   - The active session key is managed by `useTranscriptSession`
- *     (see `hooks/useTranscriptSession.ts`).
+ *   - The active session key is managed by `useTranscriptSession`.
  *   - That key is fed into `useChat`'s `id` so switching sessions resets
  *     `useChat`'s internal message buffer cleanly.
  *   - When a session is selected, its messages are loaded via
  *     `GET /chat-transcripts/{key}` and passed as `initialMessages`.
  *   - When a turn completes (`onFinish`), the full conversation is saved
  *     back via `POST /chat-transcripts` so subsequent visits resume.
+ *
+ * As of v0.4.0 this component also owns the memory drawer:
+ *   - A 🧠 toggle button sits above the composer.
+ *   - The drawer shows the Memories / Scope / Audit tabs backed by the
+ *     existing `mcp-ai/v1/chat-memory/*` REST namespace.
+ *   - `memory_event` SSE annotations (arriving as `8:` frames) flash the
+ *     toggle button so the user knows a memory operation just occurred.
+ *   - The drawer is disabled for guest mounts and when
+ *     `runtime.endpoints.memory` is absent.
  *
  * No Node server is introduced; the WordPress PHP layer remains the
  * orchestrator and AI provider gateway.
@@ -28,6 +36,7 @@ import { readChatSpaConfig, type ChatSpaConfig } from './api/config';
 import { TranscriptsClient, type TranscriptMessage } from './api/transcripts';
 import { createChatFetch } from './sse-adapter';
 import { MessageView } from './components/MessageView';
+import { MemoryDrawer, type MemoryTab } from './components/MemoryDrawer';
 import { TranscriptsSidebar } from './components/TranscriptsSidebar';
 import { useTranscriptSession } from './hooks/useTranscriptSession';
 
@@ -162,6 +171,37 @@ export function App( { config }: AppProps ) {
 		} );
 	}, [] );
 
+	// ── Memory drawer (Phase 4) ───────────────────────────────────────────────
+	// Disabled for guests and when the memory endpoint is absent (site admin
+	// has the memory surface turned off or the Pro addon isn't active).
+	const memoryEndpoint = runtime.endpoints.memory;
+	const memoryEnabled = ! isGuest && !! memoryEndpoint;
+
+	const [ memoryOpen, setMemoryOpen ] = useState( false );
+	const [ memoryTab, setMemoryTab ] = useState< MemoryTab >( 'memories' );
+	// Flash indicator: set to `true` when a `memory_event` annotation arrives,
+	// cleared automatically after 3 s.
+	const [ memoryFlash, setMemoryFlash ] = useState( false );
+	const memoryToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// Watch the last message's annotations for `memory_event` frames so we
+	// can flash the toggle button.  The annotation already renders as a pill
+	// via `MessageView` — we just need the toggle-button flash here.
+	useEffect( () => {
+		const last = messages[ messages.length - 1 ];
+		if ( ! last?.annotations ) return;
+		const hasMemoryEvent = ( last.annotations as unknown[] ).some(
+			( a ) =>
+				a !== null &&
+				typeof a === 'object' &&
+				( a as Record< string, unknown > ).type === 'memory_event'
+		);
+		if ( ! hasMemoryEvent ) return;
+		setMemoryFlash( true );
+		const t = setTimeout( () => setMemoryFlash( false ), 3000 );
+		return () => clearTimeout( t );
+	}, [ messages ] );
+
 	const onSubmit = ( e: FormEvent< HTMLFormElement > ) => {
 		e.preventDefault();
 		if ( ! input.trim() ) {
@@ -188,6 +228,18 @@ export function App( { config }: AppProps ) {
 				/>
 			) }
 			<div className="nvoos-chat-spa-main">
+				{ memoryEnabled && (
+					<MemoryDrawer
+						endpoint={ memoryEndpoint }
+						nonce={ runtime.nonce }
+						assistantId={ assistantId }
+						isOpen={ memoryOpen }
+						activeTab={ memoryTab }
+						onTabChange={ setMemoryTab }
+						onClose={ () => setMemoryOpen( false ) }
+						toggleRef={ memoryToggleRef }
+					/>
+				) }
 				<div className="nvoos-chat-spa-messages" role="log" aria-live="polite">
 					{ session.isLoading && (
 						<p className="nvoos-chat-spa-empty">
@@ -212,6 +264,18 @@ export function App( { config }: AppProps ) {
 					) }
 				</div>
 				<form className="nvoos-chat-spa-composer" onSubmit={ onSubmit }>
+					{ memoryEnabled && (
+						<button
+							ref={ memoryToggleRef }
+							type="button"
+							className={ `nvoos-chat-spa-memory-toggle${ memoryFlash ? ' nvoos-chat-spa-memory-toggle--flash' : '' }` }
+							aria-pressed={ memoryOpen }
+							aria-label={ __( 'Toggle memory drawer', 'nvoos-chat-spa' ) }
+							onClick={ () => setMemoryOpen( ( o ) => ! o ) }
+						>
+							🧠
+						</button>
+					) }
 					<label className="screen-reader-text" htmlFor="nvoos-chat-spa-input">
 						{ __( 'Message', 'nvoos-chat-spa' ) }
 					</label>

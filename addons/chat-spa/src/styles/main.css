@@ -369,3 +369,350 @@ background: #1a1a1a;
 color: #eee;
 border-color: rgba( 255, 255, 255, 0.12 );
 }
+
+/* Memory drawer (Phase 4). */
+.nvoos-chat-spa-memory-toggle {
+flex: 0 0 auto;
+font: inherit;
+font-size: 1rem;
+padding: 0 0.5rem;
+background: none;
+border: 1px solid rgba( 0, 0, 0, 0.12 );
+border-radius: 4px;
+cursor: pointer;
+transition: background 0.15s;
+}
+
+.nvoos-chat-spa-memory-toggle:hover,
+.nvoos-chat-spa-memory-toggle[aria-pressed="true"] {
+background: rgba( 138, 43, 226, 0.08 );
+}
+
+.nvoos-chat-spa-memory-toggle--flash {
+animation: nvoos-memory-flash 0.4s ease 3;
+}
+
+@keyframes nvoos-memory-flash {
+0%, 100% { background: transparent; }
+50%       { background: rgba( 138, 43, 226, 0.3 ); }
+}
+
+.nvoos-chat-spa-memory-drawer {
+position: absolute;
+top: 0;
+right: 0;
+bottom: 0;
+width: 300px;
+max-width: 90%;
+background: #fff;
+border-left: 1px solid rgba( 0, 0, 0, 0.1 );
+display: flex;
+flex-direction: column;
+z-index: 10;
+box-shadow: -2px 0 8px rgba( 0, 0, 0, 0.08 );
+}
+
+.nvoos-chat-spa-main {
+position: relative; /* drawer positions itself inside here */
+}
+
+.nvoos-chat-spa-memory-drawer-header {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.5rem 0.75rem;
+border-bottom: 1px solid rgba( 0, 0, 0, 0.08 );
+}
+
+.nvoos-chat-spa-memory-drawer-title {
+flex: 1 1 auto;
+font-size: 0.9rem;
+margin: 0;
+}
+
+.nvoos-chat-spa-memory-drawer-close {
+flex: 0 0 auto;
+background: none;
+border: 0;
+font-size: 1.2rem;
+cursor: pointer;
+padding: 0 0.3rem;
+color: rgba( 0, 0, 0, 0.55 );
+border-radius: 4px;
+}
+
+.nvoos-chat-spa-memory-drawer-close:hover {
+background: rgba( 0, 0, 0, 0.06 );
+}
+
+.nvoos-chat-spa-memory-drawer-status {
+margin: 0.25rem 0.75rem;
+font-size: 0.8rem;
+color: #6a1b9a;
+}
+
+.nvoos-chat-spa-memory-drawer-tabs {
+display: flex;
+border-bottom: 1px solid rgba( 0, 0, 0, 0.08 );
+}
+
+.nvoos-chat-spa-memory-drawer-tab {
+flex: 1 1 auto;
+font: inherit;
+font-size: 0.8rem;
+background: none;
+border: 0;
+border-bottom: 2px solid transparent;
+padding: 0.4rem 0.25rem;
+cursor: pointer;
+}
+
+.nvoos-chat-spa-memory-drawer-tab--active {
+border-bottom-color: #6a1b9a;
+font-weight: 600;
+}
+
+.nvoos-chat-spa-memory-drawer-body {
+flex: 1 1 auto;
+overflow-y: auto;
+padding: 0.5rem 0.75rem;
+}
+
+.nvoos-chat-spa-memory-prefs {
+margin-bottom: 0.5rem;
+font-size: 0.85rem;
+}
+
+.nvoos-chat-spa-memory-prefs-label {
+display: flex;
+align-items: center;
+gap: 0.4rem;
+cursor: pointer;
+}
+
+.nvoos-chat-spa-memory-list-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+font-size: 0.85rem;
+margin-bottom: 0.4rem;
+}
+
+.nvoos-chat-spa-memory-refresh {
+font: inherit;
+font-size: 0.75rem;
+background: none;
+border: 1px solid rgba( 0, 0, 0, 0.12 );
+border-radius: 4px;
+padding: 0.2rem 0.4rem;
+cursor: pointer;
+}
+
+.nvoos-chat-spa-memory-list {
+list-style: none;
+margin: 0 0 0.75rem;
+padding: 0;
+}
+
+.nvoos-chat-spa-memory-item {
+position: relative;
+padding: 0.4rem 2rem 0.4rem 0.5rem;
+border-bottom: 1px solid rgba( 0, 0, 0, 0.06 );
+font-size: 0.82rem;
+}
+
+.nvoos-chat-spa-memory-item-title {
+display: block;
+margin-bottom: 0.15rem;
+}
+
+.nvoos-chat-spa-memory-item-content {
+margin: 0;
+color: rgba( 0, 0, 0, 0.7 );
+}
+
+.nvoos-chat-spa-memory-item-importance {
+display: inline-block;
+margin-top: 0.2rem;
+padding: 0.05rem 0.4rem;
+border-radius: 999px;
+font-size: 0.7rem;
+background: rgba( 0, 0, 0, 0.06 );
+}
+
+.nvoos-chat-spa-memory-item-importance--high,
+.nvoos-chat-spa-memory-item-importance--critical {
+background: rgba( 176, 0, 32, 0.1 );
+color: #b00020;
+}
+
+.nvoos-chat-spa-memory-item-delete {
+position: absolute;
+top: 0.3rem;
+right: 0.3rem;
+background: none;
+border: 0;
+font-size: 1rem;
+cursor: pointer;
+color: rgba( 0, 0, 0, 0.4 );
+border-radius: 4px;
+padding: 0 0.2rem;
+}
+
+.nvoos-chat-spa-memory-item-delete:hover {
+background: rgba( 0, 0, 0, 0.06 );
+color: #b00020;
+}
+
+.nvoos-chat-spa-memory-empty,
+.nvoos-chat-spa-memory-error {
+font-size: 0.82rem;
+color: rgba( 0, 0, 0, 0.55 );
+margin: 0.5rem 0;
+}
+
+.nvoos-chat-spa-memory-error {
+color: #b00020;
+}
+
+.nvoos-chat-spa-memory-add-form {
+border-top: 1px solid rgba( 0, 0, 0, 0.08 );
+padding-top: 0.5rem;
+}
+
+.nvoos-chat-spa-memory-add-heading {
+font-size: 0.85rem;
+margin: 0 0 0.4rem;
+}
+
+.nvoos-chat-spa-memory-add-input,
+.nvoos-chat-spa-memory-add-select {
+width: 100%;
+font: inherit;
+font-size: 0.82rem;
+padding: 0.3rem 0.5rem;
+border: 1px solid rgba( 0, 0, 0, 0.18 );
+border-radius: 4px;
+margin-bottom: 0.35rem;
+}
+
+.nvoos-chat-spa-memory-add-textarea {
+width: 100%;
+font: inherit;
+font-size: 0.82rem;
+padding: 0.3rem 0.5rem;
+border: 1px solid rgba( 0, 0, 0, 0.18 );
+border-radius: 4px;
+margin-bottom: 0.35rem;
+resize: vertical;
+}
+
+.nvoos-chat-spa-memory-add-status {
+font-size: 0.78rem;
+color: #6a1b9a;
+margin: 0.2rem 0;
+}
+
+.nvoos-chat-spa-memory-add-submit {
+font: inherit;
+font-size: 0.82rem;
+padding: 0.35rem 0.8rem;
+border: 1px solid rgba( 138, 43, 226, 0.5 );
+border-radius: 4px;
+background: rgba( 138, 43, 226, 0.08 );
+cursor: pointer;
+}
+
+.nvoos-chat-spa-memory-add-submit:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+/* Scope tab */
+.nvoos-chat-spa-memory-tab-scope label {
+display: block;
+font-size: 0.82rem;
+margin: 0.4rem 0 0.2rem;
+}
+
+.nvoos-chat-spa-memory-scope-hint {
+font-size: 0.8rem;
+color: rgba( 0, 0, 0, 0.6 );
+margin: 0 0 0.5rem;
+}
+
+.nvoos-chat-spa-memory-scope-input {
+width: 100%;
+font: inherit;
+font-size: 0.82rem;
+padding: 0.3rem 0.5rem;
+border: 1px solid rgba( 0, 0, 0, 0.18 );
+border-radius: 4px;
+}
+
+.nvoos-chat-spa-memory-scope-save {
+margin-top: 0.6rem;
+font: inherit;
+font-size: 0.82rem;
+padding: 0.35rem 0.8rem;
+border: 1px solid rgba( 138, 43, 226, 0.5 );
+border-radius: 4px;
+background: rgba( 138, 43, 226, 0.08 );
+cursor: pointer;
+}
+
+.nvoos-chat-spa-memory-scope-current {
+margin-top: 0.4rem;
+font-size: 0.75rem;
+color: rgba( 0, 0, 0, 0.55 );
+}
+
+/* Audit tab */
+.nvoos-chat-spa-memory-audit-list {
+list-style: none;
+margin: 0;
+padding: 0;
+}
+
+.nvoos-chat-spa-memory-audit-item {
+display: flex;
+flex-wrap: wrap;
+gap: 0.3rem;
+align-items: baseline;
+padding: 0.3rem 0;
+border-bottom: 1px solid rgba( 0, 0, 0, 0.06 );
+font-size: 0.78rem;
+}
+
+.nvoos-chat-spa-memory-audit-time {
+color: rgba( 0, 0, 0, 0.5 );
+}
+
+.nvoos-chat-spa-memory-audit-action {
+font-weight: 600;
+}
+
+.nvoos-chat-spa-memory-audit-item[data-action="delete"] .nvoos-chat-spa-memory-audit-action {
+color: #b00020;
+}
+
+.nvoos-chat-spa-memory-audit-item[data-action="create"] .nvoos-chat-spa-memory-audit-action {
+color: #1b5e20;
+}
+
+.nvoos-chat-spa-memory-audit-id {
+color: rgba( 0, 0, 0, 0.4 );
+font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+font-size: 0.7rem;
+}
+
+/* Dark theme */
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-memory-drawer {
+background: #1a1a1a;
+border-left-color: rgba( 255, 255, 255, 0.08 );
+color: #eee;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-memory-toggle {
+border-color: rgba( 255, 255, 255, 0.12 );
+}
