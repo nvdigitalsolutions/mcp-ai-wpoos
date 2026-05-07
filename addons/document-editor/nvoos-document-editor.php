@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Document Editor
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: NV oOS Document Editor — React-based SPA surface for the NV oOS plugin. Generated from the Toolkit SPA Blueprint.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: NV Digital Solutions
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version — must match package.json. */
-define( 'NVOOS_DOCUMENT_EDITOR_VERSION', '0.1.0' );
+define( 'NVOOS_DOCUMENT_EDITOR_VERSION', '0.2.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_DOCUMENT_EDITOR_FILE', __FILE__ );

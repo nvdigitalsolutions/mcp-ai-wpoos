@@ -11,7 +11,7 @@
 import { __ } from '@wordpress/i18n';
 import type { ReactElement } from 'react';
 import { EditorCanvas } from './components/EditorCanvas';
-import { ComingSoon } from './components/ComingSoon';
+import { SiteCreatorCanvas } from './components/SiteCreatorCanvas';
 
 export type EditorMode = 'editor' | 'site-creator';
 
@@ -49,11 +49,7 @@ export function App( { config }: AppProps ) {
 		case 'site-creator':
 		default:
 			surface = (
-				<ComingSoon
-					mode="site-creator"
-					label={ MODE_LABELS[ 'site-creator' ] }
-					note={ __( 'The Tiptap + GrapesJS site-creator mode ships in a follow-up PR.', 'nvoos-document-editor' ) }
-				/>
+				<SiteCreatorCanvas documentId={ config.document_id } />
 			);
 	}
 

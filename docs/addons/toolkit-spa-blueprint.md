@@ -1,6 +1,6 @@
 # Toolkit SPA Blueprint
 
-> **Status:** Phases 0–9 complete · Tier A manifests complete. Last reviewed: **May 2026** · Version: **2.0**
+> **Status:** Phases 0–9 complete · Tier A manifests complete · canvas-toolkit v0.2.0 · document-editor v0.2.0. Last reviewed: **May 2026** · Version: **2.1**
 >
 > This document formalizes the reusable pattern established by
 > [`addons/docs-hub/`](../../addons/docs-hub/) for shipping a React Single-Page
@@ -423,12 +423,12 @@ Ships all four canvas modes (v0.2.0):
 | `ai-tool-builder` | `flow` (@xyflow/react — visual node-graph) |
 
 ### Tier C — Document / rich-text shells
-*Separate addon `addons/document-editor/` (Tiptap).*
+*Separate addon `addons/document-editor/` (Tiptap + GrapesJS).*
 
-| Toolkit | Recommended SPA pieces |
-|---------|------------------------|
-| `document-generation` | Tiptap (MIT, ProseMirror-based) |
-| `site-creator` | Tiptap + GrapesJS (`@grapesjs/react`, BSD-3) |
+| Toolkit | Recommended SPA pieces | Status |
+|---------|------------------------|--------|
+| `document-generation` | Tiptap (MIT, ProseMirror-based) | ✅ shipped v0.1.0 |
+| `site-creator` | Tiptap + GrapesJS (`@grapesjs/react`, MIT) | ✅ shipped v0.2.0 |
 
 ### Tier D — Domain-specialist shells
 *Each ships as its own addon (à la `cornerstone3d` and `canvas`).*
@@ -666,7 +666,7 @@ enforces this automatically on every PR that touches `src/`,
 |-------|------|-------------|-------------------|
 | `toolkit-shell` | A — data shell | **200 KB** | ~61 KB |
 | `canvas-toolkit` | B — canvas | **1600 KB** | ~1495 KB |
-| `document-editor` | C — document | **200 KB** | ~187 KB |
+| `document-editor` | C — document | **500 KB** | ~485 KB |
 | `media-studio` | D — specialist | **900 KB** | ~806 KB |
 
 Tier A/C shells must stay under 200 KB gzipped (per §12 gate 2 and §13 Risks).

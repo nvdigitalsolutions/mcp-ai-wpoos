@@ -331,7 +331,7 @@ addon for canvas / whiteboard / node-graph / BPMN surfaces, lazy-loaded by mode.
 Ships all four modes: `flow` (@xyflow/react), `whiteboard` (tldraw v5),
 `bpmn` (bpmn-js), and `mermaid` (Mermaid live preview).
 
-### `addons/document-editor/` — Tiptap rich-text document editor SPA addon
+### `addons/document-editor/` — Tiptap rich-text document editor + GrapesJS site-creator SPA addon
 
 | Package | Version | License | Upstream |
 |---------|---------|---------|----------|
@@ -344,18 +344,21 @@ Ships all four modes: `flow` (@xyflow/react), `whiteboard` (tldraw v5),
 | `@tiptap/extension-placeholder` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
 | `@tiptap/extension-table` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
 | `@tiptap/extension-table-{cell,header,row}` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `grapesjs` | 0.22.16 | BSD-3-Clause | <https://github.com/GrapesJS/grapesjs> |
+| `@grapesjs/react` | 2.0.0 | MIT | <https://github.com/GrapesJS/react> |
 
 Build-time-only dev dependencies (not redistributed in `assets/dist/`):
 `esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
 (MIT). Full per-package license text lives in
 [`addons/document-editor/THIRD_PARTY_NOTICES.md`](addons/document-editor/THIRD_PARTY_NOTICES.md).
 
-The document-editor addon is the Phase 3 implementation of the
+The document-editor addon is the Phase 3 / Phase 12 implementation of the
 [Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier C — separate
-addon for rich-text / document surfaces. Initial release ships `mode="editor"` (full
+addon for rich-text / document surfaces. v0.1.0 ships `mode="editor"` (full
 Tiptap document editor with toolbar + REST `/nvoos-document-editor/v1/documents`
-CRUD backed by the `nvoos_document` CPT). The `site-creator` mode (Tiptap + GrapesJS)
-ships as a follow-up PR.
+CRUD backed by the `nvoos_document` CPT). v0.2.0 ships `mode="site-creator"` —
+a GrapesJS visual page builder with built-in blocks (header, text, two-column)
+and localStorage project persistence.
 
 ### `addons/media-studio/` — Tier D media production SPA addon
 
