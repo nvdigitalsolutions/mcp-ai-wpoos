@@ -69,6 +69,7 @@ export default function App() {
 	const [ manifest, setManifest ] = useState<Manifest | null>( null );
 	const [ manifestError, setManifestError ] = useState<string | null>( null );
 	const [ theme, setTheme ] = useState<string>( getInitialTheme );
+	const [ mobileSidebarOpen, setMobileSidebarOpen ] = useState( false );
 
 	useEffect( () => {
 		fetchManifest()
@@ -86,6 +87,8 @@ export default function App() {
 	function toggleTheme() {
 		setTheme( ( t ) => ( t === 'dark' ? 'light' : 'dark' ) );
 	}
+
+	const closeMobileSidebar = () => setMobileSidebarOpen( false );
 
 	const rootAttrs: React.HTMLAttributes<HTMLDivElement> = {
 		className: 'nvoos-docs-hub-root',
@@ -120,6 +123,14 @@ export default function App() {
 				<div className="dh-layout">
 					{ /* Header */ }
 					<header className="dh-header-area">
+						<button
+							type="button"
+							className="dh-mobile-menu-btn"
+							aria-label="Open navigation"
+							onClick={ () => setMobileSidebarOpen( true ) }
+						>
+							☰
+						</button>
 						<span className="dh-header-brand">Docs</span>
 						<div className="dh-header-search-wrap">
 							<SearchBox />
@@ -134,9 +145,21 @@ export default function App() {
 						</button>
 					</header>
 
+					{ /* Mobile sidebar overlay backdrop */ }
+					{ mobileSidebarOpen && (
+						<div
+							className="dh-sidebar-overlay"
+							role="button"
+							tabIndex={ 0 }
+							aria-label="Close navigation"
+							onClick={ closeMobileSidebar }
+							onKeyDown={ ( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) closeMobileSidebar(); } }
+						/>
+					) }
+
 					{ /* Sidebar */ }
-					<aside className="dh-sidebar-area">
-						<Sidebar manifest={ manifest } />
+					<aside className={ `dh-sidebar-area${ mobileSidebarOpen ? ' dh-sidebar-open' : '' }` }>
+						<Sidebar manifest={ manifest } onNavClose={ closeMobileSidebar } />
 					</aside>
 
 					{ /* Main content (routes) */ }
