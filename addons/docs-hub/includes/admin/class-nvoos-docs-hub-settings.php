@@ -82,7 +82,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_checkbox' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'enabled', 'description' => __( 'Enable the Docs Hub documentation browser.', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'enabled',
+				'description' => __( 'Enable the Docs Hub documentation browser.', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -107,7 +110,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_checkbox' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'search_enabled', 'description' => __( 'Show the search box in the documentation browser.', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'search_enabled',
+				'description' => __( 'Show the search box in the documentation browser.', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -116,7 +122,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_checkbox' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'sidebar_enabled', 'description' => __( 'Show the navigation sidebar.', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'sidebar_enabled',
+				'description' => __( 'Show the navigation sidebar.', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -137,7 +146,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_text' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'default_home', 'description' => __( 'Slug of the page shown by default (e.g. "readme").', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'default_home',
+				'description' => __( 'Slug of the page shown by default (e.g. "readme").', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -146,7 +158,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_text' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'github_repo_url', 'description' => __( 'Base URL for "Edit on GitHub" links (e.g. https://github.com/org/repo/blob/main).', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'github_repo_url',
+				'description' => __( 'Base URL for "Edit on GitHub" links (e.g. https://github.com/org/repo/blob/main).', 'nvoos-docs-hub' ),
+			)
 		);
 
 		// Sources section.
@@ -342,20 +357,20 @@ class NV_oOS_Docs_Hub_Settings {
 	public static function sanitize_settings( $input ) {
 		$sanitized = array();
 
-		$sanitized['enabled']         = ! empty( $input['enabled'] );
-		$sanitized['search_enabled']  = ! empty( $input['search_enabled'] );
-		$sanitized['sidebar_enabled'] = ! empty( $input['sidebar_enabled'] );
-		$sanitized['context_enabled'] = ! empty( $input['context_enabled'] );
+		$sanitized['enabled']               = ! empty( $input['enabled'] );
+		$sanitized['search_enabled']        = ! empty( $input['search_enabled'] );
+		$sanitized['sidebar_enabled']       = ! empty( $input['sidebar_enabled'] );
+		$sanitized['context_enabled']       = ! empty( $input['context_enabled'] );
 		$sanitized['include_addon_readmes'] = ! empty( $input['include_addon_readmes'] );
-		$sanitized['default_home']    = sanitize_text_field( $input['default_home'] ?? 'readme' );
-		$sanitized['github_repo_url'] = esc_url_raw( $input['github_repo_url'] ?? '' );
+		$sanitized['default_home']          = sanitize_text_field( $input['default_home'] ?? 'readme' );
+		$sanitized['github_repo_url']       = esc_url_raw( $input['github_repo_url'] ?? '' );
 
 		$allowed_themes             = array( 'auto', 'light', 'dark' );
 		$raw_theme                  = sanitize_text_field( $input['default_theme'] ?? 'auto' );
 		$sanitized['default_theme'] = in_array( $raw_theme, $allowed_themes, true ) ? $raw_theme : 'auto';
 
-		$allowed_sources   = array( 'base', 'addons', 'root', 'context', 'remote' );
-		$raw_sources       = isset( $input['sources'] ) && is_array( $input['sources'] ) ? $input['sources'] : array();
+		$allowed_sources      = array( 'base', 'addons', 'root', 'context', 'remote' );
+		$raw_sources          = isset( $input['sources'] ) && is_array( $input['sources'] ) ? $input['sources'] : array();
 		$sanitized['sources'] = array_values(
 			array_filter(
 				$raw_sources,
@@ -371,9 +386,9 @@ class NV_oOS_Docs_Hub_Settings {
 		$existing_repos    = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
 
 		$sanitized['remote_repos'] = array();
-		$raw_repos = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
+		$raw_repos                 = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
 		foreach ( $raw_repos as $i => $repo ) {
-			$owner = sanitize_text_field( $repo['owner'] ?? '' );
+			$owner     = sanitize_text_field( $repo['owner'] ?? '' );
 			$repo_name = sanitize_text_field( $repo['repo'] ?? '' );
 			if ( '' === $owner || '' === $repo_name ) {
 				continue;
@@ -393,9 +408,9 @@ class NV_oOS_Docs_Hub_Settings {
 			$selection_mode = in_array( $raw_mode, array( 'all', 'prefix', 'selected' ), true ) ? $raw_mode : 'all';
 
 			// Selected / excluded paths arrays. Both follow the same path safety rules:
-			//  - Allowed chars: letters, digits, underscore, dot, slash, hyphen.
-			//  - No '..' segments, no leading slash.
-			//  - Trailing '/' = directory (recursive include/exclude).
+			// - Allowed chars: letters, digits, underscore, dot, slash, hyphen.
+			// - No '..' segments, no leading slash.
+			// - Trailing '/' = directory (recursive include/exclude).
 			$selected_paths = self::sanitize_path_list( $repo['selected_paths'] ?? array() );
 			$excluded_paths = self::sanitize_path_list( $repo['excluded_paths'] ?? array() );
 
@@ -471,11 +486,11 @@ class NV_oOS_Docs_Hub_Settings {
 		self::maybe_render_first_run_notice();
 		self::maybe_render_legacy_only_notice();
 
-		$cache     = new NV_oOS_Docs_Hub_Cache();
-		$last_built = $cache->get_last_built();
-		$manifest   = $cache->get_manifest();
-		$total_pages  = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
-		$broken_links = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
+		$cache         = new NV_oOS_Docs_Hub_Cache();
+		$last_built    = $cache->get_last_built();
+		$manifest      = $cache->get_manifest();
+		$total_pages   = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
+		$broken_links  = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
 		$rebuild_state = NV_oOS_Docs_Hub_Rebuild_State::to_summary();
 		$rest_base     = esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE ) );
 		$rest_nonce    = wp_create_nonce( 'wp_rest' );
@@ -511,13 +526,15 @@ class NV_oOS_Docs_Hub_Settings {
 						—
 						<span class="nvoos-rebuild-progress">
 							<?php
-							echo esc_html( sprintf(
+							echo esc_html(
+								sprintf(
 								/* translators: 1: processed, 2: total, 3: percentage */
-								__( '%1$d / %2$d (%3$d%%)', 'nvoos-docs-hub' ),
-								(int) $rebuild_state['processed'],
-								(int) $rebuild_state['total'],
-								(int) $rebuild_state['percentage']
-							) );
+									__( '%1$d / %2$d (%3$d%%)', 'nvoos-docs-hub' ),
+									(int) $rebuild_state['processed'],
+									(int) $rebuild_state['total'],
+									(int) $rebuild_state['percentage']
+								)
+							);
 							?>
 						</span>
 					</p>
@@ -738,7 +755,10 @@ class NV_oOS_Docs_Hub_Settings {
 			'context' => __( 'Context files (<code>.context/*.md</code>) — only visible to manage_options users', 'nvoos-docs-hub' ),
 		);
 
-		$kses_allowed = array( 'code' => array(), 'em' => array() );
+		$kses_allowed = array(
+			'code' => array(),
+			'em'   => array(),
+		);
 
 		foreach ( $primary as $key => $label ) :
 			?>
@@ -835,12 +855,12 @@ class NV_oOS_Docs_Hub_Settings {
 
 		foreach ( $repos as $i => $r ) :
 			$owner = esc_attr( $r['owner'] ?? '' );
-			$repo  = esc_attr( $r['repo']  ?? '' );
-			$ref   = esc_attr( $r['ref']   ?? 'HEAD' );
+			$repo  = esc_attr( $r['repo'] ?? '' );
+			$ref   = esc_attr( $r['ref'] ?? 'HEAD' );
 			$label = esc_attr( $r['label'] ?? '' );
-			$path  = esc_attr( $r['path']  ?? '' );
+			$path  = esc_attr( $r['path'] ?? '' );
 			// Token: never echo saved token back for security — show placeholder.
-			$has_token = ! empty( $r['token'] );
+			$has_token      = ! empty( $r['token'] );
 			$selection_mode = isset( $r['selection_mode'] ) && in_array( $r['selection_mode'], array( 'all', 'prefix', 'selected' ), true )
 				? $r['selection_mode']
 				: 'all';

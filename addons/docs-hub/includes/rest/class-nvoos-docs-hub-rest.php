@@ -359,7 +359,12 @@ class NV_oOS_Docs_Hub_REST {
 		$search_index = $cache->get_search_index();
 
 		if ( ! is_array( $search_index ) ) {
-			return rest_ensure_response( array( 'results' => array(), 'total' => 0 ) );
+			return rest_ensure_response(
+				array(
+					'results' => array(),
+					'total'   => 0,
+				)
+			);
 		}
 
 		$results = self::run_search( $q, $limit, $search_index );

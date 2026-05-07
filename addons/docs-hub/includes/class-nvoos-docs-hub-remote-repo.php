@@ -90,6 +90,8 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * @since 1.1.0
 	 *
 	 * @param array $repo_config {
+	 *     Configuration for the remote repository.
+	 *
 	 *     @type string $owner  GitHub username or org.
 	 *     @type string $repo   Repository name.
 	 *     @type string $ref    Branch, tag, or commit SHA. Default 'HEAD'.
@@ -102,11 +104,11 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 */
 	public function fetch_entries( $repo_config ) {
 		$owner = isset( $repo_config['owner'] ) ? sanitize_text_field( $repo_config['owner'] ) : '';
-		$repo  = isset( $repo_config['repo'] )  ? sanitize_text_field( $repo_config['repo'] )  : '';
-		$ref   = isset( $repo_config['ref'] )   ? sanitize_text_field( $repo_config['ref'] )   : 'HEAD';
+		$repo  = isset( $repo_config['repo'] ) ? sanitize_text_field( $repo_config['repo'] ) : '';
+		$ref   = isset( $repo_config['ref'] ) ? sanitize_text_field( $repo_config['ref'] ) : 'HEAD';
 		$label = isset( $repo_config['label'] ) ? sanitize_text_field( $repo_config['label'] ) : $owner . '/' . $repo;
 		$token = isset( $repo_config['token'] ) ? (string) $repo_config['token'] : '';
-		$path  = isset( $repo_config['path'] )  ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
+		$path  = isset( $repo_config['path'] ) ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
 		$force = ! empty( $repo_config['force'] );
 
 		if ( '' === $owner || '' === $repo ) {
@@ -213,7 +215,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				'path'          => $this->local_cache_path( $cache_key ),
 				'source'        => 'remote',
 				'plugin_name'   => $label,
-				'relative_path' => $file_path, // already relative to $path (prefix already stripped)
+				'relative_path' => $file_path, // Already relative to $path (prefix already stripped).
 				'content'       => $local_content,
 				'remote_url'    => 'https://github.com/'
 					. rawurlencode( $owner ) . '/'
@@ -225,7 +227,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				'repo_ref'      => $resolved_ref,
 			);
 
-			$count++;
+			++$count;
 		}
 
 		return $entries;
@@ -360,7 +362,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * @return string|null|WP_Error Subtree SHA on success, null if path not found, WP_Error on API failure.
 	 */
 	private function resolve_subtree_sha( $owner, $repo, $ref, $token, $path ) {
-		$parts = explode( '/', trim( $path, '/' ) );
+		$parts       = explode( '/', trim( $path, '/' ) );
 		$current_sha = $ref;
 
 		foreach ( $parts as $part ) {
@@ -372,7 +374,8 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 
 			$found_sha = null;
 			foreach ( $tree as $item ) {
-				if ( 'tree' === ( $item['type'] ?? '' ) && $part === ( $item['path'] ?? '' ) ) {
+				$item_path = $item['path'] ?? '';
+				if ( 'tree' === ( $item['type'] ?? '' ) && $item_path === $part ) {
 					$found_sha = $item['sha'];
 					break;
 				}
@@ -468,7 +471,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			$skip = false;
 			foreach ( (array) $force_included as $glob ) {
 				if ( fnmatch( $glob, $item_path ) || fnmatch( $glob, basename( $item_path ) ) ) {
-					$skip = false;
+					$skip      = false;
 					$results[] = $item;
 					continue 2;
 				}
@@ -555,6 +558,8 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * @since 0.3.0
 	 *
 	 * @param array $repo_config {
+	 *     Configuration for the remote repository picker.
+	 *
 	 *     @type string $owner GitHub owner.
 	 *     @type string $repo  GitHub repo name.
 	 *     @type string $ref   Branch / tag / SHA (default 'HEAD').
@@ -570,10 +575,10 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 */
 	public function fetch_tree_for_admin( $repo_config ) {
 		$owner = isset( $repo_config['owner'] ) ? sanitize_text_field( $repo_config['owner'] ) : '';
-		$repo  = isset( $repo_config['repo'] )  ? sanitize_text_field( $repo_config['repo'] )  : '';
-		$ref   = isset( $repo_config['ref'] )   ? sanitize_text_field( $repo_config['ref'] )   : 'HEAD';
+		$repo  = isset( $repo_config['repo'] ) ? sanitize_text_field( $repo_config['repo'] ) : '';
+		$ref   = isset( $repo_config['ref'] ) ? sanitize_text_field( $repo_config['ref'] ) : 'HEAD';
 		$token = isset( $repo_config['token'] ) ? (string) $repo_config['token'] : '';
-		$path  = isset( $repo_config['path'] )  ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
+		$path  = isset( $repo_config['path'] ) ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
 		$force = ! empty( $repo_config['force'] );
 
 		if ( '' === $owner || '' === $repo ) {
@@ -638,14 +643,14 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 
 		$files = array();
 		foreach ( $md_files as $item ) {
-			$rel    = isset( $item['path'] ) ? (string) $item['path'] : '';
+			$rel = isset( $item['path'] ) ? (string) $item['path'] : '';
 			if ( '' === $rel ) {
 				continue;
 			}
-			$size   = isset( $item['size'] ) ? (int) $item['size'] : 0;
+			$size = isset( $item['size'] ) ? (int) $item['size'] : 0;
 			// Reconstruct the repo-relative path (consistent with how
 			// `selected_paths` are stored — always repo-relative).
-			$full   = '' !== $path ? $path . '/' . $rel : $rel;
+			$full    = '' !== $path ? $path . '/' . $rel : $rel;
 			$files[] = array(
 				'path' => $full,
 				'size' => $size,
@@ -856,7 +861,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			return false;
 		}
 
-		$ttl = (int) apply_filters( 'nvoos_docs_hub_remote_cache_ttl', self::CACHE_TTL );
+		$ttl   = (int) apply_filters( 'nvoos_docs_hub_remote_cache_ttl', self::CACHE_TTL );
 		$mtime = filemtime( $local_path );
 		if ( false !== $mtime && ( time() - $mtime ) > $ttl ) {
 			// Cache expired.

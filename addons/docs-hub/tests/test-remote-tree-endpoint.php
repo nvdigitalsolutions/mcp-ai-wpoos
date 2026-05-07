@@ -9,6 +9,9 @@
  * @since   0.3.0
  */
 
+/**
+ * REST tree endpoint test case.
+ */
 class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 
 	/**
@@ -18,6 +21,9 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 	 */
 	protected $server;
 
+	/**
+	 * Bootstrap the addon classes and a fresh REST server before each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -51,6 +57,9 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 		NV_oOS_Docs_Hub_REST::register_routes();
 	}
 
+	/**
+	 * Reset the REST server and persisted settings between tests.
+	 */
 	public function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
@@ -64,7 +73,7 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 	 */
 	public function test_remote_tree_requires_admin() {
 		wp_set_current_user( 0 );
-		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/remote/tree' );
+		$request = new WP_REST_Request( 'GET', '/nvoos-docs/v1/remote/tree' );
 		$request->set_param( 'owner', 'foo' );
 		$request->set_param( 'repo', 'bar' );
 		$response = $this->server->dispatch( $request );
@@ -78,7 +87,7 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/remote/tree' );
+		$request = new WP_REST_Request( 'GET', '/nvoos-docs/v1/remote/tree' );
 		$request->set_param( 'owner', '' );
 		$request->set_param( 'repo', 'x' );
 		$response = $this->server->dispatch( $request );
@@ -109,7 +118,7 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 	}
 
 	/**
-	 * fetch_tree_for_admin caches results in a transient.
+	 * Fetch_tree_for_admin caches results in a transient.
 	 *
 	 * Uses a stub subclass that returns a synthetic tree without hitting the
 	 * network. Verifies the second call is served from the transient (the
@@ -184,6 +193,8 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 	}
 }
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+
 /**
  * Test stub for NV_oOS_Docs_Hub_Remote_Repo.
  *
@@ -210,14 +221,38 @@ class NVoOS_Docs_Hub_Remote_Repo_Stub extends NV_oOS_Docs_Hub_Remote_Repo {
 	 * @return array
 	 */
 	private function synthetic_tree() {
-		self::$tree_calls++;
+		++self::$tree_calls;
 		return array(
-			array( 'type' => 'blob', 'path' => 'README.md',          'size' => 100 ),
-			array( 'type' => 'blob', 'path' => 'docs/guide.md',      'size' => 200 ),
-			array( 'type' => 'blob', 'path' => 'docs/sub/deep.md',   'size' => 300 ),
-			array( 'type' => 'blob', 'path' => 'vendor/foo.md',      'size' => 50  ),
-			array( 'type' => 'blob', 'path' => 'binary.png',         'size' => 999 ),
-			array( 'type' => 'tree', 'path' => 'docs',               'size' => 0   ),
+			array(
+				'type' => 'blob',
+				'path' => 'README.md',
+				'size' => 100,
+			),
+			array(
+				'type' => 'blob',
+				'path' => 'docs/guide.md',
+				'size' => 200,
+			),
+			array(
+				'type' => 'blob',
+				'path' => 'docs/sub/deep.md',
+				'size' => 300,
+			),
+			array(
+				'type' => 'blob',
+				'path' => 'vendor/foo.md',
+				'size' => 50,
+			),
+			array(
+				'type' => 'blob',
+				'path' => 'binary.png',
+				'size' => 999,
+			),
+			array(
+				'type' => 'tree',
+				'path' => 'docs',
+				'size' => 0,
+			),
 		);
 	}
 
@@ -231,8 +266,8 @@ class NVoOS_Docs_Hub_Remote_Repo_Stub extends NV_oOS_Docs_Hub_Remote_Repo {
 	 */
 	public function fetch_tree_for_admin( $repo_config ) {
 		$owner = sanitize_text_field( $repo_config['owner'] ?? '' );
-		$repo  = sanitize_text_field( $repo_config['repo']  ?? '' );
-		$ref   = sanitize_text_field( $repo_config['ref']   ?? 'HEAD' );
+		$repo  = sanitize_text_field( $repo_config['repo'] ?? '' );
+		$ref   = sanitize_text_field( $repo_config['ref'] ?? 'HEAD' );
 		$path  = trim( sanitize_text_field( $repo_config['path'] ?? '' ), '/' );
 		$force = ! empty( $repo_config['force'] );
 
@@ -253,11 +288,19 @@ class NVoOS_Docs_Hub_Remote_Repo_Stub extends NV_oOS_Docs_Hub_Remote_Repo {
 
 		$files = array();
 		foreach ( $md_files as $item ) {
-			$rel = $item['path'];
-			$full = '' !== $path ? $path . '/' . $rel : $rel;
-			$files[] = array( 'path' => $full, 'size' => (int) ( $item['size'] ?? 0 ) );
+			$rel     = $item['path'];
+			$full    = '' !== $path ? $path . '/' . $rel : $rel;
+			$files[] = array(
+				'path' => $full,
+				'size' => (int) ( $item['size'] ?? 0 ),
+			);
 		}
-		usort( $files, static function ( $a, $b ) { return strcmp( $a['path'], $b['path'] ); } );
+		usort(
+			$files,
+			static function ( $a, $b ) {
+				return strcmp( $a['path'], $b['path'] );
+			}
+		);
 
 		$payload = array(
 			'resolved_ref' => $ref,

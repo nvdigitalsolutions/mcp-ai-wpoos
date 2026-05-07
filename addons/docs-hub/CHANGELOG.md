@@ -1,5 +1,10 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.3.2 — 2026-05-07
+
+### Fixed
+- **PHPCS lint compliance.** Resolved 96 errors / 38 warnings flagged on the v0.3.0/0.3.1 changes: associative-array spacing, missing function/class docblocks in the new test files, inline-comment punctuation, parameter-comment full stops, blank-line-after-class-comment, and a Yoda-condition violation in `Remote_Repo::fetch_tree()`'s SHA lookup. Auto-fixable issues fixed via `phpcbf`; remaining ones fixed by hand. Pre-existing `NV_oOS_*` class-name warnings (intentional addon-wide convention) are left untouched.
+
 ## 0.3.1 — 2026-05-07
 
 ### Fixed
