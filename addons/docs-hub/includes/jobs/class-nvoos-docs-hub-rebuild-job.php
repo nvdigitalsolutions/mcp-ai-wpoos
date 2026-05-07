@@ -161,7 +161,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 			}
 
 			// Strip markdown syntax for plain-text excerpt.
-			$plain = preg_replace( '/[#*`\[\]_~>]/', '', $payload['markdown'] );
+			$plain = preg_replace( '/[#*`\[\]_~>]/', '', $payload['content'] );
 			$plain = preg_replace( '/\s+/', ' ', $plain );
 			$plain = trim( $plain );
 
