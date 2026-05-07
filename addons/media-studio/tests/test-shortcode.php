@@ -31,27 +31,27 @@ class Test_Media_Studio_Shortcode extends WP_UnitTestCase {
 	/** Default mode is image-editor. */
 	public function test_default_mode_is_image_editor() {
 		$out = NV_oOS_Media_Studio_Shortcode::render( array() );
-		$this->assertStringContainsString( '"mode":"image-editor"', $out );
+		$this->assertStringContainsString( '&quot;mode&quot;:&quot;image-editor&quot;', $out );
 	}
 
 	/** Valid mode values are passed through. */
 	public function test_valid_modes() {
 		foreach ( array( 'image-editor', 'media-player', 'audio-waveform' ) as $mode ) {
 			$out = NV_oOS_Media_Studio_Shortcode::render( array( 'mode' => $mode ) );
-			$this->assertStringContainsString( '"mode":"' . $mode . '"', $out );
+			$this->assertStringContainsString( '&quot;mode&quot;:&quot;' . $mode . '&quot;', $out );
 		}
 	}
 
 	/** Unknown mode falls back to image-editor. */
 	public function test_unknown_mode_fallback() {
 		$out = NV_oOS_Media_Studio_Shortcode::render( array( 'mode' => 'unknown-thing' ) );
-		$this->assertStringContainsString( '"mode":"image-editor"', $out );
+		$this->assertStringContainsString( '&quot;mode&quot;:&quot;image-editor&quot;', $out );
 	}
 
 	/** src attribute is included in config. */
 	public function test_src_attribute_included() {
 		$out = NV_oOS_Media_Studio_Shortcode::render( array( 'src' => 'https://example.com/audio.mp3' ) );
-		$this->assertStringContainsString( '"src":', $out );
+		$this->assertStringContainsString( '&quot;src&quot;:', $out );
 		$this->assertStringContainsString( 'audio.mp3', $out );
 	}
 

@@ -46,4 +46,10 @@ class Test_Canvas_Toolkit_Shortcode extends WP_UnitTestCase {
 		$this->assertSame( '', $out );
 		remove_filter( 'nvoos_canvas_toolkit_can_render', '__return_false' );
 	}
+
+	public function test_shortcode_is_registered() {
+		NV_oOS_Canvas_Toolkit_Shortcode::register();
+		$this->assertTrue( shortcode_exists( 'nvoos_canvas_toolkit_app' ) );
+		remove_shortcode( 'nvoos_canvas_toolkit_app' );
+	}
 }
