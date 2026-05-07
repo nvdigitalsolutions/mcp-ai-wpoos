@@ -398,48 +398,46 @@ class NV_oOS_Docs_Hub_Indexer {
 	 * @return void
 	 */
 	private function build_tree( $indexed ) {
-		$tree = array();
+		// Group pages by source + plugin_name into a flat list of groups.
+		// This matches the SPA `Manifest.tree: ManifestGroup[]` contract
+		// (see addons/docs-hub/src/api/manifest-client.ts), which calls
+		// `tree.flatMap(...)` and `tree.map(group => group.pages)`.
+		$groups = array();
 
 		foreach ( $indexed as $entry ) {
 			$source      = $entry['source'];
 			$plugin_name = $entry['plugin_name'];
 			$slug        = $entry['slug'];
+			$key         = $source . '|' . $plugin_name;
 
-			// Derive section from relative path.
-			$section = $this->derive_section( $entry['relative_path'] );
-
-			if ( ! isset( $tree[ $source ] ) ) {
-				$tree[ $source ] = array();
-			}
-			if ( ! isset( $tree[ $source ][ $plugin_name ] ) ) {
-				$tree[ $source ][ $plugin_name ] = array();
-			}
-			if ( ! isset( $tree[ $source ][ $plugin_name ][ $section ] ) ) {
-				$tree[ $source ][ $plugin_name ][ $section ] = array();
+			if ( ! isset( $groups[ $key ] ) ) {
+				$groups[ $key ] = array(
+					'source'      => $source,
+					'plugin_name' => $plugin_name,
+					'pages'       => array(),
+				);
 			}
 
-			$tree[ $source ][ $plugin_name ][ $section ][] = array(
+			$groups[ $key ]['pages'][] = array(
 				'slug'  => $slug,
 				'title' => $entry['title'],
 				'order' => $entry['order'],
 			);
 		}
 
-		// Sort entries within each section by order.
-		foreach ( $tree as $src => &$plugins ) {
-			foreach ( $plugins as $pname => &$sections ) {
-				foreach ( $sections as $sec => &$pages ) {
-					usort(
-						$pages,
-						function ( $a, $b ) {
-							return $a['order'] - $b['order'];
-						}
-					);
+		// Sort pages within each group by order.
+		foreach ( $groups as &$group ) {
+			usort(
+				$group['pages'],
+				function ( $a, $b ) {
+					return $a['order'] - $b['order'];
 				}
-			}
+			);
 		}
+		unset( $group );
 
-		$this->tree = $tree;
+		// Reindex to a numeric array so JSON encodes as a JS array (not object).
+		$this->tree = array_values( $groups );
 	}
 
 	/**
