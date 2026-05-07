@@ -145,7 +145,7 @@ export default function ContentArea( { content, remoteUrl }: ContentAreaProps ) 
 	if ( remoteUrl ) {
 		const capturedUrl = remoteUrl;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		extraComponents.a = function ( props: any ) {
+		extraComponents.a = function RemoteAnchor( props: any ) {
 			const { href, children, ...rest } = props;
 			const resolvedHref = href ? resolveRemoteHref( String( href ), capturedUrl ) : undefined;
 			return (
