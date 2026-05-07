@@ -31,7 +31,14 @@
 
 import { useChat, type Message } from '@ai-sdk/react';
 import { __ } from '@wordpress/i18n';
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type FormEvent,
+} from 'react';
 import { readChatSpaConfig, type ChatSpaConfig } from './api/config';
 import { TranscriptsClient, type TranscriptMessage } from './api/transcripts';
 import { createChatFetch } from './sse-adapter';
@@ -40,6 +47,7 @@ import { MemoryDrawer, type MemoryTab } from './components/MemoryDrawer';
 import { TranscriptsSidebar } from './components/TranscriptsSidebar';
 import { HitlApprovalBar } from './components/HitlApprovalBar';
 import { useTranscriptSession } from './hooks/useTranscriptSession';
+import { useAttachments, ACCEPT_ATTR } from './hooks/useAttachments';
 
 interface AppProps {
 	config: ChatSpaConfig;
@@ -110,7 +118,7 @@ export function App( { config }: AppProps ) {
 		[ endpoint, runtime.nonce, assistantId, isGuest ]
 	);
 
-	const { messages, input, handleInputChange, handleSubmit, status, error, stop } = useChat( {
+	const { messages, input, handleInputChange, handleSubmit, status, error, stop, reload, setMessages } = useChat( {
 		// `id` rebinds the hook's internal state to the active session, so
 		// switching conversations does not bleed messages between them.
 		id: session.sessionKey,
@@ -205,13 +213,87 @@ export function App( { config }: AppProps ) {
 
 	const onSubmit = ( e: FormEvent< HTMLFormElement > ) => {
 		e.preventDefault();
-		if ( ! input.trim() ) {
+		if ( ! input.trim() && attachments.files.length === 0 ) {
 			return;
 		}
-		handleSubmit( e );
+		if ( attachments.files.length > 0 ) {
+			// Convert to Attachment[] asynchronously and submit.
+			void attachments.toPendingAttachments().then( ( attached ) => {
+				handleSubmit( e, { experimental_attachments: attached } );
+				attachments.clear();
+			} );
+		} else {
+			handleSubmit( e );
+		}
 	};
 
 	const isStreaming = status === 'streaming' || status === 'submitted';
+
+	// ── Attachment state ──────────────────────────────────────────────────────
+	const attachments = useAttachments();
+	const fileInputRef = useRef< HTMLInputElement | null >( null );
+
+	const onFileChange = useCallback(
+		( e: React.ChangeEvent< HTMLInputElement > ) => {
+			if ( e.target.files ) {
+				attachments.attach( e.target.files );
+			}
+			// Reset input value so the same file can be re-added after removal.
+			e.target.value = '';
+		},
+		[ attachments ]
+	);
+
+	// ── Regenerate + Branching ────────────────────────────────────────────────
+	// "Regenerate" re-sends the last user message to get a fresh assistant reply.
+	const canRegenerate =
+		! isStreaming &&
+		messages.length >= 2 &&
+		messages[ messages.length - 1 ].role === 'assistant';
+
+	const handleRegenerate = useCallback( () => {
+		void reload();
+	}, [ reload ] );
+
+	// "Edit + re-submit" — state stores the message being edited.
+	const [ editingMsgId, setEditingMsgId ] = useState< string | null >( null );
+
+	const handleStartEdit = useCallback(
+		( msgId: string ) => {
+			const idx = messages.findIndex( ( m ) => m.id === msgId );
+			if ( idx < 0 ) return;
+			const msg = messages[ idx ];
+			if ( msg.role !== 'user' ) return;
+			// Trim all messages after (and including) the edited one so the next
+			// submit regenerates from that point.
+			setMessages( messages.slice( 0, idx ) );
+			// We can't set the input value directly — the composer's `handleInputChange`
+			// is tied to `useChat`'s internal input state.  We fire a synthetic input
+			// event to update it.
+			const content = typeof msg.content === 'string' ? msg.content : '';
+			const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLInputElement.prototype,
+				'value'
+			)?.set;
+			const inputEl = document.getElementById(
+				'nvoos-chat-spa-input'
+			) as HTMLInputElement | null;
+			if ( inputEl && nativeInputValueSetter ) {
+				nativeInputValueSetter.call( inputEl, content );
+				inputEl.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				inputEl.focus();
+			}
+			setEditingMsgId( msgId );
+		},
+		[ messages, setMessages ]
+	);
+
+	// Clear editing indicator when input is cleared or a new message arrives.
+	useEffect( () => {
+		if ( ! input ) {
+			setEditingMsgId( null );
+		}
+	}, [ input ] );
 
 	return (
 		<div className="nvoos-chat-spa-app" data-theme={ config.theme ?? 'auto' }>
@@ -252,11 +334,35 @@ export function App( { config }: AppProps ) {
 							{ __( 'Start a conversation…', 'nvoos-chat-spa' ) }
 						</p>
 					) }
-					{ messages.map( ( m ) => (
-						<MessageView
-							key={ m.id }
-							message={ m as Parameters< typeof MessageView >[ 0 ][ 'message' ] }
-						/>
+					{ messages.map( ( m, idx ) => (
+						<div key={ m.id } className="nvoos-chat-spa-message-wrapper">
+							<MessageView
+								message={ m as Parameters< typeof MessageView >[ 0 ][ 'message' ] }
+							/>
+							{ ! isStreaming && m.role === 'user' && (
+								<button
+									type="button"
+									className="nvoos-chat-spa-edit-btn"
+									aria-label={ __( 'Edit this message and regenerate', 'nvoos-chat-spa' ) }
+									onClick={ () => handleStartEdit( m.id ) }
+								>
+									✏
+								</button>
+							) }
+							{ ! isStreaming &&
+								m.role === 'assistant' &&
+								idx === messages.length - 1 &&
+								canRegenerate && (
+									<button
+										type="button"
+										className="nvoos-chat-spa-regen-btn"
+										aria-label={ __( 'Regenerate response', 'nvoos-chat-spa' ) }
+										onClick={ handleRegenerate }
+									>
+										↺
+									</button>
+								) }
+						</div>
 					) ) }
 					{ error && (
 						<div className="nvoos-chat-spa-message nvoos-chat-spa-message--error">
@@ -286,19 +392,74 @@ export function App( { config }: AppProps ) {
 							🧠
 						</button>
 					) }
+					{ /* Hidden file input */ }
+					<input
+						ref={ fileInputRef }
+						type="file"
+						className="screen-reader-text"
+						id="nvoos-chat-spa-file-input"
+						multiple
+						accept={ ACCEPT_ATTR }
+						aria-hidden="true"
+						tabIndex={ -1 }
+						onChange={ onFileChange }
+					/>
+					<button
+						type="button"
+						className="nvoos-chat-spa-attach-btn"
+						aria-label={ __( 'Attach file', 'nvoos-chat-spa' ) }
+						title={ __( 'Attach file', 'nvoos-chat-spa' ) }
+						disabled={ isStreaming }
+						onClick={ () => fileInputRef.current?.click() }
+					>
+						📎
+					</button>
 					<label className="screen-reader-text" htmlFor="nvoos-chat-spa-input">
 						{ __( 'Message', 'nvoos-chat-spa' ) }
 					</label>
 					<input
 						id="nvoos-chat-spa-input"
-						className="nvoos-chat-spa-input"
+						className={ `nvoos-chat-spa-input${ editingMsgId ? ' nvoos-chat-spa-input--editing' : '' }` }
 						type="text"
 						value={ input }
 						onChange={ handleInputChange }
-						placeholder={ __( 'Type a message…', 'nvoos-chat-spa' ) }
+						placeholder={ editingMsgId
+							? __( 'Edit message and press Send…', 'nvoos-chat-spa' )
+							: __( 'Type a message…', 'nvoos-chat-spa' ) }
 						disabled={ isStreaming }
 						autoComplete="off"
 					/>
+					{ attachments.files.length > 0 && (
+						<ul className="nvoos-chat-spa-attachment-strip" aria-label={ __( 'Attachments', 'nvoos-chat-spa' ) }>
+							{ attachments.files.map( ( pf ) => (
+								<li key={ pf.key } className="nvoos-chat-spa-attachment-chip">
+									{ pf.previewUrl ? (
+										<img
+											src={ pf.previewUrl }
+											alt={ pf.file.name }
+											className="nvoos-chat-spa-attachment-thumb"
+										/>
+									) : (
+										<span className="nvoos-chat-spa-attachment-icon" aria-hidden="true">📄</span>
+									) }
+									<span className="nvoos-chat-spa-attachment-name">{ pf.file.name }</span>
+									<button
+										type="button"
+										className="nvoos-chat-spa-attachment-remove"
+										aria-label={ `${ __( 'Remove', 'nvoos-chat-spa' ) } ${ pf.file.name }` }
+										onClick={ () => attachments.remove( pf.key ) }
+									>
+										×
+									</button>
+								</li>
+							) ) }
+						</ul>
+					) }
+					{ attachments.attachError && (
+						<p className="nvoos-chat-spa-attachment-error" role="alert">
+							{ attachments.attachError }
+						</p>
+					) }
 					{ isStreaming ? (
 						<button
 							type="button"
@@ -311,9 +472,11 @@ export function App( { config }: AppProps ) {
 						<button
 							type="submit"
 							className="nvoos-chat-spa-send"
-							disabled={ ! input.trim() }
+							disabled={ ! input.trim() && attachments.files.length === 0 }
 						>
-							{ __( 'Send', 'nvoos-chat-spa' ) }
+							{ editingMsgId
+								? __( 'Update', 'nvoos-chat-spa' )
+								: __( 'Send', 'nvoos-chat-spa' ) }
 						</button>
 					) }
 				</form>

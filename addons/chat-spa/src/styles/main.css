@@ -830,3 +830,161 @@ border-top-color: #f9a825;
 .nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-hitl-card {
 background: #1a1a1a;
 }
+
+/* Phase 6: Attachments + Regenerate + Branching */
+
+/* Attach button in toolbar */
+.nvoos-chat-spa-attach-btn {
+flex: 0 0 auto;
+font: inherit;
+font-size: 1rem;
+padding: 0 0.5rem;
+background: none;
+border: 1px solid rgba( 0, 0, 0, 0.12 );
+border-radius: 4px;
+cursor: pointer;
+transition: background 0.15s;
+}
+
+.nvoos-chat-spa-attach-btn:hover:not(:disabled) {
+background: rgba( 0, 0, 0, 0.05 );
+}
+
+.nvoos-chat-spa-attach-btn:disabled {
+opacity: 0.45;
+cursor: not-allowed;
+}
+
+/* Attachment thumbnail strip */
+.nvoos-chat-spa-attachment-strip {
+display: flex;
+flex-wrap: wrap;
+gap: 0.4rem;
+list-style: none;
+margin: 0.3rem 0 0;
+padding: 0.4rem 0.5rem;
+background: rgba( 0, 0, 0, 0.03 );
+border-radius: 6px;
+border: 1px solid rgba( 0, 0, 0, 0.08 );
+/* Span full composer width */
+width: 100%;
+box-sizing: border-box;
+}
+
+.nvoos-chat-spa-attachment-chip {
+display: flex;
+align-items: center;
+gap: 0.3rem;
+padding: 0.2rem 0.4rem;
+background: #fff;
+border: 1px solid rgba( 0, 0, 0, 0.12 );
+border-radius: 4px;
+font-size: 0.78rem;
+max-width: 180px;
+}
+
+.nvoos-chat-spa-attachment-thumb {
+width: 28px;
+height: 28px;
+object-fit: cover;
+border-radius: 3px;
+flex: 0 0 auto;
+}
+
+.nvoos-chat-spa-attachment-icon {
+flex: 0 0 auto;
+font-size: 1.1rem;
+}
+
+.nvoos-chat-spa-attachment-name {
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+flex: 1 1 auto;
+min-width: 0;
+}
+
+.nvoos-chat-spa-attachment-remove {
+flex: 0 0 auto;
+background: none;
+border: 0;
+font-size: 1rem;
+cursor: pointer;
+color: rgba( 0, 0, 0, 0.45 );
+padding: 0 0.1rem;
+border-radius: 3px;
+line-height: 1;
+}
+
+.nvoos-chat-spa-attachment-remove:hover {
+background: rgba( 176, 0, 32, 0.08 );
+color: #b00020;
+}
+
+.nvoos-chat-spa-attachment-error {
+margin: 0.2rem 0 0;
+font-size: 0.8rem;
+color: #b00020;
+padding: 0.2rem 0.5rem;
+background: rgba( 176, 0, 32, 0.06 );
+border-radius: 4px;
+width: 100%;
+box-sizing: border-box;
+}
+
+/* Editing-mode input indicator */
+.nvoos-chat-spa-input--editing {
+border-color: #7b1fa2;
+outline: 1px solid rgba( 123, 31, 162, 0.3 );
+}
+
+/* Message wrapper — positions the regen/edit action buttons */
+.nvoos-chat-spa-message-wrapper {
+position: relative;
+}
+
+.nvoos-chat-spa-message-wrapper:hover .nvoos-chat-spa-regen-btn,
+.nvoos-chat-spa-message-wrapper:hover .nvoos-chat-spa-edit-btn {
+opacity: 1;
+}
+
+.nvoos-chat-spa-regen-btn,
+.nvoos-chat-spa-edit-btn {
+position: absolute;
+opacity: 0;
+transition: opacity 0.15s;
+background: none;
+border: 1px solid rgba( 0, 0, 0, 0.12 );
+border-radius: 4px;
+padding: 0.1rem 0.35rem;
+font-size: 0.85rem;
+cursor: pointer;
+color: rgba( 0, 0, 0, 0.55 );
+}
+
+.nvoos-chat-spa-regen-btn {
+bottom: 0.3rem;
+right: 0.3rem;
+}
+
+.nvoos-chat-spa-edit-btn {
+top: 0.3rem;
+right: 0.3rem;
+}
+
+.nvoos-chat-spa-regen-btn:hover,
+.nvoos-chat-spa-edit-btn:hover {
+background: rgba( 0, 0, 0, 0.05 );
+color: rgba( 0, 0, 0, 0.8 );
+}
+
+/* Dark-theme variants */
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-attachment-strip {
+background: rgba( 255, 255, 255, 0.04 );
+border-color: rgba( 255, 255, 255, 0.08 );
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-attachment-chip {
+background: #2a2a2a;
+border-color: rgba( 255, 255, 255, 0.1 );
+}
