@@ -1,6 +1,6 @@
 # Toolkit SPA Blueprint
 
-> **Status:** Phases 0–9 complete. Last reviewed: **May 2026** · Version: **1.9**
+> **Status:** Phases 0–9 complete · Tier A manifests complete. Last reviewed: **May 2026** · Version: **2.0**
 >
 > This document formalizes the reusable pattern established by
 > [`addons/docs-hub/`](../../addons/docs-hub/) for shipping a React Single-Page
@@ -396,13 +396,13 @@ The 24 Pro toolkits map to **6–8 reusable shells** rather than 24 bespoke SPAs
 | Toolkit | Manifest | Recommended SPA pieces |
 |---------|---------|------------------------|
 | `crm` | [`crm.json`](../../addons/pro/config/spa-manifests/crm.json) | refine + `@dnd-kit/sortable` Kanban (Pipeline / contacts / deals) |
-| `calendar-booking` | (todo) | `@fullcalendar/react` (MIT) |
-| `financial-planner` | (todo) | refine + `react-financial-charts` + `recharts` (all MIT) |
-| `analytics` | (todo) | refine + `recharts` / `visx` (MIT) |
-| `regulatory-registration` | (todo) | refine |
-| `law-firm` | (todo) | refine |
-| `cre-debt` | (todo) | refine |
-| `multilingual` | (todo) | refine + Monaco (`@monaco-editor/react`, MIT) |
+| `calendar-booking` | [`calendar-booking.json`](../../addons/pro/config/spa-manifests/calendar-booking.json) | `@fullcalendar/react` (MIT) |
+| `financial-planner` | [`financial-planner.json`](../../addons/pro/config/spa-manifests/financial-planner.json) | refine + `react-financial-charts` + `recharts` (all MIT) |
+| `analytics` | [`analytics.json`](../../addons/pro/config/spa-manifests/analytics.json) | refine + `recharts` / `visx` (MIT) |
+| `regulatory-registration` | [`regulatory-registration.json`](../../addons/pro/config/spa-manifests/regulatory-registration.json) | refine |
+| `law-firm` | [`law-firm.json`](../../addons/pro/config/spa-manifests/law-firm.json) | refine |
+| `cre-debt` | [`cre-debt.json`](../../addons/pro/config/spa-manifests/cre-debt.json) | refine |
+| `multilingual` | [`multilingual.json`](../../addons/pro/config/spa-manifests/multilingual.json) | refine + Monaco (`@monaco-editor/react`, MIT) |
 
 ### Tier B — Canvas / whiteboard shells
 *Separate addon `addons/canvas-toolkit/` (lazy-loaded by mode).*
@@ -433,8 +433,8 @@ The 24 Pro toolkits map to **6–8 reusable shells** rather than 24 bespoke SPAs
 | `media` | `addons/media-studio/` | wavesurfer.js (BSD-3) + react-player (MIT) |
 | `dj-management` | extends `addons/algorave/` | Tone.js (MIT) |
 | `chat-channels` | (no new addon) | Reuses base chat UI |
-| `ecommerce` | manifest in `toolkit-shell` | refine + product cards |
-| `social-media` | manifest in `toolkit-shell` | refine + react-big-calendar (MIT) overlay |
+| `ecommerce` | manifest in `toolkit-shell` — [`ecommerce.json`](../../addons/pro/config/spa-manifests/ecommerce.json) | refine + product cards |
+| `social-media` | manifest in `toolkit-shell` — [`social-media.json`](../../addons/pro/config/spa-manifests/social-media.json) | refine + react-big-calendar (MIT) overlay |
 | `extended-cognition` | (deferred) | Custom (timeline + visx) |
 
 ---

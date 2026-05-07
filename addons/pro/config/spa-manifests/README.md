@@ -30,10 +30,8 @@ manifests as React surfaces, talking to the toolkit's existing
 | `law-firm.json` | Law Firm | Tier A — matters + documents + kanban |
 | `cre-debt.json` | CRE Debt | Tier A — loans + payments + pipeline |
 | `multilingual.json` | Multilingual | Tier A — strings + translations + workflow |
-
-Roadmap (per the [blueprint Tier matrix](../../../../docs/addons/toolkit-spa-blueprint.md#13-tier-matrix-recommended-spa-pieces-per-pro-toolkit)):
-
-- `ecommerce.json`, `social-media.json` — refine + `react-big-calendar`
+| `ecommerce.json` | E-commerce | Tier A — products + orders (kanban) + customers |
+| `social-media.json` | Social Media | Tier A — posts + calendar view + campaigns |
 
 Specialist toolkits (architectural-design, ai-tool-builder, document-generation,
 healthcare-imaging, video-production, etc.) ship as **separate** addons rather
