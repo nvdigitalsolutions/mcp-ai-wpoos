@@ -1,0 +1,8 @@
+.nvoos-chat-spa-app {
+	font: inherit;
+	color: inherit;
+}
+.nvoos-chat-spa-app[data-theme="dark"] {
+	background: #111;
+	color: #eee;
+}

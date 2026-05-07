@@ -1,0 +1,16 @@
+{
+  "apiVersion": 2,
+  "name": "nvoos/chat-spa",
+  "title": "NV oOS Chat SPA",
+  "category": "widgets",
+  "icon": "admin-generic",
+  "description": "Embeds the NV oOS Chat SPA SPA.",
+  "textdomain": "nvoos-chat-spa",
+  "attributes": {
+    "toolkit": { "type": "string", "default": "" },
+    "theme":   { "type": "string", "default": "auto" },
+    "view":    { "type": "string", "default": "" },
+    "height":  { "type": "string", "default": "" }
+  },
+  "supports": { "html": false }
+}
