@@ -323,7 +323,8 @@ class NV_oOS_${TITLE_SNAKE}_Shortcode {
 		}
 
 		return sprintf(
-			'<div class="nvoos-${SLUG}-root" data-config="%s"></div>',
+			'<div class="nvoos-${SLUG}-root" role="application" aria-label="%s" data-config="%s"></div>',
+			esc_attr( __( '${TITLE}', 'nvoos-${SLUG}' ) ),
 			esc_attr( \$config_json )
 		);
 	}
@@ -449,6 +450,19 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles/main.css';
 
+// Load @axe-core/react in development builds for live accessibility audit output.
+// esbuild replaces process.env.NODE_ENV with "production" in prod builds,
+// making this block dead code that is eliminated by tree-shaking.
+if ( process.env.NODE_ENV !== 'production' ) {
+	Promise.all( [
+		import( 'react' ),
+		import( 'react-dom' ),
+		import( '@axe-core/react' ),
+	] ).then( ( [ React, ReactDOM, axe ] ) => {
+		axe.default( React, ReactDOM, 1000 );
+	} ).catch( () => { /* axe unavailable */ } );
+}
+
 declare global {
 	interface Window {
 		// Each addon localizes its own global; the App reads window[GLOBAL_NAME].
@@ -552,27 +566,69 @@ cat > "$ADDON_DIR/package.json" <<EOF
   "version": "0.1.0",
   "description": "NV oOS ${TITLE} — React SPA addon",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "node esbuild.config.js --prod",
-    "build:dev": "node esbuild.config.js",
-    "watch": "node esbuild.config.js --watch",
-    "typecheck": "tsc --noEmit"
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/"
   },
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@axe-core/react": "4.10.2",
+    "@types/node": "22.15.17",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",
+    "@typescript-eslint/parser": "8.32.0",
     "esbuild": "0.25.4",
+    "eslint": "9.27.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
     "typescript": "5.8.3"
   }
 }
 EOF
 
-# --- esbuild.config.js ---------------------------------------------------
-cat > "$ADDON_DIR/esbuild.config.js" <<EOF
+# --- eslint.config.js -------------------------------------------------------
+cat > "$ADDON_DIR/eslint.config.js" <<'ESLINTEOF'
+/**
+ * ESLint flat config — NV oOS SPA Addon.
+ *
+ * Enforces jsx-a11y rules (WCAG 2.1 AA baseline) on all React TSX/JSX sources.
+ *
+ * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y
+ */
+// @ts-check
+import tsParser from '@typescript-eslint/parser';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+	// a11y rules for all TSX/JSX sources
+	{
+		...jsxA11y.flatConfigs.recommended,
+		files: [ 'src/**/*.{ts,tsx,js,jsx}' ],
+		languageOptions: {
+			parser: tsParser,
+			parserOptions: {
+				ecmaFeatures: { jsx: true },
+			},
+		},
+		// Allow inline disable comments for @typescript-eslint/* rules that are
+		// handled by tsc/typecheck rather than this a11y-scoped ESLint config.
+		linterOptions: {
+			reportUnusedDisableDirectives: 'off',
+		},
+	},
+];
+ESLINTEOF
+
+# --- esbuild.config.cjs -------------------------------------------------
+# (CJS extension required because package.json has "type":"module")
+cat > "$ADDON_DIR/esbuild.config.cjs" <<'EOF'
 'use strict';
 
 const esbuild = require( 'esbuild' );

@@ -76,7 +76,8 @@ class NV_oOS_Document_Editor_Shortcode {
 		}
 
 		return sprintf(
-			'<div class="nvoos-document-editor-root" data-config="%s"></div>',
+			'<div class="nvoos-document-editor-root" role="application" aria-label="%s" data-config="%s"></div>',
+			esc_attr( __( 'NV oOS Document Editor', 'nvoos-document-editor' ) ),
 			esc_attr( $config_json )
 		);
 	}

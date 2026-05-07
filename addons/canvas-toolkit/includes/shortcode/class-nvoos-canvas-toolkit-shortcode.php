@@ -74,7 +74,8 @@ class NV_oOS_Canvas_Toolkit_Shortcode {
 		}
 
 		return sprintf(
-			'<div class="nvoos-canvas-toolkit-root" data-config="%s"></div>',
+			'<div class="nvoos-canvas-toolkit-root" role="application" aria-label="%s" data-config="%s"></div>',
+			esc_attr( __( 'NV oOS Canvas Toolkit', 'nvoos-canvas-toolkit' ) ),
 			esc_attr( $config_json )
 		);
 	}

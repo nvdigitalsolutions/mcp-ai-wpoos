@@ -74,7 +74,8 @@ class NV_oOS_Toolkit_Shell_Shortcode {
 		}
 
 		return sprintf(
-			'<div class="nvoos-toolkit-shell-root" data-config="%s"></div>',
+			'<div class="nvoos-toolkit-shell-root" role="application" aria-label="%s" data-config="%s"></div>',
+			esc_attr( __( 'NV oOS Toolkit Shell', 'nvoos-toolkit-shell' ) ),
 			esc_attr( $config_json )
 		);
 	}

@@ -13,9 +13,7 @@
 import { useCallback, useRef, useState } from 'react';
 // react-player v3 changed its type exports. Import as unknown and re-cast
 // to avoid the TSC incompatibility with its `Omit<ReactPlayerProps,'ref'>` shape.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import ReactPlayerLib from 'react-player';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ReactPlayer = ReactPlayerLib as any;
 
 interface ProgressState {
@@ -38,7 +36,6 @@ const [ duration, setDuration ] = useState( 0 );
 const [ volume, setVolume ] = useState( 0.8 );
 const [ muted, setMuted ] = useState( false );
 const [ ready, setReady ] = useState( false );
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const playerRef = useRef<any>( null );
 
 const handleProgress = useCallback(

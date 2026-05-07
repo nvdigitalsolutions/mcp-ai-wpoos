@@ -45,7 +45,6 @@ const STAGE_HEIGHT = 500;
 
 /** Apply brightness/contrast filter on a Konva Image node. */
 function applyFilters( node: Konva.Image, state: ImageState ) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const K = ( window as any ).Konva as typeof Konva | undefined;
 	if ( ! K ) {
 		return;

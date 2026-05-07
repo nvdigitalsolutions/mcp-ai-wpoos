@@ -453,6 +453,106 @@ The 24 Pro toolkits map to **6–8 reusable shells** rather than 24 bespoke SPAs
 
 ---
 
+## 14. Phase 5 quality gates — a11y hardening & CSP
+
+Every toolkit-SPA addon **must** pass these gates before merging to `main`.
+The CI workflow [`.github/workflows/spa-a11y.yml`](../../.github/workflows/spa-a11y.yml)
+enforces items 1–3 automatically.
+
+### 1. eslint-plugin-jsx-a11y (automated, blocking)
+
+All `src/**/*.{ts,tsx}` sources must pass `eslint --max-warnings 0` with the
+`jsx-a11y/recommended` ruleset. The config lives in `eslint.config.js` in each
+addon root.
+
+```bash
+npm run lint:a11y   # runs: eslint --max-warnings 0 src/
+```
+
+Key rules this enforces (WCAG 2.1 AA subset):
+- `alt-text` — all `<img>`, `<canvas>`, and `<object>` elements have alt text.
+- `no-noninteractive-element-to-interactive-role` — do not attach `role="tab"` /
+  `role="button"` etc. to block-level landmark elements (`<nav>`, `<section>`).
+  Use `<div role="tablist">` instead of `<nav role="tablist">`.
+- `aria-required-attr` / `aria-valid-attr` — ARIA attributes match the role.
+- `interactive-supports-focus` — all interactive elements are keyboard-focusable.
+- `click-events-have-key-events` — click handlers must be paired with key handlers
+  (or the element must be natively interactive like `<button>`).
+
+### 2. TypeScript type-check (automated, blocking)
+
+`npm run typecheck` (`tsc --noEmit`) must pass with zero errors. Type-checking
+is run before the a11y lint in CI.
+
+### 3. Mount container ARIA landmark (automated, enforced in PHP)
+
+Every shortcode/block PHP render method **must** output:
+
+```php
+'<div class="nvoos-<slug>-root" role="application" aria-label="%s" data-config="%s">',
+esc_attr( __( 'Human-readable title', 'nvoos-<slug>' ) ),
+esc_attr( $config_json )
+```
+
+`role="application"` signals to screen readers that the region contains a
+complex interactive widget. The `aria-label` identifies the surface. This is
+the WCAG 1.3.6 Identify Purpose requirement.
+
+### 4. axe-core dev integration (local, non-blocking in prod)
+
+Each addon's `src/index.tsx` boots `@axe-core/react` in non-production builds:
+
+```ts
+if ( process.env.NODE_ENV !== 'production' ) {
+    Promise.all( [ import('react'), import('react-dom'), import('@axe-core/react') ] )
+        .then( ( [ React, ReactDOM, axe ] ) => axe.default( React, ReactDOM, 1000 ) )
+        .catch( () => {} );
+}
+```
+
+esbuild replaces `process.env.NODE_ENV` with `"production"` via the `define`
+option, dead-code-eliminating the entire block. Run `npm run build:dev` to get
+a bundle with live axe output in the browser console.
+
+### 5. CSP compliance (manual, one-time per addon)
+
+All toolkit-SPA addons are **CSP-safe by construction**:
+
+- esbuild produces a single IIFE bundle — no `eval()`, no `new Function()`.
+- All scripts are self-hosted under `assets/dist/` — no remote CDN loads.
+- Nonces are injected by WordPress via `wp_enqueue_script()` and `wp_localize_script()`.
+
+Recommended `Content-Security-Policy` header for sites hosting these addons:
+
+```
+Content-Security-Policy:
+  default-src 'self';
+  script-src  'self' 'nonce-{WP_NONCE}';
+  style-src   'self' 'nonce-{WP_NONCE}' 'unsafe-inline';
+  img-src     'self' data: blob: https:;
+  media-src   'self' data: blob: https:;
+  connect-src 'self' https://{your-domain};
+  frame-src   'self' https://www.youtube.com https://player.vimeo.com;
+```
+
+Notes:
+- `style-src 'unsafe-inline'` is required by Tiptap (document-editor) and
+  react-konva (media-studio) which inject inline `<style>` tags.
+- `frame-src` entries cover media-player `<iframe>` embeds (YouTube / Vimeo).
+- Remove any `'unsafe-eval'` directive from existing headers — it is not needed.
+
+### 6. Focus management
+
+Interactive toolbar buttons must be reachable by keyboard (`Tab` / `Shift+Tab`).
+Canvas-based surfaces (react-konva, @xyflow/react) should expose a skip link:
+
+```tsx
+<a className="nvoos-skip-link" href="#nvoos-main-content">Skip to main content</a>
+<div id="nvoos-main-content" tabIndex={ -1 }>{ /* canvas */ }</div>
+```
+
+---
+
 ## 15. Scaffolding a new toolkit-SPA addon
 
 Run:

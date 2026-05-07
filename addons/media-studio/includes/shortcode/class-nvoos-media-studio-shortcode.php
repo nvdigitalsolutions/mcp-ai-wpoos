@@ -74,7 +74,8 @@ class NV_oOS_Media_Studio_Shortcode {
 		}
 
 		return sprintf(
-			'<div class="nvoos-media-studio-root" data-config="%s"></div>',
+			'<div class="nvoos-media-studio-root" role="application" aria-label="%s" data-config="%s"></div>',
+			esc_attr( __( 'NV oOS Media Studio', 'nvoos-media-studio' ) ),
 			esc_attr( $config_json )
 		);
 	}

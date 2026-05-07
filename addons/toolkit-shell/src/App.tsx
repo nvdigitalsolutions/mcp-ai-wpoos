@@ -71,7 +71,6 @@ export function App( { config }: AppProps ) {
 			.catch( ( err: Error ) =>
 				setManifestState( { kind: 'error', message: err.message } )
 			);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ config.toolkit ] );
 
 	const heightStyle = config.height ? { height: config.height } : undefined;
@@ -128,7 +127,7 @@ function ViewTabs( {
 		return null;
 	}
 	return (
-		<nav className="nvoos-toolkit-shell-tabs" role="tablist">
+		<div className="nvoos-toolkit-shell-tabs" role="tablist">
 			{ manifest.views.map( ( v ) => (
 				<button
 					key={ v.name }
@@ -145,7 +144,7 @@ function ViewTabs( {
 					{ v.label || v.name }
 				</button>
 			) ) }
-		</nav>
+		</div>
 	);
 }
 
