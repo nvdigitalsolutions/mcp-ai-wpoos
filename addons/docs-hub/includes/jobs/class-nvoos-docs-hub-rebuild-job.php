@@ -52,7 +52,14 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	}
 
 	/**
-	 * Run a full documentation rebuild: scan, index, and cache.
+	 * Run a full documentation rebuild SYNCHRONOUSLY: scan, index, and cache.
+	 *
+	 * Preserves the original single-request contract for tests and
+	 * `wp nvoos-docs sync`. The async / chunked path used by the
+	 * REST API and the admin UI lives in
+	 * NV_oOS_Docs_Hub_Rebuild_Pipeline. This sync path now also does
+	 * an atomic swap (build into staging, swap into live) so a partial
+	 * failure no longer leaves the site with a blank index.
 	 *
 	 * @since 1.0.0
 	 *
@@ -70,13 +77,11 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 
 			$cache = new NV_oOS_Docs_Hub_Cache();
 
-			// Clear stale data first.
-			$cache->clear();
-
-			// Store manifest.
+			// Build into staging first so a fault leaves the live cache intact.
+			$cache->use_staging( true );
+			$cache->clear_staging();
 			$cache->set_manifest( $manifest );
 
-			// Store per-page payloads.
 			$slug_map = $indexer->get_slug_map();
 			foreach ( array_keys( $slug_map ) as $slug ) {
 				$payload = $indexer->build_page_payload( $slug );
@@ -85,28 +90,97 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 				}
 			}
 
-			// Build and store search index.
 			$search_index = self::build_search_index( $slug_map, $indexer );
 			$cache->set_search_index( $search_index );
+			$cache->use_staging( false );
+
+			// Atomic swap into the live cache.
+			$cache->promote_staging();
 
 			$duration_ms  = (int) round( ( microtime( true ) - $start ) * 1000 );
 			$broken_count = count( $indexer->get_broken_links() );
 
+			// Mirror result onto rebuild state so the admin status panel
+			// can display a "last run" summary even when sync mode was used.
+			NV_oOS_Docs_Hub_Rebuild_State::set(
+				array(
+					'job_id'        => NV_oOS_Docs_Hub_Rebuild_State::generate_job_id(),
+					'phase'         => NV_oOS_Docs_Hub_Rebuild_State::PHASE_DONE,
+					'cursor'        => count( $slug_map ),
+					'total'         => count( $slug_map ),
+					'processed'     => count( $slug_map ),
+					'errors'        => array(),
+					'warnings'      => array(),
+					'started_at'    => (int) $start,
+					'updated_at'    => time(),
+					'finished_at'   => time(),
+					'phase_timings' => array( 'sync_ms' => $duration_ms ),
+					'sync'          => true,
+					'cap_hit'       => false,
+					'last_error'    => '',
+					'duration_ms'   => $duration_ms,
+					'pages'         => count( $slug_map ),
+					'broken_links'  => $broken_count,
+				)
+			);
+
 			return array(
-				'success'     => true,
-				'pages'       => count( $slug_map ),
+				'success'      => true,
+				'pages'        => count( $slug_map ),
 				'broken_links' => $broken_count,
-				'duration_ms' => $duration_ms,
+				'duration_ms'  => $duration_ms,
 			);
 		} catch ( Exception $e ) {
+			NV_oOS_Docs_Hub_Rebuild_State::update(
+				array(
+					'phase'      => NV_oOS_Docs_Hub_Rebuild_State::PHASE_FAILED,
+					'last_error' => $e->getMessage(),
+				)
+			);
 			return array(
-				'success'     => false,
-				'pages'       => 0,
+				'success'      => false,
+				'pages'        => 0,
 				'broken_links' => 0,
-				'duration_ms' => (int) round( ( microtime( true ) - $start ) * 1000 ),
-				'error'       => $e->getMessage(),
+				'duration_ms'  => (int) round( ( microtime( true ) - $start ) * 1000 ),
+				'error'        => $e->getMessage(),
 			);
 		}
+	}
+
+	/**
+	 * Enqueue an asynchronous chunked rebuild.
+	 *
+	 * Returns immediately with the queued job summary; the work spans
+	 * multiple WP-Cron ticks via NV_oOS_Docs_Hub_Rebuild_Pipeline.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return array
+	 */
+	public static function enqueue_async() {
+		return NV_oOS_Docs_Hub_Rebuild_Pipeline::enqueue();
+	}
+
+	/**
+	 * Cancel an in-flight async rebuild.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return array
+	 */
+	public static function cancel_async() {
+		return NV_oOS_Docs_Hub_Rebuild_Pipeline::cancel();
+	}
+
+	/**
+	 * Resume a stalled / failed async rebuild.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return array
+	 */
+	public static function resume_async() {
+		return NV_oOS_Docs_Hub_Rebuild_Pipeline::resume();
 	}
 
 	/**

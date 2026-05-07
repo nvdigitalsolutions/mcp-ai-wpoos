@@ -120,6 +120,18 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 
 		add_settings_field(
+			'include_addon_readmes',
+			__( 'Include per-addon README/CHANGELOG', 'nvoos-docs-hub' ),
+			array( __CLASS__, 'render_checkbox' ),
+			'nvoos-docs-hub',
+			'nvoos_docs_hub_general',
+			array(
+				'id'          => 'include_addon_readmes',
+				'description' => __( 'Index each addon\'s top-level README.md and CHANGELOG.md alongside its docs/ tree. Disable to surface only the plugin-root files.', 'nvoos-docs-hub' ),
+			)
+		);
+
+		add_settings_field(
 			'default_home',
 			__( 'Home Page Slug', 'nvoos-docs-hub' ),
 			array( __CLASS__, 'render_text' ),
@@ -247,6 +259,7 @@ class NV_oOS_Docs_Hub_Settings {
 		$sanitized['search_enabled']  = ! empty( $input['search_enabled'] );
 		$sanitized['sidebar_enabled'] = ! empty( $input['sidebar_enabled'] );
 		$sanitized['context_enabled'] = ! empty( $input['context_enabled'] );
+		$sanitized['include_addon_readmes'] = ! empty( $input['include_addon_readmes'] );
 		$sanitized['default_home']    = sanitize_text_field( $input['default_home'] ?? 'readme' );
 		$sanitized['github_repo_url'] = esc_url_raw( $input['github_repo_url'] ?? '' );
 
@@ -317,6 +330,9 @@ class NV_oOS_Docs_Hub_Settings {
 		$manifest   = $cache->get_manifest();
 		$total_pages  = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
 		$broken_links = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
+		$rebuild_state = NV_oOS_Docs_Hub_Rebuild_State::to_summary();
+		$rest_base     = esc_url_raw( rest_url( 'nvoos-docs-hub/v1' ) );
+		$rest_nonce    = wp_create_nonce( 'wp_rest' );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'NV oOS Docs Hub Settings', 'nvoos-docs-hub' ); ?></h1>
@@ -342,14 +358,119 @@ class NV_oOS_Docs_Hub_Settings {
 					<?php echo esc_html( $broken_links ); ?>
 				</p>
 
-				<form method="post" action="">
+				<div id="nvoos-docs-hub-rebuild-panel" data-rest-base="<?php echo esc_attr( $rest_base ); ?>" data-rest-nonce="<?php echo esc_attr( $rest_nonce ); ?>" data-initial-state="<?php echo esc_attr( wp_json_encode( $rebuild_state ) ); ?>">
+					<p class="nvoos-rebuild-status" style="margin-top: 12px;">
+						<strong><?php esc_html_e( 'Rebuild status:', 'nvoos-docs-hub' ); ?></strong>
+						<span class="nvoos-rebuild-phase"><?php echo esc_html( $rebuild_state['phase'] ); ?></span>
+						—
+						<span class="nvoos-rebuild-progress">
+							<?php
+							echo esc_html( sprintf(
+								/* translators: 1: processed, 2: total, 3: percentage */
+								__( '%1$d / %2$d (%3$d%%)', 'nvoos-docs-hub' ),
+								(int) $rebuild_state['processed'],
+								(int) $rebuild_state['total'],
+								(int) $rebuild_state['percentage']
+							) );
+							?>
+						</span>
+					</p>
+					<p class="nvoos-rebuild-error" style="display:<?php echo empty( $rebuild_state['last_error'] ) ? 'none' : 'block'; ?>; color:#a00;">
+						<strong><?php esc_html_e( 'Last error:', 'nvoos-docs-hub' ); ?></strong>
+						<span class="nvoos-rebuild-error-msg"><?php echo esc_html( $rebuild_state['last_error'] ); ?></span>
+					</p>
+					<p>
+						<button type="button" class="button button-primary nvoos-rebuild-start"<?php echo $rebuild_state['is_running'] ? ' disabled' : ''; ?>>
+							<?php esc_html_e( 'Rebuild Documentation Index', 'nvoos-docs-hub' ); ?>
+						</button>
+						<button type="button" class="button nvoos-rebuild-resume"<?php echo $rebuild_state['is_running'] ? ' disabled' : ''; ?>>
+							<?php esc_html_e( 'Resume', 'nvoos-docs-hub' ); ?>
+						</button>
+						<button type="button" class="button nvoos-rebuild-cancel"<?php echo $rebuild_state['is_running'] ? '' : ' disabled'; ?>>
+							<?php esc_html_e( 'Cancel', 'nvoos-docs-hub' ); ?>
+						</button>
+					</p>
+				</div>
+
+				<!-- Sync fallback for environments without JavaScript / WP-Cron. -->
+				<form method="post" action="" style="margin-top: 8px;">
 					<?php wp_nonce_field( 'nvoos_docs_hub_rebuild_action', 'nvoos_docs_hub_rebuild_nonce' ); ?>
 					<input type="submit"
 						name="nvoos_docs_hub_rebuild"
-						class="button button-primary"
-						value="<?php esc_attr_e( 'Rebuild Documentation Index', 'nvoos-docs-hub' ); ?>" />
+						class="button"
+						value="<?php esc_attr_e( 'Rebuild now (synchronous)', 'nvoos-docs-hub' ); ?>" />
 				</form>
 			</div>
+
+			<script>
+			(function () {
+				var panel = document.getElementById( 'nvoos-docs-hub-rebuild-panel' );
+				if ( ! panel ) {
+					return;
+				}
+				var base  = panel.getAttribute( 'data-rest-base' );
+				var nonce = panel.getAttribute( 'data-rest-nonce' );
+				var phaseEl    = panel.querySelector( '.nvoos-rebuild-phase' );
+				var progressEl = panel.querySelector( '.nvoos-rebuild-progress' );
+				var errorEl    = panel.querySelector( '.nvoos-rebuild-error' );
+				var errorMsgEl = panel.querySelector( '.nvoos-rebuild-error-msg' );
+				var startBtn   = panel.querySelector( '.nvoos-rebuild-start' );
+				var resumeBtn  = panel.querySelector( '.nvoos-rebuild-resume' );
+				var cancelBtn  = panel.querySelector( '.nvoos-rebuild-cancel' );
+				var pollHandle = null;
+
+				function applyState( state ) {
+					if ( ! state ) { return; }
+					phaseEl.textContent    = state.phase || '';
+					progressEl.textContent = ( state.processed || 0 ) + ' / ' + ( state.total || 0 ) + ' (' + ( state.percentage || 0 ) + '%)';
+					if ( state.last_error ) {
+						errorEl.style.display = 'block';
+						errorMsgEl.textContent = state.last_error;
+					} else {
+						errorEl.style.display = 'none';
+					}
+					var running = !! state.is_running;
+					startBtn.disabled  = running;
+					resumeBtn.disabled = running;
+					cancelBtn.disabled = ! running;
+
+					if ( running ) {
+						if ( ! pollHandle ) {
+							pollHandle = window.setInterval( pollStatus, 2000 );
+						}
+					} else if ( pollHandle ) {
+						window.clearInterval( pollHandle );
+						pollHandle = null;
+					}
+				}
+
+				function call( path, method ) {
+					return fetch( base + path, {
+						method: method || 'GET',
+						credentials: 'same-origin',
+						headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' }
+					} ).then( function ( r ) { return r.json(); } );
+				}
+
+				function pollStatus() {
+					call( '/rebuild/status', 'GET' ).then( applyState ).catch( function () {} );
+				}
+
+				startBtn.addEventListener( 'click', function () {
+					call( '/rebuild', 'POST' ).then( applyState );
+				} );
+				resumeBtn.addEventListener( 'click', function () {
+					call( '/rebuild/resume', 'POST' ).then( applyState );
+				} );
+				cancelBtn.addEventListener( 'click', function () {
+					call( '/rebuild/cancel', 'POST' ).then( applyState );
+				} );
+
+				try {
+					applyState( JSON.parse( panel.getAttribute( 'data-initial-state' ) ) );
+				} catch ( e ) {}
+			}());
+			</script>
 
 			<form method="post" action="options.php">
 				<?php

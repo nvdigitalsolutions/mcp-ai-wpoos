@@ -418,13 +418,40 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				continue;
 			}
 
-			// Apply nvoos_docs_hub_excluded_globs filter.
-			$excluded = apply_filters( 'nvoos_docs_hub_excluded_globs', array() );
-			$skip     = false;
-			foreach ( $excluded as $glob ) {
+			// Apply exclusions: defaults + filterable. Force-include filter
+			// allows opting-in to vendored docs that the operator wants.
+			$default_excluded = NV_oOS_Docs_Hub_Scanner::DEFAULT_EXCLUDED_GLOBS;
+			$excluded         = apply_filters( 'nvoos_docs_hub_excluded_globs', $default_excluded );
+			$force_included   = apply_filters( 'nvoos_docs_hub_force_include_globs', array() );
+
+			$skip = false;
+			foreach ( (array) $force_included as $glob ) {
+				if ( fnmatch( $glob, $item_path ) || fnmatch( $glob, basename( $item_path ) ) ) {
+					$skip = false;
+					$results[] = $item;
+					continue 2;
+				}
+			}
+			foreach ( (array) $excluded as $glob ) {
 				if ( fnmatch( $glob, $item_path ) || fnmatch( $glob, basename( $item_path ) ) ) {
 					$skip = true;
 					break;
+				}
+				// Cheap path-segment check for `**/dir/*` style.
+				if ( 0 === strpos( $glob, '**/' ) ) {
+					$inner = substr( $glob, 3 );
+					if ( fnmatch( $inner, $item_path ) ) {
+						$skip = true;
+						break;
+					}
+					$tail = $item_path;
+					while ( false !== ( $pos = strpos( $tail, '/' ) ) ) {
+						$tail = substr( $tail, $pos + 1 );
+						if ( '' !== $tail && fnmatch( $inner, $tail ) ) {
+							$skip = true;
+							break 2;
+						}
+					}
 				}
 			}
 			if ( $skip ) {

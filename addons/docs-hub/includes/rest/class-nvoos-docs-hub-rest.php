@@ -91,6 +91,43 @@ class NV_oOS_Docs_Hub_REST {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( __CLASS__, 'rebuild' ),
 				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				'args'                => array(
+					'sync' => array(
+						'description' => __( 'Run synchronously instead of enqueueing chunks.', 'nvoos-docs-hub' ),
+						'type'        => 'boolean',
+						'default'     => false,
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild/status',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'rebuild_status' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild/cancel',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'rebuild_cancel' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild/resume',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'rebuild_resume' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
 			)
 		);
 
@@ -297,9 +334,14 @@ class NV_oOS_Docs_Hub_REST {
 	}
 
 	/**
-	 * POST /rebuild — triggers a full documentation rebuild.
+	 * POST /rebuild — triggers a documentation rebuild.
+	 *
+	 * Async by default (returns 202-style queued response with the
+	 * current job summary). Pass `?sync=1` to run inline — preserved
+	 * for tests and CLI back-compat.
 	 *
 	 * @since 1.0.0
+	 * @since 1.2.0 Async by default; sync via `?sync=1`.
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
@@ -315,17 +357,82 @@ class NV_oOS_Docs_Hub_REST {
 			);
 		}
 
-		$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
-
-		if ( ! $result['success'] ) {
-			return new WP_Error(
-				'rebuild_failed',
-				__( 'Documentation rebuild failed.', 'nvoos-docs-hub' ),
-				array( 'status' => 500 )
-			);
+		$sync = filter_var( $request->get_param( 'sync' ), FILTER_VALIDATE_BOOLEAN );
+		if ( $sync ) {
+			$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
+			if ( ! $result['success'] ) {
+				return new WP_Error(
+					'rebuild_failed',
+					! empty( $result['error'] ) ? (string) $result['error'] : __( 'Documentation rebuild failed.', 'nvoos-docs-hub' ),
+					array( 'status' => 500 )
+				);
+			}
+			return rest_ensure_response( $result );
 		}
 
-		return rest_ensure_response( $result );
+		$summary  = NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
+		$response = rest_ensure_response(
+			array_merge(
+				$summary,
+				array( 'status' => 'queued' )
+			)
+		);
+		$response->set_status( 202 );
+		return $response;
+	}
+
+	/**
+	 * GET /rebuild/status — returns the current rebuild progress snapshot.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function rebuild_status( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$response = rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_State::to_summary() );
+		$response->header( 'Cache-Control', 'no-store' );
+		return $response;
+	}
+
+	/**
+	 * POST /rebuild/cancel — cancels an in-flight rebuild.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function rebuild_cancel( $request ) {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'invalid_nonce',
+				__( 'Nonce verification failed.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+		return rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_Job::cancel_async() );
+	}
+
+	/**
+	 * POST /rebuild/resume — resumes a stalled / failed rebuild.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function rebuild_resume( $request ) {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'invalid_nonce',
+				__( 'Nonce verification failed.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+		return rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_Job::resume_async() );
 	}
 
 	/**
@@ -350,6 +457,7 @@ class NV_oOS_Docs_Hub_REST {
 				'broken_links' => $broken_links,
 				'last_built'   => $last_built,
 				'version'      => NVOOS_DOCS_HUB_VERSION,
+				'rebuild'      => NV_oOS_Docs_Hub_Rebuild_State::to_summary(),
 			)
 		);
 	}
