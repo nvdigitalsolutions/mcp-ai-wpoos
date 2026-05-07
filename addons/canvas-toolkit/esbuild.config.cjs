@@ -11,6 +11,26 @@ const isWatch = args.includes( '--watch' );
 const outDir = path.resolve( __dirname, 'assets', 'dist' );
 fs.mkdirSync( outDir, { recursive: true } );
 
+/**
+ * esbuild plugin — maps `@wordpress/i18n` imports to `window.wp.i18n`.
+ *
+ * WordPress loads wp.i18n via the wp-i18n script dependency, so the bundle
+ * must not bundle the library — it reads window.wp.i18n at runtime.
+ */
+const wpI18nPlugin = {
+	name: "wp-i18n-external",
+	setup( build ) {
+		build.onResolve( { filter: /^@wordpress\/i18n$/ }, ( args ) => ( {
+			path: args.path,
+			namespace: "wp-i18n-ns",
+		} ) );
+		build.onLoad( { filter: /.*/, namespace: "wp-i18n-ns" }, () => ( {
+			contents: `module.exports = window.wp.i18n;`,
+			loader: "js",
+		} ) );
+	},
+};
+
 /** @type {import('esbuild').BuildOptions} */
 const buildOptions = {
 	entryPoints: [ path.resolve( __dirname, 'src', 'index.tsx' ) ],
@@ -26,6 +46,8 @@ const buildOptions = {
 	minify:      isProd,
 	sourcemap:   ! isProd,
 	treeShaking: true,
+	// Externalize @wordpress/i18n — WordPress loads wp.i18n via the wp-i18n script handle.
+	external:    [ '@wordpress/i18n' ],
 	plugins:     [ {
 		name: 'css-extract',
 		setup( build ) {

@@ -12,6 +12,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -180,7 +181,7 @@ export function EditorCanvas( { toolkit, documentId }: EditorCanvasProps ) {
 	}, [ editor ] );
 
 	if ( ! editor ) {
-		return <div className="nvoos-de-loading" role="status">Loading editor…</div>;
+		return <div className="nvoos-de-loading" role="status">{ __( 'Loading editor…', 'nvoos-document-editor' ) }</div>;
 	}
 
 	const isTable = editor.isActive( 'table' );
@@ -193,34 +194,34 @@ export function EditorCanvas( { toolkit, documentId }: EditorCanvasProps ) {
 				className="nvoos-de-title-input"
 				value={ title }
 				onChange={ ( e ) => setTitle( e.target.value ) }
-				placeholder="Document title"
-				aria-label="Document title"
+				placeholder={ __( 'Document title', 'nvoos-document-editor' ) }
+				aria-label={ __( 'Document title', 'nvoos-document-editor' ) }
 			/>
 
 			{ /* Toolbar */ }
-			<div className="nvoos-de-toolbar" role="toolbar" aria-label="Editor toolbar">
+			<div className="nvoos-de-toolbar" role="toolbar" aria-label={ __( 'Editor toolbar', 'nvoos-document-editor' ) }>
 				<ToolbarButton
-					label="Bold"
+					label={ __( 'Bold', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'bold' ) }
 					onClick={ () => editor.chain().focus().toggleBold().run() }
 				/>
 				<ToolbarButton
-					label="Italic"
+					label={ __( 'Italic', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'italic' ) }
 					onClick={ () => editor.chain().focus().toggleItalic().run() }
 				/>
 				<ToolbarButton
-					label="Strike"
+					label={ __( 'Strike', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'strike' ) }
 					onClick={ () => editor.chain().focus().toggleStrike().run() }
 				/>
 				<ToolbarButton
-					label="Code"
+					label={ __( 'Code', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'code' ) }
 					onClick={ () => editor.chain().focus().toggleCode().run() }
 				/>
 				<ToolbarButton
-					label="Link"
+					label={ __( 'Link', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'link' ) }
 					onClick={ setLink }
 				/>
@@ -248,19 +249,19 @@ export function EditorCanvas( { toolkit, documentId }: EditorCanvasProps ) {
 				/>
 				<span className="nvoos-de-toolbar-sep" aria-hidden="true" />
 				<ToolbarButton
-					label="Bullets"
+					label={ __( 'Bullets', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'bulletList' ) }
 					onClick={ () => editor.chain().focus().toggleBulletList().run() }
 				/>
 				<ToolbarButton
-					label="Numbered"
+					label={ __( 'Numbered', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'orderedList' ) }
 					onClick={ () =>
 						editor.chain().focus().toggleOrderedList().run()
 					}
 				/>
 				<ToolbarButton
-					label="Quote"
+					label={ __( 'Quote', 'nvoos-document-editor' ) }
 					active={ editor.isActive( 'blockquote' ) }
 					onClick={ () =>
 						editor.chain().focus().toggleBlockquote().run()
@@ -284,12 +285,12 @@ export function EditorCanvas( { toolkit, documentId }: EditorCanvasProps ) {
 				/>
 				<span className="nvoos-de-toolbar-sep" aria-hidden="true" />
 				<ToolbarButton
-					label="Undo"
+					label={ __( 'Undo', 'nvoos-document-editor' ) }
 					disabled={ ! editor.can().undo() }
 					onClick={ () => editor.chain().focus().undo().run() }
 				/>
 				<ToolbarButton
-					label="Redo"
+					label={ __( 'Redo', 'nvoos-document-editor' ) }
 					disabled={ ! editor.can().redo() }
 					onClick={ () => editor.chain().focus().redo().run() }
 				/>
@@ -311,12 +312,12 @@ export function EditorCanvas( { toolkit, documentId }: EditorCanvasProps ) {
 						disabled={ saveStatus === 'saving' }
 					>
 						{ saveStatus === 'saving'
-							? 'Saving…'
+							? __( 'Saving…', 'nvoos-document-editor' )
 							: saveStatus === 'saved'
-							? 'Saved ✓'
+							? __( 'Saved ✓', 'nvoos-document-editor' )
 							: saveStatus === 'error'
-							? 'Error — retry'
-							: 'Save' }
+							? __( 'Error — retry', 'nvoos-document-editor' )
+							: __( 'Save', 'nvoos-document-editor' ) }
 					</button>
 				) : null }
 			</footer>

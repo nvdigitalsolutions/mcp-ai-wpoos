@@ -9,6 +9,8 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
+
 interface ComingSoonProps {
 	mode: string;
 	label: string;
@@ -19,7 +21,7 @@ export function ComingSoon( { mode, label, note }: ComingSoonProps ) {
 	return (
 		<div className="nvoos-canvas-toolkit-coming-soon" data-mode={ mode } role="status">
 			<p>
-				<strong>{ label }</strong> — coming soon.
+				<strong>{ label }</strong> { __( '— coming soon.', 'nvoos-canvas-toolkit' ) }
 			</p>
 			<p>{ note }</p>
 		</div>

@@ -8,6 +8,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import { FlowCanvas } from './components/FlowCanvas';
 import { ComingSoon } from './components/ComingSoon';
 import type { ReactElement } from 'react';
@@ -25,10 +26,10 @@ interface AppProps {
 }
 
 const MODE_LABELS: Record<CanvasMode, string> = {
-	flow: 'Flow (node graph)',
-	whiteboard: 'Whiteboard',
-	bpmn: 'BPMN diagram',
-	mermaid: 'Mermaid live preview',
+	flow: __( 'Flow (node graph)', 'nvoos-canvas-toolkit' ),
+	whiteboard: __( 'Whiteboard', 'nvoos-canvas-toolkit' ),
+	bpmn: __( 'BPMN diagram', 'nvoos-canvas-toolkit' ),
+	mermaid: __( 'Mermaid live preview', 'nvoos-canvas-toolkit' ),
 };
 
 export function App( { config }: AppProps ) {
@@ -45,7 +46,7 @@ export function App( { config }: AppProps ) {
 				<ComingSoon
 					mode="whiteboard"
 					label={ MODE_LABELS.whiteboard }
-					note="The tldraw-based whiteboard mode ships in a follow-up PR."
+					note={ __( 'The tldraw-based whiteboard mode ships in a follow-up PR.', 'nvoos-canvas-toolkit' ) }
 				/>
 			);
 			break;
@@ -54,7 +55,7 @@ export function App( { config }: AppProps ) {
 				<ComingSoon
 					mode="bpmn"
 					label={ MODE_LABELS.bpmn }
-					note="The bpmn-js BPMN mode ships in a follow-up PR."
+					note={ __( 'The bpmn-js BPMN mode ships in a follow-up PR.', 'nvoos-canvas-toolkit' ) }
 				/>
 			);
 			break;
@@ -63,7 +64,7 @@ export function App( { config }: AppProps ) {
 				<ComingSoon
 					mode="mermaid"
 					label={ MODE_LABELS.mermaid }
-					note="The Mermaid live-preview mode ships in a follow-up PR."
+					note={ __( 'The Mermaid live-preview mode ships in a follow-up PR.', 'nvoos-canvas-toolkit' ) }
 				/>
 			);
 			break;

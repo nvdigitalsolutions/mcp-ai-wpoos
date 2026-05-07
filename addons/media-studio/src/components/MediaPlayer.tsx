@@ -10,6 +10,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import { useCallback, useRef, useState } from 'react';
 // react-player v3 changed its type exports. Import as unknown and re-cast
 // to avoid the TSC incompatibility with its `Omit<ReactPlayerProps,'ref'>` shape.
@@ -70,7 +71,7 @@ return (
 Pass a <code>src</code> URL (YouTube, Vimeo, MP4, MP3, HLS…) via the
 shortcode to load the player.
 </p>
-{ toolkit && <p className="nvoos-ms-toolkit-label">Toolkit: { toolkit }</p> }
+{ toolkit && <p className="nvoos-ms-toolkit-label">{ __( 'Toolkit: ', 'nvoos-media-studio' ) }{ toolkit }</p> }
 </div>
 );
 }
@@ -94,13 +95,13 @@ onDuration={ setDuration }
 <div
 className={ 'nvoos-ms-player-controls' + ( ! ready ? ' nvoos-ms-player-controls--loading' : '' ) }
 role="group"
-aria-label="Player controls"
+aria-label={ __( 'Player controls', 'nvoos-media-studio' ) }
 >
 <button
 type="button"
 className="nvoos-ms-toolbar-btn"
 onClick={ () => setPlaying( ( p ) => ! p ) }
-aria-label={ playing ? 'Pause' : 'Play' }
+aria-label={ playing ? __( 'Pause', 'nvoos-media-studio' ) : __( 'Play', 'nvoos-media-studio' ) }
 disabled={ ! ready }
 >
 { playing ? '⏸' : '▶' }

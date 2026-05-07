@@ -13,6 +13,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Image as KonvaImage } from 'react-konva';
 import ReactCrop, { type Crop } from 'react-image-crop';
@@ -138,7 +139,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					className={ 'nvoos-ms-toolbar-btn' + ( cropMode ? ' nvoos-ms-toolbar-btn--active' : '' ) }
 					onClick={ toggleCropMode }
 					aria-pressed={ cropMode }
-					aria-label="Crop"
+					aria-label={ __( 'Crop', 'nvoos-media-studio' ) }
 				>
 					Crop
 				</button>
@@ -146,7 +147,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					type="button"
 					className="nvoos-ms-toolbar-btn"
 					onClick={ () => rotate( -90 ) }
-					aria-label="Rotate counter-clockwise"
+					aria-label={ __( 'Rotate counter-clockwise', 'nvoos-media-studio' ) }
 				>
 					↺ 90°
 				</button>
@@ -154,7 +155,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					type="button"
 					className="nvoos-ms-toolbar-btn"
 					onClick={ () => rotate( 90 ) }
-					aria-label="Rotate clockwise"
+					aria-label={ __( 'Rotate clockwise', 'nvoos-media-studio' ) }
 				>
 					↻ 90°
 				</button>
@@ -177,7 +178,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					⇅ Flip V
 				</button>
 				<span className="nvoos-ms-toolbar-sep" aria-hidden="true" />
-				<label className="nvoos-ms-slider-label" aria-label="Brightness">
+				<label className="nvoos-ms-slider-label" aria-label={ __( 'Brightness', 'nvoos-media-studio' ) }>
 					☀
 					<input
 						type="range"
@@ -191,7 +192,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 						className="nvoos-ms-slider"
 					/>
 				</label>
-				<label className="nvoos-ms-slider-label" aria-label="Contrast">
+				<label className="nvoos-ms-slider-label" aria-label={ __( 'Contrast', 'nvoos-media-studio' ) }>
 					◑
 					<input
 						type="range"
@@ -210,7 +211,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					type="button"
 					className="nvoos-ms-toolbar-btn"
 					onClick={ () => setState( DEFAULT_STATE ) }
-					aria-label="Reset adjustments"
+					aria-label={ __( 'Reset adjustments', 'nvoos-media-studio' ) }
 				>
 					Reset
 				</button>
@@ -219,7 +220,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					className="nvoos-ms-toolbar-btn nvoos-ms-toolbar-btn--primary"
 					onClick={ handleDownload }
 					disabled={ ! imgEl }
-					aria-label="Download PNG"
+					aria-label={ __( 'Download PNG', 'nvoos-media-studio' ) }
 				>
 					↓ PNG
 				</button>
@@ -239,7 +240,7 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 					>
 						<img
 							src={ imgEl.src }
-							alt="Crop preview"
+							alt={ __( 'Crop preview', 'nvoos-media-studio' ) }
 							style={ {
 								maxWidth: STAGE_WIDTH,
 								transform: `rotate(${ state.rotation }deg) scaleX(${ state.flipH ? -1 : 1 }) scaleY(${ state.flipV ? -1 : 1 })`,
@@ -282,11 +283,11 @@ export function ImageEditor( { src, toolkit }: ImageEditorProps ) {
 							) }
 						</Layer>
 					</Stage>
-					{ ! imgEl && (
+						{ ! imgEl && (
 						<div className="nvoos-ms-empty-state">
-							<p>Open an image file or pass a <code>src</code> URL via the shortcode.</p>
+							<p>{ __( 'Open an image file or pass a src URL via the shortcode.', 'nvoos-media-studio' ) }</p>
 							{ toolkit && (
-								<p className="nvoos-ms-toolkit-label">Toolkit: { toolkit }</p>
+								<p className="nvoos-ms-toolkit-label">{ __( 'Toolkit: ', 'nvoos-media-studio' ) }{ toolkit }</p>
 							) }
 						</div>
 					) }

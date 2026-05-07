@@ -8,6 +8,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import type { ReactElement } from 'react';
 import { EditorCanvas } from './components/EditorCanvas';
 import { ComingSoon } from './components/ComingSoon';
@@ -26,8 +27,8 @@ interface AppProps {
 }
 
 const MODE_LABELS: Record<EditorMode, string> = {
-	editor: 'Rich-text document editor',
-	'site-creator': 'Site creator (Tiptap + GrapesJS)',
+	editor: __( 'Rich-text document editor', 'nvoos-document-editor' ),
+	'site-creator': __( 'Site creator (Tiptap + GrapesJS)', 'nvoos-document-editor' ),
 };
 
 export function App( { config }: AppProps ) {
@@ -51,7 +52,7 @@ export function App( { config }: AppProps ) {
 				<ComingSoon
 					mode="site-creator"
 					label={ MODE_LABELS[ 'site-creator' ] }
-					note="The Tiptap + GrapesJS site-creator mode ships in a follow-up PR."
+					note={ __( 'The Tiptap + GrapesJS site-creator mode ships in a follow-up PR.', 'nvoos-document-editor' ) }
 				/>
 			);
 	}

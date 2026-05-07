@@ -8,6 +8,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -84,7 +85,7 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 					Pass an audio <code>src</code> URL via the shortcode to render the
 					waveform.
 				</p>
-				{ toolkit && <p className="nvoos-ms-toolkit-label">Toolkit: { toolkit }</p> }
+				{ toolkit && <p className="nvoos-ms-toolkit-label">{ __( 'Toolkit: ', 'nvoos-media-studio' ) }{ toolkit }</p> }
 			</div>
 		);
 	}
@@ -110,14 +111,14 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 					className="nvoos-ms-toolbar-btn"
 					onClick={ () => wsRef.current?.playPause() }
 					disabled={ loading || loadError }
-					aria-label={ playing ? 'Pause' : 'Play' }
+					aria-label={ playing ? __( 'Pause', 'nvoos-media-studio' ) : __( 'Play', 'nvoos-media-studio' ) }
 				>
 					{ playing ? '⏸' : '▶' }
 				</button>
 				<span className="nvoos-ms-time" aria-live="off">
 					{ formatTime( currentTime ) } / { formatTime( totalDuration ) }
 				</span>
-				<label className="nvoos-ms-slider-label" aria-label="Zoom">
+				<label className="nvoos-ms-slider-label" aria-label={ __( 'Zoom', 'nvoos-media-studio' ) }>
 					🔍
 					<input
 						type="range"
