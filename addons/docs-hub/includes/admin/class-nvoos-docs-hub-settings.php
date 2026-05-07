@@ -449,21 +449,39 @@ class NV_oOS_Docs_Hub_Settings {
 						method: method || 'GET',
 						credentials: 'same-origin',
 						headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' }
-					} ).then( function ( r ) { return r.json(); } );
+					} ).then( function ( r ) {
+						if ( ! r.ok ) {
+							throw new Error( 'HTTP ' + r.status );
+						}
+						return r.json();
+					} );
 				}
 
 				function pollStatus() {
-					call( '/rebuild/status', 'GET' ).then( applyState ).catch( function () {} );
+					call( '/rebuild/status', 'GET' )
+						.then( applyState )
+						.catch( function () {
+							// Network blip — keep the polling loop alive and try again next tick.
+						} );
+				}
+
+				function safeApply( promise ) {
+					promise
+						.then( applyState )
+						.catch( function ( err ) {
+							errorEl.style.display = 'block';
+							errorMsgEl.textContent = ( err && err.message ) ? err.message : 'Request failed';
+						} );
 				}
 
 				startBtn.addEventListener( 'click', function () {
-					call( '/rebuild', 'POST' ).then( applyState );
+					safeApply( call( '/rebuild', 'POST' ) );
 				} );
 				resumeBtn.addEventListener( 'click', function () {
-					call( '/rebuild/resume', 'POST' ).then( applyState );
+					safeApply( call( '/rebuild/resume', 'POST' ) );
 				} );
 				cancelBtn.addEventListener( 'click', function () {
-					call( '/rebuild/cancel', 'POST' ).then( applyState );
+					safeApply( call( '/rebuild/cancel', 'POST' ) );
 				} );
 
 				try {

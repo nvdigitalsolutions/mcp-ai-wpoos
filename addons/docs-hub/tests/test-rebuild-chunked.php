@@ -29,7 +29,7 @@ class Test_Docs_Hub_Rebuild_Chunked extends WP_UnitTestCase {
 		parent::setUp();
 
 		if ( ! defined( 'NVOOS_DOCS_HUB_VERSION' ) ) {
-			define( 'NVOOS_DOCS_HUB_VERSION', '1.2.0' );
+			define( 'NVOOS_DOCS_HUB_VERSION', '0.2.0' );
 		}
 		if ( ! defined( 'NVOOS_DOCS_HUB_PATH' ) ) {
 			define( 'NVOOS_DOCS_HUB_PATH', dirname( __DIR__ ) . '/' );

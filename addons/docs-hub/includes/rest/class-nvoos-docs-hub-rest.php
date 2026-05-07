@@ -403,15 +403,9 @@ class NV_oOS_Docs_Hub_REST {
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function rebuild_cancel( $request ) {
-		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new WP_Error(
-				'invalid_nonce',
-				__( 'Nonce verification failed.', 'nvoos-docs-hub' ),
-				array( 'status' => 403 )
-			);
-		}
+	public static function rebuild_cancel( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		// Permission + wp_rest nonce already enforced by admin_permission()
+		// + WordPress REST cookie-auth, identical to /rebuild.
 		return rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_Job::cancel_async() );
 	}
 
@@ -423,15 +417,9 @@ class NV_oOS_Docs_Hub_REST {
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function rebuild_resume( $request ) {
-		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new WP_Error(
-				'invalid_nonce',
-				__( 'Nonce verification failed.', 'nvoos-docs-hub' ),
-				array( 'status' => 403 )
-			);
-		}
+	public static function rebuild_resume( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		// Permission + wp_rest nonce already enforced by admin_permission()
+		// + WordPress REST cookie-auth, identical to /rebuild.
 		return rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_Job::resume_async() );
 	}
 
