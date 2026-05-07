@@ -81,6 +81,35 @@ Domain data flows through the existing `mcp-ai/v1/*` chat routes.
 
 See [`includes/rest/class-nvoos-chat-spa-rest.php`](includes/rest/class-nvoos-chat-spa-rest.php).
 
+## Transcripts sidebar
+
+As of v0.3.0 the SPA ships a per-conversation sidebar backed by the
+existing `mcp-ai/v1/chat-transcripts` REST namespace. The sidebar:
+
+- Lists saved conversations for the current user + assistant
+  (`GET /chat-transcripts?assistant_id=…`).
+- Loads a previous conversation when clicked
+  (`GET /chat-transcripts/{session_key}` → fed into `useChat`'s
+  `initialMessages`).
+- Persists the active conversation after every completed turn
+  (`POST /chat-transcripts` from `useChat`'s `onFinish` callback).
+- Exposes a **New chat** button that rotates to a fresh
+  `wp-mcp-ai-session-<hex>` key.
+- Persists the user's collapsed/expanded preference and the active
+  session id in `localStorage`.
+
+The sidebar fails soft: when JetEngine's CCT is not available the
+endpoint returns a `wp_mcp_ai_transcripts_unavailable` notice and the
+sidebar collapses to a quiet empty state — the chat surface keeps
+working with browser-only state, exactly like the legacy UI.
+
+Guest mounts (`guest="1"` on the shortcode) skip the sidebar entirely
+because the underlying REST endpoint requires an authenticated user.
+
+See [`src/api/transcripts.ts`](src/api/transcripts.ts),
+[`src/hooks/useTranscriptSession.ts`](src/hooks/useTranscriptSession.ts),
+and [`src/components/TranscriptsSidebar.tsx`](src/components/TranscriptsSidebar.tsx).
+
 ## Admin preview
 
 After activation, `Tools → NV oOS Chat` mounts the SPA against any assistant
