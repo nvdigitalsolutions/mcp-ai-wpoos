@@ -2,15 +2,21 @@
  * NV oOS Canvas Toolkit — root component.
  *
  * Dispatches to the requested canvas mode. Each mode is implemented as a
- * separate component under `./components/`. Modes that aren't shipped yet
- * render a friendly "Coming soon" stub.
+ * separate component under `./components/`:
+ *
+ * - `flow`       — @xyflow/react node-graph (FlowCanvas)
+ * - `whiteboard` — tldraw v5 freehand whiteboard (WhiteboardCanvas)
+ * - `bpmn`       — bpmn-js BPMN 2.0 viewer/editor (BpmnCanvas)
+ * - `mermaid`    — Mermaid live-preview (MermaidCanvas)
  *
  * @since 0.1.0
  */
 
 import { __ } from '@wordpress/i18n';
-import { FlowCanvas } from './components/FlowCanvas';
-import { ComingSoon } from './components/ComingSoon';
+import { FlowCanvas }       from './components/FlowCanvas';
+import { WhiteboardCanvas } from './components/WhiteboardCanvas';
+import { BpmnCanvas }       from './components/BpmnCanvas';
+import { MermaidCanvas }    from './components/MermaidCanvas';
 import type { ReactElement } from 'react';
 
 export type CanvasMode = 'flow' | 'whiteboard' | 'bpmn' | 'mermaid';
@@ -42,31 +48,13 @@ export function App( { config }: AppProps ) {
 			surface = <FlowCanvas toolkit={ config.toolkit } />;
 			break;
 		case 'whiteboard':
-			surface = (
-				<ComingSoon
-					mode="whiteboard"
-					label={ MODE_LABELS.whiteboard }
-					note={ __( 'The tldraw-based whiteboard mode ships in a follow-up PR.', 'nvoos-canvas-toolkit' ) }
-				/>
-			);
+			surface = <WhiteboardCanvas toolkit={ config.toolkit } />;
 			break;
 		case 'bpmn':
-			surface = (
-				<ComingSoon
-					mode="bpmn"
-					label={ MODE_LABELS.bpmn }
-					note={ __( 'The bpmn-js BPMN mode ships in a follow-up PR.', 'nvoos-canvas-toolkit' ) }
-				/>
-			);
+			surface = <BpmnCanvas toolkit={ config.toolkit } />;
 			break;
 		case 'mermaid':
-			surface = (
-				<ComingSoon
-					mode="mermaid"
-					label={ MODE_LABELS.mermaid }
-					note={ __( 'The Mermaid live-preview mode ships in a follow-up PR.', 'nvoos-canvas-toolkit' ) }
-				/>
-			);
+			surface = <MermaidCanvas toolkit={ config.toolkit } />;
 			break;
 	}
 

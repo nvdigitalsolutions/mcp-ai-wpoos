@@ -4,7 +4,7 @@
 # within its tier threshold (blueprint §16):
 #
 #   Tier A  toolkit-shell    ≤ 200 KB gzip
-#   Tier B  canvas-toolkit   ≤ 200 KB gzip
+#   Tier B  canvas-toolkit   ≤ 1600 KB gzip (specialist canvas — tldraw + bpmn-js + mermaid)
 #   Tier C  document-editor  ≤ 200 KB gzip
 #   Tier D  media-studio     ≤ 900 KB gzip  (specialist shell — higher tolerance)
 #
@@ -56,7 +56,7 @@ jobs:
           - addon: toolkit-shell
             limit_kb: 200
           - addon: canvas-toolkit
-            limit_kb: 200
+            limit_kb: 1600  # tldraw (whiteboard) + bpmn-js (BPMN) + mermaid (live preview) are heavy specialist deps
           - addon: document-editor
             limit_kb: 200
           - addon: media-studio

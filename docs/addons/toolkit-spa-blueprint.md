@@ -407,11 +407,20 @@ The 24 Pro toolkits map to **6–8 reusable shells** rather than 24 bespoke SPAs
 ### Tier B — Canvas / whiteboard shells
 *Separate addon `addons/canvas-toolkit/` (lazy-loaded by mode).*
 
-| Toolkit | Recommended SPA pieces |
-|---------|------------------------|
-| `architectural-design` | Excalidraw (`@excalidraw/excalidraw`, MIT) **or** tldraw v3 (MIT); bpmn-js (MIT) |
-| `architect-agent` | tldraw v3 + Mermaid live preview |
-| `ai-tool-builder` | `@xyflow/react` (MIT) for visual node-graph |
+Ships all four canvas modes (v0.2.0):
+
+| Mode | Library | Status |
+|------|---------|--------|
+| `flow` | `@xyflow/react` MIT | ✅ shipped v0.1.0 |
+| `whiteboard` | `tldraw` v5 MIT | ✅ shipped v0.2.0 |
+| `bpmn` | `bpmn-js` MIT | ✅ shipped v0.2.0 |
+| `mermaid` | `mermaid` MIT | ✅ shipped v0.2.0 |
+
+| Toolkit | Recommended mode |
+|---------|-----------------|
+| `architectural-design` | `whiteboard` (tldraw) or `bpmn` (bpmn-js) |
+| `architect-agent` | `whiteboard` (tldraw) + `mermaid` (Mermaid live preview) |
+| `ai-tool-builder` | `flow` (@xyflow/react — visual node-graph) |
 
 ### Tier C — Document / rich-text shells
 *Separate addon `addons/document-editor/` (Tiptap).*
@@ -656,11 +665,13 @@ enforces this automatically on every PR that touches `src/`,
 | Addon | Tier | Limit (gzip) | Current (approx.) |
 |-------|------|-------------|-------------------|
 | `toolkit-shell` | A — data shell | **200 KB** | ~61 KB |
-| `canvas-toolkit` | B — canvas | **200 KB** | ~113 KB |
+| `canvas-toolkit` | B — canvas | **1600 KB** | ~1495 KB |
 | `document-editor` | C — document | **200 KB** | ~187 KB |
 | `media-studio` | D — specialist | **900 KB** | ~806 KB |
 
 Tier A/C shells must stay under 200 KB gzipped (per §12 gate 2 and §13 Risks).
+`canvas-toolkit` ships four heavy specialist libraries (tldraw, bpmn-js, mermaid,
+@xyflow/react) and is granted a higher 1600 KB limit.
 `media-studio` ships three heavy peer deps (react-konva, wavesurfer.js,
 react-player) and is granted a higher 900 KB limit as a specialist shell.
 
