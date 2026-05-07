@@ -1,0 +1,45 @@
+.nvoos-toolkit-shell-app {
+	font: inherit;
+	color: inherit;
+	box-sizing: border-box;
+	width: 100%;
+}
+.nvoos-toolkit-shell-app *,
+.nvoos-toolkit-shell-app *::before,
+.nvoos-toolkit-shell-app *::after {
+	box-sizing: inherit;
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] {
+	background: #111;
+	color: #eee;
+}
+.nvoos-toolkit-shell-header {
+	border-bottom: 1px solid #ddd;
+	padding: 0.5em 0;
+	margin-bottom: 1em;
+}
+.nvoos-toolkit-shell-header h2 {
+	margin: 0;
+	font-size: 1.25em;
+}
+.nvoos-toolkit-shell-error {
+	color: #b00;
+}
+.nvoos-toolkit-shell-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.nvoos-toolkit-shell-table th,
+.nvoos-toolkit-shell-table td {
+	padding: 0.4em 0.75em;
+	border-bottom: 1px solid #eee;
+	text-align: left;
+	vertical-align: top;
+}
+.nvoos-toolkit-shell-table th {
+	font-weight: 600;
+	background: rgba( 0, 0, 0, 0.03 );
+}
+.nvoos-toolkit-shell-app[data-theme="dark"] .nvoos-toolkit-shell-table th {
+	background: rgba( 255, 255, 255, 0.05 );
+}

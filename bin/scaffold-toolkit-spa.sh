@@ -1,0 +1,837 @@
+#!/usr/bin/env bash
+#
+# scaffold-toolkit-spa.sh — Generate a new NV oOS toolkit-SPA addon from the
+# Docs-Hub-derived blueprint.
+#
+# Usage:
+#   ./bin/scaffold-toolkit-spa.sh <slug> "<Human-Readable Title>"
+#
+# Example:
+#   ./bin/scaffold-toolkit-spa.sh canvas-toolkit "Canvas Toolkit"
+#
+# The script creates addons/<slug>/ pre-populated with:
+#   - Plugin entry (nvoos-<slug>.php) with header + constants
+#   - includes/   — plugin singleton, REST controller, shortcode, block
+#   - src/        — minimal React TS entry that fetches the manifest
+#   - assets/dist/ placeholder (re-build with `npm run build`)
+#   - tests/      — PHPUnit shortcode + REST contract tests
+#   - README.md   — with Credits section
+#   - THIRD_PARTY_NOTICES.md
+#   - package.json, esbuild.config.js, tsconfig.json
+#   - languages/.gitkeep
+#
+# Reference: docs/addons/toolkit-spa-blueprint.md
+#
+
+set -euo pipefail
+
+if [ "$#" -lt 2 ]; then
+	echo "Usage: $0 <slug> \"<Human-Readable Title>\"" >&2
+	echo "" >&2
+	echo "  <slug>   kebab-case slug, e.g. 'canvas-toolkit'" >&2
+	echo "  <Title>  Human-readable title in quotes, e.g. \"Canvas Toolkit\"" >&2
+	exit 64
+fi
+
+SLUG="$1"
+TITLE="$2"
+
+# --- Validate slug --------------------------------------------------------
+if ! [[ "$SLUG" =~ ^[a-z][a-z0-9-]{1,62}$ ]]; then
+	echo "[scaffold] ERROR: slug must be lowercase, kebab-case, 2-63 chars: $SLUG" >&2
+	exit 64
+fi
+
+# --- Derive case variants -------------------------------------------------
+# UPPER_SNAKE: 'canvas-toolkit' -> 'CANVAS_TOOLKIT'
+UPPER_SNAKE="$(echo "$SLUG" | tr 'a-z-' 'A-Z_')"
+# lower_snake: 'canvas-toolkit' -> 'canvas_toolkit'
+LOWER_SNAKE="$(echo "$SLUG" | tr '-' '_')"
+# TitleSnake: 'canvas-toolkit' -> 'Canvas_Toolkit'
+TITLE_SNAKE="$(echo "$SLUG" | awk -F'-' '{
+	for (i=1; i<=NF; i++) $i = toupper(substr($i,1,1)) substr($i,2)
+} 1' OFS='_')"
+
+# --- Locate repo root -----------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ADDON_DIR="${REPO_ROOT}/addons/${SLUG}"
+
+if [ -d "$ADDON_DIR" ]; then
+	echo "[scaffold] ERROR: addon directory already exists: $ADDON_DIR" >&2
+	exit 65
+fi
+
+echo "[scaffold] Creating addon: $TITLE ($SLUG)"
+echo "[scaffold] Target directory: $ADDON_DIR"
+echo "[scaffold] PHP class prefix: NV_oOS_${TITLE_SNAKE}_*"
+echo "[scaffold] PHP constant prefix: NVOOS_${UPPER_SNAKE}_*"
+echo "[scaffold] REST namespace: nvoos-${SLUG}/v1"
+
+# --- Create directories ---------------------------------------------------
+mkdir -p "$ADDON_DIR"/{includes/{admin,block,rest,shortcode,jobs},src/{api,components,routes,styles},assets/dist,tests,languages}
+
+# --- nvoos-<slug>.php (plugin entry) --------------------------------------
+cat > "$ADDON_DIR/nvoos-${SLUG}.php" <<EOF
+<?php
+/**
+ * Plugin Name: NV oOS ${TITLE}
+ * Plugin URI:  https://nvdigitalsolutions.com/wpoos
+ * Description: NV oOS ${TITLE} — React-based SPA surface for the NV oOS plugin. Generated from the Toolkit SPA Blueprint.
+ * Version:     0.1.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Author: NV Digital Solutions
+ * Author URI:  https://nvdigitalsolutions.com
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: nvoos-${SLUG}
+ * Domain Path: /languages
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/** Plugin version — must match package.json. */
+define( 'NVOOS_${UPPER_SNAKE}_VERSION', '0.1.0' );
+
+/** Absolute path to this plugin file. */
+define( 'NVOOS_${UPPER_SNAKE}_FILE', __FILE__ );
+
+/** Absolute path to this plugin directory (trailing slash). */
+define( 'NVOOS_${UPPER_SNAKE}_PATH', plugin_dir_path( __FILE__ ) );
+
+/** URL to this plugin directory (trailing slash). */
+define( 'NVOOS_${UPPER_SNAKE}_URL', plugin_dir_url( __FILE__ ) );
+
+require_once NVOOS_${UPPER_SNAKE}_PATH . 'includes/class-nvoos-${SLUG}-plugin.php';
+require_once NVOOS_${UPPER_SNAKE}_PATH . 'includes/rest/class-nvoos-${SLUG}-rest.php';
+require_once NVOOS_${UPPER_SNAKE}_PATH . 'includes/shortcode/class-nvoos-${SLUG}-shortcode.php';
+require_once NVOOS_${UPPER_SNAKE}_PATH . 'includes/block/class-nvoos-${SLUG}-block.php';
+
+NV_oOS_${TITLE_SNAKE}_Plugin::init();
+EOF
+
+# --- includes/class-nvoos-<slug>-plugin.php -------------------------------
+cat > "$ADDON_DIR/includes/class-nvoos-${SLUG}-plugin.php" <<EOF
+<?php
+/**
+ * NV oOS ${TITLE} — Core Plugin Class
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ * @since   0.1.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Core singleton for the NV oOS ${TITLE} addon.
+ *
+ * @since 0.1.0
+ */
+class NV_oOS_${TITLE_SNAKE}_Plugin {
+
+	/**
+	 * WordPress option key for addon settings.
+	 *
+	 * @var string
+	 */
+	const OPTION_KEY = 'nvoos_${LOWER_SNAKE}_settings';
+
+	/**
+	 * Register all WordPress hooks.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_action( 'init', array( 'NV_oOS_${TITLE_SNAKE}_Shortcode', 'register' ), 12 );
+		add_action( 'init', array( 'NV_oOS_${TITLE_SNAKE}_Block', 'register' ), 12 );
+		add_action( 'rest_api_init', array( 'NV_oOS_${TITLE_SNAKE}_REST', 'register_routes' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_render_missing_bundle_notice' ) );
+	}
+
+	/**
+	 * Render an admin notice when the pre-built SPA bundle is missing.
+	 *
+	 * Mirrors the SaaS Controller pattern: when assets/dist/<slug>.js is not
+	 * present, operators see a clear error instead of a silent broken widget.
+	 *
+	 * @return void
+	 */
+	public static function maybe_render_missing_bundle_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		\$bundle = NVOOS_${UPPER_SNAKE}_PATH . 'assets/dist/${SLUG}.js';
+		if ( file_exists( \$bundle ) ) {
+			return;
+		}
+		printf(
+			'<div class="notice notice-error"><p><strong>%s</strong> %s <code>cd addons/${SLUG} && npm ci && npm run build</code></p></div>',
+			esc_html__( 'NV oOS ${TITLE}:', 'nvoos-${SLUG}' ),
+			esc_html__( 'pre-built SPA bundle is missing. Build it with:', 'nvoos-${SLUG}' )
+		);
+	}
+}
+EOF
+
+# --- includes/rest/class-nvoos-<slug>-rest.php ----------------------------
+cat > "$ADDON_DIR/includes/rest/class-nvoos-${SLUG}-rest.php" <<EOF
+<?php
+/**
+ * NV oOS ${TITLE} — REST API Controller
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ * @since   0.1.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * REST API controller for the NV oOS ${TITLE} addon.
+ *
+ * @since 0.1.0
+ */
+class NV_oOS_${TITLE_SNAKE}_REST {
+
+	/**
+	 * REST namespace.
+	 *
+	 * @var string
+	 */
+	const REST_NAMESPACE = 'nvoos-${SLUG}/v1';
+
+	/**
+	 * Register routes.
+	 *
+	 * @return void
+	 */
+	public static function register_routes() {
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/health',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'health' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Manage_options gate.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function admin_permission() {
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+		return new WP_Error( 'forbidden', __( 'You do not have permission to access this endpoint.', 'nvoos-${SLUG}' ), array( 'status' => 403 ) );
+	}
+
+	/**
+	 * Health endpoint.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function health() {
+		return rest_ensure_response(
+			array(
+				'status'  => 'ok',
+				'version' => defined( 'NVOOS_${UPPER_SNAKE}_VERSION' ) ? NVOOS_${UPPER_SNAKE}_VERSION : 'unknown',
+			)
+		);
+	}
+}
+EOF
+
+# --- includes/shortcode/class-nvoos-<slug>-shortcode.php ------------------
+cat > "$ADDON_DIR/includes/shortcode/class-nvoos-${SLUG}-shortcode.php" <<EOF
+<?php
+/**
+ * NV oOS ${TITLE} — Shortcode
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ * @since   0.1.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Shortcode handler.
+ *
+ * @since 0.1.0
+ */
+class NV_oOS_${TITLE_SNAKE}_Shortcode {
+
+	const SHORTCODE = 'nvoos_${LOWER_SNAKE}_app';
+
+	/**
+	 * Register the shortcode.
+	 *
+	 * @return void
+	 */
+	public static function register() {
+		add_shortcode( self::SHORTCODE, array( __CLASS__, 'render' ) );
+	}
+
+	/**
+	 * Render the shortcode.
+	 *
+	 * @param array \$atts Shortcode attributes.
+	 * @return string HTML output.
+	 */
+	public static function render( \$atts ) {
+		\$atts = shortcode_atts(
+			array(
+				'toolkit' => '',
+				'theme'   => 'auto',
+				'view'    => '',
+				'height'  => '',
+			),
+			\$atts,
+			self::SHORTCODE
+		);
+
+		\$can_render = apply_filters( 'nvoos_${LOWER_SNAKE}_can_render', true, \$atts );
+		if ( ! \$can_render ) {
+			return '';
+		}
+
+		\$config = array(
+			'toolkit' => sanitize_key( \$atts['toolkit'] ),
+			'theme'   => in_array( \$atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? \$atts['theme'] : 'auto',
+			'view'    => sanitize_key( \$atts['view'] ),
+			'height'  => sanitize_text_field( \$atts['height'] ),
+		);
+
+		self::enqueue_assets( \$config );
+
+		\$config_json = wp_json_encode( \$config );
+		if ( false === \$config_json ) {
+			\$config_json = '{}';
+		}
+
+		return sprintf(
+			'<div class="nvoos-${SLUG}-root" data-config="%s"></div>',
+			esc_attr( \$config_json )
+		);
+	}
+
+	/**
+	 * Enqueue the SPA bundle.
+	 *
+	 * @param array \$config Per-instance config.
+	 * @return void
+	 */
+	public static function enqueue_assets( \$config ) {
+		wp_register_style(
+			'nvoos-${SLUG}',
+			NVOOS_${UPPER_SNAKE}_URL . 'assets/dist/${SLUG}.css',
+			array(),
+			NVOOS_${UPPER_SNAKE}_VERSION
+		);
+		wp_register_script(
+			'nvoos-${SLUG}',
+			NVOOS_${UPPER_SNAKE}_URL . 'assets/dist/${SLUG}.js',
+			array(),
+			NVOOS_${UPPER_SNAKE}_VERSION,
+			true
+		);
+		wp_localize_script(
+			'nvoos-${SLUG}',
+			'NVOOS_${UPPER_SNAKE}',
+			array(
+				'apiUrl' => esc_url_raw( rest_url( NV_oOS_${TITLE_SNAKE}_REST::REST_NAMESPACE ) ),
+				'proApi' => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
+				'nonce'  => wp_create_nonce( 'wp_rest' ),
+				'config' => \$config,
+			)
+		);
+		wp_enqueue_style( 'nvoos-${SLUG}' );
+		wp_enqueue_script( 'nvoos-${SLUG}' );
+	}
+}
+EOF
+
+# --- includes/block/block.json + class -----------------------------------
+cat > "$ADDON_DIR/includes/block/block.json" <<EOF
+{
+  "apiVersion": 2,
+  "name": "nvoos/${SLUG}",
+  "title": "NV oOS ${TITLE}",
+  "category": "widgets",
+  "icon": "admin-generic",
+  "description": "Embeds the NV oOS ${TITLE} SPA.",
+  "textdomain": "nvoos-${SLUG}",
+  "attributes": {
+    "toolkit": { "type": "string", "default": "" },
+    "theme":   { "type": "string", "default": "auto" },
+    "view":    { "type": "string", "default": "" },
+    "height":  { "type": "string", "default": "" }
+  },
+  "supports": { "html": false }
+}
+EOF
+
+cat > "$ADDON_DIR/includes/block/class-nvoos-${SLUG}-block.php" <<EOF
+<?php
+/**
+ * NV oOS ${TITLE} — Gutenberg Block
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ * @since   0.1.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Gutenberg block.
+ *
+ * @since 0.1.0
+ */
+class NV_oOS_${TITLE_SNAKE}_Block {
+
+	/**
+	 * Register the block.
+	 *
+	 * @return void
+	 */
+	public static function register() {
+		if ( ! function_exists( 'register_block_type' ) ) {
+			return;
+		}
+		register_block_type(
+			__DIR__ . '/block.json',
+			array( 'render_callback' => array( __CLASS__, 'render' ) )
+		);
+	}
+
+	/**
+	 * Render the block.
+	 *
+	 * @param array \$attributes Block attributes.
+	 * @return string
+	 */
+	public static function render( \$attributes ) {
+		\$atts = array(
+			'toolkit' => isset( \$attributes['toolkit'] ) ? sanitize_key( \$attributes['toolkit'] ) : '',
+			'theme'   => isset( \$attributes['theme'] ) ? sanitize_text_field( \$attributes['theme'] ) : 'auto',
+			'view'    => isset( \$attributes['view'] ) ? sanitize_key( \$attributes['view'] ) : '',
+			'height'  => isset( \$attributes['height'] ) ? sanitize_text_field( \$attributes['height'] ) : '',
+		);
+		return NV_oOS_${TITLE_SNAKE}_Shortcode::render( \$atts );
+	}
+}
+EOF
+
+# --- src/index.tsx + App.tsx ---------------------------------------------
+cat > "$ADDON_DIR/src/index.tsx" <<'EOF'
+/**
+ * NV oOS Toolkit SPA — entry point.
+ *
+ * Mounts the React app into every matching root container on the page.
+ */
+
+import { createRoot } from 'react-dom/client';
+import { App } from './App';
+import './styles/main.css';
+
+declare global {
+	interface Window {
+		// Each addon localizes its own global; the App reads window[GLOBAL_NAME].
+		[key: string]: unknown;
+	}
+}
+
+function mountAll() {
+	const containers = document.querySelectorAll<HTMLElement>(
+		// The root selector is templated per-addon by the scaffold script.
+		// See the .nvoos-<slug>-root class in the shortcode renderer.
+		'[class*="-root"][data-config]'
+	);
+	containers.forEach( ( container ) => {
+		try {
+			const raw = container.dataset.config ?? '{}';
+			const config = JSON.parse( raw );
+			const root = createRoot( container );
+			root.render( <App config={ config } /> );
+		} catch {
+			// Invalid JSON in data-config — render fallback.
+			container.textContent = 'Configuration error.';
+		}
+	} );
+}
+
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', mountAll );
+} else {
+	mountAll();
+}
+EOF
+
+cat > "$ADDON_DIR/src/App.tsx" <<EOF
+/**
+ * NV oOS ${TITLE} — root component.
+ *
+ * Replace this stub with a real implementation. The component receives
+ * its per-instance config (toolkit, theme, view, height) via props.
+ */
+
+import { useEffect, useState } from 'react';
+
+interface AppProps {
+	config: {
+		toolkit?: string;
+		theme?: string;
+		view?: string;
+		height?: string;
+	};
+}
+
+export function App( { config }: AppProps ) {
+	const [ status, setStatus ] = useState<string>( 'loading' );
+
+	useEffect( () => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const g = ( window as any ).NVOOS_${UPPER_SNAKE};
+		if ( ! g?.apiUrl ) {
+			setStatus( 'no-config' );
+			return;
+		}
+		fetch( g.apiUrl + '/health', {
+			headers: { 'X-WP-Nonce': g.nonce ?? '' },
+		} )
+			.then( ( r ) => r.json() )
+			.then( () => setStatus( 'ready' ) )
+			.catch( () => setStatus( 'error' ) );
+	}, [] );
+
+	return (
+		<div className="nvoos-${SLUG}-app" data-theme={ config.theme ?? 'auto' }>
+			<header>
+				<h2>NV oOS ${TITLE}</h2>
+			</header>
+			<main>
+				<p>Status: { status }</p>
+				<p>Toolkit: { config.toolkit ?? '(none)' }</p>
+				<p>View: { config.view ?? '(default)' }</p>
+			</main>
+		</div>
+	);
+}
+EOF
+
+cat > "$ADDON_DIR/src/styles/main.css" <<EOF
+.nvoos-${SLUG}-app {
+	font: inherit;
+	color: inherit;
+}
+.nvoos-${SLUG}-app[data-theme="dark"] {
+	background: #111;
+	color: #eee;
+}
+EOF
+
+# --- package.json --------------------------------------------------------
+cat > "$ADDON_DIR/package.json" <<EOF
+{
+  "name": "nvoos-${SLUG}",
+  "version": "0.1.0",
+  "description": "NV oOS ${TITLE} — React SPA addon",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.js --prod",
+    "build:dev": "node esbuild.config.js",
+    "watch": "node esbuild.config.js --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "esbuild": "0.25.4",
+    "typescript": "5.8.3"
+  }
+}
+EOF
+
+# --- esbuild.config.js ---------------------------------------------------
+cat > "$ADDON_DIR/esbuild.config.js" <<EOF
+'use strict';
+
+const esbuild = require( 'esbuild' );
+const path    = require( 'path' );
+const fs      = require( 'fs' );
+
+const args    = process.argv.slice( 2 );
+const isProd  = args.includes( '--prod' );
+const isWatch = args.includes( '--watch' );
+
+const outDir = path.resolve( __dirname, 'assets', 'dist' );
+fs.mkdirSync( outDir, { recursive: true } );
+
+/** @type {import('esbuild').BuildOptions} */
+const buildOptions = {
+	entryPoints: [ path.resolve( __dirname, 'src', 'index.tsx' ) ],
+	bundle:      true,
+	outfile:     path.join( outDir, '${SLUG}.js' ),
+	format:      'iife',
+	globalName:  'NVoOS_${TITLE_SNAKE}',
+	platform:    'browser',
+	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari13' ],
+	jsx:         'automatic',
+	loader:      { '.css': 'css', '.ts': 'ts', '.tsx': 'tsx' },
+	define:      { 'process.env.NODE_ENV': isProd ? '"production"' : '"development"' },
+	minify:      isProd,
+	sourcemap:   ! isProd,
+	treeShaking: true,
+	plugins:     [ {
+		name: 'css-extract',
+		setup( build ) {
+			build.onEnd( () => {
+				const def = path.join( outDir, '${SLUG}.css' );
+				const alt = path.join( outDir, 'index.css' );
+				if ( ! fs.existsSync( def ) && fs.existsSync( alt ) ) {
+					fs.renameSync( alt, def );
+				}
+			} );
+		},
+	} ],
+	logLevel: 'info',
+};
+
+if ( isWatch ) {
+	esbuild.context( buildOptions ).then( ( ctx ) => ctx.watch() );
+} else {
+	esbuild.build( buildOptions ).catch( () => process.exit( 1 ) );
+}
+EOF
+
+# --- tsconfig.json -------------------------------------------------------
+cat > "$ADDON_DIR/tsconfig.json" <<'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*"]
+}
+EOF
+
+# --- .gitignore ----------------------------------------------------------
+cat > "$ADDON_DIR/.gitignore" <<'EOF'
+node_modules/
+*.log
+.cache/
+.tsbuildinfo
+EOF
+
+# --- README.md -----------------------------------------------------------
+cat > "$ADDON_DIR/README.md" <<EOF
+# NV oOS ${TITLE}
+
+React SPA addon for NV oOS, scaffolded from the
+[Toolkit SPA Blueprint](../../docs/addons/toolkit-spa-blueprint.md).
+
+## Quick start
+
+\`\`\`bash
+cd addons/${SLUG}
+npm ci
+npm run build       # produces assets/dist/${SLUG}.{js,css}
+\`\`\`
+
+Add \`[nvoos_${LOWER_SNAKE}_app]\` to any post or page.
+
+## Version bump rule
+
+When the SPA bundle changes, bump **all three** in the same commit:
+
+1. \`Version:\` header in \`nvoos-${SLUG}.php\`
+2. \`define( 'NVOOS_${UPPER_SNAKE}_VERSION', '…' );\`
+3. \`"version"\` in \`package.json\`
+
+This forces \`?ver=\` query strings to invalidate browser caches.
+
+## REST namespace
+
+\`/wp-json/nvoos-${SLUG}/v1/*\` — see [\`includes/rest/class-nvoos-${SLUG}-rest.php\`](includes/rest/class-nvoos-${SLUG}-rest.php).
+
+## Credits
+
+This addon is a scaffold only — no third-party SPA libraries are bundled by
+default beyond React. When adding upstream packages, update:
+
+- [\`THIRD_PARTY_NOTICES.md\`](THIRD_PARTY_NOTICES.md)
+- The root [\`CREDITS.md\`](../../CREDITS.md)
+- This Credits section
+EOF
+
+# --- THIRD_PARTY_NOTICES.md ----------------------------------------------
+cat > "$ADDON_DIR/THIRD_PARTY_NOTICES.md" <<EOF
+# Third-Party Notices — NV oOS ${TITLE}
+
+This addon bundles the following third-party software. Each entry retains its
+upstream license; the per-package license texts are reproduced here.
+
+| Package | Version | License | Source |
+|---------|---------|---------|--------|
+| react | 19.1.0 | MIT | https://github.com/facebook/react |
+| react-dom | 19.1.0 | MIT | https://github.com/facebook/react |
+
+When adding a new dependency, append a row above and reproduce the upstream
+license text below.
+
+---
+
+## React (MIT)
+
+Copyright (c) Meta Platforms, Inc. and affiliates.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+EOF
+
+# --- uninstall.php -------------------------------------------------------
+cat > "$ADDON_DIR/uninstall.php" <<EOF
+<?php
+/**
+ * Uninstall handler.
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ */
+
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+	exit;
+}
+
+delete_option( 'nvoos_${LOWER_SNAKE}_settings' );
+EOF
+
+# --- tests/ --------------------------------------------------------------
+cat > "$ADDON_DIR/tests/test-shortcode.php" <<EOF
+<?php
+/**
+ * Shortcode tests.
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ */
+
+class Test_${TITLE_SNAKE}_Shortcode extends WP_UnitTestCase {
+
+	public function setUp(): void {
+		parent::setUp();
+		if ( ! defined( 'NVOOS_${UPPER_SNAKE}_VERSION' ) ) {
+			define( 'NVOOS_${UPPER_SNAKE}_VERSION', '0.1.0' );
+		}
+		if ( ! defined( 'NVOOS_${UPPER_SNAKE}_PATH' ) ) {
+			define( 'NVOOS_${UPPER_SNAKE}_PATH', dirname( __DIR__ ) . '/' );
+		}
+		if ( ! defined( 'NVOOS_${UPPER_SNAKE}_URL' ) ) {
+			define( 'NVOOS_${UPPER_SNAKE}_URL', 'http://example.com/wp-content/plugins/nvoos-${SLUG}/' );
+		}
+		require_once NVOOS_${UPPER_SNAKE}_PATH . 'includes/rest/class-nvoos-${SLUG}-rest.php';
+		require_once NVOOS_${UPPER_SNAKE}_PATH . 'includes/shortcode/class-nvoos-${SLUG}-shortcode.php';
+	}
+
+	public function test_shortcode_returns_root_container() {
+		\$out = NV_oOS_${TITLE_SNAKE}_Shortcode::render( array() );
+		\$this->assertStringContainsString( 'nvoos-${SLUG}-root', \$out );
+		\$this->assertStringContainsString( 'data-config', \$out );
+	}
+
+	public function test_shortcode_respects_can_render_filter() {
+		add_filter( 'nvoos_${LOWER_SNAKE}_can_render', '__return_false' );
+		\$out = NV_oOS_${TITLE_SNAKE}_Shortcode::render( array() );
+		\$this->assertSame( '', \$out );
+		remove_filter( 'nvoos_${LOWER_SNAKE}_can_render', '__return_false' );
+	}
+}
+EOF
+
+cat > "$ADDON_DIR/tests/test-rest.php" <<EOF
+<?php
+/**
+ * REST contract tests.
+ *
+ * @package NV_oOS_${TITLE_SNAKE}
+ */
+
+class Test_${TITLE_SNAKE}_REST extends WP_UnitTestCase {
+
+	public function setUp(): void {
+		parent::setUp();
+		if ( ! defined( 'NVOOS_${UPPER_SNAKE}_VERSION' ) ) {
+			define( 'NVOOS_${UPPER_SNAKE}_VERSION', '0.1.0' );
+		}
+		require_once dirname( __DIR__ ) . '/includes/rest/class-nvoos-${SLUG}-rest.php';
+	}
+
+	public function test_health_requires_manage_options() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		\$result = NV_oOS_${TITLE_SNAKE}_REST::admin_permission();
+		\$this->assertInstanceOf( 'WP_Error', \$result );
+	}
+}
+EOF
+
+# --- assets/dist/ placeholder + .htaccess + index.php --------------------
+cat > "$ADDON_DIR/assets/dist/.gitkeep" <<EOF
+# Pre-built SPA artifacts go here. Run \`npm run build\` to generate
+# ${SLUG}.js and ${SLUG}.css. Both must be committed.
+EOF
+
+cat > "$ADDON_DIR/languages/.gitkeep" <<'EOF'
+# Generated .pot / .po / .mo files live here.
+EOF
+
+echo ""
+echo "[scaffold] Done. Next steps:"
+echo "  1. cd addons/${SLUG}"
+echo "  2. npm install && npm run build"
+echo "  3. Edit includes/rest/class-nvoos-${SLUG}-rest.php to add your routes."
+echo "  4. Edit src/App.tsx to render your SPA."
+echo "  5. Add a slim .github/agents/${SLUG}-maintainer.agent.md (see examples/agents/toolkit-spa-maintainer.agent.md)."
+echo "  6. Update AGENTS.md inventory and CREDITS.md."
+echo "  7. Commit. Bump version once before opening the PR."

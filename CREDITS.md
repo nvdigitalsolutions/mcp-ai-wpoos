@@ -292,6 +292,23 @@ Vendored under `addons/graphify/assets/vendor/`, each with its own
 All packages are MIT-licensed (except FlexSearch which is Apache-2.0). The React SPA
 is bundled into `addons/docs-hub/assets/dist/docs-hub.js` via esbuild.
 
+### `addons/toolkit-shell/` — manifest-driven React SPA shell for Pro toolkits
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/toolkit-shell/THIRD_PARTY_NOTICES.md`](addons/toolkit-shell/THIRD_PARTY_NOTICES.md).
+
+The toolkit-shell addon is the canonical Phase 1 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) — one bundle, many
+surfaces, driven by per-toolkit JSON manifests under
+`addons/pro/config/spa-manifests/`.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**
