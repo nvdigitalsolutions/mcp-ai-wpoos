@@ -11,6 +11,8 @@
 #   ./bin/build-plugin-zip.sh --pro              # Builds pro add-on only
 #   ./bin/build-plugin-zip.sh --combined         # Builds base + pro combined
 #   ./bin/build-plugin-zip.sh --core-only        # Builds core plugin only
+#   ./bin/build-plugin-zip.sh --wp-org           # Builds WordPress.org submission packages
+#   ./bin/build-plugin-zip.sh --all              # Builds all versions including WP.org
 #   ./bin/build-plugin-zip.sh --version 1.0.0    # Specify version number
 #
 # Output:
@@ -38,6 +40,7 @@ BUILD_PRO=false
 BUILD_COMBINED=false
 BUILD_CORE_ONLY=false
 BUILD_TOOLKITS=false
+BUILD_WP_ORG=false
 SKIP_NPM_BUILD=false
 VERSION=""
 
@@ -64,6 +67,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_TOOLKITS=true
             shift
             ;;
+        --wp-org)
+            BUILD_WP_ORG=true
+            shift
+            ;;
         --skip-npm-build)
             SKIP_NPM_BUILD=true
             shift
@@ -77,6 +84,7 @@ while [[ $# -gt 0 ]]; do
             BUILD_PRO=true
             BUILD_COMBINED=true
             BUILD_TOOLKITS=true
+            BUILD_WP_ORG=true
             shift
             ;;
         -h|--help)
@@ -88,7 +96,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --combined        Build base + pro combined package"
             echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
             echo "  --toolkits        Build individual toolkit add-on ZIPs"
-            echo "  --all             Build all versions (base, pro, combined, toolkits)"
+            echo "  --wp-org          Build WordPress.org submission packages (text domain transform)"
+            echo "  --all             Build all versions (base, pro, combined, toolkits, wp-org)"
             echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
@@ -112,7 +121,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # If no build type specified, build all versions (base, pro, combined, and core-only)
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ]; then
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ] && [ "$BUILD_WP_ORG" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
@@ -137,6 +146,7 @@ echo "Build targets:"
 [ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (mcp-ai-wpoos)"
 [ "$BUILD_CORE_ONLY" = true ] && echo "  ✓ Core plugin (mcp-ai-wpoos-core) - lightweight"
 [ "$BUILD_TOOLKITS" = true ] && echo "  ✓ Individual toolkit add-ons (build/toolkit-addons/)"
+[ "$BUILD_WP_ORG" = true ] && echo "  ✓ WordPress.org submission packages (nvdigital-open-operator-system-oos-*)"
 echo ""
 
 # Check requirements
@@ -876,6 +886,15 @@ if [ "$BUILD_TOOLKITS" = true ]; then
 fi
 
 # ============================================================================
+# Build WordPress.org Submission Packages
+# ============================================================================
+if [ "$BUILD_WP_ORG" = true ]; then
+    echo "Step 3f: Building WordPress.org submission packages..."
+    "$SCRIPT_DIR/build-wordpress-org-from-base.sh" --version "$VERSION"
+    echo ""
+fi
+
+# ============================================================================
 # Summary
 # ============================================================================
 echo "=========================================="
@@ -901,6 +920,7 @@ if [ "$BUILD_CORE_ONLY" = true ]; then
     echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
 fi
 [ "$BUILD_TOOLKITS" = true ] && echo "     - build/toolkit-addons/oos-toolkit-*-${VERSION}.zip (Individual toolkit add-ons)"
+[ "$BUILD_WP_ORG" = true ] && echo "     - nvdigital-open-operator-system-oos-${VERSION}.zip (WordPress.org submission)"
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""
 
