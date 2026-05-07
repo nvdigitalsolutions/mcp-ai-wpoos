@@ -643,7 +643,51 @@ grep -c "window.wp.i18n" assets/dist/my-addon.js
 
 ---
 
-## 16. Scaffolding a new toolkit-SPA addon
+## 16. Phase 8 bundle-size guardrail
+
+Every toolkit-SPA addon must keep its **gzipped JS bundle** within its tier
+threshold. The CI workflow
+[`.github/workflows/spa-bundle-size.yml`](../../.github/workflows/spa-bundle-size.yml)
+enforces this automatically on every PR that touches `src/`,
+`esbuild.config.cjs`, or `package.json`.
+
+### Thresholds
+
+| Addon | Tier | Limit (gzip) | Current (approx.) |
+|-------|------|-------------|-------------------|
+| `toolkit-shell` | A — data shell | **200 KB** | ~61 KB |
+| `canvas-toolkit` | B — canvas | **200 KB** | ~113 KB |
+| `document-editor` | C — document | **200 KB** | ~187 KB |
+| `media-studio` | D — specialist | **900 KB** | ~806 KB |
+
+Tier A/C shells must stay under 200 KB gzipped (per §12 gate 2 and §13 Risks).
+`media-studio` ships three heavy peer deps (react-konva, wavesurfer.js,
+react-player) and is granted a higher 900 KB limit as a specialist shell.
+
+### How the check works
+
+The workflow builds each addon (`npm ci && npm run build`) and then:
+
+```bash
+GZ_BYTES=$(gzip -c "assets/dist/<addon>.js" | wc -c)
+# Fail if GZ_BYTES > LIMIT_BYTES
+```
+
+It prints headroom remaining so contributors know how close they are to the
+limit before a failure.
+
+### Keeping bundles lean
+
+- Keep heavy deps (react-konva, wavesurfer.js, Tiptap) in Tier D only.
+- `@wordpress/i18n` must stay external (see §15) — never let it bundle.
+- Run `npm run build && gzip -c assets/dist/<addon>.js | wc -c` locally
+  before opening a PR that adds new dependencies.
+- If a Tier A/B/C addon is approaching the 200 KB limit, extract the new
+  feature into a separate Tier D addon instead.
+
+---
+
+## 17. Scaffolding a new toolkit-SPA addon
 
 Run:
 
@@ -666,7 +710,7 @@ scaffolding:
 
 ---
 
-## 16. References
+## 18. References
 
 - [`addons/docs-hub/`](../../addons/docs-hub/) — canonical reference
   implementation
