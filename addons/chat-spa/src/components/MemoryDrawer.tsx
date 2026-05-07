@@ -647,6 +647,8 @@ function AuditTab( { entries, isLoading, error }: AuditTabProps ): JSX.Element {
 			{ entries !== null && entries.length > 0 && (
 				<ul className="nvoos-chat-spa-memory-audit-list">
 					{ entries.map( ( entry, idx ) => (
+						// Audit entries are append-only within a session and have no
+						// stable server-side ID in the API response, so index is safe.
 						<li
 							key={ idx }
 							className="nvoos-chat-spa-memory-audit-item"
