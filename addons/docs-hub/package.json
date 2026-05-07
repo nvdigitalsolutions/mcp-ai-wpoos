@@ -1,6 +1,6 @@
 {
   "name": "nvoos-docs-hub",
-  "version": "0.3.2",
+  "version": "0.3.5",
   "description": "NV oOS Docs Hub – React documentation browser SPA",
   "private": true,
   "scripts": {

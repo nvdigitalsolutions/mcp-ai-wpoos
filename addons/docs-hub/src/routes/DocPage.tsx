@@ -77,7 +77,7 @@ export default function DocPage() {
 		<>
 			<div className="dh-main-area">
 				<Breadcrumbs slug={ page.slug } title={ page.title } />
-				<ContentArea content={ page.content } />
+				<ContentArea content={ page.content } remoteUrl={ page.remote_url } />
 				<PrevNext prev={ page.prev } next={ page.next } />
 			</div>
 			<aside className="dh-toc-area">

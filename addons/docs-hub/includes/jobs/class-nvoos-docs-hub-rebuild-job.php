@@ -130,7 +130,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 				'broken_links' => $broken_count,
 				'duration_ms'  => $duration_ms,
 			);
-		} catch ( Exception $e ) {
+		} catch ( \Throwable $e ) {
 			NV_oOS_Docs_Hub_Rebuild_State::update(
 				array(
 					'phase'      => NV_oOS_Docs_Hub_Rebuild_State::PHASE_FAILED,
