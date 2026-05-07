@@ -25,19 +25,25 @@
 		"@tanstack/react-query": "^5.62.0",
 		"clsx": "^2.1.1",
 		"date-fns": "^4.1.0",
-		"diff": "^7.0.0",
+		"diff": "^9.0.0",
 		"zod": "^3.24.1"
+	},
+	"overrides": {
+		"minimatch@^3": "3.1.5",
+		"minimatch@^9": "9.0.9",
+		"serialize-javascript": ">=7.0.5",
+		"webpack-dev-server": ">=5.2.1"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250109.0",
-		"@types/diff": "^7.0.0",
+		"@types/diff": "^8.0.0",
 		"@types/wordpress__components": "^23.0.0",
 		"@wordpress/eslint-plugin": "^21.0.0",
 		"@wordpress/jest-preset-default": "^12.0.0",
 		"@wordpress/prettier-config": "^4.0.0",
-		"@wordpress/scripts": "^30.0.0",
-		"esbuild": "^0.24.2",
-		"miniflare": "^4.20250109.0",
+		"@wordpress/scripts": "^32.1.0",
+		"esbuild": "^0.28.0",
+		"miniflare": "^4.20260504.0",
 		"npm-run-all": "^4.1.5",
 		"typescript": "^5.7.2",
 		"wrangler": "^4.59.1"
