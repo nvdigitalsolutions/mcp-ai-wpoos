@@ -147,13 +147,13 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				return $tree;
 			}
 			// Tree items are already scoped to $path; no additional prefix filtering.
-			$md_files = $this->filter_md_files( $tree, '' );
+			$md_files = $this->filter_md_files( $tree, '', $repo_config, $path );
 		} else {
 			$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
 			if ( is_wp_error( $tree ) ) {
 				return $tree;
 			}
-			$md_files = $this->filter_md_files( $tree, '' );
+			$md_files = $this->filter_md_files( $tree, '', $repo_config, '' );
 		}
 
 		if ( empty( $md_files ) ) {
@@ -392,12 +392,33 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * Filter tree items to Markdown (and optionally .txt) files.
 	 *
 	 * @since 1.1.0
+	 * @since 0.3.0 Added $repo_config / $path_in_repo arguments to honour
+	 *              `selection_mode` ('all' | 'prefix' | 'selected') and the
+	 *              user-configured `selected_paths` / `excluded_paths`.
 	 *
-	 * @param array  $tree       Git tree items from the API.
-	 * @param string $path_prefix Optional path prefix to restrict to.
+	 * @param array  $tree         Git tree items from the API.
+	 * @param string $path_prefix  Optional path prefix to restrict to.
+	 * @param array  $repo_config  Full repo config (for selection_mode + path lists).
+	 * @param string $path_in_repo Repo-relative path of the fetched subtree
+	 *                             (so item paths can be reconstructed for
+	 *                             selected_paths matching). Empty when the
+	 *                             whole repo was fetched.
 	 * @return array Filtered items.
 	 */
-	private function filter_md_files( $tree, $path_prefix ) {
+	private function filter_md_files( $tree, $path_prefix, $repo_config = array(), $path_in_repo = '' ) {
+		$selection_mode = isset( $repo_config['selection_mode'] ) ? (string) $repo_config['selection_mode'] : 'all';
+		if ( ! in_array( $selection_mode, array( 'all', 'prefix', 'selected' ), true ) ) {
+			$selection_mode = 'all';
+		}
+		$selected_paths = isset( $repo_config['selected_paths'] ) && is_array( $repo_config['selected_paths'] )
+			? $repo_config['selected_paths']
+			: array();
+		$excluded_paths = isset( $repo_config['excluded_paths'] ) && is_array( $repo_config['excluded_paths'] )
+			? $repo_config['excluded_paths']
+			: array();
+
+		$path_in_repo = trim( (string) $path_in_repo, '/' );
+
 		$results = array();
 
 		foreach ( $tree as $item ) {
@@ -415,6 +436,26 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 
 			// Apply optional path prefix restriction.
 			if ( '' !== $path_prefix && 0 !== strpos( $item_path, $path_prefix . '/' ) ) {
+				continue;
+			}
+
+			// Reconstruct the full repo-relative path so user-configured
+			// `selected_paths` / `excluded_paths` (which are repo-relative)
+			// match correctly even when a `path` prefix is in use.
+			$full_repo_path = '' !== $path_in_repo ? $path_in_repo . '/' . $item_path : $item_path;
+
+			// `selected` mode: only keep files matching the selection list.
+			if ( 'selected' === $selection_mode ) {
+				if ( empty( $selected_paths ) ) {
+					continue;
+				}
+				if ( ! self::matches_path_list( $full_repo_path, $selected_paths ) ) {
+					continue;
+				}
+			}
+
+			// `excluded_paths` always applied (useful for 'all' and 'prefix' modes).
+			if ( ! empty( $excluded_paths ) && self::matches_path_list( $full_repo_path, $excluded_paths ) ) {
 				continue;
 			}
 
@@ -462,6 +503,170 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Test whether a repo-relative path matches any entry in a path list.
+	 *
+	 * Each list entry is either:
+	 *  - a literal file path (e.g. `docs/intro.md`) — exact match required;
+	 *  - a directory (trailing `/`, e.g. `docs/guides/`) — recursive match
+	 *    (any file beneath that directory matches).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string   $path  Repo-relative file path.
+	 * @param string[] $list  List of selected/excluded paths.
+	 * @return bool
+	 */
+	public static function matches_path_list( $path, $list ) {
+		$path = ltrim( (string) $path, '/' );
+		foreach ( (array) $list as $entry ) {
+			$entry = ltrim( (string) $entry, '/' );
+			if ( '' === $entry ) {
+				continue;
+			}
+			if ( '/' === substr( $entry, -1 ) ) {
+				// Directory — recursive match.
+				$dir = rtrim( $entry, '/' );
+				if ( $path === $dir || 0 === strpos( $path, $dir . '/' ) ) {
+					return true;
+				}
+			} elseif ( $path === $entry ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Public admin helper: list Markdown/txt files in a repo for the picker UI.
+	 *
+	 * Resolves the repo + ref, fetches the (recursive) Git tree, filters to
+	 * `.md` / `.txt` blobs (with default exclusions applied), and returns a
+	 * lightweight payload suitable for rendering in the admin tree picker.
+	 *
+	 * Results are cached in a transient for 10 minutes keyed by
+	 * owner/repo/ref/path so repeated UI clicks don't hammer the GitHub API.
+	 * Tokens are NOT included in the cache key — tokens only affect rate
+	 * limits, not the tree contents (auth-gated repos return 404 without a
+	 * valid token, which fails fast and is not cached).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array $repo_config {
+	 *     @type string $owner GitHub owner.
+	 *     @type string $repo  GitHub repo name.
+	 *     @type string $ref   Branch / tag / SHA (default 'HEAD').
+	 *     @type string $path  Optional repo-relative subdirectory.
+	 *     @type string $token Optional GitHub PAT.
+	 *     @type bool   $force Bypass the transient cache.
+	 * }
+	 * @return array|WP_Error {
+	 *     @type string   resolved_ref  Concrete commit SHA (or echo of $ref).
+	 *     @type string   path          Echoed `path` config (may be '').
+	 *     @type array[]  files         List of `{ path, size }` repo-relative entries.
+	 * }
+	 */
+	public function fetch_tree_for_admin( $repo_config ) {
+		$owner = isset( $repo_config['owner'] ) ? sanitize_text_field( $repo_config['owner'] ) : '';
+		$repo  = isset( $repo_config['repo'] )  ? sanitize_text_field( $repo_config['repo'] )  : '';
+		$ref   = isset( $repo_config['ref'] )   ? sanitize_text_field( $repo_config['ref'] )   : 'HEAD';
+		$token = isset( $repo_config['token'] ) ? (string) $repo_config['token'] : '';
+		$path  = isset( $repo_config['path'] )  ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
+		$force = ! empty( $repo_config['force'] );
+
+		if ( '' === $owner || '' === $repo ) {
+			return new WP_Error(
+				'nvoos_docs_hub_bad_repo',
+				__( 'Owner and repo are required.', 'nvoos-docs-hub' )
+			);
+		}
+		if ( ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $owner ) || ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $repo ) ) {
+			return new WP_Error(
+				'nvoos_docs_hub_bad_repo',
+				__( 'Owner / repo contain invalid characters.', 'nvoos-docs-hub' )
+			);
+		}
+
+		$transient_key = 'nvoos_docs_hub_tree_' . md5(
+			implode( '|', array( $owner, $repo, $ref, $path ) )
+		);
+
+		if ( ! $force ) {
+			$cached = get_transient( $transient_key );
+			if ( is_array( $cached ) ) {
+				return $cached;
+			}
+		}
+
+		// Step 1: resolve ref.
+		$resolved_ref = $this->resolve_ref( $owner, $repo, $ref, $token );
+		if ( is_wp_error( $resolved_ref ) ) {
+			return $resolved_ref;
+		}
+
+		// Step 2: fetch tree (subtree if path is set).
+		if ( '' !== $path ) {
+			$subtree_sha = $this->resolve_subtree_sha( $owner, $repo, $resolved_ref, $token, $path );
+			if ( is_wp_error( $subtree_sha ) ) {
+				return $subtree_sha;
+			}
+			if ( null === $subtree_sha ) {
+				$payload = array(
+					'resolved_ref' => $resolved_ref,
+					'path'         => $path,
+					'files'        => array(),
+				);
+				set_transient( $transient_key, $payload, 10 * MINUTE_IN_SECONDS );
+				return $payload;
+			}
+			$tree = $this->fetch_tree( $owner, $repo, $subtree_sha, $token );
+		} else {
+			$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
+		}
+
+		if ( is_wp_error( $tree ) ) {
+			return $tree;
+		}
+
+		// Filter to md/txt blobs honouring default exclusions only — admin
+		// picker should see every candidate file, regardless of the user's
+		// per-repo `selection_mode` (the picker is what populates that
+		// list in the first place).
+		$md_files = $this->filter_md_files( $tree, '', array( 'selection_mode' => 'all' ), $path );
+
+		$files = array();
+		foreach ( $md_files as $item ) {
+			$rel    = isset( $item['path'] ) ? (string) $item['path'] : '';
+			if ( '' === $rel ) {
+				continue;
+			}
+			$size   = isset( $item['size'] ) ? (int) $item['size'] : 0;
+			// Reconstruct the repo-relative path (consistent with how
+			// `selected_paths` are stored — always repo-relative).
+			$full   = '' !== $path ? $path . '/' . $rel : $rel;
+			$files[] = array(
+				'path' => $full,
+				'size' => $size,
+			);
+		}
+
+		usort(
+			$files,
+			static function ( $a, $b ) {
+				return strcmp( $a['path'], $b['path'] );
+			}
+		);
+
+		$payload = array(
+			'resolved_ref' => $resolved_ref,
+			'path'         => $path,
+			'files'        => $files,
+		);
+
+		set_transient( $transient_key, $payload, 10 * MINUTE_IN_SECONDS );
+		return $payload;
 	}
 
 	// -------------------------------------------------------------------------

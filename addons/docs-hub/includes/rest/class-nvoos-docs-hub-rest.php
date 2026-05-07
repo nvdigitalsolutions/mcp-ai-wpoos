@@ -140,6 +140,48 @@ class NV_oOS_Docs_Hub_REST {
 				'permission_callback' => array( __CLASS__, 'admin_permission' ),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/remote/tree',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'remote_tree' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				'args'                => array(
+					'owner' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'repo'  => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'ref'   => array(
+						'type'              => 'string',
+						'default'           => 'HEAD',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'path'  => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'index' => array(
+						'description'       => __( 'Index into the saved remote_repos array (so the persisted token can be reused without round-tripping it through the browser).', 'nvoos-docs-hub' ),
+						'type'              => 'integer',
+						'default'           => -1,
+						'sanitize_callback' => 'intval',
+					),
+					'force' => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -448,6 +490,56 @@ class NV_oOS_Docs_Hub_REST {
 				'rebuild'      => NV_oOS_Docs_Hub_Rebuild_State::to_summary(),
 			)
 		);
+	}
+
+	/**
+	 * GET /remote/tree — list Markdown/txt files in a remote repo for the picker.
+	 *
+	 * Admin-only. When the optional `index` parameter points at a saved
+	 * remote_repos entry, the persisted token is reused so the browser
+	 * never has to round-trip a fresh PAT.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function remote_tree( $request ) {
+		$owner = (string) $request->get_param( 'owner' );
+		$repo  = (string) $request->get_param( 'repo' );
+		$ref   = (string) $request->get_param( 'ref' );
+		$path  = (string) $request->get_param( 'path' );
+		$index = (int) $request->get_param( 'index' );
+		$force = (bool) $request->get_param( 'force' );
+
+		// Reuse the persisted token (if any) instead of asking the browser to send it.
+		$token    = '';
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] )
+			? $settings['remote_repos']
+			: array();
+		if ( $index >= 0 && isset( $repos[ $index ]['token'] ) ) {
+			$token = (string) $repos[ $index ]['token'];
+		}
+
+		$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
+		$result  = $fetcher->fetch_tree_for_admin(
+			array(
+				'owner' => $owner,
+				'repo'  => $repo,
+				'ref'   => '' !== $ref ? $ref : 'HEAD',
+				'path'  => $path,
+				'token' => $token,
+				'force' => $force,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 502 ) );
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
 	}
 
 	/**

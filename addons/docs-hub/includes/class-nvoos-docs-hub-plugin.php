@@ -87,11 +87,19 @@ class NV_oOS_Docs_Hub_Plugin {
 	 * @return array
 	 */
 	public static function get_settings() {
+		$option = get_option( self::OPTION_KEY, null );
+
+		// Fresh install (option does not yet exist) → remote-first defaults.
+		// Existing installs keep their saved sources unchanged.
+		$default_sources = ( null === $option )
+			? array( 'remote' )
+			: array( 'base', 'addons', 'root' );
+
 		return wp_parse_args(
-			get_option( self::OPTION_KEY, array() ),
+			is_array( $option ) ? $option : array(),
 			array(
 				'enabled'               => true,
-				'sources'               => array( 'base', 'addons', 'root' ),
+				'sources'               => $default_sources,
 				'context_enabled'       => false,
 				'default_theme'         => 'auto',
 				'search_enabled'        => true,
