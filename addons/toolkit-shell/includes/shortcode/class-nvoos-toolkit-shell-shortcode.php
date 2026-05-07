@@ -96,9 +96,14 @@ class NV_oOS_Toolkit_Shell_Shortcode {
 		wp_register_script(
 			'nvoos-toolkit-shell',
 			NVOOS_TOOLKIT_SHELL_URL . 'assets/dist/toolkit-shell.js',
-			array(),
+			array( 'wp-i18n' ),
 			NVOOS_TOOLKIT_SHELL_VERSION,
 			true
+		);
+		wp_set_script_translations(
+			'nvoos-toolkit-shell',
+			'nvoos-toolkit-shell',
+			NVOOS_TOOLKIT_SHELL_PATH . 'languages'
 		);
 		wp_localize_script(
 			'nvoos-toolkit-shell',

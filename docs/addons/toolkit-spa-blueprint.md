@@ -553,7 +553,97 @@ Canvas-based surfaces (react-konva, @xyflow/react) should expose a skip link:
 
 ---
 
-## 15. Scaffolding a new toolkit-SPA addon
+## 15. Phase 6 i18n guide
+
+All toolkit-SPA addons must pass gate #7 from §12: **"exposes a string table or
+supports `wp.i18n` interop"**. The pattern below is the reference implementation.
+
+### How it works
+
+1. **React components** import from `@wordpress/i18n`:
+
+   ```tsx
+   import { __, sprintf } from '@wordpress/i18n';
+
+   // Simple string
+   <button>{ __( 'Save', 'nvoos-my-addon' ) }</button>
+
+   // With a variable
+   <p>{ sprintf( __( 'Page %1$d of %2$d', 'nvoos-my-addon' ), page, total ) }</p>
+
+   // Conditional aria-label
+   aria-label={ playing ? __( 'Pause', 'nvoos-my-addon' ) : __( 'Play', 'nvoos-my-addon' ) }
+   ```
+
+2. **esbuild** maps `@wordpress/i18n` to `window.wp.i18n` at bundle time via
+   the `wpI18nPlugin` in `esbuild.config.cjs`. The library is **not** bundled —
+   it reads `window.wp.i18n` at runtime:
+
+   ```js
+   const wpI18nPlugin = {
+     name: 'wp-i18n-external',
+     setup( build ) {
+       build.onResolve( { filter: /^@wordpress\/i18n$/ }, ( args ) => ( {
+         path: args.path, namespace: 'wp-i18n-ns',
+       } ) );
+       build.onLoad( { filter: /.*/, namespace: 'wp-i18n-ns' }, () => ( {
+         contents: `module.exports = window.wp.i18n;`, loader: 'js',
+       } ) );
+     },
+   };
+   ```
+
+3. **PHP shortcode** declares `'wp-i18n'` as a script dependency and calls
+   `wp_set_script_translations()`:
+
+   ```php
+   wp_register_script(
+       'nvoos-my-addon',
+       NVOOS_MY_ADDON_URL . 'assets/dist/my-addon.js',
+       array( 'wp-i18n' ),
+       NVOOS_MY_ADDON_VERSION,
+       true
+   );
+   wp_set_script_translations(
+       'nvoos-my-addon',
+       'nvoos-my-addon',
+       NVOOS_MY_ADDON_PATH . 'languages'
+   );
+   ```
+
+4. **Translation files** live in `languages/`. Generate the `.pot` template with:
+
+   ```bash
+   # Requires WP-CLI
+   wp i18n make-pot . languages/nvoos-my-addon.pot \
+     --domain=nvoos-my-addon \
+     --include="src/*.tsx,src/**/*.tsx,includes/**/*.php"
+
+   # Convert .po → .mo (gettext)
+   msgfmt languages/nvoos-my-addon-fr_FR.po -o languages/nvoos-my-addon-fr_FR.mo
+
+   # Convert .po → WordPress JS JSON (for wp_set_script_translations)
+   wp i18n make-json languages/ --no-purge
+   ```
+
+   The `languages/` directory ships empty (`.gitkeep`). Translators provide `.po`
+   files which maintainers compile to `.mo` + `.json` before release.
+
+### Verify the bundle is clean
+
+After `npm run build`, check the production bundle does **not** contain
+`@wordpress/i18n` source:
+
+```bash
+grep -c "@wordpress/i18n\|setLocaleData" assets/dist/my-addon.js
+# Should output: 0
+grep -c "window.wp.i18n" assets/dist/my-addon.js
+# Should output: 1
+```
+
+---
+
+## 16. Scaffolding a new toolkit-SPA addon
 
 Run:
 

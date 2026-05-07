@@ -46,9 +46,9 @@ const buildOptions = {
 	minify:      isProd,
 	sourcemap:   ! isProd,
 	treeShaking: true,
-	// Externalize @wordpress/i18n — WordPress loads wp.i18n via the wp-i18n script handle.
-	external:    [ '@wordpress/i18n' ],
-	plugins:     [ {
+	plugins:     [
+		wpI18nPlugin,
+		{
 		name: 'css-extract',
 		setup( build ) {
 			build.onEnd( () => {

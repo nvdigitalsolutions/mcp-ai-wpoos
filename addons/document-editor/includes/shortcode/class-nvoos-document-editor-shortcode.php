@@ -98,9 +98,14 @@ class NV_oOS_Document_Editor_Shortcode {
 		wp_register_script(
 			'nvoos-document-editor',
 			NVOOS_DOCUMENT_EDITOR_URL . 'assets/dist/document-editor.js',
-			array(),
+			array( 'wp-i18n' ),
 			NVOOS_DOCUMENT_EDITOR_VERSION,
 			true
+		);
+		wp_set_script_translations(
+			'nvoos-document-editor',
+			'nvoos-document-editor',
+			NVOOS_DOCUMENT_EDITOR_PATH . 'languages'
 		);
 		wp_localize_script(
 			'nvoos-document-editor',

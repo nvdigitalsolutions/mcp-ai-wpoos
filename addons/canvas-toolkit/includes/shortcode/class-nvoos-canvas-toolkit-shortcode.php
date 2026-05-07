@@ -96,9 +96,14 @@ class NV_oOS_Canvas_Toolkit_Shortcode {
 		wp_register_script(
 			'nvoos-canvas-toolkit',
 			NVOOS_CANVAS_TOOLKIT_URL . 'assets/dist/canvas-toolkit.js',
-			array(),
+			array( 'wp-i18n' ),
 			NVOOS_CANVAS_TOOLKIT_VERSION,
 			true
+		);
+		wp_set_script_translations(
+			'nvoos-canvas-toolkit',
+			'nvoos-canvas-toolkit',
+			NVOOS_CANVAS_TOOLKIT_PATH . 'languages'
 		);
 		wp_localize_script(
 			'nvoos-canvas-toolkit',

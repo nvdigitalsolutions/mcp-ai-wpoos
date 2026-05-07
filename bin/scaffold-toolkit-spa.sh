@@ -345,9 +345,14 @@ class NV_oOS_${TITLE_SNAKE}_Shortcode {
 		wp_register_script(
 			'nvoos-${SLUG}',
 			NVOOS_${UPPER_SNAKE}_URL . 'assets/dist/${SLUG}.js',
-			array(),
+			array( 'wp-i18n' ),
 			NVOOS_${UPPER_SNAKE}_VERSION,
 			true
+		);
+		wp_set_script_translations(
+			'nvoos-${SLUG}',
+			'nvoos-${SLUG}',
+			NVOOS_${UPPER_SNAKE}_PATH . 'languages'
 		);
 		wp_localize_script(
 			'nvoos-${SLUG}',
@@ -584,6 +589,7 @@ cat > "$ADDON_DIR/package.json" <<EOF
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",
     "@typescript-eslint/parser": "8.32.0",
+    "@wordpress/i18n": "5.12.0",
     "esbuild": "0.25.4",
     "eslint": "9.27.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
@@ -643,6 +649,26 @@ const outDir = path.resolve( __dirname, 'assets', 'dist' );
 fs.mkdirSync( outDir, { recursive: true } );
 
 /** @type {import('esbuild').BuildOptions} */
+
+/**
+ * esbuild plugin — maps @wordpress/i18n imports to window.wp.i18n.
+ * WordPress loads wp.i18n via the wp-i18n script dependency.
+ */
+const wpI18nPlugin = {
+	name: 'wp-i18n-external',
+	setup( build ) {
+		build.onResolve( { filter: /^@wordpress\/i18n\$/ }, ( args ) => ( {
+			path: args.path,
+			namespace: 'wp-i18n-ns',
+		} ) );
+		build.onLoad( { filter: /.*/, namespace: 'wp-i18n-ns' }, () => ( {
+			contents: \`module.exports = window.wp.i18n;\`,
+			loader: 'js',
+		} ) );
+	},
+};
+
+/** @type {import('esbuild').BuildOptions} */
 const buildOptions = {
 	entryPoints: [ path.resolve( __dirname, 'src', 'index.tsx' ) ],
 	bundle:      true,
@@ -657,7 +683,9 @@ const buildOptions = {
 	minify:      isProd,
 	sourcemap:   ! isProd,
 	treeShaking: true,
-	plugins:     [ {
+	plugins:     [
+		wpI18nPlugin,
+		{
 		name: 'css-extract',
 		setup( build ) {
 			build.onEnd( () => {

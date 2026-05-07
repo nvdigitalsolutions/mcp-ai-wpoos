@@ -96,9 +96,14 @@ class NV_oOS_Media_Studio_Shortcode {
 		wp_register_script(
 			'nvoos-media-studio',
 			NVOOS_MEDIA_STUDIO_URL . 'assets/dist/media-studio.js',
-			array(),
+			array( 'wp-i18n' ),
 			NVOOS_MEDIA_STUDIO_VERSION,
 			true
+		);
+		wp_set_script_translations(
+			'nvoos-media-studio',
+			'nvoos-media-studio',
+			NVOOS_MEDIA_STUDIO_PATH . 'languages'
 		);
 		wp_localize_script(
 			'nvoos-media-studio',
