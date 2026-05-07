@@ -10,7 +10,7 @@ class Test_Chat_Spa_REST extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! defined( 'NVOOS_CHAT_SPA_VERSION' ) ) {
-			define( 'NVOOS_CHAT_SPA_VERSION', '0.1.0' );
+			define( 'NVOOS_CHAT_SPA_VERSION', '0.3.0' );
 		}
 		require_once dirname( __DIR__ ) . '/includes/rest/class-nvoos-chat-spa-rest.php';
 	}
