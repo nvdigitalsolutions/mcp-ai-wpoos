@@ -138,17 +138,18 @@ class Test_Docs_Hub_Remote_Selection extends WP_UnitTestCase {
 		require_once NVOOS_DOCS_HUB_PATH . 'includes/admin/class-nvoos-docs-hub-settings.php';
 		$out = NV_oOS_Docs_Hub_Settings::sanitize_path_list( array(
 			'docs/intro.md',
-			'../etc/passwd',
-			'/absolute/path.md',
-			'docs/..hidden.md', // contains '..'
+			'../etc/passwd',          // rejected: leading '..' segment
+			'a/../b.md',              // rejected: '..' as middle segment
+			'/absolute/path.md',      // rejected: leading slash
 			'guides/',
 			'',
 			'  whitespace.md  ',
-			'<script>',
+			'<script>',               // rejected: invalid chars
+			'..hidden.md',            // ALLOWED: '..' is part of filename, not a segment
 		) );
 		sort( $out );
 		$this->assertEquals(
-			array( 'docs/intro.md', 'guides/', 'whitespace.md' ),
+			array( '..hidden.md', 'docs/intro.md', 'guides/', 'whitespace.md' ),
 			$out
 		);
 	}

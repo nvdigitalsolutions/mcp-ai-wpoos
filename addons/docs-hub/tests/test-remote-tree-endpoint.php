@@ -185,17 +185,15 @@ class Test_Docs_Hub_Remote_Tree extends WP_UnitTestCase {
 }
 
 /**
- * Test stub: subclasses NV_oOS_Docs_Hub_Remote_Repo and overrides the
- * (private) network helpers via a public seam in the parent? No — instead
- * we monkey-patch the public surface by overriding fetch_tree_for_admin
- * is not viable because the original calls private methods. We instead
- * subclass and override the methods we need. Since resolve_ref / fetch_tree
- * are private in the parent, we expose them via reflection in the test
- * scaffold — simpler approach: bypass the parent and reimplement
- * fetch_tree_for_admin's flow on top of a stubbed tree.
+ * Test stub for NV_oOS_Docs_Hub_Remote_Repo.
  *
- * To keep the test self-contained, this stub class re-implements
- * fetch_tree_for_admin using the parent's filter_md_files() helper.
+ * Reimplements fetch_tree_for_admin() with a synthetic in-memory tree so
+ * tests can exercise the cache + filter_md_files() pipeline without making
+ * real GitHub API calls. The synthetic tree is reused via reflection
+ * against the parent's private filter_md_files() method so we still cover
+ * the real exclusion logic.
+ *
+ * @since 0.3.0
  */
 class NVoOS_Docs_Hub_Remote_Repo_Stub extends NV_oOS_Docs_Hub_Remote_Repo {
 

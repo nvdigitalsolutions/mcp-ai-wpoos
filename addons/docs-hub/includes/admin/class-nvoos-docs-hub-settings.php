@@ -439,8 +439,13 @@ class NV_oOS_Docs_Hub_Settings {
 			if ( '' === $line ) {
 				continue;
 			}
-			// No leading slash, no '..' traversal.
-			if ( '/' === $line[0] || false !== strpos( $line, '..' ) ) {
+			// No leading slash.
+			if ( '/' === $line[0] ) {
+				continue;
+			}
+			// Reject '..' as a path segment (e.g. '..', 'a/..', '../b', 'a/../b'),
+			// but allow filenames that merely contain consecutive dots ('..hidden.md').
+			if ( preg_match( '#(^|/)\.\.(/|$)#', $line ) ) {
 				continue;
 			}
 			if ( ! preg_match( '#^[A-Za-z0-9_./\-]+/?$#', $line ) ) {
@@ -909,10 +914,10 @@ class NV_oOS_Docs_Hub_Settings {
 					<tr>
 						<td style="padding:4px 8px 4px 0; vertical-align:top;"><?php esc_html_e( 'File selection', 'nvoos-docs-hub' ); ?></td>
 						<td style="padding:4px 0;">
-							<?php $name_mode = esc_attr( "{$option_key}[remote_repos][{$i}][selection_mode]" ); ?>
+							<?php $name_mode = "{$option_key}[remote_repos][{$i}][selection_mode]"; ?>
 							<label style="display:block; margin-bottom:4px;">
 								<input type="radio"
-									name="<?php echo $name_mode; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+									name="<?php echo esc_attr( $name_mode ); ?>"
 									value="all"
 									<?php checked( $selection_mode, 'all' ); ?> />
 								<?php esc_html_e( 'All Markdown / .txt files', 'nvoos-docs-hub' ); ?>
@@ -920,7 +925,7 @@ class NV_oOS_Docs_Hub_Settings {
 							</label>
 							<label style="display:block; margin-bottom:4px;">
 								<input type="radio"
-									name="<?php echo $name_mode; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+									name="<?php echo esc_attr( $name_mode ); ?>"
 									value="prefix"
 									<?php checked( $selection_mode, 'prefix' ); ?> />
 								<?php esc_html_e( 'Path prefix only', 'nvoos-docs-hub' ); ?>
@@ -928,7 +933,7 @@ class NV_oOS_Docs_Hub_Settings {
 							</label>
 							<label style="display:block; margin-bottom:4px;">
 								<input type="radio"
-									name="<?php echo $name_mode; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
+									name="<?php echo esc_attr( $name_mode ); ?>"
 									value="selected"
 									<?php checked( $selection_mode, 'selected' ); ?> />
 								<?php esc_html_e( 'Selected files / folders only', 'nvoos-docs-hub' ); ?>
