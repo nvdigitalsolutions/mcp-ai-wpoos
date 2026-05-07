@@ -37,26 +37,92 @@ interface ContentAreaProps {
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve a link href against a remote GitHub blob URL so that relative
- * links in remote-repo pages point to GitHub instead of the current site.
+ * Parse the GitHub owner + repo (lowercased) from any github.com URL.
+ * Returns null for non-GitHub URLs.
+ */
+function parseGitHubOwnerRepo( url: string ): { owner: string; repo: string } | null {
+	const m = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/i.exec( url );
+	return m ? { owner: m[ 1 ].toLowerCase(), repo: m[ 2 ].toLowerCase() } : null;
+}
+
+/**
+ * Derive a docs-hub slug from a GitHub repo-relative file path.
+ * Mirrors NV_oOS_Docs_Hub_Indexer::derive_slug() in PHP so that the
+ * generated hash route matches the slug stored in the manifest.
  *
- * Pure-anchor links (#section) are returned unchanged so in-page scroll
- * still works. Absolute URLs are also returned unchanged.
+ * Examples:
+ *   docs/getting-started.md  → getting-started
+ *   README.md                → readme
+ *   docs/features/chat.md   → features/chat
+ */
+function deriveSlugFromPath( filePath: string ): string {
+	let s = filePath.replace( /^docs\//i, '' );   // strip leading docs/
+	s = s.replace( /\.[a-z]+$/i, '' );             // strip file extension
+	s = s.toLowerCase();
+	s = s.replace( /[^a-z0-9/\-]/g, '-' );        // non-alnum/slash/hyphen → -
+	s = s.replace( /-{2,}/g, '-' );                // collapse runs of hyphens
+	s = s.replace( /^[/\-]+|[/\-]+$/g, '' );      // trim leading/trailing /- 
+	return s;
+}
+
+/**
+ * Resolve a link href for a page sourced from a remote GitHub repository.
+ *
+ * Resolution rules (applied in order):
+ *  1. Pure `#section` anchors  → unchanged (in-page scroll via HashRouter).
+ *  2. Relative links           → resolved to an absolute URL using the
+ *                               GitHub blob URL of the current page as base.
+ *  3. Same-repo GitHub blob/tree `.md` links (whether originally absolute or
+ *     resolved from relative) → converted to a SPA hash route `#/{slug}`
+ *     so the user stays inside the docs hub.
+ *  4. All other absolute URLs  → returned as-is; `RemoteAnchor` will add
+ *                               `target="_blank"` so they open in a new tab.
  */
 function resolveRemoteHref( href: string, remoteUrl: string ): string {
-	// Pure anchor — keep for in-page scroll.
+	// Rule 1 — pure in-page anchor.
 	if ( href.startsWith( '#' ) ) {
 		return href;
 	}
-	// Already absolute — keep as-is.
+
+	// Rule 2 — resolve relative links against the GitHub blob base URL.
+	let absoluteHref: string;
 	if ( /^[a-z][a-z0-9+\-.]*:/i.test( href ) ) {
-		return href;
+		absoluteHref = href;
+	} else {
+		try {
+			absoluteHref = new URL( href, remoteUrl ).href;
+		} catch {
+			return href;
+		}
 	}
-	try {
-		return new URL( href, remoteUrl ).href;
-	} catch {
-		return href;
+
+	// Rule 3 — same-repo GitHub blob/tree links to .md files → SPA hash route.
+	const currentRepo = parseGitHubOwnerRepo( remoteUrl );
+	if ( currentRepo ) {
+		const targetRepo = parseGitHubOwnerRepo( absoluteHref );
+		if (
+			targetRepo &&
+			targetRepo.owner === currentRepo.owner &&
+			targetRepo.repo === currentRepo.repo
+		) {
+			// Extract path after /blob/{ref}/ or /tree/{ref}/
+			const pathMatch = /^https?:\/\/github\.com\/[^/]+\/[^/]+\/(?:blob|tree)\/[^/]+\/([^?#]*)([#?].*)?$/i.exec( absoluteHref );
+			if ( pathMatch ) {
+				const filePath = decodeURIComponent( pathMatch[ 1 ] );
+				const fragment = pathMatch[ 2 ] ?? '';
+				if ( /\.md$/i.test( filePath ) ) {
+					const slug = deriveSlugFromPath( filePath );
+					if ( slug ) {
+						// Preserve heading anchor (e.g. #installation) for in-page scroll.
+						return '#/' + slug + ( fragment.startsWith( '#' ) ? fragment : '' );
+					}
+				}
+			}
+		}
 	}
+
+	// Rule 4 — return the absolute URL unchanged; caller adds target="_blank".
+	return absoluteHref;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,8 +214,17 @@ export default function ContentArea( { content, remoteUrl }: ContentAreaProps ) 
 		extraComponents.a = function RemoteAnchor( props: any ) {
 			const { href, children, ...rest } = props;
 			const resolvedHref = href ? resolveRemoteHref( String( href ), capturedUrl ) : undefined;
+
+			// Links that didn't resolve to a SPA hash route are external —
+			// open them in a new tab so the user stays in the docs hub.
+			const isExternal = resolvedHref && ! resolvedHref.startsWith( '#' );
+
 			return (
-				<a href={ resolvedHref } { ...rest }>
+				<a
+					href={ resolvedHref }
+					{ ...rest }
+					{ ...( isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {} ) }
+				>
 					{ children }
 				</a>
 			);
