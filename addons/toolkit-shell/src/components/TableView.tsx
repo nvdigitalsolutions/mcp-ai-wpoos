@@ -4,6 +4,7 @@
  * @since 0.1.0
  */
 
+import { __ } from '@wordpress/i18n';
 import type { Resource } from '../api/types';
 
 interface TableViewProps {
@@ -28,14 +29,14 @@ export function TableView( { resource, rows, onRowClick, onDelete }: TableViewPr
 							{ field.label || field.name }
 						</th>
 					) ) }
-					{ showActions && <th scope="col">Actions</th> }
+					{ showActions && <th scope="col">{ __( 'Actions', 'nvoos-toolkit-shell' ) }</th> }
 				</tr>
 			</thead>
 			<tbody>
 				{ rows.length === 0 ? (
 					<tr>
 						<td colSpan={ fields.length + ( showActions ? 1 : 0 ) }>
-							No rows.
+							{ __( 'No rows.', 'nvoos-toolkit-shell' ) }
 						</td>
 					</tr>
 				) : (
@@ -58,7 +59,7 @@ export function TableView( { resource, rows, onRowClick, onDelete }: TableViewPr
 													onRowClick( id as string | number )
 												}
 											>
-												View
+												{ __( 'View', 'nvoos-toolkit-shell' ) }
 											</button>
 										) }
 										{ onDelete && id !== undefined && id !== null && (
@@ -68,7 +69,7 @@ export function TableView( { resource, rows, onRowClick, onDelete }: TableViewPr
 													onDelete( id as string | number )
 												}
 											>
-												Delete
+												{ __( 'Delete', 'nvoos-toolkit-shell' ) }
 											</button>
 										) }
 									</td>

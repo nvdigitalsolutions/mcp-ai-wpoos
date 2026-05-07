@@ -5,6 +5,7 @@
  * @since 0.2.0
  */
 
+import { __ } from '@wordpress/i18n';
 import type { Resource } from '../api/types';
 
 interface DetailViewProps {
@@ -24,19 +25,19 @@ export function DetailView( { resource, row, loading, error, onClose, onEdit }: 
 				<div className="nvoos-toolkit-shell-detail-actions">
 					{ onEdit && (
 						<button type="button" onClick={ onEdit }>
-							Edit
+							{ __( 'Edit', 'nvoos-toolkit-shell' ) }
 						</button>
 					) }
 					{ onClose && (
 						<button type="button" onClick={ onClose }>
-							Close
+							{ __( 'Close', 'nvoos-toolkit-shell' ) }
 						</button>
 					) }
 				</div>
 			</header>
-			{ loading && <p>Loading…</p> }
+			{ loading && <p>{ __( 'Loading…', 'nvoos-toolkit-shell' ) }</p> }
 			{ error && <p className="nvoos-toolkit-shell-error">{ error }</p> }
-			{ ! loading && ! error && ! row && <p>No record selected.</p> }
+			{ ! loading && ! error && ! row && <p>{ __( 'No record selected.', 'nvoos-toolkit-shell' ) }</p> }
 			{ row && (
 				<dl className="nvoos-toolkit-shell-detail-list">
 					{ resource.fields.map( ( field ) => (

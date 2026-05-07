@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { __, sprintf } from '@wordpress/i18n';
 import { fetchManifest } from './api/manifest-client';
 import {
 	createResource,
@@ -56,7 +57,7 @@ export function App( { config }: AppProps ) {
 		if ( ! config.toolkit ) {
 			setManifestState( {
 				kind: 'error',
-				message: 'No toolkit specified. Add toolkit="<slug>" to the shortcode.',
+				message: __( 'No toolkit specified. Add toolkit="<slug>" to the shortcode.', 'nvoos-toolkit-shell' ),
 			} );
 			return;
 		}
@@ -95,10 +96,10 @@ export function App( { config }: AppProps ) {
 				) }
 			</header>
 			<main className="nvoos-toolkit-shell-main">
-				{ manifestState.kind === 'loading' && <p>Loading manifest…</p> }
+				{ manifestState.kind === 'loading' && <p>{ __( 'Loading manifest…', 'nvoos-toolkit-shell' ) }</p> }
 				{ manifestState.kind === 'error' && (
 					<p className="nvoos-toolkit-shell-error">
-						Error: { manifestState.message }
+						{ __( 'Error:', 'nvoos-toolkit-shell' ) } { manifestState.message }
 					</p>
 				) }
 				{ manifestState.kind === 'ready' && activeViewName && (
@@ -287,22 +288,22 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 			<div className="nvoos-toolkit-shell-toolbar">
 				<input
 					type="search"
-					placeholder="Search…"
+					placeholder={ __( 'Search…', 'nvoos-toolkit-shell' ) }
 					value={ search }
 					onChange={ ( e ) => {
 						setPage( 1 );
 						setSearch( e.target.value );
 					} }
-					aria-label="Search"
+					aria-label={ __( 'Search', 'nvoos-toolkit-shell' ) }
 				/>
 				<button type="button" onClick={ () => setMode( { kind: 'create' } ) }>
-					+ New
+					{ __( '+ New', 'nvoos-toolkit-shell' ) }
 				</button>
 			</div>
 			{ listError && (
-				<p className="nvoos-toolkit-shell-error">Error: { listError }</p>
+				<p className="nvoos-toolkit-shell-error">{ __( 'Error:', 'nvoos-toolkit-shell' ) } { listError }</p>
 			) }
-			{ listLoading && <p>Loading…</p> }
+			{ listLoading && <p>{ __( 'Loading…', 'nvoos-toolkit-shell' ) }</p> }
 			{ ! listLoading && view.type === 'kanban' && (
 				<KanbanView
 					resource={ resource }
@@ -317,7 +318,7 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 					rows={ list.items }
 					onRowClick={ ( id ) => setMode( { kind: 'detail', id } ) }
 					onDelete={ ( id ) => {
-						if ( ! confirm( 'Delete this record?' ) ) {
+						if ( ! confirm( __( 'Delete this record?', 'nvoos-toolkit-shell' ) ) ) {
 							return;
 						}
 						deleteResource( manifest.rest_namespace, resource, id )
@@ -333,11 +334,16 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 						disabled={ page <= 1 }
 						onClick={ () => setPage( ( p ) => Math.max( 1, p - 1 ) ) }
 					>
-						Previous
+						{ __( 'Previous', 'nvoos-toolkit-shell' ) }
 					</button>
 					<span>
-						Page { page }
-						{ list.totalPages ? ` of ${ list.totalPages }` : '' }
+						{ list.totalPages
+							? sprintf(
+								__( 'Page %1$d of %2$d', 'nvoos-toolkit-shell' ),
+								page,
+								list.totalPages
+							)
+							: sprintf( __( 'Page %d', 'nvoos-toolkit-shell' ), page ) }
 					</span>
 					<button
 						type="button"
@@ -346,7 +352,7 @@ function ViewSurface( { manifest, viewName, mode, setMode }: ViewSurfaceProps ) 
 						}
 						onClick={ () => setPage( ( p ) => p + 1 ) }
 					>
-						Next
+						{ __( 'Next', 'nvoos-toolkit-shell' ) }
 					</button>
 				</div>
 			) }
@@ -363,5 +369,5 @@ function headerLabel( state: ManifestState ): string {
 	if ( state.kind === 'ready' ) {
 		return state.manifest.label || state.manifest.toolkit;
 	}
-	return 'NV oOS Toolkit';
+	return __( 'NV oOS Toolkit', 'nvoos-toolkit-shell' );
 }

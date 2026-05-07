@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState, type FormEvent } from 'react';
+import { __ } from '@wordpress/i18n';
 import type { Resource } from '../api/types';
 
 interface FormViewProps {
@@ -55,7 +56,7 @@ export function FormView( { resource, row, mode, saving, error, onSubmit, onCanc
 		<form className="nvoos-toolkit-shell-form" onSubmit={ handleSubmit }>
 			<header className="nvoos-toolkit-shell-form-header">
 				<h3>
-					{ mode === 'create' ? 'Create' : 'Edit' }{ ' ' }
+					{ mode === 'create' ? __( 'Create', 'nvoos-toolkit-shell' ) : __( 'Edit', 'nvoos-toolkit-shell' ) }{ ' ' }
 					{ resource.label || resource.name }
 				</h3>
 			</header>
@@ -79,11 +80,11 @@ export function FormView( { resource, row, mode, saving, error, onSubmit, onCanc
 			</div>
 			<footer className="nvoos-toolkit-shell-form-footer">
 				<button type="submit" disabled={ saving }>
-					{ saving ? 'Saving…' : mode === 'create' ? 'Create' : 'Save' }
+					{ saving ? __( 'Saving…', 'nvoos-toolkit-shell' ) : mode === 'create' ? __( 'Create', 'nvoos-toolkit-shell' ) : __( 'Save', 'nvoos-toolkit-shell' ) }
 				</button>
 				{ onCancel && (
 					<button type="button" onClick={ onCancel } disabled={ saving }>
-						Cancel
+						{ __( 'Cancel', 'nvoos-toolkit-shell' ) }
 					</button>
 				) }
 			</footer>
