@@ -16,6 +16,7 @@ import { __ } from '@wordpress/i18n';
 import { type FormEvent } from 'react';
 import { readChatSpaConfig, type ChatSpaConfig } from './api/config';
 import { createChatFetch } from './sse-adapter';
+import { MessageView } from './components/MessageView';
 
 interface AppProps {
 	config: ChatSpaConfig;
@@ -73,20 +74,10 @@ export function App( { config }: AppProps ) {
 					</p>
 				) }
 				{ messages.map( ( m ) => (
-					<div
+					<MessageView
 						key={ m.id }
-						className={ `nvoos-chat-spa-message nvoos-chat-spa-message--${ m.role }` }
-					>
-						<span className="nvoos-chat-spa-role">{ m.role }</span>
-						<div className="nvoos-chat-spa-content">
-							{ /* AI SDK v4 messages may use either `content` (string)
-							     or a `parts` array. We render the string form first
-							     and fall back to text parts. */ }
-							{ typeof ( m as { content?: unknown } ).content === 'string'
-								? ( m as { content: string } ).content
-								: '' }
-						</div>
-					</div>
+						message={ m as Parameters< typeof MessageView >[ 0 ][ 'message' ] }
+					/>
 				) ) }
 				{ error && (
 					<div className="nvoos-chat-spa-message nvoos-chat-spa-message--error">

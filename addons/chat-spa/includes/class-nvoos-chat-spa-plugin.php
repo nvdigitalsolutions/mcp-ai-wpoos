@@ -34,6 +34,9 @@ class NV_oOS_Chat_Spa_Plugin {
 		add_action( 'init', array( 'NV_oOS_Chat_Spa_Block', 'register' ), 12 );
 		add_action( 'rest_api_init', array( 'NV_oOS_Chat_Spa_REST', 'register_routes' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_render_missing_bundle_notice' ) );
+		if ( is_admin() ) {
+			NV_oOS_Chat_Spa_Admin_Page::register();
+		}
 	}
 
 	/**

@@ -96,30 +96,36 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			break;
 		}
 		case 'tool_call_started': {
+			// `9:` = single ToolCall (per AI SDK Data Stream Protocol).
+			// Emitting this populates `message.toolInvocations` with state
+			// `'call'` so the UI can render a pending tool-call card.
 			out.push(
-				encodeChunk( '2', [
-					{
-						toolCallId: String( frame.id ?? '' ),
-						toolName: String( frame.name ?? '' ),
-						args: frame.arguments ?? {},
-					},
-				] )
+				encodeChunk( '9', {
+					toolCallId: String( frame.id ?? '' ),
+					toolName: String( frame.name ?? '' ),
+					args: frame.arguments ?? {},
+				} )
 			);
 			break;
 		}
 		case 'tool_call_completed': {
+			// `a:` = single tool result (Omit<ToolResult, 'args' | 'toolName'>).
+			// `useChat` matches this back to its sibling tool call by
+			// `toolCallId` and flips state to `'result'`.
 			out.push(
-				encodeChunk( '8', [
-					{
-						toolCallId: String( frame.id ?? '' ),
-						result: frame.result ?? null,
-					},
-				] )
+				encodeChunk( 'a', {
+					toolCallId: String( frame.id ?? '' ),
+					result: frame.result ?? null,
+				} )
 			);
 			break;
 		}
 		case 'memory_event':
 		case 'annotation': {
+			// `8:` = message_annotations (JSONValue[]). NV oOS memory events
+			// (recall/store/forget) ride the annotation channel so the UI
+			// can render them as small inline pills under the assistant
+			// turn without polluting the text stream.
 			out.push( encodeChunk( '8', [ frame ] ) );
 			break;
 		}

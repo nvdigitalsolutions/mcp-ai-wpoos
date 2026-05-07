@@ -81,6 +81,28 @@ Domain data flows through the existing `mcp-ai/v1/*` chat routes.
 
 See [`includes/rest/class-nvoos-chat-spa-rest.php`](includes/rest/class-nvoos-chat-spa-rest.php).
 
+## Admin preview
+
+After activation, `Tools → NV oOS Chat` mounts the SPA against any assistant
+ID for quick smoke-testing without needing to publish a shortcode on a public
+post. The page is `manage_options`-gated and renders the same shortcode used
+on the front-end. See
+[`includes/admin/class-nvoos-chat-spa-admin-page.php`](includes/admin/class-nvoos-chat-spa-admin-page.php).
+
+## What gets rendered per message
+
+`useChat` populates each message with three layers, all rendered by
+[`src/components/MessageView.tsx`](src/components/MessageView.tsx):
+
+1. **Text** (`message.content`) — assembled from `0:` chunks.
+2. **Tool-invocation cards** (`message.toolInvocations`) — collapsible
+   `<details>` cards that show args (state `'call'`) and results (state
+   `'result'`). Driven by the `9:` (tool_call) and `a:` (tool_result)
+   chunks emitted by [`src/sse-adapter.ts`](src/sse-adapter.ts).
+3. **Annotation pills** (`message.annotations`) — small inline pills for
+   `memory_event`, unknown frames, and any other side-channel data that
+   rides on `8:` `message_annotations`.
+
 ## Credits
 
 - **Vercel AI SDK** (`@ai-sdk/react`) — Apache-2.0 — <https://github.com/vercel/ai>
