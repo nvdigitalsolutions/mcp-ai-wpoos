@@ -1,0 +1,26 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "example",
+	"label": "Example Toolkit",
+	"icon": "admin-generic",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "manage_options",
+	"resources": [
+		{
+			"name": "items",
+			"label": "Items",
+			"endpoint": "/example/items",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer", "label": "ID",       "readonly": true },
+				{ "name": "title",      "type": "string",  "label": "Title",    "required": true },
+				{ "name": "status",     "type": "enum",    "label": "Status",   "options": ["draft","published","archived"] },
+				{ "name": "created_at", "type": "datetime","label": "Created",  "readonly": true }
+			]
+		}
+	],
+	"views": [
+		{ "name": "list", "type": "table", "resource": "items", "default": true, "label": "All items" }
+	]
+}

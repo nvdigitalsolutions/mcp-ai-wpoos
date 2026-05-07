@@ -1,0 +1,70 @@
+# NV oOS Toolkit SPA — Accessibility Lint
+#
+# Runs eslint-plugin-jsx-a11y (WCAG 2.1 AA baseline) against all four
+# Toolkit SPA addons on every pull request that touches their source.
+#
+# Failures are blocking: `--max-warnings 0` means even warnings fail the job.
+# Type-checking (tsc --noEmit) is also run so type regressions don't slip
+# through alongside a11y fixes.
+
+name: SPA Accessibility Lint
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'addons/toolkit-shell/src/**'
+      - 'addons/canvas-toolkit/src/**'
+      - 'addons/document-editor/src/**'
+      - 'addons/media-studio/src/**'
+      - 'addons/toolkit-shell/eslint.config.js'
+      - 'addons/canvas-toolkit/eslint.config.js'
+      - 'addons/document-editor/eslint.config.js'
+      - 'addons/media-studio/eslint.config.js'
+  pull_request:
+    paths:
+      - 'addons/toolkit-shell/src/**'
+      - 'addons/canvas-toolkit/src/**'
+      - 'addons/document-editor/src/**'
+      - 'addons/media-studio/src/**'
+      - 'addons/toolkit-shell/eslint.config.js'
+      - 'addons/canvas-toolkit/eslint.config.js'
+      - 'addons/document-editor/eslint.config.js'
+      - 'addons/media-studio/eslint.config.js'
+
+jobs:
+  a11y-lint:
+    name: a11y lint (${{ matrix.addon }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        addon:
+          - toolkit-shell
+          - canvas-toolkit
+          - document-editor
+          - media-studio
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: addons/${{ matrix.addon }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: addons/${{ matrix.addon }}
+        run: npm ci
+
+      - name: Type-check (tsc --noEmit)
+        working-directory: addons/${{ matrix.addon }}
+        run: npm run typecheck
+
+      - name: a11y lint (eslint-plugin-jsx-a11y, zero warnings)
+        working-directory: addons/${{ matrix.addon }}
+        run: npm run lint:a11y

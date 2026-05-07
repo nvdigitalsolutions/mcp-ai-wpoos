@@ -1,0 +1,2 @@
+# Pre-built SPA artifacts go here. Run `npm run build` to generate
+# canvas-toolkit.js and canvas-toolkit.css. Both must be committed.

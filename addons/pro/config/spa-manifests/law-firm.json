@@ -1,0 +1,44 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "law-firm",
+	"label": "Law Firm",
+	"icon": "businessman",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "matters",
+			"label": "Matters",
+			"endpoint": "/law-firm/matters",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",            "type": "integer",  "label": "ID",          "readonly": true },
+				{ "name": "title",         "type": "string",   "label": "Title",       "required": true },
+				{ "name": "client",        "type": "string",   "label": "Client" },
+				{ "name": "practice_area", "type": "enum",     "label": "Practice",    "options": ["litigation","corporate","ip","tax","family","real_estate","other"] },
+				{ "name": "status",        "type": "enum",     "label": "Status",      "options": ["intake","active","on_hold","closed"] },
+				{ "name": "opened_at",     "type": "date",     "label": "Opened" },
+				{ "name": "notes",         "type": "text",     "label": "Notes" }
+			]
+		},
+		{
+			"name": "documents",
+			"label": "Documents",
+			"endpoint": "/law-firm/documents",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",       "readonly": true },
+				{ "name": "matter_id",  "type": "reference","label": "Matter",   "reference": "matters", "required": true },
+				{ "name": "title",      "type": "string",   "label": "Title",    "required": true },
+				{ "name": "kind",       "type": "enum",     "label": "Kind",     "options": ["pleading","contract","memo","exhibit","correspondence","other"] },
+				{ "name": "filed_at",   "type": "date",     "label": "Filed" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "matters_list",   "type": "table",  "resource": "matters",   "default": true, "label": "Matters" },
+		{ "name": "by_status",      "type": "kanban", "resource": "matters",   "group_by": "status", "label": "By status" },
+		{ "name": "documents_list", "type": "table",  "resource": "documents",                  "label": "Documents" }
+	]
+}

@@ -1,0 +1,49 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "crm",
+	"label": "CRM",
+	"icon": "groups",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "contacts",
+			"label": "Contacts",
+			"endpoint": "/crm/contacts",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer", "label": "ID",        "readonly": true },
+				{ "name": "full_name",  "type": "string",  "label": "Name",      "required": true },
+				{ "name": "email",      "type": "email",   "label": "Email" },
+				{ "name": "phone",      "type": "string",  "label": "Phone" },
+				{ "name": "company",    "type": "string",  "label": "Company" },
+				{ "name": "stage",      "type": "enum",    "label": "Stage",     "options": ["lead","qualified","proposal","won","lost"] },
+				{ "name": "owner_id",   "type": "reference","label": "Owner",    "reference": "users" },
+				{ "name": "tags",       "type": "string",  "label": "Tags" },
+				{ "name": "created_at", "type": "datetime","label": "Created",   "readonly": true }
+			]
+		},
+		{
+			"name": "deals",
+			"label": "Deals",
+			"endpoint": "/crm/deals",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",       "readonly": true },
+				{ "name": "title",      "type": "string",   "label": "Title",    "required": true },
+				{ "name": "amount",     "type": "number",   "label": "Amount" },
+				{ "name": "currency",   "type": "string",   "label": "Currency" },
+				{ "name": "stage",      "type": "enum",     "label": "Stage",    "options": ["lead","qualified","proposal","negotiation","won","lost"] },
+				{ "name": "contact_id", "type": "reference","label": "Contact",  "reference": "contacts" },
+				{ "name": "close_date", "type": "date",     "label": "Close date" },
+				{ "name": "notes",      "type": "text",     "label": "Notes" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "contacts_list", "type": "table",  "resource": "contacts", "default": true, "label": "All contacts" },
+		{ "name": "deals_list",    "type": "table",  "resource": "deals",                     "label": "All deals" },
+		{ "name": "pipeline",      "type": "kanban", "resource": "deals",  "group_by": "stage","label": "Pipeline" }
+	]
+}

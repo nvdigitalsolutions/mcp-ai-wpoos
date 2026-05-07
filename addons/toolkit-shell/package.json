@@ -1,0 +1,31 @@
+{
+  "name": "nvoos-toolkit-shell",
+  "version": "0.2.0",
+  "description": "NV oOS Toolkit Shell — manifest-driven React SPA for Pro toolkits",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@axe-core/react": "^4.10.2",
+    "@types/node": "^22.15.17",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "@typescript-eslint/parser": "^8.32.0",
+    "@wordpress/i18n": "^5.12.0",
+    "esbuild": "0.25.4",
+    "eslint": "^9.27.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "typescript": "5.8.3"
+  },
+  "type": "module"
+}

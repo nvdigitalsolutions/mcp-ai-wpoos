@@ -1,0 +1,43 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "financial-planner",
+	"label": "Financial Planner",
+	"icon": "chart-line",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "accounts",
+			"label": "Accounts",
+			"endpoint": "/financial/accounts",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",       "type": "integer", "label": "ID",        "readonly": true },
+				{ "name": "name",     "type": "string",  "label": "Name",      "required": true },
+				{ "name": "type",     "type": "enum",    "label": "Type",      "options": ["checking","savings","credit","investment","loan","cash"] },
+				{ "name": "currency", "type": "string",  "label": "Currency" },
+				{ "name": "balance",  "type": "number",  "label": "Balance" },
+				{ "name": "notes",    "type": "text",    "label": "Notes" }
+			]
+		},
+		{
+			"name": "transactions",
+			"label": "Transactions",
+			"endpoint": "/financial/transactions",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",        "readonly": true },
+				{ "name": "account_id", "type": "reference","label": "Account",   "reference": "accounts", "required": true },
+				{ "name": "date",       "type": "date",     "label": "Date",      "required": true },
+				{ "name": "amount",     "type": "number",   "label": "Amount",    "required": true },
+				{ "name": "category",   "type": "string",   "label": "Category" },
+				{ "name": "memo",       "type": "string",   "label": "Memo" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "accounts_list",     "type": "table", "resource": "accounts",     "default": true, "label": "Accounts" },
+		{ "name": "transactions_list", "type": "table", "resource": "transactions",                  "label": "Transactions" }
+	]
+}
