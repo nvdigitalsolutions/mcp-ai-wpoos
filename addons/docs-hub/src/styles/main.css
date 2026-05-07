@@ -739,6 +739,32 @@
 	text-align: center;
 }
 
+/* Mobile sidebar backdrop (conditionally rendered in JS when sidebar is open) */
+.dh-sidebar-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba( 0, 0, 0, 0.45 );
+	z-index: 149;
+}
+
+/* Hamburger button — hidden on tablet/desktop, visible on mobile */
+.dh-mobile-menu-btn {
+	display: none;
+	background: none;
+	border: 1px solid var(--dh-border-default);
+	border-radius: var(--dh-border-radius);
+	padding: 0.3rem 0.55rem;
+	cursor: pointer;
+	color: var(--dh-text-secondary);
+	font-size: 1.1rem;
+	line-height: 1;
+	flex-shrink: 0;
+	transition: background-color var(--dh-transition-speed);
+}
+.dh-mobile-menu-btn:hover {
+	background-color: var(--dh-bg-secondary);
+}
+
 /* =========================================================
    13. Responsive overrides
    ========================================================= */
@@ -763,8 +789,28 @@
 			"main";
 	}
 
+	.dh-mobile-menu-btn {
+		display: flex;
+		align-items: center;
+	}
+
 	.dh-sidebar-area {
 		display: none;
+	}
+
+	/* Mobile sidebar drawer: slides in from the left as a fixed overlay */
+	.dh-sidebar-area.dh-sidebar-open {
+		display: block;
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 280px;
+		max-height: 100vh;
+		z-index: 150;
+		overflow-y: auto;
+		box-shadow: var(--dh-shadow-md);
+		background: var(--dh-bg-sidebar);
 	}
 
 	.dh-main-area {

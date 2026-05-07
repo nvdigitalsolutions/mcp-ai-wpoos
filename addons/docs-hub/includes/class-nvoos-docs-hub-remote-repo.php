@@ -131,19 +131,36 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		// Step 2: fetch the Git tree.
-		$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
-		if ( is_wp_error( $tree ) ) {
-			return $tree;
+		// When a path prefix is configured, fetch only the subtree rooted at that
+		// path to avoid GitHub's tree-truncation limit on large monorepos.
+		if ( '' !== $path ) {
+			$subtree_sha = $this->resolve_subtree_sha( $owner, $repo, $resolved_ref, $token, $path );
+			if ( is_wp_error( $subtree_sha ) ) {
+				return $subtree_sha;
+			}
+			if ( null === $subtree_sha ) {
+				// The configured path prefix directory does not exist in this ref.
+				return array();
+			}
+			$tree = $this->fetch_tree( $owner, $repo, $subtree_sha, $token );
+			if ( is_wp_error( $tree ) ) {
+				return $tree;
+			}
+			// Tree items are already scoped to $path; no additional prefix filtering.
+			$md_files = $this->filter_md_files( $tree, '' );
+		} else {
+			$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
+			if ( is_wp_error( $tree ) ) {
+				return $tree;
+			}
+			$md_files = $this->filter_md_files( $tree, '' );
 		}
-
-		// Step 3: filter to .md files, optionally restricted to $path prefix.
-		$md_files = $this->filter_md_files( $tree, $path );
 
 		if ( empty( $md_files ) ) {
 			return array(); // No markdown files — not an error.
 		}
 
-		// Step 4: fetch (or load from local cache) each file's content.
+		// Step 3: fetch (or load from local cache) each file's content.
 		$entries = array();
 		$count   = 0;
 		$max     = (int) apply_filters( 'nvoos_docs_hub_remote_max_files', self::MAX_FILES_PER_REPO, $owner, $repo );
@@ -153,6 +170,8 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				break;
 			}
 
+			// $file_path is relative to the fetched tree's root (i.e. relative to $path when set,
+			// or relative to the repo root when no path prefix was configured).
 			$file_path = $file_info['path'];
 			$file_size = isset( $file_info['size'] ) ? (int) $file_info['size'] : 0;
 
@@ -161,15 +180,19 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				continue;
 			}
 
-			$cache_key     = $this->local_cache_key( $owner, $repo, $resolved_ref, $file_path );
+			// Full repo-relative path (needed for raw URL, cache key, and remote_url).
+			$full_repo_path = '' !== $path ? $path . '/' . $file_path : $file_path;
+
+			$cache_key     = $this->local_cache_key( $owner, $repo, $resolved_ref, $full_repo_path );
 			$local_content = $force ? false : $this->get_cached_content( $cache_key );
 
 			if ( false === $local_content ) {
+				// $full_repo_path segments come from the GitHub tree API and are already URL-safe.
 				$raw_url = 'https://raw.githubusercontent.com/'
 					. rawurlencode( $owner ) . '/'
 					. rawurlencode( $repo ) . '/'
 					. rawurlencode( $resolved_ref ) . '/'
-					. $file_path; // path segments already URL-encoded by the API.
+					. $full_repo_path;
 
 				$headers = array();
 				if ( '' !== $token ) {
@@ -186,23 +209,17 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				$local_content = $content;
 			}
 
-			// Derive relative path (strip the leading path prefix if set).
-			$relative = $file_path;
-			if ( '' !== $path && 0 === strpos( $relative, $path . '/' ) ) {
-				$relative = substr( $relative, strlen( $path ) + 1 );
-			}
-
 			$entries[] = array(
 				'path'          => $this->local_cache_path( $cache_key ),
 				'source'        => 'remote',
 				'plugin_name'   => $label,
-				'relative_path' => $relative,
+				'relative_path' => $file_path, // already relative to $path (prefix already stripped)
 				'content'       => $local_content,
 				'remote_url'    => 'https://github.com/'
 					. rawurlencode( $owner ) . '/'
 					. rawurlencode( $repo ) . '/blob/'
 					. rawurlencode( $resolved_ref ) . '/'
-					. $file_path,
+					. $full_repo_path,
 				'repo_owner'    => $owner,
 				'repo_name'     => $repo,
 				'repo_ref'      => $resolved_ref,
@@ -277,17 +294,22 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param string $owner GitHub owner.
-	 * @param string $repo  GitHub repo name.
-	 * @param string $ref   Commit SHA or ref.
-	 * @param string $token Optional bearer token.
+	 * @param string $owner     GitHub owner.
+	 * @param string $repo      GitHub repo name.
+	 * @param string $ref       Commit SHA or ref.
+	 * @param string $token     Optional bearer token.
+	 * @param bool   $recursive Whether to fetch the tree recursively (default true).
 	 * @return array|WP_Error Array of tree items on success.
 	 */
-	private function fetch_tree( $owner, $repo, $ref, $token ) {
+	private function fetch_tree( $owner, $repo, $ref, $token, $recursive = true ) {
 		$url = 'https://api.github.com/repos/'
 			. rawurlencode( $owner ) . '/'
 			. rawurlencode( $repo ) . '/git/trees/'
-			. rawurlencode( $ref ) . '?recursive=1';
+			. rawurlencode( $ref );
+
+		if ( $recursive ) {
+			$url .= '?recursive=1';
+		}
 
 		$headers = array(
 			'Accept' => 'application/vnd.github+json',
@@ -318,6 +340,52 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		return isset( $decoded['tree'] ) && is_array( $decoded['tree'] ) ? $decoded['tree'] : array();
+	}
+
+	/**
+	 * Resolve the SHA of a subtree at a given path within the repository.
+	 *
+	 * Traverses the path segment by segment, fetching only the top-level of
+	 * each tree to avoid the GitHub API's recursive-tree truncation limit that
+	 * affects large monorepos. Returns null (not an error) when the path does
+	 * not exist in the tree.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $owner GitHub owner.
+	 * @param string $repo  GitHub repo name.
+	 * @param string $ref   Resolved commit SHA or ref.
+	 * @param string $token Optional bearer token.
+	 * @param string $path  Slash-separated path (e.g. "docs" or "addons/pro/docs").
+	 * @return string|null|WP_Error Subtree SHA on success, null if path not found, WP_Error on API failure.
+	 */
+	private function resolve_subtree_sha( $owner, $repo, $ref, $token, $path ) {
+		$parts       = explode( '/', trim( $path, '/' ) );
+		$current_sha = $ref;
+
+		foreach ( $parts as $part ) {
+			// Fetch the current level non-recursively.
+			$tree = $this->fetch_tree( $owner, $repo, $current_sha, $token, false );
+			if ( is_wp_error( $tree ) ) {
+				return $tree;
+			}
+
+			$found_sha = null;
+			foreach ( $tree as $item ) {
+				if ( 'tree' === ( $item['type'] ?? '' ) && $part === ( $item['path'] ?? '' ) ) {
+					$found_sha = $item['sha'];
+					break;
+				}
+			}
+
+			if ( null === $found_sha ) {
+				return null; // This path segment does not exist.
+			}
+
+			$current_sha = $found_sha;
+		}
+
+		return $current_sha;
 	}
 
 	/**

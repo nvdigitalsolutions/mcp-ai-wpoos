@@ -13,9 +13,10 @@ import type { Manifest } from '../api/manifest-client';
 
 interface SidebarProps {
 	manifest: Manifest;
+	onNavClose?: () => void;
 }
 
-export default function Sidebar( { manifest }: SidebarProps ) {
+export default function Sidebar( { manifest, onNavClose }: SidebarProps ) {
 	const params = useParams<{ '*': string }>();
 	const currentSlug = params[ '*' ] ?? '';
 
@@ -61,6 +62,7 @@ export default function Sidebar( { manifest }: SidebarProps ) {
 												to={ `/${ page.slug }` }
 												className={ `dh-sidebar-link ${ indentClass }${ isActive ? ' dh-active' : '' }` }
 												aria-current={ isActive ? 'page' : undefined }
+												onClick={ onNavClose }
 											>
 												{ page.title }
 											</Link>
