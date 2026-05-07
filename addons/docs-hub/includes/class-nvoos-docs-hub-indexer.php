@@ -113,6 +113,12 @@ class NV_oOS_Docs_Hub_Indexer {
 				'relative_path' => $entry['relative_path'],
 			);
 
+			// For remote entries, carry the GitHub blob URL through so the
+			// SPA can rewrite relative links to point at GitHub.
+			if ( 'remote' === $entry['source'] && ! empty( $entry['remote_url'] ) ) {
+				$this->slug_map[ $slug ]['remote_url'] = (string) $entry['remote_url'];
+			}
+
 			$indexed[] = array_merge( $entry, array(
 				'slug'  => $slug,
 				'title' => $title,
@@ -204,6 +210,12 @@ class NV_oOS_Docs_Hub_Indexer {
 			'languages'     => $languages,
 		);
 
+		// Include the GitHub blob URL for remote-sourced pages so the SPA
+		// can resolve relative links to absolute GitHub URLs.
+		if ( ! empty( $data['remote_url'] ) ) {
+			$payload['remote_url'] = (string) $data['remote_url'];
+		}
+
 		/**
 		 * Filter a page payload before it is returned or cached.
 		 *
@@ -290,6 +302,37 @@ class NV_oOS_Docs_Hub_Indexer {
 	}
 
 	/**
+	 * Strip inline Markdown syntax from a heading or title string.
+	 *
+	 * Removes bold/italic markers, inline links, and inline code spans so that
+	 * titles stored in the manifest and sidebar are plain readable text.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $text Raw heading text that may contain Markdown.
+	 * @return string Plain text.
+	 */
+	private function strip_inline_markdown( $text ) {
+		// Links and images: [text](url) → text  |  ![alt](url) → alt
+		$text = preg_replace( '/!?\[([^\]]*)\]\([^)]*\)/', '$1', $text );
+		// Reference-style links: [text][ref] → text
+		$text = preg_replace( '/\[([^\]]*)\]\[[^\]]*\]/', '$1', $text );
+		// Bold+italic: ***text*** / ___text___ → text
+		$text = preg_replace( '/\*{3}(.+?)\*{3}/s', '$1', $text );
+		$text = preg_replace( '/_{3}(.+?)_{3}/s', '$1', $text );
+		// Bold: **text** / __text__ → text
+		$text = preg_replace( '/\*{2}(.+?)\*{2}/s', '$1', $text );
+		$text = preg_replace( '/_{2}(.+?)_{2}/s', '$1', $text );
+		// Italic: *text* / _text_ → text (avoid mangling snake_case by requiring spaces)
+		$text = preg_replace( '/(?<!\w)\*([^*\n]+?)\*(?!\w)/', '$1', $text );
+		// Inline code: `text` → text
+		$text = preg_replace( '/`([^`]+)`/', '$1', $text );
+		// Strip any remaining raw HTML tags.
+		$text = wp_strip_all_tags( $text );
+		return trim( $text );
+	}
+
+	/**
 	 * Extract the page title from frontmatter, first H1, or filename.
 	 *
 	 * @since 1.0.0
@@ -304,9 +347,9 @@ class NV_oOS_Docs_Hub_Indexer {
 			return sanitize_text_field( $frontmatter['title'] );
 		}
 
-		// First H1 heading.
+		// First H1 heading — strip inline Markdown before returning.
 		if ( preg_match( '/^#\s+(.+)$/m', $content, $m ) ) {
-			return sanitize_text_field( trim( $m[1] ) );
+			return sanitize_text_field( $this->strip_inline_markdown( trim( $m[1] ) ) );
 		}
 
 		// Filename without extension, title-cased.
@@ -332,8 +375,11 @@ class NV_oOS_Docs_Hub_Indexer {
 
 		foreach ( $matches as $match ) {
 			$level  = strlen( $match[1] );
-			$text   = trim( $match[2] );
-			$anchor = $this->slugify_heading( $text );
+			$raw    = trim( $match[2] );
+			// Keep the anchor based on the raw text (rehype-slug does the same),
+			// but strip inline Markdown from the display text.
+			$anchor = $this->slugify_heading( $raw );
+			$text   = $this->strip_inline_markdown( $raw );
 			$toc[]  = array(
 				'level'  => $level,
 				'text'   => $text,

@@ -63,6 +63,7 @@ export interface DocPage {
 	tags: string[];
 	description: string;
 	last_modified: number;
+	remote_url?: string;
 }
 
 export interface SearchResult {

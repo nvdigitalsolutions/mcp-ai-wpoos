@@ -287,6 +287,26 @@
 .dh-content h5,
 .dh-content h6 { font-size: 1rem; }
 
+/* Heading anchor links — hidden until the heading is hovered */
+.dh-content .dh-heading-anchor {
+	display: inline-block;
+	margin-right: 0.35em;
+	color: var(--dh-text-muted);
+	text-decoration: none;
+	opacity: 0;
+	font-weight: 400;
+	font-size: 0.9em;
+	transition: opacity var(--dh-transition-speed);
+}
+.nvoos-docs-hub-root .dh-content h1:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h2:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h3:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h4:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h5:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h6:hover .dh-heading-anchor {
+	opacity: 1;
+}
+
 .dh-content p { margin-bottom: 1em; }
 
 .dh-content a {

@@ -528,16 +528,24 @@ class NV_oOS_Docs_Hub_REST {
 		}
 
 		$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
-		$result  = $fetcher->fetch_tree_for_admin(
-			array(
-				'owner' => $owner,
-				'repo'  => $repo,
-				'ref'   => '' !== $ref ? $ref : 'HEAD',
-				'path'  => $path,
-				'token' => $token,
-				'force' => $force,
-			)
-		);
+		try {
+			$result = $fetcher->fetch_tree_for_admin(
+				array(
+					'owner' => $owner,
+					'repo'  => $repo,
+					'ref'   => '' !== $ref ? $ref : 'HEAD',
+					'path'  => $path,
+					'token' => $token,
+					'force' => $force,
+				)
+			);
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'nvoos_docs_hub_fetch_error',
+				$e->getMessage(),
+				array( 'status' => 500 )
+			);
+		}
 
 		if ( is_wp_error( $result ) ) {
 			$result->add_data( array( 'status' => 502 ) );

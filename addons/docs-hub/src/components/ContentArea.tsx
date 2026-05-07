@@ -29,6 +29,34 @@ import type { Element } from 'hast';
 
 interface ContentAreaProps {
 	content: string;
+	remoteUrl?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a link href against a remote GitHub blob URL so that relative
+ * links in remote-repo pages point to GitHub instead of the current site.
+ *
+ * Pure-anchor links (#section) are returned unchanged so in-page scroll
+ * still works. Absolute URLs are also returned unchanged.
+ */
+function resolveRemoteHref( href: string, remoteUrl: string ): string {
+	// Pure anchor — keep for in-page scroll.
+	if ( href.startsWith( '#' ) ) {
+		return href;
+	}
+	// Already absolute — keep as-is.
+	if ( /^[a-z][a-z0-9+\-.]*:/i.test( href ) ) {
+		return href;
+	}
+	try {
+		return new URL( href, remoteUrl ).href;
+	} catch {
+		return href;
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -111,7 +139,23 @@ function remarkDirectiveCallouts() {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function ContentArea( { content }: ContentAreaProps ) {
+export default function ContentArea( { content, remoteUrl }: ContentAreaProps ) {
+	const extraComponents: Components = {};
+
+	if ( remoteUrl ) {
+		const capturedUrl = remoteUrl;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		extraComponents.a = function ( props: any ) {
+			const { href, children, ...rest } = props;
+			const resolvedHref = href ? resolveRemoteHref( String( href ), capturedUrl ) : undefined;
+			return (
+				<a href={ resolvedHref } { ...rest }>
+					{ children }
+				</a>
+			);
+		};
+	}
+
 	return (
 		<article className="dh-content">
 			<ReactMarkdown
@@ -132,7 +176,7 @@ export default function ContentArea( { content }: ContentAreaProps ) {
 						},
 					],
 				] }
-				components={ components }
+				components={ { ...components, ...extraComponents } }
 			>
 				{ content }
 			</ReactMarkdown>
