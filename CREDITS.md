@@ -355,6 +355,31 @@ Tiptap document editor with toolbar + REST `/nvoos-document-editor/v1/documents`
 CRUD backed by the `nvoos_document` CPT). The `site-creator` mode (Tiptap + GrapesJS)
 ships as a follow-up PR.
 
+### `addons/media-studio/` — Tier D media production SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.2.6 | MIT | <https://github.com/facebook/react> |
+| `konva` | 10.3.0 | MIT | <https://github.com/konvajs/konva> |
+| `react-konva` | 19.2.3 | MIT | <https://github.com/konvajs/react-konva> |
+| `react-image-crop` | 11.0.10 | ISC | <https://github.com/DominicTobias/react-image-crop> |
+| `react-player` | 3.4.0 | MIT | <https://github.com/cookpete/react-player> |
+| `wavesurfer.js` | 7.12.6 | BSD-3-Clause | <https://github.com/wavesurfer-js/wavesurfer.js> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/media-studio/THIRD_PARTY_NOTICES.md`](addons/media-studio/THIRD_PARTY_NOTICES.md).
+
+The media-studio addon is the Phase 4 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier D — specialist
+surface serving the `image-production` and `media` toolkits. Ships three modes:
+`image-editor` (react-konva canvas + react-image-crop overlay), `media-player`
+(react-player universal player), and `audio-waveform` (wavesurfer.js). Bundle is
+~826 KB gzip — expected for Tier D specialist, kept isolated by the separate-addon
+guardrail. Future `drawing` mode (tldraw, large bundle) deferred to follow-up PR.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**
