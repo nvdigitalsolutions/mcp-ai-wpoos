@@ -11,7 +11,7 @@
  * @since 1.0.0
  */
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { fetchManifest } from './api/manifest-client';
 import { indexManifest } from './search/flexsearch-adapter';
@@ -88,7 +88,7 @@ export default function App() {
 		setTheme( ( t ) => ( t === 'dark' ? 'light' : 'dark' ) );
 	}
 
-	const closeMobileSidebar = useCallback( () => setMobileSidebarOpen( false ), [] );
+	const closeMobileSidebar = () => setMobileSidebarOpen( false );
 
 	const rootAttrs: React.HTMLAttributes<HTMLDivElement> = {
 		className: 'nvoos-docs-hub-root',
@@ -149,8 +149,11 @@ export default function App() {
 					{ mobileSidebarOpen && (
 						<div
 							className="dh-sidebar-overlay"
+							role="button"
+							tabIndex={ 0 }
+							aria-label="Close navigation"
 							onClick={ closeMobileSidebar }
-							aria-hidden="true"
+							onKeyDown={ ( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) closeMobileSidebar(); } }
 						/>
 					) }
 

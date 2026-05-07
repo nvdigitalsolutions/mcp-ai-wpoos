@@ -360,7 +360,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * @return string|null|WP_Error Subtree SHA on success, null if path not found, WP_Error on API failure.
 	 */
 	private function resolve_subtree_sha( $owner, $repo, $ref, $token, $path ) {
-		$parts       = explode( '/', trim( $path, '/' ) );
+		$parts = explode( '/', trim( $path, '/' ) );
 		$current_sha = $ref;
 
 		foreach ( $parts as $part ) {
