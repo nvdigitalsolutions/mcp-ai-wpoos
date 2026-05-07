@@ -126,6 +126,30 @@ function resolveRemoteHref( href: string, remoteUrl: string ): string {
 }
 
 // ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Scroll to the element with the given id without changing window.location.hash.
+ * Used for in-page section anchors so they don't corrupt the HashRouter state.
+ */
+function scrollToAnchor( e: React.MouseEvent<HTMLAnchorElement>, id: string ) {
+	e.preventDefault();
+	const target = document.getElementById( id );
+	if ( target ) {
+		target.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+	}
+}
+
+/**
+ * Return true for pure in-page section anchors (`#something`) that must NOT
+ * navigate the HashRouter.  SPA hash routes (`#/slug`) are excluded.
+ */
+function isInPageAnchor( href: string ): boolean {
+	return href.startsWith( '#' ) && ! href.startsWith( '#/' );
+}
+
+// ---------------------------------------------------------------------------
 // Custom component map
 // ---------------------------------------------------------------------------
 
@@ -178,6 +202,30 @@ const components: Components = {
 
 		return <div className={ className }>{ children }</div>;
 	},
+
+	// Anchors: intercept pure `#section` hrefs so they don't corrupt the
+	// HashRouter by changing the hash to a path-less fragment.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	a( props: any ) {
+		const { href, children, ...rest } = props;
+		const hrefStr = href ? String( href ) : '';
+
+		if ( hrefStr && isInPageAnchor( hrefStr ) ) {
+			return (
+				<a
+					href={ hrefStr }
+					{ ...rest }
+					onClick={ ( e: React.MouseEvent<HTMLAnchorElement> ) =>
+						scrollToAnchor( e, hrefStr.slice( 1 ) )
+					}
+				>
+					{ children }
+				</a>
+			);
+		}
+
+		return <a href={ hrefStr || undefined } { ...rest }>{ children }</a>;
+	},
 };
 
 // ---------------------------------------------------------------------------
@@ -213,18 +261,32 @@ export default function ContentArea( { content, remoteUrl }: ContentAreaProps ) 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		extraComponents.a = function RemoteAnchor( props: any ) {
 			const { href, children, ...rest } = props;
-			const resolvedHref = href ? resolveRemoteHref( String( href ), capturedUrl ) : undefined;
+			const resolvedHref = href ? resolveRemoteHref( String( href ), capturedUrl ) : '';
 
-			// Links that didn't resolve to a SPA hash route are external —
-			// open them in a new tab so the user stays in the docs hub.
-			const isExternal = resolvedHref && ! resolvedHref.startsWith( '#' );
+			// Pure in-page section anchor → smooth-scroll, don't change the hash.
+			if ( resolvedHref && isInPageAnchor( resolvedHref ) ) {
+				return (
+					<a
+						href={ resolvedHref }
+						{ ...rest }
+						onClick={ ( e: React.MouseEvent<HTMLAnchorElement> ) =>
+							scrollToAnchor( e, resolvedHref.slice( 1 ) )
+						}
+					>
+						{ children }
+					</a>
+				);
+			}
 
+			// SPA hash route (e.g. #/slug from a same-repo .md link) → navigate
+			// normally; HashRouter will pick it up.
+			if ( resolvedHref && resolvedHref.startsWith( '#' ) ) {
+				return <a href={ resolvedHref } { ...rest }>{ children }</a>;
+			}
+
+			// External absolute URL → open in a new tab.
 			return (
-				<a
-					href={ resolvedHref }
-					{ ...rest }
-					{ ...( isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {} ) }
-				>
+				<a href={ resolvedHref || undefined } { ...rest } target="_blank" rel="noopener noreferrer">
 					{ children }
 				</a>
 			);
