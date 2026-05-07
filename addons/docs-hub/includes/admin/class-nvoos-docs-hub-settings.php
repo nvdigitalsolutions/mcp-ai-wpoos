@@ -82,7 +82,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_checkbox' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'enabled', 'description' => __( 'Enable the Docs Hub documentation browser.', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'enabled',
+				'description' => __( 'Enable the Docs Hub documentation browser.', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -107,7 +110,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_checkbox' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'search_enabled', 'description' => __( 'Show the search box in the documentation browser.', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'search_enabled',
+				'description' => __( 'Show the search box in the documentation browser.', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -116,7 +122,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_checkbox' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'sidebar_enabled', 'description' => __( 'Show the navigation sidebar.', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'sidebar_enabled',
+				'description' => __( 'Show the navigation sidebar.', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -137,7 +146,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_text' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'default_home', 'description' => __( 'Slug of the page shown by default (e.g. "readme").', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'default_home',
+				'description' => __( 'Slug of the page shown by default (e.g. "readme").', 'nvoos-docs-hub' ),
+			)
 		);
 
 		add_settings_field(
@@ -146,7 +158,10 @@ class NV_oOS_Docs_Hub_Settings {
 			array( __CLASS__, 'render_text' ),
 			'nvoos-docs-hub',
 			'nvoos_docs_hub_general',
-			array( 'id' => 'github_repo_url', 'description' => __( 'Base URL for "Edit on GitHub" links (e.g. https://github.com/org/repo/blob/main).', 'nvoos-docs-hub' ) )
+			array(
+				'id'          => 'github_repo_url',
+				'description' => __( 'Base URL for "Edit on GitHub" links (e.g. https://github.com/org/repo/blob/main).', 'nvoos-docs-hub' ),
+			)
 		);
 
 		// Sources section.
@@ -194,6 +209,93 @@ class NV_oOS_Docs_Hub_Settings {
 			'nvoos_docs_hub_remote',
 			array()
 		);
+	}
+
+	/**
+	 * Render a first-run notice when the settings option has never been
+	 * saved (i.e. nothing has been configured yet).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return void
+	 */
+	public static function maybe_render_first_run_notice() {
+		if ( false !== get_option( NV_oOS_Docs_Hub_Plugin::OPTION_KEY, false ) ) {
+			return;
+		}
+		?>
+		<div class="notice notice-info" style="margin-top:12px;">
+			<p>
+				<strong><?php esc_html_e( 'Welcome to NV oOS Docs Hub.', 'nvoos-docs-hub' ); ?></strong>
+				<?php
+				esc_html_e(
+					'Configure a remote GitHub repository below to start indexing documentation. Local filesystem sources are off by default — most installs should leave them off.',
+					'nvoos-docs-hub'
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render a one-time, dismissible notice for installs that have all the
+	 * legacy local sources enabled and zero remote repos configured —
+	 * pointing them to the new tree picker.
+	 *
+	 * Dismissal is stored per-user in user meta.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return void
+	 */
+	public static function maybe_render_legacy_only_notice() {
+		$user_id = get_current_user_id();
+		if ( $user_id && get_user_meta( $user_id, 'nvoos_docs_hub_legacy_notice_dismissed', true ) ) {
+			return;
+		}
+
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$sources  = isset( $settings['sources'] ) ? (array) $settings['sources'] : array();
+		$repos    = isset( $settings['remote_repos'] ) ? (array) $settings['remote_repos'] : array();
+
+		$has_all_legacy = in_array( 'base', $sources, true )
+			&& in_array( 'addons', $sources, true )
+			&& in_array( 'root', $sources, true );
+
+		if ( ! $has_all_legacy || ! empty( $repos ) ) {
+			return;
+		}
+
+		// Handle dismiss action.
+		if ( ! empty( $_GET['nvoos_dh_dismiss_legacy'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- non-state-changing dismissal.
+			&& isset( $_GET['_wpnonce'] )
+			&& wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'nvoos_dh_dismiss_legacy' )
+		) {
+			update_user_meta( $user_id, 'nvoos_docs_hub_legacy_notice_dismissed', 1 );
+			return;
+		}
+
+		$dismiss_url = wp_nonce_url(
+			add_query_arg( 'nvoos_dh_dismiss_legacy', '1' ),
+			'nvoos_dh_dismiss_legacy'
+		);
+		?>
+		<div class="notice notice-warning" style="margin-top:12px;">
+			<p>
+				<strong><?php esc_html_e( 'Heads up:', 'nvoos-docs-hub' ); ?></strong>
+				<?php
+				esc_html_e(
+					'You are indexing only local filesystem sources. Most installations should pull docs from a remote GitHub repository instead — use the "Remote Repositories" section below and the new "Browse files" picker to choose exactly what to index.',
+					'nvoos-docs-hub'
+				);
+				?>
+				<a href="<?php echo esc_url( $dismiss_url ); ?>" style="margin-left:8px;">
+					<?php esc_html_e( 'Dismiss', 'nvoos-docs-hub' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
@@ -255,20 +357,20 @@ class NV_oOS_Docs_Hub_Settings {
 	public static function sanitize_settings( $input ) {
 		$sanitized = array();
 
-		$sanitized['enabled']         = ! empty( $input['enabled'] );
-		$sanitized['search_enabled']  = ! empty( $input['search_enabled'] );
-		$sanitized['sidebar_enabled'] = ! empty( $input['sidebar_enabled'] );
-		$sanitized['context_enabled'] = ! empty( $input['context_enabled'] );
+		$sanitized['enabled']               = ! empty( $input['enabled'] );
+		$sanitized['search_enabled']        = ! empty( $input['search_enabled'] );
+		$sanitized['sidebar_enabled']       = ! empty( $input['sidebar_enabled'] );
+		$sanitized['context_enabled']       = ! empty( $input['context_enabled'] );
 		$sanitized['include_addon_readmes'] = ! empty( $input['include_addon_readmes'] );
-		$sanitized['default_home']    = sanitize_text_field( $input['default_home'] ?? 'readme' );
-		$sanitized['github_repo_url'] = esc_url_raw( $input['github_repo_url'] ?? '' );
+		$sanitized['default_home']          = sanitize_text_field( $input['default_home'] ?? 'readme' );
+		$sanitized['github_repo_url']       = esc_url_raw( $input['github_repo_url'] ?? '' );
 
 		$allowed_themes             = array( 'auto', 'light', 'dark' );
 		$raw_theme                  = sanitize_text_field( $input['default_theme'] ?? 'auto' );
 		$sanitized['default_theme'] = in_array( $raw_theme, $allowed_themes, true ) ? $raw_theme : 'auto';
 
-		$allowed_sources   = array( 'base', 'addons', 'root', 'context', 'remote' );
-		$raw_sources       = isset( $input['sources'] ) && is_array( $input['sources'] ) ? $input['sources'] : array();
+		$allowed_sources      = array( 'base', 'addons', 'root', 'context', 'remote' );
+		$raw_sources          = isset( $input['sources'] ) && is_array( $input['sources'] ) ? $input['sources'] : array();
 		$sanitized['sources'] = array_values(
 			array_filter(
 				$raw_sources,
@@ -284,9 +386,9 @@ class NV_oOS_Docs_Hub_Settings {
 		$existing_repos    = isset( $existing_settings['remote_repos'] ) ? (array) $existing_settings['remote_repos'] : array();
 
 		$sanitized['remote_repos'] = array();
-		$raw_repos = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
+		$raw_repos                 = isset( $input['remote_repos'] ) && is_array( $input['remote_repos'] ) ? $input['remote_repos'] : array();
 		foreach ( $raw_repos as $i => $repo ) {
-			$owner = sanitize_text_field( $repo['owner'] ?? '' );
+			$owner     = sanitize_text_field( $repo['owner'] ?? '' );
 			$repo_name = sanitize_text_field( $repo['repo'] ?? '' );
 			if ( '' === $owner || '' === $repo_name ) {
 				continue;
@@ -300,17 +402,73 @@ class NV_oOS_Docs_Hub_Settings {
 			if ( '' === $new_token && isset( $existing_repos[ $i ]['token'] ) ) {
 				$new_token = $existing_repos[ $i ]['token'];
 			}
+
+			// Selection mode: 'all' (default) | 'prefix' | 'selected'.
+			$raw_mode       = sanitize_text_field( $repo['selection_mode'] ?? 'all' );
+			$selection_mode = in_array( $raw_mode, array( 'all', 'prefix', 'selected' ), true ) ? $raw_mode : 'all';
+
+			// Selected / excluded paths arrays. Both follow the same path safety rules:
+			// - Allowed chars: letters, digits, underscore, dot, slash, hyphen.
+			// - No '..' segments, no leading slash.
+			// - Trailing '/' = directory (recursive include/exclude).
+			$selected_paths = self::sanitize_path_list( $repo['selected_paths'] ?? array() );
+			$excluded_paths = self::sanitize_path_list( $repo['excluded_paths'] ?? array() );
+
 			$sanitized['remote_repos'][] = array(
-				'owner' => $owner,
-				'repo'  => $repo_name,
-				'ref'   => sanitize_text_field( $repo['ref'] ?? 'HEAD' ),
-				'label' => sanitize_text_field( $repo['label'] ?? $owner . '/' . $repo_name ),
-				'path'  => sanitize_text_field( $repo['path'] ?? '' ),
-				'token' => $new_token,
+				'owner'          => $owner,
+				'repo'           => $repo_name,
+				'ref'            => sanitize_text_field( $repo['ref'] ?? 'HEAD' ),
+				'label'          => sanitize_text_field( $repo['label'] ?? $owner . '/' . $repo_name ),
+				'path'           => sanitize_text_field( $repo['path'] ?? '' ),
+				'token'          => $new_token,
+				'selection_mode' => $selection_mode,
+				'selected_paths' => $selected_paths,
+				'excluded_paths' => $excluded_paths,
 			);
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Sanitize a list of repo-relative paths (newline string or array).
+	 *
+	 * Allowed chars: A-Z a-z 0-9 _ . / -. Rejects entries containing '..'
+	 * or leading '/'. Trailing '/' is preserved (signals "directory").
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param mixed $raw Raw input (textarea string or array).
+	 * @return string[] Sanitized paths.
+	 */
+	public static function sanitize_path_list( $raw ) {
+		if ( is_string( $raw ) ) {
+			$raw = preg_split( '/\r\n|\r|\n/', $raw );
+		}
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $raw as $line ) {
+			$line = trim( (string) $line );
+			if ( '' === $line ) {
+				continue;
+			}
+			// No leading slash.
+			if ( '/' === $line[0] ) {
+				continue;
+			}
+			// Reject '..' as a path segment (e.g. '..', 'a/..', '../b', 'a/../b'),
+			// but allow filenames that merely contain consecutive dots ('..hidden.md').
+			if ( preg_match( '#(^|/)\.\.(/|$)#', $line ) ) {
+				continue;
+			}
+			if ( ! preg_match( '#^[A-Za-z0-9_./\-]+/?$#', $line ) ) {
+				continue;
+			}
+			$out[] = $line;
+		}
+		return array_values( array_unique( $out ) );
 	}
 
 	/**
@@ -325,13 +483,16 @@ class NV_oOS_Docs_Hub_Settings {
 			return;
 		}
 
-		$cache     = new NV_oOS_Docs_Hub_Cache();
-		$last_built = $cache->get_last_built();
-		$manifest   = $cache->get_manifest();
-		$total_pages  = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
-		$broken_links = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
+		self::maybe_render_first_run_notice();
+		self::maybe_render_legacy_only_notice();
+
+		$cache         = new NV_oOS_Docs_Hub_Cache();
+		$last_built    = $cache->get_last_built();
+		$manifest      = $cache->get_manifest();
+		$total_pages   = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
+		$broken_links  = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
 		$rebuild_state = NV_oOS_Docs_Hub_Rebuild_State::to_summary();
-		$rest_base     = esc_url_raw( rest_url( 'nvoos-docs-hub/v1' ) );
+		$rest_base     = esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE ) );
 		$rest_nonce    = wp_create_nonce( 'wp_rest' );
 		?>
 		<div class="wrap">
@@ -365,13 +526,15 @@ class NV_oOS_Docs_Hub_Settings {
 						—
 						<span class="nvoos-rebuild-progress">
 							<?php
-							echo esc_html( sprintf(
+							echo esc_html(
+								sprintf(
 								/* translators: 1: processed, 2: total, 3: percentage */
-								__( '%1$d / %2$d (%3$d%%)', 'nvoos-docs-hub' ),
-								(int) $rebuild_state['processed'],
-								(int) $rebuild_state['total'],
-								(int) $rebuild_state['percentage']
-							) );
+									__( '%1$d / %2$d (%3$d%%)', 'nvoos-docs-hub' ),
+									(int) $rebuild_state['processed'],
+									(int) $rebuild_state['total'],
+									(int) $rebuild_state['percentage']
+								)
+							);
 							?>
 						</span>
 					</p>
@@ -576,27 +739,63 @@ class NV_oOS_Docs_Hub_Settings {
 	 */
 	public static function render_sources_checkboxes() {
 		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$enabled  = isset( $settings['sources'] ) ? (array) $settings['sources'] : array( 'base', 'addons', 'root' );
+		$enabled  = isset( $settings['sources'] ) ? (array) $settings['sources'] : array( 'remote' );
 
-		$sources = array(
-			'base'    => __( 'Base Plugin (<code>mcp-ai-wpoos/docs/</code>)', 'nvoos-docs-hub' ),
-			'addons'  => __( 'Addons (<code>addons/*/docs/</code> and <code>README.md</code>)', 'nvoos-docs-hub' ),
-			'root'    => __( 'Repository root files (<code>README.md</code>, <code>CHANGELOG.md</code>, etc.) — only when WP_DEBUG is on', 'nvoos-docs-hub' ),
-			'context' => __( 'Context files (<code>.context/*.md</code>) — only visible to manage_options users', 'nvoos-docs-hub' ),
-			'remote'  => __( 'Remote GitHub repositories (configured in the section below)', 'nvoos-docs-hub' ),
+		// Primary (recommended) source.
+		$primary = array(
+			'remote' => __( 'Remote GitHub repositories <em>(recommended — configure below)</em>', 'nvoos-docs-hub' ),
 		);
 
-		foreach ( $sources as $key => $label ) :
+		// Legacy local-filesystem sources. Functional, but most users
+		// should leave these off — see the "Advanced" notice below.
+		$legacy = array(
+			'base'    => __( 'Base Plugin (<code>mcp-ai-wpoos/docs/</code>)', 'nvoos-docs-hub' ),
+			'addons'  => __( 'Addons (<code>addons/*/docs/</code> and <code>README.md</code>)', 'nvoos-docs-hub' ),
+			'root'    => __( 'Repository root files (<code>README.md</code>, <code>CHANGELOG.md</code>, etc.)', 'nvoos-docs-hub' ),
+			'context' => __( 'Context files (<code>.context/*.md</code>) — only visible to manage_options users', 'nvoos-docs-hub' ),
+		);
+
+		$kses_allowed = array(
+			'code' => array(),
+			'em'   => array(),
+		);
+
+		foreach ( $primary as $key => $label ) :
 			?>
 			<label style="display: block; margin-bottom: 6px;">
 				<input type="checkbox"
 					name="<?php echo esc_attr( NV_oOS_Docs_Hub_Plugin::OPTION_KEY . '[sources][]' ); ?>"
 					value="<?php echo esc_attr( $key ); ?>"
 					<?php checked( in_array( $key, $enabled, true ) ); ?> />
-				<?php echo wp_kses( $label, array( 'code' => array() ) ); ?>
+				<?php echo wp_kses( $label, $kses_allowed ); ?>
 			</label>
 			<?php
 		endforeach;
+		?>
+
+		<details style="margin-top:10px; padding:10px; border:1px solid #ccd0d4; border-radius:4px; background:#f6f7f7;">
+			<summary style="cursor:pointer; font-weight:600;">
+				<?php esc_html_e( 'Advanced — local filesystem sources (legacy)', 'nvoos-docs-hub' ); ?>
+			</summary>
+			<p class="description" style="margin-top:8px;">
+				<?php
+				esc_html_e(
+					'These sources index Markdown from the local plugin install. Most installations should leave them OFF and configure a Remote Repository above. They are kept available for local development and monorepo setups.',
+					'nvoos-docs-hub'
+				);
+				?>
+			</p>
+			<?php foreach ( $legacy as $key => $label ) : ?>
+				<label style="display: block; margin-bottom: 6px;">
+					<input type="checkbox"
+						name="<?php echo esc_attr( NV_oOS_Docs_Hub_Plugin::OPTION_KEY . '[sources][]' ); ?>"
+						value="<?php echo esc_attr( $key ); ?>"
+						<?php checked( in_array( $key, $enabled, true ) ); ?> />
+					<?php echo wp_kses( $label, $kses_allowed ); ?>
+				</label>
+			<?php endforeach; ?>
+		</details>
+		<?php
 	}
 
 	/**
@@ -610,6 +809,13 @@ class NV_oOS_Docs_Hub_Settings {
 		echo '<p>';
 		esc_html_e(
 			'Add public GitHub repositories whose Markdown documentation you want to include in the browser. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported.',
+			'nvoos-docs-hub'
+		);
+		echo '</p>';
+		echo '<p style="background:#fff8e5; border-left:4px solid #f0b849; padding:8px 12px; margin:8px 0;">';
+		echo '<strong>' . esc_html__( 'Pick exactly which files to index:', 'nvoos-docs-hub' ) . '</strong> ';
+		esc_html_e(
+			'After entering an Owner and Repository, click "Browse files in repo…" to load the file tree, then check the files or folders you want indexed. Switch "File selection" to "Selected files / folders only" to limit indexing to just those entries.',
 			'nvoos-docs-hub'
 		);
 		echo '</p>';
@@ -628,7 +834,19 @@ class NV_oOS_Docs_Hub_Settings {
 
 		// Always render at least one (empty) row so the UI is usable.
 		if ( empty( $repos ) ) {
-			$repos = array( array( 'owner' => '', 'repo' => '', 'ref' => 'HEAD', 'label' => '', 'path' => '', 'token' => '' ) );
+			$repos = array(
+				array(
+					'owner'          => '',
+					'repo'           => '',
+					'ref'            => 'HEAD',
+					'label'          => '',
+					'path'           => '',
+					'token'          => '',
+					'selection_mode' => 'all',
+					'selected_paths' => array(),
+					'excluded_paths' => array(),
+				),
+			);
 		}
 
 		$option_key = NV_oOS_Docs_Hub_Plugin::OPTION_KEY;
@@ -637,12 +855,19 @@ class NV_oOS_Docs_Hub_Settings {
 
 		foreach ( $repos as $i => $r ) :
 			$owner = esc_attr( $r['owner'] ?? '' );
-			$repo  = esc_attr( $r['repo']  ?? '' );
-			$ref   = esc_attr( $r['ref']   ?? 'HEAD' );
+			$repo  = esc_attr( $r['repo'] ?? '' );
+			$ref   = esc_attr( $r['ref'] ?? 'HEAD' );
 			$label = esc_attr( $r['label'] ?? '' );
-			$path  = esc_attr( $r['path']  ?? '' );
+			$path  = esc_attr( $r['path'] ?? '' );
 			// Token: never echo saved token back for security — show placeholder.
-			$has_token = ! empty( $r['token'] );
+			$has_token      = ! empty( $r['token'] );
+			$selection_mode = isset( $r['selection_mode'] ) && in_array( $r['selection_mode'], array( 'all', 'prefix', 'selected' ), true )
+				? $r['selection_mode']
+				: 'all';
+			$selected_paths = isset( $r['selected_paths'] ) && is_array( $r['selected_paths'] ) ? $r['selected_paths'] : array();
+			$excluded_paths = isset( $r['excluded_paths'] ) && is_array( $r['excluded_paths'] ) ? $r['excluded_paths'] : array();
+			$selected_text  = esc_textarea( implode( "\n", $selected_paths ) );
+			$excluded_text  = esc_textarea( implode( "\n", $excluded_paths ) );
 			?>
 			<div class="nvoos-dh-remote-repo-row" style="border:1px solid #ccd0d4; border-radius:4px; padding:12px; margin-bottom:10px; background:#fafafa;">
 				<table class="widefat" style="background:transparent; border:none;">
@@ -714,6 +939,85 @@ class NV_oOS_Docs_Hub_Settings {
 						</td>
 					</tr>
 					<tr>
+						<td style="padding:4px 8px 4px 0; vertical-align:top;"><?php esc_html_e( 'File selection', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<?php $name_mode = "{$option_key}[remote_repos][{$i}][selection_mode]"; ?>
+							<label style="display:block; margin-bottom:4px;">
+								<input type="radio"
+									name="<?php echo esc_attr( $name_mode ); ?>"
+									value="all"
+									<?php checked( $selection_mode, 'all' ); ?> />
+								<?php esc_html_e( 'All Markdown / .txt files', 'nvoos-docs-hub' ); ?>
+								<span class="description"><?php esc_html_e( '— index everything (with optional excludes below).', 'nvoos-docs-hub' ); ?></span>
+							</label>
+							<label style="display:block; margin-bottom:4px;">
+								<input type="radio"
+									name="<?php echo esc_attr( $name_mode ); ?>"
+									value="prefix"
+									<?php checked( $selection_mode, 'prefix' ); ?> />
+								<?php esc_html_e( 'Path prefix only', 'nvoos-docs-hub' ); ?>
+								<span class="description"><?php esc_html_e( '— restrict to the "Path prefix" field above.', 'nvoos-docs-hub' ); ?></span>
+							</label>
+							<label style="display:block; margin-bottom:4px;">
+								<input type="radio"
+									name="<?php echo esc_attr( $name_mode ); ?>"
+									value="selected"
+									<?php checked( $selection_mode, 'selected' ); ?> />
+								<?php esc_html_e( 'Selected files / folders only', 'nvoos-docs-hub' ); ?>
+								<span class="description"><?php esc_html_e( '— pick exactly which files to index.', 'nvoos-docs-hub' ); ?></span>
+							</label>
+						</td>
+					</tr>
+					<tr class="nvoos-dh-picker-row">
+						<td style="padding:4px 8px 4px 0; vertical-align:top;"><?php esc_html_e( 'Browse files', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<button type="button"
+								class="button nvoos-dh-browse-btn"
+								data-row-index="<?php echo esc_attr( (string) $i ); ?>">
+								<?php esc_html_e( 'Browse files in repo…', 'nvoos-docs-hub' ); ?>
+							</button>
+							<button type="button"
+								class="button nvoos-dh-refresh-btn"
+								data-row-index="<?php echo esc_attr( (string) $i ); ?>"
+								title="<?php esc_attr_e( 'Bypass the 10-minute cache and re-fetch from GitHub', 'nvoos-docs-hub' ); ?>">
+								<?php esc_html_e( 'Refresh', 'nvoos-docs-hub' ); ?>
+							</button>
+							<span class="nvoos-dh-picker-status" style="margin-left:8px; color:#646970; font-style:italic;"></span>
+							<div class="nvoos-dh-picker-tree"
+								style="display:none; margin-top:8px; max-height:340px; overflow:auto; padding:8px; border:1px solid #ccd0d4; border-radius:4px; background:#fff;">
+							</div>
+							<p class="description" style="margin-top:6px;">
+								<?php esc_html_e( 'Tree results are cached for 10 minutes. Click "Refresh" to bypass the cache.', 'nvoos-docs-hub' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:4px 8px 4px 0; vertical-align:top;"><?php esc_html_e( 'Selected paths', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<textarea
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][selected_paths]" ); ?>"
+								class="large-text code nvoos-dh-selected-paths"
+								rows="4"
+								placeholder="docs/intro.md&#10;guides/&#10;README.md"><?php echo $selected_text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_textarea'd ?></textarea>
+							<p class="description">
+								<?php esc_html_e( 'One repo-relative path per line. Trailing "/" includes everything beneath that directory. Used only when "Selected files / folders only" is chosen above.', 'nvoos-docs-hub' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding:4px 8px 4px 0; vertical-align:top;"><?php esc_html_e( 'Excluded paths', 'nvoos-docs-hub' ); ?></td>
+						<td style="padding:4px 0;">
+							<textarea
+								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][excluded_paths]" ); ?>"
+								class="large-text code"
+								rows="3"
+								placeholder="docs/internal/&#10;CHANGELOG.md"><?php echo $excluded_text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_textarea'd ?></textarea>
+							<p class="description">
+								<?php esc_html_e( 'Optional. One repo-relative path per line. Always applied — useful with "All Markdown / .txt files" mode.', 'nvoos-docs-hub' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
 						<td></td>
 						<td style="padding:4px 0;">
 							<button type="button" class="button nvoos-dh-remove-repo" style="color:#a00;">
@@ -744,36 +1048,220 @@ class NV_oOS_Docs_Hub_Settings {
 			var wrap = document.getElementById( 'nvoos-dh-remote-repos-wrap' );
 			var addBtn = document.getElementById( 'nvoos-dh-add-repo' );
 			var optionKey = <?php echo wp_json_encode( $option_key ); ?>;
+			var restBase  = <?php echo wp_json_encode( esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE . '/remote/tree' ) ) ); ?>;
+			var restNonce = <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
+
+			function reindexFields( row, idx ) {
+				row.querySelectorAll( '[name]' ).forEach( function( el ) {
+					var n = el.getAttribute( 'name' );
+					if ( n ) {
+						el.setAttribute( 'name', n.replace( /\[\d+\]/, '[' + idx + ']' ) );
+					}
+				} );
+				// data-row-index on picker buttons.
+				row.querySelectorAll( '[data-row-index]' ).forEach( function( el ) {
+					el.setAttribute( 'data-row-index', String( idx ) );
+				} );
+			}
 
 			addBtn.addEventListener( 'click', function() {
 				var rows = wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' );
 				var idx = rows.length;
 				var tpl = rows[ 0 ].cloneNode( true );
+				// Clear input/textarea values on the clone.
 				tpl.querySelectorAll( 'input' ).forEach( function( el ) {
-					el.value = el.getAttribute( 'placeholder' ) ? '' : el.value;
-					el.setAttribute( 'name', el.getAttribute( 'name' ).replace( /\[\d+\]/, '[' + idx + ']' ) );
-					el.value = '';
+					if ( el.type === 'radio' || el.type === 'checkbox' ) {
+						// Reset radios to "all" mode for selection_mode group.
+						if ( el.name && /selection_mode/.test( el.name ) ) {
+							el.checked = ( el.value === 'all' );
+						} else {
+							el.checked = false;
+						}
+					} else {
+						el.value = '';
+					}
 				} );
+				tpl.querySelectorAll( 'textarea' ).forEach( function( el ) { el.value = ''; } );
+				// Hide any open picker tree on the clone.
+				var clonedTree = tpl.querySelector( '.nvoos-dh-picker-tree' );
+				if ( clonedTree ) { clonedTree.style.display = 'none'; clonedTree.innerHTML = ''; }
+				var clonedStatus = tpl.querySelector( '.nvoos-dh-picker-status' );
+				if ( clonedStatus ) { clonedStatus.textContent = ''; }
+				reindexFields( tpl, idx );
 				wrap.appendChild( tpl );
 			} );
 
 			wrap.addEventListener( 'click', function( e ) {
-				if ( e.target && e.target.classList.contains( 'nvoos-dh-remove-repo' ) ) {
-					var row = e.target.closest( '.nvoos-dh-remote-repo-row' );
+				var t = e.target;
+				if ( t && t.classList.contains( 'nvoos-dh-remove-repo' ) ) {
+					var row = t.closest( '.nvoos-dh-remote-repo-row' );
 					if ( wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' ).length > 1 ) {
 						row.remove();
-						// Re-index remaining rows.
 						wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' ).forEach( function( r, i ) {
-							r.querySelectorAll( 'input' ).forEach( function( el ) {
-								el.setAttribute( 'name', el.getAttribute( 'name' ).replace( /\[\d+\]/, '[' + i + ']' ) );
-							} );
+							reindexFields( r, i );
 						} );
 					} else {
-						// Last row — just clear it.
-						row.querySelectorAll( 'input' ).forEach( function( el ) { el.value = ''; } );
+						row.querySelectorAll( 'input' ).forEach( function( el ) {
+							if ( el.type === 'radio' ) {
+								el.checked = ( el.value === 'all' && /selection_mode/.test( el.name || '' ) );
+							} else if ( el.type !== 'checkbox' ) {
+								el.value = '';
+							}
+						} );
+						row.querySelectorAll( 'textarea' ).forEach( function( el ) { el.value = ''; } );
 					}
+					return;
+				}
+
+				if ( t && ( t.classList.contains( 'nvoos-dh-browse-btn' ) || t.classList.contains( 'nvoos-dh-refresh-btn' ) ) ) {
+					e.preventDefault();
+					openPicker( t.closest( '.nvoos-dh-remote-repo-row' ), t.classList.contains( 'nvoos-dh-refresh-btn' ) );
 				}
 			} );
+
+			function fieldVal( row, suffix ) {
+				var el = row.querySelector( '[name$="[' + suffix + ']"]' );
+				return el ? String( el.value || '' ).trim() : '';
+			}
+
+			function openPicker( row, force ) {
+				if ( ! row ) { return; }
+				var tree   = row.querySelector( '.nvoos-dh-picker-tree' );
+				var status = row.querySelector( '.nvoos-dh-picker-status' );
+				if ( ! tree || ! status ) { return; }
+
+				var owner = fieldVal( row, 'owner' );
+				var repo  = fieldVal( row, 'repo' );
+				var ref   = fieldVal( row, 'ref' ) || 'HEAD';
+				var path  = fieldVal( row, 'path' );
+
+				if ( ! owner || ! repo ) {
+					status.textContent = <?php echo wp_json_encode( __( 'Enter owner and repo first.', 'nvoos-docs-hub' ) ); ?>;
+					return;
+				}
+
+				// Resolve persisted-row index from the browse button itself.
+				var btn = row.querySelector( '.nvoos-dh-browse-btn' );
+				var idx = btn ? parseInt( btn.getAttribute( 'data-row-index' ) || '-1', 10 ) : -1;
+
+				status.textContent = <?php echo wp_json_encode( __( 'Loading…', 'nvoos-docs-hub' ) ); ?>;
+				tree.style.display = 'block';
+				tree.innerHTML = '';
+
+				var url = restBase
+					+ '?owner=' + encodeURIComponent( owner )
+					+ '&repo='  + encodeURIComponent( repo )
+					+ '&ref='   + encodeURIComponent( ref )
+					+ '&path='  + encodeURIComponent( path )
+					+ '&index=' + encodeURIComponent( idx )
+					+ ( force ? '&force=1' : '' );
+
+				fetch( url, {
+					credentials: 'same-origin',
+					headers: { 'X-WP-Nonce': restNonce, 'Accept': 'application/json' }
+				} ).then( function( r ) {
+					return r.json().then( function( body ) { return { ok: r.ok, body: body }; } );
+				} ).then( function( res ) {
+					if ( ! res.ok || ! res.body || ! Array.isArray( res.body.files ) ) {
+						var msg = ( res.body && res.body.message ) ? res.body.message : 'Request failed';
+						status.textContent = msg;
+						return;
+					}
+					renderTree( row, tree, res.body.files );
+					status.textContent = res.body.files.length + ' '
+						+ <?php echo wp_json_encode( __( 'files found.', 'nvoos-docs-hub' ) ); ?>;
+				} ).catch( function( err ) {
+					status.textContent = ( err && err.message ) ? err.message : 'Request failed';
+				} );
+			}
+
+			function getSelectedPaths( row ) {
+				var ta = row.querySelector( '.nvoos-dh-selected-paths' );
+				if ( ! ta ) { return []; }
+				return String( ta.value || '' ).split( /\r\n|\r|\n/ )
+					.map( function( s ) { return s.trim(); } )
+					.filter( function( s ) { return s.length > 0; } );
+			}
+
+			function setSelectedPaths( row, paths ) {
+				var ta = row.querySelector( '.nvoos-dh-selected-paths' );
+				if ( ta ) { ta.value = paths.join( '\n' ); }
+			}
+
+			function pathIsSelected( filePath, selected ) {
+				for ( var i = 0; i < selected.length; i++ ) {
+					var s = selected[ i ];
+					if ( s.charAt( s.length - 1 ) === '/' ) {
+						var dir = s.replace( /\/+$/, '' );
+						if ( filePath === dir || filePath.indexOf( dir + '/' ) === 0 ) {
+							return true;
+						}
+					} else if ( filePath === s ) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			function renderTree( row, container, files ) {
+				container.innerHTML = '';
+				var selected = getSelectedPaths( row );
+
+				var listEl = document.createElement( 'ul' );
+				listEl.style.listStyle = 'none';
+				listEl.style.paddingLeft = '0';
+				listEl.style.margin = '0';
+
+				files.forEach( function( f ) {
+					var li = document.createElement( 'li' );
+					li.style.padding = '2px 0';
+					li.style.fontFamily = 'Menlo, Consolas, monospace';
+					li.style.fontSize = '12px';
+
+					var cb = document.createElement( 'input' );
+					cb.type = 'checkbox';
+					cb.value = f.path;
+					cb.checked = pathIsSelected( f.path, selected );
+					cb.style.marginRight = '6px';
+
+					cb.addEventListener( 'change', function() {
+						var current = getSelectedPaths( row );
+						if ( cb.checked ) {
+							if ( current.indexOf( f.path ) === -1 ) {
+								current.push( f.path );
+							}
+						} else {
+							current = current.filter( function( p ) { return p !== f.path; } );
+						}
+						setSelectedPaths( row, current );
+					} );
+
+					var label = document.createElement( 'label' );
+					label.style.cursor = 'pointer';
+					label.appendChild( cb );
+					label.appendChild( document.createTextNode( f.path + '  ' ) );
+
+					if ( typeof f.size === 'number' && f.size > 0 ) {
+						var size = document.createElement( 'span' );
+						size.style.color = '#646970';
+						size.textContent = '(' + Math.round( f.size / 1024 * 10 ) / 10 + ' KB)';
+						label.appendChild( size );
+					}
+
+					li.appendChild( label );
+					listEl.appendChild( li );
+				} );
+
+				if ( files.length === 0 ) {
+					var empty = document.createElement( 'p' );
+					empty.style.color = '#646970';
+					empty.textContent = <?php echo wp_json_encode( __( 'No Markdown files found in this ref / path.', 'nvoos-docs-hub' ) ); ?>;
+					container.appendChild( empty );
+					return;
+				}
+
+				container.appendChild( listEl );
+			}
 		} )();
 		</script>
 		<?php
