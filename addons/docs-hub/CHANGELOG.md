@@ -1,5 +1,13 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.3.1 — 2026-05-07
+
+### Fixed
+- **Rebuild Documentation Index → 404.** The admin rebuild panel was building its REST URL from the literal string `nvoos-docs-hub/v1`, but the actual REST namespace is `nvoos-docs/v1`. Switched to `NV_oOS_Docs_Hub_REST::NAMESPACE` so all four rebuild routes (`/rebuild`, `/rebuild/status`, `/rebuild/cancel`, `/rebuild/resume`) resolve correctly.
+
+### Changed
+- **Remote Repositories section** now shows a highlighted call-out explaining the "Browse files in repo…" picker and the "Selected files / folders only" mode, so the per-file selection workflow is discoverable on first visit.
+
 ## 0.3.0 — 2026-05-07
 
 ### Changed

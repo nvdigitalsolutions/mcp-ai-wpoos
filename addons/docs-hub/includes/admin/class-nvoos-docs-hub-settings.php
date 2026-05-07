@@ -477,7 +477,7 @@ class NV_oOS_Docs_Hub_Settings {
 		$total_pages  = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
 		$broken_links = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
 		$rebuild_state = NV_oOS_Docs_Hub_Rebuild_State::to_summary();
-		$rest_base     = esc_url_raw( rest_url( 'nvoos-docs-hub/v1' ) );
+		$rest_base     = esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE ) );
 		$rest_nonce    = wp_create_nonce( 'wp_rest' );
 		?>
 		<div class="wrap">
@@ -789,6 +789,13 @@ class NV_oOS_Docs_Hub_Settings {
 		echo '<p>';
 		esc_html_e(
 			'Add public GitHub repositories whose Markdown documentation you want to include in the browser. Files are fetched from the GitHub API over HTTPS and cached locally for 24 hours. Only public repos (or private repos accessible with a Personal Access Token) are supported.',
+			'nvoos-docs-hub'
+		);
+		echo '</p>';
+		echo '<p style="background:#fff8e5; border-left:4px solid #f0b849; padding:8px 12px; margin:8px 0;">';
+		echo '<strong>' . esc_html__( 'Pick exactly which files to index:', 'nvoos-docs-hub' ) . '</strong> ';
+		esc_html_e(
+			'After entering an Owner and Repository, click "Browse files in repo…" to load the file tree, then check the files or folders you want indexed. Switch "File selection" to "Selected files / folders only" to limit indexing to just those entries.',
 			'nvoos-docs-hub'
 		);
 		echo '</p>';
