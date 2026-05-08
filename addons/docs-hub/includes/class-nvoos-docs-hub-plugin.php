@@ -95,7 +95,7 @@ class NV_oOS_Docs_Hub_Plugin {
 			? array( 'remote' )
 			: array( 'base', 'addons', 'root' );
 
-		return wp_parse_args(
+		$parsed = wp_parse_args(
 			is_array( $option ) ? $option : array(),
 			array(
 				'enabled'               => true,
@@ -110,6 +110,21 @@ class NV_oOS_Docs_Hub_Plugin {
 				'remote_repos'          => array(),
 			)
 		);
+
+		// Defensive: coerce remote_repos into a list of array rows. Anything that
+		// isn't an array (string / null / scalar from a partial migration) is dropped
+		// here so downstream renderers and the indexer never see a malformed row.
+		$raw_repos              = isset( $parsed['remote_repos'] ) && is_array( $parsed['remote_repos'] ) ? $parsed['remote_repos'] : array();
+		$parsed['remote_repos'] = array_values(
+			array_filter(
+				$raw_repos,
+				static function ( $row ) {
+					return is_array( $row );
+				}
+			)
+		);
+
+		return $parsed;
 	}
 
 	/**

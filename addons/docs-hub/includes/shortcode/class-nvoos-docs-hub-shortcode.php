@@ -40,6 +40,13 @@ class NV_oOS_Docs_Hub_Shortcode {
 	 * @return string HTML output.
 	 */
 	public static function render( $atts ) {
+		// Multiple shortcode / block instances per page must not re-localize
+		// identical data — track which instance we're on so the static guards
+		// in enqueue_assets() / localize_once() can no-op cleanly. The counter
+		// is only incremented once we're actually about to emit a mount div
+		// (just before the sprintf below) so any early return added in the
+		// future does not skew instance numbering.
+		static $instance_count = 0;
 		$atts = shortcode_atts(
 			array(
 				'section' => 'all',
@@ -80,24 +87,65 @@ class NV_oOS_Docs_Hub_Shortcode {
 			'home'    => $home,
 		);
 
-		wp_localize_script(
-			'nvoos-docs-hub',
-			'NVOOS_DOCS_HUB',
-			array(
-				'apiUrl' => esc_url_raw( rest_url( 'nvoos-docs/v1' ) ),
-				'nonce'  => wp_create_nonce( 'wp_rest' ),
-				'config' => $config,
-			)
-		);
+		// Localize once per page-load. wp_localize_script is idempotent in
+		// principle, but emitting the same script tag multiple times bloats
+		// the page and means later instances overwrite the earlier global.
+		self::localize_once( $config );
 
 		$config_json = wp_json_encode( $config );
 		if ( false === $config_json ) {
 			$config_json = '{}';
 		}
 
+		// A11y: the root mount point declares its role + label up-front so
+		// screen readers and a11y test runners (axe, Lighthouse) can describe
+		// the region even before React hydrates. The `dir` class lets RTL
+		// locales mirror the layout via CSS without relying on `<html dir>`.
+		$root_classes = 'nvoos-docs-hub-root';
+		if ( function_exists( 'is_rtl' ) && is_rtl() ) {
+			$root_classes .= ' nvoos-docs-hub-rtl';
+		}
+
+		// A unique id per instance so multiple mounts on the same page keep
+		// their `aria-labelledby` / skip-link targets distinct. Increment is
+		// deferred to here so any early return above leaves the counter alone.
+		++$instance_count;
+		$instance_id = 'nvoos-docs-hub-root-' . (int) $instance_count;
+
 		return sprintf(
-			'<div id="nvoos-docs-hub-root" class="nvoos-docs-hub-root" data-config="%s"></div>',
+			'<div id="%1$s" class="%2$s" role="application" aria-label="%3$s" data-config="%4$s"></div>',
+			esc_attr( $instance_id ),
+			esc_attr( $root_classes ),
+			esc_attr__( 'Documentation browser', 'nvoos-docs-hub' ),
 			esc_attr( $config_json )
+		);
+	}
+
+	/**
+	 * Localize the runtime config exactly once per page-load.
+	 *
+	 * @since 0.3.7
+	 *
+	 * @param array $config Per-instance shortcode config (theme/section/etc.).
+	 * @return void
+	 */
+	protected static function localize_once( $config ) {
+		static $done = false;
+		if ( $done ) {
+			return;
+		}
+		$done = true;
+
+		wp_localize_script(
+			'nvoos-docs-hub',
+			'NVOOS_DOCS_HUB',
+			array(
+				'apiUrl'        => esc_url_raw( rest_url( 'nvoos-docs/v1' ) ),
+				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'config'        => $config,
+				'isRtl'         => function_exists( 'is_rtl' ) ? is_rtl() : false,
+				'githubRepoUrl' => esc_url_raw( NV_oOS_Docs_Hub_Plugin::get_settings()['github_repo_url'] ?? '' ),
+			)
 		);
 	}
 
@@ -109,6 +157,17 @@ class NV_oOS_Docs_Hub_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets() {
+		static $registered = false;
+		if ( $registered ) {
+			// wp_enqueue_* are idempotent, but skipping the second pair of
+			// register calls saves a few microseconds and silences potential
+			// "already registered" notices on hosts that flip them on.
+			wp_enqueue_style( 'nvoos-docs-hub' );
+			wp_enqueue_script( 'nvoos-docs-hub' );
+			return;
+		}
+		$registered = true;
+
 		wp_register_style(
 			'nvoos-docs-hub',
 			NVOOS_DOCS_HUB_URL . 'assets/dist/docs-hub.css',
