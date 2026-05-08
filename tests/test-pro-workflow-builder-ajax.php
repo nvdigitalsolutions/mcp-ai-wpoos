@@ -30,7 +30,7 @@
 /**
  * Pro Workflow Builder AJAX cluster.
  */
-class Test_Pro_Workflow_Builder_AJAX extends WP_MCP_AI_Ajax_TestCase {
+class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 
 	/** Nonce action used by WP_MCP_AI_Pro_Workflow_Builder_Page handlers. */
 	const WORKFLOW_NONCE = 'mcp_ai_pro_workflow_builder';
