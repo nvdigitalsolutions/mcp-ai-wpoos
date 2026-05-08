@@ -16,14 +16,14 @@ coverage across the codebase.
 | Total registered AJAX handlers (`wp_ajax_wp_mcp_ai_*`) | **271** |
 | - Base (`includes/`) | 113 |
 | - Pro (`addons/pro/`) | 158 |
-| Tested (referenced in `tests/`) | **155** |
-| Untested (allow-listed for incremental gap-fill) | 116 |
-| Coverage | **57.2 %** |
+| Tested (referenced in `tests/`) | **271** |
+| Untested (allow-listed for incremental gap-fill) | **0** |
+| Coverage | **100 %** |
 
 Numbers are produced by `bin/audit-ajax-handlers.php` and rebuilt on every
-PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 116 allow-listed
-handlers are the remaining gap; each cluster that lands in a follow-up PR
-removes its handlers from that file.
+PR run via the `Test_AJAX_Handler_Coverage` CI guard. The allow-list is now
+empty — all 271 handlers are covered and any new `wp_ajax_*` handler added
+going forward must include tests or explicitly be added to the allow-list.
 
 ---
 
@@ -150,6 +150,12 @@ forget to stub never hit the network — unstubbed URLs return `200 {}`.
 | `test-schedule-manager-ajax.php` | Schedule manager — Pro addon (get/create/delete/toggle/history/clear-history/presets/install-preset). |
 | `test-healthcare-ajax.php` | Healthcare — hw/mv dashboards, health consolidate (preview, bulk-import, upload, import-vitals). |
 | `test-regulatory-eca-cre-ajax.php` | Regulatory / ECA / CRE / Consolidate — dashboards, research create, import, bulk-import, validate, completeness. |
+| `test-pro-workflow-builder-ajax.php` | Pro Workflow Builder — save/load/delete/list/export/duplicate/rename/templates/presets/install_preset + trigger_workflow. |
+| `test-messaging-channels-ajax.php` | Messaging channels — WhatsApp/Telegram/Messenger/Google Chat/Teams/Office365/iCloud (25 Pro handlers). |
+| `test-acc-research-pm-ajax.php` | ACC dashboard/activity/approval/analytics + Research add/delete/get/ai_generate + PM generate/suggest/analyze/bulk (13 handlers). |
+| `test-create-from-research-ajax.php` | All 24 `create_*_from_research` / `preview_schedule_from_research` handlers — data-driven 3-point coverage. |
+| `test-import-handlers-ajax.php` | All 18 `import_*` handlers — data-driven 3-point coverage. |
+| `test-assistant-misc-ajax.php` | Misc base + Pro handlers: build_assistant, upload_attachment, create_team, deploy_team, cpt_chat, orchestration stats/seeder, model_config, clear_files, canvas_addon, yfinance, health/product records. |
 
 Each addition or removal of an AJAX handler must be accompanied by either a
 test reference or an explicit entry in `tests/ajax-coverage-allowlist.txt`.
@@ -200,8 +206,11 @@ handlers from the allow-list:
 9. ✅ **Schedule manager** — `sm_get_schedules`, `sm_create_schedule`, `sm_delete_schedule`, `sm_toggle_schedule`, `sm_get_history`, `sm_clear_history`, `sm_get_presets`, `sm_install_preset`.
 10. ✅ **Healthcare / vitals / member preview** — `hw_dashboard_get_health_metrics`, `mv_dashboard_get_vital_signs`, `get_member_vitals_preview`, `bulk_import_health_info`, `upload_health_document`, `import_vitals_to_cct`.
 11. ✅ **Regulatory / ECA / CRE / Consolidate** — `cre_dashboard_filter`, `eca_dashboard_data`, `create_cre_loan_from_research`, `create_eca_from_research`, `import_eca`, `create_reg_product_from_research`, `consolidate_bulk_import`, `consolidate_validate_data`, `consolidate_check_completeness`, `bulk_import_reg_products`, `import_reg_document`.
-12. **"Create-from-research" / "Import-*" CPT importers** (remaining handlers).
+12. ✅ **Pro Workflow Builder** — save/load/delete/list/export/duplicate/rename/templates/presets/install_preset + trigger_workflow (12 handlers).
+13. ✅ **Messaging channels** — WhatsApp/Telegram/Messenger/Google Chat/Teams/Office365/iCloud (25 Pro handlers).
+14. ✅ **ACC + Research + PM** — Agent Command Center, Research Add Base, PM AI Actions, PM Bulk AI (13 handlers).
+15. ✅ **Create-from-research** — all 24 create_*_from_research / preview_schedule handlers.
+16. ✅ **Import handlers** — all 18 import_* handlers.
+17. ✅ **Assistant misc** — build_assistant, upload_attachment, create_team, deploy_team, cpt_chat, orchestration stats/seeder, model_config, clear_files, canvas_addon, yfinance, health/product records (22 handlers).
 
-The `phpunit-test-author` custom agent (declared in
-[`examples/agents/`](../examples/agents/)) is the natural owner for these
-PRs.
+**All 271 handlers are now covered. The allow-list is empty.**

@@ -196,9 +196,10 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	 * grounds. Either an HTTP-403-style `wp_die` (no JSON body) or a
 	 * `success: false` response with a permissions-y message is acceptable.
 	 *
-	 * @param array $response Decoded response from {@see self::dispatch()}.
+	 * @param array       $response Decoded response from {@see self::dispatch()}.
+	 * @param string|null $message  Optional failure message.
 	 */
-	protected function assertAjaxForbidden( $response ) {
+	protected function assertAjaxForbidden( $response, $message = null ) {
 		$this->assertIsArray( $response );
 		// Either: nonce failure produced -1 / no JSON, or success:false.
 		if ( isset( $response['success'] ) && false === $response['success'] ) {
@@ -208,8 +209,62 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 		$this->assertSame(
 			'-1',
 			isset( $response['data'] ) ? trim( (string) $response['data'] ) : '',
-			'Expected forbidden / nonce failure response, got: ' . wp_json_encode( $response )
+			null !== $message
+				? $message
+				: 'Expected forbidden / nonce failure response, got: ' . wp_json_encode( $response )
 		);
+	}
+
+	/**
+	 * Return true when the response indicates `success: true`.
+	 *
+	 * Useful for conditional assertions in happy-path tests that have multiple
+	 * acceptable outcomes.
+	 *
+	 * @param array $response Decoded response from {@see self::dispatch()}.
+	 * @return bool
+	 */
+	protected function isAjaxSuccess( $response ): bool {
+		return is_array( $response ) && isset( $response['success'] ) && true === $response['success'];
+	}
+
+	/**
+	 * Return true when the response indicates `success: false`.
+	 *
+	 * @param array $response Decoded response from {@see self::dispatch()}.
+	 * @return bool
+	 */
+	protected function isAjaxError( $response ): bool {
+		return is_array( $response ) && isset( $response['success'] ) && false === $response['success'];
+	}
+
+	/**
+	 * Return true when the response looks like a nonce/capability failure.
+	 *
+	 * @param array $response Decoded response from {@see self::dispatch()}.
+	 * @return bool
+	 */
+	protected function isAjaxForbidden( $response ): bool {
+		if ( ! is_array( $response ) ) {
+			return false;
+		}
+		if ( isset( $response['success'] ) && false === $response['success'] ) {
+			return true;
+		}
+		return isset( $response['data'] ) && '-1' === trim( (string) $response['data'] );
+	}
+
+	/**
+	 * Return the `data` payload from a successful AJAX response.
+	 *
+	 * @param array $response Decoded response from {@see self::dispatch()}.
+	 * @return array
+	 */
+	protected function getResponseData( $response ): array {
+		if ( ! is_array( $response ) || ! isset( $response['data'] ) || ! is_array( $response['data'] ) ) {
+			return array();
+		}
+		return $response['data'];
 	}
 
 	/**
