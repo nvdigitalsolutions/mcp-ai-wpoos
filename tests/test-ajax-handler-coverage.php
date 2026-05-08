@@ -7,7 +7,7 @@
  * referenced by a test file under `tests/` or explicitly allow-listed in
  * `tests/ajax-coverage-allowlist.txt`.
  *
- * The seed allow-list captures the 188 handlers that were untested when the
+ * The seed allow-list captures the 185 handlers that were untested when the
  * AJAX gap-fill plan was adopted. As coverage clusters land in subsequent PRs,
  * remove the corresponding entries from the allow-list so this guard starts
  * enforcing them.

@@ -3,9 +3,11 @@
 # Handler names (without the wp_ajax_ prefix) listed here are exempt from the
 # coverage CI guard run by `php bin/audit-ajax-handlers.php --check`.
 #
-# This file was seeded with the 188 handlers that were untested at the time the
-# AJAX gap-fill plan was adopted. As clusters land in subsequent PRs, remove the
-# corresponding entries here so the CI guard starts enforcing them.
+# This file was seeded with the 188 handlers untested at the time the AJAX
+# gap-fill plan was adopted; the pilot workflow cluster (this initial PR)
+# immediately covered 3 of them, leaving 185 entries below. As clusters land
+# in subsequent PRs, remove the corresponding entries here so the CI guard
+# starts enforcing them.
 #
 # Lines beginning with # are comments. Blank lines are ignored.
 
