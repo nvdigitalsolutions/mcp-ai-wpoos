@@ -34,6 +34,9 @@ on:
       - 'addons/docs-hub/src/**'
       - 'addons/docs-hub/esbuild.config.js'
       - 'addons/docs-hub/package.json'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/esbuild.config.cjs'
+      - 'addons/chat-spa/package.json'
   pull_request:
     paths:
       - 'addons/toolkit-shell/src/**'
@@ -51,6 +54,9 @@ on:
       - 'addons/docs-hub/src/**'
       - 'addons/docs-hub/esbuild.config.js'
       - 'addons/docs-hub/package.json'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/esbuild.config.cjs'
+      - 'addons/chat-spa/package.json'
 
 jobs:
   bundle-size:
@@ -71,6 +77,8 @@ jobs:
             limit_kb: 900
           - addon: docs-hub
             limit_kb: 250  # v0.3.8: React + FlexSearch + rehype-highlight common languages
+          - addon: chat-spa
+            limit_kb: 350  # Vercel AI SDK UI (@ai-sdk/react) + React 19 baseline
 
     steps:
       - name: Checkout repository

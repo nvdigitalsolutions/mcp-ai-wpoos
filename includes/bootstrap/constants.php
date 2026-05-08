@@ -70,6 +70,20 @@ if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) ) {
 }
 
 /**
+ * Legacy chat.js frontend active.
+ *
+ * Defaults to true (legacy mode). When set to false in wp-config.php the
+ * [mcp_ai_chat] shortcode is no longer registered and the chat-bundle.min.js
+ * asset is not enqueued. Use this together with the [nvoos_chat_spa] shortcode
+ * (from the NV oOS Chat SPA addon) to fully migrate to the React frontend.
+ *
+ * define( 'WP_MCP_AI_LEGACY_CHAT_JS', false );
+ */
+if ( ! defined( 'WP_MCP_AI_LEGACY_CHAT_JS' ) ) {
+	define( 'WP_MCP_AI_LEGACY_CHAT_JS', true );
+}
+
+/**
  * Tone.js live-coding eval allowed.
  *
  * Defaults to false. The Algorave addon's live-coder shortcode compiles

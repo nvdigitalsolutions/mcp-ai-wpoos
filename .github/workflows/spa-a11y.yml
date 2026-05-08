@@ -21,6 +21,8 @@ on:
       - 'addons/canvas-toolkit/eslint.config.js'
       - 'addons/document-editor/eslint.config.js'
       - 'addons/media-studio/eslint.config.js'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/eslint.config.js'
   pull_request:
     paths:
       - 'addons/toolkit-shell/src/**'
@@ -31,6 +33,8 @@ on:
       - 'addons/canvas-toolkit/eslint.config.js'
       - 'addons/document-editor/eslint.config.js'
       - 'addons/media-studio/eslint.config.js'
+      - 'addons/chat-spa/src/**'
+      - 'addons/chat-spa/eslint.config.js'
 
 jobs:
   a11y-lint:
@@ -45,6 +49,7 @@ jobs:
           - canvas-toolkit
           - document-editor
           - media-studio
+          - chat-spa
 
     steps:
       - name: Checkout repository

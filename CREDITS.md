@@ -385,6 +385,30 @@ surface serving the `image-production` and `media` toolkits. Ships three modes:
 ~826 KB gzip — expected for Tier D specialist, kept isolated by the separate-addon
 guardrail. Future `drawing` mode (tldraw, large bundle) deferred to follow-up PR.
 
+### `addons/chat-spa/` — Tier E React chat SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `@ai-sdk/react` | 1.2.12 | Apache-2.0 | <https://github.com/vercel/ai> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT), `@axe-core/react` (MPL-2.0). Full per-package license text lives in
+[`addons/chat-spa/THIRD_PARTY_NOTICES.md`](addons/chat-spa/THIRD_PARTY_NOTICES.md).
+
+The chat-spa addon is a modern React replacement for the legacy
+`assets/js/chat.js` jQuery UI. It uses the Vercel AI SDK UI layer
+(`@ai-sdk/react`'s `useChat` hook) **on the React side only** — the WordPress
+PHP layer (`WP_MCP_AI_REST_Chat_Controller`) remains the orchestrator and AI
+provider gateway. A client-side adapter
+([`src/sse-adapter.ts`](addons/chat-spa/src/sse-adapter.ts)) translates NV oOS's
+native SSE frames into the AI SDK Data Stream Protocol so `useChat` can consume
+them with `streamProtocol: 'data'`. No Node server is introduced; every
+existing capability (HITL, harness layers, memory bridge, guest tokens,
+JetEngine transcripts, providers, tool registry) keeps working.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**
