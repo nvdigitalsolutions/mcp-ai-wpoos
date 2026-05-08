@@ -7,6 +7,8 @@
 #   Tier B  canvas-toolkit   ≤ 1600 KB gzip (specialist canvas — tldraw + bpmn-js + mermaid)
 #   Tier C  document-editor  ≤ 500 KB gzip  (v0.2.0: Tiptap + GrapesJS site-creator mode)
 #   Tier D  media-studio     ≤ 900 KB gzip  (specialist shell — higher tolerance)
+#   Tier E  chat-spa         ≤ 350 KB gzip
+#   Docs    docs-hub         ≤ 250 KB gzip  (v0.3.8: React + FlexSearch + rehype-highlight)
 #
 # Failures are blocking. The job prints the actual size alongside the limit so
 # contributors know how much headroom remains.
@@ -29,6 +31,9 @@ on:
       - 'addons/media-studio/src/**'
       - 'addons/media-studio/esbuild.config.cjs'
       - 'addons/media-studio/package.json'
+      - 'addons/docs-hub/src/**'
+      - 'addons/docs-hub/esbuild.config.js'
+      - 'addons/docs-hub/package.json'
       - 'addons/chat-spa/src/**'
       - 'addons/chat-spa/esbuild.config.cjs'
       - 'addons/chat-spa/package.json'
@@ -46,6 +51,9 @@ on:
       - 'addons/media-studio/src/**'
       - 'addons/media-studio/esbuild.config.cjs'
       - 'addons/media-studio/package.json'
+      - 'addons/docs-hub/src/**'
+      - 'addons/docs-hub/esbuild.config.js'
+      - 'addons/docs-hub/package.json'
       - 'addons/chat-spa/src/**'
       - 'addons/chat-spa/esbuild.config.cjs'
       - 'addons/chat-spa/package.json'
@@ -67,6 +75,8 @@ jobs:
             limit_kb: 500  # v0.2.0 ships site-creator mode (GrapesJS); heavier than base Tiptap editor
           - addon: media-studio
             limit_kb: 900
+          - addon: docs-hub
+            limit_kb: 250  # v0.3.8: React + FlexSearch + rehype-highlight common languages
           - addon: chat-spa
             limit_kb: 350  # Vercel AI SDK UI (@ai-sdk/react) + React 19 baseline
 

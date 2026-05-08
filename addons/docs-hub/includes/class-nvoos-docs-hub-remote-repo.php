@@ -671,7 +671,48 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		);
 
 		set_transient( $transient_key, $payload, 10 * MINUTE_IN_SECONDS );
+
+		// When the caller forced a refresh we also drop the per-file content cache
+		// for these files at this resolved ref, so the next rebuild will re-fetch
+		// the latest blob content from the remote rather than reuse a stale copy.
+		if ( $force ) {
+			$this->clear_local_cache_for_files( $owner, $repo, $resolved_ref, $files );
+		}
+
 		return $payload;
+	}
+
+	/**
+	 * Delete the per-file local content cache for a specific (owner, repo, ref) tuple.
+	 *
+	 * Used by the admin "Refresh" picker action so a user can force the indexer
+	 * to re-fetch fresh blob content on the next rebuild.
+	 *
+	 * @since 0.3.6
+	 *
+	 * @param string $owner        GitHub owner.
+	 * @param string $repo         GitHub repo name.
+	 * @param string $resolved_ref Resolved commit SHA.
+	 * @param array  $files        List of `{ path, size }` entries (`path` is repo-relative).
+	 * @return int Number of cache files deleted.
+	 */
+	public function clear_local_cache_for_files( $owner, $repo, $resolved_ref, $files ) {
+		$deleted = 0;
+		if ( ! is_array( $files ) ) {
+			return $deleted;
+		}
+		foreach ( $files as $file ) {
+			$rel = is_array( $file ) && isset( $file['path'] ) ? (string) $file['path'] : '';
+			if ( '' === $rel ) {
+				continue;
+			}
+			$key  = $this->local_cache_key( $owner, $repo, $resolved_ref, $rel );
+			$path = $this->local_cache_path( $key );
+			if ( file_exists( $path ) && is_file( $path ) && @unlink( $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				++$deleted;
+			}
+		}
+		return $deleted;
 	}
 
 	// -------------------------------------------------------------------------
@@ -736,24 +777,20 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		// --- SSRF: DNS resolution + private-IP rejection ---
-		$resolved_ip = gethostbyname( $host );
-		if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
-			return new WP_Error(
-				'nvoos_docs_hub_dns_failed',
-				__( 'Remote documentation host did not resolve.', 'nvoos-docs-hub' )
-			);
-		}
-		if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-			return new WP_Error(
-				'nvoos_docs_hub_ssrf_blocked',
-				__( 'Remote documentation host resolves to a private or reserved address.', 'nvoos-docs-hub' )
-			);
+		// Resolve via dns_get_record so we honour both A (IPv4) and AAAA (IPv6) records.
+		// Every returned address must pass the public-range filter, and we then pin
+		// the first valid candidate via CURLOPT_RESOLVE to defeat DNS rebinding.
+		$resolved_ip = $this->resolve_public_ip( $host );
+		if ( is_wp_error( $resolved_ip ) ) {
+			return $resolved_ip;
 		}
 
 		// --- DNS-rebind defence: pin the resolved IP at the cURL level ---
 		$port          = wp_parse_url( $url, PHP_URL_PORT );
 		$port          = $port ? (int) $port : 443;
-		$resolve_entry = $host . ':' . $port . ':' . $resolved_ip;
+		// CURLOPT_RESOLVE syntax differs for IPv6: hostname:port:[ipv6] (the IP must be bracketed).
+		$is_ipv6       = false !== strpos( $resolved_ip, ':' );
+		$resolve_entry = $host . ':' . $port . ':' . ( $is_ipv6 ? '[' . $resolved_ip . ']' : $resolved_ip );
 		$curl_pin      = static function ( $handle ) use ( $resolve_entry ) {
 			if ( is_resource( $handle ) || ( is_object( $handle ) && $handle instanceof \CurlHandle ) ) {
 				curl_setopt( $handle, CURLOPT_RESOLVE, array( $resolve_entry ) );
@@ -807,6 +844,93 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		return $body;
+	}
+
+	/**
+	 * Resolve a hostname to a single public IP (A or AAAA), rejecting private,
+	 * reserved, loopback, link-local, and unique-local-address (ULA) ranges.
+	 *
+	 * Uses `dns_get_record()` when available so AAAA/IPv6 addresses are also
+	 * inspected; falls back to `gethostbyname()` (A-only) when DNS records
+	 * cannot be queried (e.g. tests, restricted environments).
+	 *
+	 * Every returned address must pass FILTER_FLAG_NO_PRIV_RANGE and
+	 * FILTER_FLAG_NO_RES_RANGE — if any record points at a private/reserved
+	 * range we refuse the whole request rather than silently picking a
+	 * "safe" sibling, which is a defence-in-depth measure against DNS
+	 * rebinding tricks where one record is public and another is private.
+	 *
+	 * @since 0.3.6
+	 *
+	 * @param string $host Hostname (already validated against the allowlist).
+	 * @return string|WP_Error Resolved public IP literal on success.
+	 */
+	private function resolve_public_ip( $host ) {
+		// If the host is already an IP literal, just validate it.
+		if ( false !== filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			if ( false === filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return new WP_Error(
+					'nvoos_docs_hub_ssrf_blocked',
+					__( 'Remote documentation host resolves to a private or reserved address.', 'nvoos-docs-hub' )
+				);
+			}
+			return $host;
+		}
+
+		$candidates = array();
+
+		if ( function_exists( 'dns_get_record' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- dns_get_record emits a warning on lookup failure; we want to fall through cleanly.
+			$records = @dns_get_record( $host, DNS_A | DNS_AAAA );
+			if ( is_array( $records ) ) {
+				foreach ( $records as $record ) {
+					if ( ! is_array( $record ) ) {
+						continue;
+					}
+					if ( isset( $record['ip'] ) && is_string( $record['ip'] ) ) {
+						$candidates[] = $record['ip'];
+					}
+					if ( isset( $record['ipv6'] ) && is_string( $record['ipv6'] ) ) {
+						$candidates[] = $record['ipv6'];
+					}
+				}
+			}
+		}
+
+		// Fallback: A-record only via gethostbyname().
+		if ( empty( $candidates ) ) {
+			$resolved = gethostbyname( $host );
+			if ( $resolved !== $host ) {
+				$candidates[] = $resolved;
+			}
+		}
+
+		if ( empty( $candidates ) ) {
+			return new WP_Error(
+				'nvoos_docs_hub_dns_failed',
+				__( 'Remote documentation host did not resolve.', 'nvoos-docs-hub' )
+			);
+		}
+
+		// Every candidate must be a valid public IP. If ANY record points at a
+		// private/reserved range we refuse — defence in depth against rebinding.
+		$flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+		foreach ( $candidates as $ip ) {
+			if ( false === filter_var( $ip, FILTER_VALIDATE_IP, $flags ) ) {
+				return new WP_Error(
+					'nvoos_docs_hub_ssrf_blocked',
+					__( 'Remote documentation host resolves to a private or reserved address.', 'nvoos-docs-hub' )
+				);
+			}
+		}
+
+		// Prefer IPv4 when both are available (more reliable on legacy networks).
+		foreach ( $candidates as $ip ) {
+			if ( false !== filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				return $ip;
+			}
+		}
+		return $candidates[0];
 	}
 
 	// -------------------------------------------------------------------------

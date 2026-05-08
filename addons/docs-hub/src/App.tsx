@@ -92,6 +92,8 @@ export default function App() {
 
 	const rootAttrs: React.HTMLAttributes<HTMLDivElement> = {
 		className: 'nvoos-docs-hub-root',
+		role: 'application',
+		'aria-label': 'Documentation browser',
 		'data-theme': theme,
 	};
 
@@ -120,6 +122,9 @@ export default function App() {
 	return (
 		<div { ...rootAttrs }>
 			<HashRouter>
+				<a href="#nvoos-dh-main" className="dh-skip-link">
+					Skip to main content
+				</a>
 				<div className="dh-layout">
 					{ /* Header */ }
 					<header className="dh-header-area">
@@ -162,7 +167,11 @@ export default function App() {
 						<Sidebar manifest={ manifest } onNavClose={ closeMobileSidebar } />
 					</aside>
 
-					{ /* Main content (routes) */ }
+					{ /* Main content (routes) — DocPage / NotFound own their own
+					     `.dh-main-area` grid cell. The skip-link above targets
+					     `#nvoos-dh-main`, which is set on the rendered route's
+					     wrapper so screen-reader users land directly on the
+					     content region rather than the sidebar. */ }
 					<Routes>
 						<Route path="/" element={ <HomeRedirect manifest={ manifest } /> } />
 						<Route path="/*" element={ <DocPage /> } />

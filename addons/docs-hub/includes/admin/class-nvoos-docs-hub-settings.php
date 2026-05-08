@@ -31,6 +31,46 @@ class NV_oOS_Docs_Hub_Settings {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_init', array( __CLASS__, 'handle_rebuild_action' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+	}
+
+	/**
+	 * Enqueue admin-page-specific scripts and localize the repo-picker config.
+	 *
+	 * @since 0.3.8
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 * @return void
+	 */
+	public static function enqueue_admin_assets( $hook_suffix ) {
+		// Only load on our own settings page.
+		if ( false === strpos( $hook_suffix, 'nvoos-docs-hub' ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'nvoos-dh-repo-picker',
+			NVOOS_DOCS_HUB_URL . 'assets/admin/repo-picker.js',
+			array(),
+			NVOOS_DOCS_HUB_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'nvoos-dh-repo-picker',
+			'NVOOS_DH_REPO_PICKER',
+			array(
+				'restBase'  => esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE . '/remote/tree' ) ),
+				'restNonce' => wp_create_nonce( 'wp_rest' ),
+				'i18n'      => array(
+					'enterOwnerRepo' => __( 'Enter owner and repo first.', 'nvoos-docs-hub' ),
+					/* translators: Loading indicator text. */
+					'loading'        => __( 'Loading\u2026', 'nvoos-docs-hub' ),
+					'filesFound'     => __( 'files found.', 'nvoos-docs-hub' ),
+					'noFilesFound'   => __( 'No Markdown files found in this ref / path.', 'nvoos-docs-hub' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -428,6 +468,37 @@ class NV_oOS_Docs_Hub_Settings {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Coerce a stored path-list value into a flat array of strings.
+	 *
+	 * Tolerates bad input shapes that may arrive from third-party migrations:
+	 * arrays of arrays, scalars, or newline-delimited strings.
+	 *
+	 * @since 0.3.6
+	 *
+	 * @param mixed $raw Stored value.
+	 * @return string[] Array of single-line path strings.
+	 */
+	public static function coerce_path_list( $raw ) {
+		if ( is_string( $raw ) ) {
+			$raw = preg_split( '/\r\n|\r|\n/', $raw );
+		}
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $raw as $entry ) {
+			if ( is_array( $entry ) ) {
+				continue; // Nested arrays are dropped — settings save will normalise.
+			}
+			$line = trim( (string) $entry );
+			if ( '' !== $line ) {
+				$out[] = $line;
+			}
+		}
+		return array_values( array_unique( $out ) );
 	}
 
 	/**
@@ -854,18 +925,32 @@ class NV_oOS_Docs_Hub_Settings {
 		echo '<div id="nvoos-dh-remote-repos-wrap">';
 
 		foreach ( $repos as $i => $r ) :
-			$owner = esc_attr( $r['owner'] ?? '' );
-			$repo  = esc_attr( $r['repo'] ?? '' );
-			$ref   = esc_attr( $r['ref'] ?? 'HEAD' );
-			$label = esc_attr( $r['label'] ?? '' );
-			$path  = esc_attr( $r['path'] ?? '' );
+			// Defensive: a malformed (string/null/scalar) row from a partial migration must
+			// not fatal the settings page. Coerce to an array and surface an inline notice.
+			if ( ! is_array( $r ) ) {
+				$r = array();
+				echo '<div class="notice notice-warning inline" style="margin:0 0 10px 0;"><p>';
+				printf(
+					/* translators: %d: 1-based row index */
+					esc_html__( 'NV oOS Docs Hub: remote repository row #%d was stored in an unexpected shape and has been reset to defaults. Please re-enter the values and save.', 'nvoos-docs-hub' ),
+					(int) ( $i + 1 )
+				);
+				echo '</p></div>';
+			}
+			$owner = esc_attr( is_string( $r['owner'] ?? '' ) ? $r['owner'] : '' );
+			$repo  = esc_attr( is_string( $r['repo'] ?? '' ) ? $r['repo'] : '' );
+			$ref   = esc_attr( is_string( $r['ref'] ?? 'HEAD' ) ? $r['ref'] : 'HEAD' );
+			$label = esc_attr( is_string( $r['label'] ?? '' ) ? $r['label'] : '' );
+			$path  = esc_attr( is_string( $r['path'] ?? '' ) ? $r['path'] : '' );
 			// Token: never echo saved token back for security — show placeholder.
 			$has_token      = ! empty( $r['token'] );
 			$selection_mode = isset( $r['selection_mode'] ) && in_array( $r['selection_mode'], array( 'all', 'prefix', 'selected' ), true )
 				? $r['selection_mode']
 				: 'all';
-			$selected_paths = isset( $r['selected_paths'] ) && is_array( $r['selected_paths'] ) ? $r['selected_paths'] : array();
-			$excluded_paths = isset( $r['excluded_paths'] ) && is_array( $r['excluded_paths'] ) ? $r['excluded_paths'] : array();
+			// Coerce path lists defensively. A flat string (from older migrations) is
+			// split on newlines so the textarea round-trips correctly.
+			$selected_paths = self::coerce_path_list( $r['selected_paths'] ?? array() );
+			$excluded_paths = self::coerce_path_list( $r['excluded_paths'] ?? array() );
 			$selected_text  = esc_textarea( implode( "\n", $selected_paths ) );
 			$excluded_text  = esc_textarea( implode( "\n", $excluded_paths ) );
 			?>
@@ -1041,230 +1126,7 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 		echo '</p>';
 
-		// Inline JS for add/remove without requiring a separate asset.
-		?>
-		<script>
-		( function() {
-			var wrap = document.getElementById( 'nvoos-dh-remote-repos-wrap' );
-			var addBtn = document.getElementById( 'nvoos-dh-add-repo' );
-			var optionKey = <?php echo wp_json_encode( $option_key ); ?>;
-			var restBase  = <?php echo wp_json_encode( esc_url_raw( rest_url( NV_oOS_Docs_Hub_REST::NAMESPACE . '/remote/tree' ) ) ); ?>;
-			var restNonce = <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
-
-			function reindexFields( row, idx ) {
-				row.querySelectorAll( '[name]' ).forEach( function( el ) {
-					var n = el.getAttribute( 'name' );
-					if ( n ) {
-						el.setAttribute( 'name', n.replace( /\[\d+\]/, '[' + idx + ']' ) );
-					}
-				} );
-				// data-row-index on picker buttons.
-				row.querySelectorAll( '[data-row-index]' ).forEach( function( el ) {
-					el.setAttribute( 'data-row-index', String( idx ) );
-				} );
-			}
-
-			addBtn.addEventListener( 'click', function() {
-				var rows = wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' );
-				var idx = rows.length;
-				var tpl = rows[ 0 ].cloneNode( true );
-				// Clear input/textarea values on the clone.
-				tpl.querySelectorAll( 'input' ).forEach( function( el ) {
-					if ( el.type === 'radio' || el.type === 'checkbox' ) {
-						// Reset radios to "all" mode for selection_mode group.
-						if ( el.name && /selection_mode/.test( el.name ) ) {
-							el.checked = ( el.value === 'all' );
-						} else {
-							el.checked = false;
-						}
-					} else {
-						el.value = '';
-					}
-				} );
-				tpl.querySelectorAll( 'textarea' ).forEach( function( el ) { el.value = ''; } );
-				// Hide any open picker tree on the clone.
-				var clonedTree = tpl.querySelector( '.nvoos-dh-picker-tree' );
-				if ( clonedTree ) { clonedTree.style.display = 'none'; clonedTree.innerHTML = ''; }
-				var clonedStatus = tpl.querySelector( '.nvoos-dh-picker-status' );
-				if ( clonedStatus ) { clonedStatus.textContent = ''; }
-				reindexFields( tpl, idx );
-				wrap.appendChild( tpl );
-			} );
-
-			wrap.addEventListener( 'click', function( e ) {
-				var t = e.target;
-				if ( t && t.classList.contains( 'nvoos-dh-remove-repo' ) ) {
-					var row = t.closest( '.nvoos-dh-remote-repo-row' );
-					if ( wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' ).length > 1 ) {
-						row.remove();
-						wrap.querySelectorAll( '.nvoos-dh-remote-repo-row' ).forEach( function( r, i ) {
-							reindexFields( r, i );
-						} );
-					} else {
-						row.querySelectorAll( 'input' ).forEach( function( el ) {
-							if ( el.type === 'radio' ) {
-								el.checked = ( el.value === 'all' && /selection_mode/.test( el.name || '' ) );
-							} else if ( el.type !== 'checkbox' ) {
-								el.value = '';
-							}
-						} );
-						row.querySelectorAll( 'textarea' ).forEach( function( el ) { el.value = ''; } );
-					}
-					return;
-				}
-
-				if ( t && ( t.classList.contains( 'nvoos-dh-browse-btn' ) || t.classList.contains( 'nvoos-dh-refresh-btn' ) ) ) {
-					e.preventDefault();
-					openPicker( t.closest( '.nvoos-dh-remote-repo-row' ), t.classList.contains( 'nvoos-dh-refresh-btn' ) );
-				}
-			} );
-
-			function fieldVal( row, suffix ) {
-				var el = row.querySelector( '[name$="[' + suffix + ']"]' );
-				return el ? String( el.value || '' ).trim() : '';
-			}
-
-			function openPicker( row, force ) {
-				if ( ! row ) { return; }
-				var tree   = row.querySelector( '.nvoos-dh-picker-tree' );
-				var status = row.querySelector( '.nvoos-dh-picker-status' );
-				if ( ! tree || ! status ) { return; }
-
-				var owner = fieldVal( row, 'owner' );
-				var repo  = fieldVal( row, 'repo' );
-				var ref   = fieldVal( row, 'ref' ) || 'HEAD';
-				var path  = fieldVal( row, 'path' );
-
-				if ( ! owner || ! repo ) {
-					status.textContent = <?php echo wp_json_encode( __( 'Enter owner and repo first.', 'nvoos-docs-hub' ) ); ?>;
-					return;
-				}
-
-				// Resolve persisted-row index from the browse button itself.
-				var btn = row.querySelector( '.nvoos-dh-browse-btn' );
-				var idx = btn ? parseInt( btn.getAttribute( 'data-row-index' ) || '-1', 10 ) : -1;
-
-				status.textContent = <?php echo wp_json_encode( __( 'Loading…', 'nvoos-docs-hub' ) ); ?>;
-				tree.style.display = 'block';
-				tree.innerHTML = '';
-
-				var url = restBase
-					+ '?owner=' + encodeURIComponent( owner )
-					+ '&repo='  + encodeURIComponent( repo )
-					+ '&ref='   + encodeURIComponent( ref )
-					+ '&path='  + encodeURIComponent( path )
-					+ '&index=' + encodeURIComponent( idx )
-					+ ( force ? '&force=1' : '' );
-
-				fetch( url, {
-					credentials: 'same-origin',
-					headers: { 'X-WP-Nonce': restNonce, 'Accept': 'application/json' }
-				} ).then( function( r ) {
-					return r.json().then( function( body ) { return { ok: r.ok, body: body }; } );
-				} ).then( function( res ) {
-					if ( ! res.ok || ! res.body || ! Array.isArray( res.body.files ) ) {
-						var msg = ( res.body && res.body.message ) ? res.body.message : 'Request failed';
-						status.textContent = msg;
-						return;
-					}
-					renderTree( row, tree, res.body.files );
-					status.textContent = res.body.files.length + ' '
-						+ <?php echo wp_json_encode( __( 'files found.', 'nvoos-docs-hub' ) ); ?>;
-				} ).catch( function( err ) {
-					status.textContent = ( err && err.message ) ? err.message : 'Request failed';
-				} );
-			}
-
-			function getSelectedPaths( row ) {
-				var ta = row.querySelector( '.nvoos-dh-selected-paths' );
-				if ( ! ta ) { return []; }
-				return String( ta.value || '' ).split( /\r\n|\r|\n/ )
-					.map( function( s ) { return s.trim(); } )
-					.filter( function( s ) { return s.length > 0; } );
-			}
-
-			function setSelectedPaths( row, paths ) {
-				var ta = row.querySelector( '.nvoos-dh-selected-paths' );
-				if ( ta ) { ta.value = paths.join( '\n' ); }
-			}
-
-			function pathIsSelected( filePath, selected ) {
-				for ( var i = 0; i < selected.length; i++ ) {
-					var s = selected[ i ];
-					if ( s.charAt( s.length - 1 ) === '/' ) {
-						var dir = s.replace( /\/+$/, '' );
-						if ( filePath === dir || filePath.indexOf( dir + '/' ) === 0 ) {
-							return true;
-						}
-					} else if ( filePath === s ) {
-						return true;
-					}
-				}
-				return false;
-			}
-
-			function renderTree( row, container, files ) {
-				container.innerHTML = '';
-				var selected = getSelectedPaths( row );
-
-				var listEl = document.createElement( 'ul' );
-				listEl.style.listStyle = 'none';
-				listEl.style.paddingLeft = '0';
-				listEl.style.margin = '0';
-
-				files.forEach( function( f ) {
-					var li = document.createElement( 'li' );
-					li.style.padding = '2px 0';
-					li.style.fontFamily = 'Menlo, Consolas, monospace';
-					li.style.fontSize = '12px';
-
-					var cb = document.createElement( 'input' );
-					cb.type = 'checkbox';
-					cb.value = f.path;
-					cb.checked = pathIsSelected( f.path, selected );
-					cb.style.marginRight = '6px';
-
-					cb.addEventListener( 'change', function() {
-						var current = getSelectedPaths( row );
-						if ( cb.checked ) {
-							if ( current.indexOf( f.path ) === -1 ) {
-								current.push( f.path );
-							}
-						} else {
-							current = current.filter( function( p ) { return p !== f.path; } );
-						}
-						setSelectedPaths( row, current );
-					} );
-
-					var label = document.createElement( 'label' );
-					label.style.cursor = 'pointer';
-					label.appendChild( cb );
-					label.appendChild( document.createTextNode( f.path + '  ' ) );
-
-					if ( typeof f.size === 'number' && f.size > 0 ) {
-						var size = document.createElement( 'span' );
-						size.style.color = '#646970';
-						size.textContent = '(' + Math.round( f.size / 1024 * 10 ) / 10 + ' KB)';
-						label.appendChild( size );
-					}
-
-					li.appendChild( label );
-					listEl.appendChild( li );
-				} );
-
-				if ( files.length === 0 ) {
-					var empty = document.createElement( 'p' );
-					empty.style.color = '#646970';
-					empty.textContent = <?php echo wp_json_encode( __( 'No Markdown files found in this ref / path.', 'nvoos-docs-hub' ) ); ?>;
-					container.appendChild( empty );
-					return;
-				}
-
-				container.appendChild( listEl );
-			}
-		} )();
-		</script>
-		<?php
+		// The repo-picker script is enqueued and localized in enqueue_admin_assets().
 	}
 }
 

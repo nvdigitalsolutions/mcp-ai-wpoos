@@ -523,7 +523,14 @@ class NV_oOS_Docs_Hub_REST {
 		$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] )
 			? $settings['remote_repos']
 			: array();
-		if ( $index >= 0 && isset( $repos[ $index ]['token'] ) ) {
+		// Bounds-check the index against the saved repo list so a tampered request
+		// can't reach into other array keys.
+		if ( $index >= 0
+			&& $index < count( $repos )
+			&& isset( $repos[ $index ] )
+			&& is_array( $repos[ $index ] )
+			&& isset( $repos[ $index ]['token'] )
+		) {
 			$token = (string) $repos[ $index ]['token'];
 		}
 
