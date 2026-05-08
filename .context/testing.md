@@ -295,3 +295,29 @@ bin/find-untested-classes.sh --check
 ```
 
 The baseline file's `subsystem_floors` keys correspond 1:1 to the categories in §2 of the PHPUnit Test Coverage Gap-Filling Plan.
+
+---
+
+## Tool registry coverage smoke test
+
+`tests/test-tool-registry-coverage.php` is a single data-driven smoke test that locks the contract for every registered tool in one place. It asserts:
+
+1. `get_slug()` returns a non-empty string that survives `sanitize_key()` unchanged.
+2. The parameter schema (from `get_parameters_schema()` or `get_definition()['parameters']`) contains no `'mixed'` types and every `type:'array'` declares `items`.
+3. `get_required_capability()` (when present) resolves to a non-empty string or array of strings.
+4. `execute()` does not throw when invoked by an unauthenticated caller (a logged-out user with no capabilities).
+
+It is paired with two manifest files that list every tool-class file basename so `bin/find-untested-classes.sh` recognises the smoke test as covering the entire tool registry:
+
+- `tests/tools/.coverage-manifest.txt` — base tools under `includes/tools/`
+- `addons/pro/tests/tools/.coverage-manifest.txt` — pro tools under `addons/pro/includes/tools/`
+
+**Whenever you add, remove or rename a tool class, regenerate the manifest:**
+
+```bash
+bin/generate-tool-coverage-manifest.sh
+```
+
+The smoke test itself includes an assertion that fails when the manifest is stale, so CI catches drift even if a contributor forgets the regen step.
+
+When you want to add behavioural coverage for a high-risk tool (write/state-changing, external API, file/upload), add a dedicated test under `tests/tools/` (base) or `addons/pro/tests/tools/` (pro) — those tests stack on top of the smoke test rather than replacing it.

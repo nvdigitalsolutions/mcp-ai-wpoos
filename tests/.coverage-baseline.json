@@ -10,15 +10,15 @@
     "_comment": "Counts of source class files that have at least one dedicated test file referencing the class name. The CI gate compares current values to these floors and fails when any drops. Recompute via bin/find-untested-classes.sh.",
     "base_tools": {
       "source_classes": 242,
-      "covered_classes_min": 83
+      "covered_classes_min": 242
     },
     "pro_tools": {
       "source_classes": 715,
-      "covered_classes_min": 142
+      "covered_classes_min": 715
     },
     "rest_controllers": {
       "source_classes": 67,
-      "covered_classes_min": 34
+      "covered_classes_min": 35
     },
     "slash_commands": {
       "source_classes": 20,
@@ -39,6 +39,6 @@
   },
   "test_file_floor": {
     "_comment": "Total number of test files across tests/ and addons/*/tests/. Must never decrease without justification.",
-    "min_count": 1099
+    "min_count": 1100
   }
 }

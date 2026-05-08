@@ -38,12 +38,14 @@ for arg in "$@"; do
 done
 
 # Glob lists per subsystem.
-declare -a BASE_TOOLS=( includes/tools/class-*.php )
+declare -a BASE_TOOLS
+mapfile -t BASE_TOOLS < <(find includes/tools -type f -name 'class-*.php' 2>/dev/null)
 declare -a PRO_TOOLS
 mapfile -t PRO_TOOLS < <(find addons/pro/includes/tools -name 'class-*.php' 2>/dev/null)
 declare -a REST
 mapfile -t REST < <(find includes addons -name 'class-*-rest*.php' -o -name 'class-*-controller.php' 2>/dev/null | grep -v vendor || true)
-declare -a SLASH=( includes/slash-commands/commands/class-*.php )
+declare -a SLASH
+mapfile -t SLASH < <(find includes/slash-commands/commands -type f -name 'class-*.php' 2>/dev/null)
 declare -a SERVICES
 mapfile -t SERVICES < <(find includes/services addons/pro/includes/services -name 'class-*.php' 2>/dev/null)
 declare -a HARNESS
