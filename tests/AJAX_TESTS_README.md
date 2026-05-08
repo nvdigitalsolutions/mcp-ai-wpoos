@@ -16,14 +16,14 @@ coverage across the codebase.
 | Total registered AJAX handlers (`wp_ajax_wp_mcp_ai_*`) | **271** |
 | - Base (`includes/`) | 113 |
 | - Pro (`addons/pro/`) | 158 |
-| Tested (referenced in `tests/`) | **86** |
-| Untested (allow-listed for incremental gap-fill) | 185 |
-| Coverage | **31.7 %** |
+| Tested (referenced in `tests/`) | **97** |
+| Untested (allow-listed for incremental gap-fill) | 174 |
+| Coverage | **35.8 %** |
 
 Numbers are produced by `bin/audit-ajax-handlers.php` and rebuilt on every
-PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 185 allow-listed
-handlers are the seeded gap captured in `tests/ajax-coverage-allowlist.txt`;
-each cluster that lands in a follow-up PR removes its handlers from that file.
+PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 174 allow-listed
+handlers are the remaining gap; each cluster that lands in a follow-up PR
+removes its handlers from that file.
 
 ---
 
@@ -142,6 +142,9 @@ forget to stub never hit the network — unstubbed URLs return `200 {}`.
 | `test-token-manager-ajax-handlers.php` | Token usage admin. |
 | `test-tool-toggle-ajax.php` | `toggle_tool`. |
 | `test-workflow-ajax-handlers.php` | **Pilot cluster** — workflow CRUD + execution. |
+| `test-approvals-ajax.php` | Approvals admin (`list_approvals`, `resolve_approval`). |
+| `test-skill-manager-ajax.php` | Skill Manager — Pro addon (upload / install_url / save / delete / generate). |
+| `test-settings-utility-ajax.php` | Settings utility (export / import / clear-cache / reset). |
 
 Each addition or removal of an AJAX handler must be accompanied by either a
 test reference or an explicit entry in `tests/ajax-coverage-allowlist.txt`.
@@ -182,6 +185,9 @@ Listed in priority order; each cluster ships as its own PR that removes its
 handlers from the allow-list:
 
 1. ✅ **Workflow CRUD / execution** — pilot, this PR.
+2. ✅ **Skill manager** (upload, install_url, generate, delete, save).
+3. ✅ **Approvals / accountability** (`list_approvals`, `resolve_approval`).
+4. ✅ **Settings export/import, cache clear, reset**.
 2. **Skill manager** (upload, install_url, generate, delete, save).
 3. **Embedded models / llama binary / dataset preview**.
 4. **Approvals / accountability** (`acc_*`, `list_approvals`, `resolve_approval`).
