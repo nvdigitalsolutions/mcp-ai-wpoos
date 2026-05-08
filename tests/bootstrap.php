@@ -125,7 +125,8 @@ tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
  * This allows integration tests to run when plugins are installed.
  */
 function wp_mcp_ai_load_optional_test_plugins() {
-	$wordpress_path = getenv( 'WP_CORE_DIR' ) ?: dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
+	$wp_core_dir    = getenv( 'WP_CORE_DIR' );
+	$wordpress_path = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
 	$plugins_dir    = $wordpress_path . '/wp-content/plugins';
 
 	// Track which plugins are loaded for test skipping.
@@ -221,3 +222,7 @@ function wp_mcp_ai_init_test_database_tables() {
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+// Helpers that depend on classes provided by the WP test bootstrap (e.g.
+// `WP_Ajax_UnitTestCase`) must be loaded after it.
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';

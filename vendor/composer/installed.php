@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fill-gaps-in-ajax-test-suite',
+        'version' => 'dev-copilot/fill-gaps-in-ajax-test-suite',
+        'reference' => 'ae2a35c49204d7f20f5ea57c6571d1620d86495d',
         'pretty_version' => 'dev-copilot/enhance-docu-hub-addon',
         'version' => 'dev-copilot/enhance-docu-hub-addon',
         'reference' => '6495f36f8de97bb893ad832c414d50120484555c',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fill-gaps-in-ajax-test-suite',
+            'version' => 'dev-copilot/fill-gaps-in-ajax-test-suite',
+            'reference' => 'ae2a35c49204d7f20f5ea57c6571d1620d86495d',
             'pretty_version' => 'dev-copilot/enhance-docu-hub-addon',
             'version' => 'dev-copilot/enhance-docu-hub-addon',
             'reference' => '6495f36f8de97bb893ad832c414d50120484555c',
