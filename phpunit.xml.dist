@@ -40,7 +40,6 @@
             <directory suffix=".php">addons/algorave/includes</directory>
             <directory suffix=".php">addons/fantasy-football/includes</directory>
             <directory suffix=".php">addons/graphify/includes</directory>
-            <directory suffix=".php">addons/cloud-worker/includes</directory>
         </include>
         <exclude>
             <directory>vendor</directory>
