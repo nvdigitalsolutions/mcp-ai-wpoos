@@ -130,12 +130,10 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	// ---
 
 	/**
-
-	 * Description.
+	 * Data provider.
 	 *
 	 * @return array<string, array{string, array}>
 	 */
-	/** Data provider. */
 	public static function provideImportHandlers(): array {
 		$raw = array(
 			array(
@@ -284,8 +282,8 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 * Guards against a missing or invalid nonce.
 	 *
 	 * @dataProvider provideImportHandlers
-	 * @param string $action Value.
-	 * @param array  $cfg Value.
+	 * @param string $action AJAX action name.
+	 * @param array  $cfg Handler configuration.
 	 */
 	public function test_import_handler_rejects_bad_nonce( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
@@ -297,16 +295,11 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
-
-	 * Description.
-	 *
-	 * @dataProvider provideImportHandlers
-	/**
 	 * Guards against insufficient capabilities.
 	 *
 	 * @dataProvider provideImportHandlers
-	 * @param string $action Value.
-	 * @param array  $cfg Value.
+	 * @param string $action AJAX action name.
+	 * @param array  $cfg Handler configuration.
 	 */
 	public function test_import_handler_rejects_subscriber( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
@@ -325,16 +318,11 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
-
-	 * Description.
-	 *
-	 * @dataProvider provideImportHandlers
-	/**
 	 * Validates the empty import data parameter.
 	 *
 	 * @dataProvider provideImportHandlers
-	 * @param string $action Value.
-	 * @param array  $cfg Value.
+	 * @param string $action AJAX action name.
+	 * @param array  $cfg Handler configuration.
 	 */
 	public function test_import_handler_validates_empty_import_data( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {

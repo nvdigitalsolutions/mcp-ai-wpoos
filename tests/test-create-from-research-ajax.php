@@ -195,8 +195,8 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 * Guards against a missing or invalid nonce.
 	 *
 	 * @dataProvider provideHandlers
-	 * @param string $action Value.
-	 * @param array  $cfg Value.
+	 * @param string $action AJAX action name.
+	 * @param array  $cfg Handler configuration.
 	 */
 	public function test_handler_rejects_bad_nonce( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
@@ -208,16 +208,11 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
-
-	 * Description.
-	 *
-	 * @dataProvider provideHandlers
-	/**
 	 * Guards against insufficient capabilities.
 	 *
 	 * @dataProvider provideHandlers
-	 * @param string $action Value.
-	 * @param array  $cfg Value.
+	 * @param string $action AJAX action name.
+	 * @param array  $cfg Handler configuration.
 	 */
 	public function test_handler_rejects_subscriber( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
@@ -235,16 +230,11 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
-
-	 * Description.
-	 *
-	 * @dataProvider provideHandlers
-	/**
 	 * Validates the empty research data parameter.
 	 *
 	 * @dataProvider provideHandlers
-	 * @param string $action Value.
-	 * @param array  $cfg Value.
+	 * @param string $action AJAX action name.
+	 * @param array  $cfg Handler configuration.
 	 */
 	public function test_handler_validates_empty_research_data( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
