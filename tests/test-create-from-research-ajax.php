@@ -58,6 +58,7 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 */
 	private static array $handlers = array();
 
+	/** Sets up shared state before any test in the class. */
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
@@ -186,13 +187,16 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * Generic 4-point tests driven by self::$handlers table
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Generic 4-point tests driven by self::$handlers table
+	// ---
 
 	/**
+	 * Guards against a missing or invalid nonce.
+	 *
 	 * @dataProvider provideHandlers
+	 * @param string $action Value.
+	 * @param array  $cfg Value.
 	 */
 	public function test_handler_rejects_bad_nonce( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
@@ -204,7 +208,16 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
+
+	 * Description.
+	 *
 	 * @dataProvider provideHandlers
+	/**
+	 * Guards against insufficient capabilities.
+	 *
+	 * @dataProvider provideHandlers
+	 * @param string $action Value.
+	 * @param array  $cfg Value.
 	 */
 	public function test_handler_rejects_subscriber( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {
@@ -222,7 +235,16 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	/**
+
+	 * Description.
+	 *
 	 * @dataProvider provideHandlers
+	/**
+	 * Validates the empty research data parameter.
+	 *
+	 * @dataProvider provideHandlers
+	 * @param string $action Value.
+	 * @param array  $cfg Value.
 	 */
 	public function test_handler_validates_empty_research_data( string $action, array $cfg ): void {
 		if ( ! empty( $cfg['class'] ) && ! class_exists( $cfg['class'] ) ) {

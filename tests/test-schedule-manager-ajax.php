@@ -47,17 +47,27 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * Shared helper: assert cap/nonce rejection for a given action.
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Shared helper: assert cap/nonce rejection for a given action.
+	// ---
 
+	/**
+	 * Assert rejected without nonce.
+	 *
+	 * @param mixed $action Value.
+	 */
 	private function assert_rejected_without_nonce( $action ) {
 		$this->as_admin();
 		$response = $this->dispatch( $action );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/**
+	 * Assert rejected for subscriber.
+	 *
+	 * @param mixed $action Value.
+	 * @param array $extra Value.
+	 */
 	private function assert_rejected_for_subscriber( $action, array $extra = array() ) {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -67,19 +77,21 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Unauthorized' );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_get_schedules
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_get_schedules
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_schedules_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_get_schedules' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_schedules_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber( 'wp_mcp_ai_sm_get_schedules' );
 	}
 
+	/** Verifies the response returns array for admin. */
 	public function test_get_schedules_returns_array_for_admin() {
 		$this->as_admin();
 
@@ -97,15 +109,16 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_create_schedule
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_create_schedule
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_schedule_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_create_schedule' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_schedule_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber(
 			'wp_mcp_ai_sm_create_schedule',
@@ -113,6 +126,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing data parameter. */
 	public function test_create_schedule_validates_missing_data() {
 		$this->as_admin();
 
@@ -127,6 +141,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid schedule data' );
 	}
 
+	/** Verifies the response returns structured response with valid data. */
 	public function test_create_schedule_returns_structured_response_with_valid_data() {
 		$this->as_admin();
 
@@ -149,15 +164,16 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_delete_schedule
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_delete_schedule
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_delete_schedule_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_delete_schedule' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_delete_schedule_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber(
 			'wp_mcp_ai_sm_delete_schedule',
@@ -165,6 +181,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing schedule id parameter. */
 	public function test_delete_schedule_validates_missing_schedule_id() {
 		$this->as_admin();
 
@@ -179,6 +196,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Missing schedule_id' );
 	}
 
+	/** Verifies the response returns not found for unknown id. */
 	public function test_delete_schedule_returns_not_found_for_unknown_id() {
 		$this->as_admin();
 
@@ -195,15 +213,16 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_toggle_schedule
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_toggle_schedule
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_toggle_schedule_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_toggle_schedule' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_toggle_schedule_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber(
 			'wp_mcp_ai_sm_toggle_schedule',
@@ -214,6 +233,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing schedule id parameter. */
 	public function test_toggle_schedule_validates_missing_schedule_id() {
 		$this->as_admin();
 
@@ -229,6 +249,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Missing schedule_id' );
 	}
 
+	/** Verifies the response returns structured response for admin. */
 	public function test_toggle_schedule_returns_structured_response_for_admin() {
 		$this->as_admin();
 
@@ -245,19 +266,21 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_get_history
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_get_history
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_history_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_get_history' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_history_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber( 'wp_mcp_ai_sm_get_history' );
 	}
 
+	/** Verifies the response returns array for admin. */
 	public function test_get_history_returns_array_for_admin() {
 		$this->as_admin();
 
@@ -270,19 +293,21 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_clear_history
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_clear_history
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_clear_history_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_clear_history' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_clear_history_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber( 'wp_mcp_ai_sm_clear_history' );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_clear_history_succeeds_for_admin() {
 		$this->as_admin();
 
@@ -294,19 +319,21 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_get_presets
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_get_presets
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_presets_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_get_presets' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_presets_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber( 'wp_mcp_ai_sm_get_presets' );
 	}
 
+	/** Verifies the response returns array for admin. */
 	public function test_get_presets_returns_array_for_admin() {
 		$this->as_admin();
 
@@ -319,15 +346,16 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_sm_install_preset
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_sm_install_preset
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_install_preset_rejects_missing_nonce() {
 		$this->assert_rejected_without_nonce( 'wp_mcp_ai_sm_install_preset' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_install_preset_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber(
 			'wp_mcp_ai_sm_install_preset',
@@ -335,6 +363,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing preset id parameter. */
 	public function test_install_preset_validates_missing_preset_id() {
 		$this->as_admin();
 
@@ -349,6 +378,7 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for unknown preset. */
 	public function test_install_preset_returns_structured_response_for_unknown_preset() {
 		$this->as_admin();
 

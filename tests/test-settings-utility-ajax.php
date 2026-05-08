@@ -50,12 +50,12 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		parent::tearDown();
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_clear_settings_cache
-	 * (simplest handler — test it first so pattern is established)
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_clear_settings_cache
+	// (simplest handler — test it first so pattern is established)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_clear_cache_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -64,6 +64,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_clear_cache_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -75,6 +76,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_clear_cache_succeeds_for_admin() {
 		$this->as_admin();
 
@@ -91,11 +93,11 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertFalse( get_transient( 'wp_mcp_ai_settings_cache' ) );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_reset_settings
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_reset_settings
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_reset_settings_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -104,6 +106,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_reset_settings_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -115,6 +118,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Reset settings overwrites settings with defaults. */
 	public function test_reset_settings_overwrites_settings_with_defaults() {
 		$this->as_admin();
 
@@ -138,11 +142,11 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_export_settings
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_export_settings
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_export_settings_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -151,6 +155,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_export_settings_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -162,6 +167,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns json download. */
 	public function test_export_settings_happy_path_returns_json_download() {
 		$this->as_admin();
 
@@ -180,7 +186,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		// Two possible code-paths:
 		// 1) Handler exited early after check_ajax_referer failure → assertAjaxForbidden
 		// 2) Handler streamed JSON export → $raw is a JSON object with 'version' key
-		// 3) Handler returned wp_send_json_error → success:false response
+		// 3) Handler returned wp_send_json_error → success:false response.
 		if ( is_array( $response ) && array_key_exists( 'success', $response ) ) {
 			// Got a standard wp_send_json_* response.
 			$this->assertIsArray( $response );
@@ -193,11 +199,11 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_import_settings
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_import_settings
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_import_settings_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -206,6 +212,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_import_settings_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -217,6 +224,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Validates the no file uploaded parameter. */
 	public function test_import_settings_validates_no_file_uploaded() {
 		$this->as_admin();
 
@@ -230,6 +238,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'No file uploaded' );
 	}
 
+	/** Validates the upload error parameter. */
 	public function test_import_settings_validates_upload_error() {
 		$this->as_admin();
 
@@ -252,6 +261,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$_FILES = array();
 	}
 
+	/** Validates the file too large parameter. */
 	public function test_import_settings_validates_file_too_large() {
 		$this->as_admin();
 
@@ -279,6 +289,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		unlink( $tmp );
 	}
 
+	/** Validates the invalid json content parameter. */
 	public function test_import_settings_validates_invalid_json_content() {
 		$this->as_admin();
 
@@ -307,6 +318,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		unlink( $tmp );
 	}
 
+	/** Import settings happy path persists settings. */
 	public function test_import_settings_happy_path_persists_settings() {
 		$this->as_admin();
 

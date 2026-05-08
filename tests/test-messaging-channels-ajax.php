@@ -53,6 +53,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	/** Pro class required for this suite. */
 	const PRO_CLASS = 'WP_MCP_AI_Pro_Remote_Sites_Admin';
 
+	/** Sets up shared state before any test in the class. */
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 		if ( ! class_exists( self::PRO_CLASS ) ) {
@@ -60,10 +61,9 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * Internal helper: cap-gate + nonce-gate checks for any messaging handler.
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Internal helper: cap-gate + nonce-gate checks for any messaging handler.
+	// ---
 
 	/**
 	 * Assert that a handler rejects a subscriber.
@@ -96,15 +96,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_fetch_whatsapp_phone_numbers
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_fetch_whatsapp_phone_numbers
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_fetch_whatsapp_phone_numbers_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_fetch_whatsapp_phone_numbers' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_fetch_whatsapp_phone_numbers_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_fetch_whatsapp_phone_numbers',
@@ -116,6 +117,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing credentials parameter. */
 	public function test_fetch_whatsapp_phone_numbers_validates_missing_credentials() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -125,6 +127,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Fetch whatsapp phone numbers stubs outbound http. */
 	public function test_fetch_whatsapp_phone_numbers_stubs_outbound_http() {
 		$this->stub_http_response(
 			'graph.facebook.com',
@@ -157,15 +160,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'phone_numbers', $data );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_whatsapp_live
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_whatsapp_live
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_whatsapp_live_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_whatsapp_live' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_whatsapp_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_whatsapp_live',
@@ -177,6 +181,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing credentials parameter. */
 	public function test_whatsapp_live_validates_missing_credentials() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -187,15 +192,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_whatsapp_auto_reply
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_whatsapp_auto_reply
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_whatsapp_auto_reply_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_whatsapp_auto_reply' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_whatsapp_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_whatsapp_auto_reply',
@@ -208,15 +214,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_register_whatsapp_phone_number
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_register_whatsapp_phone_number
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_register_whatsapp_phone_number_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_register_whatsapp_phone_number' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_register_whatsapp_phone_number_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_register_whatsapp_phone_number',
@@ -229,15 +236,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_create_whatsapp_group
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_create_whatsapp_group
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_whatsapp_group_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_create_whatsapp_group' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_whatsapp_group_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_create_whatsapp_group',
@@ -250,15 +258,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_telegram_live
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_telegram_live
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_telegram_live_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_telegram_live' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_telegram_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_telegram_live',
@@ -267,6 +276,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing bot token parameter. */
 	public function test_telegram_live_validates_missing_bot_token() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -276,15 +286,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_telegram_auto_reply
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_telegram_auto_reply
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_telegram_auto_reply_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_telegram_auto_reply' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_telegram_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_telegram_auto_reply',
@@ -296,15 +307,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_set_telegram_webhook
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_set_telegram_webhook
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_set_telegram_webhook_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_set_telegram_webhook' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_set_telegram_webhook_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_set_telegram_webhook',
@@ -316,6 +328,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing token parameter. */
 	public function test_set_telegram_webhook_validates_missing_token() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -325,15 +338,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_telegram_webhook_info
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_telegram_webhook_info
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_telegram_webhook_info_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_get_telegram_webhook_info' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_telegram_webhook_info_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_get_telegram_webhook_info',
@@ -342,6 +356,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing token parameter. */
 	public function test_get_telegram_webhook_info_validates_missing_token() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -351,15 +366,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_register_telegram_commands
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_register_telegram_commands
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_register_telegram_commands_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_register_telegram_commands' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_register_telegram_commands_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_register_telegram_commands',
@@ -371,15 +387,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_generate_messenger_token
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_generate_messenger_token
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_generate_messenger_token_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_generate_messenger_token' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_generate_messenger_token_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_generate_messenger_token',
@@ -392,6 +409,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing app id parameter. */
 	public function test_generate_messenger_token_validates_missing_app_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -401,15 +419,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_messenger_live
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_messenger_live
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_messenger_live_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_messenger_live' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_messenger_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_messenger_live',
@@ -421,15 +440,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_messenger_auto_reply
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_messenger_auto_reply
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_messenger_auto_reply_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_messenger_auto_reply' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_messenger_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_messenger_auto_reply',
@@ -442,15 +462,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_google_chat_live
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_google_chat_live
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_google_chat_live_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_google_chat_live' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_google_chat_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_google_chat_live',
@@ -459,6 +480,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Validates the missing credentials parameter. */
 	public function test_google_chat_live_validates_missing_credentials() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -468,15 +490,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_fetch_google_chat_spaces
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_fetch_google_chat_spaces
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_fetch_google_chat_spaces_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_fetch_google_chat_spaces' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_fetch_google_chat_spaces_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_fetch_google_chat_spaces',
@@ -485,15 +508,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_google_chat_auto_reply
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_google_chat_auto_reply
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_google_chat_auto_reply_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_google_chat_auto_reply' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_google_chat_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_google_chat_auto_reply',
@@ -505,15 +529,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_google_chat_incoming_trigger
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_google_chat_incoming_trigger
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_google_chat_incoming_trigger_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_google_chat_incoming_trigger' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_google_chat_incoming_trigger_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_google_chat_incoming_trigger',
@@ -522,15 +547,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_google_chat_webhook_log
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_google_chat_webhook_log
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_google_chat_webhook_log_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_get_google_chat_webhook_log' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_google_chat_webhook_log_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_get_google_chat_webhook_log',
@@ -539,6 +565,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_get_google_chat_webhook_log_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -548,15 +575,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_clear_google_chat_webhook_log
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_clear_google_chat_webhook_log
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_clear_google_chat_webhook_log_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_clear_google_chat_webhook_log' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_clear_google_chat_webhook_log_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_clear_google_chat_webhook_log',
@@ -565,6 +593,7 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_clear_google_chat_webhook_log_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -574,15 +603,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_generate_teams_manifest
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_generate_teams_manifest
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_generate_teams_manifest_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_generate_teams_manifest' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_generate_teams_manifest_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_generate_teams_manifest',
@@ -595,15 +625,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_generate_teams_app_package
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_generate_teams_app_package
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_generate_teams_app_package_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_generate_teams_app_package' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_generate_teams_app_package_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_generate_teams_app_package',
@@ -616,15 +647,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_office365_live
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_office365_live
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_office365_live_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_office365_live' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_office365_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_office365_live',
@@ -637,15 +669,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_office365_auto_reply
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_office365_auto_reply
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_office365_auto_reply_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_office365_auto_reply' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_office365_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_office365_auto_reply',
@@ -659,15 +692,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_icloud_live
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_icloud_live
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_icloud_live_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_icloud_live' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_icloud_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_icloud_live',
@@ -679,15 +713,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_icloud_auto_reply
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_icloud_auto_reply
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_icloud_auto_reply_rejects_bad_nonce() {
 		$this->assertRejectsBadNonce( 'wp_mcp_ai_test_icloud_auto_reply' );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_icloud_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_icloud_auto_reply',

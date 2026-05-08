@@ -54,20 +54,21 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
+	/** Sets up test fixtures before each test. */
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( self::WF_OPTION );
 	}
 
+	/** Tears down test state after each test. */
 	public function tearDown(): void {
 		delete_option( self::WF_OPTION );
 		parent::tearDown();
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * Helpers
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Helpers
+	// ---
 
 	/**
 	 * Seed one workflow in the option store.
@@ -97,7 +98,12 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/** Valid save payload. */
+	/**
+	 * Valid save payload.
+	 *
+	 * @param string $name Workflow name.
+	 * @return array<string,mixed>
+	 */
 	private function valid_save_payload( string $name = 'My Workflow' ): array {
 		return array(
 			'nonce'    => wp_create_nonce( self::WORKFLOW_NONCE ),
@@ -116,11 +122,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_save_pro_workflow
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_save_pro_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_save_pro_workflow_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -139,12 +145,14 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_save_pro_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch( 'wp_mcp_ai_save_pro_workflow', $this->valid_save_payload() );
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing workflow parameter. */
 	public function test_save_pro_workflow_validates_missing_workflow() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -154,6 +162,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing name parameter. */
 	public function test_save_pro_workflow_validates_missing_name() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -171,6 +180,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_save_pro_workflow_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_save_pro_workflow', $this->valid_save_payload( 'My Workflow' ) );
@@ -180,11 +190,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertNotEmpty( $workflows );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_load_pro_workflow
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_load_pro_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_load_pro_workflow_rejects_bad_nonce() {
 		$this->seed_workflow();
 		$this->as_admin();
@@ -198,6 +208,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_load_pro_workflow_rejects_subscriber() {
 		$this->seed_workflow();
 		$this->as_subscriber();
@@ -211,6 +222,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_load_pro_workflow_validates_missing_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -220,6 +232,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_load_pro_workflow_happy_path() {
 		$this->seed_workflow( 'test-flow', 'Test Flow' );
 		$this->as_admin();
@@ -236,11 +249,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertSame( 'Test Flow', $data['workflow']['name'] );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_delete_pro_workflow
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_delete_pro_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_delete_pro_workflow_rejects_bad_nonce() {
 		$this->seed_workflow();
 		$this->as_admin();
@@ -254,6 +267,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_delete_pro_workflow_rejects_subscriber() {
 		$this->seed_workflow();
 		$this->as_subscriber();
@@ -267,6 +281,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_delete_pro_workflow_validates_missing_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -276,6 +291,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_delete_pro_workflow_happy_path() {
 		$this->seed_workflow( 'del-flow' );
 		$this->as_admin();
@@ -292,17 +308,18 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayNotHasKey( 'del-flow', $workflows );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_list_pro_workflows
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_list_pro_workflows
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_list_pro_workflows_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_list_pro_workflows', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_list_pro_workflows_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -312,6 +329,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_list_pro_workflows_happy_path() {
 		$this->seed_workflow( 'list-flow', 'List Flow' );
 		$this->as_admin();
@@ -325,11 +343,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertIsArray( $data['workflows'] );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_export_pro_workflow
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_export_pro_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_export_pro_workflow_rejects_bad_nonce() {
 		$this->seed_workflow();
 		$this->as_admin();
@@ -343,6 +361,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_export_pro_workflow_rejects_subscriber() {
 		$this->seed_workflow();
 		$this->as_subscriber();
@@ -356,6 +375,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_export_pro_workflow_validates_missing_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -365,6 +385,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_export_pro_workflow_happy_path() {
 		$this->seed_workflow( 'exp-flow', 'Export Me' );
 		$this->as_admin();
@@ -378,11 +399,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_duplicate_pro_workflow
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_duplicate_pro_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_duplicate_pro_workflow_rejects_bad_nonce() {
 		$this->seed_workflow();
 		$this->as_admin();
@@ -396,6 +417,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_duplicate_pro_workflow_rejects_subscriber() {
 		$this->seed_workflow();
 		$this->as_subscriber();
@@ -409,6 +431,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_duplicate_pro_workflow_validates_missing_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -418,6 +441,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_duplicate_pro_workflow_happy_path() {
 		$this->seed_workflow( 'dup-flow', 'Dup Flow' );
 		$this->as_admin();
@@ -431,11 +455,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_rename_pro_workflow
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_rename_pro_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_rename_pro_workflow_rejects_bad_nonce() {
 		$this->seed_workflow();
 		$this->as_admin();
@@ -450,6 +474,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_rename_pro_workflow_rejects_subscriber() {
 		$this->seed_workflow();
 		$this->as_subscriber();
@@ -464,6 +489,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_rename_pro_workflow_validates_missing_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -476,6 +502,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_rename_pro_workflow_happy_path() {
 		$this->seed_workflow( 'ren-flow', 'Old Name' );
 		$this->as_admin();
@@ -490,17 +517,18 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_workflow_templates
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_workflow_templates
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_workflow_templates_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_get_workflow_templates', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_workflow_templates_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -510,6 +538,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_get_workflow_templates_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -523,17 +552,18 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_workflow_presets
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_workflow_presets
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_workflow_presets_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_get_workflow_presets', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_workflow_presets_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -543,6 +573,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_get_workflow_presets_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -552,11 +583,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_install_workflow_preset
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_install_workflow_preset
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_install_workflow_preset_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -569,6 +600,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_install_workflow_preset_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -581,6 +613,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing preset id parameter. */
 	public function test_install_workflow_preset_validates_missing_preset_id() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -590,17 +623,18 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_recent_workflows  (base WP_MCP_AI_Admin_Orchestration_Dashboard)
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_recent_workflows  (base WP_MCP_AI_Admin_Orchestration_Dashboard)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_recent_workflows_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_get_recent_workflows', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_recent_workflows_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -610,6 +644,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_get_recent_workflows_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -619,11 +654,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_trigger_workflow  (Pro WP_MCP_AI_Orchestration_Dashboard)
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_trigger_workflow  (Pro WP_MCP_AI_Orchestration_Dashboard)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_trigger_workflow_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -636,6 +671,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_trigger_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -648,6 +684,7 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing workflow id parameter. */
 	public function test_trigger_workflow_validates_missing_workflow_id() {
 		$this->as_admin();
 		$response = $this->dispatch(

@@ -52,10 +52,9 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * Helper: assert cap/nonce for a given action + key name.
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Helper: assert cap/nonce for a given action + key name.
+	// ---
 
 	/**
 	 * Shared assertion for the "missing API key" validation path.
@@ -78,11 +77,11 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, $key_phrase );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_anthropic_connection
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_anthropic_connection
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_anthropic_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -94,6 +93,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_anthropic_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -108,6 +108,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty api key parameter. */
 	public function test_anthropic_validates_empty_api_key() {
 		$this->assert_empty_key_rejected(
 			'wp_mcp_ai_test_anthropic_connection',
@@ -116,6 +117,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Anthropic stubs api response. */
 	public function test_anthropic_stubs_api_response() {
 		$this->as_admin();
 
@@ -147,11 +149,11 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_exa_connection
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_exa_connection
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_exa_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -163,6 +165,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_exa_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -177,6 +180,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty api key parameter. */
 	public function test_exa_validates_empty_api_key() {
 		$this->assert_empty_key_rejected(
 			'wp_mcp_ai_test_exa_connection',
@@ -185,6 +189,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Exa stubs api response. */
 	public function test_exa_stubs_api_response() {
 		$this->as_admin();
 
@@ -210,11 +215,11 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_perplexity_connection
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_perplexity_connection
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_perplexity_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -226,6 +231,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_perplexity_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -240,6 +246,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty api key parameter. */
 	public function test_perplexity_validates_empty_api_key() {
 		$this->assert_empty_key_rejected(
 			'wp_mcp_ai_test_perplexity_connection',
@@ -248,6 +255,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Perplexity stubs api response. */
 	public function test_perplexity_stubs_api_response() {
 		$this->as_admin();
 
@@ -273,11 +281,11 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_tavily_connection
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_tavily_connection
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_tavily_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -289,6 +297,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_tavily_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -303,6 +312,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty api key parameter. */
 	public function test_tavily_validates_empty_api_key() {
 		$this->assert_empty_key_rejected(
 			'wp_mcp_ai_test_tavily_connection',
@@ -311,6 +321,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
+	/** Tavily stubs api response. */
 	public function test_tavily_stubs_api_response() {
 		$this->as_admin();
 
@@ -336,11 +347,11 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_plaid_connection
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_plaid_connection
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_plaid_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -355,6 +366,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_plaid_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -370,6 +382,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty client id parameter. */
 	public function test_plaid_validates_empty_client_id() {
 		$this->as_admin();
 
@@ -386,6 +399,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Plaid stubs api response. */
 	public function test_plaid_stubs_api_response() {
 		$this->as_admin();
 
@@ -413,11 +427,11 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_test_remote_connection (Pro addon)
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_test_remote_connection (Pro addon)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_remote_connection_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -429,6 +443,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_remote_connection_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Pro_Remote_Sites_Admin (Pro) is not available.' );
@@ -447,6 +462,7 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for admin. */
 	public function test_remote_connection_returns_structured_response_for_admin() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Pro_Remote_Sites_Admin (Pro) is not available.' );

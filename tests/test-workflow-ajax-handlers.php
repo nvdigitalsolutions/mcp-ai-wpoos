@@ -46,11 +46,11 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		parent::tearDown();
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_save_workflow
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_save_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_save_workflow_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -65,6 +65,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_save_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -80,6 +81,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the required fields parameter. */
 	public function test_save_workflow_validates_required_fields() {
 		$this->as_admin();
 
@@ -108,6 +110,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Name and steps are required' );
 	}
 
+	/** Save workflow happy path persists workflow. */
 	public function test_save_workflow_happy_path_persists_workflow() {
 		$this->as_admin();
 
@@ -136,11 +139,11 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'pilot-workflow', $saved );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_delete_workflow
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_delete_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_delete_workflow_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -152,6 +155,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_delete_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -166,6 +170,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the slug parameter. */
 	public function test_delete_workflow_validates_slug() {
 		$this->as_admin();
 
@@ -180,6 +185,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Workflow slug required' );
 	}
 
+	/** Delete workflow happy path removes existing workflow. */
 	public function test_delete_workflow_happy_path_removes_existing_workflow() {
 		$this->as_admin();
 
@@ -208,6 +214,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayNotHasKey( 'pilot-workflow', $saved );
 	}
 
+	/** Verifies the response returns error for unknown slug. */
 	public function test_delete_workflow_returns_error_for_unknown_slug() {
 		$this->as_admin();
 
@@ -223,11 +230,11 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_test_workflow
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_test_workflow
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_test_workflow_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -239,6 +246,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_test_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -253,6 +261,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the slug parameter. */
 	public function test_test_workflow_validates_slug() {
 		$this->as_admin();
 
@@ -267,6 +276,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Workflow slug required' );
 	}
 
+	/** Test workflow runs for known slug. */
 	public function test_test_workflow_runs_for_known_slug() {
 		$this->as_admin();
 
@@ -299,11 +309,11 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		// asserting is the contract, not the orchestrator's runtime behaviour.
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_execute_workflow (Orchestration Dashboard)
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_execute_workflow (Orchestration Dashboard)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_execute_workflow_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -315,6 +325,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_execute_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -329,6 +340,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the id parameter. */
 	public function test_execute_workflow_validates_id() {
 		$this->as_admin();
 
@@ -343,6 +355,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Workflow ID is required' );
 	}
 
+	/** Verifies the response returns structured response for unknown id. */
 	public function test_execute_workflow_returns_structured_response_for_unknown_id() {
 		$this->as_admin();
 
@@ -365,11 +378,11 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_restart_workflow (Orchestration Dashboard)
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_restart_workflow (Orchestration Dashboard)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_restart_workflow_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -381,6 +394,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_restart_workflow_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -395,6 +409,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the id parameter. */
 	public function test_restart_workflow_validates_id() {
 		$this->as_admin();
 
@@ -409,6 +424,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Workflow ID is required' );
 	}
 
+	/** Restart workflow errors for missing transient. */
 	public function test_restart_workflow_errors_for_missing_transient() {
 		$this->as_admin();
 
@@ -423,6 +439,7 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Workflow not found' );
 	}
 
+	/** Restart workflow happy path resets state. */
 	public function test_restart_workflow_happy_path_resets_state() {
 		$this->as_admin();
 

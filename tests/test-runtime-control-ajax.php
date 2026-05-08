@@ -38,11 +38,11 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 */
 	const NONCE_ORCH = 'wp_mcp_ai_orchestration';
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_queue_status
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_queue_status
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_queue_status_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -51,6 +51,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_queue_status_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -62,6 +63,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns stats for admin. */
 	public function test_queue_status_returns_stats_for_admin() {
 		$this->as_admin();
 
@@ -78,11 +80,11 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_rabbitmq_health
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_rabbitmq_health
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_rabbitmq_health_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -91,6 +93,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_rabbitmq_health_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -102,6 +105,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns structured response. */
 	public function test_rabbitmq_health_returns_structured_response() {
 		$this->as_admin();
 
@@ -119,11 +123,11 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_rabbitmq_setup
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_rabbitmq_setup
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_rabbitmq_setup_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -132,6 +136,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_rabbitmq_setup_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -143,6 +148,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns structured response without client. */
 	public function test_rabbitmq_setup_returns_structured_response_without_client() {
 		$this->as_admin();
 
@@ -159,11 +165,11 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_run_timeline_list_runs
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_run_timeline_list_runs
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_list_runs_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -172,6 +178,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_list_runs_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -183,6 +190,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns array for admin. */
 	public function test_list_runs_returns_array_for_admin() {
 		$this->as_admin();
 
@@ -199,11 +207,11 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_run_timeline_get_run
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_run_timeline_get_run
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_run_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -215,6 +223,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_run_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -229,6 +238,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Validates the missing run id parameter. */
 	public function test_get_run_validates_missing_run_id() {
 		$this->as_admin();
 
@@ -243,6 +253,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'run_id is required' );
 	}
 
+	/** Verifies the response returns not found for unknown run. */
 	public function test_get_run_returns_not_found_for_unknown_run() {
 		$this->as_admin();
 
@@ -257,11 +268,11 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Run not found' );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_control_session (Pro only)
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_control_session (Pro only)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_control_session_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -276,6 +287,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_control_session_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -291,6 +303,7 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for admin. */
 	public function test_control_session_returns_structured_response_for_admin() {
 		if ( ! class_exists( 'WP_MCP_AI_Orchestration_Dashboard' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Orchestration_Dashboard (Pro) is not available.' );

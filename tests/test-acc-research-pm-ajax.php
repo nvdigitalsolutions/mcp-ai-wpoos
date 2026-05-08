@@ -53,11 +53,28 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	/** Nonce for PM bulk-process handler. */
 	const PM_BULK_NONCE = 'wp_mcp_ai_pm_bulk';
 
-	/** @var bool */
-	private static bool $has_acc      = false;
-	private static bool $has_research = false;
-	private static bool $has_pm       = false;
+	/**
+	 * Whether the ACC class exists.
+	 *
+	 * @var bool
+	 */
+	private static bool $has_acc = false;
 
+	/**
+	 * Whether the Research class exists.
+	 *
+	 * @var bool
+	 */
+	private static bool $has_research = false;
+
+	/**
+	 * Whether the PM class exists.
+	 *
+	 * @var bool
+	 */
+	private static bool $has_pm = false;
+
+	/** Sets up shared state before any test in the class. */
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 		self::$has_acc      = class_exists( self::ACC_CLASS );
@@ -65,11 +82,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		self::$has_pm       = class_exists( self::PM_CLASS );
 	}
 
-	/*
-	================================================================== *
-	 * ACC — wp_mcp_ai_acc_get_dashboard_data
-	 * ================================================================== */
+	// ---
+	// ACC — wp_mcp_ai_acc_get_dashboard_data
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_acc_get_dashboard_data_rejects_bad_nonce() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -82,6 +99,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_acc_get_dashboard_data_rejects_subscriber() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -94,6 +112,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_acc_get_dashboard_data_happy_path() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -106,11 +125,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * ACC — wp_mcp_ai_acc_get_activity_log
-	 * ================================================================== */
+	// ---
+	// ACC — wp_mcp_ai_acc_get_activity_log
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_acc_get_activity_log_rejects_bad_nonce() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -120,6 +139,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_acc_get_activity_log_rejects_subscriber() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -132,6 +152,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_acc_get_activity_log_happy_path() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -144,11 +165,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * ACC — wp_mcp_ai_acc_handle_approval
-	 * ================================================================== */
+	// ---
+	// ACC — wp_mcp_ai_acc_handle_approval
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_acc_handle_approval_rejects_bad_nonce() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -165,6 +186,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_acc_handle_approval_rejects_subscriber() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -181,6 +203,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_acc_handle_approval_validates_missing_id() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -196,11 +219,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * ACC — wp_mcp_ai_acc_get_analytics
-	 * ================================================================== */
+	// ---
+	// ACC — wp_mcp_ai_acc_get_analytics
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_acc_get_analytics_rejects_bad_nonce() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -210,6 +233,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_acc_get_analytics_rejects_subscriber() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -222,6 +246,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_acc_get_analytics_happy_path() {
 		if ( ! self::$has_acc ) {
 			$this->markTestSkipped( 'ACC class not loaded.' );
@@ -234,11 +259,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * Research — wp_mcp_ai_research_add_item
-	 * ================================================================== */
+	// ---
+	// Research — wp_mcp_ai_research_add_item
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_research_add_item_rejects_bad_nonce() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -254,6 +279,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_research_add_item_rejects_subscriber() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -269,6 +295,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing data parameter. */
 	public function test_research_add_item_validates_missing_data() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -281,11 +308,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * Research — wp_mcp_ai_research_delete_item
-	 * ================================================================== */
+	// ---
+	// Research — wp_mcp_ai_research_delete_item
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_research_delete_item_rejects_bad_nonce() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -301,6 +328,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_research_delete_item_rejects_subscriber() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -316,6 +344,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_research_delete_item_validates_missing_id() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -328,11 +357,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * Research — wp_mcp_ai_research_get_item
-	 * ================================================================== */
+	// ---
+	// Research — wp_mcp_ai_research_get_item
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_research_get_item_rejects_bad_nonce() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -348,6 +377,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_research_get_item_rejects_subscriber() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -363,6 +393,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing id parameter. */
 	public function test_research_get_item_validates_missing_id() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -375,11 +406,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * Research — wp_mcp_ai_research_ai_generate
-	 * ================================================================== */
+	// ---
+	// Research — wp_mcp_ai_research_ai_generate
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_research_ai_generate_rejects_bad_nonce() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -395,6 +426,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_research_ai_generate_rejects_subscriber() {
 		if ( ! self::$has_research ) {
 			$this->markTestSkipped( 'Research class not loaded.' );
@@ -410,11 +442,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PM — wp_mcp_ai_pm_generate_description
-	 * ================================================================== */
+	// ---
+	// PM — wp_mcp_ai_pm_generate_description
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_pm_generate_description_rejects_bad_nonce() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -431,6 +463,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_pm_generate_description_rejects_subscriber() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -447,6 +480,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing title parameter. */
 	public function test_pm_generate_description_validates_missing_title() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -459,11 +493,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PM — wp_mcp_ai_pm_suggest_tasks
-	 * ================================================================== */
+	// ---
+	// PM — wp_mcp_ai_pm_suggest_tasks
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_pm_suggest_tasks_rejects_bad_nonce() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -479,6 +513,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_pm_suggest_tasks_rejects_subscriber() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -494,6 +529,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing project id parameter. */
 	public function test_pm_suggest_tasks_validates_missing_project_id() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -506,11 +542,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PM — wp_mcp_ai_pm_analyze_project
-	 * ================================================================== */
+	// ---
+	// PM — wp_mcp_ai_pm_analyze_project
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_pm_analyze_project_rejects_bad_nonce() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -526,6 +562,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_pm_analyze_project_rejects_subscriber() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -541,11 +578,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PM — wp_mcp_ai_pm_bulk_generate
-	 * ================================================================== */
+	// ---
+	// PM — wp_mcp_ai_pm_bulk_generate
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_pm_bulk_generate_rejects_bad_nonce() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -561,6 +598,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_pm_bulk_generate_rejects_subscriber() {
 		if ( ! self::$has_pm ) {
 			$this->markTestSkipped( 'PM class not loaded.' );
@@ -576,11 +614,11 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PM — wp_mcp_ai_pm_bulk_process (WP_MCP_AI_Project_Management_Bulk_AI)
-	 * ================================================================== */
+	// ---
+	// PM — wp_mcp_ai_pm_bulk_process (WP_MCP_AI_Project_Management_Bulk_AI)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_pm_bulk_process_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Project_Management_Bulk_AI' ) ) {
 			$this->markTestSkipped( 'PM Bulk AI class not loaded.' );
@@ -597,6 +635,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_pm_bulk_process_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Project_Management_Bulk_AI' ) ) {
 			$this->markTestSkipped( 'PM Bulk AI class not loaded.' );
@@ -613,6 +652,7 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing action type parameter. */
 	public function test_pm_bulk_process_validates_missing_action_type() {
 		if ( ! class_exists( 'WP_MCP_AI_Project_Management_Bulk_AI' ) ) {
 			$this->markTestSkipped( 'PM Bulk AI class not loaded.' );

@@ -41,11 +41,11 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_skill_manager_save
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_skill_manager_save
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_save_skill_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -57,6 +57,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_save_skill_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -71,6 +72,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty content parameter. */
 	public function test_save_skill_validates_empty_content() {
 		$this->as_admin();
 
@@ -85,6 +87,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Content cannot be empty' );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_save_skill_happy_path_returns_success() {
 		$this->as_admin();
 
@@ -104,11 +107,11 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_skill_manager_delete
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_skill_manager_delete
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_delete_skill_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -120,6 +123,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_delete_skill_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -134,6 +138,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty name parameter. */
 	public function test_delete_skill_validates_empty_name() {
 		$this->as_admin();
 
@@ -148,6 +153,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Skill name is required' );
 	}
 
+	/** Verifies the response returns structured response for unknown skill. */
 	public function test_delete_skill_returns_structured_response_for_unknown_skill() {
 		$this->as_admin();
 
@@ -165,11 +171,11 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_skill_manager_upload
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_skill_manager_upload
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_upload_skill_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -179,6 +185,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_upload_skill_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -190,6 +197,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the no file parameter. */
 	public function test_upload_skill_validates_no_file() {
 		$this->as_admin();
 
@@ -204,11 +212,11 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'No file was uploaded' );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_skill_manager_install_url
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_skill_manager_install_url
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_install_url_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -220,6 +228,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_install_url_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -234,6 +243,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty url parameter. */
 	public function test_install_url_validates_empty_url() {
 		$this->as_admin();
 
@@ -248,6 +258,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Please provide a URL' );
 	}
 
+	/** Install url rejects non https. */
 	public function test_install_url_rejects_non_https() {
 		$this->as_admin();
 
@@ -266,6 +277,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Only HTTPS URLs are supported' );
 	}
 
+	/** Install url happy path stubs remote. */
 	public function test_install_url_happy_path_stubs_remote() {
 		$this->as_admin();
 
@@ -295,11 +307,11 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_skill_manager_generate_skill
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_skill_manager_generate_skill
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_generate_skill_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -314,6 +326,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_generate_skill_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -329,6 +342,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the empty name parameter. */
 	public function test_generate_skill_validates_empty_name() {
 		$this->as_admin();
 
@@ -344,6 +358,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Skill name is required' );
 	}
 
+	/** Validates the empty description parameter. */
 	public function test_generate_skill_validates_empty_description() {
 		$this->as_admin();
 
@@ -359,6 +374,7 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Description is required' );
 	}
 
+	/** Generate skill happy path stubs ai request. */
 	public function test_generate_skill_happy_path_stubs_ai_request() {
 		$this->as_admin();
 

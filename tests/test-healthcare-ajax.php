@@ -38,11 +38,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	/** Required capability for hw/mv dashboard handlers. */
 	const CAP_DASHBOARD = 'edit_posts';
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_hw_dashboard_get_health_metrics
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_hw_dashboard_get_health_metrics
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_hw_get_health_metrics_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Wellness_Dashboard_Page (Pro) not available.' );
@@ -58,6 +58,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_hw_get_health_metrics_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Wellness_Dashboard_Page (Pro) not available.' );
@@ -76,6 +77,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Validates the missing member id parameter. */
 	public function test_hw_get_health_metrics_validates_missing_member_id() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Wellness_Dashboard_Page (Pro) not available.' );
@@ -94,6 +96,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Member ID is required' );
 	}
 
+	/** Verifies the response returns structured response. */
 	public function test_hw_get_health_metrics_returns_structured_response() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Wellness_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Wellness_Dashboard_Page (Pro) not available.' );
@@ -113,11 +116,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_mv_dashboard_get_vital_signs
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_mv_dashboard_get_vital_signs
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_mv_get_vital_signs_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page (Pro) not available.' );
@@ -133,6 +136,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_mv_get_vital_signs_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page (Pro) not available.' );
@@ -151,6 +155,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Validates the missing member id parameter. */
 	public function test_mv_get_vital_signs_validates_missing_member_id() {
 		if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page (Pro) not available.' );
@@ -169,6 +174,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Member ID is required' );
 	}
 
+	/** Verifies the response returns structured response. */
 	public function test_mv_get_vital_signs_returns_structured_response() {
 		if ( ! class_exists( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Medical_Vitals_Dashboard_Page (Pro) not available.' );
@@ -188,11 +194,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_member_vitals_preview
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_member_vitals_preview
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_member_vitals_preview_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -208,6 +214,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Get member vitals preview rejects no cap user. */
 	public function test_get_member_vitals_preview_rejects_no_cap_user() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -233,6 +240,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the invalid member id parameter. */
 	public function test_get_member_vitals_preview_validates_invalid_member_id() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -251,6 +259,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid member ID' );
 	}
 
+	/** Verifies the response returns structured response. */
 	public function test_get_member_vitals_preview_returns_structured_response() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -270,11 +279,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_bulk_import_health_info
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_bulk_import_health_info
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_bulk_import_health_info_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -290,6 +299,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_bulk_import_health_info_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -308,6 +318,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'You do not have permission' );
 	}
 
+	/** Validates the missing member id parameter. */
 	public function test_bulk_import_health_info_validates_missing_member_id() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -326,6 +337,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Please select a member first' );
 	}
 
+	/** Validates the missing content parameter. */
 	public function test_bulk_import_health_info_validates_missing_content() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -345,11 +357,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Please provide health information' );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_upload_health_document
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_upload_health_document
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_upload_health_document_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -362,6 +374,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_upload_health_document_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -377,6 +390,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the no file parameter. */
 	public function test_upload_health_document_validates_no_file() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -393,11 +407,11 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_import_vitals_to_cct
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_import_vitals_to_cct
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_import_vitals_to_cct_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -413,6 +427,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_import_vitals_to_cct_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );
@@ -431,6 +446,7 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_import_vitals_to_cct_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Health_Records_Consolidate_Page (Pro) not available.' );

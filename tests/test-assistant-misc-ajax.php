@@ -40,11 +40,11 @@
  */
 class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_build_assistant_from_conversation
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_build_assistant_from_conversation
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_build_assistant_from_conversation_rejects_bad_nonce() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -57,6 +57,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_build_assistant_from_conversation_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -69,6 +70,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing title parameter. */
 	public function test_build_assistant_from_conversation_validates_missing_title() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -78,11 +80,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_upload_assistant_attachment
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_upload_assistant_attachment
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_upload_assistant_attachment_rejects_bad_nonce() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -92,6 +94,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_upload_assistant_attachment_rejects_subscriber() {
 		// Subscriber doesn't have upload_files capability.
 		$this->as_subscriber();
@@ -102,6 +105,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing file parameter. */
 	public function test_upload_assistant_attachment_validates_missing_file() {
 		// Editor has upload_files; no $_FILES provided → handler must reject.
 		$this->as_editor();
@@ -112,11 +116,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_create_team_from_modal
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_create_team_from_modal
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_team_from_modal_rejects_bad_nonce() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -129,6 +133,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_team_from_modal_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -141,6 +146,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing title parameter. */
 	public function test_create_team_from_modal_validates_missing_title() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -150,11 +156,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_create_from_professional
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_create_from_professional
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_from_professional_rejects_bad_nonce() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -164,6 +170,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_from_professional_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -173,11 +180,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_deploy_team
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_deploy_team
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_deploy_team_rejects_bad_nonce() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -190,6 +197,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_deploy_team_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -202,6 +210,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the invalid team id parameter. */
 	public function test_deploy_team_validates_invalid_team_id() {
 		$this->as_editor();
 		$response = $this->dispatch(
@@ -214,17 +223,18 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_orchestration_stats
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_orchestration_stats
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_orchestration_stats_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_get_orchestration_stats', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_orchestration_stats_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -234,6 +244,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_get_orchestration_stats_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -243,17 +254,18 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_run_orchestration_seeder
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_run_orchestration_seeder
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_run_orchestration_seeder_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_run_orchestration_seeder', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_run_orchestration_seeder_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -263,6 +275,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_run_orchestration_seeder_happy_path() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -277,17 +290,18 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_get_professional_config
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_get_professional_config
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_professional_config_rejects_bad_nonce() {
 		$this->as_editor();
 		$response = $this->dispatch( 'wp_mcp_ai_get_professional_config', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Get professional config rejects unauthenticated. */
 	public function test_get_professional_config_rejects_unauthenticated() {
 		// No current user set — WP_Ajax_UnitTestCase starts as no user.
 		$response = $this->dispatch(
@@ -301,11 +315,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_download_component
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_download_component
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_download_component_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -318,6 +332,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_download_component_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -330,6 +345,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the invalid component parameter. */
 	public function test_download_component_validates_invalid_component() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -342,17 +358,18 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_download_all_components
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_download_all_components
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_download_all_components_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_download_all_components', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_download_all_components_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -362,11 +379,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_save_model_config
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_save_model_config
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_save_model_config_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -380,6 +397,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_save_model_config_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -393,6 +411,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing model parameter. */
 	public function test_save_model_config_validates_missing_model() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -405,6 +424,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing config parameter. */
 	public function test_save_model_config_validates_missing_config() {
 		$this->as_admin();
 		$response = $this->dispatch(
@@ -417,17 +437,18 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_clear_test_files
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_clear_test_files
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_clear_test_files_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_clear_test_files', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_clear_test_files_rejects_subscriber() {
 		$this->as_subscriber();
 		$response = $this->dispatch(
@@ -437,17 +458,18 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_clear_dev_files  (routed through safe_ajax_handler)
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_clear_dev_files  (routed through safe_ajax_handler)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_clear_dev_files_rejects_bad_nonce() {
 		$this->as_admin();
 		$response = $this->dispatch( 'wp_mcp_ai_clear_dev_files', array( 'nonce' => 'bad' ) );
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_clear_dev_files_rejects_subscriber() {
 		$this->as_subscriber();
 		// safe_ajax_handler uses the same wp_mcp_ai_clear_dev_files nonce internally.
@@ -458,11 +480,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_cpt_chat
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_cpt_chat
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_cpt_chat_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_CPT_AI_Integration' ) ) {
 			$this->markTestSkipped( 'Pro addon (WP_MCP_AI_Pro_CPT_AI_Integration) not loaded.' );
@@ -479,6 +501,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_cpt_chat_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_CPT_AI_Integration' ) ) {
 			$this->markTestSkipped( 'Pro addon (WP_MCP_AI_Pro_CPT_AI_Integration) not loaded.' );
@@ -495,6 +518,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Validates the missing message parameter. */
 	public function test_cpt_chat_validates_missing_message() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_CPT_AI_Integration' ) ) {
 			$this->markTestSkipped( 'Pro addon (WP_MCP_AI_Pro_CPT_AI_Integration) not loaded.' );
@@ -510,11 +534,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_install_canvas_addon
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_install_canvas_addon
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_install_canvas_addon_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Packages_Settings_Page' ) ) {
 			$this->markTestSkipped( 'Pro packages class not loaded.' );
@@ -524,6 +548,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_install_canvas_addon_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Packages_Settings_Page' ) ) {
 			$this->markTestSkipped( 'Pro packages class not loaded.' );
@@ -536,11 +561,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_test_pro_package
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_test_pro_package
+	// ---
 
+	/** Validates the missing package parameter. */
 	public function test_test_pro_package_validates_missing_package() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Packages_Settings_Page' ) ) {
 			$this->markTestSkipped( 'Pro packages class not loaded.' );
@@ -554,6 +579,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_test_pro_package_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Packages_Settings_Page' ) ) {
 			$this->markTestSkipped( 'Pro packages class not loaded.' );
@@ -569,6 +595,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response ); // nonce verified via wp_verify_nonce() → error response.
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_test_pro_package_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Packages_Settings_Page' ) ) {
 			$this->markTestSkipped( 'Pro packages class not loaded.' );
@@ -585,11 +612,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_preview_excel
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_preview_excel
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_preview_excel_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'Reg product research class not loaded.' );
@@ -599,6 +626,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_preview_excel_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'Reg product research class not loaded.' );
@@ -611,11 +639,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_clear_yfinance_cache
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_clear_yfinance_cache
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_clear_yfinance_cache_rejects_bad_nonce() {
 		if ( ! function_exists( 'wp_mcp_ai_ajax_clear_yfinance_cache' ) ) {
 			$this->markTestSkipped( 'yfinance handler function not loaded.' );
@@ -625,6 +653,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_clear_yfinance_cache_rejects_subscriber() {
 		if ( ! function_exists( 'wp_mcp_ai_ajax_clear_yfinance_cache' ) ) {
 			$this->markTestSkipped( 'yfinance handler function not loaded.' );
@@ -637,6 +666,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_clear_yfinance_cache_happy_path() {
 		if ( ! function_exists( 'wp_mcp_ai_ajax_clear_yfinance_cache' ) ) {
 			$this->markTestSkipped( 'yfinance handler function not loaded.' );
@@ -649,11 +679,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_get_member_records_preview
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_get_member_records_preview
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_member_records_preview_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'Health records class not loaded.' );
@@ -663,6 +693,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Get member records preview rejects unauthenticated. */
 	public function test_get_member_records_preview_rejects_unauthenticated() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'Health records class not loaded.' );
@@ -678,11 +709,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_check_record_completeness
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_check_record_completeness
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_check_record_completeness_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'Health records class not loaded.' );
@@ -692,6 +723,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_check_record_completeness_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Health_Records_Consolidate_Page' ) ) {
 			$this->markTestSkipped( 'Health records class not loaded.' );
@@ -707,11 +739,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_get_product_records_preview
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_get_product_records_preview
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_product_records_preview_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'Reg product research class not loaded.' );
@@ -721,6 +753,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_product_records_preview_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'Reg product research class not loaded.' );
@@ -733,11 +766,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_execute_workflow_node
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_execute_workflow_node
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_execute_workflow_node_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Builder_Page' ) ) {
 			$this->markTestSkipped( 'Pro workflow builder class not loaded.' );
@@ -754,6 +787,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_execute_workflow_node_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Builder_Page' ) ) {
 			$this->markTestSkipped( 'Pro workflow builder class not loaded.' );
@@ -770,11 +804,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/*
-	================================================================== *
-	 * PRO: wp_mcp_ai_save_workflow_execution
-	 * ================================================================== */
+	// ---
+	// PRO: wp_mcp_ai_save_workflow_execution
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_save_workflow_execution_rejects_bad_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Builder_Page' ) ) {
 			$this->markTestSkipped( 'Pro workflow builder class not loaded.' );
@@ -790,6 +824,7 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_save_workflow_execution_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Builder_Page' ) ) {
 			$this->markTestSkipped( 'Pro workflow builder class not loaded.' );

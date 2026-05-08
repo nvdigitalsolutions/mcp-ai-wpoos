@@ -44,27 +44,28 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 */
 	private $has_embedded_addon = false;
 
+	/** Sets up test fixtures before each test. */
 	public function setUp(): void {
 		parent::setUp();
 		$this->has_embedded_addon = class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * Shared skip helper
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Shared skip helper
+	// ---
 
+	/** Skip without embedded. */
 	private function skip_without_embedded() {
 		if ( ! $this->has_embedded_addon ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Embedded_Model_Ajax (embedded addon) is not available in this environment.' );
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_list_embedded_models
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_list_embedded_models
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_list_embedded_models_rejects_missing_nonce() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -74,6 +75,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_list_embedded_models_rejects_subscriber() {
 		$this->skip_without_embedded();
 		$this->as_subscriber();
@@ -86,6 +88,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'do not have permission' );
 	}
 
+	/** Verifies the response returns models array. */
 	public function test_list_embedded_models_returns_models_array() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -104,11 +107,11 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_download_embedded_model
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_download_embedded_model
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_download_embedded_model_rejects_missing_nonce() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -121,6 +124,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_download_embedded_model_rejects_subscriber() {
 		$this->skip_without_embedded();
 		$this->as_subscriber();
@@ -136,6 +140,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'do not have permission' );
 	}
 
+	/** Validates the empty slug parameter. */
 	public function test_download_embedded_model_validates_empty_slug() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -151,6 +156,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Model slug is required' );
 	}
 
+	/** Download embedded model stubs remote download. */
 	public function test_download_embedded_model_stubs_remote_download() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -171,11 +177,11 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_delete_embedded_model
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_delete_embedded_model
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_delete_embedded_model_rejects_missing_nonce() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -188,6 +194,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_delete_embedded_model_rejects_subscriber() {
 		$this->skip_without_embedded();
 		$this->as_subscriber();
@@ -203,6 +210,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'do not have permission' );
 	}
 
+	/** Validates the empty slug parameter. */
 	public function test_delete_embedded_model_validates_empty_slug() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -218,6 +226,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Model slug is required' );
 	}
 
+	/** Verifies the response returns error for non existent model. */
 	public function test_delete_embedded_model_returns_error_for_non_existent_model() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -235,11 +244,11 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_download_llama_binary
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_download_llama_binary
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_download_llama_binary_rejects_missing_nonce() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -249,6 +258,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_download_llama_binary_rejects_subscriber() {
 		$this->skip_without_embedded();
 		$this->as_subscriber();
@@ -261,6 +271,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'do not have permission' );
 	}
 
+	/** Verifies the response returns structured response. */
 	public function test_download_llama_binary_returns_structured_response() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -278,11 +289,11 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_get_llama_binary_status
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_get_llama_binary_status
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_get_llama_binary_status_rejects_missing_nonce() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -292,6 +303,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_get_llama_binary_status_rejects_subscriber() {
 		$this->skip_without_embedded();
 		$this->as_subscriber();
@@ -304,6 +316,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'do not have permission' );
 	}
 
+	/** Verifies the response returns status object. */
 	public function test_get_llama_binary_status_returns_status_object() {
 		$this->skip_without_embedded();
 		$this->as_admin();
@@ -317,11 +330,11 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertIsArray( $response['data'] );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_load_dataset_preview (base plugin)
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_load_dataset_preview (base plugin)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_load_dataset_preview_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -333,6 +346,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_load_dataset_preview_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -347,6 +361,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Validates the missing name parameter. */
 	public function test_load_dataset_preview_validates_missing_name() {
 		$this->as_admin();
 
@@ -361,6 +376,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Dataset name required' );
 	}
 
+	/** Load dataset preview stubs remote for known dataset. */
 	public function test_load_dataset_preview_stubs_remote_for_known_dataset() {
 		$this->as_admin();
 
@@ -386,11 +402,11 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_search_datasets (base plugin)
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_search_datasets (base plugin)
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_search_datasets_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -402,6 +418,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_search_datasets_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -416,6 +433,7 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns results for admin. */
 	public function test_search_datasets_returns_results_for_admin() {
 		$this->as_admin();
 

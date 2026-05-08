@@ -36,10 +36,9 @@
  */
 class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
-	/*
-	------------------------------------------------------------------ *
-	 * Nonces (each handler documents its own nonce action).
-	 * ------------------------------------------------------------------ */
+	// ---
+	// Nonces (each handler documents its own nonce action).
+	// ---
 
 	const NONCE_CRE_DASHBOARD = 'wp_mcp_ai_cre_dashboard';
 	const NONCE_ECA_DASHBOARD = 'wp_mcp_ai_eca_dashboard';
@@ -52,11 +51,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	const NONCE_VALIDATE      = 'wp_mcp_ai_validate_data';
 	const NONCE_CHECK_COMP    = 'wp_mcp_ai_check_completeness';
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_cre_dashboard_filter
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_cre_dashboard_filter
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_cre_dashboard_filter_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_CRE_Debt_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_CRE_Debt_Dashboard_Page (Pro) not available.' );
@@ -67,6 +66,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_cre_dashboard_filter_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_CRE_Debt_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_CRE_Debt_Dashboard_Page (Pro) not available.' );
@@ -80,6 +80,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_cre_dashboard_filter_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_CRE_Debt_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_CRE_Debt_Dashboard_Page (Pro) not available.' );
@@ -94,11 +95,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_eca_dashboard_data
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_eca_dashboard_data
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_eca_dashboard_data_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Dashboard_Page (Pro) not available.' );
@@ -109,6 +110,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_eca_dashboard_data_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Dashboard_Page (Pro) not available.' );
@@ -122,6 +124,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_eca_dashboard_data_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Dashboard_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Dashboard_Page (Pro) not available.' );
@@ -136,11 +139,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_create_cre_loan_from_research
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_create_cre_loan_from_research
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_cre_loan_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_CRE_Debt_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_CRE_Debt_Research_Page (Pro) not available.' );
@@ -154,6 +157,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_cre_loan_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_CRE_Debt_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_CRE_Debt_Research_Page (Pro) not available.' );
@@ -170,6 +174,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_create_cre_loan_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_CRE_Debt_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_CRE_Debt_Research_Page (Pro) not available.' );
@@ -187,11 +192,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_create_eca_from_research
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_create_eca_from_research
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_eca_from_research_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Research_Page (Pro) not available.' );
@@ -202,6 +207,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_eca_from_research_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Research_Page (Pro) not available.' );
@@ -215,6 +221,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_create_eca_from_research_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Research_Page (Pro) not available.' );
@@ -232,11 +239,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_import_eca
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_import_eca
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_import_eca_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Research_Page (Pro) not available.' );
@@ -247,6 +254,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_import_eca_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Research_Page (Pro) not available.' );
@@ -260,6 +268,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_import_eca_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_ECA_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_ECA_Research_Page (Pro) not available.' );
@@ -274,11 +283,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_create_reg_product_from_research
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_create_reg_product_from_research
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_create_reg_product_from_research_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Product_Research_Page (Pro) not available.' );
@@ -289,6 +298,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_create_reg_product_from_research_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Product_Research_Page (Pro) not available.' );
@@ -302,6 +312,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_create_reg_product_from_research_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Product_Research_Page (Pro) not available.' );
@@ -319,11 +330,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_consolidate_bulk_import
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_consolidate_bulk_import
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_consolidate_bulk_import_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -334,6 +345,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_consolidate_bulk_import_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -347,6 +359,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for admin. */
 	public function test_consolidate_bulk_import_returns_structured_response_for_admin() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -361,11 +374,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_consolidate_validate_data
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_consolidate_validate_data
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_consolidate_validate_data_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -376,6 +389,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_consolidate_validate_data_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -389,6 +403,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for admin. */
 	public function test_consolidate_validate_data_returns_structured_response_for_admin() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -403,11 +418,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_consolidate_check_completeness
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_consolidate_check_completeness
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_consolidate_check_completeness_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -418,6 +433,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_consolidate_check_completeness_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -431,6 +447,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for admin. */
 	public function test_consolidate_check_completeness_returns_structured_response_for_admin() {
 		if ( ! class_exists( 'WP_MCP_AI_Consolidate_Add_Base' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Consolidate_Add_Base (Pro) not available.' );
@@ -445,11 +462,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_bulk_import_reg_products
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_bulk_import_reg_products
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_bulk_import_reg_products_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Product_Research_Page (Pro) not available.' );
@@ -460,6 +477,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_bulk_import_reg_products_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Product_Research_Page (Pro) not available.' );
@@ -473,6 +491,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_bulk_import_reg_products_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Product_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Product_Research_Page (Pro) not available.' );
@@ -487,11 +506,11 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	================================================================== *
-	 * wp_mcp_ai_import_reg_document
-	 * ================================================================== */
+	// ---
+	// wp_mcp_ai_import_reg_document
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_import_reg_document_rejects_missing_nonce() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Document_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Document_Research_Page (Pro) not available.' );
@@ -502,6 +521,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_import_reg_document_rejects_subscriber() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Document_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Document_Research_Page (Pro) not available.' );
@@ -516,6 +536,7 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Verifies the response returns structured response for editor. */
 	public function test_import_reg_document_returns_structured_response_for_editor() {
 		if ( ! class_exists( 'WP_MCP_AI_Reg_Document_Research_Page' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Reg_Document_Research_Page (Pro) not available.' );

@@ -31,11 +31,11 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		parent::tearDown();
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_wizard_save_step
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_wizard_save_step
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_save_step_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -50,6 +50,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_save_step_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -64,6 +65,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Validates the unknown step parameter. */
 	public function test_save_step_validates_unknown_step() {
 		$this->as_admin();
 
@@ -78,6 +80,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Unknown step' );
 	}
 
+	/** Validates the invalid provider parameter. */
 	public function test_save_step_validates_invalid_provider() {
 		$this->as_admin();
 
@@ -93,6 +96,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid provider' );
 	}
 
+	/** Data provider. */
 	public function test_save_step_provider_accepts_known_provider() {
 		$this->as_admin();
 
@@ -111,11 +115,11 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_wizard_complete
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_wizard_complete
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_wizard_complete_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -124,6 +128,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_wizard_complete_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -135,6 +140,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Wizard complete persists completion flag. */
 	public function test_wizard_complete_persists_completion_flag() {
 		$this->as_admin();
 
@@ -157,11 +163,11 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_dismiss_welcome_notice
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_dismiss_welcome_notice
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_dismiss_welcome_notice_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -170,6 +176,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_dismiss_welcome_notice_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -182,6 +189,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_dismiss_welcome_notice_succeeds_for_admin() {
 		$this->as_admin();
 
@@ -193,11 +201,11 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_dismiss_optional_components
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_dismiss_optional_components
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_dismiss_optional_components_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -207,6 +215,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_dismiss_optional_components_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -220,6 +229,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Dispatches successfully on the happy path. */
 	public function test_dismiss_optional_components_succeeds_for_admin() {
 		$this->as_admin();
 
@@ -231,11 +241,11 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_dismiss_directory_notice
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_dismiss_directory_notice
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_dismiss_directory_notice_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -244,6 +254,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_dismiss_directory_notice_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -255,6 +266,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Insufficient permissions' );
 	}
 
+	/** Dismiss directory notice persists user meta. */
 	public function test_dismiss_directory_notice_persists_user_meta() {
 		$this->as_admin();
 

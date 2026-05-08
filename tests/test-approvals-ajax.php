@@ -39,11 +39,11 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_list_approvals
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_list_approvals
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_list_approvals_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -52,6 +52,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_list_approvals_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -63,6 +64,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Verifies the response returns array on success. */
 	public function test_list_approvals_returns_array_on_success() {
 		$this->as_admin();
 
@@ -83,6 +85,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
+	/** List approvals with specific assistant id. */
 	public function test_list_approvals_with_specific_assistant_id() {
 		$this->as_admin();
 
@@ -98,11 +101,11 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/*
-	------------------------------------------------------------------ *
-	 * wp_mcp_ai_resolve_approval
-	 * ------------------------------------------------------------------ */
+	// ---
+	// wp_mcp_ai_resolve_approval
+	// ---
 
+	/** Guards against a missing or invalid nonce. */
 	public function test_resolve_approval_rejects_missing_nonce() {
 		$this->as_admin();
 
@@ -117,6 +120,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
+	/** Guards against insufficient capabilities. */
 	public function test_resolve_approval_rejects_subscriber() {
 		$this->as_subscriber();
 
@@ -132,6 +136,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Permission denied' );
 	}
 
+	/** Validates the approval id zero parameter. */
 	public function test_resolve_approval_validates_approval_id_zero() {
 		$this->as_admin();
 
@@ -147,6 +152,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid approval ID' );
 	}
 
+	/** Validates the approval id negative parameter. */
 	public function test_resolve_approval_validates_approval_id_negative() {
 		$this->as_admin();
 
@@ -162,6 +168,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid approval ID' );
 	}
 
+	/** Validates the invalid resolution parameter. */
 	public function test_resolve_approval_validates_invalid_resolution() {
 		$this->as_admin();
 
@@ -177,6 +184,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid resolution' );
 	}
 
+	/** Validates the missing resolution parameter. */
 	public function test_resolve_approval_validates_missing_resolution() {
 		$this->as_admin();
 
@@ -192,6 +200,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Invalid resolution' );
 	}
 
+	/** Verifies the response returns structured response for unknown id. */
 	public function test_resolve_approval_returns_structured_response_for_unknown_id() {
 		$this->as_admin();
 
@@ -220,6 +229,7 @@ class Test_Approvals_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
+	/** Resolve approval deny path. */
 	public function test_resolve_approval_deny_path() {
 		$this->as_admin();
 
