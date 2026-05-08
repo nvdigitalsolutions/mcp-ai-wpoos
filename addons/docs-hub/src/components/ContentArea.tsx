@@ -21,6 +21,7 @@ import remarkDirective from 'remark-directive';
 import remarkFrontmatter from 'remark-frontmatter';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import rehypeHighlight from 'rehype-highlight';
 import { visit } from 'unist-util-visit';
 import CodeBlock from './CodeBlock';
 import Callout from './Callout';
@@ -154,11 +155,14 @@ function isInPageAnchor( href: string ): boolean {
 // ---------------------------------------------------------------------------
 
 const components: Components = {
-	// Fenced code blocks
+	// Fenced code blocks.
+	// rehype-highlight transforms code children to hljs span tokens before this
+	// renderer is called, so `children` may be React nodes rather than a plain
+	// string.  We extract the raw text from the hast node's original value (set
+	// before highlighting) for the copy button.
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	code( props: any ) {
 		const { node, inline, className, children, ...rest } = props;
-		void node;
 		void rest;
 
 		if ( inline ) {
@@ -168,9 +172,25 @@ const components: Components = {
 		const match = /language-(\w+)/.exec( className ?? '' );
 		const lang = match ? match[ 1 ] : undefined;
 
+		// Extract raw text from hast node for the copy button.
+		// rehype-highlight replaces text children with span elements but the
+		// original text content is still accessible by walking hast children.
+		function extractText( nodeArg: { type: string; value?: string; children?: unknown[] } ): string {
+			if ( nodeArg.type === 'text' ) {
+				return nodeArg.value ?? '';
+			}
+			if ( Array.isArray( nodeArg.children ) ) {
+				return ( nodeArg.children as Array<{ type: string; value?: string; children?: unknown[] }> )
+					.map( extractText )
+					.join( '' );
+			}
+			return '';
+		}
+		const rawCode = node ? extractText( node as { type: string; value?: string; children?: unknown[] } ) : String( children );
+
 		return (
-			<CodeBlock language={ lang }>
-				{ String( children ).replace( /\n$/, '' ) }
+			<CodeBlock language={ lang } rawCode={ rawCode.replace( /\n$/, '' ) }>
+				{ children }
 			</CodeBlock>
 		);
 	},
@@ -310,6 +330,17 @@ export default function ContentArea( { content, remoteUrl }: ContentAreaProps ) 
 							behavior: 'prepend',
 							properties: { className: 'dh-heading-anchor', ariaHidden: true, tabIndex: -1 },
 							content: { type: 'text', value: '#' },
+						},
+					],
+					[
+						rehypeHighlight,
+						{
+							// Subset of languages — covers most documentation use-cases without
+							// pulling in the full 190-language highlight.js build.  Additional
+							// languages can be added here if needed.
+							subset: false,
+							detect: true,
+							ignoreMissing: true,
 						},
 					],
 				] }

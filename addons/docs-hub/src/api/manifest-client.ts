@@ -63,6 +63,8 @@ export interface DocPage {
 	tags: string[];
 	description: string;
 	last_modified: number;
+	/** Repo-relative file path (e.g. "docs/getting-started.md"). */
+	relative_path: string;
 	remote_url?: string;
 }
 

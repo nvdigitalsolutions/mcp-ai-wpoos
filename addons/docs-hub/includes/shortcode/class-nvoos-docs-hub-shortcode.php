@@ -140,10 +140,11 @@ class NV_oOS_Docs_Hub_Shortcode {
 			'nvoos-docs-hub',
 			'NVOOS_DOCS_HUB',
 			array(
-				'apiUrl' => esc_url_raw( rest_url( 'nvoos-docs/v1' ) ),
-				'nonce'  => wp_create_nonce( 'wp_rest' ),
-				'config' => $config,
-				'isRtl'  => function_exists( 'is_rtl' ) ? is_rtl() : false,
+				'apiUrl'        => esc_url_raw( rest_url( 'nvoos-docs/v1' ) ),
+				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'config'        => $config,
+				'isRtl'         => function_exists( 'is_rtl' ) ? is_rtl() : false,
+				'githubRepoUrl' => esc_url_raw( NV_oOS_Docs_Hub_Plugin::get_settings()['github_repo_url'] ?? '' ),
 			)
 		);
 	}

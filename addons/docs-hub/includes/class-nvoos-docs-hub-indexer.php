@@ -206,6 +206,7 @@ class NV_oOS_Docs_Hub_Indexer {
 			'source'        => $data['source'],
 			'plugin_name'   => $data['plugin_name'],
 			'last_modified' => filemtime( $data['path'] ),
+			'relative_path' => isset( $data['relative_path'] ) ? (string) $data['relative_path'] : '',
 			'word_count'    => $word_count,
 			'languages'     => $languages,
 		);

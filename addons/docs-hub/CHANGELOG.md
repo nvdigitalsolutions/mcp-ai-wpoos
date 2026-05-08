@@ -1,5 +1,25 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.3.8 — 2026-05-08
+
+### Added
+- **Syntax highlighting (§5).** Code blocks are now token-coloured by [`rehype-highlight`](https://github.com/rehypejs/rehype-highlight) (using `lowlight` / `highlight.js`). A scoped GitHub-inspired CSS theme ships inside `docs-hub.css` — both light and dark variants — so the colours stay inside the SPA root and cannot bleed into the host WordPress page. The `CodeBlock` component now accepts pre-tokenised React nodes from rehype while still correctly stringifying the raw code for the copy-to-clipboard button.
+- **Last-modified date (§5).** `DocPage` now renders a `<footer>` bar below the prev/next navigation. When `page.last_modified` is present, it shows a human-readable, locale-aware date (e.g. "Last updated: May 8, 2026") in a `<time>` element with an ISO-8601 `dateTime` attribute.
+- **Edit on GitHub (§5).** The same footer bar shows a ✏ "Edit on GitHub" link when a URL can be derived:
+  - Remote pages: `page.remote_url` is already the GitHub blob URL → used directly.
+  - Local pages: the admin-configured "Edit on GitHub base URL" setting (`github_repo_url`) is combined with `page.relative_path` (new field added to the page payload by the indexer).
+  The base URL is now also passed to the SPA via `NVOOS_DOCS_HUB.githubRepoUrl` in `wp_localize_script`.
+- **`relative_path` in page payload.** The indexer now includes `relative_path` (e.g. `docs/getting-started.md`) in the serialised page payload so the SPA can construct the edit-on-GitHub URL for locally-sourced pages.
+- **`assets/admin/repo-picker.js` — inline script extracted (§7).** The 220-line inline `<script>` block that powered the remote-repo "add row / browse / tree picker" on the settings page has been extracted to a proper static asset at `assets/admin/repo-picker.js`. It is registered and enqueued via `wp_enqueue_script` + `wp_localize_script` (config object: `window.NVOOS_DH_REPO_PICKER`), making it inspectable, cacheable, and verifiable with a CSP `script-src` allowlist. The translatable strings are now also available to WP-CLI's `wp i18n make-pot` extractor.
+- **WordPress Sitemap integration (§8).** A new `NV_oOS_Docs_Hub_Sitemap_Provider` class extends `WP_Sitemaps_Provider` (WordPress 5.5+) to include all indexed documentation pages in the site's auto-generated sitemap under `/wp-sitemap-nvoos-docs-*.xml`. Each entry carries a `<lastmod>` timestamp when available. The provider respects the existing "enabled" toggle and can be fully disabled via the new `nvoos_docs_hub_sitemap_enabled` filter.
+- **Bundle-size CI guardrail for docs-hub (§7).** `docs-hub` is now included in `.github/workflows/spa-bundle-size.yml` (limit 250 KB gzip, current size ≈ 204 KB) so accidental dependency bloat is caught in CI.
+
+### Changed
+- `NV_oOS_Docs_Hub_Settings::init()` now registers an `admin_enqueue_scripts` hook (`enqueue_admin_assets`) that conditionally loads `nvoos-dh-repo-picker` only on the Docs Hub settings page.
+
+### Internal
+- `NV_oOS_Docs_Hub_Sitemap_Provider` caches the docs-page URL scan result in a one-hour transient (`nvoos_docs_hub_sitemap_page_url`) to avoid scanning all published pages on every sitemap request.
+
 ## 0.3.7 — 2026-05-08
 
 ### Added

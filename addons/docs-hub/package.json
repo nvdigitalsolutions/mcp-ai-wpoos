@@ -1,6 +1,6 @@
 {
   "name": "nvoos-docs-hub",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "NV oOS Docs Hub – React documentation browser SPA",
   "private": true,
   "scripts": {
@@ -13,11 +13,13 @@
   },
   "dependencies": {
     "flexsearch": "0.8.212",
+    "lowlight": "^3.3.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-markdown": "10.1.0",
     "react-router-dom": "^7.15.0",
     "rehype-autolink-headings": "7.1.0",
+    "rehype-highlight": "^7.0.2",
     "rehype-slug": "6.0.0",
     "remark-directive": "4.0.0",
     "remark-frontmatter": "5.0.0",

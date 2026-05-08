@@ -14,6 +14,7 @@ import ContentArea from '../components/ContentArea';
 import RightTOC from '../components/RightTOC';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PrevNext from '../components/PrevNext';
+import PageFooter from '../components/PageFooter';
 import NotFound from './NotFound';
 
 export default function DocPage() {
@@ -79,6 +80,11 @@ export default function DocPage() {
 				<Breadcrumbs slug={ page.slug } title={ page.title } />
 				<ContentArea content={ page.content } remoteUrl={ page.remote_url } />
 				<PrevNext prev={ page.prev } next={ page.next } />
+				<PageFooter
+					lastModified={ page.last_modified }
+					relativePath={ page.relative_path }
+					remoteUrl={ page.remote_url }
+				/>
 			</main>
 			<aside className="dh-toc-area">
 				<RightTOC items={ page.toc } />
