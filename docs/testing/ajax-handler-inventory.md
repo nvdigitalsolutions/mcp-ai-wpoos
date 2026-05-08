@@ -11,10 +11,10 @@ Run `php bin/audit-ajax-handlers.php` to regenerate.
 | Total registered AJAX handlers | 271 |
 | - Base (`includes/`) | 113 |
 | - Pro (`addons/pro/`) | 158 |
-| Tested (referenced in `tests/`) | 115 |
-| Untested | 156 |
-| On coverage allow-list | 174 |
-| Coverage | 42.4% |
+| Tested (referenced in `tests/`) | 133 |
+| Untested | 138 |
+| On coverage allow-list | 156 |
+| Coverage | 49.1% |
 
 ## Handler Table
 
@@ -221,27 +221,27 @@ Run `php bin/audit-ajax-handlers.php` to regenerate.
 | `wp_mcp_ai_skill_manager_install_url` | `addons/pro/includes/admin/class-wp-mcp-ai-skill-manager-admin-page.php:60` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_skill_manager_save` | `addons/pro/includes/admin/class-wp-mcp-ai-skill-manager-admin-page.php:61` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_skill_manager_upload` | `addons/pro/includes/admin/class-wp-mcp-ai-skill-manager-admin-page.php:59` | _n/a_ | _n/a_ | ✅ |
-| `wp_mcp_ai_sm_clear_history` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:45` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_create_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:39` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_delete_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:41` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_export_history_csv` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:46` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_export_ical` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:47` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_get_history` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:44` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_get_presets` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:50` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_get_schedules` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:38` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_install_preset` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:51` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_toggle_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:42` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_trigger_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:43` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_sm_update_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:40` | _n/a_ | _n/a_ | ⏭ allow-list |
+| `wp_mcp_ai_sm_clear_history` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:45` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_create_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:39` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_delete_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:41` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_export_history_csv` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:46` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_export_ical` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:47` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_get_history` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:44` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_get_presets` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:50` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_get_schedules` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:38` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_install_preset` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:51` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_toggle_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:42` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_trigger_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:43` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_sm_update_schedule` | `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php:40` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_sync_all_playbooks` | `includes/admin/class-wp-mcp-ai-admin-settings.php:162` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_telegram_webhook` | `addons/pro/includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php:143` | _n/a_ | _n/a_ | ✅ |
-| `wp_mcp_ai_test_anthropic_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:129` | _n/a_ | _n/a_ | ⏭ allow-list |
+| `wp_mcp_ai_test_anthropic_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:129` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_brave_search_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:127` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_cloudflare_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:126` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_cloudways_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:125` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_discord_auto_reply` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:59` | `manage_options` | _n/a_ | ✅ |
 | `wp_mcp_ai_test_discord_live` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:58` | `manage_options` | _n/a_ | ✅ |
-| `wp_mcp_ai_test_exa_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:130` | _n/a_ | _n/a_ | ⏭ allow-list |
+| `wp_mcp_ai_test_exa_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:130` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_flowhub_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:136` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_google_chat_auto_reply` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:46` | _n/a_ | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_test_google_chat_incoming_trigger` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:47` | _n/a_ | _n/a_ | ⏭ allow-list |
@@ -258,15 +258,15 @@ Run `php bin/audit-ajax-handlers.php` to regenerate.
 | `wp_mcp_ai_test_office365_auto_reply` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:65` | `manage_options` | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_test_office365_live` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:64` | `manage_options` | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_test_ollama_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:120` | _n/a_ | _n/a_ | ✅ |
-| `wp_mcp_ai_test_perplexity_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:131` | _n/a_ | _n/a_ | ⏭ allow-list |
-| `wp_mcp_ai_test_plaid_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:133` | _n/a_ | _n/a_ | ⏭ allow-list |
+| `wp_mcp_ai_test_perplexity_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:131` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_test_plaid_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:133` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_pro_package` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php:41` | _n/a_ | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_test_provider` | `includes/admin/class-wp-mcp-ai-provider-diagnostics.php:41` | _n/a_ | _n/a_ | ✅ |
-| `wp_mcp_ai_test_remote_connection` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:40` | _n/a_ | _n/a_ | ⏭ allow-list |
+| `wp_mcp_ai_test_remote_connection` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:40` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_removebg_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:135` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_slack_auto_reply` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:57` | `manage_options` | _n/a_ | ✅ |
 | `wp_mcp_ai_test_slack_live` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:56` | `manage_options` | _n/a_ | ✅ |
-| `wp_mcp_ai_test_tavily_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:128` | _n/a_ | _n/a_ | ⏭ allow-list |
+| `wp_mcp_ai_test_tavily_connection` | `includes/admin/class-wp-mcp-ai-admin-settings.php:128` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_test_teams_auto_reply` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:61` | `manage_options` | _n/a_ | ✅ |
 | `wp_mcp_ai_test_teams_live` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:60` | `manage_options` | _n/a_ | ✅ |
 | `wp_mcp_ai_test_telegram_auto_reply` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php:51` | `manage_options` | _n/a_ | ⏭ allow-list |

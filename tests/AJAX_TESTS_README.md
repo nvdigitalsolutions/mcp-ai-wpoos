@@ -16,12 +16,12 @@ coverage across the codebase.
 | Total registered AJAX handlers (`wp_ajax_wp_mcp_ai_*`) | **271** |
 | - Base (`includes/`) | 113 |
 | - Pro (`addons/pro/`) | 158 |
-| Tested (referenced in `tests/`) | **115** |
-| Untested (allow-listed for incremental gap-fill) | 156 |
-| Coverage | **42.4 %** |
+| Tested (referenced in `tests/`) | **133** |
+| Untested (allow-listed for incremental gap-fill) | 138 |
+| Coverage | **49.1 %** |
 
 Numbers are produced by `bin/audit-ajax-handlers.php` and rebuilt on every
-PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 156 allow-listed
+PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 138 allow-listed
 handlers are the remaining gap; each cluster that lands in a follow-up PR
 removes its handlers from that file.
 
@@ -146,8 +146,8 @@ forget to stub never hit the network — unstubbed URLs return `200 {}`.
 | `test-skill-manager-ajax.php` | Skill Manager — Pro addon (upload / install_url / save / delete / generate). |
 | `test-settings-utility-ajax.php` | Settings utility (export / import / clear-cache / reset). |
 | `test-wizard-ajax.php` | Wizard / dismiss notices (save_step, complete, dismiss_*). |
-| `test-runtime-control-ajax.php` | Runtime control — queue status, RabbitMQ, run timeline, control_session. |
-| `test-embedded-models-ajax.php` | Embedded models (download/delete/list/binary) + datasets (preview/search). |
+| `test-provider-connections-ajax.php` | Provider connection tests (Anthropic, Exa, Perplexity, Plaid, Tavily, remote-site). |
+| `test-schedule-manager-ajax.php` | Schedule manager — Pro addon (`sm_get_schedules`, `sm_create_schedule`, `sm_delete_schedule`, `sm_toggle_schedule`, `sm_get_history`, `sm_clear_history`, `sm_get_presets`, `sm_install_preset`). |
 
 Each addition or removal of an AJAX handler must be accompanied by either a
 test reference or an explicit entry in `tests/ajax-coverage-allowlist.txt`.
@@ -194,9 +194,8 @@ handlers from the allow-list:
 5. ✅ **Wizard / first-run / dismiss notices** (`wizard_save_step`, `wizard_complete`, `dismiss_*`).
 6. ✅ **Runtime control** — RabbitMQ, queue, run timeline, control_session.
 7. ✅ **Embedded models + Datasets** — `download/delete/list_embedded_model`, `download_llama_binary`, `get_llama_binary_status`, `load_dataset_preview`, `search_datasets`.
-8. **Provider connection tests not yet covered** (anthropic, exa, perplexity,
-   plaid, tavily, icloud, messenger, whatsapp, telegram_*, office, …).
-9. **Schedule manager (`sm_*`)**.
+8. ✅ **Provider connection tests** — Anthropic, Exa, Perplexity, Plaid, Tavily, remote-site.
+9. ✅ **Schedule manager** — `sm_get_schedules`, `sm_create_schedule`, `sm_delete_schedule`, `sm_toggle_schedule`, `sm_get_history`, `sm_clear_history`, `sm_get_presets`, `sm_install_preset`.
 10. **Healthcare / vitals / member preview** (`mv_*`, `hw_*`).
 11. **Compliance / regulatory / consolidate / ECA / property mgmt**.
 12. **"Create-from-research" / "Import-*" CPT importers** (largest cluster).
