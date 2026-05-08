@@ -16,12 +16,12 @@ coverage across the codebase.
 | Total registered AJAX handlers (`wp_ajax_wp_mcp_ai_*`) | **271** |
 | - Base (`includes/`) | 113 |
 | - Pro (`addons/pro/`) | 158 |
-| Tested (referenced in `tests/`) | **97** |
-| Untested (allow-listed for incremental gap-fill) | 174 |
-| Coverage | **35.8 %** |
+| Tested (referenced in `tests/`) | **115** |
+| Untested (allow-listed for incremental gap-fill) | 156 |
+| Coverage | **42.4 %** |
 
 Numbers are produced by `bin/audit-ajax-handlers.php` and rebuilt on every
-PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 174 allow-listed
+PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 156 allow-listed
 handlers are the remaining gap; each cluster that lands in a follow-up PR
 removes its handlers from that file.
 
@@ -145,6 +145,9 @@ forget to stub never hit the network — unstubbed URLs return `200 {}`.
 | `test-approvals-ajax.php` | Approvals admin (`list_approvals`, `resolve_approval`). |
 | `test-skill-manager-ajax.php` | Skill Manager — Pro addon (upload / install_url / save / delete / generate). |
 | `test-settings-utility-ajax.php` | Settings utility (export / import / clear-cache / reset). |
+| `test-wizard-ajax.php` | Wizard / dismiss notices (save_step, complete, dismiss_*). |
+| `test-runtime-control-ajax.php` | Runtime control — queue status, RabbitMQ, run timeline, control_session. |
+| `test-embedded-models-ajax.php` | Embedded models (download/delete/list/binary) + datasets (preview/search). |
 
 Each addition or removal of an AJAX handler must be accompanied by either a
 test reference or an explicit entry in `tests/ajax-coverage-allowlist.txt`.
@@ -184,22 +187,18 @@ for the canonical decision tree. In short:
 Listed in priority order; each cluster ships as its own PR that removes its
 handlers from the allow-list:
 
-1. ✅ **Workflow CRUD / execution** — pilot, this PR.
+1. ✅ **Workflow CRUD / execution** — pilot.
 2. ✅ **Skill manager** (upload, install_url, generate, delete, save).
 3. ✅ **Approvals / accountability** (`list_approvals`, `resolve_approval`).
 4. ✅ **Settings export/import, cache clear, reset**.
-2. **Skill manager** (upload, install_url, generate, delete, save).
-3. **Embedded models / llama binary / dataset preview**.
-4. **Approvals / accountability** (`acc_*`, `list_approvals`, `resolve_approval`).
-5. **Settings export/import, cache clear, health check, reset**.
-6. **Provider connection tests not yet covered** (anthropic, exa, perplexity,
+5. ✅ **Wizard / first-run / dismiss notices** (`wizard_save_step`, `wizard_complete`, `dismiss_*`).
+6. ✅ **Runtime control** — RabbitMQ, queue, run timeline, control_session.
+7. ✅ **Embedded models + Datasets** — `download/delete/list_embedded_model`, `download_llama_binary`, `get_llama_binary_status`, `load_dataset_preview`, `search_datasets`.
+8. **Provider connection tests not yet covered** (anthropic, exa, perplexity,
    plaid, tavily, icloud, messenger, whatsapp, telegram_*, office, …).
-7. **Wizard / first-run / dismiss notices**.
-8. **Schedule manager (`sm_*`)**.
-9. **Healthcare / vitals / member preview** (`mv_*`, `hw_*`).
-10. **Compliance / regulatory / consolidate / ECA / property mgmt**.
-11. **Runtime control** — RabbitMQ, queue, run timeline, control_session,
-    restart_workflow.
+9. **Schedule manager (`sm_*`)**.
+10. **Healthcare / vitals / member preview** (`mv_*`, `hw_*`).
+11. **Compliance / regulatory / consolidate / ECA / property mgmt**.
 12. **"Create-from-research" / "Import-*" CPT importers** (largest cluster).
 
 The `phpunit-test-author` custom agent (declared in
