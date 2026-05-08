@@ -221,3 +221,7 @@ function wp_mcp_ai_init_test_database_tables() {
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+// Helpers that depend on classes provided by the WP test bootstrap (e.g.
+// `WP_Ajax_UnitTestCase`) must be loaded after it.
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';
