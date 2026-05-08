@@ -62,52 +62,52 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		parent::setUpBeforeClass();
 
 		self::$handlers = array(
-			'wp_mcp_ai_create_post_from_research' => array(
+			'wp_mcp_ai_create_post_from_research'         => array(
 				'nonce'    => 'wp_mcp_ai_research_post',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_product_from_research' => array(
+			'wp_mcp_ai_create_product_from_research'      => array(
 				'nonce'    => 'wp_mcp_ai_research_product',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_project_from_research' => array(
+			'wp_mcp_ai_create_project_from_research'      => array(
 				'nonce'    => 'wp_mcp_ai_research_project',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_task_from_research' => array(
+			'wp_mcp_ai_create_task_from_research'         => array(
 				'nonce'    => 'wp_mcp_ai_research_task',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_event_from_research' => array(
+			'wp_mcp_ai_create_event_from_research'        => array(
 				'nonce'    => 'wp_mcp_ai_research_event',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_company_from_research' => array(
+			'wp_mcp_ai_create_company_from_research'      => array(
 				'nonce'    => 'wp_mcp_ai_research_page',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_page_from_research' => array(
+			'wp_mcp_ai_create_page_from_research'         => array(
 				'nonce'    => 'wp_mcp_ai_research_page',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_place_from_research' => array(
+			'wp_mcp_ai_create_place_from_research'        => array(
 				'nonce'    => 'wp_mcp_ai_research_place',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_policy_from_research' => array(
+			'wp_mcp_ai_create_policy_from_research'       => array(
 				'nonce'    => 'wp_mcp_ai_research_policy',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_quiz_from_research' => array(
+			'wp_mcp_ai_create_quiz_from_research'         => array(
 				'nonce'    => 'wp_mcp_ai_research_quiz',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
@@ -117,7 +117,7 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_schedule_from_research' => array(
+			'wp_mcp_ai_create_schedule_from_research'     => array(
 				'nonce'    => 'wp_mcp_ai_research_pro_schedule',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
@@ -127,7 +127,7 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_ff_team_from_research' => array(
+			'wp_mcp_ai_create_ff_team_from_research'      => array(
 				'nonce'    => 'wp_mcp_ai_research_ff_team',
 				'cap'      => 'edit_posts',
 				'class'    => 'WP_MCP_AI_Fantasy_Football_Research_Page',
@@ -143,12 +143,12 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_lf_client_from_research' => array(
+			'wp_mcp_ai_create_lf_client_from_research'    => array(
 				'nonce'    => 'wp_mcp_ai_lf_research',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_lf_matter_from_research' => array(
+			'wp_mcp_ai_create_lf_matter_from_research'    => array(
 				'nonce'    => 'wp_mcp_ai_lf_research',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
@@ -163,22 +163,22 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_arch_spec_from_research' => array(
+			'wp_mcp_ai_create_arch_spec_from_research'    => array(
 				'nonce'    => 'wp_mcp_ai_research_arch_spec',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
 			),
-			'wp_mcp_ai_create_media_from_design' => array(
+			'wp_mcp_ai_create_media_from_design'          => array(
 				'nonce'    => 'wp_mcp_ai_design_media',
 				'cap'      => 'edit_posts',
 				'data_key' => 'design_data',
 			),
-			'wp_mcp_ai_preview_schedule_from_research' => array(
+			'wp_mcp_ai_preview_schedule_from_research'    => array(
 				'nonce'    => 'wp_mcp_ai_research_pro_schedule',
 				'cap'      => 'edit_posts',
 				'data_key' => 'schedule_data',
 			),
-			'wp_mcp_ai_create_appointment_from_research' => array(
+			'wp_mcp_ai_create_appointment_from_research'  => array(
 				'nonce'    => 'wp_mcp_ai_research_appointment',
 				'cap'      => 'edit_posts',
 				'data_key' => 'research_data',
@@ -186,7 +186,8 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Generic 4-point tests driven by self::$handlers table
 	 * ------------------------------------------------------------------ */
 
@@ -245,30 +246,199 @@ class Test_Create_From_Research_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		// setUpBeforeClass may not have run yet in the provider context on older
 		// PHPUnit versions; build the list statically from the same data.
 		$raw = array(
-			array( 'wp_mcp_ai_create_post_from_research',             array( 'nonce' => 'wp_mcp_ai_research_post',               'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_product_from_research',          array( 'nonce' => 'wp_mcp_ai_research_product',            'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_project_from_research',          array( 'nonce' => 'wp_mcp_ai_research_project',            'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_task_from_research',             array( 'nonce' => 'wp_mcp_ai_research_task',               'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_event_from_research',            array( 'nonce' => 'wp_mcp_ai_research_event',              'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_company_from_research',          array( 'nonce' => 'wp_mcp_ai_research_page',               'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_page_from_research',             array( 'nonce' => 'wp_mcp_ai_research_page',               'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_place_from_research',            array( 'nonce' => 'wp_mcp_ai_research_place',              'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_policy_from_research',           array( 'nonce' => 'wp_mcp_ai_research_policy',             'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_quiz_from_research',             array( 'nonce' => 'wp_mcp_ai_research_quiz',               'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_registration_from_research',     array( 'nonce' => 'wp_mcp_ai_research_registration',       'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_schedule_from_research',         array( 'nonce' => 'wp_mcp_ai_research_pro_schedule',       'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_financial_account_from_research',array( 'nonce' => 'wp_mcp_ai_research_financial_account',  'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_ff_team_from_research',          array( 'nonce' => 'wp_mcp_ai_research_ff_team',            'cap' => 'edit_posts', 'class' => 'WP_MCP_AI_Fantasy_Football_Research_Page', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_image_template_from_research',   array( 'nonce' => 'wp_mcp_ai_research_image_template',     'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_document_template_from_research',array( 'nonce' => 'wp_mcp_ai_research_document_template',  'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_lf_client_from_research',        array( 'nonce' => 'wp_mcp_ai_lf_research',                 'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_lf_matter_from_research',        array( 'nonce' => 'wp_mcp_ai_lf_research',                 'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_arch_drawing_from_research',     array( 'nonce' => 'wp_mcp_ai_research_arch_drawing',       'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_arch_project_from_research',     array( 'nonce' => 'wp_mcp_ai_research_arch_project',       'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_arch_spec_from_research',        array( 'nonce' => 'wp_mcp_ai_research_arch_spec',          'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
-			array( 'wp_mcp_ai_create_media_from_design',              array( 'nonce' => 'wp_mcp_ai_design_media',                'cap' => 'edit_posts', 'data_key' => 'design_data' ) ),
-			array( 'wp_mcp_ai_preview_schedule_from_research',        array( 'nonce' => 'wp_mcp_ai_research_pro_schedule',       'cap' => 'edit_posts', 'data_key' => 'schedule_data' ) ),
-			array( 'wp_mcp_ai_create_appointment_from_research',      array( 'nonce' => 'wp_mcp_ai_research_appointment',        'cap' => 'edit_posts', 'data_key' => 'research_data' ) ),
+			array(
+				'wp_mcp_ai_create_post_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_post',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_product_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_product',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_project_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_project',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_task_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_task',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_event_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_event',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_company_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_page',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_page_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_page',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_place_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_place',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_policy_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_policy',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_quiz_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_quiz',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_registration_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_registration',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_schedule_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_pro_schedule',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_financial_account_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_financial_account',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_ff_team_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_ff_team',
+					'cap'      => 'edit_posts',
+					'class'    => 'WP_MCP_AI_Fantasy_Football_Research_Page',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_image_template_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_image_template',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_document_template_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_document_template',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_lf_client_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_lf_research',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_lf_matter_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_lf_research',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_arch_drawing_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_arch_drawing',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_arch_project_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_arch_project',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_arch_spec_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_arch_spec',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_media_from_design',
+				array(
+					'nonce'    => 'wp_mcp_ai_design_media',
+					'cap'      => 'edit_posts',
+					'data_key' => 'design_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_preview_schedule_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_pro_schedule',
+					'cap'      => 'edit_posts',
+					'data_key' => 'schedule_data',
+				),
+			),
+			array(
+				'wp_mcp_ai_create_appointment_from_research',
+				array(
+					'nonce'    => 'wp_mcp_ai_research_appointment',
+					'cap'      => 'edit_posts',
+					'data_key' => 'research_data',
+				),
+			),
 		);
 
 		$out = array();

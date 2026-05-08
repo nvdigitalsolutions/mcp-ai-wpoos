@@ -49,7 +49,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->has_embedded_addon = class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Shared skip helper
 	 * ------------------------------------------------------------------ */
 
@@ -59,7 +60,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_list_embedded_models
 	 * ------------------------------------------------------------------ */
 
@@ -102,7 +104,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_download_embedded_model
 	 * ------------------------------------------------------------------ */
 
@@ -168,7 +171,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_delete_embedded_model
 	 * ------------------------------------------------------------------ */
 
@@ -231,7 +235,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_download_llama_binary
 	 * ------------------------------------------------------------------ */
 
@@ -273,7 +278,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_get_llama_binary_status
 	 * ------------------------------------------------------------------ */
 
@@ -311,7 +317,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertIsArray( $response['data'] );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_load_dataset_preview (base plugin)
 	 * ------------------------------------------------------------------ */
 
@@ -379,7 +386,8 @@ class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_search_datasets (base plugin)
 	 * ------------------------------------------------------------------ */
 

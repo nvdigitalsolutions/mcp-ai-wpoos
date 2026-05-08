@@ -46,7 +46,8 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_save_workflow
 	 * ------------------------------------------------------------------ */
 
@@ -135,7 +136,8 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'pilot-workflow', $saved );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_delete_workflow
 	 * ------------------------------------------------------------------ */
 
@@ -221,7 +223,8 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_test_workflow
 	 * ------------------------------------------------------------------ */
 
@@ -296,7 +299,8 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		// asserting is the contract, not the orchestrator's runtime behaviour.
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_execute_workflow (Orchestration Dashboard)
 	 * ------------------------------------------------------------------ */
 
@@ -361,7 +365,8 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_restart_workflow (Orchestration Dashboard)
 	 * ------------------------------------------------------------------ */
 

@@ -60,7 +60,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Internal helper: cap-gate + nonce-gate checks for any messaging handler.
 	 * ------------------------------------------------------------------ */
 
@@ -95,7 +96,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxForbidden( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_fetch_whatsapp_phone_numbers
 	 * ================================================================== */
 
@@ -106,7 +108,10 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_fetch_whatsapp_phone_numbers_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_fetch_whatsapp_phone_numbers',
-			array( 'business_account_id' => '123', 'access_token' => 'tok' ),
+			array(
+				'business_account_id' => '123',
+				'access_token'        => 'tok',
+			),
 			'wp_mcp_ai_fetch_whatsapp_phone_numbers'
 		);
 	}
@@ -121,14 +126,23 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	public function test_fetch_whatsapp_phone_numbers_stubs_outbound_http() {
-		$this->stub_http_response( 'graph.facebook.com', array(
-			'response' => array( 'code' => 200 ),
-			'body'     => wp_json_encode( array(
-				'data' => array(
-					array( 'id' => '12345', 'display_phone_number' => '+1 555 000 0000', 'verified_name' => 'Test' ),
+		$this->stub_http_response(
+			'graph.facebook.com',
+			array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode(
+					array(
+						'data' => array(
+							array(
+								'id'                   => '12345',
+								'display_phone_number' => '+1 555 000 0000',
+								'verified_name'        => 'Test',
+							),
+						),
+					)
 				),
-			) ),
-		) );
+			)
+		);
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_fetch_whatsapp_phone_numbers',
@@ -143,7 +157,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'phone_numbers', $data );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_whatsapp_live
 	 * ================================================================== */
 
@@ -154,7 +169,10 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_whatsapp_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_whatsapp_live',
-			array( 'access_token' => 'tok', 'phone_number_id' => '123' ),
+			array(
+				'access_token'    => 'tok',
+				'phone_number_id' => '123',
+			),
 			'wp_mcp_ai_test_whatsapp_live'
 		);
 	}
@@ -169,7 +187,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_whatsapp_auto_reply
 	 * ================================================================== */
 
@@ -180,12 +199,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_whatsapp_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_whatsapp_auto_reply',
-			array( 'access_token' => 'tok', 'phone_number_id' => '123', 'assistant_id' => '1' ),
+			array(
+				'access_token'    => 'tok',
+				'phone_number_id' => '123',
+				'assistant_id'    => '1',
+			),
 			'wp_mcp_ai_test_whatsapp_auto_reply'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_register_whatsapp_phone_number
 	 * ================================================================== */
 
@@ -196,12 +220,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_register_whatsapp_phone_number_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_register_whatsapp_phone_number',
-			array( 'access_token' => 'tok', 'phone_number_id' => '123', 'pin' => '123456' ),
+			array(
+				'access_token'    => 'tok',
+				'phone_number_id' => '123',
+				'pin'             => '123456',
+			),
 			'wp_mcp_ai_register_whatsapp_phone_number'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_create_whatsapp_group
 	 * ================================================================== */
 
@@ -212,12 +241,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_create_whatsapp_group_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_create_whatsapp_group',
-			array( 'access_token' => 'tok', 'phone_number_id' => '123', 'group_name' => 'G' ),
+			array(
+				'access_token'    => 'tok',
+				'phone_number_id' => '123',
+				'group_name'      => 'G',
+			),
 			'wp_mcp_ai_create_whatsapp_group'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_telegram_live
 	 * ================================================================== */
 
@@ -242,7 +276,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_telegram_auto_reply
 	 * ================================================================== */
 
@@ -253,12 +288,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_telegram_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_telegram_auto_reply',
-			array( 'bot_token' => 'tok', 'assistant_id' => '1' ),
+			array(
+				'bot_token'    => 'tok',
+				'assistant_id' => '1',
+			),
 			'wp_mcp_ai_test_telegram_auto_reply'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_set_telegram_webhook
 	 * ================================================================== */
 
@@ -269,7 +308,10 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_set_telegram_webhook_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_set_telegram_webhook',
-			array( 'bot_token' => 'tok', 'webhook_url' => 'https://example.com/wh' ),
+			array(
+				'bot_token'   => 'tok',
+				'webhook_url' => 'https://example.com/wh',
+			),
 			'wp_mcp_ai_set_telegram_webhook'
 		);
 	}
@@ -283,7 +325,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_telegram_webhook_info
 	 * ================================================================== */
 
@@ -308,7 +351,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_register_telegram_commands
 	 * ================================================================== */
 
@@ -319,12 +363,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_register_telegram_commands_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_register_telegram_commands',
-			array( 'bot_token' => 'tok', 'commands' => wp_json_encode( array() ) ),
+			array(
+				'bot_token' => 'tok',
+				'commands'  => wp_json_encode( array() ),
+			),
 			'wp_mcp_ai_register_telegram_commands'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_generate_messenger_token
 	 * ================================================================== */
 
@@ -335,7 +383,11 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_generate_messenger_token_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_generate_messenger_token',
-			array( 'app_id' => 'x', 'app_secret' => 'y', 'code' => 'z' ),
+			array(
+				'app_id'     => 'x',
+				'app_secret' => 'y',
+				'code'       => 'z',
+			),
 			'wp_mcp_ai_generate_messenger_token'
 		);
 	}
@@ -349,7 +401,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_messenger_live
 	 * ================================================================== */
 
@@ -360,12 +413,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_messenger_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_messenger_live',
-			array( 'access_token' => 'tok', 'page_id' => '123' ),
+			array(
+				'access_token' => 'tok',
+				'page_id'      => '123',
+			),
 			'wp_mcp_ai_test_messenger_live'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_messenger_auto_reply
 	 * ================================================================== */
 
@@ -376,12 +433,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_messenger_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_messenger_auto_reply',
-			array( 'access_token' => 'tok', 'page_id' => '123', 'assistant_id' => '1' ),
+			array(
+				'access_token' => 'tok',
+				'page_id'      => '123',
+				'assistant_id' => '1',
+			),
 			'wp_mcp_ai_test_messenger_auto_reply'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_google_chat_live
 	 * ================================================================== */
 
@@ -406,7 +468,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_fetch_google_chat_spaces
 	 * ================================================================== */
 
@@ -422,7 +485,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_google_chat_auto_reply
 	 * ================================================================== */
 
@@ -433,12 +497,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_google_chat_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_google_chat_auto_reply',
-			array( 'service_account_json' => '{}', 'assistant_id' => '1' ),
+			array(
+				'service_account_json' => '{}',
+				'assistant_id'         => '1',
+			),
 			'wp_mcp_ai_test_google_chat_auto_reply'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_google_chat_incoming_trigger
 	 * ================================================================== */
 
@@ -454,7 +522,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_google_chat_webhook_log
 	 * ================================================================== */
 
@@ -479,7 +548,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_clear_google_chat_webhook_log
 	 * ================================================================== */
 
@@ -504,7 +574,8 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_generate_teams_manifest
 	 * ================================================================== */
 
@@ -515,12 +586,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_generate_teams_manifest_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_generate_teams_manifest',
-			array( 'app_id' => 'aid', 'bot_id' => 'bid', 'app_name' => 'My App' ),
+			array(
+				'app_id'   => 'aid',
+				'bot_id'   => 'bid',
+				'app_name' => 'My App',
+			),
 			'wp_mcp_ai_generate_teams_manifest'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_generate_teams_app_package
 	 * ================================================================== */
 
@@ -531,12 +607,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_generate_teams_app_package_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_generate_teams_app_package',
-			array( 'app_id' => 'aid', 'bot_id' => 'bid', 'app_name' => 'My App' ),
+			array(
+				'app_id'   => 'aid',
+				'bot_id'   => 'bid',
+				'app_name' => 'My App',
+			),
 			'wp_mcp_ai_generate_teams_app_package'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_office365_live
 	 * ================================================================== */
 
@@ -547,12 +628,17 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_office365_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_office365_live',
-			array( 'client_id' => 'cid', 'client_secret' => 'sec', 'tenant_id' => 'tid' ),
+			array(
+				'client_id'     => 'cid',
+				'client_secret' => 'sec',
+				'tenant_id'     => 'tid',
+			),
 			'wp_mcp_ai_test_office365_live'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_office365_auto_reply
 	 * ================================================================== */
 
@@ -563,12 +649,18 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_office365_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_office365_auto_reply',
-			array( 'client_id' => 'cid', 'client_secret' => 'sec', 'tenant_id' => 'tid', 'assistant_id' => '1' ),
+			array(
+				'client_id'     => 'cid',
+				'client_secret' => 'sec',
+				'tenant_id'     => 'tid',
+				'assistant_id'  => '1',
+			),
 			'wp_mcp_ai_test_office365_auto_reply'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_icloud_live
 	 * ================================================================== */
 
@@ -579,12 +671,16 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_icloud_live_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_icloud_live',
-			array( 'apple_id' => 'me@example.com', 'app_password' => 'pwd' ),
+			array(
+				'apple_id'     => 'me@example.com',
+				'app_password' => 'pwd',
+			),
 			'wp_mcp_ai_test_icloud_live'
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_icloud_auto_reply
 	 * ================================================================== */
 
@@ -595,7 +691,11 @@ class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_icloud_auto_reply_rejects_subscriber() {
 		$this->assertRejectsSubscriber(
 			'wp_mcp_ai_test_icloud_auto_reply',
-			array( 'apple_id' => 'me@example.com', 'app_password' => 'pwd', 'assistant_id' => '1' ),
+			array(
+				'apple_id'     => 'me@example.com',
+				'app_password' => 'pwd',
+				'assistant_id' => '1',
+			),
 			'wp_mcp_ai_test_icloud_auto_reply'
 		);
 	}

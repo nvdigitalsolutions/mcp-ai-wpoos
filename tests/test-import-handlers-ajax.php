@@ -48,43 +48,43 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		parent::setUpBeforeClass();
 
 		self::$handlers = array(
-			'wp_mcp_ai_import_post' => array(
+			'wp_mcp_ai_import_post'              => array(
 				'nonce' => 'wp_mcp_ai_research_post',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_product' => array(
+			'wp_mcp_ai_import_product'           => array(
 				'nonce' => 'wp_mcp_ai_research_product',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_project' => array(
+			'wp_mcp_ai_import_project'           => array(
 				'nonce' => 'wp_mcp_ai_research_project',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_task' => array(
+			'wp_mcp_ai_import_task'              => array(
 				'nonce' => 'wp_mcp_ai_import_data',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_event' => array(
+			'wp_mcp_ai_import_event'             => array(
 				'nonce' => 'wp_mcp_ai_research_event',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_page' => array(
+			'wp_mcp_ai_import_page'              => array(
 				'nonce' => 'wp_mcp_ai_research_page',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_place' => array(
+			'wp_mcp_ai_import_place'             => array(
 				'nonce' => 'wp_mcp_ai_research_place',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_policy' => array(
+			'wp_mcp_ai_import_policy'            => array(
 				'nonce' => 'wp_mcp_ai_research_policy',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_quiz' => array(
+			'wp_mcp_ai_import_quiz'              => array(
 				'nonce' => 'wp_mcp_ai_research_quiz',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_registration' => array(
+			'wp_mcp_ai_import_registration'      => array(
 				'nonce' => 'wp_mcp_ai_research_registration',
 				'cap'   => 'edit_posts',
 			),
@@ -92,12 +92,12 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'nonce' => 'wp_mcp_ai_research_financial_account',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_ff_team' => array(
+			'wp_mcp_ai_import_ff_team'           => array(
 				'nonce' => 'wp_mcp_ai_research_ff_team',
 				'cap'   => 'edit_posts',
 				'class' => 'WP_MCP_AI_Fantasy_Football_Research_Page',
 			),
-			'wp_mcp_ai_import_image_template' => array(
+			'wp_mcp_ai_import_image_template'    => array(
 				'nonce' => 'wp_mcp_ai_research_image_template',
 				'cap'   => 'edit_posts',
 			),
@@ -105,26 +105,27 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'nonce' => 'wp_mcp_ai_research_document_template',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_arch_drawing' => array(
+			'wp_mcp_ai_import_arch_drawing'      => array(
 				'nonce' => 'wp_mcp_ai_research_arch_drawing',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_arch_project' => array(
+			'wp_mcp_ai_import_arch_project'      => array(
 				'nonce' => 'wp_mcp_ai_research_arch_project',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_arch_spec' => array(
+			'wp_mcp_ai_import_arch_spec'         => array(
 				'nonce' => 'wp_mcp_ai_research_arch_spec',
 				'cap'   => 'edit_posts',
 			),
-			'wp_mcp_ai_import_appointment' => array(
+			'wp_mcp_ai_import_appointment'       => array(
 				'nonce' => 'wp_mcp_ai_research_appointment',
 				'cap'   => 'edit_posts',
 			),
 		);
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Data provider
 	 * ------------------------------------------------------------------ */
 
@@ -133,24 +134,133 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 */
 	public static function provideImportHandlers(): array {
 		$raw = array(
-			array( 'wp_mcp_ai_import_post',                array( 'nonce' => 'wp_mcp_ai_research_post',              'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_product',             array( 'nonce' => 'wp_mcp_ai_research_product',           'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_project',             array( 'nonce' => 'wp_mcp_ai_research_project',           'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_task',                array( 'nonce' => 'wp_mcp_ai_import_data',                'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_event',               array( 'nonce' => 'wp_mcp_ai_research_event',             'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_page',                array( 'nonce' => 'wp_mcp_ai_research_page',              'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_place',               array( 'nonce' => 'wp_mcp_ai_research_place',             'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_policy',              array( 'nonce' => 'wp_mcp_ai_research_policy',            'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_quiz',                array( 'nonce' => 'wp_mcp_ai_research_quiz',              'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_registration',        array( 'nonce' => 'wp_mcp_ai_research_registration',      'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_financial_account',   array( 'nonce' => 'wp_mcp_ai_research_financial_account', 'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_ff_team',             array( 'nonce' => 'wp_mcp_ai_research_ff_team',           'cap' => 'edit_posts', 'class' => 'WP_MCP_AI_Fantasy_Football_Research_Page' ) ),
-			array( 'wp_mcp_ai_import_image_template',      array( 'nonce' => 'wp_mcp_ai_research_image_template',    'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_document_template',   array( 'nonce' => 'wp_mcp_ai_research_document_template', 'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_arch_drawing',        array( 'nonce' => 'wp_mcp_ai_research_arch_drawing',      'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_arch_project',        array( 'nonce' => 'wp_mcp_ai_research_arch_project',      'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_arch_spec',           array( 'nonce' => 'wp_mcp_ai_research_arch_spec',         'cap' => 'edit_posts' ) ),
-			array( 'wp_mcp_ai_import_appointment',         array( 'nonce' => 'wp_mcp_ai_research_appointment',       'cap' => 'edit_posts' ) ),
+			array(
+				'wp_mcp_ai_import_post',
+				array(
+					'nonce' => 'wp_mcp_ai_research_post',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_product',
+				array(
+					'nonce' => 'wp_mcp_ai_research_product',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_project',
+				array(
+					'nonce' => 'wp_mcp_ai_research_project',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_task',
+				array(
+					'nonce' => 'wp_mcp_ai_import_data',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_event',
+				array(
+					'nonce' => 'wp_mcp_ai_research_event',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_page',
+				array(
+					'nonce' => 'wp_mcp_ai_research_page',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_place',
+				array(
+					'nonce' => 'wp_mcp_ai_research_place',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_policy',
+				array(
+					'nonce' => 'wp_mcp_ai_research_policy',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_quiz',
+				array(
+					'nonce' => 'wp_mcp_ai_research_quiz',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_registration',
+				array(
+					'nonce' => 'wp_mcp_ai_research_registration',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_financial_account',
+				array(
+					'nonce' => 'wp_mcp_ai_research_financial_account',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_ff_team',
+				array(
+					'nonce' => 'wp_mcp_ai_research_ff_team',
+					'cap'   => 'edit_posts',
+					'class' => 'WP_MCP_AI_Fantasy_Football_Research_Page',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_image_template',
+				array(
+					'nonce' => 'wp_mcp_ai_research_image_template',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_document_template',
+				array(
+					'nonce' => 'wp_mcp_ai_research_document_template',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_arch_drawing',
+				array(
+					'nonce' => 'wp_mcp_ai_research_arch_drawing',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_arch_project',
+				array(
+					'nonce' => 'wp_mcp_ai_research_arch_project',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_arch_spec',
+				array(
+					'nonce' => 'wp_mcp_ai_research_arch_spec',
+					'cap'   => 'edit_posts',
+				),
+			),
+			array(
+				'wp_mcp_ai_import_appointment',
+				array(
+					'nonce' => 'wp_mcp_ai_research_appointment',
+					'cap'   => 'edit_posts',
+				),
+			),
 		);
 
 		$out = array();
@@ -160,7 +270,8 @@ class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		return $out;
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * 3-point data-driven tests (cap, nonce, input-validation)
 	 * Happy path is skipped here because handlers call into JetEngine / WP
 	 * post-creation APIs that require a fully bootstrapped environment.

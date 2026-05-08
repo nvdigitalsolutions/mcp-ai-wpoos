@@ -50,7 +50,8 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_clear_settings_cache
 	 * (simplest handler — test it first so pattern is established)
 	 * ------------------------------------------------------------------ */
@@ -90,7 +91,8 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertFalse( get_transient( 'wp_mcp_ai_settings_cache' ) );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_reset_settings
 	 * ------------------------------------------------------------------ */
 
@@ -136,7 +138,8 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_export_settings
 	 * ------------------------------------------------------------------ */
 
@@ -190,7 +193,8 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_import_settings
 	 * ------------------------------------------------------------------ */
 
@@ -311,7 +315,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			'exported_at' => '2026-01-01 00:00:00',
 			'settings'    => array( 'imported_key' => 'imported_value' ),
 		);
-		$json = wp_json_encode( $export_data );
+		$json        = wp_json_encode( $export_data );
 
 		$tmp = tempnam( sys_get_temp_dir(), 'ajax_test_' );
 		file_put_contents( $tmp, $json );

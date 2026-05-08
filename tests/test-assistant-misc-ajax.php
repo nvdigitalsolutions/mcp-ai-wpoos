@@ -40,7 +40,8 @@
  */
 class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_build_assistant_from_conversation
 	 * ================================================================== */
 
@@ -48,7 +49,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_build_assistant_from_conversation',
-			array( 'nonce' => 'bad_nonce', 'title' => 'My Assistant' )
+			array(
+				'nonce' => 'bad_nonce',
+				'title' => 'My Assistant',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -74,7 +78,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_upload_assistant_attachment
 	 * ================================================================== */
 
@@ -107,7 +112,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_create_team_from_modal
 	 * ================================================================== */
 
@@ -115,7 +121,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_create_team_from_modal',
-			array( 'nonce' => 'bad_nonce', 'title' => 'Team A' )
+			array(
+				'nonce' => 'bad_nonce',
+				'title' => 'Team A',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -124,7 +133,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_create_team_from_modal',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_create_team' ), 'title' => 'Team A' )
+			array(
+				'nonce' => wp_create_nonce( 'wp_mcp_ai_create_team' ),
+				'title' => 'Team A',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -138,7 +150,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_create_from_professional
 	 * ================================================================== */
 
@@ -160,7 +173,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_deploy_team
 	 * ================================================================== */
 
@@ -168,7 +182,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_deploy_team',
-			array( 'nonce' => 'bad_nonce', 'team_id' => '1' )
+			array(
+				'nonce'   => 'bad_nonce',
+				'team_id' => '1',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -177,7 +194,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_deploy_team',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_deploy_team' ), 'team_id' => '1' )
+			array(
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_deploy_team' ),
+				'team_id' => '1',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -186,12 +206,16 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_deploy_team',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_deploy_team' ), 'team_id' => '0' )
+			array(
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_deploy_team' ),
+				'team_id' => '0',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_orchestration_stats
 	 * ================================================================== */
 
@@ -219,7 +243,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_run_orchestration_seeder
 	 * ================================================================== */
 
@@ -252,7 +277,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_professional_config
 	 * ================================================================== */
 
@@ -275,7 +301,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_download_component
 	 * ================================================================== */
 
@@ -283,7 +310,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_download_component',
-			array( 'nonce' => 'bad', 'component' => 'vectorizer' )
+			array(
+				'nonce'     => 'bad',
+				'component' => 'vectorizer',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -292,7 +322,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_download_component',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_download_component' ), 'component' => 'vectorizer' )
+			array(
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_download_component' ),
+				'component' => 'vectorizer',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -301,12 +334,16 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_download_component',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_download_component' ), 'component' => 'nonexistent' )
+			array(
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_download_component' ),
+				'component' => 'nonexistent',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_download_all_components
 	 * ================================================================== */
 
@@ -325,7 +362,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_save_model_config
 	 * ================================================================== */
 
@@ -333,7 +371,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_save_model_config',
-			array( 'nonce' => 'bad', 'model' => 'gpt-4', 'config' => array( 'temperature' => '0.7' ) )
+			array(
+				'nonce'  => 'bad',
+				'model'  => 'gpt-4',
+				'config' => array( 'temperature' => '0.7' ),
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -355,7 +397,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_save_model_config',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_admin' ), 'config' => array( 'temperature' => '0.7' ) )
+			array(
+				'nonce'  => wp_create_nonce( 'wp_mcp_ai_admin' ),
+				'config' => array( 'temperature' => '0.7' ),
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -364,12 +409,16 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_save_model_config',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_admin' ), 'model' => 'gpt-4' )
+			array(
+				'nonce' => wp_create_nonce( 'wp_mcp_ai_admin' ),
+				'model' => 'gpt-4',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_clear_test_files
 	 * ================================================================== */
 
@@ -388,7 +437,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_clear_dev_files  (routed through safe_ajax_handler)
 	 * ================================================================== */
 
@@ -408,7 +458,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_cpt_chat
 	 * ================================================================== */
 
@@ -419,7 +470,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_cpt_chat',
-			array( 'nonce' => 'bad', 'post_id' => '1', 'message' => 'Hello' )
+			array(
+				'nonce'   => 'bad',
+				'post_id' => '1',
+				'message' => 'Hello',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -447,12 +502,16 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_editor();
 		$response = $this->dispatch(
 			'wp_mcp_ai_cpt_chat',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_cpt_chat' ), 'post_id' => '1' )
+			array(
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_cpt_chat' ),
+				'post_id' => '1',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_install_canvas_addon
 	 * ================================================================== */
 
@@ -477,7 +536,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_test_pro_package
 	 * ================================================================== */
 
@@ -501,7 +561,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_test_pro_package',
-			array( 'nonce' => 'bad_nonce', 'package' => 'openai' )
+			array(
+				'nonce'   => 'bad_nonce',
+				'package' => 'openai',
+			)
 		);
 		$this->assertAjaxError( $response ); // nonce verified via wp_verify_nonce() → error response.
 	}
@@ -514,12 +577,16 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_test_pro_package',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_test_package_' . $pkg ), 'package' => $pkg )
+			array(
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_test_package_' . $pkg ),
+				'package' => $pkg,
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_preview_excel
 	 * ================================================================== */
 
@@ -544,7 +611,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_clear_yfinance_cache
 	 * ================================================================== */
 
@@ -581,7 +649,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_get_member_records_preview
 	 * ================================================================== */
 
@@ -609,7 +678,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_check_record_completeness
 	 * ================================================================== */
 
@@ -629,12 +699,16 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_check_record_completeness',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_health_consolidate' ), 'record_id' => '5' )
+			array(
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_health_consolidate' ),
+				'record_id' => '5',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_get_product_records_preview
 	 * ================================================================== */
 
@@ -659,7 +733,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_execute_workflow_node
 	 * ================================================================== */
 
@@ -670,7 +745,11 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_execute_workflow_node',
-			array( 'nonce' => 'bad', 'node_id' => 'n1', 'node_type' => 'start' )
+			array(
+				'nonce'     => 'bad',
+				'node_id'   => 'n1',
+				'node_type' => 'start',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -691,7 +770,8 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * PRO: wp_mcp_ai_save_workflow_execution
 	 * ================================================================== */
 
@@ -702,7 +782,10 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_save_workflow_execution',
-			array( 'nonce' => 'bad', 'execution_data' => wp_json_encode( array() ) )
+			array(
+				'nonce'          => 'bad',
+				'execution_data' => wp_json_encode( array() ),
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}

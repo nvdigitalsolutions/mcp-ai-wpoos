@@ -41,7 +41,8 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_skill_manager_save
 	 * ------------------------------------------------------------------ */
 
@@ -103,7 +104,8 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_skill_manager_delete
 	 * ------------------------------------------------------------------ */
 
@@ -163,7 +165,8 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_skill_manager_upload
 	 * ------------------------------------------------------------------ */
 
@@ -201,7 +204,8 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'No file was uploaded' );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_skill_manager_install_url
 	 * ------------------------------------------------------------------ */
 
@@ -291,7 +295,8 @@ class Test_Skill_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_skill_manager_generate_skill
 	 * ------------------------------------------------------------------ */
 

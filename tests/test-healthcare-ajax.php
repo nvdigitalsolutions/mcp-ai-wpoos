@@ -38,7 +38,8 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	/** Required capability for hw/mv dashboard handlers. */
 	const CAP_DASHBOARD = 'edit_posts';
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_hw_dashboard_get_health_metrics
 	 * ================================================================== */
 
@@ -112,7 +113,8 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_mv_dashboard_get_vital_signs
 	 * ================================================================== */
 
@@ -186,7 +188,8 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_member_vitals_preview
 	 * ================================================================== */
 
@@ -267,7 +270,8 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_bulk_import_health_info
 	 * ================================================================== */
 
@@ -332,16 +336,17 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$response = $this->dispatch(
 			'wp_mcp_ai_bulk_import_health_info',
 			array(
-				'nonce'        => wp_create_nonce( self::NONCE_HC ),
-				'member_id'    => 1,
-				'health_info'  => '',
+				'nonce'       => wp_create_nonce( self::NONCE_HC ),
+				'member_id'   => 1,
+				'health_info' => '',
 			)
 		);
 
 		$this->assertAjaxError( $response, 'Please provide health information' );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_upload_health_document
 	 * ================================================================== */
 
@@ -388,7 +393,8 @@ class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_import_vitals_to_cct
 	 * ================================================================== */
 

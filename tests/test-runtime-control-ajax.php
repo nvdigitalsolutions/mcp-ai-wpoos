@@ -38,7 +38,8 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 */
 	const NONCE_ORCH = 'wp_mcp_ai_orchestration';
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_queue_status
 	 * ------------------------------------------------------------------ */
 
@@ -77,7 +78,8 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_rabbitmq_health
 	 * ------------------------------------------------------------------ */
 
@@ -117,7 +119,8 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_rabbitmq_setup
 	 * ------------------------------------------------------------------ */
 
@@ -156,7 +159,8 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_run_timeline_list_runs
 	 * ------------------------------------------------------------------ */
 
@@ -195,7 +199,8 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_run_timeline_get_run
 	 * ------------------------------------------------------------------ */
 
@@ -252,7 +257,8 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Run not found' );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * wp_mcp_ai_control_session (Pro only)
 	 * ------------------------------------------------------------------ */
 
@@ -261,7 +267,10 @@ class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 		$response = $this->dispatch(
 			'wp_mcp_ai_control_session',
-			array( 'session_id' => 'sess-001', 'action' => 'pause' )
+			array(
+				'session_id' => 'sess-001',
+				'action'     => 'pause',
+			)
 		);
 
 		$this->assertAjaxForbidden( $response );

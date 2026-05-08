@@ -64,7 +64,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Helpers
 	 * ------------------------------------------------------------------ */
 
@@ -82,7 +83,12 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 					'id'          => $id,
 					'name'        => $name,
 					'description' => '',
-					'nodes'       => array( array( 'id' => 'n1', 'type' => 'start' ) ),
+					'nodes'       => array(
+						array(
+							'id'   => 'n1',
+							'type' => 'start',
+						),
+					),
 					'edges'       => array(),
 					'created_at'  => time(),
 					'updated_at'  => time(),
@@ -98,14 +104,20 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 			'workflow' => wp_json_encode(
 				array(
 					'name'  => $name,
-					'nodes' => array( array( 'id' => 'n1', 'type' => 'start' ) ),
+					'nodes' => array(
+						array(
+							'id'   => 'n1',
+							'type' => 'start',
+						),
+					),
 					'edges' => array(),
 				)
 			),
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_save_pro_workflow
 	 * ================================================================== */
 
@@ -115,7 +127,13 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 			'wp_mcp_ai_save_pro_workflow',
 			array(
 				'nonce'    => 'bad_nonce',
-				'workflow' => wp_json_encode( array( 'name' => 'x', 'nodes' => array(), 'edges' => array() ) ),
+				'workflow' => wp_json_encode(
+					array(
+						'name'  => 'x',
+						'nodes' => array(),
+						'edges' => array(),
+					)
+				),
 			)
 		);
 		$this->assertAjaxForbidden( $response );
@@ -142,7 +160,12 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 			'wp_mcp_ai_save_pro_workflow',
 			array(
 				'nonce'    => wp_create_nonce( self::WORKFLOW_NONCE ),
-				'workflow' => wp_json_encode( array( 'nodes' => array(), 'edges' => array() ) ),
+				'workflow' => wp_json_encode(
+					array(
+						'nodes' => array(),
+						'edges' => array(),
+					)
+				),
 			)
 		);
 		$this->assertAjaxError( $response );
@@ -157,7 +180,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertNotEmpty( $workflows );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_load_pro_workflow
 	 * ================================================================== */
 
@@ -166,7 +190,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_load_pro_workflow',
-			array( 'nonce' => 'bad', 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => 'bad',
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -176,7 +203,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_load_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -195,7 +225,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_load_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxSuccess( $response );
 		$data = $this->getResponseData( $response );
@@ -203,7 +236,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertSame( 'Test Flow', $data['workflow']['name'] );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_delete_pro_workflow
 	 * ================================================================== */
 
@@ -212,7 +246,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_delete_pro_workflow',
-			array( 'nonce' => 'bad', 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => 'bad',
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -222,7 +259,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_delete_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -241,7 +281,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_delete_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'del-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'del-flow',
+			)
 		);
 		$this->assertAjaxSuccess( $response );
 
@@ -249,7 +292,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayNotHasKey( 'del-flow', $workflows );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_list_pro_workflows
 	 * ================================================================== */
 
@@ -281,7 +325,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertIsArray( $data['workflows'] );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_export_pro_workflow
 	 * ================================================================== */
 
@@ -290,7 +335,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_export_pro_workflow',
-			array( 'nonce' => 'bad', 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => 'bad',
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -300,7 +348,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_export_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -319,12 +370,16 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_export_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'exp-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'exp-flow',
+			)
 		);
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_duplicate_pro_workflow
 	 * ================================================================== */
 
@@ -333,7 +388,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_duplicate_pro_workflow',
-			array( 'nonce' => 'bad', 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => 'bad',
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -343,7 +401,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_duplicate_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'test-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'test-flow',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -362,12 +423,16 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_duplicate_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'workflow_id' => 'dup-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'workflow_id' => 'dup-flow',
+			)
 		);
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_rename_pro_workflow
 	 * ================================================================== */
 
@@ -376,7 +441,11 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_rename_pro_workflow',
-			array( 'nonce' => 'bad', 'workflow_id' => 'test-flow', 'new_name' => 'New Name' )
+			array(
+				'nonce'       => 'bad',
+				'workflow_id' => 'test-flow',
+				'new_name'    => 'New Name',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -399,7 +468,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_rename_pro_workflow',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'new_name' => 'New Name' )
+			array(
+				'nonce'    => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'new_name' => 'New Name',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -418,7 +490,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_workflow_templates
 	 * ================================================================== */
 
@@ -450,7 +523,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_workflow_presets
 	 * ================================================================== */
 
@@ -478,7 +552,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_install_workflow_preset
 	 * ================================================================== */
 
@@ -486,7 +561,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_install_workflow_preset',
-			array( 'nonce' => 'bad', 'preset_id' => 'basic' )
+			array(
+				'nonce'     => 'bad',
+				'preset_id' => 'basic',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -495,7 +573,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_install_workflow_preset',
-			array( 'nonce' => wp_create_nonce( self::WORKFLOW_NONCE ), 'preset_id' => 'basic' )
+			array(
+				'nonce'     => wp_create_nonce( self::WORKFLOW_NONCE ),
+				'preset_id' => 'basic',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}
@@ -509,7 +590,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_get_recent_workflows  (base WP_MCP_AI_Admin_Orchestration_Dashboard)
 	 * ================================================================== */
 
@@ -537,7 +619,8 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_trigger_workflow  (Pro WP_MCP_AI_Orchestration_Dashboard)
 	 * ================================================================== */
 
@@ -545,7 +628,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_admin();
 		$response = $this->dispatch(
 			'wp_mcp_ai_trigger_workflow',
-			array( 'nonce' => 'bad', 'workflow_id' => 'some-flow' )
+			array(
+				'nonce'       => 'bad',
+				'workflow_id' => 'some-flow',
+			)
 		);
 		$this->assertAjaxForbidden( $response );
 	}
@@ -554,7 +640,10 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		$this->as_subscriber();
 		$response = $this->dispatch(
 			'wp_mcp_ai_trigger_workflow',
-			array( 'nonce' => wp_create_nonce( self::ORCH_NONCE ), 'workflow_id' => 'some-flow' )
+			array(
+				'nonce'       => wp_create_nonce( self::ORCH_NONCE ),
+				'workflow_id' => 'some-flow',
+			)
 		);
 		$this->assertAjaxError( $response );
 	}

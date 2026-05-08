@@ -36,7 +36,8 @@
  */
 class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Nonces (each handler documents its own nonce action).
 	 * ------------------------------------------------------------------ */
 
@@ -51,7 +52,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	const NONCE_VALIDATE      = 'wp_mcp_ai_validate_data';
 	const NONCE_CHECK_COMP    = 'wp_mcp_ai_check_completeness';
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_cre_dashboard_filter
 	 * ================================================================== */
 
@@ -92,7 +94,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_eca_dashboard_data
 	 * ================================================================== */
 
@@ -133,7 +136,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_create_cre_loan_from_research
 	 * ================================================================== */
 
@@ -183,7 +187,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_create_eca_from_research
 	 * ================================================================== */
 
@@ -227,7 +232,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_import_eca
 	 * ================================================================== */
 
@@ -268,7 +274,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_create_reg_product_from_research
 	 * ================================================================== */
 
@@ -312,7 +319,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_consolidate_bulk_import
 	 * ================================================================== */
 
@@ -353,7 +361,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_consolidate_validate_data
 	 * ================================================================== */
 
@@ -394,7 +403,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_consolidate_check_completeness
 	 * ================================================================== */
 
@@ -435,7 +445,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_bulk_import_reg_products
 	 * ================================================================== */
 
@@ -476,7 +487,8 @@ class Test_Regulatory_ECA_CRE_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_import_reg_document
 	 * ================================================================== */
 

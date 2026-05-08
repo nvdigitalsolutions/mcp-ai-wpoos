@@ -52,7 +52,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		);
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Helper: assert cap/nonce for a given action + key name.
 	 * ------------------------------------------------------------------ */
 
@@ -77,7 +78,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, $key_phrase );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_anthropic_connection
 	 * ================================================================== */
 
@@ -122,7 +124,12 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			'api.anthropic.com',
 			array(
 				'response' => array( 'code' => 200 ),
-				'body'     => wp_json_encode( array( 'id' => 'msg_test', 'content' => array( array( 'text' => 'Hi' ) ) ) ),
+				'body'     => wp_json_encode(
+					array(
+						'id'      => 'msg_test',
+						'content' => array( array( 'text' => 'Hi' ) ),
+					)
+				),
 				'headers'  => array( 'content-type' => 'application/json' ),
 				'cookies'  => array(),
 			)
@@ -140,7 +147,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_exa_connection
 	 * ================================================================== */
 
@@ -202,7 +210,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_perplexity_connection
 	 * ================================================================== */
 
@@ -264,7 +273,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_tavily_connection
 	 * ================================================================== */
 
@@ -326,7 +336,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_plaid_connection
 	 * ================================================================== */
 
@@ -402,7 +413,8 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_test_remote_connection (Pro addon)
 	 * ================================================================== */
 
@@ -446,7 +458,12 @@ class Test_Provider_Connections_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			'example.com',
 			array(
 				'response' => array( 'code' => 200 ),
-				'body'     => wp_json_encode( array( 'name' => 'Test Site', 'description' => '' ) ),
+				'body'     => wp_json_encode(
+					array(
+						'name'        => 'Test Site',
+						'description' => '',
+					)
+				),
 				'headers'  => array( 'content-type' => 'application/json' ),
 				'cookies'  => array(),
 			)

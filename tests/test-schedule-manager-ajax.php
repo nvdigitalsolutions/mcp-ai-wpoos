@@ -47,7 +47,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Shared helper: assert cap/nonce rejection for a given action.
 	 * ------------------------------------------------------------------ */
 
@@ -66,7 +67,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxError( $response, 'Unauthorized' );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_get_schedules
 	 * ================================================================== */
 
@@ -95,7 +97,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		}
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_create_schedule
 	 * ================================================================== */
 
@@ -133,10 +136,10 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 				'nonce'         => wp_create_nonce( self::NONCE ),
 				'schedule_data' => wp_json_encode(
 					array(
-						'name'        => 'Test Schedule',
+						'name'         => 'Test Schedule',
 						'assistant_id' => 0,
-						'cron'        => '0 * * * *',
-						'enabled'     => true,
+						'cron'         => '0 * * * *',
+						'enabled'      => true,
 					)
 				),
 			)
@@ -146,7 +149,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_delete_schedule
 	 * ================================================================== */
 
@@ -191,7 +195,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_toggle_schedule
 	 * ================================================================== */
 
@@ -202,7 +207,10 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public function test_toggle_schedule_rejects_subscriber() {
 		$this->assert_rejected_for_subscriber(
 			'wp_mcp_ai_sm_toggle_schedule',
-			array( 'schedule_id' => 1, 'enabled' => 1 )
+			array(
+				'schedule_id' => 1,
+				'enabled'     => 1,
+			)
 		);
 	}
 
@@ -237,7 +245,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_get_history
 	 * ================================================================== */
 
@@ -261,7 +270,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_clear_history
 	 * ================================================================== */
 
@@ -284,7 +294,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertAjaxSuccess( $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_get_presets
 	 * ================================================================== */
 
@@ -308,7 +319,8 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
-	/* ================================================================== *
+	/*
+	================================================================== *
 	 * wp_mcp_ai_sm_install_preset
 	 * ================================================================== */
 
