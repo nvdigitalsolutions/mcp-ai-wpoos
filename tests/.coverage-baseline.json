@@ -26,15 +26,15 @@
     },
     "services": {
       "source_classes": 78,
-      "covered_classes_min": 32
+      "covered_classes_min": 55
     },
     "harness": {
       "source_classes": 10,
-      "covered_classes_min": 1
+      "covered_classes_min": 10
     },
     "provider_clients": {
       "source_classes": 16,
-      "covered_classes_min": 11
+      "covered_classes_min": 12
     }
   },
   "test_file_floor": {

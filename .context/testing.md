@@ -321,3 +321,14 @@ bin/generate-tool-coverage-manifest.sh
 The smoke test itself includes an assertion that fails when the manifest is stale, so CI catches drift even if a contributor forgets the regen step.
 
 When you want to add behavioural coverage for a high-risk tool (write/state-changing, external API, file/upload), add a dedicated test under `tests/tools/` (base) or `addons/pro/tests/tools/` (pro) — those tests stack on top of the smoke test rather than replacing it.
+
+### Coverage matcher: kebab → PascalCase
+
+`bin/find-untested-classes.sh` recognises a class as "covered" if any test file under `tests/` or `addons/*/tests/` references **either**:
+
+1. The kebab-case file basename (e.g. `wp-mcp-ai-harness-profile`), as appears in the coverage manifests, or
+2. The PascalCase class name derived from that basename (e.g. `WP_MCP_AI_Harness_Profile`), as appears in normal PHPUnit `use`/instance-of references.
+
+The acronyms `WP`, `MCP`, and `AI` stay fully uppercase; every other segment is title-cased. So `wp-mcp-ai-pii-filter` matches `WP_MCP_AI_Pii_Filter`, and `wp-mcp-ai-tool-router-harness` matches `WP_MCP_AI_Tool_Router_Harness`.
+
+Tests therefore do not need to mention class file basenames; referencing the class symbol naturally is enough to credit coverage.

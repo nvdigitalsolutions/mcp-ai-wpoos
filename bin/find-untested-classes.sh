@@ -61,9 +61,25 @@ done
 
 is_covered() {
     local file="$1"
-    local name
-    name="$(basename "$file" .php | sed 's/^class-//')"
-    grep -rq -- "$name" "${TEST_DIRS[@]}" 2>/dev/null
+    local kebab class
+    kebab="$(basename "$file" .php | sed 's/^class-//')"
+
+    # Match either:
+    # - the kebab-case file basename (e.g. via require_once or our manifest files)
+    # - the PascalCase class name derived from it (e.g. wp-mcp-ai-foo-bar → WP_MCP_AI_Foo_Bar),
+    #   which is how most PHPUnit tests reference the subject under test.
+    class="$(printf '%s' "$kebab" | awk -F'-' '{
+        for (i = 1; i <= NF; i++) {
+            if (toupper($i) == "WP" || toupper($i) == "MCP" || toupper($i) == "AI") {
+                printf "%s", toupper($i);
+            } else {
+                printf "%s%s", toupper(substr($i, 1, 1)), tolower(substr($i, 2));
+            }
+            if (i < NF) printf "_";
+        }
+    }')"
+
+    grep -rqE -- "(${kebab}|${class})" "${TEST_DIRS[@]}" 2>/dev/null
 }
 
 report_subsystem() {
