@@ -16,12 +16,12 @@ coverage across the codebase.
 | Total registered AJAX handlers (`wp_ajax_wp_mcp_ai_*`) | **271** |
 | - Base (`includes/`) | 113 |
 | - Pro (`addons/pro/`) | 158 |
-| Tested (referenced in `tests/`) | **133** |
-| Untested (allow-listed for incremental gap-fill) | 138 |
-| Coverage | **49.1 %** |
+| Tested (referenced in `tests/`) | **155** |
+| Untested (allow-listed for incremental gap-fill) | 116 |
+| Coverage | **57.2 %** |
 
 Numbers are produced by `bin/audit-ajax-handlers.php` and rebuilt on every
-PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 138 allow-listed
+PR run via the `Test_AJAX_Handler_Coverage` CI guard. The 116 allow-listed
 handlers are the remaining gap; each cluster that lands in a follow-up PR
 removes its handlers from that file.
 
@@ -147,7 +147,9 @@ forget to stub never hit the network — unstubbed URLs return `200 {}`.
 | `test-settings-utility-ajax.php` | Settings utility (export / import / clear-cache / reset). |
 | `test-wizard-ajax.php` | Wizard / dismiss notices (save_step, complete, dismiss_*). |
 | `test-provider-connections-ajax.php` | Provider connection tests (Anthropic, Exa, Perplexity, Plaid, Tavily, remote-site). |
-| `test-schedule-manager-ajax.php` | Schedule manager — Pro addon (`sm_get_schedules`, `sm_create_schedule`, `sm_delete_schedule`, `sm_toggle_schedule`, `sm_get_history`, `sm_clear_history`, `sm_get_presets`, `sm_install_preset`). |
+| `test-schedule-manager-ajax.php` | Schedule manager — Pro addon (get/create/delete/toggle/history/clear-history/presets/install-preset). |
+| `test-healthcare-ajax.php` | Healthcare — hw/mv dashboards, health consolidate (preview, bulk-import, upload, import-vitals). |
+| `test-regulatory-eca-cre-ajax.php` | Regulatory / ECA / CRE / Consolidate — dashboards, research create, import, bulk-import, validate, completeness. |
 
 Each addition or removal of an AJAX handler must be accompanied by either a
 test reference or an explicit entry in `tests/ajax-coverage-allowlist.txt`.
@@ -196,9 +198,9 @@ handlers from the allow-list:
 7. ✅ **Embedded models + Datasets** — `download/delete/list_embedded_model`, `download_llama_binary`, `get_llama_binary_status`, `load_dataset_preview`, `search_datasets`.
 8. ✅ **Provider connection tests** — Anthropic, Exa, Perplexity, Plaid, Tavily, remote-site.
 9. ✅ **Schedule manager** — `sm_get_schedules`, `sm_create_schedule`, `sm_delete_schedule`, `sm_toggle_schedule`, `sm_get_history`, `sm_clear_history`, `sm_get_presets`, `sm_install_preset`.
-10. **Healthcare / vitals / member preview** (`mv_*`, `hw_*`).
-11. **Compliance / regulatory / consolidate / ECA / property mgmt**.
-12. **"Create-from-research" / "Import-*" CPT importers** (largest cluster).
+10. ✅ **Healthcare / vitals / member preview** — `hw_dashboard_get_health_metrics`, `mv_dashboard_get_vital_signs`, `get_member_vitals_preview`, `bulk_import_health_info`, `upload_health_document`, `import_vitals_to_cct`.
+11. ✅ **Regulatory / ECA / CRE / Consolidate** — `cre_dashboard_filter`, `eca_dashboard_data`, `create_cre_loan_from_research`, `create_eca_from_research`, `import_eca`, `create_reg_product_from_research`, `consolidate_bulk_import`, `consolidate_validate_data`, `consolidate_check_completeness`, `bulk_import_reg_products`, `import_reg_document`.
+12. **"Create-from-research" / "Import-*" CPT importers** (remaining handlers).
 
 The `phpunit-test-author` custom agent (declared in
 [`examples/agents/`](../examples/agents/)) is the natural owner for these

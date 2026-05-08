@@ -80,6 +80,17 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
+	 * Switch to a freshly created editor user (has edit_posts, upload_files, etc.).
+	 *
+	 * @return int User ID.
+	 */
+	protected function as_editor() {
+		$user_id = self::factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+		return $user_id;
+	}
+
+	/**
 	 * Switch to no logged-in user.
 	 */
 	protected function as_anonymous() {
