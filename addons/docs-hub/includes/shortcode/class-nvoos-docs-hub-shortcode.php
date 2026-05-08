@@ -42,9 +42,11 @@ class NV_oOS_Docs_Hub_Shortcode {
 	public static function render( $atts ) {
 		// Multiple shortcode / block instances per page must not re-localize
 		// identical data — track which instance we're on so the static guards
-		// in enqueue_assets() / localize_once() can no-op cleanly.
+		// in enqueue_assets() / localize_once() can no-op cleanly. The counter
+		// is only incremented once we're actually about to emit a mount div
+		// (just before the sprintf below) so any early return added in the
+		// future does not skew instance numbering.
 		static $instance_count = 0;
-		++$instance_count;
 		$atts = shortcode_atts(
 			array(
 				'section' => 'all',
@@ -105,7 +107,9 @@ class NV_oOS_Docs_Hub_Shortcode {
 		}
 
 		// A unique id per instance so multiple mounts on the same page keep
-		// their `aria-labelledby` / skip-link targets distinct.
+		// their `aria-labelledby` / skip-link targets distinct. Increment is
+		// deferred to here so any early return above leaves the counter alone.
+		++$instance_count;
 		$instance_id = 'nvoos-docs-hub-root-' . (int) $instance_count;
 
 		return sprintf(
