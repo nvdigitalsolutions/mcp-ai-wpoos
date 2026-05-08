@@ -1,5 +1,26 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.3.6 — 2026-05-08
+
+### Fixed
+- **Critical error on Settings → NV oOS Docs Hub.** A malformed `remote_repos` row (string / null / scalar) saved by a partial migration would fatal the settings page on PHP 7.4 once the renderer hit `is_array($r['selected_paths'])`. `NV_oOS_Docs_Hub_Plugin::get_settings()` now coerces `remote_repos` to a list of array rows at the source, and `render_remote_repos()` defensively falls back to defaults (with a clear inline notice) for any row that survives as non-array — matching the §A hardening from the docs-hub review.
+- **REST `remote_tree` index bounds-check.** `index` is now validated against `count($repos)` and the row's array shape before its persisted token is reused, so a tampered request can't reach into an unrelated array key.
+
+### Added
+- **Force-refresh now clears the per-file content cache.** When the admin "Refresh" button calls `/remote/tree?force=true`, the matching files in `wp-content/uploads/nvoos-docs-hub/remote/` are deleted for the resolved ref so the next "Rebuild Documentation Index" re-fetches fresh blob content. New public method `NV_oOS_Docs_Hub_Remote_Repo::clear_local_cache_for_files()`.
+- **Defensive `coerce_path_list()`** helper on the settings class so a stored path list that arrived as a flat string round-trips correctly through the textarea.
+
+### Changed
+- **SSRF helper now resolves IPv4 + IPv6.** `safe_get()` previously called `gethostbyname()` which is A-record only and silently failed on AAAA-only hosts. The new `resolve_public_ip()` helper queries `dns_get_record($host, DNS_A | DNS_AAAA)`, validates *every* candidate against `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE` (defence in depth against rebinding tricks where one record is public and another is private), prefers IPv4, and pins the chosen IP via `CURLOPT_RESOLVE` (with the bracket syntax IPv6 needs). Falls back to `gethostbyname()` when `dns_get_record()` is unavailable.
+
+### Documentation
+- This CHANGELOG entry catches up the v0.3.3 → v0.3.5 gap implicitly: those tags shipped no user-facing changes beyond the v0.3.2 PHPCS pass and version-string churn. v0.3.6 is the first substantive release after v0.3.2.
+
+### Tests
+- New `test-remote-repos-defensive.php` covers the §A regression (settings render does not fatal on a malformed row, and `get_settings()` filters non-array rows out).
+- New `test-remote-tree-force-clears-cache.php` covers the `force=true` per-file cache invalidation.
+- New `test-remote-repo-ssrf.php` covers AAAA / mixed-record rejection in `resolve_public_ip()`.
+
 ## 0.3.2 — 2026-05-07
 
 ### Fixed

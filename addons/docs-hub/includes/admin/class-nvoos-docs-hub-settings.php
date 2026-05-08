@@ -431,6 +431,37 @@ class NV_oOS_Docs_Hub_Settings {
 	}
 
 	/**
+	 * Coerce a stored path-list value into a flat array of strings.
+	 *
+	 * Tolerates bad input shapes that may arrive from third-party migrations:
+	 * arrays of arrays, scalars, or newline-delimited strings.
+	 *
+	 * @since 0.3.6
+	 *
+	 * @param mixed $raw Stored value.
+	 * @return string[] Array of single-line path strings.
+	 */
+	public static function coerce_path_list( $raw ) {
+		if ( is_string( $raw ) ) {
+			$raw = preg_split( '/\r\n|\r|\n/', $raw );
+		}
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $raw as $entry ) {
+			if ( is_array( $entry ) ) {
+				continue; // Nested arrays are dropped — settings save will normalise.
+			}
+			$line = trim( (string) $entry );
+			if ( '' !== $line ) {
+				$out[] = $line;
+			}
+		}
+		return array_values( array_unique( $out ) );
+	}
+
+	/**
 	 * Sanitize a list of repo-relative paths (newline string or array).
 	 *
 	 * Allowed chars: A-Z a-z 0-9 _ . / -. Rejects entries containing '..'
@@ -854,18 +885,32 @@ class NV_oOS_Docs_Hub_Settings {
 		echo '<div id="nvoos-dh-remote-repos-wrap">';
 
 		foreach ( $repos as $i => $r ) :
-			$owner = esc_attr( $r['owner'] ?? '' );
-			$repo  = esc_attr( $r['repo'] ?? '' );
-			$ref   = esc_attr( $r['ref'] ?? 'HEAD' );
-			$label = esc_attr( $r['label'] ?? '' );
-			$path  = esc_attr( $r['path'] ?? '' );
+			// Defensive: a malformed (string/null/scalar) row from a partial migration must
+			// not fatal the settings page. Coerce to an array and surface an inline notice.
+			if ( ! is_array( $r ) ) {
+				$r = array();
+				echo '<div class="notice notice-warning inline" style="margin:0 0 10px 0;"><p>';
+				printf(
+					/* translators: %d: 1-based row index */
+					esc_html__( 'NV oOS Docs Hub: remote repository row #%d was stored in an unexpected shape and has been reset to defaults. Please re-enter the values and save.', 'nvoos-docs-hub' ),
+					(int) ( $i + 1 )
+				);
+				echo '</p></div>';
+			}
+			$owner = esc_attr( is_string( $r['owner'] ?? '' ) ? $r['owner'] : '' );
+			$repo  = esc_attr( is_string( $r['repo'] ?? '' ) ? $r['repo'] : '' );
+			$ref   = esc_attr( is_string( $r['ref'] ?? 'HEAD' ) ? $r['ref'] : 'HEAD' );
+			$label = esc_attr( is_string( $r['label'] ?? '' ) ? $r['label'] : '' );
+			$path  = esc_attr( is_string( $r['path'] ?? '' ) ? $r['path'] : '' );
 			// Token: never echo saved token back for security — show placeholder.
 			$has_token      = ! empty( $r['token'] );
 			$selection_mode = isset( $r['selection_mode'] ) && in_array( $r['selection_mode'], array( 'all', 'prefix', 'selected' ), true )
 				? $r['selection_mode']
 				: 'all';
-			$selected_paths = isset( $r['selected_paths'] ) && is_array( $r['selected_paths'] ) ? $r['selected_paths'] : array();
-			$excluded_paths = isset( $r['excluded_paths'] ) && is_array( $r['excluded_paths'] ) ? $r['excluded_paths'] : array();
+			// Coerce path lists defensively. A flat string (from older migrations) is
+			// split on newlines so the textarea round-trips correctly.
+			$selected_paths = self::coerce_path_list( $r['selected_paths'] ?? array() );
+			$excluded_paths = self::coerce_path_list( $r['excluded_paths'] ?? array() );
 			$selected_text  = esc_textarea( implode( "\n", $selected_paths ) );
 			$excluded_text  = esc_textarea( implode( "\n", $excluded_paths ) );
 			?>
