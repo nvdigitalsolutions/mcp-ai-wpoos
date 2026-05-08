@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/improve-phpunit-test-coverage',
         'version' => 'dev-copilot/improve-phpunit-test-coverage',
-        'reference' => 'e5a02626d5af49f25a419aa92902af1a8fa721a0',
+        'reference' => '1bbdb523d1454df08d9a15c753a7d1169a19738d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/improve-phpunit-test-coverage',
             'version' => 'dev-copilot/improve-phpunit-test-coverage',
-            'reference' => 'e5a02626d5af49f25a419aa92902af1a8fa721a0',
+            'reference' => '1bbdb523d1454df08d9a15c753a7d1169a19738d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

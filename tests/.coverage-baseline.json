@@ -18,7 +18,7 @@
     },
     "rest_controllers": {
       "source_classes": 67,
-      "covered_classes_min": 45
+      "covered_classes_min": 48
     },
     "slash_commands": {
       "source_classes": 20,
