@@ -210,16 +210,29 @@ class NV_oOS_Docs_Hub_Sitemap_Provider extends WP_Sitemaps_Provider {
 }
 
 /**
- * Register the Docs Hub sitemap provider.
+ * Register the Docs Hub sitemap provider with the WordPress sitemap registry.
  *
- * Hooked to `wp_sitemaps_add_provider` via the plugin initialiser.
+ * Hooked to `wp_sitemaps_init`, which fires once when the WP_Sitemaps server
+ * boots and passes the WP_Sitemaps instance. The instance exposes a public
+ * `registry` property (a WP_Sitemaps_Registry) on which custom providers are
+ * registered via `add_provider( $name, $provider )`.
+ *
+ * Note: an earlier revision of this file mistakenly hooked into the
+ * `wp_sitemaps_add_provider` filter, whose first argument is the provider
+ * being added (e.g. WP_Sitemaps_Posts) — not the registry. Calling
+ * `add_provider()` on that object produced a fatal error because
+ * WP_Sitemaps_Posts has no such method.
  *
  * @since 0.3.8
  *
- * @param WP_Sitemaps $sitemaps WordPress sitemaps instance.
+ * @param WP_Sitemaps $wp_sitemaps WordPress sitemaps server instance.
  * @return void
  */
-function nvoos_docs_hub_register_sitemap_provider( $sitemaps ) {
+function nvoos_docs_hub_register_sitemap_provider( $wp_sitemaps ) {
+	if ( ! $wp_sitemaps instanceof WP_Sitemaps || ! isset( $wp_sitemaps->registry ) ) {
+		return;
+	}
+
 	$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
 
 	// Respect the docs_hub_enabled toggle.
@@ -239,6 +252,6 @@ function nvoos_docs_hub_register_sitemap_provider( $sitemaps ) {
 		return;
 	}
 
-	$sitemaps->add_provider( new NV_oOS_Docs_Hub_Sitemap_Provider() );
+	$wp_sitemaps->registry->add_provider( 'nvoos-docs', new NV_oOS_Docs_Hub_Sitemap_Provider() );
 }
-add_action( 'wp_sitemaps_add_provider', 'nvoos_docs_hub_register_sitemap_provider' );
+add_action( 'wp_sitemaps_init', 'nvoos_docs_hub_register_sitemap_provider' );

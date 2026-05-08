@@ -1,5 +1,10 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.3.9 — 2026-05-08
+
+### Fixed
+- **Fatal error registering the WP sitemap provider.** `nvoos_docs_hub_register_sitemap_provider()` was hooked into `wp_sitemaps_add_provider`, whose first argument is the provider being registered (e.g. `WP_Sitemaps_Posts`) — not the sitemap registry. Calling `add_provider()` on that object produced `Fatal error: Uncaught Error: Call to undefined method WP_Sitemaps_Posts::add_provider()` during `wp-settings.php` boot, taking the whole site down. The hook is now `wp_sitemaps_init`, which passes the `WP_Sitemaps` server instance, and the provider is registered against `$wp_sitemaps->registry` with an explicit `'nvoos-docs'` name as required by `WP_Sitemaps_Registry::add_provider()`.
+
 ## 0.3.8 — 2026-05-08
 
 ### Added
