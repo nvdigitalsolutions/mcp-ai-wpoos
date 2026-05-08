@@ -262,3 +262,36 @@ vendor/bin/phpunit --verbose
 # Run with coverage (requires Xdebug):
 vendor/bin/phpunit --coverage-html coverage/
 ```
+
+---
+
+## Coverage Policy (PHPUnit Test Coverage Gap-Filling Plan)
+
+**Every PR that adds new code must add at least one PHPUnit test in the same PR.** Specifically:
+
+| Change | Required tests |
+|---|---|
+| New base tool (`includes/tools/class-*.php`) | `tests/test-tool-{slug}.php` covering at minimum the unauthorised-user case + one happy path |
+| New pro tool (`addons/pro/includes/tools/class-*.php`) | Test under `addons/pro/tests/` referencing the tool class name |
+| New REST controller / route | Permission callback + schema + at least one happy path under `tests/rest/` or `tests/rest-api/` |
+| New slash command (`includes/slash-commands/commands/class-*.php`) | `tests/test-slash-command-{name}.php` with output shape + capability gate + alias resolution |
+| New harness layer (`includes/harness/`, `addons/pro/includes/harness/`) | Layer enable/disable + documented filter (`wp_mcp_ai_harness_*`) firing |
+| New service class | Either a direct unit test or coverage via the REST/tool surface that consumes it |
+
+### Baseline & non-regression gate
+
+- The per-subsystem coverage floors live in [`tests/.coverage-baseline.json`](../tests/.coverage-baseline.json).
+- The `PHPUnit` GitHub workflow runs `bin/find-untested-classes.sh --check` and fails any PR that drops the count of covered classes for a subsystem below its baseline.
+- Floors **must only ratchet upward**. Never lower a floor without an explicit justification in the PR description.
+- Locally, run `composer run test:gaps` to see the full list of untested classes per subsystem, or `composer run test:gaps:check` to verify the baseline before opening a PR.
+
+### Recomputing the baseline after coverage improves
+
+```bash
+# Print current covered counts for all subsystems
+bin/find-untested-classes.sh --check
+# Then update tests/.coverage-baseline.json so subsystem_floors.<name>.covered_classes_min
+# matches the new (higher) covered count, and bump test_file_floor.min_count if it grew.
+```
+
+The baseline file's `subsystem_floors` keys correspond 1:1 to the categories in §2 of the PHPUnit Test Coverage Gap-Filling Plan.
