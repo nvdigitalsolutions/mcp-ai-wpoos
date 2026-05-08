@@ -18,7 +18,7 @@
     },
     "rest_controllers": {
       "source_classes": 67,
-      "covered_classes_min": 35
+      "covered_classes_min": 45
     },
     "slash_commands": {
       "source_classes": 20,
@@ -26,7 +26,7 @@
     },
     "services": {
       "source_classes": 78,
-      "covered_classes_min": 55
+      "covered_classes_min": 58
     },
     "harness": {
       "source_classes": 10,
@@ -34,7 +34,7 @@
     },
     "provider_clients": {
       "source_classes": 16,
-      "covered_classes_min": 12
+      "covered_classes_min": 16
     }
   },
   "test_file_floor": {

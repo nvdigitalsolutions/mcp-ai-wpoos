@@ -64,22 +64,19 @@ is_covered() {
     local kebab class
     kebab="$(basename "$file" .php | sed 's/^class-//')"
 
-    # Match either:
-    # - the kebab-case file basename (e.g. via require_once or our manifest files)
-    # - the PascalCase class name derived from it (e.g. wp-mcp-ai-foo-bar → WP_MCP_AI_Foo_Bar),
-    #   which is how most PHPUnit tests reference the subject under test.
-    class="$(printf '%s' "$kebab" | awk -F'-' '{
-        for (i = 1; i <= NF; i++) {
-            if (toupper($i) == "WP" || toupper($i) == "MCP" || toupper($i) == "AI") {
-                printf "%s", toupper($i);
-            } else {
-                printf "%s%s", toupper(substr($i, 1, 1)), tolower(substr($i, 2));
-            }
-            if (i < NF) printf "_";
-        }
-    }')"
+    # Match against either:
+    # - the kebab-case file basename (e.g. via require_once or coverage manifests), or
+    # - the actual PHP class symbol declared inside the file (parsed once, no
+    #   guesswork about acronym casing like LM/OpenAI/RabbitMQ).
+    class="$(grep -oE 'class[[:space:]]+[A-Z][A-Za-z0-9_]+' "$file" 2>/dev/null \
+        | head -n1 \
+        | awk '{print $NF}')"
 
-    grep -rqE -- "(${kebab}|${class})" "${TEST_DIRS[@]}" 2>/dev/null
+    if [ -n "$class" ]; then
+        grep -rqE -- "(${kebab}|${class})" "${TEST_DIRS[@]}" 2>/dev/null
+    else
+        grep -rq -- "$kebab" "${TEST_DIRS[@]}" 2>/dev/null
+    fi
 }
 
 report_subsystem() {
