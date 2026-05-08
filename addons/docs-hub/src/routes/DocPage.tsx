@@ -75,11 +75,11 @@ export default function DocPage() {
 
 	return (
 		<>
-			<div className="dh-main-area">
+			<main id="nvoos-dh-main" tabIndex={ -1 } className="dh-main-area">
 				<Breadcrumbs slug={ page.slug } title={ page.title } />
 				<ContentArea content={ page.content } remoteUrl={ page.remote_url } />
 				<PrevNext prev={ page.prev } next={ page.next } />
-			</div>
+			</main>
 			<aside className="dh-toc-area">
 				<RightTOC items={ page.toc } />
 			</aside>

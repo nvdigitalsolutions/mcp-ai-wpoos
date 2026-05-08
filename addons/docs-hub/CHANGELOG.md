@@ -1,5 +1,16 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.3.7 — 2026-05-08
+
+### Added
+- **A11y root attributes (§K).** The shortcode and block now render the SPA mount as `<div role="application" aria-label="Documentation browser" …>`, so screen readers and a11y test runners (axe, Lighthouse) can describe the region before React hydrates. The same attributes are kept on the React-side wrapper so they persist after mount.
+- **Skip-link to main content.** `<a class="dh-skip-link" href="#nvoos-dh-main">Skip to main content</a>` is rendered as the first focusable child of the SPA. It is visually hidden until focused (Tab) and pops into the top-left as a high-contrast pill, letting keyboard users bypass the sidebar to land on the article body. `DocPage` and `NotFound` now wrap the content cell in `<main id="nvoos-dh-main" tabIndex="-1">` so the skip-link target is a true landmark.
+- **`prefers-reduced-motion` support (WCAG 2.1 SC 2.3.3).** `assets/dist/docs-hub.css` now ships an `@media (prefers-reduced-motion: reduce)` block that neutralises animations / transitions inside the SPA root and renders the loading spinner as a static disc.
+- **RTL mirror.** PHP detects `is_rtl()` and adds a `nvoos-docs-hub-rtl` class to the SPA root so Hebrew / Arabic / Persian sites mirror the three-column layout (sidebar borders flip; grid direction follows automatically). `NVOOS_DOCS_HUB.isRtl` is also localized for any future React-side branching.
+
+### Changed
+- **`wp_localize_script` and asset registration are now deduped (§F).** Multiple `[nvoos_docs]` shortcodes / blocks on the same page used to re-register the bundle and re-emit identical inline `<script>NVOOS_DOCS_HUB = {…}` tags on every render. The new `NV_oOS_Docs_Hub_Shortcode::localize_once()` runs at most once per page-load, and `enqueue_assets()` short-circuits its `wp_register_*` calls after the first invocation. Each instance still gets a unique `id="nvoos-docs-hub-root-N"` so future per-instance config (when we move it server-side) won't collide.
+
 ## 0.3.6 — 2026-05-08
 
 ### Fixed
