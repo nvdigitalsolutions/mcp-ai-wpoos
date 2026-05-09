@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.13
+Stable tag: 1.1.16
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -275,9 +275,115 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.1.16 - May 6, 2026 =
+
+**SaaS Controller Addon (v0.1.0) + Structured Logging Integration**
+
+*Added — SaaS Controller Addon (addons/saas-controller/)*
+
+* Operator-side WordPress admin toolkit (WP-Admin → NV oOS SaaS, manage_options) for provisioning and managing the NV oOS Cloud control plane — Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, and OpenRouter — without leaving WP-Admin.
+* Four admin tabs: Overview (React Credentials Wizard + masked-credentials fallback), Deployment (topology editor + Run Plan), Operations (HITL Apply + Drift Detector + Orphan Review + Webhook Events + Smoke Tests + Audit Log), Packages (credits surface).
+* Phases 2–11 shipped: encrypted credential store (AES-256-CBC), deployment-config store, connection tester, read-only Cloudflare client, reconcile-plan generator (creates/updates/noops/orphans/errors), mutating Cloudflare client (D1/KV/AI Gateway/Worker upload), HITL-gated Apply (sync + background async), drift detector (manifest + post-apply fingerprint), orphan cleanup, Stripe webhook verifier (HMAC-SHA256, constant-time, 300 s replay guard), webhook event store (200-entry ring buffer, idempotent), audit log (200-entry ring buffer).
+* REST namespace /wp-json/nvoos-saas/v1/ — all routes require manage_options except POST /webhooks/stripe (signature-gated). 19 routes covering credentials, deployment, plan, audit-log, smoke tests, apply (sync + async + orphans), drift, and webhooks.
+* Key filters: nvoos_saas_controller_apply_token_ttl, nvoos_saas_controller_audit_log_max_entries, nvoos_saas_controller_audit_log_record, nvoos_saas_controller_webhook_events_max_entries, nvoos_saas_controller_apply_job_state_ttl, nvoos_saas_controller_worker_dist_path.
+* See addons/saas-controller/README.md for the full implementation reference.
+
+*Added / Improved — Structured Logging Integration (PR #4849)*
+
+* WP_MCP_AI_Agent_Memory_CCT_Bridge — all bridge writes, CCT mirror failures, filter-suppressed writes, and deletions logged via WP_MCP_AI_Logger.
+* WP_MCP_AI_Transcript_Mining_Job — structured logging for the full job lifecycle (enqueue, tick, completion, cancellation, all error paths).
+* WP_MCP_AI_Logger integrated across Algorave, Canvas, Webchat, Fantasy Football, Graphify, SaaS Controller addons; admin (Run Timeline, Approvals, Settings Base); cost calculator; model catalog migration; workflow engine V2; harness layers; and more.
+* New PHPUnit tests: test-agent-memory-cct-bridge-logging.php and test-transcript-mining-job-logging.php.
+
+= 1.1.15 - May 5, 2026 =
+
+**New providers (OpenRouter, DeepSeek), Orchestration Phases 1–7 re-landed, LLM Harnessing GA, 19 new slash commands, Memory Bridge G-series, Retroactive Transcript Mining, Graphify NV oOS data-source bridge, stability sweep**
+
+*Added — New AI providers*
+
+* **OpenRouter** — `WP_MCP_AI_OpenRouter_Client`, a unified OpenAI-compatible gateway in front of OpenAI, Anthropic, Google, Meta, Mistral, and others via a single API key. Selectable from Settings → Providers. PR #4840.
+* **DeepSeek** — `WP_MCP_AI_DeepSeek_Client`, first-class provider with model selection and `reasoning_content` passthrough. PR #4820.
+* **Kimi K2.6 + Qwen 3.6** — added to the model catalog and provider dropdowns. PR #4810.
+
+*Added — LM Studio parity (May 2026 LM Studio capabilities)*
+
+Real-time token streaming via native cURL SSE (#4839) plus full provider parity: native `/api/v0` endpoint opt-in (#4818), embeddings, bearer-token auth, capability-aware tool gating, `reasoning_content` passthrough, malformed-argument repair, TTL + structured-output pass-through, and improved `test_connection()` fallback to `/api/v0/models`. New filter: `wp_mcp_ai_lm_studio_stream_request_args`.
+
+*Added — Orchestration roadmap Phases 1–7 (re-landed with JetEngine CCT init-priority fix)*
+
+HITL approval queue (`WP_MCP_AI_Approval_Queue`, CPT `mcp_ai_approval`, REST `/mcp-ai/v1/approvals/*`), prompt-injection guardrail (Layer I, `WP_MCP_AI_Prompt_Injection_Detector`), structured-output guardrail, OTel span exporter, visual DAG builder, durable run store, trigger CPTs + webhooks, sub-agent dispatch, Pro vector-store adapter (openai/pgvector/qdrant), and Pro team budget manager (per-team daily caps). All CCT bootstraps now register on `init` at priority 11+ to avoid racing JetEngine's cache hydration. PRs #4816, #4821.
+
+*Added — Observability UI*
+
+Observability dashboard surfaced under the **Orchestration** tab (#4833). OpenTelemetry OTLP endpoint and token configurable under **Tools → Connections** (#4837).
+
+*Added — LLM Harnessing Subsystem (Layers A-H)*
+
+Seven opt-in per-request layers in `includes/harness/` improve response quality without changing existing tool behaviour: Layer A (Prompt/Cue Library with 7 named templates), Layer B (Reasoning Trace + self-consistency vote), Layer C (Tool Routing with preset_weights), Layer D (Retrieval fan-out + citation verification), Layer E (Self-Refine loop with cost caps), Layer F (Memory Scoping + PII Filter), Layer G (Eval Scheduler cron). Pro Layer H exports fine-tune curricula as OpenAI JSONL. Profile stored in `_wp_mcp_ai_harness_profile` post meta. Reference: `docs/llm-harness.md`.
+
+*Added — 19 new slash commands (11 base + 8 Pro, 32 total)*
+
+New base commands: `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/markup-stats`, `/remember`, `/forget`, `/scope`, `/compact`, `/context`, `/clear`, `/reset`, `/resume`, `/workflow`, `/sync-docs`, `/optimize-perf`. New Pro commands: `/schedule`, `/schedule-preset`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`.
+
+*Added — Chat-client Memory Bridge (G-series completion)*
+
+Memory Drawer with three tabs (Memories / Scope / Audit), auto-badge on memory-touching messages, SSE `memory_event` frame, pagehide auto-capture, drawer export. REST proxy at `/mcp-ai/v1/chat-memory/`. Three gates: `wp_mcp_ai_chat_memory_enabled` filter, per-user meta, and a new site-wide **Enable Chat-Client Memory** toggle in **Orchestration → Settings** (#4802).
+
+*Added — Retroactive Transcript Mining*
+
+`WP_MCP_AI_Transcript_Mining_Job` background worker with REST API (`/mcp-ai/v1/transcript-mining/jobs*`). New `transcripts` source on `mine_agent_memory` tool with provenance metadata and dedupe.
+
+*Added — Graphify NV oOS data-source bridge*
+
+Private CPTs, JetEngine CCT resolvers, MemPalace edges, and external `$wpdb` tables are now first-class Graphify data sources. A new **Sources (CPT / CCT)** tab on the Knowledge Graph settings page exposes per-source control. PR #4834.
+
+*Added — Pro Packages Tier 5*
+
+Five new NPM packages: `nvoos-client-tools`, `nvoos-chat-memory`, `nvoos-attachments`, `nvoos-cron-status`, `nvoos-transcription`.
+
+*Added — DX*
+
+* Custom devcontainer image for WordPress plugin development (#4811).
+* `examples/agents/` roster mirrored as native Zed agent profiles in `.zed/settings.json` (#4808).
+
+*Fixed*
+
+* Transcript-mining queued job never executed — future cron timestamp + missing `spawn_cron()` call. Three-root-cause sweep (#4804, #4826).
+* "Workflow not found" error on admin Workflows tab for orchestrator-managed workflows (#4803).
+* `workflow-cpt` `map_meta_cap=false` blocked JetEngine on WP 6.1 delete_post notice (#4822).
+* Graphify `get_settings()` infinite recursion causing 502 on admin page (#4835).
+* Graphify Sources (CPT / CCT) tab missing from Knowledge Graph settings page (#4836).
+* Graphify admin settings file PHP linting CI failure (#4838).
+* Multi-agent dashboard TypeError when `primary_roles` post meta is unset (#4823).
+* Nonce field-name mismatches breaking Generate Credential, Revoke, and Delete credential buttons (#4824, #4825).
+* JetEngine CCT table prefix corrected to `jet_cct_` (underscores) in transcript repository and all direct SQL paths; chat channel SQL queries now backtick-quote hyphenated table names to satisfy MySQL (#4827, #4828, #4830).
+* Site-health polyfill `wp_is_auto_update_forced_for_item` added before early-return guard (#4832).
+* README TOC anchor links corrected (#4807).
+* `/status` slash command PHP notice on malformed async health-check shape.
+
+*Versioning*
+
+Bumped to 1.1.15 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
 = 1.1.14 - May 2, 2026 =
 
-**Agent Skills v2 — progressive disclosure + skill packs + remote catalogues, follow-up fixes**
+**Agent Skills v2 (progressive disclosure + skill packs + remote catalogues), Markup Subsystem (Base), MemPalace Capture Framework Phases A + B1, Graphify CPT/CCT integration suite, follow-up fixes**
+
+*Added — Markup Subsystem (Base, PR #4778)*
+
+A new in-the-loop image / document markup system that lets tools pause the agentic loop, surface a Konva canvas widget in the chat UI for the user to draw on, and resume the same tool call with the rasterised mask / crop / region polygon.
+
+* **Loop integration** — `WP_MCP_AI_Markup_Loop_Interceptor` short-circuits any tool that implements `WP_MCP_AI_Markup_Aware_Tool_Interface` and emits a `markup_elicitation` SSE frame instead of the tool result. The chat client persists a `request_id` and resumes the call once the user submits the markup. Master toggle: `wp_mcp_ai_markup_enabled` filter.
+* **Chat canvas widget** auto-enqueued whenever the main chat bundle is on the page — supports `mask`, `crop`, and `region` modes against image targets.
+* **Markup-aware tools** — `edit_openai_image` (`mask`), `crop_image` (`crop`), `edit_gemini_image` (`region`).
+* **REST controller** — `/wp-json/mcp-ai/v1/markup/{request_id}` accepts a W3C Web Annotation envelope, runs `WP_MCP_AI_Markup_Validator` + `WP_MCP_AI_Markup_Rasterizer`, and re-invokes the source tool with the resulting artifacts in the execution context.
+* **Settings UI** toggle under **NV oOS → Settings → General**.
+* **Telemetry** — bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
+* **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags.
+* **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
+* **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+* **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
+* Reference: `docs/markup-subsystem.md`.
 
 *Added — Agent Skills Phases 1–4 (PR #4771)*
 
@@ -287,25 +393,57 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * **Phase 4 — Skill packs**: curated, named collections of related skills addressable as a single unit ("WordPress Developer", "Document Authoring", etc.). The Skill Manager admin UI gains tabs for browsing catalogues, managing packs, and editing individual skills.
 * Filters: `wp_mcp_ai_skill_catalogue_manifest_ttl`, `wp_mcp_ai_skill_catalogue_refresh_cadence`.
 
+*Added — MemPalace Capture Framework Phases A + B1*
+
+* **Phase A — foundation** — base capture interface, lifecycle hooks, and shared time-source / tier-logging utilities, with a follow-up review fix for time consistency and tier-logging payload shape.
+* **Phase B1 — five highest-leverage capture tools** that write into the durable `ai_agent_memories` Custom Content Type through the Phase 4a/4b bridge shipped in 1.1.13.
+* See `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` for the unified MemPalace / Letta / Zep / mem0 / Cognee schema rationale.
+
+*Added — Graphify CPT/CCT integration suite*
+
+JetEngine custom post types and Custom Content Types are now first-class citizens across every Graphify surface.
+
+* **Knowledge graph builds (#4779)** — JetEngine CPTs and CCTs are detected, structured (`cct_{slug}` nodes + `AUTHORED_BY` edges), and semantically embedded end-to-end through dedicated cache prefixes and cron actions.
+* **Graph Explorer type filter** — JetEngine CPTs and CCTs now appear alongside core post types in the Explorer's type filter.
+* **Related-content widget + recommendations** expanded to all CPTs (audit follow-up).
+* **Semantic extractor extended to JetEngine CCT items (#4781)**.
+* **Re-index All Nodes** button on the embeddings tab now triggers a full re-index of every Graphify node.
+* **Per-source detection counts + CCT skip reason** surfaced on the embeddings/diagnostics screens.
+* **Settings persistence on tabbed admin page (#4784)** — Graphify settings now persist correctly across tab switches.
+* JS escaping fix (#4780): extracted constant, hoisted filter, added a label-field filter for downstream customisation.
+* `ucwords` for multi-word post-type slug fallback so `case_study` produces `Case Study` instead of `Case_study`.
+
+*Added — Agent context system (.github/agents/ + examples/agents/)*
+
+* `.github/agents/` is now a layered context surface — each `*.agent.md` carries only role-specific metadata + behavior and links to `AGENTS.md`, `CLAUDE.md`, and `.context/` for shared rules. Slim template at `.context/templates/agent-file-template.md`; copy-ready examples under `examples/agents/`.
+* New 10-agent roster covers the full NV oOS surface (REST reviewer, security reviewer, WP.org compliance auditor, PHP-compat reviewer, tool author, slash-command author, chat-UI author, PHPUnit test author, agent-skill curator, addon maintainer, release engineer, docs maintainer). See `examples/agents/README.md`.
+
 *Fixed*
 
+* **Markup subsystem — server-side ownership check on admin fallback page** — a markup `request_id` issued for one user can no longer be opened by another.
+* **Markup subsystem — null-safe hex color, best-effort hardening file writes** — review-pass hardening on the rasteriser path.
 * **Graphify Memory Bridge stale "not installed" status (#4769)** — the orchestration dashboard's Phase 4a memory-bridge widget could report "not installed" even after the bridge had been activated, due to a stale-cache `bridge_active` recomputation path. Cache invalidation now runs on activation/deactivation and the widget re-reads the live status. Regression covered by `tests/test-orchestration-dashboard-stale-cache.php`.
+* **Orchestration dashboard — JetEngine availability recomputed on cache hit** — `get_agent_memory_stats()` caches results for 5 min; both `bridge_active` (Graphify) and `persistent_storage.available` (JetEngine CCT) are now re-checked on cache hit so the dashboard no longer reports "not installed" for up to 5 minutes after the underlying plugin is activated.
+* **Pro Mini App Builder — TMA bundle enqueue when `asset.php` is missing** — the Telegram Mini App bundle now enqueues correctly even when the build pipeline does not emit a sibling `asset.php` manifest, so the builder loads on a clean install.
 * **cURL SSL error 60 fetching remote skill catalogues (#4772)** — the new catalogue-fetcher (Phase 2) could fail with `cURL error 60: SSL certificate problem` on hosts with outdated CA bundles when reaching `api.github.com` and `raw.githubusercontent.com`. The HTTP layer now uses WordPress's `wp_remote_get()` certificate bundle path consistently and surfaces a structured `WP_Error` instead of a fatal request failure when verification still fails.
 * **"Dynamic require of dicom-parser" in Medical Imaging Viewer (#4773)** — the Pro Medical Imaging Viewer bundle could fail at runtime with `Dynamic require of "dicom-parser" is not supported`. The viewer now imports `dicom-parser` statically so the esbuild output no longer relies on a runtime CommonJS shim.
+* **Stored embeddings display (#4787)** — the stored-embeddings admin display rendered incorrectly under certain dataset shapes; it now degrades gracefully and surfaces accurate counts.
 
 *Build*
 
-* **All distribution ZIPs rebuilt at v1.1.13 (#4775)** — `bin/rebuild-all-zips.sh` regenerated the four original (`mcp-ai-wpoos-base|pro|combined|core`) and four WordPress.org (`nvdigital-open-operator-system-oos-*`) packages plus the six standalone toolkit add-on ZIPs.
+* **All distribution ZIPs rebuilt at v1.1.13 (#4775, #4782)** — `bin/rebuild-all-zips.sh` regenerated the four original (`mcp-ai-wpoos-base|pro|combined|core`) and four WordPress.org (`nvdigital-open-operator-system-oos-*`) packages plus the standalone toolkit add-on ZIPs (19 toolkit ZIPs in the v1.1.13 rebuild pass).
 * **Production autoloader reaffirmed (#4774)** — `vendor/composer/installed.json` and the autoload classmap regenerated with `composer install --no-dev --classmap-authoritative` to confirm the production posture established in 1.1.13.
 
 *Documentation*
 
+* `docs/markup-subsystem.md` (new) walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+* `docs/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 * `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
-* `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 and reconciled tool counts (~195 base / ~635 Pro / ~830 total).
+* `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 and reconciled tool counts (~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative).
 
 *Versioning*
 
-* The plugin version constant remains 1.1.13 in this commit. The `WP_MCP_AI_VERSION` constant, plugin header, `package.json`, and `readme.txt` Stable tag will be bumped together to 1.1.14 when the next ZIP is cut.
+* Bumped to 1.1.14 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 = 1.1.13 - May 1, 2026 =
 
@@ -851,6 +989,12 @@ This plugin has been in active development since October 2024. See the complete 
 
 == Upgrade Notice ==
 
+= 1.1.15 =
+**OpenRouter + DeepSeek** added as first-class providers; **Kimi K2.6 + Qwen 3.6** in model catalog. **LM Studio** gains native cURL SSE streaming. **Orchestration Phases 1–7** re-landed with JetEngine CCT init-priority fix: HITL approval queue, prompt-injection guardrail, structured output, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, and team budget manager. **LLM Harnessing Subsystem (Layers A–H)** ships GA. **19 new slash commands** (11 base + 8 Pro). **Chat-client Memory Bridge G-series** complete with site-wide toggle. **Retroactive Transcript Mining** stuck-job root causes fixed. **Graphify NV oOS data-source bridge** with private CPTs, CCT resolvers, and MemPalace edges. Multiple stability fixes (transcript-mining, workflow tab, credential nonces, JetEngine CCT prefix, site-health polyfill). Safe upgrade.
+
+= 1.1.14 =
+**Markup Subsystem (Base)** — tools can now pause the agentic loop, surface a Konva canvas in the chat for the user to draw on, and resume with the rasterised mask / crop / region. Three tools (`edit_openai_image`, `crop_image`, `edit_gemini_image`) are markup-aware out of the box. New **NV oOS → Markup Telemetry** dashboard, `/markup-stats` slash command, and 4 actions + 4 filters. **Agent Skills v2** ships progressive disclosure (`load_skill` tool), curated skill packs, and remote skill catalogues (Pro). **MemPalace Capture Framework Phases A + B1** layer five capture tools onto the durable agent-memory bridge from 1.1.13. **Graphify** now treats JetEngine CPTs and CCTs as first-class citizens in the knowledge graph, Graph Explorer, related-content widget, and embeddings re-index path. Plus follow-up fixes to the orchestration dashboard, the Pro Mini App Builder enqueue path, the skill-catalogue cURL fetcher, the Pro Medical Imaging Viewer bundle, and the stored-embeddings admin display. Safe upgrade.
+
 = 1.1.13 =
 OpenAI **`gpt-image-2` (Images 2.0)** is now the default image model with native 2K aspect-ratio support. Phase 4a/4b adds a durable agent-memory bridge that mirrors transient memory into a JetEngine `ai_agent_memories` CCT (industry-standard schema; transients still primary read path). New AI Harmonization sub-toolkit (14 Pro tools). Production-only Composer autoloader so the repo can be cloned as a deployable plugin (`composer install --no-dev --classmap-authoritative` — no separate `dump-autoload`). Existing sites with a saved image-model setting are unaffected. Safe upgrade.
 
@@ -936,6 +1080,15 @@ Initial release. Welcome to Open Operator System!
 * **Service URL:** https://integrate.api.nvidia.com/v1 (default cloud endpoint; supports custom/self-hosted NIM endpoints)
 * **Terms of Service:** https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/
 * **Privacy Policy:** https://www.nvidia.com/en-us/about-nvidia/privacy-policy/
+
+**6b. DeepSeek API**
+* **Purpose:** Cloud AI inference via DeepSeek's OpenAI-compatible API (deepseek-chat, deepseek-reasoner, deepseek-coder)
+* **Data Sent:** Chat messages, system prompts, tool definitions, and tool results
+* **When:** Every time an AI assistant is used with DeepSeek as the provider
+* **Service URL:** https://api.deepseek.com (default; supports custom base URL for proxies or regional endpoints)
+* **Terms of Service:** https://platform.deepseek.com/terms
+* **Privacy Policy:** https://platform.deepseek.com/privacy
+* **Data Usage:** See DeepSeek's privacy policy for data handling details
 
 = Optional Third-Party Service Integrations =
 
@@ -1547,7 +1700,21 @@ Review your chosen provider's privacy policy before use.
 
 Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
-Special thanks to the open source community and all contributors.
+NV oOS stands on the shoulders of an extraordinary open-source ecosystem. The full, authoritative list of every third-party library, vendored asset, bundled skill, font, and methodology that ships with NV oOS — together with each upstream owner, license, and source URL — is maintained in [CREDITS.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CREDITS.md).
+
+Highlight acknowledgements (non-exhaustive):
+
+* **PHP libraries:** Guzzle (guzzlehttp), Symfony components, PSR interfaces (PHP-FIG), league/oauth2-client, php-http/discovery, Nyholm/psr7, rahul900day/tiktoken-php — all MIT-licensed.
+* **Pro addon PHP libraries:** TCPDF (Nicola Asuni), Dompdf, PHPSpreadsheet, PHPWord (PHPOffice), smalot/pdfparser, Masterminds/html5-php, sabberworm/php-css-parser, dvdoug/BoxPacker, maennchen/ZipStream-PHP, thiagoalessio/tesseract-ocr-for-php, MarkBaker/PHPComplex, MarkBaker/PHPMatrix, thecodingmachine/safe.
+* **JavaScript libraries (base):** Chart.js, DOMPurify (cure53), @microsoft/fetch-event-source, marked (markedjs), React (Meta), reactflow (xyflow), @dnd-kit (Claude Lefebvre), @mlc-ai/web-llm, @neplex/vectorizer, ky (sindresorhus), Konva (konvajs).
+* **JavaScript libraries (Pro / addons):** Sharp (lovell), pdfkit, pdf-lib, exceljs, docx (dolanmiu), tesseract.js (naptha), pdf.js (Mozilla), Cheerio, Stripe, Twitter API v2 (PLhery), Turf.js, KaTeX, mathjs, MJML, axios, validator.js, libphonenumber-js, qrcode (soldair), Tone.js, @strudel/web (TidalCycles / Felix Roos), Tonal, WebMidi, Cytoscape (The Cytoscape Consortium) + cytoscape-fcose / cose-base / layout-base (iVis lab, Bilkent), Cornerstone3D and dicom-parser.
+* **Bundled Agent Skills:** curated from anthropics/skills (© Anthropic, MIT) and Lonsdale201/wp-agent-skills (© Soczó Kristóf, MIT). Per-skill attribution lives in `includes/bundled-skills/THIRD_PARTY_NOTICES.md` and `addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`.
+* **Fonts:** DejaVu Fonts project, GNU FreeFont, KaTeX fonts.
+* **Methodology / inspiration:** MemPalace, Letta/MemGPT, Zep, mem0, Cognee, BMAD-METHOD, and the broader GSD context-engineering community — see CREDITS.md for full attribution.
+
+If you spot a missing or incorrect attribution, please open an issue with the `credits` label at https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues — corrections are treated as priority fixes.
+
+Special thanks to every contributor and to the open source community at large.
 
 == Licensing ==
 

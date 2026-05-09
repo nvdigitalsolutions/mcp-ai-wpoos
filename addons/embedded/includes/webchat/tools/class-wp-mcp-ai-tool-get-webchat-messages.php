@@ -22,7 +22,7 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Check if this tool is available.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return bool True if WebChat is enabled and JetEngine is active.
 	 */
@@ -146,7 +146,7 @@ class WP_MCP_AI_Tool_Get_WebChat_Messages implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Enforce limits.
-		$limit = max( 1, min( 100, $limit ) );
+		$limit  = max( 1, min( 100, $limit ) );
 		$offset = max( 0, $offset );
 
 		// Validate message type if provided.

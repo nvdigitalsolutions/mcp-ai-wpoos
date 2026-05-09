@@ -3060,7 +3060,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
 							array(
 								'a' => array(
-									'href' => array(),
+									'href'   => array(),
 									'target' => array(),
 								),
 							)

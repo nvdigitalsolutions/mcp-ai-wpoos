@@ -3,21 +3,30 @@
  * Plugin Name: NV oOS Embedded AI Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Embedded AI and WebChat extension for NV oOS. Enables server-side LLM inference via llama.cpp (GGUF models), client-side browser inference via WebLLM (WebGPU), and decentralised P2P WebChat rooms with WebRTC signaling. Requires NV oOS base plugin.
- * Version:     1.0.0
+ * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: Proprietary
+ * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: nvoos-embedded
  * Domain Path: /languages
  *
  * @package NV_oOS_Embedded
  *
+ * ⚠️ PROPRIETARY SOFTWARE
+ * This is commercial software licensed for authorized users only.
+ * Patent Pending (Application #19/410,504)
+ * © 2025 NV Digital Solutions - All Rights Reserved
+ *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * All rights reserved. This is proprietary software.
+ *
+ * Bundled / referenced third-party engines (WebLLM Apache-2.0, llama.cpp MIT)
+ * retain their upstream licenses; see readme.txt and the repository-wide
+ * CREDITS.md for the full attribution index.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_EMBEDDED_VERSION', '1.0.0' );
+define( 'NVOOS_EMBEDDED_VERSION', '0.1.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_EMBEDDED_FILE', __FILE__ );
@@ -52,7 +61,7 @@ if ( is_admin() ) {
 /**
  * Check whether the NV oOS base plugin is active.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the base plugin is available.
  */
@@ -63,7 +72,7 @@ function nvoos_embedded_is_base_active() {
 /**
  * Check whether the embedded addon is fully ready.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the addon is operational.
  */

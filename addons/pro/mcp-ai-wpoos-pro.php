@@ -542,6 +542,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Skill Manager (always enabled - provides skill upload, install, and editor UI).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/skills-manager-init.php';
 
+		// Load Pro Harness Layer H — fine-tune curriculum exporter (always enabled when harness subsystem is active).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/harness-init.php';
+
+		// Load Pro Phase 6 — Vector-store adapter + per-team budgets (always enabled).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/services-init-phase6.php';
+
+		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
+		// Pro-only: paid third-party billing (Stripe merchant of record).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
+
+		// Load Pro Workflow Builder ↔ Base Orchestration bridge (always enabled when Pro is active).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-workflow-bridge.php';
+		add_action( 'init', array( 'WP_MCP_AI_Pro_Workflow_Bridge', 'get_instance' ), 27 );
+
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
@@ -652,6 +666,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Register Pro tool categories for recommendations.
 		add_filter( 'wp_mcp_ai_tool_categories', 'wp_mcp_ai_pro_tool_categories', 20 );
+
+		// Load Pro slash commands.
+		$pro_slash_init = WP_MCP_AI_PRO_PATH . 'includes/slash-commands/slash-commands-init.php';
+		if ( file_exists( $pro_slash_init ) ) {
+			require_once $pro_slash_init;
+		}
 
 		/**
 		 * Fires after Open Operator System Pro has completed initialization.

@@ -1,0 +1,44 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "calendar-booking",
+	"label": "Calendar & Booking",
+	"icon": "calendar-alt",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "events",
+			"label": "Events",
+			"endpoint": "/calendar/events",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",        "readonly": true },
+				{ "name": "title",      "type": "string",   "label": "Title",     "required": true },
+				{ "name": "start_at",   "type": "datetime", "label": "Starts",    "required": true },
+				{ "name": "end_at",     "type": "datetime", "label": "Ends" },
+				{ "name": "location",   "type": "string",   "label": "Location" },
+				{ "name": "description","type": "text",     "label": "Notes" }
+			]
+		},
+		{
+			"name": "bookings",
+			"label": "Bookings",
+			"endpoint": "/calendar/bookings",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",       "readonly": true },
+				{ "name": "event_id",   "type": "reference","label": "Event",    "reference": "events", "required": true },
+				{ "name": "attendee",   "type": "string",   "label": "Attendee", "required": true },
+				{ "name": "email",      "type": "email",    "label": "Email" },
+				{ "name": "status",     "type": "enum",     "label": "Status",   "options": ["pending","confirmed","cancelled","no_show"] },
+				{ "name": "created_at", "type": "datetime", "label": "Created",  "readonly": true }
+			]
+		}
+	],
+	"views": [
+		{ "name": "events_list",   "type": "table",  "resource": "events",   "default": true, "label": "Events" },
+		{ "name": "bookings_list", "type": "table",  "resource": "bookings",                  "label": "Bookings" },
+		{ "name": "by_status",     "type": "kanban", "resource": "bookings", "group_by": "status", "label": "By status" }
+	]
+}

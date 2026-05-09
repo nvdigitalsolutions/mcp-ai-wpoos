@@ -101,8 +101,8 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			}
 
 			// GCM uses a 12-byte nonce (96 bits — the recommended length for GCM).
-			$nonce    = random_bytes( 12 );
-			$tag      = '';
+			$nonce      = random_bytes( 12 );
+			$tag        = '';
 			$ciphertext = openssl_encrypt(
 				$data,
 				self::CIPHER_METHOD,

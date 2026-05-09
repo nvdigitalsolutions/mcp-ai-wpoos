@@ -105,6 +105,18 @@ mcp-ai-wpoos/
 │   │
 │   ├─ assistants/             ← Assistant CPT registration and metaboxes
 │   ├─ services/               ← Business logic (20+ service classes)
+│   │   └─ class-wp-mcp-ai-transcript-mining-job.php  ← Retroactive transcript mining background job
+│   ├─ rest/                   ← REST controllers
+│   │   ├─ class-wp-mcp-ai-rest-chat-memory-controller.php  ← Chat-client memory bridge proxy
+│   │   └─ class-wp-mcp-ai-rest-transcript-mining-controller.php  ← Transcript mining REST API
+│   ├─ harness/                ← LLM Harnessing subsystem (Layers A–G)
+│   │   ├─ class-wp-mcp-ai-prompt-cue-library.php  ← Layer A: cue templates
+│   │   ├─ class-wp-mcp-ai-reasoning-trace.php     ← Layer B: reasoning traces
+│   │   ├─ class-wp-mcp-ai-tool-router-harness.php ← Layer C: tool routing
+│   │   ├─ class-wp-mcp-ai-retrieval-harness.php   ← Layer D: retrieval fan-out
+│   │   ├─ class-wp-mcp-ai-self-refine-loop.php    ← Layer E: self-refine
+│   │   ├─ class-wp-mcp-ai-pii-filter.php          ← Layer F: PII scrubbing
+│   │   └─ class-wp-mcp-ai-harness-eval-scheduler.php  ← Layer G: eval scheduler
 │   ├─ repositories/           ← Data access layer
 │   ├─ integrations/           ← JetEngine, Elementor, Auth0, ChatKit, Gravatar
 │   ├─ infrastructure/         ← HTTP client, options-store adapter, provider adapters
@@ -122,6 +134,8 @@ mcp-ai-wpoos/
 │   ├─ mcp-ai-wpoos-pro.php    ← Pro entry point (no WP plugin header in repo)
 │   └─ includes/
 │       ├─ tools/              ← ~635 pro tool classes (same naming convention)
+│       ├─ harness/            ← Layer H fine-tune curriculum exporter (Pro)
+│       │   └─ class-wp-mcp-ai-tool-export-fine-tune-curriculum.php
 │       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin…)
 │       ├─ rest/               ← Pro REST controllers (channels, TMA, social…)
 │       ├─ integrations/       ← WooCommerce, Shopify, social media, Google, GitHub
@@ -135,7 +149,7 @@ mcp-ai-wpoos/
 │   │   └─ vendor/             ← Vendored third-party JS (chart.js, vectorizer…)
 │   └─ css/                    ← Styles; *.min.css served
 │
-└─ packages/                   ← 9 standalone NPM packages (published separately)
+└─ packages/                   ← 17 standalone NPM packages (published separately)
     ├─ nvoos-storage/          ← Storage utilities
     ├─ nvoos-markdown/         ← Markdown utilities
     ├─ nvoos-events/           ← Event system
@@ -144,7 +158,15 @@ mcp-ai-wpoos/
     ├─ nvoos-offline-sync/     ← Offline sync
     ├─ nvoos-slash-commands/   ← Slash commands
     ├─ nvoos-audio/            ← Audio utilities
-    └─ nvoos-dom-batcher/      ← DOM batching
+    ├─ nvoos-dom-batcher/      ← DOM batching
+    ├─ nvoos-llm-worker/       ← Browser LLM worker (Tier 4)
+    ├─ nvoos-model-loader/     ← Browser model loader (Tier 4)
+    ├─ nvoos-transformers-client/ ← @huggingface/transformers wrapper (Tier 4)
+    ├─ nvoos-client-tools/     ← Browser-native AI tool registry (Tier 5)
+    ├─ nvoos-chat-memory/      ← REST client for chat memory bridge (Tier 5)
+    ├─ nvoos-attachments/      ← File attachment helpers (Tier 5)
+    ├─ nvoos-cron-status/      ← SSE-first job status monitor (Tier 5)
+    └─ nvoos-transcription/    ← MediaRecorder + transcription pipeline (Tier 5)
 ```
 
 ### Tool naming convention

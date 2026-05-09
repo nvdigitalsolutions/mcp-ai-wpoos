@@ -4,6 +4,8 @@
 **Plugin Version:** 1.2.0
 **Since:** 1.0.0 (core), 1.1.0 (multi-agent), 1.1.1 (presets/reasoning/load-balancing), 1.2.0 (PSO optimizer)
 
+> **Not the same as the LLM harness.** This document covers the *infrastructure* layer — how requests are routed, executed, budgeted, and monitored. For the per-assistant *epistemic* layer (cues, reasoning traces, retrieval-with-provenance, self-refine, memory scoping), see [`docs/llm-harness.md`](llm-harness.md), which includes a side-by-side comparison and an interaction diagram. The short version: the harness sits on top of orchestration. Orchestration is always on; the harness is opt-in per assistant.
+
 ---
 
 ## Table of Contents

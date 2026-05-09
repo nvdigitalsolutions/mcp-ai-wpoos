@@ -81,7 +81,10 @@ class NV_oOS_Graphify_Tool_Get_Neighbors implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( ! $node ) {
-			return array( 'success' => false, 'error' => __( 'Node not found.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'Node not found.', 'nvoos-graphify' ),
+			);
 		}
 
 		$relation      = isset( $arguments['relation'] ) ? sanitize_text_field( $arguments['relation'] ) : '';
@@ -90,8 +93,8 @@ class NV_oOS_Graphify_Tool_Get_Neighbors implements WP_MCP_AI_Tool_Interface, WP
 
 		$neighbors = array();
 		foreach ( $edges as $edge ) {
-			$nid       = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
-			$nbr_node  = NV_oOS_Graphify_DB::get_node( $nid );
+			$nid         = ( $edge->source_node_id === $node->node_id ) ? $edge->target_node_id : $edge->source_node_id;
+			$nbr_node    = NV_oOS_Graphify_DB::get_node( $nid );
 			$neighbors[] = array(
 				'node_id'    => $nid,
 				'label'      => $nbr_node ? $nbr_node->label : $nid,
@@ -106,11 +109,15 @@ class NV_oOS_Graphify_Tool_Get_Neighbors implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return array(
-			'success'        => true,
-			'node'           => array( 'node_id' => $node->node_id, 'label' => $node->label, 'type' => $node->type ),
-			'relation_filter'=> $relation,
-			'neighbor_count' => count( $neighbors ),
-			'neighbors'      => $neighbors,
+			'success'         => true,
+			'node'            => array(
+				'node_id' => $node->node_id,
+				'label'   => $node->label,
+				'type'    => $node->type,
+			),
+			'relation_filter' => $relation,
+			'neighbor_count'  => count( $neighbors ),
+			'neighbors'       => $neighbors,
 		);
 	}
 }

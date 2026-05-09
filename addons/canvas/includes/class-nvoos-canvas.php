@@ -7,7 +7,7 @@
  * native binaries.
  *
  * @package NV_oOS_Canvas
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Core singleton for the NV oOS Canvas Addon.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Canvas {
 
@@ -144,7 +144,11 @@ class NV_oOS_Canvas {
 				__( '<strong>NV oOS Canvas Addon</strong> is active but the platform-specific canvas binary is missing. <a href="%s" target="_blank" rel="noopener">Download the correct platform build</a> (linux-x64, linux-arm64) from the NV Digital Solutions website and replace this installation.', 'nvoos-canvas' ),
 				array(
 					'strong' => array(),
-					'a'      => array( 'href' => array(), 'target' => array(), 'rel' => array() ),
+					'a'      => array(
+						'href'   => array(),
+						'target' => array(),
+						'rel'    => array(),
+					),
 				)
 			),
 			esc_url( 'https://nvdigitalsolutions.com/wpoos#canvas-addon' )

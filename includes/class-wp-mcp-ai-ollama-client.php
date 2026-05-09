@@ -1527,7 +1527,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					$error_msg,
 					array(
 						'status' => $code,
-						'body' => $decoded,
+						'body'   => $decoded,
 					)
 				);
 			}

@@ -148,16 +148,16 @@ class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_
 				$room_id = get_the_ID();
 
 				$rooms[] = array(
-					'room_id'              => $room_id,
-					'title'                => get_the_title(),
-					'description'          => get_post_meta( $room_id, '_mcp_ai_webchat_description', true ),
-					'max_participants'     => absint( get_post_meta( $room_id, '_mcp_ai_webchat_max_participants', true ) ),
-					'active_participants'  => absint( get_post_meta( $room_id, '_mcp_ai_webchat_active_participants', true ) ),
-					'allow_anonymous'      => (bool) get_post_meta( $room_id, '_mcp_ai_webchat_allow_anonymous', true ),
-					'status'               => get_post_meta( $room_id, '_mcp_ai_webchat_status', true ),
-					'room_url'             => get_permalink( $room_id ),
-					'author_id'            => absint( get_the_author_meta( 'ID' ) ),
-					'created_at'           => get_the_date( 'c' ),
+					'room_id'             => $room_id,
+					'title'               => get_the_title(),
+					'description'         => get_post_meta( $room_id, '_mcp_ai_webchat_description', true ),
+					'max_participants'    => absint( get_post_meta( $room_id, '_mcp_ai_webchat_max_participants', true ) ),
+					'active_participants' => absint( get_post_meta( $room_id, '_mcp_ai_webchat_active_participants', true ) ),
+					'allow_anonymous'     => (bool) get_post_meta( $room_id, '_mcp_ai_webchat_allow_anonymous', true ),
+					'status'              => get_post_meta( $room_id, '_mcp_ai_webchat_status', true ),
+					'room_url'            => get_permalink( $room_id ),
+					'author_id'           => absint( get_the_author_meta( 'ID' ) ),
+					'created_at'          => get_the_date( 'c' ),
 				);
 			}
 			wp_reset_postdata();

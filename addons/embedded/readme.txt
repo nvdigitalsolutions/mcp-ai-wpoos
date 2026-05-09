@@ -5,8 +5,8 @@ Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.0.0
-License: GPLv3 or later
-License URI: https://www.gnu.org/licenses/gpl-3.0.html
+License: Proprietary
+License URI: https://nvdigitalsolutions.com/wpoos/license
 
 Embedded AI inference and WebChat P2P extension for NV oOS (Open Operator System).
 
@@ -50,6 +50,17 @@ GGUF models for server-side inference are downloaded from Hugging Face.
 - Data sent: Model download requests
 - Terms: https://huggingface.co/terms-of-service
 - Privacy: https://huggingface.co/privacy
+
+== Credits ==
+
+This addon embeds and integrates with several open-source projects. No upstream code is modified; each retains its original license.
+
+* WebLLM — https://github.com/mlc-ai/web-llm — Apache-2.0 © MLC AI
+* llama.cpp — https://github.com/ggerganov/llama.cpp — MIT © Georgi Gerganov and contributors
+* Hugging Face model distribution — https://huggingface.co/ — model weights are governed by each model author's license
+* Pre-configured model authors — Meta (Llama), Mistral AI (Mistral), Microsoft (Phi), Alibaba (Qwen), Google (Gemma), DeepSeek, and others — credits and licenses live with each model card
+
+For the full repo-wide attribution index, see CREDITS.md at the repository root: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CREDITS.md
 
 == Changelog ==
 

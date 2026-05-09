@@ -1,0 +1,53 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-transcription",
+  "version": "0.1.0-alpha.1",
+  "description": "MediaRecorder-based audio recording + tool-call transcription pipeline for AI chat surfaces - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-transcription.js",
+  "module": "dist/nvoos-transcription.js",
+  "types": "dist/nvoos-transcription.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-transcription.js",
+      "default": "./dist/nvoos-transcription.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-transcription",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-transcription"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "transcription",
+    "speech-to-text",
+    "media-recorder",
+    "audio",
+    "voice-input",
+    "whisper",
+    "openai",
+    "chat",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

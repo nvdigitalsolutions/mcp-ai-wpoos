@@ -1,0 +1,79 @@
+NV oOS Cornerstone3D Addon — Proprietary License
+=================================================
+
+Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com).
+All rights reserved.
+
+This addon (the "Software"), including all files contained in the
+`addons/cornerstone3d/` directory of the `nvdigitalsolutions/mcp-ai-wpoos`
+repository — namely the PHP plugin code under `includes/`, the plugin entry
+file `nvoos-cornerstone3d.php`, the `README.md`, and this `LICENSE` file —
+is the **proprietary and confidential** intellectual property of
+NV Digital Solutions.
+
+Notwithstanding any license terms ("GNU General Public License v3 or
+later" or otherwise) that apply to the rest of the
+`nvdigitalsolutions/mcp-ai-wpoos` repository, the Software in this
+directory is **NOT** licensed under the GPL and is **NOT** distributed
+under the terms of the repository-root `LICENSE` file. Where this file and
+the repository-root `LICENSE` conflict for files inside
+`addons/cornerstone3d/`, this file controls.
+
+1. RESERVATION OF RIGHTS
+
+   All rights, title, and interest in and to the Software — including all
+   copyrights, trademarks, trade secrets, patents, and other intellectual
+   property rights — are and shall remain the exclusive property of
+   NV Digital Solutions. No license or right is granted by implication,
+   estoppel, or otherwise except as expressly stated below.
+
+2. PERMITTED USE
+
+   No use, reproduction, modification, public performance, public display,
+   distribution, sublicensing, or creation of derivative works is permitted
+   without a prior, written, signed licensing agreement with NV Digital
+   Solutions. Internal evaluation by parties to whom NV Digital Solutions
+   has supplied a copy of the Software is permitted solely for the purpose
+   of enabling the NV oOS Pro Medical Imaging Viewer on infrastructure owned
+   or controlled by that party, and only for as long as that party holds a
+   current, paid-up commercial agreement with NV Digital Solutions covering
+   the Software.
+
+3. REDISTRIBUTION PROHIBITED
+
+   The Software MAY NOT be redistributed, mirrored, forked, repackaged,
+   uploaded to WordPress.org, uploaded to any other public plugin
+   repository, or otherwise made available to third parties — in source or
+   compiled form — without prior written authorisation from NV Digital
+   Solutions.
+
+4. THIRD-PARTY COMPONENTS
+
+   The Software bundles pre-built ESM modules of the Cornerstone3D medical-
+   imaging stack (© OHIF and Cornerstone.js contributors, MIT License), the
+   dicom-parser library (MIT), and xmlbuilder2 (MIT). The full attribution
+   and upstream copyright notices are in `THIRD_PARTY_NOTICES.md` in this
+   directory and in the repository-wide `CREDITS.md`.
+
+   Those components remain governed by their own upstream licenses (MIT as
+   applicable). Nothing in this LICENSE relicenses or modifies the terms of
+   those upstream components, and nothing in those upstream licenses
+   relicenses the proprietary code of NV Digital Solutions.
+
+5. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+6. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL NV DIGITAL SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES,
+   OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+   ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+   OTHER DEALINGS IN THE SOFTWARE.
+
+7. CONTACT
+
+   For licensing enquiries: licensing@nvdigitalsolutions.com
+   https://nvdigitalsolutions.com/wpoos/license/cornerstone3d

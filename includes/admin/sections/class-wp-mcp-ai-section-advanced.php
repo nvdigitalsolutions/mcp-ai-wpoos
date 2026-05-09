@@ -1815,8 +1815,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				if ( ! class_exists( 'WP_MCP_AI_Skill_Pack_Registry' ) ) {
 					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-pack-registry.php';
 				}
-				$skill_packs       = WP_MCP_AI_Skill_Pack_Registry::instance()->get_packs();
-				$skill_pack_nonce  = wp_create_nonce( 'wp_mcp_ai_install_skill_pack' );
+				$skill_packs             = WP_MCP_AI_Skill_Pack_Registry::instance()->get_packs();
+				$skill_pack_nonce        = wp_create_nonce( 'wp_mcp_ai_install_skill_pack' );
 				$installed_skills_lookup = array();
 				foreach ( $installed_skills as $_iskill ) {
 					if ( isset( $_iskill['name'] ) ) {
@@ -1841,7 +1841,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							</tr>
 						</thead>
 						<tbody>
-							<?php foreach ( $skill_packs as $pack ) :
+							<?php
+							foreach ( $skill_packs as $pack ) :
 								$pack_skill_count = count( $pack['skills'] );
 								$pack_installed   = 0;
 								foreach ( $pack['skills'] as $member ) {
@@ -2138,6 +2139,288 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						if (confirm(<?php echo wp_json_encode( __( 'This will permanently delete developer-only files (docs, build tools, CI configs, bin scripts). This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performCleanup('wp_mcp_ai_clear_dev_files', '#wp-mcp-ai-clear-dev-files-btn', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_clear_dev_files' ) ); ?>);
 						}
+					});
+				});
+				</script>
+			</div>
+			<?php
+			$this->render_transcript_mining_section();
+		}
+
+		/**
+		 * Render the "Mine Memories from Transcripts" subsection.
+		 *
+		 * Drives the slice-2 REST endpoints under `/mcp-ai/v1/transcript-mining/`:
+		 * - POST /jobs                — enqueue a mining job
+		 * - GET  /jobs/{id}            — poll progress
+		 * - POST /jobs/{id}/cancel     — cancel
+		 *
+		 * Authentication uses the standard WP REST cookie-auth path with an
+		 * inline `wp_rest` nonce, matching how every other admin-driven REST
+		 * call in this plugin authenticates. The endpoint itself is gated by
+		 * `manage_options` in {@see WP_MCP_AI_REST_Transcript_Mining_Controller}.
+		 *
+		 * @return void
+		 */
+		private function render_transcript_mining_section() {
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => 100, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- Bounded admin selector; sites with more than 100 published assistants can use the Assistants post-type screen and target the rare ones via direct ID entry in a follow-up iteration.
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+					'fields'         => 'ids',
+				)
+			);
+			?>
+			<div class="wp-mcp-ai-transcript-mining-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
+				<h3><?php esc_html_e( 'Mine Memories from Transcripts', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Retroactively extract durable memories from stored chat transcripts for a chosen assistant. Sessions are processed in small batches by a background worker so the page never blocks; you can poll progress and cancel at any time.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<?php if ( empty( $assistants ) ) : ?>
+					<p>
+						<em><?php esc_html_e( 'No published assistants found. Create at least one assistant before mining transcripts.', 'mcp-ai-wpoos' ); ?></em>
+					</p>
+				<?php else : ?>
+					<table class="form-table" role="presentation">
+						<tbody>
+							<tr>
+								<th scope="row">
+									<label for="wp-mcp-ai-tx-mine-assistant"><?php esc_html_e( 'Assistant', 'mcp-ai-wpoos' ); ?></label>
+								</th>
+								<td>
+									<select id="wp-mcp-ai-tx-mine-assistant" class="regular-text">
+										<?php foreach ( $assistants as $assistant_id ) : ?>
+											<option value="<?php echo esc_attr( (string) $assistant_id ); ?>">
+												<?php echo esc_html( get_the_title( $assistant_id ) . ' (#' . (string) $assistant_id . ')' ); ?>
+											</option>
+										<?php endforeach; ?>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row">
+									<label for="wp-mcp-ai-tx-mine-batch-size"><?php esc_html_e( 'Batch size', 'mcp-ai-wpoos' ); ?></label>
+								</th>
+								<td>
+									<input type="number" id="wp-mcp-ai-tx-mine-batch-size" class="small-text" value="10" min="1" max="50" />
+									<p class="description">
+										<?php esc_html_e( 'Sessions processed per cron tick (1–50).', 'mcp-ai-wpoos' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Options', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" id="wp-mcp-ai-tx-mine-only-unextracted" checked />
+										<?php esc_html_e( 'Skip transcripts that have already been mined (recommended).', 'mcp-ai-wpoos' ); ?>
+									</label>
+									<br />
+									<label>
+										<input type="checkbox" id="wp-mcp-ai-tx-mine-dry-run" />
+										<?php esc_html_e( 'Dry run — extract candidates without writing memories.', 'mcp-ai-wpoos' ); ?>
+									</label>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<p>
+						<button type="button" class="button button-primary" id="wp-mcp-ai-tx-mine-start-btn">
+							<span class="dashicons dashicons-search" style="margin-top: 3px;"></span>
+							<?php esc_html_e( 'Start Mining', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<button type="button" class="button button-secondary" id="wp-mcp-ai-tx-mine-cancel-btn" disabled style="margin-left: 8px;">
+							<span class="dashicons dashicons-dismiss" style="margin-top: 3px;"></span>
+							<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+
+					<div id="wp-mcp-ai-tx-mine-progress" style="display: none; margin-top: 15px; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Job Progress', 'mcp-ai-wpoos' ); ?></h4>
+						<ul style="margin: 10px 0; padding-left: 20px;">
+							<li><strong><?php esc_html_e( 'Job ID:', 'mcp-ai-wpoos' ); ?></strong> <code id="wp-mcp-ai-tx-mine-job-id">—</code></li>
+							<li><strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-tx-mine-status" class="wp-mcp-ai-status-badge">—</span></li>
+							<li><strong><?php esc_html_e( 'Progress:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-tx-mine-progress-text">0 / 0 (0%)</span></li>
+							<li><strong><?php esc_html_e( 'Mined / Skipped / Failed:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-tx-mine-counts">0 / 0 / 0</span></li>
+							<li><strong><?php esc_html_e( 'Last Message:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-tx-mine-last-msg">—</span></li>
+						</ul>
+						<div id="wp-mcp-ai-tx-mine-errors" style="display: none; color: #a00; margin-top: 10px;"></div>
+					</div>
+
+					<div id="wp-mcp-ai-tx-mine-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				<?php endif; ?>
+
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only.
+				?>
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					var restBase = <?php echo wp_json_encode( esc_url_raw( rest_url( 'mcp-ai/v1/transcript-mining' ) ) ); ?>;
+					var restNonce = <?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
+					var pollTimer = null;
+					var currentJobId = null;
+
+					function setStatusBadge(status) {
+						var $badge = $('#wp-mcp-ai-tx-mine-status');
+						$badge.removeClass('wp-mcp-ai-status-success wp-mcp-ai-status-warning wp-mcp-ai-status-error').text(status || '—');
+						if (status === 'completed') {
+							$badge.addClass('wp-mcp-ai-status-success');
+						} else if (status === 'cancelled' || status === 'failed') {
+							$badge.addClass('wp-mcp-ai-status-error');
+						} else {
+							$badge.addClass('wp-mcp-ai-status-warning');
+						}
+					}
+
+					function renderProgress(p) {
+						$('#wp-mcp-ai-tx-mine-job-id').text(p.id || '—');
+						setStatusBadge(p.status);
+						$('#wp-mcp-ai-tx-mine-progress-text').text(
+							(p.processed || 0) + ' / ' + (p.total || 0) + ' (' + (p.percent || 0) + '%)'
+						);
+						$('#wp-mcp-ai-tx-mine-counts').text(
+							(p.mined_count || 0) + ' / ' + (p.skipped_count || 0) + ' / ' + (p.failed_count || 0)
+						);
+						$('#wp-mcp-ai-tx-mine-last-msg').text(p.last_message || '—');
+						var $errs = $('#wp-mcp-ai-tx-mine-errors');
+						if (p.errors && p.errors.length) {
+							$errs.empty();
+							p.errors.forEach(function(msg) {
+								$('<div></div>').text('• ' + msg).appendTo($errs);
+							});
+							$errs.show();
+						} else {
+							$errs.hide().empty();
+						}
+					}
+
+					function showMessage(type, text) {
+						var $m = $('#wp-mcp-ai-tx-mine-message');
+						$m.removeClass('notice-success notice-error notice-warning').addClass('notice-' + type);
+						$m.find('p').text(text);
+						$m.show();
+					}
+
+					function stopPolling() {
+						if (pollTimer) {
+							clearInterval(pollTimer);
+							pollTimer = null;
+						}
+					}
+
+					function poll(jobId) {
+						$.ajax({
+							url: restBase + '/jobs/' + encodeURIComponent(jobId),
+							method: 'GET',
+							headers: { 'X-WP-Nonce': restNonce },
+							dataType: 'json'
+						}).done(function(progress) {
+							renderProgress(progress);
+							if (progress.status === 'completed' || progress.status === 'cancelled' || progress.status === 'failed') {
+								stopPolling();
+								$('#wp-mcp-ai-tx-mine-start-btn').prop('disabled', false);
+								$('#wp-mcp-ai-tx-mine-cancel-btn').prop('disabled', true);
+
+								if (progress.status === 'completed') {
+									var mined = progress.mined_count || 0;
+									var failed = progress.failed_count || 0;
+									if (failed > 0) {
+										var errorsUrl = <?php echo wp_json_encode( esc_url_raw( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=logging' ) ) ); ?>;
+										showMessage(
+											'error',
+											<?php echo wp_json_encode( __( 'Mining job completed with errors.', 'mcp-ai-wpoos' ) ); ?> +
+											' ' +
+											<?php echo wp_json_encode( __( 'Check NV oOS → Settings → Advanced → Recent Errors.', 'mcp-ai-wpoos' ) ); ?>
+										);
+										$('#wp-mcp-ai-tx-mine-message')
+											.find('p')
+											.append(' ')
+											.append($('<a></a>').attr('href', errorsUrl).text(<?php echo wp_json_encode( __( 'Open Recent Errors', 'mcp-ai-wpoos' ) ); ?>));
+									} else if (mined === 0) {
+										showMessage(
+											'warning',
+											<?php echo wp_json_encode( __( 'Job completed but no new memories were extracted. Common causes: (1) all eligible transcripts have already been mined — uncheck "Skip transcripts that have already been mined" to re-process them; (2) the assistant has no stored transcripts yet; (3) JetEngine data-stores is inactive — check Settings → NV oOS → Recent Errors for details.', 'mcp-ai-wpoos' ) ); ?>
+										);
+									}
+								}
+							}
+						}).fail(function(xhr) {
+							stopPolling();
+							var msg = (xhr.responseJSON && xhr.responseJSON.message) || <?php echo wp_json_encode( __( 'Failed to poll job.', 'mcp-ai-wpoos' ) ); ?>;
+							showMessage('error', msg);
+						});
+					}
+
+					$('#wp-mcp-ai-tx-mine-start-btn').on('click', function(e) {
+						e.preventDefault();
+						var assistantId = $('#wp-mcp-ai-tx-mine-assistant').val();
+						if (!assistantId) {
+							showMessage('error', <?php echo wp_json_encode( __( 'Choose an assistant first.', 'mcp-ai-wpoos' ) ); ?>);
+							return;
+						}
+						var batchSize = parseInt($('#wp-mcp-ai-tx-mine-batch-size').val(), 10) || 10;
+						var payload = {
+							agent_id: String(assistantId),
+							batch_size: batchSize,
+							dry_run: $('#wp-mcp-ai-tx-mine-dry-run').is(':checked'),
+							transcript_query: {
+								assistant_id: parseInt(assistantId, 10),
+								only_unextracted: $('#wp-mcp-ai-tx-mine-only-unextracted').is(':checked')
+							}
+						};
+
+						$('#wp-mcp-ai-tx-mine-message').hide();
+						$('#wp-mcp-ai-tx-mine-start-btn').prop('disabled', true);
+
+						$.ajax({
+							url: restBase + '/jobs',
+							method: 'POST',
+							headers: { 'X-WP-Nonce': restNonce },
+							contentType: 'application/json; charset=UTF-8',
+							data: JSON.stringify(payload),
+							dataType: 'json'
+						}).done(function(progress) {
+							currentJobId = progress.id;
+							$('#wp-mcp-ai-tx-mine-progress').show();
+							$('#wp-mcp-ai-tx-mine-cancel-btn').prop('disabled', false);
+							renderProgress(progress);
+							showMessage('success', <?php echo wp_json_encode( __( 'Mining job started.', 'mcp-ai-wpoos' ) ); ?>);
+							stopPolling();
+							pollTimer = setInterval(function() { poll(currentJobId); }, 2000);
+						}).fail(function(xhr) {
+							$('#wp-mcp-ai-tx-mine-start-btn').prop('disabled', false);
+							var msg = (xhr.responseJSON && xhr.responseJSON.message) || <?php echo wp_json_encode( __( 'Failed to start mining job.', 'mcp-ai-wpoos' ) ); ?>;
+							showMessage('error', msg);
+						});
+					});
+
+					$('#wp-mcp-ai-tx-mine-cancel-btn').on('click', function(e) {
+						e.preventDefault();
+						if (!currentJobId) {
+							return;
+						}
+						$('#wp-mcp-ai-tx-mine-cancel-btn').prop('disabled', true);
+						$.ajax({
+							url: restBase + '/jobs/' + encodeURIComponent(currentJobId) + '/cancel',
+							method: 'POST',
+							headers: { 'X-WP-Nonce': restNonce },
+							dataType: 'json'
+						}).done(function(progress) {
+							renderProgress(progress);
+							stopPolling();
+							$('#wp-mcp-ai-tx-mine-start-btn').prop('disabled', false);
+							showMessage('warning', <?php echo wp_json_encode( __( 'Mining job cancelled.', 'mcp-ai-wpoos' ) ); ?>);
+						}).fail(function(xhr) {
+							var msg = (xhr.responseJSON && xhr.responseJSON.message) || <?php echo wp_json_encode( __( 'Failed to cancel job.', 'mcp-ai-wpoos' ) ); ?>;
+							showMessage('error', msg);
+						});
 					});
 				});
 				</script>

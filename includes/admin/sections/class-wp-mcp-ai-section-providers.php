@@ -59,7 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI).', 'mcp-ai-wpoos' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI, DeepSeek).', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -112,10 +112,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-opus-4-7'    => 'Claude Opus 4.7 (Flagship)',
-					'claude-opus-4-6'    => 'Claude Opus 4.6',
-					'claude-sonnet-4-6'  => 'Claude Sonnet 4.6 (Recommended)',
-					'claude-haiku-4-5'   => 'Claude Haiku 4.5 (Fastest)',
+					'claude-opus-4-7'   => 'Claude Opus 4.7 (Flagship)',
+					'claude-opus-4-6'   => 'Claude Opus 4.6',
+					'claude-sonnet-4-6' => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-haiku-4-5'  => 'Claude Haiku 4.5 (Fastest)',
 				);
 			}
 
@@ -166,8 +166,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get DeepSeek models from Model Config.
+			$deepseek_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$deepseek_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'deepseek' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $deepseek_models ) ) {
+				$deepseek_models = array(
+					'deepseek-chat'     => 'DeepSeek-V3 (Recommended, supports tools)',
+					'deepseek-reasoner' => 'DeepSeek-R1 (Chain-of-thought, no tools)',
+					'deepseek-coder'    => 'DeepSeek Coder',
+				);
+			}
+
+			// Get OpenRouter models from Model Config.
+			$openrouter_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$openrouter_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openrouter' );
+			}
+
+			// Fallback to a curated short list. The full catalogue is
+			// discovered live from /api/v1/models when the API key is set.
+			if ( empty( $openrouter_models ) ) {
+				$openrouter_models = array(
+					'openrouter/auto'                   => 'OpenRouter Auto (router picks)',
+					'openai/gpt-4o-mini'                => 'OpenAI GPT-4o Mini',
+					'openai/gpt-4o'                     => 'OpenAI GPT-4o',
+					'anthropic/claude-3.5-sonnet'       => 'Anthropic Claude 3.5 Sonnet',
+					'anthropic/claude-3-haiku'          => 'Anthropic Claude 3 Haiku',
+					'google/gemini-pro-1.5'             => 'Google Gemini 1.5 Pro',
+					'meta-llama/llama-3.3-70b-instruct' => 'Meta Llama 3.3 70B Instruct',
+					'mistralai/mistral-large'           => 'Mistral Large',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -852,6 +888,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
+				'lm_studio_api_key'                  => array(
+					'type'        => 'password',
+					'label'       => __( 'LM Studio API Key (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional bearer token for LM Studio authentication (LM Studio 0.3.6+). Leave empty if your server does not require authentication.', 'mcp-ai-wpoos' ),
+					'placeholder' => '',
+				),
+				'lm_studio_use_native_api'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Use LM Studio Native API (/api/v0)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use the /api/v0 endpoint surface for richer model metadata and telemetry stats', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, model listing uses /api/v0/models which returns architecture, quantization, loaded context size, and per-model capability flags. Chat completions use /api/v0/chat/completions which returns performance stats (tokens/sec, TTFT). Default: off (uses /v1 for full backwards compatibility).', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
@@ -982,13 +1031,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Flux-2 Dev offers the best balanced quality. Flux-1 Schnell is fastest. SDXL models are legacy options.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev (Recommended)',
-						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell (Fast)',
+						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev (Recommended)',
+						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell (Fast)',
 						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Legacy)',
-						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Legacy Fast)',
-						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
+						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Legacy Fast)',
+						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
 					),
 					'default'     => '@cf/black-forest-labs/flux-2-dev',
 				),
@@ -1093,6 +1142,84 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'meta/llama-3.1-8b-instruct',
 				),
 
+				// DeepSeek Provider Settings.
+				'enable_deepseek'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DeepSeek Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DeepSeek as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When disabled, DeepSeek will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'deepseek_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'DeepSeek API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: DeepSeek Platform API keys URL */
+						__( 'Your DeepSeek API key. Get one from <a href="%s" target="_blank">DeepSeek Platform</a>. The same key works for all DeepSeek models.', 'mcp-ai-wpoos' ),
+						'https://platform.deepseek.com/api_keys'
+					),
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
+				),
+				'deepseek_model'                     => array(
+					'type'        => 'select',
+					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-chat (DeepSeek-V3) is the general-purpose model with tool calling support. deepseek-reasoner (DeepSeek-R1) provides chain-of-thought reasoning but does not support tool/function calling.', 'mcp-ai-wpoos' ),
+					'options'     => $deepseek_models,
+					'default'     => 'deepseek-chat',
+				),
+				'deepseek_base_url'                  => array(
+					'type'        => 'url',
+					'label'       => __( 'DeepSeek API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for DeepSeek API requests. Leave empty to use the default (https://api.deepseek.com). Useful for regional proxies (e.g., Volcano Engine) or DeepSeek-compatible services. Note: DeepSeek offers discounted off-peak pricing during UTC 16:30–00:30.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.deepseek.com',
+				),
+
+				// OpenRouter Provider Settings.
+				'enable_openrouter'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OpenRouter Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable OpenRouter as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'OpenRouter is a unified gateway in front of OpenAI, Anthropic, Google, Meta, Mistral and many other providers — all reachable through a single API key with OpenAI-compatible requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'openrouter_api_key'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'OpenRouter API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: OpenRouter API keys URL */
+						__( 'Your OpenRouter API key. Get one from <a href="%s" target="_blank">OpenRouter Keys</a>. The same key works for every model in the OpenRouter catalogue.', 'mcp-ai-wpoos' ),
+						'https://openrouter.ai/keys'
+					),
+					'placeholder'  => 'sk-or-v1-...',
+					'autocomplete' => 'new-password',
+				),
+				'openrouter_model'                   => array(
+					'type'        => 'select',
+					'label'       => __( 'Default OpenRouter Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for OpenRouter requests. Use the namespaced form, e.g. "openai/gpt-4o-mini" or "anthropic/claude-3.5-sonnet". Pick "openrouter/auto" to let OpenRouter choose a recommended model on each request.', 'mcp-ai-wpoos' ),
+					'options'     => $openrouter_models,
+					'default'     => 'openrouter/auto',
+				),
+				'openrouter_base_url'                => array(
+					'type'        => 'url',
+					'label'       => __( 'OpenRouter API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for OpenRouter API requests. Leave empty to use the default (https://openrouter.ai/api/v1). Useful when proxying OpenRouter through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://openrouter.ai/api/v1',
+				),
+				'openrouter_site_url'                => array(
+					'type'        => 'url',
+					'label'       => __( 'Site URL (HTTP-Referer)', 'mcp-ai-wpoos' ),
+					'description' => __( 'OpenRouter sends this value in the HTTP-Referer header to identify your application on its leaderboard and dashboard. Leave empty to use this site\'s home URL.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://example.com',
+				),
+				'openrouter_app_title'               => array(
+					'type'        => 'text',
+					'label'       => __( 'Application Title (X-Title)', 'mcp-ai-wpoos' ),
+					'description' => __( 'OpenRouter sends this value in the X-Title header to label requests in its dashboard. Leave empty to use this site\'s title.', 'mcp-ai-wpoos' ),
+					'placeholder' => __( 'My WordPress Site', 'mcp-ai-wpoos' ),
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1149,7 +1276,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'lm_studio',
 					'label'  => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
+					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_api_key', 'lm_studio_use_native_api', 'lm_studio_network_interface' ),
 				),
 				'huggingface'          => array(
 					'id'     => 'huggingface',
@@ -1174,6 +1301,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'NVIDIA', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-superhero',
 					'fields' => array( 'enable_nvidia', 'nvidia_api_key', 'nvidia_endpoint_url', 'nvidia_model' ),
+				),
+				'deepseek'             => array(
+					'id'     => 'deepseek',
+					'label'  => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-superhero',
+					'fields' => array( 'enable_deepseek', 'deepseek_api_key', 'deepseek_model', 'deepseek_base_url' ),
+				),
+				'openrouter'           => array(
+					'id'     => 'openrouter',
+					'label'  => __( 'OpenRouter', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-randomize',
+					'fields' => array( 'enable_openrouter', 'openrouter_api_key', 'openrouter_model', 'openrouter_base_url', 'openrouter_site_url', 'openrouter_app_title' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1387,6 +1526,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+				'deepseek'    => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+				'openrouter'  => __( 'OpenRouter (Multi-provider gateway)', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
@@ -1514,7 +1655,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

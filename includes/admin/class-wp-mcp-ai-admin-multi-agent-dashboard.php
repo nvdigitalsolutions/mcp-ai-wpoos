@@ -427,7 +427,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 			$last_used = $this->get_last_used_time( $post_id );
 
 			// Determine workflow pattern based on slug and roles.
-			$workflow_pattern = $this->detect_workflow_pattern( $post->post_name, $primary_roles );
+			$workflow_pattern = $this->detect_workflow_pattern( $post->post_name, is_array( $primary_roles ) ? $primary_roles : array() );
 
 			$agent_data = array(
 				'id'               => $post_id,
@@ -509,7 +509,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 
 		// Query most recent chat transcript for this assistant.
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'jet_cct_mcp_ai_chat_transcripts';
+		$table_name = $wpdb->prefix . 'jet_cct_ai_chat_transcripts';
 
 		// Check if table exists.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.

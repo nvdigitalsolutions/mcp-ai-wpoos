@@ -3,21 +3,29 @@
  * Plugin Name: NV oOS Graphify
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: WordPress Knowledge Graph addon for NV oOS. Extracts entities and relationships from your content, builds a navigable knowledge graph, and exposes it to AI assistants via oOS tools and a REST API. Requires NV oOS base plugin.
- * Version:     0.5.0
+ * Version:     0.6.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: Proprietary
+ * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: nvoos-graphify
  * Domain Path: /languages
  *
  * @package NV_oOS_Graphify
  *
+ * ⚠️ PROPRIETARY SOFTWARE
+ * This is commercial software licensed for authorized users only.
+ * Patent Pending (Application #19/410,504)
+ * © 2025 NV Digital Solutions - All Rights Reserved
+ *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * All rights reserved. This is proprietary software.
+ *
+ * Bundled third-party assets retain their upstream MIT licenses; see README.md
+ * and the repository-wide CREDITS.md for the full attribution index.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_GRAPHIFY_VERSION', '0.5.0' );
+define( 'NVOOS_GRAPHIFY_VERSION', '0.6.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_GRAPHIFY_FILE', __FILE__ );
@@ -85,11 +93,26 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings.php
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings-on-ingest.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-memory-bridge.php';
 
+// Load NV oOS data bridge (only when the base plugin is active).
+// Delay to plugins_loaded so WP_MCP_AI_VERSION is defined before we test.
+add_action(
+	'plugins_loaded',
+	static function () {
+		if ( defined( 'WP_MCP_AI_VERSION' )
+			&& ! class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' )
+		) {
+			require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-nvoos-bridge.php';
+			NV_oOS_Graphify_NV_oOS_Bridge::register();
+		}
+	},
+	20
+);
+
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 
 // Load admin classes.
 if ( is_admin() ) {
-	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-settings.php';
+	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nv-oos-graphify-settings.php';
 	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-remote-admin.php';
 }
 

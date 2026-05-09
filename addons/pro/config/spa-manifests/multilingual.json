@@ -1,0 +1,43 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "multilingual",
+	"label": "Multilingual",
+	"icon": "translation",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "strings",
+			"label": "Translation strings",
+			"endpoint": "/multilingual/strings",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer", "label": "ID",         "readonly": true },
+				{ "name": "key",        "type": "string",  "label": "Key",        "required": true },
+				{ "name": "source",     "type": "text",    "label": "Source text", "required": true },
+				{ "name": "context",    "type": "string",  "label": "Context" },
+				{ "name": "domain",     "type": "string",  "label": "Domain" },
+				{ "name": "status",     "type": "enum",    "label": "Status",     "options": ["new","translated","reviewed","approved","stale"] }
+			]
+		},
+		{
+			"name": "translations",
+			"label": "Translations",
+			"endpoint": "/multilingual/translations",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",         "readonly": true },
+				{ "name": "string_id",  "type": "reference","label": "String",     "reference": "strings", "required": true },
+				{ "name": "locale",     "type": "string",   "label": "Locale",     "required": true },
+				{ "name": "translated", "type": "text",     "label": "Translation","required": true },
+				{ "name": "status",     "type": "enum",     "label": "Status",     "options": ["draft","translated","reviewed","approved"] }
+			]
+		}
+	],
+	"views": [
+		{ "name": "strings_list",      "type": "table",  "resource": "strings",      "default": true, "label": "Strings" },
+		{ "name": "translations_list", "type": "table",  "resource": "translations",                 "label": "Translations" },
+		{ "name": "by_status",         "type": "kanban", "resource": "strings",      "group_by": "status", "label": "Workflow" }
+	]
+}

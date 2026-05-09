@@ -314,3 +314,20 @@ $ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph( array(
 
 ### 0.5.0
 - Initial release: graph build pipeline, Cytoscape.js explorer, export, 4 MCP tools
+
+## Credits
+
+Graphify ships pre-bundled, unmodified copies of the Cytoscape.js graph-rendering stack under `addons/graphify/assets/vendor/`. Each directory carries the upstream `LICENSE` file alongside the bundle.
+
+| Library | License | Upstream |
+|---------|---------|----------|
+| Cytoscape.js | MIT — © 2016–2023 The Cytoscape Consortium | https://github.com/cytoscape/cytoscape.js |
+| cytoscape-fcose | MIT — © iVis Lab, Bilkent University | https://github.com/iVis-at-Bilkent/cytoscape.js-fcose |
+| cose-base | MIT — © iVis Lab, Bilkent University | https://github.com/iVis-at-Bilkent/cose-base |
+| layout-base | MIT — © iVis Lab, Bilkent University | https://github.com/iVis-at-Bilkent/layout-base |
+
+For the full repo-wide attribution index, see [`CREDITS.md`](../../CREDITS.md) at the repository root.
+
+## License
+
+Graphify itself is **proprietary** — © 2025-2026 NV Digital Solutions, all rights reserved. Bundled third-party libraries listed above retain their upstream MIT licenses. See [`CREDITS.md`](../../CREDITS.md) at the repository root for the full attribution index.

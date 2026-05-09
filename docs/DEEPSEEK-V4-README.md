@@ -1,5 +1,7 @@
 # DeepSeek V4 Orchestration Documentation
 
+> **Note:** This document covers the **DeepSeek V4 orchestration architecture** — a paper-inspired multi-agent coordination design built into NV oOS. It is **unrelated** to the DeepSeek LLM provider integration (the `deepseek-chat` / `deepseek-reasoner` API models configurable under Settings → NV oOS → Providers → DeepSeek). See [`docs/features/ai-providers/deepseek/DEEPSEEK_SETUP.md`](features/ai-providers/deepseek/DEEPSEEK_SETUP.md) for the provider integration docs.
+
 **Complete documentation suite for the DeepSeek V4 multi-agent orchestration system**
 
 ---

@@ -63,6 +63,7 @@ class NV_oOS_Graphify {
 		add_action( self::CRON_BUILD_HOOK, array( __CLASS__, 'run_scheduled_build' ) );
 		add_action( self::CRON_ENRICH_HOOK, array( __CLASS__, 'run_scheduled_enrich' ) );
 		add_action( 'nvoos_graphify_cron_semantic_extract', array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch' ) );
+		add_action( NV_oOS_Graphify_Semantic_Extractor::CRON_ACTION_CCT, array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch_ccts' ) );
 		NV_oOS_Graphify_Embeddings_On_Ingest::register();
 		NV_oOS_Graphify_Memory_Bridge::register();
 	}
@@ -255,24 +256,29 @@ class NV_oOS_Graphify {
 		return wp_parse_args(
 			get_option( self::OPTION_KEY, array() ),
 			array(
-				'enabled'              => true,
-				'post_types'           => NV_oOS_Graphify_Detector::get_default_post_types(),
-				'semantic_extraction'  => true,
-				'incremental_builds'   => true,
-				'auto_rebuild'         => false,
-				'rebuild_schedule'     => 'daily',
-				'schema_injection'     => true,
-				'related_content'      => true,
-				'max_related'          => 5,
-				'openai_api_key'       => '',
-				'cytoscape_height'     => '600px',
-				'max_display_nodes'    => 300,
+				'enabled'               => true,
+				// 'post_types' is intentionally NOT listed here as a computed default.
+				// detect_posts() calls get_default_post_types() directly when the key
+				// is absent. Including it here would cause infinite recursion because
+				// get_default_post_types() applies the nvoos_graphify_indexed_post_types
+				// filter, which (when the NV oOS bridge is active) calls back into
+				// get_settings() via filter_indexed_post_types().
+				'semantic_extraction'   => true,
+				'incremental_builds'    => true,
+				'auto_rebuild'          => false,
+				'rebuild_schedule'      => 'daily',
+				'schema_injection'      => true,
+				'related_content'       => true,
+				'max_related'           => 5,
+				'openai_api_key'        => '',
+				'cytoscape_height'      => '600px',
+				'max_display_nodes'     => 300,
 				'remote_enrich_enabled' => false,
-				'remote_enrich_budget' => 50,
-				'embeddings_enabled'   => false,
-				'embeddings_model'     => 'text-embedding-3-small',
-				'embed_on_ingest'      => true,
-				'remote_enrich_async'  => true,
+				'remote_enrich_budget'  => 50,
+				'embeddings_enabled'    => false,
+				'embeddings_model'      => 'text-embedding-3-small',
+				'embed_on_ingest'       => true,
+				'remote_enrich_async'   => true,
 			)
 		);
 	}
@@ -545,11 +551,26 @@ class NV_oOS_Graphify {
 			'nvoos-graphify/graph',
 			array(
 				'attributes'      => array(
-					'mode'         => array( 'type' => 'string', 'default' => 'full' ),
-					'community_id' => array( 'type' => 'string', 'default' => '' ),
-					'post_id'      => array( 'type' => 'integer', 'default' => 0 ),
-					'height'       => array( 'type' => 'string', 'default' => '600px' ),
-					'max_nodes'    => array( 'type' => 'integer', 'default' => 300 ),
+					'mode'         => array(
+						'type'    => 'string',
+						'default' => 'full',
+					),
+					'community_id' => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'post_id'      => array(
+						'type'    => 'integer',
+						'default' => 0,
+					),
+					'height'       => array(
+						'type'    => 'string',
+						'default' => '600px',
+					),
+					'max_nodes'    => array(
+						'type'    => 'integer',
+						'default' => 300,
+					),
 				),
 				'render_callback' => array( __CLASS__, 'render_block' ),
 			)
@@ -614,7 +635,7 @@ class NV_oOS_Graphify {
 
 		$edges = NV_oOS_Graphify_DB::get_edges_for_node( $node->node_id );
 
-		$about        = array();
+		$about         = array();
 		$related_links = array();
 
 		foreach ( $edges as $edge ) {
@@ -674,6 +695,17 @@ class NV_oOS_Graphify {
 			return $content;
 		}
 
+		// Only append once per request. Without this guard, any recursive
+		// `apply_filters( 'the_content', $other_content )` call made from
+		// inside the main loop (for example the NV oOS chat shortcode
+		// rendering the assistant description in its header) would also
+		// receive the Related Content widget, causing graphify content to
+		// leak into the assistant header in the chat client.
+		static $appended = false;
+		if ( $appended ) {
+			return $content;
+		}
+
 		$post_id = get_the_ID();
 		if ( ! $post_id ) {
 			return $content;
@@ -697,7 +729,12 @@ class NV_oOS_Graphify {
 
 		foreach ( $neighbors as $nid ) {
 			$n = NV_oOS_Graphify_DB::get_node( $nid );
-			if ( $n && $n->post_id && $n->url && in_array( $n->type, array( 'post', 'page' ), true ) ) {
+			// Show every neighbour that is backed by a real, linkable WordPress
+			// post — i.e. has a numeric post_id and a public URL. This covers
+			// `post`, `page` and every public CPT (including JetEngine CPTs)
+			// while still excluding term/user/media/CCT/semantic nodes which
+			// store post_id = 0.
+			if ( $n && $n->post_id && $n->url ) {
 				$post_nodes[] = $n;
 			}
 		}
@@ -712,6 +749,8 @@ class NV_oOS_Graphify {
 			$widget .= '<li><a href="' . esc_url( $n->url ) . '">' . esc_html( $n->label ) . '</a></li>';
 		}
 		$widget .= '</ul></div>';
+
+		$appended = true;
 
 		return $content . $widget;
 	}

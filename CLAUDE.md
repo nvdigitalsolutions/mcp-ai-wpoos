@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -74,6 +74,22 @@ Every code change must:
 - **Verify nonces**: `check_ajax_referer()` or `wp_verify_nonce()` for state changes
 - **ABSPATH guard**: Every non-root PHP file starts with `if ( ! defined( 'ABSPATH' ) ) { exit; }`
 - **Prepared queries**: Always `$wpdb->prepare()` — never string-concatenate SQL
+
+## Third-Party Attribution
+
+When a file is **derived from**, **heavily inspired by**, or **wraps** an upstream open-source project, add `@link` and `@credit` tags to the file-level PHPDoc:
+
+```php
+/**
+ * Class summary.
+ *
+ * @link    <upstream URL>
+ * @credit  <upstream project name> by <author> (<license>)
+ * @package WP_MCP_AI
+ */
+```
+
+The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
 
 ## Tool Implementation Pattern
 
@@ -147,11 +163,37 @@ In `class-wp-mcp-ai-rest.php` (lines ~2578-2950):
 - Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.)
 - Capability flags: `'read-only'`, `'write'`, `'state-changing'`, `'cacheable'`, `'external-api'`
 
+### Orchestration Phases (1–7)
+
+All seven orchestration phases are active as of v1.1.15. Key components:
+- **HITL** (`WP_MCP_AI_Approval_Queue`, CPT `mcp_ai_approval`, REST `/mcp-ai/v1/approvals/*`)
+- **Prompt Injection Detector** (`WP_MCP_AI_Prompt_Injection_Detector`, harness profile key `injection_detector.enabled`, action `wp_mcp_ai_prompt_injection_detected`)
+- **OTel** — OTLP endpoint + token configurable under **Tools → Connections**
+- **Observability dashboard** — surfaced under the **Orchestration** tab
+- **Sub-agents** (`WP_MCP_AI_Sub_Agent_Dispatcher`), **durable runs** (`WP_MCP_AI_Durable_Run_Store`), **triggers** (`WP_MCP_AI_Workflow_Trigger_CPT`)
+- **JetEngine CCT init priority** — all CCT bootstraps must use `init` at priority 11+ to avoid racing JetEngine's table-cache hydration (priorities 1–10)
+- Pro: `WP_MCP_AI_Vector_Store_Adapter` (openai/pgvector/qdrant), `WP_MCP_AI_Team_Budget_Manager`
+
+### Provider Clients
+
+Nine providers supported. New in v1.1.15:
+- **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
+- **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) — `reasoning_content` / `<think>…</think>` passthrough
+- **LM Studio** — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
+
 ### Slash Commands
 
 Pattern: class with `execute( $args, $flags, $context )` returning string/array/WP_Error.
 Registration via `$handler->register( 'name', array( 'handler' => ..., 'capability' => ..., 'aliases' => ... ) )`.
 Located in `includes/slash-commands/commands/`.
+
+### LLM Harnessing Subsystem
+
+Seven opt-in per-request layers (`includes/harness/`) that improve response quality without modifying existing tool behaviour. All layers are off by default and activated per-assistant via the **LLM Harness** metabox on the assistant edit screen. Harness profile stored in `_wp_mcp_ai_harness_profile` post meta (keys: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`). Pro Layer H (`addons/pro/includes/harness/`) exports fine-tune curricula as OpenAI JSONL — loaded via `addons/pro/includes/harness-init.php`. Key hooks: `wp_mcp_ai_register_prompt_cues`, `wp_mcp_ai_harness_profile`, `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_eval_generator`, `wp_mcp_ai_harness_eval_tick`. Reference: `docs/llm-harness.md`.
+
+### Chat-client Memory Bridge
+
+REST proxy (`WP_MCP_AI_REST_Chat_Memory_Controller`) exposes `/mcp-ai/v1/chat-memory/` (6 routes: preferences, wake-up, recall, store, audit, /{context_id}). JS service (`assets/js/chat-memory-service.js`) and Memory Drawer (`assets/js/chat-memory-drawer.js` — three tabs: Memories / Scope / Audit). The agentic loop emits `memory_event` SSE frames; the drawer handles them in real time. Three gates: (1) site-wide admin toggle in **Orchestration → Settings** (`Enable Chat-Client Memory`); (2) site-wide filter `wp_mcp_ai_chat_memory_enabled`; (3) per-user meta `wp_mcp_ai_chat_memory_enabled`. Endpoints localized via `window.wpMcpAiChat.memoryEndpoints`. Reference: `docs/features/memory/chat-client-integration.md`.
 
 ### SSE Streaming
 
@@ -208,6 +250,8 @@ test(scope): brief description
 | `.context/testing.md` | Writing PHPUnit tests |
 | `.context/pro-vs-base.md` | Base vs Pro decisions |
 | `docs/hooks-reference.md` | Working with plugin hooks |
+| `docs/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
+| `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
 
 ## OpenAI Schema Compatibility
 
@@ -297,8 +341,11 @@ This repository is developed by multiple AI coding agents. You (Claude Code) are
 |-------|-------------|----------------------|
 | **Claude Code** | This file (`CLAUDE.md`) | — |
 | **GitHub Copilot** | `.github/copilot-instructions.md` | Shares coding standards, tool patterns |
+| **GitHub Custom Agents** | `.github/agents/*.agent.md` | Role-specific only — defers to `AGENTS.md` / `CLAUDE.md` / `.context/` for shared rules (see layering rule below) |
 | **OpenAI Codex** | `.codex/startup.sh` | Sandbox bootstrap only |
 | **BMAD Agents** | `.bmad/agents/*.yaml` | Specialized workflow roles (6 agents) |
+
+**Layering rule for `.github/agents/`:** Those files hold only agent-specific metadata + behavior (frontmatter, scope, examples, refusals). They MUST NOT restate naming/security/PHP-compat/architecture rules — those live in `AGENTS.md`, `CLAUDE.md`, and `.context/`. If you (Claude Code) are asked to author or edit a `*.agent.md` file, keep it slim and link to the canonical sources. See [`AGENTS.md` §2 "Layering rule"](AGENTS.md) for the full rule.
 
 **Key points for Claude Code sessions:**
 - Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.

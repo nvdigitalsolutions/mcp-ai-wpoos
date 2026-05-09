@@ -908,3 +908,17 @@ This document and all associated materials are proprietary and confidential.
 *Last Updated: February 2026*  
 *Version: Pro Add-on 1.0.0*  
 *Document Version: 2.0*
+
+## Credits
+
+The Pro addon bundles a substantial set of third-party PHP libraries (under `addons/pro/vendor/`) and Node.js packages (under `addons/pro/assets/vendor/`). Every package keeps its upstream `LICENSE` file in place. The complete attribution index — package · version · license · upstream URL · copyright holder — lives in [`CREDITS.md`](../../CREDITS.md) at the repository root.
+
+The in-product surface for Pro npm packages is the **NV oOS → Pro Packages** admin page, which renders status alongside upstream URL, license, and copyright for every Pro Node.js dependency.
+
+Headline acknowledgements:
+
+- **PHP:** TCPDF (Nicola Asuni), Dompdf, PHPSpreadsheet, PHPWord (PHPOffice), smalot/pdfparser, Masterminds/html5-php, sabberworm/php-css-parser, dvdoug/BoxPacker, maennchen/ZipStream-PHP, thiagoalessio/tesseract-ocr-for-php.
+- **JavaScript:** Sharp (lovell), pdfkit, pdf-lib, exceljs, docx (dolanmiu), tesseract.js (naptha), pdf.js (Mozilla), Cheerio, Stripe, Twitter API v2 (PLhery), Turf.js, KaTeX, mathjs, MJML, axios, validator.js, libphonenumber-js, qrcode (soldair), Remotion (custom license — see remotion.dev/license).
+- **Bundled Agent Skills:** curated from [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) (© Soczó Kristóf, MIT) — see `addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`.
+- **Tier 5 — Chat Service Utilities (May 2026):** `@nvdigitalsolutions/nvoos-client-tools`, `nvoos-chat-memory`, `nvoos-attachments`, `nvoos-cron-status`, `nvoos-transcription` — all MIT, © NV Digital Solutions. Surfaced on the **NV oOS → Pro Packages** admin screen.
+- **Tier 4 — Browser-AI Runtime (April 2026):** `@nvdigitalsolutions/nvoos-llm-worker`, `nvoos-model-loader`, `nvoos-transformers-client` — all MIT, © NV Digital Solutions.

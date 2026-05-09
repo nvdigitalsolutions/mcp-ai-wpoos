@@ -7,7 +7,7 @@
  * bundled Cornerstone3D ESM modules.
  *
  * @package NV_oOS_Cornerstone3D
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Core singleton for the NV oOS Cornerstone3D Addon.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Cornerstone3D {
 

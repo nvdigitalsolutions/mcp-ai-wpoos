@@ -233,6 +233,8 @@ class WP_MCP_AI_Model_Discovery_Service {
 			'huggingface' => 'huggingface_api_key',
 			'nvidia'      => 'nvidia_api_key',
 			'cloudflare'  => 'cloudflare_api_token',
+			'deepseek'    => 'deepseek_api_key',
+			'openrouter'  => 'openrouter_api_key',
 		);
 		foreach ( $keys as $provider => $key ) {
 			if ( ! empty( $settings[ $key ] ) ) {

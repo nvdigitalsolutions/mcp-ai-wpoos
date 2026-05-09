@@ -1663,6 +1663,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_lm_studio_section'
 			);
 
+			add_settings_field(
+				'lm_studio_api_key',
+				__( 'LM Studio API Key (Optional)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_lm_studio_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_lm_studio_section'
+			);
+
+			add_settings_field(
+				'lm_studio_use_native_api',
+				__( 'Use Native API (/api/v0)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_lm_studio_use_native_api_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_lm_studio_section'
+			);
+
 			add_settings_section(
 				'wp_mcp_ai_authentication_section',
 				__( 'Authentication', 'mcp-ai-wpoos' ),
@@ -2452,6 +2468,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			if ( isset( $settings['lm_studio_model'] ) ) {
 				$clean['lm_studio_model'] = trim( sanitize_text_field( $settings['lm_studio_model'] ) );
 			}
+
+			if ( isset( $settings['lm_studio_api_key'] ) ) {
+				$clean['lm_studio_api_key'] = trim( sanitize_text_field( $settings['lm_studio_api_key'] ) );
+			}
+
+			$clean['lm_studio_use_native_api'] = ! empty( $settings['lm_studio_use_native_api'] );
 
 			if ( isset( $settings['default_assistant'] ) ) {
 				$clean['default_assistant'] = absint( $settings['default_assistant'] );
@@ -3877,6 +3899,32 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		<button type="button" id="wp-mcp-ai-fetch-lm-studio-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'mcp-ai-wpoos' ); ?></button>
 		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your LM Studio server.', 'mcp-ai-wpoos' ); ?></p>
 		<div id="wp-mcp-ai-lm-studio-models-list" style="margin-top: 10px;"></div>
+			<?php
+		}
+
+		/**
+		 * Render the LM Studio API key field.
+		 */
+		public function render_lm_studio_api_key_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_api_key]" value="<?php echo esc_attr( $settings['lm_studio_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Optional: enter a bearer token when your LM Studio server has API-key authentication enabled (LM Studio 0.3.6+). Leave empty for open access.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the "use native /api/v0 endpoint" checkbox.
+		 */
+		public function render_lm_studio_use_native_api_field() {
+			$settings = self::get_settings();
+			$checked  = ! empty( $settings['lm_studio_use_native_api'] );
+			?>
+		<label>
+			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_use_native_api]" value="1" <?php checked( $checked ); ?> />
+			<?php esc_html_e( 'Use the /api/v0 endpoint surface for richer model metadata and per-request telemetry stats', 'mcp-ai-wpoos' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, model listing returns architecture, quantization, context size, and capability flags. Chat completions return performance stats (tokens/sec, time-to-first-token). Off by default to preserve backwards compatibility.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 

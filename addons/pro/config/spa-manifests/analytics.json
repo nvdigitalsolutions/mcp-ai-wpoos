@@ -1,0 +1,41 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "analytics",
+	"label": "Analytics",
+	"icon": "chart-bar",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "manage_options",
+	"resources": [
+		{
+			"name": "reports",
+			"label": "Reports",
+			"endpoint": "/analytics/reports",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",         "type": "integer",  "label": "ID",        "readonly": true },
+				{ "name": "title",      "type": "string",   "label": "Title",     "required": true },
+				{ "name": "kind",       "type": "enum",     "label": "Kind",      "options": ["traffic","conversion","cohort","funnel","custom"] },
+				{ "name": "window",     "type": "enum",     "label": "Window",    "options": ["1d","7d","30d","90d","ytd","all"] },
+				{ "name": "updated_at", "type": "datetime", "label": "Updated",   "readonly": true }
+			]
+		},
+		{
+			"name": "metrics",
+			"label": "Metrics",
+			"endpoint": "/analytics/metrics",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",        "type": "integer",  "label": "ID",       "readonly": true },
+				{ "name": "name",      "type": "string",   "label": "Metric",   "required": true },
+				{ "name": "value",     "type": "number",   "label": "Value" },
+				{ "name": "delta_pct", "type": "number",   "label": "Δ %" },
+				{ "name": "captured_at","type": "datetime","label": "Captured", "readonly": true }
+			]
+		}
+	],
+	"views": [
+		{ "name": "reports_list", "type": "table", "resource": "reports", "default": true, "label": "Reports" },
+		{ "name": "metrics_list", "type": "table", "resource": "metrics",                  "label": "Metrics" }
+	]
+}

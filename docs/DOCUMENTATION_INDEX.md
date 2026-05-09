@@ -1,14 +1,28 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 27, 2026  
-**Plugin Version:** 1.1.11  
+**Last Updated:** May 6, 2026  
+**Plugin Version:** 1.1.16  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
-> **📌 APRIL 27, 2026 UPDATE:** 🛡️ **APRIL 2026 SECURITY AUDIT SUMMARY, PRODUCTION VENDOR AUTOLOAD, VEO 3.1 SEED FIX**
+> **📌 MAY 6, 2026 UPDATE (v1.1.16):** 🛠️ **SAAS CONTROLLER ADDON (v0.1.0) + STRUCTURED LOGGING INTEGRATION**
+> - **SaaS Controller Addon** (`addons/saas-controller/`, v0.1.0) — operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane. All 11 phases shipped. New reference doc: [`docs/saas-controller.md`](saas-controller.md).
+> - **Structured Logging Integration** (PR #4849) — `WP_MCP_AI_Logger` integrated across `WP_MCP_AI_Agent_Memory_CCT_Bridge`, `WP_MCP_AI_Transcript_Mining_Job`, Algorave, Canvas, Webchat, Fantasy Football, Graphify, SaaS Controller addons, and core admin/service components. New test classes: `test-agent-memory-cct-bridge-logging.php`, `test-transcript-mining-job-logging.php`.
+> - **Versioning** — bumped to 1.1.16 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
+
+> **📌 MAY 5, 2026 UPDATE (v1.1.15):** 🔌 **NEW PROVIDERS (OPENROUTER + DEEPSEEK), ORCHESTRATION PHASES 1–7, LLM HARNESSING GA, OBSERVABILITY UI, GRAPHIFY DATA-SOURCE BRIDGE**
+> - **New AI providers** — OpenRouter (`WP_MCP_AI_OpenRouter_Client`), DeepSeek (`WP_MCP_AI_DeepSeek_Client`), Kimi K2.6, Qwen 3.6 added. LM Studio gains native cURL SSE streaming.
+> - **Orchestration Phases 1–7 re-landed** — HITL approval queue, prompt-injection guardrail (Layer I), structured output, OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, Pro team budget manager. All JetEngine CCT bootstraps now on `init` priority 11+.
+> - **Observability UI** — Observability dashboard under **Orchestration** tab; OTLP endpoint + token configurable in **Tools → Connections**.
+> - **LLM Harnessing Subsystem (Layers A–H)** ships GA — seven opt-in epistemic layers. Reference: [`docs/llm-harness.md`](llm-harness.md).
+> - **Chat-client Memory Bridge G-series** — complete with site-wide admin toggle in **Orchestration → Settings**.
+> - **Retroactive Transcript Mining** — three stuck-job root causes fixed (PRs #4804 #4826). Troubleshooting guide added to [`docs/features/memory/transcript-mining.md`](features/memory/transcript-mining.md).
+> - **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace edges, external `$wpdb` tables. New **Sources (CPT / CCT)** tab on Knowledge Graph settings page.
+> - **Stability sweep** — workflow-not-found, JetEngine CCT prefix, credential nonces, multi-agent dashboard TypeError, site-health polyfill, README TOC anchors.
+> - **Versioning** — bumped to 1.1.15 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`, `docs/QUICK_REFERENCE.md`, `docs/orchestration-reference.md`.
 > - **April 2026 Security Audit Summary** (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](compliance/SECURITY_AUDIT_2026_04.md) publishes the consolidated summary of the nine audit deliverables under [`docs/audit/2026-04/`](audit/2026-04/). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
 > - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
 > - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0; Veo 3.1 rejects it (PR #4735).
@@ -306,6 +320,27 @@ This document provides a comprehensive index of all documentation available for 
 > **📌 DECEMBER 29, 2025 UPDATE**: Comprehensive documentation review completed - 659 files reviewed, 100% feature coverage verified, zero significant gaps found. Overall documentation grade A (95/100). See [Documentation Review Summary](DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Review](implementation-history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md) for details.
 
 > **📌 DECEMBER 25, 2025 UPDATE**: Complete codebase review performed - Full PHP/JS linting, security scan, architecture assessment. Overall grade A- (92/100) - Production Ready. See [Comprehensive Code Review](implementation-history/2025/code-reviews/COMPREHENSIVE_CODE_REVIEW_2025-12-25.md) and [Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-25.md) for details.
+
+---
+
+## 🆕 May 2026 — Phase 7 Gap-Fill: Orchestration Hub, Platform Comparison, Quickstart Workflow
+
+### New documents (Phase 7 gap-fill)
+
+- **[docs/orchestration-reference.md](orchestration-reference.md)** ⭐ **NEW** — Canonical orchestration documentation hub. 2-paragraph NV oOS overview, links to every orchestration-relevant doc, full Phase 1 Observability reference (Run Timeline, Layer I Prompt Injection Detector, Structured Output Guardrail, OTel span exporter), full Phase 2 HITL reference (`request_user_approval` tool, `WP_MCP_AI_Approval_Queue`, REST `/mcp-ai/v1/approvals/*`, admin Approvals page), and Phase 3–6 roadmap table. Distinct from [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) (the deep infrastructure reference).
+- **[docs/comparisons/orchestration-platform-comparison.md](orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
+- **[docs/quickstart-workflow.md](quickstart-workflow.md)** ⭐ **NEW** — "Build your first workflow in 10 minutes" tutorial. Creates an assistant, enables `write_post` + `request_user_approval`, writes a system prompt, triggers the HITL loop from the chat UI, reviews the approval request in **NV oOS → Approvals**, approves, and watches the post publish. Welcoming tone; H2/H3 headings, numbered steps, code blocks.
+
+---
+
+## 🆕 May 2026 — LLM Harnessing GA, Slash Commands, Chat Memory Drawer, Transcript Mining, Pro Packages Tier 5
+
+### New and updated documents (May 3–4, 2026)
+
+- **[docs/llm-harness.md](llm-harness.md)** ⭐ **UPDATED** — LLM Harnessing Subsystem Layers A–H end-to-end reference, Quick Start, harness profile schema, all hooks, Pro Layer H curriculum export.
+- **[docs/features/memory/transcript-mining.md](features/memory/transcript-mining.md)** ⭐ **NEW** — Retroactive Transcript Mining: background job, REST API (3 endpoints), `mine_agent_memory` `transcripts` source, provenance metadata, de-duplication, filters, admin UI, PHPUnit coverage.
+- **[docs/features/memory/chat-client-integration.md](features/memory/chat-client-integration.md)** ⭐ **UPDATED** — G-series completion (G2 audit tab, G3 badge, G6 pagehide, G8 SSE frame, G11 export); two-gates section (`wp_mcp_ai_chat_memory_enabled` filter + per-user meta).
+- **[docs/features/slash-commands-guide.md](features/slash-commands-guide.md)** ⭐ **NEW** — Complete reference for all 24 base + 8 Pro slash commands with capability, aliases, and description. Replaces the dated Phase 1 guide for day-to-day reference.
 
 ---
 
@@ -1132,6 +1167,15 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [cloudflare-tunnel-setup.md](getting-started/installation-setup/cloudflare-tunnel-setup.md) | Cloudflare Tunnel setup for exposing local AI services securely (16KB) | Admins |
 | [REMOTE_CLIENT_TESTING_SUMMARY.md](implementation-history/2025/summaries/REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
 | [lm-studio-testing.md](getting-started/quick-starts/lm-studio-testing.md) | LM Studio specific testing | Developers |
+
+### SaaS Setup (NV oOS Cloud)
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [saas-controller.md](saas-controller.md) | **NEW (v1.1.16):** SaaS Controller Addon reference — all 11 phases, admin UI, REST API (19 routes), filters, data storage, build instructions | Operators/Devs |
+| [SAAS_SETUP_GUIDE.md](SAAS_SETUP_GUIDE.md) | Industry-standard SaaS install/setup guide for NV oOS Cloud — prerequisites, account provisioning, connect tokens, billing, security, runbook | Operators/Admins |
+| [features/nv-cloud.md](features/nv-cloud.md) | NV oOS Cloud feature spec (plugin contract, hooks, constants) | Developers |
+| [../addons/cloud-worker/README.md](../addons/cloud-worker/README.md) | Cloudflare Worker source-of-truth (deploy commands, D1 schema) | Operators |
 
 ### Security & Authentication
 

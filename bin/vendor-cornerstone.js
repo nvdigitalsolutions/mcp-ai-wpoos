@@ -142,13 +142,25 @@ const entries = [
 	{
 		name: 'cornerstone-dicom-loader',
 		entry: 'entry-dicom-loader.js',
-		code: 'export * from "@cornerstonejs/dicom-image-loader";\n',
+		// Statically import `dicom-parser` before re-exporting the dicom-image-loader.
+		// This guarantees esbuild traces and inlines dicom-parser into the bundle as
+		// a real ESM module — the `import` statement creates a static dependency
+		// edge that cannot be elided.  Re-exporting `@cornerstonejs/dicom-image-loader`
+		// alone is not sufficient because the loader's published dist is a UMD
+		// wrapper that references `dicom-parser` through CommonJS detection
+		// branches; some esbuild paths emit a runtime `__require("dicom-parser")`
+		// shim for those references which throws
+		// "Dynamic require of \"dicom-parser\" is not supported" at runtime.
+		// The static import primes the bundler so the dicom-parser module is
+		// always present in the output graph, eliminating the CJS shim path.
+		code:
+			'import "dicom-parser";\n' +
+			'export * from "@cornerstonejs/dicom-image-loader";\n',
 		// Only @cornerstonejs/core is kept external so tools and dicom-loader
 		// share a single core instance via the importmap.  dicom-parser and
-		// xmlbuilder2 are CommonJS internally; externalising them causes
-		// esbuild to emit a runtime `__require()` shim that throws
-		// "Dynamic require of \"dicom-parser\" is not supported".  Inlining
-		// them (~140 KB) keeps the bundle ESM-pure and reliable.
+		// xmlbuilder2 are CommonJS internally and must NOT be externalised —
+		// externalising them causes esbuild to emit the `__require()` shim
+		// described above.  Inlining them (~140 KB) keeps the bundle ESM-pure.
 		external: [ '@cornerstonejs/core' ],
 	},
 ];

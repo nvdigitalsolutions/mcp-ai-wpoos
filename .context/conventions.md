@@ -165,6 +165,28 @@ Every class, method, and function **must** have a PHPDoc block:
  */
 ```
 
+### Third-Party Attribution Header (when applicable)
+
+If a file is **derived from**, **heavily inspired by**, or **wraps** an upstream open-source project, add `@link` and `@credit` tags to the file-level docblock so the source of the idea or code is preserved:
+
+```php
+/**
+ * Class summary.
+ *
+ * @link    <upstream URL>
+ * @credit  <upstream project name> by <author> (<license>)
+ * @package WP_MCP_AI
+ */
+```
+
+Use this pattern for:
+
+- Wrappers around vendored libraries (e.g. Strudel, Cytoscape, Konva integration glue).
+- Files that materially derive from an upstream project (e.g. the agent-memory subsystem citing MemPalace).
+- Tool classes that adapt or implement an external protocol or specification.
+
+Do **not** apply this header to trivial utility files that merely call a vendored library — one citation at the top of the wrapper file is enough. The full repo-wide attribution index lives in [`CREDITS.md`](../CREDITS.md) at the repository root.
+
 ## Security Requirements (Always Apply)
 
 ### Input Sanitization

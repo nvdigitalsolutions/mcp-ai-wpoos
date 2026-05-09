@@ -14,11 +14,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
+require_once WP_MCP_AI_PATH . 'includes/markup/interface-wp-mcp-ai-markup-aware-tool.php';
 
 /**
  * Crop images to a specific region or aspect ratio.
+ *
+ * Implements {@see WP_MCP_AI_Markup_Aware_Tool_Interface} so the LLM
+ * can defer the crop region to the user. When `request_user_crop` is
+ * set and no manual `x/y/width/height` (or `aspect_ratio`) is
+ * provided, the tool short-circuits the agentic loop with a
+ * `crop`-mode markup elicitation. The user's painted rectangle is
+ * rasterized to a `crop_rect` artifact, denormalized to pixel
+ * coordinates if necessary, and fed back into `execute()`.
  */
-class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Markup_Aware_Tool_Interface {
 
 	/**
 	 * {@inheritdoc}
@@ -50,36 +59,41 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'x'            => array(
+					'x'                 => array(
 						'type'        => 'integer',
 						'description' => __( 'X coordinate of the top-left corner of the crop region (in pixels). Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
 					),
-					'y'            => array(
+					'y'                 => array(
 						'type'        => 'integer',
 						'description' => __( 'Y coordinate of the top-left corner of the crop region (in pixels). Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
 					),
-					'width'        => array(
+					'width'             => array(
 						'type'        => 'integer',
 						'description' => __( 'Width of the crop region in pixels. Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 					),
-					'height'       => array(
+					'height'            => array(
 						'type'        => 'integer',
 						'description' => __( 'Height of the crop region in pixels. Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 					),
-					'aspect_ratio' => array(
+					'aspect_ratio'      => array(
 						'type'        => 'string',
 						'description' => __( 'Target aspect ratio for center crop (e.g., "16:9", "4:3", "1:1"). Alternative to manual crop.', 'mcp-ai-wpoos' ),
 						'enum'        => array( '1:1', '16:9', '4:3', '3:2', '2:3', '9:16', '3:4' ),
 					),
-					'position'     => array(
+					'position'          => array(
 						'type'        => 'string',
 						'description' => __( 'Crop position when using aspect ratio: center, top, bottom, left, right.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right' ),
 						'default'     => 'center',
+					),
+					'request_user_crop' => array(
+						'type'        => 'boolean',
+						'description' => __( 'When true and no manual x/y/width/height (and no aspect_ratio) is supplied, pause execution and ask the user to draw the crop rectangle on the image in chat. The painted rectangle is converted to pixel coordinates automatically.', 'mcp-ai-wpoos' ),
+						'default'     => false,
 					),
 				),
 				$this->get_output_format_parameter_schema()
@@ -367,5 +381,114 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			'width'  => $crop_width,
 			'height' => $crop_height,
 		);
+	}
+
+	/**
+	 * Decide whether to elicit a crop rectangle from the user.
+	 *
+	 * Returns a markup request when:
+	 *  - `request_user_crop` is true; and
+	 *  - the caller did not already supply pixel `x/y/width/height`; and
+	 *  - the caller did not supply an `aspect_ratio` (which has its own
+	 *    deterministic crop math); and
+	 *  - the source image can be resolved to a WordPress attachment.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return WP_MCP_AI_Markup_Request|null
+	 */
+	public function needs_markup( array $arguments, array $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Markup_Request' ) ) {
+			return null;
+		}
+		if ( empty( $arguments['request_user_crop'] ) ) {
+			return null;
+		}
+		// Caller already specified the crop.
+		if ( ! empty( $arguments['aspect_ratio'] ) ) {
+			return null;
+		}
+		if ( isset( $arguments['x'], $arguments['y'], $arguments['width'], $arguments['height'] ) ) {
+			return null;
+		}
+
+		// Enrich and resolve the source attachment without side effects.
+		$enriched      = $this->enrich_arguments_from_messages( $arguments, $context );
+		$attachment_id = isset( $enriched['attachment_id'] ) ? absint( $enriched['attachment_id'] ) : 0;
+		if ( $attachment_id <= 0 && ! empty( $enriched['url'] ) && method_exists( $this, 'resolve_attachment_id_from_url' ) ) {
+			$resolved = $this->resolve_attachment_id_from_url( (string) $enriched['url'] );
+			if ( is_int( $resolved ) && $resolved > 0 ) {
+				$attachment_id = $resolved;
+			}
+		}
+		if ( $attachment_id <= 0 || ! wp_attachment_is_image( $attachment_id ) ) {
+			return null;
+		}
+
+		$meta = wp_get_attachment_metadata( $attachment_id );
+		$w    = isset( $meta['width'] ) ? (int) $meta['width'] : 0;
+		$h    = isset( $meta['height'] ) ? (int) $meta['height'] : 0;
+
+		try {
+			return new WP_MCP_AI_Markup_Request(
+				array(
+					'tool_slug'      => $this->get_slug(),
+					'target_type'    => 'image',
+					'mode'           => 'crop',
+					'target'         => array(
+						'attachment_id' => $attachment_id,
+						'width'         => $w,
+						'height'        => $h,
+					),
+					'instructions'   => __( 'Drag a rectangle around the area to keep. Everything outside the rectangle will be cropped away.', 'mcp-ai-wpoos' ),
+					'tool_arguments' => $arguments,
+					'tool_context'   => $context,
+					'assistant_id'   => isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0,
+				)
+			);
+		} catch ( Exception $e ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Resume execution with a user-painted crop rectangle.
+	 *
+	 * The rasterizer returns `crop_rect` as `{x, y, width, height,
+	 * normalized}`. When `normalized` is true the coordinates are in
+	 * the [0,1] space relative to the source image dimensions and we
+	 * convert them to pixels using the request target. The elicitation
+	 * flag is then cleared so the recursion does not re-trigger.
+	 *
+	 * @param array                   $arguments Original tool arguments.
+	 * @param WP_MCP_AI_Markup_Result $result    Validated markup result.
+	 * @param array                   $context   Execution context.
+	 * @return mixed Tool result.
+	 */
+	public function consume_markup( array $arguments, WP_MCP_AI_Markup_Result $result, array $context ) {
+		$rect = $result->get_artifact( 'crop_rect', array() );
+		if ( is_array( $rect ) && isset( $rect['width'], $rect['height'] ) && $rect['width'] > 0 && $rect['height'] > 0 ) {
+			$normalized = ! empty( $rect['normalized'] );
+			if ( $normalized ) {
+				$target = $result->get_request()->get_target();
+				$img_w  = isset( $target['width'] ) ? (int) $target['width'] : 0;
+				$img_h  = isset( $target['height'] ) ? (int) $target['height'] : 0;
+				if ( $img_w > 0 && $img_h > 0 ) {
+					$arguments['x']      = (int) round( (float) $rect['x'] * $img_w );
+					$arguments['y']      = (int) round( (float) $rect['y'] * $img_h );
+					$arguments['width']  = max( 1, (int) round( (float) $rect['width'] * $img_w ) );
+					$arguments['height'] = max( 1, (int) round( (float) $rect['height'] * $img_h ) );
+				}
+			} else {
+				$arguments['x']      = (int) round( (float) $rect['x'] );
+				$arguments['y']      = (int) round( (float) $rect['y'] );
+				$arguments['width']  = max( 1, (int) round( (float) $rect['width'] ) );
+				$arguments['height'] = max( 1, (int) round( (float) $rect['height'] ) );
+			}
+		}
+		// Prevent infinite re-elicitation on the recursive call.
+		$arguments['request_user_crop'] = false;
+
+		return $this->execute( $arguments, $context );
 	}
 }

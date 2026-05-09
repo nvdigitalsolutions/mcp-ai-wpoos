@@ -84,7 +84,10 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		$max_nodes = isset( $arguments['max_nodes'] ) ? max( 1, min( 200, absint( $arguments['max_nodes'] ) ) ) : 50;
 
 		if ( ! $question ) {
-			return array( 'success' => false, 'error' => __( 'A question or search keyword is required.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'A question or search keyword is required.', 'nvoos-graphify' ),
+			);
 		}
 
 		// Find seed nodes via label search.
@@ -101,12 +104,12 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		$all_node_ids = array();
 		$all_edges    = array();
 		foreach ( $seeds as $seed ) {
-			$subgraph     = NV_oOS_Graphify_Analyzer::traverse( $seed->node_id, $depth, $mode, $max_nodes );
+			$subgraph = NV_oOS_Graphify_Analyzer::traverse( $seed->node_id, $depth, $mode, $max_nodes );
 			foreach ( $subgraph['nodes'] as $n ) {
 				$all_node_ids[ $n->node_id ] = $n;
 			}
 			foreach ( $subgraph['edges'] as $e ) {
-				$ekey = $e->source_node_id . '|' . $e->target_node_id . '|' . $e->relation;
+				$ekey               = $e->source_node_id . '|' . $e->target_node_id . '|' . $e->relation;
 				$all_edges[ $ekey ] = $e;
 			}
 		}
@@ -129,7 +132,14 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 			'question'   => $question,
 			'mode'       => $mode,
 			'depth'      => $depth,
-			'seed_nodes' => array_map( function ( $n ) { return array( 'node_id' => $n->node_id, 'label' => $n->label ); }, $seeds ),
+			'seed_nodes' => array_map(
+				function ( $n ) {
+					return array(
+						'node_id' => $n->node_id,
+						'label'   => $n->label,
+					); },
+				$seeds
+			),
 			'node_count' => count( $nodes ),
 			'edge_count' => count( $edges ),
 			'nodes'      => $nodes,

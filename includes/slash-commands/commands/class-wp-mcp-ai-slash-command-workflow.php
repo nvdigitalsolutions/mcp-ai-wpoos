@@ -621,6 +621,24 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			);
 		}
 
+		// Load orchestrator workflows (built-in multi-step workflows managed by the orchestrator).
+		if ( function_exists( 'wp_mcp_ai_get_workflow_orchestrator' ) ) {
+			$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
+			if ( $orchestrator ) {
+				foreach ( $orchestrator->get_workflows() as $slug => $info ) {
+					if ( ! isset( $workflows[ $slug ] ) ) {
+						$full               = $orchestrator->get_workflow( $slug );
+						$workflows[ $slug ] = array(
+							'title'       => $info['name'],
+							'description' => $info['description'],
+							'steps'       => isset( $full['steps'] ) ? $full['steps'] : array(),
+							'source'      => 'orchestrator',
+						);
+					}
+				}
+			}
+		}
+
 		// Load custom workflows from uploads directory.
 		$upload_dir   = wp_upload_dir();
 		$workflow_dir = $upload_dir['basedir'] . '/mcp-ai/workflows';
@@ -666,6 +684,28 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		if ( isset( $templates[ $workflow_name ] ) ) {
 			return $templates[ $workflow_name ];
+		}
+
+		// Check orchestrator workflows (e.g. ai_tool_setup, content_pipeline).
+		if ( function_exists( 'wp_mcp_ai_get_workflow_orchestrator' ) ) {
+			$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
+			if ( $orchestrator ) {
+				$orchestrator_workflow = $orchestrator->get_workflow( $workflow_name );
+				if ( $orchestrator_workflow ) {
+					// Normalise step format: the orchestrator uses 'command' while this
+					// slash command expects 'task'. Rename the key so show_workflow() and
+					// visualize_workflow() work without further changes.
+					if ( ! empty( $orchestrator_workflow['steps'] ) && is_array( $orchestrator_workflow['steps'] ) ) {
+						foreach ( $orchestrator_workflow['steps'] as &$step ) {
+							if ( isset( $step['command'] ) && ! isset( $step['task'] ) ) {
+								$step['task'] = $step['command'];
+								unset( $step['command'] );
+							}
+						}
+					}
+					return $orchestrator_workflow;
+				}
+			}
 		}
 
 		// Load from custom workflows.

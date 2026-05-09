@@ -7,7 +7,7 @@
  * for the embedded AI addon.
  *
  * @package NV_oOS_Embedded
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Core singleton for the NV oOS Embedded AI Addon.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Addon class follows NV_oOS_ naming convention.
  * phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid -- Matches NV_oOS_Algorave convention.
@@ -34,7 +34,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Register all WordPress hooks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -46,7 +46,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Fired on plugins_loaded — verify base plugin and register hooks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -83,7 +83,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Show admin notices when base plugin is not active.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -101,7 +101,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Check whether the embedded addon is enabled.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */
@@ -116,7 +116,7 @@ class NV_oOS_Embedded {
 	 * Bridges the language model router's `wp_mcp_ai_embedded_chat_completion` filter
 	 * to the actual embedded client implementation.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param mixed $result   Current result (null if not yet handled).
 	 * @param array $messages Chat messages array.
@@ -143,7 +143,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Check if embedded provider is available.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param bool $available Current availability status.
 	 * @return bool True if embedded provider is available.
@@ -155,7 +155,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Check if a model slug is a server-side embedded model.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param bool   $is_server Current server model status.
 	 * @param string $model     Model slug to check.
@@ -171,7 +171,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Get embedded client configuration for REST endpoint.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param array $config       Current config array.
 	 * @param int   $assistant_id Assistant ID.
@@ -188,7 +188,7 @@ class NV_oOS_Embedded {
 	 * Hooked into wp_mcp_ai_register_embedded_scripts to let the addon register
 	 * scripts from its own assets directory.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -247,7 +247,7 @@ class NV_oOS_Embedded {
 	 *
 	 * Called via the wp_mcp_ai_enqueue_embedded_scripts action from the shortcode.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param bool $needs_embedded Whether embedded provider scripts are needed.
 	 * @param bool $has_tools      Whether the assistant has tools configured.
@@ -272,7 +272,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Conditionally load webchat integration.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -315,7 +315,7 @@ class NV_oOS_Embedded {
 	/**
 	 * Register webchat tools with the oOS tool registry.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param object $registry WP_MCP_AI_Tool_Registry instance.
 	 * @return void

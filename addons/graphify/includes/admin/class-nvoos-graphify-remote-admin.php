@@ -182,6 +182,39 @@ class NV_oOS_Graphify_Remote_Admin {
 			</button>
 			<span id="nvoos-reindex-status" style="margin-left:8px;"></span>
 		</div>
+		<script>
+		(function($){
+			$(function(){
+				// Guard: avoid double-binding if the same handler is also rendered
+				// by the Remote tab modal markup on the same page load.
+				if ( window.nvoosGraphifyReindexBound ) { return; }
+				window.nvoosGraphifyReindexBound = true;
+
+				$(document).on('click', '#nvoos-reindex-btn', function(){
+					var btn    = $(this).prop('disabled', true);
+					var status = $('#nvoos-reindex-status').text('<?php echo esc_js( __( 'Reindexing…', 'nvoos-graphify' ) ); ?>');
+					$.post(ajaxurl, {action:'nvoos_graphify_reindex_embeddings', nonce:btn.data('nonce')}, function(res){
+						btn.prop('disabled', false);
+						if ( res && res.success ) {
+							var processed = (res.data && res.data.processed) || 0;
+							var failed    = (res.data && res.data.failed) || 0;
+							var msg       = '<?php echo esc_js( __( 'Done. Stored:', 'nvoos-graphify' ) ); ?> ' + processed;
+							if ( failed > 0 ) {
+								msg += ' · <?php echo esc_js( __( 'Failed:', 'nvoos-graphify' ) ); ?> ' + failed
+									+ ' (<?php echo esc_js( __( 'check OpenAI API key in NV oOS settings', 'nvoos-graphify' ) ); ?>)';
+							}
+							status.text(msg);
+						} else {
+							status.text('Error: ' + ((res && res.data) || 'unknown'));
+						}
+					}).fail(function(xhr){
+						btn.prop('disabled', false);
+						status.text('Error: ' + (xhr.statusText || 'request failed'));
+					});
+				});
+			});
+		}(jQuery));
+		</script>
 		<?php
 	}
 
@@ -515,7 +548,18 @@ class NV_oOS_Graphify_Remote_Admin {
 				var status = $('#nvoos-reindex-status').text('<?php echo esc_js( __( 'Reindexing…', 'nvoos-graphify' ) ); ?>');
 				$.post(ajaxurl, {action:'nvoos_graphify_reindex_embeddings', nonce:$(this).data('nonce')}, function(res){
 					btn.prop('disabled', false);
-					status.text(res.success ? ('<?php echo esc_js( __( 'Done. Processed:', 'nvoos-graphify' ) ); ?> ' + (res.data.processed||0)) : ('Error: '+(res.data||'unknown')));
+					if ( res && res.success ) {
+						var processed = (res.data && res.data.processed) || 0;
+						var failed    = (res.data && res.data.failed) || 0;
+						var msg       = '<?php echo esc_js( __( 'Done. Stored:', 'nvoos-graphify' ) ); ?> ' + processed;
+						if ( failed > 0 ) {
+							msg += ' · <?php echo esc_js( __( 'Failed:', 'nvoos-graphify' ) ); ?> ' + failed
+								+ ' (<?php echo esc_js( __( 'check OpenAI API key in NV oOS settings', 'nvoos-graphify' ) ); ?>)';
+						}
+						status.text(msg);
+					} else {
+						status.text('Error: ' + ((res && res.data) || 'unknown'));
+					}
 				});
 			});
 

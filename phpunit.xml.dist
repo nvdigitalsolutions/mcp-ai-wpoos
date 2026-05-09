@@ -8,12 +8,16 @@
         <testsuite name="WP MCP AI Plugin Test Suite">
             <directory suffix=".php">tests</directory>
             <directory suffix=".php">addons/pro/tests</directory>
+            <directory suffix=".php">addons/canvas-toolkit/tests</directory>
+            <directory suffix=".php">addons/media-studio/tests</directory>
+            <directory suffix=".php">addons/saas-controller/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>
             <exclude>tests/bootstrap.php</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>
+            <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
     <groups>

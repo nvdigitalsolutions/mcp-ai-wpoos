@@ -145,12 +145,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$main_submenu = $submenu[ self::PAGE_SLUG ];
 
 			// Define desired order: Getting Started (0), General Settings (10), Orchestration (20), Task Plans (30).
-			$ordered_items          = array();
-			$getting_started_item   = null;
-			$general_settings_item  = null;
-			$orchestration_item     = null;
-			$task_plans_item        = null;
-			$other_items            = array();
+			$ordered_items         = array();
+			$getting_started_item  = null;
+			$general_settings_item = null;
+			$orchestration_item    = null;
+			$task_plans_item       = null;
+			$other_items           = array();
 
 			// Categorize menu items.
 			foreach ( $main_submenu as $item ) {

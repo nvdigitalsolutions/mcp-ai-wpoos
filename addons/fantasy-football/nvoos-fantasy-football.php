@@ -3,21 +3,26 @@
  * Plugin Name: NV oOS Fantasy Football Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Fantasy Football extension for NV oOS. Provides ESPN and Yahoo Fantasy Sports API integration with team management, player research, trade analysis, league reports, and AI-powered team logo generation through the oOS chat interface. Requires NV oOS base plugin.
- * Version:     1.0.0
+ * Version:     0.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
- * License: GPLv3 or later
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * License: Proprietary
+ * License URI: https://nvdigitalsolutions.com/wpoos/license
  * Text Domain: nvoos-fantasy-football
  * Domain Path: /languages
  *
  * @package NV_oOS_Fantasy_Football
  *
+ * ⚠️ PROPRIETARY SOFTWARE
+ * This is commercial software licensed for authorized users only.
+ * Patent Pending (Application #19/410,504)
+ * © 2025 NV Digital Solutions - All Rights Reserved
+ *
  * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v3 or later.
+ * All rights reserved. This is proprietary software.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_FANTASY_FOOTBALL_VERSION', '1.0.0' );
+define( 'NVOOS_FANTASY_FOOTBALL_VERSION', '0.1.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_FANTASY_FOOTBALL_FILE', __FILE__ );
@@ -55,7 +60,7 @@ if ( is_admin() ) {
 /**
  * Check whether the NV oOS base plugin is active.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the base plugin is available.
  */
@@ -66,7 +71,7 @@ function nvoos_fantasy_football_is_base_active() {
 /**
  * Check whether the fantasy football addon is fully ready.
  *
- * @since 1.0.0
+ * @since 0.1.0
  *
  * @return bool True when the addon is operational.
  */

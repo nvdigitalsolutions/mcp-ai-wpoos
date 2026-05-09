@@ -20,7 +20,9 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-bas
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-memory-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-transcript-mining-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
@@ -421,9 +423,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tools_controller = new WP_MCP_AI_REST_Tools_Controller( $this, $this->authenticator, $this->validator );
 			$tools_controller->register_routes();
 
+			// Delegate chat-client ⇄ memory bridge to Chat Memory Controller (Phase 1).
+			$chat_memory_controller = new WP_MCP_AI_REST_Chat_Memory_Controller( $this->authenticator, $this->validator );
+			$chat_memory_controller->register_routes();
+
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
 			$teams_controller->register_routes();
+
+			// Delegate retroactive transcript-to-memory mining job routes.
+			$transcript_mining_controller = new WP_MCP_AI_REST_Transcript_Mining_Controller();
+			$transcript_mining_controller->register_routes();
 
 			// Delegate A2A protocol routes to A2A Controller.
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -2480,6 +2490,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			/**
+			 * Filter the resolved system prompt just before it is consumed by
+			 * the chat path. The harness Prompt Cue injector subscribes to
+			 * this hook to prepend cues from the assistant's harness profile.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param string $system_prompt The system prompt as resolved so far.
+			 * @param int    $assistant_id  Assistant post ID (0 if none).
+			 * @param array  $context       Surface context: { surface: 'rest_chat', request: WP_REST_Request }.
+			 */
+			$assistant_config['system_prompt'] = (string) apply_filters(
+				'wp_mcp_ai_resolved_system_prompt',
+				isset( $assistant_config['system_prompt'] ) ? (string) $assistant_config['system_prompt'] : '',
+				isset( $assistant_id ) ? (int) $assistant_id : 0,
+				array(
+					'surface' => 'rest_chat',
+					'request' => $request,
+				)
+			);
+
 			// If additional_tools are provided (for context-specific tools like research pages), merge them into the assistant's tools.
 			$additional_tools = $request->get_param( 'additional_tools' );
 			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
@@ -3208,6 +3239,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$iteration             = 0;
 			$tool_result_messages  = array();
 			$agentic_tool_messages = array();
+			$native_streaming_used = false; // True when LM Studio real-time SSE streaming is active.
 
 			// Send status for attachment processing if attachments are present.
 			// This provides user feedback when images or documents are being analyzed.
@@ -3282,6 +3314,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 			$messages = $preflight['messages'];
 			$options  = $preflight['options'];
+
+			// Resolved provider slug, used for LM Studio native streaming checks below.
+			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+
+			// Enable LM Studio real-time SSE streaming: inject stream_callback so that
+			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each
+			// content/reasoning token to the browser as it is generated.
+			if ( function_exists( 'curl_init' ) && 'lm_studio' === $resolved_provider ) {
+				$native_streaming_used      = true;
+				$options['stream']          = true;
+				$options['stream_callback'] = function ( $chunk ) {
+					$this->send_sse_event( 'message', $chunk );
+				};
+			}
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -3373,6 +3419,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->finish_sse();
 				return;
 			}
+
+			// Remove native-streaming options to prevent them from leaking to a
+			// different provider if a TPM-triggered model switch occurs in the loop.
+			unset( $options['stream'], $options['stream_callback'] );
 
 			// Agentic loop with streaming updates.
 			while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
@@ -3517,6 +3567,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'result'    => $display_result,
 						)
 					);
+
+					// G8 Phase 2 — emit a `memory_event` SSE frame mid-stream
+					// when the tool that just ran touched the agent-memory
+					// subsystem, so the chat client can announce a transient
+					// "🧠 Used / saved long-term memory." toast immediately
+					// instead of waiting for the assistant message to render.
+					$memory_event_action = $this->classify_memory_tool_action( $tool_name );
+					if ( null !== $memory_event_action ) {
+						$this->send_sse_event(
+							'memory_event',
+							array(
+								'action'    => $memory_event_action,
+								'tool_name' => $tool_name,
+								'tool_id'   => $tool_call_id,
+							)
+						);
+					}
 
 					// Create full tool message for frontend.
 					// JSON-encode the content to match the non-streaming path format.
@@ -3721,7 +3788,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Call LLM again with tool results.
+				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
+				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
+					$options['stream']          = true;
+					$options['stream_callback'] = function ( $chunk ) {
+						$this->send_sse_event( 'message', $chunk );
+					};
+				}
 				$response = $this->client->create_chat_completion( $messages, $options );
+				unset( $options['stream'], $options['stream_callback'] );
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
@@ -3836,7 +3912,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
-			if ( is_string( $thinking_text ) && '' !== $thinking_text ) {
+			// Skip when LM Studio native streaming was active — reasoning tokens were
+			// already forwarded in real time via the stream_callback.
+			if ( ! $native_streaming_used && is_string( $thinking_text ) && '' !== $thinking_text ) {
 				// Format thinking chunks based on provider for optimal client compatibility.
 				if ( 'openai' === $thinking_provider_format ) {
 					// Use OpenAI format for reasoning fields.
@@ -3920,7 +3998,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Send text content in chunks to simulate streaming (for better UX).
-			if ( is_string( $text_content ) && '' !== $text_content ) {
+			// Skip when LM Studio native streaming was active — content tokens were
+			// already forwarded in real time via the stream_callback.
+			if ( ! $native_streaming_used && is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
 				$content_formatter = function ( $chunk ) {
 					return array(
@@ -3935,7 +4015,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				};
 
 				$this->stream_text_chunks( $text_content, $content_formatter, 'text', $assistant_id );
-			} else {
+			} elseif ( ! $native_streaming_used ) {
 				// Log when no chunks are sent (helps diagnose streaming issues).
 				WP_MCP_AI_Logger::log_event(
 					'debug',
@@ -4047,6 +4127,44 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->send_sse_done();
 
 			$this->finish_sse();
+		}
+
+		/**
+		 * Classify a tool name as a memory-retrieving / memory-storing op.
+		 *
+		 * Mirrors the JS lists in `assets/js/chat-memory-drawer.js`. Used by the
+		 * SSE streaming path to emit `memory_event` frames mid-stream so the
+		 * chat client can announce a "🧠 Memory" toast as soon as the tool runs
+		 * (G8 Phase 2), rather than waiting for the assistant bubble to render.
+		 *
+		 * @since 1.1.14
+		 *
+		 * @param string $tool_name OpenAI-style tool function name.
+		 * @return string|null 'retrieved' / 'stored' / null when the tool is not
+		 *                     a memory tool.
+		 */
+		protected function classify_memory_tool_action( $tool_name ) {
+			if ( ! is_string( $tool_name ) || '' === $tool_name ) {
+				return null;
+			}
+			$retrieve_tools = array(
+				'recall_memory',
+				'wake_up_context',
+				'semantic_context_search',
+				'retrieve_agent_memory',
+			);
+			$store_tools    = array(
+				'store_agent_context',
+				'update_agent_memory',
+				'capture_memory',
+			);
+			if ( in_array( $tool_name, $retrieve_tools, true ) ) {
+				return 'retrieved';
+			}
+			if ( in_array( $tool_name, $store_tools, true ) ) {
+				return 'stored';
+			}
+			return null;
 		}
 
 		/**
@@ -4780,7 +4898,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			try {
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
-				$result = $tool->execute( $prepared_arguments, $context );
+				/**
+				 * Filter that allows interceptors (e.g. the markup subsystem) to
+				 * short-circuit tool execution. When the filter returns a non-null
+				 * value, that value is used as the tool result and `execute()` is
+				 * skipped.
+				 *
+				 * @since 1.3.0
+				 * @param mixed                    $short_circuit Default null.
+				 * @param WP_MCP_AI_Tool_Interface $tool          Tool being executed.
+				 * @param array                    $prepared_arguments Tool arguments.
+				 * @param array                    $context       Execution context.
+				 */
+				$short_circuit = apply_filters( 'wp_mcp_ai_pre_execute_tool', null, $tool, $prepared_arguments, $context );
+
+				if ( null !== $short_circuit ) {
+					$result = $short_circuit;
+				} else {
+					$result = $tool->execute( $prepared_arguments, $context );
+				}
 
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
@@ -9876,7 +10012,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
-				$result = $tool->execute( $arguments, $context );
+				/**
+				 * Filter that allows interceptors (e.g. the markup subsystem) to
+				 * short-circuit tool execution inside the agentic loop. When the
+				 * filter returns a non-null value, that value is used as the
+				 * tool result and `execute()` is skipped.
+				 *
+				 * @since 1.3.0
+				 * @param mixed                    $short_circuit Default null.
+				 * @param WP_MCP_AI_Tool_Interface $tool          Tool being executed.
+				 * @param array                    $arguments     Tool arguments.
+				 * @param array                    $context       Execution context.
+				 */
+				$short_circuit = apply_filters( 'wp_mcp_ai_pre_execute_tool', null, $tool, $arguments, $context );
+
+				if ( null !== $short_circuit ) {
+					$result = $short_circuit;
+				} else {
+					$result = $tool->execute( $arguments, $context );
+				}
 
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );

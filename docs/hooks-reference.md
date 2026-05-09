@@ -2,7 +2,7 @@
 
 > **Comprehensive reference for all action and filter hooks in the NV oOS plugin.**
 > Use hooks to extend, customize, or integrate with the plugin without modifying core code.
-> Last reviewed: April 2026.
+> Last reviewed: May 2026.
 
 ---
 
@@ -22,6 +22,10 @@
 12. [Crawler & Search Hooks](#crawler--search-hooks)
 13. [Video Generation Hooks](#video-generation-hooks)
 14. [Erlang C & Queue Operations Hooks](#erlang-c--queue-operations-hooks)
+15. [Markup Subsystem Hooks](#markup-subsystem-hooks)
+16. [LLM Harnessing Hooks](#llm-harnessing-subsystem-hooks)
+17. [Chat Memory Bridge Hooks](#chat-memory-bridge-hooks)
+18. [Transcript Mining Hooks](#transcript-mining-hooks)
 
 ---
 
@@ -935,5 +939,268 @@ Fires after `wp_mcp_ai_model_catalog_discovery` produces a fresh diff. Receives 
 ```php
 add_action( 'wp_mcp_ai_model_catalog_suggestions_updated', function ( $diff ) {
     // Notify ops channel, auto-apply additions, etc.
+} );
+```
+
+---
+
+## Markup Subsystem Hooks
+
+The markup subsystem (introduced in 1.3.0) lets tools pause the agentic loop, ask the user to draw on an image / region, and resume with the rasterised result. See `docs/markup-subsystem.md` for the end-to-end flow.
+
+### Filter: `wp_mcp_ai_markup_enabled`
+Master kill-switch, evaluated by `WP_MCP_AI_Markup_Loop_Interceptor::is_enabled()`. Default `true`. Return `false` to disable the loop interceptor entirely (existing pending requests still resolve through the REST controller, but no new ones are created).
+
+```php
+add_filter( 'wp_mcp_ai_markup_enabled', function ( $enabled ) {
+    if ( wp_is_maintenance_mode() ) {
+        return false;
+    }
+    return $enabled;
+} );
+```
+
+### Action: `wp_mcp_ai_markup_request_created`
+Fires when the loop interceptor has persisted a fresh request and is about to short-circuit the tool call back to the chat surface as a `markup_elicitation` SSE event.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$request` | `WP_MCP_AI_Markup_Request` | Immutable request value object — `request_id`, `tool_slug`, `mode`, `target_type`, `target`, `context`, `expires_at`. |
+| `$tool` | `object\|null` | The tool instance that triggered the request, or `null` for non-class invocations. |
+
+```php
+add_action( 'wp_mcp_ai_markup_request_created', function ( $request, $tool ) {
+    error_log( 'Markup request created for tool: ' . $request->get_tool_slug() );
+}, 10, 2 );
+```
+
+### Action: `wp_mcp_ai_markup_submitted`
+Fires inside `POST /markup/{request_id}` after the request has been loaded but before annotation validation runs. Use this for audit logging — the payload is still untrusted at this point.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$record` | `WP_MCP_AI_Markup_Request` | The pending request being resolved. |
+
+### Action: `wp_mcp_ai_markup_validated`
+Fires once the W3C Web Annotation envelope has passed `WP_MCP_AI_Markup_Validator::validate()` and is safe to consume. Receives the validator's normalised output.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$record` | `WP_MCP_AI_Markup_Request` | The request being resolved. |
+| `$cleaned` | `array` | Validator-normalised annotation array. |
+
+### Action: `wp_mcp_ai_markup_resolved`
+Fires exactly once per request lifecycle to indicate terminal state. The recorder + slash command + admin dashboard all subscribe to this hook via the `WP_MCP_AI_Markup_Telemetry` aggregator.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$record` | `WP_MCP_AI_Markup_Request` | The request being resolved. |
+| `$outcome` | `string` | One of `completed`, `cancelled`, `invalid`, `tool_error`. |
+
+```php
+add_action( 'wp_mcp_ai_markup_resolved', function ( $record, $outcome ) {
+    if ( 'completed' !== $outcome ) {
+        my_alerting_service_notify( $record->get_tool_slug(), $outcome );
+    }
+}, 10, 2 );
+```
+
+### Filter: `wp_mcp_ai_markup_widget_payload`
+Mutates the SSE payload sent to the chat canvas widget. Useful for adding tenant-specific defaults, branding strings, or extra widget hints.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$payload` | `array` | Widget payload — `request_id`, `mode`, `target_type`, `target`, `widget`, `expires_at`. |
+| `$request` | `WP_MCP_AI_Markup_Request` | The request being broadcast. |
+
+### Filter: `wp_mcp_ai_markup_mcp_elicitation`
+Mutates the MCP `elicitation/create` envelope sent to external MCP clients. Mirrors `wp_mcp_ai_markup_widget_payload` but for the over-the-wire MCP shape.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$elicitation` | `array` | MCP elicitation payload. |
+| `$request` | `WP_MCP_AI_Markup_Request` | The request being broadcast. |
+
+### Filter: `wp_mcp_ai_markup_rasterized_artifacts`
+Mutates the artifacts produced by `WP_MCP_AI_Markup_Rasterizer::rasterize()` before they are passed to the tool's `execute()` method as the `markup_artifacts` context entry. Use this to attach extra files (e.g. provenance manifests) or strip mask attachments before tool consumption.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$artifacts` | `array` | Rasteriser output — `mask_attachment_id`, `crop_box`, `region_polygon`, etc. |
+| `$annotation` | `array` | Validated annotation that produced the artifacts. |
+| `$request` | `WP_MCP_AI_Markup_Request` | The request being resolved. |
+
+### Filter: `wp_mcp_ai_recent_activity_types`
+Not markup-specific, but the markup-init bootstrap appends `markup_created`, `markup_submitted`, `markup_validated`, `markup_completed`, `markup_cancelled`, `markup_invalid`, and `markup_tool_error` to this list so the activity feed surfaces markup events when logging is enabled.
+
+---
+
+## LLM Harnessing Subsystem Hooks
+
+The LLM harnessing subsystem (`includes/harness/`) exposes hooks for every layer so addons can override prompt selection, scoring, retrieval ranking, and PII filtering without touching the base implementation.
+
+### Action: `wp_mcp_ai_register_prompt_cues`
+
+Fires the first time the `WP_MCP_AI_Prompt_Cue_Library` is touched, after the seven default cues are seeded. Register additional cue templates here.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$library` | `WP_MCP_AI_Prompt_Cue_Library` | Library singleton. Call `register()` to add cues. |
+
+```php
+add_action( 'wp_mcp_ai_register_prompt_cues', function ( $library ) {
+    $library->register( array(
+        'slug'         => 'show_your_work',
+        'label'        => 'Show Your Work',
+        'description'  => 'Require explicit derivation for math problems.',
+        'template'     => 'For every numeric step, show the derivation, not just the result.',
+        'task_classes' => array( 'math' ),
+    ) );
+} );
+```
+
+### Filter: `wp_mcp_ai_select_prompt_cue`
+
+Selects the cue slug applied for a given task class. Return an empty string to apply no cue.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$cue_slug` | `string` | Default cue slug (first registered cue for the task class). |
+| `$task_class` | `string` | Task class slug (`math`, `code`, `qa`, `rag`, `research`, `agentic`, `general`). |
+| `$assistant_id` | `int` | Assistant post ID, or `0` for global. |
+| `$model` | `string` | Model identifier (e.g. `gpt-4o`). |
+
+### Filter: `wp_mcp_ai_harness_profile`
+
+Mutates the resolved per-assistant harness profile after sanitization. Use this to enforce site-wide policy (e.g. force `cost_ceiling_usd` to a fixed value).
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$profile` | `array` | Sanitized harness profile. |
+| `$assistant_id` | `int` | Assistant post ID (`0` = global). |
+
+### Filter: `wp_mcp_ai_harness_tool_score`
+
+Mutates the score the Tool Router computes for a candidate tool against a task class. Pro overrides this with a learned model.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$score` | `float` | Default score from the base scoring rules. |
+| `$tool` | `WP_MCP_AI_Tool_Interface` | Tool instance. |
+| `$task_class` | `string` | Task class. |
+| `$assistant_prefs` | `array` | Per-assistant tool preferences (slug → weight). |
+| `$preset_weights` | `array` | Resolved preset-family weight map (`preset_slug → float [-5, 5]`). |
+
+### Filter: `wp_mcp_ai_harness_eval_generator`
+
+Supplies the eval generator callable used by the eval scheduler to produce test cases for a given eval suite. Return `null` (the default) to skip the suite without logging an error.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$generator` | `callable\|null` | Default `null` — no built-in generator; Pro registers its own. |
+| `$suite_slug` | `string` | Eval suite slug. |
+| `$assistant_id` | `int` | Assistant post ID. |
+
+### Action: `wp_mcp_ai_harness_eval_tick`
+
+WP-Cron action hook fired by `WP_MCP_AI_Harness_Eval_Scheduler` on its daily schedule. Receives no arguments; the scheduler discovers eligible assistants internally and dispatches suites via `wp_mcp_ai_harness_eval_generator`.
+
+---
+
+## Chat Memory Bridge Hooks
+
+The chat-client memory bridge (`WP_MCP_AI_REST_Chat_Memory_Controller` + `assets/js/chat-memory-drawer.js`) exposes hooks so developers can gate or modify memory bridge behaviour.
+
+### Filter: `wp_mcp_ai_chat_memory_enabled`
+
+Site-wide kill-switch for the chat-client memory bridge. Return `false` to disable all `/mcp-ai/v1/chat-memory/*` routes and the Memory Drawer for every user.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$enabled` | `bool` | Default `true`. |
+| `$user_id` | `int` | The requesting user ID (available from v1.x context). |
+
+```php
+// Disable chat memory on GDPR opt-out.
+add_filter( 'wp_mcp_ai_chat_memory_enabled', function ( $enabled, $user_id ) {
+    return ! user_has_opted_out_of_memory( $user_id );
+}, 10, 2 );
+```
+
+---
+
+## Transcript Mining Hooks
+
+The retroactive transcript mining subsystem (`WP_MCP_AI_Transcript_Mining_Job` + `mine_agent_memory` `transcripts` source) exposes filters for session selection, message processing, and de-duplication.
+
+### Filter: `wp_mcp_ai_mine_transcripts_sessions`
+
+Mutates the session list before retroactive transcript mining begins. Useful for excluding specific session types (e.g. guest sessions) or injecting additional keys.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$sessions` | `array` | Session key list (may include `'__auto__'` sentinel). |
+| `$query_args` | `array` | Raw `transcript_query` args from the job or tool call. |
+
+### Filter: `wp_mcp_ai_mine_transcripts_session_messages`
+
+Mutates the raw message array for a session before item extraction. Use this for redaction or filtering.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$messages` | `array` | Message objects for the session. |
+| `$session_key` | `string` | Session key. |
+
+### Filter: `wp_mcp_ai_mine_transcripts_dedupe_scan_limit`
+
+Overrides the number of most-recent memories scanned for de-duplication during `mine_agent_memory` with `source=transcripts`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$limit` | `int` | Default `1000`. |
+
+### Filter: `wp_mcp_ai_pro_curriculum_per_case_char_cap`
+
+(Pro) Overrides the maximum character count for a single fine-tune curriculum case exported by `WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$cap` | `int` | Default `16000`. |
+| `$suite_slug` | `string` | Eval suite slug. |
+
+### Filter: `wp_mcp_ai_retrieval_passages`
+
+Mutates the final ranked passages produced by `WP_MCP_AI_Retrieval_Harness::retrieve()` before they leave the harness. Useful for deduplicating against an external index or enforcing per-passage redaction.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$passages` | `array` | Top-k passages (each with `text`, `source`, `score`, `freshness`, `citation`). |
+| `$query` | `string` | Original query string. |
+| `$scope` | `array` | Scope hash (`wing`, `room`, `assistant_id`, `task_class`). |
+| `$context` | `array` | Tool execution context. |
+
+### Filter: `wp_mcp_ai_retrieval_claim_supported`
+
+Per-sentence predicate used by `WP_MCP_AI_Retrieval_Harness::verify_citations()`. Default implementation requires a shared 5-gram between the sentence and at least one passage. Override to substitute a semantic check.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$is_supported` | `bool` | Default decision. |
+| `$sentence` | `string` | Sentence under test. |
+| `$passages` | `array` | Passage list. |
+
+### Filter: `wp_mcp_ai_pii_filter_patterns`
+
+Adds or replaces the regex patterns used by `WP_MCP_AI_Pii_Filter::scrub()`. Each entry is an array of `[ regex, replacement_token ]`. Defaults cover emails, phones, SSNs, credit cards, and common API key prefixes.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$patterns` | `array` | Default patterns. |
+
+```php
+add_filter( 'wp_mcp_ai_pii_filter_patterns', function ( $patterns ) {
+    // Redact internal ticket IDs before persistence.
+    $patterns[] = array( '/JIRA-\d{3,}/', '[REDACTED_TICKET]' );
+    return $patterns;
 } );
 ```
