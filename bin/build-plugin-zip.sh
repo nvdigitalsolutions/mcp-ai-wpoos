@@ -216,6 +216,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.vscode' \
         --exclude '.bmad' \
         --exclude '.context' \
+        --exclude '.zed' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -276,7 +277,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
-        --exclude 'addons/pro' \
+        --exclude 'addons' \
         --exclude 'assets/examples' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
@@ -691,6 +692,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.vscode' \
         --exclude '.bmad' \
         --exclude '.context' \
+        --exclude '.zed' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -832,7 +834,15 @@ if [ "$BUILD_COMBINED" = true ]; then
     # and unminified versions when SCRIPT_DEBUG is enabled.
     # This provides better debugging experience while maintaining optimal production performance.
     echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
-    
+
+    # Remove non-pro toolkit addons from the combined build.
+    # Toolkit addons (chat-spa, canvas-toolkit, document-editor, etc.) are distributed
+    # as individual ZIPs via --toolkits and should not be bundled inside the combined package.
+    if [ -d "build/${COMBINED_SLUG}/addons" ]; then
+        find "build/${COMBINED_SLUG}/addons" -mindepth 1 -maxdepth 1 -type d ! -name 'pro' -exec rm -rf {} +
+        echo "✓ Removed non-pro toolkit addons from combined build (distributed separately)"
+    fi
+
     # ------------------------------------------------------------------
     # Prune tecnickcom/tcpdf (~28.7 MB) from the combined zip.
     #
