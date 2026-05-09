@@ -11,6 +11,19 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 230+ built-in tools.
 
+== Submission Scope ==
+
+This WordPress.org submission contains **only the base plugin** — every file in this ZIP lives outside the `addons/` directory of the upstream GitHub repository. The following addons are developed in the same repository but are **NOT** part of this submission and are distributed only via GitHub Releases (`-full.zip` artifact) or via separate sales channels:
+
+* `addons/pro` — NV oOS Pro (PHP 8.1+ extension; sold separately)
+* `addons/embedded` — Embedded device runtime
+* `addons/fantasy-football` — Fantasy Sports tooling
+* `addons/algorave`, `addons/canvas`, `addons/cornerstone3d`, `addons/graphify` — domain-specific add-ons
+* `addons/docs-hub`, `addons/chat-spa`, `addons/canvas-toolkit`, `addons/document-editor`, `addons/media-studio`, `addons/toolkit-shell` — React Single-Page-App add-ons
+* `addons/saas-controller`, `addons/cloud-worker` — server-side companion plugins
+
+If a code reviewer sees a path beginning with `addons/` in any reported finding, that finding is out of scope for this submission. The release pipeline (`.github/workflows/release.yml`) builds two artifacts: a base-only ZIP (this submission) and a separate full ZIP for GitHub. Both `.distignore` and the workflow's rsync exclusion list assert `addons/` is absent before any upload. See `SUBMISSION.md` in the upstream repository for the full payload manifest.
+
 == Description ==
 
 **NV Digital Open Operator System (oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
