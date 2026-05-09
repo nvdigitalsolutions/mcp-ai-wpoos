@@ -49,9 +49,12 @@
         "test": "vendor/bin/phpunit",
         "test:coverage": "vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage.xml",
         "test:coverage-dashboard": "bash bin/generate-coverage-dashboard.sh",
+        "test:gaps": "bash bin/find-untested-classes.sh",
+        "test:gaps:check": "bash bin/find-untested-classes.sh --check",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
         "ci:all": [
             "@lint:errors-only",
+            "@test:gaps:check",
             "@test:coverage"
         ]
     },
