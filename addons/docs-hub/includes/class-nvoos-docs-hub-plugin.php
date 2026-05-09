@@ -44,6 +44,10 @@ class NV_oOS_Docs_Hub_Plugin {
 		add_action( 'activated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
 		add_action( 'deactivated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
+
+		// Register the chunked-rebuild tick handler. Settings page
+		// registers itself when its file is loaded (admin context only).
+		NV_oOS_Docs_Hub_Rebuild_Pipeline::register();
 	}
 
 	/**
@@ -83,20 +87,44 @@ class NV_oOS_Docs_Hub_Plugin {
 	 * @return array
 	 */
 	public static function get_settings() {
-		return wp_parse_args(
-			get_option( self::OPTION_KEY, array() ),
+		$option = get_option( self::OPTION_KEY, null );
+
+		// Fresh install (option does not yet exist) → remote-first defaults.
+		// Existing installs keep their saved sources unchanged.
+		$default_sources = ( null === $option )
+			? array( 'remote' )
+			: array( 'base', 'addons', 'root' );
+
+		$parsed = wp_parse_args(
+			is_array( $option ) ? $option : array(),
 			array(
-				'enabled'         => true,
-				'sources'         => array( 'base', 'addons', 'root' ),
-				'context_enabled' => false,
-				'default_theme'   => 'auto',
-				'search_enabled'  => true,
-				'sidebar_enabled' => true,
-				'default_home'    => 'readme',
-				'github_repo_url' => '',
-				'remote_repos'    => array(),
+				'enabled'               => true,
+				'sources'               => $default_sources,
+				'context_enabled'       => false,
+				'default_theme'         => 'auto',
+				'search_enabled'        => true,
+				'sidebar_enabled'       => true,
+				'include_addon_readmes' => true,
+				'default_home'          => 'readme',
+				'github_repo_url'       => '',
+				'remote_repos'          => array(),
 			)
 		);
+
+		// Defensive: coerce remote_repos into a list of array rows. Anything that
+		// isn't an array (string / null / scalar from a partial migration) is dropped
+		// here so downstream renderers and the indexer never see a malformed row.
+		$raw_repos              = isset( $parsed['remote_repos'] ) && is_array( $parsed['remote_repos'] ) ? $parsed['remote_repos'] : array();
+		$parsed['remote_repos'] = array_values(
+			array_filter(
+				$raw_repos,
+				static function ( $row ) {
+					return is_array( $row );
+				}
+			)
+		);
+
+		return $parsed;
 	}
 
 	/**
@@ -135,12 +163,16 @@ class NV_oOS_Docs_Hub_Plugin {
 	/**
 	 * Run the scheduled rebuild via cron.
 	 *
+	 * Daily cron now enqueues the async chunked pipeline instead of
+	 * running the entire rebuild inline (which historically OOM'd on
+	 * large repos).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
 	public static function run_scheduled_rebuild() {
-		NV_oOS_Docs_Hub_Rebuild_Job::run();
+		NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 	}
 
 	/**

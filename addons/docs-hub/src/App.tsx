@@ -69,6 +69,7 @@ export default function App() {
 	const [ manifest, setManifest ] = useState<Manifest | null>( null );
 	const [ manifestError, setManifestError ] = useState<string | null>( null );
 	const [ theme, setTheme ] = useState<string>( getInitialTheme );
+	const [ mobileSidebarOpen, setMobileSidebarOpen ] = useState( false );
 
 	useEffect( () => {
 		fetchManifest()
@@ -87,8 +88,12 @@ export default function App() {
 		setTheme( ( t ) => ( t === 'dark' ? 'light' : 'dark' ) );
 	}
 
+	const closeMobileSidebar = () => setMobileSidebarOpen( false );
+
 	const rootAttrs: React.HTMLAttributes<HTMLDivElement> = {
 		className: 'nvoos-docs-hub-root',
+		role: 'application',
+		'aria-label': 'Documentation browser',
 		'data-theme': theme,
 	};
 
@@ -117,9 +122,20 @@ export default function App() {
 	return (
 		<div { ...rootAttrs }>
 			<HashRouter>
+				<a href="#nvoos-dh-main" className="dh-skip-link">
+					Skip to main content
+				</a>
 				<div className="dh-layout">
 					{ /* Header */ }
 					<header className="dh-header-area">
+						<button
+							type="button"
+							className="dh-mobile-menu-btn"
+							aria-label="Open navigation"
+							onClick={ () => setMobileSidebarOpen( true ) }
+						>
+							☰
+						</button>
 						<span className="dh-header-brand">Docs</span>
 						<div className="dh-header-search-wrap">
 							<SearchBox />
@@ -134,12 +150,28 @@ export default function App() {
 						</button>
 					</header>
 
+					{ /* Mobile sidebar overlay backdrop */ }
+					{ mobileSidebarOpen && (
+						<div
+							className="dh-sidebar-overlay"
+							role="button"
+							tabIndex={ 0 }
+							aria-label="Close navigation"
+							onClick={ closeMobileSidebar }
+							onKeyDown={ ( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) closeMobileSidebar(); } }
+						/>
+					) }
+
 					{ /* Sidebar */ }
-					<aside className="dh-sidebar-area">
-						<Sidebar manifest={ manifest } />
+					<aside className={ `dh-sidebar-area${ mobileSidebarOpen ? ' dh-sidebar-open' : '' }` }>
+						<Sidebar manifest={ manifest } onNavClose={ closeMobileSidebar } />
 					</aside>
 
-					{ /* Main content (routes) */ }
+					{ /* Main content (routes) — DocPage / NotFound own their own
+					     `.dh-main-area` grid cell. The skip-link above targets
+					     `#nvoos-dh-main`, which is set on the rendered route's
+					     wrapper so screen-reader users land directly on the
+					     content region rather than the sidebar. */ }
 					<Routes>
 						<Route path="/" element={ <HomeRedirect manifest={ manifest } /> } />
 						<Route path="/*" element={ <DocPage /> } />

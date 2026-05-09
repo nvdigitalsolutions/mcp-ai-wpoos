@@ -4,7 +4,7 @@ Tags: documentation, markdown, react, docs browser, spa
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 0.2.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -80,10 +80,26 @@ via WP-CLI, or via the REST API (requires `manage_options`).
 
 == Changelog ==
 
+= 0.2.0 =
+* Chunked, async-by-default rebuild pipeline (`scan` → `pages` → `links` → `search` → `finalize`) driven by self-rescheduling WP-Cron ticks. Per-tick wall-clock + memory budgets prevent the historical "single 60 s+ PHP request crashes on a large repo" failure mode.
+* Atomic staging-cache swap. A failed rebuild leaves the previous index intact instead of wiping the docs and leaving the SPA blank.
+* Built-in vendor / dependency exclusion (`vendor/`, `node_modules/`, `bower_components/`, `.git/`, `.github/`, `dist/`, `build/`, `coverage/`, `tests/fixtures/`) applied during recursive scan to prune subdirectories before recursion. New `nvoos_docs_hub_force_include_globs` filter allow-lists specific vendored docs.
+* Plugin-root `README.md` / `CHANGELOG.md` / `CONTRIBUTING.md` / `SECURITY.md` are now indexed unconditionally when the `root` source is enabled (no longer gated behind `WP_DEBUG`). `.context/*.md` remains gated behind `context_enabled` + `manage_options`.
+* New source-priority (`root` > `base` > `addons` > `context` > `remote`) ensures the plugin-root README wins the canonical `readme` slug; addon READMEs receive suffixed slugs.
+* New REST endpoints: `GET /rebuild/status`, `POST /rebuild/cancel`, `POST /rebuild/resume`. `POST /rebuild` returns HTTP 202 by default; pass `?sync=1` for the legacy inline behaviour.
+* New WP-CLI command: `wp nvoos-docs rebuild [--async|--sync|--resume|--cancel]`.
+* Admin UI: live progress panel polls `/rebuild/status` with start / resume / cancel buttons.
+* New filters: `nvoos_docs_hub_force_include_globs`, `nvoos_docs_hub_pruned_dir_names`, `nvoos_docs_hub_source_priority`, `nvoos_docs_hub_rebuild_chunk_size`, `nvoos_docs_hub_rebuild_tick_budget`, `nvoos_docs_hub_max_files_total`. New action: `nvoos_docs_hub_rebuild_phase`.
+* New setting: "Include per-addon README/CHANGELOG" (default on).
+* Performance: `build_search_index()` now reuses cached page payloads instead of re-reading every file.
+
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
+
+= 0.2.0 =
+Asynchronous chunked rebuilds + vendor exclusion. The "Rebuild Documentation Index" button is now non-blocking; long rebuilds run across WP-Cron ticks. Default exclusions for `vendor/` and `node_modules/` mean third-party READMEs no longer pollute your docs.
 
 = 1.0.0 =
 Initial release.

@@ -157,6 +157,60 @@
 	min-height: 80vh;
 }
 
+/* =========================================================
+   3a. Accessibility: skip-link + focus visibility
+   ========================================================= */
+/* Skip-link is visually hidden until focused (e.g. via Tab).
+   Once focused, it appears as a high-contrast pill in the
+   top-left corner so keyboard / screen-reader users can jump
+   past the sidebar to the main content. */
+.dh-skip-link {
+	position: absolute;
+	top: -40px;
+	left: var(--dh-spacing-md);
+	z-index: 200;
+	padding: 0.5rem 0.875rem;
+	background: var(--dh-text-link, #1d4ed8);
+	color: #fff;
+	border-radius: 4px;
+	font-size: var(--dh-font-size-sm);
+	font-weight: 600;
+	text-decoration: none;
+	transition: top var(--dh-transition-speed);
+}
+
+.dh-skip-link:focus,
+.dh-skip-link:focus-visible {
+	top: var(--dh-spacing-sm, 8px);
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
+/* Make `<main>` the announce-able landmark; remove the default
+   focus outline that browsers paint on tabIndex=-1 elements when
+   the user lands here via the skip-link, and replace it with a
+   subtle focus ring matching our design tokens. */
+.dh-main-area:focus,
+.dh-main-area:focus-visible {
+	outline: 2px solid var(--dh-text-link, #1d4ed8);
+	outline-offset: -2px;
+}
+
+/* RTL mirror — set on the root by PHP via is_rtl(). The grid
+   direction flips automatically; we only need to override
+   border sides that are not symmetrical. */
+.nvoos-docs-hub-rtl {
+	direction: rtl;
+}
+.nvoos-docs-hub-rtl .dh-sidebar-area {
+	border-right: 0;
+	border-left: 1px solid var(--dh-border-default);
+}
+.nvoos-docs-hub-rtl .dh-toc-area {
+	border-left: 0;
+	border-right: 1px solid var(--dh-border-default);
+}
+
 .dh-header-area {
 	grid-area: header;
 	border-bottom: 1px solid var(--dh-border-default);
@@ -209,6 +263,10 @@
 }
 
 .dh-sidebar-group-label {
+	background: none;
+	border: none;
+	width: 100%;
+	font-family: inherit;
 	font-size: 0.7rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
@@ -282,6 +340,26 @@
 .dh-content h4 { font-size: 1.1rem; }
 .dh-content h5,
 .dh-content h6 { font-size: 1rem; }
+
+/* Heading anchor links — hidden until the heading is hovered */
+.dh-content .dh-heading-anchor {
+	display: inline-block;
+	margin-right: 0.35em;
+	color: var(--dh-text-muted);
+	text-decoration: none;
+	opacity: 0;
+	font-weight: 400;
+	font-size: 0.9em;
+	transition: opacity var(--dh-transition-speed);
+}
+.nvoos-docs-hub-root .dh-content h1:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h2:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h3:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h4:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h5:hover .dh-heading-anchor,
+.nvoos-docs-hub-root .dh-content h6:hover .dh-heading-anchor {
+	opacity: 1;
+}
 
 .dh-content p { margin-bottom: 1em; }
 
@@ -735,6 +813,32 @@
 	text-align: center;
 }
 
+/* Mobile sidebar backdrop (conditionally rendered in JS when sidebar is open) */
+.dh-sidebar-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba( 0, 0, 0, 0.45 );
+	z-index: 149;
+}
+
+/* Hamburger button — hidden on tablet/desktop, visible on mobile */
+.dh-mobile-menu-btn {
+	display: none;
+	background: none;
+	border: 1px solid var(--dh-border-default);
+	border-radius: var(--dh-border-radius);
+	padding: 0.3rem 0.55rem;
+	cursor: pointer;
+	color: var(--dh-text-secondary);
+	font-size: 1.1rem;
+	line-height: 1;
+	flex-shrink: 0;
+	transition: background-color var(--dh-transition-speed);
+}
+.dh-mobile-menu-btn:hover {
+	background-color: var(--dh-bg-secondary);
+}
+
 /* =========================================================
    13. Responsive overrides
    ========================================================= */
@@ -759,11 +863,211 @@
 			"main";
 	}
 
+	.dh-mobile-menu-btn {
+		display: flex;
+		align-items: center;
+	}
+
 	.dh-sidebar-area {
 		display: none;
+	}
+
+	/* Mobile sidebar drawer: slides in from the left as a fixed overlay */
+	.dh-sidebar-area.dh-sidebar-open {
+		display: block;
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 280px;
+		max-height: 100vh;
+		z-index: 150;
+		overflow-y: auto;
+		box-shadow: var(--dh-shadow-md);
+		background: var(--dh-bg-sidebar);
 	}
 
 	.dh-main-area {
 		padding: var(--dh-spacing-md);
 	}
+}
+
+/* =========================================================
+   8. Reduced-motion preference (WCAG 2.1 SC 2.3.3)
+   When the user opts out of motion via OS / browser settings,
+   neutralise our spinners, slide-ins, and transitions. The skip
+   link still moves on focus, but only via the very short
+   --dh-transition-speed token, which we override to 0ms here.
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+.nvoos-docs-hub-root,
+.nvoos-docs-hub-root * {
+animation-duration: 0.001ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.001ms !important;
+scroll-behavior: auto !important;
+}
+
+.nvoos-docs-hub-root .dh-spinner {
+/* Render the spinner as a static disc rather than animating it. */
+animation: none !important;
+border-top-color: var(--dh-text-link, #1d4ed8) !important;
+}
+}
+
+/* =========================================================
+   9. Page footer (last-modified + edit on GitHub)
+   ========================================================= */
+.dh-page-footer {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+justify-content: space-between;
+gap: var(--dh-spacing-sm);
+margin-top: calc( var(--dh-spacing-md) * 2 );
+padding-top: var(--dh-spacing-md);
+border-top: 1px solid var(--dh-border);
+font-size: 0.8125rem;
+color: var(--dh-text-muted, #6b7280);
+}
+
+.dh-page-footer__modified time {
+font-style: normal;
+}
+
+.dh-page-footer__edit {
+display: inline-flex;
+align-items: center;
+gap: 0.25rem;
+color: var(--dh-text-link, #1d4ed8);
+text-decoration: none;
+}
+
+.dh-page-footer__edit:hover,
+.dh-page-footer__edit:focus-visible {
+text-decoration: underline;
+}
+
+/* =========================================================
+   10. Syntax highlighting (highlight.js GitHub-inspired theme)
+       Scoped entirely inside the SPA root so it cannot bleed
+       into the host WordPress page.
+   ========================================================= */
+.nvoos-docs-hub-root .hljs {
+color: #24292e;
+background: transparent;
+}
+.nvoos-docs-hub-root .hljs-comment,
+.nvoos-docs-hub-root .hljs-quote {
+color: #6a737d;
+font-style: italic;
+}
+.nvoos-docs-hub-root .hljs-keyword,
+.nvoos-docs-hub-root .hljs-selector-tag,
+.nvoos-docs-hub-root .hljs-subst {
+color: #d73a49;
+}
+.nvoos-docs-hub-root .hljs-string,
+.nvoos-docs-hub-root .hljs-attr,
+.nvoos-docs-hub-root .hljs-doctag,
+.nvoos-docs-hub-root .hljs-template-variable,
+.nvoos-docs-hub-root .hljs-variable {
+color: #032f62;
+}
+.nvoos-docs-hub-root .hljs-number,
+.nvoos-docs-hub-root .hljs-literal,
+.nvoos-docs-hub-root .hljs-regexp {
+color: #005cc5;
+}
+.nvoos-docs-hub-root .hljs-title,
+.nvoos-docs-hub-root .hljs-section,
+.nvoos-docs-hub-root .hljs-selector-id {
+color: #6f42c1;
+}
+.nvoos-docs-hub-root .hljs-type,
+.nvoos-docs-hub-root .hljs-class .hljs-title {
+color: #e36209;
+}
+.nvoos-docs-hub-root .hljs-built_in,
+.nvoos-docs-hub-root .hljs-builtin-name,
+.nvoos-docs-hub-root .hljs-tag,
+.nvoos-docs-hub-root .hljs-name {
+color: #22863a;
+}
+.nvoos-docs-hub-root .hljs-attribute {
+color: #005cc5;
+}
+.nvoos-docs-hub-root .hljs-meta,
+.nvoos-docs-hub-root .hljs-meta-string {
+color: #6a737d;
+}
+.nvoos-docs-hub-root .hljs-emphasis {
+font-style: italic;
+}
+.nvoos-docs-hub-root .hljs-strong {
+font-weight: bold;
+}
+.nvoos-docs-hub-root .hljs-deletion {
+color: #b31d28;
+background-color: #ffeef0;
+}
+.nvoos-docs-hub-root .hljs-addition {
+color: #22863a;
+background-color: #f0fff4;
+}
+
+/* Dark-mode overrides for the highlight theme. */
+.nvoos-docs-hub-root[data-theme="dark"] .hljs,
+.nvoos-docs-hub-root.dh-dark .hljs {
+color: #e1e4e8;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-comment,
+.nvoos-docs-hub-root.dh-dark     .hljs-comment,
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-quote,
+.nvoos-docs-hub-root.dh-dark     .hljs-quote {
+color: #8b949e;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-keyword,
+.nvoos-docs-hub-root.dh-dark     .hljs-keyword,
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-selector-tag,
+.nvoos-docs-hub-root.dh-dark     .hljs-selector-tag {
+color: #ff7b72;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-string,
+.nvoos-docs-hub-root.dh-dark     .hljs-string,
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-attr,
+.nvoos-docs-hub-root.dh-dark     .hljs-attr {
+color: #a5d6ff;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-number,
+.nvoos-docs-hub-root.dh-dark     .hljs-number,
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-literal,
+.nvoos-docs-hub-root.dh-dark     .hljs-literal {
+color: #79c0ff;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-title,
+.nvoos-docs-hub-root.dh-dark     .hljs-title {
+color: #d2a8ff;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-type,
+.nvoos-docs-hub-root.dh-dark     .hljs-type {
+color: #ffa657;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-built_in,
+.nvoos-docs-hub-root.dh-dark     .hljs-built_in,
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-tag,
+.nvoos-docs-hub-root.dh-dark     .hljs-tag,
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-name,
+.nvoos-docs-hub-root.dh-dark     .hljs-name {
+color: #7ee787;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-deletion,
+.nvoos-docs-hub-root.dh-dark     .hljs-deletion {
+color: #ffa198;
+background-color: #490202;
+}
+.nvoos-docs-hub-root[data-theme="dark"] .hljs-addition,
+.nvoos-docs-hub-root.dh-dark     .hljs-addition {
+color: #56d364;
+background-color: #0f5323;
 }

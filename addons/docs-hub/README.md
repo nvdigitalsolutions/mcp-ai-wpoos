@@ -66,21 +66,37 @@ Base: `GET /wp-json/nvoos-docs/v1`
 | GET | `/manifest` | Public | Full manifest (tree, slug_map) |
 | GET | `/pages/{slug}` | Public | Rendered page content + TOC |
 | GET | `/search?q=…` | Public | Full-text search results |
-| POST | `/rebuild` | `manage_options` + nonce | Trigger a full index rebuild |
-| GET | `/health` | `manage_options` | Index statistics |
+| POST | `/rebuild` | `manage_options` + nonce | Enqueue a chunked rebuild (HTTP 202). Pass `?sync=1` for inline rebuild. |
+| GET | `/rebuild/status` | `manage_options` | Current rebuild progress snapshot (phase, processed/total, errors). |
+| POST | `/rebuild/cancel` | `manage_options` + nonce | Cancel an in-flight rebuild. |
+| POST | `/rebuild/resume` | `manage_options` + nonce | Resume a stalled or failed rebuild. |
+| GET | `/health` | `manage_options` | Index statistics + last rebuild summary. |
+
+> Since v0.2.0, `POST /rebuild` is **asynchronous by default** — it returns immediately with HTTP 202 and a `{ job_id, status: "queued" }` body. The job runs in WP-Cron ticks; poll `/rebuild/status` to display progress. Pass `?sync=1` (legacy) to run the entire rebuild inline in one request.
 
 ---
 
 ## WP-CLI
 
 ```bash
-# Rebuild the index
+# Async chunked rebuild (default, runs across WP-Cron ticks)
+wp nvoos-docs rebuild
+
+# Inline rebuild (legacy single-request behaviour, used by tests)
+wp nvoos-docs rebuild --sync
+# or the back-compat alias
 wp nvoos-docs sync
+
+# Resume a previously failed or canceled rebuild
+wp nvoos-docs rebuild --resume
+
+# Cancel an in-flight rebuild
+wp nvoos-docs rebuild --cancel
 
 # Clear all cached data
 wp nvoos-docs clear
 
-# Show index statistics
+# Show index statistics + current rebuild phase / cursor
 wp nvoos-docs status
 ```
 
@@ -111,7 +127,13 @@ wp nvoos-docs status
 | Filter | Description |
 |--------|-------------|
 | `nvoos_docs_hub_sources` | Array of source definitions (`type`, `root`, `plugin_name`) |
-| `nvoos_docs_hub_excluded_globs` | Array of glob patterns to exclude |
+| `nvoos_docs_hub_excluded_globs` | Array of glob patterns to exclude. Defaults to a built-in list (`vendor/`, `node_modules/`, `bower_components/`, `.git/`, `.github/`, `dist/`, `build/`, `coverage/`, `tests/fixtures/`, `LICENSE.md`, `LICENSE.txt`, `CODE_OF_CONDUCT.md`, `THIRD_PARTY_NOTICES.md`). Return `[]` to opt out of all defaults. |
+| `nvoos_docs_hub_force_include_globs` | Array of glob patterns that override `nvoos_docs_hub_excluded_globs` (re-admit specific vendored docs). |
+| `nvoos_docs_hub_pruned_dir_names` | Array of directory basenames pruned during recursive scans (default: `vendor`, `node_modules`, `bower_components`, `.git`, `.github`, `.svn`, `dist`, `build`, `coverage`). |
+| `nvoos_docs_hub_source_priority` | Map of source key → priority integer used by the indexer to award canonical slugs (`root` outranks `addons` so the plugin-root README wins the `readme` slug). |
+| `nvoos_docs_hub_rebuild_chunk_size` | Number of files processed per chunked-rebuild tick (default `25`). |
+| `nvoos_docs_hub_rebuild_tick_budget` | Per-tick wall-clock budget in seconds (default `15`). |
+| `nvoos_docs_hub_max_files_total` | Aggregate cap on total indexed files per rebuild (default `5000`). |
 | `nvoos_docs_hub_can_read_section` | Return `false` or `WP_Error` to restrict public REST access |
 | `nvoos_docs_hub_can_render` | Return `false` to suppress the shortcode output |
 | `nvoos_docs_hub_manifest` | Filter the final manifest array before caching |
@@ -124,6 +146,7 @@ wp nvoos-docs status
 |--------|-------------|
 | `nvoos_docs_hub_before_rebuild` | Fired before a full rebuild starts |
 | `nvoos_docs_hub_after_rebuild` | Fired after a full rebuild completes. Receives `$result` array |
+| `nvoos_docs_hub_rebuild_phase` | Fired on every phase transition of the chunked rebuild pipeline. Receives `$phase, $state` so dashboards can hang off it. |
 
 ---
 

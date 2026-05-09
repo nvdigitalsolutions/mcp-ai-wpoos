@@ -77,6 +77,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertSame( 200, $result['status'] );
 		$this->assertSame( 'OK', $result['message'] );
 		$this->assertNotEmpty( $this->captured );
+		$this->assertStringContainsString(
+			'/user/tokens/verify',
+			$this->captured[0]['url'],
+			'Preflight must use the token-verification endpoint, not an account-scoped URL.'
+		);
 		$this->assertSame(
 			'Bearer token-with-enough-chars',
 			$this->captured[0]['args']['headers']['Authorization']
@@ -210,6 +215,7 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 			}
 		}
 		$this->assertNotNull( $cf_call );
+		$this->assertStringContainsString( '/user/tokens/verify', $cf_call['url'] );
 		$this->assertSame(
 			'Bearer stored-token-with-enough-chars',
 			$cf_call['args']['headers']['Authorization']

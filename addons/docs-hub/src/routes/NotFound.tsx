@@ -12,7 +12,7 @@ interface NotFoundProps {
 
 export default function NotFound( { slug }: NotFoundProps ) {
 	return (
-		<div className="dh-not-found">
+		<main id="nvoos-dh-main" tabIndex={ -1 } className="dh-not-found dh-main-area">
 			<h1 style={ { fontSize: '3rem', marginBottom: '0.5rem' } }>404</h1>
 			<h2 style={ { marginBottom: '1rem' } }>Page Not Found</h2>
 
@@ -25,6 +25,6 @@ export default function NotFound( { slug }: NotFoundProps ) {
 			<Link to="/" style={ { color: 'var(--dh-text-link)' } }>
 				← Back to documentation home
 			</Link>
-		</div>
+		</main>
 	);
 }

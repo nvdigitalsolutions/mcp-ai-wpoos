@@ -43,17 +43,46 @@ class NV_oOS_Docs_Hub_Indexer {
 	private $broken_links = array();
 
 	/**
+	 * Source priority for slug-collision and tree ordering.
+	 *
+	 * Lower = higher priority. The plugin-root README/CHANGELOG (`root`)
+	 * outrank addon READMEs so they own the canonical `readme` /
+	 * `changelog` slugs in the SPA.
+	 *
+	 * Filter via `nvoos_docs_hub_source_priority` to override.
+	 *
+	 * @var array
+	 */
+	const SOURCE_PRIORITY = array(
+		'root'    => 0,
+		'base'    => 1,
+		'addons'  => 2,
+		'context' => 3,
+		'remote'  => 4,
+	);
+
+	/**
 	 * Build the full manifest from scanned entries.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array $entries Entries from NV_oOS_Docs_Hub_Scanner::scan().
+	 * @param array $entries           Entries from NV_oOS_Docs_Hub_Scanner::scan().
+	 * @param bool  $detect_broken     When false, skip the broken-link pass
+	 *                                 (each file is read twice during it).
+	 *                                 The chunked rebuild pipeline runs link
+	 *                                 detection in a separate phase to spread
+	 *                                 the I/O across requests.
 	 * @return array
 	 */
-	public function build_manifest( $entries ) {
+	public function build_manifest( $entries, $detect_broken = true ) {
 		$this->slug_map     = array();
 		$this->tree         = array();
 		$this->broken_links = array();
+
+		// Sort by source priority FIRST so the slug-collision suffix
+		// (`-1`, `-2`, …) lands on the lower-priority entries — the plugin
+		// root README owns `readme`, addon READMEs become `readme-1`, etc.
+		$entries = $this->sort_entries_by_priority( $entries );
 
 		// First pass: derive slugs and extract metadata.
 		$indexed = array();
@@ -84,6 +113,12 @@ class NV_oOS_Docs_Hub_Indexer {
 				'relative_path' => $entry['relative_path'],
 			);
 
+			// For remote entries, carry the GitHub blob URL through so the
+			// SPA can rewrite relative links to point at GitHub.
+			if ( 'remote' === $entry['source'] && ! empty( $entry['remote_url'] ) ) {
+				$this->slug_map[ $slug ]['remote_url'] = (string) $entry['remote_url'];
+			}
+
 			$indexed[] = array_merge( $entry, array(
 				'slug'  => $slug,
 				'title' => $title,
@@ -95,11 +130,14 @@ class NV_oOS_Docs_Hub_Indexer {
 		$this->assign_prev_next( $indexed );
 		$this->build_tree( $indexed );
 
-		// Third pass: detect broken internal links.
-		foreach ( $this->slug_map as $slug => $data ) {
-			$content             = $this->read_file( $data['path'] );
-			$broken              = $this->detect_broken_links( $content, $data['path'], $data['relative_path'] );
-			$this->broken_links  = array_merge( $this->broken_links, $broken );
+		// Third pass: detect broken internal links (skip when chunked
+		// rebuild will run this in its own phase).
+		if ( $detect_broken ) {
+			foreach ( $this->slug_map as $slug => $data ) {
+				$content             = $this->read_file( $data['path'] );
+				$broken              = $this->detect_broken_links( $content, $data['path'], $data['relative_path'] );
+				$this->broken_links  = array_merge( $this->broken_links, $broken );
+			}
 		}
 
 		$manifest = array(
@@ -159,7 +197,7 @@ class NV_oOS_Docs_Hub_Indexer {
 		$payload = array(
 			'slug'          => $slug,
 			'title'         => $data['title'],
-			'markdown'      => $content,
+			'content'       => $content,
 			'toc'           => $toc,
 			'frontmatter'   => $frontmatter,
 			'breadcrumbs'   => $breadcrumbs,
@@ -168,9 +206,16 @@ class NV_oOS_Docs_Hub_Indexer {
 			'source'        => $data['source'],
 			'plugin_name'   => $data['plugin_name'],
 			'last_modified' => filemtime( $data['path'] ),
+			'relative_path' => isset( $data['relative_path'] ) ? (string) $data['relative_path'] : '',
 			'word_count'    => $word_count,
 			'languages'     => $languages,
 		);
+
+		// Include the GitHub blob URL for remote-sourced pages so the SPA
+		// can resolve relative links to absolute GitHub URLs.
+		if ( ! empty( $data['remote_url'] ) ) {
+			$payload['remote_url'] = (string) $data['remote_url'];
+		}
 
 		/**
 		 * Filter a page payload before it is returned or cached.
@@ -258,6 +303,37 @@ class NV_oOS_Docs_Hub_Indexer {
 	}
 
 	/**
+	 * Strip inline Markdown syntax from a heading or title string.
+	 *
+	 * Removes bold/italic markers, inline links, and inline code spans so that
+	 * titles stored in the manifest and sidebar are plain readable text.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $text Raw heading text that may contain Markdown.
+	 * @return string Plain text.
+	 */
+	private function strip_inline_markdown( $text ) {
+		// Links and images: [text](url) → text  |  ![alt](url) → alt
+		$text = preg_replace( '/!?\[([^\]]*)\]\([^)]*\)/', '$1', $text );
+		// Reference-style links: [text][ref] → text
+		$text = preg_replace( '/\[([^\]]*)\]\[[^\]]*\]/', '$1', $text );
+		// Bold+italic: ***text*** / ___text___ → text
+		$text = preg_replace( '/\*{3}(.+?)\*{3}/s', '$1', $text );
+		$text = preg_replace( '/_{3}(.+?)_{3}/s', '$1', $text );
+		// Bold: **text** / __text__ → text
+		$text = preg_replace( '/\*{2}(.+?)\*{2}/s', '$1', $text );
+		$text = preg_replace( '/_{2}(.+?)_{2}/s', '$1', $text );
+		// Italic: *text* / _text_ → text (avoid mangling snake_case by requiring spaces)
+		$text = preg_replace( '/(?<!\w)\*([^*\n]+?)\*(?!\w)/', '$1', $text );
+		// Inline code: `text` → text
+		$text = preg_replace( '/`([^`]+)`/', '$1', $text );
+		// Strip any remaining raw HTML tags.
+		$text = wp_strip_all_tags( $text );
+		return trim( $text );
+	}
+
+	/**
 	 * Extract the page title from frontmatter, first H1, or filename.
 	 *
 	 * @since 1.0.0
@@ -272,9 +348,9 @@ class NV_oOS_Docs_Hub_Indexer {
 			return sanitize_text_field( $frontmatter['title'] );
 		}
 
-		// First H1 heading.
+		// First H1 heading — strip inline Markdown before returning.
 		if ( preg_match( '/^#\s+(.+)$/m', $content, $m ) ) {
-			return sanitize_text_field( trim( $m[1] ) );
+			return sanitize_text_field( $this->strip_inline_markdown( trim( $m[1] ) ) );
 		}
 
 		// Filename without extension, title-cased.
@@ -300,8 +376,11 @@ class NV_oOS_Docs_Hub_Indexer {
 
 		foreach ( $matches as $match ) {
 			$level  = strlen( $match[1] );
-			$text   = trim( $match[2] );
-			$anchor = $this->slugify_heading( $text );
+			$raw    = trim( $match[2] );
+			// Keep the anchor based on the raw text (rehype-slug does the same),
+			// but strip inline Markdown from the display text.
+			$anchor = $this->slugify_heading( $raw );
+			$text   = $this->strip_inline_markdown( $raw );
 			$toc[]  = array(
 				'level'  => $level,
 				'text'   => $text,
@@ -352,7 +431,7 @@ class NV_oOS_Docs_Hub_Indexer {
 	 * @param string $relative_path Relative path for reporting.
 	 * @return array List of [ 'source' => '...', 'target' => '...' ] entries.
 	 */
-	private function detect_broken_links( $content, $file_path, $relative_path ) {
+	public function detect_broken_links( $content, $file_path, $relative_path ) {
 		$broken = array();
 
 		if ( ! preg_match_all( '/\[([^\]]+)\]\(([^)]+)\)/', $content, $matches, PREG_SET_ORDER ) ) {
@@ -398,48 +477,46 @@ class NV_oOS_Docs_Hub_Indexer {
 	 * @return void
 	 */
 	private function build_tree( $indexed ) {
-		$tree = array();
+		// Group pages by source + plugin_name into a flat list of groups.
+		// This matches the SPA `Manifest.tree: ManifestGroup[]` contract
+		// (see addons/docs-hub/src/api/manifest-client.ts), which calls
+		// `tree.flatMap(...)` and `tree.map(group => group.pages)`.
+		$groups = array();
 
 		foreach ( $indexed as $entry ) {
 			$source      = $entry['source'];
 			$plugin_name = $entry['plugin_name'];
 			$slug        = $entry['slug'];
+			$key         = $source . '|' . $plugin_name;
 
-			// Derive section from relative path.
-			$section = $this->derive_section( $entry['relative_path'] );
-
-			if ( ! isset( $tree[ $source ] ) ) {
-				$tree[ $source ] = array();
-			}
-			if ( ! isset( $tree[ $source ][ $plugin_name ] ) ) {
-				$tree[ $source ][ $plugin_name ] = array();
-			}
-			if ( ! isset( $tree[ $source ][ $plugin_name ][ $section ] ) ) {
-				$tree[ $source ][ $plugin_name ][ $section ] = array();
+			if ( ! isset( $groups[ $key ] ) ) {
+				$groups[ $key ] = array(
+					'source'      => $source,
+					'plugin_name' => $plugin_name,
+					'pages'       => array(),
+				);
 			}
 
-			$tree[ $source ][ $plugin_name ][ $section ][] = array(
+			$groups[ $key ]['pages'][] = array(
 				'slug'  => $slug,
 				'title' => $entry['title'],
 				'order' => $entry['order'],
 			);
 		}
 
-		// Sort entries within each section by order.
-		foreach ( $tree as $src => &$plugins ) {
-			foreach ( $plugins as $pname => &$sections ) {
-				foreach ( $sections as $sec => &$pages ) {
-					usort(
-						$pages,
-						function ( $a, $b ) {
-							return $a['order'] - $b['order'];
-						}
-					);
+		// Sort pages within each group by order.
+		foreach ( $groups as &$group ) {
+			usort(
+				$group['pages'],
+				function ( $a, $b ) {
+					return $a['order'] - $b['order'];
 				}
-			}
+			);
 		}
+		unset( $group );
 
-		$this->tree = $tree;
+		// Reindex to a numeric array so JSON encodes as a JS array (not object).
+		$this->tree = array_values( $groups );
 	}
 
 	/**
@@ -516,12 +593,47 @@ class NV_oOS_Docs_Hub_Indexer {
 	 * @param string $path Absolute file path.
 	 * @return string
 	 */
-	private function read_file( $path ) {
+	public function read_file( $path ) {
 		if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
 			return '';
 		}
 		$contents = file_get_contents( $path );  // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		return false === $contents ? '' : $contents;
+	}
+
+	/**
+	 * Stable-sort scanned entries by source priority.
+	 *
+	 * Entries from higher-priority sources come first so that they win
+	 * the canonical slugs in the dedupe loop (the duplicate suffix is
+	 * applied to whatever arrives later).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $entries Scanned entries.
+	 * @return array
+	 */
+	public function sort_entries_by_priority( $entries ) {
+		/**
+		 * Filter the source-priority map.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $priority Map of source key => integer priority.
+		 */
+		$priority = apply_filters( 'nvoos_docs_hub_source_priority', self::SOURCE_PRIORITY );
+
+		// PHP 7.4 has no native stable sort key parameter; use array_multisort
+		// with the original index as the secondary key to guarantee stability.
+		$keys   = array();
+		$index  = array();
+		foreach ( $entries as $i => $entry ) {
+			$source  = isset( $entry['source'] ) ? (string) $entry['source'] : '';
+			$keys[]  = isset( $priority[ $source ] ) ? (int) $priority[ $source ] : 999;
+			$index[] = $i;
+		}
+		array_multisort( $keys, SORT_ASC, SORT_NUMERIC, $index, SORT_ASC, SORT_NUMERIC, $entries );
+		return $entries;
 	}
 
 	/**
@@ -533,6 +645,68 @@ class NV_oOS_Docs_Hub_Indexer {
 	 */
 	public function get_slug_map() {
 		return $this->slug_map;
+	}
+
+	/**
+	 * Restore a previously-built slug map (e.g. between chunked rebuild ticks).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $slug_map Slug map keyed by slug.
+	 * @return void
+	 */
+	public function set_slug_map( $slug_map ) {
+		$this->slug_map = is_array( $slug_map ) ? $slug_map : array();
+	}
+
+	/**
+	 * Restore a previously-built tree.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $tree Tree structure.
+	 * @return void
+	 */
+	public function set_tree( $tree ) {
+		$this->tree = is_array( $tree ) ? $tree : array();
+	}
+
+	/**
+	 * Restore a previously-built broken-links list.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $broken Broken-link entries.
+	 * @return void
+	 */
+	public function set_broken_links( $broken ) {
+		$this->broken_links = is_array( $broken ) ? $broken : array();
+	}
+
+	/**
+	 * Append broken-link entries (used by chunked link-checking).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $broken Broken-link entries.
+	 * @return void
+	 */
+	public function append_broken_links( $broken ) {
+		if ( ! is_array( $broken ) || empty( $broken ) ) {
+			return;
+		}
+		$this->broken_links = array_merge( $this->broken_links, $broken );
+	}
+
+	/**
+	 * Get current tree (already built when build_manifest() was called).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return array
+	 */
+	public function get_tree() {
+		return $this->tree;
 	}
 
 	/**

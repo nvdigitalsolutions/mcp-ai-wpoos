@@ -69,6 +69,70 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 	}
 
 	/**
+	 * Run a chunked rebuild that may span multiple WP-Cron ticks.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--async]
+	 * : Enqueue the chunked rebuild and return immediately. Default for this command.
+	 *
+	 * [--sync]
+	 * : Run inline (equivalent to `wp nvoos-docs sync`). Useful for tests / cron hosts.
+	 *
+	 * [--resume]
+	 * : Resume a previously failed or canceled rebuild from its last cursor.
+	 *
+	 * [--cancel]
+	 * : Cancel the currently in-flight rebuild.
+	 *
+	 * [--strict]
+	 * : With --sync, exit non-zero if any broken links are found.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *   wp nvoos-docs rebuild --async
+	 *   wp nvoos-docs rebuild --sync
+	 *   wp nvoos-docs rebuild --resume
+	 *
+	 * @subcommand rebuild
+	 * @since 1.2.0
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Named arguments.
+	 * @return void
+	 */
+	public function rebuild( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
+		if ( ! empty( $assoc_args['cancel'] ) ) {
+			$state = NV_oOS_Docs_Hub_Rebuild_Job::cancel_async();
+			WP_CLI::success( sprintf( 'Rebuild canceled at phase %s (cursor %d).', $state['phase'], (int) $state['cursor'] ) );
+			return;
+		}
+
+		if ( ! empty( $assoc_args['resume'] ) ) {
+			$summary = NV_oOS_Docs_Hub_Rebuild_Job::resume_async();
+			WP_CLI::success( sprintf( 'Rebuild resumed at phase %s.', $summary['phase'] ) );
+			return;
+		}
+
+		if ( ! empty( $assoc_args['sync'] ) ) {
+			$this->sync( $args, $assoc_args );
+			return;
+		}
+
+		// Default: async.
+		$summary = NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
+		WP_CLI::success(
+			sprintf(
+				'Rebuild queued (job_id=%s, phase=%s, total=%d).',
+				$summary['job_id'],
+				$summary['phase'],
+				(int) $summary['total']
+			)
+		);
+		WP_CLI::log( 'Run `wp nvoos-docs status` to monitor progress.' );
+	}
+
+	/**
 	 * Clear the documentation cache.
 	 *
 	 * ## EXAMPLES
@@ -107,6 +171,7 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 
 		$total_pages  = is_array( $manifest ) ? ( $manifest['total_pages'] ?? 0 ) : 0;
 		$broken_links = is_array( $manifest ) ? count( $manifest['broken_links'] ?? array() ) : 0;
+		$rebuild      = NV_oOS_Docs_Hub_Rebuild_State::to_summary();
 
 		WP_CLI\Utils\format_items(
 			'table',
@@ -118,6 +183,9 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 				array( 'Key' => 'Total Pages', 'Value' => $total_pages ),
 				array( 'Key' => 'Broken Links', 'Value' => $broken_links ),
 				array( 'Key' => 'Version', 'Value' => NVOOS_DOCS_HUB_VERSION ),
+				array( 'Key' => 'Rebuild Phase', 'Value' => $rebuild['phase'] ),
+				array( 'Key' => 'Rebuild Progress', 'Value' => sprintf( '%d / %d (%d%%)', $rebuild['processed'], $rebuild['total'], $rebuild['percentage'] ) ),
+				array( 'Key' => 'Last Error', 'Value' => $rebuild['last_error'] ?: '—' ),
 			),
 			array( 'Key', 'Value' )
 		);

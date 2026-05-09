@@ -292,6 +292,123 @@ Vendored under `addons/graphify/assets/vendor/`, each with its own
 All packages are MIT-licensed (except FlexSearch which is Apache-2.0). The React SPA
 is bundled into `addons/docs-hub/assets/dist/docs-hub.js` via esbuild.
 
+### `addons/toolkit-shell/` — manifest-driven React SPA shell for Pro toolkits
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/toolkit-shell/THIRD_PARTY_NOTICES.md`](addons/toolkit-shell/THIRD_PARTY_NOTICES.md).
+
+The toolkit-shell addon is the canonical Phase 1 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) — one bundle, many
+surfaces, driven by per-toolkit JSON manifests under
+`addons/pro/config/spa-manifests/`.
+
+### `addons/canvas-toolkit/` — React canvas / node-graph SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.2.6 | MIT | <https://github.com/facebook/react> |
+| `@xyflow/react` | 12.4.0 | MIT | <https://github.com/xyflow/xyflow> |
+| `tldraw` | 5.0.0 | MIT | <https://github.com/tldraw/tldraw> |
+| `bpmn-js` | 18.16.1 | MIT | <https://github.com/bpmn-io/bpmn-js> |
+| `mermaid` | 11.14.0 | MIT | <https://github.com/mermaid-js/mermaid> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/canvas-toolkit/THIRD_PARTY_NOTICES.md`](addons/canvas-toolkit/THIRD_PARTY_NOTICES.md).
+
+The canvas-toolkit addon is the Phase 2 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier B — separate
+addon for canvas / whiteboard / node-graph / BPMN surfaces, lazy-loaded by mode.
+Ships all four modes: `flow` (@xyflow/react), `whiteboard` (tldraw v5),
+`bpmn` (bpmn-js), and `mermaid` (Mermaid live preview).
+
+### `addons/document-editor/` — Tiptap rich-text document editor + GrapesJS site-creator SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `@tiptap/react` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/pm` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/starter-kit` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-link` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-placeholder` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-table` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `@tiptap/extension-table-{cell,header,row}` | 3.22.5 | MIT | <https://github.com/ueberdosis/tiptap> |
+| `grapesjs` | 0.22.16 | BSD-3-Clause | <https://github.com/GrapesJS/grapesjs> |
+| `@grapesjs/react` | 2.0.0 | MIT | <https://github.com/GrapesJS/react> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/document-editor/THIRD_PARTY_NOTICES.md`](addons/document-editor/THIRD_PARTY_NOTICES.md).
+
+The document-editor addon is the Phase 3 / Phase 12 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier C — separate
+addon for rich-text / document surfaces. v0.1.0 ships `mode="editor"` (full
+Tiptap document editor with toolbar + REST `/nvoos-document-editor/v1/documents`
+CRUD backed by the `nvoos_document` CPT). v0.2.0 ships `mode="site-creator"` —
+a GrapesJS visual page builder with built-in blocks (header, text, two-column)
+and localStorage project persistence.
+
+### `addons/media-studio/` — Tier D media production SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.2.6 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.2.6 | MIT | <https://github.com/facebook/react> |
+| `konva` | 10.3.0 | MIT | <https://github.com/konvajs/konva> |
+| `react-konva` | 19.2.3 | MIT | <https://github.com/konvajs/react-konva> |
+| `react-image-crop` | 11.0.10 | ISC | <https://github.com/DominicTobias/react-image-crop> |
+| `react-player` | 3.4.0 | MIT | <https://github.com/cookpete/react-player> |
+| `wavesurfer.js` | 7.12.6 | BSD-3-Clause | <https://github.com/wavesurfer-js/wavesurfer.js> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT). Full per-package license text lives in
+[`addons/media-studio/THIRD_PARTY_NOTICES.md`](addons/media-studio/THIRD_PARTY_NOTICES.md).
+
+The media-studio addon is the Phase 4 implementation of the
+[Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md) Tier D — specialist
+surface serving the `image-production` and `media` toolkits. Ships three modes:
+`image-editor` (react-konva canvas + react-image-crop overlay), `media-player`
+(react-player universal player), and `audio-waveform` (wavesurfer.js). Bundle is
+~826 KB gzip — expected for Tier D specialist, kept isolated by the separate-addon
+guardrail. Future `drawing` mode (tldraw, large bundle) deferred to follow-up PR.
+
+### `addons/chat-spa/` — Tier E React chat SPA addon
+
+| Package | Version | License | Upstream |
+|---------|---------|---------|----------|
+| `react` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `react-dom` | 19.1.0 | MIT | <https://github.com/facebook/react> |
+| `@ai-sdk/react` | 1.2.12 | Apache-2.0 | <https://github.com/vercel/ai> |
+
+Build-time-only dev dependencies (not redistributed in `assets/dist/`):
+`esbuild` (MIT), `typescript` (Apache-2.0), `@types/react` and `@types/react-dom`
+(MIT), `@axe-core/react` (MPL-2.0). Full per-package license text lives in
+[`addons/chat-spa/THIRD_PARTY_NOTICES.md`](addons/chat-spa/THIRD_PARTY_NOTICES.md).
+
+The chat-spa addon is a modern React replacement for the legacy
+`assets/js/chat.js` jQuery UI. It uses the Vercel AI SDK UI layer
+(`@ai-sdk/react`'s `useChat` hook) **on the React side only** — the WordPress
+PHP layer (`WP_MCP_AI_REST_Chat_Controller`) remains the orchestrator and AI
+provider gateway. A client-side adapter
+([`src/sse-adapter.ts`](addons/chat-spa/src/sse-adapter.ts)) translates NV oOS's
+native SSE frames into the AI SDK Data Stream Protocol so `useChat` can consume
+them with `streamProtocol: 'data'`. No Node server is introduced; every
+existing capability (HITL, harness layers, memory bridge, guest tokens,
+JetEngine transcripts, providers, tool registry) keeps working.
+
 ### `addons/embedded/`
 
 No external bundled JS libraries; CSS/JS authored in-house. **License:**

@@ -1,0 +1,45 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "cre-debt",
+	"label": "CRE Debt",
+	"icon": "building",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "loans",
+			"label": "Loans",
+			"endpoint": "/cre-debt/loans",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",             "type": "integer",  "label": "ID",            "readonly": true },
+				{ "name": "borrower",       "type": "string",   "label": "Borrower",      "required": true },
+				{ "name": "property",       "type": "string",   "label": "Property" },
+				{ "name": "principal",      "type": "number",   "label": "Principal" },
+				{ "name": "rate_pct",       "type": "number",   "label": "Rate %" },
+				{ "name": "status",         "type": "enum",     "label": "Status",        "options": ["pipeline","under_review","approved","funded","servicing","paid_off","default"] },
+				{ "name": "maturity_date",  "type": "date",     "label": "Maturity" },
+				{ "name": "notes",          "type": "text",     "label": "Notes" }
+			]
+		},
+		{
+			"name": "payments",
+			"label": "Payments",
+			"endpoint": "/cre-debt/payments",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",       "type": "integer",  "label": "ID",      "readonly": true },
+				{ "name": "loan_id",  "type": "reference","label": "Loan",    "reference": "loans", "required": true },
+				{ "name": "due_date", "type": "date",     "label": "Due",     "required": true },
+				{ "name": "amount",   "type": "number",   "label": "Amount" },
+				{ "name": "paid_at",  "type": "date",     "label": "Paid" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "loans_list",   "type": "table",  "resource": "loans",   "default": true, "label": "Loans" },
+		{ "name": "pipeline",     "type": "kanban", "resource": "loans",   "group_by": "status", "label": "Pipeline" },
+		{ "name": "payments_list","type": "table",  "resource": "payments",                  "label": "Payments" }
+	]
+}

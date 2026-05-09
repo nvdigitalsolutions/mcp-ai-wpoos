@@ -380,8 +380,21 @@ class NV_oOS_Graphify_Detector {
 		}
 
 		// Build the indexed-slug allowlist once, before iterating.
-		$default_slugs = array_map( 'sanitize_key', wp_list_pluck( $types, 'slug' ) );
-		$default_slugs = array_values( array_filter( $default_slugs ) );
+		//
+		// JetEngine's CCT type objects don't expose `slug` as a public
+		// property — it lives in `$type->args['slug']` (with newer versions
+		// also surfacing it via `$type->slug`). Reuse the same resolution
+		// helper as the iteration loop below so we don't end up with a list
+		// of nulls (which would empty the allowlist and skip every CCT,
+		// surfacing as the `all_content_types_empty_or_unindexed` reason).
+		$default_slugs = array();
+		foreach ( $types as $type_key => $type ) {
+			$slug = self::resolve_cct_slug( $type, $type_key );
+			if ( '' !== $slug ) {
+				$default_slugs[] = $slug;
+			}
+		}
+		$default_slugs = array_values( array_unique( $default_slugs ) );
 
 		/**
 		 * Filter the list of CCT slugs indexed by the knowledge graph.
@@ -398,14 +411,8 @@ class NV_oOS_Graphify_Detector {
 
 		$rows = array();
 
-		foreach ( $types as $type ) {
-			$slug = '';
-			if ( ! empty( $type->slug ) ) {
-				$slug = $type->slug;
-			} elseif ( ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
-				$slug = $type->args['slug'];
-			}
-			$slug = sanitize_key( $slug );
+		foreach ( $types as $type_key => $type ) {
+			$slug = self::resolve_cct_slug( $type, $type_key );
 			if ( '' === $slug ) {
 				continue;
 			}
@@ -416,20 +423,25 @@ class NV_oOS_Graphify_Detector {
 
 			// Resolve human-readable name.
 			$name = '';
-			if ( ! empty( $type->name ) ) {
+			if ( is_object( $type ) && ! empty( $type->name ) ) {
 				$name = $type->name;
-			} elseif ( ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
+			} elseif ( is_object( $type ) && ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
 				$name = $type->args['name'];
+			} elseif ( is_array( $type ) && ! empty( $type['name'] ) ) {
+				$name = $type['name'];
+			} elseif ( is_array( $type ) && ! empty( $type['args']['name'] ) ) {
+				$name = $type['args']['name'];
 			} else {
 				$name = $slug;
 			}
 
-			if ( empty( $type->db ) || ! method_exists( $type->db, 'query' ) ) {
+			$db = is_object( $type ) && ! empty( $type->db ) ? $type->db : null;
+			if ( null === $db || ! method_exists( $db, 'query' ) ) {
 				continue;
 			}
 
-			if ( method_exists( $type->db, 'set_format_flag' ) ) {
-				$type->db->set_format_flag( ARRAY_A );
+			if ( method_exists( $db, 'set_format_flag' ) ) {
+				$db->set_format_flag( ARRAY_A );
 			}
 
 			$filter_args = array();
@@ -443,7 +455,7 @@ class NV_oOS_Graphify_Detector {
 				);
 			}
 
-			$items = $type->db->query( $filter_args, $per_type_limit, 0 );
+			$items = $db->query( $filter_args, $per_type_limit, 0 );
 			if ( ! is_array( $items ) || empty( $items ) ) {
 				continue;
 			}
@@ -468,6 +480,44 @@ class NV_oOS_Graphify_Detector {
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * Resolve a sanitised CCT slug from a JetEngine content-type entry.
+	 *
+	 * JetEngine's CCT type instances historically expose the slug only via
+	 * `$type->args['slug']` (older builds) and may also expose a public
+	 * `$type->slug` property (newer builds). Some integration shims pass the
+	 * type as an associative array, and the manager always indexes the
+	 * content-types map by slug — so the array key is a reliable last-resort
+	 * fallback.
+	 *
+	 * Centralising this fallback chain ensures the indexed-slug allowlist
+	 * built up-front and the per-type iteration agree on the same slug for
+	 * the same type, which is what makes the `nvoos_graphify_indexed_cct_slugs`
+	 * filter behave predictably.
+	 *
+	 * @since 0.7.1
+	 *
+	 * @param object|array $type     JetEngine content-type entry.
+	 * @param string|int   $type_key Associative key from the content-types map.
+	 * @return string Sanitised slug, or empty string when none could be resolved.
+	 */
+	private static function resolve_cct_slug( $type, $type_key = '' ) {
+		$slug = '';
+		if ( is_object( $type ) && ! empty( $type->slug ) ) {
+			$slug = $type->slug;
+		} elseif ( is_object( $type ) && ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
+			$slug = $type->args['slug'];
+		} elseif ( is_array( $type ) && ! empty( $type['slug'] ) ) {
+			$slug = $type['slug'];
+		} elseif ( is_array( $type ) && ! empty( $type['args']['slug'] ) ) {
+			$slug = $type['args']['slug'];
+		} elseif ( is_string( $type_key ) && '' !== $type_key ) {
+			$slug = $type_key;
+		}
+
+		return sanitize_key( $slug );
 	}
 
 	/**

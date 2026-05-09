@@ -6,7 +6,7 @@
  * addon manages — Cloudflare, Stripe, OpenRouter — by making a single,
  * cheap, read-only HTTP call against each provider's identity endpoint:
  *
- *   • Cloudflare  → GET https://api.cloudflare.com/client/v4/accounts/{account_id}
+ *   • Cloudflare  → GET https://api.cloudflare.com/client/v4/user/tokens/verify
  *   • Stripe      → GET https://api.stripe.com/v1/account
  *   • OpenRouter  → GET https://openrouter.ai/api/v1/auth/key
  *
@@ -49,10 +49,25 @@ class NVOOS_SaaS_Controller_Connection_Tester {
 	/**
 	 * Test the Cloudflare credential pair.
 	 *
+	 * Uses the dedicated token-verification endpoint (`/user/tokens/verify`)
+	 * rather than an account-scoped endpoint. This has two advantages:
+	 *
+	 *   1. It does not require the token to have a specific scope — any valid
+	 *      API token will receive a 200 response, making the test meaningful
+	 *      regardless of which permissions the operator granted.
+	 *   2. It avoids the HTTP 400 "Invalid request headers" response that some
+	 *      Cloudflare account endpoints return when default WordPress request
+	 *      headers conflict with the account-details endpoint's strict header
+	 *      validation.
+	 *
+	 * The account ID is still validated for format here so that bad values are
+	 * surfaced immediately. Live account-scope verification is handled by the
+	 * smoke tester's `check_cloudflare_workers()` check.
+	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $account_id Cloudflare account ID.
-	 * @param string $api_token  Cloudflare API token.
+	 * @param string $account_id Cloudflare account ID (format-validated only).
+	 * @param string $api_token  Cloudflare API token (live-verified).
 	 * @return array Result shape: { ok, latency_ms, status, message }.
 	 */
 	public function test_cloudflare( $account_id, $api_token ) {
@@ -67,9 +82,13 @@ class NVOOS_SaaS_Controller_Connection_Tester {
 		if ( ! preg_match( '/^[a-f0-9]{16,64}$/i', $account_id ) ) {
 			return $this->failure( 0, 0, __( 'Cloudflare account ID format is invalid.', 'nvoos-saas-controller' ) );
 		}
-		$url = 'https://api.cloudflare.com/client/v4/accounts/' . rawurlencode( $account_id );
+		// Use the dedicated token-verification endpoint instead of an
+		// account-scoped URL. The /accounts/{id} endpoint can return HTTP 400
+		// "Invalid request headers" depending on the token scope and the server
+		// environment, while /user/tokens/verify is specifically designed for
+		// this kind of preflight check.
 		return $this->preflight(
-			$url,
+			'https://api.cloudflare.com/client/v4/user/tokens/verify',
 			array(
 				'Authorization' => 'Bearer ' . $api_token,
 				'Accept'        => 'application/json',

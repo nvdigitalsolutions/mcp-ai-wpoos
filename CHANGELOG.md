@@ -1,5 +1,21 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Security — Dependabot Alert Sweep (33 alerts)
+
+Resolved the full 33-alert Dependabot backlog across all five npm manifests; the Composer surface was already clean. Lockfiles refreshed and committed dist artifacts rebuilt where applicable.
+
+- **Root (`/package.json`)** — bumped overrides: `axios → ^1.16.0`, `basic-ftp → >=6.0.1`, `ip-address → >=10.2.0`. Resolves 3 alerts (1 moderate / 2 high) including 13 axios advisories (prototype-pollution + SSRF + CRLF chain), `basic-ftp` DoS (`GHSA-rpmf-866q-6p89`), and `ip-address` XSS (`GHSA-v2v4-37r5-5v8g`).
+- **`addons/pro/package.json`** — bumped direct `axios` to `^1.16.0`; added overrides for `basic-ftp` and `ip-address` mirroring root. Resolves 3 alerts.
+- **`addons/saas-controller/package.json`** — bumped `@wordpress/scripts` (^30 → ^32.1.0), `diff` (^7 → ^9 — only referenced from PHPUnit identifiers, no JS callers), `@types/diff` (→ ^8), `esbuild` (^0.24 → ^0.28), `miniflare` (→ ^4.20260504); added overrides for `minimatch`, `serialize-javascript`, `webpack-dev-server`. Rebuilt `assets/build/` + `worker/dist/`. Resolves 17 alerts (5 low / 2 mod / 10 high) covering ReDoS, RCE, dev-server source-leak.
+- **`addons/docs-hub/package.json`** — bumped `react-router-dom` (7.5.3 → ^7.15.0). Resolves 2 alerts (CSRF + XSS chain `GHSA-h5cw-625j-3rxh`, `GHSA-2w69-qvjg-hvjx`, etc.). Rebuilt `assets/dist/docs-hub.js` + `docs-hub.css` per `addons/docs-hub/esbuild.config.js`.
+- **`addons/cloud-worker/package.json`** — bumped `@cloudflare/vitest-pool-workers` (^0.5 → ^0.16), `vitest` (^2 → ^4.1.5), `wrangler` (^3 → ^4.88). Resolves 10 alerts (devalue prototype pollution, esbuild dev-server, undici/miniflare chain).
+
+#### Hardening (`.github/dependabot.yml`)
+
+Extended Dependabot coverage from root-only to every addon manifest with its own lockfile / `composer.json`: added 4 new npm watchers (`addons/pro`, `addons/saas-controller`, `addons/docs-hub`, `addons/cloud-worker`) and 4 new composer watchers (`addons/pro`, `addons/fantasy-football`, `addons/docs-hub`, `addons/algorave`). Prevents the next batch of transitive vulns from accumulating silently.
+
 ## [1.1.16] - 2026-05-06
 
 ### May 6, 2026 — SaaS Controller Addon (v0.1.0) + Structured Logging Integration

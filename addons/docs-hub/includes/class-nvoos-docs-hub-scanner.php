@@ -35,6 +35,65 @@ class NV_oOS_Docs_Hub_Scanner {
 	const ALLOWED_EXTENSIONS = array( 'md', 'txt' );
 
 	/**
+	 * Default exclusion globs applied on every rebuild (filterable).
+	 *
+	 * Covers third-party / build / VCS noise so vendor docs don't pollute
+	 * the index. Tested against both the relative_path and the basename
+	 * of every candidate file in apply_exclusions(); also used by
+	 * is_dir_pruned() to skip whole subtrees during recursion.
+	 *
+	 * @var string[]
+	 */
+	const DEFAULT_EXCLUDED_GLOBS = array(
+		// Dependency directories.
+		'vendor/*',
+		'**/vendor/*',
+		'node_modules/*',
+		'**/node_modules/*',
+		'bower_components/*',
+		'**/bower_components/*',
+		// VCS / CI / build outputs.
+		'.git/*',
+		'**/.git/*',
+		'.github/*',
+		'**/.github/*',
+		'dist/*',
+		'**/dist/*',
+		'build/*',
+		'**/build/*',
+		'coverage/*',
+		'**/coverage/*',
+		'tests/fixtures/*',
+		'**/tests/fixtures/*',
+		// Third-party noise filenames.
+		'LICENSE.md',
+		'LICENSE.txt',
+		'CODE_OF_CONDUCT.md',
+		'THIRD_PARTY_NOTICES.md',
+	);
+
+	/**
+	 * Directory names that are unconditionally pruned during recursive
+	 * directory walks (matched on basename).
+	 *
+	 * Filtered through `nvoos_docs_hub_pruned_dir_names` so site owners
+	 * can extend or shrink this list at runtime.
+	 *
+	 * @var string[]
+	 */
+	const PRUNED_DIR_NAMES = array(
+		'vendor',
+		'node_modules',
+		'bower_components',
+		'.git',
+		'.github',
+		'.svn',
+		'dist',
+		'build',
+		'coverage',
+	);
+
+	/**
 	 * Scan configured sources and return an array of file entries.
 	 *
 	 * Each entry: [ 'path', 'source', 'plugin_name', 'relative_path' ]
@@ -78,9 +137,40 @@ class NV_oOS_Docs_Hub_Scanner {
 			$entries = array_merge( $entries, $this->scan_remote_repos( $settings ) );
 		}
 
-		$excluded = apply_filters( 'nvoos_docs_hub_excluded_globs', array() );
+		// Always apply the default exclusion list, with optional user
+		// extensions on top. The filter receives the merged defaults so
+		// site owners can both extend and override (return [] to opt-out).
+		$default_excluded = self::DEFAULT_EXCLUDED_GLOBS;
+
+		/**
+		 * Filter the list of glob patterns to exclude from indexing.
+		 *
+		 * Defaults exclude vendor/, node_modules/, build outputs and
+		 * common third-party noise filenames. Return an empty array to
+		 * opt out entirely (not recommended).
+		 *
+		 * @since 1.0.0
+		 * @since 1.2.0 Now seeded with self::DEFAULT_EXCLUDED_GLOBS.
+		 *
+		 * @param string[] $excluded Glob patterns.
+		 */
+		$excluded = apply_filters( 'nvoos_docs_hub_excluded_globs', $default_excluded );
+
+		/**
+		 * Filter the list of glob patterns to force-include even when an
+		 * exclusion would otherwise drop them.
+		 *
+		 * Use this when you legitimately want to publish a vendored doc
+		 * (e.g. `vendor/some-team/internal-runbooks/*.md`).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string[] $force_included Glob patterns.
+		 */
+		$force_included = apply_filters( 'nvoos_docs_hub_force_include_globs', array() );
+
 		if ( ! empty( $excluded ) ) {
-			$entries = $this->apply_exclusions( $entries, $excluded );
+			$entries = $this->apply_exclusions( $entries, $excluded, $force_included );
 		}
 
 		return $entries;
@@ -164,6 +254,9 @@ class NV_oOS_Docs_Hub_Scanner {
 			return array();
 		}
 
+		$settings        = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$include_readmes = ! isset( $settings['include_addon_readmes'] ) || ! empty( $settings['include_addon_readmes'] );
+
 		foreach ( $addon_dirs as $addon_dir ) {
 			$addon_slug = basename( $addon_dir );
 
@@ -179,7 +272,9 @@ class NV_oOS_Docs_Hub_Scanner {
 
 			$plugin_name = $this->derive_addon_name( $real_addon, $addon_slug );
 
-			// Scan docs subdirectory.
+			// Scan docs subdirectory. glob_recursive() now skips vendor/,
+			// node_modules/, etc. so a `docs/vendor/...` regression in any
+			// addon will not pollute the index.
 			$docs_dir = $real_addon . DIRECTORY_SEPARATOR . 'docs';
 			if ( is_dir( $docs_dir ) ) {
 				$files = $this->glob_recursive( $docs_dir, '*.md' );
@@ -200,15 +295,22 @@ class NV_oOS_Docs_Hub_Scanner {
 				}
 			}
 
-			// Also include top-level README.md.
-			$readme = $real_addon . DIRECTORY_SEPARATOR . 'README.md';
-			if ( file_exists( $readme ) && $this->is_allowed_file( $readme ) ) {
-				$entries[] = array(
-					'path'          => $readme,
-					'source'        => 'addons',
-					'plugin_name'   => $plugin_name,
-					'relative_path' => 'README.md',
-				);
+			if ( ! $include_readmes ) {
+				continue;
+			}
+
+			// Also include top-level README.md / CHANGELOG.md so each addon
+			// can ship a one-page intro without a docs/ tree.
+			foreach ( array( 'README.md', 'CHANGELOG.md' ) as $top_file ) {
+				$candidate = $real_addon . DIRECTORY_SEPARATOR . $top_file;
+				if ( file_exists( $candidate ) && $this->is_allowed_file( $candidate ) ) {
+					$entries[] = array(
+						'path'          => $candidate,
+						'source'        => 'addons',
+						'plugin_name'   => $plugin_name,
+						'relative_path' => $top_file,
+					);
+				}
 			}
 		}
 
@@ -223,11 +325,11 @@ class NV_oOS_Docs_Hub_Scanner {
 	 * @return array
 	 */
 	private function scan_root() {
-		// Only scan when WP_DEBUG is on or context_enabled.
-		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
-		if ( empty( $settings['context_enabled'] ) && ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) ) {
-			return array();
-		}
+		// `.context/*.md` discovery still requires WP_DEBUG or context_enabled
+		// and is handled by scan_context(). The well-known root files
+		// (README, CHANGELOG, CONTRIBUTING, SECURITY) are non-sensitive and
+		// are exactly what end users expect to see, so we always index them
+		// when the `root` source is enabled.
 
 		// Two levels up from plugin dir.
 		$repo_root = dirname( dirname( NVOOS_DOCS_HUB_PATH ) );
@@ -383,6 +485,9 @@ class NV_oOS_Docs_Hub_Scanner {
 		$subdirs = glob( rtrim( $dir, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR );
 		if ( ! empty( $subdirs ) ) {
 			foreach ( $subdirs as $subdir ) {
+				if ( $this->is_dir_pruned( $subdir ) ) {
+					continue;
+				}
 				$results = array_merge( $results, $this->glob_recursive( $subdir, $pattern ) );
 			}
 		}
@@ -390,29 +495,106 @@ class NV_oOS_Docs_Hub_Scanner {
 	}
 
 	/**
+	 * Whether a directory should be pruned during recursive walks.
+	 *
+	 * Pruning happens at directory-entry time so we never descend into
+	 * `vendor/` or `node_modules/`, which can contain tens of thousands of
+	 * irrelevant files in a single addon. This is what makes the scan
+	 * affordable on big repos.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $dir Absolute directory path.
+	 * @return bool
+	 */
+	private function is_dir_pruned( $dir ) {
+		$basename = basename( $dir );
+
+		/**
+		 * Filter the list of directory basenames pruned during recursion.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string[] $names List of directory basenames.
+		 */
+		$names = apply_filters( 'nvoos_docs_hub_pruned_dir_names', self::PRUNED_DIR_NAMES );
+
+		return in_array( $basename, (array) $names, true );
+	}
+
+	/**
 	 * Apply excluded glob patterns, removing matching entries.
 	 *
 	 * @since 1.0.0
+	 * @since 1.2.0 Adds force-include override list.
 	 *
-	 * @param array    $entries  List of file entries.
-	 * @param string[] $excluded List of glob patterns to exclude.
+	 * @param array    $entries        List of file entries.
+	 * @param string[] $excluded       Glob patterns to exclude.
+	 * @param string[] $force_included Glob patterns that override exclusions.
 	 * @return array
 	 */
-	private function apply_exclusions( $entries, $excluded ) {
+	private function apply_exclusions( $entries, $excluded, $force_included = array() ) {
 		return array_filter(
 			$entries,
-			function ( $entry ) use ( $excluded ) {
-				foreach ( $excluded as $pattern ) {
-					if ( fnmatch( $pattern, $entry['relative_path'] ) ) {
-						return false;
-					}
-					if ( fnmatch( $pattern, basename( $entry['path'] ) ) ) {
-						return false;
-					}
+			function ( $entry ) use ( $excluded, $force_included ) {
+				if ( $this->matches_any_glob( $entry, $force_included ) ) {
+					return true;
 				}
-				return true;
+				return ! $this->matches_any_glob( $entry, $excluded );
 			}
 		);
+	}
+
+	/**
+	 * Test an entry's relative_path / basename against a list of glob patterns.
+	 *
+	 * Supports the `**\/dir\/*` recursive syntax in addition to fnmatch's
+	 * native `?` / `*` / `[…]` matching.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array    $entry    File entry array.
+	 * @param string[] $patterns Glob patterns.
+	 * @return bool
+	 */
+	private function matches_any_glob( $entry, $patterns ) {
+		$relative = isset( $entry['relative_path'] ) ? (string) $entry['relative_path'] : '';
+		$basename = isset( $entry['path'] ) ? basename( (string) $entry['path'] ) : '';
+
+		foreach ( (array) $patterns as $pattern ) {
+			if ( '' === $pattern ) {
+				continue;
+			}
+
+			// Native fnmatch first.
+			if ( '' !== $relative && fnmatch( $pattern, $relative ) ) {
+				return true;
+			}
+			if ( '' !== $basename && fnmatch( $pattern, $basename ) ) {
+				return true;
+			}
+
+			// `**/dir/*` should match `dir/foo`, `a/dir/foo`, `a/b/dir/foo`.
+			if ( 0 === strpos( $pattern, '**/' ) ) {
+				$inner = substr( $pattern, 3 );
+				if ( '' !== $relative ) {
+					if ( fnmatch( $inner, $relative ) ) {
+						return true;
+					}
+					// Walk every path-segment offset so `a/b/c.md` is checked
+					// against `b/c.md` and `c.md` too.
+					$tail = $relative;
+					while ( false !== ( $pos = strpos( $tail, '/' ) ) ) {
+						$tail = substr( $tail, $pos + 1 );
+						if ( '' !== $tail && fnmatch( $inner, $tail ) ) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**

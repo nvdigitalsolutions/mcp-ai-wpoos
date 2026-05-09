@@ -1,0 +1,14 @@
+# Pre-built SPA artifacts go here.
+#
+# Run `npm ci && npm run build` to generate:
+#   toolkit-shell.js
+#   toolkit-shell.css
+#
+# Both files MUST be committed alongside source so fresh clones work without
+# a local npm build (per the SaaS Controller pattern in
+# addons/saas-controller/.gitignore).
+#
+# When the bundle changes, bump:
+#   1. `Version:` header in nvoos-toolkit-shell.php
+#   2. `define( 'NVOOS_TOOLKIT_SHELL_VERSION', '...' );`
+#   3. `"version"` in package.json

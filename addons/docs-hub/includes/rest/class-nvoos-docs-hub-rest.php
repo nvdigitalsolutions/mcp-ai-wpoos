@@ -91,6 +91,43 @@ class NV_oOS_Docs_Hub_REST {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( __CLASS__, 'rebuild' ),
 				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				'args'                => array(
+					'sync' => array(
+						'description' => __( 'Run synchronously instead of enqueueing chunks.', 'nvoos-docs-hub' ),
+						'type'        => 'boolean',
+						'default'     => false,
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild/status',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'rebuild_status' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild/cancel',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'rebuild_cancel' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/rebuild/resume',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'rebuild_resume' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
 			)
 		);
 
@@ -101,6 +138,48 @@ class NV_oOS_Docs_Hub_REST {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'health' ),
 				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/remote/tree',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'remote_tree' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				'args'                => array(
+					'owner' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'repo'  => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'ref'   => array(
+						'type'              => 'string',
+						'default'           => 'HEAD',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'path'  => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'index' => array(
+						'description'       => __( 'Index into the saved remote_repos array (so the persisted token can be reused without round-tripping it through the browser).', 'nvoos-docs-hub' ),
+						'type'              => 'integer',
+						'default'           => -1,
+						'sanitize_callback' => 'intval',
+					),
+					'force' => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
+				),
 			)
 		);
 	}
@@ -280,7 +359,12 @@ class NV_oOS_Docs_Hub_REST {
 		$search_index = $cache->get_search_index();
 
 		if ( ! is_array( $search_index ) ) {
-			return rest_ensure_response( array( 'results' => array(), 'total' => 0 ) );
+			return rest_ensure_response(
+				array(
+					'results' => array(),
+					'total'   => 0,
+				)
+			);
 		}
 
 		$results = self::run_search( $q, $limit, $search_index );
@@ -297,9 +381,14 @@ class NV_oOS_Docs_Hub_REST {
 	}
 
 	/**
-	 * POST /rebuild — triggers a full documentation rebuild.
+	 * POST /rebuild — triggers a documentation rebuild.
+	 *
+	 * Async by default (returns 202-style queued response with the
+	 * current job summary). Pass `?sync=1` to run inline — preserved
+	 * for tests and CLI back-compat.
 	 *
 	 * @since 1.0.0
+	 * @since 1.2.0 Async by default; sync via `?sync=1`.
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
@@ -315,17 +404,70 @@ class NV_oOS_Docs_Hub_REST {
 			);
 		}
 
-		$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
-
-		if ( ! $result['success'] ) {
-			return new WP_Error(
-				'rebuild_failed',
-				__( 'Documentation rebuild failed.', 'nvoos-docs-hub' ),
-				array( 'status' => 500 )
-			);
+		$sync = filter_var( $request->get_param( 'sync' ), FILTER_VALIDATE_BOOLEAN );
+		if ( $sync ) {
+			$result = NV_oOS_Docs_Hub_Rebuild_Job::run();
+			if ( ! $result['success'] ) {
+				return new WP_Error(
+					'rebuild_failed',
+					! empty( $result['error'] ) ? (string) $result['error'] : __( 'Documentation rebuild failed.', 'nvoos-docs-hub' ),
+					array( 'status' => 500 )
+				);
+			}
+			return rest_ensure_response( $result );
 		}
 
-		return rest_ensure_response( $result );
+		$summary  = NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
+		$response = rest_ensure_response(
+			array_merge(
+				$summary,
+				array( 'status' => 'queued' )
+			)
+		);
+		$response->set_status( 202 );
+		return $response;
+	}
+
+	/**
+	 * GET /rebuild/status — returns the current rebuild progress snapshot.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function rebuild_status( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		$response = rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_State::to_summary() );
+		$response->header( 'Cache-Control', 'no-store' );
+		return $response;
+	}
+
+	/**
+	 * POST /rebuild/cancel — cancels an in-flight rebuild.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function rebuild_cancel( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		// Permission + wp_rest nonce already enforced by admin_permission()
+		// + WordPress REST cookie-auth, identical to /rebuild.
+		return rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_Job::cancel_async() );
+	}
+
+	/**
+	 * POST /rebuild/resume — resumes a stalled / failed rebuild.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function rebuild_resume( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		// Permission + wp_rest nonce already enforced by admin_permission()
+		// + WordPress REST cookie-auth, identical to /rebuild.
+		return rest_ensure_response( NV_oOS_Docs_Hub_Rebuild_Job::resume_async() );
 	}
 
 	/**
@@ -350,8 +492,74 @@ class NV_oOS_Docs_Hub_REST {
 				'broken_links' => $broken_links,
 				'last_built'   => $last_built,
 				'version'      => NVOOS_DOCS_HUB_VERSION,
+				'rebuild'      => NV_oOS_Docs_Hub_Rebuild_State::to_summary(),
 			)
 		);
+	}
+
+	/**
+	 * GET /remote/tree — list Markdown/txt files in a remote repo for the picker.
+	 *
+	 * Admin-only. When the optional `index` parameter points at a saved
+	 * remote_repos entry, the persisted token is reused so the browser
+	 * never has to round-trip a fresh PAT.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function remote_tree( $request ) {
+		$owner = (string) $request->get_param( 'owner' );
+		$repo  = (string) $request->get_param( 'repo' );
+		$ref   = (string) $request->get_param( 'ref' );
+		$path  = (string) $request->get_param( 'path' );
+		$index = (int) $request->get_param( 'index' );
+		$force = (bool) $request->get_param( 'force' );
+
+		// Reuse the persisted token (if any) instead of asking the browser to send it.
+		$token    = '';
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] )
+			? $settings['remote_repos']
+			: array();
+		// Bounds-check the index against the saved repo list so a tampered request
+		// can't reach into other array keys.
+		if ( $index >= 0
+			&& $index < count( $repos )
+			&& isset( $repos[ $index ] )
+			&& is_array( $repos[ $index ] )
+			&& isset( $repos[ $index ]['token'] )
+		) {
+			$token = (string) $repos[ $index ]['token'];
+		}
+
+		$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
+		try {
+			$result = $fetcher->fetch_tree_for_admin(
+				array(
+					'owner' => $owner,
+					'repo'  => $repo,
+					'ref'   => '' !== $ref ? $ref : 'HEAD',
+					'path'  => $path,
+					'token' => $token,
+					'force' => $force,
+				)
+			);
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'nvoos_docs_hub_fetch_error',
+				$e->getMessage(),
+				array( 'status' => 500 )
+			);
+		}
+
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 502 ) );
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
 	}
 
 	/**

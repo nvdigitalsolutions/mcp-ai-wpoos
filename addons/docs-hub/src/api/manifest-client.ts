@@ -63,6 +63,9 @@ export interface DocPage {
 	tags: string[];
 	description: string;
 	last_modified: number;
+	/** Repo-relative file path (e.g. "docs/getting-started.md"). */
+	relative_path: string;
+	remote_url?: string;
 }
 
 export interface SearchResult {
@@ -199,7 +202,7 @@ export async function fetchPage( slug: string ): Promise<DocPage> {
 		return cached;
 	}
 
-	const page = await apiFetch<DocPage>( `pages/${ encodeURIComponent( slug ) }` );
+	const page = await apiFetch<DocPage>( `pages/${ slug.split( '/' ).map( encodeURIComponent ).join( '/' ) }` );
 	cacheSet( CACHE_KEY, page );
 	return page;
 }

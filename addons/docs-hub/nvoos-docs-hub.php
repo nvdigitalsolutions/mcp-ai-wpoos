@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Docs Hub
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: React-based documentation browser for NV oOS. Discovers, indexes, and renders Markdown docs from the base plugin and every addon in a GitBook-style SPA. Shortcode [nvoos_docs] embeds it on any page.
- * Version:     1.0.0
+ * Version:     0.3.9
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_DOCS_HUB_VERSION', '1.0.0' );
+define( 'NVOOS_DOCS_HUB_VERSION', '0.3.9' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_DOCS_HUB_FILE', __FILE__ );
@@ -42,10 +42,13 @@ require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-remote-repo.ph
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-scanner.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-indexer.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-cache.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/jobs/class-nvoos-docs-hub-rebuild-state.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/jobs/class-nvoos-docs-hub-rebuild-job.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/jobs/class-nvoos-docs-hub-rebuild-pipeline.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/rest/class-nvoos-docs-hub-rest.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/shortcode/class-nvoos-docs-hub-shortcode.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/block/class-nvoos-docs-hub-block.php';
+require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-sitemap-provider.php';
 
 // Load admin classes.
 if ( is_admin() ) {

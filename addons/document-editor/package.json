@@ -1,0 +1,50 @@
+{
+  "name": "nvoos-document-editor",
+  "version": "0.2.0",
+  "description": "NV oOS Document Editor — React SPA addon",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.cjs --prod",
+    "build:dev": "node esbuild.config.cjs",
+    "watch": "node esbuild.config.cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:a11y": "eslint --max-warnings 0 src/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@grapesjs/react": "^2.0.0",
+    "@tiptap/extension-link": "3.22.5",
+    "@tiptap/extension-placeholder": "3.22.5",
+    "@tiptap/extension-table": "3.22.5",
+    "@tiptap/extension-table-cell": "3.22.5",
+    "@tiptap/extension-table-header": "3.22.5",
+    "@tiptap/extension-table-row": "3.22.5",
+    "@tiptap/pm": "3.22.5",
+    "@tiptap/react": "3.22.5",
+    "@tiptap/starter-kit": "3.22.5",
+    "grapesjs": "^0.22.16",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@axe-core/react": "^4.10.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.17",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "@typescript-eslint/parser": "^8.32.0",
+    "@vitest/coverage-v8": "^4.1.5",
+    "@wordpress/i18n": "^5.12.0",
+    "esbuild": "^0.27.0",
+    "eslint": "^9.27.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "jsdom": "^29.1.1",
+    "typescript": "5.8.3",
+    "vitest": "^4.1.5"
+  },
+  "type": "module"
+}

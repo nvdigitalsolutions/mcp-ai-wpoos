@@ -1,0 +1,65 @@
+{
+	"$schema": "https://nvdigitalsolutions.com/schemas/toolkit-spa-manifest-v1.json",
+	"version": "1.0",
+	"toolkit": "ecommerce",
+	"label": "E-commerce",
+	"icon": "shopping-cart",
+	"rest_namespace": "mcp-ai-pro/v1",
+	"capability": "edit_posts",
+	"resources": [
+		{
+			"name": "products",
+			"label": "Products",
+			"endpoint": "/ecommerce/products",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",          "type": "integer", "label": "ID",       "readonly": true },
+				{ "name": "name",        "type": "string",  "label": "Name",     "required": true },
+				{ "name": "sku",         "type": "string",  "label": "SKU" },
+				{ "name": "price",       "type": "number",  "label": "Price",    "required": true },
+				{ "name": "stock",       "type": "integer", "label": "Stock" },
+				{ "name": "status",      "type": "enum",    "label": "Status",   "options": ["draft","active","out_of_stock","archived"] },
+				{ "name": "category",    "type": "string",  "label": "Category" },
+				{ "name": "description", "type": "text",    "label": "Description" },
+				{ "name": "created_at",  "type": "datetime","label": "Created",  "readonly": true }
+			]
+		},
+		{
+			"name": "orders",
+			"label": "Orders",
+			"endpoint": "/ecommerce/orders",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",          "type": "integer",  "label": "ID",       "readonly": true },
+				{ "name": "customer",    "type": "string",   "label": "Customer", "required": true },
+				{ "name": "email",       "type": "email",    "label": "Email" },
+				{ "name": "total",       "type": "number",   "label": "Total",    "required": true },
+				{ "name": "currency",    "type": "string",   "label": "Currency" },
+				{ "name": "status",      "type": "enum",     "label": "Status",   "options": ["pending","processing","shipped","delivered","refunded","cancelled"] },
+				{ "name": "notes",       "type": "text",     "label": "Notes" },
+				{ "name": "created_at",  "type": "datetime", "label": "Ordered",  "readonly": true }
+			]
+		},
+		{
+			"name": "customers",
+			"label": "Customers",
+			"endpoint": "/ecommerce/customers",
+			"primary_key": "id",
+			"fields": [
+				{ "name": "id",          "type": "integer",  "label": "ID",       "readonly": true },
+				{ "name": "full_name",   "type": "string",   "label": "Name",     "required": true },
+				{ "name": "email",       "type": "email",    "label": "Email",    "required": true },
+				{ "name": "phone",       "type": "string",   "label": "Phone" },
+				{ "name": "total_spent", "type": "number",   "label": "Total spent" },
+				{ "name": "orders_count","type": "integer",  "label": "# Orders",  "readonly": true },
+				{ "name": "created_at",  "type": "datetime", "label": "Registered","readonly": true }
+			]
+		}
+	],
+	"views": [
+		{ "name": "products_list",  "type": "table",  "resource": "products",  "default": true, "label": "Products" },
+		{ "name": "orders_list",    "type": "table",  "resource": "orders",                     "label": "All orders" },
+		{ "name": "order_pipeline", "type": "kanban", "resource": "orders",    "group_by": "status", "label": "Order pipeline" },
+		{ "name": "customers_list", "type": "table",  "resource": "customers",                  "label": "Customers" }
+	]
+}

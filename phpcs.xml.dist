@@ -20,6 +20,7 @@
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
+<exclude-pattern>*/tests/fixtures/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 <exclude-pattern>*/addons/pro/*</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
@@ -29,6 +30,9 @@
 <!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix
      clarifies the file role. Class rename would break existing hooks and the autoloader. -->
 <exclude-pattern>class-wp-mcp-ai-plugin\.php$</exclude-pattern>
+<!-- Test files: PHPUnit test files use the test-*.php naming convention, which does not
+     match the WordPress class-*.php convention. The filename sniff is not applicable. -->
+<exclude-pattern>*/tests/test-*</exclude-pattern>
 <!-- Test files that intentionally contain multiple stub/test classes -->
 <exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
 </rule>

@@ -90,6 +90,8 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 * @since 1.1.0
 	 *
 	 * @param array $repo_config {
+	 *     Configuration for the remote repository.
+	 *
 	 *     @type string $owner  GitHub username or org.
 	 *     @type string $repo   Repository name.
 	 *     @type string $ref    Branch, tag, or commit SHA. Default 'HEAD'.
@@ -102,11 +104,11 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 */
 	public function fetch_entries( $repo_config ) {
 		$owner = isset( $repo_config['owner'] ) ? sanitize_text_field( $repo_config['owner'] ) : '';
-		$repo  = isset( $repo_config['repo'] )  ? sanitize_text_field( $repo_config['repo'] )  : '';
-		$ref   = isset( $repo_config['ref'] )   ? sanitize_text_field( $repo_config['ref'] )   : 'HEAD';
+		$repo  = isset( $repo_config['repo'] ) ? sanitize_text_field( $repo_config['repo'] ) : '';
+		$ref   = isset( $repo_config['ref'] ) ? sanitize_text_field( $repo_config['ref'] ) : 'HEAD';
 		$label = isset( $repo_config['label'] ) ? sanitize_text_field( $repo_config['label'] ) : $owner . '/' . $repo;
 		$token = isset( $repo_config['token'] ) ? (string) $repo_config['token'] : '';
-		$path  = isset( $repo_config['path'] )  ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
+		$path  = isset( $repo_config['path'] ) ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
 		$force = ! empty( $repo_config['force'] );
 
 		if ( '' === $owner || '' === $repo ) {
@@ -131,19 +133,36 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		// Step 2: fetch the Git tree.
-		$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
-		if ( is_wp_error( $tree ) ) {
-			return $tree;
+		// When a path prefix is configured, fetch only the subtree rooted at that
+		// path to avoid GitHub's tree-truncation limit on large monorepos.
+		if ( '' !== $path ) {
+			$subtree_sha = $this->resolve_subtree_sha( $owner, $repo, $resolved_ref, $token, $path );
+			if ( is_wp_error( $subtree_sha ) ) {
+				return $subtree_sha;
+			}
+			if ( null === $subtree_sha ) {
+				// The configured path prefix directory does not exist in this ref.
+				return array();
+			}
+			$tree = $this->fetch_tree( $owner, $repo, $subtree_sha, $token );
+			if ( is_wp_error( $tree ) ) {
+				return $tree;
+			}
+			// Tree items are already scoped to $path; no additional prefix filtering.
+			$md_files = $this->filter_md_files( $tree, '', $repo_config, $path );
+		} else {
+			$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
+			if ( is_wp_error( $tree ) ) {
+				return $tree;
+			}
+			$md_files = $this->filter_md_files( $tree, '', $repo_config, '' );
 		}
-
-		// Step 3: filter to .md files, optionally restricted to $path prefix.
-		$md_files = $this->filter_md_files( $tree, $path );
 
 		if ( empty( $md_files ) ) {
 			return array(); // No markdown files — not an error.
 		}
 
-		// Step 4: fetch (or load from local cache) each file's content.
+		// Step 3: fetch (or load from local cache) each file's content.
 		$entries = array();
 		$count   = 0;
 		$max     = (int) apply_filters( 'nvoos_docs_hub_remote_max_files', self::MAX_FILES_PER_REPO, $owner, $repo );
@@ -153,6 +172,8 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				break;
 			}
 
+			// $file_path is relative to the fetched tree's root (i.e. relative to $path when set,
+			// or relative to the repo root when no path prefix was configured).
 			$file_path = $file_info['path'];
 			$file_size = isset( $file_info['size'] ) ? (int) $file_info['size'] : 0;
 
@@ -161,15 +182,19 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				continue;
 			}
 
-			$cache_key     = $this->local_cache_key( $owner, $repo, $resolved_ref, $file_path );
+			// Full repo-relative path (needed for raw URL, cache key, and remote_url).
+			$full_repo_path = '' !== $path ? $path . '/' . $file_path : $file_path;
+
+			$cache_key     = $this->local_cache_key( $owner, $repo, $resolved_ref, $full_repo_path );
 			$local_content = $force ? false : $this->get_cached_content( $cache_key );
 
 			if ( false === $local_content ) {
+				// $full_repo_path segments come from the GitHub tree API and are already URL-safe.
 				$raw_url = 'https://raw.githubusercontent.com/'
 					. rawurlencode( $owner ) . '/'
 					. rawurlencode( $repo ) . '/'
 					. rawurlencode( $resolved_ref ) . '/'
-					. $file_path; // path segments already URL-encoded by the API.
+					. $full_repo_path;
 
 				$headers = array();
 				if ( '' !== $token ) {
@@ -186,29 +211,23 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				$local_content = $content;
 			}
 
-			// Derive relative path (strip the leading path prefix if set).
-			$relative = $file_path;
-			if ( '' !== $path && 0 === strpos( $relative, $path . '/' ) ) {
-				$relative = substr( $relative, strlen( $path ) + 1 );
-			}
-
 			$entries[] = array(
 				'path'          => $this->local_cache_path( $cache_key ),
 				'source'        => 'remote',
 				'plugin_name'   => $label,
-				'relative_path' => $relative,
+				'relative_path' => $file_path, // Already relative to $path (prefix already stripped).
 				'content'       => $local_content,
 				'remote_url'    => 'https://github.com/'
 					. rawurlencode( $owner ) . '/'
 					. rawurlencode( $repo ) . '/blob/'
 					. rawurlencode( $resolved_ref ) . '/'
-					. $file_path,
+					. $full_repo_path,
 				'repo_owner'    => $owner,
 				'repo_name'     => $repo,
 				'repo_ref'      => $resolved_ref,
 			);
 
-			$count++;
+			++$count;
 		}
 
 		return $entries;
@@ -277,17 +296,22 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param string $owner GitHub owner.
-	 * @param string $repo  GitHub repo name.
-	 * @param string $ref   Commit SHA or ref.
-	 * @param string $token Optional bearer token.
+	 * @param string $owner     GitHub owner.
+	 * @param string $repo      GitHub repo name.
+	 * @param string $ref       Commit SHA or ref.
+	 * @param string $token     Optional bearer token.
+	 * @param bool   $recursive Whether to fetch the tree recursively (default true).
 	 * @return array|WP_Error Array of tree items on success.
 	 */
-	private function fetch_tree( $owner, $repo, $ref, $token ) {
+	private function fetch_tree( $owner, $repo, $ref, $token, $recursive = true ) {
 		$url = 'https://api.github.com/repos/'
 			. rawurlencode( $owner ) . '/'
 			. rawurlencode( $repo ) . '/git/trees/'
-			. rawurlencode( $ref ) . '?recursive=1';
+			. rawurlencode( $ref );
+
+		if ( $recursive ) {
+			$url .= '?recursive=1';
+		}
 
 		$headers = array(
 			'Accept' => 'application/vnd.github+json',
@@ -321,15 +345,83 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	}
 
 	/**
-	 * Filter tree items to Markdown (and optionally .txt) files.
+	 * Resolve the SHA of a subtree at a given path within the repository.
+	 *
+	 * Traverses the path segment by segment, fetching only the top-level of
+	 * each tree to avoid the GitHub API's recursive-tree truncation limit that
+	 * affects large monorepos. Returns null (not an error) when the path does
+	 * not exist in the tree.
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param array  $tree       Git tree items from the API.
-	 * @param string $path_prefix Optional path prefix to restrict to.
+	 * @param string $owner GitHub owner.
+	 * @param string $repo  GitHub repo name.
+	 * @param string $ref   Resolved commit SHA or ref.
+	 * @param string $token Optional bearer token.
+	 * @param string $path  Slash-separated path (e.g. "docs" or "addons/pro/docs").
+	 * @return string|null|WP_Error Subtree SHA on success, null if path not found, WP_Error on API failure.
+	 */
+	private function resolve_subtree_sha( $owner, $repo, $ref, $token, $path ) {
+		$parts       = explode( '/', trim( $path, '/' ) );
+		$current_sha = $ref;
+
+		foreach ( $parts as $part ) {
+			// Fetch the current level non-recursively.
+			$tree = $this->fetch_tree( $owner, $repo, $current_sha, $token, false );
+			if ( is_wp_error( $tree ) ) {
+				return $tree;
+			}
+
+			$found_sha = null;
+			foreach ( $tree as $item ) {
+				$item_path = $item['path'] ?? '';
+				if ( 'tree' === ( $item['type'] ?? '' ) && $item_path === $part ) {
+					$found_sha = $item['sha'];
+					break;
+				}
+			}
+
+			if ( null === $found_sha ) {
+				return null; // This path segment does not exist.
+			}
+
+			$current_sha = $found_sha;
+		}
+
+		return $current_sha;
+	}
+
+	/**
+	 * Filter tree items to Markdown (and optionally .txt) files.
+	 *
+	 * @since 1.1.0
+	 * @since 0.3.0 Added $repo_config / $path_in_repo arguments to honour
+	 *              `selection_mode` ('all' | 'prefix' | 'selected') and the
+	 *              user-configured `selected_paths` / `excluded_paths`.
+	 *
+	 * @param array  $tree         Git tree items from the API.
+	 * @param string $path_prefix  Optional path prefix to restrict to.
+	 * @param array  $repo_config  Full repo config (for selection_mode + path lists).
+	 * @param string $path_in_repo Repo-relative path of the fetched subtree
+	 *                             (so item paths can be reconstructed for
+	 *                             selected_paths matching). Empty when the
+	 *                             whole repo was fetched.
 	 * @return array Filtered items.
 	 */
-	private function filter_md_files( $tree, $path_prefix ) {
+	private function filter_md_files( $tree, $path_prefix, $repo_config = array(), $path_in_repo = '' ) {
+		$selection_mode = isset( $repo_config['selection_mode'] ) ? (string) $repo_config['selection_mode'] : 'all';
+		if ( ! in_array( $selection_mode, array( 'all', 'prefix', 'selected' ), true ) ) {
+			$selection_mode = 'all';
+		}
+		$selected_paths = isset( $repo_config['selected_paths'] ) && is_array( $repo_config['selected_paths'] )
+			? $repo_config['selected_paths']
+			: array();
+		$excluded_paths = isset( $repo_config['excluded_paths'] ) && is_array( $repo_config['excluded_paths'] )
+			? $repo_config['excluded_paths']
+			: array();
+
+		$path_in_repo = trim( (string) $path_in_repo, '/' );
+
 		$results = array();
 
 		foreach ( $tree as $item ) {
@@ -350,13 +442,60 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 				continue;
 			}
 
-			// Apply nvoos_docs_hub_excluded_globs filter.
-			$excluded = apply_filters( 'nvoos_docs_hub_excluded_globs', array() );
-			$skip     = false;
-			foreach ( $excluded as $glob ) {
+			// Reconstruct the full repo-relative path so user-configured
+			// `selected_paths` / `excluded_paths` (which are repo-relative)
+			// match correctly even when a `path` prefix is in use.
+			$full_repo_path = '' !== $path_in_repo ? $path_in_repo . '/' . $item_path : $item_path;
+
+			// `selected` mode: only keep files matching the selection list.
+			if ( 'selected' === $selection_mode ) {
+				if ( empty( $selected_paths ) ) {
+					continue;
+				}
+				if ( ! self::matches_path_list( $full_repo_path, $selected_paths ) ) {
+					continue;
+				}
+			}
+
+			// `excluded_paths` always applied (useful for 'all' and 'prefix' modes).
+			if ( ! empty( $excluded_paths ) && self::matches_path_list( $full_repo_path, $excluded_paths ) ) {
+				continue;
+			}
+
+			// Apply exclusions: defaults + filterable. Force-include filter
+			// allows opting-in to vendored docs that the operator wants.
+			$default_excluded = NV_oOS_Docs_Hub_Scanner::DEFAULT_EXCLUDED_GLOBS;
+			$excluded         = apply_filters( 'nvoos_docs_hub_excluded_globs', $default_excluded );
+			$force_included   = apply_filters( 'nvoos_docs_hub_force_include_globs', array() );
+
+			$skip = false;
+			foreach ( (array) $force_included as $glob ) {
+				if ( fnmatch( $glob, $item_path ) || fnmatch( $glob, basename( $item_path ) ) ) {
+					$skip      = false;
+					$results[] = $item;
+					continue 2;
+				}
+			}
+			foreach ( (array) $excluded as $glob ) {
 				if ( fnmatch( $glob, $item_path ) || fnmatch( $glob, basename( $item_path ) ) ) {
 					$skip = true;
 					break;
+				}
+				// Cheap path-segment check for `**/dir/*` style.
+				if ( 0 === strpos( $glob, '**/' ) ) {
+					$inner = substr( $glob, 3 );
+					if ( fnmatch( $inner, $item_path ) ) {
+						$skip = true;
+						break;
+					}
+					$tail = $item_path;
+					while ( false !== ( $pos = strpos( $tail, '/' ) ) ) {
+						$tail = substr( $tail, $pos + 1 );
+						if ( '' !== $tail && fnmatch( $inner, $tail ) ) {
+							$skip = true;
+							break 2;
+						}
+					}
 				}
 			}
 			if ( $skip ) {
@@ -367,6 +506,213 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Test whether a repo-relative path matches any entry in a path list.
+	 *
+	 * Each list entry is either:
+	 *  - a literal file path (e.g. `docs/intro.md`) — exact match required;
+	 *  - a directory (trailing `/`, e.g. `docs/guides/`) — recursive match
+	 *    (any file beneath that directory matches).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string   $path  Repo-relative file path.
+	 * @param string[] $list  List of selected/excluded paths.
+	 * @return bool
+	 */
+	public static function matches_path_list( $path, $list ) {
+		$path = ltrim( (string) $path, '/' );
+		foreach ( (array) $list as $entry ) {
+			$entry = ltrim( (string) $entry, '/' );
+			if ( '' === $entry ) {
+				continue;
+			}
+			if ( '/' === substr( $entry, -1 ) ) {
+				// Directory — recursive match.
+				$dir = rtrim( $entry, '/' );
+				if ( $path === $dir || 0 === strpos( $path, $dir . '/' ) ) {
+					return true;
+				}
+			} elseif ( $path === $entry ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Public admin helper: list Markdown/txt files in a repo for the picker UI.
+	 *
+	 * Resolves the repo + ref, fetches the (recursive) Git tree, filters to
+	 * `.md` / `.txt` blobs (with default exclusions applied), and returns a
+	 * lightweight payload suitable for rendering in the admin tree picker.
+	 *
+	 * Results are cached in a transient for 10 minutes keyed by
+	 * owner/repo/ref/path so repeated UI clicks don't hammer the GitHub API.
+	 * Tokens are NOT included in the cache key — tokens only affect rate
+	 * limits, not the tree contents (auth-gated repos return 404 without a
+	 * valid token, which fails fast and is not cached).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array $repo_config {
+	 *     Configuration for the remote repository picker.
+	 *
+	 *     @type string $owner GitHub owner.
+	 *     @type string $repo  GitHub repo name.
+	 *     @type string $ref   Branch / tag / SHA (default 'HEAD').
+	 *     @type string $path  Optional repo-relative subdirectory.
+	 *     @type string $token Optional GitHub PAT.
+	 *     @type bool   $force Bypass the transient cache.
+	 * }
+	 * @return array|WP_Error {
+	 *     @type string   resolved_ref  Concrete commit SHA (or echo of $ref).
+	 *     @type string   path          Echoed `path` config (may be '').
+	 *     @type array[]  files         List of `{ path, size }` repo-relative entries.
+	 * }
+	 */
+	public function fetch_tree_for_admin( $repo_config ) {
+		$owner = isset( $repo_config['owner'] ) ? sanitize_text_field( $repo_config['owner'] ) : '';
+		$repo  = isset( $repo_config['repo'] ) ? sanitize_text_field( $repo_config['repo'] ) : '';
+		$ref   = isset( $repo_config['ref'] ) ? sanitize_text_field( $repo_config['ref'] ) : 'HEAD';
+		$token = isset( $repo_config['token'] ) ? (string) $repo_config['token'] : '';
+		$path  = isset( $repo_config['path'] ) ? trim( sanitize_text_field( $repo_config['path'] ), '/' ) : '';
+		$force = ! empty( $repo_config['force'] );
+
+		if ( '' === $owner || '' === $repo ) {
+			return new WP_Error(
+				'nvoos_docs_hub_bad_repo',
+				__( 'Owner and repo are required.', 'nvoos-docs-hub' )
+			);
+		}
+		if ( ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $owner ) || ! preg_match( '/^[a-zA-Z0-9_.\-]+$/', $repo ) ) {
+			return new WP_Error(
+				'nvoos_docs_hub_bad_repo',
+				__( 'Owner / repo contain invalid characters.', 'nvoos-docs-hub' )
+			);
+		}
+
+		$transient_key = 'nvoos_docs_hub_tree_' . md5(
+			implode( '|', array( $owner, $repo, $ref, $path ) )
+		);
+
+		if ( ! $force ) {
+			$cached = get_transient( $transient_key );
+			if ( is_array( $cached ) ) {
+				return $cached;
+			}
+		}
+
+		// Step 1: resolve ref.
+		$resolved_ref = $this->resolve_ref( $owner, $repo, $ref, $token );
+		if ( is_wp_error( $resolved_ref ) ) {
+			return $resolved_ref;
+		}
+
+		// Step 2: fetch tree (subtree if path is set).
+		if ( '' !== $path ) {
+			$subtree_sha = $this->resolve_subtree_sha( $owner, $repo, $resolved_ref, $token, $path );
+			if ( is_wp_error( $subtree_sha ) ) {
+				return $subtree_sha;
+			}
+			if ( null === $subtree_sha ) {
+				$payload = array(
+					'resolved_ref' => $resolved_ref,
+					'path'         => $path,
+					'files'        => array(),
+				);
+				set_transient( $transient_key, $payload, 10 * MINUTE_IN_SECONDS );
+				return $payload;
+			}
+			$tree = $this->fetch_tree( $owner, $repo, $subtree_sha, $token );
+		} else {
+			$tree = $this->fetch_tree( $owner, $repo, $resolved_ref, $token );
+		}
+
+		if ( is_wp_error( $tree ) ) {
+			return $tree;
+		}
+
+		// Filter to md/txt blobs honouring default exclusions only — admin
+		// picker should see every candidate file, regardless of the user's
+		// per-repo `selection_mode` (the picker is what populates that
+		// list in the first place).
+		$md_files = $this->filter_md_files( $tree, '', array( 'selection_mode' => 'all' ), $path );
+
+		$files = array();
+		foreach ( $md_files as $item ) {
+			$rel = isset( $item['path'] ) ? (string) $item['path'] : '';
+			if ( '' === $rel ) {
+				continue;
+			}
+			$size = isset( $item['size'] ) ? (int) $item['size'] : 0;
+			// Reconstruct the repo-relative path (consistent with how
+			// `selected_paths` are stored — always repo-relative).
+			$full    = '' !== $path ? $path . '/' . $rel : $rel;
+			$files[] = array(
+				'path' => $full,
+				'size' => $size,
+			);
+		}
+
+		usort(
+			$files,
+			static function ( $a, $b ) {
+				return strcmp( $a['path'], $b['path'] );
+			}
+		);
+
+		$payload = array(
+			'resolved_ref' => $resolved_ref,
+			'path'         => $path,
+			'files'        => $files,
+		);
+
+		set_transient( $transient_key, $payload, 10 * MINUTE_IN_SECONDS );
+
+		// When the caller forced a refresh we also drop the per-file content cache
+		// for these files at this resolved ref, so the next rebuild will re-fetch
+		// the latest blob content from the remote rather than reuse a stale copy.
+		if ( $force ) {
+			$this->clear_local_cache_for_files( $owner, $repo, $resolved_ref, $files );
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Delete the per-file local content cache for a specific (owner, repo, ref) tuple.
+	 *
+	 * Used by the admin "Refresh" picker action so a user can force the indexer
+	 * to re-fetch fresh blob content on the next rebuild.
+	 *
+	 * @since 0.3.6
+	 *
+	 * @param string $owner        GitHub owner.
+	 * @param string $repo         GitHub repo name.
+	 * @param string $resolved_ref Resolved commit SHA.
+	 * @param array  $files        List of `{ path, size }` entries (`path` is repo-relative).
+	 * @return int Number of cache files deleted.
+	 */
+	public function clear_local_cache_for_files( $owner, $repo, $resolved_ref, $files ) {
+		$deleted = 0;
+		if ( ! is_array( $files ) ) {
+			return $deleted;
+		}
+		foreach ( $files as $file ) {
+			$rel = is_array( $file ) && isset( $file['path'] ) ? (string) $file['path'] : '';
+			if ( '' === $rel ) {
+				continue;
+			}
+			$key  = $this->local_cache_key( $owner, $repo, $resolved_ref, $rel );
+			$path = $this->local_cache_path( $key );
+			if ( file_exists( $path ) && is_file( $path ) && @unlink( $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				++$deleted;
+			}
+		}
+		return $deleted;
 	}
 
 	// -------------------------------------------------------------------------
@@ -431,24 +777,20 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		}
 
 		// --- SSRF: DNS resolution + private-IP rejection ---
-		$resolved_ip = gethostbyname( $host );
-		if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
-			return new WP_Error(
-				'nvoos_docs_hub_dns_failed',
-				__( 'Remote documentation host did not resolve.', 'nvoos-docs-hub' )
-			);
-		}
-		if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-			return new WP_Error(
-				'nvoos_docs_hub_ssrf_blocked',
-				__( 'Remote documentation host resolves to a private or reserved address.', 'nvoos-docs-hub' )
-			);
+		// Resolve via dns_get_record so we honour both A (IPv4) and AAAA (IPv6) records.
+		// Every returned address must pass the public-range filter, and we then pin
+		// the first valid candidate via CURLOPT_RESOLVE to defeat DNS rebinding.
+		$resolved_ip = $this->resolve_public_ip( $host );
+		if ( is_wp_error( $resolved_ip ) ) {
+			return $resolved_ip;
 		}
 
 		// --- DNS-rebind defence: pin the resolved IP at the cURL level ---
 		$port          = wp_parse_url( $url, PHP_URL_PORT );
 		$port          = $port ? (int) $port : 443;
-		$resolve_entry = $host . ':' . $port . ':' . $resolved_ip;
+		// CURLOPT_RESOLVE syntax differs for IPv6: hostname:port:[ipv6] (the IP must be bracketed).
+		$is_ipv6       = false !== strpos( $resolved_ip, ':' );
+		$resolve_entry = $host . ':' . $port . ':' . ( $is_ipv6 ? '[' . $resolved_ip . ']' : $resolved_ip );
 		$curl_pin      = static function ( $handle ) use ( $resolve_entry ) {
 			if ( is_resource( $handle ) || ( is_object( $handle ) && $handle instanceof \CurlHandle ) ) {
 				curl_setopt( $handle, CURLOPT_RESOLVE, array( $resolve_entry ) );
@@ -504,6 +846,93 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		return $body;
 	}
 
+	/**
+	 * Resolve a hostname to a single public IP (A or AAAA), rejecting private,
+	 * reserved, loopback, link-local, and unique-local-address (ULA) ranges.
+	 *
+	 * Uses `dns_get_record()` when available so AAAA/IPv6 addresses are also
+	 * inspected; falls back to `gethostbyname()` (A-only) when DNS records
+	 * cannot be queried (e.g. tests, restricted environments).
+	 *
+	 * Every returned address must pass FILTER_FLAG_NO_PRIV_RANGE and
+	 * FILTER_FLAG_NO_RES_RANGE — if any record points at a private/reserved
+	 * range we refuse the whole request rather than silently picking a
+	 * "safe" sibling, which is a defence-in-depth measure against DNS
+	 * rebinding tricks where one record is public and another is private.
+	 *
+	 * @since 0.3.6
+	 *
+	 * @param string $host Hostname (already validated against the allowlist).
+	 * @return string|WP_Error Resolved public IP literal on success.
+	 */
+	private function resolve_public_ip( $host ) {
+		// If the host is already an IP literal, just validate it.
+		if ( false !== filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			if ( false === filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return new WP_Error(
+					'nvoos_docs_hub_ssrf_blocked',
+					__( 'Remote documentation host resolves to a private or reserved address.', 'nvoos-docs-hub' )
+				);
+			}
+			return $host;
+		}
+
+		$candidates = array();
+
+		if ( function_exists( 'dns_get_record' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- dns_get_record emits a warning on lookup failure; we want to fall through cleanly.
+			$records = @dns_get_record( $host, DNS_A | DNS_AAAA );
+			if ( is_array( $records ) ) {
+				foreach ( $records as $record ) {
+					if ( ! is_array( $record ) ) {
+						continue;
+					}
+					if ( isset( $record['ip'] ) && is_string( $record['ip'] ) ) {
+						$candidates[] = $record['ip'];
+					}
+					if ( isset( $record['ipv6'] ) && is_string( $record['ipv6'] ) ) {
+						$candidates[] = $record['ipv6'];
+					}
+				}
+			}
+		}
+
+		// Fallback: A-record only via gethostbyname().
+		if ( empty( $candidates ) ) {
+			$resolved = gethostbyname( $host );
+			if ( $resolved !== $host ) {
+				$candidates[] = $resolved;
+			}
+		}
+
+		if ( empty( $candidates ) ) {
+			return new WP_Error(
+				'nvoos_docs_hub_dns_failed',
+				__( 'Remote documentation host did not resolve.', 'nvoos-docs-hub' )
+			);
+		}
+
+		// Every candidate must be a valid public IP. If ANY record points at a
+		// private/reserved range we refuse — defence in depth against rebinding.
+		$flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+		foreach ( $candidates as $ip ) {
+			if ( false === filter_var( $ip, FILTER_VALIDATE_IP, $flags ) ) {
+				return new WP_Error(
+					'nvoos_docs_hub_ssrf_blocked',
+					__( 'Remote documentation host resolves to a private or reserved address.', 'nvoos-docs-hub' )
+				);
+			}
+		}
+
+		// Prefer IPv4 when both are available (more reliable on legacy networks).
+		foreach ( $candidates as $ip ) {
+			if ( false !== filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				return $ip;
+			}
+		}
+		return $candidates[0];
+	}
+
 	// -------------------------------------------------------------------------
 	// Local content cache
 	// -------------------------------------------------------------------------
@@ -556,7 +985,7 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			return false;
 		}
 
-		$ttl = (int) apply_filters( 'nvoos_docs_hub_remote_cache_ttl', self::CACHE_TTL );
+		$ttl   = (int) apply_filters( 'nvoos_docs_hub_remote_cache_ttl', self::CACHE_TTL );
 		$mtime = filemtime( $local_path );
 		if ( false !== $mtime && ( time() - $mtime ) > $ttl ) {
 			// Cache expired.
