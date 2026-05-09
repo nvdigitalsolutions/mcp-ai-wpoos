@@ -20,6 +20,7 @@
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
+<exclude-pattern>*/tests/fixtures/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 <exclude-pattern>*/addons/pro/*</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
