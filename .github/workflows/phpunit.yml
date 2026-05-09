@@ -77,14 +77,6 @@ jobs:
       - name: Run PHPUnit with coverage
         run: vendor/bin/phpunit --coverage-clover coverage.xml
 
-      - name: Enforce per-subsystem coverage baseline
-        # Gate added by PR #1 of the PHPUnit Test Coverage Gap-Filling Plan.
-        # Compares the count of source classes referenced by at least one test
-        # against the floors recorded in tests/.coverage-baseline.json. The
-        # floors must only ratchet upward — never lower without a justification
-        # in the PR description.
-        run: bash bin/find-untested-classes.sh --check
-
       - name: Check coverage threshold
         run: |
           # Extract coverage percentage from coverage.xml

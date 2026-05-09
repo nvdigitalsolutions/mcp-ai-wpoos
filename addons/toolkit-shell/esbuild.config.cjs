@@ -49,7 +49,7 @@ const buildOptions = {
 	format:      'iife',
 	globalName:  'NVoOSToolkitShell',
 	platform:    'browser',
-	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari15' ],
+	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari13' ],
 	jsx:         'automatic',
 	loader:      { '.css': 'css', '.ts': 'ts', '.tsx': 'tsx' },
 	define:      { 'process.env.NODE_ENV': isProd ? '"production"' : '"development"' },
