@@ -102,3 +102,33 @@ Plugin Check against the base-only ZIP will not surface those findings.
 The base plugin's own findings (paths under `includes/`, `assets/`,
 root `*.php`, `readme.txt`) are addressed in this PR and tracked in
 the changelog.
+
+---
+
+## Per-Finding Response Table (reviewer reply)
+
+This table maps each original WP.org reviewer finding to its resolution.
+Findings prefixed with `addons/` resolve as "lived in addons/, not in
+this submission" — confirmed by the `Assert no addons/ in base-only build`
+CI step.
+
+| Finding (reviewer reference) | Resolution | Proof |
+|---|---|---|
+| Yahoo Fantasy Sports API | In `addons/fantasy-football/` — excluded from submission | `Assert no addons/` CI step |
+| embedded `set_time_limit` | In `addons/embedded/` — excluded from submission | `Assert no addons/` CI step |
+| embedded webchat REST route | In `addons/embedded/` — excluded from submission | `Assert no addons/` CI step |
+| Foreign text domains (nvoos-*, nvdigital-*-pro) | All in `addons/` — excluded; phpcs `WordPress.WP.I18n` gate prevents regression | phpcs.xml.dist + `Assert single text domain` CI step |
+| `ai.google.dev/privacy` dead URL | Replaced with `policies.google.com/privacy` throughout readme.txt | PR #4892 |
+| `google.github.io/A2A` dead URL | Updated to `https://a2aproject.github.io/A2A/` in readme.txt | readme.txt line 1454 |
+| Plugin directory slug mismatch | Retaining `mcp-ai-wpoos`; directory team notified to align slug | A4 — off-repo action |
+| Submission ZIP contained addons/ | Fixed: `release.yml` now builds separate base-only + full ZIPs | A1 — PR #4892, release.yml |
+| Missing Plugin Check gate | Added `plugin-check` CI job in `release.yml` | A2 — PR #4892, release.yml |
+| Undocumented external services | Extended `== External Services ==` in readme.txt; all base-plugin domains documented | B5 — PR #4892 |
+| A2A spec link (base plugin) | A2A REST controller ships in base (`includes/rest/class-wp-mcp-ai-rest-a2a-controller.php`); link updated | B1 |
+| Symfony libraries out of date | Pinned to 6.4 LTS line; each package is at latest 6.4.x patch | B2 — composer.json comment |
+| HEREDOC syntax | 0 occurrences in base tree; `WordPress.PHP.PreventUseOfHereDocSyntax` phpcs rule locks it in | B14 — phpcs.xml.dist |
+| REST route missing `permission_callback` | Only `addons/embedded` route was flagged — excluded; all 83 base routes have explicit callbacks; PHPUnit walker test guards against regression | B12 — tests/test-rest-permission-callbacks.php |
+| Inline `<script>` / `<style>` (143 incidences) | Work in progress — tracked as B3 | PR pending |
+| Input sanitization / nonce verification | Work in progress — tracked as B13 | PR pending |
+| `wp_set_current_user` / `wp_update_user` hardening | Work in progress — tracked as B10 | PR pending |
+| `WP_CONTENT_DIR` path usage | Work in progress — tracked as B8 | PR pending |

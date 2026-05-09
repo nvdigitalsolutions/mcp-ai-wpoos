@@ -307,6 +307,21 @@ jobs:
           fi
           echo "✅ Base-only build verified: no addons/ paths present"
 
+      - name: Assert single text domain in base-only build
+        run: |
+          set -euo pipefail
+          # R-T-06 guard: the base submission must declare only "mcp-ai-wpoos"
+          # as its Text Domain. Foreign domains (nvoos-*, nvdigital-*-pro, etc.)
+          # live exclusively in addons/ and must not appear in the WP.org build.
+          FOREIGN=$(grep -rI "Text Domain:" build/${PLUGIN_SLUG}/ \
+            | grep -v "Text Domain: mcp-ai-wpoos" || true)
+          if [ -n "${FOREIGN}" ]; then
+            echo "::error::Base-only build contains a foreign Text Domain declaration."
+            echo "${FOREIGN}"
+            exit 1
+          fi
+          echo "✅ Text Domain guard passed: only mcp-ai-wpoos found in base build"
+
       - name: Verify plugin structure
         run: |
           echo "📁 Base-only structure:"

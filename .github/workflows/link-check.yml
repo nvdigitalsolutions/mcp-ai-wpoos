@@ -1,0 +1,97 @@
+name: Link Check
+
+on:
+  pull_request:
+    paths:
+      - 'readme.txt'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'SUBMISSION.md'
+      - '.github/workflows/link-check.yml'
+  push:
+    branches:
+      - alpha-working
+      - main
+    paths:
+      - 'readme.txt'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'SUBMISSION.md'
+  schedule:
+    # Run weekly on Mondays at 09:00 UTC to catch newly-dead links.
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  link-check:
+    name: Check URLs in documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract URLs from readme.txt
+        id: extract
+        run: |
+          set -euo pipefail
+          # Extract all http(s) URLs from readme.txt for checking.
+          grep -oE 'https?://[^)>" ]+' readme.txt | sort -u > /tmp/readme-urls.txt
+          echo "Found $(wc -l < /tmp/readme-urls.txt) URLs in readme.txt"
+          cat /tmp/readme-urls.txt
+
+      - name: Check URLs with curl
+        run: |
+          set -euo pipefail
+          FAILED=0
+          SKIPPED=0
+          CHECKED=0
+
+          # Domains to skip (require login, block bots, or are private):
+          SKIP_PATTERNS=(
+            "localhost"
+            "example.com"
+            "127.0.0.1"
+            "your-site.com"
+            "yourdomain.com"
+          )
+
+          while IFS= read -r url; do
+            # Skip patterns.
+            skip=false
+            for pattern in "${SKIP_PATTERNS[@]}"; do
+              if [[ "$url" == *"$pattern"* ]]; then
+                skip=true
+                break
+              fi
+            done
+            if $skip; then
+              echo "⏭  SKIPPED: $url"
+              (( SKIPPED++ )) || true
+              continue
+            fi
+
+            # Check URL with a 15-second timeout.  Follow redirects up to 5 hops.
+            HTTP_STATUS=$(curl --silent --head --max-time 15 --max-redirs 5 \
+              --output /dev/null --write-out "%{http_code}" \
+              --user-agent "Mozilla/5.0 (compatible; NVoOS-LinkChecker/1.0; +https://github.com/nvdigitalsolutions/mcp-ai-wpoos)" \
+              "$url" 2>/dev/null || echo "000")
+
+            if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "301" || "$HTTP_STATUS" == "302" || \
+                  "$HTTP_STATUS" == "307" || "$HTTP_STATUS" == "308" || "$HTTP_STATUS" == "403" || \
+                  "$HTTP_STATUS" == "429" ]]; then
+              echo "✅ OK ($HTTP_STATUS): $url"
+            else
+              echo "::warning::Dead link ($HTTP_STATUS): $url"
+              (( FAILED++ )) || true
+            fi
+            (( CHECKED++ )) || true
+
+          done < /tmp/readme-urls.txt
+
+          echo ""
+          echo "Link check complete: ${CHECKED} checked, ${SKIPPED} skipped, ${FAILED} failed."
+
+          if [ "${FAILED}" -gt 0 ]; then
+            echo "::error::${FAILED} URL(s) returned unexpected status codes. Review the warnings above and update readme.txt."
+            exit 1
+          fi

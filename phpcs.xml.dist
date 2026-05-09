@@ -64,5 +64,30 @@
 <exclude-pattern>*/includes/domain/*</exclude-pattern>
 </rule>
 
+<!--
+	R-T-06 compliance gate: enforce the base-plugin text domain on every
+	gettext call. Any domain other than "mcp-ai-wpoos" is a lint error.
+	Foreign domains (nvoos-*, nvdigital-open-operator-system-oos-pro, etc.)
+	only exist in addons/ which is excluded from the WordPress.org submission;
+	if any creep into includes/ this rule will catch them.
+	See: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md B6.
+-->
+<rule ref="WordPress.WP.I18n">
+	<properties>
+		<property name="text_domain" type="array">
+			<element value="mcp-ai-wpoos"/>
+		</property>
+	</properties>
+</rule>
+
+<!--
+	R-T-14 compliance gate: HEREDOC/NOWDOC syntax is prohibited in the base
+	plugin because it prevents proper escaping of interpolated variables.
+	Use sprintf()/printf() with literal format strings and escaped values
+	instead. Confirmed 0 occurrences after PR #4892 — this rule locks it in.
+	See: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md B14.
+-->
+<rule ref="WordPress.PHP.PreventUseOfHereDocSyntax"/>
+
 <file>.</file>
 </ruleset>
