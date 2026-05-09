@@ -85,6 +85,12 @@
         "classmap-authoritative": true,
         "platform": {
             "php": "8.3.0"
+        },
+        "preferred-install": {
+            "wp-phpunit/wp-phpunit": "source",
+            "league/oauth2-client": "source",
+            "phpunit/phpunit": "source",
+            "*": "dist"
         }
     }
 }
