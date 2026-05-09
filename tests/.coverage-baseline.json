@@ -22,7 +22,7 @@
     },
     "slash_commands": {
       "source_classes": 20,
-      "covered_classes_min": 16
+      "covered_classes_min": 20
     },
     "services": {
       "source_classes": 78,
