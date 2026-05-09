@@ -47,7 +47,7 @@
 		"pdf-parse": "^1.1.4",
 		"pdfjs-dist": "^4.9.155",
 		"pdfkit": "^0.17.2",
-		"prettier": "^3.4.2",
+		"prettier": "^3.8.3",
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
 		"remotion": "^4.0.0",
