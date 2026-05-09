@@ -4,6 +4,17 @@ on:
   push:
     branches: [ main ]
   pull_request:
+    paths:
+      - '**.php'
+      - 'tests/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpunit.xml'
+      - 'phpunit.xml.dist'
+      - 'bin/install-wp-tests.sh'
+      - 'bin/install-test-plugins.sh'
+      - 'bin/find-untested-classes.sh'
+      - '.github/workflows/phpunit.yml'
 
 permissions:
   contents: read
