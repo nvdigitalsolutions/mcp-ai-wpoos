@@ -16,14 +16,15 @@
         "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
         "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
     },
+    "_comment_symfony_pin": "Symfony deps are pinned to the 6.4 LTS line because the base plugin's PHP floor is 7.4. Symfony 7.x requires PHP 8.2+ and uses readonly/enum syntax that fatal-parses on PHP 7.4 even when not executed. 6.4 LTS is supported until November 2027.",
     "require": {
         "rahul900day/tiktoken-php": "^1.0",
-        "symfony/http-client": "^6.1|^7.0",
+        "symfony/http-client": "^6.4.36",
         "nyholm/psr7": "^1.8",
-        "symfony/validator": ">=6.4.36 <7.0|^7.0",
-        "symfony/cache": ">=6.4.36 <7.0|^7.0",
-        "symfony/filesystem": "^6.4|^7.0",
-        "symfony/process": "^6.4|^7.0",
+        "symfony/validator": "^6.4.36",
+        "symfony/cache": "^6.4.36",
+        "symfony/filesystem": "^6.4.34",
+        "symfony/process": "^6.4.33",
         "league/oauth2-client": "^2.7"
     },
     "require-dev": {
@@ -87,6 +88,12 @@
         "classmap-authoritative": true,
         "platform": {
             "php": "8.3.0"
+        },
+        "preferred-install": {
+            "wp-phpunit/wp-phpunit": "source",
+            "league/oauth2-client": "source",
+            "phpunit/phpunit": "source",
+            "*": "dist"
         }
     }
 }

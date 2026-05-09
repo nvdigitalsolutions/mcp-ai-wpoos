@@ -11,6 +11,19 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 230+ built-in tools.
 
+== Submission Scope ==
+
+This WordPress.org submission contains **only the base plugin** — every file in this ZIP lives outside the `addons/` directory of the upstream GitHub repository. The following addons are developed in the same repository but are **NOT** part of this submission and are distributed only via GitHub Releases (`-full.zip` artifact) or via separate sales channels:
+
+* `addons/pro` — NV oOS Pro (PHP 8.1+ extension; sold separately)
+* `addons/embedded` — Embedded device runtime
+* `addons/fantasy-football` — Fantasy Sports tooling
+* `addons/algorave`, `addons/canvas`, `addons/cornerstone3d`, `addons/graphify` — domain-specific add-ons
+* `addons/docs-hub`, `addons/chat-spa`, `addons/canvas-toolkit`, `addons/document-editor`, `addons/media-studio`, `addons/toolkit-shell` — React Single-Page-App add-ons
+* `addons/saas-controller`, `addons/cloud-worker` — server-side companion plugins
+
+If a code reviewer sees a path beginning with `addons/` in any reported finding, that finding is out of scope for this submission. The release pipeline (`.github/workflows/release.yml`) builds two artifacts: a base-only ZIP (this submission) and a separate full ZIP for GitHub. Both `.distignore` and the workflow's rsync exclusion list assert `addons/` is absent before any upload. See `SUBMISSION.md` in the upstream repository for the full payload manifest.
+
 == Description ==
 
 **NV Digital Open Operator System (oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
@@ -27,7 +40,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
-* [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
+* [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://policies.google.com/privacy)
 * [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
 * [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 * [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
@@ -58,7 +71,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 **Multi-Provider AI Routing**
 * **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))
-* **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy))
+* **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://policies.google.com/privacy))
 * **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
 * **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
 * **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
@@ -1030,7 +1043,7 @@ Initial release. Welcome to Open Operator System!
 * **When:** Every time an AI assistant is used with Gemini as the provider
 * **Service URL:** https://generativelanguage.googleapis.com
 * **Terms of Service:** https://ai.google.dev/terms
-* **Privacy Policy:** https://ai.google.dev/privacy
+* **Privacy Policy:** https://policies.google.com/privacy
 
 **2a. Google Gemini Semantic Retrieval API (Corpus / RAG)**
 * **Purpose:** Native Retrieval-Augmented Generation (RAG) — store and query document corpora for grounded AI responses
@@ -1038,7 +1051,7 @@ Initial release. Welcome to Open Operator System!
 * **When:** Only when a Gemini assistant has a corpus name configured (optional feature, off by default)
 * **Service URL:** https://generativelanguage.googleapis.com/v1beta/corpora
 * **Terms of Service:** https://ai.google.dev/terms
-* **Privacy Policy:** https://ai.google.dev/privacy
+* **Privacy Policy:** https://policies.google.com/privacy
 
 **3. Anthropic API (Claude)**
 * **Purpose:** Core AI functionality (chat, vision, document analysis)
@@ -1438,7 +1451,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Data Sent:** HTTP GET to `{agent_url}/.well-known/agent.json` for discovery; JSON-RPC task payloads (task description, context) for delegation
 * **When:** When a site administrator configures remote agents and the AI assistant delegates tasks via A2A
 * **Service URL:** User-configured remote agent URLs (no default endpoint; disabled unless explicitly configured)
-* **Terms of Service:** https://google.github.io/A2A/ (Apache-2.0 protocol specification)
+* **Terms of Service:** https://a2aproject.github.io/A2A/ (Apache-2.0 protocol specification)
 * **Privacy Policy:** Per the remote agent operator's privacy policy
 
 **48. Mesh Router — Peer-to-Peer Agent Communication**
@@ -1550,7 +1563,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 
 **Google Gemini (when configured):**
 * Data sent to: https://generativelanguage.googleapis.com
-* Processed according to: [Google AI Privacy](https://ai.google.dev/privacy)
+* Processed according to: [Google AI Privacy](https://policies.google.com/privacy)
 * Terms of Service: [Google Gemini Terms](https://ai.google.dev/terms)
 * Data Usage: Google uses API data as described in their privacy policy
 * Review Google's data retention policies before use
@@ -1669,7 +1682,7 @@ This plugin may connect to the following external services based on your configu
 
 **Required (one must be configured):**
 * OpenAI API - [Privacy](https://openai.com/privacy) | [Terms](https://openai.com/policies/terms-of-use)
-* Google Gemini API - [Privacy](https://ai.google.dev/privacy) | [Terms](https://ai.google.dev/terms)
+* Google Gemini API - [Privacy](https://policies.google.com/privacy) | [Terms](https://ai.google.dev/terms)
 * Anthropic API - [Privacy](https://www.anthropic.com/legal/privacy) | [Terms](https://www.anthropic.com/legal/consumer-terms)
 * Ollama (self-hosted) - No external service
 * LM Studio (self-hosted) - No external service
