@@ -15,6 +15,7 @@
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>
             <exclude>tests/bootstrap.php</exclude>
+            <exclude>tests/fixtures</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
