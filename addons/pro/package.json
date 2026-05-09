@@ -51,7 +51,7 @@
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
 		"remotion": "^4.0.0",
-		"sharp": "^0.33.5",
+		"sharp": "^0.34.5",
 		"stripe": "^14.0.0",
 		"subtitle": "^3.0.0",
 		"tesseract.js": "^5.1.1",
