@@ -9,7 +9,9 @@
     "watch": "node esbuild.config.js --watch",
     "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "flexsearch": "0.8.212",
@@ -27,11 +29,18 @@
     "unist-util-visit": "5.0.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",
     "@typescript-eslint/eslint-plugin": "8.32.1",
     "@typescript-eslint/parser": "8.32.1",
-    "esbuild": "0.25.4",
-    "typescript": "5.8.3"
+    "@vitest/coverage-v8": "^4.1.5",
+    "esbuild": "^0.27.0",
+    "jsdom": "^29.1.1",
+    "typescript": "5.8.3",
+    "vitest": "^4.1.5"
   }
 }

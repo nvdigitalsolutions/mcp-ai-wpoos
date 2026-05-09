@@ -41,7 +41,7 @@
     "scripts": {
         "lint": "phpcs",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",
-        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
+        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,test-capability-flags-integration.php,tests/helpers,tests/fixtures .",
         "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,tests .",
         "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,tests .",
         "format": "phpcbf",
@@ -50,9 +50,12 @@
         "test": "vendor/bin/phpunit",
         "test:coverage": "vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage.xml",
         "test:coverage-dashboard": "bash bin/generate-coverage-dashboard.sh",
+        "test:gaps": "bash bin/find-untested-classes.sh",
+        "test:gaps:check": "bash bin/find-untested-classes.sh --check",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
         "ci:all": [
             "@lint:errors-only",
+            "@test:gaps:check",
             "@test:coverage"
         ]
     },
