@@ -36,7 +36,7 @@ const buildOptions = {
 	format:      'iife',
 	globalName:  'NVoOSDocsHub',
 	platform:    'browser',
-	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari13' ],
+	target:      [ 'es2017', 'chrome80', 'firefox78', 'safari15' ],
 	jsx:         'automatic',
 
 	// Extract CSS to a separate file.
