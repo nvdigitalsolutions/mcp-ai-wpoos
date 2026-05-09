@@ -318,6 +318,11 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 				// Validate token (implement token validation logic).
 				$user_id = $this->validate_bearer_token( $token );
 				if ( $user_id ) {
+					// Switch the current-user context only after
+					// `validate_bearer_token()` returned a real WordPress
+					// user ID. The capability check at line 353 below
+					// (`current_user_can( 'read' )`) is the authoritative
+					// gate; this method returns `WP_Error` if it fails.
 					wp_set_current_user( $user_id );
 					$this->log_success(
 						'bearer_auth',

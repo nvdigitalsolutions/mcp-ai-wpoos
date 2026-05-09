@@ -100,6 +100,14 @@ class WP_MCP_AI_REST_Authenticator {
 	/**
 	 * Sync the global current user with the authenticated context when available.
 	 *
+	 * Security note: this method is invoked **only after** a bearer token
+	 * (or assistant credential, or guest token) has been validated by an
+	 * upstream method on this class. The token-validation path is the
+	 * single chokepoint and resolves a real WordPress user ID before
+	 * calling here. The capability gate for any subsequent action lives
+	 * on each REST route's `permission_callback`. Per-request state is
+	 * cleared by `reset_auth_context()` between requests.
+	 *
 	 * @param int $user_id WordPress user identifier.
 	 * @return void
 	 */
