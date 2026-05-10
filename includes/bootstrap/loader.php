@@ -132,6 +132,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-profession-search-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-presets-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-user-context-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
 // ---------------------------------------------------------------------------

@@ -404,15 +404,8 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		<?php
 		$script = ob_get_clean();
 
-		if ( function_exists( 'wp_print_inline_script_tag' ) ) {
-			wp_print_inline_script_tag( $script );
-			return;
-		}
-
-		// Fallback for older WordPress versions.
-		// Output static JavaScript for copy functionality. Content is static and safe.
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped,WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Static JavaScript code from ob_get_clean(), no user input. Inline script for Elementor assistant tools widget functionality.
-		echo '<script>' . $script . '</script>';
+		// Plugin requires WP 6.0+; wp_print_inline_script_tag() (added in WP 5.7) is always available.
+		wp_print_inline_script_tag( $script );
 	}
 
 	/**
