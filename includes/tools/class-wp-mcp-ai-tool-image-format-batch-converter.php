@@ -190,9 +190,14 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			'fields'         => 'ids',
 		);
 
+		// Cap user-supplied image_ids list at the per-tool max_items ceiling.
+		$max_items = WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( $this->get_slug(), 0, 500 );
 		if ( ! empty( $image_ids ) ) {
+			if ( count( $image_ids ) > $max_items ) {
+				$image_ids = array_slice( $image_ids, 0, $max_items );
+			}
 			$query_args['post__in']       = $image_ids;
-			$query_args['posts_per_page'] = -1;
+			$query_args['posts_per_page'] = count( $image_ids );
 		}
 
 		$images = get_posts( $query_args );

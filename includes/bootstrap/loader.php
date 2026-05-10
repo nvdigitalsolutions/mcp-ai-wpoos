@@ -120,6 +120,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-options-s
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-capability-checker.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-http-client.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-bulk-operation.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-options-store.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-capability-checker.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/http/class-wp-mcp-ai-wp-http-client.php';
@@ -184,6 +185,12 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-catalog-migration.
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-discovery-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-batch-iterator.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-artifact-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-data-budget-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-async-scheduler-bridge.php';
+WP_MCP_AI_Async_Scheduler_Bridge::register_hooks();
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';

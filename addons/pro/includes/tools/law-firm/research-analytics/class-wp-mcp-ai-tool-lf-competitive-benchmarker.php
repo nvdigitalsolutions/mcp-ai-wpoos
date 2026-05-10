@@ -166,7 +166,7 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 
 		$entries = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_competitive_benchmarker', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => $entry_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		) );

@@ -80,7 +80,7 @@ class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_M
 		$args  = array(
 			'post_type'      => 'mcp_appointment',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'optimize_schedule', 0, 500 ) : 500,
 			'meta_query'     => array(
 				array(
 					'key'     => '_start_time',

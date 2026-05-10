@@ -240,7 +240,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_med_record',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_health_timeline', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_medical_record_member_id',
@@ -282,7 +282,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_prescription',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_health_timeline', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_prescription_member_id',
@@ -325,7 +325,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_checkup',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_health_timeline', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_checkup_member_id',
@@ -368,7 +368,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_allergy',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_health_timeline', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_allergy_member_id',
@@ -414,7 +414,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_hc_vital_log',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_health_timeline', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_member_id',

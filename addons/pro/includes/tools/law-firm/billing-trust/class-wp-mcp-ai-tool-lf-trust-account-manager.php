@@ -170,7 +170,7 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 	private function calculate_balance( int $matter_id ): float {
 		$txns = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_trust_txn',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_trust_account_manager', 0, 1000 ) : 1000,
 			'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		) );
 

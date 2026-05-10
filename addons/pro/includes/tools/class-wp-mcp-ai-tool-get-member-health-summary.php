@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 				'post_status'    => 'publish',
 				'meta_key'       => '_allergy_member_id',
 				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_member_health_summary', 0, 1000 ) : 1000,
 				'orderby'        => 'title',
 				'order'          => 'ASC',
 			)
@@ -199,7 +199,7 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 						'type'    => 'DATE',
 					),
 				),
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_member_health_summary', 0, 1000 ) : 1000,
 				'orderby'        => 'title',
 				'order'          => 'ASC',
 			)

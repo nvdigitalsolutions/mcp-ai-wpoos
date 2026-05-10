@@ -77,7 +77,7 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 		// Fetch all matters for this client.
 		$matters = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_matter',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_client_satisfaction_analyzer', 0, 1000 ) : 1000,
 			'post_status'    => 'any',
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(
@@ -140,7 +140,7 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 		// 2. Payment timeliness analysis (25 points max).
 		$invoices_query = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_client_satisfaction_analyzer', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(

@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 		if ( in_array( 'time_spent', $metrics, true ) ) {
 			$entries = get_posts( array(
 				'post_type'      => 'mcp_ai_lf_time_entry',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_matter_analytics_generator', 0, 1000 ) : 1000,
 				'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			) );
 
@@ -158,7 +158,7 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 				// Recalculate if time_spent was not already computed.
 				$budget_entries = get_posts( array(
 					'post_type'      => 'mcp_ai_lf_time_entry',
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_matter_analytics_generator', 0, 1000 ) : 1000,
 					'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $matter_id ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				) );
 				foreach ( $budget_entries as $be ) {
