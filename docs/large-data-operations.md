@@ -1,16 +1,21 @@
 # Large-Data Operations
 
-> **Phase 1 of the [Massive-Data Hardening plan](#)** — primitives only.
-> Phases 2–5 (tool refactors, agentic-loop output guard, Action Scheduler
-> integration, `wp mcp-ai migrate` command) ship in follow-up PRs.
+> **Phases 1 + 2 of the [Massive-Data Hardening plan](#)** — primitives +
+> first wave of tool refactors. Phases 3–5 (agentic-loop output guard,
+> Action Scheduler integration, `wp mcp-ai migrate` command) ship in
+> follow-up PRs.
 
-This document describes the two reusable primitives every NV oOS tool, async
+This document describes the reusable primitives every NV oOS tool, async
 job, or migration script should use when iterating over potentially large
 datasets:
 
 - `WP_MCP_AI_Memory_Manager` (memory hygiene + throttling)
 - `WP_MCP_AI_Batch_Iterator` (batched / seek-based iteration with
   checkpointing and DLQ failure isolation)
+- `WP_MCP_AI_Tool_Artifact_Helper` (Phase 2 — stream oversized tool
+  results to artifacts instead of inlining them in the LLM context)
+- `WP_MCP_AI_Tool_Bulk_Operation_Interface` (Phase 2 — opt-in marker so
+  the tool registry can auto-dispatch heavy calls to the async queue)
 
 These primitives apply the operational principles from the
 [Delicious Brains massive-data-migrations playbook](https://deliciousbrains.com/building-custom-wp-cli-commands-massive-data-migrations/)
@@ -145,4 +150,88 @@ interface WP_MCP_AI_Tool_Bulk_Operation_Interface {
     public function get_checkpoint_key( $arguments );
     public function estimate_total( $arguments );
 }
+```
+
+---
+
+## Phase 2 — `WP_MCP_AI_Tool_Artifact_Helper`
+
+When a tool produces a result with hundreds (or thousands) of rows, returning
+the full payload to the LLM blows up token usage, SSE message size, and
+client-side render time. The artifact helper persists the full payload to a
+24-hour transient and returns a small envelope:
+
+```php
+$rows = []; // produced by your iterator loop
+
+if ( WP_MCP_AI_Tool_Artifact_Helper::should_stream_to_artifact( count( $rows ), $this->get_slug() ) ) {
+    $artifact = WP_MCP_AI_Tool_Artifact_Helper::stream_to_artifact( $rows, $this->get_slug() );
+    return array(
+        'success'           => true,
+        'rows_summary'      => array_slice( $rows, 0, 20 ),
+        'rows_artifact'     => $artifact, // { summary, count, truncated, artifact_id, artifact_url, original_bytes, expires_at }
+    );
+}
+```
+
+### Filters
+
+| Filter | Default | Purpose |
+|--------|---------|---------|
+| `wp_mcp_ai_max_inline_rows` | `100` | Row count above which results stream to an artifact instead of being inlined. |
+| `wp_mcp_ai_tool_max_items` | per-tool | Per-tool ceiling for `max_items` arguments. Pass `( $value, $tool_slug )`. |
+| `wp_mcp_ai_tool_artifact_stored` | (action) | Fires after a payload is persisted; mirror to S3 / CCT here. |
+
+### `resolve_max_items()` recipe
+
+Tools that accept a `max_items` parameter should call:
+
+```php
+$max_items = WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items(
+    $this->get_slug(),
+    isset( $arguments['max_items'] ) ? absint( $arguments['max_items'] ) : 0,
+    /* hard default */ 500
+);
+```
+
+This resolves the user-supplied value, falls back to the hard default, and
+applies the `wp_mcp_ai_tool_max_items` filter — so site owners can clamp
+specific tools without code changes.
+
+---
+
+## Phase 2 — Auto-async dispatch
+
+When a tool implements `WP_MCP_AI_Tool_Bulk_Operation_Interface` **and**
+`estimate_total( $arguments ) >= wp_mcp_ai_bulk_async_threshold` (default
+1000), `WP_MCP_AI_Tool_Registry::execute_tool()` will queue the call via
+`WP_MCP_AI_Async_Job_Queue` and return a job-handle envelope instead of
+running inline:
+
+```php
+array(
+    'success'        => true,
+    'async'          => true,
+    'job_id'         => 42,
+    'tool_slug'      => 'media_library_optimizer',
+    'estimated_rows' => 12500,
+    'message'        => 'media_library_optimizer call (~12500 rows) queued as async job #42.',
+)
+```
+
+Auto-dispatch is **off by default** (the Phase 4 Action Scheduler integration
+is required for the worker side). Enable explicitly:
+
+```php
+define( 'WP_MCP_AI_BULK_AUTO_ASYNC', true );
+// or:
+add_filter( 'wp_mcp_ai_bulk_auto_async_enabled', '__return_true' );
+```
+
+The threshold is filterable per tool:
+
+```php
+add_filter( 'wp_mcp_ai_bulk_async_threshold', function ( $threshold, $slug ) {
+    return 'export_fhir_data' === $slug ? 5000 : $threshold;
+}, 10, 2 );
 ```

@@ -300,8 +300,120 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return $validation_result;
 			}
 
+			// Auto-async dispatch (Phase 2): if the tool implements the
+			// bulk-operation interface and the estimated workload exceeds
+			// `wp_mcp_ai_bulk_async_threshold`, queue the call via the async
+			// job queue instead of executing inline. Gated behind
+			// `WP_MCP_AI_BULK_AUTO_ASYNC` so existing behaviour is preserved
+			// until the Phase 4 Action Scheduler integration lands.
+			$auto_async = $this->maybe_dispatch_async_bulk( $slug, $tool, $arguments, $context );
+			if ( null !== $auto_async ) {
+				return $auto_async;
+			}
+
 			// Execute the tool.
 			return $tool->execute( $arguments, $context );
+		}
+
+		/**
+		 * If the tool is a registered bulk-operation handler and its estimated
+		 * workload exceeds the configured threshold, dispatch the call to the
+		 * async job queue and return a job-handle envelope to the caller.
+		 *
+		 * Returns `null` to indicate "no async dispatch — execute inline".
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $slug      Tool slug.
+		 * @param object $tool      Resolved tool instance.
+		 * @param array  $arguments Tool arguments.
+		 * @param array  $context   Execution context.
+		 * @return array|null
+		 */
+		protected function maybe_dispatch_async_bulk( $slug, $tool, $arguments, $context ) {
+			// Default off until Phase 4 Action Scheduler integration ships.
+			$enabled = defined( 'WP_MCP_AI_BULK_AUTO_ASYNC' ) ? (bool) WP_MCP_AI_BULK_AUTO_ASYNC : false;
+
+			/**
+			 * Filters whether auto-async bulk dispatch is enabled.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param bool   $enabled Whether to attempt async dispatch.
+			 * @param string $slug    Tool slug.
+			 */
+			$enabled = (bool) apply_filters( 'wp_mcp_ai_bulk_auto_async_enabled', $enabled, $slug );
+
+			if ( ! $enabled ) {
+				return null;
+			}
+
+			if ( ! ( $tool instanceof WP_MCP_AI_Tool_Bulk_Operation_Interface ) ) {
+				return null;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
+				return null;
+			}
+
+			// Avoid recursive dispatch when the queue worker re-enters.
+			if ( ! empty( $context['async_worker'] ) ) {
+				return null;
+			}
+
+			$estimate = (int) $tool->estimate_total( $arguments );
+			if ( $estimate <= 0 ) {
+				return null;
+			}
+
+			/**
+			 * Filters the row threshold above which bulk tools are auto-dispatched
+			 * to the async job queue.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param int    $threshold Default 1000.
+			 * @param string $slug      Tool slug.
+			 */
+			$threshold = (int) apply_filters( 'wp_mcp_ai_bulk_async_threshold', 1000, $slug );
+
+			if ( $estimate < $threshold ) {
+				return null;
+			}
+
+			$job_id = WP_MCP_AI_Async_Job_Queue::queue_job(
+				array(
+					'job_type'     => 'tool_execution',
+					'job_data'     => array(
+						'tool_slug'      => $slug,
+						'arguments'      => $arguments,
+						'checkpoint_key' => $tool->get_checkpoint_key( $arguments ),
+						'estimated_rows' => $estimate,
+					),
+					'chat_session' => isset( $context['chat_session'] ) ? (string) $context['chat_session'] : '',
+					'assistant_id' => isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0,
+				)
+			);
+
+			if ( is_wp_error( $job_id ) ) {
+				// Fall back to inline execution rather than blocking the call.
+				return null;
+			}
+
+			return array(
+				'success'        => true,
+				'async'          => true,
+				'job_id'         => (int) $job_id,
+				'tool_slug'      => $slug,
+				'estimated_rows' => $estimate,
+				'message'        => sprintf(
+					/* translators: 1: tool slug, 2: estimated row count, 3: job ID */
+					__( '%1$s call (~%2$d rows) queued as async job #%3$d.', 'mcp-ai-wpoos' ),
+					$slug,
+					$estimate,
+					(int) $job_id
+				),
+			);
 		}
 
 		/**
