@@ -5,6 +5,9 @@
  * @package WP_MCP_AI
  */
 
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-bulk-operation.php';
+
 /**
  * Bulk-interface tool fixture used by Test_Tool_Registry_Bulk_Auto_Dispatch.
  */
