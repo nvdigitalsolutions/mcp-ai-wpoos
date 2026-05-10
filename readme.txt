@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.16
+Stable tag: 1.1.17
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -287,6 +287,63 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.17 - May 10, 2026 =
+
+Bumped to 1.1.17 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+**WP.org Compliance Hardening + Chat SPA (all 7 phases) + Docs Hub v0.3.8 + Toolkit SPA Blueprint Phases 5–12 + Coverage Campaign + Dependabot Security Sweep**
+
+*Fixed — WordPress.org Reviewer Findings (PRs #4892, #4902)*
+
+* B3 — Inline script/style echoes removed; config blocks converted to wp_print_inline_script_tag(); telemetry CSS moved to wp_add_inline_style().
+* B8 — Cache path moved from WP_CONTENT_DIR/cache/wp-mcp-ai to wp_upload_dir()['basedir']/wp-mcp-ai-cache.
+* B10 — New WP_MCP_AI_User_Context_Helper::safe_set_current_user() validates get_userdata() and multisite membership before touching global state.
+* B13 — wp_unslash() added to approval handler $_POST reads; phpcs:ignore annotations annotated with explanations.
+* B1/B2/B5/B11/B12 — unescape-before-output patterns removed, dead WP < 5.7 branches deleted, permission callback gaps closed.
+* 49/49 base AJAX handlers confirmed with check_ajax_referer(). Full evidence: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md.
+
+*Added — Chat SPA addon (addons/chat-spa/, v0.6.0 — all 7 phases)*
+
+* React replacement for the legacy chat shortcode using Vercel AI SDK UI with a custom SSE adapter.
+* Phase 2: tool-call cards + memory pills + admin embed (WP-Admin → NV oOS Chat).
+* Phase 3: transcripts sidebar (load / save / delete); session key matches legacy chat.js format.
+* Phase 4: memory drawer with Memories / Scope / Audit tabs; scope persisted in localStorage.
+* Phase 5: HITL approval bar polling /mcp-ai/v1/approvals every 6 s during streaming.
+* Phase 6: file attachments (5 MB per file, 10 MB total, 10 files max), regenerate, message branching.
+* Phase 7: WP_MCP_AI_LEGACY_CHAT_JS constant (default true) gates the legacy shortcode; blueprint §20 migration guide.
+
+*Added — Docs Hub addon (addons/docs-hub/, v0.1.0 → v0.3.8)*
+
+* Remote-first defaults + tree-picker UX; chunked rebuild + CLI subcommand; mobile sidebar; RemoteAnchor; in-page link routing.
+* SSRF hardening (resolve_public_ip via DNS A/AAAA); defensive remote_repos coercion.
+* a11y: ARIA root attrs, skip-link, prefers-reduced-motion. Syntax highlighting via rehype-highlight + lowlight.
+* NV_oOS_Docs_Hub_Sitemap_Provider (WP_Sitemaps_Provider); PageFooter (last_modified + edit-on-GitHub); admin repo-picker.js extracted.
+
+*Added — Toolkit SPA Blueprint Phases 5–12*
+
+* SPA a11y CI (spa-a11y.yml), bundle-size CI (spa-bundle-size.yml), i18n pass (wp.i18n external + wp_set_script_translations), expanded PHPUnit tests (Phase 7).
+* Scaffolder auto-patches CI workflows on new addon creation (Phase 9).
+* All 10 Tier-A toolkit-shell manifests complete (Phase 10).
+* canvas-toolkit v0.2.0: whiteboard (tldraw v5), bpmn (bpmn-js), mermaid modes. document-editor v0.2.0: GrapesJS site-creator. media-studio Phase 4: image-editor, media-player, audio-waveform.
+
+*Added — Build Pipeline*
+
+* bin/build-plugin-zip.sh --wp-org flag: produces WP.org-compliant base-only ZIP (addons/, .zed, root *.md excluded).
+
+*Security — Dependabot Alert Sweep (33 alerts)*
+
+* Root: axios, basic-ftp, ip-address overrides bumped (3 alerts).
+* addons/pro: axios bumped (3 alerts).
+* addons/saas-controller: @wordpress/scripts, diff, esbuild, miniflare + webpack-dev-server overrides (17 alerts).
+* addons/docs-hub: react-router-dom 7.5.3 → ^7.15.0 (2 alerts).
+* addons/cloud-worker: @cloudflare/vitest-pool-workers, vitest, wrangler bumped (10 alerts).
+* Dependabot extended to all addon manifests (4 npm + 4 composer watchers added).
+
+*Tests*
+
+* PHPUnit + Vitest coverage campaign (PRs #1–#11): 271 AJAX handlers covered; PHPUnit baseline + non-regression CI gate; Vitest scaffolding for all 6 SPA addons (~71 tests).
+* New test files: test-user-context-helper.php, test-hooks-tool-lifecycle.php, test-hooks-chat-lifecycle.php, test-hooks-registry.php, test-security-regression.php, and Pro/service/REST controller suites.
 
 = 1.1.16 - May 6, 2026 =
 

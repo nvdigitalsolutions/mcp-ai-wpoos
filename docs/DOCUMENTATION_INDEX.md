@@ -1,12 +1,22 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 6, 2026  
-**Plugin Version:** 1.1.16  
+**Last Updated:** May 10, 2026  
+**Plugin Version:** 1.1.17  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 MAY 10, 2026 UPDATE (v1.1.17):** 🛡️💬📚🧪 **WP.ORG COMPLIANCE, CHAT SPA PHASES 1–7, DOCS HUB v0.3.8, TOOLKIT SPA PHASES 5–12, COVERAGE CAMPAIGN**
+> - **WP.org Compliance Hardening** (PRs #4892, #4902) — B1/B2/B3/B5/B8/B10/B11/B12/B13 reviewer findings resolved. `WP_MCP_AI_User_Context_Helper` centralises privileged-op hardening. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Reviewer response table: [`SUBMISSION.md`](../SUBMISSION.md).
+> - **Build-pipeline split** — `--wp-org` flag in `bin/build-plugin-zip.sh` produces a WP.org-submission ZIP; full GitHub Release ZIP built separately. `addons/` + `.zed` + root `*.md` excluded from the WP.org artifact.
+> - **Chat SPA addon** (`addons/chat-spa/`) — all 7 phases complete (v0.6.0): SSE adapter, tool-call cards, transcripts sidebar, memory drawer, HITL approval bar, file attachments + regenerate, `WP_MCP_AI_LEGACY_CHAT_JS` opt-out constant.
+> - **Docs Hub addon** (`addons/docs-hub/`) — evolved from v0.1.0 to v0.3.8: remote-first defaults, tree-picker UX, chunked rebuild + CLI, a11y hardening, syntax highlighting (rehype-highlight), `NV_oOS_Docs_Hub_Sitemap_Provider`, PageFooter, SSRF hardening.
+> - **Toolkit SPA Blueprint Phases 5–12** — a11y, i18n, PHPUnit tests, bundle-size CI, scaffolder auto-patch, 10 Tier-A manifests complete; canvas-toolkit v0.2.0 (whiteboard/bpmn/mermaid), document-editor v0.2.0 (GrapesJS), media-studio Phase 4.
+> - **PHPUnit + Vitest coverage campaign** (PRs #1–#11) — 271 AJAX handlers covered; PHPUnit baseline + non-regression CI gate; Vitest scaffolding for all 6 SPA addons.
+> - **Dependabot security sweep** — 33 alerts resolved across all npm manifests.
+> - **Versioning** — bumped to 1.1.17 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 6, 2026 UPDATE (v1.1.16):** 🛠️ **SAAS CONTROLLER ADDON (v0.1.0) + STRUCTURED LOGGING INTEGRATION**
 > - **SaaS Controller Addon** (`addons/saas-controller/`, v0.1.0) — operator-side WordPress admin toolkit for provisioning and managing the NV oOS Cloud control plane. All 11 phases shipped. New reference doc: [`docs/saas-controller.md`](saas-controller.md).
