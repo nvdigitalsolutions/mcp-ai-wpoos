@@ -136,7 +136,9 @@ The plugin works standalone with **224 base tools** and optionally extends throu
 
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
-**Latest audit:** See [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/). **WordPress.org compliance hardening (May 9, 2026):** [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — B3, B8, B10, B13, and production vendor remap all resolved.
+**Latest audit:** See [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/).
+
+**WordPress.org compliance hardening (May 9, 2026):** [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — findings B3, B8, B10, B13, and production vendor remap all resolved.
 
 ### ⚠️ Warranty & Safe Use
 
@@ -553,7 +555,9 @@ OpenAI file/model management · text embeddings & vector stores · multi-agent o
 
 ### WordPress.org Compliance Re-Audit (April 15, 2026) 🔒
 
-All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output-escaping instances — is catalogued in `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`. A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, and the production vendor remap is documented in [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
+All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output-escaping instances — is catalogued in `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`.
+
+A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, and the production vendor remap is documented in [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
 
 ---
 
