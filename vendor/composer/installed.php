@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/research-data-volume-agentic-flows',
         'version' => 'dev-copilot/research-data-volume-agentic-flows',
-        'reference' => 'e975099ef0ee44a0377b7e76bab0cdd56b92c9c9',
+        'reference' => '07333f1af3ea8c591e442ab9ef31415bfc15b238',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/research-data-volume-agentic-flows',
             'version' => 'dev-copilot/research-data-volume-agentic-flows',
-            'reference' => 'e975099ef0ee44a0377b7e76bab0cdd56b92c9c9',
+            'reference' => '07333f1af3ea8c591e442ab9ef31415bfc15b238',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

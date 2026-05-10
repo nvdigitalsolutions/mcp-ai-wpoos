@@ -212,6 +212,80 @@ class WP_MCP_AI_Tool_Artifact_Helper {
 	}
 
 	/**
+	 * Wrap an oversized tool-result string with an artifact-spill envelope.
+	 *
+	 * Phase 3 of the massive-data hardening plan. When the agentic-loop output
+	 * guard detects a tool message that would exceed the per-message or
+	 * cumulative byte budget, callers can pass the already-sanitised string
+	 * payload here and receive a small JSON-encoded envelope referencing an
+	 * artifact instead. The envelope is the tool message's `content` for the
+	 * remainder of the request and is safe to feed back into the LLM.
+	 *
+	 * Fires `wp_mcp_ai_tool_output_truncated` with
+	 * `( $tool_name, $original_bytes, $artifact_id, $context )` so observers
+	 * (logger, OTel exporter, SSE bridge) can react.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $sanitized_content Already-sanitised tool result string.
+	 * @param string $tool_name         Tool slug / name (for diagnostics).
+	 * @param array  $context           Optional. `assistant_id`, `iteration`,
+	 *                                  `tool_call_id`, `request_id`.
+	 * @return string JSON-encoded envelope ready for the tool message body.
+	 */
+	public static function wrap_oversized_tool_result( $sanitized_content, $tool_name = '', $context = array() ) {
+		$sanitized_content = is_string( $sanitized_content ) ? $sanitized_content : (string) wp_json_encode( $sanitized_content );
+		$original_bytes    = strlen( $sanitized_content );
+
+		$artifact_id = self::generate_artifact_id( $tool_name );
+		$ttl         = self::DEFAULT_TTL_SECONDS;
+
+		$record = array(
+			'tool_slug' => sanitize_key( $tool_name ),
+			'payload'   => $sanitized_content,
+			'count'     => 1,
+			'byte_size' => $original_bytes,
+			'created'   => time(),
+		);
+
+		set_transient( self::TRANSIENT_PREFIX . $artifact_id, $record, $ttl );
+
+		$preview_limit = 256;
+		$preview       = $original_bytes > $preview_limit
+			? substr( $sanitized_content, 0, $preview_limit ) . '…'
+			: $sanitized_content;
+
+		$envelope = array(
+			'truncated'      => true,
+			'reason'         => 'agentic_output_budget_exceeded',
+			'tool_name'      => (string) $tool_name,
+			'preview'        => $preview,
+			'artifact_id'    => $artifact_id,
+			'artifact_url'   => self::build_artifact_url( $artifact_id ),
+			'original_bytes' => $original_bytes,
+			'expires_at'     => time() + $ttl,
+		);
+
+		/**
+		 * Fires when a tool output is artifact-spilled by the agentic-loop guard.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $tool_name      Tool slug / name.
+		 * @param int    $original_bytes Original byte size before spill.
+		 * @param string $artifact_id    Generated artifact id.
+		 * @param array  $context        Caller-supplied context.
+		 */
+		do_action( 'wp_mcp_ai_tool_output_truncated', $tool_name, $original_bytes, $artifact_id, $context );
+
+		do_action( 'wp_mcp_ai_tool_artifact_stored', $artifact_id, $record, $envelope );
+
+		$encoded = wp_json_encode( $envelope );
+
+		return is_string( $encoded ) ? $encoded : '{"truncated":true}';
+	}
+
+	/**
 	 * Retrieve a previously streamed artifact.
 	 *
 	 * @since 1.2.0

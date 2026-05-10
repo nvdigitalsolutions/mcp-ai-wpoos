@@ -1,8 +1,8 @@
 # Large-Data Operations
 
-> **Phases 1 + 2 of the [Massive-Data Hardening plan](#)** — primitives +
-> first wave of tool refactors. Phases 3–5 (agentic-loop output guard,
-> Action Scheduler integration, `wp mcp-ai migrate` command) ship in
+> **Phases 1 + 2 + 3 of the [Massive-Data Hardening plan](#)** — primitives,
+> first wave of tool refactors, and the agentic-loop output guard. Phases
+> 4–5 (Action Scheduler integration, `wp mcp-ai migrate` command) ship in
 > follow-up PRs.
 
 This document describes the reusable primitives every NV oOS tool, async
@@ -16,6 +16,8 @@ datasets:
   results to artifacts instead of inlining them in the LLM context)
 - `WP_MCP_AI_Tool_Bulk_Operation_Interface` (Phase 2 — opt-in marker so
   the tool registry can auto-dispatch heavy calls to the async queue)
+- `WP_MCP_AI_Data_Budget_Tracker` (Phase 3 — cumulative byte-budget guard
+  for the agentic loop)
 
 These primitives apply the operational principles from the
 [Delicious Brains massive-data-migrations playbook](https://deliciousbrains.com/building-custom-wp-cli-commands-massive-data-migrations/)
@@ -235,3 +237,54 @@ add_filter( 'wp_mcp_ai_bulk_async_threshold', function ( $threshold, $slug ) {
     return 'export_fhir_data' === $slug ? 5000 : $threshold;
 }, 10, 2 );
 ```
+
+---
+
+## Phase 3 — Agentic-loop output guard
+
+Tool results come from many places (custom REST endpoints, third-party
+APIs, external scrapers) and existing per-message limits
+(`WP_MCP_AI_REST_Validator::TOOL_RESULT_MAX_BYTES`, default 64 KiB) only
+cap a *single* message. Long agentic loops can still flood the LLM
+context by chaining many medium-sized tool calls.
+
+`WP_MCP_AI_Data_Budget_Tracker` provides a cumulative byte budget per
+chat request. The agentic loop in `WP_MCP_AI_REST::handle_chat_request()`
+and `handle_chat_request_with_streaming()` constructs a tracker per
+request and consults it *after* `sanitize_tool_result_for_llm()` for
+each tool result.
+
+When `should_spill( $bytes )` returns true (either because the single
+message exceeds the per-message ceiling or the cumulative request budget
+would be blown), the loop replaces the tool message body with a small
+JSON envelope returned by
+`WP_MCP_AI_Tool_Artifact_Helper::wrap_oversized_tool_result()`:
+
+```json
+{
+  "truncated": true,
+  "reason": "agentic_output_budget_exceeded",
+  "tool_name": "expensive_tool",
+  "preview": "first 256 bytes…",
+  "artifact_id": "expensive_tool_e3a1…",
+  "artifact_url": "https://site.test/wp-json/mcp-ai/v1/artifacts/expensive_tool_e3a1…",
+  "original_bytes": 192345,
+  "expires_at": 1730000000
+}
+```
+
+The full payload is persisted as a transient artifact (24 h TTL by
+default) and the LLM continues with the bounded envelope. The streaming
+branch additionally emits a `tool_output_truncated` SSE frame so chat
+UIs can surface the spill.
+
+Filters:
+
+- `wp_mcp_ai_agentic_loop_byte_budget` — overall per-request ceiling
+  (default `1 MiB`, floor `1 KiB`).
+- `wp_mcp_ai_agentic_loop_per_message_byte_budget` — per-message
+  ceiling (default `64 KiB`, floor `512 B`).
+
+Action: `wp_mcp_ai_tool_output_truncated` fires with
+`( $tool_name, $original_bytes, $artifact_id, $context )` whenever a
+spill happens — useful for OTel exporters or audit logs.
