@@ -331,8 +331,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return array|null
 		 */
 		protected function maybe_dispatch_async_bulk( $slug, $tool, $arguments, $context ) {
-			// Default off until Phase 4 Action Scheduler integration ships.
-			$enabled = defined( 'WP_MCP_AI_BULK_AUTO_ASYNC' ) ? (bool) WP_MCP_AI_BULK_AUTO_ASYNC : false;
+			// Phase 4: when the Action Scheduler bridge is available, default
+			// auto-async dispatch ON so bulk jobs run on the next AS tick
+			// instead of polling WP-Cron once per minute. Sites without AS
+			// keep the legacy default (off) until they explicitly opt in via
+			// the `WP_MCP_AI_BULK_AUTO_ASYNC` constant or the filter below.
+			if ( defined( 'WP_MCP_AI_BULK_AUTO_ASYNC' ) ) {
+				$enabled = (bool) WP_MCP_AI_BULK_AUTO_ASYNC;
+			} elseif (
+				class_exists( 'WP_MCP_AI_Async_Scheduler_Bridge' ) &&
+				WP_MCP_AI_Async_Scheduler_Bridge::is_available()
+			) {
+				$enabled = true;
+			} else {
+				$enabled = false;
+			}
 
 			/**
 			 * Filters whether auto-async bulk dispatch is enabled.

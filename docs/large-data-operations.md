@@ -288,3 +288,46 @@ Filters:
 Action: `wp_mcp_ai_tool_output_truncated` fires with
 `( $tool_name, $original_bytes, $artifact_id, $context )` whenever a
 spill happens — useful for OTel exporters or audit logs.
+
+## Phase 4 — Action Scheduler integration
+
+Phase 4 introduces `WP_MCP_AI_Async_Scheduler_Bridge`, a thin bridge
+that dispatches queued bulk-tool jobs through [Action
+Scheduler](https://actionscheduler.org) instead of waiting for the
+once-per-minute WP-Cron tick that drives
+`WP_MCP_AI_Async_Job_Queue::process_queue()`.
+
+When Action Scheduler is detected at runtime
+(`function_exists( 'as_enqueue_async_action' )`):
+
+1. `WP_MCP_AI_Async_Job_Queue::queue_job()` immediately calls
+   `WP_MCP_AI_Async_Scheduler_Bridge::enqueue_job( $job_id )`, which
+   posts an async action under the `wp-mcp-ai-jobs` group.
+2. Action Scheduler invokes
+   `WP_MCP_AI_Async_Scheduler_Bridge::run_job( $job_id )` on the next
+   runner tick, which delegates to
+   `WP_MCP_AI_Async_Job_Queue::process_specific_job( $job_id )`.
+3. Failures and retries are re-enqueued through the bridge so retries
+   do not regress to minute-resolution polling.
+4. `WP_MCP_AI_Tool_Registry::maybe_dispatch_async_bulk()` flips its
+   default to **on** when the bridge is available — bulk tools above
+   `wp_mcp_ai_bulk_async_threshold` (default `1000` rows) auto-dispatch
+   without further opt-in.
+
+When Action Scheduler is **not** loaded the bridge is a no-op:
+`is_available()` returns `false`, `enqueue_job()` returns `false`, and
+`Tool_Registry` keeps the legacy default-off behaviour. Existing sites
+that rely on WP-Cron continue to work unchanged.
+
+Hooks:
+
+- `wp_mcp_ai_async_scheduler_bridge_enabled` (filter, `bool`) — global
+  on/off override even when Action Scheduler is loaded.
+- `wp_mcp_ai_async_scheduler_group` (filter, `string`) — Action
+  Scheduler group name. Default `'wp-mcp-ai-jobs'`.
+- `wp_mcp_ai_bulk_auto_async_enabled` (filter, `bool`) — per-tool
+  override that runs **after** the bridge default is computed.
+- `WP_MCP_AI_BULK_AUTO_ASYNC` (constant, `bool`) — site-wide kill
+  switch that takes priority over the bridge default. Define it as
+  `false` to force inline execution everywhere even when Action
+  Scheduler is loaded.
