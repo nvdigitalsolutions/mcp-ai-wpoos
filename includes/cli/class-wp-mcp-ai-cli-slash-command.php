@@ -127,9 +127,14 @@ class WP_MCP_AI_CLI_Slash_Command extends WP_MCP_AI_CLI_Base_Command {
 			WP_CLI::error( 'Slash command handler not initialized' );
 		}
 
-		// Set current user for capability filtering.
+		// Set current user for capability filtering. WP-CLI runs as the
+		// system user, so we accept any valid user ID regardless of blog
+		// membership (network admins can list commands across sites).
 		if ( $user_id ) {
-			wp_set_current_user( $user_id );
+			WP_MCP_AI_User_Context_Helper::safe_set_current_user(
+				$user_id,
+				array( 'require_blog_membership' => false )
+			);
 		}
 
 		// Get commands.

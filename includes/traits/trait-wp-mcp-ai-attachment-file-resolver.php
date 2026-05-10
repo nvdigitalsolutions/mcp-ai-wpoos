@@ -320,23 +320,32 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 				);
 			}
 
-			$ext      = $this->guess_extension_from_content_type( $download['content_type'] ?? '' );
-			$tmp_base = tempnam( sys_get_temp_dir(), 'wp_mcp_ai_pf_' );
+			$ext = $this->guess_extension_from_content_type( $download['content_type'] ?? '' );
 
-			if ( false === $tmp_base ) {
+			// Write into the WordPress uploads directory (under a plugin-owned
+			// subfolder), not the system temp dir or the plugin folder.
+			// This keeps writes inside the documented WP filesystem boundary.
+			$uploads = wp_upload_dir( null, false );
+			if ( ! is_array( $uploads ) || empty( $uploads['basedir'] ) || ! empty( $uploads['error'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_temp_file_error',
-					__( 'Could not create a temporary file for the provider download.', 'mcp-ai-wpoos' ),
+					__( 'Could not resolve the WordPress uploads directory for a temporary file.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
 
-			$tmp_path = '' !== $ext ? $tmp_base . $ext : $tmp_base;
-
-			if ( '' !== $ext && false === rename( $tmp_base, $tmp_path ) ) {
-				// If rename fails, keep the original name.
-				$tmp_path = $tmp_base;
+			$tmp_dir = trailingslashit( $uploads['basedir'] ) . 'mcp-ai-wpoos/tmp';
+			if ( ! wp_mkdir_p( $tmp_dir ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_temp_file_error',
+					__( 'Could not create a temporary file directory under uploads for the provider download.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
 			}
+
+			// Generate a unique filename within the uploads tmp dir.
+			$filename = 'wp_mcp_ai_pf_' . wp_generate_password( 12, false, false ) . ( '' !== $ext ? $ext : '' );
+			$tmp_path = trailingslashit( $tmp_dir ) . $filename;
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to system temp dir during HTTP file download; WP_Filesystem is not available in this non-admin context.
 			if ( false === file_put_contents( $tmp_path, $body ) ) {

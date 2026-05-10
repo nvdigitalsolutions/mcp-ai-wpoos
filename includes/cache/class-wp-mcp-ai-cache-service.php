@@ -118,7 +118,10 @@ class WP_MCP_AI_Cache_Service {
 		}
 
 		// Fall back to filesystem tag-aware cache (supports tag invalidation via symlinks).
-		$cache_dir = WP_CONTENT_DIR . '/cache/wp-mcp-ai';
+		// Use the uploads directory rather than WP_CONTENT_DIR so the cache
+		// path is portable and within the directory WordPress manages.
+		$upload_dir = wp_upload_dir();
+		$cache_dir  = $upload_dir['basedir'] . '/wp-mcp-ai-cache';
 		if ( ! is_dir( $cache_dir ) ) {
 			wp_mkdir_p( $cache_dir );
 		}

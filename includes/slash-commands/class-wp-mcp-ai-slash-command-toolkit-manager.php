@@ -7973,8 +7973,16 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$type    = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'full';
 			$storage = ! empty( $args['storage'] ) ? sanitize_text_field( $args['storage'] ) : 'local';
 
-			$backup_id   = 'backup_' . time();
-			$backup_path = WP_CONTENT_DIR . '/backups/';
+			$backup_id = 'backup_' . time();
+
+			// Use the WordPress uploads directory for backups (per WP plugin
+			// directory guidelines on writing under wp_upload_dir() rather
+			// than WP_CONTENT_DIR or the plugin folder).
+			$uploads = wp_upload_dir( null, false );
+			if ( ! is_array( $uploads ) || empty( $uploads['basedir'] ) || ! empty( $uploads['error'] ) ) {
+				return $this->error_response( __( 'Could not resolve the WordPress uploads directory for backups.', 'mcp-ai-wpoos' ) );
+			}
+			$backup_path = trailingslashit( $uploads['basedir'] ) . 'mcp-ai-wpoos/backups/';
 
 			// Create backup directory if it doesn't exist.
 			if ( ! file_exists( $backup_path ) ) {
