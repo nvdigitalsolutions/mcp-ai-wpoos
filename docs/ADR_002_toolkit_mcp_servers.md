@@ -1,6 +1,6 @@
 # ADR 002 — Per-Toolkit MCP Servers
 
-> Status: **Accepted (Phase 0 + Phase 1)** · Date: 2026-05-08
+> Status: **Accepted (Phase 0 + Phase 1 + Phase 2)** · Date: 2026-05-08; Phase 2 added 2026-05-10
 >
 > Supersedes: none.
 > Related: `docs/ADR_001_module_boundaries.md`, `docs/features/toolkit-mcp-servers.md`.
@@ -55,13 +55,34 @@ Healthcare's `health-records-consolidate` is referenced from Architectural Desig
 
 ## Phasing
 
-This ADR ships **Phase 0 (foundation)** and **Phase 1 (three pilot servers — CRM, Healthcare, Architectural Design)** plus the MCP Server settings tab on `WP_MCP_AI_Toolkit_Settings_Base`. Subsequent phases land in follow-up PRs:
+This ADR ships **Phase 0 (foundation)**, **Phase 1 (three pilot servers — CRM, Healthcare, Architectural Design)**, and **Phase 2 (the remaining 16 Tier-1 promotions — see "Tier 1 candidates" below)**. Subsequent phases land in follow-up PRs:
 
-- Phase 2 — promote remaining 16 Tier-1 toolkits.
+- ~~Phase 2 — promote remaining 16 Tier-1 toolkits.~~ **(landed 2026-05-10)**
 - Phase 3 — toolkit-scoped credentials, rate-limit overrides, CLI, slash commands, `tools/call` / `resources/read` / `prompts/get`.
 - Phase 4 — cross-mount audit trail in observability.
 - Phase 5 — assistant "mounted MCP servers" UI, observability dashboard card, auto-generated `docs/mcp-servers.md`.
 - Phase 6 — Tier 2 toolkits and `/.well-known/mcp` externalisation.
+
+### Phase 2 server inventory
+
+| Slug | Class | Native surfaces | Mounts | Notes |
+|---|---|---|---|---|
+| `ai-tool-builder` | `WP_MCP_AI_AI_Tool_Builder_MCP_Server` | — | — | Tools-only. Meta-toolkit that scaffolds NV oOS tools themselves. |
+| `calendar-booking` | `WP_MCP_AI_Calendar_Booking_MCP_Server` | research-appointment | — | |
+| `cre-debt` | `WP_MCP_AI_CRE_Debt_MCP_Server` | research-cre-debt | — | |
+| `dj-management` | `WP_MCP_AI_DJ_Management_MCP_Server` | — | — | Tools-only. |
+| `document-generation` | `WP_MCP_AI_Document_Generation_MCP_Server` | research-document-template | — | Includes QMS controlled-document tools. |
+| `eca` | `WP_MCP_AI_ECA_Management_MCP_Server` | research-eca | — | |
+| `ecommerce` | `WP_MCP_AI_Ecommerce_MCP_Server` | research-product, product-consolidate | — | Dual-surface on the WooCommerce `product` CPT. |
+| `financial-planner` | `WP_MCP_AI_Financial_Planner_MCP_Server` | research-financial-account | — | |
+| `image-production` | `WP_MCP_AI_Image_Production_MCP_Server` | research-image-template | — | |
+| `law-firm` | `WP_MCP_AI_Law_Firm_MCP_Server` | research-law-firm | — | |
+| `media` | `WP_MCP_AI_Media_Toolkit_MCP_Server` | design-media (C&A) | — | C&A-only on the WordPress `attachment` post type. |
+| `multilingual` | `WP_MCP_AI_Multilingual_MCP_Server` | — | — | Tools-only. |
+| `project-management` | `WP_MCP_AI_Project_Management_MCP_Server` | research-project, research-task, research-event, event-consolidate | — | Multi-page R&A + dual-surface on `mcp_ai_event`. |
+| `regulatory-registration` | `WP_MCP_AI_Regulatory_Registration_MCP_Server` | wp-mcp-ai-reg-product-research, wp-mcp-ai-reg-document-research, wp-mcp-ai-registration-research | — | Three-page R&A. |
+| `social-media` | `WP_MCP_AI_Social_Media_MCP_Server` | — | — | Tools-only. |
+| `video-production` | `WP_MCP_AI_Video_Production_MCP_Server` | — | — | Tools-only (no R&A page on disk). |
 
 ## Tier 1 candidates (19)
 

@@ -2,8 +2,8 @@
 /**
  * Toolkit MCP Servers — Bootstrap
  *
- * Loads framework classes, primes the registry on init, and registers the three
- * Phase 1 pilot servers (CRM, Healthcare, Architectural Design).
+ * Loads framework classes, primes the registry on init, and registers all
+ * Tier-1 toolkit servers (Phases 1 + 2 = 19 servers).
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0
@@ -18,9 +18,28 @@ require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-base.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-registry.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-rest-controller.php';
 
+// Phase 1 pilot servers.
 require_once __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
 require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-mcp-server.php';
 require_once __DIR__ . '/servers/class-wp-mcp-ai-architectural-design-mcp-server.php';
+
+// Phase 2 Tier-1 promotions (16 servers, alphabetical).
+require_once __DIR__ . '/servers/class-wp-mcp-ai-ai-tool-builder-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-calendar-booking-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-cre-debt-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-dj-management-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-document-generation-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-eca-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-ecommerce-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-financial-planner-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-image-production-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-law-firm-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-media-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-multilingual-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-project-management-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-regulatory-registration-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-social-media-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-video-production-mcp-server.php';
 
 /**
  * Wire the registry to fire its registration action at init priority 12 — after
@@ -36,7 +55,7 @@ add_action(
 );
 
 /**
- * Register the Phase 1 pilot servers when the registration action fires.
+ * Register all Tier-1 servers when the registration action fires.
  */
 add_action(
 	'wp_mcp_ai_register_toolkit_servers',
@@ -44,9 +63,28 @@ add_action(
 		if ( ! ( $registry instanceof WP_MCP_AI_Toolkit_Server_Registry ) ) {
 			return;
 		}
+		// Phase 1 pilots.
 		$registry->register( new WP_MCP_AI_CRM_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Healthcare_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Architectural_Design_MCP_Server() );
+
+		// Phase 2 Tier-1 promotions (alphabetical).
+		$registry->register( new WP_MCP_AI_AI_Tool_Builder_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Calendar_Booking_MCP_Server() );
+		$registry->register( new WP_MCP_AI_CRE_Debt_MCP_Server() );
+		$registry->register( new WP_MCP_AI_DJ_Management_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Document_Generation_MCP_Server() );
+		$registry->register( new WP_MCP_AI_ECA_Management_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Ecommerce_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Financial_Planner_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Image_Production_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Law_Firm_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Media_Toolkit_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Multilingual_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Project_Management_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Regulatory_Registration_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Social_Media_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Video_Production_MCP_Server() );
 	}
 );
 

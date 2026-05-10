@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 shipped (CRM, Healthcare, Architectural Design)
+> Status: Phase 0 + Phase 1 + Phase 2 shipped — all 19 Tier-1 toolkits promoted.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
@@ -15,7 +15,7 @@ All routes live under namespace `mcp-ai-pro/v1`:
 | `GET`  | `/mcp-ai-pro/v1/mcp/{slug}`      | Single-server descriptor                                                |
 | `POST` | `/mcp-ai-pro/v1/mcp/{slug}`      | JSON-RPC 2.0 entry point                                                |
 
-Supported JSON-RPC methods (Phase 1):
+Supported JSON-RPC methods (Phase 1 / Phase 2):
 
 - `initialize`
 - `ping`
@@ -25,13 +25,36 @@ Supported JSON-RPC methods (Phase 1):
 
 `tools/call`, `resources/read`, `prompts/get` are intentionally not yet implemented at the per-toolkit endpoint; clients should fall back to the monolithic `/mcp-ai/v1/mcp` endpoint for execution while Phase 3 lands.
 
-## Phase 1 pilot servers
+## Tier-1 servers
+
+### Phase 1 pilot servers
 
 | Slug                   | Class                                              | Native surfaces                                                                                            | Mounted surfaces                                                  |
 |------------------------|----------------------------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `crm`                  | `WP_MCP_AI_CRM_MCP_Server`                         | `company-research`, `post-research`, `page-research`, `place-research` (all R&A)                          | —                                                                 |
 | `health`               | `WP_MCP_AI_Healthcare_MCP_Server`                  | `member-research` (R&A), `health-records-consolidate` (C&A) — both on `mcp_ai_member`                     | —                                                                 |
 | `architectural-design` | `WP_MCP_AI_Architectural_Design_MCP_Server`        | `architectural-drawing-research`, `architectural-project-research`, `architectural-specification-research` | `health-records-consolidate` mounted read-only from `health` |
+
+### Phase 2 promotions
+
+| Slug                       | Class                                              | Native surfaces                                                                                              |
+|----------------------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `ai-tool-builder`          | `WP_MCP_AI_AI_Tool_Builder_MCP_Server`             | — (tools-only)                                                                                                |
+| `calendar-booking`         | `WP_MCP_AI_Calendar_Booking_MCP_Server`            | `research-appointment` (R&A)                                                                                  |
+| `cre-debt`                 | `WP_MCP_AI_CRE_Debt_MCP_Server`                    | `research-cre-debt` (R&A)                                                                                     |
+| `dj-management`            | `WP_MCP_AI_DJ_Management_MCP_Server`               | — (tools-only)                                                                                                |
+| `document-generation`      | `WP_MCP_AI_Document_Generation_MCP_Server`         | `research-document-template` (R&A)                                                                            |
+| `eca`                      | `WP_MCP_AI_ECA_Management_MCP_Server`              | `research-eca` (R&A)                                                                                          |
+| `ecommerce`                | `WP_MCP_AI_Ecommerce_MCP_Server`                   | `research-product` (R&A), `product-consolidate` (C&A) — both on `product`                                     |
+| `financial-planner`        | `WP_MCP_AI_Financial_Planner_MCP_Server`           | `research-financial-account` (R&A)                                                                            |
+| `image-production`         | `WP_MCP_AI_Image_Production_MCP_Server`            | `research-image-template` (R&A)                                                                               |
+| `law-firm`                 | `WP_MCP_AI_Law_Firm_MCP_Server`                    | `research-law-firm` (R&A)                                                                                     |
+| `media`                    | `WP_MCP_AI_Media_Toolkit_MCP_Server`               | `design-media` (C&A) on `attachment`                                                                          |
+| `multilingual`             | `WP_MCP_AI_Multilingual_MCP_Server`                | — (tools-only)                                                                                                |
+| `project-management`       | `WP_MCP_AI_Project_Management_MCP_Server`          | `research-project`, `research-task`, `research-event` (R&A); `event-consolidate` (C&A on `mcp_ai_event`)      |
+| `regulatory-registration`  | `WP_MCP_AI_Regulatory_Registration_MCP_Server`     | `wp-mcp-ai-reg-product-research`, `wp-mcp-ai-reg-document-research`, `wp-mcp-ai-registration-research` (R&A)  |
+| `social-media`             | `WP_MCP_AI_Social_Media_MCP_Server`                | — (tools-only)                                                                                                |
+| `video-production`         | `WP_MCP_AI_Video_Production_MCP_Server`            | — (tools-only)                                                                                                |
 
 ## Registering a server
 

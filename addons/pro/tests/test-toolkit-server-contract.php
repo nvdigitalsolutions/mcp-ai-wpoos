@@ -16,15 +16,33 @@ require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 
 	/**
-	 * Provider for all pilot servers.
+	 * Provider for all Tier-1 servers (Phase 1 pilots + Phase 2 promotions).
 	 *
 	 * @return array<string,array{0:string,1:string}>
 	 */
 	public function pilot_servers() {
 		return array(
-			'crm'                  => array( 'WP_MCP_AI_CRM_MCP_Server', 'crm' ),
-			'health'               => array( 'WP_MCP_AI_Healthcare_MCP_Server', 'health' ),
-			'architectural-design' => array( 'WP_MCP_AI_Architectural_Design_MCP_Server', 'architectural-design' ),
+			// Phase 1 pilots.
+			'crm'                     => array( 'WP_MCP_AI_CRM_MCP_Server', 'crm' ),
+			'health'                  => array( 'WP_MCP_AI_Healthcare_MCP_Server', 'health' ),
+			'architectural-design'    => array( 'WP_MCP_AI_Architectural_Design_MCP_Server', 'architectural-design' ),
+			// Phase 2 Tier-1 promotions (alphabetical).
+			'ai-tool-builder'         => array( 'WP_MCP_AI_AI_Tool_Builder_MCP_Server', 'ai-tool-builder' ),
+			'calendar-booking'        => array( 'WP_MCP_AI_Calendar_Booking_MCP_Server', 'calendar-booking' ),
+			'cre-debt'                => array( 'WP_MCP_AI_CRE_Debt_MCP_Server', 'cre-debt' ),
+			'dj-management'           => array( 'WP_MCP_AI_DJ_Management_MCP_Server', 'dj-management' ),
+			'document-generation'     => array( 'WP_MCP_AI_Document_Generation_MCP_Server', 'document-generation' ),
+			'eca'                     => array( 'WP_MCP_AI_ECA_Management_MCP_Server', 'eca' ),
+			'ecommerce'               => array( 'WP_MCP_AI_Ecommerce_MCP_Server', 'ecommerce' ),
+			'financial-planner'       => array( 'WP_MCP_AI_Financial_Planner_MCP_Server', 'financial-planner' ),
+			'image-production'        => array( 'WP_MCP_AI_Image_Production_MCP_Server', 'image-production' ),
+			'law-firm'                => array( 'WP_MCP_AI_Law_Firm_MCP_Server', 'law-firm' ),
+			'media'                   => array( 'WP_MCP_AI_Media_Toolkit_MCP_Server', 'media' ),
+			'multilingual'            => array( 'WP_MCP_AI_Multilingual_MCP_Server', 'multilingual' ),
+			'project-management'      => array( 'WP_MCP_AI_Project_Management_MCP_Server', 'project-management' ),
+			'regulatory-registration' => array( 'WP_MCP_AI_Regulatory_Registration_MCP_Server', 'regulatory-registration' ),
+			'social-media'            => array( 'WP_MCP_AI_Social_Media_MCP_Server', 'social-media' ),
+			'video-production'        => array( 'WP_MCP_AI_Video_Production_MCP_Server', 'video-production' ),
 		);
 	}
 
@@ -121,13 +139,28 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 	public function test_registry_holds_pilot_servers_after_bootstrap() {
 		WP_MCP_AI_Toolkit_Server_Registry::reset_instance();
 		$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
-		// Manually register, since `init` may have already fired in this test process.
-		$registry->register( new WP_MCP_AI_CRM_MCP_Server() );
-		$registry->register( new WP_MCP_AI_Healthcare_MCP_Server() );
-		$registry->register( new WP_MCP_AI_Architectural_Design_MCP_Server() );
+		// Manually register all Tier-1 servers, since `init` may have already
+		// fired in this test process.
+		foreach ( $this->pilot_servers() as $row ) {
+			$registry->register( new $row[0]() );
+		}
 
-		foreach ( array( 'crm', 'health', 'architectural-design' ) as $slug ) {
-			$this->assertNotNull( $registry->get( $slug ), 'Registry missing: ' . $slug );
+		foreach ( $this->pilot_servers() as $row ) {
+			$this->assertNotNull( $registry->get( $row[1] ), 'Registry missing: ' . $row[1] );
+		}
+	}
+
+	public function test_every_server_has_at_least_one_candidate_tool_or_surface() {
+		// A Tier-1 server must justify its existence — either by exposing a tool
+		// candidate or by owning at least one ingestion surface.
+		foreach ( $this->pilot_servers() as $row ) {
+			$server     = new $row[0]();
+			$has_tool   = ! empty( $server->candidate_tool_slugs() );
+			$has_surface = ! empty( $server->ingestion_surfaces() );
+			$this->assertTrue(
+				$has_tool || $has_surface,
+				$row[1] . ' must declare at least one candidate tool or ingestion surface.'
+			);
 		}
 	}
 }
