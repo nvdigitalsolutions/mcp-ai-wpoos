@@ -113,7 +113,7 @@ class WP_MCP_AI_REST_Authenticator {
 	 */
 	protected function maybe_set_current_user( $user_id ) {
 		if ( $user_id > 0 ) {
-			wp_set_current_user( $user_id );
+			WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id );
 		}
 	}
 

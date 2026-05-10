@@ -137,7 +137,13 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( $user_id > 0 && get_current_user_id() !== $user_id ) {
-			wp_set_current_user( $user_id );
+			if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_user',
+					__( 'The authenticated user could not be resolved on this site.', 'mcp-ai-wpoos' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
 		}
 
 		$document_specs = $this->normalise_document_arguments( $arguments );

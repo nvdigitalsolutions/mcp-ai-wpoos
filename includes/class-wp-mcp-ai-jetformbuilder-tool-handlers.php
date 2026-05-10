@@ -247,7 +247,12 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			// the request is already executing under a logged-in user.
 			// JetFormBuilder permission checks then run in this user's
 			// context for the duration of the dispatched request.
-			wp_set_current_user( $user_id );
+			if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_user',
+					__( 'The authenticated user could not be resolved on this site.', 'mcp-ai-wpoos' )
+				);
+			}
 		}
 
 		return $user_id;
@@ -490,8 +495,9 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		// branch only runs as the response phase of a request that
 		// already authenticated. The capability gate for any
 		// subsequent JetFormBuilder action lives on the JetFormBuilder
-		// REST route's own `permission_callback`.
-		wp_set_current_user( $user_id );
+		// REST route's own `permission_callback`. The helper revalidates
+		// that the user still exists before we mutate global state.
+		WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id );
 
 		return $result;
 	}

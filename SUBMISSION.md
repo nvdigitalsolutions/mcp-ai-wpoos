@@ -130,5 +130,5 @@ CI step.
 | REST route missing `permission_callback` | Only `addons/embedded` route was flagged — excluded; all 83 base routes have explicit callbacks; PHPUnit walker test guards against regression | B12 — tests/test-rest-permission-callbacks.php |
 | Inline `<script>` / `<style>` (143 incidences) | Work in progress — tracked as B3 | PR pending |
 | Input sanitization / nonce verification | Work in progress — tracked as B13 | PR pending |
-| `wp_set_current_user` / `wp_update_user` hardening | Work in progress — tracked as B10 | PR pending |
+| `wp_set_current_user` / `wp_update_user` hardening | Resolved — every base-plugin `wp_set_current_user()` call now routes through `WP_MCP_AI_User_Context_Helper::safe_set_current_user()`, which validates the user exists (`get_userdata()`) and (on multisite) belongs to the current blog before mutating global state | B10 — `includes/helpers/class-wp-mcp-ai-user-context-helper.php`, `tests/test-user-context-helper.php` |
 | `WP_CONTENT_DIR` path usage | Work in progress — tracked as B8 | PR pending |

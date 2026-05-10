@@ -86,8 +86,13 @@
 	Use sprintf()/printf() with literal format strings and escaped values
 	instead. Confirmed 0 occurrences after PR #4892 — this rule locks it in.
 	See: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md B14.
+
+	NOTE: WPCS 3.x removed the legacy `WordPress.PHP.PreventUseOfHereDocSyntax`
+	sniff. The equivalent rule lives in PHPCS core's Squiz standard, which
+	WPCS already pulls in transitively, so referencing it here keeps the
+	compliance gate in place.
 -->
-<rule ref="WordPress.PHP.PreventUseOfHereDocSyntax"/>
+<rule ref="Squiz.PHP.Heredoc"/>
 
 <file>.</file>
 </ruleset>
