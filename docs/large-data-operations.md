@@ -331,3 +331,21 @@ Hooks:
   switch that takes priority over the bridge default. Define it as
   `false` to force inline execution everywhere even when Action
   Scheduler is loaded.
+
+## Phase 5 — `wp mcp-ai bulk` WP-CLI command
+
+Phase 5 ships an operations-focused WP-CLI surface backed by
+`WP_MCP_AI_CLI_Bulk_Command` (registered as `mcp-ai bulk`). It exposes
+four subcommands that work against the Phase 1–4 infrastructure:
+
+| Command | Purpose |
+|---------|---------|
+| `wp mcp-ai bulk audit` | Lists every tool implementing `WP_MCP_AI_Tool_Bulk_Operation_Interface` with the threshold resolved by `wp_mcp_ai_bulk_async_threshold`. |
+| `wp mcp-ai bulk status` | Summarises `WP_MCP_AI_Async_Job_Queue` — counts by status, oldest queued row, and Action Scheduler bridge availability. |
+| `wp mcp-ai bulk dispatch <slug> [--args=<json>] [--dry-run]` | Enqueues a bulk-interface tool with a JSON payload through the same `WP_MCP_AI_Async_Job_Queue::queue_job()` path the agentic loop uses, so it honours the AS bridge. |
+| `wp mcp-ai bulk cleanup-artifacts [--dry-run]` | Walks the options table for expired `_transient_timeout_wp_mcp_ai_artifact_*` rows and deletes both the timeout and value siblings. |
+
+All subcommands accept the standard `--format=table|json|yaml|csv`
+output flags inherited from `WP_MCP_AI_CLI_Base_Command`. `dispatch`
+and `cleanup-artifacts` additionally accept `--dry-run` so retro-runs
+and cleanups can be previewed before mutating state.
