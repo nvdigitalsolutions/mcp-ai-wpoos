@@ -216,6 +216,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.vscode' \
         --exclude '.bmad' \
         --exclude '.context' \
+        --exclude '.zed' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -228,7 +229,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
-        --exclude 'MAINTAINER_MAP.md' \
+        --exclude '/*.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -244,19 +245,6 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
-        --exclude 'ARCHITECTURE.md' \
-        --exclude 'CHANGELOG.md' \
-        --exclude 'CLAUDE.md' \
-        --exclude 'AGENTS.md' \
-        --exclude 'RELEASE_CHECKLIST.md' \
-        --exclude 'CONTRIBUTING.md' \
-        --exclude 'SECURITY.md' \
-        --exclude 'BUILD.md' \
-        --exclude 'INCOMPLETE-FEATURES-REVIEW.md' \
-        --exclude 'INCOMPLETE-FEATURES-STATUS-SUMMARY.md' \
-        --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
-        --exclude 'VENDOR-EXEC-USAGE.md' \
-        --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
@@ -276,7 +264,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.zip' \
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
-        --exclude 'addons/pro' \
+        --exclude 'addons' \
         --exclude 'assets/examples' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
@@ -345,19 +333,19 @@ if [ "$BUILD_BASE" = true ]; then
     
     # Note: mcp-ai-wpoos-base.php is already included via rsync above.
     # It serves as the main plugin file for the base version (matches folder name).
-    
+
+    # Restore the addons/ directory with a placeholder so the folder exists for
+    # users who later install toolkit add-ons (which unzip into addons/<slug>/).
+    mkdir -p "build/${BASE_SLUG}/addons"
+    touch "build/${BASE_SLUG}/addons/.gitkeep"
+    echo "✓ Created addons/.gitkeep placeholder (addons/ excluded from base build)"
+
     # Keep both minified and unminified assets for flexibility
     # PHP code will automatically use minified versions in production (via get_asset_file() method)
     # and unminified versions when SCRIPT_DEBUG is enabled.
     # This provides better debugging experience while maintaining optimal production performance.
     echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
-    
-    # Remove README.md (readme.txt is the WordPress.org standard)
-    if [ -f "build/${BASE_SLUG}/README.md" ]; then
-        rm -f "build/${BASE_SLUG}/README.md"
-        echo "✓ Removed README.md (readme.txt is used for WordPress.org)"
-    fi
-    
+
     # Remove plugin header from mcp-ai-wpoos.php to prevent WordPress from detecting it as a separate plugin
     # Only mcp-ai-wpoos-base.php should have the plugin header in the base version
     if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
@@ -691,6 +679,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.vscode' \
         --exclude '.bmad' \
         --exclude '.context' \
+        --exclude '.zed' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -703,7 +692,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
-        --exclude 'MAINTAINER_MAP.md' \
+        --exclude '/*.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -719,19 +708,6 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
-        --exclude 'ARCHITECTURE.md' \
-        --exclude 'CHANGELOG.md' \
-        --exclude 'CLAUDE.md' \
-        --exclude 'AGENTS.md' \
-        --exclude 'RELEASE_CHECKLIST.md' \
-        --exclude 'CONTRIBUTING.md' \
-        --exclude 'SECURITY.md' \
-        --exclude 'BUILD.md' \
-        --exclude 'INCOMPLETE-FEATURES-REVIEW.md' \
-        --exclude 'INCOMPLETE-FEATURES-STATUS-SUMMARY.md' \
-        --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
-        --exclude 'VENDOR-EXEC-USAGE.md' \
-        --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
@@ -832,7 +808,15 @@ if [ "$BUILD_COMBINED" = true ]; then
     # and unminified versions when SCRIPT_DEBUG is enabled.
     # This provides better debugging experience while maintaining optimal production performance.
     echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
-    
+
+    # Remove non-pro toolkit addons from the combined build.
+    # Toolkit addons (chat-spa, canvas-toolkit, document-editor, etc.) are distributed
+    # as individual ZIPs via --toolkits and should not be bundled inside the combined package.
+    if [ -d "build/${COMBINED_SLUG}/addons" ]; then
+        find "build/${COMBINED_SLUG}/addons" -mindepth 1 -maxdepth 1 -type d ! -name 'pro' -exec rm -rf {} +
+        echo "✓ Removed non-pro toolkit addons from combined build (distributed separately)"
+    fi
+
     # ------------------------------------------------------------------
     # Prune tecnickcom/tcpdf (~28.7 MB) from the combined zip.
     #
@@ -860,12 +844,6 @@ if [ "$BUILD_COMBINED" = true ]; then
     fi
     echo "✓ Excluded tecnickcom/tcpdf vendor (ships in oos-toolkit-tcpdf add-on)"
 
-    # Remove README.md (readme.txt is the WordPress.org standard)
-    if [ -f "build/${COMBINED_SLUG}/README.md" ]; then
-        rm -f "build/${COMBINED_SLUG}/README.md"
-        echo "✓ Removed README.md (readme.txt is used for WordPress.org)"
-    fi
-    
     # Create ZIP
     cd build
     zip -r -q "${COMBINED_SLUG}-${VERSION}.zip" "${COMBINED_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
