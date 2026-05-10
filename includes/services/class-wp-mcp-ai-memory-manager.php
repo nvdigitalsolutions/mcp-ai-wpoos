@@ -101,7 +101,8 @@ class WP_MCP_AI_Memory_Manager {
 				$wp_object_cache->cache_misses = 0;
 			}
 
-			// Some object cache drop-ins expose a __remoteset() method.
+			// Some object cache drop-ins (e.g. WP Super Cache, Memcached Object Cache)
+			// expose a __remoteset() method to flush local request-scoped state.
 			if ( method_exists( $wp_object_cache, '__remoteset' ) ) {
 				call_user_func( array( $wp_object_cache, '__remoteset' ) );
 			}

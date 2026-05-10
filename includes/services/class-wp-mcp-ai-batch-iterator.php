@@ -370,10 +370,19 @@ class WP_MCP_AI_Batch_Iterator {
 	 * @since 1.2.0
 	 *
 	 * @param string $table        Fully qualified table name (e.g. $wpdb->posts).
-	 * @param string $id_column    Primary-key column to seek on.
+	 *                             MUST be a developer-supplied identifier — it is
+	 *                             validated against `[A-Za-z0-9_$.]+` but never
+	 *                             escaped by `$wpdb->prepare()`.
+	 * @param string $id_column    Primary-key column to seek on. Validated against
+	 *                             `[A-Za-z0-9_]+`.
 	 * @param string $where        Optional SQL WHERE fragment (without the WHERE keyword).
+	 *                             **The caller is responsible for ensuring this is safe**:
+	 *                             it must be either a static string, or already escaped /
+	 *                             prepared via `$wpdb->prepare()`. Never pass raw user
+	 *                             input here.
 	 * @param int    $batch_size   Rows per batch.
 	 * @param array  $extra_select Optional extra columns to SELECT (alongside the id column).
+	 *                             Each column is validated against `[A-Za-z0-9_]+`.
 	 *
 	 * @return Generator|array[]
 	 */
@@ -468,11 +477,8 @@ class WP_MCP_AI_Batch_Iterator {
 
 			++$this->checkpoint['processed'];
 			return true;
-		} catch ( Exception $e ) {
-			$this->record_failure( $item_id, $e->getMessage(), $context );
-			return false;
 		} catch ( Throwable $e ) {
-			// PHP 7+ Throwable for fatal-ish errors that are catchable.
+			// Catch both Exception (which implements Throwable) and engine errors.
 			$this->record_failure( $item_id, $e->getMessage(), $context );
 			return false;
 		}
