@@ -318,7 +318,22 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 				// Validate token (implement token validation logic).
 				$user_id = $this->validate_bearer_token( $token );
 				if ( $user_id ) {
-					wp_set_current_user( $user_id );
+					// Switch the current-user context only after
+					// `validate_bearer_token()` returned a real WordPress
+					// user ID. `safe_set_current_user()` revalidates the
+					// user still exists (and on multisite, belongs to
+					// this blog) before mutating global state. The
+					// capability check at line 358 below
+					// (`current_user_can( 'read' )`) is the authoritative
+					// gate; this method returns `WP_Error` if it fails.
+					if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+						$this->log_error( 'invalid_token', 'Bearer token user could not be resolved' );
+						return new WP_Error(
+							'invalid_token',
+							__( 'Invalid bearer token', 'mcp-ai-wpoos' ),
+							array( 'status' => 401 )
+						);
+					}
 					$this->log_success(
 						'bearer_auth',
 						array( 'user_id' => $user_id )

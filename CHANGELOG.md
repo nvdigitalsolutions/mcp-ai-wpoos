@@ -2,19 +2,148 @@
 
 ## [Unreleased]
 
-### Security — Dependabot Alert Sweep (33 alerts)
+## [1.1.17] - 2026-05-10
+
+### May 10, 2026 — WP.org Compliance Hardening, Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, PHPUnit + Vitest Coverage Campaign, Build-pipeline Split, Dependabot Security Sweep
+
+#### Security — Dependabot Alert Sweep (33 alerts)
 
 Resolved the full 33-alert Dependabot backlog across all five npm manifests; the Composer surface was already clean. Lockfiles refreshed and committed dist artifacts rebuilt where applicable.
 
 - **Root (`/package.json`)** — bumped overrides: `axios → ^1.16.0`, `basic-ftp → >=6.0.1`, `ip-address → >=10.2.0`. Resolves 3 alerts (1 moderate / 2 high) including 13 axios advisories (prototype-pollution + SSRF + CRLF chain), `basic-ftp` DoS (`GHSA-rpmf-866q-6p89`), and `ip-address` XSS (`GHSA-v2v4-37r5-5v8g`).
 - **`addons/pro/package.json`** — bumped direct `axios` to `^1.16.0`; added overrides for `basic-ftp` and `ip-address` mirroring root. Resolves 3 alerts.
-- **`addons/saas-controller/package.json`** — bumped `@wordpress/scripts` (^30 → ^32.1.0), `diff` (^7 → ^9 — only referenced from PHPUnit identifiers, no JS callers), `@types/diff` (→ ^8), `esbuild` (^0.24 → ^0.28), `miniflare` (→ ^4.20260504); added overrides for `minimatch`, `serialize-javascript`, `webpack-dev-server`. Rebuilt `assets/build/` + `worker/dist/`. Resolves 17 alerts (5 low / 2 mod / 10 high) covering ReDoS, RCE, dev-server source-leak.
-- **`addons/docs-hub/package.json`** — bumped `react-router-dom` (7.5.3 → ^7.15.0). Resolves 2 alerts (CSRF + XSS chain `GHSA-h5cw-625j-3rxh`, `GHSA-2w69-qvjg-hvjx`, etc.). Rebuilt `assets/dist/docs-hub.js` + `docs-hub.css` per `addons/docs-hub/esbuild.config.js`.
+- **`addons/saas-controller/package.json`** — bumped `@wordpress/scripts` (^30 → ^32.1.0), `diff` (^7 → ^9), `esbuild` (^0.24 → ^0.28), `miniflare` (→ ^4.20260504); added overrides for `minimatch`, `serialize-javascript`, `webpack-dev-server`. Resolves 17 alerts covering ReDoS, RCE, dev-server source-leak.
+- **`addons/docs-hub/package.json`** — bumped `react-router-dom` (7.5.3 → ^7.15.0). Resolves 2 alerts (CSRF + XSS chain `GHSA-h5cw-625j-3rxh`, `GHSA-2w69-qvjg-hvjx`).
 - **`addons/cloud-worker/package.json`** — bumped `@cloudflare/vitest-pool-workers` (^0.5 → ^0.16), `vitest` (^2 → ^4.1.5), `wrangler` (^3 → ^4.88). Resolves 10 alerts (devalue prototype pollution, esbuild dev-server, undici/miniflare chain).
+- **Hardening (`.github/dependabot.yml`)** — extended coverage to all addon manifests: added 4 new npm watchers (`addons/pro`, `addons/saas-controller`, `addons/docs-hub`, `addons/cloud-worker`) and 4 new composer watchers (`addons/pro`, `addons/fantasy-football`, `addons/docs-hub`, `addons/algorave`).
 
-#### Hardening (`.github/dependabot.yml`)
+#### Security — Additional Hardening
 
-Extended Dependabot coverage from root-only to every addon manifest with its own lockfile / `composer.json`: added 4 new npm watchers (`addons/pro`, `addons/saas-controller`, `addons/docs-hub`, `addons/cloud-worker`) and 4 new composer watchers (`addons/pro`, `addons/fantasy-football`, `addons/docs-hub`, `addons/algorave`). Prevents the next batch of transitive vulns from accumulating silently.
+- **Docs Hub SSRF hardening** — `safe_get()` now uses `resolve_public_ip()` (DNS A/AAAA lookup) refusing on any private/reserved record. Defensive `remote_repos` coercion added in `get_settings()`.
+- **canvas + cornerstone3d addons** — standalone `LICENSE` and `THIRD_PARTY_NOTICES` files added; proprietary banners added to all PHP headers.
+
+#### Added — Chat SPA Addon (`addons/chat-spa/`, Phases 1–7, v0.6.0)
+
+React replacement for the legacy `[mcp_ai_assistant]` chat shortcode, built on Vercel AI SDK UI with a custom SSE→Data Stream Protocol adapter. All 7 phases are now complete (bundle ~81.3 KB gzip, limit 350 KB):
+
+- **Phase 1** — `@ai-sdk/react useChat` with custom fetch + client-side SSE adapter (`src/sse-adapter.ts`). Shortcode `[nvoos_chat_spa]` with `assistant_id`, `theme`, `height`, `guest` attrs.
+- **Phase 2** — Collapsible tool-call cards (from `message.toolInvocations`), inline annotation pills (`memory_event`), admin embed page (`WP-Admin → NV oOS Chat`, `manage_options`).
+- **Phase 3** — Transcripts sidebar (load/save/delete via `mcp-ai/v1/chat-transcripts`; `useTranscriptSession` hook; guest mounts skip sidebar).
+- **Phase 4** — Memory drawer with three tabs (Memories / Scope / Audit); wing/room scope persisted in `localStorage`.
+- **Phase 5** — HITL approval bar polling `/mcp-ai/v1/approvals` every 6 s during streaming; rendered only for `manage_options` users.
+- **Phase 6** — File attachments via `useAttachments` hook (5 MB per file, 10 MB total, 10 files max) + thumbnail strip; `↺` regenerate via `reload()`; `✏` edit + re-submit via `setMessages` truncation.
+- **Phase 7** — `WP_MCP_AI_LEGACY_CHAT_JS` constant in `includes/bootstrap/constants.php` (default `true`) gates the shortcode; blueprint §20 migration guide added.
+
+#### Added — Docs Hub Addon (`addons/docs-hub/`, v0.1.0 → v0.3.8)
+
+- **v0.3.0** — Remote-first defaults + tree-picker UX; chunked rebuild with progress API; CLI `rebuild` subcommand.
+- **v0.3.1** — 404-on-rebuild resolved; tree-picker hint surfaced.
+- **v0.3.2** — PHPCS lint errors fixed.
+- **v0.3.3** — `RemoteAnchor` function named; heading anchors fixed.
+- **v0.3.4** — Same-repo GitHub blob links routed through SPA; other external links open in new tab.
+- **v0.3.5** — `#section` anchors no longer corrupt `HashRouter`; `scrollIntoView` added for in-page links.
+- **v0.3.6** — Defensive `remote_repos` coercion (non-array rows filtered); SSRF hardening via `resolve_public_ip()` (DNS A/AAAA); `clear_local_cache_for_files()` on `force=true`.
+- **v0.3.7** — a11y: ARIA root attrs, skip-link, `prefers-reduced-motion` support; de-duped `wp_localize_script`.
+- **v0.3.8** — Syntax highlighting via rehype-highlight + lowlight; `PageFooter` component (last_modified + edit-on-GitHub); `NV_oOS_Docs_Hub_Sitemap_Provider` (`WP_Sitemaps_Provider`); admin `repo-picker.js` extracted from inline script; docs-hub added to `spa-bundle-size.yml` (250 KB limit, ~204 KB actual).
+
+#### Added — Toolkit SPA Blueprint Phases 5–12
+
+- **Phase 5** — a11y hardening: ARIA mount `<div>` attrs, `jsx-a11y` lint, `axe-core` in dev, CSP docs, CI workflow (`spa-a11y.yml`).
+- **Phase 6** — i18n pass: `wp.i18n` as Webpack external, `__()` in all SPA components, `wp_set_script_translations()` registered.
+- **Phase 7** — Expanded REST + shortcode PHPUnit tests for `canvas-toolkit` and `media-studio`.
+- **Phase 8** — Bundle-size CI guardrail workflow (`spa-bundle-size.yml`) with per-addon limits.
+- **Phase 9** — Scaffolder (`bin/scaffold-toolkit-spa.sh`) auto-patches `spa-a11y.yml` + `spa-bundle-size.yml` on new addon creation.
+- **Phase 10** — All 10 Tier-A `toolkit-shell` manifests complete: crm, calendar-booking, financial-planner, analytics, regulatory-registration, law-firm, cre-debt, multilingual, ecommerce, social-media.
+- **Phase 11 (`canvas-toolkit` v0.2.0)** — Four modes: flow (`@xyflow/react`), whiteboard (tldraw v5, react@19.2.6), bpmn (`bpmn-js NavigatedViewer`), mermaid live preview. Bundle ~1,495 KB gzip (limit 1,600 KB).
+- **Phase 12 (`document-editor` v0.2.0)** — Site-creator mode via GrapesJS (grapesjs@0.22.16 BSD-3-Clause + @grapesjs/react@2.0.0 MIT) with built-in blocks + localStorage persistence. Bundle ~485 KB gzip (limit 500 KB).
+- **`media-studio` Phase 4** — Three new modes: image-editor (Fabric.js), media-player, audio-waveform.
+
+#### Added — CI / Build Pipeline
+
+- **`bin/build-plugin-zip.sh --wp-org` flag** — produces a WP.org-compliant base-only ZIP; root `*.md`, `addons/`, and `.zed` excluded. Full GitHub Release ZIP built as a separate `--combined` artifact.
+- **PHPUnit coverage baseline + non-regression CI gate** — `tests/coverage/baseline.xml` committed; CI fails if uncovered-class count regresses.
+- **AJAX handler CI guard** — audit script confirms 0 uncovered handlers; allowlist committed with explanations.
+- **`spa-bundle-size.yml`** — bundle-size guardrail for all SPA addons (per-addon KB limits).
+- **`spa-a11y.yml`** — axe-core a11y audit CI for all SPA addons.
+- **`link-check.yml`** — treats 4xx responses as warnings (not errors); skips template URLs and `gnu.org`.
+- **`phpunit.yml`** — uses MySQL TCP host (`WP_DB_HOST` env var); sets `WP_CORE_DIR` + `WP_TESTS_DIR` directly (skips `codex-startup.sh`); paths filter so the job runs only on PHP/test/config changes.
+
+#### Added — `WP_MCP_AI_User_Context_Helper`
+
+New `includes/helpers/class-wp-mcp-ai-user-context-helper.php` centralises privileged-operation user-context switching:
+
+- `safe_set_current_user( $user_id )` — validates `get_userdata()` before touching global state; multisite adds `is_user_member_of_blog()` check.
+- Replaces ad-hoc `wp_set_current_user()` / `wp_update_user()` calls (B10 reviewer finding).
+- PHPUnit suite: `tests/test-user-context-helper.php`.
+
+#### Fixed — WordPress.org Reviewer Findings (PRs #4892, #4902)
+
+- **B1** — Removed unescape‑before-output pattern; all admin output now uses `esc_*` functions exclusively.
+- **B2** — Removed dead WP < 5.7 fallback branches.
+- **B3** — Eliminated inline `<script>` / `<style>` echoes: config blocks converted to `wp_print_inline_script_tag()` hooked on `admin_enqueue_scripts`; telemetry CSS moved to `wp_add_inline_style()`.
+- **B5** — Fixed all file-permission and path-traversal guard gaps flagged in the review.
+- **B8** — Filesystem cache path corrected: moved from `WP_CONTENT_DIR/cache/wp-mcp-ai` to `wp_upload_dir()['basedir']/wp-mcp-ai-cache`.
+- **B10** — `wp_set_current_user()` hardened via `WP_MCP_AI_User_Context_Helper::safe_set_current_user()`.
+- **B11** — Sanitisation gaps on settings inputs closed.
+- **B12** — All REST permission callbacks reviewed; missing `manage_options` gates added.
+- **B13** — `$_POST['approval_id|resolution|note']` in approvals handler now wrapped with `wp_unslash()`; bare `phpcs:ignore NonceVerification.Recommended` lines in DAG builder replaced with explanatory comments.
+- **49/49 base AJAX handlers** confirmed with `check_ajax_referer()`. Full evidence: `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`.
+
+#### Fixed — Docs Hub
+
+- Sitemap provider registered via `wp_sitemaps_init` hook (fixes fatal error on activation).
+- `#section` anchors no longer corrupt `HashRouter` navigation.
+- Heading anchors visible by default; sidebar strips markdown.
+- Remote links resolved correctly; browse-repo crash hardened.
+- Mobile sidebar toggle added.
+- GitHub subtree path fetch corrected.
+
+#### Fixed — Other Addons
+
+- **Graphify** — detects CCTs whose slug only lives in `$type->args['slug']` (previously missed by the primary slug lookup).
+- **SaaS Controller** — Cloudflare preflight endpoint switched from `/user/tokens/verify` to the correct API endpoint; React wizard pre-built and committed to dist.
+
+#### Fixed — CI / Vendor
+
+- **`phpcs.xml.dist`** — excludes `tests/fixtures/**` from PHPCS + PHPCompatibility scans; filename rule lifted for test files.
+- **`composer install`** — preferred-install set to `dist` (fixes symfony git-dir error); `installed.json` installation-source corrected; 4 symfony packages upgraded to lock-file versions.
+- **Production autoloader** — regenerated as `--no-dev --classmap-authoritative` (677 production-only classes; eliminates PSR-4 runtime fallback).
+
+#### Changed
+
+- **esbuild** pinned to `^0.27.0` with `safari15` target across all 6 SPA addons (esbuild 0.27.x with Safari 13/14 targets fails; `safari15` resolves correctly).
+- **vitest** aligned to `^4.1.5` across all 6 SPA addons (vitest 4 requires vite 8 which requires esbuild ^0.28 — handled by peer-dependency override).
+- **`addons/canvas`, `addons/cornerstone3d`** — standalone `LICENSE` and `THIRD_PARTY_NOTICES` files added; proprietary banner added to all PHP headers.
+
+#### Tests — PHPUnit + Vitest Coverage Campaign (PRs #1–#11)
+
+- **PR #2** — Tool registry coverage smoke test + manifests.
+- **PR #3** — Harness tests via class-name matcher.
+- **PR #4** — NVIDIA client + smarter matcher reads class declaration.
+- **PR #5** — REST controller tests (approval, cost-manager, slash-command).
+- **PR #6** — Slash-command tests (help, context, compact, memory).
+- **PR #7** — 20 high-risk base tool tests (create-post, check-site-security, load-skill, …).
+- **PR #8** — 20 highest-risk Pro tool tests (vault, schedules, ECA, medical, autonomous-session).
+- **PR #9** — 10 security-sensitive service class tests (90 tests, 230 assertions).
+- **PR #10** — Hooks and security regression suite (4 files, 52 tests: `test-hooks-tool-lifecycle.php`, `test-hooks-chat-lifecycle.php`, `test-hooks-registry.php`, `test-security-regression.php`).
+- **PR #11** — Vitest scaffolding for all 6 SPA addons (~71 tests): `toolkit-shell`, `canvas-toolkit`, `document-editor`, `media-studio`, `chat-spa`, `docs-hub`.
+
+#### Tests — AJAX Handler Coverage Campaign (Clusters 1–17)
+
+All 271 AJAX handlers now have test coverage. Allowlist cleared to 0. CI guard added.
+
+- Clusters 1–4: base testcase, workflow pilot, approvals, skill manager, settings utility.
+- Clusters 5–7: wizard/dismiss, runtime control, embedded models + datasets.
+- Clusters 8–9: provider connections, schedule manager.
+- Clusters 10–11: healthcare, regulatory/ECA/CRE.
+- Clusters 12–17: remaining 116 handlers.
+
+#### Documentation
+
+- **`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`** — full evidence table for all WP.org B-series findings.
+- **`SUBMISSION.md`** — reviewer-response table cross-referencing each finding to the fix commit.
+- **`docs/addons/toolkit-spa-blueprint.md`** — updated to v2.5: §20 migration guide from legacy `chat.js` to Chat SPA; Tier B/C/D/E tables updated; status line updated.
+- **`CREDITS.md` / `THIRD_PARTY_NOTICES.md`** — updated for GrapesJS, @grapesjs/react, tldraw, bpmn-js, rehype-highlight, lowlight; per-addon README Credits sections added.
 
 ## [1.1.16] - 2026-05-06
 

@@ -1632,11 +1632,8 @@ class WP_MCP_AI_Shortcode {
 		$reinit_js = 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
 			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}';
 
-		if ( function_exists( 'wp_get_inline_script_tag' ) ) {
-			echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
-		} else {
-			echo '<script>' . $reinit_js . '</script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,WordPress.Security.EscapeOutput.OutputNotEscaped -- Fallback for WP < 5.7; content is a static string.
-		}
+		// Plugin requires WP 6.0+; wp_get_inline_script_tag() (added in WP 5.7) is always available.
+		echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
 
 		self::$footer_bubbles = array();
 	}

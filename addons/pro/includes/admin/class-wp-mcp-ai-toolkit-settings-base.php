@@ -236,6 +236,9 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 					case 'help':
 						$this->render_help_tab();
 						break;
+					case 'mcp_server':
+						$this->render_mcp_server_tab();
+						break;
 					default:
 						$this->render_overview_tab();
 				}
@@ -306,6 +309,11 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 
 		if ( $this->has_remote_sites ) {
 			$tabs['remote_sites'] = __( 'Remote Sites', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Add the MCP Server tab when this toolkit has registered a per-toolkit MCP server.
+		if ( $this->get_mcp_server() ) {
+			$tabs['mcp_server'] = __( 'MCP Server', 'mcp-ai-wpoos-pro' );
 		}
 
 		?>
@@ -730,5 +738,193 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Resolve the per-toolkit MCP server registered for this settings page.
+	 *
+	 * Tries the literal toolkit_slug then a kebab-case variant
+	 * ('architectural_design' → 'architectural-design').
+	 *
+	 * @return WP_MCP_AI_Toolkit_Server_Interface|null
+	 */
+	protected function get_mcp_server() {
+		if ( ! class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
+			return null;
+		}
+		$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+		$server   = $registry->get( $this->toolkit_slug );
+		if ( null === $server ) {
+			$server = $registry->get( str_replace( '_', '-', $this->toolkit_slug ) );
+		}
+		return $server;
+	}
+
+	/**
+	 * Render the MCP Server tab.
+	 *
+	 * Three subsections: Server (master switch), Tools matrix, Ingestion surfaces
+	 * (native + mounted-from-other-toolkits, grouped). Form posts to admin-post.php
+	 * action `wp_mcp_ai_save_toolkit_mcp_server`.
+	 */
+	protected function render_mcp_server_tab() {
+		$server = $this->get_mcp_server();
+		if ( ! $server ) {
+			return;
+		}
+
+		// Settings-saved notice.
+		if ( isset( $_GET['mcp_saved'] ) && '1' === $_GET['mcp_saved'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			?>
+			<div class="notice notice-success is-dismissible">
+				<p><?php esc_html_e( 'MCP server settings saved.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+		}
+
+		$config         = $server->get_configuration();
+		$candidates     = $server->candidate_tool_slugs();
+		$native         = $server->ingestion_surfaces();
+		$mounted        = $server->mounted_surfaces();
+		$descriptor_url = rest_url( WP_MCP_AI_Toolkit_MCP_REST_Controller::REST_NAMESPACE . '/mcp/' . $server->get_slug() );
+
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'wp_mcp_ai_save_toolkit_mcp_server_' . $server->get_slug() ); ?>
+			<input type="hidden" name="action" value="wp_mcp_ai_save_toolkit_mcp_server" />
+			<input type="hidden" name="server_slug" value="<?php echo esc_attr( $server->get_slug() ); ?>" />
+			<input type="hidden" name="redirect_page" value="<?php echo esc_attr( $this->page_slug ); ?>" />
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'MCP Server', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p>
+					<?php
+					/* translators: %s: REST URL */
+					echo wp_kses_post( sprintf( __( 'JSON-RPC endpoint: <code>%s</code>', 'mcp-ai-wpoos-pro' ), esc_html( $descriptor_url ) ) );
+					?>
+				</p>
+				<p>
+					<label>
+						<input type="checkbox" name="enabled" value="1" <?php checked( ! empty( $config['enabled'] ) ); ?> />
+						<?php esc_html_e( 'Enable this MCP server', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+				</p>
+				<p class="description">
+					<?php esc_html_e( 'When disabled, JSON-RPC clients will receive a method-not-found response for every method except initialize and ping.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			</div>
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Tools', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $candidates ) ) : ?>
+					<p><em><?php esc_html_e( 'No candidate tools registered for this toolkit yet.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<p class="description">
+						<?php esc_html_e( 'Leave all unchecked to expose every candidate tool. Check individual tools to restrict the set the MCP server surfaces.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<ul style="columns: 2; -webkit-columns: 2; -moz-columns: 2;">
+					<?php
+					$allowlist = isset( $config['tools_allowlist'] ) ? (array) $config['tools_allowlist'] : array();
+					foreach ( $candidates as $slug ) :
+						$checked = in_array( $slug, $allowlist, true );
+						?>
+						<li>
+							<label>
+								<input type="checkbox" name="tools_allowlist[]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( $checked ); ?> />
+								<code><?php echo esc_html( $slug ); ?></code>
+							</label>
+						</li>
+					<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+			</div>
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Ingestion Surfaces — Native', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $native ) ) : ?>
+					<p><em><?php esc_html_e( 'No native ingestion surfaces registered.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<p class="description">
+						<?php esc_html_e( 'Disabled surfaces are hidden from prompts/list and resources/list.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th style="width: 50px;"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Page', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Entity', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php
+						$disabled_surfaces = isset( $config['disabled_surfaces'] ) ? (array) $config['disabled_surfaces'] : array();
+						foreach ( $native as $surface ) :
+							$page_slug = isset( $surface['page_slug'] ) ? $surface['page_slug'] : '';
+							$checked   = in_array( $page_slug, $disabled_surfaces, true );
+							?>
+							<tr>
+								<td>
+									<input type="checkbox" name="disabled_surfaces[]" value="<?php echo esc_attr( $page_slug ); ?>" <?php checked( $checked ); ?> />
+								</td>
+								<td>
+									<strong><?php echo esc_html( isset( $surface['label'] ) ? $surface['label'] : $page_slug ); ?></strong>
+									<br /><code><?php echo esc_html( $page_slug ); ?></code>
+								</td>
+								<td><code><?php echo esc_html( isset( $surface['type'] ) ? $surface['type'] : '' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $surface['entity_type'] ) ? $surface['entity_type'] : '' ); ?></code></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Ingestion Surfaces — Mounted from other toolkits', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $mounted ) ) : ?>
+					<p><em><?php esc_html_e( 'No mounted surfaces. This toolkit does not consume read-only ingestion surfaces from other toolkits.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<p class="description">
+						<?php esc_html_e( 'Disable a mount to hide the foreign surface from this toolkit\'s descriptor. The source toolkit retains write authority and can also revoke its own surface.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th style="width: 50px;"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Source toolkit', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Page', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Entity', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php
+						$disabled_mounts = isset( $config['disabled_mounts'] ) ? (array) $config['disabled_mounts'] : array();
+						foreach ( $mounted as $surface ) :
+							$page_slug = isset( $surface['page_slug'] ) ? $surface['page_slug'] : '';
+							$source    = isset( $surface['source_toolkit_slug'] ) ? $surface['source_toolkit_slug'] : '';
+							$mount_key = $source . '::' . $page_slug;
+							$checked   = in_array( $mount_key, $disabled_mounts, true );
+							?>
+							<tr>
+								<td>
+									<input type="checkbox" name="disabled_mounts[]" value="<?php echo esc_attr( $mount_key ); ?>" <?php checked( $checked ); ?> />
+								</td>
+								<td><code><?php echo esc_html( $source ); ?></code></td>
+								<td>
+									<strong><?php echo esc_html( isset( $surface['label'] ) ? $surface['label'] : $page_slug ); ?></strong>
+									<br /><code><?php echo esc_html( $page_slug ); ?></code>
+								</td>
+								<td><code><?php echo esc_html( isset( $surface['entity_type'] ) ? $surface['entity_type'] : '' ); ?></code></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+
+			<?php submit_button( __( 'Save MCP Server Settings', 'mcp-ai-wpoos-pro' ) ); ?>
+		</form>
+		<?php
 	}
 }

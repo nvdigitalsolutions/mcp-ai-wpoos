@@ -548,6 +548,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Phase 6 — Vector-store adapter + per-team budgets (always enabled).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/services-init-phase6.php';
 
+		// Load Per-Toolkit MCP Server framework + Phase 1 pilot servers (CRM, Healthcare, Architectural Design).
+		// Always enabled: framework lies dormant until a toolkit registers a server, and disabled servers
+		// reject JSON-RPC method calls cleanly.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-servers/mcp-servers-init.php';
+
 		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
 		// Pro-only: paid third-party billing (Stripe merchant of record).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
