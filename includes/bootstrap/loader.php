@@ -184,6 +184,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-catalog-migration.
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-discovery-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-batch-iterator.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
