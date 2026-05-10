@@ -22,16 +22,48 @@
 | `image_format_batch_converter` (base) | 1 | ✅ refactored — `image_ids` path no longer falls back to `-1`; capped via `wp_mcp_ai_tool_max_items` | This PR |
 | `export_fhir_data` (Pro) | 3 | ✅ refactored — `build_medication_resources`, `build_allergy_resources`, `build_immunization_resources` all iterator-driven | This PR |
 | `mine_agent_memory` (base) | 0 (already capped) | ✅ confirmed safe — schema clamps `posts_per_page` to `MAX_RECORDS_PER_RUN` | n/a |
-| Calendar-booking (5 tools) | 5 | ⏳ follow-up PR | — |
-| ECA suite (10 tools) | 10 | ⏳ follow-up PR | — |
-| Healthcare (12 tools) | 12 | ⏳ follow-up PR | — |
-| Law-firm (12 tools) | 12 | ⏳ follow-up PR | — |
-| Regulatory-registration (15 tools) | 15 | ⏳ follow-up PR | — |
-| Ecommerce / DJ / misc (3) | 3 | ⏳ follow-up PR | — |
+| Calendar-booking (5 tools) | 5 | ✅ refactored — every site clamped via `WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items()` (default 500) | This PR |
+| ECA suite (10 tools) | 19 | ✅ refactored — clamped via helper (default 1000) | This PR |
+| Healthcare (8 tools) | 16 | ✅ refactored — clamped via helper (default 1000) | This PR |
+| Law-firm (15 tools) | 21 | ✅ refactored — clamped via helper (default 1000) | This PR |
+| Regulatory-registration (19 tools) | 22 | ✅ refactored — clamped via helper (default 1000) | This PR |
+| Ecommerce / DJ / misc (2) | 2 | ✅ refactored — clamped via helper (default 500) | This PR |
+
+> **Phase 2 status (live audit, May 2026):** the actual offender count came in at
+> **85 sites across 57 Pro files** — higher than the original ~56-site estimate,
+> because several tools (`generate-eca-participation-report`, `get-health-timeline`,
+> `guide-health-record-creation`, etc.) had multiple `-1` queries each. All 85 sites
+> are now bounded; `git grep "posts_per_page['\"]?\\s*=>\\s*-1" addons/pro/includes/tools`
+> returns zero matches.
 
 ## Refactor recipe
 
-For each remaining offender:
+For each remaining offender, choose **one of two approaches** based on the call
+site:
+
+### A. Lightweight cap (used for the 85 Pro sites in this PR)
+
+Replace `'posts_per_page' => -1,` inline with:
+
+```php
+'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' )
+    ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( '<tool_slug>', 0, <default> )
+    : <default>,
+```
+
+This:
+
+- Eliminates the unbounded query (the audit's primary goal).
+- Preserves the surrounding query plumbing (`new WP_Query`, `get_posts`, etc.).
+- Exposes the documented `wp_mcp_ai_tool_max_items` filter so site owners can
+  clamp specific tools without code changes.
+- Defaults used in this PR: `500` for calendar-booking and ecommerce/DJ
+  (smaller working sets), `1000` for ECA, healthcare, law-firm, and
+  regulatory-registration (analytics / export tools).
+
+### B. Full iterator + artifact spill (used for the Phase 1 base + FHIR sites)
+
+For tools that aggregate or stream very large datasets:
 
 1. Replace the `posts_per_page => -1` query with a
    `WP_MCP_AI_Batch_Iterator::paged_iterate( $query_args )` loop.

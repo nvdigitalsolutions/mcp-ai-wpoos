@@ -221,7 +221,7 @@ class WP_MCP_AI_Tool_Get_ECA_Timetable implements WP_MCP_AI_Tool_Interface, WP_M
 		$query_args = array(
 			'post_type'      => 'mcp_ai_eca',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_eca_timetable', 0, 1000 ) : 1000,
 		);
 
 		if ( 'teacher' === $view_type ) {

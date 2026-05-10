@@ -135,7 +135,7 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 		$existing_docs = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'validate_document_checklist', 0, 1000 ) : 1000,
 				'meta_key'       => $meta_key,
 				'meta_value'     => $entity_id,
 				'fields'         => 'ids',
