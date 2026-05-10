@@ -88,7 +88,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 		);
 
 		// Resolve workflow_id from query string; verify it belongs to the right CPT.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL parameter for page display; value is cast to absint() and ownership is verified via get_post() check below.
 		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( $_GET['workflow_id'] ) : 0;
 		if ( $workflow_id > 0 ) {
 			$wf_post = get_post( $workflow_id );
@@ -125,7 +125,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL parameter for page display; value is cast to absint() and ownership is verified via get_post() check below.
 		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( $_GET['workflow_id'] ) : 0;
 		if ( $workflow_id > 0 ) {
 			$wf_check = get_post( $workflow_id );
