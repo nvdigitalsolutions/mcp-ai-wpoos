@@ -1,6 +1,6 @@
 <?php
 /**
- * Media Toolkit Toolkit MCP Server
+ * Media Toolkit MCP Server
  *
  * Phase 2 Tier-1 promotion. See docs/ADR_002_toolkit_mcp_servers.md.
  *
