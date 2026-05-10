@@ -258,7 +258,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					'count'   => count( $optimization_opportunities ),
 					'summary' => sprintf(
 						/* translators: %d: opportunity count */
-						__( '%d optimisation opportunities streamed to artifact.', 'mcp-ai-wpoos' ),
+						__( '%d optimization opportunities streamed to artifact.', 'mcp-ai-wpoos' ),
 						count( $optimization_opportunities )
 					),
 				)
