@@ -147,6 +147,7 @@ class Test_Pro_Schedule_Toolkit_Settings_Registration extends WP_UnitTestCase {
 				'delete_pro_schedule',
 				'list_pro_schedules',
 				'get_schedule_run_history',
+				'dry_run_pro_schedule',
 				'plan_schedules_from_workflow',
 			) as $slug
 		) {

@@ -888,6 +888,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-delete-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
 			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
+			'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
 			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
 			// iSAMS School Management System tool.

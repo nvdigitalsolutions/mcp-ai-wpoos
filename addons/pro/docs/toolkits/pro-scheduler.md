@@ -48,10 +48,10 @@ under **NV oOS Pro Dashboard → Pro Scheduler**. Tabs:
    concurrent runs, retry policy (count + backoff), error-notification
    email, global kill-switch. Persisted under
    `wp_mcp_ai_pro_schedule_toolkit_settings`.
-3. **Tools** — toggleable list of the six core Pro Schedule tools
+3. **Tools** — toggleable list of the seven core Pro Schedule tools
    (`create_pro_schedule`, `update_pro_schedule`, `delete_pro_schedule`,
    `list_pro_schedules`, `get_schedule_run_history`,
-   `plan_schedules_from_workflow`).
+   `dry_run_pro_schedule`, `plan_schedules_from_workflow`).
 4. **Research** — opens the standalone Research & Add Schedule page.
 5. **Help** — cadence cheat-sheet, common patterns, troubleshooting.
 6. **MCP Server** — inherited; lists tools that are exposed via the
@@ -70,6 +70,18 @@ the Schedule Settings page applies this filter when registering its submenu.
 |------|------|-------|
 | `wp_mcp_ai_pro_schedule_run_completed` | action | After every schedule run, regardless of success. Receives `( $schedule_id, $result )` where `$result` is `[ 'success', 'duration', 'error', 'action_log', 'schedule' ]`. Use this to forward run summaries to observability layers (OTel, dashboards) or to trigger notifications. |
 | `wp_mcp_ai_pro_schedule_capability` | filter | Capability slug required to access the Pro Scheduler settings page. Default `manage_options`. |
+
+## Tools
+
+| Slug | Risk | Purpose |
+|------|------|---------|
+| `create_pro_schedule` | write | Create a new Pro Schedule. |
+| `update_pro_schedule` | write | Update an existing schedule's cadence, args, or metadata. |
+| `delete_pro_schedule` | write | Permanently remove a schedule. |
+| `list_pro_schedules` | info | List schedules with their next-run and run-count metadata. |
+| `get_schedule_run_history` | info | Return the ring-buffer of recent runs for one schedule. |
+| `dry_run_pro_schedule` | info | Side-effect-free preview of what a schedule would do at its next N runs. Validates configuration, surfaces warnings (paused, unknown cadence, no upcoming runs), and returns a type-specific action preview without writing to the run-history ring buffer or firing the hook. |
+| `plan_schedules_from_workflow` | write | Create one or more schedules from a workflow plan. |
 
 ## Tests
 

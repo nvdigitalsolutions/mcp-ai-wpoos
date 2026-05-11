@@ -425,6 +425,7 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			'delete_pro_schedule'           => __( 'Delete Pro Schedule', 'mcp-ai-wpoos-pro' ),
 			'list_pro_schedules'            => __( 'List Pro Schedules', 'mcp-ai-wpoos-pro' ),
 			'get_schedule_run_history'      => __( 'Get Schedule Run History', 'mcp-ai-wpoos-pro' ),
+			'dry_run_pro_schedule'          => __( 'Dry-run Pro Schedule', 'mcp-ai-wpoos-pro' ),
 			'plan_schedules_from_workflow'  => __( 'Plan Schedules From Workflow', 'mcp-ai-wpoos-pro' ),
 		);
 	}
