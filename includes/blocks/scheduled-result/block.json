@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "mcp-ai-wpoos/scheduled-result",
+  "version": "1.0.0",
+  "title": "Scheduled Result",
+  "category": "widgets",
+  "icon": "chart-line",
+  "description": "Renders the latest run output of an NV oOS Pro Schedule as a live dashboard tile.",
+  "keywords": [ "schedule", "result", "dashboard", "nv oos", "mcp ai" ],
+  "textdomain": "mcp-ai-wpoos",
+  "supports": {
+    "html": false,
+    "align": [ "wide", "full" ]
+  },
+  "attributes": {
+    "scheduleId": {
+      "type": "string",
+      "default": ""
+    },
+    "renderMode": {
+      "type": "string",
+      "default": "summary-card"
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "showLastRun": {
+      "type": "boolean",
+      "default": true
+    },
+    "refreshIntervalSec": {
+      "type": "number",
+      "default": 0
+    },
+    "historyLimit": {
+      "type": "number",
+      "default": 20
+    },
+    "truncateChars": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "editorScript": "file:./edit.js"
+}

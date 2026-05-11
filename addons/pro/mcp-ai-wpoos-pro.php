@@ -463,6 +463,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load ECA Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/eca-management-init.php';
 
+		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
+
 		// Load Quiz Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
 
@@ -893,6 +896,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
 			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
+			'WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-latest-result.php',
+			'WP_MCP_AI_Pro_Tool_Render_Schedule_Result'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-render-schedule-result.php',
+			'WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-configure-schedule-widget-defaults.php',
 			// iSAMS School Management System tool.
 			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
@@ -2214,6 +2220,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools['get_schedule_run_history']      = 'wordpress-core';
 		$pro_tools['schedule_channel_broadcast']    = 'wordpress-core';
 		$pro_tools['plan_schedules_from_workflow']  = 'wordpress-core';
+		$pro_tools['get_schedule_latest_result']         = 'wordpress-core';
+		$pro_tools['render_schedule_result']             = 'wordpress-core';
+		$pro_tools['configure_schedule_widget_defaults'] = 'wordpress-core';
 
 		/**
 		 * Filter the Pro tool group assignments.
