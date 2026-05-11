@@ -997,6 +997,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Get job ID from URL parameter.
 			$job_id = $request->get_param( 'job_id' );
 
+			// Self-healing inline kick for async-tool jobs that are stuck
+			// in `pending` past the stale threshold. Schedules a shutdown
+			// action that drives the job forward after this response is
+			// flushed, so the chat client's poll loop automatically heals
+			// stuck jobs on hosts where the WP-Cron loopback never fires.
+			// No-op for non-async job IDs (veo_*, regular cron jobs, etc.)
+			// and for jobs that have already advanced past `pending`.
+			if ( is_string( $job_id ) && 0 === strpos( $job_id, 'async_' ) && class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+				$executor = new WP_MCP_AI_Tool_Async_Executor();
+				$executor->kick_inline_if_stale( $job_id );
+			}
+
 			// Get job details from service (includes permission check).
 			$job_details = $service->get_job_details( $job_id, $user_id );
 

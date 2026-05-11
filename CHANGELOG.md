@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+### Added — Inline-async-tick fallback for Tool Async Executor
+
+- New reusable trait `WP_MCP_AI_Inline_Async_Tick_Trait` at
+  `includes/traits/trait-wp-mcp-ai-inline-async-tick.php` consolidating
+  the four inline-async primitives (worker detach, two-layer cooperative
+  tick lock, `DISABLE_WP_CRON` loop decision, observability action)
+  introduced for the Mine Memories job in PR #4916.
+- `WP_MCP_AI_Tool_Async_Executor` now consumes the trait. Async tools
+  scheduled via `queue_tool()` register a `shutdown` action that runs
+  the tick inline once the response is flushed, so jobs no longer sit
+  at `status: pending` forever on hosts where the WP-Cron loopback never
+  fires (`DISABLE_WP_CRON = true`, firewalled `wp-cron.php`, etc.). A
+  cooperative per-job lock around `execute_async_tool()` prevents
+  double-execution when a delayed cron loopback fires after the inline
+  worker has finished.
+- The REST cron-status poll endpoint (`GET /mcp-ai/v1/cron-status/{job_id}`)
+  now self-heals stuck async jobs: when status has been `pending` past
+  5 seconds the controller schedules a shutdown kick. The response
+  payload is unchanged.
+- New filter `wp_mcp_ai_inline_kick_enabled` (default `true`, per-job
+  filterable) — operator escape hatch.
+- New action `wp_mcp_ai_inline_kick_completed` fires once per inline
+  kick with `( $class, $job_id, $duration_ms, $success )` — Pro
+  measurement bootstrap can record `inline_kick.duration_ms` and
+  `inline_kick.failure.count` for OTel.
+- Docs: new architecture page
+  `docs/architecture/inline-async-tick-pattern.md`; async-tool guide
+  updated with the fallback section.
+
 ### Added — Scheduled Result widget + block
 
 - New **Scheduled Result Display** as a Gutenberg dynamic block

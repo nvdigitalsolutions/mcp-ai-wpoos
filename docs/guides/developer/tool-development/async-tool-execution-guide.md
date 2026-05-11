@@ -467,6 +467,28 @@ define( 'DOING_CRON', true );
   */1 * * * * curl -s https://example.com/wp-cron.php > /dev/null
   ```
 
+### Inline-Async Fallback (DISABLE_WP_CRON / broken loopback)
+
+`WP_MCP_AI_Tool_Async_Executor` consumes the [inline-async-tick
+pattern](../../../architecture/inline-async-tick-pattern.md). On hosts
+where the WP-Cron loopback never fires (sites with
+`DISABLE_WP_CRON = true`, firewalled `wp-cron.php`, etc.), the
+executor:
+
+1. Registers a `shutdown` action on every `queue_tool()` that flushes
+   the response and runs the tick inline in the same PHP process if
+   the cron loopback hasn't already drained it.
+2. Re-checks the job status under a cooperative tick lock so a
+   delayed cron loopback cannot double-execute a completed job.
+3. Self-heals from the REST `cron-status/{job_id}` poll endpoint:
+   when a job has been stuck in `pending` past 5 seconds, the next
+   poll schedules a shutdown kick automatically.
+
+The pattern can be globally disabled via the
+`wp_mcp_ai_inline_kick_enabled` filter when a host has incompatible
+output buffering or `fastcgi_finish_request()` behaviour. Cron remains
+the fallback path either way.
+
 ## Best Practices
 
 ### For Tool Developers
