@@ -11,12 +11,13 @@ import type { RemotionEnvironment } from './remotion-environment-context.js';
 import type { SequenceFieldSchema, SequenceSchema } from './sequence-field-schema.js';
 import type { ResolvedStackLocation } from './sequence-stack-traces.js';
 import * as TimelinePosition from './timeline-position-state.js';
-import { type SetTimelineContextValue, type TimelineContextValue } from './TimelineContext.js';
+import { type PlaybackRateContextValue, type SetTimelineContextValue, type TimelineContextValue } from './TimelineContext.js';
 import { truthy } from './truthy.js';
-import type { CanUpdateSequencePropStatus } from './use-schema.js';
+import { type CanUpdateSequencePropStatus, type CodeValues, type DragOverrides } from './use-schema.js';
 import type { MediaVolumeContextValue, SetMediaVolumeContextValue } from './volume-position-state.js';
 import type { WatchRemotionStaticFilesPayload } from './watch-static-file.js';
 import { useRemotionContexts } from './wrap-remotion-context.js';
+export type { EffectChainState } from './effects/run-effect-chain.js';
 export declare const Internals: {
     readonly MaxMediaCacheSizeContext: import("react").Context<number | null>;
     readonly useUnsafeVideoConfig: () => import("./video-config.js").VideoConfig | null;
@@ -81,13 +82,81 @@ export declare const Internals: {
     readonly SequenceManager: import("react").Context<import("./SequenceManager.js").SequenceManagerContext>;
     readonly SequenceStackTracesUpdateContext: import("react").Context<import("./sequence-stack-traces.js").UpdateResolvedStackTraceFn>;
     readonly SequenceVisibilityToggleContext: import("react").Context<import("./SequenceManager.js").SequenceVisibilityToggleState>;
-    readonly useSchema: <S extends SequenceSchema, T extends import("./sequence-field-schema.js").SchemaKeysRecord<S>>(schema: S | null, currentValue: (T & Record<Exclude<keyof T, keyof S>, never>) | null) => {
-        controls: import("./CompositionManager.js").SequenceControls | undefined;
-        values: T;
-    };
     readonly wrapInSchema: <S extends SequenceSchema, Props extends object>(Component: React.ComponentType<Props & {
-        readonly controls: import("./CompositionManager.js").SequenceControls | undefined;
+        readonly _experimentalControls: import("./CompositionManager.js").SequenceControls | undefined;
     }>, schema: S) => React.ComponentType<Props>;
+    readonly sequenceSchema: {
+        readonly layout: {
+            readonly type: "enum";
+            readonly default: "absolute-fill";
+            readonly description: "Layout";
+            readonly variants: {
+                readonly 'absolute-fill': {
+                    readonly 'style.translate': {
+                        readonly type: "translate";
+                        readonly step: 1;
+                        readonly default: "0px 0px";
+                        readonly description: "Offset";
+                    };
+                    readonly 'style.scale': {
+                        readonly type: "number";
+                        readonly min: 0.05;
+                        readonly max: 100;
+                        readonly step: 0.01;
+                        readonly default: 1;
+                        readonly description: "Scale";
+                    };
+                    readonly 'style.rotate': {
+                        readonly type: "rotation";
+                        readonly step: 1;
+                        readonly default: "0deg";
+                        readonly description: "Rotation";
+                    };
+                    readonly 'style.opacity': {
+                        readonly type: "number";
+                        readonly min: 0;
+                        readonly max: 1;
+                        readonly step: 0.01;
+                        readonly default: 1;
+                        readonly description: "Opacity";
+                    };
+                };
+                readonly none: {};
+            };
+        };
+    };
+    readonly sequenceStyleSchema: {
+        readonly 'style.translate': {
+            readonly type: "translate";
+            readonly step: 1;
+            readonly default: "0px 0px";
+            readonly description: "Offset";
+        };
+        readonly 'style.scale': {
+            readonly type: "number";
+            readonly min: 0.05;
+            readonly max: 100;
+            readonly step: 0.01;
+            readonly default: 1;
+            readonly description: "Scale";
+        };
+        readonly 'style.rotate': {
+            readonly type: "rotation";
+            readonly step: 1;
+            readonly default: "0deg";
+            readonly description: "Rotation";
+        };
+        readonly 'style.opacity': {
+            readonly type: "number";
+            readonly min: 0;
+            readonly max: 1;
+            readonly step: 0.01;
+            readonly default: 1;
+            readonly description: "Opacity";
+        };
+    };
+    readonly flattenActiveSchema: (schema: SequenceSchema, resolve: import("./flatten-schema.js").ResolveValue) => SequenceSchema;
+    readonly getFlatSchemaWithAllKeys: (schema: SequenceSchema) => SequenceSchema;
     readonly useSequenceControlOverride: (key: string) => unknown | undefined;
     readonly RemotionRootContexts: import("react").FC<{
         readonly children: React.ReactNode;
@@ -144,6 +213,24 @@ export declare const Internals: {
     readonly SetMediaVolumeContext: import("react").Context<SetMediaVolumeContextValue>;
     readonly getRemotionEnvironment: () => RemotionEnvironment;
     readonly SharedAudioContext: import("react").Context<{
+        audioContext: AudioContext | null;
+        gainNode: GainNode | null;
+        audioSyncAnchor: {
+            value: number;
+        };
+        audioSyncAnchorEmitter: import("./audio/shared-audio-tags.js").AudioSyncAnchorEmitter;
+        scheduleAudioNode: (options: ScheduleAudioNodeOptions) => ScheduleAudioNodeResult;
+        resume: () => Promise<void>;
+        suspend: () => void;
+        getIsResumingAudioContext: () => Promise<void> | null;
+        unscheduleAudioNode: (node: AudioBufferSourceNode) => void;
+    } | null>;
+    readonly SharedAudioContextProvider: import("react").FC<{
+        readonly children: React.ReactNode;
+        readonly audioLatencyHint: AudioContextLatencyCategory;
+        readonly audioEnabled: boolean;
+    }>;
+    readonly SharedAudioTagsContext: import("react").Context<{
         registerAudio: (options: {
             aud: import("react").AudioHTMLAttributes<HTMLAudioElement>;
             audioId: string;
@@ -170,17 +257,10 @@ export declare const Internals: {
         }) => void;
         playAllAudios: () => void;
         numberOfAudioTags: number;
-        audioContext: AudioContext | null;
-        audioSyncAnchor: {
-            value: number;
-        };
-        scheduleAudioNode: (options: ScheduleAudioNodeOptions) => ScheduleAudioNodeResult;
     } | null>;
-    readonly SharedAudioContextProvider: import("react").FC<{
+    readonly SharedAudioTagsContextProvider: import("react").FC<{
         readonly numberOfAudioTags: number;
         readonly children: React.ReactNode;
-        readonly audioLatencyHint: AudioContextLatencyCategory;
-        readonly audioEnabled: boolean;
     }>;
     readonly invalidCompositionErrorMessage: string;
     readonly calculateMediaDuration: ({ trimAfter, mediaDurationInFrames, playbackRate, trimBefore, }: {
@@ -280,6 +360,7 @@ export declare const Internals: {
     readonly persistCurrentFrame: (time: {
         [x: string]: number;
     }) => void;
+    readonly usePlaybackRate: () => PlaybackRateContextValue;
     readonly useTimelineContext: () => TimelineContextValue;
     readonly useTimelineSetFrame: () => ((u: React.SetStateAction<Record<string, number>>) => void);
     readonly isIosSafari: () => boolean;
@@ -315,15 +396,6 @@ export declare const Internals: {
             height: number;
         };
     }) => number;
-    readonly editorPropsProviderRef: import("react").RefObject<{
-        getProps: () => {
-            [x: string]: Record<string, unknown>;
-        };
-        setProps: React.Dispatch<React.SetStateAction<{
-            [x: string]: Record<string, unknown>;
-        }>>;
-    } | null>;
-    readonly PROPS_UPDATED_EXTERNALLY: "remotion.propsUpdatedExternally";
     readonly validateRenderAsset: (artifact: TRenderAsset) => void;
     readonly Log: {
         trace: (options: {
@@ -398,23 +470,28 @@ export declare const Internals: {
     }, "ref"> & import("react").RefAttributes<HTMLAudioElement>>;
     readonly OBJECTFIT_CONTAIN_CLASS_NAME: "__remotion_objectfitcontain";
     readonly InnerOffthreadVideo: import("react").FC<import("./video/props.js").AllOffthreadVideoProps>;
-    readonly useBasicMediaInTimeline: ({ volume, mediaVolume, mediaType, src, displayName, trimBefore, trimAfter, playbackRate, }: {
+    readonly useBasicMediaInTimeline: ({ volume, mediaVolume, mediaType, src, displayName, trimBefore, trimAfter, playbackRate, sequenceDurationInFrames, mediaStartsAt, loop, }: {
         volume: import("./volume-prop.js").VolumeProp | undefined;
         mediaVolume: number;
-        mediaType: "audio" | "video";
+        mediaType: "audio" | "video" | "image";
         src: string | undefined;
         displayName: string | null;
         trimBefore: number | undefined;
         trimAfter: number | undefined;
         playbackRate: number;
+        sequenceDurationInFrames: number;
+        mediaStartsAt: number;
+        loop: boolean;
     }) => {
         volumes: string | number;
         duration: number;
         doesVolumeChange: boolean;
         nonce: import("./nonce.js").NonceHistoryContext;
         rootId: string;
-        isStudio: boolean;
         finalDisplayName: string;
+        startMediaFrom: number;
+        src: string;
+        playbackRate: number;
     };
     readonly getInputPropsOverride: () => Record<string, unknown> | null;
     readonly setInputPropsOverride: (override: Record<string, unknown> | null) => void;
@@ -437,6 +514,7 @@ export declare const Internals: {
     readonly TimelinePosition: typeof TimelinePosition;
     readonly DelayRenderContextType: import("react").Context<import("./delay-render.js").DelayRenderScope | null>;
     readonly TimelineContext: import("react").Context<TimelineContextValue | null>;
+    readonly PlaybackRateContext: import("react").Context<PlaybackRateContextValue | null>;
     readonly AbsoluteTimeContext: import("react").Context<TimelineContextValue | null>;
     readonly RenderAssetManagerProvider: import("react").FC<{
         children: React.ReactNode;
@@ -449,5 +527,19 @@ export declare const Internals: {
         defaultValue: unknown;
         shouldResortToDefaultValueIfUndefined: boolean;
     }) => unknown;
+    readonly CompositionRenderErrorContext: import("react").Context<import("./composition-render-error-context.js").CompositionRenderErrorContextType>;
+    readonly useEffectChainState: () => {
+        get: (width: number, height: number) => import("./effects/run-effect-chain.js").EffectChainState | null;
+    };
+    readonly runEffectChain: ({ state, source, effects, output, frame, width, height, }: import("./effects/run-effect-chain.js").RunEffectChainOptions) => Promise<boolean>;
+    readonly useMemoizedEffects: (effects: import("./index.js").EffectDescriptor<unknown>[]) => import("./index.js").EffectDefinitionAndStack<unknown>[];
+    readonly defineEffect: <P, S>(definition: import("./effects/effect-types.js").EffectDefinition<P, S>) => import("./effects/effect-types.js").EffectDefinition<P, S>;
+    readonly createDescriptor: <P, S>(definition: import("./effects/effect-types.js").EffectDefinition<P, S>, params: P) => import("./index.js").EffectDescriptor<unknown>;
+    readonly computeEffectiveSchemaValuesDotNotation: ({ schema, currentValue, overrideValues, propStatus, }: {
+        schema: SequenceSchema;
+        currentValue: Record<string, unknown>;
+        overrideValues: Record<string, unknown>;
+        propStatus: Record<string, CanUpdateSequencePropStatus> | undefined;
+    }) => Record<string, unknown>;
 };
-export type { CompositionManagerContext, ResolvedStackLocation, CompProps, LoggingContextValue, MediaVolumeContextValue, RemotionEnvironment, SequenceFieldSchema, SequenceSchema, SerializedJSONWithCustomFields, SetMediaVolumeContextValue, SetTimelineContextValue, TCompMetadata, TComposition, TimelineContextValue, TRenderAsset, TSequence, WatchRemotionStaticFilesPayload, ScheduleAudioNodeOptions, CanUpdateSequencePropStatus, ScheduleAudioNodeResult, NonceHistory, };
+export type { CompositionManagerContext, ResolvedStackLocation, CompProps, LoggingContextValue, MediaVolumeContextValue, RemotionEnvironment, SequenceFieldSchema, SequenceSchema, SerializedJSONWithCustomFields, SetMediaVolumeContextValue, SetTimelineContextValue, PlaybackRateContextValue, TCompMetadata, TComposition, TimelineContextValue, TRenderAsset, TSequence, WatchRemotionStaticFilesPayload, ScheduleAudioNodeOptions, CanUpdateSequencePropStatus, CodeValues, DragOverrides, ScheduleAudioNodeResult, NonceHistory, };

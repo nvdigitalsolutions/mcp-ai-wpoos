@@ -1,5 +1,7 @@
 import React from 'react';
 import type { LoopDisplay, SequenceControls } from './CompositionManager.js';
+import type { EffectsProp } from './effects/effect-types.js';
+import type { BasicMediaInTimelineReturnType } from './use-media-in-timeline.js';
 export type AbsoluteFillLayout = {
     layout?: 'absolute-fill';
     premountFor?: number;
@@ -19,7 +21,8 @@ export type SequencePropsWithoutDuration = {
     readonly from?: number;
     readonly name?: string;
     readonly showInTimeline?: boolean;
-    readonly controls?: SequenceControls;
+    readonly _experimentalControls?: SequenceControls;
+    readonly _experimentalEffects?: EffectsProp;
     /**
      * @deprecated For internal use only.
      */
@@ -44,8 +47,15 @@ export type SequencePropsWithoutDuration = {
      * @deprecated For internal use only.
      */
     readonly _remotionInternalIsPostmounting?: boolean;
+    /**
+     * @deprecated For internal use only.
+     */
+    readonly _remotionInternalIsMedia?: {
+        type: 'video' | 'audio';
+        data: BasicMediaInTimelineReturnType;
+    };
 } & LayoutAndStyle;
 export type SequenceProps = {
     readonly durationInFrames?: number;
 } & SequencePropsWithoutDuration;
-export declare const Sequence: React.ForwardRefExoticComponent<SequenceProps & React.RefAttributes<HTMLDivElement>>;
+export declare const Sequence: React.ComponentType<SequenceProps & React.RefAttributes<HTMLDivElement>>;

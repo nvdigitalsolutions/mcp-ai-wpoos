@@ -55,6 +55,7 @@ const volume_position_state_js_1 = require("../volume-position-state.js");
 const volume_prop_js_1 = require("../volume-prop.js");
 const volume_safeguard_js_1 = require("../volume-safeguard.js");
 const emit_video_frame_js_1 = require("./emit-video-frame.js");
+const MediaPlaybackError_js_1 = require("./MediaPlaybackError.js");
 const video_fragment_js_1 = require("./video-fragment.js");
 const VideoForDevelopmentRefForwardingFunction = (props, ref) => {
     var _a, _b, _c, _d, _e, _f;
@@ -192,20 +193,32 @@ const VideoForDevelopmentRefForwardingFunction = (props, ref) => {
                 console.error('Error occurred in video', current === null || current === void 0 ? void 0 : current.error);
                 // If user is handling the error, we don't cause an unhandled exception
                 if (onError) {
-                    const err = new Error(`Code ${current.error.code}: ${current.error.message}`);
+                    const err = new MediaPlaybackError_js_1.MediaPlaybackError({
+                        message: `Code ${current.error.code}: ${current.error.message}`,
+                        src: src,
+                    });
                     onError(err);
                     return;
                 }
-                throw new Error(`The browser threw an error while playing the video ${src}: Code ${current.error.code} - ${(_a = current === null || current === void 0 ? void 0 : current.error) === null || _a === void 0 ? void 0 : _a.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`);
+                throw new MediaPlaybackError_js_1.MediaPlaybackError({
+                    message: `The browser threw an error while playing the video ${src}: Code ${current.error.code} - ${(_a = current === null || current === void 0 ? void 0 : current.error) === null || _a === void 0 ? void 0 : _a.message}. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.`,
+                    src: src,
+                });
             }
             else {
                 // If user is handling the error, we don't cause an unhandled exception
                 if (onError) {
-                    const err = new Error(`The browser threw an error while playing the video ${src}`);
+                    const err = new MediaPlaybackError_js_1.MediaPlaybackError({
+                        message: `The browser threw an error while playing the video ${src}`,
+                        src: src,
+                    });
                     onError(err);
                     return;
                 }
-                throw new Error('The browser threw an error while playing the video');
+                throw new MediaPlaybackError_js_1.MediaPlaybackError({
+                    message: 'The browser threw an error while playing the video',
+                    src: src,
+                });
             }
         };
         current.addEventListener('error', errorHandler, { once: true });

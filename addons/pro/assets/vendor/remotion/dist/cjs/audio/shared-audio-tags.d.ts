@@ -28,17 +28,39 @@ export type ScheduleAudioNodeResult = {
     scheduledTime: number;
 } | {
     type: 'not-started';
+    reason: string;
 };
 export type ScheduleAudioNodeOptions = {
     readonly node: AudioBufferSourceNode;
-    readonly targetTime: number;
     readonly mediaTimestamp: number;
     readonly currentTime: number;
-    readonly sequenceEndTime: number;
-    readonly sequenceStartTime: number;
-    readonly debugAudioScheduling: boolean;
+    readonly scheduledTime: number;
+    readonly originalUnloopedMediaTimestamp: number;
+    readonly duration: number;
+    readonly offset: number;
 };
-type SharedContext = {
+export type AudioSyncAnchorEvent = 'changed';
+export type AudioSyncAnchorListener = (event: AudioSyncAnchorEvent) => void;
+export type AudioSyncAnchorEmitter = {
+    dispatch: (event: AudioSyncAnchorEvent) => void;
+    subscribe: (listener: AudioSyncAnchorListener) => {
+        remove: () => void;
+    };
+};
+type SharedAudioContextValue = {
+    audioContext: AudioContext | null;
+    gainNode: GainNode | null;
+    audioSyncAnchor: {
+        value: number;
+    };
+    audioSyncAnchorEmitter: AudioSyncAnchorEmitter;
+    scheduleAudioNode: (options: ScheduleAudioNodeOptions) => ScheduleAudioNodeResult;
+    resume: () => Promise<void>;
+    suspend: () => void;
+    getIsResumingAudioContext: () => Promise<void> | null;
+    unscheduleAudioNode: (node: AudioBufferSourceNode) => void;
+};
+type SharedAudioTagsContextValue = {
     registerAudio: (options: {
         aud: AudioHTMLAttributes<HTMLAudioElement>;
         audioId: string;
@@ -55,18 +77,17 @@ type SharedContext = {
     }) => void;
     playAllAudios: () => void;
     numberOfAudioTags: number;
-    audioContext: AudioContext | null;
-    audioSyncAnchor: {
-        value: number;
-    };
-    scheduleAudioNode: (options: ScheduleAudioNodeOptions) => ScheduleAudioNodeResult;
 };
-export declare const SharedAudioContext: React.Context<SharedContext | null>;
+export declare const SharedAudioContext: React.Context<SharedAudioContextValue | null>;
+export declare const SharedAudioTagsContext: React.Context<SharedAudioTagsContextValue | null>;
 export declare const SharedAudioContextProvider: React.FC<{
-    readonly numberOfAudioTags: number;
     readonly children: React.ReactNode;
     readonly audioLatencyHint: AudioContextLatencyCategory;
     readonly audioEnabled: boolean;
+}>;
+export declare const SharedAudioTagsContextProvider: React.FC<{
+    readonly numberOfAudioTags: number;
+    readonly children: React.ReactNode;
 }>;
 export declare const useSharedAudio: ({ aud, audioId, premounting, postmounting, }: {
     aud: AudioHTMLAttributes<HTMLAudioElement>;

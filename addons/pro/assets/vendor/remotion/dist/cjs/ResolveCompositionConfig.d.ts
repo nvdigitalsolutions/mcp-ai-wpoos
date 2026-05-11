@@ -19,6 +19,5 @@ type VideoConfigState = {
     error: Error;
 };
 export declare const needsResolution: (composition: AnyComposition) => boolean;
-export declare const PROPS_UPDATED_EXTERNALLY = "remotion.propsUpdatedExternally";
 export declare const useResolvedVideoConfig: (preferredCompositionId: string | null) => VideoConfigState | null;
 export {};

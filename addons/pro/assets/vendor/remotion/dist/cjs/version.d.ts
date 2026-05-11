@@ -3,4 +3,4 @@
  * @see [Documentation](https://remotion.dev/docs/version)
  * @returns {string} The current version of the remotion package
  */
-export declare const VERSION = "4.0.436";
+export declare const VERSION = "4.0.459";
