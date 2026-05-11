@@ -129,3 +129,7 @@ The PR adds PHPUnit tests under `addons/pro/tests/`:
   run-history AJAX endpoint: subscriber-denied (403), missing `schedule_id`
   (400 + message contains "schedule_id"), tool-unavailable graceful error,
   and happy-path returns a parseable response with a `success` key.
+- `test-pro-schedule-webhook-hmac.php` — 3-case suite for HMAC-SHA256 webhook
+  signing: no secret → no `X-WP-MCP-AI-Signature` header; with secret →
+  header present and `hash_hmac('sha256', timestamp.body, secret)` verifies;
+  tampered body → hash mismatch (integrity protection demonstration).

@@ -333,10 +333,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			// Validate with filter_var() rather than wp_http_validate_url() because
 			// the latter performs DNS resolution, which fails for intranet hosts and
 			// in CI/test environments where DNS is unavailable.
-			$callback_url = isset( $data['callback_url'] ) ? esc_url_raw( $data['callback_url'] ) : '';
+			$callback_url    = isset( $data['callback_url'] ) ? esc_url_raw( $data['callback_url'] ) : '';
 			if ( $callback_url && ! filter_var( $callback_url, FILTER_VALIDATE_URL ) ) {
 				return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
 			}
+			$callback_secret = isset( $data['callback_secret'] ) ? sanitize_text_field( $data['callback_secret'] ) : '';
 
 			// Use a unique ID that incorporates schedule type for workflow/assistant to avoid collisions.
 			$id_key      = self::TYPE_TASK === $schedule_type
@@ -364,6 +365,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'tags'              => $tags,
 				'timeout'           => $timeout,
 				'callback_url'      => $callback_url,
+				'callback_secret'   => $callback_secret,
 				'notify_on_failure'  => $notify,
 				'notify_email'       => $notify_email,
 				'notify_channels'             => $notify_channels,
@@ -484,6 +486,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
 				}
 				$updated['callback_url'] = $url;
+			}
+			if ( isset( $data['callback_secret'] ) ) {
+				$updated['callback_secret'] = sanitize_text_field( $data['callback_secret'] );
 			}
 			if ( isset( $data['schedule'] ) ) {
 				$new_schedule = sanitize_key( $data['schedule'] );
@@ -2030,11 +2035,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'site_url'      => home_url(),
 			);
 
+			$body    = wp_json_encode( $payload );
+			$headers = array( 'Content-Type' => 'application/json' );
+
+			$secret = isset( $schedule['callback_secret'] ) ? (string) $schedule['callback_secret'] : '';
+			if ( '' !== $secret ) {
+				$ts                         = (string) time();
+				$headers['X-WP-MCP-AI-Timestamp'] = $ts;
+				$headers['X-WP-MCP-AI-Signature']  = 'sha256=' . hash_hmac( 'sha256', $ts . '.' . $body, $secret );
+			}
+
 			$response = wp_remote_post(
 				$callback_url,
 				array(
-					'body'      => wp_json_encode( $payload ),
-					'headers'   => array( 'Content-Type' => 'application/json' ),
+					'body'      => $body,
+					'headers'   => $headers,
 					'timeout'   => 15,
 					'blocking'  => false,
 					'sslverify' => true,

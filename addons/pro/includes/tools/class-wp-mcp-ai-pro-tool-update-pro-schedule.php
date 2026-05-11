@@ -118,6 +118,10 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'format'      => 'uri',
 					'description' => __( 'New external webhook callback URL. Empty string to remove.', 'mcp-ai-wpoos-pro' ),
 				),
+				'callback_secret'   => array(
+					'type'        => 'string',
+					'description' => __( 'HMAC-SHA256 signing secret for the callback. Empty string to remove. When set, every webhook POST includes X-WP-MCP-AI-Signature: sha256=<hex> computed over "<timestamp>.<body>". The X-WP-MCP-AI-Timestamp header contains the Unix timestamp; receivers should reject requests where that timestamp is more than 300 seconds old to prevent replay attacks.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,

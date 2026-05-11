@@ -208,6 +208,10 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'format'      => 'uri',
 					'description' => __( 'External webhook URL that receives a POST with run results on completion or failure.', 'mcp-ai-wpoos-pro' ),
 				),
+				'callback_secret'   => array(
+					'type'        => 'string',
+					'description' => __( 'Optional HMAC-SHA256 signing secret. When set, every webhook POST includes an X-WP-MCP-AI-Signature header (sha256=<hex>) computed over "<timestamp>.<body>" so the receiver can verify authenticity. The X-WP-MCP-AI-Timestamp header contains the Unix timestamp used; receivers should reject requests where that timestamp is more than 300 seconds old to prevent replay attacks.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'additionalProperties' => false,
 		);
