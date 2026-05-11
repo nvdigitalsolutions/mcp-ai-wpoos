@@ -22,13 +22,13 @@
 	}
 
 	function refresh( container ) {
-		var id = container.getAttribute( 'data-mcp-ai-refresh-schedule' );
+		const id = container.getAttribute( 'data-mcp-ai-refresh-schedule' );
 		if ( ! id ) {
 			return;
 		}
-		var base = ( window.wpApiSettings && window.wpApiSettings.root ) || '/wp-json/';
-		var url  = base.replace( /\/$/, '' ) + '/mcp-ai-pro/v1/schedules/' + encodeURIComponent( id ) + '/latest-result';
-		var headers = {};
+		const base = ( window.wpApiSettings && window.wpApiSettings.root ) || '/wp-json/';
+		const url  = base.replace( /\/$/, '' ) + '/mcp-ai-pro/v1/schedules/' + encodeURIComponent( id ) + '/latest-result';
+		const headers = {};
 		if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
 			headers[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
 		}
@@ -41,12 +41,12 @@
 				if ( ! payload || ! payload.envelope ) {
 					return;
 				}
-				var body = container.querySelector( '.mcp-ai-scheduled-result__body' );
+				const body = container.querySelector( '.mcp-ai-scheduled-result__body' );
 				if ( ! body ) {
 					return;
 				}
 				// Minimal in-place update: re-render the summary line.
-				var envelope = payload.envelope;
+				const envelope = payload.envelope;
 				body.innerHTML =
 					'<p class="mcp-ai-scheduled-result__summary">' +
 					escapeHtml( envelope.summary || '' ) +
@@ -62,9 +62,9 @@
 	}
 
 	function init() {
-		var containers = document.querySelectorAll( '[data-mcp-ai-refresh-interval]' );
+		const containers = document.querySelectorAll( '[data-mcp-ai-refresh-interval]' );
 		Array.prototype.forEach.call( containers, function ( container ) {
-			var interval = parseInt( container.getAttribute( 'data-mcp-ai-refresh-interval' ), 10 );
+			const interval = parseInt( container.getAttribute( 'data-mcp-ai-refresh-interval' ), 10 );
 			if ( ! interval || interval < 5 ) {
 				return;
 			}
