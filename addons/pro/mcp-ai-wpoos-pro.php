@@ -224,6 +224,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			// Class auto-initializes at the bottom of the file.
 		}
 
+		// Load Pro Schedule Toolkit Settings page (Overview · Configuration · Tools · Research · Help · MCP Server).
+		$schedule_settings_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-toolkit-settings-page.php';
+		if ( file_exists( $schedule_settings_page ) ) {
+			require_once $schedule_settings_page;
+			// Class auto-instantiates in admin context at the bottom of the file.
+		}
+
 		// Load Pro Webhook Status admin page (registers under NV oOS Pro Dashboard menu).
 		$webhook_status_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-webhook-status-page.php';
 		if ( file_exists( $webhook_status_page ) ) {
@@ -643,6 +650,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-verifier.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-presets.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-budget-guarded-reward.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-schedule-metrics.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-schedule-otel-subscriber.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-measurement-bootstrap.php';
 		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();
 
@@ -881,6 +890,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-delete-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
 			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
+			'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
 			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
 			// iSAMS School Management System tool.
