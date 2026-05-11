@@ -68,7 +68,7 @@ the Schedule Settings page applies this filter when registering its submenu.
 
 | Hook | Type | Fires |
 |------|------|-------|
-| `wp_mcp_ai_pro_schedule_run_completed` | action | After every schedule run, regardless of success. Receives `( $schedule_id, $result )` where `$result` is `[ 'success', 'duration', 'error', 'action_log', 'schedule' ]`. Use this to forward run summaries to observability layers (OTel, dashboards) or to trigger notifications. |
+| `wp_mcp_ai_pro_schedule_run_completed` | action | After every schedule run, regardless of success. Receives `( $schedule_id, $result )` where `$result` is `[ 'success', 'duration', 'error', 'action_log', 'schedule' ]`. Use this to forward run summaries to observability layers (OTel, dashboards) or to trigger notifications. **Built-in subscriber:** `WP_MCP_AI_Pro_Schedule_Otel_Subscriber` records `schedule.run.duration_ms` and (on failure) `schedule.run.failure.count` via the base metric collector, then dispatches the OTel exporter. Disable with `add_filter('wp_mcp_ai_pro_schedule_otel_enabled','__return_false')`. |
 | `wp_mcp_ai_pro_schedule_capability` | filter | Capability slug required to access the Pro Scheduler settings page. Default `manage_options`. |
 
 ## Tools
@@ -83,9 +83,32 @@ the Schedule Settings page applies this filter when registering its submenu.
 | `dry_run_pro_schedule` | info | Side-effect-free preview of what a schedule would do at its next N runs. Validates configuration, surfaces warnings (paused, unknown cadence, no upcoming runs), and returns a type-specific action preview without writing to the run-history ring buffer or firing the hook. |
 | `plan_schedules_from_workflow` | write | Create one or more schedules from a workflow plan. |
 
+## Metrics
+
+Two metrics are registered by `WP_MCP_AI_Pro_Schedule_Metrics` (priority 30 on
+`wp_mcp_ai_register_metrics`) and emitted by
+`WP_MCP_AI_Pro_Schedule_Otel_Subscriber` on every
+`wp_mcp_ai_pro_schedule_run_completed` event.
+
+| Metric id | Type | Unit | Tagged by |
+|-----------|------|------|-----------|
+| `schedule.run.duration_ms` | histogram | ms | `schedule_id`, `schedule_type`, `success` |
+| `schedule.run.failure.count` | counter | runs | `schedule_id`, `schedule_type`, `success=false` |
+
+Both follow the **Goodhart pairing** convention: `duration_ms` is paired with
+`failure.count` so that "fast runs" that always fail do not appear healthy.
+
+**Opt-out filters:**
+
+| Filter | Default | Effect |
+|--------|---------|--------|
+| `wp_mcp_ai_pro_schedule_otel_enabled` | `true` | Return `false` to disable the entire subscriber. |
+| `wp_mcp_ai_pro_schedule_otel_jit_dispatch` | `true` | Return `false` to suppress the just-in-time `WP_MCP_AI_OTel_Exporter::dispatch()` call (useful when batching). |
+| `wp_mcp_ai_pro_schedule_metrics_definitions` | full set | Return a subset or empty array to limit which metrics are registered. |
+
 ## Tests
 
-The PR adds two PHPUnit tests under `addons/pro/tests/`:
+The PR adds PHPUnit tests under `addons/pro/tests/`:
 
 - `test-pro-schedule-research-page-uses-workflow-cards.php` — asserts the
   rendered HTML contains `.workflow-option[data-workflow="research"]`, three
@@ -95,3 +118,10 @@ The PR adds two PHPUnit tests under `addons/pro/tests/`:
   settings page registers under `nvoos-pro-dashboard`, exposes the six
   canonical tab links, lists the six core tools, and sanitizes settings
   input to safe defaults.
+- `test-pro-schedule-research-page-action-ajax.php` — 5-case suite for the
+  Pause/Resume and Run-now AJAX endpoints: subscriber-denied, missing id,
+  and admin happy paths.
+- `test-pro-schedule-otel-subscriber.php` — 4-case suite for the OTel
+  subscriber: boot registration, successful run records only duration_ms,
+  failed run records both metrics, zero-duration skips duration_ms, and
+  schedule_type attribute flows through to context.
