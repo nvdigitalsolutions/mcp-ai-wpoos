@@ -324,7 +324,11 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 		}
 		if ( isset( $sanitized['default_time'] ) ) {
 			$time = (string) $sanitized['default_time'];
-			$sanitized['default_time'] = preg_match( '/^\d{1,2}:\d{2}$/', $time ) ? $time : '09:00';
+			if ( preg_match( '/^([01]?\d|2[0-3]):([0-5]\d)$/', $time, $m ) ) {
+				$sanitized['default_time'] = sprintf( '%02d:%02d', (int) $m[1], (int) $m[2] );
+			} else {
+				$sanitized['default_time'] = '09:00';
+			}
 		}
 		if ( isset( $sanitized['max_concurrent_runs'] ) ) {
 			$sanitized['max_concurrent_runs'] = max( 1, min( 20, absint( $sanitized['max_concurrent_runs'] ) ) );
