@@ -19,7 +19,12 @@ import type { ManifestEntry } from '../api/manifest-client';
 // and retrieve typed objects.
 
 let _indexReady: Promise<void> | null = null;
-let _index: import( 'flexsearch' ).Document<ManifestEntry> | null = null;
+// FlexSearch's `Document<T extends DocumentData>` generic constraint conflicts
+// with our typed ManifestEntry (the latter intentionally has no string-index
+// signature). Storing the runtime instance as `unknown` and narrowing at each
+// call site keeps the public ManifestEntry shape strict.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _index: any = null;
 
 async function ensureIndex( entries: ManifestEntry[] ): Promise<void> {
 	if ( _indexReady ) {
@@ -46,6 +51,9 @@ async function ensureIndex( entries: ManifestEntry[] ): Promise<void> {
 		} );
 
 		for ( const entry of entries ) {
+			if ( ! _index ) {
+				break;
+			}
 			await _index.addAsync( entry.slug, entry );
 		}
 	} )();
