@@ -231,6 +231,12 @@ trait WP_MCP_AI_Inline_Async_Tick_Trait {
 	 *                           action).
 	 * @param string   $job_id   Job identifier.
 	 * @param callable $callable Tick handler. Receives no arguments.
+	 *                           Any thrown `Throwable` (Exception OR
+	 *                           Error such as TypeError) is caught,
+	 *                           logged, and reported as a failed kick
+	 *                           via the observability action so a
+	 *                           buggy tick body cannot tear down the
+	 *                           shutdown handler chain.
 	 * @return void
 	 */
 	protected static function inline_async_run_kick( $class, $job_id, $callable ) {
