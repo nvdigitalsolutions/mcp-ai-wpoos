@@ -2974,7 +2974,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 			$slice = array_reverse( $results[ $id ] );
 			$limit = max( 1, min( 100, (int) $limit ) );
-			return array_slice( $slice , 0, $limit );
+			return array_slice( $slice, 0, $limit );
 		}
 
 		/**
