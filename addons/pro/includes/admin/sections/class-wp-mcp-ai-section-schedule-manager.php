@@ -669,6 +669,62 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						</div>
 					</div>
 
+
+					<!-- Row: Result Capture (display settings for Scheduled Result widget) -->
+					<div class="wp-mcp-ai-sm-form-row">
+						<div class="wp-mcp-ai-sm-form-group full-width">
+							<strong><?php esc_html_e( 'Result Capture', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<p class="description"><?php esc_html_e( 'Controls how run output is stored and surfaced in the Scheduled Result block/widget.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-sm-form-row">
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-result-capture"><?php esc_html_e( 'Capture Mode', 'mcp-ai-wpoos-pro' ); ?></label>
+							<select id="sm-result-capture">
+								<option value="summary"><?php esc_html_e( 'Summary only', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="full"><?php esc_html_e( 'Full (summary + data)', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="disabled"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></option>
+							</select>
+						</div>
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-result-retention"><?php esc_html_e( 'Retention (runs)', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="number" id="sm-result-retention" value="10" min="1" max="100" class="small-text">
+							<p class="description"><?php esc_html_e( 'Number of recent result envelopes to keep (1–100).', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-sm-form-row">
+						<div class="wp-mcp-ai-sm-form-group">
+							<label class="wp-mcp-ai-sm-toggle-label">
+								<input type="checkbox" id="sm-public-render">
+								<?php esc_html_e( 'Allow public rendering', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'When enabled, unauthenticated visitors can fetch the latest result (only the allowed fields below).', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-public-fields"><?php esc_html_e( 'Public fields (allow-list)', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="text" id="sm-public-fields" class="regular-text" placeholder="<?php esc_attr_e( 'summary, data.items', 'mcp-ai-wpoos-pro' ); ?>">
+							<p class="description"><?php esc_html_e( 'Comma-separated dotted JSON paths exposed when public rendering is on. Leave blank to expose summary only.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-sm-form-row">
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-widget-render-mode"><?php esc_html_e( 'Widget default: render mode', 'mcp-ai-wpoos-pro' ); ?></label>
+							<select id="sm-widget-render-mode">
+								<option value="summary-card"><?php esc_html_e( 'Summary card', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="list"><?php esc_html_e( 'List', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="table"><?php esc_html_e( 'Table', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="metric"><?php esc_html_e( 'Metric', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="timeline"><?php esc_html_e( 'Timeline', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="raw"><?php esc_html_e( 'Raw', 'mcp-ai-wpoos-pro' ); ?></option>
+							</select>
+						</div>
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-widget-refresh-interval"><?php esc_html_e( 'Widget default: auto-refresh (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="number" id="sm-widget-refresh-interval" value="0" min="0" max="3600" class="small-text">
+							<p class="description"><?php esc_html_e( '0 = no auto-refresh.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+					</div>
+
 					<!-- Row: Enabled toggle + Submit -->
 					<div class="wp-mcp-ai-sm-form-row wp-mcp-ai-sm-form-actions">
 						<label class="wp-mcp-ai-sm-toggle-label">
