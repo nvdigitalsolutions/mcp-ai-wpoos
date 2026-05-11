@@ -54,6 +54,7 @@ class Test_Pro_Schedule_Research_Page_Uses_Workflow_Cards extends WP_UnitTestCas
 		$this->assertStringContainsString( 'data-workflow="research"', $html, 'AI Research card present' );
 		$this->assertStringContainsString( 'data-workflow="import"', $html, 'Bulk Import card present' );
 		$this->assertStringContainsString( 'data-workflow="review"', $html, 'Review card present' );
+		$this->assertStringContainsString( 'data-workflow="calendar"', $html, 'Calendar card present' );
 	}
 
 	/**
@@ -65,6 +66,7 @@ class Test_Pro_Schedule_Research_Page_Uses_Workflow_Cards extends WP_UnitTestCas
 		$this->assertStringContainsString( 'id="workflow-research"', $html );
 		$this->assertStringContainsString( 'id="workflow-import"', $html );
 		$this->assertStringContainsString( 'id="workflow-review"', $html );
+		$this->assertStringContainsString( 'id="workflow-calendar"', $html );
 	}
 
 	/**

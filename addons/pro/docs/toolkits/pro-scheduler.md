@@ -21,6 +21,7 @@ panel without a page reload:
 | **AI Research** | `research` | Embeds the chat shortcode with the schedule-planning toolset (`plan_schedules_from_workflow`, `create_pro_schedule`, …). |
 | **Bulk Import** | `import` | Paste a free-form list of responsibilities and preview/create each line as a managed Pro Schedule. |
 | **Review & Run History** | `review` | Inspect schedules created from this workflow and their last-run state. |
+| **Calendar** | `calendar` | At-a-glance list of the next 30 upcoming runs across all enabled schedules, rendered in the site time-zone. |
 
 ### Legacy `?mode=` compatibility
 
@@ -60,7 +61,15 @@ under **NV oOS Pro Dashboard → Pro Scheduler**. Tabs:
 
 All Schedule admin pages and tools default to the `manage_options`
 capability. To delegate scheduling to other roles, filter
-`wp_mcp_ai_pro_schedule_capability` and return a custom capability slug.
+`wp_mcp_ai_pro_schedule_capability` and return a custom capability slug —
+the Schedule Settings page applies this filter when registering its submenu.
+
+## Hooks
+
+| Hook | Type | Fires |
+|------|------|-------|
+| `wp_mcp_ai_pro_schedule_run_completed` | action | After every schedule run, regardless of success. Receives `( $schedule_id, $result )` where `$result` is `[ 'success', 'duration', 'error', 'action_log', 'schedule' ]`. Use this to forward run summaries to observability layers (OTel, dashboards) or to trigger notifications. |
+| `wp_mcp_ai_pro_schedule_capability` | filter | Capability slug required to access the Pro Scheduler settings page. Default `manage_options`. |
 
 ## Tests
 

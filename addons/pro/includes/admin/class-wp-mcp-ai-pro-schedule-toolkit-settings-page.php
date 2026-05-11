@@ -39,6 +39,36 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	}
 
 	/**
+	 * Register the submenu page with a filterable capability.
+	 *
+	 * Overrides the base method so site administrators can delegate schedule
+	 * management to non-`manage_options` roles via the
+	 * `wp_mcp_ai_pro_schedule_capability` filter.
+	 */
+	public function add_settings_page() {
+		/**
+		 * Filter the capability required to view the Pro Scheduler settings page.
+		 *
+		 * @since 1.x
+		 *
+		 * @param string $capability Capability slug. Default 'manage_options'.
+		 */
+		$capability = (string) apply_filters( 'wp_mcp_ai_pro_schedule_capability', 'manage_options' );
+		if ( '' === $capability ) {
+			$capability = 'manage_options';
+		}
+
+		add_submenu_page(
+			$this->parent_slug,
+			$this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ),
+			$this->toolkit_name,
+			$capability,
+			$this->page_slug,
+			array( $this, 'render_settings_page' )
+		);
+	}
+
+	/**
 	 * Toolkit slug accessor.
 	 *
 	 * @return string
@@ -171,6 +201,95 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 					</a>
 				</p>
 			</div>
+			<?php $this->render_recent_run_history( $schedules, $date_fmt ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the recent-run-history card (last 20 runs across all schedules).
+	 *
+	 * Reads from `WP_MCP_AI_Pro_Schedule_Manager::get_run_history()` per schedule,
+	 * merges, sorts newest first, and surfaces status + duration + last error so
+	 * site admins can spot failing schedules from one glance.
+	 *
+	 * @param array  $schedules Schedules keyed by id.
+	 * @param string $date_fmt  Combined site date+time format.
+	 */
+	protected function render_recent_run_history( array $schedules, $date_fmt ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
+			return;
+		}
+		if ( ! method_exists( 'WP_MCP_AI_Pro_Schedule_Manager', 'get_run_history' ) ) {
+			return;
+		}
+
+		$rows = array();
+		foreach ( $schedules as $sch ) {
+			$schedule_id = isset( $sch['id'] ) ? (string) $sch['id'] : '';
+			if ( '' === $schedule_id ) {
+				continue;
+			}
+			$history = WP_MCP_AI_Pro_Schedule_Manager::get_run_history( $schedule_id, 10 );
+			if ( ! is_array( $history ) ) {
+				continue;
+			}
+			foreach ( $history as $run ) {
+				$rows[] = array(
+					'schedule_name' => isset( $sch['name'] ) ? (string) $sch['name'] : $schedule_id,
+					'when'          => isset( $run['start_time'] ) ? (int) $run['start_time'] : 0,
+					'success'       => isset( $run['status'] ) && 'success' === $run['status'],
+					'duration'      => isset( $run['duration'] ) ? (float) $run['duration'] : 0.0,
+					'error'         => isset( $run['error'] ) ? (string) $run['error'] : '',
+				);
+			}
+		}
+
+		if ( empty( $rows ) ) {
+			return;
+		}
+
+		usort(
+			$rows,
+			static function ( $a, $b ) {
+				return $b['when'] <=> $a['when'];
+			}
+		);
+		$rows = array_slice( $rows, 0, 20 );
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Recent Run History', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Last 20 runs across all schedules. Failed runs show their last error message.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<table class="wp-list-table widefat fixed striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'When', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Schedule', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Duration', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Last Error', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $rows as $row ) : ?>
+						<tr>
+							<td><?php echo esc_html( $row['when'] > 0 ? wp_date( $date_fmt, $row['when'] ) : '—' ); ?></td>
+							<td><?php echo esc_html( $row['schedule_name'] ); ?></td>
+							<td>
+								<?php if ( $row['success'] ) : ?>
+									<span style="color:#00a32a;">●</span> <?php esc_html_e( 'Success', 'mcp-ai-wpoos-pro' ); ?>
+								<?php else : ?>
+									<span style="color:#b32d2e;">●</span> <?php esc_html_e( 'Failed', 'mcp-ai-wpoos-pro' ); ?>
+								<?php endif; ?>
+							</td>
+							<td><?php echo esc_html( sprintf( '%.2fs', $row['duration'] ) ); ?></td>
+							<td><?php echo esc_html( $row['error'] !== '' ? wp_trim_words( $row['error'], 12, '…' ) : '' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
 		<?php
 	}

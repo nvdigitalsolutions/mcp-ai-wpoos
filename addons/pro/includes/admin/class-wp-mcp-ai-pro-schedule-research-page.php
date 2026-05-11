@@ -112,9 +112,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				// Map legacy ?mode= query-arg → data-workflow card so old bookmarks land on the right card.
 				$legacy_mode    = isset( $_GET['mode'] ) ? sanitize_key( wp_unslash( $_GET['mode'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$mode_to_card   = array(
-					'chat'   => 'research',
-					'paste'  => 'import',
-					'review' => 'review',
+					'chat'     => 'research',
+					'paste'    => 'import',
+					'review'   => 'review',
+					'calendar' => 'calendar',
 				);
 				$initial_card   = isset( $mode_to_card[ $legacy_mode ] ) ? $mode_to_card[ $legacy_mode ] : '';
 				wp_localize_script(
@@ -264,6 +265,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 									<strong><?php esc_html_e( 'Review & Run History', 'mcp-ai-wpoos-pro' ); ?></strong>
 									<p><?php esc_html_e( 'Inspect schedules created from this workflow.', 'mcp-ai-wpoos-pro' ); ?></p>
 								</button>
+								<button type="button" class="workflow-option" data-workflow="calendar">
+									<span class="dashicons dashicons-calendar-alt"></span>
+									<strong><?php esc_html_e( 'Calendar', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<p><?php esc_html_e( 'Preview the next upcoming runs at a glance.', 'mcp-ai-wpoos-pro' ); ?></p>
+								</button>
 							</div>
 						</div>
 
@@ -280,6 +286,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 						<!-- Review Workflow -->
 						<div id="workflow-review" class="workflow-content">
 							<?php self::render_review_mode(); ?>
+						</div>
+
+						<!-- Calendar Workflow -->
+						<div id="workflow-calendar" class="workflow-content">
+							<?php self::render_calendar_mode(); ?>
 						</div>
 					</div>
 				</div>
@@ -554,6 +565,84 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			}
 
 			wp_send_json_success( $result );
+		}
+
+		/**
+		 * Render the Calendar mode — a flat list of the next upcoming runs across
+		 * every enabled schedule, sorted ascending. Provides the at-a-glance
+		 * timeline view called for by the toolkit blueprint.
+		 */
+		protected static function render_calendar_mode() {
+			$rows = array();
+
+			if ( class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' )
+				&& method_exists( 'WP_MCP_AI_Pro_Schedule_Manager', 'get_schedules' )
+				&& method_exists( 'WP_MCP_AI_Pro_Schedule_Manager', 'get_next_run_times' )
+			) {
+				$schedules = WP_MCP_AI_Pro_Schedule_Manager::get_schedules( array( 'enabled' => true ) );
+				if ( is_array( $schedules ) ) {
+					foreach ( $schedules as $sch ) {
+						$schedule_id = isset( $sch['id'] ) ? (string) $sch['id'] : '';
+						if ( '' === $schedule_id ) {
+							continue;
+						}
+						$times = WP_MCP_AI_Pro_Schedule_Manager::get_next_run_times( $schedule_id, 5 );
+						foreach ( $times as $when ) {
+							$rows[] = array(
+								'when'    => (int) $when,
+								'name'    => isset( $sch['name'] ) ? (string) $sch['name'] : $schedule_id,
+								'cadence' => isset( $sch['schedule'] ) ? (string) $sch['schedule'] : '',
+							);
+						}
+					}
+				}
+			}
+
+			usort(
+				$rows,
+				static function ( $a, $b ) {
+					return $a['when'] <=> $b['when'];
+				}
+			);
+			$rows     = array_slice( $rows, 0, 30 );
+			$date_fmt = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+			$tz       = wp_timezone_string();
+			?>
+			<div class="wp-mcp-ai-research-section">
+				<h2><?php esc_html_e( 'Upcoming Runs', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p class="description">
+					<?php
+					printf(
+						/* translators: %s: site timezone string. */
+						esc_html__( 'Next 30 upcoming runs across all enabled schedules. Times are shown in the site timezone (%s).', 'mcp-ai-wpoos-pro' ),
+						esc_html( $tz )
+					);
+					?>
+				</p>
+				<?php if ( empty( $rows ) ) : ?>
+					<p><em><?php esc_html_e( 'No upcoming runs are scheduled yet.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+				<?php else : ?>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'When', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Schedule', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Cadence', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $rows as $row ) : ?>
+								<tr>
+									<td><?php echo esc_html( wp_date( $date_fmt, $row['when'] ) ); ?></td>
+									<td><?php echo esc_html( $row['name'] ); ?></td>
+									<td><code><?php echo esc_html( $row['cadence'] ); ?></code></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</div>
+			<?php
 		}
 
 		/**

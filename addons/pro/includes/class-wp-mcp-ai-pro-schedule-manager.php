@@ -1023,6 +1023,38 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			// Record run result.
 			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
 
+			/**
+			 * Fires after every Pro schedule run completes, regardless of success.
+			 *
+			 * Mirrors the action surfaced by the Pro workflow / assistant pipelines so
+			 * observability layers (OTel, dashboards, notifications) can subscribe to
+			 * a single canonical "run completed" event.
+			 *
+			 * @since 1.x
+			 *
+			 * @param string $schedule_id Schedule identifier.
+			 * @param array  $result      {
+			 *     Result summary.
+			 *
+			 *     @type bool   $success    Whether the run finished without error.
+			 *     @type float  $duration   Execution time in seconds.
+			 *     @type string $error      Last error message ('' on success).
+			 *     @type array  $action_log Type-specific structured log of what ran.
+			 *     @type array  $schedule   The schedule record at dispatch time.
+			 * }
+			 */
+			do_action(
+				'wp_mcp_ai_pro_schedule_run_completed',
+				$schedule_id,
+				array(
+					'success'    => (bool) $success,
+					'duration'   => (float) $duration,
+					'error'      => (string) $error_msg,
+					'action_log' => $action_log,
+					'schedule'   => $schedule,
+				)
+			);
+
 			self::debug_log(
 				sprintf(
 					'[dispatch] Completed %s schedule %s (%s): %s in %.3fs%s',
@@ -2512,6 +2544,46 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 */
 		public static function get_next_run_time( $schedule_id ) {
 			return wp_next_scheduled( self::DISPATCH_HOOK, array( (string) $schedule_id ) );
+		}
+
+		/**
+		 * Project the next N run timestamps for a schedule.
+		 *
+		 * Combines the next WP-cron event (which only knows about the upcoming
+		 * single trigger) with the schedule's registered interval to extrapolate
+		 * subsequent runs. For one-shot ("single") schedules, returns at most one
+		 * timestamp.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param int    $count       Maximum number of run times to return (default 10).
+		 * @return int[] Sorted ascending list of timestamps.
+		 */
+		public static function get_next_run_times( $schedule_id, $count = 10 ) {
+			$count = max( 1, (int) $count );
+			$next  = self::get_next_run_time( $schedule_id );
+			if ( ! $next ) {
+				return array();
+			}
+
+			$schedule = self::get_schedule( $schedule_id );
+			$cadence  = ( $schedule && isset( $schedule['schedule'] ) ) ? (string) $schedule['schedule'] : 'single';
+
+			if ( 'single' === $cadence ) {
+				return array( (int) $next );
+			}
+
+			$schedules = wp_get_schedules();
+			$interval  = isset( $schedules[ $cadence ]['interval'] ) ? (int) $schedules[ $cadence ]['interval'] : 0;
+
+			if ( $interval <= 0 ) {
+				return array( (int) $next );
+			}
+
+			$times = array();
+			for ( $i = 0; $i < $count; $i++ ) {
+				$times[] = (int) $next + ( $i * $interval );
+			}
+			return $times;
 		}
 
 		/**
