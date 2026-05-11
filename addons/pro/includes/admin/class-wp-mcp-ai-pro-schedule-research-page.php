@@ -48,6 +48,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_preview_schedule_from_research', array( __CLASS__, 'ajax_preview' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_create_schedule_from_research', array( __CLASS__, 'ajax_create' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_dry_run_schedule_from_research', array( __CLASS__, 'ajax_dry_run' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_toggle_schedule_from_research', array( __CLASS__, 'ajax_toggle' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_run_now_schedule_from_research', array( __CLASS__, 'ajax_run_now' ) );
 		}
 
 		/**
@@ -155,6 +157,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 						'noNextRuns' => __( 'No upcoming runs projected.', 'mcp-ai-wpoos-pro' ),
 						'warnings'   => __( 'Warnings:', 'mcp-ai-wpoos-pro' ),
 						'nextRuns'   => __( 'Next runs:', 'mcp-ai-wpoos-pro' ),
+						'pausing'    => __( 'Pausing…', 'mcp-ai-wpoos-pro' ),
+						'resuming'   => __( 'Resuming…', 'mcp-ai-wpoos-pro' ),
+						'running'    => __( 'Running…', 'mcp-ai-wpoos-pro' ),
+						'paused'     => __( 'Paused.', 'mcp-ai-wpoos-pro' ),
+						'resumed'    => __( 'Resumed.', 'mcp-ai-wpoos-pro' ),
+						'ranOk'      => __( 'Run completed successfully.', 'mcp-ai-wpoos-pro' ),
+						'pauseLabel' => __( 'Pause', 'mcp-ai-wpoos-pro' ),
+						'resumeLabel'=> __( 'Resume', 'mcp-ai-wpoos-pro' ),
+						'confirmRun' => __( 'Trigger this schedule to run immediately?', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -494,6 +505,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 									<button type="button" class="button button-small wp-mcp-ai-dry-run-button" data-schedule-id="<?php echo esc_attr( $sch_id ); ?>">
 										<?php esc_html_e( 'Dry-run', 'mcp-ai-wpoos-pro' ); ?>
 									</button>
+									<button type="button" class="button button-small wp-mcp-ai-toggle-button" data-schedule-id="<?php echo esc_attr( $sch_id ); ?>" data-enabled="<?php echo ! empty( $sch['enabled'] ) ? '1' : '0'; ?>">
+										<?php echo esc_html( ! empty( $sch['enabled'] ) ? __( 'Pause', 'mcp-ai-wpoos-pro' ) : __( 'Resume', 'mcp-ai-wpoos-pro' ) ); ?>
+									</button>
+									<button type="button" class="button button-small wp-mcp-ai-run-now-button" data-schedule-id="<?php echo esc_attr( $sch_id ); ?>">
+										<?php esc_html_e( 'Run now', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
 								</td>
 							</tr>
 							<?php if ( '' !== $sch_id ) : ?>
@@ -564,6 +581,70 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			}
 
 			wp_send_json_success( $result );
+		}
+
+		/**
+		 * AJAX handler — pause or resume a schedule. Posts `enabled=1|0`.
+		 */
+		public static function ajax_toggle() {
+			check_ajax_referer( 'wp_mcp_ai_research_pro_schedule', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to modify schedules.', 'mcp-ai-wpoos-pro' ) ),
+					403
+				);
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Schedule Manager is not available.', 'mcp-ai-wpoos-pro' ) ), 500 );
+			}
+
+			$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
+			$enabled     = isset( $_POST['enabled'] ) ? (bool) absint( $_POST['enabled'] ) : false;
+			if ( '' === $schedule_id ) {
+				wp_send_json_error( array( 'message' => __( 'A schedule_id is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
+			}
+
+			$result = WP_MCP_AI_Pro_Schedule_Manager::toggle_schedule( $schedule_id, $enabled, get_current_user_id() );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			}
+
+			wp_send_json_success(
+				array(
+					'schedule_id' => $schedule_id,
+					'enabled'     => $enabled,
+				)
+			);
+		}
+
+		/**
+		 * AJAX handler — manually trigger a schedule via Schedule_Manager::trigger_now().
+		 */
+		public static function ajax_run_now() {
+			check_ajax_referer( 'wp_mcp_ai_research_pro_schedule', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to run schedules.', 'mcp-ai-wpoos-pro' ) ),
+					403
+				);
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Schedule Manager is not available.', 'mcp-ai-wpoos-pro' ) ), 500 );
+			}
+
+			$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
+			if ( '' === $schedule_id ) {
+				wp_send_json_error( array( 'message' => __( 'A schedule_id is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
+			}
+
+			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now( $schedule_id, get_current_user_id() );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			}
+
+			wp_send_json_success( array( 'schedule_id' => $schedule_id ) );
 		}
 
 		/**
@@ -868,6 +949,65 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 		}).fail(function(){
 			$btn.prop('disabled', false);
 			$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
+		});
+	});
+
+	$(document).on('click', '.wp-mcp-ai-toggle-button', function(e){
+		e.preventDefault();
+		var $btn = $(this);
+		var scheduleId = $btn.data('schedule-id');
+		if (!scheduleId){ return; }
+		var enabled = String($btn.attr('data-enabled')) === '1';
+		var newEnabled = !enabled;
+		var originalText = $btn.text();
+		$btn.prop('disabled', true).text(enabled ? cfg.i18n.pausing : cfg.i18n.resuming);
+		$.post(cfg.ajaxUrl, {
+			action: 'wp_mcp_ai_toggle_schedule_from_research',
+			nonce: cfg.nonce,
+			schedule_id: scheduleId,
+			enabled: newEnabled ? 1 : 0
+		}).done(function(resp){
+			$btn.prop('disabled', false);
+			if (!resp || !resp.success){
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
+				$btn.text(originalText);
+				alert(cfg.i18n.errorPrefix + msg);
+				return;
+			}
+			$btn.attr('data-enabled', newEnabled ? '1' : '0');
+			$btn.text(newEnabled ? cfg.i18n.pauseLabel : cfg.i18n.resumeLabel);
+			// Update the corresponding Status cell (5th column).
+			var $statusCell = $btn.closest('tr').find('td').eq(4);
+			$statusCell.text(newEnabled ? 'Enabled' : 'Disabled');
+		}).fail(function(){
+			$btn.prop('disabled', false).text(originalText);
+			alert(cfg.i18n.errorPrefix + 'Request failed');
+		});
+	});
+
+	$(document).on('click', '.wp-mcp-ai-run-now-button', function(e){
+		e.preventDefault();
+		var $btn = $(this);
+		var scheduleId = $btn.data('schedule-id');
+		if (!scheduleId){ return; }
+		if (!window.confirm(cfg.i18n.confirmRun)){ return; }
+		var originalText = $btn.text();
+		$btn.prop('disabled', true).text(cfg.i18n.running);
+		$.post(cfg.ajaxUrl, {
+			action: 'wp_mcp_ai_run_now_schedule_from_research',
+			nonce: cfg.nonce,
+			schedule_id: scheduleId
+		}).done(function(resp){
+			$btn.prop('disabled', false).text(originalText);
+			if (!resp || !resp.success){
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
+				alert(cfg.i18n.errorPrefix + msg);
+				return;
+			}
+			alert(cfg.i18n.ranOk);
+		}).fail(function(){
+			$btn.prop('disabled', false).text(originalText);
+			alert(cfg.i18n.errorPrefix + 'Request failed');
 		});
 	});
 

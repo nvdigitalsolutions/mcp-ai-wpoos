@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-research-scheduler',
         'version' => 'dev-copilot/enhance-research-scheduler',
-        'reference' => '03ac61dbba893fb441a7ddd625bc04d50971239c',
+        'reference' => 'b456cf2b64216464a7c73a77840a7375f1689708',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-research-scheduler',
             'version' => 'dev-copilot/enhance-research-scheduler',
-            'reference' => '03ac61dbba893fb441a7ddd625bc04d50971239c',
+            'reference' => 'b456cf2b64216464a7c73a77840a7375f1689708',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

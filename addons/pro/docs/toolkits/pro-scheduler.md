@@ -20,7 +20,7 @@ panel without a page reload:
 |------|-----------------|--------------|
 | **AI Research** | `research` | Embeds the chat shortcode with the schedule-planning toolset (`plan_schedules_from_workflow`, `create_pro_schedule`, …). |
 | **Bulk Import** | `import` | Paste a free-form list of responsibilities and preview/create each line as a managed Pro Schedule. |
-| **Review & Run History** | `review` | Inspect schedules created from this workflow and their last-run state. Each row exposes a per-schedule **Dry-run** button that invokes `dry_run_pro_schedule` over AJAX and renders the next 5 projected runs + any warnings inline, without firing the hook. |
+| **Review & Run History** | `review` | Inspect schedules created from this workflow and their last-run state. Each row exposes three per-schedule action buttons: **Dry-run** invokes `dry_run_pro_schedule` over AJAX and renders the next 5 projected runs + warnings inline; **Pause / Resume** toggles `enabled` via `WP_MCP_AI_Pro_Schedule_Manager::toggle_schedule()` and updates the Status cell in place; **Run now** confirms then calls `WP_MCP_AI_Pro_Schedule_Manager::trigger_now()` to dispatch the schedule synchronously. |
 | **Calendar** | `calendar` | At-a-glance list of the next 30 upcoming runs across all enabled schedules, rendered in the site time-zone. |
 
 ### Legacy `?mode=` compatibility
