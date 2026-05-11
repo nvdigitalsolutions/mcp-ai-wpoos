@@ -189,9 +189,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			// Get assistant from settings or first available.
-			$settings     = get_option( 'wp_mcp_ai_settings', array() );
-			$assistant_id = isset( $settings['default_assistant_id'] ) ? absint( $settings['default_assistant_id'] ) : 0;
+			// Get assistant from toolkit settings or first available.
+			$settings     = get_option( 'wp_mcp_ai_pro_schedule_toolkit_settings', array() );
+			$assistant_id = isset( $settings['research_assistant_id'] ) ? absint( $settings['research_assistant_id'] ) : 0;
 
 			if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
 				$assistants = get_posts(
