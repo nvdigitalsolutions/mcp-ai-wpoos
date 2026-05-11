@@ -12,7 +12,7 @@ require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 /**
  * @group toolkit-mcp-servers
  */
-class Test_Toolkit_Server_Limits extends WP_REST_TestCase {
+class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 
 	/**
 	 * @var int

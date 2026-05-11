@@ -45,7 +45,7 @@ if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool' ) ) {
 /**
  * @group toolkit-mcp-servers
  */
-class Test_Toolkit_Server_Execution extends WP_REST_TestCase {
+class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 
 	/**
 	 * @var int
