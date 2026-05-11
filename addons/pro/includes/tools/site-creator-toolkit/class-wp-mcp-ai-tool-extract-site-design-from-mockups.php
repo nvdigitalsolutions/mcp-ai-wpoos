@@ -228,7 +228,7 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 		// 5. Render snippet.
 		$picked_variant = WP_MCP_AI_Design_Snippet_Renderer::pick_skin_variant( $design_system, $skin_variant );
 
-		$fingerprint = substr( md5( wp_json_encode( $design_system ) . wp_json_encode( $features ) . $picked_variant ), 0, 12 );
+		$fingerprint = substr( md5( wp_json_encode( array( 'ds' => $design_system, 'features' => $features, 'variant' => $picked_variant ) ) ), 0, 12 );
 		$snippet     = WP_MCP_AI_Design_Snippet_Renderer::render(
 			$design_system,
 			array(

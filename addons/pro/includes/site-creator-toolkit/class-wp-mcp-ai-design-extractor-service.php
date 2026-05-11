@@ -188,7 +188,8 @@ class WP_MCP_AI_Design_Extractor_Service {
 			$content = (string) $file['content'];
 		} elseif ( ! empty( $file['media_id'] ) && function_exists( 'get_attached_file' ) ) {
 			$path = get_attached_file( (int) $file['media_id'] );
-			if ( $path && file_exists( $path ) && filesize( $path ) <= self::MAX_IMAGE_BYTES ) {
+			// Guard against non-local paths (e.g. offloaded media) before reading.
+			if ( $path && ! preg_match( '#^https?://#i', $path ) && file_exists( $path ) && filesize( $path ) <= self::MAX_IMAGE_BYTES ) {
 				$raw = file_get_contents( $path ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData
 				if ( false !== $raw ) {
 					$content = (string) $raw;
@@ -271,7 +272,8 @@ class WP_MCP_AI_Design_Extractor_Service {
 				$counts[ $value ] = isset( $counts[ $value ] ) ? $counts[ $value ] + 1 : 1;
 			}
 			arsort( $counts );
-			$top = (string) array_key_first( $counts );
+			reset( $counts );
+			$top = (string) key( $counts );
 			if ( '' !== $top && empty( $out['radii']['md'] ) ) {
 				$out['radii']['md'] = $top;
 			}

@@ -536,9 +536,6 @@ class WP_MCP_AI_Design_Snippet_Renderer {
 		$lines[] = ' * @credit  Snippet shape derived from Aerlinn-style luxury interaction patterns.';
 		$lines[] = ' */';
 
-		// Suppress unused-parameter PHPCS warning.
-		unset( $design_system );
-
 		return implode( "\n", $lines ) . "\n";
 	}
 
