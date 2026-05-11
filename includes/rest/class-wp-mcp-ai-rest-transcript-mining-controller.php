@@ -236,11 +236,12 @@ class WP_MCP_AI_REST_Transcript_Mining_Controller extends WP_REST_Controller {
 				&& isset( $progress['created_at'] )
 				&& ( time() - (int) $progress['created_at'] ) > WP_MCP_AI_Transcript_Mining_Job::STALE_QUEUED_THRESHOLD_SECONDS
 			) {
-				$job_id_for_kick = sanitize_text_field( $id );
+				// `$id` is already sanitized by the route's `sanitize_text_field`
+				// arg callback; capture it directly for the shutdown closure.
 				add_action(
 					'shutdown',
-					static function () use ( $job_id_for_kick ) {
-						WP_MCP_AI_Transcript_Mining_Job::kick_inline( $job_id_for_kick );
+					static function () use ( $id ) {
+						WP_MCP_AI_Transcript_Mining_Job::kick_inline( $id );
 					},
 					20
 				);

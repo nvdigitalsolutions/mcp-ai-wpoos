@@ -276,9 +276,8 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 
 		$this->assertSame( 'queued', $state['status'] );
 
-		// Back-date `created_at` past the stale threshold so any future
-		// poll-side kicks would also fire — but the shutdown handler
-		// registered inside enqueue() should suffice on its own.
+		// Sanity-check that the job state landed in the transient store
+		// the shutdown handler will read.
 		$persisted = WP_MCP_AI_Transcript_Mining_Job::get_state( $state['id'] );
 		$this->assertIsArray( $persisted );
 
