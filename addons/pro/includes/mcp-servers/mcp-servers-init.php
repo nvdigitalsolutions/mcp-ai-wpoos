@@ -114,16 +114,19 @@ add_action(
 		}
 
 		$config = array(
-			'enabled'           => ! empty( $_POST['enabled'] ),
-			'tools_allowlist'   => isset( $_POST['tools_allowlist'] ) && is_array( $_POST['tools_allowlist'] )
+			'enabled'             => ! empty( $_POST['enabled'] ),
+			'tools_allowlist'     => isset( $_POST['tools_allowlist'] ) && is_array( $_POST['tools_allowlist'] )
 				? array_map( 'sanitize_key', wp_unslash( $_POST['tools_allowlist'] ) )
 				: array(),
-			'disabled_surfaces' => isset( $_POST['disabled_surfaces'] ) && is_array( $_POST['disabled_surfaces'] )
+			'disabled_surfaces'   => isset( $_POST['disabled_surfaces'] ) && is_array( $_POST['disabled_surfaces'] )
 				? array_map( 'sanitize_key', wp_unslash( $_POST['disabled_surfaces'] ) )
 				: array(),
-			'disabled_mounts'   => isset( $_POST['disabled_mounts'] ) && is_array( $_POST['disabled_mounts'] )
+			'disabled_mounts'     => isset( $_POST['disabled_mounts'] ) && is_array( $_POST['disabled_mounts'] )
 				? array_map( 'sanitize_text_field', wp_unslash( $_POST['disabled_mounts'] ) )
 				: array(),
+			'requests_per_minute' => isset( $_POST['requests_per_minute'] ) ? max( 0, (int) wp_unslash( $_POST['requests_per_minute'] ) ) : 0, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Cast to int.
+			'max_payload_bytes'   => isset( $_POST['max_payload_bytes'] ) ? max( 0, (int) wp_unslash( $_POST['max_payload_bytes'] ) ) : 0, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Cast to int.
+			'max_iterations'      => isset( $_POST['max_iterations'] ) ? max( 0, (int) wp_unslash( $_POST['max_iterations'] ) ) : 0, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Cast to int.
 		);
 
 		if ( $server instanceof WP_MCP_AI_Toolkit_Server_Base ) {

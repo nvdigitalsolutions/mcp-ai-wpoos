@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 shipped — all 19 Tier-1 toolkits promoted.
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3a/3c shipped — all 19 Tier-1 toolkits promoted and the per-toolkit endpoint now supports execution.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
@@ -15,15 +15,83 @@ All routes live under namespace `mcp-ai-pro/v1`:
 | `GET`  | `/mcp-ai-pro/v1/mcp/{slug}`      | Single-server descriptor                                                |
 | `POST` | `/mcp-ai-pro/v1/mcp/{slug}`      | JSON-RPC 2.0 entry point                                                |
 
-Supported JSON-RPC methods (Phase 1 / Phase 2):
+Supported JSON-RPC methods:
 
 - `initialize`
 - `ping`
 - `tools/list`
+- `tools/call` *(Phase 3a)*
 - `resources/list`
+- `resources/read` *(Phase 3a)*
 - `prompts/list`
+- `prompts/get` *(Phase 3a)*
 
-`tools/call`, `resources/read`, `prompts/get` are intentionally not yet implemented at the per-toolkit endpoint; clients should fall back to the monolithic `/mcp-ai/v1/mcp` endpoint for execution while Phase 3 lands.
+### `tools/call`
+
+Routes through `WP_MCP_AI_Tool_Registry::execute_tool()` after gating on the per-server effective tool allowlist computed by `WP_MCP_AI_Toolkit_Server_Base::tool_is_allowed()`. The execution context is decorated with `source: 'toolkit_mcp'` and `toolkit_mcp_server: '{slug}'` so downstream observers (Prompt Injection Detector, OTel, audit log) can attribute calls to the originating server.
+
+Two action hooks bracket each call:
+
+- `wp_mcp_ai_toolkit_mcp_before_call( string $tool_slug, array $arguments, WP_MCP_AI_Toolkit_Server_Interface $server )`
+- `wp_mcp_ai_toolkit_mcp_after_call( string $tool_slug, array $arguments, mixed $result, WP_MCP_AI_Toolkit_Server_Interface $server )`
+
+These are intended for observability and audit subscribers (Phase 4).
+
+### `resources/read`
+
+Resolves the supplied `uri` against the server's effective `resources/list` output (native + mounted, after admin and source-toolkit gates). Returns a single `contents[]` entry whose `text` is a JSON descriptor of the underlying entity collection. Mounted resources are marked `mounted: true, read_only: true` in the body and retain their `application/vnd.nvoos.entity-collection+json` MIME type.
+
+Materializing actual records is intentionally deferred — clients should call the toolkit's own read tools via `tools/call` for record data.
+
+### `prompts/get`
+
+Resolves the supplied `name` against the server's effective `prompts/list` output and returns a single `user`-role message whose text summarizes the bound ingestion surface (page slug, entity type, mount status). Mounted prompts include a note that they are read-only and resolve back to the source toolkit.
+
+## Configuration options
+
+Per-server configuration is persisted in option `wp_mcp_ai_toolkit_mcp_server_{slug}` and surfaced as the **MCP Server** tab on every toolkit settings page. The tab is auto-grown by `WP_MCP_AI_Toolkit_Settings_Base` whenever a server is registered for the toolkit.
+
+Sections:
+
+1. **Server** — master enable/disable switch.
+2. **Tools** — allowlist matrix over `candidate_tool_slugs()`. Empty means "all candidates allowed".
+3. **Ingestion Surfaces — Native** — per-page disable toggles for surfaces this toolkit owns.
+4. **Ingestion Surfaces — Mounted** — per-mount disable toggles for foreign surfaces this toolkit consumes read-only.
+5. **Limits** *(Phase 3c)*:
+   - **Requests per minute** — per-user JSON-RPC rate limit on the per-toolkit endpoint. `0` = unlimited.
+   - **Max request body size (bytes)** — reject JSON-RPC requests with bodies larger than this many bytes. `0` = no limit.
+   - **Max agentic iterations** — per-server cap on agentic loop iterations. `0` = inherit global `wp_mcp_ai_max_agentic_iterations` filter.
+
+The effective limits are also reflected in the discovery descriptor under the `limits` key, so clients can introspect them before issuing calls.
+
+### Limits enforcement
+
+Limits are enforced in `WP_MCP_AI_Toolkit_MCP_REST_Controller::enforce_limits()` *before* dispatch. Probe methods (`initialize`, `ping`) bypass the guard so handshakes are never throttled.
+
+| Trigger                          | JSON-RPC error code | Notes                                       |
+|----------------------------------|---------------------|---------------------------------------------|
+| Payload exceeds `max_payload_bytes` | `-32098`         | `data.max_payload_bytes`, `data.received_bytes` |
+| Rate-limit bucket full           | `-32099`            | `data.requests_per_minute`, `data.retry_after_seconds` |
+
+Bucketing uses a per-user, per-server, per-60s-window transient (`wp_mcp_ai_tk_mcp_rl_{slug}_{user_id}_{epoch_minute}`).
+
+### Filter — `wp_mcp_ai_toolkit_mcp_server_limits`
+
+Final-mile override of effective limits, applied after admin overrides:
+
+```php
+add_filter(
+    'wp_mcp_ai_toolkit_mcp_server_limits',
+    function ( array $limits, string $slug ) {
+        if ( 'crm' === $slug ) {
+            $limits['requests_per_minute'] = 30;
+        }
+        return $limits;
+    },
+    10,
+    2
+);
+```
 
 ## Tier-1 servers
 

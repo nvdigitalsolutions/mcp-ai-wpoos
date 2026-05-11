@@ -1,6 +1,6 @@
 # ADR 002 — Per-Toolkit MCP Servers
 
-> Status: **Accepted (Phase 0 + Phase 1 + Phase 2)** · Date: 2026-05-08; Phase 2 added 2026-05-10
+> Status: **Accepted (Phase 0 + Phase 1 + Phase 2 + Phase 3a/3c)** · Date: 2026-05-08; Phase 2 added 2026-05-10; Phase 3a/3c added 2026-05-11
 >
 > Supersedes: none.
 > Related: `docs/ADR_001_module_boundaries.md`, `docs/features/toolkit-mcp-servers.md`.
