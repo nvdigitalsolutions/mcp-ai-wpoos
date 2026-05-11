@@ -2,36 +2,6 @@
 
 ## [Unreleased]
 
-### Fixed — Transcript mining job stuck in `queued` on WP-Cron-disabled hosts
-
-- The **Mine Memories from Transcripts** background job
-  (`WP_MCP_AI_Transcript_Mining_Job`) now ships an industry-standard inline-async
-  fallback so jobs progress on every WordPress host, including sites with
-  `DISABLE_WP_CRON = true` or a firewalled `wp-cron.php` loopback. Previously,
-  jobs would sit at `Status: queued, Progress: 0 / 1` indefinitely on these
-  hosts because `spawn_cron()` cannot dispatch its loopback HTTP request.
-- `enqueue()` now registers a `shutdown` action that flushes the REST response
-  via `fastcgi_finish_request()` (when available), detaches the worker via
-  `ignore_user_abort()`, and runs the first tick in-process when state is still
-  `queued`. The cron path is unchanged for hosts where it already works.
-- `handle_tick()` is guarded by a two-layer cooperative lock (object cache +
-  transient) so the inline shutdown worker and a delayed cron loopback cannot
-  double-process the same batch.
-- `handle_tick()` also runs subsequent batches inline when `DISABLE_WP_CRON` is
-  true, bounded by a 20 s wall-clock budget per request to stay clear of PHP
-  `max_execution_time` limits.
-- The REST poll endpoint `GET /mcp-ai/v1/transcript-mining/jobs/{id}` is now
-  self-healing: when a job has been `queued` for longer than 5 s it queues an
-  inline kick after the response is flushed. The admin UI's 2 s poll loop
-  therefore drives forward progress automatically.
-- Diagnostic logging: a `transcript_mining` event records when a tick is driven
-  by the inline path (`source => inline_shutdown`) and a single warning is
-  emitted when `spawn_cron()` returns `false`, pointing operators to the
-  loopback or `DISABLE_WP_CRON` setting.
-- PHPUnit coverage added in `tests/test-transcript-mining-job.php` (3 new
-  cases): inline-shutdown completion, cooperative-lock guard, and
-  `kick_inline()` no-op on non-queued states.
-
 ### Added — Scheduled Result widget + block
 
 - New **Scheduled Result Display** as a Gutenberg dynamic block
