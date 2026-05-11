@@ -605,6 +605,7 @@
 				result_capture:   $( '#sm-result-capture' ).val() || 'summary',
 				result_retention: parseInt( $( '#sm-result-retention' ).val(), 10 ) || 10,
 				public_render:    $( '#sm-public-render' ).is( ':checked' ),
+				// split(',').map(trim).filter(Boolean) cleanly handles empty input and extra commas.
 				public_fields:    $( '#sm-public-fields' ).val().split( ',' ).map( function ( f ) { return f.trim(); } ).filter( Boolean ),
 				widget_defaults: {
 					render_mode:      $( '#sm-widget-render-mode' ).val() || 'summary-card',
@@ -1042,17 +1043,19 @@
 			// Result capture / display settings.
 			const disp    = schedule.display || {};
 			const dWd     = disp.widget_defaults || {};
+			// v comes from a hardcoded allow-list; escape defensively so this pattern
+			// remains safe if the array is ever made dynamic.
 			const captureOpts = [ 'summary', 'full', 'disabled' ]
 				.map( function ( v ) {
 					const sel = v === ( disp.result_capture || 'summary' ) ? ' selected' : '';
-					return '<option value="' + v + '"' + sel + '>' + v + '</option>';
-				} )
+					return '<option value="' + this.esc( v ) + '"' + sel + '>' + this.esc( v ) + '</option>';
+				}.bind( this ) )
 				.join( '' );
 			const renderModeOpts = [ 'summary-card', 'list', 'table', 'metric', 'timeline', 'raw' ]
 				.map( function ( v ) {
 					const sel = v === ( dWd.render_mode || 'summary-card' ) ? ' selected' : '';
-					return '<option value="' + v + '"' + sel + '>' + v + '</option>';
-				} )
+					return '<option value="' + this.esc( v ) + '"' + sel + '>' + this.esc( v ) + '</option>';
+				}.bind( this ) )
 				.join( '' );
 			html += '<tr><td colspan="2"><hr><strong>Result Capture</strong></td></tr>';
 			html += this.editRow( 'Capture Mode', '<select id="edit-result-capture">' + captureOpts + '</select>' );
@@ -1061,6 +1064,7 @@
 				'Public rendering',
 				'<label><input type="checkbox" id="edit-public-render" ' + ( disp.public_render ? 'checked' : '' ) + '> Allow unauthenticated access</label>'
 			);
+			// placeholder is a static string literal; value is escaped via this.esc().
 			html += this.editRow( 'Public fields (allow-list)', '<input type="text" id="edit-public-fields" class="regular-text" value="' + this.esc( ( disp.public_fields || [] ).join( ', ' ) ) + '" placeholder="summary, data.items"><br><span class="description">Comma-separated dotted JSON paths</span>' );
 			html += this.editRow( 'Widget render mode', '<select id="edit-widget-render-mode">' + renderModeOpts + '</select>' );
 			html += this.editRow( 'Widget auto-refresh (s)', '<input type="number" id="edit-widget-refresh-interval" class="small-text" min="0" max="3600" value="' + ( parseInt( dWd.refresh_interval, 10 ) || 0 ) + '"><br><span class="description">0 = off</span>' );
