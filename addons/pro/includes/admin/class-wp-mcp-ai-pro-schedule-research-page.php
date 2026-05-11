@@ -47,6 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_preview_schedule_from_research', array( __CLASS__, 'ajax_preview' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_create_schedule_from_research', array( __CLASS__, 'ajax_create' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_dry_run_schedule_from_research', array( __CLASS__, 'ajax_dry_run' ) );
 		}
 
 		/**
@@ -150,6 +151,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 						'creating'   => __( 'Creating schedules…', 'mcp-ai-wpoos-pro' ),
 						'noItems'    => __( 'Please paste at least one workflow item.', 'mcp-ai-wpoos-pro' ),
 						'errorPrefix'=> __( 'Error: ', 'mcp-ai-wpoos-pro' ),
+						'dryRunning' => __( 'Running dry-run…', 'mcp-ai-wpoos-pro' ),
+						'noNextRuns' => __( 'No upcoming runs projected.', 'mcp-ai-wpoos-pro' ),
+						'warnings'   => __( 'Warnings:', 'mcp-ai-wpoos-pro' ),
+						'nextRuns'   => __( 'Next runs:', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -467,10 +472,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 							<th><?php esc_html_e( 'Tags', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Last Run', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $schedules as $sch ) : ?>
+							<?php $sch_id = isset( $sch['id'] ) ? (string) $sch['id'] : ''; ?>
 							<tr>
 								<td><?php echo esc_html( isset( $sch['name'] ) ? $sch['name'] : '' ); ?></td>
 								<td><?php echo esc_html( isset( $sch['schedule'] ) ? $sch['schedule'] : '' ); ?></td>
@@ -483,7 +490,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 									echo esc_html( $last > 0 ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last ) : __( 'Never', 'mcp-ai-wpoos-pro' ) );
 									?>
 								</td>
+								<td>
+									<button type="button" class="button button-small wp-mcp-ai-dry-run-button" data-schedule-id="<?php echo esc_attr( $sch_id ); ?>">
+										<?php esc_html_e( 'Dry-run', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</td>
 							</tr>
+							<?php if ( '' !== $sch_id ) : ?>
+								<tr class="wp-mcp-ai-dry-run-result" id="wp-mcp-ai-dry-run-result-<?php echo esc_attr( $sch_id ); ?>" style="display:none;">
+									<td colspan="7"></td>
+								</tr>
+							<?php endif; ?>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
@@ -503,6 +520,50 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 		 */
 		public static function ajax_create() {
 			self::handle_ajax( false );
+		}
+
+		/**
+		 * AJAX handler — dry-run an existing schedule. Returns the new
+		 * dry_run_pro_schedule tool's payload so the review-mode UI can show
+		 * upcoming runs + warnings inline.
+		 */
+		public static function ajax_dry_run() {
+			check_ajax_referer( 'wp_mcp_ai_research_pro_schedule', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to inspect schedules.', 'mcp-ai-wpoos-pro' ) ),
+					403
+				);
+			}
+
+			$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
+			if ( '' === $schedule_id ) {
+				wp_send_json_error( array( 'message' => __( 'A schedule_id is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
+			}
+
+			$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php';
+			if ( file_exists( $tool_file ) ) {
+				require_once $tool_file;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Dry-run tool is not available.', 'mcp-ai-wpoos-pro' ) ), 500 );
+			}
+
+			$tool   = new WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule();
+			$result = $tool->execute(
+				array(
+					'schedule_id' => $schedule_id,
+					'count'       => 5,
+				),
+				array( 'user_id' => get_current_user_id() )
+			);
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			}
+
+			wp_send_json_success( $result );
 		}
 
 		/**
@@ -753,6 +814,63 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			$('#schedule-research-results').append('<div class="notice notice-error"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
 		});
 	});
+	$(document).on('click', '.wp-mcp-ai-dry-run-button', function(e){
+		e.preventDefault();
+		var $btn = $(this);
+		var scheduleId = $btn.data('schedule-id');
+		if (!scheduleId){ return; }
+		var $row = $('#wp-mcp-ai-dry-run-result-' + scheduleId.replace(/[^a-zA-Z0-9_-]/g, ''));
+		// Fall back to attribute selector if data-schedule-id contains non-id-safe characters.
+		if ($row.length === 0){
+			$row = $('tr.wp-mcp-ai-dry-run-result').filter(function(){
+				return $(this).attr('id') === 'wp-mcp-ai-dry-run-result-' + scheduleId;
+			});
+		}
+		var $cell = $row.find('td').first();
+		$row.show();
+		$cell.html('<em>' + escapeHtml(cfg.i18n.dryRunning) + '</em>');
+		$btn.prop('disabled', true);
+		$.post(cfg.ajaxUrl, {
+			action: 'wp_mcp_ai_dry_run_schedule_from_research',
+			nonce: cfg.nonce,
+			schedule_id: scheduleId
+		}).done(function(resp){
+			$btn.prop('disabled', false);
+			if (!resp || !resp.success){
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
+				$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + msg) + '</p></div>');
+				return;
+			}
+			var data = resp.data || {};
+			var html = '';
+			var nextRuns = Array.isArray(data.next_runs) ? data.next_runs : [];
+			html += '<p><strong>' + escapeHtml(cfg.i18n.nextRuns) + '</strong></p>';
+			if (nextRuns.length === 0){
+				html += '<p><em>' + escapeHtml(cfg.i18n.noNextRuns) + '</em></p>';
+			} else {
+				html += '<ul style="margin:0 0 8px 18px;list-style:disc;">';
+				nextRuns.forEach(function(r){
+					html += '<li><code>' + escapeHtml(r.iso8601 || '') + '</code></li>';
+				});
+				html += '</ul>';
+			}
+			var warnings = Array.isArray(data.warnings) ? data.warnings : [];
+			if (warnings.length){
+				html += '<p><strong>' + escapeHtml(cfg.i18n.warnings) + '</strong></p><ul style="margin:0 0 8px 18px;list-style:disc;color:#996800;">';
+				warnings.forEach(function(w){ html += '<li>' + escapeHtml(w) + '</li>'; });
+				html += '</ul>';
+			}
+			if (data.action){
+				html += '<details><summary>' + escapeHtml('Action preview (' + (data.action.type || '') + ')') + '</summary>';
+				html += '<pre style="margin:8px 0;padding:8px;background:#f6f7f7;border:1px solid #dcdcde;overflow:auto;">' + escapeHtml(JSON.stringify(data.action, null, 2)) + '</pre></details>';
+			}
+			$cell.html(html);
+		}).fail(function(){
+			$btn.prop('disabled', false);
+			$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
+		});
+	});
+
 })(jQuery);
 JS;
 		}
