@@ -98,6 +98,37 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				);
 			}
 
+			// Reuse the shared workflow-card click handler from the base plugin.
+			$js_path = WP_MCP_AI_PATH . 'assets/js/enhanced-research-page.js';
+			if ( file_exists( $js_path ) ) {
+				wp_enqueue_script(
+					'wp-mcp-ai-enhanced-research-page',
+					WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+					array( 'jquery' ),
+					defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : false,
+					true
+				);
+
+				// Map legacy ?mode= query-arg → data-workflow card so old bookmarks land on the right card.
+				$legacy_mode    = isset( $_GET['mode'] ) ? sanitize_key( wp_unslash( $_GET['mode'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$mode_to_card   = array(
+					'chat'   => 'research',
+					'paste'  => 'import',
+					'review' => 'review',
+				);
+				$initial_card   = isset( $mode_to_card[ $legacy_mode ] ) ? $mode_to_card[ $legacy_mode ] : '';
+				wp_localize_script(
+					'wp-mcp-ai-enhanced-research-page',
+					'wpMcpAiResearchPage',
+					array(
+						'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+						'nonce'          => wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' ),
+						'entityType'     => 'pro_schedule',
+						'initialWorkflow' => $initial_card,
+					)
+				);
+			}
+
 			// Inline JS handles preview/create AJAX for the bulk paste mode.
 			wp_register_script(
 				'wp-mcp-ai-pro-schedule-research-page',
@@ -152,11 +183,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				$assistant_id = ! empty( $assistants ) ? (int) $assistants[0]->ID : 0;
 			}
 
-			$current_mode = isset( $_GET['mode'] ) ? sanitize_key( $_GET['mode'] ) : 'chat'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$valid_modes  = array( 'chat', 'paste', 'review' );
-			if ( ! in_array( $current_mode, $valid_modes, true ) ) {
-				$current_mode = 'chat';
-			}
+			$settings_url = admin_url( 'admin.php?page=wp-mcp-ai-pro-schedule-toolkit-settings' );
+			$manager_url  = admin_url( 'admin.php?page=nvoos-pro-schedule-manager' );
 
 			?>
 			<div class="wrap wp-mcp-ai-research-page wp-mcp-ai-pro-schedule-research-page">
@@ -165,8 +193,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 					<?php esc_html_e( 'Research & Add Schedule', 'mcp-ai-wpoos-pro' ); ?>
 					<span style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;margin-left:10px;text-transform:uppercase;letter-spacing:.5px;">PRO</span>
 				</h1>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-schedule-manager' ) ); ?>" class="page-title-action">
+				<a href="<?php echo esc_url( $manager_url ); ?>" class="page-title-action">
 					<?php esc_html_e( 'Open Schedule Manager', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+				<a href="<?php echo esc_url( $settings_url ); ?>" class="page-title-action">
+					<?php esc_html_e( 'Schedule Settings', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 
 				<hr class="wp-header-end">
@@ -176,7 +207,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 						<div class="wp-mcp-ai-research-intro">
 							<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 							<ol>
-								<li><?php esc_html_e( 'Paste a list of recurring responsibilities — one per line.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Pick a workflow card — AI Research, Bulk Import, or Review & Run History.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'AI normalizes cadence and time-of-day for each item.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Preview the plan and adjust any cadences.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Create — each line becomes a managed Pro Schedule.', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -196,8 +227,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 						<div class="wp-mcp-ai-research-actions">
 							<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 							<p>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-schedule-manager' ) ); ?>" class="button">
+								<a href="<?php echo esc_url( $manager_url ); ?>" class="button">
 									<?php esc_html_e( 'Schedule Manager', 'mcp-ai-wpoos-pro' ); ?>
+								</a>
+							</p>
+							<p>
+								<a href="<?php echo esc_url( $settings_url ); ?>" class="button">
+									<?php esc_html_e( 'Schedule Settings', 'mcp-ai-wpoos-pro' ); ?>
 								</a>
 							</p>
 							<p>
@@ -209,30 +245,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 					</div>
 
 					<div class="wp-mcp-ai-research-main">
-						<div class="wp-mcp-ai-mode-tabs">
-							<?php
-							$modes = array(
-								'chat'   => array( 'icon' => '💬', 'label' => __( 'AI Plan', 'mcp-ai-wpoos-pro' ) ),
-								'paste'  => array( 'icon' => '📋', 'label' => __( 'Bulk Paste', 'mcp-ai-wpoos-pro' ) ),
-								'review' => array( 'icon' => '📊', 'label' => __( 'Review', 'mcp-ai-wpoos-pro' ) ),
-							);
-							foreach ( $modes as $mode => $data ) :
-								$url = add_query_arg( 'mode', $mode );
-								?>
-								<a href="<?php echo esc_url( $url ); ?>" class="mode-tab <?php echo esc_attr( $mode === $current_mode ? 'active' : '' ); ?>">
-									<span class="mode-icon"><?php echo esc_html( $data['icon'] ); ?></span>
-									<span class="mode-label"><?php echo esc_html( $data['label'] ); ?></span>
-								</a>
-							<?php endforeach; ?>
+						<!-- Workflow Mode Selector -->
+						<div class="wp-mcp-ai-workflow-selector">
+							<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
+							<div class="workflow-options">
+								<button type="button" class="workflow-option active" data-workflow="research">
+									<span class="dashicons dashicons-format-chat"></span>
+									<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<p><?php esc_html_e( 'Plan schedules with AI assistance.', 'mcp-ai-wpoos-pro' ); ?></p>
+								</button>
+								<button type="button" class="workflow-option" data-workflow="import">
+									<span class="dashicons dashicons-upload"></span>
+									<strong><?php esc_html_e( 'Bulk Import', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<p><?php esc_html_e( 'Paste a list of recurring responsibilities.', 'mcp-ai-wpoos-pro' ); ?></p>
+								</button>
+								<button type="button" class="workflow-option" data-workflow="review">
+									<span class="dashicons dashicons-analytics"></span>
+									<strong><?php esc_html_e( 'Review & Run History', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<p><?php esc_html_e( 'Inspect schedules created from this workflow.', 'mcp-ai-wpoos-pro' ); ?></p>
+								</button>
+							</div>
 						</div>
 
-						<?php if ( 'chat' === $current_mode ) : ?>
+						<!-- AI Research Workflow (Default) -->
+						<div id="workflow-research" class="workflow-content active">
 							<?php self::render_chat_mode( $assistant_id ); ?>
-						<?php elseif ( 'paste' === $current_mode ) : ?>
+						</div>
+
+						<!-- Bulk Import Workflow -->
+						<div id="workflow-import" class="workflow-content">
 							<?php self::render_paste_mode( $assistant_id ); ?>
-						<?php else : ?>
+						</div>
+
+						<!-- Review Workflow -->
+						<div id="workflow-review" class="workflow-content">
 							<?php self::render_review_mode(); ?>
-						<?php endif; ?>
+						</div>
 					</div>
 				</div>
 			</div>

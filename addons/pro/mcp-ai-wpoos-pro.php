@@ -224,6 +224,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			// Class auto-initializes at the bottom of the file.
 		}
 
+		// Load Pro Schedule Toolkit Settings page (Overview · Configuration · Tools · Research · Help · MCP Server).
+		$schedule_settings_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-toolkit-settings-page.php';
+		if ( file_exists( $schedule_settings_page ) ) {
+			require_once $schedule_settings_page;
+			// Class auto-instantiates in admin context at the bottom of the file.
+		}
+
 		// Load Pro Webhook Status admin page (registers under NV oOS Pro Dashboard menu).
 		$webhook_status_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-webhook-status-page.php';
 		if ( file_exists( $webhook_status_page ) ) {

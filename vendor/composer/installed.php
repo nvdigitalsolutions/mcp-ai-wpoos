@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/research-data-volume-agentic-flows',
-        'version' => 'dev-copilot/research-data-volume-agentic-flows',
-        'reference' => '07333f1af3ea8c591e442ab9ef31415bfc15b238',
+        'pretty_version' => 'dev-copilot/enhance-research-scheduler',
+        'version' => 'dev-copilot/enhance-research-scheduler',
+        'reference' => '52e63fefc73e52e44b97783a0bd3ad56c69948e1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -74,9 +74,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/research-data-volume-agentic-flows',
-            'version' => 'dev-copilot/research-data-volume-agentic-flows',
-            'reference' => '07333f1af3ea8c591e442ab9ef31415bfc15b238',
+            'pretty_version' => 'dev-copilot/enhance-research-scheduler',
+            'version' => 'dev-copilot/enhance-research-scheduler',
+            'reference' => '52e63fefc73e52e44b97783a0bd3ad56c69948e1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
