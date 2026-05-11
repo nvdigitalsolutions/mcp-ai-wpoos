@@ -224,6 +224,28 @@ class WP_MCP_AI_REST_Transcript_Mining_Controller extends WP_REST_Controller {
 			if ( null === $progress ) {
 				return new WP_Error( 'job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 			}
+
+			// Self-healing inline kick: if the job has been stuck in
+			// `queued` past the stale threshold, schedule an inline tick
+			// to run after this response is flushed. Guarantees forward
+			// progress on hosts where the WP-Cron loopback never fires
+			// (DISABLE_WP_CRON sites, firewalled loopback, etc.). The
+			// response payload itself is unchanged — callers see the
+			// same progress projection they would have without this.
+			if ( 'queued' === $progress['status']
+				&& isset( $progress['created_at'] )
+				&& ( time() - (int) $progress['created_at'] ) > WP_MCP_AI_Transcript_Mining_Job::STALE_QUEUED_THRESHOLD_SECONDS
+			) {
+				$job_id_for_kick = sanitize_text_field( $id );
+				add_action(
+					'shutdown',
+					static function () use ( $job_id_for_kick ) {
+						WP_MCP_AI_Transcript_Mining_Job::kick_inline( $job_id_for_kick );
+					},
+					20
+				);
+			}
+
 			return rest_ensure_response( $progress );
 		} catch ( Throwable $e ) {
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
