@@ -125,3 +125,7 @@ The PR adds PHPUnit tests under `addons/pro/tests/`:
   subscriber: boot registration, successful run records only duration_ms,
   failed run records both metrics, zero-duration skips duration_ms, and
   schedule_type attribute flows through to context.
+- `test-pro-schedule-research-run-history-ajax.php` — 4-case suite for the
+  run-history AJAX endpoint: subscriber-denied (403), missing `schedule_id`
+  (400 + message contains "schedule_id"), tool-unavailable graceful error,
+  and happy-path returns a parseable response with a `success` key.

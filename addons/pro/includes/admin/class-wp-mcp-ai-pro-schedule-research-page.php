@@ -50,6 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_dry_run_schedule_from_research', array( __CLASS__, 'ajax_dry_run' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_toggle_schedule_from_research', array( __CLASS__, 'ajax_toggle' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_run_now_schedule_from_research', array( __CLASS__, 'ajax_run_now' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_run_history_from_research', array( __CLASS__, 'ajax_run_history' ) );
 		}
 
 		/**
@@ -166,6 +167,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 						'pauseLabel' => __( 'Pause', 'mcp-ai-wpoos-pro' ),
 						'resumeLabel'=> __( 'Resume', 'mcp-ai-wpoos-pro' ),
 						'confirmRun' => __( 'Trigger this schedule to run immediately?', 'mcp-ai-wpoos-pro' ),
+						'loadingHistory' => __( 'Loading run history…', 'mcp-ai-wpoos-pro' ),
+						'noHistory'      => __( 'No run history recorded yet.', 'mcp-ai-wpoos-pro' ),
+						'runSuccess'     => __( '✓ Success', 'mcp-ai-wpoos-pro' ),
+						'runFailed'      => __( '✗ Failed', 'mcp-ai-wpoos-pro' ),
+						'historyDuration'=> __( 'Duration', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -511,10 +517,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 									<button type="button" class="button button-small wp-mcp-ai-run-now-button" data-schedule-id="<?php echo esc_attr( $sch_id ); ?>">
 										<?php esc_html_e( 'Run now', 'mcp-ai-wpoos-pro' ); ?>
 									</button>
+									<button type="button" class="button button-small wp-mcp-ai-history-button" data-schedule-id="<?php echo esc_attr( $sch_id ); ?>">
+										<?php esc_html_e( 'History', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
 								</td>
 							</tr>
 							<?php if ( '' !== $sch_id ) : ?>
 								<tr class="wp-mcp-ai-dry-run-result" id="wp-mcp-ai-dry-run-result-<?php echo esc_attr( $sch_id ); ?>" style="display:none;">
+									<td colspan="7"></td>
+								</tr>
+								<tr class="wp-mcp-ai-run-history-row" id="wp-mcp-ai-run-history-row-<?php echo esc_attr( $sch_id ); ?>" style="display:none;">
 									<td colspan="7"></td>
 								</tr>
 							<?php endif; ?>
@@ -645,6 +657,58 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			}
 
 			wp_send_json_success( array( 'schedule_id' => $schedule_id ) );
+		}
+
+		/**
+		 * AJAX handler — return the run-history ring buffer for a schedule.
+		 *
+		 * Calls the `get_schedule_run_history` tool (via registry or direct
+		 * instantiation) and returns the result as JSON.
+		 */
+		public static function ajax_run_history() {
+			check_ajax_referer( 'wp_mcp_ai_research_pro_schedule', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to view run history.', 'mcp-ai-wpoos-pro' ) ),
+					403
+				);
+			}
+
+			$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
+			if ( '' === $schedule_id ) {
+				wp_send_json_error( array( 'message' => __( 'A schedule_id is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
+			}
+
+			$args    = array( 'schedule_id' => $schedule_id );
+			$context = array( 'user_id' => get_current_user_id() );
+			$result  = null;
+
+			// Prefer the registry so lifecycle hooks fire.
+			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				$registry = WP_MCP_AI_Tool_Registry::get_instance();
+				if ( method_exists( $registry, 'execute_tool' ) ) {
+					$result = $registry->execute_tool( 'get_schedule_run_history', $args, $context );
+				}
+			}
+
+			if ( null === $result ) {
+				$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php';
+				if ( file_exists( $tool_file ) ) {
+					require_once $tool_file;
+				}
+				if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History' ) ) {
+					wp_send_json_error( array( 'message' => __( 'Run history tool is not available.', 'mcp-ai-wpoos-pro' ) ), 500 );
+				}
+				$tool   = new WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History();
+				$result = $tool->execute( $args, $context );
+			}
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
+			}
+
+			wp_send_json_success( $result );
 		}
 
 		/**
@@ -1008,6 +1072,80 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 		}).fail(function(){
 			$btn.prop('disabled', false).text(originalText);
 			alert(cfg.i18n.errorPrefix + 'Request failed');
+		});
+	});
+
+	/* ------------------------------------------------------------------ *
+	 * Run-history toggle button                                            *
+	 * ------------------------------------------------------------------ */
+	$(document).on('click', '.wp-mcp-ai-history-button', function(e){
+		e.preventDefault();
+		var $btn = $(this);
+		var scheduleId = $btn.data('schedule-id');
+		if (!scheduleId){ return; }
+		var safeId = scheduleId.replace(/[^a-zA-Z0-9_-]/g, '');
+		var $row = $('#wp-mcp-ai-run-history-row-' + safeId);
+		if ($row.length === 0){
+			$row = $('tr.wp-mcp-ai-run-history-row').filter(function(){
+				return $(this).attr('id') === 'wp-mcp-ai-run-history-row-' + scheduleId;
+			});
+		}
+		var $cell = $row.find('td').first();
+
+		// If already loaded and visible, toggle (collapse).
+		if ($row.is(':visible') && $cell.data('loaded')){
+			$row.hide();
+			return;
+		}
+
+		$row.show();
+		$cell.html('<em>' + escapeHtml(cfg.i18n.loadingHistory) + '</em>');
+		$btn.prop('disabled', true);
+
+		$.post(cfg.ajaxUrl, {
+			action: 'wp_mcp_ai_run_history_from_research',
+			nonce: cfg.nonce,
+			schedule_id: scheduleId
+		}).done(function(resp){
+			$btn.prop('disabled', false);
+			if (!resp || !resp.success){
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
+				$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + msg) + '</p></div>');
+				return;
+			}
+			var data = resp.data || {};
+			var history = Array.isArray(data.history) ? data.history : (Array.isArray(data.runs) ? data.runs : []);
+			if (history.length === 0){
+				$cell.html('<p><em>' + escapeHtml(cfg.i18n.noHistory) + '</em></p>');
+				$cell.data('loaded', true);
+				return;
+			}
+			var html = '<table class="widefat striped" style="margin:8px 0;">';
+			html += '<thead><tr>';
+			html += '<th>' + escapeHtml('When') + '</th>';
+			html += '<th>' + escapeHtml(cfg.i18n.historyDuration) + '</th>';
+			html += '<th>' + escapeHtml('Result') + '</th>';
+			html += '<th>' + escapeHtml('Error') + '</th>';
+			html += '</tr></thead><tbody>';
+			history.forEach(function(run){
+				var when = run.time || run.run_time || run.timestamp || '';
+				var dur  = (run.duration != null) ? (parseFloat(run.duration) * 1000).toFixed(0) + ' ms' : (run.duration_ms != null ? run.duration_ms + ' ms' : '—');
+				var ok   = (run.success === true || run.success === 1 || run.success === '1');
+				var err  = run.error || '';
+				var errTrunc = err.length > 120 ? err.substring(0, 120) + '…' : err;
+				html += '<tr>';
+				html += '<td style="white-space:nowrap;">' + escapeHtml(when) + '</td>';
+				html += '<td style="white-space:nowrap;">' + escapeHtml(dur) + '</td>';
+				html += '<td style="white-space:nowrap;' + (ok ? 'color:#00a32a;' : 'color:#d63638;') + '">' + escapeHtml(ok ? cfg.i18n.runSuccess : cfg.i18n.runFailed) + '</td>';
+				html += '<td>' + escapeHtml(errTrunc) + '</td>';
+				html += '</tr>';
+			});
+			html += '</tbody></table>';
+			$cell.html(html);
+			$cell.data('loaded', true);
+		}).fail(function(){
+			$btn.prop('disabled', false);
+			$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
 		});
 	});
 
