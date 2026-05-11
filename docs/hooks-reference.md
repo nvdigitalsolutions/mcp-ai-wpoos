@@ -1204,3 +1204,54 @@ add_filter( 'wp_mcp_ai_pii_filter_patterns', function ( $patterns ) {
     return $patterns;
 } );
 ```
+
+## Scheduled Result Widget (Pro)
+
+### Filter: `wp_mcp_ai_pro_schedule_result_envelope`
+
+Last chance to shape the structured result envelope produced by a Pro
+schedule run before it is persisted. Useful to e.g. coerce an assistant_run
+response into `data.items` so the Scheduled Result widget renders a list.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$envelope` | `array` | `{ summary, data, render, status, error, generated_at }`. |
+| `$schedule` | `array` | Schedule record. |
+| `$action_log` | `array` | Dispatcher's structured action log. |
+| `$success` | `bool` | Whether the run succeeded. |
+
+### Filter: `wp_mcp_ai_pro_schedule_public_result`
+
+Last chance to redact the envelope returned to **unauthenticated** REST
+callers / front-end renders. Runs after the built-in
+`public_fields` allow-list has been applied.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$redacted` | `array` | The redacted envelope. |
+| `$envelope` | `array` | The full envelope. |
+| `$schedule` | `array` | Schedule record. |
+
+### Filter: `wp_mcp_ai_pro_schedule_result_retention`
+
+Override the per-schedule retention count for stored result envelopes.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$retention` | `int` | Default retention (clamped 1–100). |
+| `$schedule` | `array` | Schedule record. |
+
+### Filter: `wp_mcp_ai_pro_schedule_result_capability`
+
+Override the WordPress capability required by the authenticated
+`/mcp-ai-pro/v1/schedules/{id}/latest-result` and `/results` routes.
+Default is `read_private_posts`.
+
+### Action: `wp_mcp_ai_pro_schedule_result_recorded`
+
+Fires immediately after a structured result envelope is stored.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$schedule_id` | `string` | Schedule ID. |
+| `$envelope` | `array` | The persisted envelope. |
