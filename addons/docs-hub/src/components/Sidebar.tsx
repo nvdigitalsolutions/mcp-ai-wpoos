@@ -46,7 +46,7 @@ export default function Sidebar( { manifest, onNavClose }: SidebarProps ) {
 						</button>
 
 						{ ! isCollapsed && (
-							<ul role="list">
+							<ul>
 								{ group.pages.map( ( page ) => {
 									const isActive = currentSlug === page.slug;
 									const depth = page.slug.split( '/' ).length - 1;

@@ -209,10 +209,13 @@ const components: Components = {
 		void rest;
 
 		// Check if this is a directive container.
-		const directiveName = node?.data?.directiveName as string | undefined;
+		const nodeData = node?.data as
+			| { directiveName?: string; hProperties?: { title?: string } }
+			| undefined;
+		const directiveName = nodeData?.directiveName;
 
 		if ( directiveName ) {
-			const titleNode = node?.data?.hProperties as { title?: string } | undefined;
+			const titleNode = nodeData?.hProperties;
 			return (
 				<Callout variant={ directiveName as 'note' | 'tip' | 'warning' | 'danger' } title={ titleNode?.title }>
 					{ children }

@@ -61,7 +61,7 @@ export default function RightTOC( { items }: RightTOCProps ) {
 	return (
 		<nav className="dh-toc" aria-label="On this page">
 			<p className="dh-toc-title">On this page</p>
-			<ul className="dh-toc-list" role="list">
+			<ul className="dh-toc-list">
 				{ items.map( ( item ) => (
 					<li
 						key={ item.anchor }
