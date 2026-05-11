@@ -126,6 +126,7 @@ class WP_MCP_AI_Elementor_Integration {
 				'class-wp-mcp-ai-elementor-system-health-status-widget.php',
 				'class-wp-mcp-ai-elementor-quick-actions-widget.php',
 				'class-wp-mcp-ai-elementor-telegram-login-widget.php',
+				'class-wp-mcp-ai-elementor-scheduled-result-widget.php',
 			);
 
 			foreach ( $widget_files as $file ) {
@@ -162,6 +163,7 @@ class WP_MCP_AI_Elementor_Integration {
 				'WP_MCP_AI_Elementor_System_Health_Status_Widget',
 				'WP_MCP_AI_Elementor_Quick_Actions_Widget',
 				'WP_MCP_AI_Elementor_Telegram_Login_Widget',
+				'WP_MCP_AI_Elementor_Scheduled_Result_Widget',
 			);
 
 			foreach ( $widget_classes as $widget_class ) {

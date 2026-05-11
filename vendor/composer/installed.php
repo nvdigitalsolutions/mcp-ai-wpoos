@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-research-scheduler',
-        'version' => 'dev-copilot/enhance-research-scheduler',
-        'reference' => '1890f6d3758f98cfd92e1030b86bfbc9d1d6d930',
+        'pretty_version' => 'dev-copilot/enhance-pro-scheduler-tools',
+        'version' => 'dev-copilot/enhance-pro-scheduler-tools',
+        'reference' => 'a7009c501039394281f9ecd0af17c5451d6205b7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-research-scheduler',
-            'version' => 'dev-copilot/enhance-research-scheduler',
-            'reference' => '1890f6d3758f98cfd92e1030b86bfbc9d1d6d930',
+            'pretty_version' => 'dev-copilot/enhance-pro-scheduler-tools',
+            'version' => 'dev-copilot/enhance-pro-scheduler-tools',
+            'reference' => 'a7009c501039394281f9ecd0af17c5451d6205b7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

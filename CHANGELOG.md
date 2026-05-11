@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Added — Scheduled Result widget + block
+
+- New **Scheduled Result Display** as a Gutenberg dynamic block
+  (`mcp-ai-wpoos/scheduled-result`) and Elementor widget
+  (`WP_MCP_AI_Elementor_Scheduled_Result_Widget`). Both bind to any Pro
+  Schedule and render its latest run output via a shared PHP renderer
+  (`includes/renderers/class-wp-mcp-ai-scheduled-result-renderer.php`) with
+  six canonical modes — `summary-card`, `list`, `table`, `metric`,
+  `timeline`, `raw`.
+- Pro: Schedule Manager now persists a typed result envelope
+  (`{ summary, data, render, status, error, generated_at }`) in a separate
+  `wp_mcp_ai_pro_schedule_results` option, independent of the run-history
+  ring buffer. Per-schedule `result_retention` (default 10).
+- Pro: New REST routes under `mcp-ai-pro/v1/schedules` — `?selectable=1`
+  picker, `/{id}/latest-result` (with ETag), `/{id}/results`, and a
+  nonce-protected `/{id}/preview`.
+- Pro: Three new tools — `get_schedule_latest_result`,
+  `render_schedule_result`, `configure_schedule_widget_defaults`.
+- New filters/actions: `wp_mcp_ai_pro_schedule_result_envelope`,
+  `wp_mcp_ai_pro_schedule_public_result`,
+  `wp_mcp_ai_pro_schedule_result_retention`,
+  `wp_mcp_ai_pro_schedule_result_capability`, and the
+  `wp_mcp_ai_pro_schedule_result_recorded` action.
+- Docs: `docs/features/scheduled-result-widget.md`.
+
 ## [1.1.17] - 2026-05-10
 
 ### May 10, 2026 — WP.org Compliance Hardening, Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, PHPUnit + Vitest Coverage Campaign, Build-pipeline Split, Dependabot Security Sweep
