@@ -209,7 +209,7 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		// Kick WordPress cron immediately so the first tick runs even if no page
 		// load follows this request. spawn_cron() returning false is not an error —
 		// it means another cron spawn is already in flight and will pick up the event.
-		$spawn_result = null;
+		$spawn_result = false;
 		if ( function_exists( 'spawn_cron' ) ) {
 			$spawn_result = spawn_cron();
 		}
@@ -234,7 +234,7 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		// surface a single diagnostic event so operators can correlate the
 		// "queued forever" symptom with a misconfigured loopback. The inline
 		// shutdown worker registered above guarantees the job still progresses.
-		if ( false === $spawn_result && class_exists( 'WP_MCP_AI_Logger' ) ) {
+		if ( function_exists( 'spawn_cron' ) && false === $spawn_result && class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'transcript_mining',
 				__( 'spawn_cron() returned false after enqueue — WP-Cron loopback may be misconfigured. Falling back to inline shutdown worker.', 'mcp-ai-wpoos' ),
@@ -461,9 +461,9 @@ class WP_MCP_AI_Transcript_Mining_Job {
 				);
 			}
 		} elseif ( is_array( $result ) ) {
-			$mined_this_tick         = isset( $result['count'] ) ? (int) $result['count'] : 0;
-			$skipped_this_tick       = isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
-			$failed_this_tick        = isset( $result['failed'] ) ? (int) $result['failed'] : 0;
+			$mined_this_tick        = isset( $result['count'] ) ? (int) $result['count'] : 0;
+			$skipped_this_tick      = isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
+			$failed_this_tick       = isset( $result['failed'] ) ? (int) $result['failed'] : 0;
 			$state['mined_count']   += $mined_this_tick;
 			$state['skipped_count'] += $skipped_this_tick;
 			$state['failed_count']  += $failed_this_tick;
