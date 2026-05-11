@@ -3,6 +3,7 @@ import React from 'react';
 import type { AnyZodObject } from './any-zod-type.js';
 import type { CalculateMetadataFunction } from './Composition.js';
 import type { DownloadBehavior } from './download-behavior.js';
+import type { EffectDefinitionAndStack } from './effects/effect-types.js';
 import type { NonceHistory } from './nonce.js';
 import type { InferProps, PropsIfHasProps } from './props-if-has-props.js';
 import type { SequenceSchema } from './sequence-field-schema.js';
@@ -18,6 +19,7 @@ export type TComposition<Schema extends AnyZodObject, Props extends Record<strin
     nonce: NonceHistory;
     schema: Schema | null;
     calculateMetadata: CalculateMetadataFunction<InferProps<Schema, Props>> | null;
+    stack: string | null;
 } & PropsIfHasProps<Schema, Props>;
 export type AnyComposition = TComposition<AnyZodObject, Record<string, unknown>>;
 export type TCompMetadataWithCalcFunction<Schema extends AnyZodObject, Props extends Record<string, unknown>> = Pick<TComposition<Schema, Props>, 'id' | 'height' | 'width' | 'fps' | 'durationInFrames' | 'defaultProps' | 'calculateMetadata'>;
@@ -39,6 +41,9 @@ type EnhancedTSequenceData = {
     doesVolumeChange: boolean;
     startMediaFrom: number;
     playbackRate: number;
+} | {
+    type: 'image';
+    src: string;
 };
 export type LoopDisplay = {
     numberOfTimes: number;
@@ -47,7 +52,7 @@ export type LoopDisplay = {
 };
 export type SequenceControls = {
     schema: SequenceSchema;
-    currentValue: Record<string, unknown>;
+    currentRuntimeValueDotNotation: Record<string, unknown>;
     overrideId: string;
 };
 export type TSequence = {
@@ -64,6 +69,7 @@ export type TSequence = {
     premountDisplay: number | null;
     postmountDisplay: number | null;
     controls: SequenceControls | null;
+    effects: EffectDefinitionAndStack<unknown>[];
 } & EnhancedTSequenceData;
 export type AudioOrVideoAsset = {
     type: 'audio' | 'video';

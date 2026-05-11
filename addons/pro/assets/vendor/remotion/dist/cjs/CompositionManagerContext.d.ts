@@ -4,7 +4,7 @@ import type { AnyComposition, TComposition } from './CompositionManager.js';
 import type { TFolder } from './Folder.js';
 import type { NonceHistory } from './nonce.js';
 import type { VideoConfig } from './video-config.js';
-export type BaseMetadata = Pick<VideoConfig, 'durationInFrames' | 'fps' | 'props' | 'height' | 'width' | 'defaultCodec' | 'defaultOutName' | 'defaultVideoImageFormat' | 'defaultPixelFormat' | 'defaultProResProfile'>;
+export type BaseMetadata = Pick<VideoConfig, 'durationInFrames' | 'fps' | 'props' | 'height' | 'width' | 'defaultCodec' | 'defaultOutName' | 'defaultVideoImageFormat' | 'defaultPixelFormat' | 'defaultProResProfile' | 'defaultSampleRate'>;
 export type CanvasContent = {
     type: 'composition';
     compositionId: string;
@@ -28,7 +28,6 @@ export type CompositionManagerSetters = {
     registerFolder: (name: string, parent: string | null, nonce: NonceHistory) => void;
     unregisterFolder: (name: string, parent: string | null) => void;
     setCanvasContent: React.Dispatch<React.SetStateAction<CanvasContent | null>>;
-    updateCompositionDefaultProps: (id: string, newDefaultProps: Record<string, unknown>) => void;
     onlyRenderComposition: string | null;
 };
 export type CompositionManagerContext = {

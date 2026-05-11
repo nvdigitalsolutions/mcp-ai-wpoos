@@ -15,7 +15,7 @@ const useUnsafeVideoConfig = () => {
         if (!video) {
             return null;
         }
-        const { id, durationInFrames, fps, height, width, defaultProps, props, defaultCodec, defaultOutName, defaultVideoImageFormat, defaultPixelFormat, defaultProResProfile, } = video;
+        const { id, durationInFrames, fps, height, width, defaultProps, props, defaultCodec, defaultOutName, defaultVideoImageFormat, defaultPixelFormat, defaultProResProfile, defaultSampleRate, } = video;
         return {
             id,
             width: ctxWidth !== null && ctxWidth !== void 0 ? ctxWidth : width,
@@ -29,6 +29,7 @@ const useUnsafeVideoConfig = () => {
             defaultVideoImageFormat,
             defaultPixelFormat,
             defaultProResProfile,
+            defaultSampleRate,
         };
     }, [ctxDuration, ctxHeight, ctxWidth, video]);
 };

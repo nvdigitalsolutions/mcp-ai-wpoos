@@ -1,6 +1,5 @@
 export type PremountContextValue = {
     premountFramesRemaining: number;
-    playing: boolean;
 };
 /**
  * @internal

@@ -53,20 +53,6 @@ const CompositionManagerProvider = ({ children, onlyRenderComposition, currentCo
             getCompositions: () => currentcompositionsRef.current,
         };
     }, []);
-    const updateCompositionDefaultProps = (0, react_1.useCallback)((id, newDefaultProps) => {
-        setCompositions((comps) => {
-            const updated = comps.map((c) => {
-                if (c.id === id) {
-                    return {
-                        ...c,
-                        defaultProps: newDefaultProps,
-                    };
-                }
-                return c;
-            });
-            return updated;
-        });
-    }, []);
     const compositionManagerSetters = (0, react_1.useMemo)(() => {
         return {
             registerComposition,
@@ -74,7 +60,6 @@ const CompositionManagerProvider = ({ children, onlyRenderComposition, currentCo
             registerFolder,
             unregisterFolder,
             setCanvasContent,
-            updateCompositionDefaultProps,
             onlyRenderComposition,
         };
     }, [
@@ -82,7 +67,6 @@ const CompositionManagerProvider = ({ children, onlyRenderComposition, currentCo
         registerFolder,
         unregisterComposition,
         unregisterFolder,
-        updateCompositionDefaultProps,
         onlyRenderComposition,
     ]);
     const compositionManagerContextValue = (0, react_1.useMemo)(() => {
