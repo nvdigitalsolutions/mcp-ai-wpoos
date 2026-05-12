@@ -56,8 +56,8 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 	 * @var array<string,bool>
 	 */
 	const DEFAULT_PREFERENCES = array(
-		'enabled'        => true,
-		'autosummarize'  => false,
+		'enabled'       => true,
+		'autosummarize' => false,
 	);
 
 	/**
@@ -255,30 +255,30 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 					'permission_callback' => array( $this, 'permissions_check_can_write' ),
 					'callback'            => array( $this, 'handle_update' ),
 					'args'                => array(
-						'context_id'   => array(
+						'context_id' => array(
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( $this, 'sanitize_context_id' ),
 						),
-						'agent_id'     => array(
+						'agent_id'   => array(
 							'type'     => array( 'integer', 'string' ),
 							'required' => false,
 						),
-						'title'        => array(
+						'title'      => array(
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'content'      => array(
+						'content'    => array(
 							'type'     => 'string',
 							'required' => false,
 						),
-						'tags'         => array(
+						'tags'       => array(
 							'type'     => 'array',
 							'required' => false,
 							'items'    => array( 'type' => 'string' ),
 						),
-						'importance'   => array(
+						'importance' => array(
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_key',
@@ -515,7 +515,7 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 			return $agent_id;
 		}
 
-		$args = array(
+		$args  = array(
 			'agent_id' => $agent_id,
 		);
 		$query = $request->get_param( 'query' );
@@ -535,10 +535,19 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 			$args['limit'] = min( 50, $limit );
 		}
 
-		// Prefer recall_memory when available; fall back to retrieve_agent_memory for Base builds
-		// where the hierarchical wrapper might be disabled by a custom registry filter.
+		// Prefer recall_memory when available **and** a wing was supplied —
+		// recall_memory hard-requires a wing (MemPalace "this client's
+		// drawers" semantics). When the drawer's no-scope case sends an
+		// empty wing the caller is really asking "everything we remember
+		// about this agent", which is exactly what retrieve_agent_memory
+		// answers. Falling through to retrieve_agent_memory also covers
+		// Base builds where the hierarchical wrapper might be disabled by
+		// a custom registry filter.
 		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool_slug = $registry->get_tool( 'recall_memory' ) ? 'recall_memory' : 'retrieve_agent_memory';
+		$has_wing  = isset( $args['wing'] ) && '' !== $args['wing'];
+		$tool_slug = ( $has_wing && $registry->get_tool( 'recall_memory' ) )
+			? 'recall_memory'
+			: 'retrieve_agent_memory';
 
 		return $this->dispatch_tool( $tool_slug, $args );
 	}
@@ -577,9 +586,9 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		// G6 Phase 2 — optional LLM summarisation. Falls back to verbatim
 		// silently on any failure (no API key, HTTP error, malformed JSON)
 		// so the auto-capture path on `pagehide` never loses data.
-		$summarize          = (bool) $request->get_param( 'summarize' );
-		$summary_metadata   = null;
-		$original_length    = strlen( $content );
+		$summarize        = (bool) $request->get_param( 'summarize' );
+		$summary_metadata = null;
+		$original_length  = strlen( $content );
 		if ( $summarize ) {
 			$summary = $this->maybe_summarize_content( $content );
 			if ( is_array( $summary ) && ! empty( $summary['text'] ) ) {

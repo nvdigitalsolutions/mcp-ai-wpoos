@@ -248,6 +248,19 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		$context_index = get_transient( $index_key );
 
 		if ( ! is_array( $context_index ) || empty( $context_index ) ) {
+			// Transient index missing (Redis flush, fresh process, object-
+			// cache eviction). Fall back to the durable CCT mirror so the
+			// chat-memory drawer doesn't black-hole memories that survived
+			// in the durable store. Reader silently no-ops when JetEngine /
+			// the CCT table is unavailable, so the original empty response
+			// remains the worst case.
+			if ( class_exists( 'WP_MCP_AI_Agent_Memory_CCT_Reader' ) ) {
+				$cct_records = WP_MCP_AI_Agent_Memory_CCT_Reader::get_transient_shaped_records_for_agent( $agent_id, $limit );
+				if ( ! empty( $cct_records ) ) {
+					return $this->build_search_result_from_records( $cct_records, $query, $filters, $limit, $include_expired );
+				}
+			}
+
 			return array(
 				'success'  => true,
 				'message'  => __( 'No contexts found for this agent.', 'mcp-ai-wpoos' ),
@@ -296,6 +309,64 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		$results = array_slice( $results, 0, $limit );
 
 		// Format results.
+		$formatted_results = array();
+		foreach ( $results as $result ) {
+			$formatted_results[] = $this->format_context_result( $result['record'], $result['relevance'] );
+		}
+
+		return array(
+			'success'  => true,
+			'message'  => sprintf(
+				/* translators: %d: number of contexts found */
+				_n( 'Found %d context.', 'Found %d contexts.', count( $formatted_results ), 'mcp-ai-wpoos' ),
+				count( $formatted_results )
+			),
+			'contexts' => $formatted_results,
+			'count'    => count( $formatted_results ),
+			'query'    => $query,
+		);
+	}
+
+	/**
+	 * Build a search result envelope from a list of pre-fetched records.
+	 *
+	 * Used by both the transient-index path (after expanding each context
+	 * id) and the CCT fallback. Centralising the filter/relevance/sort/
+	 * format pipeline guarantees both paths return identically-shaped
+	 * responses.
+	 *
+	 * @param array  $records         Records in the transient shape (with
+	 *                                a `data` sub-array).
+	 * @param string $query           Search query.
+	 * @param array  $filters         Filters to apply.
+	 * @param int    $limit           Maximum results.
+	 * @param bool   $include_expired Whether to include expired contexts.
+	 * @return array
+	 */
+	private function build_search_result_from_records( array $records, $query, $filters, $limit, $include_expired ) {
+		$results = array();
+		foreach ( $records as $context_record ) {
+			if ( ! is_array( $context_record ) ) {
+				continue;
+			}
+			if ( ! $include_expired && ! empty( $context_record['expires_at'] ) ) {
+				$expires_timestamp = strtotime( (string) $context_record['expires_at'] );
+				if ( $expires_timestamp && time() > $expires_timestamp ) {
+					continue;
+				}
+			}
+			if ( ! $this->matches_filters( $context_record, $filters ) ) {
+				continue;
+			}
+			$results[] = array(
+				'record'    => $context_record,
+				'relevance' => $this->calculate_relevance( $context_record, $query ),
+			);
+		}
+
+		usort( $results, array( $this, 'sort_results' ) );
+		$results = array_slice( $results, 0, $limit );
+
 		$formatted_results = array();
 		foreach ( $results as $result ) {
 			$formatted_results[] = $this->format_context_result( $result['record'], $result['relevance'] );

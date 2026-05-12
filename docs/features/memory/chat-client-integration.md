@@ -46,7 +46,30 @@ language instruction.
                 ▼                    ▼                     ▼
    wake_up_context        recall_memory /          store_agent_context
                           retrieve_agent_memory    manage_context_lifecycle
+                          │
+                          ▼
+              ┌────────────────────────────────────────┐
+              │ transient context index (fast path)    │
+              │       ∪                                │
+              │ {prefix}jet_cct_ai_agent_memories      │
+              │  via WP_MCP_AI_Agent_Memory_CCT_Reader │
+              │ (durable fallback so the drawer keeps  │
+              │  rendering after object-cache flush)   │
+              └────────────────────────────────────────┘
 ```
+
+> **Read path (1.6.1+):** `GET /chat-memory/recall` routes to `recall_memory`
+> only when a `wing` is supplied — `recall_memory` hard-requires the wing for
+> MemPalace semantics. When the drawer's no-scope case sends an empty wing,
+> the controller falls through to `retrieve_agent_memory`, which lists every
+> memory for the agent. Both tools now consult
+> `WP_MCP_AI_Agent_Memory_CCT_Reader`: it hooks
+> `wp_mcp_ai_recall_memory_candidates` to hydrate `recall_memory` from the
+> durable CCT mirror, and exposes a static `get_transient_shaped_records_for_agent()`
+> helper that `retrieve_agent_memory` calls as a fallback when its per-agent
+> transient index is empty. The transient layer remains the primary read path;
+> the CCT is consulted only as a backstop. The candidate cap defaults to 500
+> and is tunable via `apply_filters( 'wp_mcp_ai_agent_memory_cct_reader_limit', 500, $agent_id )`.
 
 ## REST surface
 
