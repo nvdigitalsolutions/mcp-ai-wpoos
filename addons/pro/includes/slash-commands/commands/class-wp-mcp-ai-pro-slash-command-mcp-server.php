@@ -223,7 +223,7 @@ class WP_MCP_AI_Pro_Slash_Command_Mcp_Server {
 		$out .= sprintf( "- **Mounted surfaces:** %d\n", count( (array) $descriptor['mounted_surfaces'] ) );
 		if ( isset( $descriptor['limits'] ) && is_array( $descriptor['limits'] ) ) {
 			$out .= sprintf(
-				"- **Limits:** %d req/min, %d byte payload cap, %d max iterations (0 = unlimited)\n",
+				"- **Limits:** %d req/min (0 = unlimited), %d byte payload cap (0 = no limit), %d max iterations (0 = inherit global)\n",
 				(int) ( $descriptor['limits']['requests_per_minute'] ?? 0 ),
 				(int) ( $descriptor['limits']['max_payload_bytes'] ?? 0 ),
 				(int) ( $descriptor['limits']['max_iterations'] ?? 0 )
