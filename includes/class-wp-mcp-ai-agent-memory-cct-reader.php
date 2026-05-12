@@ -211,6 +211,8 @@ class WP_MCP_AI_Agent_Memory_CCT_Reader {
 		);
 
 		$wpdb->suppress_errors( $suppress_state );
+		// Restore the previous suppression state so we never leak the
+		// "errors hidden" mode to unrelated queries on the same request.
 
 		return is_array( $rows ) ? $rows : array();
 	}

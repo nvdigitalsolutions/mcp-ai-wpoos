@@ -270,9 +270,10 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Retrieve and filter contexts.
-		$results = array();
+		$records = array();
 		foreach ( $context_index as $ctx_id => $index_entry ) {
-			// Check expiration.
+			// Check expiration via the index entry before bothering to load
+			// the heavier per-context transient.
 			if ( ! $include_expired && isset( $index_entry['expires_at'] ) ) {
 				$expires_timestamp = strtotime( $index_entry['expires_at'] );
 				if ( $expires_timestamp && time() > $expires_timestamp ) {
@@ -280,51 +281,16 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 				}
 			}
 
-			// Get full context record.
 			$transient_key  = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $ctx_id );
 			$context_record = get_transient( $transient_key );
-
 			if ( ! $context_record ) {
 				continue;
 			}
 
-			// Apply filters.
-			if ( ! $this->matches_filters( $context_record, $filters ) ) {
-				continue;
-			}
-
-			// Calculate relevance score.
-			$relevance_score = $this->calculate_relevance( $context_record, $query );
-
-			$results[] = array(
-				'record'    => $context_record,
-				'relevance' => $relevance_score,
-			);
+			$records[] = $context_record;
 		}
 
-		// Sort by relevance and importance.
-		usort( $results, array( $this, 'sort_results' ) );
-
-		// Limit results.
-		$results = array_slice( $results, 0, $limit );
-
-		// Format results.
-		$formatted_results = array();
-		foreach ( $results as $result ) {
-			$formatted_results[] = $this->format_context_result( $result['record'], $result['relevance'] );
-		}
-
-		return array(
-			'success'  => true,
-			'message'  => sprintf(
-				/* translators: %d: number of contexts found */
-				_n( 'Found %d context.', 'Found %d contexts.', count( $formatted_results ), 'mcp-ai-wpoos' ),
-				count( $formatted_results )
-			),
-			'contexts' => $formatted_results,
-			'count'    => count( $formatted_results ),
-			'query'    => $query,
-		);
+		return $this->build_search_result_from_records( $records, $query, $filters, $limit, $include_expired );
 	}
 
 	/**
