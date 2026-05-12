@@ -69,8 +69,9 @@ Every consumer of the trait wires the same four moving parts:
 | --- | --- | --- | --- |
 | 1 | `WP_MCP_AI_Transcript_Mining_Job` (Mine Memories) | `wp_mcp_ai_tx_mine_tick` | 5 s |
 | 2 | `WP_MCP_AI_Tool_Async_Executor` | `wp_mcp_ai_async_tool_execution` | 5 s |
+| 3 | `NVOOS_SaaS_Controller_Apply_Job` (SaaS Controller addon) | `nvoos_saas_controller_apply_tick` | 5 s |
 
-Future Tier-1 consumers planned (per the rollout plan): SaaS Apply Job,
+Future Tier-1 consumers planned (per the rollout plan):
 Gemini Veo polling, Crawl4AI poll task, Docs Hub rebuild pipeline,
 Graphify reindex, Harness eval scheduler.
 

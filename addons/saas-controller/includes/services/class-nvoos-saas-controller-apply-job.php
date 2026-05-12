@@ -78,12 +78,28 @@ if ( class_exists( 'NVOOS_SaaS_Controller_Apply_Job' ) ) {
 	return;
 }
 
+// Load the shared inline-async-tick trait from the base plugin. The trait
+// (introduced in PR #4916 + #4920 for the Mine Memories job) gives this
+// addon the same `DISABLE_WP_CRON` / firewalled-loopback fallback for free.
+// The base plugin is a hard prerequisite for this addon (see the activation
+// gate in nvoos-saas-controller.php), so WP_MCP_AI_PATH is guaranteed to
+// exist by the time this file is loaded.
+if ( defined( 'WP_MCP_AI_PATH' ) && ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	$nvoos_saas_apply_job_trait_path = WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+	if ( file_exists( $nvoos_saas_apply_job_trait_path ) ) {
+		require_once $nvoos_saas_apply_job_trait_path;
+	}
+	unset( $nvoos_saas_apply_job_trait_path );
+}
+
 /**
  * Apply background-job worker.
  *
  * @since 0.1.0
  */
 class NVOOS_SaaS_Controller_Apply_Job {
+
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
 
 	/**
 	 * Cron hook for tick processing. The `cron_schedules` filter is not
@@ -121,6 +137,55 @@ class NVOOS_SaaS_Controller_Apply_Job {
 	 * @var int
 	 */
 	const MAX_TOTAL_ROWS = 200;
+
+	/**
+	 * Prefix for the cooperative tick lock key (consumed by the
+	 * inline-async-tick trait helpers).
+	 *
+	 * @var string
+	 */
+	const TICK_LOCK_PREFIX = 'nvoos_saas_apply_lock_';
+
+	/**
+	 * Object-cache group used by the cooperative tick lock. Layered with
+	 * the transient set in
+	 * {@see WP_MCP_AI_Inline_Async_Tick_Trait::inline_async_acquire_tick_lock()}
+	 * to give atomic in-process protection on persistent object caches.
+	 *
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'nvoos_saas_apply';
+
+	/**
+	 * Tick lock TTL in seconds. Must comfortably exceed the slowest
+	 * realistic per-row apply call (a Worker multipart upload can take
+	 * 5–15 s in the wild) plus jitter; 120 s is the chosen ceiling.
+	 *
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 120;
+
+	/**
+	 * Stale-job staleness threshold for the REST self-heal kick. When the
+	 * admin UI polls `/apply/jobs/{id}` and the job has sat in `queued`
+	 * past this many seconds since `updated_at`, the controller schedules
+	 * a shutdown kick on the way out so the next poll observes progress.
+	 *
+	 * @var int
+	 */
+	const STALE_QUEUED_THRESHOLD_SECONDS = 5;
+
+	/**
+	 * Inline-loop wall-clock budget when `DISABLE_WP_CRON` is true.
+	 * Bounds the worst-case time a single PHP request spends running
+	 * apply rows back-to-back so the inline fallback cannot blow past
+	 * `max_execution_time` on shared hosts. One Worker upload can take
+	 * 5–15 s, so 60 s gives ~3–6 ticks per request in the worst case
+	 * while still leaving headroom under a 90 s default execution cap.
+	 *
+	 * @var int
+	 */
+	const INLINE_LOOP_BUDGET_SECONDS = 60;
 
 	/**
 	 * Wire the tick handler. Idempotent — safe to call on every plugin
@@ -255,7 +320,90 @@ class NVOOS_SaaS_Controller_Apply_Job {
 			spawn_cron();
 		}
 
+		// Industry-standard inline-async fallback: when the WP-Cron loopback
+		// is disabled or firewalled, the rescheduled single-event would
+		// otherwise sit forever and the apply job would never advance past
+		// `queued`. Register a `shutdown` action that re-checks state and
+		// runs the first tick inline in this same PHP process once the
+		// REST response has been flushed.
+		//
+		// Honours the shared escape hatch (filter
+		// `wp_mcp_ai_inline_kick_enabled`) so operators can disable the
+		// fallback per-job or globally without touching code.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				static function () use ( $job_id ) {
+					NVOOS_SaaS_Controller_Apply_Job::kick_inline( $job_id );
+				},
+				20
+			);
+		}
+
 		return self::project( $state );
+	}
+
+	/**
+	 * Run the first available tick of a job inline, in the current PHP
+	 * process. Used both by the `shutdown` action registered in
+	 * {@see self::enqueue_plan()} and by the self-healing branch of the
+	 * REST poll endpoint when a job has sat in `queued` longer than the
+	 * stale threshold.
+	 *
+	 * Mirrors the shape of
+	 * {@see WP_MCP_AI_Transcript_Mining_Job::kick_inline()} so the
+	 * `wp_mcp_ai_inline_kick_completed` observability action fires for
+	 * SaaS Apply too — Pro measurement bootstrap subscribers record
+	 * duration/failure metrics for free.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return void
+	 */
+	public static function kick_inline( $job_id ) {
+		$job_id = sanitize_text_field( (string) $job_id );
+		if ( '' === $job_id ) {
+			return;
+		}
+
+		// Honour the global escape hatch so operators can disable the
+		// inline-async fallback (per-job or globally) when it interacts
+		// badly with the host environment. When disabled, the cron
+		// loopback path is unchanged.
+		if ( ! self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			return;
+		}
+
+		// Survive a client disconnect and flush the response (FastCGI)
+		// so the operator's browser sees the JSON immediately while the
+		// tick continues. Delegated to the shared trait helper so all
+		// Tier-1 jobs detach the same way.
+		self::inline_async_detach_worker_from_client();
+
+		// Wrap the tick body in the shared observability helper so the
+		// `wp_mcp_ai_inline_kick_completed` action fires once per kick.
+		self::inline_async_run_kick(
+			__CLASS__,
+			$job_id,
+			static function () use ( $job_id ) {
+				$state = self::get_state( $job_id );
+				if ( ! is_array( $state ) ) {
+					return;
+				}
+
+				// Only kick when the cron tick has not already advanced
+				// the job to a terminal state. The cooperative lock in
+				// handle_tick() would block us for `running` anyway, but
+				// short-circuiting here avoids the lock churn (and the
+				// extra audit-log noise that a no-op tick would create).
+				if ( in_array( $state['status'], array( 'cancelled', 'completed', 'failed' ), true ) ) {
+					return;
+				}
+
+				self::handle_tick( $job_id );
+			}
+		);
 	}
 
 	/**
@@ -263,10 +411,11 @@ class NVOOS_SaaS_Controller_Apply_Job {
 	 * the apply engine, persists the result, and re-schedules until the
 	 * queue is drained.
 	 *
-	 * Stays idempotent under racing cron spawns: the very first thing it
-	 * does is mark `status=running` and rewrite the state, so a second
-	 * concurrent tick with the same `$job_id` reads the updated queue
-	 * (which already had its head popped) on its next read.
+	 * Stays idempotent under racing cron spawns: a cooperative tick lock
+	 * (provided by {@see WP_MCP_AI_Inline_Async_Tick_Trait}) guarantees
+	 * that at most one tick body runs at a time for a given `$job_id`,
+	 * even when the WP-Cron loopback fires concurrently with the
+	 * inline-shutdown kick.
 	 *
 	 * @since 0.1.0
 	 *
@@ -275,13 +424,73 @@ class NVOOS_SaaS_Controller_Apply_Job {
 	 */
 	public static function handle_tick( $job_id ) {
 		$job_id = sanitize_text_field( (string) $job_id );
-		$state  = self::get_state( $job_id );
+		if ( '' === $job_id ) {
+			return;
+		}
+
+		$state = self::get_state( $job_id );
 		if ( ! is_array( $state ) ) {
 			return;
 		}
 
 		if ( in_array( $state['status'], array( 'cancelled', 'completed', 'failed' ), true ) ) {
 			return;
+		}
+
+		// Cooperative lock against concurrent ticks. If another worker (a
+		// delayed cron loopback, a parallel shutdown handler, etc.) is
+		// already inside the critical section for this job, bail — that
+		// worker will save fresh state when it exits and the next tick
+		// can pick up from there.
+		$lock_key = self::TICK_LOCK_PREFIX . $job_id;
+		if ( ! self::inline_async_acquire_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return;
+		}
+
+		$tick_started_at = time();
+		$should_loop     = false;
+
+		try {
+			$should_loop = self::process_tick_body( $job_id );
+		} finally {
+			self::inline_async_release_tick_lock( $lock_key, self::TICK_LOCK_CACHE_GROUP );
+		}
+
+		// `DISABLE_WP_CRON` inline-loop branch: when WP-Cron is disabled,
+		// re-scheduling the next tick alone is insufficient because the
+		// scheduled event will never fire of its own accord. Recurse in
+		// this same PHP process while we still have wall-clock budget.
+		// The recursion re-enters handle_tick(), which acquires its own
+		// lock and re-reads state, so the cancellation gate is honoured.
+		if ( self::inline_async_should_loop( $tick_started_at, $should_loop, self::INLINE_LOOP_BUDGET_SECONDS ) ) {
+			self::handle_tick( $job_id );
+		}
+	}
+
+	/**
+	 * Process exactly one row for the given job. Returns true when the
+	 * queue still has work after this row (so the caller can decide
+	 * whether to recurse inline under `DISABLE_WP_CRON`).
+	 *
+	 * Internal helper of {@see self::handle_tick()}; runs inside the
+	 * cooperative tick lock.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return bool Whether the queue still has work.
+	 */
+	private static function process_tick_body( $job_id ) {
+		$state = self::get_state( $job_id );
+		if ( ! is_array( $state ) ) {
+			return false;
+		}
+
+		// Re-check the cancellation/completion gate after taking the
+		// lock: another worker may have moved the job past these states
+		// in the brief window between the outer check and lock acquire.
+		if ( in_array( $state['status'], array( 'cancelled', 'completed', 'failed' ), true ) ) {
+			return false;
 		}
 
 		// Mark running before pulling a row so concurrent ticks see the
@@ -297,7 +506,7 @@ class NVOOS_SaaS_Controller_Apply_Job {
 			$state['last_message'] = __( 'No more plan rows to apply.', 'nvoos-saas-controller' );
 			$state['updated_at']   = time();
 			self::save_state( $state );
-			return;
+			return false;
 		}
 
 		$section = isset( $head['section'] ) ? (string) $head['section'] : 'create';
@@ -310,7 +519,7 @@ class NVOOS_SaaS_Controller_Apply_Job {
 			$state['errors'][]     = $engine->get_error_message();
 			$state['updated_at']   = time();
 			self::save_state( $state );
-			return;
+			return false;
 		}
 
 		$result = $engine->apply_row( $row, $section );
@@ -341,7 +550,7 @@ class NVOOS_SaaS_Controller_Apply_Job {
 		if ( empty( $state['queue'] ) ) {
 			$state['status'] = 'completed';
 			self::save_state( $state );
-			return;
+			return false;
 		}
 
 		// Re-schedule next tick. Past timestamp by design — see the same
@@ -353,6 +562,7 @@ class NVOOS_SaaS_Controller_Apply_Job {
 		}
 
 		self::save_state( $state );
+		return true;
 	}
 
 	/**

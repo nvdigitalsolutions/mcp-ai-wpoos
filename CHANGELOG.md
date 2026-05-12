@@ -2,6 +2,52 @@
 
 ## [Unreleased]
 
+### Added — Inline-async-tick fallback for SaaS Controller Apply Job
+
+- `NVOOS_SaaS_Controller_Apply_Job` (the queued background-apply
+  worker for the SaaS Controller addon's Cloudflare / Stripe /
+  OpenRouter / Worker upload pipeline) now composes the base
+  plugin's `WP_MCP_AI_Inline_Async_Tick_Trait`. On hosts where
+  `DISABLE_WP_CRON` is true or the WP-Cron loopback is firewalled,
+  apply jobs previously sat at `status: queued` forever even though
+  `spawn_cron()` returned without error. The class now:
+  - registers a `shutdown` action from `enqueue_plan()` that runs
+    the first tick inline in the same PHP process once the
+    `/apply/enqueue` REST response has been flushed (honours the
+    shared `wp_mcp_ai_inline_kick_enabled` escape-hatch filter);
+  - guards `handle_tick()` with the trait's two-layer cooperative
+    tick lock (transient + `wp_cache_add`) so a delayed cron
+    loopback firing concurrently with the inline shutdown kick is
+    a no-op;
+  - emits the unified `wp_mcp_ai_inline_kick_completed`
+    observability action so the Pro OTel measurement bootstrap
+    records `inline_kick.duration_ms` / `inline_kick.failure.count`
+    for SaaS Apply on the same dashboard as Mine Memories and the
+    Tool Async Executor;
+  - recurses inline under `DISABLE_WP_CRON` within a 60-second
+    wall-clock budget (`INLINE_LOOP_BUDGET_SECONDS = 60`) — larger
+    than the 20s used by the much faster batch-oriented Mine
+    Memories job because a single Apply row can include a
+    multi-second Worker multipart upload to Cloudflare.
+- REST `GET /nvoos-saas/v1/apply/jobs/{id}` now self-heals: when
+  the admin UI polls and the job has sat in `queued` past
+  `STALE_QUEUED_THRESHOLD_SECONDS = 5`, the controller schedules a
+  one-shot shutdown kick on the way out so the very next poll
+  observes progress. Mirrors the equivalent self-heal in the base
+  plugin's Mine Memories and Tool Async Executor REST routes.
+- New class constants `TICK_LOCK_PREFIX = 'nvoos_saas_apply_lock_'`,
+  `TICK_LOCK_CACHE_GROUP = 'nvoos_saas_apply'`, `TICK_LOCK_TTL =
+  120`, `STALE_QUEUED_THRESHOLD_SECONDS = 5`,
+  `INLINE_LOOP_BUDGET_SECONDS = 60`. Existing constants
+  (`CRON_HOOK`, `STATE_PREFIX`, `STATE_TTL`, `MAX_TOTAL_ROWS`) are
+  unchanged. No public method signatures changed; existing PHPUnit
+  tests against `enqueue_plan()`, `handle_tick()`, `cancel()`, and
+  `get_progress()` pass unmodified.
+- PHPUnit: 4 new tests covering inline-shutdown kick advancing a
+  queued job, terminal-status short-circuit, the
+  `wp_mcp_ai_inline_kick_enabled` filter disabling the registration,
+  and the cooperative lock no-op behaviour under concurrent ticks.
+
 ### Changed — Transcript Mining job now consumes the inline-async-tick trait
 
 - `WP_MCP_AI_Transcript_Mining_Job` now composes
