@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-pro-scheduler-tools',
-        'version' => 'dev-copilot/enhance-pro-scheduler-tools',
-        'reference' => 'a7009c501039394281f9ecd0af17c5451d6205b7',
+        'pretty_version' => 'dev-copilot/fix-inline-async-fallback',
+        'version' => 'dev-copilot/fix-inline-async-fallback',
+        'reference' => 'e0e476f478c500cbb51133fcc49991d182d2648b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-pro-scheduler-tools',
-            'version' => 'dev-copilot/enhance-pro-scheduler-tools',
-            'reference' => 'a7009c501039394281f9ecd0af17c5451d6205b7',
+            'pretty_version' => 'dev-copilot/fix-inline-async-fallback',
+            'version' => 'dev-copilot/fix-inline-async-fallback',
+            'reference' => 'e0e476f478c500cbb51133fcc49991d182d2648b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
