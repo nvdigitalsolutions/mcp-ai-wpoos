@@ -35,7 +35,7 @@
 		"webpack-dev-server": ">=5.2.1"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250109.0",
+		"@cloudflare/workers-types": "^4.20260511.1",
 		"@types/diff": "^8.0.0",
 		"@types/wordpress__components": "^23.0.0",
 		"@wordpress/eslint-plugin": "^21.0.0",
