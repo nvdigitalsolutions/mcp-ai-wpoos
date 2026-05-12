@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3a/3b/3c shipped — all 19 Tier-1 toolkits promoted, the per-toolkit endpoint supports execution, and a `/mcp-server` slash command is available for inspection and admin toggling.
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3e) + Phase 4 shipped — all 19 Tier-1 toolkits promoted, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, and cross-mount reads are recorded in the audit log.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
@@ -237,3 +237,48 @@ A Pro slash command for chat-side inspection and toggling of toolkit MCP servers
 Aliases: `/mcp-servers`, `/toolkit-mcp`. Add `--json` to any sub-action to receive the raw envelope as JSON.
 
 Mutating sub-actions write to option `wp_mcp_ai_toolkit_mcp_server_{slug}` — the same store used by the **MCP Server** settings tab. Disabling a server suppresses every JSON-RPC method except `initialize`/`ping` (which still return the descriptor so clients can detect the disabled state).
+
+## Cross-mount audit trail (Phase 4)
+
+Whenever a mounted resource or prompt is accessed through `resources/read` or `prompts/get`, the framework fires the `wp_mcp_ai_toolkit_mcp_cross_mount_read` action and records an entry in the lightweight ring-buffer audit log.
+
+### Storage
+
+Option key: `wp_mcp_ai_toolkit_mcp_audit_log`
+
+The log is a JSON-serialised array of up to 200 entries (configurable via the `wp_mcp_ai_toolkit_mcp_audit_max_entries` filter). Each entry has:
+
+| Field      | Type    | Description                                               |
+|------------|---------|-----------------------------------------------------------|
+| `ts`       | int     | Unix timestamp.                                           |
+| `consumer` | string  | Slug of the consumer server that initiated the read.      |
+| `source`   | string  | Slug of the source (mounted) server.                      |
+| `entity`   | string  | Resource entity type or prompt name.                      |
+| `uri`      | string  | Resource URI, or empty string for prompt reads.           |
+| `method`   | string  | `resources/read` or `prompts/get`.                        |
+| `user_id`  | int     | WordPress user ID at the time of the request.             |
+
+### REST endpoint
+
+`GET /mcp-ai-pro/v1/mcp-audit` — requires `manage_options`.
+
+Query parameters:
+
+| Parameter      | Default | Description                                                          |
+|----------------|---------|----------------------------------------------------------------------|
+| `limit`        | 50      | Max entries to return (1–200).                                       |
+| `consumer`     | —       | Filter by consumer server slug.                                      |
+| `source`       | —       | Filter by source server slug.                                        |
+| `summary_only` | false   | Return grouped `{consumer, source, count, last_ts}` array instead.  |
+
+### Hooks
+
+| Hook                                        | Type   | When                                              |
+|---------------------------------------------|--------|---------------------------------------------------|
+| `wp_mcp_ai_toolkit_mcp_cross_mount_read`    | action | Fired before recording, for external subscribers. |
+| `wp_mcp_ai_toolkit_mcp_audit_recorded`      | action | Fired after each entry is written to the buffer.  |
+| `wp_mcp_ai_toolkit_mcp_audit_max_entries`   | filter | Override the ring-buffer size (default 200).      |
+
+### Tests
+
+`addons/pro/tests/test-toolkit-mcp-audit-log.php` — 8 cases covering record, ring-buffer trim, entry ordering, consumer filter, summary grouping, clear, action trigger, and the `audit_recorded` action.

@@ -96,6 +96,41 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/mcp-audit',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_audit_log' ),
+					'permission_callback' => array( $this, 'permission_audit' ),
+					'args'                => array(
+						'limit'        => array(
+							'type'              => 'integer',
+							'default'           => 50,
+							'minimum'           => 1,
+							'maximum'           => 200,
+							'sanitize_callback' => 'absint',
+						),
+						'consumer'     => array(
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'source'       => array(
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'summary_only' => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -122,6 +157,68 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 			return new WP_Error( 'rest_forbidden', __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 		return true;
+	}
+
+	/**
+	 * Audit log read permission — requires `manage_options`.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public function permission_audit() {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', __( 'Authentication required.', 'mcp-ai-wpoos-pro' ), array( 'status' => 401 ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
+		}
+		return true;
+	}
+
+	/**
+	 * GET /mcp-audit — return cross-mount audit log entries.
+	 *
+	 * Query params: limit (1-200), consumer (slug filter), source (slug filter),
+	 * summary_only (bool — return grouped summary instead of raw entries).
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public function handle_audit_log( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Audit_Log' ) ) {
+			return rest_ensure_response( array( 'entries' => array(), 'total' => 0 ) );
+		}
+
+		$log          = WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance();
+		$summary_only = (bool) $request->get_param( 'summary_only' );
+
+		if ( $summary_only ) {
+			return rest_ensure_response( array( 'summary' => $log->get_summary() ) );
+		}
+
+		$limit    = (int) $request->get_param( 'limit' );
+		$consumer = (string) $request->get_param( 'consumer' );
+		$source   = (string) $request->get_param( 'source' );
+
+		$filter       = '';
+		$filter_field = '';
+		if ( '' !== $consumer ) {
+			$filter       = $consumer;
+			$filter_field = 'consumer';
+		} elseif ( '' !== $source ) {
+			$filter       = $source;
+			$filter_field = 'source';
+		}
+
+		$entries = $log->get_entries( $limit, $filter, $filter_field );
+
+		return rest_ensure_response(
+			array(
+				'entries' => $entries,
+				'total'   => count( $entries ),
+			)
+		);
 	}
 
 	/**
@@ -581,6 +678,28 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 			$body['read_only'] = true;
 		}
 
+		if ( $is_mounted ) {
+			// Determine source slug from the mounted URI: nvoos://{consumer}/_mounted/{source}/{entity}.
+			$parsed_source = '';
+			if ( preg_match( '#^nvoos://[^/]+/_mounted/([^/]+)/#', $uri, $m ) ) {
+				$parsed_source = $m[1];
+			}
+
+			/**
+			 * Fires whenever a mounted resource is read through a per-toolkit MCP server.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param string                             $consumer_slug Consumer server slug.
+			 * @param string                             $source_slug   Source (mounted) server slug.
+			 * @param string                             $entity_type   Entity type / resource name.
+			 * @param string                             $uri           Resource URI.
+			 * @param string                             $method        JSON-RPC method ('resources/read').
+			 * @param WP_MCP_AI_Toolkit_Server_Interface $server        Consumer server instance.
+			 */
+			do_action( 'wp_mcp_ai_toolkit_mcp_cross_mount_read', $server->get_slug(), $parsed_source, $entity_type, $uri, 'resources/read', $server );
+		}
+
 		$encoded = wp_json_encode( $body );
 
 		return rest_ensure_response(
@@ -655,6 +774,28 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 		$summary    = isset( $match['description'] ) ? (string) $match['description'] : '';
 		$page_slug  = isset( $match['metadata']['page_slug'] ) ? (string) $match['metadata']['page_slug'] : '';
 		$entity     = isset( $match['metadata']['entity_type'] ) ? (string) $match['metadata']['entity_type'] : '';
+
+		if ( $is_mounted ) {
+			// Derive source slug from mounted prompt name: _mounted/{source}.{type}.{entity}.
+			$parsed_source = '';
+			if ( preg_match( '#^_mounted/([^.]+)\.#', $name, $m ) ) {
+				$parsed_source = $m[1];
+			}
+
+			/**
+			 * Fires whenever a mounted prompt is read through a per-toolkit MCP server.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param string                             $consumer_slug Consumer server slug.
+			 * @param string                             $source_slug   Source (mounted) server slug.
+			 * @param string                             $prompt_name   Full prompt name.
+			 * @param string                             $uri           Empty string (prompts have no URI).
+			 * @param string                             $method        JSON-RPC method ('prompts/get').
+			 * @param WP_MCP_AI_Toolkit_Server_Interface $server        Consumer server instance.
+			 */
+			do_action( 'wp_mcp_ai_toolkit_mcp_cross_mount_read', $server->get_slug(), $parsed_source, $name, '', 'prompts/get', $server );
+		}
 
 		$lines = array();
 		if ( '' !== $summary ) {

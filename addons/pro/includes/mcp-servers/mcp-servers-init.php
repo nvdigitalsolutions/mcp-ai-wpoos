@@ -17,6 +17,7 @@ require_once __DIR__ . '/interface-wp-mcp-ai-toolkit-server.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-base.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-registry.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-rest-controller.php';
+require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-audit-log.php';
 
 // Phase 1 pilot servers.
 require_once __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
@@ -92,6 +93,11 @@ add_action(
  * Initialize the REST controller.
  */
 WP_MCP_AI_Toolkit_MCP_REST_Controller::get_instance()->init();
+
+/**
+ * Initialize the cross-mount audit log.
+ */
+WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance()->init();
 
 /**
  * Admin-post handler — persists per-toolkit MCP server configuration.
