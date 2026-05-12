@@ -65,7 +65,7 @@ This ADR ships **Phase 0 (foundation)**, **Phase 1 (three pilot servers — CRM,
   - ~~3d — Toolkit-scoped credentials.~~
   - ~~3e — WP-CLI commands.~~ **(landed 2026-05-12)**
 - Phase 4 — cross-mount audit trail in observability. **(landed 2026-05-12)**
-- Phase 5 — assistant "mounted MCP servers" UI, observability dashboard card, auto-generated `docs/mcp-servers.md`.
+- Phase 5 — assistant "mounted MCP servers" UI, observability dashboard card, auto-generated `docs/mcp-servers.md`. ✅ **Landed.**
 - Phase 6 — Tier 2 toolkits and `/.well-known/mcp` externalisation.
 
 ### Phase 2 server inventory

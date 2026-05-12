@@ -282,3 +282,37 @@ Query parameters:
 ### Tests
 
 `addons/pro/tests/test-toolkit-mcp-audit-log.php` — 8 cases covering record, ring-buffer trim, entry ordering, consumer filter, summary grouping, clear, action trigger, and the `audit_recorded` action.
+
+---
+
+## Phase 5 — Assistant UI, Observability Card, Reference Docs
+
+### Assistant "Toolkit MCP Servers" Metabox
+
+A metabox on the `mcp_ai_assistant` CPT edit screen lets editors choose which per-toolkit MCP servers that assistant may invoke.
+
+- **Class:** `WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers`
+- **Meta key:** `_wp_mcp_ai_pro_allowed_mcp_servers` (array of slugs)
+- **Empty array** = allow all enabled servers (default behaviour).
+- Static helper: `WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $post_id )` → `string[]`
+
+### Observability Dashboard Card
+
+`WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card` injects a summary card into the  
+**NV oOS Settings → Performance** section via the  
+`wp_mcp_ai_performance_section_after_components` action.
+
+The card shows:
+
+- Total registered servers + enabled count.
+- Last cross-mount read timestamp.
+- Top-3 most active consumer servers (last 24 h, derived from the audit log).
+- Links to the Manage MCP Servers admin page and the audit log REST endpoint.
+
+### Server Reference Documentation
+
+`docs/mcp-servers.md` — auto-generated Markdown reference for all 19 Tier-1 servers. Includes: slug, name, description, REST endpoint table, configuration field reference, audit log query parameters, WP-CLI examples, and slash command cheatsheet.
+
+### Tests
+
+`addons/pro/tests/test-phase5-toolkit-mcp-servers.php` — 6 cases covering hook binding, save_meta_box slug persistence, empty-post clearing, get_allowed_servers(), observability card graceful noop, and hook binding for the performance section action.

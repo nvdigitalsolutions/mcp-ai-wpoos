@@ -399,6 +399,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Load Remote Connections metabox for assistants.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
 
+			// Load Toolkit MCP Servers metabox for assistants (Phase 5).
+			if ( class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php';
+				new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
+			}
+
 			// WebLLM settings page has been moved to the NV oOS Embedded addon.
 
 			// Embedded Model AJAX handlers have been moved to the NV oOS Embedded addon.

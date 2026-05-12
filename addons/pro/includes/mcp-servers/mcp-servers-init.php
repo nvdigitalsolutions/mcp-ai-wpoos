@@ -18,6 +18,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-base.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-registry.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-rest-controller.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-audit-log.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-mcp-observability-card.php';
 
 // Phase 1 pilot servers.
 require_once __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
@@ -98,6 +99,13 @@ WP_MCP_AI_Toolkit_MCP_REST_Controller::get_instance()->init();
  * Initialize the cross-mount audit log.
  */
 WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance()->init();
+
+/**
+ * Register the observability card for the performance/orchestration admin section.
+ */
+if ( is_admin() ) {
+	new WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card();
+}
 
 /**
  * Admin-post handler — persists per-toolkit MCP server configuration.

@@ -65,6 +65,16 @@ class WP_MCP_AI_Toolkit_MCP_Audit_Log {
 	}
 
 	/**
+	 * Reset singleton (test fixture support).
+	 *
+	 * @since 1.4.0
+	 * @return void
+	 */
+	public static function reset_instance() {
+		self::$instance = null;
+	}
+
+	/**
 	 * Register hooks.
 	 *
 	 * @return void
