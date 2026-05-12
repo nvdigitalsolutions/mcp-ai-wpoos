@@ -71,7 +71,7 @@ class WP_MCP_AI_Pro_Toolkit_Server_Token {
 		}
 
 		// Generate a unique 8-char prefix and 40-char secret.
-		$prefix = substr( bin2hex( random_bytes( 8 ) ), 0, 8 );
+		$prefix = bin2hex( random_bytes( 4 ) );
 		$secret = bin2hex( random_bytes( 20 ) );
 		$raw    = self::TOKEN_PREFIX . $prefix . '.' . $secret;
 		$now    = time();

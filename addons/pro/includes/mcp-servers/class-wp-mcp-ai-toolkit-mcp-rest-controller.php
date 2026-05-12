@@ -203,7 +203,7 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 				class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) &&
 				0 === strpos( $raw_token, WP_MCP_AI_Pro_Toolkit_Server_Token::TOKEN_PREFIX )
 			) {
-				$slug = sanitize_key( isset( $request['slug'] ) ? $request['slug'] : '' );
+				$slug = sanitize_key( (string) $request->get_param( 'slug' ) );
 				if ( WP_MCP_AI_Pro_Toolkit_Server_Token::validate( $slug, $raw_token ) ) {
 					return true;
 				}

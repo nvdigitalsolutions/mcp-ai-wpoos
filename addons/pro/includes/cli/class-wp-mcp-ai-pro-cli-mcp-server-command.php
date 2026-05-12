@@ -379,9 +379,9 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	 */
 	public function token_generate( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
-		$this->require_server( $args );
-		$slug  = sanitize_key( (string) $args[0] );
-		$label = sanitize_text_field( \WP_CLI\Utils\get_flag_value( $assoc_args, 'label', '' ) );
+		$server = $this->require_server( $args );
+		$slug   = $server->get_slug();
+		$label  = sanitize_text_field( \WP_CLI\Utils\get_flag_value( $assoc_args, 'label', '' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
 			WP_CLI::error( __( 'Token service is not loaded.', 'mcp-ai-wpoos-pro' ) );
@@ -442,8 +442,8 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	 */
 	public function token_list( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
-		$this->require_server( $args );
-		$slug   = sanitize_key( (string) $args[0] );
+		$server = $this->require_server( $args );
+		$slug   = $server->get_slug();
 		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
@@ -502,8 +502,8 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 	 */
 	public function token_revoke( $args, $assoc_args ) {
 		$this->assert_pro_loaded();
-		$this->require_server( $args );
-		$slug = sanitize_key( (string) $args[0] );
+		$server = $this->require_server( $args );
+		$slug   = $server->get_slug();
 
 		if ( empty( $args[1] ) ) {
 			WP_CLI::error( __( 'Please provide the token prefix. Run `wp mcp-ai mcp-server token-list <slug>` to see prefixes.', 'mcp-ai-wpoos-pro' ) );
