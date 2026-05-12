@@ -190,6 +190,7 @@ Mounted prompts appear under a `_mounted/` namespace; mounted resources use URIs
 - `addons/pro/tests/test-ingestion-surface-parity.php` — R&A-only, C&A-only, dual-surface, multi-page shapes.
 - `addons/pro/tests/test-cross-toolkit-mounts.php` — mount visibility, source-disable propagation, consumer-side suppression, binding ownership.
 - `addons/pro/tests/test-pro-slash-command-mcp-server.php` — slash command coverage (Phase 3b).
+- `addons/pro/tests/test-pro-cli-mcp-server-command.php` — WP-CLI command coverage (Phase 3e).
 
 Run them with:
 
@@ -197,7 +198,30 @@ Run them with:
 vendor/bin/phpunit --group toolkit-mcp-servers
 ```
 
-## `/mcp-server` slash command (Phase 3b)
+## `wp mcp-ai mcp-server` WP-CLI command (Phase 3e)
+
+A Pro WP-CLI command that mirrors the `/mcp-server` slash command for use in CI/CD pipelines, WP-CLI scripts, and shell automation.
+
+| Command                                          | Description                                                              |
+|--------------------------------------------------|--------------------------------------------------------------------------|
+| `wp mcp-ai mcp-server list`                      | Table of all registered servers (slug, name, status, tool_count, version). Supports `--status=enabled/disabled` and `--format=table/json/yaml/csv/ids`. |
+| `wp mcp-ai mcp-server get <slug>`                | Full descriptor for one server. `--format=json` returns the raw JSON envelope. |
+| `wp mcp-ai mcp-server enable <slug>`             | Set `enabled: true` for the given server.                                |
+| `wp mcp-ai mcp-server disable <slug> [--yes]`    | Set `enabled: false`. Prompts for confirmation unless `--yes` is given.  |
+| `wp mcp-ai mcp-server tools <slug>`              | Effective tool slugs (after admin allowlist). Supports `--format=ids` for shell pipelines. |
+
+```bash
+# Enable a server in a deployment script.
+wp mcp-ai mcp-server enable crm
+
+# Export the full server list as JSON for a CI health-check.
+wp mcp-ai mcp-server list --format=json
+
+# Confirm a specific tool slug is still exposed after a Pro update.
+wp mcp-ai mcp-server tools crm --format=ids | tr ' ' '\n' | grep crm_manage_companies
+```
+
+Mutating commands write to `wp_mcp_ai_toolkit_mcp_server_{slug}` — the same option used by the admin MCP Server tab and the `/mcp-server` slash command.
 
 A Pro slash command for chat-side inspection and toggling of toolkit MCP servers. Mirrors the conventional sub-action + `--json` envelope shape used by every other slash command.
 

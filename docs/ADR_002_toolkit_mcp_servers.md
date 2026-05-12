@@ -62,8 +62,8 @@ This ADR ships **Phase 0 (foundation)**, **Phase 1 (three pilot servers — CRM,
   - ~~3a — `tools/call`, `resources/read`, `prompts/get` JSON-RPC dispatch.~~ **(landed 2026-05-11)**
   - ~~3b — `/mcp-server` slash command (list / show / enable / disable / tools).~~ **(landed 2026-05-12)**
   - ~~3c — Per-server limits (requests_per_minute, max_payload_bytes, max_iterations).~~ **(landed 2026-05-11)**
-  - 3d — Toolkit-scoped credentials.
-  - 3e — WP-CLI commands.
+  - ~~3d — Toolkit-scoped credentials.~~
+  - ~~3e — WP-CLI commands.~~ **(landed 2026-05-12)**
 - Phase 4 — cross-mount audit trail in observability.
 - Phase 5 — assistant "mounted MCP servers" UI, observability dashboard card, auto-generated `docs/mcp-servers.md`.
 - Phase 6 — Tier 2 toolkits and `/.well-known/mcp` externalisation.

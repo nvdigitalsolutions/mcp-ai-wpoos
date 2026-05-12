@@ -2322,6 +2322,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		'class-wp-mcp-ai-pro-cli-connection-command.php',
 		'class-wp-mcp-ai-pro-cli-project-command.php',
 		'class-wp-mcp-ai-pro-cli-task-command.php',
+		'class-wp-mcp-ai-pro-cli-mcp-server-command.php',
 	);
 
 	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
