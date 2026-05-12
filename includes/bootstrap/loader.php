@@ -393,6 +393,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-submissions-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
 	require_once WP_MCP_AI_PATH . 'includes/renderers/class-wp-mcp-ai-scheduled-result-renderer.php';
@@ -418,6 +419,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	// every JetEngine-enabled site benefits from the persistent memory tier.
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
 }
 
 // MemPalace Capture Framework Phase A — capture service + tier manager are
