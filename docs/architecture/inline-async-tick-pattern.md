@@ -1,8 +1,9 @@
 # Inline-Async-Tick Pattern
 
 > **Status:** Stable. Trait introduced in v1.2.0. First production
-> consumer is the Mine Memories job (PR #4916). Tool Async Executor
-> consumes it as of this PR.
+> consumer is the Mine Memories job (PR #4916, originally inline-coded;
+> refactored to consume the shared trait in this PR alongside the Tool
+> Async Executor adoption).
 
 The **inline-async-tick** pattern is the plugin's defence against
 WordPress sites where the WP-Cron loopback never fires:

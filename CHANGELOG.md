@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Changed — Transcript Mining job now consumes the inline-async-tick trait
+
+- `WP_MCP_AI_Transcript_Mining_Job` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` instead of carrying its own copies
+  of the four primitives. Behaviour is unchanged on hosts that hit the
+  existing fallback paths, but Mine Memories now:
+  - emits the unified `wp_mcp_ai_inline_kick_completed` observability
+    action on every shutdown kick (same `( $class, $job_id,
+    $duration_ms, $success )` shape used by the Tool Async Executor),
+    so Pro OTel subscribers can record `inline_kick.duration_ms` /
+    `inline_kick.failure.count` for free; and
+  - honours the global `wp_mcp_ai_inline_kick_enabled` escape-hatch
+    filter — returning `false` from the filter (globally or per-job)
+    now skips the shutdown action registration entirely for Mine
+    Memories the same way it already did for the Tool Async Executor.
+- New class constant `TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_tx_mine'`
+  formalises the object-cache group that the lock helper consumes
+  (previously inlined as a string literal). `TICK_LOCK_PREFIX`,
+  `TICK_LOCK_TTL`, `INLINE_LOOP_BUDGET_SECONDS`, and
+  `STALE_QUEUED_THRESHOLD_SECONDS` are unchanged.
+- Net diff: ~80 LOC removed from the class; one trait `use` line
+  added. No public method signatures changed; existing tests against
+  `handle_tick()`, `kick_inline()`, and `TICK_LOCK_PREFIX` continue to
+  pass without modification.
+
 ### Added — Inline-async-tick fallback for Tool Async Executor
 
 - New reusable trait `WP_MCP_AI_Inline_Async_Tick_Trait` at

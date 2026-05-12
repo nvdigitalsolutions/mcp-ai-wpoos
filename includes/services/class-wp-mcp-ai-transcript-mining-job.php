@@ -30,15 +30,29 @@ if ( class_exists( 'WP_MCP_AI_Transcript_Mining_Job' ) ) {
 	return;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+
 /**
  * Transcript mining background job.
  */
 class WP_MCP_AI_Transcript_Mining_Job {
 
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
+
 	/**
 	 * Cron hook for tick processing.
 	 */
 	const CRON_HOOK = 'wp_mcp_ai_transcript_mining_tick';
+
+	/**
+	 * Object-cache group used by the cooperative tick lock.
+	 *
+	 * Layered with the transient set in {@see acquire_tick_lock()} to give
+	 * atomic in-process protection on persistent object caches.
+	 *
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_tx_mine';
 
 	/**
 	 * Transient key prefix for job state records.
@@ -221,13 +235,19 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		// `wp-cron.php` loopback is firewalled), executes the first tick in
 		// this same PHP process. Without this, jobs sit at `status: queued`
 		// indefinitely on otherwise-correctly-configured sites.
-		add_action(
-			'shutdown',
-			static function () use ( $job_id ) {
-				WP_MCP_AI_Transcript_Mining_Job::kick_inline( $job_id );
-			},
-			20
-		);
+		//
+		// Honour the shared escape hatch (filter
+		// `wp_mcp_ai_inline_kick_enabled`) so operators can disable the
+		// fallback globally or per-job without touching code.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				static function () use ( $job_id ) {
+					WP_MCP_AI_Transcript_Mining_Job::kick_inline( $job_id );
+				},
+				20
+			);
+		}
 
 		// If `spawn_cron()` could not dispatch the loopback (returns false when
 		// the `_doing_wp_cron` lock is held or when the host blocks the request),
@@ -277,45 +297,54 @@ class WP_MCP_AI_Transcript_Mining_Job {
 			return;
 		}
 
-		// Survive a client disconnect — the operator may navigate away or
-		// the AJAX poll may time out mid-tick.
-		if ( function_exists( 'ignore_user_abort' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			@ignore_user_abort( true );
-		}
-
-		// Flush the response to the client immediately. Only relevant under
-		// FPM/FastCGI; safe to call on other SAPIs because it is gated on
-		// function_exists.
-		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			@fastcgi_finish_request();
-		}
-
-		$state = self::get_state( $job_id );
-		if ( ! is_array( $state ) ) {
-			return;
-		}
-		// Only kick when the cron tick has not already advanced the job.
-		// Once status is `running`, `completed`, `cancelled`, or `failed`,
-		// the cooperative lock in handle_tick() would block us anyway —
-		// short-circuit to avoid the lock churn.
-		if ( 'queued' !== $state['status'] ) {
+		// Honour the global escape hatch so operators can disable the
+		// inline-async fallback (per-job or globally) when it interacts
+		// badly with the host environment. When disabled, the cron
+		// loopback path is unchanged.
+		if ( ! self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
 			return;
 		}
 
-		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'transcript_mining',
-				__( 'Transcript mining job kicked inline (cron loopback fallback).', 'mcp-ai-wpoos' ),
-				array(
-					'job_id' => $job_id,
-					'source' => 'inline_shutdown',
-				)
-			);
-		}
+		// Survive a client disconnect and flush the response (FastCGI) so
+		// the operator's browser sees the JSON immediately while the tick
+		// continues. Delegated to the shared trait helper so all Tier-1
+		// jobs detach the same way.
+		self::inline_async_detach_worker_from_client();
 
-		self::handle_tick( $job_id );
+		// Wrap the tick body in the shared observability helper so the
+		// `wp_mcp_ai_inline_kick_completed` action fires for Mine
+		// Memories the same way it does for the Tool Async Executor.
+		self::inline_async_run_kick(
+			__CLASS__,
+			$job_id,
+			static function () use ( $job_id ) {
+				$state = self::get_state( $job_id );
+				if ( ! is_array( $state ) ) {
+					return;
+				}
+
+				// Only kick when the cron tick has not already advanced the
+				// job. Once status is `running`, `completed`, `cancelled`,
+				// or `failed`, the cooperative lock in handle_tick() would
+				// block us anyway — short-circuit to avoid the lock churn.
+				if ( 'queued' !== $state['status'] ) {
+					return;
+				}
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'transcript_mining',
+						__( 'Transcript mining job kicked inline (cron loopback fallback).', 'mcp-ai-wpoos' ),
+						array(
+							'job_id' => $job_id,
+							'source' => 'inline_shutdown',
+						)
+					);
+				}
+
+				self::handle_tick( $job_id );
+			}
+		);
 	}
 
 	/**
@@ -527,51 +556,27 @@ class WP_MCP_AI_Transcript_Mining_Job {
 		// Continue inline only when WP-Cron is disabled (the scheduled
 		// event we just queued will never fire on its own), there is more
 		// work, and we still have wall-clock budget to spare in this
-		// request. Otherwise let the next cron tick / poll-side kick pick
-		// it up.
-		return $queue_remaining
-			&& defined( 'DISABLE_WP_CRON' )
-			&& DISABLE_WP_CRON
-			&& ( time() - (int) $tick_started_at ) < self::INLINE_LOOP_BUDGET_SECONDS;
+		// request. Delegated to the shared trait helper so all Tier-1
+		// jobs share one predicate.
+		return self::inline_async_should_loop( $tick_started_at, $queue_remaining, self::INLINE_LOOP_BUDGET_SECONDS );
 	}
 
 	/**
 	 * Acquire the per-job tick lock.
 	 *
-	 * Two-layer scheme:
-	 *
-	 * 1. A short-lived transient provides the cross-request, cross-process
-	 *    guarantee that survives even when no persistent object cache is
-	 *    installed (the typical WordPress.org-distribution case).
-	 * 2. A `wp_cache_add()` entry layered on top provides atomic in-process
-	 *    protection on installations that ship a persistent object cache
-	 *    (Redis, Memcached, etc.), where transient operations are routed
-	 *    through the cache and cannot otherwise be guaranteed atomic.
+	 * Thin wrapper around the shared trait helper that pins the
+	 * Mine-Memories-specific key prefix, cache group, and TTL so callers
+	 * inside this class can stay terse.
 	 *
 	 * @param string $job_id Job identifier.
 	 * @return bool True when the lock was acquired by this caller.
 	 */
 	private static function acquire_tick_lock( $job_id ) {
-		$key = self::TICK_LOCK_PREFIX . $job_id;
-
-		// Cross-process gate first: if a transient already exists, another
-		// worker (in this or another PHP process) is inside the section.
-		if ( false !== get_transient( $key ) ) {
-			return false;
-		}
-
-		// In-process atomic gate. wp_cache_add returns false when the key
-		// is already present in the cache, which on a persistent object
-		// cache means another process beat us to it.
-		if ( function_exists( 'wp_cache_add' ) ) {
-			$added = wp_cache_add( $key, 1, 'wp_mcp_ai_tx_mine', self::TICK_LOCK_TTL );
-			if ( false === $added ) {
-				return false;
-			}
-		}
-
-		set_transient( $key, 1, self::TICK_LOCK_TTL );
-		return true;
+		return self::inline_async_acquire_tick_lock(
+			self::TICK_LOCK_PREFIX . $job_id,
+			self::TICK_LOCK_CACHE_GROUP,
+			self::TICK_LOCK_TTL
+		);
 	}
 
 	/**
@@ -581,11 +586,10 @@ class WP_MCP_AI_Transcript_Mining_Job {
 	 * @return void
 	 */
 	private static function release_tick_lock( $job_id ) {
-		$key = self::TICK_LOCK_PREFIX . $job_id;
-		if ( function_exists( 'wp_cache_delete' ) ) {
-			wp_cache_delete( $key, 'wp_mcp_ai_tx_mine' );
-		}
-		delete_transient( $key );
+		self::inline_async_release_tick_lock(
+			self::TICK_LOCK_PREFIX . $job_id,
+			self::TICK_LOCK_CACHE_GROUP
+		);
 	}
 
 	/**
