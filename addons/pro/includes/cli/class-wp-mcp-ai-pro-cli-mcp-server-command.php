@@ -140,7 +140,7 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 		usort(
 			$items,
 			static function ( $a, $b ) {
-				return strcmp( (string) $a['slug'], (string) $b['slug'] );
+				return strcmp( $a['slug'], $b['slug'] );
 			}
 		);
 
@@ -183,7 +183,9 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
 		$descriptor = $server->get_descriptor();
-		$limits     = $descriptor['limits'] ?? array( 'requests_per_minute' => 0, 'max_payload_bytes' => 0, 'max_iterations' => 0 );
+		$limits     = isset( $descriptor['limits'] ) && is_array( $descriptor['limits'] )
+			? $descriptor['limits']
+			: array( 'requests_per_minute' => 0, 'max_payload_bytes' => 0, 'max_iterations' => 0 );
 
 		$row = array(
 			array( 'key' => 'slug', 'value' => $descriptor['slug'] ),

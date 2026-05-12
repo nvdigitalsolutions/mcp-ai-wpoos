@@ -57,8 +57,11 @@ namespace {
 	// Stub the WP_CLI class (if not already present from a previous test run).
 	if ( ! class_exists( 'WP_CLI' ) ) {
 		/**
-		 * Minimal WP_CLI stub that captures output rather than printing to STDOUT
-		 * and throws RuntimeException on ::error() so tests can assert fatal paths.
+		 * Minimal WP_CLI stub for unit tests.
+		 *
+		 * Captures all output in static properties instead of printing to STDOUT.
+		 * `::error()` throws a RuntimeException so tests can assert fatal error paths
+		 * without terminating the process.
 		 */
 		class WP_CLI { // phpcs:ignore
 			/** @var string */
