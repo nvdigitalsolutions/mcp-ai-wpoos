@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+### Added — Inline-async-tick fallback for Gemini Veo polling (Slice 6)
+
+- `WP_MCP_AI_Gemini_Video_Generation_Service` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first Gemini
+  operation-status poll fires on the shutdown of the request that queued the
+  video job, rather than waiting for the next WP-Cron loopback. On hosts with
+  `DISABLE_WP_CRON` the loopback never fires; the cooperative tick lock
+  prevents the inline kick and the rescheduled cron event from executing
+  `poll_video_async()` for the same `job_id` simultaneously:
+  - `queue_async_polling()` registers a `shutdown` action at priority 22 that
+    calls `poll_video_async_static()` inline after the video-generation
+    response is returned to the client (guarded by the
+    `wp_mcp_ai_inline_kick_enabled` filter). The existing
+    `wp_schedule_single_event(time() + 1, …)` + `spawn_cron()` calls are
+    preserved as the cron fallback.
+  - `poll_video_async()` now acquires the cooperative tick lock
+    (`TICK_LOCK_PREFIX = 'wp_mcp_ai_veo_poll_lock_'`, group
+    `wp_mcp_ai_veo_poll`, TTL 30 s) then delegates to the new protected
+    `do_poll_video_async()` method, so shutdown kick and cron event cannot
+    race for the same job.
+- New class constants: `TICK_LOCK_PREFIX`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`.
+- New test: `tests/test-veo-inline-kick.php` (4 cases: constant assertions,
+  lock prevents double-poll, missing-metadata bail, filter disable).
+- Architecture doc `docs/architecture/inline-async-tick-pattern.md` updated:
+  Slice 6 added to the Tier-1 consumer table; the "Future Tier-1 consumers"
+  note removed (all planned slices are now complete).
+
 ### Added — Inline-async-tick fallback for Graphify reindex (Slice 5a)
 
 - `NV_oOS_Graphify` now composes `WP_MCP_AI_Inline_Async_Tick_Trait`

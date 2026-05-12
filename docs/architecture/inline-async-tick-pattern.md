@@ -74,9 +74,7 @@ Every consumer of the trait wires the same four moving parts:
 | 5 | `NV_oOS_Docs_Hub_Rebuild_Pipeline` (Docs Hub addon) | `nvoos_docs_hub_rebuild_tick` | n/a (single-rebuild-at-a-time; lock TTL 45 s) |
 | 6 | `NV_oOS_Graphify` (Graphify reindex on post save) | `nvoos_graphify_cron_build` | n/a (fixed lock key; lock TTL 60 s) |
 | 7 | `WP_MCP_AI_Harness_Eval_Scheduler` (eval tick) | `wp_mcp_ai_harness_eval_tick` | n/a (first-schedule only; lock TTL 120 s) |
-
-Future Tier-1 consumers planned (per the rollout plan):
-Gemini Veo polling.
+| 8 | `WP_MCP_AI_Gemini_Video_Generation_Service` (Veo polling) | `wp_mcp_ai_poll_veo_video` | n/a (per-job lock prefix; lock TTL 30 s) |
 
 ## Cross-cutting controls
 
@@ -116,6 +114,9 @@ Two test fixtures are provided:
 - `tests/test-harness-eval-scheduler-inline-kick.php` — Slice 5b: Harness
   eval scheduler (first-schedule shutdown kick, lock contention, filter,
   do_tick no-op on empty site).
+- `tests/test-veo-inline-kick.php` — Slice 6: Gemini Veo polling
+  (tick-lock constant assertions, lock contention bail, missing-metadata bail,
+  filter disable).
 
 The Mine Memories regression suite at
 `tests/test-transcript-mining-job.php` covers the original consumer.
