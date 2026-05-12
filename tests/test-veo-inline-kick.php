@@ -35,7 +35,9 @@ class Test_Veo_Inline_Kick extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		if ( ! class_exists( 'WP_MCP_AI_Gemini_Video_Generation_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		}
 
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 	}

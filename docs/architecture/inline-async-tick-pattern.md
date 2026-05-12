@@ -65,7 +65,7 @@ Every consumer of the trait wires the same four moving parts:
 
 ## Active consumers (Tier 1)
 
-| # | Host class | Tick hook | Stale threshold |
+| Entry | Host class | Tick hook | Stale threshold |
 | --- | --- | --- | --- |
 | 1 | `WP_MCP_AI_Transcript_Mining_Job` (Mine Memories) | `wp_mcp_ai_tx_mine_tick` | 5 s |
 | 2 | `WP_MCP_AI_Tool_Async_Executor` | `wp_mcp_ai_async_tool_execution` | 5 s |
