@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3a/3c shipped — all 19 Tier-1 toolkits promoted and the per-toolkit endpoint now supports execution.
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3a/3b/3c shipped — all 19 Tier-1 toolkits promoted, the per-toolkit endpoint supports execution, and a `/mcp-server` slash command is available for inspection and admin toggling.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
@@ -189,9 +189,27 @@ Mounted prompts appear under a `_mounted/` namespace; mounted resources use URIs
 - `addons/pro/tests/test-toolkit-server-contract.php` — generic contract assertions.
 - `addons/pro/tests/test-ingestion-surface-parity.php` — R&A-only, C&A-only, dual-surface, multi-page shapes.
 - `addons/pro/tests/test-cross-toolkit-mounts.php` — mount visibility, source-disable propagation, consumer-side suppression, binding ownership.
+- `addons/pro/tests/test-pro-slash-command-mcp-server.php` — slash command coverage (Phase 3b).
 
 Run them with:
 
 ```bash
 vendor/bin/phpunit --group toolkit-mcp-servers
 ```
+
+## `/mcp-server` slash command (Phase 3b)
+
+A Pro slash command for chat-side inspection and toggling of toolkit MCP servers. Mirrors the conventional sub-action + `--json` envelope shape used by every other slash command.
+
+| Sub-action               | Capability       | Description                                                                  |
+|--------------------------|------------------|------------------------------------------------------------------------------|
+| `/mcp-server`            | `edit_posts`     | Defaults to `list` — table of every registered server.                       |
+| `/mcp-server list`       | `edit_posts`     | Same as default.                                                             |
+| `/mcp-server show <slug>`| `edit_posts`     | Full descriptor (name, version, enabled flag, tool count, surfaces, limits). |
+| `/mcp-server tools <slug>` | `edit_posts`   | Effective tool slugs exposed by the server (after admin allowlist).          |
+| `/mcp-server enable <slug>`  | `manage_options` | Set `enabled: true` on the server's config option.                       |
+| `/mcp-server disable <slug>` | `manage_options` | Set `enabled: false` on the server's config option.                      |
+
+Aliases: `/mcp-servers`, `/toolkit-mcp`. Add `--json` to any sub-action to receive the raw envelope as JSON.
+
+Mutating sub-actions write to option `wp_mcp_ai_toolkit_mcp_server_{slug}` — the same store used by the **MCP Server** settings tab. Disabling a server suppresses every JSON-RPC method except `initialize`/`ping` (which still return the descriptor so clients can detect the disabled state).
