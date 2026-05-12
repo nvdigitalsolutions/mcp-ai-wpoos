@@ -47,8 +47,9 @@ class WP_MCP_AI_Transcript_Mining_Job {
 	/**
 	 * Object-cache group used by the cooperative tick lock.
 	 *
-	 * Layered with the transient set in {@see acquire_tick_lock()} to give
-	 * atomic in-process protection on persistent object caches.
+	 * Layered with the transient set in
+	 * {@see WP_MCP_AI_Inline_Async_Tick_Trait::inline_async_acquire_tick_lock()}
+	 * to give atomic in-process protection on persistent object caches.
 	 *
 	 * @var string
 	 */
