@@ -46,9 +46,6 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 	public function test_register_remote_job_adds_shutdown_action() {
 		$task_id = 'test_kick_reg_' . wp_generate_uuid4();
 
-		// Count shutdown hooks before the call.
-		$before = has_action( 'shutdown' ) ? did_action( 'shutdown' ) : 0;
-
 		WP_MCP_AI_Crawler::register_remote_job(
 			$task_id,
 			array(

@@ -135,16 +135,15 @@ class WP_MCP_AI_Crawler {
 		// request so that fast jobs (those that Crawl4AI processes in < 30 s) are
 		// resolved without waiting for the next WP-Cron loopback.
 		if ( self::inline_async_kick_enabled( $task_id, __CLASS__ ) ) {
-			$kick_task_id = $task_id;
 			add_action(
 				'shutdown',
-				function () use ( $kick_task_id ) {
+				function () use ( $task_id ) {
 					self::inline_async_detach_worker_from_client();
 					self::inline_async_run_kick(
 						__CLASS__,
-						$kick_task_id,
-						function () use ( $kick_task_id ) {
-							self::handle_poll_event( $kick_task_id );
+						$task_id,
+						function () use ( $task_id ) {
+							self::handle_poll_event( $task_id );
 						}
 					);
 				},
