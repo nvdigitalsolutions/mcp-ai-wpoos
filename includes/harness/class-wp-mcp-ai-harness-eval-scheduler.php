@@ -39,6 +39,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Harness_Eval_Scheduler {
 
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
+
 	/**
 	 * Cron hook fired daily.
 	 */
@@ -60,6 +62,36 @@ class WP_MCP_AI_Harness_Eval_Scheduler {
 	const MAX_PAIRS_PER_TICK = 25;
 
 	/**
+	 * Fixed key for the tick lock.  Only one eval tick should run at a
+	 * time; re-entrant cron loopbacks are silently skipped.
+	 *
+	 * Used with {@see inline_async_acquire_tick_lock()} /
+	 * {@see inline_async_release_tick_lock()}.
+	 *
+	 * @since 1.4.1
+	 * @var string
+	 */
+	const TICK_LOCK_KEY = 'wp_mcp_ai_harness_eval_tick_lock';
+
+	/**
+	 * Object-cache group for the eval tick lock.
+	 *
+	 * @since 1.4.1
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_harness_eval';
+
+	/**
+	 * Tick lock TTL in seconds. Each (assistant × suite) pair fires at
+	 * most one AI call; 120 s accommodates sites with up to ~4 s per call
+	 * and the 25-pair cap.
+	 *
+	 * @since 1.4.1
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 120;
+
+	/**
 	 * Wire the cron hook + scheduling.
 	 *
 	 * @return void
@@ -70,27 +102,80 @@ class WP_MCP_AI_Harness_Eval_Scheduler {
 	}
 
 	/**
-	 * Schedule the daily cron once. No-op when WP-Cron is disabled
-	 * (`DISABLE_WP_CRON`) — sites that disable WP-Cron typically run
-	 * `wp cron event run` from the system scheduler, which still picks
-	 * up the registered hook.
+	 * Schedule the daily cron once. When the event is newly created (i.e.
+	 * it did not exist before this call) AND the inline-async kick is
+	 * enabled, a one-shot shutdown kick is also registered so the first
+	 * tick fires in the current request rather than waiting up to 24 hours
+	 * for the loopback to catch up.
 	 *
 	 * @return void
 	 */
 	public static function maybe_schedule_cron() {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
+		if ( wp_next_scheduled( self::CRON_HOOK ) ) {
+			return;
+		}
+
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_HOOK );
+
+		// Inline-async-tick: fire the first tick inline on the shutdown of
+		// the request that first activates the eval scheduler (e.g. saving
+		// a harness profile or activating the plugin), so opted-in
+		// assistants see an initial eval result within seconds rather than
+		// waiting until tomorrow.
+		if ( self::inline_async_kick_enabled( 'first_schedule', __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				function () {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						'first_schedule',
+						function () {
+							self::tick();
+						}
+					);
+				},
+				22
+			);
 		}
 	}
 
 	/**
-	 * Cron handler. Iterates opted-in assistants and runs their enabled
-	 * suites, bounded by `MAX_PAIRS_PER_TICK`.
+	 * Cron handler. Acquires the cooperative tick lock then delegates to
+	 * {@see do_tick()} so that a WP-Cron loopback and a concurrent inline
+	 * shutdown kick cannot run two overlapping eval batches.
 	 *
 	 * @return array{processed:int, skipped:int, errors:int} Summary for
 	 *                                                       observability.
 	 */
 	public static function tick() {
+		if ( ! self::inline_async_acquire_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return array(
+				'processed' => 0,
+				'skipped'   => 0,
+				'errors'    => 0,
+			);
+		}
+		try {
+			return self::do_tick();
+		} finally {
+			self::inline_async_release_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Inner tick body — extracted so tests can call it directly without
+	 * going through the tick lock.
+	 *
+	 * Iterates opted-in assistants and runs their enabled suites, bounded
+	 * by {@see MAX_PAIRS_PER_TICK}.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @return array{processed:int, skipped:int, errors:int} Summary for
+	 *                                                       observability.
+	 */
+	public static function do_tick() {
 		$assistant_ids = self::find_opted_in_assistants();
 
 		$processed = 0;

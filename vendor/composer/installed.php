@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-inline-async-fallback',
-        'version' => 'dev-copilot/fix-inline-async-fallback',
-        'reference' => 'e0e476f478c500cbb51133fcc49991d182d2648b',
+        'pretty_version' => 'dev-copilot/review-cron-enhancements',
+        'version' => 'dev-copilot/review-cron-enhancements',
+        'reference' => '8aca45658558710c7b131aeb6c9db6c27c228b5e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-inline-async-fallback',
-            'version' => 'dev-copilot/fix-inline-async-fallback',
-            'reference' => 'e0e476f478c500cbb51133fcc49991d182d2648b',
+            'pretty_version' => 'dev-copilot/review-cron-enhancements',
+            'version' => 'dev-copilot/review-cron-enhancements',
+            'reference' => '8aca45658558710c7b131aeb6c9db6c27c228b5e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -822,6 +822,16 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$user_id = $this->get_current_user_id();
 		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
 
+		// Self-healing inline kick: when the requested job is an async-
+		// tool job that has been stuck in `pending` past the stale
+		// threshold, schedule a `shutdown` action to drive it forward
+		// after this response is flushed. Guarantees progress on hosts
+		// where the WP-Cron loopback never fires (DISABLE_WP_CRON sites,
+		// firewalled loopback, etc.). The response payload itself is
+		// unchanged. Mirrors the pattern from PR #4916 for the Mine
+		// Memories job.
+		$this->maybe_kick_async_job_inline( $job_id );
+
 		$job_details = $service->get_job_details( $job_id, $user_id );
 
 		if ( is_wp_error( $job_details ) ) {
@@ -829,6 +839,28 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return $this->success( $job_details );
+	}
+
+	/**
+	 * Schedule a `shutdown` action that runs an async tool job inline
+	 * if it has been stuck in `pending`. No-op for non-async job IDs
+	 * and for jobs that have already advanced past `pending`.
+	 *
+	 * Lives on this controller (not the main controller) so both
+	 * REST entry points share the same self-heal hook.
+	 *
+	 * @param string $job_id Sanitised job identifier.
+	 * @return void
+	 */
+	protected function maybe_kick_async_job_inline( $job_id ) {
+		if ( empty( $job_id ) || 0 !== strpos( $job_id, 'async_' ) ) {
+			return;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			return;
+		}
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$executor->kick_inline_if_stale( $job_id );
 	}
 
 	/**

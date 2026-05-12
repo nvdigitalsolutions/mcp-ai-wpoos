@@ -15,12 +15,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ---------------------------------------------------------------------------
+// Inline-async-tick trait — load from the base plugin when available, or
+// define a no-op stub so this file can be parsed in bare unit-test
+// environments that don't have the base plugin active.
+// ---------------------------------------------------------------------------
+if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	if ( defined( 'WP_MCP_AI_PATH' ) && file_exists( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+	} else {
+		// Stub — all methods are no-ops so the class loads cleanly.
+		trait WP_MCP_AI_Inline_Async_Tick_Trait { // phpcs:ignore
+			protected static function inline_async_kick_enabled( $job_id, $class ) { return false; }
+			protected static function inline_async_acquire_tick_lock( $lock_key, $cache_group, $ttl_seconds = 60 ) { return true; }
+			protected static function inline_async_release_tick_lock( $lock_key, $cache_group ) {}
+			protected static function inline_async_detach_worker_from_client() {}
+			protected static function inline_async_run_kick( $class, $job_id, $callable ) {}
+		}
+	}
+}
+
 /**
  * Core singleton for the NV oOS Graphify addon.
  *
  * @since 0.5.0
  */
 class NV_oOS_Graphify {
+
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
 
 	/**
 	 * WordPress option key for addon settings.
@@ -42,6 +64,36 @@ class NV_oOS_Graphify {
 	 * @var string
 	 */
 	const CRON_ENRICH_HOOK = 'nvoos_graphify_cron_enrich';
+
+	/**
+	 * Fixed key for the build tick lock (global across all build triggers,
+	 * since only one full/incremental build should run at a time).
+	 *
+	 * Used with {@see inline_async_acquire_tick_lock()} /
+	 * {@see inline_async_release_tick_lock()}.
+	 *
+	 * @since 0.6.1
+	 * @var string
+	 */
+	const TICK_LOCK_KEY = 'nvoos_graphify_build_tick_lock';
+
+	/**
+	 * Object-cache group for the build tick lock.
+	 *
+	 * @since 0.6.1
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'nvoos_graphify';
+
+	/**
+	 * Tick lock TTL in seconds. Graphify builds can take 10-30s on large
+	 * sites, so 60s provides a comfortable window before the lock expires
+	 * and a second attempt is allowed.
+	 *
+	 * @since 0.6.1
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 60;
 
 	// -------------------------------------------------------------------------
 	// Boot
@@ -214,11 +266,34 @@ class NV_oOS_Graphify {
 	/**
 	 * Run the scheduled full rebuild.
 	 *
+	 * Acquires the cooperative tick lock before delegating to {@see do_build()}
+	 * so that a WP-Cron loopback and an inline-async shutdown kick cannot run
+	 * two concurrent builds simultaneously.
+	 *
 	 * @since 0.5.0
 	 *
 	 * @return void
 	 */
 	public static function run_scheduled_build() {
+		if ( ! self::inline_async_acquire_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return; // Another build is already in progress.
+		}
+		try {
+			self::do_build();
+		} finally {
+			self::inline_async_release_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Inner build body — extracted so tests can call it directly without
+	 * going through the tick lock.
+	 *
+	 * @since 0.6.1
+	 *
+	 * @return void
+	 */
+	protected static function do_build() {
 		$settings = self::get_settings();
 		NV_oOS_Graphify_Builder::build(
 			array(
@@ -290,7 +365,12 @@ class NV_oOS_Graphify {
 	/**
 	 * Trigger an incremental rebuild when a post is saved.
 	 *
-	 * Runs via WP Cron to avoid slowing down the save request.
+	 * Schedules a WP-Cron event for 5 seconds out (the existing behaviour)
+	 * AND registers an inline-async shutdown kick so the rebuild begins
+	 * immediately on the current request's shutdown, rather than waiting
+	 * for the cron loopback. The tick lock in {@see run_scheduled_build()}
+	 * ensures only one build runs if both the shutdown kick and the cron
+	 * loopback fire at almost the same time.
 	 *
 	 * @since 0.5.0
 	 *
@@ -308,7 +388,29 @@ class NV_oOS_Graphify {
 		if ( ! $post || 'publish' !== $post->post_status ) {
 			return;
 		}
+
+		// Legacy cron path — still registered so builds run even without
+		// an object cache (the tick lock degrades to transient-only).
 		wp_schedule_single_event( time() + 5, self::CRON_BUILD_HOOK );
+
+		// Inline-async-tick: fire the first build chunk on the shutdown of
+		// the save request so incremental reindexing begins immediately.
+		if ( self::inline_async_kick_enabled( $post_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				function () use ( $post_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						(string) $post_id,
+						function () {
+							self::run_scheduled_build();
+						}
+					);
+				},
+				22
+			);
+		}
 	}
 
 	// -------------------------------------------------------------------------
