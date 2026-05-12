@@ -38,7 +38,7 @@
 		"@cloudflare/workers-types": "^4.20250109.0",
 		"@types/diff": "^8.0.0",
 		"@types/wordpress__components": "^23.0.0",
-		"@wordpress/eslint-plugin": "^21.0.0",
+		"@wordpress/eslint-plugin": "^25.1.0",
 		"@wordpress/jest-preset-default": "^12.0.0",
 		"@wordpress/prettier-config": "^4.0.0",
 		"@wordpress/scripts": "^32.1.0",
