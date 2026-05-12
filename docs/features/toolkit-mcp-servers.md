@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3e) + Phase 4 + Phase 5 + Phase 6 shipped — all 26 toolkits promoted (19 Tier-1 + 7 Tier-2), `/.well-known/mcp` discovery endpoint active, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, and cross-mount reads are recorded in the audit log.
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3d/3e) + Phase 4 + Phase 5 + Phase 6 shipped — all 26 toolkits promoted (19 Tier-1 + 7 Tier-2), `/.well-known/mcp` discovery endpoint active, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, cross-mount reads are recorded in the audit log, and toolkit-scoped bearer tokens (Phase 3d) allow credential-based access without a WordPress user session.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
@@ -91,6 +91,51 @@ add_filter(
     10,
     2
 );
+```
+
+## Toolkit-scoped credentials (Phase 3d)
+
+Each toolkit MCP server can issue **bearer tokens** that allow programmatic access without a WordPress user session. This is designed for CI/CD pipelines, background agents, and external MCP clients that cannot maintain a cookie-based session.
+
+### Token format
+
+```
+mcptk_{8-char prefix}.{40-char secret}
+```
+
+The raw token is shown **once** at generation time. Only a bcrypt hash of the secret is stored on disk (in WP option `wp_mcp_ai_tk_mcp_token_{slug}`). A maximum of 10 tokens per server are allowed.
+
+### Authenticating requests
+
+Include the token in the `Authorization` header:
+
+```
+Authorization: Bearer mcptk_a1b2c3d4.abcdef0123456789...
+```
+
+If the token prefix maps to `mcptk_`, the REST controller validates it against the stored hash for the target server **before** falling back to user-session authentication. If validation fails, the request is rejected with HTTP 401 rather than falling through to the session check.
+
+### REST API for token management
+
+All token management routes require `manage_options`.
+
+| Method   | Route                                              | Description                                   |
+|----------|----------------------------------------------------|-----------------------------------------------|
+| `GET`    | `/mcp-ai-pro/v1/mcp/{slug}/token`                  | List token metadata (prefix, label, timestamps). |
+| `POST`   | `/mcp-ai-pro/v1/mcp/{slug}/token`                  | Generate a new token. Accepts optional `label` body param. Returns the raw token once. |
+| `DELETE` | `/mcp-ai-pro/v1/mcp/{slug}/token/{prefix}`         | Revoke a token by prefix.                     |
+
+### WP-CLI
+
+```bash
+# Generate a token for the CRM server.
+wp mcp-ai mcp-server token-generate crm --label=ci-pipeline
+
+# List all active tokens (secrets omitted).
+wp mcp-ai mcp-server token-list crm
+
+# Revoke a token by its 8-char prefix.
+wp mcp-ai mcp-server token-revoke crm a1b2c3d4 --yes
 ```
 
 ## Tier-1 servers
@@ -191,6 +236,7 @@ Mounted prompts appear under a `_mounted/` namespace; mounted resources use URIs
 - `addons/pro/tests/test-cross-toolkit-mounts.php` — mount visibility, source-disable propagation, consumer-side suppression, binding ownership.
 - `addons/pro/tests/test-pro-slash-command-mcp-server.php` — slash command coverage (Phase 3b).
 - `addons/pro/tests/test-pro-cli-mcp-server-command.php` — WP-CLI command coverage (Phase 3e).
+- `addons/pro/tests/test-toolkit-server-credentials.php` — bearer-token coverage (Phase 3d, 15 cases).
 
 Run them with:
 

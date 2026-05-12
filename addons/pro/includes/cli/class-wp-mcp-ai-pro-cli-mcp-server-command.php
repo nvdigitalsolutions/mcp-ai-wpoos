@@ -9,11 +9,14 @@
  * is a single source of truth.
  *
  * Commands:
- *   wp mcp-ai mcp-server list    [--status=<all|enabled|disabled>] [--format=<fmt>]
- *   wp mcp-ai mcp-server get     <slug>  [--format=<fmt>]
- *   wp mcp-ai mcp-server enable  <slug>
- *   wp mcp-ai mcp-server disable <slug>  [--yes]
- *   wp mcp-ai mcp-server tools   <slug>  [--format=<fmt>]
+ *   wp mcp-ai mcp-server list           [--status=<all|enabled|disabled>] [--format=<fmt>]
+ *   wp mcp-ai mcp-server get            <slug>  [--format=<fmt>]
+ *   wp mcp-ai mcp-server enable         <slug>
+ *   wp mcp-ai mcp-server disable        <slug>  [--yes]
+ *   wp mcp-ai mcp-server tools          <slug>  [--format=<fmt>]
+ *   wp mcp-ai mcp-server token-generate <slug>  [--label=<label>]
+ *   wp mcp-ai mcp-server token-list     <slug>  [--format=<fmt>]
+ *   wp mcp-ai mcp-server token-revoke   <slug> <prefix> [--yes]
  *
  * @package    WP_MCP_AI_Pro
  * @subpackage CLI
@@ -345,6 +348,203 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 		);
 
 		\WP_CLI\Utils\format_items( $format, $items, array( 'tool_slug' ) );
+	}
+
+	// ─── Phase 3d — token management ─────────────────────────────────────────
+
+	/**
+	 * Generate a new API bearer token for a toolkit MCP server.
+	 *
+	 * The raw token is printed once and never stored — treat it like a password.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <slug>
+	 * : Server slug (e.g. crm, health).
+	 *
+	 * [--label=<label>]
+	 * : Human-readable label for the token (e.g. "ci-pipeline", "staging-agent").
+	 * ---
+	 * default:
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp mcp-ai mcp-server token-generate crm --label=ci-pipeline
+	 *
+	 * @subcommand token-generate
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function token_generate( $args, $assoc_args ) {
+		$this->assert_pro_loaded();
+		$this->require_server( $args );
+		$slug  = sanitize_key( (string) $args[0] );
+		$label = sanitize_text_field( \WP_CLI\Utils\get_flag_value( $assoc_args, 'label', '' ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
+			WP_CLI::error( __( 'Token service is not loaded.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$result = WP_MCP_AI_Pro_Toolkit_Server_Token::generate( $slug, $label );
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+
+		WP_CLI::success(
+			sprintf(
+				/* translators: %s: server slug */
+				__( 'Token generated for server "%s". Copy it now — it will not be shown again.', 'mcp-ai-wpoos-pro' ),
+				$slug
+			)
+		);
+		WP_CLI::line( '' );
+		WP_CLI::line( $result['token'] );
+		WP_CLI::line( '' );
+		WP_CLI::log(
+			sprintf(
+				/* translators: 1: token prefix, 2: token label */
+				__( 'Prefix: %1$s  Label: %2$s', 'mcp-ai-wpoos-pro' ),
+				$result['prefix'],
+				$result['label']
+			)
+		);
+	}
+
+	/**
+	 * List API tokens for a toolkit MCP server (metadata only — secrets omitted).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <slug>
+	 * : Server slug (e.g. crm, health).
+	 *
+	 * [--format=<format>]
+	 * : Output format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - yaml
+	 *   - csv
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp mcp-ai mcp-server token-list crm
+	 *
+	 * @subcommand token-list
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function token_list( $args, $assoc_args ) {
+		$this->assert_pro_loaded();
+		$this->require_server( $args );
+		$slug   = sanitize_key( (string) $args[0] );
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
+			WP_CLI::error( __( 'Token service is not loaded.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$tokens = WP_MCP_AI_Pro_Toolkit_Server_Token::list_tokens( $slug );
+		if ( empty( $tokens ) ) {
+			WP_CLI::log(
+				sprintf(
+					/* translators: %s: server slug */
+					__( 'No tokens for server "%s".', 'mcp-ai-wpoos-pro' ),
+					$slug
+				)
+			);
+			return;
+		}
+
+		// Make timestamps human-readable for table/yaml/csv output.
+		if ( 'json' !== $format ) {
+			$tokens = array_map(
+				static function ( $t ) {
+					$t['created_at']   = $t['created_at'] ? gmdate( 'Y-m-d H:i:s', $t['created_at'] ) : '-';
+					$t['last_used_at'] = $t['last_used_at'] ? gmdate( 'Y-m-d H:i:s', $t['last_used_at'] ) : 'never';
+					return $t;
+				},
+				$tokens
+			);
+		}
+
+		\WP_CLI\Utils\format_items( $format, $tokens, array( 'prefix', 'label', 'created_at', 'last_used_at' ) );
+	}
+
+	/**
+	 * Revoke an API token for a toolkit MCP server.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <slug>
+	 * : Server slug (e.g. crm, health).
+	 *
+	 * <prefix>
+	 * : 8-character token prefix (shown by `token-list`).
+	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     $ wp mcp-ai mcp-server token-revoke crm a1b2c3d4 --yes
+	 *
+	 * @subcommand token-revoke
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function token_revoke( $args, $assoc_args ) {
+		$this->assert_pro_loaded();
+		$this->require_server( $args );
+		$slug = sanitize_key( (string) $args[0] );
+
+		if ( empty( $args[1] ) ) {
+			WP_CLI::error( __( 'Please provide the token prefix. Run `wp mcp-ai mcp-server token-list <slug>` to see prefixes.', 'mcp-ai-wpoos-pro' ) );
+		}
+		$prefix = sanitize_key( (string) $args[1] );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
+			WP_CLI::error( __( 'Token service is not loaded.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$yes = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		if ( ! $yes ) {
+			WP_CLI::confirm(
+				sprintf(
+					/* translators: 1: prefix, 2: server slug */
+					__( 'Revoke token "%1$s" for server "%2$s"? Any client using this token will immediately lose access.', 'mcp-ai-wpoos-pro' ),
+					$prefix,
+					$slug
+				)
+			);
+		}
+
+		$removed = WP_MCP_AI_Pro_Toolkit_Server_Token::revoke( $slug, $prefix );
+		if ( ! $removed ) {
+			WP_CLI::error(
+				sprintf(
+					/* translators: %s: token prefix */
+					__( 'Token "%s" not found.', 'mcp-ai-wpoos-pro' ),
+					$prefix
+				)
+			);
+		}
+
+		WP_CLI::success(
+			sprintf(
+				/* translators: 1: prefix, 2: server slug */
+				__( 'Token "%1$s" revoked for server "%2$s".', 'mcp-ai-wpoos-pro' ),
+				$prefix,
+				$slug
+			)
+		);
 	}
 
 	// ─── Helpers ──────────────────────────────────────────────────────────────

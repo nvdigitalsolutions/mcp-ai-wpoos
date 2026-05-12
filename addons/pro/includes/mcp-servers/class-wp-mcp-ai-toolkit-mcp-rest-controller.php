@@ -97,6 +97,43 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 			)
 		);
 
+		// Phase 3d — token management routes (manage_options only).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/mcp/(?P<slug>[a-z0-9_\-]+)/token',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_token_list' ),
+					'permission_callback' => array( $this, 'permission_manage_tokens' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_token_generate' ),
+					'permission_callback' => array( $this, 'permission_manage_tokens' ),
+					'args'                => array(
+						'label' => array(
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/mcp/(?P<slug>[a-z0-9_\-]+)/token/(?P<prefix>[a-f0-9]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'handle_token_revoke' ),
+					'permission_callback' => array( $this, 'permission_manage_tokens' ),
+				),
+			)
+		);
+
 		register_rest_route(
 			self::REST_NAMESPACE,
 			'/mcp-audit',
@@ -144,16 +181,64 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	}
 
 	/**
-	 * JSON-RPC permission. Mirrors the existing monolithic MCP endpoint:
-	 * authenticated users with `read` capability.
+	 * JSON-RPC permission.
 	 *
+	 * Accepts either:
+	 *  (a) A valid per-server bearer token (`Authorization: Bearer mcptk_…`)
+	 *      issued via the token management REST endpoints (Phase 3d), or
+	 *  (b) An authenticated WordPress user session with the `read` capability.
+	 *
+	 * @since 1.2.0
+	 * @since 1.5.0 Also accepts per-server bearer tokens (Phase 3d).
+	 *
+	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
 	 */
-	public function permission_jsonrpc() {
+	public function permission_jsonrpc( WP_REST_Request $request ) {
+		// Phase 3d — per-server bearer token check.
+		$auth_header = $request->get_header( 'Authorization' );
+		if ( $auth_header && 0 === strpos( $auth_header, 'Bearer ' ) ) {
+			$raw_token = substr( $auth_header, 7 );
+			if (
+				class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) &&
+				0 === strpos( $raw_token, WP_MCP_AI_Pro_Toolkit_Server_Token::TOKEN_PREFIX )
+			) {
+				$slug = sanitize_key( isset( $request['slug'] ) ? $request['slug'] : '' );
+				if ( WP_MCP_AI_Pro_Toolkit_Server_Token::validate( $slug, $raw_token ) ) {
+					return true;
+				}
+				// Token format was correct but validation failed — reject outright
+				// rather than falling through to session auth.
+				return new WP_Error(
+					'rest_forbidden',
+					__( 'Invalid server token.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 401 )
+				);
+			}
+		}
+
+		// Fall back to standard user-session check.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_forbidden', __( 'Authentication required for MCP JSON-RPC.', 'mcp-ai-wpoos-pro' ), array( 'status' => 401 ) );
 		}
 		if ( ! current_user_can( 'read' ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Token management permission — requires `manage_options`.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return bool|WP_Error
+	 */
+	public function permission_manage_tokens() {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_forbidden', __( 'Authentication required.', 'mcp-ai-wpoos-pro' ), array( 'status' => 401 ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( 'rest_forbidden', __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 		return true;
@@ -831,5 +916,88 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 				),
 			)
 		);
+	}
+
+	// -----------------------------------------------------------------------
+	// Phase 3d — token management handlers
+	// -----------------------------------------------------------------------
+
+	/**
+	 * GET /mcp/{slug}/token — list token metadata for a server.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_token_list( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
+			return new WP_Error( 'token_service_unavailable', __( 'Token service unavailable.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
+		}
+		$slug = sanitize_key( $request['slug'] );
+		if ( null === WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( $slug ) ) {
+			return new WP_Error( 'mcp_server_not_found', __( 'Toolkit MCP server not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+		return rest_ensure_response(
+			array(
+				'tokens' => WP_MCP_AI_Pro_Toolkit_Server_Token::list_tokens( $slug ),
+			)
+		);
+	}
+
+	/**
+	 * POST /mcp/{slug}/token — generate a new bearer token for a server.
+	 *
+	 * Returns the raw token string in the response body (shown once only).
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_token_generate( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
+			return new WP_Error( 'token_service_unavailable', __( 'Token service unavailable.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
+		}
+		$slug = sanitize_key( $request['slug'] );
+		if ( null === WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( $slug ) ) {
+			return new WP_Error( 'mcp_server_not_found', __( 'Toolkit MCP server not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		$label  = sanitize_text_field( (string) $request->get_param( 'label' ) );
+		$result = WP_MCP_AI_Pro_Toolkit_Server_Token::generate( $slug, $label );
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error( $result->get_error_code(), $result->get_error_message(), array( 'status' => 422 ) );
+		}
+
+		$response = rest_ensure_response( $result );
+		$response->set_status( 201 );
+		return $response;
+	}
+
+	/**
+	 * DELETE /mcp/{slug}/token/{prefix} — revoke a bearer token.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_token_revoke( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) ) {
+			return new WP_Error( 'token_service_unavailable', __( 'Token service unavailable.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
+		}
+		$slug   = sanitize_key( $request['slug'] );
+		$prefix = sanitize_key( $request['prefix'] );
+		if ( null === WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( $slug ) ) {
+			return new WP_Error( 'mcp_server_not_found', __( 'Toolkit MCP server not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		$removed = WP_MCP_AI_Pro_Toolkit_Server_Token::revoke( $slug, $prefix );
+		if ( ! $removed ) {
+			return new WP_Error( 'token_not_found', __( 'Token not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+		return rest_ensure_response( array( 'revoked' => true, 'prefix' => $prefix ) );
 	}
 }

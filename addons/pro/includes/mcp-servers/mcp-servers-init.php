@@ -19,6 +19,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-registry.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-rest-controller.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-audit-log.php';
 require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-mcp-observability-card.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-server-token.php';
 
 // Phase 1 pilot servers.
 require_once __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
