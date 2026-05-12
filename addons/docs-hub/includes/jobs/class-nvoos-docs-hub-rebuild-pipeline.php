@@ -29,12 +29,54 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the inline-async-tick trait from the base plugin when available so the
+// rebuild pipeline can fire its first chunk immediately on the request that
+// triggered the rebuild, rather than waiting for the next WP-Cron loopback.
+if ( defined( 'WP_MCP_AI_PATH' ) && ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	$nvoos_docs_hub_trait_path = WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+	if ( file_exists( $nvoos_docs_hub_trait_path ) ) {
+		require_once $nvoos_docs_hub_trait_path;
+	}
+	unset( $nvoos_docs_hub_trait_path );
+}
+
+// Stub: lets the class load cleanly on bare envs (e.g. unit tests running
+// without the base plugin) while silently disabling the inline kick.
+if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
+	// phpcs:ignore Generic.Files.OneClassPerFile.MultipleFound -- intentional stub trait.
+	trait WP_MCP_AI_Inline_Async_Tick_Trait {
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		protected static function inline_async_kick_enabled( $job_id, $class ) {
+			return false;
+		}
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		protected static function inline_async_detach_worker_from_client() {}
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		protected static function inline_async_acquire_tick_lock( $lock_key, $cache_group, $ttl_seconds = 60 ) {
+			return true;
+		}
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		protected static function inline_async_release_tick_lock( $lock_key, $cache_group ) {}
+		// phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		protected static function inline_async_run_kick( $class, $job_id, $callable ) {}
+	}
+}
+
 /**
  * Chunked rebuild pipeline.
+ *
+ * Adopts {@see WP_MCP_AI_Inline_Async_Tick_Trait} (Slice 4 of the inline-async-tick
+ * campaign) when the base NV oOS plugin is active. The inline kick fires the first
+ * chunk of the rebuild on the shutdown of the request that calls {@see enqueue()},
+ * eliminating the latency between "rebuild triggered" and "first chunk processed".
+ * The cooperative tick lock prevents two concurrent tick executions (e.g. an inline
+ * kick racing a WP-Cron loopback) from processing the same chunk twice.
  *
  * @since 1.2.0
  */
 class NV_oOS_Docs_Hub_Rebuild_Pipeline {
+
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
 
 	/**
 	 * Cron / single-event hook fired between chunks.
@@ -56,6 +98,39 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	 * @var float
 	 */
 	const DEFAULT_MEMORY_BUDGET = 0.8;
+
+	/**
+	 * Lock key for the cooperative tick lock.
+	 *
+	 * There is only one rebuild at a time (guarded by {@see is_running()}),
+	 * so a fixed key is sufficient. The key is passed directly to
+	 * {@see inline_async_acquire_tick_lock()} /
+	 * {@see inline_async_release_tick_lock()}.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const TICK_LOCK_KEY = 'nvoos_docs_hub_rebuild_tick_lock';
+
+	/**
+	 * Object-cache group used by the tick-lock entries.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const TICK_LOCK_CACHE_GROUP = 'nvoos_docs_hub';
+
+	/**
+	 * Tick-lock TTL in seconds.
+	 *
+	 * Should be longer than the per-tick wall-clock budget (15 s) plus some
+	 * headroom for worst-case ticks. 45 s is chosen to be safely above the
+	 * default 15 s budget while releasing the lock quickly.
+	 *
+	 * @since 1.2.0
+	 * @var int
+	 */
+	const TICK_LOCK_TTL = 45;
 
 	/**
 	 * Tick start timestamp (microtime).
@@ -147,6 +222,27 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 
 		self::schedule_next_tick();
 
+		// Inline-async-tick: fire the first processing chunk on the shutdown of
+		// the current request so the rebuild begins work immediately instead of
+		// waiting for the next WP-Cron loopback (which on busy sites may be 1+
+		// minutes away, or may never fire when DISABLE_WP_CRON is true).
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			add_action(
+				'shutdown',
+				function () use ( $job_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						$job_id,
+						function () {
+							self::tick();
+						}
+					);
+				},
+				22
+			);
+		}
+
 		return NV_oOS_Docs_Hub_Rebuild_State::to_summary();
 	}
 
@@ -210,13 +306,44 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 	 *
 	 * Picks up the current phase from the rebuild state and runs as
 	 * much work as the per-tick budget allows. Reschedules itself
-	 * when more work remains.
+	 * when more work remains. Protected by the cooperative tick lock
+	 * ({@see WP_MCP_AI_Inline_Async_Tick_Trait}) to prevent the inline
+	 * kick fired by {@see enqueue()} from racing a concurrent WP-Cron
+	 * loopback tick.
 	 *
 	 * @since 1.2.0
 	 *
 	 * @return void
 	 */
 	public static function tick() {
+		$state = NV_oOS_Docs_Hub_Rebuild_State::get();
+		if ( ! NV_oOS_Docs_Hub_Rebuild_State::is_running( $state ) ) {
+			return;
+		}
+
+		// Cooperative lock — one tick at a time.
+		if ( ! self::inline_async_acquire_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP, self::TICK_LOCK_TTL ) ) {
+			return;
+		}
+
+		try {
+			self::do_tick();
+		} finally {
+			self::inline_async_release_tick_lock( self::TICK_LOCK_KEY, self::TICK_LOCK_CACHE_GROUP );
+		}
+	}
+
+	/**
+	 * Inner tick logic — executes while the tick lock is held.
+	 *
+	 * Extracted from {@see tick()} so unit tests can run chunks without
+	 * going through the lock machinery.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return void
+	 */
+	public static function do_tick() {
 		$state = NV_oOS_Docs_Hub_Rebuild_State::get();
 		if ( ! NV_oOS_Docs_Hub_Rebuild_State::is_running( $state ) ) {
 			return;

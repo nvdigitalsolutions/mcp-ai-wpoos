@@ -2,6 +2,281 @@
 
 ## [Unreleased]
 
+### Added — Inline-async-tick fallback for Gemini Veo polling (Slice 6)
+
+- `WP_MCP_AI_Gemini_Video_Generation_Service` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first Gemini
+  operation-status poll fires on the shutdown of the request that queued the
+  video job, rather than waiting for the next WP-Cron loopback. On hosts with
+  `DISABLE_WP_CRON` the loopback never fires; the cooperative tick lock
+  prevents the inline kick and the rescheduled cron event from executing
+  `poll_video_async()` for the same `job_id` simultaneously:
+  - `queue_async_polling()` registers a `shutdown` action at priority 22 that
+    calls `poll_video_async_static()` inline after the video-generation
+    response is returned to the client (guarded by the
+    `wp_mcp_ai_inline_kick_enabled` filter). The existing
+    `wp_schedule_single_event(time() + 1, …)` + `spawn_cron()` calls are
+    preserved as the cron fallback.
+  - `poll_video_async()` now acquires the cooperative tick lock
+    (`TICK_LOCK_PREFIX = 'wp_mcp_ai_veo_poll_lock_'`, group
+    `wp_mcp_ai_veo_poll`, TTL 30 s) then delegates to the new protected
+    `do_poll_video_async()` method, so shutdown kick and cron event cannot
+    race for the same job.
+- New class constants: `TICK_LOCK_PREFIX`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`.
+- New test: `tests/test-veo-inline-kick.php` (4 cases: constant assertions,
+  lock prevents double-poll, missing-metadata bail, filter disable).
+- Architecture doc `docs/architecture/inline-async-tick-pattern.md` updated:
+  Slice 6 added to the Tier-1 consumer table; the "Future Tier-1 consumers"
+  note removed (all planned slices are now complete).
+
+### Added — Inline-async-tick fallback for Graphify reindex (Slice 5a)
+
+- `NV_oOS_Graphify` now composes `WP_MCP_AI_Inline_Async_Tick_Trait`
+  (conditional load from `WP_MCP_AI_PATH`, with a no-op stub for bare
+  environments) so that the first incremental reindex after a post save fires
+  on the shutdown of the save request instead of waiting 5+ seconds for the
+  WP-Cron loopback:
+  - `on_save_post()` registers a `shutdown` action at priority 22 that
+    calls `run_scheduled_build()` inline after the save response is flushed
+    (guarded by the `wp_mcp_ai_inline_kick_enabled` filter). The existing
+    `wp_schedule_single_event(time() + 5, …)` call is preserved as the
+    cron fallback.
+  - `run_scheduled_build()` now acquires the cooperative tick lock
+    (`TICK_LOCK_KEY = 'nvoos_graphify_build_tick_lock'`, group
+    `nvoos_graphify`, TTL 60 s) then delegates to the new protected static
+    `do_build()` method so that the shutdown kick and the cron loopback
+    cannot run two concurrent builds simultaneously.
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`, `TICK_LOCK_TTL`.
+- New test: `tests/graphify/test-graphify-inline-kick.php` (4 cases:
+  shutdown-kick registration on publish, lock prevents double-build, filter
+  disables, draft post skips kick).
+
+### Added — Inline-async-tick fallback for Harness Eval Scheduler (Slice 5b)
+
+- `WP_MCP_AI_Harness_Eval_Scheduler` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first eval batch fires on
+  the shutdown of the request that first activates the scheduler:
+  - `maybe_schedule_cron()` now adds a `shutdown` action (priority 22) the
+    first time it schedules the daily cron event, firing `tick()` inline so
+    opted-in assistants see an initial eval result within seconds rather than
+    waiting until the next day.
+  - `tick()` now acquires the cooperative tick lock
+    (`TICK_LOCK_KEY = 'wp_mcp_ai_harness_eval_tick_lock'`, group
+    `wp_mcp_ai_harness_eval`, TTL 120 s) and delegates to the new public
+    static `do_tick()` method, preventing concurrent WP-Cron invocations from
+    running two overlapping eval batches.
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`, `TICK_LOCK_TTL`.
+- New test: `tests/test-harness-eval-scheduler-inline-kick.php` (4 cases:
+  first-schedule shutdown kick, lock contention, filter disables, do_tick
+  no-op summary on empty site).
+
+### Added — Inline-async-tick fallback for Crawl4AI background poller (Slice 3)
+
+- `WP_MCP_AI_Crawler` now composes the base plugin's
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first poll for a
+  newly-queued Crawl4AI job fires on the shutdown of the request that
+  registered it, rather than waiting up to 30 s (the default poll
+  interval) for the WP-Cron loopback:
+  - `register_remote_job()` registers a `shutdown` action at priority
+    22 that calls `handle_poll_event($task_id)` inline after the REST
+    response is flushed (guarded by the `wp_mcp_ai_inline_kick_enabled`
+    filter escape hatch).
+  - `handle_poll_event()` now acquires the two-layer cooperative tick
+    lock (`TICK_LOCK_PREFIX . md5($task_id)`, group
+    `wp_mcp_ai_crawl4ai`, TTL 30 s) before delegating to the new
+    `do_poll_event()` method so that the inline kick and a concurrent
+    WP-Cron loopback cannot both call `check_remote_task()` for the
+    same task simultaneously.
+  - The poll body has been extracted into the protected static
+    `do_poll_event()` method so unit tests can exercise it without
+    going through the lock.
+- New class constants: `TICK_LOCK_PREFIX`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`, `STALE_QUEUED_THRESHOLD_SECONDS`.
+- New test: `tests/test-crawl4ai-inline-kick.php` (4 cases:
+  shutdown-kick registration, lock-prevents-double-poll, filter disables,
+  skip-polling bail).
+
+### Added — Inline-async-tick fallback for Docs Hub rebuild pipeline (Slice 4)
+
+- `NV_oOS_Docs_Hub_Rebuild_Pipeline` (Docs Hub addon) now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` when the base NV oOS plugin is
+  active. This fires the first rebuild chunk on the shutdown of the
+  request that calls `enqueue()` instead of waiting for the next
+  WP-Cron loopback, making rebuilds feel near-instant for operators:
+  - The trait file is loaded from `WP_MCP_AI_PATH` with a guard;
+    a no-op stub trait is defined for bare environments (unit tests
+    running without the base plugin) so the class loads cleanly.
+  - `enqueue()` registers a `shutdown` action at priority 22 that
+    calls `tick()` inline after flushing (guarded by the filter).
+  - `tick()` acquires the fixed-key cooperative tick lock
+    (`TICK_LOCK_KEY = 'nvoos_docs_hub_rebuild_tick_lock'`, group
+    `nvoos_docs_hub`, TTL 45 s) then delegates to the new static
+    `do_tick()` method so that the inline kick and a WP-Cron loopback
+    cannot run two concurrent chunks.
+  - Tick body extracted to public static `do_tick()` (callable by
+    tests directly without the lock).
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`.
+- New test: `addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php`
+  (4 cases: shutdown-kick registration, lock-prevents-double-tick, filter
+  disables, idle/done bail).
+
+### Added — Inline-async-tick fallback for SaaS Controller Apply Job
+
+- `NVOOS_SaaS_Controller_Apply_Job` (the queued background-apply
+  worker for the SaaS Controller addon's Cloudflare / Stripe /
+  OpenRouter / Worker upload pipeline) now composes the base
+  plugin's `WP_MCP_AI_Inline_Async_Tick_Trait`. On hosts where
+  `DISABLE_WP_CRON` is true or the WP-Cron loopback is firewalled,
+  apply jobs previously sat at `status: queued` forever even though
+  `spawn_cron()` returned without error. The class now:
+  - registers a `shutdown` action from `enqueue_plan()` that runs
+    the first tick inline in the same PHP process once the
+    `/apply/enqueue` REST response has been flushed (honours the
+    shared `wp_mcp_ai_inline_kick_enabled` escape-hatch filter);
+  - guards `handle_tick()` with the trait's two-layer cooperative
+    tick lock (transient + `wp_cache_add`) so a delayed cron
+    loopback firing concurrently with the inline shutdown kick is
+    a no-op;
+  - emits the unified `wp_mcp_ai_inline_kick_completed`
+    observability action so the Pro OTel measurement bootstrap
+    records `inline_kick.duration_ms` / `inline_kick.failure.count`
+    for SaaS Apply on the same dashboard as Mine Memories and the
+    Tool Async Executor;
+  - recurses inline under `DISABLE_WP_CRON` within a 60-second
+    wall-clock budget (`INLINE_LOOP_BUDGET_SECONDS = 60`) — larger
+    than the 20s used by the much faster batch-oriented Mine
+    Memories job because a single Apply row can include a
+    multi-second Worker multipart upload to Cloudflare.
+- REST `GET /nvoos-saas/v1/apply/jobs/{id}` now self-heals: when
+  the admin UI polls and the job has sat in `queued` past
+  `STALE_QUEUED_THRESHOLD_SECONDS = 5`, the controller schedules a
+  one-shot shutdown kick on the way out so the very next poll
+  observes progress. Mirrors the equivalent self-heal in the base
+  plugin's Mine Memories and Tool Async Executor REST routes.
+- New class constants `TICK_LOCK_PREFIX = 'nvoos_saas_apply_lock_'`,
+  `TICK_LOCK_CACHE_GROUP = 'nvoos_saas_apply'`, `TICK_LOCK_TTL =
+  120`, `STALE_QUEUED_THRESHOLD_SECONDS = 5`,
+  `INLINE_LOOP_BUDGET_SECONDS = 60`. Existing constants
+  (`CRON_HOOK`, `STATE_PREFIX`, `STATE_TTL`, `MAX_TOTAL_ROWS`) are
+  unchanged. No public method signatures changed; existing PHPUnit
+  tests against `enqueue_plan()`, `handle_tick()`, `cancel()`, and
+  `get_progress()` pass unmodified.
+- PHPUnit: 4 new tests covering inline-shutdown kick advancing a
+  queued job, terminal-status short-circuit, the
+  `wp_mcp_ai_inline_kick_enabled` filter disabling the registration,
+  and the cooperative lock no-op behaviour under concurrent ticks.
+
+### Changed — Transcript Mining job now consumes the inline-async-tick trait
+
+- `WP_MCP_AI_Transcript_Mining_Job` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` instead of carrying its own copies
+  of the four primitives. Behaviour is unchanged on hosts that hit the
+  existing fallback paths, but Mine Memories now:
+  - emits the unified `wp_mcp_ai_inline_kick_completed` observability
+    action on every shutdown kick (same `( $class, $job_id,
+    $duration_ms, $success )` shape used by the Tool Async Executor),
+    so Pro OTel subscribers can record `inline_kick.duration_ms` /
+    `inline_kick.failure.count` for free; and
+  - honours the global `wp_mcp_ai_inline_kick_enabled` escape-hatch
+    filter — returning `false` from the filter (globally or per-job)
+    now skips the shutdown action registration entirely for Mine
+    Memories the same way it already did for the Tool Async Executor.
+- New class constant `TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_tx_mine'`
+  formalises the object-cache group that the lock helper consumes
+  (previously inlined as a string literal). `TICK_LOCK_PREFIX`,
+  `TICK_LOCK_TTL`, `INLINE_LOOP_BUDGET_SECONDS`, and
+  `STALE_QUEUED_THRESHOLD_SECONDS` are unchanged.
+- Net diff: ~80 LOC removed from the class; one trait `use` line
+  added. No public method signatures changed; existing tests against
+  `handle_tick()`, `kick_inline()`, and `TICK_LOCK_PREFIX` continue to
+  pass without modification.
+
+### Added — Inline-async-tick fallback for Tool Async Executor
+
+- New reusable trait `WP_MCP_AI_Inline_Async_Tick_Trait` at
+  `includes/traits/trait-wp-mcp-ai-inline-async-tick.php` consolidating
+  the four inline-async primitives (worker detach, two-layer cooperative
+  tick lock, `DISABLE_WP_CRON` loop decision, observability action)
+  introduced for the Mine Memories job in PR #4916.
+- `WP_MCP_AI_Tool_Async_Executor` now consumes the trait. Async tools
+  scheduled via `queue_tool()` register a `shutdown` action that runs
+  the tick inline once the response is flushed, so jobs no longer sit
+  at `status: pending` forever on hosts where the WP-Cron loopback never
+  fires (`DISABLE_WP_CRON = true`, firewalled `wp-cron.php`, etc.). A
+  cooperative per-job lock around `execute_async_tool()` prevents
+  double-execution when a delayed cron loopback fires after the inline
+  worker has finished.
+- The REST cron-status poll endpoint (`GET /mcp-ai/v1/cron-status/{job_id}`)
+  now self-heals stuck async jobs: when status has been `pending` past
+  5 seconds the controller schedules a shutdown kick. The response
+  payload is unchanged.
+- New filter `wp_mcp_ai_inline_kick_enabled` (default `true`, per-job
+  filterable) — operator escape hatch.
+- New action `wp_mcp_ai_inline_kick_completed` fires once per inline
+  kick with `( $class, $job_id, $duration_ms, $success )` — Pro
+  measurement bootstrap can record `inline_kick.duration_ms` and
+  `inline_kick.failure.count` for OTel.
+- Docs: new architecture page
+  `docs/architecture/inline-async-tick-pattern.md`; async-tool guide
+  updated with the fallback section.
+
+### Fixed — Transcript mining job stuck in `queued` on WP-Cron-disabled hosts
+
+- The **Mine Memories from Transcripts** background job
+  (`WP_MCP_AI_Transcript_Mining_Job`) now ships an industry-standard inline-async
+  fallback so jobs progress on every WordPress host, including sites with
+  `DISABLE_WP_CRON = true` or a firewalled `wp-cron.php` loopback. Previously,
+  jobs would sit at `Status: queued, Progress: 0 / 1` indefinitely on these
+  hosts because `spawn_cron()` cannot dispatch its loopback HTTP request.
+- `enqueue()` now registers a `shutdown` action that flushes the REST response
+  via `fastcgi_finish_request()` (when available), detaches the worker via
+  `ignore_user_abort()`, and runs the first tick in-process when state is still
+  `queued`. The cron path is unchanged for hosts where it already works.
+- `handle_tick()` is guarded by a two-layer cooperative lock (object cache +
+  transient) so the inline shutdown worker and a delayed cron loopback cannot
+  double-process the same batch.
+- `handle_tick()` also runs subsequent batches inline when `DISABLE_WP_CRON` is
+  true, bounded by a 20 s wall-clock budget per request to stay clear of PHP
+  `max_execution_time` limits.
+- The REST poll endpoint `GET /mcp-ai/v1/transcript-mining/jobs/{id}` is now
+  self-healing: when a job has been `queued` for longer than 5 s it queues an
+  inline kick after the response is flushed. The admin UI's 2 s poll loop
+  therefore drives forward progress automatically.
+- Diagnostic logging: a `transcript_mining` event records when a tick is driven
+  by the inline path (`source => inline_shutdown`) and a single warning is
+  emitted when `spawn_cron()` returns `false`, pointing operators to the
+  loopback or `DISABLE_WP_CRON` setting.
+- PHPUnit coverage added in `tests/test-transcript-mining-job.php` (3 new
+  cases): inline-shutdown completion, cooperative-lock guard, and
+  `kick_inline()` no-op on non-queued states.
+
+### Added — Scheduled Result widget + block
+
+- New **Scheduled Result Display** as a Gutenberg dynamic block
+  (`mcp-ai-wpoos/scheduled-result`) and Elementor widget
+  (`WP_MCP_AI_Elementor_Scheduled_Result_Widget`). Both bind to any Pro
+  Schedule and render its latest run output via a shared PHP renderer
+  (`includes/renderers/class-wp-mcp-ai-scheduled-result-renderer.php`) with
+  six canonical modes — `summary-card`, `list`, `table`, `metric`,
+  `timeline`, `raw`.
+- Pro: Schedule Manager now persists a typed result envelope
+  (`{ summary, data, render, status, error, generated_at }`) in a separate
+  `wp_mcp_ai_pro_schedule_results` option, independent of the run-history
+  ring buffer. Per-schedule `result_retention` (default 10).
+- Pro: New REST routes under `mcp-ai-pro/v1/schedules` — `?selectable=1`
+  picker, `/{id}/latest-result` (with ETag), `/{id}/results`, and a
+  nonce-protected `/{id}/preview`.
+- Pro: Three new tools — `get_schedule_latest_result`,
+  `render_schedule_result`, `configure_schedule_widget_defaults`.
+- New filters/actions: `wp_mcp_ai_pro_schedule_result_envelope`,
+  `wp_mcp_ai_pro_schedule_public_result`,
+  `wp_mcp_ai_pro_schedule_result_retention`,
+  `wp_mcp_ai_pro_schedule_result_capability`, and the
+  `wp_mcp_ai_pro_schedule_result_recorded` action.
+- Docs: `docs/features/scheduled-result-widget.md`.
+
 ## [1.1.17] - 2026-05-10
 
 ### May 10, 2026 — WP.org Compliance Hardening, Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, PHPUnit + Vitest Coverage Campaign, Build-pipeline Split, Dependabot Security Sweep
