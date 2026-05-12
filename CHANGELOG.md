@@ -2,6 +2,57 @@
 
 ## [Unreleased]
 
+### Added — Inline-async-tick fallback for Crawl4AI background poller (Slice 3)
+
+- `WP_MCP_AI_Crawler` now composes the base plugin's
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first poll for a
+  newly-queued Crawl4AI job fires on the shutdown of the request that
+  registered it, rather than waiting up to 30 s (the default poll
+  interval) for the WP-Cron loopback:
+  - `register_remote_job()` registers a `shutdown` action at priority
+    22 that calls `handle_poll_event($task_id)` inline after the REST
+    response is flushed (guarded by the `wp_mcp_ai_inline_kick_enabled`
+    filter escape hatch).
+  - `handle_poll_event()` now acquires the two-layer cooperative tick
+    lock (`TICK_LOCK_PREFIX . md5($task_id)`, group
+    `wp_mcp_ai_crawl4ai`, TTL 30 s) before delegating to the new
+    `do_poll_event()` method so that the inline kick and a concurrent
+    WP-Cron loopback cannot both call `check_remote_task()` for the
+    same task simultaneously.
+  - The poll body has been extracted into the protected static
+    `do_poll_event()` method so unit tests can exercise it without
+    going through the lock.
+- New class constants: `TICK_LOCK_PREFIX`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`, `STALE_QUEUED_THRESHOLD_SECONDS`.
+- New test: `tests/test-crawl4ai-inline-kick.php` (4 cases:
+  shutdown-kick registration, lock-prevents-double-poll, filter disables,
+  skip-polling bail).
+
+### Added — Inline-async-tick fallback for Docs Hub rebuild pipeline (Slice 4)
+
+- `NV_oOS_Docs_Hub_Rebuild_Pipeline` (Docs Hub addon) now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` when the base NV oOS plugin is
+  active. This fires the first rebuild chunk on the shutdown of the
+  request that calls `enqueue()` instead of waiting for the next
+  WP-Cron loopback, making rebuilds feel near-instant for operators:
+  - The trait file is loaded from `WP_MCP_AI_PATH` with a guard;
+    a no-op stub trait is defined for bare environments (unit tests
+    running without the base plugin) so the class loads cleanly.
+  - `enqueue()` registers a `shutdown` action at priority 22 that
+    calls `tick()` inline after flushing (guarded by the filter).
+  - `tick()` acquires the fixed-key cooperative tick lock
+    (`TICK_LOCK_KEY = 'nvoos_docs_hub_rebuild_tick_lock'`, group
+    `nvoos_docs_hub`, TTL 45 s) then delegates to the new static
+    `do_tick()` method so that the inline kick and a WP-Cron loopback
+    cannot run two concurrent chunks.
+  - Tick body extracted to public static `do_tick()` (callable by
+    tests directly without the lock).
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`.
+- New test: `addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php`
+  (4 cases: shutdown-kick registration, lock-prevents-double-tick, filter
+  disables, idle/done bail).
+
 ### Added — Inline-async-tick fallback for SaaS Controller Apply Job
 
 - `NVOOS_SaaS_Controller_Apply_Job` (the queued background-apply

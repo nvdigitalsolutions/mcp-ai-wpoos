@@ -70,10 +70,11 @@ Every consumer of the trait wires the same four moving parts:
 | 1 | `WP_MCP_AI_Transcript_Mining_Job` (Mine Memories) | `wp_mcp_ai_tx_mine_tick` | 5 s |
 | 2 | `WP_MCP_AI_Tool_Async_Executor` | `wp_mcp_ai_async_tool_execution` | 5 s |
 | 3 | `NVOOS_SaaS_Controller_Apply_Job` (SaaS Controller addon) | `nvoos_saas_controller_apply_tick` | 5 s |
+| 4 | `WP_MCP_AI_Crawler` (Crawl4AI background poller) | `wp_mcp_ai_crawl4ai_poll_task` | 5 s (stale threshold; lock TTL 30 s) |
+| 5 | `NV_oOS_Docs_Hub_Rebuild_Pipeline` (Docs Hub addon) | `nvoos_docs_hub_rebuild_tick` | n/a (single-rebuild-at-a-time; lock TTL 45 s) |
 
 Future Tier-1 consumers planned (per the rollout plan):
-Gemini Veo polling, Crawl4AI poll task, Docs Hub rebuild pipeline,
-Graphify reindex, Harness eval scheduler.
+Gemini Veo polling, Graphify reindex, Harness eval scheduler.
 
 ## Cross-cutting controls
 
@@ -103,6 +104,11 @@ Two test fixtures are provided:
 - `tests/test-tool-async-executor-inline-async.php` — verifies the
   Tool Async Executor end-to-end (shutdown registration, lock
   contention, REST self-heal staleness threshold, escape-hatch filter).
+- `tests/test-crawl4ai-inline-kick.php` — Slice 3: Crawl4AI poller
+  (shutdown kick registration, lock contention, filter, skip-polling bail).
+- `addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php` — Slice 4:
+  Docs Hub rebuild pipeline (shutdown kick registration, lock contention,
+  filter, idle/done bail).
 
 The Mine Memories regression suite at
 `tests/test-transcript-mining-job.php` covers the original consumer.
