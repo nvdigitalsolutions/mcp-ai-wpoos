@@ -72,9 +72,11 @@ Every consumer of the trait wires the same four moving parts:
 | 3 | `NVOOS_SaaS_Controller_Apply_Job` (SaaS Controller addon) | `nvoos_saas_controller_apply_tick` | 5 s |
 | 4 | `WP_MCP_AI_Crawler` (Crawl4AI background poller) | `wp_mcp_ai_crawl4ai_poll_task` | 5 s (stale threshold; lock TTL 30 s) |
 | 5 | `NV_oOS_Docs_Hub_Rebuild_Pipeline` (Docs Hub addon) | `nvoos_docs_hub_rebuild_tick` | n/a (single-rebuild-at-a-time; lock TTL 45 s) |
+| 6 | `NV_oOS_Graphify` (Graphify reindex on post save) | `nvoos_graphify_cron_build` | n/a (fixed lock key; lock TTL 60 s) |
+| 7 | `WP_MCP_AI_Harness_Eval_Scheduler` (eval tick) | `wp_mcp_ai_harness_eval_tick` | n/a (first-schedule only; lock TTL 120 s) |
 
 Future Tier-1 consumers planned (per the rollout plan):
-Gemini Veo polling, Graphify reindex, Harness eval scheduler.
+Gemini Veo polling.
 
 ## Cross-cutting controls
 
@@ -109,6 +111,11 @@ Two test fixtures are provided:
 - `addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php` — Slice 4:
   Docs Hub rebuild pipeline (shutdown kick registration, lock contention,
   filter, idle/done bail).
+- `tests/graphify/test-graphify-inline-kick.php` — Slice 5a: Graphify reindex
+  (shutdown kick on post save, lock contention, filter, draft skip).
+- `tests/test-harness-eval-scheduler-inline-kick.php` — Slice 5b: Harness
+  eval scheduler (first-schedule shutdown kick, lock contention, filter,
+  do_tick no-op on empty site).
 
 The Mine Memories regression suite at
 `tests/test-transcript-mining-job.php` covers the original consumer.

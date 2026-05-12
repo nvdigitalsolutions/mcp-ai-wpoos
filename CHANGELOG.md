@@ -2,6 +2,47 @@
 
 ## [Unreleased]
 
+### Added — Inline-async-tick fallback for Graphify reindex (Slice 5a)
+
+- `NV_oOS_Graphify` now composes `WP_MCP_AI_Inline_Async_Tick_Trait`
+  (conditional load from `WP_MCP_AI_PATH`, with a no-op stub for bare
+  environments) so that the first incremental reindex after a post save fires
+  on the shutdown of the save request instead of waiting 5+ seconds for the
+  WP-Cron loopback:
+  - `on_save_post()` registers a `shutdown` action at priority 22 that
+    calls `run_scheduled_build()` inline after the save response is flushed
+    (guarded by the `wp_mcp_ai_inline_kick_enabled` filter). The existing
+    `wp_schedule_single_event(time() + 5, …)` call is preserved as the
+    cron fallback.
+  - `run_scheduled_build()` now acquires the cooperative tick lock
+    (`TICK_LOCK_KEY = 'nvoos_graphify_build_tick_lock'`, group
+    `nvoos_graphify`, TTL 60 s) then delegates to the new protected static
+    `do_build()` method so that the shutdown kick and the cron loopback
+    cannot run two concurrent builds simultaneously.
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`, `TICK_LOCK_TTL`.
+- New test: `tests/graphify/test-graphify-inline-kick.php` (4 cases:
+  shutdown-kick registration on publish, lock prevents double-build, filter
+  disables, draft post skips kick).
+
+### Added — Inline-async-tick fallback for Harness Eval Scheduler (Slice 5b)
+
+- `WP_MCP_AI_Harness_Eval_Scheduler` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first eval batch fires on
+  the shutdown of the request that first activates the scheduler:
+  - `maybe_schedule_cron()` now adds a `shutdown` action (priority 22) the
+    first time it schedules the daily cron event, firing `tick()` inline so
+    opted-in assistants see an initial eval result within seconds rather than
+    waiting until the next day.
+  - `tick()` now acquires the cooperative tick lock
+    (`TICK_LOCK_KEY = 'wp_mcp_ai_harness_eval_tick_lock'`, group
+    `wp_mcp_ai_harness_eval`, TTL 120 s) and delegates to the new public
+    static `do_tick()` method, preventing concurrent WP-Cron invocations from
+    running two overlapping eval batches.
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`, `TICK_LOCK_TTL`.
+- New test: `tests/test-harness-eval-scheduler-inline-kick.php` (4 cases:
+  first-schedule shutdown kick, lock contention, filter disables, do_tick
+  no-op summary on empty site).
+
 ### Added — Inline-async-tick fallback for Crawl4AI background poller (Slice 3)
 
 - `WP_MCP_AI_Crawler` now composes the base plugin's
