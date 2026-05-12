@@ -87,6 +87,12 @@ namespace {
 		}
 	}
 
+	// WP_CLI_Command is the base class used by WP_MCP_AI_CLI_Base_Command.
+	// It is not available in the PHPUnit environment, so stub it here.
+	if ( ! class_exists( 'WP_CLI_Command' ) ) {
+		class WP_CLI_Command {} // phpcs:ignore
+	}
+
 	// Load the command class.
 	require_once dirname( __DIR__ ) . '/includes/cli/class-wp-mcp-ai-pro-cli-mcp-server-command.php';
 
