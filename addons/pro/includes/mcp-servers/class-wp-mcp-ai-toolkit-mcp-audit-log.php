@@ -111,7 +111,7 @@ class WP_MCP_AI_Toolkit_MCP_Audit_Log {
 			'consumer' => sanitize_key( isset( $entry['consumer'] ) ? (string) $entry['consumer'] : '' ),
 			'source'   => sanitize_key( isset( $entry['source'] ) ? (string) $entry['source'] : '' ),
 			'entity'   => sanitize_text_field( isset( $entry['entity'] ) ? (string) $entry['entity'] : '' ),
-			'uri'      => isset( $entry['uri'] ) ? esc_url_raw( (string) $entry['uri'] ) : '',
+			'uri'      => isset( $entry['uri'] ) ? sanitize_text_field( (string) $entry['uri'] ) : '',
 			'method'   => sanitize_key( isset( $entry['method'] ) ? (string) $entry['method'] : '' ),
 			'user_id'  => (int) ( isset( $entry['user_id'] ) ? $entry['user_id'] : 0 ),
 		);

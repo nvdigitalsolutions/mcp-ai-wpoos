@@ -681,7 +681,8 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 		if ( $is_mounted ) {
 			// Determine source slug from the mounted URI: nvoos://{consumer}/_mounted/{source}/{entity}.
 			$parsed_source = '';
-			if ( preg_match( '#^nvoos://[^/]+/_mounted/([^/]+)/#', $uri, $m ) ) {
+			$safe_uri      = sanitize_text_field( (string) $uri );
+			if ( preg_match( '#^nvoos://[^/]+/_mounted/([^/]+)/#', $safe_uri, $m ) ) {
 				$parsed_source = $m[1];
 			}
 
@@ -778,7 +779,8 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 		if ( $is_mounted ) {
 			// Derive source slug from mounted prompt name: _mounted/{source}.{type}.{entity}.
 			$parsed_source = '';
-			if ( preg_match( '#^_mounted/([^.]+)\.#', $name, $m ) ) {
+			$safe_name     = sanitize_text_field( (string) $name );
+			if ( preg_match( '#^_mounted/([^.]+)\.#', $safe_name, $m ) ) {
 				$parsed_source = $m[1];
 			}
 
