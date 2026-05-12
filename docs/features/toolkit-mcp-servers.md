@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3e) + Phase 4 shipped — all 19 Tier-1 toolkits promoted, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, and cross-mount reads are recorded in the audit log.
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3e) + Phase 4 + Phase 5 + Phase 6 shipped — all 26 toolkits promoted (19 Tier-1 + 7 Tier-2), `/.well-known/mcp` discovery endpoint active, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, and cross-mount reads are recorded in the audit log.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
@@ -316,3 +316,68 @@ The card shows:
 ### Tests
 
 `addons/pro/tests/test-phase5-toolkit-mcp-servers.php` — 6 cases covering hook binding, save_meta_box slug persistence, empty-post clearing, get_allowed_servers(), observability card graceful noop, and hook binding for the performance section action.
+
+---
+
+## Phase 6 — Tier-2 Toolkits + `/.well-known/mcp` Externalisation
+
+### Tier-2 Server Inventory
+
+Seven additional toolkits promoted to first-class MCP servers. All are **tools-only** (no CPT-shaped ingestion surface):
+
+| Slug                   | Class                                        | Description                                                                   |
+|------------------------|----------------------------------------------|-------------------------------------------------------------------------------|
+| `analytics`            | `WP_MCP_AI_Analytics_MCP_Server`             | Custom reporting, funnel analysis, revenue forecasting, ML segmentation.      |
+| `architect-agent`      | `WP_MCP_AI_Architect_Agent_MCP_Server`       | Shell execution, git operations, file management, codebase search.            |
+| `chat-channels`        | `WP_MCP_AI_Chat_Channels_MCP_Server`         | Cross-platform messaging (Slack, Discord, Teams, WhatsApp, Telegram, etc.).   |
+| `extended-cognition`   | `WP_MCP_AI_Extended_Cognition_MCP_Server`    | Multimodal sensory capture (screen, audio, visual, motion) and analysis.      |
+| `healthcare-imaging`   | `WP_MCP_AI_Healthcare_Imaging_MCP_Server`    | DICOM import/export, radiology reporting, DICOMweb connectivity.              |
+| `healthcare-wellness`  | `WP_MCP_AI_Healthcare_Wellness_MCP_Server`   | Vital-sign tracking, wellness check-ins, BMI, vaccinations, prescriptions.    |
+| `site-creator`         | `WP_MCP_AI_Site_Creator_MCP_Server`          | Site scaffolding, layout generation, theme structure, template management.    |
+
+### `/.well-known/mcp` Discovery Endpoint
+
+**Class:** `WP_MCP_AI_Pro_Well_Known_MCP`
+
+Serves a JSON discovery document at `GET /.well-known/mcp` listing every **enabled** toolkit server:
+
+```json
+{
+  "mcpServers": [
+    {
+      "slug":        "crm",
+      "name":        "CRM",
+      "description": "...",
+      "version":     "1.0.0",
+      "endpoint":    "https://example.com/wp-json/mcp-ai-pro/v1/mcp/crm"
+    },
+    ...
+  ]
+}
+```
+
+Disabled servers (`enabled: false` in their config) are excluded from the list. The document is cache-controlled with a 1-hour `max-age` by default.
+
+#### Filters
+
+| Filter | Description |
+|--------|-------------|
+| `wp_mcp_ai_well_known_mcp_cache_max_age` | Override the `Cache-Control: max-age` value (integer seconds, default 3600; use `0` to emit `no-store`). |
+| `wp_mcp_ai_well_known_mcp_document` | Modify the full discovery document array before it is sent to the client. |
+
+#### Rewrite rules
+
+The endpoint is served via WordPress's rewrite system:
+
+```
+^\.well-known/mcp/?$ → index.php?wp_mcp_ai_well_known_mcp=1
+```
+
+Flush rewrite rules after activation (`WP_MCP_AI_Pro_Well_Known_MCP::activate()`).
+
+### Tests
+
+`addons/pro/tests/test-phase6-toolkit-mcp-servers.php` — 10 cases covering Tier-2 class existence, interface compliance, slug correctness, non-empty name/description, non-empty candidate tool slugs, empty ingestion surfaces, discovery document structure, disabled-server exclusion, the `wp_mcp_ai_well_known_mcp_document` filter, and constructor hook registration.
+
+The Tier-2 server classes are also covered by the generic contract suite:  
+`addons/pro/tests/test-toolkit-server-contract.php` — data provider updated to include all 7 Tier-2 slugs.

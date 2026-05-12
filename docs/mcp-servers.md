@@ -2,7 +2,7 @@
 
 > **Auto-generated** from the server registry.  
 > Source: `addons/pro/includes/mcp-servers/servers/`  
-> Phase: **Tier 1 (19 servers — Phases 1 + 2)**  
+> Phase: **Tier 1 (19 servers — Phases 1 + 2) + Tier 2 (7 servers — Phase 6) = 26 servers total**  
 > Protocol version: `2025-06-18`
 
 This document describes every per-toolkit **MCP server** shipped with NV oOS Pro. Each server exposes its toolkit's data as a Model Context Protocol endpoint, allowing AI assistants and external MCP clients to read resources, call tools, and fetch prompt templates scoped to that toolkit's domain.
@@ -387,4 +387,62 @@ Aliases: `/mcp-servers`, `/toolkit-mcp`
 
 ---
 
-*Last updated: Phase 5 (May 2026). For Tier 2 servers and the `/.well-known/mcp` endpoint see Phase 6.*
+*Last updated: Phase 6 (May 2026). For the `/.well-known/mcp` discovery endpoint, see the Phase 6 section below.*
+
+---
+
+## Tier-2 Servers (Phase 6)
+
+Seven additional toolkits promoted to MCP servers. All are **tools-only** (no CPT-shaped ingestion surface); they expose no `resources/list` or `prompts/list` entries.
+
+| Slug                  | Class                                       | Candidate tool count |
+|-----------------------|---------------------------------------------|----------------------|
+| `analytics`           | `WP_MCP_AI_Analytics_MCP_Server`            | 12                   |
+| `architect-agent`     | `WP_MCP_AI_Architect_Agent_MCP_Server`      | 4                    |
+| `chat-channels`       | `WP_MCP_AI_Chat_Channels_MCP_Server`        | 50+                  |
+| `extended-cognition`  | `WP_MCP_AI_Extended_Cognition_MCP_Server`   | 7                    |
+| `healthcare-imaging`  | `WP_MCP_AI_Healthcare_Imaging_MCP_Server`   | 8                    |
+| `healthcare-wellness` | `WP_MCP_AI_Healthcare_Wellness_MCP_Server`  | 10                   |
+| `site-creator`        | `WP_MCP_AI_Site_Creator_MCP_Server`         | 27                   |
+
+### REST Endpoint
+
+Same pattern as Tier-1: `POST /wp-json/mcp-ai-pro/v1/mcp/{slug}` for JSON-RPC.
+
+### Configuration
+
+Per-server option: `wp_mcp_ai_toolkit_mcp_server_{slug}`. Defaults:
+
+| Field                | Default  | Description                                         |
+|----------------------|----------|-----------------------------------------------------|
+| `enabled`            | `true`   | Master on/off switch.                               |
+| `tools_allowlist`    | `[]`     | Empty = all candidate tools exposed.                |
+| `requests_per_minute`| `0`      | `0` = unlimited.                                    |
+| `max_payload_bytes`  | `0`      | `0` = no limit.                                     |
+| `max_iterations`     | `0`      | `0` = inherit global filter.                        |
+
+---
+
+## `/.well-known/mcp` Discovery Endpoint (Phase 6)
+
+**URI:** `GET /.well-known/mcp`  
+**Class:** `WP_MCP_AI_Pro_Well_Known_MCP`  
+**Cache-Control:** `public, max-age=3600` (overridable via `wp_mcp_ai_well_known_mcp_cache_max_age` filter)
+
+Returns a JSON discovery document listing every enabled toolkit server:
+
+```json
+{
+  "mcpServers": [
+    {
+      "slug":        "crm",
+      "name":        "CRM",
+      "description": "...",
+      "version":     "1.0.0",
+      "endpoint":    "https://example.com/wp-json/mcp-ai-pro/v1/mcp/crm"
+    }
+  ]
+}
+```
+
+Disabled servers are excluded. The document can be customised via the `wp_mcp_ai_well_known_mcp_document` filter.

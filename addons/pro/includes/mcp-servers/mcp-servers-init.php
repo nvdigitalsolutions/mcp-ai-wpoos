@@ -43,6 +43,18 @@ require_once __DIR__ . '/servers/class-wp-mcp-ai-regulatory-registration-mcp-ser
 require_once __DIR__ . '/servers/class-wp-mcp-ai-social-media-mcp-server.php';
 require_once __DIR__ . '/servers/class-wp-mcp-ai-video-production-mcp-server.php';
 
+// Phase 6 Tier-2 promotions (7 servers, alphabetical).
+require_once __DIR__ . '/servers/class-wp-mcp-ai-analytics-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-architect-agent-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-chat-channels-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-extended-cognition-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-imaging-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-wellness-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-site-creator-mcp-server.php';
+
+// Phase 6 — /.well-known/mcp discovery endpoint.
+require_once __DIR__ . '/class-wp-mcp-ai-pro-well-known-mcp.php';
+
 /**
  * Wire the registry to fire its registration action at init priority 12 — after
  * toolkit initialization completes (which happens at priority 10/11 across the
@@ -87,6 +99,15 @@ add_action(
 		$registry->register( new WP_MCP_AI_Regulatory_Registration_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Social_Media_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Video_Production_MCP_Server() );
+
+		// Phase 6 Tier-2 promotions (alphabetical).
+		$registry->register( new WP_MCP_AI_Analytics_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Architect_Agent_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Chat_Channels_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Extended_Cognition_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Healthcare_Imaging_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Healthcare_Wellness_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Site_Creator_MCP_Server() );
 	}
 );
 
@@ -106,6 +127,11 @@ WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance()->init();
 if ( is_admin() ) {
 	new WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card();
 }
+
+/**
+ * Phase 6 — register the /.well-known/mcp discovery endpoint.
+ */
+new WP_MCP_AI_Pro_Well_Known_MCP();
 
 /**
  * Admin-post handler — persists per-toolkit MCP server configuration.
