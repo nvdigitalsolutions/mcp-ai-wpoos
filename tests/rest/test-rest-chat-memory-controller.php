@@ -165,7 +165,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 		update_user_meta( $this->editor_id, WP_MCP_AI_REST_Chat_Memory_Controller::USER_META_ENABLED, 0 );
 
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/recall' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/recall' );
 		$request->set_param( 'agent_id', 1 );
 		$response = $this->server->dispatch( $request );
 
@@ -204,7 +204,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_audit_requires_login() {
 		wp_set_current_user( 0 );
 
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
 		$request->set_param( 'agent_id', 1 );
 		$response = $this->server->dispatch( $request );
 
@@ -219,7 +219,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 		update_user_meta( $this->editor_id, WP_MCP_AI_REST_Chat_Memory_Controller::USER_META_ENABLED, 0 );
 
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
 		$request->set_param( 'agent_id', 1 );
 		$response = $this->server->dispatch( $request );
 
@@ -255,7 +255,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_audit_returns_success_envelope_for_editor() {
 		wp_set_current_user( $this->editor_id );
 
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
 		$request->set_param( 'agent_id', 'user_' . $this->editor_id );
 		$request->set_param( 'limit', 10 );
 		$response = $this->server->dispatch( $request );
@@ -264,5 +264,93 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		// Either a 200 envelope (tool present + responded) or a 503 (tool not registered
 		// in this minimal test build). Both prove the route + permission gate are wired.
 		$this->assertContains( $status, array( 200, 503 ) );
+	}
+
+	/**
+	 * Drawer-empty regression: GET /chat-memory/recall with no `wing` must
+	 * route to `retrieve_agent_memory` (which lists every memory for the
+	 * agent) rather than `recall_memory` (which 400s on missing wing). When
+	 * the JetEngine CCT table is seeded with a row that survived an
+	 * object-cache flush, the response must surface that row.
+	 */
+	public function test_recall_without_wing_lists_cct_rows() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'jet_cct_ai_agent_memories';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- test fixture: table name is $wpdb->prefix + literal.
+		$wpdb->query(
+			"CREATE TABLE IF NOT EXISTS `{$table}` (
+				`_ID` int(11) NOT NULL AUTO_INCREMENT,
+				`cct_status` varchar(20) DEFAULT 'publish',
+				`context_id` varchar(190) DEFAULT '',
+				`agent_id` varchar(190) DEFAULT '',
+				`memory_tier` varchar(40) DEFAULT '',
+				`context_type` varchar(40) DEFAULT '',
+				`wing` varchar(190) DEFAULT '',
+				`room` varchar(190) DEFAULT '',
+				`title` varchar(255) DEFAULT '',
+				`content` longtext,
+				`tags` longtext,
+				`importance` varchar(20) DEFAULT '',
+				`verbatim` tinyint(1) DEFAULT 0,
+				`transaction_time` datetime DEFAULT NULL,
+				`valid_from` datetime DEFAULT NULL,
+				`valid_until` datetime DEFAULT NULL,
+				`expires_at` datetime DEFAULT NULL,
+				`source` varchar(190) DEFAULT '',
+				`metadata` longtext,
+				PRIMARY KEY (`_ID`)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$agent_id = 'agent_drawer_' . $this->editor_id;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->insert(
+			$table,
+			array(
+				'cct_status'       => 'publish',
+				'context_id'       => 'ctx_drawer_regression_001',
+				'agent_id'         => $agent_id,
+				'memory_tier'      => 'semantic',
+				'context_type'     => 'fact',
+				'wing'             => '',
+				'room'             => '',
+				'title'            => 'Drawer should see me',
+				'content'          => 'Even after Redis flush.',
+				'tags'             => wp_json_encode( array( 'regression' ) ),
+				'importance'       => 'medium',
+				'transaction_time' => '2026-04-01 00:00:00',
+				'valid_from'       => '2026-04-01 00:00:00',
+				'valid_until'      => '2099-01-01 00:00:00',
+				'expires_at'       => '2099-01-01 00:00:00',
+				'source'           => 'store_agent_context',
+			)
+		);
+
+		// Make sure no stale transient index sneaks in.
+		delete_transient( 'mcp_ai_ctx_index_' . md5( $agent_id ) );
+
+		wp_set_current_user( $this->editor_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/recall' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'agent_id', $agent_id );
+		$response = $this->server->dispatch( $request );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- test cleanup
+		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+
+		$this->assertSame( 200, $response->get_status(), 'No-wing recall must succeed (no 400 from recall_memory).' );
+		$data = $response->get_data();
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'contexts', $data, 'Response envelope must come from retrieve_agent_memory.' );
+		$ids = array_map(
+			static function ( $c ) {
+				return isset( $c['context_id'] ) ? $c['context_id'] : '';
+			},
+			(array) $data['contexts']
+		);
+		$this->assertContains( 'ctx_drawer_regression_001', $ids, 'Drawer must surface the durable CCT row.' );
 	}
 }
