@@ -159,7 +159,7 @@ class WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card {
 			<?php endif; ?>
 
 			<p style="margin-top:12px;">
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-orchestration&tab=mcp_servers' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-toolkit-mcp-servers' ) ); ?>"
 				   class="button button-secondary">
 					<?php esc_html_e( 'Manage MCP Servers', 'mcp-ai-wpoos-pro' ); ?>
 				</a>

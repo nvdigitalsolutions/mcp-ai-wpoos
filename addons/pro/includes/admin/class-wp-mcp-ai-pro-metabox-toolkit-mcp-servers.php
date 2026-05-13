@@ -134,7 +134,7 @@ class WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers {
 		</div>
 
 		<p style="margin-top:8px;">
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-orchestration&tab=mcp_servers' ) ); ?>"
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-toolkit-mcp-servers' ) ); ?>"
 			   style="font-size:11px;">
 				<?php esc_html_e( 'Manage Toolkit MCP Servers →', 'mcp-ai-wpoos-pro' ); ?>
 			</a>
