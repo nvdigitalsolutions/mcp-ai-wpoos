@@ -7,18 +7,18 @@
  * @since   1.6.0
  */
 
-/* global wpMcpAiProMcpServers, wp */
-( function ( apiFetch, i18n ) {
+/* global wpMcpAiProMcpServers */
+( function ( apiFetch ) {
 	'use strict';
 
 	if ( typeof wpMcpAiProMcpServers === 'undefined' ) {
 		return;
 	}
 
-	var cfg      = wpMcpAiProMcpServers;
-	var t        = cfg.i18n || {};
-	var apiBase  = cfg.apiBase  || '';
-	var restNonce = cfg.nonce  || '';
+	const cfg      = wpMcpAiProMcpServers;
+	const t        = cfg.i18n || {};
+	const apiBase  = cfg.apiBase  || '';
+	const restNonce = cfg.nonce  || '';
 
 	// ------------------------------------------------------------------
 	// Utility helpers
@@ -44,7 +44,7 @@
 
 	/** Fallback clipboard copy via textarea. */
 	function fallbackCopy( text, btn ) {
-		var ta = document.createElement( 'textarea' );
+		const ta = document.createElement( 'textarea' );
 		ta.value = text;
 		ta.style.position = 'fixed';
 		ta.style.opacity  = '0';
@@ -59,7 +59,7 @@
 	/** Flash "Copied!" text on a button for 1.5 s. */
 	function showCopyFeedback( btn ) {
 		if ( ! btn ) { return; }
-		var orig = btn.textContent;
+		const orig = btn.textContent;
 		btn.textContent = t.tokenCopied || 'Copied!';
 		setTimeout( function () {
 			btn.textContent = orig;
@@ -71,10 +71,10 @@
 	// ------------------------------------------------------------------
 
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-copy-endpoint' );
+		const btn = e.target.closest( '.wp-mcp-ai-copy-endpoint' );
 		if ( ! btn ) { return; }
 		e.preventDefault();
-		var endpoint = btn.getAttribute( 'data-endpoint' ) || '';
+		const endpoint = btn.getAttribute( 'data-endpoint' ) || '';
 		copyToClipboard( endpoint, btn );
 	} );
 
@@ -83,9 +83,9 @@
 	// ------------------------------------------------------------------
 
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-toggle-btn' );
+		const btn = e.target.closest( '.wp-mcp-ai-toggle-btn' );
 		if ( ! btn ) { return; }
-		var confirmMsg = btn.getAttribute( 'data-confirm' ) || '';
+		const confirmMsg = btn.getAttribute( 'data-confirm' ) || '';
 		if ( confirmMsg && ! window.confirm( confirmMsg ) ) {
 			e.preventDefault();
 		}
@@ -96,14 +96,14 @@
 	// ------------------------------------------------------------------
 
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-generate-token-btn' );
+		const btn = e.target.closest( '.wp-mcp-ai-generate-token-btn' );
 		if ( ! btn ) { return; }
 		e.preventDefault();
 
-		var slug       = btn.getAttribute( 'data-slug' ) || '';
-		var wrapper    = btn.closest( '.wp-mcp-ai-generate-token' );
-		var labelInput = wrapper ? wrapper.querySelector( '.wp-mcp-ai-token-label-input' ) : null;
-		var label      = labelInput ? labelInput.value.trim() : '';
+		const slug       = btn.getAttribute( 'data-slug' ) || '';
+		const wrapper    = btn.closest( '.wp-mcp-ai-generate-token' );
+		const labelInput = wrapper ? wrapper.querySelector( '.wp-mcp-ai-token-label-input' ) : null;
+		const label      = labelInput ? labelInput.value.trim() : '';
 
 		btn.disabled    = true;
 		btn.textContent = t.generating || 'Generating…';
@@ -122,7 +122,7 @@
 		} ).catch( function ( err ) {
 			btn.disabled    = false;
 			btn.textContent = 'Generate Token';
-			var msg = ( err && err.message ) ? err.message : 'Error generating token.';
+			const msg = ( err && err.message ) ? err.message : 'Error generating token.';
 			window.alert( msg );
 		} );
 	} );
@@ -132,7 +132,7 @@
 	// ------------------------------------------------------------------
 
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-revoke-token' );
+		const btn = e.target.closest( '.wp-mcp-ai-revoke-token' );
 		if ( ! btn ) { return; }
 		e.preventDefault();
 
@@ -140,8 +140,8 @@
 			return;
 		}
 
-		var slug   = btn.getAttribute( 'data-slug' )   || '';
-		var prefix = btn.getAttribute( 'data-prefix' ) || '';
+		const slug   = btn.getAttribute( 'data-slug' )   || '';
+		const prefix = btn.getAttribute( 'data-prefix' ) || '';
 
 		btn.disabled    = true;
 		btn.textContent = t.revoking || 'Revoking…';
@@ -152,14 +152,14 @@
 			headers: { 'X-WP-Nonce': restNonce },
 		} ).then( function () {
 			// Remove the row from the DOM without a full reload.
-			var row = btn.closest( 'tr[data-prefix]' );
+			const row = btn.closest( 'tr[data-prefix]' );
 			if ( row ) {
 				row.parentNode.removeChild( row );
 			}
 		} ).catch( function ( err ) {
 			btn.disabled    = false;
 			btn.textContent = 'Revoke';
-			var msg = ( err && err.message ) ? err.message : 'Error revoking token.';
+			const msg = ( err && err.message ) ? err.message : 'Error revoking token.';
 			window.alert( msg );
 		} );
 	} );
@@ -176,9 +176,9 @@
 	 * @param {string} token Raw bearer token string.
 	 */
 	function showTokenModal( slug, token ) {
-		var modal = document.getElementById( 'wp-mcp-ai-token-modal-' + slug );
+		const modal = document.getElementById( 'wp-mcp-ai-token-modal-' + slug );
 		if ( ! modal ) { return; }
-		var input = modal.querySelector( '.wp-mcp-ai-token-value' );
+		const input = modal.querySelector( '.wp-mcp-ai-token-value' );
 		if ( input ) { input.value = token; }
 		modal.style.display = 'flex';
 		document.body.style.overflow = 'hidden';
@@ -191,25 +191,25 @@
 
 	/** Copy-token button inside the modal. */
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-copy-token-btn' );
+		const btn = e.target.closest( '.wp-mcp-ai-copy-token-btn' );
 		if ( ! btn ) { return; }
 		e.preventDefault();
-		var modal = btn.closest( '.wp-mcp-ai-token-modal' );
+		const modal = btn.closest( '.wp-mcp-ai-token-modal' );
 		if ( ! modal ) { return; }
-		var input = modal.querySelector( '.wp-mcp-ai-token-value' );
+		const input = modal.querySelector( '.wp-mcp-ai-token-value' );
 		copyToClipboard( input ? input.value : '', btn );
 	} );
 
 	/** Dismiss button — require that the user has acknowledged the warning. */
 	document.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.wp-mcp-ai-token-dismiss' );
+		const btn = e.target.closest( '.wp-mcp-ai-token-dismiss' );
 		if ( ! btn ) { return; }
 		e.preventDefault();
-		var slug  = btn.getAttribute( 'data-slug' ) || '';
-		var modal = document.getElementById( 'wp-mcp-ai-token-modal-' + slug );
+		const slug  = btn.getAttribute( 'data-slug' ) || '';
+		const modal = document.getElementById( 'wp-mcp-ai-token-modal-' + slug );
 		if ( modal ) {
 			// Wipe the token value before closing.
-			var input = modal.querySelector( '.wp-mcp-ai-token-value' );
+			const input = modal.querySelector( '.wp-mcp-ai-token-value' );
 			if ( input ) { input.value = ''; }
 			modal.style.display = 'none';
 			document.body.style.overflow = '';
@@ -222,10 +222,10 @@
 	// Audit log: clear confirmation
 	// ------------------------------------------------------------------
 
-	var clearAuditForm = document.getElementById( 'wp-mcp-ai-clear-audit-form' );
+	const clearAuditForm = document.getElementById( 'wp-mcp-ai-clear-audit-form' );
 	if ( clearAuditForm ) {
 		clearAuditForm.addEventListener( 'submit', function ( e ) {
-			var confirmed = window.confirm( t.confirmClearLog || 'Clear the entire audit log? This cannot be undone.' );
+			const confirmed = window.confirm( t.confirmClearLog || 'Clear the entire audit log? This cannot be undone.' );
 			if ( ! confirmed ) { e.preventDefault(); }
 		} );
 	}
@@ -234,17 +234,17 @@
 	// Audit log: CSV export
 	// ------------------------------------------------------------------
 
-	var exportCsvBtn = document.getElementById( 'wp-mcp-ai-export-csv' );
+	const exportCsvBtn = document.getElementById( 'wp-mcp-ai-export-csv' );
 	if ( exportCsvBtn ) {
 		exportCsvBtn.addEventListener( 'click', function () {
-			var entries = JSON.parse( exportCsvBtn.getAttribute( 'data-entries' ) || '[]' );
+			const entries = JSON.parse( exportCsvBtn.getAttribute( 'data-entries' ) || '[]' );
 			exportAuditCsv( entries );
 		} );
 	}
 
 	function exportAuditCsv( entries ) {
-		var headers = [ 'timestamp', 'server', 'consumer', 'action', 'result' ];
-		var rows    = [ headers ];
+		const headers = [ 'timestamp', 'server', 'consumer', 'action', 'result' ];
+		const rows    = [ headers ];
 		entries.forEach( function ( e ) {
 			rows.push( [
 				e.ts    ? new Date( e.ts * 1000 ).toISOString() : '',
@@ -254,7 +254,7 @@
 				e.result   || '',
 			] );
 		} );
-		var csv = rows.map( function ( r ) {
+		const csv = rows.map( function ( r ) {
 			return r.map( function ( c ) {
 				return '"' + String( c ).replace( /"/g, '""' ) + '"';
 			} ).join( ',' );
@@ -266,10 +266,10 @@
 	// Audit log: JSON export
 	// ------------------------------------------------------------------
 
-	var exportJsonBtn = document.getElementById( 'wp-mcp-ai-export-json' );
+	const exportJsonBtn = document.getElementById( 'wp-mcp-ai-export-json' );
 	if ( exportJsonBtn ) {
 		exportJsonBtn.addEventListener( 'click', function () {
-			var entries = JSON.parse( exportJsonBtn.getAttribute( 'data-entries' ) || '[]' );
+			const entries = JSON.parse( exportJsonBtn.getAttribute( 'data-entries' ) || '[]' );
 			downloadBlob( JSON.stringify( entries, null, 2 ), 'mcp-audit-log.json', 'application/json' );
 		} );
 	}
@@ -282,9 +282,9 @@
 	 * @param {string} type     MIME type.
 	 */
 	function downloadBlob( content, filename, type ) {
-		var blob = new Blob( [ content ], { type: type } );
-		var url  = URL.createObjectURL( blob );
-		var a    = document.createElement( 'a' );
+		const blob = new Blob( [ content ], { type: type } );
+		const url  = URL.createObjectURL( blob );
+		const a    = document.createElement( 'a' );
 		a.href     = url;
 		a.download = filename;
 		a.style.display = 'none';
@@ -298,7 +298,7 @@
 	// Discovery tab: load + refresh + copy
 	// ------------------------------------------------------------------
 
-	var discoveryPreview = document.getElementById( 'wp-mcp-ai-discovery-preview' );
+	const discoveryPreview = document.getElementById( 'wp-mcp-ai-discovery-preview' );
 
 	function loadDiscovery() {
 		if ( ! discoveryPreview ) { return; }
@@ -318,15 +318,15 @@
 		loadDiscovery();
 	}
 
-	var refreshBtn = document.getElementById( 'wp-mcp-ai-refresh-discovery' );
+	const refreshBtn = document.getElementById( 'wp-mcp-ai-refresh-discovery' );
 	if ( refreshBtn ) {
 		refreshBtn.addEventListener( 'click', loadDiscovery );
 	}
 
-	var copyDiscoveryBtn = document.getElementById( 'wp-mcp-ai-copy-discovery' );
+	const copyDiscoveryBtn = document.getElementById( 'wp-mcp-ai-copy-discovery' );
 	if ( copyDiscoveryBtn ) {
 		copyDiscoveryBtn.addEventListener( 'click', function () {
-			var text = discoveryPreview ? discoveryPreview.textContent : '';
+			const text = discoveryPreview ? discoveryPreview.textContent : '';
 			copyToClipboard( text, copyDiscoveryBtn );
 		} );
 	}
@@ -335,10 +335,10 @@
 	// Servers tab: select-all checkbox
 	// ------------------------------------------------------------------
 
-	var cbAll = document.getElementById( 'cb-select-all-1' );
+	const cbAll = document.getElementById( 'cb-select-all-1' );
 	if ( cbAll ) {
 		cbAll.addEventListener( 'change', function () {
-			var checkboxes = document.querySelectorAll( 'input[name="server[]"]' );
+			const checkboxes = document.querySelectorAll( 'input[name="server[]"]' );
 			checkboxes.forEach( function ( cb ) { cb.checked = cbAll.checked; } );
 		} );
 	}
@@ -355,16 +355,16 @@
 			return response.json().catch( function () {
 				return {};
 			} ).then( function ( body ) {
-				var err = new Error( ( body && body.message ) ? body.message : 'Request failed (' + response.status + ')' );
+				const err = new Error( ( body && body.message ) ? body.message : 'Request failed (' + response.status + ')' );
 				err.code   = ( body && body.code ) ? body.code : 'request_failed';
 				err.status = response.status;
 				return Promise.reject( err );
 			} );
 		}
 		return response.json().catch( function () {
-			var err = new Error( 'Invalid JSON response' );
+			const err = new Error( 'Invalid JSON response' );
 			err.code = 'invalid_json';
 			return Promise.reject( err );
 		} );
 	} );
-}, window.wp && window.wp.i18n ) );
+} ) );
