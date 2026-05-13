@@ -3686,3 +3686,115 @@
 .wp-mcp-ai-chat__container {
     position: relative;
 }
+
+/* =========================================
+   Inline Job Progress Card (Phase 3a)
+   ========================================= */
+.wp-mcp-ai-job-card {
+    background: var(--wp-mcp-ai-surface, #f9fafb);
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    position: relative;
+}
+
+.wp-mcp-ai-job-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.wp-mcp-ai-job-card__title {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.wp-mcp-ai-job-card__cancel,
+.wp-mcp-ai-job-card__retry {
+    background: none;
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    white-space: nowrap;
+    color: inherit;
+}
+
+.wp-mcp-ai-job-card__cancel:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.wp-mcp-ai-job-card__retry:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.wp-mcp-ai-job-card__progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.wp-mcp-ai-job-card__progress-bar {
+    flex: 1;
+    background: var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 9999px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.wp-mcp-ai-job-card__progress-fill {
+    background: var(--wp-mcp-ai-primary, #2563eb);
+    border-radius: 9999px;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.wp-mcp-ai-job-card__progress-pct {
+    font-size: 0.75rem;
+    min-width: 32px;
+    text-align: right;
+}
+
+.wp-mcp-ai-job-card__eta {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.wp-mcp-ai-job-card__message {
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+    font-size: 0.8125rem;
+    margin-bottom: 4px;
+}
+
+.wp-mcp-ai-job-card__steps {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+}
+
+.wp-mcp-ai-job-card__steps li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 2px 0;
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+}
+
+.wp-mcp-ai-job-card__steps li[data-step-status="completed"]::before { content: "✓"; color: #16a34a; }
+.wp-mcp-ai-job-card__steps li[data-step-status="failed"]::before    { content: "✗"; color: #dc2626; }
+.wp-mcp-ai-job-card__steps li[data-step-status="running"]::before   { content: "⏳"; }
+.wp-mcp-ai-job-card__steps li[data-step-status="pending"]::before   { content: "·"; }
+

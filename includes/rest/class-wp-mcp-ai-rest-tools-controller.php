@@ -312,6 +312,50 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			true
 		);
 
+		// /cron-status/{job_id}/cancel — cancel a running or queued job.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cron-status/(?P<job_id>[a-zA-Z0-9_.]+)/cancel',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
+					'callback'            => array( $this, 'handle_cancel_job_request' ),
+					'args'                => array(
+						'job_id' => array(
+							'description'       => __( 'Job identifier to cancel.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this, 'sanitize_job_id' ),
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /cron-status/{job_id}/retry — retry a failed or cancelled job.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cron-status/(?P<job_id>[a-zA-Z0-9_.]+)/retry',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
+					'callback'            => array( $this, 'handle_retry_job_request' ),
+					'args'                => array(
+						'job_id' => array(
+							'description'       => __( 'Job identifier to retry.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this, 'sanitize_job_id' ),
+						),
+					),
+				),
+			),
+			true
+		);
+
 		// /attachments/prepare - Pre-register a WordPress attachment with the AI provider.
 		// This enables the multi-step attachment pipeline in the chat client:
 		// step 1 uploads to WordPress, step 2 pre-registers with the AI Files API.
@@ -949,5 +993,171 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Handle POST /cron-status/{job_id}/cancel request.
+	 *
+	 * Cancels a pending or running async job. Native async_* jobs are handled
+	 * by WP_MCP_AI_Tool_Async_Executor; other job types may be cancelled via
+	 * the job-source registry if the source implements a cancel_job() method.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error REST response or error.
+	 */
+	public function handle_cancel_job_request( WP_REST_Request $request ) {
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_cancel_job_request' ) ) {
+			return $this->main_controller->handle_cancel_job_request( $request );
+		}
+
+		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
+		$user_id = get_current_user_id();
+
+		if ( empty( $job_id ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_job_id', __( 'A valid job ID is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Try registered job-source registry first (Phase 1 contract).
+		$source_result = $this->try_source_cancel( $job_id, $user_id );
+		if ( true === $source_result ) {
+			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+		}
+		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
+			$source_result->add_data( array( 'status' => 400 ) );
+			return $source_result;
+		}
+
+		// Native async_* executor fallback.
+		if ( 0 !== strpos( $job_id, 'async_' ) ) {
+			return new WP_Error( 'wp_mcp_ai_unsupported_job', __( 'This job type does not support cancellation.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			return new WP_Error( 'wp_mcp_ai_executor_unavailable', __( 'Async executor is unavailable.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$result   = $executor->cancel_job( $job_id, $user_id );
+
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 400 ) );
+			return $result;
+		}
+
+		return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+	}
+
+	/**
+	 * Handle POST /cron-status/{job_id}/retry request.
+	 *
+	 * Retries a failed or cancelled async job. Native async_* jobs are handled
+	 * by WP_MCP_AI_Tool_Async_Executor; other job types may be retried via
+	 * the job-source registry if the source implements a retry_job() method.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error REST response or error.
+	 */
+	public function handle_retry_job_request( WP_REST_Request $request ) {
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_retry_job_request' ) ) {
+			return $this->main_controller->handle_retry_job_request( $request );
+		}
+
+		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
+		$user_id = get_current_user_id();
+
+		if ( empty( $job_id ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_job_id', __( 'A valid job ID is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Try registered job-source registry first (Phase 1 contract).
+		$source_result = $this->try_source_retry( $job_id, $user_id );
+		if ( true === $source_result ) {
+			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+		}
+		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
+			$source_result->add_data( array( 'status' => 400 ) );
+			return $source_result;
+		}
+
+		// Native async_* executor fallback.
+		if ( 0 !== strpos( $job_id, 'async_' ) ) {
+			return new WP_Error( 'wp_mcp_ai_unsupported_job', __( 'This job type does not support retry.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			return new WP_Error( 'wp_mcp_ai_executor_unavailable', __( 'Async executor is unavailable.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$result   = $executor->retry_job( $job_id, $user_id );
+
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 400 ) );
+			return $result;
+		}
+
+		return rest_ensure_response( array( 'success' => true, 'job_id' => $result ) );
+	}
+
+	/**
+	 * Attempt to cancel a job via the registered job-source registry.
+	 *
+	 * Returns true on success, WP_Error('wp_mcp_ai_no_source') if no source
+	 * claims the job, or a WP_Error with a different code if the source
+	 * rejects the cancellation.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id User requesting the cancellation.
+	 * @return true|WP_Error
+	 */
+	protected function try_source_cancel( $job_id, $user_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_source', '' );
+		}
+
+		$service = $this->get_cron_status_service();
+		$sources = $service->get_registered_sources();
+
+		foreach ( $sources as $source ) {
+			if ( method_exists( $source, 'cancel_job' ) ) {
+				$result = $source->cancel_job( $job_id, $user_id );
+				if ( true === $result || is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
+		}
+
+		return new WP_Error( 'wp_mcp_ai_no_source', '' );
+	}
+
+	/**
+	 * Attempt to retry a job via the registered job-source registry.
+	 *
+	 * Returns true on success, WP_Error('wp_mcp_ai_no_source') if no source
+	 * claims the job, or a WP_Error with a different code if the source
+	 * rejects the retry.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id User requesting the retry.
+	 * @return true|WP_Error
+	 */
+	protected function try_source_retry( $job_id, $user_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_source', '' );
+		}
+
+		$service = $this->get_cron_status_service();
+		$sources = $service->get_registered_sources();
+
+		foreach ( $sources as $source ) {
+			if ( method_exists( $source, 'retry_job' ) ) {
+				$result = $source->retry_job( $job_id, $user_id );
+				if ( true === $result || is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
+		}
+
+		return new WP_Error( 'wp_mcp_ai_no_source', '' );
 	}
 }

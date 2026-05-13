@@ -115,6 +115,8 @@ Use `WP_MCP_AI_Job_Notifier` as the unifying read view; fall back to per-namespa
 
 #### 3a. In-bubble progress card
 
+> **Status (PR-C, May 2026):** `createJobProgressCard()` JS function landed in `assets/js/chat.js`. Wired into both `waitForAsyncToolResultSSE` and `waitForAsyncToolResultPolling`. BEM CSS block `.wp-mcp-ai-job-card__*` added to `assets/css/chat.css`. Feature-gated via `state.config.inlineJobCard`.
+
 Replace the plain "Tool is processing…" line with a compact card:
 
 ```
@@ -153,6 +155,8 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 ---
 
 ### Phase 4 — Controls (Cancel / Retry / Notify me)
+
+> **Status (PR-C, May 2026):** Cancel and retry routes landed. `cancel_job()`, `retry_job()`, `is_owned_by()` added to `WP_MCP_AI_Tool_Async_Executor`. REST handlers `handle_cancel_job_request()` / `handle_retry_job_request()` + source-dispatch helpers `try_source_cancel()` / `try_source_retry()` added to `WP_MCP_AI_REST_Tools_Controller`. PHPUnit coverage in `tests/rest/test-cron-status-controls.php`.
 
 **New REST routes** under the existing cron-status controller:
 
@@ -210,7 +214,7 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 |----|--------|------|----------------|
 | **PR-A** "wire-up fixes" | Phase 0 | Minimal | `chat.js` + `handle_cron_status_request` |
 | **PR-B** "job-source registry + stream loop" | Phase 1 + Phase 2 backend | Medium | PHP filter contract, SSE loop |
-| **PR-C** "inline progress + cancel/retry (async executor)" | Phase 3a + Phase 4 (executor only) | Medium | JS bubble card, new REST routes |
+| **PR-C** "inline progress + cancel/retry (async executor)" | Phase 3a + Phase 4 (executor only) | Medium | JS bubble card, new REST routes | ✅ landed May 2026 |
 | **PR-D** "Tasks drawer + toasts" (feature-flagged) | Phase 3b + Phase 3c | Medium | Drawer component, localStorage |
 | **PR-E** "register remaining sources" | Phase 1 follow-on | Low | Each source adapter |
 | **PR-F** "health + perf + OTel" | Phase 5 + Phase 6 | Low | Index option, OTel spans |

@@ -9887,6 +9887,266 @@
     }
 
     /**
+     * Create and attach an inline job-progress card inside a pending-entry bubble.
+     *
+     * The card shows the tool name, an optional progress bar, ETA, step list,
+     * Cancel button (when the job is cancellable), and a Retry button that appears
+     * on failure. All updates arrive through window.wpMcpAiJobBus subscriptions.
+     *
+     * Feature-flagged: only active when state.config.inlineJobCard !== false.
+     *
+     * @param {Element} entry    The system-bubble element created by appendMessage.
+     * @param {string}  jobId    The async job identifier.
+     * @param {string}  toolName Human-readable tool name.
+     * @param {Object}  state    Chat state (for restUrl, restNonce, config).
+     * @return {{ unsubscribe: Function, markFailed: Function, markCompleted: Function }|null}
+     */
+    function createJobProgressCard(entry, jobId, toolName, state) {
+        if (!entry || !jobId || !state || !state.config) {
+            return null;
+        }
+        if (state.config.inlineJobCard === false) {
+            return null;
+        }
+
+        var restUrl = (state.config.restUrl || '').replace(/\/$/, '');
+        var nonce = (state.config && state.config.restNonce) ? state.config.restNonce : '';
+
+        // Build card DOM.
+        var card = document.createElement('div');
+        card.className = 'wp-mcp-ai-job-card';
+        card.setAttribute('data-job-id', jobId);
+
+        var header = document.createElement('div');
+        header.className = 'wp-mcp-ai-job-card__header';
+
+        var titleEl = document.createElement('span');
+        titleEl.className = 'wp-mcp-ai-job-card__title';
+        titleEl.textContent = toolName || jobId;
+
+        var cancelBtn = document.createElement('button');
+        cancelBtn.className = 'wp-mcp-ai-job-card__cancel';
+        cancelBtn.type = 'button';
+        cancelBtn.setAttribute('aria-label', 'Cancel job');
+        cancelBtn.textContent = 'Cancel';
+
+        header.appendChild(titleEl);
+        header.appendChild(cancelBtn);
+
+        var progressRow = document.createElement('div');
+        progressRow.className = 'wp-mcp-ai-job-card__progress-row';
+        progressRow.hidden = true;
+
+        var progressBar = document.createElement('div');
+        progressBar.className = 'wp-mcp-ai-job-card__progress-bar';
+        progressBar.setAttribute('role', 'progressbar');
+        progressBar.setAttribute('aria-valuenow', '0');
+        progressBar.setAttribute('aria-valuemin', '0');
+        progressBar.setAttribute('aria-valuemax', '100');
+
+        var progressFill = document.createElement('div');
+        progressFill.className = 'wp-mcp-ai-job-card__progress-fill';
+        progressBar.appendChild(progressFill);
+
+        var progressPct = document.createElement('span');
+        progressPct.className = 'wp-mcp-ai-job-card__progress-pct';
+        progressPct.textContent = '0%';
+
+        var etaEl = document.createElement('span');
+        etaEl.className = 'wp-mcp-ai-job-card__eta';
+        etaEl.hidden = true;
+
+        progressRow.appendChild(progressBar);
+        progressRow.appendChild(progressPct);
+        progressRow.appendChild(etaEl);
+
+        var messageEl = document.createElement('div');
+        messageEl.className = 'wp-mcp-ai-job-card__message';
+        messageEl.textContent = 'Processing…';
+
+        var stepsEl = document.createElement('ul');
+        stepsEl.className = 'wp-mcp-ai-job-card__steps';
+        stepsEl.hidden = true;
+        var stepItems = [];
+        var stepsShowMore = false;
+        var MAX_VISIBLE_STEPS = 5;
+
+        var retryBtn = document.createElement('button');
+        retryBtn.className = 'wp-mcp-ai-job-card__retry';
+        retryBtn.type = 'button';
+        retryBtn.hidden = true;
+        retryBtn.textContent = 'Retry';
+
+        card.appendChild(header);
+        card.appendChild(progressRow);
+        card.appendChild(messageEl);
+        card.appendChild(stepsEl);
+        card.appendChild(retryBtn);
+
+        // Replace bubble text content with the card.
+        entry.textContent = '';
+        entry.appendChild(card);
+
+        function setProgress(pct) {
+            if (typeof pct !== 'number') {
+                return;
+            }
+            progressRow.hidden = false;
+            var p = Math.max(0, Math.min(100, Math.round(pct)));
+            progressFill.style.width = p + '%';
+            progressPct.textContent = p + '%';
+            progressBar.setAttribute('aria-valuenow', String(p));
+        }
+
+        function setEta(eta) {
+            if (!eta) {
+                etaEl.hidden = true;
+                return;
+            }
+            etaEl.hidden = false;
+            etaEl.textContent = '~' + eta;
+        }
+
+        function addStep(step) {
+            var li = document.createElement('li');
+            li.setAttribute('data-step-status', step.status || 'pending');
+            li.textContent = step.label || step.message || '';
+            stepItems.push(li);
+
+            var needsMoreButton = stepItems.length > MAX_VISIBLE_STEPS && !stepsShowMore;
+
+            if (needsMoreButton) {
+                li.hidden = true;
+            }
+
+            stepsEl.appendChild(li);
+            stepsEl.hidden = false;
+
+            if (needsMoreButton) {
+                var showMoreBtn = stepsEl.querySelector('.wp-mcp-ai-job-card__steps-more');
+                if (!showMoreBtn) {
+                    showMoreBtn = document.createElement('li');
+                    showMoreBtn.className = 'wp-mcp-ai-job-card__steps-more';
+                    showMoreBtn.style.cursor = 'pointer';
+                    showMoreBtn.style.color = 'inherit';
+                    showMoreBtn.addEventListener('click', function () {
+                        stepsShowMore = true;
+                        var hidden = stepsEl.querySelectorAll('li[hidden]');
+                        for (var i = 0; i < hidden.length; i++) {
+                            hidden[i].hidden = false;
+                        }
+                        showMoreBtn.hidden = true;
+                    });
+                    stepsEl.appendChild(showMoreBtn);
+                }
+                showMoreBtn.textContent = '+ ' + (stepItems.length - MAX_VISIBLE_STEPS) + ' more';
+            }
+        }
+
+        function postJobAction(action) {
+            return fetch(restUrl + '/cron-status/' + encodeURIComponent(jobId) + '/' + action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': nonce
+                },
+                credentials: 'same-origin'
+            }).then(function (resp) {
+                return resp.json();
+            });
+        }
+
+        cancelBtn.addEventListener('click', function () {
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = 'Cancelling…';
+            postJobAction('cancel').then(function (data) {
+                if (data && data.success) {
+                    messageEl.textContent = 'Job cancelled.';
+                    cancelBtn.hidden = true;
+                } else {
+                    cancelBtn.disabled = false;
+                    cancelBtn.textContent = 'Cancel';
+                }
+            }).catch(function () {
+                cancelBtn.disabled = false;
+                cancelBtn.textContent = 'Cancel';
+            });
+        });
+
+        retryBtn.addEventListener('click', function () {
+            retryBtn.disabled = true;
+            retryBtn.textContent = 'Retrying…';
+            postJobAction('retry').then(function (data) {
+                if (data && data.success) {
+                    retryBtn.hidden = true;
+                    cancelBtn.hidden = false;
+                    cancelBtn.disabled = false;
+                    cancelBtn.textContent = 'Cancel';
+                    messageEl.textContent = 'Re-queued…';
+                    progressRow.hidden = true;
+                } else {
+                    retryBtn.disabled = false;
+                    retryBtn.textContent = 'Retry';
+                }
+            }).catch(function () {
+                retryBtn.disabled = false;
+                retryBtn.textContent = 'Retry';
+            });
+        });
+
+        // Subscribe to job bus events.
+        var unsubscribeToken = null;
+        if (window.wpMcpAiJobBus && typeof window.wpMcpAiJobBus.subscribe === 'function') {
+            unsubscribeToken = window.wpMcpAiJobBus.subscribe(jobId, function (eventType, payload) {
+                if (!payload) {
+                    return;
+                }
+                if (eventType === 'job:step' || eventType === 'step') {
+                    addStep(payload);
+                } else if (eventType === 'job:progress' || eventType === 'cron_job_status') {
+                    if (typeof payload.progress === 'number') {
+                        setProgress(payload.progress);
+                    }
+                    if (payload.eta) {
+                        setEta(payload.eta);
+                    }
+                    if (payload.message || payload.progress_message) {
+                        messageEl.textContent = payload.message || payload.progress_message;
+                    }
+                } else if (eventType === 'job:cancelled') {
+                    messageEl.textContent = 'Job cancelled.';
+                    cancelBtn.hidden = true;
+                }
+            });
+        }
+
+        function unsubscribe() {
+            if (unsubscribeToken && window.wpMcpAiJobBus && typeof window.wpMcpAiJobBus.unsubscribe === 'function') {
+                window.wpMcpAiJobBus.unsubscribe(unsubscribeToken);
+            }
+        }
+
+        function markFailed(errorMessage, retryable) {
+            messageEl.textContent = errorMessage || 'Job failed.';
+            cancelBtn.hidden = true;
+            if (retryable !== false) {
+                retryBtn.hidden = false;
+                retryBtn.disabled = false;
+                retryBtn.textContent = 'Retry';
+            }
+            unsubscribe();
+        }
+
+        function markCompleted() {
+            cancelBtn.hidden = true;
+            retryBtn.hidden = true;
+            unsubscribe();
+        }
+
+        return { unsubscribe: unsubscribe, markFailed: markFailed, markCompleted: markCompleted };
+    }
+
+    /**
      * Client-side async polling for Crawl4AI tasks.
      * NOTE: Currently unused - system uses server-side WP-Cron polling instead (WP_MCP_AI_Crawler class).
      * This implementation is kept for potential future use with client-side polling.
@@ -10026,6 +10286,9 @@
         const startTime = Date.now();
         const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
 
+        // Attach inline job progress card when feature is enabled.
+        var jobCard = createJobProgressCard(pendingEntry, jobId, toolName, state);
+
         return new Promise(function (resolve, reject) {
             let sseConnection = null;
             let timeoutTimer = null;
@@ -10049,6 +10312,9 @@
                 }
                 resolved = true;
                 cleanup();
+                if (jobCard) {
+                    jobCard.markCompleted();
+                }
 
                 // Remove the pending message
                 if (pendingEntry && pendingEntry.parentNode) {
@@ -10071,7 +10337,11 @@
                 }
                 resolved = true;
                 cleanup();
-                updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolName || 'Tool', errorMessage));
+                if (jobCard) {
+                    jobCard.markFailed(errorMessage, true);
+                } else {
+                    updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolName || 'Tool', errorMessage));
+                }
                 reject(new Error(errorMessage));
             }
 
@@ -10316,6 +10586,9 @@
             pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'), false, { state: state });
         }
 
+        // Attach inline job progress card when feature is enabled.
+        var jobCard = createJobProgressCard(pendingEntry, jobId, toolName, state);
+
         state.pendingAsyncTools[jobId] = {
             entry: pendingEntry,
             pollDelay: pollDelay,
@@ -10400,13 +10673,20 @@
                                 getString('toolError', 'The tool request failed.')
                             );
                             const toolDisplayName = record.toolName || 'Tool';
-                            updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
+                            if (jobCard) {
+                                jobCard.markFailed(formatString('%s failed: %s', toolDisplayName, errorMessage), true);
+                            } else {
+                                updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
+                            }
                             reject(new Error(errorMessage));
                             return;
                         }
 
                         if (status === 'completed') {
                             cleanup();
+                            if (jobCard) {
+                                jobCard.markCompleted();
+                            }
                             // Remove the pending message
                             if (pendingEntry && pendingEntry.parentNode) {
                                 pendingEntry.parentNode.removeChild(pendingEntry);
