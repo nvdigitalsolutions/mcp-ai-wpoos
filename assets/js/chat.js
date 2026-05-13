@@ -19076,6 +19076,10 @@
                         var s = jobs[id].status;
                         return s === 'completed' || s === 'failed' || s === 'cancelled';
                     });
+                    // Sort by updated_at ascending so the oldest terminal jobs are removed first.
+                    terminal.sort(function (a, b) {
+                        return (jobs[a].updated_at || 0) - (jobs[b].updated_at || 0);
+                    });
                     terminal.slice(0, ids.length - MAX_STORED_JOBS).forEach(function (id) {
                         delete jobs[id];
                     });
@@ -19388,22 +19392,18 @@
         }
 
         // ---- Job bus subscriptions ----
-        // Track running count per instance to manage tab-title badge.
-        var prevRunning = 0;
 
         function onJobUpdate(evt) {
             if (!evt || !evt.jobId) { return; }
             var id = evt.jobId;
             var payload = evt.data || evt;
 
-            var wasRunning = prevRunning;
             var prevStatus = jobs[id] ? jobs[id].status : null;
 
             // Merge the update into local state.
             jobs[id] = Object.assign({}, jobs[id] || {}, payload, { job_id: id });
 
             var newStatus  = jobs[id].status;
-            var nowRunning = countRunning();
 
             // Update tab-title badge.
             if (prevStatus !== newStatus) {
