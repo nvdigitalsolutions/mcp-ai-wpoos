@@ -23,7 +23,7 @@ Comprehensive guides for all users
 ### 📚 **[API Reference](reference/)**
 Complete technical reference
 - **[REST API](reference/api/rest-api.md)** ⭐ Essential
-- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All 568 tools (166 base + 402 Pro)
+- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All ~830 tools (~195 base + ~635 Pro; live count authoritative)
 - **[Models](reference/models/)** - AI model specifications
 - **[Technical Specs](reference/technical/)** - Token counting, compatibility
 
@@ -33,6 +33,7 @@ System design and patterns
 - **[Multi-Agent System](features/multi-agent/README-MULTI-AGENT-SYSTEM.md)** - Multi-agent orchestration implementation
 - **[Orchestration](architecture/orchestration/)** - Orchestration layer
 - **[Integrations](architecture/integrations/)** - Elementor, JetEngine
+- **[Inline-async-tick Pattern](architecture/inline-async-tick-pattern.md)** — background-job kick pattern
 
 ### ✨ **[Features](features/)**
 Feature-specific documentation
@@ -40,6 +41,12 @@ Feature-specific documentation
 - **[Tools](features/tools/)** - Image, video, communication tools
 - **[Security](features/security/)** - Security hardening, key rotation
 - **[Performance](features/performance/)** - Rate limiting, token management
+- **[LLM Harnessing (Layers A–H)](llm-harness.md)** — opt-in epistemic layers
+- **[Markup Subsystem](markup-subsystem.md)** — in-loop image markup with Konva canvas
+- **[Agent Skills](features/agent-skills.md)** — portable SKILL.md behavior packages
+- **[Chat-client Memory Bridge](features/memory/chat-client-integration.md)** — Memory Drawer + REST proxy
+- **[Toolkit MCP Servers](features/toolkit-mcp-servers.md)** — 26 per-toolkit JSON-RPC servers
+- **[NV oOS Cloud](features/nv-cloud.md)** — managed-tokens + SaaS Controller
 
 ### 🔧 **[Troubleshooting](troubleshooting/)**
 Problem-solving guides
@@ -73,6 +80,13 @@ Usage examples and demos
 Historical reference (260+ documents from 2024-2025)
 - **[2025 Archive](archive/2025/README.md)** - Recently archived: DeepSeek V4, WordPress.org, Pro Dashboard, Pro Toolkit consolidation
 - **[Root Archive](../archive/README.md)** - 50+ files from root directory reorganization (Phase 6, fixes, status reports)
+
+### 🔌 **[Addons](addons/)**
+Installable addon documentation
+- **[Toolkit SPA Blueprint](addons/toolkit-spa-blueprint.md)** — standard pattern for all SPA addons
+- **[Chat SPA](addons/chat-spa.md)** — React replacement for the legacy chat shortcode
+- **[Docs Hub](addons/docs-hub.md)** — in-site documentation SPA
+- **[SaaS Controller Reference](saas-controller.md)** — NV oOS Cloud control plane
 
 ---
 
