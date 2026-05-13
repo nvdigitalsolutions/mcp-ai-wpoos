@@ -282,6 +282,8 @@ composer install</pre>
 				</table>
 			</div>
 
+			<?php do_action( 'wp_mcp_ai_performance_section_after_components', $report ); ?>
+
 			<!-- Performance Alerts -->
 			<?php if ( ! empty( $report['alerts'] ) ) : ?>
 				<div class="wp-mcp-ai-performance-alerts">

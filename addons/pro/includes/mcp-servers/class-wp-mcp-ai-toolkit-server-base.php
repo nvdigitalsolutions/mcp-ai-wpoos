@@ -44,10 +44,14 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 	public function get_configuration() {
 		$option   = get_option( self::OPTION_PREFIX . $this->get_slug(), array() );
 		$defaults = array(
-			'enabled'           => true,
-			'tools_allowlist'   => array(),
-			'disabled_surfaces' => array(),
-			'disabled_mounts'   => array(),
+			'enabled'             => true,
+			'tools_allowlist'     => array(),
+			'disabled_surfaces'   => array(),
+			'disabled_mounts'     => array(),
+			// Phase 3c — per-server limits. `0` means "no override; use global".
+			'requests_per_minute' => 0,
+			'max_payload_bytes'   => 0,
+			'max_iterations'      => 0,
 		);
 		if ( ! is_array( $option ) ) {
 			$option = array();
@@ -63,18 +67,124 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 	 */
 	public function update_configuration( $config ) {
 		$sanitized = array(
-			'enabled'           => ! empty( $config['enabled'] ),
-			'tools_allowlist'   => isset( $config['tools_allowlist'] ) && is_array( $config['tools_allowlist'] )
+			'enabled'             => ! empty( $config['enabled'] ),
+			'tools_allowlist'     => isset( $config['tools_allowlist'] ) && is_array( $config['tools_allowlist'] )
 				? array_values( array_unique( array_map( 'sanitize_key', $config['tools_allowlist'] ) ) )
 				: array(),
-			'disabled_surfaces' => isset( $config['disabled_surfaces'] ) && is_array( $config['disabled_surfaces'] )
+			'disabled_surfaces'   => isset( $config['disabled_surfaces'] ) && is_array( $config['disabled_surfaces'] )
 				? array_values( array_unique( array_map( 'sanitize_key', $config['disabled_surfaces'] ) ) )
 				: array(),
-			'disabled_mounts'   => isset( $config['disabled_mounts'] ) && is_array( $config['disabled_mounts'] )
+			'disabled_mounts'     => isset( $config['disabled_mounts'] ) && is_array( $config['disabled_mounts'] )
 				? array_values( array_unique( array_filter( array_map( array( $this, 'sanitize_mount_key' ), $config['disabled_mounts'] ) ) ) )
 				: array(),
+			'requests_per_minute' => isset( $config['requests_per_minute'] ) ? max( 0, (int) $config['requests_per_minute'] ) : 0,
+			'max_payload_bytes'   => isset( $config['max_payload_bytes'] ) ? max( 0, (int) $config['max_payload_bytes'] ) : 0,
+			'max_iterations'      => isset( $config['max_iterations'] ) ? max( 0, (int) $config['max_iterations'] ) : 0,
 		);
 		return update_option( self::OPTION_PREFIX . $this->get_slug(), $sanitized );
+	}
+
+	/**
+	 * Whether a tool slug is permitted to be invoked through this server.
+	 *
+	 * A slug is allowed when it appears in `effective_tool_slugs()`, which
+	 * already accounts for the candidate list, the admin allowlist, and any
+	 * subclass overrides.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $slug Tool slug.
+	 * @return bool
+	 */
+	public function tool_is_allowed( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		if ( '' === $slug ) {
+			return false;
+		}
+		return in_array( $slug, $this->effective_tool_slugs(), true );
+	}
+
+	/**
+	 * Get the effective limits (after admin overrides AND filter).
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array{requests_per_minute:int, max_payload_bytes:int, max_iterations:int}
+	 */
+	public function effective_limits() {
+		$config = $this->get_configuration();
+		$limits = array(
+			'requests_per_minute' => isset( $config['requests_per_minute'] ) ? (int) $config['requests_per_minute'] : 0,
+			'max_payload_bytes'   => isset( $config['max_payload_bytes'] ) ? (int) $config['max_payload_bytes'] : 0,
+			'max_iterations'      => isset( $config['max_iterations'] ) ? (int) $config['max_iterations'] : 0,
+		);
+
+		/**
+		 * Filter the effective per-server limits.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param array  $limits Limits with `requests_per_minute`, `max_payload_bytes`, `max_iterations` (0 = no override).
+		 * @param string $slug   Server slug.
+		 */
+		$limits = apply_filters( 'wp_mcp_ai_toolkit_mcp_server_limits', $limits, $this->get_slug() );
+
+		return array(
+			'requests_per_minute' => max( 0, (int) ( $limits['requests_per_minute'] ?? 0 ) ),
+			'max_payload_bytes'   => max( 0, (int) ( $limits['max_payload_bytes'] ?? 0 ) ),
+			'max_iterations'      => max( 0, (int) ( $limits['max_iterations'] ?? 0 ) ),
+		);
+	}
+
+	/**
+	 * Resolve a mounted-surface descriptor by its mount key (`{source}::{page}`).
+	 *
+	 * Returns null when the mount is not declared, suppressed by the consumer,
+	 * or the source toolkit has revoked it.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $source_slug Source toolkit slug.
+	 * @param string $page_slug   Page slug.
+	 * @return array<string,mixed>|null
+	 */
+	public function find_mounted_surface( $source_slug, $page_slug ) {
+		$source_slug = sanitize_key( (string) $source_slug );
+		$page_slug   = sanitize_key( (string) $page_slug );
+		if ( '' === $source_slug || '' === $page_slug ) {
+			return null;
+		}
+		foreach ( $this->effective_mounted_surfaces() as $surface ) {
+			if (
+				isset( $surface['source_toolkit_slug'], $surface['page_slug'] )
+				&& $surface['source_toolkit_slug'] === $source_slug
+				&& $surface['page_slug'] === $page_slug
+			) {
+				return $surface;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Resolve a native ingestion-surface descriptor by page slug.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $page_slug Page slug.
+	 * @return array<string,mixed>|null
+	 */
+	public function find_native_surface( $page_slug ) {
+		$page_slug = sanitize_key( (string) $page_slug );
+		if ( '' === $page_slug ) {
+			return null;
+		}
+		foreach ( $this->effective_ingestion_surfaces() as $surface ) {
+			if ( isset( $surface['page_slug'] ) && $surface['page_slug'] === $page_slug ) {
+				return $surface;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -166,10 +276,10 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 	 * @return array<int,array<string,mixed>>
 	 */
 	public function effective_mounted_surfaces() {
-		$config            = $this->get_configuration();
-		$disabled_mounts   = isset( $config['disabled_mounts'] ) ? (array) $config['disabled_mounts'] : array();
-		$registry          = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
-		$out               = array();
+		$config          = $this->get_configuration();
+		$disabled_mounts = isset( $config['disabled_mounts'] ) ? (array) $config['disabled_mounts'] : array();
+		$registry        = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+		$out             = array();
 
 		foreach ( $this->mounted_surfaces() as $surface ) {
 			if ( ! is_array( $surface ) || empty( $surface['page_slug'] ) || empty( $surface['source_toolkit_slug'] ) ) {
@@ -220,12 +330,16 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 			'protocolVersion'  => '2025-06-18',
 			'capabilities'     => array(
 				'tools'     => (object) array(),
-				'resources' => (object) array( 'subscribe' => false, 'listChanged' => false ),
+				'resources' => (object) array(
+					'subscribe'   => false,
+					'listChanged' => false,
+				),
 				'prompts'   => (object) array( 'listChanged' => false ),
 			),
 			'native_surfaces'  => array_values( $native ),
 			'mounted_surfaces' => array_values( $mounted ),
 			'tool_count'       => count( $this->effective_tool_slugs() ),
+			'limits'           => $this->effective_limits(),
 			'endpoints'        => array(
 				'jsonrpc' => rest_url( WP_MCP_AI_Toolkit_MCP_REST_Controller::REST_NAMESPACE . '/mcp/' . $this->get_slug() ),
 			),
@@ -371,7 +485,10 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 				'description' => isset( $definition['description'] ) ? $definition['description'] : ( isset( $definition['name'] ) ? $definition['name'] : $slug ),
 				'inputSchema' => isset( $definition['parameters'] ) && is_array( $definition['parameters'] )
 					? $definition['parameters']
-					: array( 'type' => 'object', 'properties' => array() ),
+					: array(
+						'type'       => 'object',
+						'properties' => array(),
+					),
 			);
 		}
 		return $out;

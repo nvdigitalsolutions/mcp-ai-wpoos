@@ -1,6 +1,6 @@
 # ADR 002 — Per-Toolkit MCP Servers
 
-> Status: **Accepted (Phase 0 + Phase 1 + Phase 2)** · Date: 2026-05-08; Phase 2 added 2026-05-10
+> Status: **Accepted (Phase 0 + Phase 1 + Phase 2 + Phase 3a/3c + Phase 3d + Phase 4 + Phase 5 + Phase 6)** · Date: 2026-05-08; Phase 2 added 2026-05-10; Phase 3a/3c added 2026-05-11; Phase 3d added 2026-05-12; Phase 4 added 2026-05-12; Phase 5 added 2026-05-12; Phase 6 added 2026-05-12
 >
 > Supersedes: none.
 > Related: `docs/ADR_001_module_boundaries.md`, `docs/features/toolkit-mcp-servers.md`.
@@ -59,9 +59,14 @@ This ADR ships **Phase 0 (foundation)**, **Phase 1 (three pilot servers — CRM,
 
 - ~~Phase 2 — promote remaining 16 Tier-1 toolkits.~~ **(landed 2026-05-10)**
 - Phase 3 — toolkit-scoped credentials, rate-limit overrides, CLI, slash commands, `tools/call` / `resources/read` / `prompts/get`.
-- Phase 4 — cross-mount audit trail in observability.
-- Phase 5 — assistant "mounted MCP servers" UI, observability dashboard card, auto-generated `docs/mcp-servers.md`.
-- Phase 6 — Tier 2 toolkits and `/.well-known/mcp` externalisation.
+  - ~~3a — `tools/call`, `resources/read`, `prompts/get` JSON-RPC dispatch.~~ **(landed 2026-05-11)**
+  - ~~3b — `/mcp-server` slash command (list / show / enable / disable / tools).~~ **(landed 2026-05-12)**
+  - ~~3c — Per-server limits (requests_per_minute, max_payload_bytes, max_iterations).~~ **(landed 2026-05-11)**
+  - ~~3d — Toolkit-scoped credentials.~~ **(landed 2026-05-12)**
+  - ~~3e — WP-CLI commands.~~ **(landed 2026-05-12)**
+- Phase 4 — cross-mount audit trail in observability. **(landed 2026-05-12)**
+- Phase 5 — assistant "mounted MCP servers" UI, observability dashboard card, auto-generated `docs/mcp-servers.md`. ✅ **Landed.**
+- Phase 6 — Tier 2 toolkits and `/.well-known/mcp` externalisation. ✅ **Landed.**
 
 ### Phase 2 server inventory
 
