@@ -1077,7 +1077,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return void Streams SSE updates and exits.
 		 */
 		protected function stream_status_summary_updates( WP_REST_Request $request, array $initial, $service, $user_id, $limit, $assistant_id ) {
-			$stream_started_micros = function_exists( 'microtime' ) ? (int) round( microtime( true ) * 1e6 ) : 0;
+			$stream_started_micros = (int) round( microtime( true ) * 1e6 );
 
 			/**
 			 * Fires when a cron-status SSE stream is established.
@@ -1195,7 +1195,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 * @param int|null $assistant_id Optional assistant filter.
 			 * @param int      $duration_ms  Stream duration in milliseconds (0 if unavailable).
 			 */
-			$duration_ms = $stream_started_micros > 0 ? (int) round( ( (int) round( microtime( true ) * 1e6 ) - $stream_started_micros ) / 1000 ) : 0;
+			$duration_ms = $stream_started_micros > 0 ? (int) round( ( microtime( true ) * 1e6 - $stream_started_micros ) / 1000 ) : 0;
 			do_action( 'wp_mcp_ai_after_chat_jobs_stream', $poll_count, $user_id, $assistant_id, $duration_ms );
 
 			$this->sse_handler->finish();
