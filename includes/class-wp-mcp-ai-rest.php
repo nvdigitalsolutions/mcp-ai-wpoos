@@ -953,8 +953,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$counts = $service->get_status_counts( $user_id, $assistant_id );
 
 			$response = array(
-				'jobs'   => $jobs,
-				'counts' => $counts,
+				'jobs'          => $jobs,
+				'counts'        => $counts,
+				'system_status' => $service->get_system_status(),
 			);
 
 			// Include assistant_id in response if filtered.

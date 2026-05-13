@@ -815,4 +815,75 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		// Clean up transient.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 	}
+
+	/**
+	 * Test that get_system_status() returns the documented shape with safe
+	 * defaults when no health monitors are present.
+	 *
+	 * Phase 0 wire-up: docs/features/chat/cron-status-tasks-drawer-plan.md.
+	 */
+	public function test_get_system_status_returns_default_shape() {
+		$status = $this->service->get_system_status();
+
+		$this->assertIsArray( $status );
+		$this->assertArrayHasKey( 'async', $status );
+		$this->assertArrayHasKey( 'health', $status );
+
+		$this->assertArrayHasKey( 'status', $status['async'] );
+		$this->assertArrayHasKey( 'stuck_jobs', $status['async'] );
+		$this->assertArrayHasKey( 'long_running', $status['async'] );
+
+		$this->assertArrayHasKey( 'status', $status['health'] );
+		$this->assertArrayHasKey( 'label', $status['health'] );
+
+		// stuck_jobs / long_running must always be ints so the JS comparator
+		// `systemStatus.async.stuck_jobs > 0` works without coercion bugs.
+		$this->assertIsInt( $status['async']['stuck_jobs'] );
+		$this->assertIsInt( $status['async']['long_running'] );
+	}
+
+	/**
+	 * Async/video jobs must win the limited window over regular cron entries
+	 * so a busy WP-Cron queue cannot starve assistant-scoped jobs out of the
+	 * chat UI's status bar.
+	 *
+	 * Phase 0 wire-up: docs/features/chat/cron-status-tasks-drawer-plan.md.
+	 */
+	public function test_get_status_summary_orders_async_jobs_before_regular_cron() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		// Two regular cron entries.
+		$hook_a    = 'wp_mcp_ai_test_order_a';
+		$hook_b    = 'wp_mcp_ai_test_order_b';
+		$timestamp = time() + HOUR_IN_SECONDS;
+		wp_schedule_single_event( $timestamp, $hook_a, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook_a, array(), 'single', $timestamp, $this->user_id );
+		wp_schedule_single_event( $timestamp + 60, $hook_b, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook_b, array(), 'single', $timestamp + 60, $this->user_id );
+
+		// One async job that must show up even when limit=1.
+		$async_job_id = 'async_test_priority';
+		set_transient(
+			WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_id,
+			array(
+				'job_id'    => $async_job_id,
+				'tool_slug' => 'priority_tool',
+				'status'    => 'running',
+				'queued_at' => time() - 30,
+				'context'   => array( 'user_id' => $this->user_id ),
+			),
+			DAY_IN_SECONDS
+		);
+
+		$summary = $this->service->get_status_summary( $this->user_id, 1 );
+
+		$this->assertNotEmpty( $summary );
+		$this->assertCount( 1, $summary );
+		$this->assertEquals( $async_job_id, $summary[0]['job_id'], 'Async job must win the single available slot.' );
+
+		// Clean up.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $async_job_id );
+		wp_clear_scheduled_hook( $hook_a );
+		wp_clear_scheduled_hook( $hook_b );
+	}
 }

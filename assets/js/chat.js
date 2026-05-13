@@ -10135,6 +10135,16 @@
                 eventHandlers: {
                     // Existing cron_job_status handler
                     cron_job_status: function (payload) {
+                        // Republish per-job SSE frames onto the global job event
+                        // bus so the cron-status drawer, toast surfaces, and any
+                        // other component subscribed to job updates stay in sync
+                        // with the real-time stream owned by this chat bubble.
+                        // Phase 0 wire-up fix from
+                        // docs/features/chat/cron-status-tasks-drawer-plan.md.
+                        if (window.wpMcpAiJobBus && payload && payload.job_id) {
+                            window.wpMcpAiJobBus.handleJobUpdate(payload.job_id, payload);
+                        }
+
                         const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
 
                         if (status === 'completed') {
@@ -18550,9 +18560,15 @@
             const healthEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-health');
 
             if (activeEl) {
-                activeEl.textContent = counts.active || 0;
+                // Backend (`WP_MCP_AI_Cron_Status_Service::get_status_counts`) returns
+                // the in-flight tally as `counts.running` (covers both `running` and
+                // `polling` job statuses). Read that key — `counts.active` is never
+                // populated by the REST response and previously kept the badge stuck
+                // at zero even while jobs were actively executing.
+                const runningCount = counts.running || 0;
+                activeEl.textContent = runningCount;
                 activeEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-active';
-                if (counts.active > 0) {
+                if (runningCount > 0) {
                     activeEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-active--running';
                 }
             }

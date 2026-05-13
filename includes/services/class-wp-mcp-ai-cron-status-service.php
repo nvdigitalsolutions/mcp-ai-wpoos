@@ -95,13 +95,18 @@ class WP_MCP_AI_Cron_Status_Service {
 		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
 		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,.
 		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
+		//
+		// Async/video jobs are merged BEFORE regular cron entries so that, when the shared
+		// $limit is small (e.g. the chat UI default of 10), assistant-scoped jobs always win
+		// the slot ordering and are never starved by a backlog of generic cron entries.
 		if ( null !== $assistant_id ) {
 			// Multi-widget isolation: only show jobs for this specific assistant.
 			$all_jobs = array_merge( $async_jobs, $video_jobs );
 		} else {
-			// No filter: include all jobs (regular cron + async + video).
+			// No filter: include all jobs (regular cron + async + video) but put assistant
+			// jobs first so they win the limited window.
 			$jobs     = WP_MCP_AI_Cron_Manager::get_jobs();
-			$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
+			$all_jobs = array_merge( $async_jobs, $video_jobs, $jobs );
 		}
 
 		if ( empty( $all_jobs ) ) {
@@ -618,6 +623,61 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		return $counts;
+	}
+
+	/**
+	 * Get lightweight system status for chat-client display.
+	 *
+	 * Surfaces async-health and orchestration-health signals so the chat UI
+	 * can render a health pill alongside the job counters. Failures from
+	 * either subsystem are swallowed so a misbehaving health probe never
+	 * breaks the cron-status REST response.
+	 *
+	 * @since 1.9.2
+	 * @return array {
+	 *     @type array $async  { status, stuck_jobs, long_running }.
+	 *     @type array $health { status, label }.
+	 * }
+	 */
+	public function get_system_status() {
+		$status = array(
+			'async'  => array(
+				'status'       => 'unknown',
+				'stuck_jobs'   => 0,
+				'long_running' => 0,
+			),
+			'health' => array(
+				'status' => 'unknown',
+				'label'  => 'Unknown',
+			),
+		);
+
+		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
+			try {
+				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async'] = array(
+					'status'       => isset( $async_health['status'] ) ? (string) $async_health['status'] : 'unknown',
+					'stuck_jobs'   => isset( $async_health['stuck_jobs'] ) ? absint( $async_health['stuck_jobs'] ) : 0,
+					'long_running' => isset( $async_health['long_running'] ) ? absint( $async_health['long_running'] ) : 0,
+				);
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Async health is best-effort; never break the chat surface.
+				// Silently fall back to the 'unknown' default initialised above.
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+			try {
+				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+				$status['health'] = array(
+					'status' => isset( $health_status['status'] ) ? (string) $health_status['status'] : 'unknown',
+					'label'  => isset( $health_status['label'] ) ? (string) $health_status['label'] : 'Unknown',
+				);
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Orchestration health is best-effort; never break the chat surface.
+				// Silently fall back to the 'unknown' default initialised above.
+			}
+		}
+
+		return $status;
 	}
 
 	/**

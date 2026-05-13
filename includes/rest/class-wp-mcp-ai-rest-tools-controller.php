@@ -108,50 +108,15 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * Provides async health and orchestration health status for the chat UI's
 	 * status bar. This is a lightweight version suitable for frequent polling.
 	 *
+	 * Delegates to {@see WP_MCP_AI_Cron_Status_Service::get_system_status()} so
+	 * the production REST handler and the controller fallback share one
+	 * implementation.
+	 *
 	 * @since 1.9.1
 	 * @return array System status data with async and health information.
 	 */
 	private function get_system_status_for_chat() {
-		$status = array(
-			'async'  => array(
-				'status'       => 'unknown',
-				'stuck_jobs'   => 0,
-				'long_running' => 0,
-			),
-			'health' => array(
-				'status' => 'unknown',
-				'label'  => 'Unknown',
-			),
-		);
-
-		// Get async health status if monitor is available.
-		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
-			try {
-				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
-				$status['async'] = array(
-					'status'       => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
-					'stuck_jobs'   => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
-					'long_running' => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
-				);
-			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: async health monitoring is optional and should not break REST API response.
-				// Silently fail - status monitoring should not break the chat.
-			}
-		}
-
-		// Get orchestration health status if service is available.
-		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
-			try {
-				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
-				$status['health'] = array(
-					'status' => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
-					'label'  => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
-				);
-			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: orchestration health monitoring is optional and should not break REST API response.
-				// Silently fail.
-			}
-		}
-
-		return $status;
+		return $this->get_cron_status_service()->get_system_status();
 	}
 
 	/**
