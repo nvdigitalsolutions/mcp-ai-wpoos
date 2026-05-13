@@ -50,6 +50,20 @@ require_once NVOOS_DOCS_HUB_PATH . 'includes/shortcode/class-nvoos-docs-hub-shor
 require_once NVOOS_DOCS_HUB_PATH . 'includes/block/class-nvoos-docs-hub-block.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-sitemap-provider.php';
 
+// Register rebuild job-source for the cron-status Tasks Drawer.
+if ( interface_exists( 'Interface_WP_MCP_AI_Cron_Status_Job_Source' ) ) {
+	require_once NVOOS_DOCS_HUB_PATH . 'includes/job-sources/class-nvoos-docs-hub-rebuild-job-source.php';
+	add_filter(
+		'wp_mcp_ai_cron_status_job_sources',
+		static function ( array $sources ) {
+			$sources['docs_hub_rebuild'] = new NV_oOS_Docs_Hub_Rebuild_Job_Source();
+			return $sources;
+		},
+		10,
+		1
+	);
+}
+
 // Load admin classes.
 if ( is_admin() ) {
 	require_once NVOOS_DOCS_HUB_PATH . 'includes/admin/class-nvoos-docs-hub-settings.php';

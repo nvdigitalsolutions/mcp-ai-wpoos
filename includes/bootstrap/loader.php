@@ -313,6 +313,11 @@ add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 11 );
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cron' ), 1 );
 
 // ---------------------------------------------------------------------------
+// PR-E: base-plugin job-source adapters (transcript mining, Crawl4AI, HITL)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/services/job-sources/job-sources-init.php';
+
+// ---------------------------------------------------------------------------
 // Phase 3 — Workflow CPT + Engine V2
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-workflow-cpt.php';
