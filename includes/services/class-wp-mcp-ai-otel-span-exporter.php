@@ -558,6 +558,22 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param array $attributes Flat associative array.
 	 * @return array OTLP attribute list.
 	 */
+	private static function encode_attributes( array $attributes ) {
+		$result = array();
+		foreach ( $attributes as $key => $value ) {
+			$attr = array( 'key' => (string) $key );
+			if ( is_bool( $value ) ) {
+				$attr['value'] = array( 'boolValue' => $value );
+			} elseif ( is_int( $value ) || is_float( $value ) ) {
+				$attr['value'] = array( 'intValue' => (string) (int) $value );
+			} else {
+				$attr['value'] = array( 'stringValue' => (string) $value );
+			}
+			$result[] = $attr;
+		}
+		return $result;
+	}
+
 	/**
 	 * Reset static state for unit-test isolation.
 	 *
