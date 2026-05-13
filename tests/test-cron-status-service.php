@@ -886,4 +886,235 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		wp_clear_scheduled_hook( $hook_a );
 		wp_clear_scheduled_hook( $hook_b );
 	}
+
+	/**
+	 * Phase 1 — Job-Source Registry: filter fires and a well-formed source contributes a job.
+	 */
+	public function test_registered_source_contributes_job_to_summary() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_test_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id'       => 'job-abc',
+						'kind'         => 'transcript_mine',
+						'status'       => 'running',
+						'created_by'   => $user_id,
+						'assistant_id' => 0,
+						'started_at'   => time() - 10,
+						'updated_at'   => time(),
+						'eta'          => time() + 30,
+						'progress'     => 42,
+						'message'      => 'Mining transcript…',
+						'cancellable'  => true,
+						'retryable'    => false,
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$found = null;
+		foreach ( $summary as $row ) {
+			if ( isset( $row['job_id'] ) && 'job-abc' === $row['job_id'] ) {
+				$found = $row;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $found, 'Job contributed via wp_mcp_ai_cron_status_job_sources should appear in the summary.' );
+		$this->assertSame( 'running', $found['status'] );
+		$this->assertSame( 'phase1_test_source', $found['source'] );
+		$this->assertSame( 'transcript_mine', $found['kind'] );
+		$this->assertSame( 42, $found['progress'] );
+		$this->assertTrue( $found['cancellable'] );
+		$this->assertFalse( $found['retryable'] );
+	}
+
+	/**
+	 * Phase 1: a job contributed by a registered source counts in get_status_counts().
+	 */
+	public function test_registered_source_job_appears_in_counts() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_counts_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id'     => 'job-c1',
+						'kind'       => 'crawl',
+						'status'     => 'running',
+						'created_by' => $user_id,
+					),
+					array(
+						'job_id'     => 'job-c2',
+						'kind'       => 'crawl',
+						'status'     => 'failed',
+						'created_by' => $user_id,
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$counts = $this->service->get_status_counts( $this->user_id );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$this->assertGreaterThanOrEqual( 1, $counts['running'], 'Running record should be tallied.' );
+		$this->assertGreaterThanOrEqual( 1, $counts['failed'], 'Failed record should be tallied.' );
+		$this->assertGreaterThanOrEqual( 2, $counts['total'] );
+	}
+
+	/**
+	 * Phase 1: invalid records (no job_id) are dropped silently.
+	 */
+	public function test_invalid_source_records_are_dropped() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_invalid_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array( 'no_job_id_here' => true ),
+					'not-an-array',
+					array(
+						'job_id' => 'valid-1',
+						'status' => 'pending',
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$valid_ids = wp_list_pluck( $summary, 'job_id' );
+		$this->assertContains( 'valid-1', $valid_ids );
+		$this->assertNotContains( '', $valid_ids );
+	}
+
+	/**
+	 * Phase 1: a throwing source does not break the REST response.
+	 */
+	public function test_throwing_source_is_isolated() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$bad = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_bad_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				throw new \RuntimeException( 'simulated source failure' );
+			}
+		};
+
+		$good = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_good_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id' => 'good-1',
+						'status' => 'queued',
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $bad, $good ) {
+			$sources[ $bad->get_slug() ]  = $bad;
+			$sources[ $good->get_slug() ] = $good;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$error_slugs = array();
+		$error_cb    = function ( $slug ) use ( &$error_slugs ) {
+			$error_slugs[] = $slug;
+		};
+		add_action( 'wp_mcp_ai_cron_status_source_error', $error_cb );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+		remove_action( 'wp_mcp_ai_cron_status_source_error', $error_cb );
+
+		$this->assertContains( 'phase1_bad_source', $error_slugs, 'Throwing source must trigger wp_mcp_ai_cron_status_source_error.' );
+		$valid_ids = wp_list_pluck( $summary, 'job_id' );
+		$this->assertContains( 'good-1', $valid_ids, 'A throwing source must not block other sources.' );
+	}
+
+	/**
+	 * Phase 1: assistant-scoped queries drop unmatched source records.
+	 */
+	public function test_source_records_respect_assistant_scope() {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+
+		$source = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
+			public function get_slug() {
+				return 'phase1_scope_source';
+			}
+			public function get_jobs( $user_id = 0, $assistant_id = null ) {
+				return array(
+					array(
+						'job_id'       => 'mine-1',
+						'status'       => 'running',
+						'assistant_id' => 555,
+						'created_by'   => $user_id,
+					),
+					array(
+						'job_id'       => 'other-1',
+						'status'       => 'running',
+						'assistant_id' => 999,
+						'created_by'   => $user_id,
+					),
+				);
+			}
+		};
+
+		$callback = function ( $sources ) use ( $source ) {
+			$sources[ $source->get_slug() ] = $source;
+			return $sources;
+		};
+		add_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$summary = $this->service->get_status_summary( $this->user_id, 10, 555 );
+
+		remove_filter( 'wp_mcp_ai_cron_status_job_sources', $callback );
+
+		$ids = wp_list_pluck( $summary, 'job_id' );
+		$this->assertContains( 'mine-1', $ids );
+		$this->assertNotContains( 'other-1', $ids );
+	}
 }

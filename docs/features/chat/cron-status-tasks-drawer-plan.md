@@ -44,6 +44,8 @@ Small frontend + backend corrections that must land first.
 
 ### Phase 1 — Job-source registry (architectural)
 
+> **Status (PR-B, May 2026):** Registry contract, normalized record, and integration into `get_status_summary()` / `get_status_counts()` have landed. Built-in async-tool / Veo / cron-manager collectors continue to feed the pipeline natively; new sources opt in via the filter. Source-by-source migration (transcript mining, crawler, docs-hub, graphify, harness eval, SaaS apply, pro schedule, MCP audit, sub-agent dispatcher, durable runs, HITL approvals) is tracked under PR-E.
+
 A single filter replaces three hard-coded transient scans.
 
 **New filter:**
