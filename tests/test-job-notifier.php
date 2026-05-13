@@ -167,4 +167,85 @@ class Test_Job_Notifier extends WP_UnitTestCase {
 		$this->assertEquals( 'completed', $cached['status'] );
 		$this->assertEquals( $result, $cached['result'] );
 	}
+
+	/**
+	 * Test that record_step appends a step to the cached job status and fires the action.
+	 *
+	 * Phase 2 / slice 2a of the chat-tasks-drawer plan.
+	 */
+	public function test_record_step_appends_step_and_fires_action() {
+		$job_id = 'step_job_' . wp_generate_uuid4();
+
+		// Seed the cache with an existing job so we exercise the merge path.
+		do_action( 'wp_mcp_ai_job_started', $job_id, array( 'type' => 'test' ) );
+
+		$captured = array();
+		$listener = function ( $observed_id, $step, $status ) use ( &$captured ) {
+			$captured[] = array(
+				'job_id' => $observed_id,
+				'step'   => $step,
+				'status' => $status,
+			);
+		};
+		add_action( 'wp_mcp_ai_job_step', $listener, 10, 3 );
+
+		$ok = WP_MCP_AI_Job_Notifier::record_step(
+			$job_id,
+			'Parsing prompt',
+			'completed',
+			array( 'duration_ms' => 320 )
+		);
+
+		remove_action( 'wp_mcp_ai_job_step', $listener, 10 );
+
+		$this->assertTrue( $ok );
+		$this->assertCount( 1, $captured );
+		$this->assertSame( $job_id, $captured[0]['job_id'] );
+		$this->assertSame( 'Parsing prompt', $captured[0]['step']['label'] );
+		$this->assertSame( 'completed', $captured[0]['step']['status'] );
+		$this->assertSame( 320, $captured[0]['step']['metadata']['duration_ms'] );
+
+		$cached = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+		$this->assertIsArray( $cached );
+		$this->assertArrayHasKey( 'steps', $cached );
+		$this->assertCount( 1, $cached['steps'] );
+		$this->assertSame( 'Parsing prompt', $cached['steps'][0]['label'] );
+		// The seeded 'started' status should be preserved — record_step must not overwrite it.
+		$this->assertSame( 'started', $cached['status'] );
+	}
+
+	/**
+	 * Test that record_step rejects invalid input and clamps unknown statuses to 'running'.
+	 */
+	public function test_record_step_validates_input() {
+		$job_id = 'step_job_' . wp_generate_uuid4();
+
+		$this->assertFalse( WP_MCP_AI_Job_Notifier::record_step( '', 'label' ) );
+		$this->assertFalse( WP_MCP_AI_Job_Notifier::record_step( $job_id, '' ) );
+		$this->assertFalse( WP_MCP_AI_Job_Notifier::record_step( $job_id, '   ' ) );
+
+		// Unknown status falls back to 'running' without bailing.
+		$this->assertTrue( WP_MCP_AI_Job_Notifier::record_step( $job_id, 'Frob the widget', 'gibberish' ) );
+		$cached = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+		$this->assertSame( 'running', $cached['steps'][0]['status'] );
+	}
+
+	/**
+	 * Test that the steps ring buffer caps at MAX_STEPS_PER_JOB.
+	 */
+	public function test_record_step_ring_buffer_caps_at_max() {
+		$job_id = 'step_job_' . wp_generate_uuid4();
+		$cap    = WP_MCP_AI_Job_Notifier::MAX_STEPS_PER_JOB;
+
+		// Push two over the cap.
+		for ( $i = 1; $i <= $cap + 2; $i++ ) {
+			WP_MCP_AI_Job_Notifier::record_step( $job_id, 'step-' . $i, 'running' );
+		}
+
+		$cached = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+		$this->assertCount( $cap, $cached['steps'] );
+		// The oldest entries should have been trimmed off the front.
+		$this->assertSame( 'step-3', $cached['steps'][0]['label'] );
+		$this->assertSame( 'step-' . ( $cap + 2 ), $cached['steps'][ $cap - 1 ]['label'] );
+	}
 }

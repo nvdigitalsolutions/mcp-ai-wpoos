@@ -92,16 +92,28 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Get video generation jobs.
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
+		// Phase 1 (job-source registry): collect extra jobs contributed via the
+		// `wp_mcp_ai_cron_status_job_sources` filter. These are merged into the
+		// status-summary pipeline alongside the built-in async/video collectors
+		// and respect the same assistant_id scoping. See
+		// docs/features/chat/cron-status-tasks-drawer-plan.md.
+		$external_jobs = $this->collect_registered_source_jobs( $user_id, $assistant_id );
+
 		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
 		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,.
 		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
+		//
+		// Async/video jobs are merged BEFORE regular cron entries so that, when the shared
+		// $limit is small (e.g. the chat UI default of 10), assistant-scoped jobs always win
+		// the slot ordering and are never starved by a backlog of generic cron entries.
 		if ( null !== $assistant_id ) {
 			// Multi-widget isolation: only show jobs for this specific assistant.
-			$all_jobs = array_merge( $async_jobs, $video_jobs );
+			$all_jobs = array_merge( $async_jobs, $video_jobs, $external_jobs );
 		} else {
-			// No filter: include all jobs (regular cron + async + video).
+			// No filter: include all jobs (regular cron + async + video + external)
+			// but put assistant jobs first so they win the limited window.
 			$jobs     = WP_MCP_AI_Cron_Manager::get_jobs();
-			$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
+			$all_jobs = array_merge( $async_jobs, $video_jobs, $external_jobs, $jobs );
 		}
 
 		if ( empty( $all_jobs ) ) {
@@ -122,10 +134,17 @@ class WP_MCP_AI_Cron_Status_Service {
 				continue;
 			}
 
+			// Phase 1 (job-source registry): records contributed via the
+			// `wp_mcp_ai_cron_status_job_sources` filter are tagged with
+			// `_is_source_record` so we can route them to the dedicated formatter
+			// instead of mis-dispatching to async/cron formatting.
+			$is_source_record = ! empty( $job['_is_source_record'] );
 			// Check if this is an async tool job.
 			$is_async_tool = isset( $job['tool_slug'] );
 
-			if ( $is_async_tool ) {
+			if ( $is_source_record ) {
+				$job_data = $this->format_source_record( $job );
+			} elseif ( $is_async_tool ) {
 				// Format async tool job data.
 				$job_data = $this->format_async_tool_job( $job );
 			} else {
@@ -564,16 +583,21 @@ class WP_MCP_AI_Cron_Status_Service {
 		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
+		// Phase 1 (job-source registry): include jobs contributed via the
+		// `wp_mcp_ai_cron_status_job_sources` filter so they participate in
+		// the running/pending/completed/failed tally.
+		$external_jobs = $this->collect_registered_source_jobs( $user_id, $assistant_id );
+
 		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
 		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,.
 		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
 		if ( null !== $assistant_id ) {
 			// Multi-widget isolation: only show jobs for this specific assistant.
-			$all_jobs = array_merge( $async_jobs, $video_jobs );
+			$all_jobs = array_merge( $async_jobs, $video_jobs, $external_jobs );
 		} else {
-			// No filter: include all jobs (regular cron + async + video).
+			// No filter: include all jobs (regular cron + async + video + external).
 			$jobs     = WP_MCP_AI_Cron_Manager::get_jobs();
-			$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs );
+			$all_jobs = array_merge( $jobs, $async_jobs, $video_jobs, $external_jobs );
 		}
 
 		$counts = array(
@@ -591,7 +615,10 @@ class WP_MCP_AI_Cron_Status_Service {
 			}
 
 			// Check if async tool job.
-			if ( isset( $job['tool_slug'] ) && isset( $job['status'] ) ) {
+			if ( ! empty( $job['_is_source_record'] ) ) {
+				// Phase 1 normalized source record carries its own status.
+				$status = isset( $job['status'] ) ? (string) $job['status'] : 'pending';
+			} elseif ( isset( $job['tool_slug'] ) && isset( $job['status'] ) ) {
 				$status = $job['status'];
 			} else {
 				$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
@@ -618,6 +645,370 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		return $counts;
+	}
+
+	/**
+	 * Phase 1: Resolve the registered job-source adapters.
+	 *
+	 * Fires the `wp_mcp_ai_cron_status_job_sources` filter and returns the
+	 * filtered map of `slug => Interface_WP_MCP_AI_Cron_Status_Job_Source`.
+	 * Non-conforming entries are dropped (defensive; we never trust a third-party
+	 * filter to return well-shaped data).
+	 *
+	 * @since 1.9.2
+	 * @return array<string,Interface_WP_MCP_AI_Cron_Status_Job_Source>
+	 */
+	public function get_registered_sources() {
+		/**
+		 * Filter: register job sources for the cron-status Tasks drawer.
+		 *
+		 * @since 1.9.2
+		 *
+		 * @param array<string,Interface_WP_MCP_AI_Cron_Status_Job_Source> $sources Existing map.
+		 */
+		$sources = apply_filters( 'wp_mcp_ai_cron_status_job_sources', array() );
+
+		if ( ! is_array( $sources ) ) {
+			return array();
+		}
+
+		$resolved = array();
+		foreach ( $sources as $key => $source ) {
+			if ( ! is_object( $source ) || ! ( $source instanceof Interface_WP_MCP_AI_Cron_Status_Job_Source ) ) {
+				continue;
+			}
+
+			$slug = is_string( $key ) && '' !== $key ? $key : $source->get_slug();
+			$slug = sanitize_key( (string) $slug );
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			$resolved[ $slug ] = $source;
+		}
+
+		return $resolved;
+	}
+
+	/**
+	 * Phase 1: Collect normalized job records from every registered source.
+	 *
+	 * Each source is invoked inside a try/catch so a single misbehaving
+	 * adapter cannot break the chat-status REST response. Invalid records
+	 * (missing job_id, non-array, etc.) are silently dropped.
+	 *
+	 * The returned map is keyed by `<slug>:<job_id>` to guarantee global
+	 * uniqueness across heterogeneous sources, and each record is tagged
+	 * with `_is_source_record => true` so the dispatch loop can route it
+	 * to {@see format_source_record()}.
+	 *
+	 * @since 1.9.2
+	 *
+	 * @param int             $user_id      Requesting user.
+	 * @param int|string|null $assistant_id Optional assistant scope.
+	 * @return array<string,array<string,mixed>>
+	 */
+	public function collect_registered_source_jobs( $user_id = 0, $assistant_id = null ) {
+		$sources = $this->get_registered_sources();
+		if ( empty( $sources ) ) {
+			return array();
+		}
+
+		$collected = array();
+
+		foreach ( $sources as $slug => $source ) {
+			$jobs = array();
+			try {
+				$jobs = $source->get_jobs( $user_id, $assistant_id );
+			} catch ( \Throwable $e ) {
+				/**
+				 * Fires when a registered job source throws while listing jobs.
+				 *
+				 * Useful for surfacing broken adapters in observability without
+				 * letting them break the chat-status REST response.
+				 *
+				 * @since 1.9.2
+				 *
+				 * @param string     $slug Registered source slug.
+				 * @param \Throwable $e    The thrown exception.
+				 */
+				do_action( 'wp_mcp_ai_cron_status_source_error', $slug, $e );
+				continue;
+			}
+
+			if ( ! is_array( $jobs ) ) {
+				continue;
+			}
+
+			foreach ( $jobs as $raw ) {
+				$record = $this->normalize_source_record( $raw, $slug );
+				if ( null === $record ) {
+					continue;
+				}
+
+				// Assistant-scope filtering: drop records that don't match when scope is set.
+				if ( null !== $assistant_id && '' !== (string) $record['assistant_id']
+					&& (string) $record['assistant_id'] !== (string) $assistant_id ) {
+					continue;
+				}
+
+				$key               = $slug . ':' . $record['job_id'];
+				$collected[ $key ] = $record;
+			}
+		}
+
+		return $collected;
+	}
+
+	/**
+	 * Phase 1: Normalize a raw record returned by a job source.
+	 *
+	 * Enforces the documented contract from
+	 * `docs/features/chat/cron-status-tasks-drawer-plan.md` and tags the
+	 * record with `_is_source_record => true` so the formatter loop in
+	 * {@see get_status_summary()} can dispatch to {@see format_source_record()}.
+	 *
+	 * Returns `null` for records that are missing required keys
+	 * (job_id, status) — callers should treat that as "drop silently".
+	 *
+	 * @since 1.9.2
+	 *
+	 * @param mixed  $raw  Raw record from the source.
+	 * @param string $slug Source slug (used as fallback for `source`).
+	 * @return array<string,mixed>|null
+	 */
+	public function normalize_source_record( $raw, $slug ) {
+		if ( ! is_array( $raw ) ) {
+			return null;
+		}
+
+		$job_id = isset( $raw['job_id'] ) ? (string) $raw['job_id'] : '';
+		$job_id = sanitize_text_field( $job_id );
+		if ( '' === $job_id ) {
+			return null;
+		}
+
+		$status = isset( $raw['status'] ) ? (string) $raw['status'] : '';
+		$status = sanitize_key( $status );
+		$allowed_statuses = array( 'queued', 'pending', 'running', 'polling', 'completed', 'failed', 'cancelled' );
+		if ( ! in_array( $status, $allowed_statuses, true ) ) {
+			// Map unknown legacy values defensively rather than dropping the record.
+			$status = 'pending';
+		}
+
+		$kind = isset( $raw['kind'] ) ? sanitize_key( (string) $raw['kind'] ) : '';
+		if ( '' === $kind ) {
+			$kind = sanitize_key( $slug );
+		}
+
+		// Assistant ID may be int or string (e.g. "unified_team_123").
+		$assistant_id = '';
+		if ( isset( $raw['assistant_id'] ) ) {
+			$assistant_id = is_int( $raw['assistant_id'] )
+				? (string) $raw['assistant_id']
+				: sanitize_text_field( (string) $raw['assistant_id'] );
+		}
+
+		$record = array(
+			'job_id'            => $job_id,
+			'kind'              => $kind,
+			'status'            => $status,
+			'created_by'        => isset( $raw['created_by'] ) ? absint( $raw['created_by'] ) : 0,
+			'assistant_id'      => $assistant_id,
+			'started_at'        => isset( $raw['started_at'] ) ? absint( $raw['started_at'] ) : 0,
+			'updated_at'        => isset( $raw['updated_at'] ) ? absint( $raw['updated_at'] ) : 0,
+			'eta'               => isset( $raw['eta'] ) && null !== $raw['eta'] ? absint( $raw['eta'] ) : null,
+			'progress'          => isset( $raw['progress'] ) && null !== $raw['progress']
+				? max( 0, min( 100, (int) $raw['progress'] ) )
+				: null,
+			'message'           => isset( $raw['message'] ) ? sanitize_text_field( (string) $raw['message'] ) : '',
+			'cancellable'       => ! empty( $raw['cancellable'] ),
+			'retryable'         => ! empty( $raw['retryable'] ),
+			'source'            => isset( $raw['source'] ) && is_string( $raw['source'] ) && '' !== $raw['source']
+				? sanitize_key( $raw['source'] )
+				: sanitize_key( $slug ),
+			'_is_source_record' => true,
+		);
+
+		return $record;
+	}
+
+	/**
+	 * Phase 1: Format a normalized source record for the REST response.
+	 *
+	 * Mirrors the shape used by {@see format_async_tool_job()} so the chat
+	 * client doesn't need to know which subsystem produced the row.
+	 *
+	 * @since 1.9.2
+	 *
+	 * @param array<string,mixed> $record Normalized record (must carry `_is_source_record`).
+	 * @return array<string,mixed>
+	 */
+	protected function format_source_record( $record ) {
+		$status = isset( $record['status'] ) ? (string) $record['status'] : 'pending';
+
+		$job_data = array(
+			'job_id'       => isset( $record['job_id'] ) ? (string) $record['job_id'] : '',
+			'kind'         => isset( $record['kind'] ) ? (string) $record['kind'] : '',
+			'source'       => isset( $record['source'] ) ? (string) $record['source'] : '',
+			'status'       => $status,
+			'created_by'   => isset( $record['created_by'] ) ? (int) $record['created_by'] : 0,
+			'assistant_id' => isset( $record['assistant_id'] ) ? (string) $record['assistant_id'] : '',
+			'started_at'   => isset( $record['started_at'] ) ? (int) $record['started_at'] : 0,
+			'updated_at'   => isset( $record['updated_at'] ) ? (int) $record['updated_at'] : 0,
+			'eta'          => array_key_exists( 'eta', $record ) ? $record['eta'] : null,
+			'progress'     => array_key_exists( 'progress', $record ) ? $record['progress'] : null,
+			'message'      => isset( $record['message'] ) ? (string) $record['message'] : '',
+			'cancellable'  => ! empty( $record['cancellable'] ),
+			'retryable'    => ! empty( $record['retryable'] ),
+		);
+
+		return $job_data;
+	}
+
+	/**
+	 * Classify a job-status diff into a typed `job:*` SSE event name.
+	 *
+	 * Implements the canonical contract documented in
+	 * `docs/features/chat/cron-status-tasks-drawer-plan.md` Phase 2.
+	 *
+	 * Valid event names: `job:queued`, `job:started`, `job:progress`,
+	 * `job:completed`, `job:failed`, `job:cancelled`, `job:retried`.
+	 * Returns an empty string when the diff produces no meaningful event
+	 * (e.g. unchanged record).
+	 *
+	 * Note: `job:step` frames are emitted directly by
+	 * {@see WP_MCP_AI_Job_Notifier::record_step()} and are not classified
+	 * here — this method handles only the list-endpoint diff loop.
+	 *
+	 * @since 1.9.3
+	 *
+	 * @param array<string,mixed>|null $prev Previous snapshot record (or null for new jobs).
+	 * @param array<string,mixed>      $next Current snapshot record.
+	 * @return string Typed event name, or empty string for "no event".
+	 */
+	public function classify_job_diff_event( $prev, array $next ) {
+		$next_status = isset( $next['status'] ) ? (string) $next['status'] : '';
+		if ( '' === $next_status ) {
+			return '';
+		}
+
+		$running_statuses  = array( 'running', 'polling', 'in_progress' );
+		$pending_statuses  = array( 'pending', 'queued' );
+		$terminal_complete = 'completed';
+		$terminal_failed   = 'failed';
+		$terminal_cancel   = 'cancelled';
+
+		// New job (no previous record).
+		if ( null === $prev || ! is_array( $prev ) ) {
+			if ( $terminal_complete === $next_status ) {
+				return 'job:completed';
+			}
+			if ( $terminal_failed === $next_status ) {
+				return 'job:failed';
+			}
+			if ( $terminal_cancel === $next_status ) {
+				return 'job:cancelled';
+			}
+			if ( in_array( $next_status, $running_statuses, true ) ) {
+				return 'job:started';
+			}
+			return 'job:queued';
+		}
+
+		$prev_status = isset( $prev['status'] ) ? (string) $prev['status'] : '';
+
+		if ( $prev_status !== $next_status ) {
+			if ( $terminal_complete === $next_status ) {
+				return 'job:completed';
+			}
+			if ( $terminal_failed === $next_status ) {
+				return 'job:failed';
+			}
+			if ( $terminal_cancel === $next_status ) {
+				return 'job:cancelled';
+			}
+			if ( in_array( $next_status, $running_statuses, true )
+				&& in_array( $prev_status, $pending_statuses, true ) ) {
+				return 'job:started';
+			}
+			if ( in_array( $next_status, $pending_statuses, true )
+				&& in_array( $prev_status, array( $terminal_failed, $terminal_cancel ), true ) ) {
+				return 'job:retried';
+			}
+			// Generic transition (e.g. running → polling) is a progress signal.
+			return 'job:progress';
+		}
+
+		// Same status — look for progress/updated_at changes.
+		$prev_progress = array_key_exists( 'progress', $prev ) ? $prev['progress'] : null;
+		$next_progress = array_key_exists( 'progress', $next ) ? $next['progress'] : null;
+		if ( $prev_progress !== $next_progress ) {
+			return 'job:progress';
+		}
+
+		$prev_updated = isset( $prev['updated_at'] ) ? (int) $prev['updated_at'] : 0;
+		$next_updated = isset( $next['updated_at'] ) ? (int) $next['updated_at'] : 0;
+		if ( $prev_updated !== $next_updated && in_array( $next_status, $running_statuses, true ) ) {
+			return 'job:progress';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get lightweight system status for chat-client display.
+	 *
+	 * Surfaces async-health and orchestration-health signals so the chat UI
+	 * can render a health pill alongside the job counters. Failures from
+	 * either subsystem are swallowed so a misbehaving health probe never
+	 * breaks the cron-status REST response.
+	 *
+	 * @since 1.9.2
+	 * @return array {
+	 *     @type array $async  { status, stuck_jobs, long_running }.
+	 *     @type array $health { status, label }.
+	 * }
+	 */
+	public function get_system_status() {
+		$status = array(
+			'async'  => array(
+				'status'       => 'unknown',
+				'stuck_jobs'   => 0,
+				'long_running' => 0,
+			),
+			'health' => array(
+				'status' => 'unknown',
+				'label'  => 'Unknown',
+			),
+		);
+
+		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
+			try {
+				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async'] = array(
+					'status'       => isset( $async_health['status'] ) ? (string) $async_health['status'] : 'unknown',
+					'stuck_jobs'   => isset( $async_health['stuck_jobs'] ) ? absint( $async_health['stuck_jobs'] ) : 0,
+					'long_running' => isset( $async_health['long_running'] ) ? absint( $async_health['long_running'] ) : 0,
+				);
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Async health is best-effort; never break the chat surface.
+				// Silently fall back to the 'unknown' default initialised above.
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+			try {
+				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+				$status['health'] = array(
+					'status' => isset( $health_status['status'] ) ? (string) $health_status['status'] : 'unknown',
+					'label'  => isset( $health_status['label'] ) ? (string) $health_status['label'] : 'Unknown',
+				);
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Orchestration health is best-effort; never break the chat surface.
+				// Silently fall back to the 'unknown' default initialised above.
+			}
+		}
+
+		return $status;
 	}
 
 	/**

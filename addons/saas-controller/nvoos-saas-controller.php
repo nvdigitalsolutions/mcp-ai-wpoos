@@ -118,6 +118,20 @@ function nvoos_saas_controller_bootstrap() {
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/services/class-nvoos-saas-controller-drift-detector.php';
 	require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/rest/class-nvoos-saas-controller-rest.php';
 
+	// Register apply-job cron-status source for the Tasks Drawer.
+	if ( interface_exists( 'Interface_WP_MCP_AI_Cron_Status_Job_Source' ) ) {
+		require_once NVOOS_SAAS_CONTROLLER_PATH . 'includes/job-sources/class-nvoos-saas-controller-job-source.php';
+		add_filter(
+			'wp_mcp_ai_cron_status_job_sources',
+			static function ( array $sources ) {
+				$sources['saas_apply'] = new NVOOS_SaaS_Controller_Job_Source();
+				return $sources;
+			},
+			10,
+			1
+		);
+	}
+
 	NVOOS_SaaS_Controller_REST::init();
 
 	if ( is_admin() ) {
