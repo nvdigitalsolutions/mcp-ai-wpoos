@@ -291,6 +291,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_slash_commands' ) ) {
 			)
 		);
 
+		// ── /mcp-server ───────────────────────────────────────────────────────
+		require_once $commands_dir . 'class-wp-mcp-ai-pro-slash-command-mcp-server.php';
+		$mcp_server_cmd = new WP_MCP_AI_Pro_Slash_Command_Mcp_Server();
+		$handler->register(
+			'mcp-server',
+			array(
+				'handler'     => array( $mcp_server_cmd, 'execute' ),
+				'description' => __( 'Inspect and toggle per-toolkit MCP servers (list, show, enable, disable, tools).', 'mcp-ai-wpoos-pro' ),
+				'usage'       => '/mcp-server [list|show|enable|disable|tools] [<slug>] [--json]',
+				'capability'  => 'edit_posts',
+				'aliases'     => array( 'mcp-servers', 'toolkit-mcp' ),
+				'parameters'  => array(
+					'action' => array(
+						'description' => __( 'Sub-action: list (default), show, enable, disable, tools', 'mcp-ai-wpoos-pro' ),
+						'required'    => false,
+					),
+					'slug'   => array(
+						'description' => __( 'Server slug (required for show/enable/disable/tools)', 'mcp-ai-wpoos-pro' ),
+						'required'    => false,
+					),
+					'--json' => array(
+						'description' => __( 'Return JSON envelope', 'mcp-ai-wpoos-pro' ),
+						'required'    => false,
+					),
+				),
+			)
+		);
+
 		// ── /broadcast ────────────────────────────────────────────────────────
 		require_once $commands_dir . 'class-wp-mcp-ai-pro-slash-command-broadcast.php';
 		$broadcast_cmd = new WP_MCP_AI_Pro_Slash_Command_Broadcast();

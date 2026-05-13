@@ -16,7 +16,7 @@ require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 
 	/**
-	 * Provider for all Tier-1 servers (Phase 1 pilots + Phase 2 promotions).
+	 * Provider for all servers (Phase 1 pilots + Phase 2 Tier-1 + Phase 6 Tier-2 promotions).
 	 *
 	 * @return array<string,array{0:string,1:string}>
 	 */
@@ -43,6 +43,14 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 			'regulatory-registration' => array( 'WP_MCP_AI_Regulatory_Registration_MCP_Server', 'regulatory-registration' ),
 			'social-media'            => array( 'WP_MCP_AI_Social_Media_MCP_Server', 'social-media' ),
 			'video-production'        => array( 'WP_MCP_AI_Video_Production_MCP_Server', 'video-production' ),
+			// Phase 6 Tier-2 promotions (alphabetical).
+			'analytics'               => array( 'WP_MCP_AI_Analytics_MCP_Server', 'analytics' ),
+			'architect-agent'         => array( 'WP_MCP_AI_Architect_Agent_MCP_Server', 'architect-agent' ),
+			'chat-channels'           => array( 'WP_MCP_AI_Chat_Channels_MCP_Server', 'chat-channels' ),
+			'extended-cognition'      => array( 'WP_MCP_AI_Extended_Cognition_MCP_Server', 'extended-cognition' ),
+			'healthcare-imaging'      => array( 'WP_MCP_AI_Healthcare_Imaging_MCP_Server', 'healthcare-imaging' ),
+			'healthcare-wellness'     => array( 'WP_MCP_AI_Healthcare_Wellness_MCP_Server', 'healthcare-wellness' ),
+			'site-creator'            => array( 'WP_MCP_AI_Site_Creator_MCP_Server', 'site-creator' ),
 		);
 	}
 

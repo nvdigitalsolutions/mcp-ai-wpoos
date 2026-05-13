@@ -17,6 +17,9 @@ require_once __DIR__ . '/interface-wp-mcp-ai-toolkit-server.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-base.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-server-registry.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-rest-controller.php';
+require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-audit-log.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-mcp-observability-card.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-server-token.php';
 
 // Phase 1 pilot servers.
 require_once __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
@@ -40,6 +43,18 @@ require_once __DIR__ . '/servers/class-wp-mcp-ai-project-management-mcp-server.p
 require_once __DIR__ . '/servers/class-wp-mcp-ai-regulatory-registration-mcp-server.php';
 require_once __DIR__ . '/servers/class-wp-mcp-ai-social-media-mcp-server.php';
 require_once __DIR__ . '/servers/class-wp-mcp-ai-video-production-mcp-server.php';
+
+// Phase 6 Tier-2 promotions (7 servers, alphabetical).
+require_once __DIR__ . '/servers/class-wp-mcp-ai-analytics-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-architect-agent-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-chat-channels-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-extended-cognition-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-imaging-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-healthcare-wellness-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-site-creator-mcp-server.php';
+
+// Phase 6 — /.well-known/mcp discovery endpoint.
+require_once __DIR__ . '/class-wp-mcp-ai-pro-well-known-mcp.php';
 
 /**
  * Wire the registry to fire its registration action at init priority 12 — after
@@ -85,6 +100,15 @@ add_action(
 		$registry->register( new WP_MCP_AI_Regulatory_Registration_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Social_Media_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Video_Production_MCP_Server() );
+
+		// Phase 6 Tier-2 promotions (alphabetical).
+		$registry->register( new WP_MCP_AI_Analytics_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Architect_Agent_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Chat_Channels_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Extended_Cognition_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Healthcare_Imaging_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Healthcare_Wellness_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Site_Creator_MCP_Server() );
 	}
 );
 
@@ -92,6 +116,23 @@ add_action(
  * Initialize the REST controller.
  */
 WP_MCP_AI_Toolkit_MCP_REST_Controller::get_instance()->init();
+
+/**
+ * Initialize the cross-mount audit log.
+ */
+WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance()->init();
+
+/**
+ * Register the observability card for the performance/orchestration admin section.
+ */
+if ( is_admin() ) {
+	new WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card();
+}
+
+/**
+ * Phase 6 — register the /.well-known/mcp discovery endpoint.
+ */
+new WP_MCP_AI_Pro_Well_Known_MCP();
 
 /**
  * Admin-post handler — persists per-toolkit MCP server configuration.
@@ -114,16 +155,19 @@ add_action(
 		}
 
 		$config = array(
-			'enabled'           => ! empty( $_POST['enabled'] ),
-			'tools_allowlist'   => isset( $_POST['tools_allowlist'] ) && is_array( $_POST['tools_allowlist'] )
+			'enabled'             => ! empty( $_POST['enabled'] ),
+			'tools_allowlist'     => isset( $_POST['tools_allowlist'] ) && is_array( $_POST['tools_allowlist'] )
 				? array_map( 'sanitize_key', wp_unslash( $_POST['tools_allowlist'] ) )
 				: array(),
-			'disabled_surfaces' => isset( $_POST['disabled_surfaces'] ) && is_array( $_POST['disabled_surfaces'] )
+			'disabled_surfaces'   => isset( $_POST['disabled_surfaces'] ) && is_array( $_POST['disabled_surfaces'] )
 				? array_map( 'sanitize_key', wp_unslash( $_POST['disabled_surfaces'] ) )
 				: array(),
-			'disabled_mounts'   => isset( $_POST['disabled_mounts'] ) && is_array( $_POST['disabled_mounts'] )
+			'disabled_mounts'     => isset( $_POST['disabled_mounts'] ) && is_array( $_POST['disabled_mounts'] )
 				? array_map( 'sanitize_text_field', wp_unslash( $_POST['disabled_mounts'] ) )
 				: array(),
+			'requests_per_minute' => isset( $_POST['requests_per_minute'] ) ? max( 0, (int) wp_unslash( $_POST['requests_per_minute'] ) ) : 0, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Cast to int.
+			'max_payload_bytes'   => isset( $_POST['max_payload_bytes'] ) ? max( 0, (int) wp_unslash( $_POST['max_payload_bytes'] ) ) : 0, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Cast to int.
+			'max_iterations'      => isset( $_POST['max_iterations'] ) ? max( 0, (int) wp_unslash( $_POST['max_iterations'] ) ) : 0, // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Cast to int.
 		);
 
 		if ( $server instanceof WP_MCP_AI_Toolkit_Server_Base ) {

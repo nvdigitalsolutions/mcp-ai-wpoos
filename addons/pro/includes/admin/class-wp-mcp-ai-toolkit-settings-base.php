@@ -923,6 +923,43 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				<?php endif; ?>
 			</div>
 
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Limits', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Per-server overrides. Leave any value at 0 to inherit the global default.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<?php
+				$rpm = isset( $config['requests_per_minute'] ) ? (int) $config['requests_per_minute'] : 0;
+				$mpb = isset( $config['max_payload_bytes'] ) ? (int) $config['max_payload_bytes'] : 0;
+				$mit = isset( $config['max_iterations'] ) ? (int) $config['max_iterations'] : 0;
+				?>
+				<table class="form-table" role="presentation">
+					<tbody>
+						<tr>
+							<th scope="row"><label for="requests_per_minute"><?php esc_html_e( 'Requests per minute', 'mcp-ai-wpoos-pro' ); ?></label></th>
+							<td>
+								<input type="number" min="0" id="requests_per_minute" name="requests_per_minute" value="<?php echo esc_attr( $rpm ); ?>" class="small-text" />
+								<p class="description"><?php esc_html_e( 'Per-user JSON-RPC rate limit. 0 = unlimited.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="max_payload_bytes"><?php esc_html_e( 'Max request body size (bytes)', 'mcp-ai-wpoos-pro' ); ?></label></th>
+							<td>
+								<input type="number" min="0" id="max_payload_bytes" name="max_payload_bytes" value="<?php echo esc_attr( $mpb ); ?>" class="regular-text" />
+								<p class="description"><?php esc_html_e( 'Reject JSON-RPC bodies larger than this many bytes. 0 = no limit.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="max_iterations"><?php esc_html_e( 'Max agentic iterations', 'mcp-ai-wpoos-pro' ); ?></label></th>
+							<td>
+								<input type="number" min="0" id="max_iterations" name="max_iterations" value="<?php echo esc_attr( $mit ); ?>" class="small-text" />
+								<p class="description"><?php esc_html_e( 'Per-server cap on agentic loop iterations. 0 = inherit global wp_mcp_ai_max_agentic_iterations filter.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
 			<?php submit_button( __( 'Save MCP Server Settings', 'mcp-ai-wpoos-pro' ) ); ?>
 		</form>
 		<?php
