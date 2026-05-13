@@ -466,6 +466,149 @@ class WP_MCP_AI_Tool_Async_Executor {
 	}
 
 	/**
+	 * Cancel a pending or running async job.
+	 *
+	 * Sets the job status to 'cancelled' and fires the wp_mcp_ai_job_cancelled
+	 * action. The cooperative tick lock ensures any in-flight
+	 * execute_async_tool_locked() call completes cleanly; subsequent ticks see
+	 * 'cancelled' in the status gate and bail early.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id ID of the user requesting the cancellation (0 = skip ownership check).
+	 * @return bool|WP_Error True on success, WP_Error if the job cannot be cancelled.
+	 */
+	public function cancel_job( $job_id, $user_id = 0 ) {
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		$terminal = array( 'completed', 'failed', 'cancelled' );
+		if ( in_array( $metadata['status'], $terminal, true ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_terminal', __( 'Job is already in a terminal state.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Ownership check — admins bypass per-user restriction.
+		if ( $user_id > 0 && isset( $metadata['context']['user_id'] ) && (int) $metadata['context']['user_id'] !== $user_id ) {
+			if ( ! user_can( $user_id, 'manage_options' ) ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to cancel this job.', 'mcp-ai-wpoos' ) );
+			}
+		}
+
+		$metadata['status']       = 'cancelled';
+		$metadata['completed_at'] = time();
+		$this->save_metadata( $job_id, $metadata );
+
+		if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+			WP_MCP_AI_Job_Notifier::update_status( $job_id, 'cancelled' );
+		}
+
+		/**
+		 * Fires after an async job is cancelled.
+		 *
+		 * @param string $job_id  Job identifier.
+		 * @param int    $user_id User who initiated the cancellation.
+		 */
+		do_action( 'wp_mcp_ai_job_cancelled', $job_id, $user_id );
+
+		return true;
+	}
+
+	/**
+	 * Retry a failed or cancelled async job by re-queuing it.
+	 *
+	 * Clears the existing result/error fields, resets status to 'pending',
+	 * and schedules a fresh cron event. Fires the wp_mcp_ai_job_retried action.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id ID of the user requesting the retry (0 = skip ownership check).
+	 * @return string|WP_Error The job ID string on success, WP_Error on failure.
+	 */
+	public function retry_job( $job_id, $user_id = 0 ) {
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'Job not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		$retryable = array( 'failed', 'cancelled' );
+		if ( ! in_array( $metadata['status'], $retryable, true ) ) {
+			return new WP_Error( 'wp_mcp_ai_job_not_retryable', __( 'Only failed or cancelled jobs can be retried.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Ownership check — admins bypass per-user restriction.
+		if ( $user_id > 0 && isset( $metadata['context']['user_id'] ) && (int) $metadata['context']['user_id'] !== $user_id ) {
+			if ( ! user_can( $user_id, 'manage_options' ) ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retry this job.', 'mcp-ai-wpoos' ) );
+			}
+		}
+
+		// Reset state for a fresh execution run.
+		$metadata['status']       = 'pending';
+		$metadata['queued_at']    = time();
+		$metadata['started_at']   = null;
+		$metadata['completed_at'] = null;
+		$metadata['result']       = null;
+		$metadata['error']        = null;
+		$this->save_metadata( $job_id, $metadata );
+
+		// Schedule cron event in the immediate past so spawn_cron() picks it up.
+		$timestamp = time() - 1;
+		wp_schedule_single_event( $timestamp, self::CRON_HOOK, array( $job_id ) );
+
+		if ( function_exists( 'spawn_cron' ) ) {
+			spawn_cron();
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
+			WP_MCP_AI_Job_Notifier::update_status( $job_id, 'pending' );
+		}
+
+		/**
+		 * Fires after an async job is retried.
+		 *
+		 * @param string $job_id  Job identifier.
+		 * @param int    $user_id User who initiated the retry.
+		 */
+		do_action( 'wp_mcp_ai_job_retried', $job_id, $user_id );
+
+		// Inline-kick fallback for environments where WP-Cron loopback is disabled.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			$executor = $this;
+			add_action(
+				'shutdown',
+				static function () use ( $executor, $job_id ) {
+					$executor->kick_inline( $job_id );
+				},
+				20
+			);
+		}
+
+		return $job_id;
+	}
+
+	/**
+	 * Check whether a job is owned by the given user.
+	 *
+	 * Returns true if the job exists and was created by $user_id,
+	 * or if $user_id holds the manage_options capability.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id WordPress user ID.
+	 * @return bool
+	 */
+	public function is_owned_by( $job_id, $user_id ) {
+		$metadata = $this->get_metadata( $job_id );
+		if ( ! is_array( $metadata ) ) {
+			return false;
+		}
+		if ( user_can( $user_id, 'manage_options' ) ) {
+			return true;
+		}
+		$owner = isset( $metadata['context']['user_id'] ) ? (int) $metadata['context']['user_id'] : 0;
+		return $owner === $user_id;
+	}
+
+	/**
 	 * Internal body of the cron callback. Runs inside the cooperative
 	 * tick lock acquired by {@see execute_async_tool()}.
 	 *
@@ -486,6 +629,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// job past `pending` in the brief window between the lock release
 		// and our acquisition. Re-running a completed/failed/delegated
 		// job would corrupt its state and double-fire completion hooks.
+		// Note: 'cancelled' is also a terminal state and is caught here.
 		if ( isset( $metadata['status'] ) && 'pending' !== $metadata['status'] ) {
 			return;
 		}
