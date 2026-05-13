@@ -403,6 +403,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			if ( class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php';
 				new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
+
+				// Phase 7 — dedicated admin page for Toolkit MCP Server management.
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
+				new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
 			}
 
 			// WebLLM settings page has been moved to the NV oOS Embedded addon.
