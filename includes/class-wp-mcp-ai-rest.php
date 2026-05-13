@@ -435,6 +435,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$transcript_mining_controller = new WP_MCP_AI_REST_Transcript_Mining_Controller();
 			$transcript_mining_controller->register_routes();
 
+			// Delegate chat-session SSE stream to Chat Session Stream Controller.
+			if ( class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-session-stream-controller.php';
+				$chat_session_stream_controller = new WP_MCP_AI_REST_Chat_Session_Stream_Controller( $this->authenticator, $this->validator );
+				$chat_session_stream_controller->register_routes();
+			}
+
 			// Delegate A2A protocol routes to A2A Controller.
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 			if ( ! empty( $settings['enable_a2a_server'] ) ) {

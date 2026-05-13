@@ -19,6 +19,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-continuation-store.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-continuation-dispatcher.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-session-frame-buffer.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-continuation-llm-re-entry.php';
 
 // Register cron + completion handlers.
 WP_MCP_AI_Chat_Continuation_Dispatcher::init();
+
+// Register LLM re-entry listener (hooks onto wp_mcp_ai_chat_continuation_ready).
+WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::init();
