@@ -345,10 +345,26 @@
 
 }( window.wp && window.wp.apiFetch ? window.wp.apiFetch : function ( opts ) {
 	// Minimal apiFetch shim for environments where wp.apiFetch might not be
-	// loaded before this script.
+	// loaded before this script. Handles non-2xx responses and JSON parse errors.
 	return window.fetch( opts.url, {
 		method: opts.method || 'GET',
 		headers: Object.assign( { 'Content-Type': 'application/json' }, opts.headers || {} ),
 		body: opts.data ? JSON.stringify( opts.data ) : undefined,
-	} ).then( function ( r ) { return r.json(); } );
+	} ).then( function ( response ) {
+		if ( ! response.ok ) {
+			return response.json().catch( function () {
+				return {};
+			} ).then( function ( body ) {
+				var err = new Error( ( body && body.message ) ? body.message : 'Request failed (' + response.status + ')' );
+				err.code   = ( body && body.code ) ? body.code : 'request_failed';
+				err.status = response.status;
+				return Promise.reject( err );
+			} );
+		}
+		return response.json().catch( function () {
+			var err = new Error( 'Invalid JSON response' );
+			err.code = 'invalid_json';
+			return Promise.reject( err );
+		} );
+	} );
 }, window.wp && window.wp.i18n ) );

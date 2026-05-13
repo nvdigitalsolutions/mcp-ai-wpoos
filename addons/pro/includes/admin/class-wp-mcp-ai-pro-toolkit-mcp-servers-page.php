@@ -66,6 +66,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 		const CLEAR_AUDIT_NONCE = 'wp_mcp_ai_pro_mcp_servers_clear_audit';
 
 		/**
+		 * Asset version fallback when WP_MCP_AI_VERSION is not defined.
+		 *
+		 * @since 1.6.0
+		 * @var string
+		 */
+		const ASSET_VERSION_FALLBACK = '1.0';
+
+		/**
 		 * WordPress hook name returned by add_submenu_page().
 		 *
 		 * @since 1.6.0
@@ -139,14 +147,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				'wp-mcp-ai-pro-toolkit-mcp-servers',
 				$base_url . 'assets/css/pro-toolkit-mcp-servers.css',
 				array(),
-				defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0'
+				defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : self::ASSET_VERSION_FALLBACK
 			);
 
 			wp_enqueue_script(
 				'wp-mcp-ai-pro-toolkit-mcp-servers',
 				$base_url . 'assets/js/pro-toolkit-mcp-servers.js',
 				array( 'wp-api-fetch', 'wp-i18n' ),
-				defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0',
+				defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : self::ASSET_VERSION_FALLBACK,
 				true
 			);
 
