@@ -2945,6 +2945,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Execute each tool and collect results.
 				// Track if any tool returned async pending result (requires exiting agentic loop).
 				$has_async_pending_result = false;
+				$pending_async_jobs       = array();
 
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
@@ -2961,6 +2962,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// after processing this iteration. The frontend will handle polling for the async result.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
+						$pending_job_id           = isset( $tool_result['job_id'] ) ? (string) $tool_result['job_id'] : '';
+						if ( '' !== $pending_job_id ) {
+							$pending_async_jobs[] = array(
+								'job_id'       => $pending_job_id,
+								'tool_call_id' => (string) $tool_call_id,
+								'tool_name'    => (string) $tool_name,
+							);
+						}
 						WP_MCP_AI_Logger::log_event(
 							'async_tool_pending_in_agentic_loop',
 							'Async tool returned pending status, will exit agentic loop after this iteration',
@@ -3066,6 +3075,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'assistant_id' => $assistant_id,
 							'tool_count'   => count( $tool_result_messages ),
 						)
+					);
+					$this->snapshot_chat_continuation_on_async_pending(
+						$pending_async_jobs,
+						$messages,
+						$assistant_id,
+						$user_id,
+						$options,
+						$transcript_context
 					);
 					break;
 				}
@@ -3700,6 +3717,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Execute each tool and stream results.
 				// Track if any tool returned async pending result (requires exiting agentic loop).
 				$has_async_pending_result = false;
+				$pending_async_jobs       = array();
 
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
@@ -3770,6 +3788,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// doesn't understand async job states and might try to call the same tool again.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
+						$pending_job_id           = isset( $tool_result['job_id'] ) ? (string) $tool_result['job_id'] : '';
+						if ( '' !== $pending_job_id ) {
+							$pending_async_jobs[] = array(
+								'job_id'       => $pending_job_id,
+								'tool_call_id' => (string) $tool_call_id,
+								'tool_name'    => (string) $tool_name,
+							);
+						}
 						WP_MCP_AI_Logger::log_event(
 							'async_tool_pending_in_agentic_loop',
 							'Async tool returned pending status, will exit agentic loop after this iteration',
@@ -3935,6 +3961,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'assistant_id' => $assistant_id,
 							'tool_count'   => count( $tool_result_messages ),
 						)
+					);
+					$this->snapshot_chat_continuation_on_async_pending(
+						$pending_async_jobs,
+						$messages,
+						$assistant_id,
+						$user_id,
+						$options,
+						$transcript_context
 					);
 					break;
 				}
@@ -10668,6 +10702,116 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $error_array;
+		}
+
+		/**
+		 * Snapshot the in-flight conversation into the Chat Continuation Store
+		 * when the agentic loop is about to exit because a tool returned
+		 * `{ async: true, status: 'pending' }`.
+		 *
+		 * One row is written per pending job_id so that when the async job
+		 * later fires `wp_mcp_ai_job_completed`, the dispatcher can correlate
+		 * back to the originating chat session and resume the LLM.
+		 *
+		 * No-op when the continuation subsystem is unavailable (defensive)
+		 * or when the caller did not collect any pending jobs.
+		 *
+		 * @since 1.9.4
+		 *
+		 * @param array $pending_async_jobs  List of { job_id, tool_call_id, tool_name }.
+		 * @param array $messages            Conversation messages at the point of exit.
+		 * @param int   $assistant_id        Assistant identifier.
+		 * @param int   $user_id             User identifier (0 for guests).
+		 * @param array $options             Provider options (model, max_tokens, ...).
+		 * @param array $transcript_context  Transcript context (session_key, ...).
+		 */
+		protected function snapshot_chat_continuation_on_async_pending(
+			array $pending_async_jobs,
+			array $messages,
+			$assistant_id,
+			$user_id,
+			array $options,
+			array $transcript_context
+		) {
+			if ( empty( $pending_async_jobs ) ) {
+				return;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
+				return;
+			}
+
+			$session_key = isset( $transcript_context['session_key'] )
+				? (string) $transcript_context['session_key']
+				: '';
+
+			$context_for_session = array(
+				'assistant_id' => (int) $assistant_id,
+				'user_id'      => (int) $user_id,
+			);
+			$chat_session_id = '' !== $session_key
+				? $session_key
+				: WP_MCP_AI_Chat_Continuation_Store::generate_session_id( $context_for_session );
+
+			$provider = '';
+			if ( isset( $options['provider'] ) && is_string( $options['provider'] ) ) {
+				$provider = $options['provider'];
+			}
+			$model = '';
+			if ( isset( $options['model'] ) && is_string( $options['model'] ) ) {
+				$model = $options['model'];
+			}
+
+			// Strip transient/large keys from options before persisting.
+			$persisted_options = $options;
+			unset(
+				$persisted_options['attachments'],
+				$persisted_options['memory_documents'],
+				$persisted_options['tools']
+			);
+
+			$harness_profile = array();
+			if ( isset( $options['harness_profile'] ) && is_array( $options['harness_profile'] ) ) {
+				$harness_profile = $options['harness_profile'];
+			}
+
+			$now = time();
+
+			foreach ( $pending_async_jobs as $pending ) {
+				if ( ! is_array( $pending ) || empty( $pending['job_id'] ) ) {
+					continue;
+				}
+
+				$payload = array(
+					'chat_session_id' => $chat_session_id,
+					'assistant_id'    => (int) $assistant_id,
+					'user_id'         => (int) $user_id,
+					'tool_call_id'    => isset( $pending['tool_call_id'] ) ? (string) $pending['tool_call_id'] : '',
+					'tool_name'       => isset( $pending['tool_name'] ) ? (string) $pending['tool_name'] : '',
+					'provider'        => $provider,
+					'model'           => $model,
+					'options'         => is_array( $persisted_options ) ? $persisted_options : array(),
+					'harness_profile' => $harness_profile,
+					'messages'        => $messages,
+					'created_at'      => $now,
+				);
+
+				$stored = WP_MCP_AI_Chat_Continuation_Store::store(
+					(string) $pending['job_id'],
+					$payload
+				);
+
+				if ( is_wp_error( $stored ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'chat_continuation_store_failed',
+						array(
+							'job_id'       => (string) $pending['job_id'],
+							'assistant_id' => $assistant_id,
+							'error_code'   => $stored->get_error_code(),
+							'error'        => $stored->get_error_message(),
+						)
+					);
+				}
+			}
 		}
 
 		/**

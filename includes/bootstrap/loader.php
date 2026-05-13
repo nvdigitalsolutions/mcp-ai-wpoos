@@ -243,6 +243,16 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
 require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
+
+// ---------------------------------------------------------------------------
+// Async chat continuation — durable correlation between async jobs and the
+// chat sessions that started them. Listens to wp_mcp_ai_job_completed (and
+// _failed / _cancelled) at priority 20 (after Job_Notifier caches status at
+// priority 10) so the chat session can be resumed off-hook and the LLM can
+// produce a follow-up message. See docs/features/chat/async-continuation.md
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/chat-continuation-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
