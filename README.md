@@ -15,7 +15,7 @@
 **Release Date:** 2026-05-10 (May 10, 2026 — **WP.org Compliance Hardening** (B-series reviewer findings B1–B13 resolved), **Chat SPA addon** (Phases 1–7 complete, v0.6.0), **Docs Hub addon** (v0.1.0 → v0.3.8), **Toolkit SPA Blueprint Phases 5–12**, **PHPUnit + Vitest coverage campaign** (PRs #1–#11, 271 AJAX handlers), **build-pipeline split** (WP.org vs full GitHub Release ZIPs), **Dependabot security sweep** (33 alerts); v1.1.16 — **SaaS Controller Addon** v0.1.0 (operator-side WordPress admin toolkit for the NV oOS Cloud control plane — Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter — Phases 2–11 shipped), **Structured Logging Integration** across all addons and core components (PR #4849); v1.1.15: OpenRouter + DeepSeek as first-class providers, Kimi K2.6 + Qwen 3.6 in model catalog, **LM Studio** native cURL SSE streaming, **Orchestration Phases 1–7** re-landed with JetEngine CCT init-priority fix (HITL, structured output, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store, team budgets), **LLM Harnessing GA** (Layers A–H), **19 new slash commands** (11 base + 8 Pro), **Chat-client Memory Bridge G-series**, **Retroactive Transcript Mining** stuck-job fix, **Graphify NV oOS data-source bridge** + Observability UI + stability sweep; v1.1.14: Agent Skills v2 + Markup Subsystem (Base) + MemPalace Capture Framework Phases A + B1 + Graphify CPT/CCT integration suite; v1.1.13: OpenAI **`gpt-image-2`** / Images 2.0 as new default image model with native 2K aspect-ratio support, **Phase 4a/4b durable agent-memory bridge** mirroring transient memory into a JetEngine `ai_agent_memories` Custom Content Type with industry-standard schema (Letta / Zep / mem0 / Cognee / [MemPalace](https://github.com/MemPalace/mempalace)), **AI Harmonization** 14-tool sub-toolkit (Pro), production-only Composer autoloader (`composer install --no-dev --classmap-authoritative` — no separate `dump-autoload`))  
 **Latest Updates:** May 10, 2026 (v1.1.17) — See [§ Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026) below.  
 **Previous Updates (v1.1.16):** May 6, 2026 (v1.1.16) — See [§ Latest Updates (v1.1.16 — May 2026)](#-latest-updates-v1116--may-2026) below.  
-**Previous Updates (v1.1.15):** May 5, 2026 — **New Providers (OpenRouter + DeepSeek), Orchestration Phases 1–7, LLM Harnessing GA, Memory Bridge G-series, Graphify Data-source Bridge.** (1) Agent Skills Phases 1–4 (per the [agentskills.io](https://agentskills.io/specification) spec) shipped end-to-end (PR #4771): 28+ new bundled `SKILL.md` files curated from the MIT-licensed [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) catalogue (WooCommerce, JetEngine, JetFormBuilder, WP Rocket, WP Abilities API), new `THIRD_PARTY_NOTICES.md` in both `bundled-skills/` directories, new Pro `WP_MCP_AI_Skill_Catalogue_Service` + `WP_MCP_AI_Skill_Catalogue_REST_Controller` (`mcp-ai-pro/v1` namespace) for one-click installs from registered public GitHub catalogues with SSRF-safe fetch, a base-plugin `load_skill` tool that lets assistants pull a full SKILL.md only when needed, and curated skill packs. (2) **Markup Subsystem (Base, PR #4778)** — tools can now pause the agentic loop, surface a Konva canvas in the chat UI for the user to draw on, and resume the same tool call with the rasterised mask / crop / region polygon; `edit_openai_image`, `crop_image`, and `edit_gemini_image` are markup-aware out of the box; new **NV oOS → Markup Telemetry** dashboard, `/markup-stats` slash command, and 4 actions + 4 filters. (3) **MemPalace Capture Framework Phases A + B1** layer five high-leverage capture tools onto the durable agent-memory bridge shipped in 1.1.13. (4) **Graphify** now treats JetEngine CPTs and CCTs as first-class citizens in the knowledge graph, Graph Explorer type filter, related-content widget, recommendations, and embeddings re-index path (PRs #4779, #4781, #4784). Plus follow-up fixes to the orchestration dashboard JetEngine-availability stale cache (#4769 + `#dabb3746`), the Pro Mini App Builder TMA enqueue path (`#53c64d49`), the skill-catalogue cURL fetcher (#4772), the Pro Medical Imaging Viewer bundle (#4773), and the stored-embeddings admin display (#4787). New 10-agent roster under `examples/agents/` covers the full NV oOS surface; `.github/agents/` is now a layered context surface following the rule documented in [`AGENTS.md` §2](AGENTS.md). All distribution ZIPs rebuilt and the production-only Composer autoloader reaffirmed (#4774, #4775, #4782). See [`docs/markup-subsystem.md`](docs/markup-subsystem.md) and [`docs/features/agent-skills.md`](docs/features/agent-skills.md) for the full references.  
+**Previous Updates (v1.1.15):** May 5, 2026 — **New Providers (OpenRouter + DeepSeek), Orchestration Phases 1–7, LLM Harnessing GA, Memory Bridge G-series, Graphify Data-source Bridge.** (1) **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) unified gateway for 100+ models (OpenAI / Anthropic / Google / Meta / Mistral) via one key; **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) first-class provider with `reasoning_content` passthrough; **Kimi K2.6** + **Qwen 3.6** added to model catalog; **LM Studio** native cURL SSE streaming + full May-2026 parity (native `/api/v0`, embeddings, bearer auth, capability-aware tool gating). (2) **Orchestration Phases 1–7 re-landed** with JetEngine CCT `init` priority 11+ fix: Phase 1 (Run Timeline, prompt-injection detector, OTel span exporter), Phase 2 (HITL `WP_MCP_AI_Approval_Queue` + REST `/mcp-ai/v1/approvals/*`), Phase 3 (structured output), Phase 4 (DAG builder), Phase 5 (durable runs `WP_MCP_AI_Durable_Run_Store`), Phase 6 (triggers + webhooks `WP_MCP_AI_Workflow_Trigger_CPT`), Phase 7 (sub-agents, Pro vector-store adapter, Pro team budget manager). (3) **LLM Harnessing GA** (Layers A–H) — seven opt-in per-assistant epistemic layers. Reference: [`docs/llm-harness.md`](docs/llm-harness.md). (4) **19 new slash commands** (11 base + 8 Pro): `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/clear`, `/reset`, `/resume` + Pro `/schedule`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`. (5) **Chat-client Memory Bridge G-series** — REST proxy + Memory Drawer (Memories/Scope/Audit tabs) + SSE `memory_event` frame + pagehide auto-capture + 3 gates. (6) **Retroactive Transcript Mining** stuck-job root causes fixed (PRs #4804 #4826). (7) **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace `RECALLS` edges, external `$wpdb` tables; Sources tab + Observability dashboard. See [§ Latest Updates (v1.1.15 — May 2026)](#-latest-updates-v1115--may-2026) below for the full list.  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -44,6 +44,18 @@
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
 - [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
 - [💬 Frontend Shortcode](#-frontend-shortcode)
+
+### Addons & Extensions
+- [☁️ NV oOS Cloud & SaaS Controller](#-nv-oos-cloud--saas-controller)
+- [💬 Chat SPA Addon](#-chat-spa-addon)
+- [📚 Docs Hub Addon](#-docs-hub-addon)
+- [🎨 Toolkit SPA Blueprint](#-toolkit-spa-blueprint)
+
+### Orchestration & AI Features
+- [🎛 Orchestration Phases 1–7](#-orchestration-phases-17)
+- [🧠 LLM Harnessing (Layers A–H)](#-llm-harnessing-layers-ah)
+- [🔗 Toolkit MCP Servers (26 toolkits)](#-toolkit-mcp-servers-26-toolkits)
+- [🧵 Chat-client Memory Bridge](#-chat-client-memory-bridge)
 
 ### AI Providers & Integration
 - [🧠 Language Model Providers](#-language-model-providers-openai-gemini-anthropic-nvidia-nim-ollama-lm-studio-hugging-face--cloudflare)
@@ -98,7 +110,16 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare Worker AI, Ollama, LM Studio, OpenRouter, and DeepSeek.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.17)
+
+- ✅ **Orchestration Phases 1–7 GA** — HITL approval queue, OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store, Pro team budget manager
+- ✅ **LLM Harnessing Subsystem (Layers A–H)** — seven opt-in epistemic layers per-assistant: prompt cues, reasoning/self-consistency, tool router, retrieval+citation, self-refine, memory scoping+PII filter, eval scheduler (+ Pro Layer H fine-tune curriculum export). See [`docs/llm-harness.md`](docs/llm-harness.md).
+- ✅ **Chat SPA addon (`addons/chat-spa/`)** — React-based replacement for the legacy chat shortcode (Phases 1–7, v0.6.0); opt out via `WP_MCP_AI_LEGACY_CHAT_JS` constant. See [`docs/addons/chat-spa.md`](docs/addons/chat-spa.md).
+- ✅ **NV oOS Cloud / SaaS Controller** — operator-side WordPress admin toolkit for provisioning Cloudflare Workers + D1 + KV + AI Gateway + Stripe + OpenRouter from WP-Admin. See [`docs/saas-controller.md`](docs/saas-controller.md).
+- ✅ **26 Toolkit MCP Servers + `/.well-known/mcp`** — every Pro toolkit is now an MCP server discoverable at `/.well-known/mcp`; toolkit-scoped credentials, cross-mount audit trail, `/mcp-server` slash command. See [`docs/mcp-servers.md`](docs/mcp-servers.md).
+- ✅ **WordPress.org Compliance Hardening** — B-series reviewer findings B1–B13 all resolved; WP.org submission ZIP now built separately via `bin/build-plugin-zip.sh --wp-org`. See [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
 
 **Privacy & Terms Notice:** This plugin connects to external AI services. Review each provider's policies:
 - **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
@@ -107,18 +128,24 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - **Cloudflare**: [Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 - **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 - **Ollama**: Self-hosted (no external data transmission)
+- **OpenRouter**: [Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy)
+- **DeepSeek**: [Terms](https://platform.deepseek.com/downloads/DeepSeek%20Terms%20of%20Service.html) | [Privacy](https://platform.deepseek.com/downloads/DeepSeek%20Privacy%20Policy.html)
+- **NVIDIA NIM**: [Terms](https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/) | [Privacy](https://www.nvidia.com/en-us/privacy-center/)
+- **LM Studio**: Self-hosted (no external data transmission)
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
 
-The plugin works standalone with **224 base tools** and optionally extends through the **Pro addon**, which adds **651 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **875 built-in tools**.
+The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~635 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~830 built-in tools** (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (224 tools) works standalone. The full version requires the Pro addon and provides 875 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, MCP Apps, and more.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~830 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+
+**Addon Ecosystem:** NV oOS ships a growing family of installable addons: **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Toolkit Shell / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. See [`docs/addons/toolkit-spa-blueprint.md`](docs/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
 **NV oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're trying to **peel back decades of API wrappers with the help of AI**, providing:
 
-- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama without custom development
+- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, Ollama, LM Studio, OpenRouter, and DeepSeek without custom development
 - **Security-First Architecture** - Built-in protection against nefarious usage with active monitoring and prevention systems
 - **Enterprise-Grade Features** - Access to capabilities typically requiring expensive custom development
 - **Compliance & Audit Tools** - Comprehensive logging, rate limiting, and usage tracking built-in
@@ -177,10 +204,14 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **9 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Embedded
-- **875 tool classes** (224 base + 651 pro) registered through a singleton Tool Registry
+- **~830 tool classes** (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **34 REST controllers** (16 base + 18 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
+- **26 Toolkit MCP servers** (19 Tier-1 + 7 Tier-2) — per-toolkit JSON-RPC 2.0 servers exposed under `/wp-json/mcp-ai-pro/v1/mcp/{slug}`; discoverable at `/.well-known/mcp`
+- **8 inline-async-tick consumers** — cooperative tick-lock pattern eliminates WP-Cron startup latency for background jobs (transcript mining, async tool executor, SaaS Apply, Crawl4AI, Docs Hub rebuild, Graphify reindex, Harness eval, Gemini Veo polling)
+- **7 LLM Harness layers (+ 1 Pro)** — opt-in epistemic layers A–H activated per-assistant via the **LLM Harness** metabox
+- **Orchestration Phases 1–7** — HITL approval queue, prompt-injection detector, structured output, OTel exporter, DAG builder, durable runs, triggers/webhooks, sub-agents
 
 > **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
@@ -2101,11 +2132,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all 875 tools (224 base + 651 Pro)
+2. You now have the **complete version** with all ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 - ✅ Complete plugin with base + Pro features combined
-- ✅ All 875 built-in tools ready to use
+- ✅ All ~830 built-in tools ready to use (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -2135,7 +2166,7 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ 224 base tools (more with optional third-party plugins)
+- ✅ ~195 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
@@ -2167,7 +2198,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, 224 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, ~195 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -2334,12 +2365,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (9 providers, 875 tool classes, 34 REST controllers)
+- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (9 providers, ~830 tool classes, 34 REST controllers)
 - **[Request Flow Walkthrough](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 875 tools documented (224 base + 651 Pro)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~830 tools documented (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
