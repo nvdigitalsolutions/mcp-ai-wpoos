@@ -44,7 +44,9 @@ Small frontend + backend corrections that must land first.
 
 ### Phase 1 — Job-source registry (architectural)
 
-> **Status (PR-B, May 2026):** Registry contract, normalized record, and integration into `get_status_summary()` / `get_status_counts()` have landed. Built-in async-tool / Veo / cron-manager collectors continue to feed the pipeline natively; new sources opt in via the filter. Source-by-source migration (transcript mining, crawler, docs-hub, graphify, harness eval, SaaS apply, pro schedule, MCP audit, sub-agent dispatcher, durable runs, HITL approvals) is tracked under PR-E.
+> **Status (PR-B, May 2026):** Registry contract, normalized record, and integration into `get_status_summary()` / `get_status_counts()` have landed. Built-in async-tool / Veo / cron-manager collectors continue to feed the pipeline natively; new sources opt in via the filter.
+>
+> **Status (PR-E, May 2026):** Three base-plugin adapter classes have landed — `WP_MCP_AI_Job_Source_Transcript_Mining`, `WP_MCP_AI_Job_Source_Crawl4AI`, and `WP_MCP_AI_Job_Source_Hitl_Approvals` — loaded by `includes/services/job-sources/job-sources-init.php` (wired into bootstrap). Two addon adapters also landed: `NVOOS_SaaS_Controller_Job_Source` (saas-controller addon) and `NV_oOS_Docs_Hub_Rebuild_Job_Source` (docs-hub addon), each registered via their own addon entry-point filter hook. PHPUnit coverage in `tests/test-job-source-adapters.php` (16 cases). Remaining sources (graphify, harness eval, pro schedule, MCP audit, sub-agent dispatcher, durable runs) deferred to a future PR.
 
 A single filter replaces three hard-coded transient scans.
 
@@ -79,16 +81,16 @@ array(
 | Cron manager entries | `WP_MCP_AI_Cron_Manager` | migrate existing |
 | Async tool jobs | `WP_MCP_AI_Tool_Async_Executor` | migrate existing |
 | Veo video generation | `WP_MCP_AI_Gemini_Video_Generation_Service` | migrate existing |
-| Transcript mining | `WP_MCP_AI_Transcript_Mining_Job` | new registration |
-| Crawl4AI poller | `WP_MCP_AI_Crawler` | new registration |
-| Docs Hub rebuild | `NV_oOS_Docs_Hub_Rebuild_Pipeline` | new registration |
-| Graphify reindex | `NV_oOS_Graphify` | new registration |
-| Harness eval | `WP_MCP_AI_Harness_Eval_Scheduler` | new registration |
-| SaaS Apply jobs | `NVOOS_SaaS_Controller_Apply_Job` | new registration |
-| Pro Schedule runs | `WP_MCP_AI_Pro_Schedule_Manager` | new registration |
-| HITL approvals | `WP_MCP_AI_Approval_Queue` | new registration |
-| Sub-agent dispatcher | `WP_MCP_AI_Sub_Agent_Dispatcher` | new registration |
-| Durable runs | `WP_MCP_AI_Durable_Run_Store` | new registration |
+| Transcript mining | `WP_MCP_AI_Transcript_Mining_Job` | ✅ registered (PR-E) |
+| Crawl4AI poller | `WP_MCP_AI_Crawler` | ✅ registered (PR-E) |
+| Docs Hub rebuild | `NV_oOS_Docs_Hub_Rebuild_Pipeline` | ✅ registered (PR-E) |
+| Graphify reindex | `NV_oOS_Graphify` | deferred |
+| Harness eval | `WP_MCP_AI_Harness_Eval_Scheduler` | deferred |
+| SaaS Apply jobs | `NVOOS_SaaS_Controller_Apply_Job` | ✅ registered (PR-E) |
+| Pro Schedule runs | `WP_MCP_AI_Pro_Schedule_Manager` | deferred |
+| HITL approvals | `WP_MCP_AI_Approval_Queue` | ✅ registered (PR-E) |
+| Sub-agent dispatcher | `WP_MCP_AI_Sub_Agent_Dispatcher` | deferred |
+| Durable runs | `WP_MCP_AI_Durable_Run_Store` | deferred |
 
 Use `WP_MCP_AI_Job_Notifier` as the unifying read view; fall back to per-namespace transient scans only for sources not yet migrated.
 
@@ -220,7 +222,7 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 | **PR-B** "job-source registry + stream loop" | Phase 1 + Phase 2 backend | Medium | PHP filter contract, SSE loop |
 | **PR-C** "inline progress + cancel/retry (async executor)" | Phase 3a + Phase 4 (executor only) | Medium | JS bubble card, new REST routes | ✅ landed May 2026 |
 | **PR-D** "Tasks drawer + toasts" (feature-flagged) | Phase 3b + Phase 3c | Medium | Drawer component, localStorage | ✅ landed May 2026 |
-| **PR-E** "register remaining sources" | Phase 1 follow-on | Low | Each source adapter |
+| **PR-E** "register remaining sources" | Phase 1 follow-on | Low | Each source adapter | ✅ landed May 2026 |
 | **PR-F** "health + perf + OTel" | Phase 5 + Phase 6 | Low | Index option, OTel spans |
 | **PR-G** "docs + flag default-on" | Phase 7 | Minimal | Docs, tests, flag flip |
 
