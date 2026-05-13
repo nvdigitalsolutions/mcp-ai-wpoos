@@ -18907,6 +18907,555 @@
         });
 
         observer.observe(container, { attributes: true });
+
+        // PR-D: when the chatTasksDrawer feature flag is on, activate the Tasks drawer
+        // and toast/tab-badge subsystems for this container.
+        if (config.chatTasksDrawer) {
+            initTasksDrawer(container, config, cronStatusEndpoint, nonce);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // PR-D: Tasks drawer (Phase 3b) + toast/tab-badge (Phase 3c)
+    // Feature-gated: only active when config.chatTasksDrawer === true.
+    // The old 4-counter strip remains the fallback when the flag is off.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Module-level tab-title badge state.
+     * All chat instances on the same page share a single running-job counter
+     * so the `(N)` prefix only appears once in the tab title.
+     */
+    var _tabTitleRunning = 0;
+    var _tabTitleOriginal = '';
+
+    /**
+     * Increment or decrement the global running-job counter and update
+     * document.title to `(N) <original title>` while N > 0.
+     *
+     * @param {number} delta  +1 or -1.
+     */
+    function updateTabTitleBadge(delta) {
+        if (!_tabTitleOriginal) {
+            _tabTitleOriginal = document.title || '';
+        }
+        _tabTitleRunning = Math.max(0, _tabTitleRunning + delta);
+        if (_tabTitleRunning > 0) {
+            document.title = '(' + _tabTitleRunning + ') ' + _tabTitleOriginal;
+        } else {
+            document.title = _tabTitleOriginal;
+        }
+    }
+
+    /**
+     * Append a floating toast to the chat instance's toast container.
+     * The toast auto-dismisses after TOAST_DURATION_MS.
+     *
+     * @param {HTMLElement} container Chat root element.
+     * @param {string}      type      'completed' | 'failed'.
+     * @param {Object}      job       Normalized job record.
+     */
+    var TOAST_DURATION_MS = 6000;
+
+    function showJobToast(container, type, job) {
+        if (!container || !job) {
+            return;
+        }
+        var toastContainer = container.querySelector('.wp-mcp-ai-chat__job-toast-container');
+        if (!toastContainer) {
+            return;
+        }
+
+        var toast = document.createElement('div');
+        toast.className = 'wp-mcp-ai-job-toast wp-mcp-ai-job-toast--' + type;
+        toast.setAttribute('role', 'status');
+
+        var icon = type === 'completed' ? '✓' : '✕';
+        var label = type === 'completed' ? 'Completed' : 'Failed';
+        var jobTitle = job.tool_name || job.kind || job.job_id || 'Job';
+
+        var iconEl = document.createElement('span');
+        iconEl.className = 'wp-mcp-ai-job-toast__icon';
+        iconEl.setAttribute('aria-hidden', 'true');
+        iconEl.textContent = icon;
+
+        var msgEl = document.createElement('span');
+        msgEl.className = 'wp-mcp-ai-job-toast__msg';
+        msgEl.textContent = label + ': ' + jobTitle;
+
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'wp-mcp-ai-job-toast__close';
+        closeBtn.setAttribute('aria-label', 'Dismiss notification');
+        closeBtn.textContent = '✕';
+
+        toast.appendChild(iconEl);
+        toast.appendChild(msgEl);
+        toast.appendChild(closeBtn);
+        toastContainer.appendChild(toast);
+
+        // Trigger enter animation on next frame.
+        setTimeout(function () { toast.classList.add('wp-mcp-ai-job-toast--visible'); }, 16);
+
+        function dismiss() {
+            toast.classList.remove('wp-mcp-ai-job-toast--visible');
+            setTimeout(function () {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }
+
+        closeBtn.addEventListener('click', dismiss);
+        setTimeout(dismiss, TOAST_DURATION_MS);
+    }
+
+    /**
+     * Initialize the Tasks drawer for a single chat container instance.
+     * Called from initializeCronStatus() when config.chatTasksDrawer is true.
+     *
+     * @param {HTMLElement} container          Chat root element.
+     * @param {Object}      config             Instance config.
+     * @param {string}      cronStatusEndpoint Base cron-status REST URL.
+     * @param {string}      nonce              WP REST nonce.
+     */
+    function initTasksDrawer(container, config, cronStatusEndpoint, nonce) {
+        if (!container || !window.wpMcpAiJobBus) {
+            return;
+        }
+
+        // ---- DOM references ----
+        var oldStrip   = container.querySelector('.wp-mcp-ai-chat__cron-status');
+        var drawerBtn  = container.querySelector('.wp-mcp-ai-chat__tasks-btn');
+        var drawer     = container.querySelector('.wp-mcp-ai-chat__tasks-drawer');
+        var closeBtn   = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__close');
+        var filterBtns = drawer && Array.prototype.slice.call(drawer.querySelectorAll('.wp-mcp-ai-chat__tasks-drawer__filter'));
+        var listEl     = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__list');
+        var emptyEl    = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__empty');
+        var batchBar   = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch');
+        var selectAll  = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__select-all');
+        var batchCancel = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch-cancel');
+        var batchRetry  = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch-retry');
+        var batchDismiss = batchBar && batchBar.querySelector('.wp-mcp-ai-chat__tasks-drawer__batch-dismiss');
+        var healthDot  = drawer && drawer.querySelector('.wp-mcp-ai-chat__tasks-drawer__health');
+        var badgeEl    = drawerBtn && drawerBtn.querySelector('.wp-mcp-ai-chat__tasks-btn__badge');
+
+        if (!drawerBtn || !drawer || !listEl) {
+            return;
+        }
+
+        // Hide the old 4-counter strip; show our button instead.
+        if (oldStrip) { oldStrip.setAttribute('hidden', ''); }
+        drawerBtn.removeAttribute('hidden');
+
+        // ---- Local state ----
+        var STORAGE_KEY = 'wp_mcp_ai_tasks_' + (config.assistantId || 'default');
+        var MAX_STORED_JOBS = 200;
+        var activeFilter = 'all';
+        var jobs = {}; // keyed by job_id
+
+        // Load persisted jobs from localStorage (job IDs only; fresh data from bus).
+        (function loadFromStorage() {
+            try {
+                var raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    var parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object') {
+                        jobs = parsed;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }());
+
+        function saveToStorage() {
+            try {
+                // Keep at most MAX_STORED_JOBS entries (drop oldest completed/failed first).
+                var ids = Object.keys(jobs);
+                if (ids.length > MAX_STORED_JOBS) {
+                    var terminal = ids.filter(function (id) {
+                        var s = jobs[id].status;
+                        return s === 'completed' || s === 'failed' || s === 'cancelled';
+                    });
+                    terminal.slice(0, ids.length - MAX_STORED_JOBS).forEach(function (id) {
+                        delete jobs[id];
+                    });
+                }
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+            } catch (e) { /* ignore quota errors */ }
+        }
+
+        // ---- Drawer open / close ----
+        function openDrawer() {
+            drawer.removeAttribute('hidden');
+            drawerBtn.setAttribute('aria-expanded', 'true');
+            renderList();
+        }
+
+        function closeDrawer() {
+            drawer.setAttribute('hidden', '');
+            drawerBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        drawerBtn.addEventListener('click', function () {
+            if (drawer.hasAttribute('hidden')) {
+                openDrawer();
+            } else {
+                closeDrawer();
+            }
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeDrawer);
+        }
+
+        // Close on Escape.
+        document.addEventListener('keydown', function (e) {
+            if ((e.key === 'Escape' || e.keyCode === 27) && !drawer.hasAttribute('hidden')) {
+                closeDrawer();
+            }
+        });
+
+        // ---- Filter tabs ----
+        filterBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                activeFilter = btn.getAttribute('data-filter') || 'all';
+                filterBtns.forEach(function (b) {
+                    b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+                    if (b === btn) {
+                        b.classList.add('wp-mcp-ai-chat__tasks-drawer__filter--active');
+                    } else {
+                        b.classList.remove('wp-mcp-ai-chat__tasks-drawer__filter--active');
+                    }
+                });
+                renderList();
+            });
+        });
+
+        // ---- Job action helper ----
+        function postJobAction(jobId, action) {
+            return fetch(cronStatusEndpoint + '/' + encodeURIComponent(jobId) + '/' + action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': nonce
+                },
+                credentials: 'same-origin'
+            }).then(function (resp) { return resp.json(); });
+        }
+
+        // ---- Counts & badge ----
+        function countByStatus(status) {
+            return Object.keys(jobs).filter(function (id) {
+                return jobs[id].status === status;
+            }).length;
+        }
+
+        function countRunning() {
+            return Object.keys(jobs).filter(function (id) {
+                var s = jobs[id].status;
+                return s === 'running' || s === 'polling';
+            }).length;
+        }
+
+        function updateBadge() {
+            var running = countRunning();
+            var queued  = countByStatus('queued');
+            var total   = running + queued;
+            if (badgeEl) {
+                badgeEl.textContent = total;
+                badgeEl.hidden = total === 0;
+            }
+            // Show / hide the button itself.
+            if (Object.keys(jobs).length > 0) {
+                drawerBtn.removeAttribute('hidden');
+            }
+        }
+
+        // ---- Render a single job row ----
+        function formatElapsed(job) {
+            var start = job.started_at || job.updated_at;
+            if (!start) { return ''; }
+            var seconds = Math.floor(Date.now() / 1000 - start);
+            if (seconds < 60) { return seconds + 's'; }
+            return Math.floor(seconds / 60) + 'm ' + (seconds % 60) + 's';
+        }
+
+        function buildJobRow(job) {
+            var li = document.createElement('li');
+            li.className = 'wp-mcp-ai-chat__tasks-drawer__row';
+            li.setAttribute('data-job-id', job.job_id);
+            li.setAttribute('data-status', job.status || 'unknown');
+
+            // Checkbox (for batch actions).
+            var chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.className = 'wp-mcp-ai-chat__tasks-drawer__row-check';
+            chk.setAttribute('aria-label', 'Select job ' + job.job_id);
+            chk.addEventListener('change', onSelectionChange);
+
+            // Status icon.
+            var iconMap = { queued: '⏳', running: '⚡', polling: '⟳', completed: '✓', failed: '✕', cancelled: '—' };
+            var iconEl = document.createElement('span');
+            iconEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-icon';
+            iconEl.setAttribute('aria-hidden', 'true');
+            iconEl.textContent = iconMap[job.status] || '●';
+
+            // Title.
+            var titleEl = document.createElement('span');
+            titleEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-title';
+            titleEl.textContent = job.tool_name || job.kind || job.job_id;
+
+            // Elapsed / ETA.
+            var metaEl = document.createElement('span');
+            metaEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-meta';
+            var elapsed = formatElapsed(job);
+            var eta = '';
+            if (job.eta) {
+                var etaSecs = Math.max(0, Math.floor(job.eta - Date.now() / 1000));
+                eta = etaSecs > 0 ? '~' + etaSecs + 's left' : '';
+            }
+            metaEl.textContent = [elapsed, eta].filter(Boolean).join(' · ') || '—';
+
+            // Progress bar (only when progress value exists).
+            var progressEl = null;
+            if (job.progress != null) {
+                progressEl = document.createElement('div');
+                progressEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-progress';
+                var bar = document.createElement('div');
+                bar.className = 'wp-mcp-ai-chat__tasks-drawer__row-progress-fill';
+                bar.style.width = Math.min(100, Math.max(0, job.progress)) + '%';
+                progressEl.appendChild(bar);
+            }
+
+            // Cancel / Retry buttons.
+            var actionsEl = document.createElement('span');
+            actionsEl.className = 'wp-mcp-ai-chat__tasks-drawer__row-actions';
+
+            if (job.cancellable) {
+                var cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'wp-mcp-ai-chat__tasks-drawer__row-cancel';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.addEventListener('click', function () {
+                    cancelBtn.disabled = true;
+                    cancelBtn.textContent = 'Cancelling…';
+                    postJobAction(job.job_id, 'cancel').then(function (data) {
+                        if (!data || !data.success) {
+                            cancelBtn.disabled = false;
+                            cancelBtn.textContent = 'Cancel';
+                        }
+                    }).catch(function () {
+                        cancelBtn.disabled = false;
+                        cancelBtn.textContent = 'Cancel';
+                    });
+                });
+                actionsEl.appendChild(cancelBtn);
+            }
+
+            if (job.retryable) {
+                var retryBtn = document.createElement('button');
+                retryBtn.type = 'button';
+                retryBtn.className = 'wp-mcp-ai-chat__tasks-drawer__row-retry';
+                retryBtn.textContent = 'Retry';
+                retryBtn.addEventListener('click', function () {
+                    retryBtn.disabled = true;
+                    retryBtn.textContent = 'Retrying…';
+                    postJobAction(job.job_id, 'retry').then(function (data) {
+                        if (!data || !data.success) {
+                            retryBtn.disabled = false;
+                            retryBtn.textContent = 'Retry';
+                        }
+                    }).catch(function () {
+                        retryBtn.disabled = false;
+                        retryBtn.textContent = 'Retry';
+                    });
+                });
+                actionsEl.appendChild(retryBtn);
+            }
+
+            li.appendChild(chk);
+            li.appendChild(iconEl);
+            li.appendChild(titleEl);
+            li.appendChild(metaEl);
+            if (progressEl) { li.appendChild(progressEl); }
+            li.appendChild(actionsEl);
+
+            return li;
+        }
+
+        // ---- Render / refresh the list ----
+        function renderList() {
+            var ids = Object.keys(jobs);
+            var filtered = ids.filter(function (id) {
+                if (activeFilter === 'all') { return true; }
+                if (activeFilter === 'running') {
+                    return jobs[id].status === 'running' || jobs[id].status === 'polling';
+                }
+                return jobs[id].status === activeFilter;
+            });
+
+            // Sort: active first, then by updated_at desc.
+            filtered.sort(function (a, b) {
+                var order = { running: 0, polling: 0, queued: 1, failed: 2, cancelled: 3, completed: 4 };
+                var oa = order[jobs[a].status] !== undefined ? order[jobs[a].status] : 5;
+                var ob = order[jobs[b].status] !== undefined ? order[jobs[b].status] : 5;
+                if (oa !== ob) { return oa - ob; }
+                return ((jobs[b].updated_at || 0) - (jobs[a].updated_at || 0));
+            });
+
+            listEl.innerHTML = '';
+            filtered.forEach(function (id) {
+                listEl.appendChild(buildJobRow(jobs[id]));
+            });
+
+            if (emptyEl) {
+                emptyEl.hidden = filtered.length > 0;
+            }
+
+            // Show batch bar only when there are selectable rows.
+            if (batchBar) {
+                batchBar.hidden = filtered.length === 0;
+            }
+        }
+
+        // ---- Selection / batch actions ----
+        function getCheckedJobIds() {
+            if (!listEl) { return []; }
+            return Array.prototype.slice.call(
+                listEl.querySelectorAll('.wp-mcp-ai-chat__tasks-drawer__row-check:checked')
+            ).map(function (chk) {
+                var row = chk.closest('[data-job-id]');
+                return row ? row.getAttribute('data-job-id') : null;
+            }).filter(Boolean);
+        }
+
+        function onSelectionChange() {
+            var checked = getCheckedJobIds();
+            if (!batchBar) { return; }
+            var hasCancellable = checked.some(function (id) { return jobs[id] && jobs[id].cancellable; });
+            var hasRetryable   = checked.some(function (id) { return jobs[id] && jobs[id].retryable; });
+            var hasTerminal    = checked.some(function (id) {
+                var s = jobs[id] && jobs[id].status;
+                return s === 'completed' || s === 'failed' || s === 'cancelled';
+            });
+            if (batchCancel)  { batchCancel.hidden  = !hasCancellable || checked.length === 0; }
+            if (batchRetry)   { batchRetry.hidden   = !hasRetryable   || checked.length === 0; }
+            if (batchDismiss) { batchDismiss.hidden = !hasTerminal    || checked.length === 0; }
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                Array.prototype.forEach.call(
+                    listEl.querySelectorAll('.wp-mcp-ai-chat__tasks-drawer__row-check'),
+                    function (chk) { chk.checked = selectAll.checked; }
+                );
+                onSelectionChange();
+            });
+        }
+
+        if (batchCancel) {
+            batchCancel.addEventListener('click', function () {
+                getCheckedJobIds().filter(function (id) {
+                    return jobs[id] && jobs[id].cancellable;
+                }).forEach(function (id) {
+                    postJobAction(id, 'cancel').catch(function () {});
+                });
+            });
+        }
+
+        if (batchRetry) {
+            batchRetry.addEventListener('click', function () {
+                getCheckedJobIds().filter(function (id) {
+                    return jobs[id] && jobs[id].retryable;
+                }).forEach(function (id) {
+                    postJobAction(id, 'retry').catch(function () {});
+                });
+            });
+        }
+
+        if (batchDismiss) {
+            batchDismiss.addEventListener('click', function () {
+                getCheckedJobIds().filter(function (id) {
+                    var s = jobs[id] && jobs[id].status;
+                    return s === 'completed' || s === 'failed' || s === 'cancelled';
+                }).forEach(function (id) {
+                    delete jobs[id];
+                });
+                saveToStorage();
+                renderList();
+                updateBadge();
+            });
+        }
+
+        // ---- Job bus subscriptions ----
+        // Track running count per instance to manage tab-title badge.
+        var prevRunning = 0;
+
+        function onJobUpdate(evt) {
+            if (!evt || !evt.jobId) { return; }
+            var id = evt.jobId;
+            var payload = evt.data || evt;
+
+            var wasRunning = prevRunning;
+            var prevStatus = jobs[id] ? jobs[id].status : null;
+
+            // Merge the update into local state.
+            jobs[id] = Object.assign({}, jobs[id] || {}, payload, { job_id: id });
+
+            var newStatus  = jobs[id].status;
+            var nowRunning = countRunning();
+
+            // Update tab-title badge.
+            if (prevStatus !== newStatus) {
+                var wasRun = prevStatus === 'running' || prevStatus === 'polling';
+                var nowRun = newStatus  === 'running' || newStatus  === 'polling';
+                if (!wasRun && nowRun)  { updateTabTitleBadge(+1); }
+                if (wasRun  && !nowRun) { updateTabTitleBadge(-1); }
+            }
+
+            // Show toasts on terminal transitions.
+            if (prevStatus !== newStatus) {
+                if (newStatus === 'completed') {
+                    showJobToast(container, 'completed', jobs[id]);
+                } else if (newStatus === 'failed') {
+                    showJobToast(container, 'failed', jobs[id]);
+                }
+            }
+
+            saveToStorage();
+            updateBadge();
+
+            // Refresh list if drawer is open.
+            if (!drawer.hasAttribute('hidden')) {
+                renderList();
+            }
+        }
+
+        function onHealthUpdate(evt) {
+            if (!healthDot || !evt || !evt.status) { return; }
+            healthDot.setAttribute('data-status', evt.status);
+            healthDot.title = evt.label || 'Health: ' + evt.status;
+        }
+
+        // Subscribe to all job event types through the bus.
+        ['job:queued', 'job:started', 'job:step', 'job:progress', 'job:completed', 'job:failed', 'job:cancelled', 'job:retried'].forEach(function (eventType) {
+            window.wpMcpAiJobBus.on(eventType, onJobUpdate);
+        });
+
+        if (typeof window.wpMcpAiJobBus.on === 'function') {
+            window.wpMcpAiJobBus.on('system:health', onHealthUpdate);
+        }
+
+        // Seed badge and list from any cached jobs already in the bus.
+        if (typeof window.wpMcpAiJobBus.getAll === 'function') {
+            var cached = window.wpMcpAiJobBus.getAll();
+            if (cached && typeof cached === 'object') {
+                Object.keys(cached).forEach(function (id) {
+                    jobs[id] = Object.assign({}, jobs[id] || {}, cached[id], { job_id: id });
+                });
+            }
+        }
+        updateBadge();
     }
 
     /**

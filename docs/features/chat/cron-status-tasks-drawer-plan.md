@@ -137,6 +137,8 @@ Replace the plain "Tool is processing…" line with a compact card:
 
 #### 3b. Global "Tasks" drawer
 
+> **Status (PR-D, May 2026):** Tasks drawer landed. `initTasksDrawer()` activates when `config.chatTasksDrawer === true` (PHP filter `wp_mcp_ai_chat_tasks_drawer`, default off). Old 4-counter strip remains the fallback. Drawer anatomy: health pill + filter tabs (All/Running/Pending/Completed/Failed) + batch bar (Cancel/Retry/Dismiss) + scrollable job rows with progress bar, Cancel/Retry buttons. Job IDs persisted in `localStorage` (key `wp_mcp_ai_tasks_{assistantId}`, max 200 entries). Drawer button shows `(N)` running badge. Source: PR-D, `assets/js/chat.js initTasksDrawer()`.
+
 Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawer above the composer.
 
 **Drawer anatomy:**
@@ -147,6 +149,8 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 - **Feature flag**: `wp_mcp_ai_chat_tasks_drawer` filter — the old 4-counter strip remains as fallback when flag is off.
 
 #### 3c. Toast + tab notifications
+
+> **Status (PR-D, May 2026):** `showJobToast(container, type, job)` landed — subscribes via `wpMcpAiJobBus`; displays for 6 s with dismiss button. Tab-title badge (`updateTabTitleBadge(delta)`) increments `(N)` prefix while N jobs are running; decrements on completion/failure/cancel. Both are activated inside `initTasksDrawer()` when `config.chatTasksDrawer` is on.
 
 - Toast component subscribes to `job:completed` / `job:failed` on `wpMcpAiJobBus`; displays for ~6 s with a `View result` link.
 - Tab title prefixed with `(N)` while N jobs are running (parity with ChatGPT/Slack).
@@ -215,7 +219,7 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 | **PR-A** "wire-up fixes" | Phase 0 | Minimal | `chat.js` + `handle_cron_status_request` |
 | **PR-B** "job-source registry + stream loop" | Phase 1 + Phase 2 backend | Medium | PHP filter contract, SSE loop |
 | **PR-C** "inline progress + cancel/retry (async executor)" | Phase 3a + Phase 4 (executor only) | Medium | JS bubble card, new REST routes | ✅ landed May 2026 |
-| **PR-D** "Tasks drawer + toasts" (feature-flagged) | Phase 3b + Phase 3c | Medium | Drawer component, localStorage |
+| **PR-D** "Tasks drawer + toasts" (feature-flagged) | Phase 3b + Phase 3c | Medium | Drawer component, localStorage | ✅ landed May 2026 |
 | **PR-E** "register remaining sources" | Phase 1 follow-on | Low | Each source adapter |
 | **PR-F** "health + perf + OTel" | Phase 5 + Phase 6 | Low | Index option, OTel spans |
 | **PR-G** "docs + flag default-on" | Phase 7 | Minimal | Docs, tests, flag flip |
