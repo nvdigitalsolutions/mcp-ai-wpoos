@@ -90,12 +90,12 @@ export default function App() {
 
 	const closeMobileSidebar = () => setMobileSidebarOpen( false );
 
-	const rootAttrs: React.HTMLAttributes<HTMLDivElement> = {
+	const rootAttrs = {
 		className: 'nvoos-docs-hub-root',
 		role: 'application',
 		'aria-label': 'Documentation browser',
 		'data-theme': theme,
-	};
+	} as React.HTMLAttributes<HTMLDivElement>;
 
 	if ( manifestError ) {
 		return (

@@ -224,6 +224,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			// Class auto-initializes at the bottom of the file.
 		}
 
+		// Load Pro Schedule Toolkit Settings page (Overview · Configuration · Tools · Research · Help · MCP Server).
+		$schedule_settings_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-toolkit-settings-page.php';
+		if ( file_exists( $schedule_settings_page ) ) {
+			require_once $schedule_settings_page;
+			// Class auto-instantiates in admin context at the bottom of the file.
+		}
+
 		// Load Pro Webhook Status admin page (registers under NV oOS Pro Dashboard menu).
 		$webhook_status_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-webhook-status-page.php';
 		if ( file_exists( $webhook_status_page ) ) {
@@ -456,6 +463,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load ECA Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/eca-management-init.php';
 
+		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
+
 		// Load Quiz Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
 
@@ -548,6 +558,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Phase 6 — Vector-store adapter + per-team budgets (always enabled).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/services-init-phase6.php';
 
+		// Load Per-Toolkit MCP Server framework + Phase 1 pilot servers (CRM, Healthcare, Architectural Design).
+		// Always enabled: framework lies dormant until a toolkit registers a server, and disabled servers
+		// reject JSON-RPC method calls cleanly.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-servers/mcp-servers-init.php';
+
 		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
 		// Pro-only: paid third-party billing (Stripe merchant of record).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
@@ -638,6 +653,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-verifier.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-presets.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-budget-guarded-reward.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-schedule-metrics.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-schedule-otel-subscriber.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-measurement-bootstrap.php';
 		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();
 
@@ -876,8 +893,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-delete-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
 			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
+			'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
 			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
+			'WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-latest-result.php',
+			'WP_MCP_AI_Pro_Tool_Render_Schedule_Result'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-render-schedule-result.php',
+			'WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-configure-schedule-widget-defaults.php',
 			// iSAMS School Management System tool.
 			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
@@ -2199,6 +2220,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools['get_schedule_run_history']      = 'wordpress-core';
 		$pro_tools['schedule_channel_broadcast']    = 'wordpress-core';
 		$pro_tools['plan_schedules_from_workflow']  = 'wordpress-core';
+		$pro_tools['get_schedule_latest_result']         = 'wordpress-core';
+		$pro_tools['render_schedule_result']             = 'wordpress-core';
+		$pro_tools['configure_schedule_widget_defaults'] = 'wordpress-core';
 
 		/**
 		 * Filter the Pro tool group assignments.

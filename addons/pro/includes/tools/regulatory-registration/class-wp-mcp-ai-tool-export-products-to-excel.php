@@ -121,7 +121,7 @@ class WP_MCP_AI_Tool_Export_Products_To_Excel implements WP_MCP_AI_Tool_Interfac
 		$query_args = array(
 			'post_type'      => 'mcp_ai_reg_product',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_products_to_excel', 0, 1000 ) : 1000,
 		);
 
 		// Apply filters.

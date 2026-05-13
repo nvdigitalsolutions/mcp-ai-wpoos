@@ -316,7 +316,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				array(
 					'post_type'      => 'task',
 					'post_parent'    => $project_id,
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_calendar_ics', 0, 1000 ) : 1000,
 					'post_status'    => 'any',
 				)
 			);
@@ -341,7 +341,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				array(
 					'post_type'      => 'event',
 					'post_parent'    => $project_id,
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_calendar_ics', 0, 1000 ) : 1000,
 					'post_status'    => 'publish',
 				)
 			);

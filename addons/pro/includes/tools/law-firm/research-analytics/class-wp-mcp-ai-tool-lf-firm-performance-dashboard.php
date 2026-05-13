@@ -115,7 +115,7 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 
 		$entries = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_firm_performance_dashboard', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => $entry_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		) );
@@ -168,7 +168,7 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		// Query matters for the period.
 		$matter_args = array(
 			'post_type'      => 'mcp_ai_lf_matter',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_firm_performance_dashboard', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'date_query'     => array(
 				array( 'after' => $start_date ),
@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		// Query trust transactions in the period.
 		$trust_txns = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_trust_txn',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_firm_performance_dashboard', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(

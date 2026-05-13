@@ -223,7 +223,7 @@ class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$query_args = array(
 			'post_type'      => 'mcp_ai_eca',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_eca_data', 0, 1000 ) : 1000,
 		);
 
 		$meta_query = array( 'relation' => 'AND' );
@@ -310,7 +310,7 @@ class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$student_args = array(
 			'post_type'      => 'mcp_ai_student',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_eca_data', 0, 1000 ) : 1000,
 		);
 
 		if ( ! empty( $filters['year_group'] ) ) {
@@ -335,7 +335,7 @@ class WP_MCP_AI_Tool_Export_ECA_Data implements WP_MCP_AI_Tool_Interface, WP_MCP
 				array(
 					'post_type'      => 'mcp_ai_eca',
 					'post_status'    => 'publish',
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_eca_data', 0, 1000 ) : 1000,
 					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 						array(
 							'key'     => '_eca_enrolled_students',

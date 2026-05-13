@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 		$query_args = array(
 			'post_type'      => 'dj_equipment',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'equipment_inventory_report', 0, 500 ) : 500,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
 		);

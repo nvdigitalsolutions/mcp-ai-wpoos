@@ -239,7 +239,20 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		}
 
 		if ( get_current_user_id() !== $user_id ) {
-			wp_set_current_user( $user_id );
+			// Switch the current-user context to match the verified caller.
+			// `$user_id` here originates from the request's authenticated
+			// `$context` (populated by the REST authenticator after a
+			// bearer token, nonce, or assistant credential has been
+			// validated upstream), or from `get_current_user_id()` when
+			// the request is already executing under a logged-in user.
+			// JetFormBuilder permission checks then run in this user's
+			// context for the duration of the dispatched request.
+			if ( ! WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_user',
+					__( 'The authenticated user could not be resolved on this site.', 'mcp-ai-wpoos' )
+				);
+			}
 		}
 
 		return $user_id;
@@ -477,7 +490,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			return $result;
 		}
 
-		wp_set_current_user( $user_id );
+		// `$user_id` is the verified user from the previously-stored
+		// proxy transient (keyed by a request-scoped header); this
+		// branch only runs as the response phase of a request that
+		// already authenticated. The capability gate for any
+		// subsequent JetFormBuilder action lives on the JetFormBuilder
+		// REST route's own `permission_callback`. The helper revalidates
+		// that the user still exists before we mutate global state.
+		WP_MCP_AI_User_Context_Helper::safe_set_current_user( $user_id );
 
 		return $result;
 	}

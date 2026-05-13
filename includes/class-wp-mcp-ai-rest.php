@@ -997,6 +997,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Get job ID from URL parameter.
 			$job_id = $request->get_param( 'job_id' );
 
+			// Self-healing inline kick for async-tool jobs that are stuck
+			// in `pending` past the stale threshold. Schedules a shutdown
+			// action that drives the job forward after this response is
+			// flushed, so the chat client's poll loop automatically heals
+			// stuck jobs on hosts where the WP-Cron loopback never fires.
+			// No-op for non-async job IDs (veo_*, regular cron jobs, etc.)
+			// and for jobs that have already advanced past `pending`.
+			if ( is_string( $job_id ) && 0 === strpos( $job_id, 'async_' ) && class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+				$executor = new WP_MCP_AI_Tool_Async_Executor();
+				$executor->kick_inline_if_stale( $job_id );
+			}
+
 			// Get job details from service (includes permission check).
 			$job_details = $service->get_job_details( $job_id, $user_id );
 
@@ -2614,6 +2626,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
 
+			// Phase 3: agentic-loop output guard. Tracks cumulative tool-output bytes
+			// across all iterations and substitutes oversized payloads with artifact
+			// references so the LLM context stays bounded.
+			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-' . $assistant_id . '-' . wp_generate_uuid4() );
+
 			// Track original tool results for frontend display.
 			$tool_result_messages = array();
 
@@ -2799,6 +2816,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					// Create a sanitized version for the LLM (strip large content fields).
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
+
+					// Phase 3: agentic-loop output guard. If this single message or the
+					// cumulative request budget would be exceeded, spill the payload to
+					// an artifact and substitute a small reference envelope.
+					$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					if ( $budget_tracker->should_spill( $message_bytes ) ) {
+						$sanitized_result = WP_MCP_AI_Tool_Artifact_Helper::wrap_oversized_tool_result(
+							$sanitized_result,
+							$tool_name,
+							array(
+								'assistant_id' => $assistant_id,
+								'iteration'    => $iteration,
+								'tool_call_id' => $tool_call_id,
+								'request_id'   => $budget_tracker->request_id(),
+							)
+						);
+						$budget_tracker->note_spill();
+						$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					}
+					$budget_tracker->record( $message_bytes );
 
 					$tool_message = array(
 						'role'    => 'tool',
@@ -3209,6 +3246,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected function handle_chat_request_with_streaming( $assistant_id, $messages, $options, $assistant_config, $transcript_context, $request, $user_id, $max_iterations ) {
 			// Set up SSE headers.
 			$this->send_sse_headers();
+
+			// Phase 3: agentic-loop output guard (streaming branch).
+			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-stream-' . $assistant_id . '-' . wp_generate_uuid4() );
 
 			// Extend PHP execution time for the duration of the SSE stream.
 			// The default max_execution_time (often 30 s) is too short for embedded LLM
@@ -3638,6 +3678,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					// Create sanitized version for LLM.
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
+
+					// Phase 3: agentic-loop output guard.
+					$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					if ( $budget_tracker->should_spill( $message_bytes ) ) {
+						$sanitized_result = WP_MCP_AI_Tool_Artifact_Helper::wrap_oversized_tool_result(
+							$sanitized_result,
+							$tool_name,
+							array(
+								'assistant_id' => $assistant_id,
+								'iteration'    => isset( $iteration ) ? $iteration : 0,
+								'tool_call_id' => $tool_call_id,
+								'request_id'   => $budget_tracker->request_id(),
+							)
+						);
+						$budget_tracker->note_spill();
+						$this->send_sse_event(
+							'tool_output_truncated',
+							array(
+								'tool_name'    => $tool_name,
+								'tool_call_id' => $tool_call_id,
+							)
+						);
+						$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					}
+					$budget_tracker->record( $message_bytes );
 
 					$tool_message = array(
 						'role'    => 'tool',

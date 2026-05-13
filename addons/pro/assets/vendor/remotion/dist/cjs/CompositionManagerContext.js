@@ -14,6 +14,5 @@ exports.CompositionSetters = (0, react_1.createContext)({
     registerFolder: () => undefined,
     unregisterFolder: () => undefined,
     setCanvasContent: () => undefined,
-    updateCompositionDefaultProps: () => undefined,
     onlyRenderComposition: null,
 });

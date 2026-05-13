@@ -8,20 +8,28 @@
  * @license   GPL-3.0-or-later
  */
 
+// Detect CI / MySQL environment via the WP_DB_HOST env var exported by phpunit.yml.
+// When WP_DB_HOST is set (e.g. "127.0.0.1" in GitHub Actions), use real MySQL and
+// pick up credentials from the WP_DB_* env vars.  Otherwise fall back to SQLite for
+// local / Codex environments where the SQLite drop-in is available.
+$_wp_db_host = getenv( 'WP_DB_HOST' );
+
 if ( ! defined( 'DB_NAME' ) ) {
-	define( 'DB_NAME', 'wordpress_test' );
+	define( 'DB_NAME', getenv( 'WP_DB_NAME' ) ?: 'wordpress_test' );
 }
 
 if ( ! defined( 'DB_USER' ) ) {
-	define( 'DB_USER', 'wordpress' );
+	define( 'DB_USER', getenv( 'WP_DB_USER' ) ?: 'wordpress' );
 }
 
 if ( ! defined( 'DB_PASSWORD' ) ) {
-	define( 'DB_PASSWORD', 'wordpress' );
+	define( 'DB_PASSWORD', getenv( 'WP_DB_PASSWORD' ) ?: 'wordpress' );
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
-	define( 'DB_HOST', 'localhost' );
+	// Use 127.0.0.1 (TCP) when a host env var is provided; avoids Unix-socket
+	// "No such file or directory" errors in GitHub Actions MySQL service containers.
+	define( 'DB_HOST', $_wp_db_host ?: 'localhost' );
 }
 
 if ( ! defined( 'DB_CHARSET' ) ) {
@@ -32,17 +40,20 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 	define( 'DB_COLLATE', '' );
 }
 
-// Use SQLite for testing
-if ( ! defined( 'DB_TYPE' ) ) {
-	define( 'DB_TYPE', 'sqlite' );
-}
+// Use SQLite only in local / Codex environments (no WP_DB_HOST env var).
+// In CI the MySQL service container is used instead.
+if ( ! $_wp_db_host ) {
+	if ( ! defined( 'DB_TYPE' ) ) {
+		define( 'DB_TYPE', 'sqlite' );
+	}
 
-if ( ! defined( 'DB_DIR' ) ) {
-	define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
-}
+	if ( ! defined( 'DB_DIR' ) ) {
+		define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
+	}
 
-if ( ! defined( 'DB_FILE' ) ) {
-	define( 'DB_FILE', 'wptests.sqlite' );
+	if ( ! defined( 'DB_FILE' ) ) {
+		define( 'DB_FILE', 'wptests.sqlite' );
+	}
 }
 
 if ( ! isset( $table_prefix ) ) {

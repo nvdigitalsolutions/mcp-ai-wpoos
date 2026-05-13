@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useResolvedVideoConfig = exports.PROPS_UPDATED_EXTERNALLY = exports.needsResolution = exports.resolveCompositionsRef = exports.ResolveCompositionContext = void 0;
+exports.useResolvedVideoConfig = exports.needsResolution = exports.resolveCompositionsRef = exports.ResolveCompositionContext = void 0;
 const react_1 = require("react");
 const CompositionManagerContext_js_1 = require("./CompositionManagerContext.js");
 const input_props_js_1 = require("./config/input-props.js");
@@ -15,7 +15,6 @@ const needsResolution = (composition) => {
     return Boolean(composition.calculateMetadata);
 };
 exports.needsResolution = needsResolution;
-exports.PROPS_UPDATED_EXTERNALLY = 'remotion.propsUpdatedExternally';
 const useResolvedVideoConfig = (preferredCompositionId) => {
     const context = (0, react_1.useContext)(exports.ResolveCompositionContext);
     const { props: allEditorProps } = (0, react_1.useContext)(EditorProps_js_1.EditorPropsContext);
@@ -76,6 +75,7 @@ const useResolvedVideoConfig = (preferredCompositionId) => {
                     defaultVideoImageFormat: null,
                     defaultPixelFormat: null,
                     defaultProResProfile: null,
+                    defaultSampleRate: null,
                 },
             };
         }

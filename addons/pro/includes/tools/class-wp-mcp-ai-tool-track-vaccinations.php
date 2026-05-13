@@ -379,7 +379,7 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 					'value' => true,
 				),
 			),
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'track_vaccinations', 0, 1000 ) : 1000,
 			'orderby'        => 'meta_value',
 			'meta_key'       => '_record_date',
 			'order'          => 'DESC',

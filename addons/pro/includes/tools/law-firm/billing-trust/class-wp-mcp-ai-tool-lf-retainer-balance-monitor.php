@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 			// Calculate current trust balance for this matter.
 			$txns = get_posts( array(
 				'post_type'      => 'mcp_ai_lf_trust_txn',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_retainer_balance_monitor', 0, 1000 ) : 1000,
 				'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $m->ID ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			) );
 

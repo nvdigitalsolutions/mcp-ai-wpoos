@@ -250,4 +250,118 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 		);
 		$this->assertSame( WP_MCP_AI_Transcript_Mining_Job::MAX_TOTAL_SESSIONS, $state['total'] );
 	}
+
+	/**
+	 * The inline shutdown handler registered by enqueue() drives the first
+	 * tick to completion when no cron loopback ever fires. This is the
+	 * primary regression test for the "job sits at status: queued forever"
+	 * bug on hosts with DISABLE_WP_CRON or broken loopback HTTP.
+	 *
+	 * We do not need to actually set DISABLE_WP_CRON to exercise this path
+	 * — the shutdown closure runs `kick_inline()`, which in turn invokes
+	 * `handle_tick()` regardless of the cron configuration. Manually
+	 * firing `do_action('shutdown')` simulates the end of the REST request
+	 * lifecycle.
+	 */
+	public function test_inline_shutdown_kick_drives_queued_job_to_completion() {
+		$this->seed_sessions( 2 );
+
+		$state = WP_MCP_AI_Transcript_Mining_Job::enqueue(
+			array( 'agent_id' => 8005 ),
+			array(
+				'session_keys' => array( 'sess_0', 'sess_1' ),
+				'batch_size'   => 5,
+			)
+		);
+
+		$this->assertSame( 'queued', $state['status'] );
+
+		// Sanity-check that the job state landed in the transient store
+		// the shutdown handler will read.
+		$persisted = WP_MCP_AI_Transcript_Mining_Job::get_state( $state['id'] );
+		$this->assertIsArray( $persisted );
+
+		// Fire WordPress' `shutdown` action manually. This invokes the
+		// closure that enqueue() just registered, which calls
+		// kick_inline() → handle_tick() in-process.
+		do_action( 'shutdown' );
+
+		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
+		$this->assertSame( 'completed', $progress['status'], 'inline shutdown should drive the job to completion' );
+		$this->assertSame( 2, $progress['processed'] );
+		$this->assertSame( 100, $progress['percent'] );
+	}
+
+	/**
+	 * The per-job cooperative tick lock must prevent a re-entrant
+	 * `handle_tick()` call from double-processing a batch. We simulate a
+	 * still-running parallel worker by manually seeding the lock
+	 * transient, then invoking handle_tick() and asserting no work was
+	 * advanced; releasing the lock and re-invoking should then drain the
+	 * queue normally.
+	 */
+	public function test_handle_tick_is_guarded_by_cooperative_lock() {
+		$this->seed_sessions( 2 );
+
+		$state = WP_MCP_AI_Transcript_Mining_Job::enqueue(
+			array( 'agent_id' => 8006 ),
+			array(
+				'session_keys' => array( 'sess_0', 'sess_1' ),
+				'batch_size'   => 2,
+			)
+		);
+
+		$lock_key = WP_MCP_AI_Transcript_Mining_Job::TICK_LOCK_PREFIX . $state['id'];
+		set_transient( $lock_key, 1, WP_MCP_AI_Transcript_Mining_Job::TICK_LOCK_TTL );
+
+		WP_MCP_AI_Transcript_Mining_Job::handle_tick( $state['id'] );
+
+		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
+		$this->assertSame( 0, $progress['processed'], 'a held lock must block tick processing' );
+		$this->assertSame( 'queued', $progress['status'] );
+
+		delete_transient( $lock_key );
+		// wp_cache_add may also have seeded an in-process entry inside the
+		// blocked attempt; clear it so the next call can re-acquire.
+		wp_cache_delete( $lock_key, 'wp_mcp_ai_tx_mine' );
+
+		WP_MCP_AI_Transcript_Mining_Job::handle_tick( $state['id'] );
+
+		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
+		$this->assertSame( 2, $progress['processed'], 'releasing the lock must allow tick processing' );
+		$this->assertSame( 'completed', $progress['status'] );
+	}
+
+	/**
+	 * `kick_inline()` is the entry point used by both the shutdown
+	 * handler registered in enqueue() and the self-healing REST poll
+	 * branch. It must drive a stale `queued` job forward and become a
+	 * no-op for non-queued statuses.
+	 */
+	public function test_kick_inline_drives_stale_queued_job() {
+		$this->seed_sessions( 1 );
+
+		$state = WP_MCP_AI_Transcript_Mining_Job::enqueue(
+			array( 'agent_id' => 8007 ),
+			array(
+				'session_keys' => array( 'sess_0' ),
+				'batch_size'   => 1,
+			)
+		);
+
+		$this->assertSame( 'queued', $state['status'] );
+
+		WP_MCP_AI_Transcript_Mining_Job::kick_inline( $state['id'] );
+
+		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
+		$this->assertSame( 'completed', $progress['status'] );
+		$this->assertSame( 1, $progress['processed'] );
+
+		// Second call must be a no-op (state is no longer `queued`); the
+		// job stays completed and counters are unchanged.
+		WP_MCP_AI_Transcript_Mining_Job::kick_inline( $state['id'] );
+		$progress2 = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
+		$this->assertSame( 'completed', $progress2['status'] );
+		$this->assertSame( 1, $progress2['processed'] );
+	}
 }

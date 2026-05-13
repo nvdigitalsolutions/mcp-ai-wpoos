@@ -117,7 +117,7 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 
 		$query_args = array(
 			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_attorney_utilization_tracker', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		);

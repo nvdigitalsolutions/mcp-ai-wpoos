@@ -298,7 +298,7 @@ class WP_MCP_AI_Tool_Set_ECA_Schedule implements WP_MCP_AI_Tool_Interface, WP_MC
 		$query_args = array(
 			'post_type'      => 'mcp_ai_eca',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'set_eca_schedule', 0, 1000 ) : 1000,
 			'post__not_in'   => array( $eca_id ),
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				'relation' => 'AND',

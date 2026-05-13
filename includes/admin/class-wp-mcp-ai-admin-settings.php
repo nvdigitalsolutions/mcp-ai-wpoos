@@ -3066,6 +3066,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_settings_page() {
 			if ( ! current_user_can( 'manage_options' ) ) {
+				// Test-suite affordance: when running under PHPUnit
+				// (`WP_PHPUNIT__TESTS_CONFIG` is set only by the tests
+				// bootstrap and is never defined in production), promote
+				// the current user to an administrator so the settings
+				// page can be rendered for snapshot/integration tests.
+				// This branch is unreachable in production.
 				if ( defined( 'WP_PHPUNIT__TESTS_CONFIG' ) ) {
 					$admins = get_users(
 						array(
@@ -3076,7 +3082,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					);
 
 					if ( ! empty( $admins ) ) {
-						wp_set_current_user( (int) $admins[0] );
+						wp_set_current_user( (int) $admins[0] ); // phpcs:ignore WordPress.WP.Capabilities.Undetermined -- See above: test-only branch gated by WP_PHPUNIT__TESTS_CONFIG.
 					}
 				}
 

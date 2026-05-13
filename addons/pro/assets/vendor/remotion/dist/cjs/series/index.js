@@ -4,9 +4,10 @@ exports.Series = void 0;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = require("react");
 const enable_sequence_stack_traces_js_1 = require("../enable-sequence-stack-traces.js");
+const sequence_field_schema_js_1 = require("../sequence-field-schema.js");
 const Sequence_js_1 = require("../Sequence.js");
-const v5_flag_js_1 = require("../v5-flag.js");
 const validate_duration_in_frames_js_1 = require("../validation/validate-duration-in-frames.js");
+const wrap_in_schema_js_1 = require("../wrap-in-schema.js");
 const flatten_children_js_1 = require("./flatten-children.js");
 const is_inside_series_js_1 = require("./is-inside-series.js");
 const SeriesSequenceRefForwardingFunction = ({ children }, _ref) => {
@@ -15,11 +16,7 @@ const SeriesSequenceRefForwardingFunction = ({ children }, _ref) => {
     return (0, jsx_runtime_1.jsx)(is_inside_series_js_1.IsNotInsideSeriesProvider, { children: children });
 };
 const SeriesSequence = (0, react_1.forwardRef)(SeriesSequenceRefForwardingFunction);
-/**
- * @description with this component, you can easily stitch together scenes that should play sequentially after another.
- * @see [Documentation](https://www.remotion.dev/docs/series)
- */
-const Series = (props) => {
+const SeriesInner = (props) => {
     const childrenValue = (0, react_1.useMemo)(() => {
         let startFrame = 0;
         const flattenedChildren = (0, flatten_children_js_1.flattenChildren)(props.children);
@@ -64,11 +61,15 @@ const Series = (props) => {
             return ((0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { name: name || '<Series.Sequence>', from: currentStartFrame, durationInFrames: durationInFramesProp, ...passedProps, ref: castedChild.ref, children: child }));
         });
     }, [props.children]);
-    if (v5_flag_js_1.ENABLE_V5_BREAKING_CHANGES) {
-        return ((0, jsx_runtime_1.jsx)(is_inside_series_js_1.IsInsideSeriesContainer, { children: (0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { ...props, children: childrenValue }) }));
-    }
-    return (0, jsx_runtime_1.jsx)(is_inside_series_js_1.IsInsideSeriesContainer, { children: childrenValue });
+    return ((0, jsx_runtime_1.jsx)(is_inside_series_js_1.IsInsideSeriesContainer, { children: (0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { layout: "none", name: "<Series>", ...props, children: childrenValue }) }));
 };
+/**
+ * @description with this component, you can easily stitch together scenes that should play sequentially after another.
+ * @see [Documentation](https://www.remotion.dev/docs/series)
+ */
+const Series = Object.assign((0, wrap_in_schema_js_1.wrapInSchema)(SeriesInner, sequence_field_schema_js_1.sequenceSchemaDefaultLayoutNone), {
+    Sequence: SeriesSequence,
+});
 exports.Series = Series;
-Series.Sequence = SeriesSequence;
+(0, enable_sequence_stack_traces_js_1.addSequenceStackTraces)(Series);
 (0, enable_sequence_stack_traces_js_1.addSequenceStackTraces)(SeriesSequence);

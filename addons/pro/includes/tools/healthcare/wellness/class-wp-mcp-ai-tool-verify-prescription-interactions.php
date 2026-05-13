@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_
 				array(
 					'post_type'      => 'mcp_ai_prescription',
 					'post_status'    => 'publish',
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'verify_prescription_interactions', 0, 1000 ) : 1000,
 					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 						'relation' => 'AND',
 						array(

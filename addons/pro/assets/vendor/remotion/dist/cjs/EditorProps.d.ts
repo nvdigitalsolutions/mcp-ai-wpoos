@@ -8,13 +8,8 @@ export type EditorPropsContextType = {
         defaultProps: Record<string, unknown>;
         newProps: Record<string, unknown> | ((oldProps: Record<string, unknown>) => Record<string, unknown>);
     }) => void;
-    resetUnsaved: (compositionId: string) => void;
 };
 export declare const EditorPropsContext: React.Context<EditorPropsContextType>;
-export declare const editorPropsProviderRef: React.RefObject<{
-    getProps: () => Props;
-    setProps: React.Dispatch<React.SetStateAction<Props>>;
-} | null>;
 export declare const timeValueRef: React.RefObject<{
     goToFrame: () => void;
     seek: (newFrame: number) => void;

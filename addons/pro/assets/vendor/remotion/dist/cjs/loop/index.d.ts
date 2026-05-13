@@ -1,11 +1,11 @@
 import React from 'react';
-import type { LayoutAndStyle } from '../Sequence.js';
+import type { LayoutAndStyle, SequenceProps } from '../Sequence.js';
 export type LoopProps = {
     readonly durationInFrames: number;
     readonly times?: number;
     readonly name?: string;
     readonly children: React.ReactNode;
-} & LayoutAndStyle;
+} & LayoutAndStyle & Pick<SequenceProps, 'showInTimeline'>;
 type LoopContextType = {
     iteration: number;
     durationInFrames: number;

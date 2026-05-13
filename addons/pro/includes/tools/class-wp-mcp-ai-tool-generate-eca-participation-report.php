@@ -268,7 +268,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			array(
 				'post_type'      => 'mcp_ai_eca',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_eca_participation_report', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'     => '_eca_enrolled_students',
@@ -326,7 +326,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			array(
 				'post_type'      => 'mcp_ai_student',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_eca_participation_report', 0, 1000 ) : 1000,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
 						'key'   => '_student_year_group',
@@ -346,7 +346,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 				array(
 					'post_type'      => 'mcp_ai_eca',
 					'post_status'    => 'publish',
-					'posts_per_page' => -1,
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_eca_participation_report', 0, 1000 ) : 1000,
 					'fields'         => 'ids',
 					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 						array(
@@ -392,7 +392,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			array(
 				'post_type'      => 'mcp_ai_eca',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_eca_participation_report', 0, 1000 ) : 1000,
 			)
 		);
 
@@ -401,7 +401,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			array(
 				'post_type'      => 'mcp_ai_student',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'generate_eca_participation_report', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);

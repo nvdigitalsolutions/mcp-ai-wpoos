@@ -567,46 +567,60 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function build_medication_resources( $member_id, $date_from, $date_to ) {
 		$medications = array();
 
-		// Query prescriptions.
-		$args = array(
+		$query_args = array(
 			'post_type'      => 'mcp_ai_prescription',
 			'post_status'    => 'publish',
 			'meta_key'       => '_prescription_member_id',
 			'meta_value'     => $member_id,
-			'posts_per_page' => -1,
 		);
 
 		if ( $date_from || $date_to ) {
-			$args['date_query'] = array();
+			$query_args['date_query'] = array();
 			if ( $date_from ) {
-				$args['date_query']['after'] = $date_from;
+				$query_args['date_query']['after'] = $date_from;
 			}
 			if ( $date_to ) {
-				$args['date_query']['before'] = $date_to;
+				$query_args['date_query']['before'] = $date_to;
 			}
 		}
 
-		$query = new WP_Query( $args );
+		$max = class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' )
+			? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_fhir_data', 0, 1000 )
+			: 1000;
 
-		if ( $query->have_posts() ) {
-			while ( $query->have_posts() ) {
-				$query->the_post();
-				$prescription_id = get_the_ID();
+		$iterator = class_exists( 'WP_MCP_AI_Batch_Iterator' )
+			? new WP_MCP_AI_Batch_Iterator( 'fhir_export_medications', array( 'max_items' => $max ) )
+			: null;
+
+		if ( null === $iterator ) {
+			$query_args['posts_per_page'] = $max;
+			$prescription_ids             = get_posts( array_merge( $query_args, array( 'fields' => 'ids' ) ) );
+			$batches                      = array( $prescription_ids );
+		} else {
+			$query_args['fields'] = 'ids';
+			$batches              = $iterator->paged_iterate( $query_args );
+		}
+
+		foreach ( $batches as $batch ) {
+			foreach ( $batch as $prescription_id ) {
+				$prescription = get_post( $prescription_id );
+				if ( ! $prescription ) {
+					continue;
+				}
 
 				$medication = array(
-					'resourceType' => 'MedicationStatement',
-					'id'           => 'med-' . $prescription_id,
-					'status'       => 'active',
+					'resourceType'              => 'MedicationStatement',
+					'id'                        => 'med-' . $prescription_id,
+					'status'                    => 'active',
 					'medicationCodeableConcept' => array(
-						'text' => get_the_title(),
+						'text' => $prescription->post_title,
 					),
-					'subject'      => array(
+					'subject'                   => array(
 						'reference' => 'Patient/member-' . $member_id,
 					),
 				);
 
-				// Add dosage.
-				$dosage = get_post_meta( $prescription_id, '_prescription_dosage', true );
+				$dosage    = get_post_meta( $prescription_id, '_prescription_dosage', true );
 				$frequency = get_post_meta( $prescription_id, '_prescription_frequency', true );
 				if ( $dosage || $frequency ) {
 					$medication['dosage'] = array(
@@ -616,7 +630,6 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 					);
 				}
 
-				// Add dates.
 				$start_date = get_post_meta( $prescription_id, '_prescription_start_date', true );
 				if ( $start_date ) {
 					$medication['effectivePeriod'] = array(
@@ -626,7 +639,10 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 
 				$medications[] = $medication;
 			}
-			wp_reset_postdata();
+		}
+
+		if ( null !== $iterator ) {
+			$iterator->complete();
 		}
 
 		return $medications;
@@ -641,28 +657,40 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function build_allergy_resources( $member_id ) {
 		$allergies = array();
 
-		// Query allergies.
-		$query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_allergy',
-				'post_status'    => 'publish',
-				'meta_key'       => '_allergy_member_id',
-				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
-			)
+		$max = class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' )
+			? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_fhir_data', 0, 1000 )
+			: 1000;
+
+		$query_args = array(
+			'post_type'   => 'mcp_ai_allergy',
+			'post_status' => 'publish',
+			'meta_key'    => '_allergy_member_id',
+			'meta_value'  => $member_id,
+			'fields'      => 'ids',
 		);
 
-		if ( $query->have_posts() ) {
-			while ( $query->have_posts() ) {
-				$query->the_post();
-				$allergy_id = get_the_ID();
+		if ( class_exists( 'WP_MCP_AI_Batch_Iterator' ) ) {
+			$iterator = new WP_MCP_AI_Batch_Iterator( 'fhir_export_allergies', array( 'max_items' => $max ) );
+			$batches  = $iterator->paged_iterate( $query_args );
+		} else {
+			$query_args['posts_per_page'] = $max;
+			$iterator                     = null;
+			$batches                      = array( get_posts( $query_args ) );
+		}
+
+		foreach ( $batches as $batch ) {
+			foreach ( $batch as $allergy_id ) {
+				$post = get_post( $allergy_id );
+				if ( ! $post ) {
+					continue;
+				}
 
 				$severity_terms = wp_get_object_terms( $allergy_id, 'mcp_ai_allergy_severity', array( 'fields' => 'names' ) );
-				$severity = ! empty( $severity_terms ) && ! is_wp_error( $severity_terms ) ? strtolower( $severity_terms[0] ) : 'moderate';
+				$severity       = ! empty( $severity_terms ) && ! is_wp_error( $severity_terms ) ? strtolower( $severity_terms[0] ) : 'moderate';
 
 				$allergy = array(
-					'resourceType' => 'AllergyIntolerance',
-					'id'           => 'allergy-' . $allergy_id,
+					'resourceType'   => 'AllergyIntolerance',
+					'id'             => 'allergy-' . $allergy_id,
 					'clinicalStatus' => array(
 						'coding' => array(
 							array(
@@ -671,18 +699,21 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 							),
 						),
 					),
-					'code'         => array(
-						'text' => get_the_title(),
+					'code'           => array(
+						'text' => $post->post_title,
 					),
-					'patient'      => array(
+					'patient'        => array(
 						'reference' => 'Patient/member-' . $member_id,
 					),
-					'criticality'  => 'severe' === $severity ? 'high' : ( 'mild' === $severity ? 'low' : 'unable-to-assess' ),
+					'criticality'    => 'severe' === $severity ? 'high' : ( 'mild' === $severity ? 'low' : 'unable-to-assess' ),
 				);
 
 				$allergies[] = $allergy;
 			}
-			wp_reset_postdata();
+		}
+
+		if ( null !== $iterator ) {
+			$iterator->complete();
 		}
 
 		return $allergies;
@@ -712,11 +743,11 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function build_immunization_resources( $member_id, $date_from, $date_to ) {
 		$immunizations = array();
 
-		// Query vaccination records.
-		$args = array(
-			'post_type'      => 'mcp_ai_med_record',
-			'post_status'    => 'publish',
-			'meta_query'     => array(
+		$query_args = array(
+			'post_type'   => 'mcp_ai_med_record',
+			'post_status' => 'publish',
+			'fields'      => 'ids',
+			'meta_query'  => array(
 				array(
 					'key'   => '_record_member_id',
 					'value' => $member_id,
@@ -726,11 +757,10 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 					'value' => true,
 				),
 			),
-			'posts_per_page' => -1,
 		);
 
 		if ( $date_from || $date_to ) {
-			$args['meta_query'][] = array(
+			$query_args['meta_query'][] = array(
 				'key'     => '_record_date',
 				'value'   => array( $date_from, $date_to ),
 				'compare' => 'BETWEEN',
@@ -738,27 +768,34 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		$query = new WP_Query( $args );
+		$max = class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' )
+			? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'export_fhir_data', 0, 1000 )
+			: 1000;
 
-		if ( $query->have_posts() ) {
-			while ( $query->have_posts() ) {
-				$query->the_post();
-				$record_id = get_the_ID();
+		if ( class_exists( 'WP_MCP_AI_Batch_Iterator' ) ) {
+			$iterator = new WP_MCP_AI_Batch_Iterator( 'fhir_export_immunizations', array( 'max_items' => $max ) );
+			$batches  = $iterator->paged_iterate( $query_args );
+		} else {
+			$query_args['posts_per_page'] = $max;
+			$iterator                     = null;
+			$batches                      = array( get_posts( $query_args ) );
+		}
 
+		foreach ( $batches as $batch ) {
+			foreach ( $batch as $record_id ) {
 				$immunization = array(
-					'resourceType' => 'Immunization',
-					'id'           => 'imm-' . $record_id,
-					'status'       => 'completed',
-					'vaccineCode'  => array(
+					'resourceType'       => 'Immunization',
+					'id'                 => 'imm-' . $record_id,
+					'status'             => 'completed',
+					'vaccineCode'        => array(
 						'text' => get_post_meta( $record_id, '_vaccination_name', true ),
 					),
-					'patient'      => array(
+					'patient'            => array(
 						'reference' => 'Patient/member-' . $member_id,
 					),
 					'occurrenceDateTime' => get_post_meta( $record_id, '_record_date', true ),
 				);
 
-				// Add lot number if available.
 				$lot_number = get_post_meta( $record_id, '_vaccination_lot_number', true );
 				if ( $lot_number ) {
 					$immunization['lotNumber'] = $lot_number;
@@ -766,7 +803,10 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 
 				$immunizations[] = $immunization;
 			}
-			wp_reset_postdata();
+		}
+
+		if ( null !== $iterator ) {
+			$iterator->complete();
 		}
 
 		return $immunizations;

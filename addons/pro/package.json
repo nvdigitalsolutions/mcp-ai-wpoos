@@ -47,10 +47,10 @@
 		"pdf-parse": "^1.1.4",
 		"pdfjs-dist": "^4.9.155",
 		"pdfkit": "^0.17.2",
-		"prettier": "^3.4.2",
+		"prettier": "^3.8.3",
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
-		"remotion": "^4.0.0",
+		"remotion": "^4.0.459",
 		"sharp": "^0.33.5",
 		"stripe": "^14.0.0",
 		"subtitle": "^3.0.0",
@@ -88,6 +88,8 @@
 		"lodash": ">=4.18.1",
 		"lodash-es": ">=4.18.1",
 		"uuid": ">=14.0.0",
+		"fast-uri": ">=3.1.2",
+		"@babel/plugin-transform-modules-systemjs": ">=7.29.4",
 		"mailparser": {
 			"nodemailer": ">=8.0.5"
 		}

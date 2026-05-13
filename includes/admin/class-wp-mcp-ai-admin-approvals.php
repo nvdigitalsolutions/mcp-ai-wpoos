@@ -216,9 +216,9 @@ class WP_MCP_AI_Admin_Approvals {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
 		}
 
-		$approval_id = (int) ( $_POST['approval_id'] ?? 0 );
-		$action      = sanitize_key( (string) ( $_POST['resolution'] ?? '' ) );
-		$note        = sanitize_textarea_field( (string) ( $_POST['note'] ?? '' ) );
+		$approval_id = absint( wp_unslash( $_POST['approval_id'] ?? 0 ) );
+		$action      = isset( $_POST['resolution'] ) ? sanitize_key( wp_unslash( $_POST['resolution'] ) ) : '';
+		$note        = isset( $_POST['note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['note'] ) ) : '';
 
 		if ( $approval_id <= 0 ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid approval ID.', 'mcp-ai-wpoos' ) ), 400 );

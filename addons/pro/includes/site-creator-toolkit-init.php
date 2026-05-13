@@ -99,6 +99,7 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-analyze-competitor-sites.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-site-plan.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-extract-site-design-from-mockups.php';
 
 	// Page Building Tools.
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-landing-page.php';
@@ -143,6 +144,9 @@ function wp_mcp_ai_load_site_creator_tools() {
 		$registry->register_tool( new WP_MCP_AI_Tool_Research_Site_Best_Practices() );
 		$registry->register_tool( new WP_MCP_AI_Tool_Analyze_Competitor_Sites() );
 		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Site_Plan() );
+		if ( class_exists( 'WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups' ) ) {
+			$registry->register_tool( new WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups() );
+		}
 
 		// Page Building.
 		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Landing_Page() );
