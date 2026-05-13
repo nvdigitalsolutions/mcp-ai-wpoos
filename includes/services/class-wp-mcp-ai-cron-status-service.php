@@ -867,6 +867,96 @@ class WP_MCP_AI_Cron_Status_Service {
 	}
 
 	/**
+	 * Classify a job-status diff into a typed `job:*` SSE event name.
+	 *
+	 * Implements the canonical contract documented in
+	 * `docs/features/chat/cron-status-tasks-drawer-plan.md` Phase 2.
+	 *
+	 * Valid event names: `job:queued`, `job:started`, `job:progress`,
+	 * `job:completed`, `job:failed`, `job:cancelled`, `job:retried`.
+	 * Returns an empty string when the diff produces no meaningful event
+	 * (e.g. unchanged record).
+	 *
+	 * Note: `job:step` frames are emitted directly by
+	 * {@see WP_MCP_AI_Job_Notifier::record_step()} and are not classified
+	 * here — this method handles only the list-endpoint diff loop.
+	 *
+	 * @since 1.9.3
+	 *
+	 * @param array<string,mixed>|null $prev Previous snapshot record (or null for new jobs).
+	 * @param array<string,mixed>      $next Current snapshot record.
+	 * @return string Typed event name, or empty string for "no event".
+	 */
+	public function classify_job_diff_event( $prev, array $next ) {
+		$next_status = isset( $next['status'] ) ? (string) $next['status'] : '';
+		if ( '' === $next_status ) {
+			return '';
+		}
+
+		$running_statuses  = array( 'running', 'polling', 'in_progress' );
+		$pending_statuses  = array( 'pending', 'queued' );
+		$terminal_complete = 'completed';
+		$terminal_failed   = 'failed';
+		$terminal_cancel   = 'cancelled';
+
+		// New job (no previous record).
+		if ( null === $prev || ! is_array( $prev ) ) {
+			if ( $terminal_complete === $next_status ) {
+				return 'job:completed';
+			}
+			if ( $terminal_failed === $next_status ) {
+				return 'job:failed';
+			}
+			if ( $terminal_cancel === $next_status ) {
+				return 'job:cancelled';
+			}
+			if ( in_array( $next_status, $running_statuses, true ) ) {
+				return 'job:started';
+			}
+			return 'job:queued';
+		}
+
+		$prev_status = isset( $prev['status'] ) ? (string) $prev['status'] : '';
+
+		if ( $prev_status !== $next_status ) {
+			if ( $terminal_complete === $next_status ) {
+				return 'job:completed';
+			}
+			if ( $terminal_failed === $next_status ) {
+				return 'job:failed';
+			}
+			if ( $terminal_cancel === $next_status ) {
+				return 'job:cancelled';
+			}
+			if ( in_array( $next_status, $running_statuses, true )
+				&& in_array( $prev_status, $pending_statuses, true ) ) {
+				return 'job:started';
+			}
+			if ( in_array( $next_status, $pending_statuses, true )
+				&& in_array( $prev_status, array( $terminal_failed, $terminal_cancel ), true ) ) {
+				return 'job:retried';
+			}
+			// Generic transition (e.g. running → polling) is a progress signal.
+			return 'job:progress';
+		}
+
+		// Same status — look for progress/updated_at changes.
+		$prev_progress = array_key_exists( 'progress', $prev ) ? $prev['progress'] : null;
+		$next_progress = array_key_exists( 'progress', $next ) ? $next['progress'] : null;
+		if ( $prev_progress !== $next_progress ) {
+			return 'job:progress';
+		}
+
+		$prev_updated = isset( $prev['updated_at'] ) ? (int) $prev['updated_at'] : 0;
+		$next_updated = isset( $next['updated_at'] ) ? (int) $next['updated_at'] : 0;
+		if ( $prev_updated !== $next_updated && in_array( $next_status, $running_statuses, true ) ) {
+			return 'job:progress';
+		}
+
+		return '';
+	}
+
+	/**
 	 * Get lightweight system status for chat-client display.
 	 *
 	 * Surfaces async-health and orchestration-health signals so the chat UI

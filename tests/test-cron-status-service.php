@@ -1117,4 +1117,185 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		$this->assertContains( 'mine-1', $ids );
 		$this->assertNotContains( 'other-1', $ids );
 	}
+
+	/**
+	 * Test classify_job_diff_event with a new (previously unseen) job.
+	 *
+	 * Phase 2 slice 2b: covers the canonical event-name mapping when no
+	 * prior snapshot exists for the given job_id.
+	 */
+	public function test_classify_job_diff_event_new_job_status_mapping() {
+		// Pending → job:queued.
+		$this->assertSame(
+			'job:queued',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'pending' ) )
+		);
+		// Queued → job:queued.
+		$this->assertSame(
+			'job:queued',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'queued' ) )
+		);
+		// Running → job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'running' ) )
+		);
+		// Polling → job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'polling' ) )
+		);
+		// Completed → job:completed.
+		$this->assertSame(
+			'job:completed',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'completed' ) )
+		);
+		// Failed → job:failed.
+		$this->assertSame(
+			'job:failed',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'failed' ) )
+		);
+		// Cancelled → job:cancelled.
+		$this->assertSame(
+			'job:cancelled',
+			$this->service->classify_job_diff_event( null, array( 'status' => 'cancelled' ) )
+		);
+		// Missing status → no event.
+		$this->assertSame( '', $this->service->classify_job_diff_event( null, array() ) );
+	}
+
+	/**
+	 * Test classify_job_diff_event with status transitions on existing jobs.
+	 */
+	public function test_classify_job_diff_event_transitions() {
+		// queued → running ⇒ job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'queued' ),
+				array( 'status' => 'running' )
+			)
+		);
+		// pending → running ⇒ job:started.
+		$this->assertSame(
+			'job:started',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'pending' ),
+				array( 'status' => 'running' )
+			)
+		);
+		// running → completed ⇒ job:completed.
+		$this->assertSame(
+			'job:completed',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'completed' )
+			)
+		);
+		// running → failed ⇒ job:failed.
+		$this->assertSame(
+			'job:failed',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'failed' )
+			)
+		);
+		// running → cancelled ⇒ job:cancelled.
+		$this->assertSame(
+			'job:cancelled',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'cancelled' )
+			)
+		);
+		// failed → queued ⇒ job:retried.
+		$this->assertSame(
+			'job:retried',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'failed' ),
+				array( 'status' => 'queued' )
+			)
+		);
+		// cancelled → pending ⇒ job:retried.
+		$this->assertSame(
+			'job:retried',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'cancelled' ),
+				array( 'status' => 'pending' )
+			)
+		);
+		// running → polling ⇒ job:progress (generic transition).
+		$this->assertSame(
+			'job:progress',
+			$this->service->classify_job_diff_event(
+				array( 'status' => 'running' ),
+				array( 'status' => 'polling' )
+			)
+		);
+	}
+
+	/**
+	 * Test classify_job_diff_event with unchanged status but progress/timestamp updates.
+	 */
+	public function test_classify_job_diff_event_progress_updates() {
+		// Same running status but progress changed ⇒ job:progress.
+		$this->assertSame(
+			'job:progress',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'   => 'running',
+					'progress' => 25,
+				),
+				array(
+					'status'   => 'running',
+					'progress' => 50,
+				)
+			)
+		);
+		// Same running status, updated_at advanced ⇒ job:progress.
+		$this->assertSame(
+			'job:progress',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'     => 'running',
+					'updated_at' => 1000,
+				),
+				array(
+					'status'     => 'running',
+					'updated_at' => 1500,
+				)
+			)
+		);
+		// Identical record ⇒ no event.
+		$this->assertSame(
+			'',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'     => 'running',
+					'progress'   => 50,
+					'updated_at' => 1000,
+				),
+				array(
+					'status'     => 'running',
+					'progress'   => 50,
+					'updated_at' => 1000,
+				)
+			)
+		);
+		// Pending with updated_at change ⇒ no event (only running statuses
+		// promote updated_at into a progress signal).
+		$this->assertSame(
+			'',
+			$this->service->classify_job_diff_event(
+				array(
+					'status'     => 'pending',
+					'updated_at' => 1000,
+				),
+				array(
+					'status'     => 'pending',
+					'updated_at' => 1500,
+				)
+			)
+		);
+	}
 }

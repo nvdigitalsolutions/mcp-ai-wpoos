@@ -98,7 +98,7 @@ Use `WP_MCP_AI_Job_Notifier` as the unifying read view; fall back to per-namespa
 
 > **Slice 2a status (landed):** `WP_MCP_AI_Job_Notifier::record_step()` exists, fires `wp_mcp_ai_job_step`, emits SSE `step` events, dispatches the `step` webhook event; `WP_MCP_AI_SSE_Handler::send_sse_event_with_id()` exists to support `Last-Event-ID` resume in slice 2b. The typed event-schema below is the canonical contract producers and consumers must use.
 >
-> **Slice 2b status (pending):** the `/cron-status` list-endpoint polling loop (`stream_status_summary_updates`) that emits the diff frames + monotonic `id:` lines is still TBD.
+> **Slice 2b status (landed):** `WP_MCP_AI_REST::stream_status_summary_updates()` replaces the one-shot SSE snapshot on `/cron-status` with a real polling loop. It emits the canonical typed `job:*` diff frames driven by `WP_MCP_AI_Cron_Status_Service::classify_job_diff_event()`, attaches a monotonic `id:` line to every frame (back-compat `cron_status` snapshot frame, typed diff frames, and `event: ping` heartbeats every `SSE_JOB_HEARTBEAT_INTERVAL` polls), and resumes the counter from `Last-Event-ID` (`HTTP_LAST_EVENT_ID` header or `last_event_id` query param) on reconnect.
 
 - Replace the one-shot `stream_event_stream_payload()` on the list endpoint with a real polling loop (modeled on `stream_job_status_updates()`): periodic snapshot → diff frames → heartbeat. Caps at existing SSE timeouts.
 - **Typed event schema:**
