@@ -971,6 +971,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $this->stream_status_summary_updates( $request, $response, $service, $user_id, $limit, $assistant_id );
 			}
 
+			/**
+			 * Fires after a one-shot cron-status snapshot is built.
+			 *
+			 * Allows OTel subscribers and monitoring hooks to record a span /
+			 * metric for the snapshot request. Consumers MUST NOT modify
+			 * $response here — use the `wp_mcp_ai_cron_status_response` filter
+			 * for that.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param array    $response     The snapshot payload (jobs, counts, system_status).
+			 * @param int      $user_id      Authenticated user ID.
+			 * @param int|null $assistant_id Optional assistant filter.
+			 */
+			do_action( 'wp_mcp_ai_chat_jobs_snapshot', $response, $user_id, $assistant_id );
+
 			return rest_ensure_response( $response );
 		}
 
@@ -1061,6 +1077,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return void Streams SSE updates and exits.
 		 */
 		protected function stream_status_summary_updates( WP_REST_Request $request, array $initial, $service, $user_id, $limit, $assistant_id ) {
+			$stream_started_micros = function_exists( 'microtime' ) ? (int) round( microtime( true ) * 1e6 ) : 0;
+
+			/**
+			 * Fires when a cron-status SSE stream is established.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param int      $user_id      Authenticated user ID.
+			 * @param int|null $assistant_id Optional assistant filter.
+			 */
+			do_action( 'wp_mcp_ai_before_chat_jobs_stream', $user_id, $assistant_id );
+
 			$this->sse_handler->send_sse_headers();
 
 			// Parse `Last-Event-ID` so reconnecting clients resume the
@@ -1155,6 +1183,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$this->sse_handler->send_sse_done();
+
+			/**
+			 * Fires when a cron-status SSE stream ends (connection aborted or
+			 * max polls reached).
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param int      $poll_count   Number of polls completed.
+			 * @param int      $user_id      Authenticated user ID.
+			 * @param int|null $assistant_id Optional assistant filter.
+			 * @param int      $duration_ms  Stream duration in milliseconds (0 if unavailable).
+			 */
+			$duration_ms = $stream_started_micros > 0 ? (int) round( ( (int) round( microtime( true ) * 1e6 ) - $stream_started_micros ) / 1000 ) : 0;
+			do_action( 'wp_mcp_ai_after_chat_jobs_stream', $poll_count, $user_id, $assistant_id, $duration_ms );
+
 			$this->sse_handler->finish();
 		}
 

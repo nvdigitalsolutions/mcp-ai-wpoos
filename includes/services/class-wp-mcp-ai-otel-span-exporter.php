@@ -14,13 +14,18 @@
  *
  * ## What is traced
  *
- * | Hook                           | Span name                |
- * |--------------------------------|--------------------------|
- * | `wp_mcp_ai_before_chat_request`  | `nvoos.chat.request`     |
- * | `wp_mcp_ai_after_chat_response`  | (ends the chat span)     |
- * | `wp_mcp_ai_before_tool_execution`| `nvoos.tool.{slug}`      |
- * | `wp_mcp_ai_after_tool_execution` | (ends the tool span)     |
- * | `wp_mcp_ai_prompt_injection_detected` | `nvoos.security.injection` |
+ * | Hook                                 | Span name                      |
+ * |--------------------------------------|--------------------------------|
+ * | `wp_mcp_ai_before_chat_request`      | `nvoos.chat.request`           |
+ * | `wp_mcp_ai_after_chat_response`      | (ends the chat span)           |
+ * | `wp_mcp_ai_before_tool_execution`    | `nvoos.tool.{slug}`            |
+ * | `wp_mcp_ai_after_tool_execution`     | (ends the tool span)           |
+ * | `wp_mcp_ai_prompt_injection_detected`| `nvoos.security.injection`     |
+ * | `wp_mcp_ai_chat_jobs_snapshot`       | `nvoos.chat.jobs.snapshot`     |
+ * | `wp_mcp_ai_before_chat_jobs_stream`  | (starts `nvoos.chat.jobs.stream`) |
+ * | `wp_mcp_ai_after_chat_jobs_stream`   | `nvoos.chat.jobs.stream`       |
+ * | `wp_mcp_ai_chat_jobs_cancel`         | `nvoos.chat.jobs.cancel`       |
+ * | `wp_mcp_ai_chat_jobs_retry`          | `nvoos.chat.jobs.retry`        |
  *
  * ## OTLP/HTTP Protobuf vs JSON
  *
@@ -117,6 +122,11 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		add_action( 'wp_mcp_ai_before_tool_execution', array( __CLASS__, 'on_before_tool' ), 99, 3 );
 		add_action( 'wp_mcp_ai_after_tool_execution', array( __CLASS__, 'on_after_tool' ), 99, 5 );
 		add_action( 'wp_mcp_ai_prompt_injection_detected', array( __CLASS__, 'on_injection_detected' ), 99, 4 );
+		add_action( 'wp_mcp_ai_chat_jobs_snapshot', array( __CLASS__, 'on_chat_jobs_snapshot' ), 99, 3 );
+		add_action( 'wp_mcp_ai_before_chat_jobs_stream', array( __CLASS__, 'on_before_chat_jobs_stream' ), 99, 2 );
+		add_action( 'wp_mcp_ai_after_chat_jobs_stream', array( __CLASS__, 'on_after_chat_jobs_stream' ), 99, 4 );
+		add_action( 'wp_mcp_ai_chat_jobs_cancel', array( __CLASS__, 'on_chat_jobs_cancel' ), 99, 2 );
+		add_action( 'wp_mcp_ai_chat_jobs_retry', array( __CLASS__, 'on_chat_jobs_retry' ), 99, 2 );
 
 		if ( ! self::$shutdown_registered ) {
 			register_shutdown_function( array( __CLASS__, 'flush' ) );
@@ -243,6 +253,98 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	}
 
 	// ── Span buffering & flushing ─────────────────────────────────────────────
+
+	// ── Chat-jobs handlers ────────────────────────────────────────────────────
+
+	/**
+	 * Record a span for a one-shot cron-status snapshot request.
+	 *
+	 * @param array    $response     Snapshot payload.
+	 * @param int      $user_id      Authenticated user ID.
+	 * @param int|null $assistant_id Optional assistant filter.
+	 */
+	public static function on_chat_jobs_snapshot( $response, $user_id, $assistant_id ) {
+		$job_count = isset( $response['jobs'] ) && is_array( $response['jobs'] ) ? count( $response['jobs'] ) : 0;
+		$attrs     = array(
+			'nvoos.chat_jobs.job_count'    => $job_count,
+			'nvoos.chat_jobs.user_id'      => (int) $user_id,
+			'nvoos.chat_jobs.assistant_id' => null !== $assistant_id ? (string) $assistant_id : '',
+		);
+		self::buffer_span( 'nvoos.chat.jobs.snapshot', self::generate_span_id(), self::now_micros(), $attrs );
+	}
+
+	/**
+	 * Open a span when a cron-status SSE stream starts.
+	 *
+	 * @param int      $user_id      Authenticated user ID.
+	 * @param int|null $assistant_id Optional assistant filter.
+	 */
+	public static function on_before_chat_jobs_stream( $user_id, $assistant_id ) {
+		$span_id = self::generate_span_id();
+		self::$open_spans['chat_jobs_stream'] = array(
+			'span_id'      => $span_id,
+			'start_micros' => self::now_micros(),
+			'attributes'   => array(
+				'nvoos.chat_jobs.user_id'      => (int) $user_id,
+				'nvoos.chat_jobs.assistant_id' => null !== $assistant_id ? (string) $assistant_id : '',
+			),
+		);
+	}
+
+	/**
+	 * Close the stream span when the SSE connection ends.
+	 *
+	 * @param int      $poll_count   Number of polls completed.
+	 * @param int      $user_id      Authenticated user ID.
+	 * @param int|null $assistant_id Optional assistant filter.
+	 * @param int      $duration_ms  Stream duration in milliseconds.
+	 */
+	public static function on_after_chat_jobs_stream( $poll_count, $user_id, $assistant_id, $duration_ms ) {
+		$key = 'chat_jobs_stream';
+		if ( ! isset( self::$open_spans[ $key ] ) ) {
+			return;
+		}
+
+		$open           = self::$open_spans[ $key ];
+		$attrs          = $open['attributes'];
+		$attrs['nvoos.chat_jobs.poll_count']  = (int) $poll_count;
+		$attrs['nvoos.chat_jobs.duration_ms'] = (int) $duration_ms;
+
+		self::buffer_span( 'nvoos.chat.jobs.stream', $open['span_id'], $open['start_micros'], $attrs );
+		unset( self::$open_spans[ $key ] );
+	}
+
+	/**
+	 * Record a span when a job is cancelled.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id User who requested the cancellation.
+	 */
+	public static function on_chat_jobs_cancel( $job_id, $user_id ) {
+		$attrs = array(
+			'nvoos.chat_jobs.job_id'  => (string) $job_id,
+			'nvoos.chat_jobs.user_id' => (int) $user_id,
+			'nvoos.chat_jobs.action'  => 'cancel',
+		);
+		self::buffer_span( 'nvoos.chat.jobs.cancel', self::generate_span_id(), self::now_micros(), $attrs );
+	}
+
+	/**
+	 * Record a span when a job is retried.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id User who requested the retry.
+	 */
+	public static function on_chat_jobs_retry( $job_id, $user_id ) {
+		$attrs = array(
+			'nvoos.chat_jobs.job_id'  => (string) $job_id,
+			'nvoos.chat_jobs.user_id' => (int) $user_id,
+			'nvoos.chat_jobs.action'  => 'retry',
+		);
+		self::buffer_span( 'nvoos.chat.jobs.retry', self::generate_span_id(), self::now_micros(), $attrs );
+	}
+
+	// ── Span buffering & flushing (continued) ─────────────────────────────────
 
 	/**
 	 * Buffer a completed span. Flushes the buffer if it hits MAX_BUFFERED_SPANS.
@@ -456,19 +558,32 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param array $attributes Flat associative array.
 	 * @return array OTLP attribute list.
 	 */
-	private static function encode_attributes( array $attributes ) {
-		$result = array();
-		foreach ( $attributes as $key => $value ) {
-			$attr = array( 'key' => (string) $key );
-			if ( is_bool( $value ) ) {
-				$attr['value'] = array( 'boolValue' => $value );
-			} elseif ( is_int( $value ) || is_float( $value ) ) {
-				$attr['value'] = array( 'intValue' => (string) (int) $value );
-			} else {
-				$attr['value'] = array( 'stringValue' => (string) $value );
-			}
-			$result[] = $attr;
-		}
-		return $result;
+	/**
+	 * Reset static state for unit-test isolation.
+	 *
+	 * Clears the span buffer, open-span stack, trace ID, and the
+	 * shutdown-registered flag so `register()` can be re-entered cleanly
+	 * in a test suite without leaking hooks across test cases.
+	 *
+	 * @since 1.9.4
+	 *
+	 * @return void
+	 */
+	public static function reset_for_tests() {
+		self::$spans               = array();
+		self::$open_spans          = array();
+		self::$trace_id            = null;
+		self::$shutdown_registered = false;
+
+		remove_all_actions( 'wp_mcp_ai_before_chat_request' );
+		remove_all_actions( 'wp_mcp_ai_after_chat_response' );
+		remove_all_actions( 'wp_mcp_ai_before_tool_execution' );
+		remove_all_actions( 'wp_mcp_ai_after_tool_execution' );
+		remove_all_actions( 'wp_mcp_ai_prompt_injection_detected' );
+		remove_all_actions( 'wp_mcp_ai_chat_jobs_snapshot' );
+		remove_all_actions( 'wp_mcp_ai_before_chat_jobs_stream' );
+		remove_all_actions( 'wp_mcp_ai_after_chat_jobs_stream' );
+		remove_all_actions( 'wp_mcp_ai_chat_jobs_cancel' );
+		remove_all_actions( 'wp_mcp_ai_chat_jobs_retry' );
 	}
 }

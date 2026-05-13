@@ -180,8 +180,10 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 
 ### Phase 5 — Health & diagnostics surfacing
 
-- Include `system_status` in every list snapshot response.
-- Drawer header shows health pill from `WP_MCP_AI_Async_Health_Monitor` + `WP_MCP_AI_Orchestration_Health_Service`.
+> **Status (PR-F, May 2026):** `system_status` is included in every list snapshot response and in every SSE `ping` heartbeat frame. It aggregates `WP_MCP_AI_Async_Health_Monitor::check_async_health()` + `WP_MCP_AI_Orchestration_Health_Service::get_health_status()` behind a defensive try/catch so a broken monitor can never surface a 500 on the chat endpoint.
+
+- ✅ Include `system_status` in every list snapshot response.
+- ✅ Drawer header shows health pill from `WP_MCP_AI_Async_Health_Monitor` + `WP_MCP_AI_Orchestration_Health_Service`.
 - `Why did this fail?` expands `Job_Notifier::error_data` inline + link:  
   `admin.php?page=wp-mcp-ai-cron-manager&highlight={job_id}`.
 - **Accessibility**: drawer is `role="region"` with `aria-live="polite"`; toasts use `role="status"`; timeline steps announce state changes via screen reader.
@@ -190,10 +192,12 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 
 ### Phase 6 — Performance & resilience
 
-- **Active-jobs index option** (`wp_mcp_ai_active_jobs`): registry pushes/removes job IDs on state changes → `get_async_tool_jobs()` / `get_video_generation_jobs()` become O(active) reads instead of `LIKE '%transient_%'` full-table scans.
+> **Status (PR-F, May 2026):** OTel spans landed — five new action hooks (`wp_mcp_ai_chat_jobs_snapshot`, `wp_mcp_ai_before/after_chat_jobs_stream`, `wp_mcp_ai_chat_jobs_cancel`, `wp_mcp_ai_chat_jobs_retry`) are fired at the relevant REST handler call-sites; `WP_MCP_AI_Otel_Span_Exporter::register()` subscribes listeners that emit `nvoos.chat.jobs.*` OTLP spans when an endpoint is configured. SSE heartbeat (every `SSE_JOB_HEARTBEAT_INTERVAL` polls) is also live. Tests: `tests/test-chat-jobs-otel-hooks.php` (11 cases).
+
+- **Active-jobs index option** (`wp_mcp_ai_active_jobs`): registry pushes/removes job IDs on state changes → `get_async_tool_jobs()` / `get_video_generation_jobs()` become O(active) reads instead of `LIKE '%transient_%'` full-table scans. _(deferred)_
 - **Drawer cap**: max 50 entries; paginated history via `GET /cron-status?page=2`.
-- **SSE heartbeat**: explicit `event: ping` every 15 s + `Last-Event-ID` resume support.
-- **OTel spans**: `chat.jobs.snapshot`, `chat.jobs.stream`, `chat.jobs.cancel` added to match existing `WP_MCP_AI_Pro_Schedule_Otel_Subscriber` pattern.
+- ✅ **SSE heartbeat**: explicit `event: ping` every 15 s + `Last-Event-ID` resume support.
+- ✅ **OTel spans**: `chat.jobs.snapshot`, `chat.jobs.stream`, `chat.jobs.cancel`, `chat.jobs.retry` added. `WP_MCP_AI_Otel_Span_Exporter` now also exposes `reset_for_tests()` for test-suite isolation.
 
 ---
 
@@ -223,7 +227,7 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 | **PR-C** "inline progress + cancel/retry (async executor)" | Phase 3a + Phase 4 (executor only) | Medium | JS bubble card, new REST routes | ✅ landed May 2026 |
 | **PR-D** "Tasks drawer + toasts" (feature-flagged) | Phase 3b + Phase 3c | Medium | Drawer component, localStorage | ✅ landed May 2026 |
 | **PR-E** "register remaining sources" | Phase 1 follow-on | Low | Each source adapter | ✅ landed May 2026 |
-| **PR-F** "health + perf + OTel" | Phase 5 + Phase 6 | Low | Index option, OTel spans |
+| **PR-F** "health + perf + OTel" | Phase 5 + Phase 6 | Low | Index option, OTel spans | ✅ landed May 2026 |
 | **PR-G** "docs + flag default-on" | Phase 7 | Minimal | Docs, tests, flag flip |
 
 ---

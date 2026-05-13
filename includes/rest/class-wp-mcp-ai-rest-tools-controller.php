@@ -1020,6 +1020,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Try registered job-source registry first (Phase 1 contract).
 		$source_result = $this->try_source_cancel( $job_id, $user_id );
 		if ( true === $source_result ) {
+			do_action( 'wp_mcp_ai_chat_jobs_cancel', $job_id, $user_id );
 			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
 		}
 		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
@@ -1044,12 +1045,20 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $result;
 		}
 
+		/**
+		 * Fires when a job has been successfully cancelled.
+		 *
+		 * @since 1.9.4
+		 *
+		 * @param string $job_id  Cancelled job ID.
+		 * @param int    $user_id User who requested the cancellation.
+		 */
+		do_action( 'wp_mcp_ai_chat_jobs_cancel', $job_id, $user_id );
+
 		return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
 	}
 
 	/**
-	 * Handle POST /cron-status/{job_id}/retry request.
-	 *
 	 * Retries a failed or cancelled async job. Native async_* jobs are handled
 	 * by WP_MCP_AI_Tool_Async_Executor; other job types may be retried via
 	 * the job-source registry if the source implements a retry_job() method.
@@ -1072,6 +1081,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Try registered job-source registry first (Phase 1 contract).
 		$source_result = $this->try_source_retry( $job_id, $user_id );
 		if ( true === $source_result ) {
+			do_action( 'wp_mcp_ai_chat_jobs_retry', $job_id, $user_id );
 			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
 		}
 		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
@@ -1095,6 +1105,16 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$result->add_data( array( 'status' => 400 ) );
 			return $result;
 		}
+
+		/**
+		 * Fires when a job has been successfully retried.
+		 *
+		 * @since 1.9.4
+		 *
+		 * @param string $job_id  Retried job ID.
+		 * @param int    $user_id User who requested the retry.
+		 */
+		do_action( 'wp_mcp_ai_chat_jobs_retry', $job_id, $user_id );
 
 		return rest_ensure_response( array( 'success' => true, 'job_id' => $result ) );
 	}
