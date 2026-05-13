@@ -388,6 +388,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once $schedule_manager_core;
 		}
 
+		// Load Per-Toolkit MCP Server framework early so WP_MCP_AI_Toolkit_Server_Registry
+		// is defined before the admin block below checks class_exists() to register the
+		// Phase 7 admin page.  The framework lies dormant until a toolkit registers a
+		// server, so loading it here has no side-effects on non-admin requests.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-servers/mcp-servers-init.php';
+
 		// Load Pro admin sections.
 		// Performance section is only loaded in admin context.
 		if ( is_admin() ) {
@@ -403,6 +409,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			if ( class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php';
 				new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
+
+				// Phase 7 — dedicated admin page for Toolkit MCP Server management.
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
+				new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
 			}
 
 			// WebLLM settings page has been moved to the NV oOS Embedded addon.
@@ -564,10 +574,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Phase 6 — Vector-store adapter + per-team budgets (always enabled).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/services-init-phase6.php';
 
-		// Load Per-Toolkit MCP Server framework + Phase 1 pilot servers (CRM, Healthcare, Architectural Design).
-		// Always enabled: framework lies dormant until a toolkit registers a server, and disabled servers
-		// reject JSON-RPC method calls cleanly.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-servers/mcp-servers-init.php';
+		// Note: mcp-servers-init.php is loaded earlier in this file, before the
+		// admin block, so that WP_MCP_AI_Toolkit_Server_Registry is available when
+		// the admin page registration guard (class_exists) runs.
 
 		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
 		// Pro-only: paid third-party billing (Stripe merchant of record).

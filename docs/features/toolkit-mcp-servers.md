@@ -1,6 +1,6 @@
 # Per-Toolkit MCP Servers
 
-> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3d/3e) + Phase 4 + Phase 5 + Phase 6 shipped — all 26 toolkits promoted (19 Tier-1 + 7 Tier-2), `/.well-known/mcp` discovery endpoint active, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, cross-mount reads are recorded in the audit log, and toolkit-scoped bearer tokens (Phase 3d) allow credential-based access without a WordPress user session.
+> Status: Phase 0 + Phase 1 + Phase 2 + Phase 3 (3a/3b/3c/3d/3e) + Phase 4 + Phase 5 + Phase 6 + Phase 7 shipped — all 26 toolkits promoted (19 Tier-1 + 7 Tier-2), `/.well-known/mcp` discovery endpoint active, the per-toolkit endpoint supports execution and rate limiting, a `/mcp-server` slash command + WP-CLI command are available, cross-mount reads are recorded in the audit log, toolkit-scoped bearer tokens (Phase 3d) allow credential-based access without a WordPress user session, and a dedicated Pro admin page (`nvoos-pro-toolkit-mcp-servers`) provides a first-class management UI.
 > ADR: [`docs/ADR_002_toolkit_mcp_servers.md`](../ADR_002_toolkit_mcp_servers.md)
 
 Each Pro toolkit can be promoted into a first-class MCP (Model Context Protocol) server with its own JSON-RPC endpoint, capability negotiation, discovery descriptor, and per-toolkit configuration page — without disturbing the existing monolithic `/mcp-ai/v1/mcp` endpoint.
