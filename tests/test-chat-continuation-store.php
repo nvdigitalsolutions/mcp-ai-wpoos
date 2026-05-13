@@ -172,10 +172,11 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 			);
 		}
 
-		// First two should have been evicted.
+		// First two should have been evicted; remaining three (2, 3, 4) kept.
 		$this->assertNull( WP_MCP_AI_Chat_Continuation_Store::get( 'job_lru_0' ) );
 		$this->assertNull( WP_MCP_AI_Chat_Continuation_Store::get( 'job_lru_1' ) );
 		$this->assertNotNull( WP_MCP_AI_Chat_Continuation_Store::get( 'job_lru_2' ) );
+		$this->assertNotNull( WP_MCP_AI_Chat_Continuation_Store::get( 'job_lru_3' ) );
 		$this->assertNotNull( WP_MCP_AI_Chat_Continuation_Store::get( 'job_lru_4' ) );
 
 		remove_all_filters( 'wp_mcp_ai_chat_continuation_max_total' );

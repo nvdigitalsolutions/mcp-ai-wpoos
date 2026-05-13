@@ -578,6 +578,11 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 		/**
 		 * Sanitize an arbitrary string into a safe job_id.
 		 *
+		 * Allowed characters: A-Z, a-z, 0-9, underscore, dot, hyphen.
+		 * Dots and hyphens are intentionally preserved because async tools
+		 * (notably Gemini Veo) emit dotted operation names like
+		 * `operations/abc.123` and asset ids may carry hyphens.
+		 *
 		 * @param mixed $job_id Input value.
 		 *
 		 * @return string Sanitized job_id (may be empty).
@@ -652,6 +657,8 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 			$session_id = self::sanitize_session_id( $session_id );
 			if ( '' === $session_id ) {
 				// Last-resort fallback if a filter returned something unusable.
+				// `random_bytes()` is available since PHP 7.0; the base plugin
+				// targets PHP 7.4+, so this is safe.
 				$session_id = 'sess_' . bin2hex( random_bytes( 16 ) );
 			}
 			return $session_id;
