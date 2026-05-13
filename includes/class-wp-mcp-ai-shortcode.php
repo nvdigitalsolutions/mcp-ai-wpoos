@@ -1001,7 +1001,7 @@ class WP_MCP_AI_Shortcode {
 			// Feature flag: replace the 4-counter strip with the full Tasks drawer + toasts.
 			// Off by default; flip on once the flag has been tested in production for one patch cycle.
 			// See docs/features/chat/cron-status-tasks-drawer-plan.md Phase 3b / PR-D.
-			$config['chatTasksDrawer'] = (bool) apply_filters( 'wp_mcp_ai_chat_tasks_drawer', false );
+			$config['chatTasksDrawer'] = (bool) apply_filters( 'wp_mcp_ai_chat_tasks_drawer', true );
 
 			// Add provider and model for client-side execution (embedded provider).
 			// Also include system_prompt and temperature for embedded provider to use assistant defaults.

@@ -203,9 +203,11 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 
 ### Phase 7 — Docs, tests, rollout
 
+> **Status (PR-G, May 2026):** Both docs landed — `docs/features/chat/cron-status-integration.md` (architecture, event schema, OTel hooks) and `docs/guides/developer/tool-development/registering-a-job-source.md` (developer how-to). `wp_mcp_ai_chat_tasks_drawer` filter default flipped to **`true`** (on) as of v1.9.3.
+
 **New documentation:**
-- `docs/features/chat/cron-status-integration.md` — architecture, registry contract, event schema.
-- `docs/guides/developer/tool-development/registering-a-job-source.md` — how a new subsystem opts in with one filter registration.
+- `docs/features/chat/cron-status-integration.md` — architecture, registry contract, event schema. ✅ landed PR-G
+- `docs/guides/developer/tool-development/registering-a-job-source.md` — how a new subsystem opts in with one filter registration. ✅ landed PR-G
 
 **New/extended tests:**
 - `tests/test-cron-status-service.php` — registry contract coverage.
@@ -214,7 +216,7 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 
 **Rollout:**
 - `wp_mcp_ai_chat_tasks_drawer` filter defaults **off** in patch release.
-- Flipped to **on** in the next minor release after one patch cycle.
+- Flipped to **on** in the next minor release after one patch cycle. ✅ flipped PR-G
 
 ---
 
@@ -228,7 +230,7 @@ Replace the 4-counter strip with a `Jobs: 2 running` button opening a side drawe
 | **PR-D** "Tasks drawer + toasts" (feature-flagged) | Phase 3b + Phase 3c | Medium | Drawer component, localStorage | ✅ landed May 2026 |
 | **PR-E** "register remaining sources" | Phase 1 follow-on | Low | Each source adapter | ✅ landed May 2026 |
 | **PR-F** "health + perf + OTel" | Phase 5 + Phase 6 | Low | Index option, OTel spans | ✅ landed May 2026 |
-| **PR-G** "docs + flag default-on" | Phase 7 | Minimal | Docs, tests, flag flip |
+| **PR-G** "docs + flag default-on" | Phase 7 | Minimal | Docs, tests, flag flip | ✅ landed May 2026 |
 
 ---
 

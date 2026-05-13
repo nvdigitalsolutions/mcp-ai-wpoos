@@ -868,11 +868,11 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
-	 * chatTasksDrawer config key defaults to false when the filter is not applied.
+	 * chatTasksDrawer config key defaults to true as of v1.9.3 (PR-G flag flip).
 	 *
 	 * @covers WP_MCP_AI_Shortcode
 	 */
-	public function test_chat_tasks_drawer_flag_defaults_to_false() {
+	public function test_chat_tasks_drawer_flag_defaults_to_true() {
 		$assistant_id = self::factory()->post->create(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -894,16 +894,16 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$config = json_decode( $matches[1], true );
 		$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
 		$this->assertArrayHasKey( 'chatTasksDrawer', $config, 'chatTasksDrawer key should be present in instance config.' );
-		$this->assertFalse( $config['chatTasksDrawer'], 'chatTasksDrawer should default to false.' );
+		$this->assertTrue( $config['chatTasksDrawer'], 'chatTasksDrawer should default to true (v1.9.3+).' );
 	}
 
 	/**
-	 * chatTasksDrawer config key is true when the filter returns true.
+	 * chatTasksDrawer config key is false when the filter returns false (opt-out).
 	 *
 	 * @covers WP_MCP_AI_Shortcode
 	 */
 	public function test_chat_tasks_drawer_flag_respects_filter() {
-		add_filter( 'wp_mcp_ai_chat_tasks_drawer', '__return_true' );
+		add_filter( 'wp_mcp_ai_chat_tasks_drawer', '__return_false' );
 
 		$assistant_id = self::factory()->post->create(
 			array(
@@ -926,9 +926,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$config = json_decode( $matches[1], true );
 		$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
 		$this->assertArrayHasKey( 'chatTasksDrawer', $config, 'chatTasksDrawer key should be present in instance config.' );
-		$this->assertTrue( $config['chatTasksDrawer'], 'chatTasksDrawer should be true when filter returns true.' );
+		$this->assertFalse( $config['chatTasksDrawer'], 'chatTasksDrawer should be false when filter returns false (opt-out).' );
 
-		remove_filter( 'wp_mcp_ai_chat_tasks_drawer', '__return_true' );
+		remove_filter( 'wp_mcp_ai_chat_tasks_drawer', '__return_false' );
 	}
 
 	/**
