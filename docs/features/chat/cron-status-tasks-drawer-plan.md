@@ -96,12 +96,16 @@ Use `WP_MCP_AI_Job_Notifier` as the unifying read view; fall back to per-namespa
 
 ### Phase 2 — Streaming + structured event schema
 
+> **Slice 2a status (landed):** `WP_MCP_AI_Job_Notifier::record_step()` exists, fires `wp_mcp_ai_job_step`, emits SSE `step` events, dispatches the `step` webhook event; `WP_MCP_AI_SSE_Handler::send_sse_event_with_id()` exists to support `Last-Event-ID` resume in slice 2b. The typed event-schema below is the canonical contract producers and consumers must use.
+>
+> **Slice 2b status (pending):** the `/cron-status` list-endpoint polling loop (`stream_status_summary_updates`) that emits the diff frames + monotonic `id:` lines is still TBD.
+
 - Replace the one-shot `stream_event_stream_payload()` on the list endpoint with a real polling loop (modeled on `stream_job_status_updates()`): periodic snapshot → diff frames → heartbeat. Caps at existing SSE timeouts.
 - **Typed event schema:**
   - `job:queued` · `job:started` · `job:step` · `job:progress`
   - `job:completed` · `job:failed` · `job:cancelled` · `job:retried`
   - Each frame carries the full normalized record from Phase 1.
-- **`Job_Notifier`**: add `record_step( $label, $status )` so tools can emit progressive-disclosure steps.
+- **`Job_Notifier`**: add `record_step( $label, $status )` so tools can emit progressive-disclosure steps. ✅
 - **`wpMcpAiJobBus`**: becomes the single subscription point in JS; all per-job and list streams publish through it.
 - **`Last-Event-ID` resume**: the list stream replays diff frames since the last client-acknowledged ID on reconnect.
 
