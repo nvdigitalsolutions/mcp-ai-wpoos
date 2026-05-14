@@ -2,7 +2,7 @@
 
 This directory configures the [Zed editor](https://zed.dev) for contributors working on **Open Operator System (NV oOS)**. Its main purpose is to expose the GitHub Custom Agent roster from [`examples/agents/`](../examples/agents/) as native Zed **agent profiles**, so each example becomes a one-click selection in Zed's Agent Panel.
 
-> **Last reviewed:** May 2026 · **Mirrors:** `examples/agents/` (12 agents)
+> **Last reviewed:** May 2026 · **Mirrors:** `examples/agents/` (13 agents)
 
 ---
 
@@ -35,9 +35,9 @@ The shared rules (naming, security, PHP-compat, tool patterns, architecture) are
 
 ---
 
-## The 12 profiles
+## The 13 profiles
 
-All 12 examples from `examples/agents/` are exposed. Pick the one that matches your task.
+All 13 examples from `examples/agents/` are exposed. Pick the one that matches your task.
 
 ### Read-only reviewers *(no `edit_file`, no `terminal`)*
 
@@ -58,6 +58,7 @@ All 12 examples from `examples/agents/` are exposed. Pick the one that matches y
 | `phpunit-test-author` | [`phpunit-test-author.agent.md`](../examples/agents/phpunit-test-author.agent.md) | Tests under `tests/` and `addons/pro/tests/` |
 | `agent-skill-curator` | [`agent-skill-curator.agent.md`](../examples/agents/agent-skill-curator.agent.md) | Bundled `SKILL.md` files + `THIRD_PARTY_NOTICES.md` |
 | `addon-maintainer` | [`addon-maintainer.agent.md`](../examples/agents/addon-maintainer.agent.md) | One addon per session — algorave / canvas / cornerstone3d / embedded / fantasy-football / graphify |
+| `toolkit-spa-maintainer` | [`toolkit-spa-maintainer.agent.md`](../examples/agents/toolkit-spa-maintainer.agent.md) | One toolkit-SPA addon per session — toolkit-shell / canvas-toolkit / document-editor / ohif-viewer / media-studio / video-studio |
 | `release-engineer` | [`release-engineer.agent.md`](../examples/agents/release-engineer.agent.md) | Versions, `CHANGELOG.md`, `readme.txt`, build scripts |
 | `docs-maintainer` | [`docs-maintainer.agent.md`](../examples/agents/docs-maintainer.agent.md) | `docs/`, `README.md`, `readme.txt`, `CHANGELOG.md` *(no `terminal`)* |
 
