@@ -158,7 +158,7 @@ class WP_MCP_AI_Pro_Chat_Continuation_Notifier {
 	 * @param array  $snapshot        Continuation snapshot.
 	 * @param string $terminal_status completed|failed|cancelled.
 	 *
-	 * @return array
+	 * @return array Associative payload array ready for JSON encoding.
 	 */
 	protected static function build_payload( $job_id, array $snapshot, $terminal_status ) {
 		return array(
