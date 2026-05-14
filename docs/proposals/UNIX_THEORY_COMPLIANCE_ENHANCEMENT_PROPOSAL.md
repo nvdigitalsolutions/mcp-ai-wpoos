@@ -1,7 +1,7 @@
 # NV oOS — Unix Theory Compliance Enhancement Proposal
 
 **Date:** May 2026 (originally drafted) · **Last reviewed:** May 2026  
-**Status:** 🟢 IN PROGRESS — Phases P0 + P1 landed (May 2026); P2–P6 remain (see [§3 Implementation Phases](#3-implementation-phases))  
+**Status:** 🟢 IN PROGRESS — Phases P0 + P1 + P2 landed (May 2026); P3–P6 remain (see [§3 Implementation Phases](#3-implementation-phases))  
 **Plugin Version:** 1.1.17+  
 **Reviewer:** GitHub Copilot Agent  
 **Branch:** `copilot/enhance-plugin-compliance-unix-theory`
@@ -250,7 +250,7 @@ Add a lint comment convention:
 |-------|-------------|--------|--------|--------|
 | **P0** | Document canonical return envelope in [`CLAUDE.md`](../../CLAUDE.md) and `.context/conventions.md` (the archived `docs/CODE_REVIEW.md` is no longer the canonical surface — see [§0.4](#04-documentation-paths-moved)) | XS | v1.2.0 | ✅ Landed (May 2026) — `CLAUDE.md` "Tool Return Format — Canonical Envelope" + `.context/conventions.md` "Tool Return Envelope (Canonical)" + `.context/tool-registry.md` cross-link |
 | **P1** | Promote `format_success_response()` from the chat-response trait to a tool-agnostic trait or shared helper; add a PHPCS warning for `'success' => false` arrays (see [§0.1](#01-tools-are-interface--traits-not-a-base-class)) | S | v1.2.0 | ✅ Landed (May 2026) — new `WP_MCP_AI_Tool_Envelope` trait at [`includes/tools/trait-wp-mcp-ai-tool-envelope.php`](../../includes/tools/trait-wp-mcp-ai-tool-envelope.php); `WP_MCP_AI_Tool_Chat_Response` composes it for back-compat; custom sniff `WPMCPAI.Tools.CanonicalReturnEnvelope` at [`phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php`](../../phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php) wired into [`phpcs.xml.dist`](../../phpcs.xml.dist) (warning severity → silent under `lint:base`'s `--warning-severity=8`, visible under default `composer run lint`) |
-| **P2** | **Audit-only** for the remaining direct-integration touch-points (Rank Math, WPCode, any new Pro→Base reach-throughs). Most JetEngine/JetFormBuilder paths are already guarded — see [§0.5](#05-optional-dependency-guards-are-already-widespread) | S | v1.2.1 | ⏳ Pending |
+| **P2** | **Audit-only** for the remaining direct-integration touch-points (Rank Math, WPCode, any new Pro→Base reach-throughs). Most JetEngine/JetFormBuilder paths are already guarded — see [§0.5](#05-optional-dependency-guards-are-already-widespread) | S | v1.2.1 | ✅ Landed (May 2026) — audit document [`docs/proposals/audits/P2-capability-fence-audit-2026-05.md`](audits/P2-capability-fence-audit-2026-05.md). Findings: all touch-points already fenced via canonical `is_available()` + `execute()` pattern, multi-provider SEO Meta Optimizer fenced per-branch with a safe built-in fallback, WPCode is fully encapsulated in Pro (zero Base reach-throughs), 32 `jet_engine` guards confirmed across `includes/`. No code changes required. |
 | **P3** | Add `produces` / `consumes` fields to tool definition schema; update agentic loop to forward hints. Position as a data-contract layer on top of the existing capability flags / rules interfaces ([§0.3](#03-several-producesconsumes-style-concerns-are-already-covered)) | M | v1.2.1 | ⏳ Pending |
 | **P4** | Add an **optional 5th descriptor argument** to `wp_mcp_ai_after_tool_execution` without changing positions 1–4 ([§0.2](#02-the-agentic-loop-hook-signature-has-4-args-not-3)); update [`docs/hooks-reference.md`](../hooks-reference.md) | S | v1.2.1 | ⏳ Pending |
 | **P5** | Action-split audit: identify multi-action tools with > 4 values; begin decomposition in Base | L | v1.3.0 | ⏳ Pending |
@@ -295,4 +295,4 @@ Add a lint comment convention:
 
 ---
 
-*Proposal status: **IN PROGRESS** — Phases P0 (canonical envelope docs, May 2026) and P1 (`WP_MCP_AI_Tool_Envelope` trait + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff, May 2026) landed. Phases P2–P6 remain.*
+*Proposal status: **IN PROGRESS** — Phases P0 (canonical envelope docs, May 2026), P1 (`WP_MCP_AI_Tool_Envelope` trait + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff, May 2026), and P2 (capability-fence audit, May 2026 — see [`docs/proposals/audits/P2-capability-fence-audit-2026-05.md`](audits/P2-capability-fence-audit-2026-05.md)) landed. Phases P3–P6 remain.*
