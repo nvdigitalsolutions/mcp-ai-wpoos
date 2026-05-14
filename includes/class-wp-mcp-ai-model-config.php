@@ -471,6 +471,12 @@ class WP_MCP_AI_Model_Config {
 			$providers['openrouter'] = __( 'OpenRouter', 'mcp-ai-wpoos' );
 		}
 
+		// Check enable_digitalocean setting (defaults to false if not set).
+		$enable_digitalocean = isset( $settings['enable_digitalocean'] ) ? $settings['enable_digitalocean'] : false;
+		if ( $enable_digitalocean && ! empty( $settings['digitalocean_api_key'] ) ) {
+			$providers['digitalocean'] = __( 'DigitalOcean', 'mcp-ai-wpoos' );
+		}
+
 		// Check enable_huggingface setting (defaults to false if not set).
 		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
 		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {

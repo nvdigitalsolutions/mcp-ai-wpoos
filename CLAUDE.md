@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -200,6 +200,7 @@ All seven orchestration phases are active as of v1.1.15. Key components:
 
 Nine providers supported. New in v1.1.15:
 - **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
+- **DigitalOcean Serverless Inference** (`WP_MCP_AI_DigitalOcean_Client`) — OpenAI-compatible API at `https://inference.do-ai.run/v1`; Llama 3.3, DeepSeek-R1 distill, gpt-oss, plus native `/embeddings`
 - **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) — `reasoning_content` / `<think>…</think>` passthrough
 - **LM Studio** — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
 

@@ -656,10 +656,11 @@ class WP_MCP_AI_Vector_Context_Service {
 	 * @return WP_MCP_AI_Embedding_Provider_Interface|null
 	 */
 	private function resolve_default_provider() {
-		$settings    = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
-		$has_openai  = ! empty( $settings['openai_api_key'] );
-		$has_ollama  = ! empty( $settings['ollama_endpoint_url'] );
-		$preference  = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
+		$settings        = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$has_openai      = ! empty( $settings['openai_api_key'] );
+		$has_ollama      = ! empty( $settings['ollama_endpoint_url'] );
+		$has_digitalocean = ! empty( $settings['digitalocean_api_key'] );
+		$preference      = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
 
 		// Honour an explicit preference if its backend is available.
 		if ( 'ollama' === $preference && $has_ollama ) {
@@ -667,6 +668,9 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 		if ( 'openai' === $preference && $has_openai ) {
 			return new WP_MCP_AI_Embedding_Provider_OpenAI();
+		}
+		if ( 'digitalocean' === $preference && $has_digitalocean ) {
+			return new WP_MCP_AI_Embedding_Provider_DigitalOcean();
 		}
 
 		// Auto-detect: prefer OpenAI when present (preserves prior behaviour
@@ -676,6 +680,9 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 		if ( $has_ollama ) {
 			return new WP_MCP_AI_Embedding_Provider_Ollama();
+		}
+		if ( $has_digitalocean ) {
+			return new WP_MCP_AI_Embedding_Provider_DigitalOcean();
 		}
 
 		return null;
@@ -697,6 +704,9 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_Ollama' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-ollama.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_DigitalOcean' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-digitalocean.php';
 		}
 	}
 

@@ -202,8 +202,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get DigitalOcean models from Model Config.
+			$digitalocean_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$digitalocean_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'digitalocean' );
+			}
+
+			// Fallback to a curated short list. The full catalogue is
+			// discovered live from /v1/models when the API key is set.
+			if ( empty( $digitalocean_models ) ) {
+				$digitalocean_models = array(
+					'llama3.3-70b-instruct'         => 'Meta Llama 3.3 70B Instruct',
+					'llama3.1-8b-instruct'          => 'Meta Llama 3.1 8B Instruct',
+					'deepseek-r1-distill-llama-70b' => 'DeepSeek-R1 Distill Llama 70B',
+					'openai-gpt-oss-120b'           => 'OpenAI gpt-oss 120B (open weights)',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1220,6 +1237,45 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => __( 'My WordPress Site', 'mcp-ai-wpoos' ),
 				),
 
+				// DigitalOcean Serverless Inference Settings.
+				'enable_digitalocean'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DigitalOcean Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DigitalOcean Serverless Inference as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'DigitalOcean Serverless Inference exposes Llama, DeepSeek-R1 distill, OpenAI gpt-oss, and other open-weights models through an OpenAI-compatible REST API at https://inference.do-ai.run/v1.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'digitalocean_api_key'               => array(
+					'type'         => 'password',
+					'label'        => __( 'DigitalOcean Model Access Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: DigitalOcean Gradient Platform URL */
+						__( 'Your DigitalOcean Serverless Inference model access key. Create one from <a href="%s" target="_blank">Gradient Platform → Serverless Inference → Model access keys</a>. Keys can be scoped to specific models, inference routers, or batch jobs.', 'mcp-ai-wpoos' ),
+						'https://cloud.digitalocean.com/gen-ai/serverless-inference'
+					),
+					'placeholder'  => 'do-…',
+					'autocomplete' => 'new-password',
+				),
+				'digitalocean_model'                 => array(
+					'type'        => 'select',
+					'label'       => __( 'Default DigitalOcean Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for DigitalOcean Serverless Inference requests (e.g. "llama3.3-70b-instruct" or "deepseek-r1-distill-llama-70b"). Available models change as DigitalOcean adds new ones — the list refreshes from the /v1/models endpoint when an API key is configured.', 'mcp-ai-wpoos' ),
+					'options'     => $digitalocean_models,
+					'default'     => 'llama3.3-70b-instruct',
+				),
+				'digitalocean_base_url'              => array(
+					'type'        => 'url',
+					'label'       => __( 'DigitalOcean API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for DigitalOcean Serverless Inference requests. Leave empty to use the default (https://inference.do-ai.run/v1). Useful when proxying through your own gateway or VPC endpoint.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://inference.do-ai.run/v1',
+				),
+				'digitalocean_embedding_model'       => array(
+					'type'        => 'text',
+					'label'       => __( 'DigitalOcean Embedding Model (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Embedding model id used when DigitalOcean is selected as the embedding provider. Defaults to "gte-large-en-v1.5".', 'mcp-ai-wpoos' ),
+					'placeholder' => 'gte-large-en-v1.5',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1313,6 +1369,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'OpenRouter', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-randomize',
 					'fields' => array( 'enable_openrouter', 'openrouter_api_key', 'openrouter_model', 'openrouter_base_url', 'openrouter_site_url', 'openrouter_app_title' ),
+				),
+				'digitalocean'         => array(
+					'id'     => 'digitalocean',
+					'label'  => __( 'DigitalOcean', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_digitalocean', 'digitalocean_api_key', 'digitalocean_model', 'digitalocean_base_url', 'digitalocean_embedding_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1528,6 +1590,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'deepseek'    => __( 'DeepSeek', 'mcp-ai-wpoos' ),
 				'openrouter'  => __( 'OpenRouter (Multi-provider gateway)', 'mcp-ai-wpoos' ),
+				'digitalocean' => __( 'DigitalOcean (Serverless Inference)', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
@@ -1655,7 +1718,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
