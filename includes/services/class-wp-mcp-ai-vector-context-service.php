@@ -659,7 +659,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		$settings        = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
 		$has_openai      = ! empty( $settings['openai_api_key'] );
 		$has_ollama      = ! empty( $settings['ollama_endpoint_url'] );
-		$has_digitalocean = ! empty( $settings['enable_digitalocean'] ) && ! empty( $settings['digitalocean_api_key'] );
+		$has_digitalocean = ! empty( $settings['digitalocean_api_key'] );
 		$preference      = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
 
 		// Honour an explicit preference if its backend is available.
