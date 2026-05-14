@@ -1,5 +1,14 @@
 # NV oOS BMAD Agent Definitions
 
+> **Last reviewed:** May 2026 (v1.1.18). All BMAD-role agents operate under the
+> Unix Theory Compliance Phases P0–P6 constraints landed across the v1.1.15 →
+> v1.1.18 cycle: the canonical return envelope (forbid
+> `array( 'success' => false, ... )` for errors), the two-gate sanitisation
+> rule (`WPMCPAI.Tools.SanitizeAtEntry` Gate 1 + escape at exit Gate 2), the
+> optional `WP_MCP_AI_Tool_Data_Contract_Interface`, and the back-compat alias
+> infrastructure for tool-decomposition PRs. See [`CLAUDE.md`](../CLAUDE.md) §
+> "Tool Return Format" and § "Tool Sanitisation — Two-Gate Rule".
+
 This directory contains the **BMAD (Breakthrough Method for Agile AI-Driven Development)** agent role definitions for the NV oOS plugin development workflow. These are the **Agent-as-Code** configurations that enable consistent, specialized AI prompting across development sessions.
 
 ## Overview
