@@ -82,7 +82,12 @@ class Test_Docs_Hub_Shortcode extends WP_UnitTestCase {
 	 */
 	public function test_shortcode_ignores_unknown_attrs() {
 		$shortcode = new NV_oOS_Docs_Hub_Shortcode();
-		$output    = $shortcode->render( array( 'unknown_attr' => 'value', 'another' => 'test' ) );
+		$output    = $shortcode->render(
+			array(
+				'unknown_attr' => 'value',
+				'another'      => 'test',
+			)
+		);
 
 		// Should still produce valid output.
 		$this->assertStringContainsString( 'nvoos-docs-hub-root', $output );

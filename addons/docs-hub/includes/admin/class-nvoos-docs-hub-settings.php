@@ -456,7 +456,7 @@ class NV_oOS_Docs_Hub_Settings {
 				$new_token = $existing_repos[ $i ]['token'];
 			}
 
-			// Selection mode: 'all' (default) | 'prefix' | 'selected'.
+			// Selection mode values: all (default), prefix, or selected.
 			$raw_mode       = sanitize_text_field( $repo['selection_mode'] ?? 'all' );
 			$selection_mode = in_array( $raw_mode, array( 'all', 'prefix', 'selected' ), true ) ? $raw_mode : 'all';
 

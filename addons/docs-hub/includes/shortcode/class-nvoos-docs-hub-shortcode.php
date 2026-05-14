@@ -47,7 +47,7 @@ class NV_oOS_Docs_Hub_Shortcode {
 		// (just before the sprintf below) so any early return added in the
 		// future does not skew instance numbering.
 		static $instance_count = 0;
-		$atts = shortcode_atts(
+		$atts                  = shortcode_atts(
 			array(
 				'section' => 'all',
 				'theme'   => 'auto',

@@ -275,14 +275,28 @@ class Test_Docs_Hub_REST_Manifest extends WP_UnitTestCase {
 					'plugin_name' => 'NV oOS',
 					'source'      => 'base',
 					'pages'       => array(
-						array( 'slug' => 'readme', 'title' => 'README', 'source' => 'base', 'plugin_name' => 'NV oOS', 'order' => 0, 'toc' => array() ),
+						array(
+							'slug'        => 'readme',
+							'title'       => 'README',
+							'source'      => 'base',
+							'plugin_name' => 'NV oOS',
+							'order'       => 0,
+							'toc'         => array(),
+						),
 					),
 				),
 				array(
 					'plugin_name' => 'Context',
 					'source'      => 'context',
 					'pages'       => array(
-						array( 'slug' => 'context-private', 'title' => 'Private', 'source' => 'context', 'plugin_name' => 'Context', 'order' => 0, 'toc' => array() ),
+						array(
+							'slug'        => 'context-private',
+							'title'       => 'Private',
+							'source'      => 'context',
+							'plugin_name' => 'Context',
+							'order'       => 0,
+							'toc'         => array(),
+						),
 					),
 				),
 			),
@@ -335,14 +349,28 @@ class Test_Docs_Hub_REST_Manifest extends WP_UnitTestCase {
 					'plugin_name' => 'NV oOS',
 					'source'      => 'base',
 					'pages'       => array(
-						array( 'slug' => 'readme', 'title' => 'README', 'source' => 'base', 'plugin_name' => 'NV oOS', 'order' => 0, 'toc' => array() ),
+						array(
+							'slug'        => 'readme',
+							'title'       => 'README',
+							'source'      => 'base',
+							'plugin_name' => 'NV oOS',
+							'order'       => 0,
+							'toc'         => array(),
+						),
 					),
 				),
 				array(
 					'plugin_name' => 'Context',
 					'source'      => 'context',
 					'pages'       => array(
-						array( 'slug' => 'context-private', 'title' => 'Private', 'source' => 'context', 'plugin_name' => 'Context', 'order' => 0, 'toc' => array() ),
+						array(
+							'slug'        => 'context-private',
+							'title'       => 'Private',
+							'source'      => 'context',
+							'plugin_name' => 'Context',
+							'order'       => 0,
+							'toc'         => array(),
+						),
 					),
 				),
 			),
