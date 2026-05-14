@@ -114,6 +114,16 @@ class WP_MCP_AI_Skill_Pack_Registry {
 					'internal-comms',
 				),
 			),
+			'ui-ux-design'        => array(
+				'slug'        => 'ui-ux-design',
+				'name'        => __( 'UI/UX Design Pack', 'mcp-ai-wpoos' ),
+				'description' => __( 'Professional design intelligence for building polished UI/UX — AI-powered design system generation with 67 UI styles, 99 UX guidelines, pre-delivery checklists, and industry-specific reasoning rules. Also includes frontend design and canvas design skills.', 'mcp-ai-wpoos' ),
+				'skills'      => array(
+					'ui-ux-pro-max',
+					'frontend-design',
+					'canvas-design',
+				),
+			),
 		);
 	}
 
