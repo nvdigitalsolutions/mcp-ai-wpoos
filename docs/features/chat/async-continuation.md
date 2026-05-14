@@ -1,6 +1,6 @@
 # Async Chat Continuation
 
-> **Status (May 2026):** Foundation landed (slices 1, 2 core, 6 partial). Slices 2 step 3 (full agentic-loop re-entry), 3 (chat-session SSE channel), 4 (`assets/js/chat.js`), and 5 (Pro multi-channel) are tracked in follow-up PRs. See "Roadmap" at the bottom.
+> **Status (May 2026):** All slices 1–6 complete. The full continuation pipeline is shipped: store → dispatcher → LLM re-entry → SSE channel → chat.js integration → Pro webhook notifier → OTel observability. See "Roadmap" at the bottom.
 
 ## Problem
 
@@ -180,11 +180,11 @@ resume. The cron worker is idempotent on the continuation row's
 |---|---|---|
 | 1 — Continuation store + correlation ID | ✅ landed | this PR |
 | 2 core — Dispatcher skeleton + ready/dispatched hooks | ✅ landed | this PR |
-| 2 step 3 — `WP_MCP_AI_REST::resume_chat_after_job()` (LLM re-entry) | ⏳ next | TBD |
-| 3 — `GET /mcp-ai/v1/chat-sessions/{id}/stream` SSE channel | ⏳ next | TBD |
-| 4 — `assets/js/chat.js` integration | ⏳ next | TBD |
-| 5 — Pro Web Push / email multi-channel | ⏳ later | TBD |
-| 6 — OTel observability card + JS tests | partial (PHPUnit done) | TBD |
+| 2 step 3 — `WP_MCP_AI_Chat_Continuation_LLM_Re_Entry` (LLM re-entry) | ✅ landed | this PR |
+| 3 — `GET /mcp-ai/v1/chat-sessions/{id}/stream` SSE channel | ✅ landed | this PR |
+| 4 — `assets/js/chat.js` integration | ✅ landed | this PR |
+| 5 — Pro multi-channel webhook notifier | ✅ landed | this PR |
+| 6 — OTel observability + JS unit tests | ✅ landed | this PR |
 
 ## Testing
 
