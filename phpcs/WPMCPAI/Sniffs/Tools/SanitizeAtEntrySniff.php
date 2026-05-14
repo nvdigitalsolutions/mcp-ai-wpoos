@@ -244,7 +244,24 @@ class SanitizeAtEntrySniff implements Sniff {
 				continue;
 			}
 
-			if ( $this->is_safe_wrapper_name( strtolower( $tokens[ $prev ]['content'] ) ) ) {
+			$name = strtolower( $tokens[ $prev ]['content'] );
+
+			// `prepare` is only a safe wrapper when invoked as a method
+			// (e.g. `$wpdb->prepare( … )` or `WPDB::prepare( … )`). A bare
+			// `prepare( … )` call is some other custom function and must
+			// not suppress the warning.
+			if ( 'prepare' === $name ) {
+				$before = $phpcsFile->findPrevious( T_WHITESPACE, $prev - 1, null, true );
+				if ( false === $before ) {
+					continue;
+				}
+				if ( T_OBJECT_OPERATOR !== $tokens[ $before ]['code']
+					&& T_DOUBLE_COLON !== $tokens[ $before ]['code'] ) {
+					continue;
+				}
+			}
+
+			if ( $this->is_safe_wrapper_name( $name ) ) {
 				return true;
 			}
 		}
