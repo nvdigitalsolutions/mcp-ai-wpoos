@@ -1,12 +1,23 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 10, 2026  
-**Plugin Version:** 1.1.17  
+**Last Updated:** May 14, 2026  
+**Plugin Version:** 1.1.18  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
+> - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](proposals/audits/P6-sanitize-escape-codification-2026-05.md).
+> - **DigitalOcean Serverless Inference provider** (9th provider) — `WP_MCP_AI_DigitalOcean_Client` + OpenAI-compatible chat / tool calls / streaming / embeddings; default embedding model `gte-large-en-v1.5`; Provider Diagnostics card. Reference: [`docs/features/ai-providers/digitalocean.md`](features/ai-providers/digitalocean.md).
+> - **Async chat continuation** (slices 1–6) — durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel hooks + Jest tests. Plan: [`docs/features/chat/async-continuation.md`](features/chat/async-continuation.md).
+> - **Jobs/Tasks Drawer + cron-status** (PRs A–G) — inline job-progress card subscribing to `wpMcpAiJobBus`; `POST /mcp-ai/v1/cron-status/{job_id}/cancel|retry` routes; Tasks Drawer + toasts (default-on via `wp_mcp_ai_chat_tasks_drawer` filter); 5 OTel hooks → `nvoos.chat.jobs.*` spans. Docs: [`docs/features/chat/cron-status-integration.md`](features/chat/cron-status-integration.md), [`docs/guides/developer/tool-development/registering-a-job-source.md`](guides/developer/tool-development/registering-a-job-source.md).
+> - **Toolkit MCP Servers Phase 7 admin UI** — `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` (slug `nvoos-pro-toolkit-mcp-servers`) — 5-tab admin page (Servers / Detail / Audit / Discovery / Help).
+> - **JetEngine CCT memory mirror** — `retrieve_agent_memory` + `recall` hydrate from the CCT mirror when available.
+> - **Security / maintenance** — langsmith `>=0.6.0` (GHSA-3644-q5cj-c5c7); `wp_read_video_metadata` guard in Veo/Sora tools; production autoload restoration.
+> - **Agent surfaces refreshed** — `.bmad/`, `.codex/`, `.context/`, `.devcontainer/`, `.github/agents/`, `.vscode/`, `.zed/` all reviewed and brought in lockstep. `toolkit-spa-maintainer` now mirrored from `examples/agents/` into both `.github/agents/` and `.zed/settings.json` (13 profiles).
+> - **Versioning** — bumped to 1.1.18 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 10, 2026 UPDATE (v1.1.17):** 🛡️💬📚🧪 **WP.ORG COMPLIANCE, CHAT SPA PHASES 1–7, DOCS HUB v0.3.8, TOOLKIT SPA PHASES 5–12, COVERAGE CAMPAIGN**
 > - **WP.org Compliance Hardening** (PRs #4892, #4902) — B1/B2/B3/B5/B8/B10/B11/B12/B13 reviewer findings resolved. `WP_MCP_AI_User_Context_Helper` centralises privileged-op hardening. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Reviewer response table: [`SUBMISSION.md`](../SUBMISSION.md).
