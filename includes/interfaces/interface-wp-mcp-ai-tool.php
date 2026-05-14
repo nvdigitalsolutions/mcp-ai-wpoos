@@ -273,6 +273,55 @@ interface WP_MCP_AI_Tool_Flow_Stage_Interface {
 }
 
 /**
+ * Optional interface for tools that declare a data contract for composability.
+ *
+ * The `produces` / `consumes` fields describe the *shape* of a tool's
+ * output / input payload (e.g. `post_object`, `attachment_id`, `order_id`).
+ * They complement — but do not replace — the operational flags exposed by
+ * {@see WP_MCP_AI_Tool_Capability_Flags_Interface} and the orchestration
+ * constraints exposed by {@see WP_MCP_AI_Tool_Rules_Interface}.
+ *
+ * The AI model uses these hints to chain tool calls autonomously, e.g.
+ * "the output of `get_post` (produces=`post_object`) can be fed to
+ * `update_post_seo` (consumes=`post_object`)".
+ *
+ * Both keys are optional. Return `null` for either to opt out of that side
+ * of the contract. The registry will not emit a contract block when both
+ * keys are null/empty.
+ *
+ * Example:
+ * ```php
+ * public function get_data_contract() {
+ *     return array(
+ *         'produces' => 'post_object',
+ *         'consumes' => null,
+ *     );
+ * }
+ * ```
+ *
+ * @since 1.2.1
+ */
+interface WP_MCP_AI_Tool_Data_Contract_Interface {
+	/**
+	 * Retrieve the data contract for this tool.
+	 *
+	 * Return shape:
+	 * ```
+	 * array(
+	 *     'produces' => string|null,           // Single named contract.
+	 *     'consumes' => string|string[]|null,  // Single named contract OR list of accepted contracts.
+	 * )
+	 * ```
+	 *
+	 * Implementations should use stable, snake_case identifiers (e.g.
+	 * `post_object`, `attachment_id`, `order_id`, `wc_product_id`).
+	 *
+	 * @return array{produces?: string|null, consumes?: string|string[]|null}
+	 */
+	public function get_data_contract();
+}
+
+/**
  * Optional interface for tools that restrict access from certain contexts.
  *
  * Context restrictions control which endpoints or interfaces can invoke a tool.

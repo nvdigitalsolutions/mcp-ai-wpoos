@@ -173,7 +173,7 @@ In `class-wp-mcp-ai-rest.php` (lines ~2578-2950):
 
 - Singleton: `WP_MCP_AI_Tool_Registry::get_instance()`
 - Hook-based: `do_action( 'wp_mcp_ai_register_tools', $registry )`
-- Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.)
+- Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.), `WP_MCP_AI_Tool_Data_Contract_Interface` (`produces`/`consumes` payload hints — surfaced to the model as a `[Data contract: …]` description suffix)
 - Capability flags: `'read-only'`, `'write'`, `'state-changing'`, `'cacheable'`, `'external-api'`
 
 ### Orchestration Phases (1–7)

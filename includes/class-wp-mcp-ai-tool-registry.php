@@ -724,11 +724,73 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return null;
 			}
 
-			return array(
+			$definition = array(
 				'name'        => $tool->get_slug(),
 				'description' => $tool->get_description(),
 				'parameters'  => $tool->get_parameters_schema(),
 			);
+
+			$data_contract = $this->get_tool_data_contract( $slug );
+			if ( ! empty( $data_contract ) ) {
+				$definition['data_contract'] = $data_contract;
+			}
+
+			return $definition;
+		}
+
+		/**
+		 * Retrieve the data contract for a specific tool.
+		 *
+		 * Tools that implement {@see WP_MCP_AI_Tool_Data_Contract_Interface}
+		 * may declare named `produces` and/or `consumes` payload contracts so
+		 * the orchestrator can hint at chaining opportunities to the model.
+		 *
+		 * Returns an empty array when the tool does not implement the interface
+		 * or when both keys are null/empty.
+		 *
+		 * @since 1.2.1
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array{produces?: string, consumes?: string|string[]} Normalised contract.
+		 */
+		public function get_tool_data_contract( $slug ) {
+			$tool = $this->get_tool( $slug );
+			if ( ! $tool ) {
+				return array();
+			}
+
+			if ( ! ( $tool instanceof WP_MCP_AI_Tool_Data_Contract_Interface ) ) {
+				return array();
+			}
+
+			$contract = $tool->get_data_contract();
+			if ( ! is_array( $contract ) ) {
+				return array();
+			}
+
+			$normalised = array();
+
+			if ( isset( $contract['produces'] ) && is_string( $contract['produces'] ) && '' !== $contract['produces'] ) {
+				$normalised['produces'] = sanitize_key( $contract['produces'] );
+			}
+
+			if ( isset( $contract['consumes'] ) && ! empty( $contract['consumes'] ) ) {
+				if ( is_string( $contract['consumes'] ) ) {
+					$normalised['consumes'] = sanitize_key( $contract['consumes'] );
+				} elseif ( is_array( $contract['consumes'] ) ) {
+					$consumes_list = array();
+					foreach ( $contract['consumes'] as $value ) {
+						if ( is_string( $value ) && '' !== $value ) {
+							$consumes_list[] = sanitize_key( $value );
+						}
+					}
+					if ( ! empty( $consumes_list ) ) {
+						$normalised['consumes'] = array_values( array_unique( $consumes_list ) );
+					}
+				}
+			}
+
+			return $normalised;
 		}
 
 		/**
