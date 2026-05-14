@@ -2,6 +2,56 @@
 
 ## [Unreleased]
 
+### Added — DigitalOcean Serverless Inference provider
+
+- `feat(providers): add DigitalOcean Serverless Inference provider`.
+- New concrete client `WP_MCP_AI_DigitalOcean_Client`
+  (`includes/class-wp-mcp-ai-digitalocean-client.php`) wrapping the
+  OpenAI-compatible REST API at `https://inference.do-ai.run/v1`. Supports
+  chat completions, tool/function calling, JSON mode, SSE streaming, native
+  embeddings, model listing, and reasoning passthrough. Authentication uses
+  a model access key (`Authorization: Bearer …`) issued from
+  Gradient Platform → Serverless Inference → Model access keys.
+- New provider-interface adapter
+  `WP_MCP_AI_DigitalOcean_Provider_Client`
+  (`includes/infrastructure/providers/…`) implementing
+  `Interface_WP_MCP_AI_Provider_Client` for the language-model router.
+- New embedding provider `WP_MCP_AI_Embedding_Provider_DigitalOcean`
+  (`includes/services/embedding/…`) registered alongside the OpenAI and
+  Ollama embedding providers; default model `gte-large-en-v1.5`.
+- DI container wiring: `client.digitalocean` singleton, injected into
+  `WP_MCP_AI_Language_Model_Router` as a new optional constructor argument.
+- Settings UI: new **DigitalOcean** subtab under **Settings → Providers**
+  with `enable_digitalocean`, `digitalocean_api_key`, `digitalocean_model`,
+  `digitalocean_base_url`, and `digitalocean_embedding_model` fields.
+- `WP_MCP_AI_Model_Config::get_active_providers()` now includes
+  `digitalocean` when the provider is enabled with an API key configured.
+- `includes/data/model-catalog.json` seeded with `llama3.3-70b-instruct`,
+  `llama3.1-8b-instruct`, `deepseek-r1-distill-llama-70b`,
+  `openai-gpt-oss-120b`, and `gte-large-en-v1.5`. Pricing fields are
+  zeroed — operators should update them via the Models admin page or the
+  `wp_mcp_ai_model_catalog` filter to reflect their account's per-token
+  billing.
+- **Model Discovery Service**: new `digitalocean` branch refreshes the
+  cached catalogue from `/v1/models` when an API key is configured.
+- **Provider Diagnostics**: new **DigitalOcean Serverless Inference** card
+  with a `GET /v1/models` connectivity probe that reports latency, model
+  count, and the configured default model. The probe does not spend
+  inference credits.
+- New test `tests/test-digitalocean-client.php` (mock HTTP via
+  `pre_http_request`): constants, accessors, chat completion success,
+  tool-call passthrough, 401/429 error envelopes, malformed JSON,
+  reasoning-content passthrough, `list_models()` normalisation, embedding
+  round-trip, custom base URL override, token-count heuristic.
+- New docs: `docs/features/ai-providers/digitalocean.md` (prerequisites,
+  quick start, model access keys, available models, custom base URL,
+  tool calling + streaming, embeddings, prompt caching/reasoning notes,
+  diagnostics, troubleshooting).
+- **Out of scope**: DigitalOcean Agent endpoints
+  (`*.agents.do-ai.run/api/v1`) — they use a different per-agent URL
+  scheme and auth flow. May be added as a separate provider entry in a
+  future release.
+
 ### Added — Inline-async-tick fallback for Gemini Veo polling (Slice 6)
 
 - `WP_MCP_AI_Gemini_Video_Generation_Service` now composes
