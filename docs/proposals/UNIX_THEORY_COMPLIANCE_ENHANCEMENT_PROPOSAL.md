@@ -33,7 +33,7 @@ Translated to a WordPress plugin context:
 
 ## 0. Current State (May 2026 audit)
 
-This proposal was originally drafted against plugin v1.1.15. Several pieces of the surrounding architecture have since shifted, so the recommendations below have been re-scoped to match what is **actually** in the tree at v1.1.17. Read this section before consuming §2–§4.
+This proposal was originally drafted against plugin v1.1.15. Two minor releases (v1.1.16, v1.1.17) have shipped since then, and several adjacent subsystems — the tools interface family, the agentic-loop hook payload, and the docs taxonomy — moved during that window. The recommendations below have been re-scoped to match what is **actually** in the tree at v1.1.17. Read this section before consuming §2–§4.
 
 ### 0.1 Tools are interface + traits, not a base class
 
