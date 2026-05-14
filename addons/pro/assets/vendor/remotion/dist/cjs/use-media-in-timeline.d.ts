@@ -1,23 +1,40 @@
-import type { LoopDisplay } from './CompositionManager.js';
+import type { LoopDisplay, SequenceControls } from './CompositionManager.js';
 import type { VolumeProp } from './volume-prop.js';
-export declare const useBasicMediaInTimeline: ({ volume, mediaVolume, mediaType, src, displayName, trimBefore, trimAfter, playbackRate, }: {
+export declare const useBasicMediaInTimeline: ({ volume, mediaVolume, mediaType, src, displayName, trimBefore, trimAfter, playbackRate, sequenceDurationInFrames, mediaStartsAt, loop, }: {
     volume: VolumeProp | undefined;
     mediaVolume: number;
-    mediaType: "audio" | "video";
+    mediaType: "audio" | "video" | "image";
     src: string | undefined;
     displayName: string | null;
     trimBefore: number | undefined;
     trimAfter: number | undefined;
     playbackRate: number;
+    sequenceDurationInFrames: number;
+    mediaStartsAt: number;
+    loop: boolean;
 }) => {
     volumes: string | number;
     duration: number;
     doesVolumeChange: boolean;
     nonce: import("./nonce.js").NonceHistoryContext;
     rootId: string;
-    isStudio: boolean;
     finalDisplayName: string;
+    startMediaFrom: number;
+    src: string;
+    playbackRate: number;
 };
+export type BasicMediaInTimelineReturnType = ReturnType<typeof useBasicMediaInTimeline>;
+export declare const useImageInTimeline: ({ src, displayName, id, stack, showInTimeline, premountDisplay, postmountDisplay, loopDisplay, controls, }: {
+    src: string | undefined;
+    displayName: string | null;
+    id: string;
+    stack: string | null;
+    showInTimeline: boolean;
+    premountDisplay: number | null;
+    postmountDisplay: number | null;
+    loopDisplay: LoopDisplay | undefined;
+    controls: SequenceControls | null;
+}) => void;
 export declare const useMediaInTimeline: ({ volume, mediaVolume, src, mediaType, playbackRate, displayName, id, stack, showInTimeline, premountDisplay, postmountDisplay, loopDisplay, }: {
     volume: VolumeProp | undefined;
     mediaVolume: number;

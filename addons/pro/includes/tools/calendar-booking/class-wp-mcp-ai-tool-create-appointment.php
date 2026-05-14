@@ -437,7 +437,7 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 		$args = array(
 			'post_type'      => 'mcp_appointment',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'create_appointment', 0, 500 ) : 500,
 			'meta_query'     => array(
 				'relation' => 'AND',
 				array(

@@ -144,8 +144,15 @@ export default function SearchBox() {
 								key={ r.slug }
 								className={ `dh-search-result-item${ activeIdx === idx ? ' dh-active' : '' }` }
 								role="option"
+								tabIndex={ -1 }
 								aria-selected={ activeIdx === idx }
 								onClick={ () => selectResult( r.slug ) }
+								onKeyDown={ ( e ) => {
+									if ( e.key === 'Enter' || e.key === ' ' ) {
+										e.preventDefault();
+										selectResult( r.slug );
+									}
+								} }
 								onMouseEnter={ () => setActiveIdx( idx ) }
 							>
 								<div className="dh-search-result-title">{ r.title }</div>

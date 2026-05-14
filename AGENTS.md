@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **May 2026** · Version: **1.2**
+> Last reviewed: **May 2026** · Version: **1.3**
 
 ### Related Files
 
@@ -27,8 +27,8 @@ These are the AI assistants that human maintainers invoke when working on the re
 |-------|----------|-------------|---------|-------|
 | **Claude Code** | Anthropic | [`CLAUDE.md`](CLAUDE.md) | Manual / Copilot Coding Agent | Full codebase — code generation, review, refactoring, docs |
 | **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
-| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents — see each `*.agent.md` for scope |
-| **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster — same scopes, mapped to Zed's tool registry |
+| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents (13 in this repo — reviewers, writers per subsystem, plus `addon-maintainer` and `toolkit-spa-maintainer` parameterised per addon). See each `*.agent.md` for scope. |
+| **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (13 profiles) — same scopes, mapped to Zed's tool registry |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)

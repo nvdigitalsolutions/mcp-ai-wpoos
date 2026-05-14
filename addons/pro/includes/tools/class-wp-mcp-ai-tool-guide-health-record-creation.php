@@ -347,7 +347,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 				'post_type'      => 'mcp_ai_policy',
 				'meta_key'       => '_policy_member_id',
 				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'guide_health_record_creation', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);
@@ -404,7 +404,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 				'post_type'      => 'mcp_ai_allergy',
 				'meta_key'       => '_allergy_member_id',
 				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'guide_health_record_creation', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);
@@ -541,7 +541,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 				'post_type'      => 'mcp_ai_med_record',
 				'meta_key'       => '_record_member_id',
 				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'guide_health_record_creation', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);
@@ -671,7 +671,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 				'post_type'      => 'mcp_ai_prescription',
 				'meta_key'       => '_prescription_member_id',
 				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'guide_health_record_creation', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);

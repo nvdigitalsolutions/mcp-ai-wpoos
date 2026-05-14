@@ -120,6 +120,8 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-options-s
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-capability-checker.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-http-client.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-bulk-operation.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-options-store.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-capability-checker.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/http/class-wp-mcp-ai-wp-http-client.php';
@@ -132,6 +134,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-profession-search-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-presets-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-user-context-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
 // ---------------------------------------------------------------------------
@@ -183,6 +186,13 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-catalog-migration.
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-discovery-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-batch-iterator.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-artifact-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-lifecycle-descriptor.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-data-budget-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-async-scheduler-bridge.php';
+WP_MCP_AI_Async_Scheduler_Bridge::register_hooks();
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
@@ -201,6 +211,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nvidia-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deepseek-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openrouter-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-digitalocean-client.php';
 // WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
 // Provider interface adapters (thin delegates over the concrete clients above).
@@ -212,6 +223,7 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-nvidia-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-lm-studio-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openrouter-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php';
 
 // ---------------------------------------------------------------------------
 // Tool infrastructure and utilities
@@ -234,6 +246,16 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
 require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
+
+// ---------------------------------------------------------------------------
+// Async chat continuation — durable correlation between async jobs and the
+// chat sessions that started them. Listens to wp_mcp_ai_job_completed (and
+// _failed / _cancelled) at priority 20 (after Job_Notifier caches status at
+// priority 10) so the chat session can be resumed off-hook and the LLM can
+// produce a follow-up message. See docs/features/chat/async-continuation.md
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/chat-continuation-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
@@ -302,6 +324,11 @@ require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-approval-queue.php';
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 11 );
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cron' ), 1 );
+
+// ---------------------------------------------------------------------------
+// PR-E: base-plugin job-source adapters (transcript mining, Crawl4AI, HITL)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/services/job-sources/job-sources-init.php';
 
 // ---------------------------------------------------------------------------
 // Phase 3 — Workflow CPT + Engine V2
@@ -385,8 +412,11 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-submissions-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
+	require_once WP_MCP_AI_PATH . 'includes/renderers/class-wp-mcp-ai-scheduled-result-renderer.php';
+	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-scheduled-result-block.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
@@ -408,6 +438,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	// every JetEngine-enabled site benefits from the persistent memory tier.
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
 }
 
 // MemPalace Capture Framework Phase A — capture service + tier manager are

@@ -1,5 +1,11 @@
 # `.devcontainer/` — NV oOS WordPress plugin dev container
 
+> **First, read [`AGENTS.md`](../AGENTS.md) and [`CLAUDE.md`](../CLAUDE.md).** They describe the
+> agent inventory, layering rule, naming conventions, PHP-compat floors (PHP 7.4+ base,
+> PHP 8.1+ Pro), and security expectations that apply inside this container too. After the
+> container is up, your first command should be `composer run test:install` (see "Common
+> tasks" below).
+
 This folder defines the [Dev Container](https://containers.dev/) used by Zed,
 VS Code, GitHub Codespaces, and any other devcontainer-aware tool to give
 contributors a reproducible Linux PHP/WordPress environment without polluting

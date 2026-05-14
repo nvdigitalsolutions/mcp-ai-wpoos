@@ -435,6 +435,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$transcript_mining_controller = new WP_MCP_AI_REST_Transcript_Mining_Controller();
 			$transcript_mining_controller->register_routes();
 
+			// Delegate chat-session SSE stream to Chat Session Stream Controller.
+			if ( class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-session-stream-controller.php';
+				$chat_session_stream_controller = new WP_MCP_AI_REST_Chat_Session_Stream_Controller( $this->authenticator, $this->validator );
+				$chat_session_stream_controller->register_routes();
+			}
+
 			// Delegate A2A protocol routes to A2A Controller.
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 			if ( ! empty( $settings['enable_a2a_server'] ) ) {
@@ -953,8 +960,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$counts = $service->get_status_counts( $user_id, $assistant_id );
 
 			$response = array(
-				'jobs'   => $jobs,
-				'counts' => $counts,
+				'jobs'          => $jobs,
+				'counts'        => $counts,
+				'system_status' => $service->get_system_status(),
 			);
 
 			// Include assistant_id in response if filtered.
@@ -964,10 +972,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Return cron status as SSE snapshot (one-shot response).
-				// For continuous job monitoring, use /cron-status/{job_id}?stream=true instead.
-				return $this->sse_handler->stream_event_stream_payload( $response, 'cron_status' );
+				// Phase 2 slice 2b: real polling loop emitting typed `job:*`
+				// diff frames with monotonic `id:` lines + `Last-Event-ID`
+				// resume. See docs/features/chat/cron-status-tasks-drawer-plan.md.
+				return $this->stream_status_summary_updates( $request, $response, $service, $user_id, $limit, $assistant_id );
 			}
+
+			/**
+			 * Fires after a one-shot cron-status snapshot is built.
+			 *
+			 * Allows OTel subscribers and monitoring hooks to record a span /
+			 * metric for the snapshot request. Consumers MUST NOT modify
+			 * $response here — use the `wp_mcp_ai_cron_status_response` filter
+			 * for that.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param array    $response     The snapshot payload (jobs, counts, system_status).
+			 * @param int      $user_id      Authenticated user ID.
+			 * @param int|null $assistant_id Optional assistant filter.
+			 */
+			do_action( 'wp_mcp_ai_chat_jobs_snapshot', $response, $user_id, $assistant_id );
 
 			return rest_ensure_response( $response );
 		}
@@ -997,6 +1022,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Get job ID from URL parameter.
 			$job_id = $request->get_param( 'job_id' );
 
+			// Self-healing inline kick for async-tool jobs that are stuck
+			// in `pending` past the stale threshold. Schedules a shutdown
+			// action that drives the job forward after this response is
+			// flushed, so the chat client's poll loop automatically heals
+			// stuck jobs on hosts where the WP-Cron loopback never fires.
+			// No-op for non-async job IDs (veo_*, regular cron jobs, etc.)
+			// and for jobs that have already advanced past `pending`.
+			if ( is_string( $job_id ) && 0 === strpos( $job_id, 'async_' ) && class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+				$executor = new WP_MCP_AI_Tool_Async_Executor();
+				$executor->kick_inline_if_stale( $job_id );
+			}
+
 			// Get job details from service (includes permission check).
 			$job_details = $service->get_job_details( $job_id, $user_id );
 
@@ -1011,6 +1048,189 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return rest_ensure_response( $job_details );
+		}
+
+		/**
+		 * Stream `/cron-status` list snapshot updates via SSE (Phase 2 slice 2b).
+		 *
+		 * Replaces the one-shot `stream_event_stream_payload()` SSE snapshot
+		 * on the list endpoint with a real polling loop that emits typed
+		 * `job:queued` / `job:started` / `job:progress` / `job:completed` /
+		 * `job:failed` / `job:cancelled` / `job:retried` diff frames per the
+		 * canonical schema documented in
+		 * `docs/features/chat/cron-status-tasks-drawer-plan.md`.
+		 *
+		 * Behaviours:
+		 * - Initial frame: `event: cron_status` carrying the current snapshot
+		 *   (back-compat with existing consumers).
+		 * - Diff frames: each state transition (per
+		 *   {@see WP_MCP_AI_Cron_Status_Service::classify_job_diff_event()})
+		 *   emits the typed event name carrying the full normalized job record.
+		 * - Heartbeat: explicit `event: ping` every
+		 *   `SSE_JOB_HEARTBEAT_INTERVAL` polls so proxies hold the
+		 *   connection open and clients can detect stalled streams.
+		 * - Monotonic `id:` lines on every frame so EventSource populates
+		 *   `lastEventId`; clients reissue it on reconnect via the
+		 *   `Last-Event-ID` header (parsed from `HTTP_LAST_EVENT_ID`).
+		 *
+		 * @since 1.9.3
+		 *
+		 * @param WP_REST_Request               $request      Incoming REST request.
+		 * @param array                         $initial      Initial snapshot payload (jobs, counts, system_status).
+		 * @param WP_MCP_AI_Cron_Status_Service $service      Cron status service instance.
+		 * @param int                           $user_id      Authenticated user ID.
+		 * @param int                           $limit        Snapshot limit.
+		 * @param int|null                      $assistant_id Optional assistant filter.
+		 * @return void Streams SSE updates and exits.
+		 */
+		protected function stream_status_summary_updates( WP_REST_Request $request, array $initial, $service, $user_id, $limit, $assistant_id ) {
+			$stream_started_micros = (int) round( microtime( true ) * 1e6 );
+
+			/**
+			 * Fires when a cron-status SSE stream is established.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param int      $user_id      Authenticated user ID.
+			 * @param int|null $assistant_id Optional assistant filter.
+			 */
+			do_action( 'wp_mcp_ai_before_chat_jobs_stream', $user_id, $assistant_id );
+
+			$this->sse_handler->send_sse_headers();
+
+			// Parse `Last-Event-ID` so reconnecting clients resume the
+			// monotonic counter from where they left off. The header is
+			// surfaced via SAPI under HTTP_LAST_EVENT_ID; we also honour the
+			// `last_event_id` query param for transports that strip headers.
+			$last_event_id = 0;
+			$header_value  = $request->get_header( 'last_event_id' );
+			if ( null === $header_value && isset( $_SERVER['HTTP_LAST_EVENT_ID'] ) ) {
+				$header_value = sanitize_text_field( wp_unslash( $_SERVER['HTTP_LAST_EVENT_ID'] ) );
+			}
+			if ( null === $header_value ) {
+				$query_value = $request->get_param( 'last_event_id' );
+				if ( null !== $query_value ) {
+					$header_value = $query_value;
+				}
+			}
+			if ( is_scalar( $header_value ) ) {
+				$last_event_id = max( 0, (int) $header_value );
+			}
+
+			// Monotonic counter starts after the last-acknowledged ID so
+			// clients never see a repeat ID on resume.
+			$event_id_seq = $last_event_id;
+
+			// Normalize the initial snapshot for safe JSON encoding.
+			$initial = $this->normalize_data_recursive( $initial );
+
+			// Emit the initial cron_status snapshot frame for back-compat
+			// with consumers built against the one-shot SSE payload.
+			++$event_id_seq;
+			$this->sse_handler->send_sse_event_with_id( 'cron_status', $initial, (string) $event_id_seq );
+
+			// Seed the diff baseline from the initial snapshot so
+			// subsequent polls only emit frames for real transitions.
+			$prev_jobs = $this->index_jobs_by_id( isset( $initial['jobs'] ) ? $initial['jobs'] : array() );
+
+			$max_polls     = self::SSE_JOB_MAX_POLLS;
+			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
+			$poll_count    = 0;
+
+			$required_time = ( $max_polls * $poll_interval ) + 60;
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort timeout extension.
+			}
+
+			while ( $poll_count < $max_polls ) {
+				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+					break;
+				}
+
+				sleep( $poll_interval );
+				++$poll_count;
+
+				if ( 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL && function_exists( 'spawn_cron' ) ) {
+					spawn_cron();
+				}
+
+				$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id );
+				$counts = $service->get_status_counts( $user_id, $assistant_id );
+				$jobs   = $this->normalize_data_recursive( $jobs );
+
+				$next_jobs = $this->index_jobs_by_id( $jobs );
+
+				// Emit one typed frame per changed job.
+				foreach ( $next_jobs as $job_id => $next_record ) {
+					$prev_record = isset( $prev_jobs[ $job_id ] ) ? $prev_jobs[ $job_id ] : null;
+					$event_name  = $service->classify_job_diff_event( $prev_record, $next_record );
+					if ( '' === $event_name ) {
+						continue;
+					}
+					++$event_id_seq;
+					$this->sse_handler->send_sse_event_with_id( $event_name, $next_record, (string) $event_id_seq );
+				}
+
+				$prev_jobs = $next_jobs;
+
+				// Heartbeat frame keeps proxies and clients alive between
+				// genuine diffs. Sent every SSE_JOB_HEARTBEAT_INTERVAL polls.
+				if ( 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL ) {
+					++$event_id_seq;
+					$this->sse_handler->send_sse_event_with_id(
+						'ping',
+						array(
+							'counts'        => $counts,
+							'system_status' => $service->get_system_status(),
+							'ts'            => time(),
+						),
+						(string) $event_id_seq
+					);
+				}
+			}
+
+			$this->sse_handler->send_sse_done();
+
+			/**
+			 * Fires when a cron-status SSE stream ends (connection aborted or
+			 * max polls reached).
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param int      $poll_count   Number of polls completed.
+			 * @param int      $user_id      Authenticated user ID.
+			 * @param int|null $assistant_id Optional assistant filter.
+			 * @param int      $duration_ms  Stream duration in milliseconds (0 if unavailable).
+			 */
+			$duration_ms = $stream_started_micros > 0 ? (int) round( ( microtime( true ) * 1e6 - $stream_started_micros ) / 1000 ) : 0;
+			do_action( 'wp_mcp_ai_after_chat_jobs_stream', $poll_count, $user_id, $assistant_id, $duration_ms );
+
+			$this->sse_handler->finish();
+		}
+
+		/**
+		 * Index a flat list of job records by their `job_id` for diff lookups.
+		 *
+		 * Records missing a `job_id` are skipped so a malformed source can't
+		 * collide with the diff baseline.
+		 *
+		 * @since 1.9.3
+		 *
+		 * @param array<int,array<string,mixed>> $jobs Flat list of normalized job records.
+		 * @return array<string,array<string,mixed>>
+		 */
+		protected function index_jobs_by_id( $jobs ) {
+			$indexed = array();
+			if ( ! is_array( $jobs ) ) {
+				return $indexed;
+			}
+			foreach ( $jobs as $job ) {
+				if ( ! is_array( $job ) || empty( $job['job_id'] ) ) {
+					continue;
+				}
+				$indexed[ (string) $job['job_id'] ] = $job;
+			}
+			return $indexed;
 		}
 
 		/**
@@ -2614,6 +2834,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
 
+			// Phase 3: agentic-loop output guard. Tracks cumulative tool-output bytes
+			// across all iterations and substitutes oversized payloads with artifact
+			// references so the LLM context stays bounded.
+			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-' . $assistant_id . '-' . wp_generate_uuid4() );
+
 			// Track original tool results for frontend display.
 			$tool_result_messages = array();
 
@@ -2727,6 +2952,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Execute each tool and collect results.
 				// Track if any tool returned async pending result (requires exiting agentic loop).
 				$has_async_pending_result = false;
+				$pending_async_jobs       = array();
 
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
@@ -2743,6 +2969,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// after processing this iteration. The frontend will handle polling for the async result.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
+						$pending_job_id           = isset( $tool_result['job_id'] ) ? (string) $tool_result['job_id'] : '';
+						if ( '' !== $pending_job_id ) {
+							$pending_async_jobs[] = array(
+								'job_id'       => $pending_job_id,
+								'tool_call_id' => (string) $tool_call_id,
+								'tool_name'    => (string) $tool_name,
+							);
+						}
 						WP_MCP_AI_Logger::log_event(
 							'async_tool_pending_in_agentic_loop',
 							'Async tool returned pending status, will exit agentic loop after this iteration',
@@ -2800,6 +3034,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Create a sanitized version for the LLM (strip large content fields).
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
 
+					// Phase 3: agentic-loop output guard. If this single message or the
+					// cumulative request budget would be exceeded, spill the payload to
+					// an artifact and substitute a small reference envelope.
+					$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					if ( $budget_tracker->should_spill( $message_bytes ) ) {
+						$sanitized_result = WP_MCP_AI_Tool_Artifact_Helper::wrap_oversized_tool_result(
+							$sanitized_result,
+							$tool_name,
+							array(
+								'assistant_id' => $assistant_id,
+								'iteration'    => $iteration,
+								'tool_call_id' => $tool_call_id,
+								'request_id'   => $budget_tracker->request_id(),
+							)
+						);
+						$budget_tracker->note_spill();
+						$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					}
+					$budget_tracker->record( $message_bytes );
+
 					$tool_message = array(
 						'role'    => 'tool',
 						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
@@ -2828,6 +3082,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'assistant_id' => $assistant_id,
 							'tool_count'   => count( $tool_result_messages ),
 						)
+					);
+					$this->snapshot_chat_continuation_on_async_pending(
+						$pending_async_jobs,
+						$messages,
+						$assistant_id,
+						$user_id,
+						$options,
+						$transcript_context
 					);
 					break;
 				}
@@ -3210,6 +3472,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Set up SSE headers.
 			$this->send_sse_headers();
 
+			// Phase 3: agentic-loop output guard (streaming branch).
+			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-stream-' . $assistant_id . '-' . wp_generate_uuid4() );
+
 			// Extend PHP execution time for the duration of the SSE stream.
 			// The default max_execution_time (often 30 s) is too short for embedded LLM
 			// inference (which can take 60–120 s) and long agentic loops.
@@ -3459,6 +3724,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Execute each tool and stream results.
 				// Track if any tool returned async pending result (requires exiting agentic loop).
 				$has_async_pending_result = false;
+				$pending_async_jobs       = array();
 
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
@@ -3529,6 +3795,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// doesn't understand async job states and might try to call the same tool again.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
+						$pending_job_id           = isset( $tool_result['job_id'] ) ? (string) $tool_result['job_id'] : '';
+						if ( '' !== $pending_job_id ) {
+							$pending_async_jobs[] = array(
+								'job_id'       => $pending_job_id,
+								'tool_call_id' => (string) $tool_call_id,
+								'tool_name'    => (string) $tool_name,
+							);
+						}
 						WP_MCP_AI_Logger::log_event(
 							'async_tool_pending_in_agentic_loop',
 							'Async tool returned pending status, will exit agentic loop after this iteration',
@@ -3639,6 +3913,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Create sanitized version for LLM.
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
 
+					// Phase 3: agentic-loop output guard.
+					$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					if ( $budget_tracker->should_spill( $message_bytes ) ) {
+						$sanitized_result = WP_MCP_AI_Tool_Artifact_Helper::wrap_oversized_tool_result(
+							$sanitized_result,
+							$tool_name,
+							array(
+								'assistant_id' => $assistant_id,
+								'iteration'    => isset( $iteration ) ? $iteration : 0,
+								'tool_call_id' => $tool_call_id,
+								'request_id'   => $budget_tracker->request_id(),
+							)
+						);
+						$budget_tracker->note_spill();
+						$this->send_sse_event(
+							'tool_output_truncated',
+							array(
+								'tool_name'    => $tool_name,
+								'tool_call_id' => $tool_call_id,
+							)
+						);
+						$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
+					}
+					$budget_tracker->record( $message_bytes );
+
 					$tool_message = array(
 						'role'    => 'tool',
 						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
@@ -3669,6 +3968,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'assistant_id' => $assistant_id,
 							'tool_count'   => count( $tool_result_messages ),
 						)
+					);
+					$this->snapshot_chat_continuation_on_async_pending(
+						$pending_async_jobs,
+						$messages,
+						$assistant_id,
+						$user_id,
+						$options,
+						$transcript_context
 					);
 					break;
 				}
@@ -4898,6 +5205,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			try {
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
+				$wp_mcp_ai_tool_start = microtime( true );
+
 				/**
 				 * Filter that allows interceptors (e.g. the markup subsystem) to
 				 * short-circuit tool execution. When the filter returns a non-null
@@ -4935,12 +5244,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				/**
 				 * Fires after a registered tool has completed execution.
 				 *
-				 * @param string           $tool_slug Tool identifier.
-				 * @param array            $arguments Arguments passed in the request.
-				 * @param array            $context   Execution context including user_id and assistant_id.
-				 * @param mixed            $result    Tool result after filters have been applied.
+				 * @param string $tool_slug  Tool identifier.
+				 * @param array  $arguments  Arguments passed in the request.
+				 * @param array  $context    Execution context including user_id and assistant_id.
+				 * @param mixed  $result     Tool result after filters have been applied.
+				 * @param array  $descriptor Normalised lifecycle descriptor
+				 *                           ({success, error_code, data_type, duration_ms}).
+				 *                           Subscribers with `accepted_args = 4` ignore this.
 				 */
-				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
+				do_action(
+					'wp_mcp_ai_after_tool_execution',
+					$tool_slug,
+					$prepared_arguments,
+					$context,
+					$result,
+					WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, $wp_mcp_ai_tool_start, $tool_slug, $context )
+				);
 
 			} catch ( Exception $e ) {
 				// Orchestration Layer: Budget constraint violation.
@@ -10012,6 +10331,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
+				$wp_mcp_ai_tool_start = microtime( true );
+
 				/**
 				 * Filter that allows interceptors (e.g. the markup subsystem) to
 				 * short-circuit tool execution inside the agentic loop. When the
@@ -10078,7 +10399,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
 
-				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+				do_action(
+					'wp_mcp_ai_after_tool_execution',
+					$tool_slug,
+					$arguments,
+					$context,
+					$result,
+					WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, $wp_mcp_ai_tool_start, $tool_slug, $context )
+				);
 
 				return $result;
 
@@ -10402,6 +10730,116 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $error_array;
+		}
+
+		/**
+		 * Snapshot the in-flight conversation into the Chat Continuation Store
+		 * when the agentic loop is about to exit because a tool returned
+		 * `{ async: true, status: 'pending' }`.
+		 *
+		 * One row is written per pending job_id so that when the async job
+		 * later fires `wp_mcp_ai_job_completed`, the dispatcher can correlate
+		 * back to the originating chat session and resume the LLM.
+		 *
+		 * No-op when the continuation subsystem is unavailable (defensive)
+		 * or when the caller did not collect any pending jobs.
+		 *
+		 * @since 1.9.4
+		 *
+		 * @param array $pending_async_jobs  List of { job_id, tool_call_id, tool_name }.
+		 * @param array $messages            Conversation messages at the point of exit.
+		 * @param int   $assistant_id        Assistant identifier.
+		 * @param int   $user_id             User identifier (0 for guests).
+		 * @param array $options             Provider options (model, max_tokens, ...).
+		 * @param array $transcript_context  Transcript context (session_key, ...).
+		 */
+		protected function snapshot_chat_continuation_on_async_pending(
+			array $pending_async_jobs,
+			array $messages,
+			$assistant_id,
+			$user_id,
+			array $options,
+			array $transcript_context
+		) {
+			if ( empty( $pending_async_jobs ) ) {
+				return;
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
+				return;
+			}
+
+			$session_key = isset( $transcript_context['session_key'] )
+				? (string) $transcript_context['session_key']
+				: '';
+
+			$context_for_session = array(
+				'assistant_id' => (int) $assistant_id,
+				'user_id'      => (int) $user_id,
+			);
+			$chat_session_id = '' !== $session_key
+				? $session_key
+				: WP_MCP_AI_Chat_Continuation_Store::generate_session_id( $context_for_session );
+
+			$provider = '';
+			if ( isset( $options['provider'] ) && is_string( $options['provider'] ) ) {
+				$provider = $options['provider'];
+			}
+			$model = '';
+			if ( isset( $options['model'] ) && is_string( $options['model'] ) ) {
+				$model = $options['model'];
+			}
+
+			// Strip transient/large keys from options before persisting.
+			$persisted_options = $options;
+			unset(
+				$persisted_options['attachments'],
+				$persisted_options['memory_documents'],
+				$persisted_options['tools']
+			);
+
+			$harness_profile = array();
+			if ( isset( $options['harness_profile'] ) && is_array( $options['harness_profile'] ) ) {
+				$harness_profile = $options['harness_profile'];
+			}
+
+			$now = time();
+
+			foreach ( $pending_async_jobs as $pending ) {
+				if ( ! is_array( $pending ) || empty( $pending['job_id'] ) ) {
+					continue;
+				}
+
+				$payload = array(
+					'chat_session_id' => $chat_session_id,
+					'assistant_id'    => (int) $assistant_id,
+					'user_id'         => (int) $user_id,
+					'tool_call_id'    => isset( $pending['tool_call_id'] ) ? (string) $pending['tool_call_id'] : '',
+					'tool_name'       => isset( $pending['tool_name'] ) ? (string) $pending['tool_name'] : '',
+					'provider'        => $provider,
+					'model'           => $model,
+					'options'         => is_array( $persisted_options ) ? $persisted_options : array(),
+					'harness_profile' => $harness_profile,
+					'messages'        => $messages,
+					'created_at'      => $now,
+				);
+
+				$stored = WP_MCP_AI_Chat_Continuation_Store::store(
+					(string) $pending['job_id'],
+					$payload
+				);
+
+				if ( is_wp_error( $stored ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'chat_continuation_store_failed',
+						array(
+							'job_id'       => (string) $pending['job_id'],
+							'assistant_id' => $assistant_id,
+							'error_code'   => $stored->get_error_code(),
+							'error'        => $stored->get_error_message(),
+						)
+					);
+				}
+			}
 		}
 
 		/**

@@ -842,6 +842,29 @@ class NVOOS_SaaS_Controller_REST {
 				array( 'status' => 404 )
 			);
 		}
+
+		// Self-heal: when polling reveals a job that has sat in `queued`
+		// past the stale threshold (typically because the WP-Cron
+		// loopback is disabled or firewalled), schedule a shutdown kick
+		// so the very next poll observes progress. The kick is a no-op
+		// when status has advanced beyond `queued` (handle_tick checks
+		// before doing any work) and runs at most once per request.
+		// Mirrors the equivalent self-heal in the base plugin's
+		// Mine Memories / Tool Async Executor REST routes.
+		if ( 'queued' === $state['status'] ) {
+			$age = time() - (int) $state['updated_at'];
+			if ( $age >= NVOOS_SaaS_Controller_Apply_Job::STALE_QUEUED_THRESHOLD_SECONDS ) {
+				$kick_id = (string) $state['id'];
+				add_action(
+					'shutdown',
+					static function () use ( $kick_id ) {
+						NVOOS_SaaS_Controller_Apply_Job::kick_inline( $kick_id );
+					},
+					20
+				);
+			}
+		}
+
 		return rest_ensure_response(
 			array(
 				'ok'  => true,

@@ -17,6 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// The canonical envelope helper lives in a dedicated, tool-agnostic trait
+// so any tool can compose just the envelope shape without pulling in the
+// broader chat-response behaviour. See trait-wp-mcp-ai-tool-envelope.php.
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-envelope.php';
+
 /**
  * Trait WP_MCP_AI_Tool_Chat_Response
  *
@@ -39,6 +44,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * ```
  */
 trait WP_MCP_AI_Tool_Chat_Response {
+
+	// Compose the canonical success-envelope helper from the sibling trait
+	// so `format_success_response()` has a single source of truth. See
+	// trait-wp-mcp-ai-tool-envelope.php and the Unix Theory Compliance
+	// Enhancement Proposal §2.2.
+	use WP_MCP_AI_Tool_Envelope;
 
 	/**
 	 * Format a tool response with proper chat client fields.
@@ -101,32 +112,6 @@ trait WP_MCP_AI_Tool_Chat_Response {
 			} else {
 				// Non-array data: store under data key.
 				$response[ $options['data_key'] ] = $data;
-			}
-		}
-
-		return $response;
-	}
-
-	/**
-	 * Format a success response with a message.
-	 *
-	 * Convenience method for successful operations.
-	 *
-	 * @param string $message Success message.
-	 * @param mixed  $data    Optional. Additional data to include.
-	 * @return array Formatted success response.
-	 */
-	protected function format_success_response( $message, $data = null ) {
-		$response = array(
-			'success' => true,
-			'message' => $message,
-		);
-
-		if ( null !== $data ) {
-			if ( is_array( $data ) ) {
-				$response = array_merge( $response, $data );
-			} else {
-				$response['data'] = $data;
 			}
 		}
 

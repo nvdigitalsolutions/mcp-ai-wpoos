@@ -56,17 +56,18 @@ agent:
   per_story_qa_checklist:
     - All acceptance criteria met
     - PHPUnit tests pass (composer run test)
-    - PHPCS clean (composer run lint)
+    - PHPCS clean (composer run lint — includes the WPMCPAI.Tools.CanonicalReturnEnvelope and WPMCPAI.Tools.SanitizeAtEntry sniffs at severity 5; baseline is 2 documented warnings)
     - ESLint clean for JS changes (npm run lint:js)
     - CodeQL scan passes
     - PHPDoc blocks present on all new classes/methods
     - Security review complete:
-      - Input sanitized (sanitize_text_field, absint, wp_kses_post, etc.)
-      - Output escaped (esc_html, esc_url, esc_attr, wp_kses, etc.)
+      - Input sanitized at entry (Gate 1 — sanitize_text_field, absint, wp_kses_post, esc_url_raw, sanitize_key)
+      - Output escaped at exit (Gate 2 — esc_html, esc_url, esc_attr, wp_kses, wp_json_encode)
       - Capabilities checked before privileged operations
       - Nonces verified for state-changing requests
+      - Tools return canonical envelope (success array or WP_Error — never array('success' => false))
     - Documentation updated if needed
-    - Backward compatibility verified
+    - Backward compatibility verified — any decomposed tool registers a deprecated alias via $registry->register_deprecated_alias()
     - Base vs Pro version gating correct
 
   post_release_monitoring_checklist:

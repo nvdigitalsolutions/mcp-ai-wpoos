@@ -24,6 +24,7 @@ export type CalcMetadataReturnType<T extends Record<string, unknown>> = {
     defaultVideoImageFormat?: VideoImageFormat;
     defaultPixelFormat?: PixelFormat;
     defaultProResProfile?: ProResProfile;
+    defaultSampleRate?: number;
 };
 export type CalculateMetadataFunction<T extends Record<string, unknown>> = (options: {
     defaultProps: T;

@@ -26,6 +26,7 @@
 16. [LLM Harnessing Hooks](#llm-harnessing-subsystem-hooks)
 17. [Chat Memory Bridge Hooks](#chat-memory-bridge-hooks)
 18. [Transcript Mining Hooks](#transcript-mining-hooks)
+19. [Async Chat Continuation Hooks](#async-chat-continuation-hooks)
 
 ---
 
@@ -218,10 +219,35 @@ Fires after a tool completes execution.
 - `array $arguments` — Tool arguments.
 - `array $context` — Execution context.
 - `mixed $result` — Tool execution result (array or WP_Error).
+- `array $descriptor` *(since v1.2.1, optional)* — Normalised lifecycle
+  descriptor pre-derived from `$result`. Shape:
+  `{ success: bool, error_code: ?string, data_type: ?string, duration_ms: ?float }`.
+  Subscribers registered with `accepted_args = 4` ignore this parameter and
+  continue to work unchanged. Subscribers that bump to `accepted_args = 5`
+  receive the descriptor.
 
-**Fired in:** `class-wp-mcp-ai-rest.php:4739`, `class-wp-mcp-ai-rest.php:9731`, `class-wp-mcp-ai-rest-tools-controller.php:677`
+  - `success` — `true` for non-`WP_Error` results.
+  - `error_code` — `WP_Error::get_error_code()` when failed, else `null`.
+  - `data_type` — A coarse type label (`array`, `string`, `int`, `bool`,
+    `float`, `null`, `object`, `generic`) for success results; if the
+    tool's success array carries a `produces` field (see
+    [Phase P3](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#3-implementation-phases)),
+    that field is used instead.
+  - `duration_ms` — Milliseconds elapsed between the `before_tool_execution`
+    and `after_tool_execution` hooks, when the firing site captures a
+    start timestamp; `null` otherwise (e.g. async-job completion fired
+    from a different process than start).
 
-**Example:**
+  Build the descriptor via `WP_MCP_AI_Tool_Lifecycle_Descriptor::build()`
+  if you fire this action from custom code. Filter the descriptor before
+  dispatch via `wp_mcp_ai_tool_lifecycle_descriptor`.
+
+**Fired in:** `class-wp-mcp-ai-rest.php` (sync tool dispatch + agentic loop),
+`class-wp-mcp-ai-rest-tools-controller.php`,
+`class-wp-mcp-ai-tool-async-executor.php` (async completion),
+`class-wp-mcp-ai-gemini-video-generation-service.php` (Veo job completion).
+
+**Example (legacy 4-arg subscriber — still supported):**
 ```php
 add_action( 'wp_mcp_ai_after_tool_execution', function( $tool_slug, $arguments, $context, $result ) {
     if ( is_wp_error( $result ) ) {
@@ -229,6 +255,25 @@ add_action( 'wp_mcp_ai_after_tool_execution', function( $tool_slug, $arguments, 
         error_log( sprintf( 'Tool %s failed: %s', $tool_slug, $result->get_error_message() ) );
     }
 }, 10, 4 );
+```
+
+**Example (new 5-arg subscriber using the descriptor):**
+```php
+add_action( 'wp_mcp_ai_after_tool_execution', function( $tool_slug, $arguments, $context, $result, $descriptor ) {
+    if ( ! $descriptor['success'] ) {
+        my_metrics_counter( 'tool.failure', 1, array(
+            'tool'  => $tool_slug,
+            'error' => $descriptor['error_code'],
+        ) );
+        return;
+    }
+    if ( isset( $descriptor['duration_ms'] ) ) {
+        my_metrics_histogram( 'tool.duration_ms', $descriptor['duration_ms'], array(
+            'tool'      => $tool_slug,
+            'data_type' => $descriptor['data_type'],
+        ) );
+    }
+}, 10, 5 );
 ```
 
 ---
@@ -1204,3 +1249,166 @@ add_filter( 'wp_mcp_ai_pii_filter_patterns', function ( $patterns ) {
     return $patterns;
 } );
 ```
+
+## Scheduled Result Widget (Pro)
+
+### Filter: `wp_mcp_ai_pro_schedule_result_envelope`
+
+Last chance to shape the structured result envelope produced by a Pro
+schedule run before it is persisted. Useful to e.g. coerce an assistant_run
+response into `data.items` so the Scheduled Result widget renders a list.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$envelope` | `array` | `{ summary, data, render, status, error, generated_at }`. |
+| `$schedule` | `array` | Schedule record. |
+| `$action_log` | `array` | Dispatcher's structured action log. |
+| `$success` | `bool` | Whether the run succeeded. |
+
+### Filter: `wp_mcp_ai_pro_schedule_public_result`
+
+Last chance to redact the envelope returned to **unauthenticated** REST
+callers / front-end renders. Runs after the built-in
+`public_fields` allow-list has been applied.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$redacted` | `array` | The redacted envelope. |
+| `$envelope` | `array` | The full envelope. |
+| `$schedule` | `array` | Schedule record. |
+
+### Filter: `wp_mcp_ai_pro_schedule_result_retention`
+
+Override the per-schedule retention count for stored result envelopes.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$retention` | `int` | Default retention (clamped 1–100). |
+| `$schedule` | `array` | Schedule record. |
+
+### Filter: `wp_mcp_ai_pro_schedule_result_capability`
+
+Override the WordPress capability required by the authenticated
+`/mcp-ai-pro/v1/schedules/{id}/latest-result` and `/results` routes.
+Default is `read_private_posts`.
+
+### Action: `wp_mcp_ai_pro_schedule_result_recorded`
+
+Fires immediately after a structured result envelope is stored.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$schedule_id` | `string` | Schedule ID. |
+| `$envelope` | `array` | The persisted envelope. |
+
+---
+
+## Async Chat Continuation Hooks
+
+The chat continuation subsystem (`WP_MCP_AI_Chat_Continuation_Store` +
+`WP_MCP_AI_Chat_Continuation_Dispatcher`) lets the chat session that
+started an async tool job receive a fresh LLM follow-up when the job
+finishes. See `docs/features/chat/async-continuation.md` for the full
+architecture.
+
+### Filter: `wp_mcp_ai_chat_session_id_generated`
+
+Override the UUID v4 generator used to mint a chat session identifier
+when no session_key is supplied by the client.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$session_id` | `string` | Default UUID v4. |
+| `$context` | `array` | `{ assistant_id, user_id }`. |
+
+### Filter: `wp_mcp_ai_chat_continuation_enabled`
+
+Site-wide kill switch. Return `false` to disable storing snapshots and
+dispatching continuations on job completion.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$enabled` | `bool` | Default `true`. |
+| `$job_id` | `string` | Async job identifier. |
+| `$terminal_status` | `string` | `completed`, `failed`, or `cancelled`. |
+
+### Filter: `wp_mcp_ai_chat_continuation_should_dispatch`
+
+Late opt-out for a specific continuation (useful for HITL approvals or
+sub-agent dispatchers that wish to handle the resume themselves).
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$should_dispatch` | `bool` | Default `true`. |
+| `$snapshot` | `array` | Continuation snapshot. |
+| `$terminal_status` | `string` | `completed`, `failed`, `cancelled`. |
+| `$result` | `array` | Job result data. |
+
+### Filter: `wp_mcp_ai_chat_continuation_message`
+
+Rewrite the tool-result message that the dispatcher appends to the
+conversation before LLM re-entry.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$message` | `array` | Constructed OpenAI tool message. |
+| `$snapshot` | `array` | Continuation snapshot. |
+| `$terminal_status` | `string` | `completed`, `failed`, `cancelled`. |
+| `$result` | `array` | Job result data. |
+
+### Filter: `wp_mcp_ai_chat_continuation_ttl`
+
+Override snapshot TTL (default `DAY_IN_SECONDS`).
+
+### Filter: `wp_mcp_ai_chat_continuation_max_total`
+
+Override the site-wide LRU cap (default `500`).
+
+### Filter: `wp_mcp_ai_chat_continuation_max_per_session`
+
+Override the per-session continuation cap (default `32`).
+
+### Filter: `wp_mcp_ai_chat_continuation_max_messages_size`
+
+Override the maximum serialized size (bytes) of `messages[]` in a
+snapshot (default `524288`).
+
+### Filter: `wp_mcp_ai_chat_continuation_cron_delay`
+
+Override the delay (seconds) before the cron worker is scheduled
+(default `1`).
+
+### Action: `wp_mcp_ai_chat_continuation_stored`
+
+Fires after a continuation snapshot has been persisted by the REST
+chat handler at the `async_pending` exit point.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$job_id` | `string` | Async job identifier. |
+| `$snapshot` | `array` | Normalized snapshot payload. |
+
+### Action: `wp_mcp_ai_chat_continuation_ready`
+
+Fires from the cron worker after the tool-result message has been
+appended to the conversation history. This is the seam where the
+forthcoming LLM re-entry path (`WP_MCP_AI_REST::resume_chat_after_job()`)
+will attach.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$snapshot` | `array` | Continuation snapshot (with `terminal_*` fields and the appended tool message). |
+| `$terminal_status` | `string` | `completed`, `failed`, `cancelled`. |
+| `$terminal_result` | `array` | Job result data. |
+
+### Action: `wp_mcp_ai_chat_continuation_dispatched`
+
+Fires after the continuation has been driven to completion. Canonical
+observability hook (parity with the OTel signal pattern used in
+`cron-status`).
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$job_id` | `string` | Async job identifier. |
+| `$snapshot` | `array` | Continuation snapshot. |
+| `$terminal_status` | `string` | `completed`, `failed`, `cancelled`. |

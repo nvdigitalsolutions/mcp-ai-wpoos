@@ -312,7 +312,7 @@ class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP
 			array(
 				'post_type'      => 'mcp_ai_eca',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'manage_eca_term', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 				'meta_query'     => array(
 					array(
@@ -398,7 +398,7 @@ class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP
 			array(
 				'post_type'      => 'mcp_ai_eca',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'manage_eca_term', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);
@@ -489,7 +489,7 @@ class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP
 			array(
 				'post_type'      => 'mcp_ai_eca',
 				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'manage_eca_term', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 				'meta_query'     => array(
 					array(

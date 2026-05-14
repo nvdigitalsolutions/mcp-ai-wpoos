@@ -121,7 +121,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 						'value' => 'graded',
 					),
 				),
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'get_quiz_analytics', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);

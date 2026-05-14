@@ -19,6 +19,32 @@
 
 ---
 
+## Released: v1.1.17 / v1.1.16 / v1.1.15 / v1.1.14 — May 2026 ✅
+
+**Release Dates:** May 1–10, 2026
+
+### What was delivered across these four releases
+
+- ✅ **Orchestration Phases 1–7** — HITL approval queue, prompt-injection detector, structured output + OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store adapter, Pro team budget manager
+- ✅ **LLM Harnessing Subsystem (Layers A–H)** — seven opt-in per-assistant epistemic layers (prompt cues, reasoning/self-consistency, tool router, retrieval+citation, self-refine, memory scoping+PII, eval scheduler) + Pro Layer H fine-tune curriculum export
+- ✅ **Toolkit MCP Servers — all 7 phases complete** — 26 toolkits (19 Tier-1 + 7 Tier-2) exposed as per-toolkit MCP servers; `/.well-known/mcp` discovery endpoint; toolkit-scoped credentials; cross-mount audit trail; `/mcp-server` slash command; WP-CLI token management
+- ✅ **New AI providers** — OpenRouter (unified gateway for 100+ models), DeepSeek (reasoning_content passthrough), LM Studio native cURL SSE streaming + full May 2026 parity, Kimi K2.6 + Qwen 3.6 in catalog
+- ✅ **Chat SPA addon (v0.6.0, Phases 1–7)** — React replacement for legacy chat shortcode (Vercel AI SDK UI, SSE adapter, tool-call cards, memory drawer, HITL bar, attachments, branching, legacy opt-out constant)
+- ✅ **SaaS Controller addon (v0.1.0, 11 phases)** + **Cloud Worker (Phase 3)** — full NV oOS Cloud control plane management from WP-Admin
+- ✅ **Docs Hub addon (v0.1.0 → v0.3.8)** — remote-first React SPA documentation portal
+- ✅ **Toolkit SPA Blueprint Phases 5–12** — a11y, i18n, PHPUnit tests, bundle-size CI guardrail, scaffolder auto-patch; 10 Tier-A manifests; canvas-toolkit v0.2.0; document-editor v0.2.0; media-studio Phase 4
+- ✅ **Inline-async-tick pattern** — 8 Tier-1 consumers (transcript mining, async tool executor, SaaS Apply, Crawl4AI, Docs Hub rebuild, Graphify reindex, Harness eval, Gemini Veo polling)
+- ✅ **WordPress.org Compliance Hardening (B1–B13)** — all reviewer findings resolved; build-pipeline split (--wp-org flag)
+- ✅ **PHPUnit + Vitest coverage campaign** (PRs #1–#11) — 271 AJAX handlers covered; non-regression CI gate; Vitest for all 6 SPA addons
+- ✅ **Dependabot security sweep** — 33 alerts resolved across all manifests
+- ✅ **Agent Skills Phases 1–4** — 28+ bundled Pro WP-developer skills, remote catalogues, progressive disclosure, skill packs
+- ✅ **Markup Subsystem (Base)** — in-loop Konva canvas widget for image annotation
+- ✅ **MemPalace Capture Framework Phases A + B1** — five capture tools onto the durable memory bridge
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
+
+---
+
 ## Current Release (v1.1.4) - March 2026 ✅
 
 **Release Date:** March 15, 2026  

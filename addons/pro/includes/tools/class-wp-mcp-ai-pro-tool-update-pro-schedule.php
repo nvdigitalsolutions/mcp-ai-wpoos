@@ -118,6 +118,45 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'format'      => 'uri',
 					'description' => __( 'New external webhook callback URL. Empty string to remove.', 'mcp-ai-wpoos-pro' ),
 				),
+				'callback_secret'   => array(
+					'type'        => 'string',
+					'description' => __( 'HMAC-SHA256 signing secret for the callback. Empty string to remove. When set, every webhook POST includes X-WP-MCP-AI-Signature: sha256=<hex> computed over "<timestamp>.<body>". The X-WP-MCP-AI-Timestamp header contains the Unix timestamp; receivers should reject requests where that timestamp is more than 300 seconds old to prevent replay attacks.', 'mcp-ai-wpoos-pro' ),
+				),
+				'display'           => array(
+					'type'        => 'object',
+					'description' => __( 'Display / widget-binding settings consumed by the Scheduled Result block & Elementor widget.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'result_capture'   => array(
+							'type' => 'string',
+							'enum' => array( 'disabled', 'summary', 'full' ),
+						),
+						'public_render'    => array( 'type' => 'boolean' ),
+						'public_fields'    => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'string' ),
+						),
+						'result_retention' => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+							'maximum' => 100,
+						),
+						'widget_defaults'  => array(
+							'type'       => 'object',
+							'properties' => array(
+								'render_mode'      => array(
+									'type' => 'string',
+									'enum' => array( 'summary-card', 'list', 'table', 'metric', 'timeline', 'raw' ),
+								),
+								'title'            => array( 'type' => 'string' ),
+								'refresh_interval' => array(
+									'type'    => 'integer',
+									'minimum' => 0,
+									'maximum' => 3600,
+								),
+							),
+						),
+					),
+				),
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,

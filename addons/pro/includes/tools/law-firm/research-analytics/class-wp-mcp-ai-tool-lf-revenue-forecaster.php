@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 
 		$recent_entries = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => $recent_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		) );
@@ -165,7 +165,7 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 
 		$prior_entries = get_posts( array(
 			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => $prior_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		) );
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 		// Count active matters in pipeline.
 		$pipeline_args = array(
 			'post_type'      => 'mcp_ai_lf_matter',
-			'posts_per_page' => -1,
+			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
 			'post_status'    => 'publish',
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(

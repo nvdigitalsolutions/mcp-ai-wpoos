@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > **This file is loaded every turn by Claude Code.** Keep it focused and actionable.
-> Last reviewed: **May 2026** · Version: **2.2**
+> Last reviewed: **May 2026** · Version: **2.3**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -117,14 +117,36 @@ class WP_MCP_AI_Tool_Example extends WP_MCP_AI_Tool_Base {
 }
 ```
 
-## Tool Return Format
+## Tool Return Format — Canonical Envelope
+
+Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
 
 ```php
-// Success:
-return array( 'success' => true, 'message' => __( 'Done.', 'mcp-ai-wpoos' ), 'data' => $results );
-// Error:
-return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ) );
+// SUCCESS — array with success/message/data:
+return array(
+    'success' => true,
+    'message' => __( 'Done.', 'mcp-ai-wpoos' ),  // Translated, human-readable.
+    'data'    => $results,                        // Serialisable via wp_json_encode().
+);
+
+// FAILURE — ALWAYS WP_Error, never an array with 'success' => false:
+return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ), $extra_data );
 ```
+
+**Rules:**
+- ✅ Success returns an array with at minimum `success => true` and `message`. `data` is the only pipeable payload — keep it serialisable.
+- ✅ Failure **must** use `WP_Error`. The agentic loop already normalises `WP_Error` correctly for the model.
+- ❌ Do **not** return `array( 'success' => false, 'message' => ... )` for errors. It defeats observability subscribers and produces inconsistent reasoning signals for the LLM.
+- 🛠️ For success responses, compose [`trait-wp-mcp-ai-tool-envelope.php::format_success_response()`](includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;` and call `$this->format_success_response( $message, $data )`. Tools that also need the broader chat-response helpers (`format_chat_response`, `format_collection_response`, `format_empty_result_response`, `ensure_response_message`) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait, so `format_success_response()` is identical from both.
+
+## Tool Sanitisation — Two-Gate Rule
+
+Every tool's `execute()` method must satisfy two gates (Unix Theory Compliance §2.6, Phase P6):
+
+- **Gate 1 — Sanitize at entry:** all `$arguments[...]` values are sanitised at the top of `execute()` **before** any business logic (use `absint`, `sanitize_text_field`, `sanitize_key`, `wp_kses_post`, `esc_url_raw`, etc.).
+- **Gate 2 — Escape at exit:** every value returned in the canonical-envelope `data` array — and every value inserted into a database, redirect URL, response header, or rendered HTML — is escaped/prepared (use `esc_html`, `esc_attr`, `esc_url`, `wp_json_encode`, `$wpdb->prepare()` with placeholders).
+
+The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 
 ## Base vs Pro Decision
 
@@ -160,12 +182,12 @@ In `class-wp-mcp-ai-rest.php` (lines ~2578-2950):
 
 - Singleton: `WP_MCP_AI_Tool_Registry::get_instance()`
 - Hook-based: `do_action( 'wp_mcp_ai_register_tools', $registry )`
-- Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.)
+- Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.), `WP_MCP_AI_Tool_Data_Contract_Interface` (`produces`/`consumes` payload hints — surfaced to the model as a `[Data contract: …]` description suffix)
 - Capability flags: `'read-only'`, `'write'`, `'state-changing'`, `'cacheable'`, `'external-api'`
 
 ### Orchestration Phases (1–7)
 
-All seven orchestration phases are active as of v1.1.15. Key components:
+All seven orchestration phases are active as of v1.1.15. The Unix Theory Compliance Phases P0–P6 (canonical return envelope + sniff, capability-fence audit, data-contract interface, tool-lifecycle descriptor, back-compat alias infrastructure, sanitize-at-entry sniff) landed across v1.1.16–v1.1.18 on top of these. Key components:
 - **HITL** (`WP_MCP_AI_Approval_Queue`, CPT `mcp_ai_approval`, REST `/mcp-ai/v1/approvals/*`)
 - **Prompt Injection Detector** (`WP_MCP_AI_Prompt_Injection_Detector`, harness profile key `injection_detector.enabled`, action `wp_mcp_ai_prompt_injection_detected`)
 - **OTel** — OTLP endpoint + token configurable under **Tools → Connections**
@@ -176,10 +198,11 @@ All seven orchestration phases are active as of v1.1.15. Key components:
 
 ### Provider Clients
 
-Nine providers supported. New in v1.1.15:
-- **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
-- **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) — `reasoning_content` / `<think>…</think>` passthrough
-- **LM Studio** — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
+Nine providers supported. New across v1.1.15–v1.1.17:
+- **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`, v1.1.15) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
+- **DigitalOcean Serverless Inference** (`WP_MCP_AI_DigitalOcean_Client`, v1.1.17) — OpenAI-compatible API at `https://inference.do-ai.run/v1`; Llama 3.3, DeepSeek-R1 distill, gpt-oss, plus native `/embeddings`
+- **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`, v1.1.15) — `reasoning_content` / `<think>…</think>` passthrough
+- **LM Studio** (v1.1.15) — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
 
 ### Slash Commands
 

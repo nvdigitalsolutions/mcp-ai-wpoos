@@ -1,5 +1,4 @@
-import type { SequenceControls } from './CompositionManager.js';
-import type { SchemaKeysRecord, SequenceSchema } from './sequence-field-schema.js';
+import type { SequenceSchema } from './sequence-field-schema.js';
 export type CanUpdateSequencePropStatus = {
     canUpdate: true;
     codeValue: unknown;
@@ -7,7 +6,11 @@ export type CanUpdateSequencePropStatus = {
     canUpdate: false;
     reason: 'computed';
 };
-export declare const useSchema: <S extends SequenceSchema, T extends SchemaKeysRecord<S>>(schema: S | null, currentValue: (T & Record<Exclude<keyof T, keyof S>, never>) | null) => {
-    controls: SequenceControls | undefined;
-    values: T;
-};
+export type DragOverrides = Record<string, Record<string, unknown>>;
+export type CodeValues = Record<string, Record<string, CanUpdateSequencePropStatus>>;
+export declare const computeEffectiveSchemaValuesDotNotation: ({ schema, currentValue, overrideValues, propStatus, }: {
+    schema: SequenceSchema;
+    currentValue: Record<string, unknown>;
+    overrideValues: Record<string, unknown>;
+    propStatus: Record<string, CanUpdateSequencePropStatus> | undefined;
+}) => Record<string, unknown>;

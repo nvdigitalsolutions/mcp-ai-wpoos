@@ -624,6 +624,9 @@ Headline providers acknowledged here for completeness:
 * **Anthropic Claude** — <https://www.anthropic.com/>
 * **Ollama** (local) — <https://ollama.com/>
 * **LM Studio** (local) — <https://lmstudio.ai/>
+* **OpenRouter** (unified gateway) — <https://openrouter.ai/>
+* **DeepSeek** — <https://www.deepseek.com/>
+* **DigitalOcean Serverless Inference** — <https://www.digitalocean.com/products/ai> (OpenAI-compatible API at `https://inference.do-ai.run/v1`; Llama 3.3, DeepSeek-R1 distill, gpt-oss, plus native `/embeddings`).
 * **Crawl4AI** — <https://github.com/unclecode/crawl4ai>
 
 ---

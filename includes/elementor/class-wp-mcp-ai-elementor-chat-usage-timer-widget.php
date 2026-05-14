@@ -359,12 +359,8 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 			. ' var interval = setInterval( tick, 1000 );'
 			. '} )();';
 
-		if ( function_exists( 'wp_print_inline_script_tag' ) ) {
-			wp_print_inline_script_tag( $script );
-		} else {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Fallback for WordPress < 5.7, script content is generated above
-			echo '<script>' . $script . '</script>';
-		}
+		// Plugin requires WP 6.0+; wp_print_inline_script_tag() (added in WP 5.7) is always available.
+		wp_print_inline_script_tag( $script );
 	}
 
 	/**

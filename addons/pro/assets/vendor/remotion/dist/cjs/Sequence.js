@@ -5,9 +5,12 @@ const jsx_runtime_1 = require("react/jsx-runtime");
 /* eslint-disable @typescript-eslint/no-use-before-define */
 const react_1 = require("react");
 const AbsoluteFill_js_1 = require("./AbsoluteFill.js");
+const effect_internals_js_1 = require("./effects/effect-internals.js");
+const use_memoized_effects_js_1 = require("./effects/use-memoized-effects.js");
 const freeze_js_1 = require("./freeze.js");
 const nonce_js_1 = require("./nonce.js");
 const PremountContext_js_1 = require("./PremountContext.js");
+const sequence_field_schema_js_1 = require("./sequence-field-schema.js");
 const SequenceContext_js_1 = require("./SequenceContext.js");
 const SequenceManager_js_1 = require("./SequenceManager.js");
 const timeline_position_state_js_1 = require("./timeline-position-state.js");
@@ -15,7 +18,8 @@ const use_current_frame_1 = require("./use-current-frame");
 const use_remotion_environment_js_1 = require("./use-remotion-environment.js");
 const use_video_config_js_1 = require("./use-video-config.js");
 const v5_flag_js_1 = require("./v5-flag.js");
-const RegularSequenceRefForwardingFunction = ({ from = 0, durationInFrames = Infinity, children, name, height, width, showInTimeline = true, controls, _remotionInternalLoopDisplay: loopDisplay, _remotionInternalStack: stack, _remotionInternalPremountDisplay: premountDisplay, _remotionInternalPostmountDisplay: postmountDisplay, ...other }, ref) => {
+const wrap_in_schema_js_1 = require("./wrap-in-schema.js");
+const RegularSequenceRefForwardingFunction = ({ from = 0, durationInFrames = Infinity, children, name, height, width, showInTimeline = true, _experimentalControls: controls, _experimentalEffects, _remotionInternalLoopDisplay: loopDisplay, _remotionInternalStack: stack, _remotionInternalPremountDisplay: premountDisplay, _remotionInternalPostmountDisplay: postmountDisplay, _remotionInternalIsMedia: isMedia, ...other }, ref) => {
     var _a, _b;
     const { layout = 'absolute-fill' } = other;
     const [id] = (0, react_1.useState)(() => String(Math.random()));
@@ -30,7 +34,9 @@ const RegularSequenceRefForwardingFunction = ({ from = 0, durationInFrames = Inf
     }
     // @ts-expect-error
     if (layout === 'none' && typeof other.style !== 'undefined') {
-        throw new TypeError('If layout="none", you may not pass a style.');
+        throw new TypeError('If layout="none", you may not pass a style. Passed: ' +
+            // @ts-expect-error
+            JSON.stringify(other.style));
     }
     if (typeof durationInFrames !== 'number') {
         throw new TypeError(`You passed to durationInFrames an argument of type ${typeof durationInFrames}, but it must be a number.`);
@@ -95,17 +101,45 @@ const RegularSequenceRefForwardingFunction = ({ from = 0, durationInFrames = Inf
     }, [name]);
     const env = (0, use_remotion_environment_js_1.useRemotionEnvironment)();
     const inheritedStack = (_a = other === null || other === void 0 ? void 0 : other.stack) !== null && _a !== void 0 ? _a : null;
+    const memoizedEffects = (0, use_memoized_effects_js_1.useMemoizedEffects)((0, effect_internals_js_1.flattenEffects)(_experimentalEffects !== null && _experimentalEffects !== void 0 ? _experimentalEffects : []));
     (0, react_1.useEffect)(() => {
-        var _a;
+        var _a, _b;
         if (!env.isStudio) {
             return;
+        }
+        if (isMedia) {
+            registerSequence({
+                type: isMedia.type,
+                controls: controls !== null && controls !== void 0 ? controls : null,
+                effects: memoizedEffects,
+                displayName: timelineClipName,
+                doesVolumeChange: isMedia.data.doesVolumeChange,
+                duration: actualDurationInFrames,
+                from,
+                id,
+                loopDisplay,
+                nonce: nonce.get(),
+                parent: (_a = parentSequence === null || parentSequence === void 0 ? void 0 : parentSequence.id) !== null && _a !== void 0 ? _a : null,
+                playbackRate: isMedia.data.playbackRate,
+                postmountDisplay: postmountDisplay !== null && postmountDisplay !== void 0 ? postmountDisplay : null,
+                premountDisplay: premountDisplay !== null && premountDisplay !== void 0 ? premountDisplay : null,
+                rootId,
+                showInTimeline,
+                src: isMedia.data.src,
+                stack: stack !== null && stack !== void 0 ? stack : inheritedStack,
+                startMediaFrom: isMedia.data.startMediaFrom,
+                volume: isMedia.data.volumes,
+            });
+            return () => {
+                unregisterSequence(id);
+            };
         }
         registerSequence({
             from,
             duration: actualDurationInFrames,
             id,
             displayName: timelineClipName,
-            parent: (_a = parentSequence === null || parentSequence === void 0 ? void 0 : parentSequence.id) !== null && _a !== void 0 ? _a : null,
+            parent: (_b = parentSequence === null || parentSequence === void 0 ? void 0 : parentSequence.id) !== null && _b !== void 0 ? _b : null,
             type: 'sequence',
             rootId,
             showInTimeline,
@@ -115,6 +149,7 @@ const RegularSequenceRefForwardingFunction = ({ from = 0, durationInFrames = Inf
             premountDisplay: premountDisplay !== null && premountDisplay !== void 0 ? premountDisplay : null,
             postmountDisplay: postmountDisplay !== null && postmountDisplay !== void 0 ? postmountDisplay : null,
             controls: controls !== null && controls !== void 0 ? controls : null,
+            effects: memoizedEffects,
         });
         return () => {
             unregisterSequence(id);
@@ -139,6 +174,8 @@ const RegularSequenceRefForwardingFunction = ({ from = 0, durationInFrames = Inf
         env.isStudio,
         inheritedStack,
         controls,
+        memoizedEffects,
+        isMedia,
     ]);
     // Ceil to support floats
     // https://github.com/remotion-dev/remotion/issues/2958
@@ -202,15 +239,7 @@ const PremountedPostmountedSequenceRefForwardingFunction = (props, ref) => {
         styleWhilePremounted,
         styleWhilePostmounted,
     ]);
-    const { playing } = (0, timeline_position_state_js_1.useTimelineContext)();
-    const premountFramesRemaining = premountingActive ? from - frame : 0;
-    const premountContextValue = (0, react_1.useMemo)(() => {
-        return {
-            premountFramesRemaining,
-            playing: parentPremountContext.playing || playing,
-        };
-    }, [premountFramesRemaining, parentPremountContext.playing, playing]);
-    return ((0, jsx_runtime_1.jsx)(PremountContext_js_1.PremountContext.Provider, { value: premountContextValue, children: (0, jsx_runtime_1.jsx)(freeze_js_1.Freeze, { frame: freezeFrame, active: isFreezingActive, children: (0, jsx_runtime_1.jsx)(exports.Sequence, { ref: ref, from: from, durationInFrames: durationInFrames, style: style, _remotionInternalPremountDisplay: premountFor, _remotionInternalPostmountDisplay: postmountFor, _remotionInternalIsPremounting: premountingActive, _remotionInternalIsPostmounting: postmountingActive, ...otherProps }) }) }));
+    return ((0, jsx_runtime_1.jsx)(freeze_js_1.Freeze, { frame: freezeFrame, active: isFreezingActive, children: (0, jsx_runtime_1.jsx)(SequenceInner, { ref: ref, from: from, durationInFrames: durationInFrames, style: style, _remotionInternalPremountDisplay: premountFor, _remotionInternalPostmountDisplay: postmountFor, _remotionInternalIsPremounting: premountingActive, _remotionInternalIsPostmounting: postmountingActive, ...otherProps }) }));
 };
 const PremountedPostmountedSequence = (0, react_1.forwardRef)(PremountedPostmountedSequenceRefForwardingFunction);
 const SequenceRefForwardingFunction = (props, ref) => {
@@ -227,8 +256,9 @@ const SequenceRefForwardingFunction = (props, ref) => {
     }
     return (0, jsx_runtime_1.jsx)(RegularSequence, { ...props, ref: ref });
 };
+const SequenceInner = (0, react_1.forwardRef)(SequenceRefForwardingFunction);
 /*
  * @description A component that time-shifts its children and wraps them in an absolutely positioned <div>.
  * @see [Documentation](https://www.remotion.dev/docs/sequence)
  */
-exports.Sequence = (0, react_1.forwardRef)(SequenceRefForwardingFunction);
+exports.Sequence = (0, wrap_in_schema_js_1.wrapInSchema)(SequenceInner, sequence_field_schema_js_1.sequenceSchema);

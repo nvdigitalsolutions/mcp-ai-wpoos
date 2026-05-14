@@ -48,7 +48,7 @@ const useLoop = () => {
  * @description This component allows you to quickly lay out an animation so it repeats itself.
  * @see [Documentation](https://remotion.dev/docs/loop)
  */
-const Loop = ({ durationInFrames, times = Infinity, children, name, ...props }) => {
+const Loop = ({ durationInFrames, times = Infinity, children, name, showInTimeline, ...props }) => {
     const currentFrame = (0, use_current_frame_js_1.useCurrentFrame)();
     const { durationInFrames: compDuration } = (0, use_video_config_js_1.useVideoConfig)();
     (0, validate_duration_in_frames_js_1.validateDurationInFrames)(durationInFrames, {
@@ -84,7 +84,7 @@ const Loop = ({ durationInFrames, times = Infinity, children, name, ...props }) 
             durationInFrames,
         };
     }, [currentFrame, durationInFrames]);
-    return ((0, jsx_runtime_1.jsx)(LoopContext.Provider, { value: loopContext, children: (0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { durationInFrames: durationInFrames, from: from, name: name !== null && name !== void 0 ? name : '<Loop>', _remotionInternalLoopDisplay: loopDisplay, layout: props.layout, style: style, children: children }) }));
+    return ((0, jsx_runtime_1.jsx)(LoopContext.Provider, { value: loopContext, children: (0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { durationInFrames: durationInFrames, from: from, name: name !== null && name !== void 0 ? name : '<Loop>', _remotionInternalLoopDisplay: loopDisplay, layout: props.layout, style: style, showInTimeline: showInTimeline, children: children }) }));
 };
 exports.Loop = Loop;
 exports.Loop.useLoop = useLoop;

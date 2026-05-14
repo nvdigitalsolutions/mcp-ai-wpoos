@@ -267,6 +267,23 @@
         "enable_all_context_servers": false,
         "context_servers": {}
       },
+      "toolkit-spa-maintainer": {
+        "name": "NV oOS · Toolkit SPA Maintainer",
+        "tools": {
+          "read_file": true,
+          "grep": true,
+          "find_path": true,
+          "list_directory": true,
+          "edit_file": true,
+          "create_directory": true,
+          "move_path": true,
+          "terminal": true,
+          "thinking": true,
+          "diagnostics": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {}
+      },
       "release-engineer": {
         "name": "NV oOS · Release Engineer",
         "tools": {

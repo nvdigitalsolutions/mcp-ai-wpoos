@@ -29,7 +29,7 @@ const useVolume = ({ mediaRef, volume, logLevel, source, shouldUseWebAudioApi, }
     if (!sharedAudioContext) {
         throw new Error('useAmplification must be used within a SharedAudioContext');
     }
-    const { audioContext } = sharedAudioContext;
+    const { audioContext, gainNode: masterGainNode } = sharedAudioContext;
     if (typeof window !== 'undefined') {
         // eslint-disable-next-line react-hooks/rules-of-hooks
         (0, react_1.useLayoutEffect)(() => {
@@ -51,12 +51,15 @@ const useVolume = ({ mediaRef, volume, logLevel, source, shouldUseWebAudioApi, }
             if (!source) {
                 return;
             }
+            if (!masterGainNode) {
+                return;
+            }
             const gainNode = new GainNode(audioContext, {
                 gain: currentVolumeRef.current,
             });
             source.attemptToConnect();
             source.get().connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            gainNode.connect(masterGainNode);
             audioStuffRef.current = {
                 gainNode,
             };
@@ -66,7 +69,14 @@ const useVolume = ({ mediaRef, volume, logLevel, source, shouldUseWebAudioApi, }
                 gainNode.disconnect();
                 source.get().disconnect();
             };
-        }, [logLevel, mediaRef, audioContext, source, shouldUseWebAudioApi]);
+        }, [
+            logLevel,
+            mediaRef,
+            audioContext,
+            source,
+            shouldUseWebAudioApi,
+            masterGainNode,
+        ]);
     }
     if (audioStuffRef.current) {
         const valueToSet = volume;

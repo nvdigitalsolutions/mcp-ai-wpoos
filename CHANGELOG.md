@@ -2,19 +2,481 @@
 
 ## [Unreleased]
 
-### Security — Dependabot Alert Sweep (33 alerts)
+_No changes yet._
+
+## [1.1.18] - 2026-05-14
+
+Bumped to 1.1.18 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+The complete set of changes captured in this release is broken down below; the per-PR detail that was previously authored under `[Unreleased]` is preserved verbatim in the following sub-sections.
+
+### Added — DigitalOcean Serverless Inference provider
+
+- `feat(providers): add DigitalOcean Serverless Inference provider`.
+- New concrete client `WP_MCP_AI_DigitalOcean_Client`
+  (`includes/class-wp-mcp-ai-digitalocean-client.php`) wrapping the
+  OpenAI-compatible REST API at `https://inference.do-ai.run/v1`. Supports
+  chat completions, tool/function calling, JSON mode, SSE streaming, native
+  embeddings, model listing, and reasoning passthrough. Authentication uses
+  a model access key (`Authorization: Bearer …`) issued from
+  Gradient Platform → Serverless Inference → Model access keys.
+- New provider-interface adapter
+  `WP_MCP_AI_DigitalOcean_Provider_Client`
+  (`includes/infrastructure/providers/…`) implementing
+  `Interface_WP_MCP_AI_Provider_Client` for the language-model router.
+- New embedding provider `WP_MCP_AI_Embedding_Provider_DigitalOcean`
+  (`includes/services/embedding/…`) registered alongside the OpenAI and
+  Ollama embedding providers; default model `gte-large-en-v1.5`.
+- DI container wiring: `client.digitalocean` singleton, injected into
+  `WP_MCP_AI_Language_Model_Router` as a new optional constructor argument.
+- Settings UI: new **DigitalOcean** subtab under **Settings → Providers**
+  with `enable_digitalocean`, `digitalocean_api_key`, `digitalocean_model`,
+  `digitalocean_base_url`, and `digitalocean_embedding_model` fields.
+- `WP_MCP_AI_Model_Config::get_active_providers()` now includes
+  `digitalocean` when the provider is enabled with an API key configured.
+- `includes/data/model-catalog.json` seeded with `llama3.3-70b-instruct`,
+  `llama3.1-8b-instruct`, `deepseek-r1-distill-llama-70b`,
+  `openai-gpt-oss-120b`, and `gte-large-en-v1.5`. Pricing fields are
+  zeroed — operators should update them via the Models admin page or the
+  `wp_mcp_ai_model_catalog` filter to reflect their account's per-token
+  billing.
+- **Model Discovery Service**: new `digitalocean` branch refreshes the
+  cached catalogue from `/v1/models` when an API key is configured.
+- **Provider Diagnostics**: new **DigitalOcean Serverless Inference** card
+  with a `GET /v1/models` connectivity probe that reports latency, model
+  count, and the configured default model. The probe does not spend
+  inference credits.
+- New test `tests/test-digitalocean-client.php` (mock HTTP via
+  `pre_http_request`): constants, accessors, chat completion success,
+  tool-call passthrough, 401/429 error envelopes, malformed JSON,
+  reasoning-content passthrough, `list_models()` normalisation, embedding
+  round-trip, custom base URL override, token-count heuristic.
+- New docs: `docs/features/ai-providers/digitalocean.md` (prerequisites,
+  quick start, model access keys, available models, custom base URL,
+  tool calling + streaming, embeddings, prompt caching/reasoning notes,
+  diagnostics, troubleshooting).
+- **Out of scope**: DigitalOcean Agent endpoints
+  (`*.agents.do-ai.run/api/v1`) — they use a different per-agent URL
+  scheme and auth flow. May be added as a separate provider entry in a
+  future release.
+
+### Added — Inline-async-tick fallback for Gemini Veo polling (Slice 6)
+
+- `WP_MCP_AI_Gemini_Video_Generation_Service` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first Gemini
+  operation-status poll fires on the shutdown of the request that queued the
+  video job, rather than waiting for the next WP-Cron loopback. On hosts with
+  `DISABLE_WP_CRON` the loopback never fires; the cooperative tick lock
+  prevents the inline kick and the rescheduled cron event from executing
+  `poll_video_async()` for the same `job_id` simultaneously:
+  - `queue_async_polling()` registers a `shutdown` action at priority 22 that
+    calls `poll_video_async_static()` inline after the video-generation
+    response is returned to the client (guarded by the
+    `wp_mcp_ai_inline_kick_enabled` filter). The existing
+    `wp_schedule_single_event(time() + 1, …)` + `spawn_cron()` calls are
+    preserved as the cron fallback.
+  - `poll_video_async()` now acquires the cooperative tick lock
+    (`TICK_LOCK_PREFIX = 'wp_mcp_ai_veo_poll_lock_'`, group
+    `wp_mcp_ai_veo_poll`, TTL 30 s) then delegates to the new protected
+    `do_poll_video_async()` method, so shutdown kick and cron event cannot
+    race for the same job.
+- New class constants: `TICK_LOCK_PREFIX`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`.
+- New test: `tests/test-veo-inline-kick.php` (4 cases: constant assertions,
+  lock prevents double-poll, missing-metadata bail, filter disable).
+- Architecture doc `docs/architecture/inline-async-tick-pattern.md` updated:
+  Slice 6 added to the Tier-1 consumer table; the "Future Tier-1 consumers"
+  note removed (all planned slices are now complete).
+
+### Added — Inline-async-tick fallback for Graphify reindex (Slice 5a)
+
+- `NV_oOS_Graphify` now composes `WP_MCP_AI_Inline_Async_Tick_Trait`
+  (conditional load from `WP_MCP_AI_PATH`, with a no-op stub for bare
+  environments) so that the first incremental reindex after a post save fires
+  on the shutdown of the save request instead of waiting 5+ seconds for the
+  WP-Cron loopback:
+  - `on_save_post()` registers a `shutdown` action at priority 22 that
+    calls `run_scheduled_build()` inline after the save response is flushed
+    (guarded by the `wp_mcp_ai_inline_kick_enabled` filter). The existing
+    `wp_schedule_single_event(time() + 5, …)` call is preserved as the
+    cron fallback.
+  - `run_scheduled_build()` now acquires the cooperative tick lock
+    (`TICK_LOCK_KEY = 'nvoos_graphify_build_tick_lock'`, group
+    `nvoos_graphify`, TTL 60 s) then delegates to the new protected static
+    `do_build()` method so that the shutdown kick and the cron loopback
+    cannot run two concurrent builds simultaneously.
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`, `TICK_LOCK_TTL`.
+- New test: `tests/graphify/test-graphify-inline-kick.php` (4 cases:
+  shutdown-kick registration on publish, lock prevents double-build, filter
+  disables, draft post skips kick).
+
+### Added — Inline-async-tick fallback for Harness Eval Scheduler (Slice 5b)
+
+- `WP_MCP_AI_Harness_Eval_Scheduler` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first eval batch fires on
+  the shutdown of the request that first activates the scheduler:
+  - `maybe_schedule_cron()` now adds a `shutdown` action (priority 22) the
+    first time it schedules the daily cron event, firing `tick()` inline so
+    opted-in assistants see an initial eval result within seconds rather than
+    waiting until the next day.
+  - `tick()` now acquires the cooperative tick lock
+    (`TICK_LOCK_KEY = 'wp_mcp_ai_harness_eval_tick_lock'`, group
+    `wp_mcp_ai_harness_eval`, TTL 120 s) and delegates to the new public
+    static `do_tick()` method, preventing concurrent WP-Cron invocations from
+    running two overlapping eval batches.
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`, `TICK_LOCK_TTL`.
+- New test: `tests/test-harness-eval-scheduler-inline-kick.php` (4 cases:
+  first-schedule shutdown kick, lock contention, filter disables, do_tick
+  no-op summary on empty site).
+
+### Added — Inline-async-tick fallback for Crawl4AI background poller (Slice 3)
+
+- `WP_MCP_AI_Crawler` now composes the base plugin's
+  `WP_MCP_AI_Inline_Async_Tick_Trait` so that the first poll for a
+  newly-queued Crawl4AI job fires on the shutdown of the request that
+  registered it, rather than waiting up to 30 s (the default poll
+  interval) for the WP-Cron loopback:
+  - `register_remote_job()` registers a `shutdown` action at priority
+    22 that calls `handle_poll_event($task_id)` inline after the REST
+    response is flushed (guarded by the `wp_mcp_ai_inline_kick_enabled`
+    filter escape hatch).
+  - `handle_poll_event()` now acquires the two-layer cooperative tick
+    lock (`TICK_LOCK_PREFIX . md5($task_id)`, group
+    `wp_mcp_ai_crawl4ai`, TTL 30 s) before delegating to the new
+    `do_poll_event()` method so that the inline kick and a concurrent
+    WP-Cron loopback cannot both call `check_remote_task()` for the
+    same task simultaneously.
+  - The poll body has been extracted into the protected static
+    `do_poll_event()` method so unit tests can exercise it without
+    going through the lock.
+- New class constants: `TICK_LOCK_PREFIX`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`, `STALE_QUEUED_THRESHOLD_SECONDS`.
+- New test: `tests/test-crawl4ai-inline-kick.php` (4 cases:
+  shutdown-kick registration, lock-prevents-double-poll, filter disables,
+  skip-polling bail).
+
+### Added — Inline-async-tick fallback for Docs Hub rebuild pipeline (Slice 4)
+
+- `NV_oOS_Docs_Hub_Rebuild_Pipeline` (Docs Hub addon) now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` when the base NV oOS plugin is
+  active. This fires the first rebuild chunk on the shutdown of the
+  request that calls `enqueue()` instead of waiting for the next
+  WP-Cron loopback, making rebuilds feel near-instant for operators:
+  - The trait file is loaded from `WP_MCP_AI_PATH` with a guard;
+    a no-op stub trait is defined for bare environments (unit tests
+    running without the base plugin) so the class loads cleanly.
+  - `enqueue()` registers a `shutdown` action at priority 22 that
+    calls `tick()` inline after flushing (guarded by the filter).
+  - `tick()` acquires the fixed-key cooperative tick lock
+    (`TICK_LOCK_KEY = 'nvoos_docs_hub_rebuild_tick_lock'`, group
+    `nvoos_docs_hub`, TTL 45 s) then delegates to the new static
+    `do_tick()` method so that the inline kick and a WP-Cron loopback
+    cannot run two concurrent chunks.
+  - Tick body extracted to public static `do_tick()` (callable by
+    tests directly without the lock).
+- New class constants: `TICK_LOCK_KEY`, `TICK_LOCK_CACHE_GROUP`,
+  `TICK_LOCK_TTL`.
+- New test: `addons/docs-hub/tests/test-rebuild-pipeline-inline-kick.php`
+  (4 cases: shutdown-kick registration, lock-prevents-double-tick, filter
+  disables, idle/done bail).
+
+### Added — Inline-async-tick fallback for SaaS Controller Apply Job
+
+- `NVOOS_SaaS_Controller_Apply_Job` (the queued background-apply
+  worker for the SaaS Controller addon's Cloudflare / Stripe /
+  OpenRouter / Worker upload pipeline) now composes the base
+  plugin's `WP_MCP_AI_Inline_Async_Tick_Trait`. On hosts where
+  `DISABLE_WP_CRON` is true or the WP-Cron loopback is firewalled,
+  apply jobs previously sat at `status: queued` forever even though
+  `spawn_cron()` returned without error. The class now:
+  - registers a `shutdown` action from `enqueue_plan()` that runs
+    the first tick inline in the same PHP process once the
+    `/apply/enqueue` REST response has been flushed (honours the
+    shared `wp_mcp_ai_inline_kick_enabled` escape-hatch filter);
+  - guards `handle_tick()` with the trait's two-layer cooperative
+    tick lock (transient + `wp_cache_add`) so a delayed cron
+    loopback firing concurrently with the inline shutdown kick is
+    a no-op;
+  - emits the unified `wp_mcp_ai_inline_kick_completed`
+    observability action so the Pro OTel measurement bootstrap
+    records `inline_kick.duration_ms` / `inline_kick.failure.count`
+    for SaaS Apply on the same dashboard as Mine Memories and the
+    Tool Async Executor;
+  - recurses inline under `DISABLE_WP_CRON` within a 60-second
+    wall-clock budget (`INLINE_LOOP_BUDGET_SECONDS = 60`) — larger
+    than the 20s used by the much faster batch-oriented Mine
+    Memories job because a single Apply row can include a
+    multi-second Worker multipart upload to Cloudflare.
+- REST `GET /nvoos-saas/v1/apply/jobs/{id}` now self-heals: when
+  the admin UI polls and the job has sat in `queued` past
+  `STALE_QUEUED_THRESHOLD_SECONDS = 5`, the controller schedules a
+  one-shot shutdown kick on the way out so the very next poll
+  observes progress. Mirrors the equivalent self-heal in the base
+  plugin's Mine Memories and Tool Async Executor REST routes.
+- New class constants `TICK_LOCK_PREFIX = 'nvoos_saas_apply_lock_'`,
+  `TICK_LOCK_CACHE_GROUP = 'nvoos_saas_apply'`, `TICK_LOCK_TTL =
+  120`, `STALE_QUEUED_THRESHOLD_SECONDS = 5`,
+  `INLINE_LOOP_BUDGET_SECONDS = 60`. Existing constants
+  (`CRON_HOOK`, `STATE_PREFIX`, `STATE_TTL`, `MAX_TOTAL_ROWS`) are
+  unchanged. No public method signatures changed; existing PHPUnit
+  tests against `enqueue_plan()`, `handle_tick()`, `cancel()`, and
+  `get_progress()` pass unmodified.
+- PHPUnit: 4 new tests covering inline-shutdown kick advancing a
+  queued job, terminal-status short-circuit, the
+  `wp_mcp_ai_inline_kick_enabled` filter disabling the registration,
+  and the cooperative lock no-op behaviour under concurrent ticks.
+
+### Changed — Transcript Mining job now consumes the inline-async-tick trait
+
+- `WP_MCP_AI_Transcript_Mining_Job` now composes
+  `WP_MCP_AI_Inline_Async_Tick_Trait` instead of carrying its own copies
+  of the four primitives. Behaviour is unchanged on hosts that hit the
+  existing fallback paths, but Mine Memories now:
+  - emits the unified `wp_mcp_ai_inline_kick_completed` observability
+    action on every shutdown kick (same `( $class, $job_id,
+    $duration_ms, $success )` shape used by the Tool Async Executor),
+    so Pro OTel subscribers can record `inline_kick.duration_ms` /
+    `inline_kick.failure.count` for free; and
+  - honours the global `wp_mcp_ai_inline_kick_enabled` escape-hatch
+    filter — returning `false` from the filter (globally or per-job)
+    now skips the shutdown action registration entirely for Mine
+    Memories the same way it already did for the Tool Async Executor.
+- New class constant `TICK_LOCK_CACHE_GROUP = 'wp_mcp_ai_tx_mine'`
+  formalises the object-cache group that the lock helper consumes
+  (previously inlined as a string literal). `TICK_LOCK_PREFIX`,
+  `TICK_LOCK_TTL`, `INLINE_LOOP_BUDGET_SECONDS`, and
+  `STALE_QUEUED_THRESHOLD_SECONDS` are unchanged.
+- Net diff: ~80 LOC removed from the class; one trait `use` line
+  added. No public method signatures changed; existing tests against
+  `handle_tick()`, `kick_inline()`, and `TICK_LOCK_PREFIX` continue to
+  pass without modification.
+
+### Added — Inline-async-tick fallback for Tool Async Executor
+
+- New reusable trait `WP_MCP_AI_Inline_Async_Tick_Trait` at
+  `includes/traits/trait-wp-mcp-ai-inline-async-tick.php` consolidating
+  the four inline-async primitives (worker detach, two-layer cooperative
+  tick lock, `DISABLE_WP_CRON` loop decision, observability action)
+  introduced for the Mine Memories job in PR #4916.
+- `WP_MCP_AI_Tool_Async_Executor` now consumes the trait. Async tools
+  scheduled via `queue_tool()` register a `shutdown` action that runs
+  the tick inline once the response is flushed, so jobs no longer sit
+  at `status: pending` forever on hosts where the WP-Cron loopback never
+  fires (`DISABLE_WP_CRON = true`, firewalled `wp-cron.php`, etc.). A
+  cooperative per-job lock around `execute_async_tool()` prevents
+  double-execution when a delayed cron loopback fires after the inline
+  worker has finished.
+- The REST cron-status poll endpoint (`GET /mcp-ai/v1/cron-status/{job_id}`)
+  now self-heals stuck async jobs: when status has been `pending` past
+  5 seconds the controller schedules a shutdown kick. The response
+  payload is unchanged.
+- New filter `wp_mcp_ai_inline_kick_enabled` (default `true`, per-job
+  filterable) — operator escape hatch.
+- New action `wp_mcp_ai_inline_kick_completed` fires once per inline
+  kick with `( $class, $job_id, $duration_ms, $success )` — Pro
+  measurement bootstrap can record `inline_kick.duration_ms` and
+  `inline_kick.failure.count` for OTel.
+- Docs: new architecture page
+  `docs/architecture/inline-async-tick-pattern.md`; async-tool guide
+  updated with the fallback section.
+
+### Fixed — Transcript mining job stuck in `queued` on WP-Cron-disabled hosts
+
+- The **Mine Memories from Transcripts** background job
+  (`WP_MCP_AI_Transcript_Mining_Job`) now ships an industry-standard inline-async
+  fallback so jobs progress on every WordPress host, including sites with
+  `DISABLE_WP_CRON = true` or a firewalled `wp-cron.php` loopback. Previously,
+  jobs would sit at `Status: queued, Progress: 0 / 1` indefinitely on these
+  hosts because `spawn_cron()` cannot dispatch its loopback HTTP request.
+- `enqueue()` now registers a `shutdown` action that flushes the REST response
+  via `fastcgi_finish_request()` (when available), detaches the worker via
+  `ignore_user_abort()`, and runs the first tick in-process when state is still
+  `queued`. The cron path is unchanged for hosts where it already works.
+- `handle_tick()` is guarded by a two-layer cooperative lock (object cache +
+  transient) so the inline shutdown worker and a delayed cron loopback cannot
+  double-process the same batch.
+- `handle_tick()` also runs subsequent batches inline when `DISABLE_WP_CRON` is
+  true, bounded by a 20 s wall-clock budget per request to stay clear of PHP
+  `max_execution_time` limits.
+- The REST poll endpoint `GET /mcp-ai/v1/transcript-mining/jobs/{id}` is now
+  self-healing: when a job has been `queued` for longer than 5 s it queues an
+  inline kick after the response is flushed. The admin UI's 2 s poll loop
+  therefore drives forward progress automatically.
+- Diagnostic logging: a `transcript_mining` event records when a tick is driven
+  by the inline path (`source => inline_shutdown`) and a single warning is
+  emitted when `spawn_cron()` returns `false`, pointing operators to the
+  loopback or `DISABLE_WP_CRON` setting.
+- PHPUnit coverage added in `tests/test-transcript-mining-job.php` (3 new
+  cases): inline-shutdown completion, cooperative-lock guard, and
+  `kick_inline()` no-op on non-queued states.
+
+### Added — Scheduled Result widget + block
+
+- New **Scheduled Result Display** as a Gutenberg dynamic block
+  (`mcp-ai-wpoos/scheduled-result`) and Elementor widget
+  (`WP_MCP_AI_Elementor_Scheduled_Result_Widget`). Both bind to any Pro
+  Schedule and render its latest run output via a shared PHP renderer
+  (`includes/renderers/class-wp-mcp-ai-scheduled-result-renderer.php`) with
+  six canonical modes — `summary-card`, `list`, `table`, `metric`,
+  `timeline`, `raw`.
+- Pro: Schedule Manager now persists a typed result envelope
+  (`{ summary, data, render, status, error, generated_at }`) in a separate
+  `wp_mcp_ai_pro_schedule_results` option, independent of the run-history
+  ring buffer. Per-schedule `result_retention` (default 10).
+- Pro: New REST routes under `mcp-ai-pro/v1/schedules` — `?selectable=1`
+  picker, `/{id}/latest-result` (with ETag), `/{id}/results`, and a
+  nonce-protected `/{id}/preview`.
+- Pro: Three new tools — `get_schedule_latest_result`,
+  `render_schedule_result`, `configure_schedule_widget_defaults`.
+- New filters/actions: `wp_mcp_ai_pro_schedule_result_envelope`,
+  `wp_mcp_ai_pro_schedule_public_result`,
+  `wp_mcp_ai_pro_schedule_result_retention`,
+  `wp_mcp_ai_pro_schedule_result_capability`, and the
+  `wp_mcp_ai_pro_schedule_result_recorded` action.
+- Docs: `docs/features/scheduled-result-widget.md`.
+
+## [1.1.17] - 2026-05-10
+
+### May 10, 2026 — WP.org Compliance Hardening, Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, PHPUnit + Vitest Coverage Campaign, Build-pipeline Split, Dependabot Security Sweep
+
+#### Security — Dependabot Alert Sweep (33 alerts)
 
 Resolved the full 33-alert Dependabot backlog across all five npm manifests; the Composer surface was already clean. Lockfiles refreshed and committed dist artifacts rebuilt where applicable.
 
 - **Root (`/package.json`)** — bumped overrides: `axios → ^1.16.0`, `basic-ftp → >=6.0.1`, `ip-address → >=10.2.0`. Resolves 3 alerts (1 moderate / 2 high) including 13 axios advisories (prototype-pollution + SSRF + CRLF chain), `basic-ftp` DoS (`GHSA-rpmf-866q-6p89`), and `ip-address` XSS (`GHSA-v2v4-37r5-5v8g`).
 - **`addons/pro/package.json`** — bumped direct `axios` to `^1.16.0`; added overrides for `basic-ftp` and `ip-address` mirroring root. Resolves 3 alerts.
-- **`addons/saas-controller/package.json`** — bumped `@wordpress/scripts` (^30 → ^32.1.0), `diff` (^7 → ^9 — only referenced from PHPUnit identifiers, no JS callers), `@types/diff` (→ ^8), `esbuild` (^0.24 → ^0.28), `miniflare` (→ ^4.20260504); added overrides for `minimatch`, `serialize-javascript`, `webpack-dev-server`. Rebuilt `assets/build/` + `worker/dist/`. Resolves 17 alerts (5 low / 2 mod / 10 high) covering ReDoS, RCE, dev-server source-leak.
-- **`addons/docs-hub/package.json`** — bumped `react-router-dom` (7.5.3 → ^7.15.0). Resolves 2 alerts (CSRF + XSS chain `GHSA-h5cw-625j-3rxh`, `GHSA-2w69-qvjg-hvjx`, etc.). Rebuilt `assets/dist/docs-hub.js` + `docs-hub.css` per `addons/docs-hub/esbuild.config.js`.
+- **`addons/saas-controller/package.json`** — bumped `@wordpress/scripts` (^30 → ^32.1.0), `diff` (^7 → ^9), `esbuild` (^0.24 → ^0.28), `miniflare` (→ ^4.20260504); added overrides for `minimatch`, `serialize-javascript`, `webpack-dev-server`. Resolves 17 alerts covering ReDoS, RCE, dev-server source-leak.
+- **`addons/docs-hub/package.json`** — bumped `react-router-dom` (7.5.3 → ^7.15.0). Resolves 2 alerts (CSRF + XSS chain `GHSA-h5cw-625j-3rxh`, `GHSA-2w69-qvjg-hvjx`).
 - **`addons/cloud-worker/package.json`** — bumped `@cloudflare/vitest-pool-workers` (^0.5 → ^0.16), `vitest` (^2 → ^4.1.5), `wrangler` (^3 → ^4.88). Resolves 10 alerts (devalue prototype pollution, esbuild dev-server, undici/miniflare chain).
+- **Hardening (`.github/dependabot.yml`)** — extended coverage to all addon manifests: added 4 new npm watchers (`addons/pro`, `addons/saas-controller`, `addons/docs-hub`, `addons/cloud-worker`) and 4 new composer watchers (`addons/pro`, `addons/fantasy-football`, `addons/docs-hub`, `addons/algorave`).
 
-#### Hardening (`.github/dependabot.yml`)
+#### Security — Additional Hardening
 
-Extended Dependabot coverage from root-only to every addon manifest with its own lockfile / `composer.json`: added 4 new npm watchers (`addons/pro`, `addons/saas-controller`, `addons/docs-hub`, `addons/cloud-worker`) and 4 new composer watchers (`addons/pro`, `addons/fantasy-football`, `addons/docs-hub`, `addons/algorave`). Prevents the next batch of transitive vulns from accumulating silently.
+- **Docs Hub SSRF hardening** — `safe_get()` now uses `resolve_public_ip()` (DNS A/AAAA lookup) refusing on any private/reserved record. Defensive `remote_repos` coercion added in `get_settings()`.
+- **canvas + cornerstone3d addons** — standalone `LICENSE` and `THIRD_PARTY_NOTICES` files added; proprietary banners added to all PHP headers.
+
+#### Added — Chat SPA Addon (`addons/chat-spa/`, Phases 1–7, v0.6.0)
+
+React replacement for the legacy `[mcp_ai_assistant]` chat shortcode, built on Vercel AI SDK UI with a custom SSE→Data Stream Protocol adapter. All 7 phases are now complete (bundle ~81.3 KB gzip, limit 350 KB):
+
+- **Phase 1** — `@ai-sdk/react useChat` with custom fetch + client-side SSE adapter (`src/sse-adapter.ts`). Shortcode `[nvoos_chat_spa]` with `assistant_id`, `theme`, `height`, `guest` attrs.
+- **Phase 2** — Collapsible tool-call cards (from `message.toolInvocations`), inline annotation pills (`memory_event`), admin embed page (`WP-Admin → NV oOS Chat`, `manage_options`).
+- **Phase 3** — Transcripts sidebar (load/save/delete via `mcp-ai/v1/chat-transcripts`; `useTranscriptSession` hook; guest mounts skip sidebar).
+- **Phase 4** — Memory drawer with three tabs (Memories / Scope / Audit); wing/room scope persisted in `localStorage`.
+- **Phase 5** — HITL approval bar polling `/mcp-ai/v1/approvals` every 6 s during streaming; rendered only for `manage_options` users.
+- **Phase 6** — File attachments via `useAttachments` hook (5 MB per file, 10 MB total, 10 files max) + thumbnail strip; `↺` regenerate via `reload()`; `✏` edit + re-submit via `setMessages` truncation.
+- **Phase 7** — `WP_MCP_AI_LEGACY_CHAT_JS` constant in `includes/bootstrap/constants.php` (default `true`) gates the shortcode; blueprint §20 migration guide added.
+
+#### Added — Docs Hub Addon (`addons/docs-hub/`, v0.1.0 → v0.3.8)
+
+- **v0.3.0** — Remote-first defaults + tree-picker UX; chunked rebuild with progress API; CLI `rebuild` subcommand.
+- **v0.3.1** — 404-on-rebuild resolved; tree-picker hint surfaced.
+- **v0.3.2** — PHPCS lint errors fixed.
+- **v0.3.3** — `RemoteAnchor` function named; heading anchors fixed.
+- **v0.3.4** — Same-repo GitHub blob links routed through SPA; other external links open in new tab.
+- **v0.3.5** — `#section` anchors no longer corrupt `HashRouter`; `scrollIntoView` added for in-page links.
+- **v0.3.6** — Defensive `remote_repos` coercion (non-array rows filtered); SSRF hardening via `resolve_public_ip()` (DNS A/AAAA); `clear_local_cache_for_files()` on `force=true`.
+- **v0.3.7** — a11y: ARIA root attrs, skip-link, `prefers-reduced-motion` support; de-duped `wp_localize_script`.
+- **v0.3.8** — Syntax highlighting via rehype-highlight + lowlight; `PageFooter` component (last_modified + edit-on-GitHub); `NV_oOS_Docs_Hub_Sitemap_Provider` (`WP_Sitemaps_Provider`); admin `repo-picker.js` extracted from inline script; docs-hub added to `spa-bundle-size.yml` (250 KB limit, ~204 KB actual).
+
+#### Added — Toolkit SPA Blueprint Phases 5–12
+
+- **Phase 5** — a11y hardening: ARIA mount `<div>` attrs, `jsx-a11y` lint, `axe-core` in dev, CSP docs, CI workflow (`spa-a11y.yml`).
+- **Phase 6** — i18n pass: `wp.i18n` as Webpack external, `__()` in all SPA components, `wp_set_script_translations()` registered.
+- **Phase 7** — Expanded REST + shortcode PHPUnit tests for `canvas-toolkit` and `media-studio`.
+- **Phase 8** — Bundle-size CI guardrail workflow (`spa-bundle-size.yml`) with per-addon limits.
+- **Phase 9** — Scaffolder (`bin/scaffold-toolkit-spa.sh`) auto-patches `spa-a11y.yml` + `spa-bundle-size.yml` on new addon creation.
+- **Phase 10** — All 10 Tier-A `toolkit-shell` manifests complete: crm, calendar-booking, financial-planner, analytics, regulatory-registration, law-firm, cre-debt, multilingual, ecommerce, social-media.
+- **Phase 11 (`canvas-toolkit` v0.2.0)** — Four modes: flow (`@xyflow/react`), whiteboard (tldraw v5, react@19.2.6), bpmn (`bpmn-js NavigatedViewer`), mermaid live preview. Bundle ~1,495 KB gzip (limit 1,600 KB).
+- **Phase 12 (`document-editor` v0.2.0)** — Site-creator mode via GrapesJS (grapesjs@0.22.16 BSD-3-Clause + @grapesjs/react@2.0.0 MIT) with built-in blocks + localStorage persistence. Bundle ~485 KB gzip (limit 500 KB).
+- **`media-studio` Phase 4** — Three new modes: image-editor (Fabric.js), media-player, audio-waveform.
+
+#### Added — CI / Build Pipeline
+
+- **`bin/build-plugin-zip.sh --wp-org` flag** — produces a WP.org-compliant base-only ZIP; root `*.md`, `addons/`, and `.zed` excluded. Full GitHub Release ZIP built as a separate `--combined` artifact.
+- **PHPUnit coverage baseline + non-regression CI gate** — `tests/coverage/baseline.xml` committed; CI fails if uncovered-class count regresses.
+- **AJAX handler CI guard** — audit script confirms 0 uncovered handlers; allowlist committed with explanations.
+- **`spa-bundle-size.yml`** — bundle-size guardrail for all SPA addons (per-addon KB limits).
+- **`spa-a11y.yml`** — axe-core a11y audit CI for all SPA addons.
+- **`link-check.yml`** — treats 4xx responses as warnings (not errors); skips template URLs and `gnu.org`.
+- **`phpunit.yml`** — uses MySQL TCP host (`WP_DB_HOST` env var); sets `WP_CORE_DIR` + `WP_TESTS_DIR` directly (skips `codex-startup.sh`); paths filter so the job runs only on PHP/test/config changes.
+
+#### Added — `WP_MCP_AI_User_Context_Helper`
+
+New `includes/helpers/class-wp-mcp-ai-user-context-helper.php` centralises privileged-operation user-context switching:
+
+- `safe_set_current_user( $user_id )` — validates `get_userdata()` before touching global state; multisite adds `is_user_member_of_blog()` check.
+- Replaces ad-hoc `wp_set_current_user()` / `wp_update_user()` calls (B10 reviewer finding).
+- PHPUnit suite: `tests/test-user-context-helper.php`.
+
+#### Fixed — WordPress.org Reviewer Findings (PRs #4892, #4902)
+
+- **B1** — Removed unescape‑before-output pattern; all admin output now uses `esc_*` functions exclusively.
+- **B2** — Removed dead WP < 5.7 fallback branches.
+- **B3** — Eliminated inline `<script>` / `<style>` echoes: config blocks converted to `wp_print_inline_script_tag()` hooked on `admin_enqueue_scripts`; telemetry CSS moved to `wp_add_inline_style()`.
+- **B5** — Fixed all file-permission and path-traversal guard gaps flagged in the review.
+- **B8** — Filesystem cache path corrected: moved from `WP_CONTENT_DIR/cache/wp-mcp-ai` to `wp_upload_dir()['basedir']/wp-mcp-ai-cache`.
+- **B10** — `wp_set_current_user()` hardened via `WP_MCP_AI_User_Context_Helper::safe_set_current_user()`.
+- **B11** — Sanitisation gaps on settings inputs closed.
+- **B12** — All REST permission callbacks reviewed; missing `manage_options` gates added.
+- **B13** — `$_POST['approval_id|resolution|note']` in approvals handler now wrapped with `wp_unslash()`; bare `phpcs:ignore NonceVerification.Recommended` lines in DAG builder replaced with explanatory comments.
+- **49/49 base AJAX handlers** confirmed with `check_ajax_referer()`. Full evidence: `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`.
+
+#### Fixed — Docs Hub
+
+- Sitemap provider registered via `wp_sitemaps_init` hook (fixes fatal error on activation).
+- `#section` anchors no longer corrupt `HashRouter` navigation.
+- Heading anchors visible by default; sidebar strips markdown.
+- Remote links resolved correctly; browse-repo crash hardened.
+- Mobile sidebar toggle added.
+- GitHub subtree path fetch corrected.
+
+#### Fixed — Other Addons
+
+- **Graphify** — detects CCTs whose slug only lives in `$type->args['slug']` (previously missed by the primary slug lookup).
+- **SaaS Controller** — Cloudflare preflight endpoint switched from `/user/tokens/verify` to the correct API endpoint; React wizard pre-built and committed to dist.
+
+#### Fixed — CI / Vendor
+
+- **`phpcs.xml.dist`** — excludes `tests/fixtures/**` from PHPCS + PHPCompatibility scans; filename rule lifted for test files.
+- **`composer install`** — preferred-install set to `dist` (fixes symfony git-dir error); `installed.json` installation-source corrected; 4 symfony packages upgraded to lock-file versions.
+- **Production autoloader** — regenerated as `--no-dev --classmap-authoritative` (677 production-only classes; eliminates PSR-4 runtime fallback).
+
+#### Changed
+
+- **esbuild** pinned to `^0.27.0` with `safari15` target across all 6 SPA addons (esbuild 0.27.x with Safari 13/14 targets fails; `safari15` resolves correctly).
+- **vitest** aligned to `^4.1.5` across all 6 SPA addons (vitest 4 requires vite 8 which requires esbuild ^0.28 — handled by peer-dependency override).
+- **`addons/canvas`, `addons/cornerstone3d`** — standalone `LICENSE` and `THIRD_PARTY_NOTICES` files added; proprietary banner added to all PHP headers.
+
+#### Tests — PHPUnit + Vitest Coverage Campaign (PRs #1–#11)
+
+- **PR #2** — Tool registry coverage smoke test + manifests.
+- **PR #3** — Harness tests via class-name matcher.
+- **PR #4** — NVIDIA client + smarter matcher reads class declaration.
+- **PR #5** — REST controller tests (approval, cost-manager, slash-command).
+- **PR #6** — Slash-command tests (help, context, compact, memory).
+- **PR #7** — 20 high-risk base tool tests (create-post, check-site-security, load-skill, …).
+- **PR #8** — 20 highest-risk Pro tool tests (vault, schedules, ECA, medical, autonomous-session).
+- **PR #9** — 10 security-sensitive service class tests (90 tests, 230 assertions).
+- **PR #10** — Hooks and security regression suite (4 files, 52 tests: `test-hooks-tool-lifecycle.php`, `test-hooks-chat-lifecycle.php`, `test-hooks-registry.php`, `test-security-regression.php`).
+- **PR #11** — Vitest scaffolding for all 6 SPA addons (~71 tests): `toolkit-shell`, `canvas-toolkit`, `document-editor`, `media-studio`, `chat-spa`, `docs-hub`.
+
+#### Tests — AJAX Handler Coverage Campaign (Clusters 1–17)
+
+All 271 AJAX handlers now have test coverage. Allowlist cleared to 0. CI guard added.
+
+- Clusters 1–4: base testcase, workflow pilot, approvals, skill manager, settings utility.
+- Clusters 5–7: wizard/dismiss, runtime control, embedded models + datasets.
+- Clusters 8–9: provider connections, schedule manager.
+- Clusters 10–11: healthcare, regulatory/ECA/CRE.
+- Clusters 12–17: remaining 116 handlers.
+
+#### Documentation
+
+- **`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`** — full evidence table for all WP.org B-series findings.
+- **`SUBMISSION.md`** — reviewer-response table cross-referencing each finding to the fix commit.
+- **`docs/addons/toolkit-spa-blueprint.md`** — updated to v2.5: §20 migration guide from legacy `chat.js` to Chat SPA; Tier B/C/D/E tables updated; status line updated.
+- **`CREDITS.md` / `THIRD_PARTY_NOTICES.md`** — updated for GrapesJS, @grapesjs/react, tldraw, bpmn-js, rehype-highlight, lowlight; per-addon README Credits sections added.
 
 ## [1.1.16] - 2026-05-06
 

@@ -272,4 +272,118 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertContains( 'apply_job_enqueued', $actions );
 		$this->assertContains( 'apply_job_cancelled', $actions );
 	}
+
+	/**
+	 * The inline-shutdown kick should drive a `queued` job to make
+	 * progress in the same PHP process, without waiting for the WP-Cron
+	 * loopback. Mirrors the equivalent test in the base plugin's
+	 * Mine Memories suite. The kick is wired by `enqueue_plan()` as a
+	 * `shutdown` action; firing it via `do_action('shutdown')` simulates
+	 * the end of the REST request.
+	 */
+	public function test_inline_shutdown_kick_advances_queued_job() {
+		$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
+
+		$progress = NVOOS_SaaS_Controller_Apply_Job::get_progress( $state['id'] );
+		$this->assertSame( 'queued', $progress['status'] );
+
+		// Capture the observability action so we can assert it fires
+		// with the documented `( $class, $job_id, $duration_ms, $success )`
+		// payload — same shape as Mine Memories and the Tool Async
+		// Executor so Pro OTel subscribers receive uniform telemetry.
+		$captured = array();
+		$listener = static function ( $class, $job_id, $duration_ms, $success ) use ( &$captured ) {
+			$captured[] = array(
+				'class'       => $class,
+				'job_id'      => $job_id,
+				'duration_ms' => $duration_ms,
+				'success'     => $success,
+			);
+		};
+		add_action( 'wp_mcp_ai_inline_kick_completed', $listener, 10, 4 );
+
+		try {
+			do_action( 'shutdown' );
+		} finally {
+			remove_action( 'wp_mcp_ai_inline_kick_completed', $listener, 10 );
+		}
+
+		$progress = NVOOS_SaaS_Controller_Apply_Job::get_progress( $state['id'] );
+		$this->assertNotSame( 'queued', $progress['status'], 'inline shutdown kick should have advanced the job past queued' );
+		$this->assertGreaterThanOrEqual( 1, $progress['processed'], 'inline shutdown kick should have processed at least one row' );
+
+		$this->assertNotEmpty( $captured, 'wp_mcp_ai_inline_kick_completed must fire for SaaS Apply' );
+		$this->assertSame( 'NVOOS_SaaS_Controller_Apply_Job', $captured[0]['class'] );
+		$this->assertSame( $state['id'], $captured[0]['job_id'] );
+		$this->assertTrue( $captured[0]['success'] );
+	}
+
+	/**
+	 * `kick_inline()` must short-circuit on terminal job statuses
+	 * (cancelled / completed / failed) so the audit-log and engine
+	 * stubs are never touched after the job is done.
+	 */
+	public function test_kick_inline_short_circuits_on_terminal_status() {
+		$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
+		NVOOS_SaaS_Controller_Apply_Job::cancel( $state['id'] );
+
+		$calls_before = count( $this->stub->calls );
+		NVOOS_SaaS_Controller_Apply_Job::kick_inline( $state['id'] );
+		$this->assertCount( $calls_before, $this->stub->calls, 'kick_inline must not touch the engine after cancel' );
+
+		$progress = NVOOS_SaaS_Controller_Apply_Job::get_progress( $state['id'] );
+		$this->assertSame( 'cancelled', $progress['status'] );
+	}
+
+	/**
+	 * The shared `wp_mcp_ai_inline_kick_enabled` filter must disable the
+	 * shutdown registration. Operators rely on this escape hatch to
+	 * debug hosts where `fastcgi_finish_request()` interacts badly with
+	 * another plugin.
+	 */
+	public function test_inline_kick_enabled_filter_disables_shutdown_registration() {
+		add_filter( 'wp_mcp_ai_inline_kick_enabled', '__return_false' );
+		try {
+			$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
+
+			do_action( 'shutdown' );
+
+			$progress = NVOOS_SaaS_Controller_Apply_Job::get_progress( $state['id'] );
+			$this->assertSame( 'queued', $progress['status'], 'with the filter disabled the inline kick must not advance the job' );
+			$this->assertSame( 0, $progress['processed'] );
+		} finally {
+			remove_filter( 'wp_mcp_ai_inline_kick_enabled', '__return_false' );
+		}
+	}
+
+	/**
+	 * The cooperative tick lock guarantees that re-entering `handle_tick`
+	 * while a prior tick is mid-flight (e.g. a delayed cron loopback
+	 * firing concurrently with the inline-shutdown kick) is a no-op.
+	 * Simulated here by pre-acquiring the lock and then calling
+	 * `handle_tick` — it should leave state untouched.
+	 */
+	public function test_handle_tick_no_ops_when_lock_held() {
+		$state  = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
+		$job_id = $state['id'];
+
+		$lock_key = NVOOS_SaaS_Controller_Apply_Job::TICK_LOCK_PREFIX . $job_id;
+		set_transient( $lock_key, 1, NVOOS_SaaS_Controller_Apply_Job::TICK_LOCK_TTL );
+		if ( function_exists( 'wp_cache_add' ) ) {
+			wp_cache_add( $lock_key, 1, NVOOS_SaaS_Controller_Apply_Job::TICK_LOCK_CACHE_GROUP, NVOOS_SaaS_Controller_Apply_Job::TICK_LOCK_TTL );
+		}
+
+		NVOOS_SaaS_Controller_Apply_Job::handle_tick( $job_id );
+
+		$progress = NVOOS_SaaS_Controller_Apply_Job::get_progress( $job_id );
+		$this->assertSame( 'queued', $progress['status'], 'handle_tick must no-op while another worker holds the lock' );
+		$this->assertSame( 0, $progress['processed'] );
+		$this->assertCount( 0, $this->stub->calls, 'engine must not be invoked while the lock is held' );
+
+		// Cleanup so the global tearDown does not see a leaked lock.
+		delete_transient( $lock_key );
+		if ( function_exists( 'wp_cache_delete' ) ) {
+			wp_cache_delete( $lock_key, NVOOS_SaaS_Controller_Apply_Job::TICK_LOCK_CACHE_GROUP );
+		}
+	}
 }

@@ -15,7 +15,7 @@
   "dependencies": {
     "@xyflow/react": "12.4.0",
     "bpmn-js": "^18.16.1",
-    "mermaid": "^11.14.0",
+    "mermaid": "^11.15.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "tldraw": "^5.0.0"

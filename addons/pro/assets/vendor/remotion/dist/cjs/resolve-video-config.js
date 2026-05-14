@@ -28,6 +28,7 @@ const validateCalculated = ({ calculated, compositionId, compositionFps, composi
     const defaultVideoImageFormat = calculated === null || calculated === void 0 ? void 0 : calculated.defaultVideoImageFormat;
     const defaultPixelFormat = calculated === null || calculated === void 0 ? void 0 : calculated.defaultPixelFormat;
     const defaultProResProfile = calculated === null || calculated === void 0 ? void 0 : calculated.defaultProResProfile;
+    const defaultSampleRate = calculated === null || calculated === void 0 ? void 0 : calculated.defaultSampleRate;
     return {
         width,
         height,
@@ -38,10 +39,11 @@ const validateCalculated = ({ calculated, compositionId, compositionFps, composi
         defaultVideoImageFormat,
         defaultPixelFormat,
         defaultProResProfile,
+        defaultSampleRate,
     };
 };
 const resolveVideoConfig = ({ calculateMetadata, signal, defaultProps, inputProps: originalProps, compositionId, compositionDurationInFrames, compositionFps, compositionHeight, compositionWidth, }) => {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g;
     const calculatedProm = calculateMetadata
         ? calculateMetadata({
             defaultProps,
@@ -56,7 +58,7 @@ const resolveVideoConfig = ({ calculateMetadata, signal, defaultProps, inputProp
         'then' in calculatedProm) {
         return calculatedProm.then((c) => {
             var _a;
-            const { height, width, durationInFrames, fps, defaultCodec, defaultOutName, defaultVideoImageFormat, defaultPixelFormat, defaultProResProfile, } = validateCalculated({
+            const { height, width, durationInFrames, fps, defaultCodec, defaultOutName, defaultVideoImageFormat, defaultPixelFormat, defaultProResProfile, defaultSampleRate, } = validateCalculated({
                 calculated: c,
                 compositionDurationInFrames,
                 compositionFps,
@@ -77,6 +79,7 @@ const resolveVideoConfig = ({ calculateMetadata, signal, defaultProps, inputProp
                 defaultVideoImageFormat: defaultVideoImageFormat !== null && defaultVideoImageFormat !== void 0 ? defaultVideoImageFormat : null,
                 defaultPixelFormat: defaultPixelFormat !== null && defaultPixelFormat !== void 0 ? defaultPixelFormat : null,
                 defaultProResProfile: defaultProResProfile !== null && defaultProResProfile !== void 0 ? defaultProResProfile : null,
+                defaultSampleRate: defaultSampleRate !== null && defaultSampleRate !== void 0 ? defaultSampleRate : null,
             };
         });
     }
@@ -99,6 +102,7 @@ const resolveVideoConfig = ({ calculateMetadata, signal, defaultProps, inputProp
             defaultVideoImageFormat: null,
             defaultPixelFormat: null,
             defaultProResProfile: null,
+            defaultSampleRate: null,
         };
     }
     return {
@@ -111,6 +115,7 @@ const resolveVideoConfig = ({ calculateMetadata, signal, defaultProps, inputProp
         defaultVideoImageFormat: (_d = calculatedProm.defaultVideoImageFormat) !== null && _d !== void 0 ? _d : null,
         defaultPixelFormat: (_e = calculatedProm.defaultPixelFormat) !== null && _e !== void 0 ? _e : null,
         defaultProResProfile: (_f = calculatedProm.defaultProResProfile) !== null && _f !== void 0 ? _f : null,
+        defaultSampleRate: (_g = calculatedProm.defaultSampleRate) !== null && _g !== void 0 ? _g : null,
     };
 };
 exports.resolveVideoConfig = resolveVideoConfig;

@@ -187,8 +187,8 @@ The class inside extends a base tool class and must implement `get_slug()`, `get
 
 ```bash
 composer install                  # Install dependencies (includes PHPUnit + WPCS)
-composer run lint                 # PHPCS – full WordPress coding standards
-composer run lint:base            # PHPCS – base plugin only (excludes Pro)
+composer run lint                 # PHPCS – full WordPress coding standards (includes WPMCPAI.Tools.CanonicalReturnEnvelope + WPMCPAI.Tools.SanitizeAtEntry custom sniffs at severity 5 — visible in default lint, current baseline is 2 documented P6 warnings)
+composer run lint:base            # PHPCS – base plugin only (-w8 — silences the two Unix-Theory sniffs and any other severity-5 warnings)
 composer run lint:compat          # PHP 7.4–8.3 compatibility check
 composer run format               # PHPCBF – auto-fix style issues
 composer run test:install         # One-time: install WordPress test suite into /tmp

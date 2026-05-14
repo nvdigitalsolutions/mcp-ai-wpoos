@@ -5,11 +5,24 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.16
+Stable tag: 1.1.18
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 230+ built-in tools.
+
+== Submission Scope ==
+
+This WordPress.org submission contains **only the base plugin** — every file in this ZIP lives outside the `addons/` directory of the upstream GitHub repository. The following addons are developed in the same repository but are **NOT** part of this submission and are distributed only via GitHub Releases (`-full.zip` artifact) or via separate sales channels:
+
+* `addons/pro` — NV oOS Pro (PHP 8.1+ extension; sold separately)
+* `addons/embedded` — Embedded device runtime
+* `addons/fantasy-football` — Fantasy Sports tooling
+* `addons/algorave`, `addons/canvas`, `addons/cornerstone3d`, `addons/graphify` — domain-specific add-ons
+* `addons/docs-hub`, `addons/chat-spa`, `addons/canvas-toolkit`, `addons/document-editor`, `addons/media-studio`, `addons/toolkit-shell` — React Single-Page-App add-ons
+* `addons/saas-controller`, `addons/cloud-worker` — server-side companion plugins
+
+If a code reviewer sees a path beginning with `addons/` in any reported finding, that finding is out of scope for this submission. The release pipeline (`.github/workflows/release.yml`) builds two artifacts: a base-only ZIP (this submission) and a separate full ZIP for GitHub. Both `.distignore` and the workflow's rsync exclusion list assert `addons/` is absent before any upload. See `SUBMISSION.md` in the upstream repository for the full payload manifest.
 
 == Description ==
 
@@ -27,7 +40,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
-* [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
+* [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://policies.google.com/privacy)
 * [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
 * [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 * [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
@@ -58,7 +71,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 **Multi-Provider AI Routing**
 * **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))
-* **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy))
+* **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://policies.google.com/privacy))
 * **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
 * **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
 * **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
@@ -274,6 +287,99 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.18 - May 14, 2026 =
+
+Bumped to 1.1.18 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+**Unix Theory Compliance Phases P0–P6 + DigitalOcean Serverless Inference + Async Chat Continuation + Jobs/Tasks Drawer + Toolkit MCP Servers Phase 7 Admin UI**
+
+* **Unix Theory P0–P6 (Phases landed across this cycle):**
+  * **P0/P1 — Canonical return envelope.** Tool-agnostic trait `WP_MCP_AI_Tool_Envelope` (`includes/tools/trait-wp-mcp-ai-tool-envelope.php`); `WP_MCP_AI_Tool_Chat_Response` composes it. New PHPCS sniff `WPMCPAI.Tools.CanonicalReturnEnvelope` (severity 5) warns on `array( 'success' => false, ... )` — visible under `composer run lint`, silent under `composer run lint:base`.
+  * **P2 — Capability-fence audit.** All optional-dep touch-points verified fenced (Rank Math, WPCode, JetEngine, Elementor, WooCommerce); no Base→Pro reach-throughs.
+  * **P3 — Data-contract metadata.** New optional `WP_MCP_AI_Tool_Data_Contract_Interface` (`get_data_contract() => array{produces?, consumes?}`). Tool-service appends `[Data contract: produces=X, consumes=A|B]` to the OpenAI function-calling description. Filter `wp_mcp_ai_tool_data_contract_description_suffix`.
+  * **P4 — Tool lifecycle descriptor.** Optional 5th arg on `wp_mcp_ai_after_tool_execution`; helper `WP_MCP_AI_Tool_Lifecycle_Descriptor::build()` returns `{success, error_code, data_type, duration_ms}`. OTel spans gain `nvoos.tool.data_type` + `nvoos.tool.duration_ms`. 4-arg subscribers stay back-compat.
+  * **P5 — Back-compat alias infrastructure.** `WP_MCP_AI_Tool_Registry::register_deprecated_alias()`, `get_deprecated_aliases()`, `resolve_deprecated_alias()`, `reset_deprecated_alias_invocations()`. Action `wp_mcp_ai_tool_deprecated_alias_invoked` fires once per request per slug. Aliases live in a separate map invisible to `build_tools_payload`. Sets up Tier-A decompositions for v1.3.0.
+  * **P6 — Sanitize-at-entry sniff.** New PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` enforces Gate 1 of the two-gate sanitisation rule. Codification: `docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
+
+* **DigitalOcean Serverless Inference provider (new — 9th provider).** `WP_MCP_AI_DigitalOcean_Client` wraps the OpenAI-compatible API at `https://inference.do-ai.run/v1`. Chat completions, tool/function calling, JSON mode, SSE streaming, native `/embeddings`, model listing, reasoning passthrough. Settings → Providers → DigitalOcean subtab; Model Discovery `digitalocean` branch; Provider Diagnostics card with `GET /v1/models` probe; default embedding model `gte-large-en-v1.5`. DigitalOcean Agent endpoints (`*.agents.do-ai.run`) intentionally out of scope.
+
+* **Async chat continuation (slices 1–6 complete).** Durable continuation store + dispatcher for async tool jobs, LLM re-entry, session frame buffer, SSE stream controller, chat.js client integration, Pro webhook notifier (`addons/pro/includes/services/class-wp-mcp-ai-pro-chat-continuation-notifier.php`), OTel hooks + Jest tests. Plan doc `docs/features/chat/async-continuation.md`.
+
+* **Jobs/Tasks Drawer + cron-status (PRs A–G complete).**
+  * Inline job progress card (BEM `.wp-mcp-ai-job-card__*`) — progress bar, ETA, step list, Cancel/Retry buttons; feature-gated via `state.config.inlineJobCard`. Subscribes to `wpMcpAiJobBus` events (`job:started`, `job:step`, `job:progress`, `job:completed`, `job:failed`, `job:cancelled`).
+  * New REST routes `POST /mcp-ai/v1/cron-status/{job_id}/cancel` and `.../retry`. Async-executor gains `cancel_job()`, `retry_job()`, `is_owned_by()`. Actions: `wp_mcp_ai_job_cancelled`, `wp_mcp_ai_job_retried`.
+  * Tasks Drawer + toasts in chat shortcode; default on via filter `wp_mcp_ai_chat_tasks_drawer`. localStorage key `wp_mcp_ai_tasks_{assistantId}` (max 200 entries).
+  * Five new OTel hooks (`wp_mcp_ai_chat_jobs_snapshot|stream|cancel|retry`) emit `nvoos.chat.jobs.*` OTLP spans.
+  * Docs: `docs/features/chat/cron-status-integration.md`, `docs/guides/developer/tool-development/registering-a-job-source.md`.
+
+* **Toolkit MCP Servers Phase 7 admin UI.** New `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` (slug `nvoos-pro-toolkit-mcp-servers`) — 5-tab admin page (Servers / Detail / Audit / Discovery / Help). Action hook `wp_mcp_ai_toolkit_mcp_server_toggled`. Observability card + assistant metabox links updated. `addons/pro/mcp-ai-wpoos-pro.php` load order fix so the toolkit page registers before the admin block.
+
+* **JetEngine CCT memory mirror.** `retrieve_agent_memory` + `recall` now hydrate directly from the JetEngine CCT mirror when available; pipeline deduped to avoid double-suppression.
+
+* **Security / maintenance.**
+  * Bumped npm `langsmith` minimum to `>=0.6.0` (GHSA-3644-q5cj-c5c7).
+  * Added `wp_read_video_metadata` guard (`media.php`) in Veo and Sora video tools to handle hosts without the helper preloaded.
+  * Production autoload restored: `--no-dev --classmap-authoritative`; `vendor/composer/installed.json` (`dev: false`, `dev-package-names: []`) and `installed.php` (`dev => false`) patched manually.
+
+**Agent surfaces refreshed.** All hidden folders that host coding-agent context (`.bmad/`, `.codex/`, `.context/`, `.devcontainer/`, `.github/agents/`, `.vscode/`, `.zed/`) refreshed in this release so contributors get consistent guidance regardless of editor or agent. The `toolkit-spa-maintainer` agent is now mirrored from `examples/agents/` into both `.github/agents/` and `.zed/settings.json` (13 profiles).
+
+= 1.1.17 - May 10, 2026 =
+
+Bumped to 1.1.17 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+**WP.org Compliance Hardening + Chat SPA (all 7 phases) + Docs Hub v0.3.8 + Toolkit SPA Blueprint Phases 5–12 + Coverage Campaign + Dependabot Security Sweep**
+
+*Fixed — WordPress.org Reviewer Findings (PRs #4892, #4902)*
+
+* B3 — Inline script/style echoes removed; config blocks converted to wp_print_inline_script_tag(); telemetry CSS moved to wp_add_inline_style().
+* B8 — Cache path moved from WP_CONTENT_DIR/cache/wp-mcp-ai to wp_upload_dir()['basedir']/wp-mcp-ai-cache.
+* B10 — New WP_MCP_AI_User_Context_Helper::safe_set_current_user() validates get_userdata() and multisite membership before touching global state.
+* B13 — wp_unslash() added to approval handler $_POST reads; phpcs:ignore annotations annotated with explanations.
+* B1/B2/B5/B11/B12 — unescape-before-output patterns removed, dead WP < 5.7 branches deleted, permission callback gaps closed.
+* 49/49 base AJAX handlers confirmed with check_ajax_referer(). Full evidence: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md.
+
+*Added — Chat SPA addon (addons/chat-spa/, v0.6.0 — all 7 phases)*
+
+* React replacement for the legacy chat shortcode using Vercel AI SDK UI with a custom SSE adapter.
+* Phase 2: tool-call cards + memory pills + admin embed (WP-Admin → NV oOS Chat).
+* Phase 3: transcripts sidebar (load / save / delete); session key matches legacy chat.js format.
+* Phase 4: memory drawer with Memories / Scope / Audit tabs; scope persisted in localStorage.
+* Phase 5: HITL approval bar polling /mcp-ai/v1/approvals every 6 s during streaming.
+* Phase 6: file attachments (5 MB per file, 10 MB total, 10 files max), regenerate, message branching.
+* Phase 7: WP_MCP_AI_LEGACY_CHAT_JS constant (default true) gates the legacy shortcode; blueprint §20 migration guide.
+
+*Added — Docs Hub addon (addons/docs-hub/, v0.1.0 → v0.3.8)*
+
+* Remote-first defaults + tree-picker UX; chunked rebuild + CLI subcommand; mobile sidebar; RemoteAnchor; in-page link routing.
+* SSRF hardening (resolve_public_ip via DNS A/AAAA); defensive remote_repos coercion.
+* a11y: ARIA root attrs, skip-link, prefers-reduced-motion. Syntax highlighting via rehype-highlight + lowlight.
+* NV_oOS_Docs_Hub_Sitemap_Provider (WP_Sitemaps_Provider); PageFooter (last_modified + edit-on-GitHub); admin repo-picker.js extracted.
+
+*Added — Toolkit SPA Blueprint Phases 5–12*
+
+* SPA a11y CI (spa-a11y.yml), bundle-size CI (spa-bundle-size.yml), i18n pass (wp.i18n external + wp_set_script_translations), expanded PHPUnit tests (Phase 7).
+* Scaffolder auto-patches CI workflows on new addon creation (Phase 9).
+* All 10 Tier-A toolkit-shell manifests complete (Phase 10).
+* canvas-toolkit v0.2.0: whiteboard (tldraw v5), bpmn (bpmn-js), mermaid modes. document-editor v0.2.0: GrapesJS site-creator. media-studio Phase 4: image-editor, media-player, audio-waveform.
+
+*Added — Build Pipeline*
+
+* bin/build-plugin-zip.sh --wp-org flag: produces WP.org-compliant base-only ZIP (addons/, .zed, root *.md excluded).
+
+*Security — Dependabot Alert Sweep (33 alerts)*
+
+* Root: axios, basic-ftp, ip-address overrides bumped (3 alerts).
+* addons/pro: axios bumped (3 alerts).
+* addons/saas-controller: @wordpress/scripts, diff, esbuild, miniflare + webpack-dev-server overrides (17 alerts).
+* addons/docs-hub: react-router-dom 7.5.3 → ^7.15.0 (2 alerts).
+* addons/cloud-worker: @cloudflare/vitest-pool-workers, vitest, wrangler bumped (10 alerts).
+* Dependabot extended to all addon manifests (4 npm + 4 composer watchers added).
+
+*Tests*
+
+* PHPUnit + Vitest coverage campaign (PRs #1–#11): 271 AJAX handlers covered; PHPUnit baseline + non-regression CI gate; Vitest scaffolding for all 6 SPA addons (~71 tests).
+* New test files: test-user-context-helper.php, test-hooks-tool-lifecycle.php, test-hooks-chat-lifecycle.php, test-hooks-registry.php, test-security-regression.php, and Pro/service/REST controller suites.
 
 = 1.1.16 - May 6, 2026 =
 
@@ -1030,7 +1136,7 @@ Initial release. Welcome to Open Operator System!
 * **When:** Every time an AI assistant is used with Gemini as the provider
 * **Service URL:** https://generativelanguage.googleapis.com
 * **Terms of Service:** https://ai.google.dev/terms
-* **Privacy Policy:** https://ai.google.dev/privacy
+* **Privacy Policy:** https://policies.google.com/privacy
 
 **2a. Google Gemini Semantic Retrieval API (Corpus / RAG)**
 * **Purpose:** Native Retrieval-Augmented Generation (RAG) — store and query document corpora for grounded AI responses
@@ -1038,7 +1144,7 @@ Initial release. Welcome to Open Operator System!
 * **When:** Only when a Gemini assistant has a corpus name configured (optional feature, off by default)
 * **Service URL:** https://generativelanguage.googleapis.com/v1beta/corpora
 * **Terms of Service:** https://ai.google.dev/terms
-* **Privacy Policy:** https://ai.google.dev/privacy
+* **Privacy Policy:** https://policies.google.com/privacy
 
 **3. Anthropic API (Claude)**
 * **Purpose:** Core AI functionality (chat, vision, document analysis)
@@ -1438,7 +1544,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Data Sent:** HTTP GET to `{agent_url}/.well-known/agent.json` for discovery; JSON-RPC task payloads (task description, context) for delegation
 * **When:** When a site administrator configures remote agents and the AI assistant delegates tasks via A2A
 * **Service URL:** User-configured remote agent URLs (no default endpoint; disabled unless explicitly configured)
-* **Terms of Service:** https://google.github.io/A2A/ (Apache-2.0 protocol specification)
+* **Terms of Service:** https://a2aproject.github.io/A2A/ (Apache-2.0 protocol specification)
 * **Privacy Policy:** Per the remote agent operator's privacy policy
 
 **48. Mesh Router — Peer-to-Peer Agent Communication**
@@ -1550,7 +1656,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 
 **Google Gemini (when configured):**
 * Data sent to: https://generativelanguage.googleapis.com
-* Processed according to: [Google AI Privacy](https://ai.google.dev/privacy)
+* Processed according to: [Google AI Privacy](https://policies.google.com/privacy)
 * Terms of Service: [Google Gemini Terms](https://ai.google.dev/terms)
 * Data Usage: Google uses API data as described in their privacy policy
 * Review Google's data retention policies before use
@@ -1669,7 +1775,7 @@ This plugin may connect to the following external services based on your configu
 
 **Required (one must be configured):**
 * OpenAI API - [Privacy](https://openai.com/privacy) | [Terms](https://openai.com/policies/terms-of-use)
-* Google Gemini API - [Privacy](https://ai.google.dev/privacy) | [Terms](https://ai.google.dev/terms)
+* Google Gemini API - [Privacy](https://policies.google.com/privacy) | [Terms](https://ai.google.dev/terms)
 * Anthropic API - [Privacy](https://www.anthropic.com/legal/privacy) | [Terms](https://www.anthropic.com/legal/consumer-terms)
 * Ollama (self-hosted) - No external service
 * LM Studio (self-hosted) - No external service

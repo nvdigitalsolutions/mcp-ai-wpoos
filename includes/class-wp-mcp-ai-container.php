@@ -332,6 +332,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'client.digitalocean',
+			function () {
+				return new WP_MCP_AI_DigitalOcean_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
@@ -347,7 +354,8 @@ class WP_MCP_AI_Container {
 					null,
 					$container->get( 'client.nvidia' ),
 					$container->get( 'client.deepseek' ),
-					$container->get( 'client.openrouter' )
+					$container->get( 'client.openrouter' ),
+					$container->get( 'client.digitalocean' )
 				);
 			}
 		);

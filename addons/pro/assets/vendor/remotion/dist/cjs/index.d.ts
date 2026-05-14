@@ -39,7 +39,7 @@ declare global {
         remotion_ignoreFastRefreshUpdate: number | null;
         remotion_numberOfAudioTags: number;
         remotion_audioLatencyHint: AudioContextLatencyCategory | undefined;
-        remotion_logLevel: LogLevel;
+        remotion_logLevel: LogLevel | undefined;
         remotion_projectName: string;
         remotion_cwd: string;
         remotion_studioServerCommand: string;
@@ -55,6 +55,7 @@ declare global {
         remotion_envVariables: string;
         remotion_isMainTab: boolean;
         remotion_mediaCacheSizeInBytes: number | null;
+        remotion_sampleRate: number;
         remotion_initialMemoryAvailable: number | null;
         remotion_collectAssets: () => TRenderAsset[];
         remotion_isPlayer: boolean;
@@ -65,7 +66,6 @@ declare global {
         siteVersion: '11';
         remotion_version: string;
         remotion_imported: string | boolean;
-        remotion_unsavedProps: boolean | undefined;
     }
 }
 export type BundleCompositionState = {
@@ -81,6 +81,7 @@ export type BundleCompositionState = {
     compositionDefaultVideoImageFormat: VideoImageFormat | null;
     compositionDefaultPixelFormat: PixelFormat | null;
     compositionDefaultProResProfile: ProResProfile | null;
+    compositionDefaultSampleRate: number | null;
 };
 export type BundleIndexState = {
     type: 'index';
@@ -91,6 +92,10 @@ export type BundleEvaluationState = {
 export type BundleState = BundleIndexState | BundleEvaluationState | BundleCompositionState;
 export * from './AbsoluteFill.js';
 export * from './animated-image/index.js';
+export type { EffectDefinitionAndStack, EffectDescriptor, EffectsProp, } from './effects/index.js';
+export type { SolidProps } from './effects/Solid.js';
+export { HtmlInCanvas, isHtmlInCanvasSupported, type HtmlInCanvasOnInit, type HtmlInCanvasOnInitCleanup, type HtmlInCanvasOnPaint, } from './HtmlInCanvas.js';
+export type { HtmlInCanvasOnPaintParams, HtmlInCanvasProps, } from './HtmlInCanvas.js';
 export type { AnyZodObject } from './any-zod-type.js';
 export { Artifact } from './Artifact.js';
 export { Audio, Html5Audio, RemotionAudioProps } from './audio/index.js';
@@ -133,6 +138,7 @@ export * from './use-video-config.js';
 export * from './version.js';
 export * from './video-config.js';
 export { Html5Video, OffthreadVideo, OffthreadVideoProps, RemotionMainVideoProps, RemotionOffthreadVideoProps, RemotionVideoProps, Video, } from './video/index.js';
+export { MediaPlaybackError } from './video/MediaPlaybackError.js';
 export type { OnVideoFrame } from './video/props.js';
 export type { VolumeProp } from './volume-prop.js';
 export { watchStaticFile } from './watch-static-file.js';
@@ -147,6 +153,7 @@ export declare const Experimental: {
      * @see [Documentation](https://www.remotion.dev/docs/null)
      */
     Null: import("react").FC<{}>;
+    Solid: import("react").FC<import("./effects/Solid.js").SolidProps>;
     useIsPlayer: () => boolean;
 };
 export declare const Config: {};

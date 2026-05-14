@@ -688,6 +688,76 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- DigitalOcean Serverless Inference -->
+				<div class="card">
+					<h2><?php esc_html_e( '11. DigitalOcean Serverless Inference', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_digitalocean'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Model Access Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['digitalocean_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['digitalocean_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['digitalocean_model'] ) && '' !== $settings['digitalocean_model'] ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['digitalocean_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['digitalocean_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://inference.do-ai.run/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="digitalocean-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="digitalocean"
+						<?php echo esc_attr( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test DigitalOcean Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_digitalocean'] ) || empty( $settings['digitalocean_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your DigitalOcean settings in the Providers tab. You need to enable the provider and create a model access key in Gradient Platform → Serverless Inference.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=digitalocean' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'DigitalOcean Serverless Inference exposes Llama, DeepSeek-R1 distill, gpt-oss and other open-weights models through an OpenAI-compatible REST API. Embeddings are supported natively.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
@@ -967,6 +1037,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['enable_openrouter'] ) && ! empty( $settings['openrouter_api_key'] ) ) {
 						$configured[] = 'OpenRouter';
+					}
+					if ( ! empty( $settings['enable_digitalocean'] ) && ! empty( $settings['digitalocean_api_key'] ) ) {
+						$configured[] = 'DigitalOcean Serverless Inference';
 					}
 					if ( ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
@@ -1250,6 +1323,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'openrouter':
 					self::test_openrouter( $settings );
+					break;
+
+				case 'digitalocean':
+					self::test_digitalocean( $settings );
 					break;
 
 				case 'embedded':
@@ -2040,6 +2117,109 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
 							__( 'Referer', 'mcp-ai-wpoos' ) => $site_url,
 							__( 'App Title', 'mcp-ai-wpoos' ) => $app_title,
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test DigitalOcean Serverless Inference connection.
+		 *
+		 * Sends a GET to /v1/models to verify the model access key and
+		 * network connectivity to inference.do-ai.run. This avoids spending
+		 * inference credits during the diagnostic probe.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_digitalocean( $settings ) {
+			if ( empty( $settings['enable_digitalocean'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'DigitalOcean provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['digitalocean_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'DigitalOcean model access key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'DigitalOcean client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$base_url = isset( $settings['digitalocean_base_url'] ) && '' !== trim( $settings['digitalocean_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['digitalocean_base_url'] ) )
+					: WP_MCP_AI_DigitalOcean_Client::DEFAULT_BASE_URL;
+
+				$model = isset( $settings['digitalocean_model'] ) && '' !== $settings['digitalocean_model']
+					? $settings['digitalocean_model']
+					: WP_MCP_AI_DigitalOcean_Client::DEFAULT_MODEL;
+
+				$start = microtime( true );
+
+				$response = wp_remote_get(
+					$base_url . '/models',
+					array(
+						'headers'   => array(
+							'Authorization' => 'Bearer ' . $settings['digitalocean_api_key'],
+							'User-Agent'    => WP_MCP_AI_DigitalOcean_Client::USER_AGENT,
+						),
+						'timeout'   => 30,
+						'sslverify' => true,
+					)
+				);
+
+				$latency_ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				$body      = json_decode( wp_remote_retrieve_body( $response ), true );
+				$model_cnt = isset( $body['data'] ) && is_array( $body['data'] ) ? count( $body['data'] ) : 0;
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'DigitalOcean connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Default Model', 'mcp-ai-wpoos' )  => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' )    => $base_url,
+							__( 'Models Available', 'mcp-ai-wpoos' ) => (string) $model_cnt,
+							__( 'Latency', 'mcp-ai-wpoos' )         => $latency_ms . ' ms',
 						),
 					)
 				);

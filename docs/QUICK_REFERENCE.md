@@ -1,11 +1,18 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.15  
-**Last Updated:** May 5, 2026
+**Version:** 1.1.18  
+**Last Updated:** May 14, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (April 2026)
+## 🆕 Recent Updates (May 2026)
+
+- **v1.1.18** (May 14): **Unix Theory Compliance Phases P0–P6** (canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` sniff, capability-fence audit, `WP_MCP_AI_Tool_Data_Contract_Interface`, tool-lifecycle descriptor 5th arg + OTel `data_type`/`duration_ms`, back-compat alias infrastructure, `WPMCPAI.Tools.SanitizeAtEntry` sniff); **DigitalOcean Serverless Inference** provider (9th provider); **Async chat continuation** slices 1–6 (durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel + Jest); **Jobs/Tasks Drawer + cron-status** PRs A–G (inline progress cards, cancel/retry routes, OTel hooks); **Toolkit MCP Servers Phase 7** admin UI; **JetEngine CCT memory mirror** hydration; agent-surface refresh across `.bmad/` `.codex/` `.context/` `.devcontainer/` `.github/agents/` `.vscode/` `.zed/`
+- **v1.1.17** (May 10): WP.org compliance hardening B1–B13 all resolved; **Chat SPA addon** v0.6.0 (Phases 1–7 complete); **Docs Hub** v0.3.8; **Toolkit SPA Blueprint** Phases 5–12; PHPUnit + Vitest coverage campaign (PRs #1–#11, 271 AJAX handlers covered); build-pipeline split (WP.org vs full GitHub Release ZIPs); Dependabot security sweep (33 alerts resolved)
+- **v1.1.16** (May 6): **SaaS Controller** v0.1.0 (11 phases, NV oOS Cloud control plane); **Structured Logging** integration across all addons and core; **Docs Hub** v0.1.0; inline-async-tick pattern (8 consumers); **Toolkit MCP servers** all 7 phases complete (26 toolkits); addon licensing split
+- **v1.1.15** (May 5): **OpenRouter + DeepSeek** as first-class providers; **LM Studio** native cURL SSE streaming; **Orchestration Phases 1–7** GA (HITL, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents); **LLM Harnessing GA** (Layers A–H); 19 new slash commands; **Chat-client Memory Bridge** G-series; **Graphify** NV oOS data-source bridge
+
+### Previous Updates (April 2026)
 
 - **Harmonization Sub-Toolkit** 🎨 — 14 new Pro tools under `addons/pro/includes/tools/image-production/harmonization/` that complement the end-to-end `product_actualization` tool with composable AI-compositing primitives (color harmonization, relighting, shadow synthesis, reflection, boundary refinement, AI-assisted background generation, outpainting, placement suggestion, lighting analysis, and an end-to-end orchestrator). See [`docs/harmonization-architecture.md`](harmonization-architecture.md). Example LLM prompts:
   - *"Place this product photo on an AI-generated kitchen counter."*
@@ -144,6 +151,8 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 - **Crawl4AI URL** - For web crawling capabilities
 - **Mailjet API** - For email automation
 - **QuickBooks API** - For financial reporting
+- **OpenRouter API Key** — For OpenRouter unified gateway (OpenAI/Anthropic/Google/Meta via one key)
+- **DeepSeek API Key** — For DeepSeek provider (reasoning_content passthrough)
 
 ---
 
@@ -606,12 +615,30 @@ Settings → NV oOS → Chat Theme
 
 ---
 
+## 🧠 LLM Harness Quick Toggle
+
+Per-assistant opt-in: Edit Assistant → **LLM Harness** metabox → Enable → check the layers you want (A–H). All layers are off by default. Reference: [docs/llm-harness.md](llm-harness.md).
+
+---
+
+## ✅ HITL Approval Queue
+
+Admin: **NV oOS → Orchestration → Approvals**. Tool: `request_user_approval`. REST: `GET/POST/PATCH /wp-json/mcp-ai/v1/approvals/*`. Pending → Publish = approved; Private = denied.
+
+---
+
+## 🔗 Toolkit MCP Discovery
+
+Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled toolkit server URLs). Credentials: **NV oOS → Orchestration → Toolkit MCP → {Toolkit} → Credentials**. CLI: `wp mcp-ai mcp-server token-generate {slug}`. Reference: [docs/mcp-servers.md](mcp-servers.md).
+
+---
+
 ## 📚 Additional Resources
 
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 568 tools detailed (166 base + 402 pro)
+- [Tool Reference](reference/tools/tool-reference.md) - All ~830 tools detailed (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 

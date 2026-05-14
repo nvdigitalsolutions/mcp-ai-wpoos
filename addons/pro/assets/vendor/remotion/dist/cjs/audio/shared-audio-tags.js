@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useSharedAudio = exports.SharedAudioContextProvider = exports.SharedAudioContext = void 0;
+exports.useSharedAudio = exports.SharedAudioTagsContextProvider = exports.SharedAudioContextProvider = exports.SharedAudioTagsContext = exports.SharedAudioContext = void 0;
 const jsx_runtime_1 = require("react/jsx-runtime");
 const react_1 = __importStar(require("react"));
 const log_level_context_js_1 = require("../log-level-context.js");
@@ -42,6 +42,7 @@ const play_and_handle_not_allowed_error_js_1 = require("../play-and-handle-not-a
 const use_remotion_environment_js_1 = require("../use-remotion-environment.js");
 const shared_element_source_node_js_1 = require("./shared-element-source-node.js");
 const use_audio_context_js_1 = require("./use-audio-context.js");
+const wait_until_actually_resumed_js_1 = require("./wait-until-actually-resumed.js");
 const EMPTY_AUDIO = 'data:audio/mp3;base64,/+MYxAAJcAV8AAgAABn//////+/gQ5BAMA+D4Pg+BAQBAEAwD4Pg+D4EBAEAQDAPg++hYBH///hUFQVBUFREDQNHmf///////+MYxBUGkAGIMAAAAP/29Xt6lUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxDUAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 const compareProps = (obj1, obj2) => {
     const keysA = Object.keys(obj1).sort();
@@ -75,75 +76,77 @@ const didPropChange = (key, newProp, prevProp) => {
     return true;
 };
 exports.SharedAudioContext = (0, react_1.createContext)(null);
-const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyHint, audioEnabled }) => {
-    var _a;
-    const audios = (0, react_1.useRef)([]);
-    const [initialNumberOfAudioTags] = (0, react_1.useState)(numberOfAudioTags);
-    if (numberOfAudioTags !== initialNumberOfAudioTags) {
-        throw new Error('The number of shared audio tags has changed dynamically. Once you have set this property, you cannot change it afterwards.');
-    }
+exports.SharedAudioTagsContext = (0, react_1.createContext)(null);
+const SharedAudioContextProvider = ({ children, audioLatencyHint, audioEnabled }) => {
     const logLevel = (0, log_level_context_js_1.useLogLevel)();
-    const audioContext = (0, use_audio_context_js_1.useSingletonAudioContext)({
+    const ctxAndGain = (0, use_audio_context_js_1.useSingletonAudioContext)({
         logLevel,
         latencyHint: audioLatencyHint,
         audioEnabled,
     });
+    const audioContextIsPlayingEventually = (0, react_1.useRef)(false);
+    const isResuming = (0, react_1.useRef)(null);
     const audioSyncAnchor = (0, react_1.useMemo)(() => ({ value: 0 }), []);
+    const audioSyncAnchorListeners = (0, react_1.useRef)([]);
+    const audioSyncAnchorEmitter = (0, react_1.useMemo)(() => {
+        return {
+            dispatch: (event) => {
+                audioSyncAnchorListeners.current.forEach((l) => l(event));
+            },
+            subscribe: (listener) => {
+                audioSyncAnchorListeners.current.push(listener);
+                return {
+                    remove: () => {
+                        audioSyncAnchorListeners.current =
+                            audioSyncAnchorListeners.current.filter((l) => l !== listener);
+                    },
+                };
+            },
+        };
+    }, []);
     const prevEndTimes = (0, react_1.useRef)({ scheduledEndTime: null, mediaEndTime: null });
+    const nodesToResume = (0, react_1.useRef)(new Map());
+    const unscheduleAudioNode = (0, react_1.useCallback)((node) => {
+        nodesToResume.current.delete(node);
+    }, []);
     const scheduleAudioNode = (0, react_1.useMemo)(() => {
-        return ({ node, mediaTimestamp, targetTime, currentTime, sequenceEndTime, sequenceStartTime, debugAudioScheduling, }) => {
-            var _a, _b;
-            if (!audioContext) {
+        return ({ node, mediaTimestamp, currentTime, scheduledTime, duration, offset, originalUnloopedMediaTimestamp, }) => {
+            if (!ctxAndGain) {
                 throw new Error('Audio context not found');
             }
-            const bufferDuration = (_b = (_a = node.buffer) === null || _a === void 0 ? void 0 : _a.duration) !== null && _b !== void 0 ? _b : 0;
-            const unclampedMediaEndTime = mediaTimestamp + bufferDuration;
-            const needsTrimEnd = unclampedMediaEndTime > sequenceEndTime;
-            const needsTrimStart = mediaTimestamp < sequenceStartTime;
-            const offsetBecauseOfTrim = needsTrimStart
-                ? sequenceStartTime - mediaTimestamp
-                : 0;
-            const offsetBecauseOfTooLate = targetTime < 0 ? -targetTime : 0;
-            const offset = offsetBecauseOfTrim + offsetBecauseOfTooLate;
-            const duration = needsTrimEnd
-                ? bufferDuration -
-                    Math.max(0, unclampedMediaEndTime - sequenceEndTime) -
-                    offset
-                : bufferDuration - offset;
-            const scheduledTime = targetTime + currentTime + offset;
-            if (offset < 0) {
-                throw new Error('offset < 0: ' +
-                    JSON.stringify({
-                        offset,
-                        targetTime,
-                        currentTime,
-                        offsetBecauseOfTrim,
-                        offsetBecauseOfTooLate,
-                    }));
-            }
             if (duration > 0) {
-                node.start(scheduledTime, offset, duration);
+                if (ctxAndGain.audioContext.state === 'suspended') {
+                    nodesToResume.current.set(node, {
+                        scheduledTime,
+                        offset,
+                        duration,
+                    });
+                }
+                else {
+                    node.start(scheduledTime, offset, duration);
+                }
             }
             const scheduledEndTime = scheduledTime + duration / node.playbackRate.value;
             const mediaTime = mediaTimestamp + offset;
             const mediaEndTime = mediaTime + duration;
-            const latency = audioContext.baseLatency + audioContext.outputLatency;
-            const timeDiff = scheduledTime - currentTime - latency;
+            const latency = ctxAndGain.audioContext.baseLatency +
+                ctxAndGain.audioContext.outputLatency;
+            const timeDiff = scheduledTime - ctxAndGain.audioContext.currentTime;
             const prev = prevEndTimes.current;
             const scheduledMismatch = prev.scheduledEndTime !== null &&
                 Math.abs(scheduledTime - prev.scheduledEndTime) > 0.001;
             const mediaMismatch = prev.mediaEndTime !== null &&
                 Math.abs(mediaTime - prev.mediaEndTime) > 0.001;
-            if (debugAudioScheduling) {
-                log_js_1.Log.info({ logLevel, tag: 'audio-scheduling' }, 'scheduled %c%s%c %s %c%s%c %s %c%s%c %s %s %s', scheduledMismatch ? 'color: red; font-weight: bold' : '', scheduledTime.toFixed(4), '', scheduledEndTime.toFixed(4), mediaMismatch ? 'color: red; font-weight: bold' : '', mediaTime.toFixed(4), '', mediaEndTime.toFixed(4), duration < 0
+            log_js_1.Log.verbose({ logLevel, tag: 'audio-scheduling' }, 'scheduled %c%s%c %s %c%s%c %s %c%s%c %s %s %s', scheduledMismatch ? 'color: red; font-weight: bold' : '', scheduledTime.toFixed(4), '', scheduledEndTime.toFixed(4), mediaMismatch ? 'color: red; font-weight: bold' : '', mediaTime.toFixed(4), '', mediaEndTime.toFixed(4), duration < 0
+                ? 'color: red; font-weight: bold'
+                : timeDiff < 0
                     ? 'color: red; font-weight: bold'
-                    : timeDiff < 0
-                        ? 'color: red; font-weight: bold'
-                        : 'color: blue; font-weight: bold', duration < 0
-                    ? 'missed ' + Math.abs(offset).toFixed(2) + 's'
-                    : Math.abs(timeDiff).toFixed(2) +
-                        (timeDiff < 0 ? ' delay' : ' ahead'), '', 'current=' + currentTime.toFixed(4), 'offset=' + offset.toFixed(4), 'latency=' + latency.toFixed(4), 'state=' + audioContext.state);
-            }
+                    : 'color: blue; font-weight: bold', duration < 0
+                ? 'missed ' + Math.abs(offset).toFixed(2) + 's'
+                : Math.abs(timeDiff).toFixed(2) +
+                    (timeDiff < 0 ? ' delay' : ' ahead'), '', 'current=' + currentTime.toFixed(4), 'offset=' + offset.toFixed(4), 'latency=' + latency.toFixed(4), 'state=' + ctxAndGain.audioContext.state, originalUnloopedMediaTimestamp !== mediaTime
+                ? 'original_ts=' + originalUnloopedMediaTimestamp.toFixed(4)
+                : '');
             prev.scheduledEndTime = scheduledEndTime;
             prev.mediaEndTime = mediaEndTime;
             return duration > 0
@@ -153,9 +156,90 @@ const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyH
                 }
                 : {
                     type: 'not-started',
+                    reason: 'missed ' + Math.abs(offset).toFixed(2) + 's',
                 };
         };
-    }, [audioContext, logLevel]);
+    }, [ctxAndGain, logLevel]);
+    const resume = (0, react_1.useCallback)(() => {
+        if (!ctxAndGain) {
+            return Promise.resolve();
+        }
+        if (audioContextIsPlayingEventually.current) {
+            return Promise.resolve();
+        }
+        audioContextIsPlayingEventually.current = true;
+        const resumePromise = ctxAndGain.audioContext.resume();
+        isResuming.current = new Promise((resolve) => {
+            (0, wait_until_actually_resumed_js_1.waitUntilActuallyResumed)(ctxAndGain.audioContext, logLevel).then(resolve);
+            resumePromise.catch((err) => {
+                log_js_1.Log.warn({ logLevel, tag: 'audio' }, 'AudioContext resume rejected, continuing without audio sync', err);
+                resolve();
+            });
+        }).finally(() => {
+            isResuming.current = null;
+        });
+        ctxAndGain.gainNode.gain.cancelScheduledValues(ctxAndGain.audioContext.currentTime);
+        ctxAndGain.gainNode.gain.setValueAtTime(0, ctxAndGain.audioContext.currentTime);
+        ctxAndGain.gainNode.gain.linearRampToValueAtTime(1, ctxAndGain.audioContext.currentTime + 0.03);
+        nodesToResume.current.forEach((r, node) => node.start(r.scheduledTime, r.offset, r.duration));
+        nodesToResume.current.clear();
+        return resumePromise.catch(() => {
+            // Already logged above; swallow to avoid unhandled rejection
+            // since callers (e.g. use-playback.ts) do not await this.
+        });
+    }, [ctxAndGain, logLevel]);
+    const getIsResumingAudioContext = (0, react_1.useCallback)(() => {
+        return isResuming.current;
+    }, []);
+    const suspend = (0, react_1.useCallback)(() => {
+        if (!ctxAndGain) {
+            return;
+        }
+        if (!audioContextIsPlayingEventually.current) {
+            return;
+        }
+        audioContextIsPlayingEventually.current = false;
+        ctxAndGain.audioContext.suspend();
+    }, [ctxAndGain]);
+    const audioContextValue = (0, react_1.useMemo)(() => {
+        var _a, _b;
+        return {
+            audioContext: (_a = ctxAndGain === null || ctxAndGain === void 0 ? void 0 : ctxAndGain.audioContext) !== null && _a !== void 0 ? _a : null,
+            gainNode: (_b = ctxAndGain === null || ctxAndGain === void 0 ? void 0 : ctxAndGain.gainNode) !== null && _b !== void 0 ? _b : null,
+            audioSyncAnchor,
+            audioSyncAnchorEmitter,
+            scheduleAudioNode,
+            resume,
+            suspend,
+            getIsResumingAudioContext,
+            unscheduleAudioNode,
+        };
+    }, [
+        ctxAndGain,
+        audioSyncAnchor,
+        audioSyncAnchorEmitter,
+        scheduleAudioNode,
+        resume,
+        suspend,
+        getIsResumingAudioContext,
+        unscheduleAudioNode,
+    ]);
+    return ((0, jsx_runtime_1.jsx)(exports.SharedAudioContext.Provider, { value: audioContextValue, children: children }));
+};
+exports.SharedAudioContextProvider = SharedAudioContextProvider;
+const SharedAudioTagsContextProvider = ({ children, numberOfAudioTags }) => {
+    var _a, _b;
+    const audios = (0, react_1.useRef)([]);
+    const [initialNumberOfAudioTags] = (0, react_1.useState)(numberOfAudioTags);
+    if (numberOfAudioTags !== initialNumberOfAudioTags) {
+        throw new Error('The number of shared audio tags has changed dynamically. Once you have set this property, you cannot change it afterwards.');
+    }
+    const logLevel = (0, log_level_context_js_1.useLogLevel)();
+    const mountTime = (0, log_level_context_js_1.useMountTime)();
+    const env = (0, use_remotion_environment_js_1.useRemotionEnvironment)();
+    const audioCtx = (0, react_1.useContext)(exports.SharedAudioContext);
+    const audioContext = (_a = audioCtx === null || audioCtx === void 0 ? void 0 : audioCtx.audioContext) !== null && _a !== void 0 ? _a : null;
+    const resume = audioCtx === null || audioCtx === void 0 ? void 0 : audioCtx.resume;
     const refs = (0, react_1.useMemo)(() => {
         return new Array(numberOfAudioTags).fill(true).map(() => {
             const ref = (0, react_1.createRef)();
@@ -178,7 +262,7 @@ const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyH
      *
      * Need to import it from React to fix React 17 ESM support.
      */
-    const effectToUse = (_a = react_1.default.useInsertionEffect) !== null && _a !== void 0 ? _a : react_1.default.useLayoutEffect;
+    const effectToUse = (_b = react_1.default.useInsertionEffect) !== null && _b !== void 0 ? _b : react_1.default.useLayoutEffect;
     // Disconnecting the SharedElementSourceNodes if the Player unmounts to prevent leak.
     // https://github.com/remotion-dev/remotion/issues/6285
     // But useInsertionEffect will fire before other effects, meaning the
@@ -294,8 +378,6 @@ const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyH
             rerenderAudios();
         }
     }, [rerenderAudios]);
-    const mountTime = (0, log_level_context_js_1.useMountTime)();
-    const env = (0, use_remotion_environment_js_1.useRemotionEnvironment)();
     const playAllAudios = (0, react_1.useCallback)(() => {
         refs.forEach((ref) => {
             const audio = audios.current.find((a) => a.el === ref.ref);
@@ -312,18 +394,15 @@ const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyH
                 isPlayer: env.isPlayer,
             });
         });
-        audioContext === null || audioContext === void 0 ? void 0 : audioContext.resume();
-    }, [audioContext, logLevel, mountTime, refs, env.isPlayer]);
-    const value = (0, react_1.useMemo)(() => {
+        resume === null || resume === void 0 ? void 0 : resume();
+    }, [logLevel, mountTime, refs, env.isPlayer, resume]);
+    const audioTagsValue = (0, react_1.useMemo)(() => {
         return {
             registerAudio,
             unregisterAudio,
             updateAudio,
             playAllAudios,
             numberOfAudioTags,
-            audioContext,
-            audioSyncAnchor,
-            scheduleAudioNode,
         };
     }, [
         numberOfAudioTags,
@@ -331,11 +410,8 @@ const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyH
         registerAudio,
         unregisterAudio,
         updateAudio,
-        audioContext,
-        audioSyncAnchor,
-        scheduleAudioNode,
     ]);
-    return ((0, jsx_runtime_1.jsxs)(exports.SharedAudioContext.Provider, { value: value, children: [refs.map(({ id, ref }) => {
+    return ((0, jsx_runtime_1.jsxs)(exports.SharedAudioTagsContext.Provider, { value: audioTagsValue, children: [refs.map(({ id, ref }) => {
                 return (
                 // Without preload="metadata", iOS will seek the time internally
                 // but not actually with sound. Adding `preload="metadata"` helps here.
@@ -343,22 +419,23 @@ const SharedAudioContextProvider = ({ children, numberOfAudioTags, audioLatencyH
                 (0, jsx_runtime_1.jsx)("audio", { ref: ref, preload: "metadata", src: EMPTY_AUDIO }, id));
             }), children] }));
 };
-exports.SharedAudioContextProvider = SharedAudioContextProvider;
+exports.SharedAudioTagsContextProvider = SharedAudioTagsContextProvider;
 const useSharedAudio = ({ aud, audioId, premounting, postmounting, }) => {
     var _a;
-    const ctx = (0, react_1.useContext)(exports.SharedAudioContext);
+    const audioCtx = (0, react_1.useContext)(exports.SharedAudioContext);
+    const tagsCtx = (0, react_1.useContext)(exports.SharedAudioTagsContext);
     /**
      * We work around this in React 18 so an audio tag will only register itself once
      */
     const [elem] = (0, react_1.useState)(() => {
-        if (ctx && ctx.numberOfAudioTags > 0) {
-            return ctx.registerAudio({ aud, audioId, premounting, postmounting });
+        if (tagsCtx && tagsCtx.numberOfAudioTags > 0) {
+            return tagsCtx.registerAudio({ aud, audioId, premounting, postmounting });
         }
         // numberOfSharedAudioTags is 0
         const el = react_1.default.createRef();
-        const mediaElementSourceNode = (ctx === null || ctx === void 0 ? void 0 : ctx.audioContext)
+        const mediaElementSourceNode = (audioCtx === null || audioCtx === void 0 ? void 0 : audioCtx.audioContext)
             ? (0, shared_element_source_node_js_1.makeSharedElementSourceNode)({
-                audioContext: ctx.audioContext,
+                audioContext: audioCtx.audioContext,
                 ref: el,
             })
             : null;
@@ -386,17 +463,23 @@ const useSharedAudio = ({ aud, audioId, premounting, postmounting, }) => {
     const effectToUse = (_a = react_1.default.useInsertionEffect) !== null && _a !== void 0 ? _a : react_1.default.useLayoutEffect;
     if (typeof document !== 'undefined') {
         effectToUse(() => {
-            if (ctx && ctx.numberOfAudioTags > 0) {
-                ctx.updateAudio({ id: elem.id, aud, audioId, premounting, postmounting });
+            if (tagsCtx && tagsCtx.numberOfAudioTags > 0) {
+                tagsCtx.updateAudio({
+                    id: elem.id,
+                    aud,
+                    audioId,
+                    premounting,
+                    postmounting,
+                });
             }
-        }, [aud, ctx, elem.id, audioId, premounting, postmounting]);
+        }, [aud, tagsCtx, elem.id, audioId, premounting, postmounting]);
         effectToUse(() => {
             return () => {
-                if (ctx && ctx.numberOfAudioTags > 0) {
-                    ctx.unregisterAudio(elem.id);
+                if (tagsCtx && tagsCtx.numberOfAudioTags > 0) {
+                    tagsCtx.unregisterAudio(elem.id);
                 }
             };
-        }, [ctx, elem.id]);
+        }, [tagsCtx, elem.id]);
     }
     return elem;
 };

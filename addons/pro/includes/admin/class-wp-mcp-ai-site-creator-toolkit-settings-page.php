@@ -286,6 +286,18 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 								</td>
 							</tr>
 							<tr>
+								<th scope="row"><?php esc_html_e( 'Design Extractor', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[enable_design_extractor]" value="1" <?php checked( ! empty( $settings['enable_design_extractor'] ) ); ?> />
+										<?php esc_html_e( 'Enable extract_site_design_from_mockups (vision tokens may be consumed)', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Allows the AI to ingest mockup images, HTML/CSS files and live URLs and emit a single install-ready PHP site-design snippet (tokens + interactions + JFB form skin). Off by default because vision providers may be called per image.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
 								<th scope="row"><?php esc_html_e( 'Elementor Kit Import', 'mcp-ai-wpoos-pro' ); ?></th>
 								<td>
 									<label>

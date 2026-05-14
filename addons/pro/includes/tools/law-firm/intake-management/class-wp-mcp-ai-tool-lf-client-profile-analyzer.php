@@ -131,7 +131,7 @@ class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interf
 				'post_status'    => 'publish',
 				'meta_key'       => '_lf_client_id',
 				'meta_value'     => $client_id,
-				'posts_per_page' => -1,
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_client_profile_analyzer', 0, 1000 ) : 1000,
 				'fields'         => 'ids',
 			)
 		);
