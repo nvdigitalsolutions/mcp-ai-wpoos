@@ -19,6 +19,13 @@
 <exclude-pattern>*/node_modules/*</exclude-pattern>
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
+<!--
+	The phpcs/ directory contains custom PHPCS sniff classes which follow the
+	upstream PHPCS naming convention (CamelCase class files, camelCase variables
+	like $phpcsFile/$stackPtr) — not WordPress Coding Standards. Skip WPCS rules
+	on this tree.
+-->
+<exclude-pattern>*/phpcs/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>*/tests/fixtures/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
@@ -93,6 +100,18 @@
 	compliance gate in place.
 -->
 <rule ref="Squiz.PHP.Heredoc"/>
+
+<!--
+	Phase P1 of the Unix Theory Compliance Enhancement Proposal: warn when a
+	tool returns `array( 'success' => false, ... )` instead of `WP_Error` on
+	the failure path. The canonical envelope is documented in CLAUDE.md and
+	`.context/conventions.md`.
+
+	The custom sniff lives at phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php
+	and is referenced by path so no global PHPCS `installed_paths` change is
+	required.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php"/>
 
 <file>.</file>
 </ruleset>

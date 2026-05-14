@@ -344,8 +344,8 @@ Rules:
 
 - ✅ Success arrays MUST include `success => true` and a translated `message`. `data` is the only pipeable field — keep it `wp_json_encode()`-safe.
 - ✅ Failure MUST use `WP_Error`. The agentic loop normalises `WP_Error` correctly; observability hooks (`wp_mcp_ai_after_tool_execution`, OTel, audit log, token tracking) read `is_wp_error( $result )` to classify outcomes.
-- ❌ DO NOT return `array( 'success' => false, 'message' => ... )` for errors. It is forbidden in new code and PHPCS will warn on it once Phase P1 lands.
-- 🛠️ For success shapes, prefer the existing helper `format_success_response( $message, $data )` from [`trait-wp-mcp-ai-tool-chat-response.php`](../includes/tools/trait-wp-mcp-ai-tool-chat-response.php). It composes the canonical envelope without requiring a base class.
+- ❌ DO NOT return `array( 'success' => false, 'message' => ... )` for errors. It is forbidden in new code; the `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (landed in Phase P1) warns on this pattern at default severity 5 — visible under `composer run lint`, silent under `composer run lint:base`.
+- 🛠️ For success shapes, compose `format_success_response( $message, $data )` from [`trait-wp-mcp-ai-tool-envelope.php`](../includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;`. Tools that also need the broader chat-response behaviour (`format_chat_response`, `format_collection_response`, `format_empty_result_response`, `ensure_response_message`) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait, so `format_success_response()` is identical from either path.
 
 ## Commit Message Convention
 

@@ -137,7 +137,7 @@ return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ), $extr
 - ✅ Success returns an array with at minimum `success => true` and `message`. `data` is the only pipeable payload — keep it serialisable.
 - ✅ Failure **must** use `WP_Error`. The agentic loop already normalises `WP_Error` correctly for the model.
 - ❌ Do **not** return `array( 'success' => false, 'message' => ... )` for errors. It defeats observability subscribers and produces inconsistent reasoning signals for the LLM.
-- 🛠️ For success responses, prefer the existing helper [`trait-wp-mcp-ai-tool-chat-response.php::format_success_response()`](includes/tools/trait-wp-mcp-ai-tool-chat-response.php) — `use WP_MCP_AI_Tool_Chat_Response;` and call `$this->format_success_response( $message, $data )`.
+- 🛠️ For success responses, compose [`trait-wp-mcp-ai-tool-envelope.php::format_success_response()`](includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;` and call `$this->format_success_response( $message, $data )`. Tools that also need the broader chat-response helpers (`format_chat_response`, `format_collection_response`, `format_empty_result_response`, `ensure_response_message`) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait, so `format_success_response()` is identical from both.
 
 ## Base vs Pro Decision
 
