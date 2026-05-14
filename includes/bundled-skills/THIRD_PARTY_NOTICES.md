@@ -1,13 +1,14 @@
 # Third-Party Notices — Bundled Agent Skills (Base)
 
-The bundled-skills directory contains both Anthropic-authored skills (already
-covered by the upstream [`anthropics/skills`](https://github.com/anthropics/skills)
-repository) and curated WordPress-developer skills sourced from
-[`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills).
+The bundled-skills directory contains Anthropic-authored skills (upstream:
+[`anthropics/skills`](https://github.com/anthropics/skills)) and curated skills
+sourced from third-party repositories including
+[`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills)
+and [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill).
 
 All third-party skills in this directory are redistributed under their original
-license. Each individual `SKILL.md` carries `source:` and `license:` frontmatter
-fields pointing back to its upstream copy.
+license. Where present, `SKILL.md` frontmatter includes upstream `source:` and
+license metadata; this notice remains the canonical attribution record.
 
 ## Skills sourced from `Lonsdale201/wp-agent-skills`
 
@@ -72,7 +73,7 @@ SOFTWARE.
 
 ## Skills sourced from `anthropics/skills`
 
-The remaining bundled skills (e.g. `pdf`, `docx`, `xlsx`, `pptx`,
+Anthropic-authored bundled skills (e.g. `pdf`, `docx`, `xlsx`, `pptx`,
 `canvas-design`, `algorithmic-art`, `frontend-design`, `mcp-builder`,
 `skill-creator`, `code-reviewer`, `web-artifacts-builder`, `webapp-testing`,
 `brand-guidelines`, `theme-factory`, `slack-gif-creator`, `excalidraw-diagram`,
@@ -80,3 +81,45 @@ The remaining bundled skills (e.g. `pdf`, `docx`, `xlsx`, `pptx`,
 `planetscale`, `shannon`, `karpathy-coding-principles`) originate from the
 Anthropic Skills repository at https://github.com/anthropics/skills and
 follow that repository's license terms.
+
+## Skill sourced from `nextlevelbuilder/ui-ux-pro-max-skill`
+
+**Upstream repository:** https://github.com/nextlevelbuilder/ui-ux-pro-max-skill  
+**Pinned commit:** `b7e3af80f6e331f6fb456667b82b12cade7c9d35`  
+**License:** MIT (see below)  
+**Copyright holder:** Next Level Builder
+
+The following files were copied from the pinned upstream commit:
+
+- `includes/bundled-skills/ui-ux-pro-max/SKILL.md` ← `.claude/skills/ui-ux-pro-max/SKILL.md`
+- `includes/bundled-skills/ui-ux-pro-max/scripts/search.py` ← `src/ui-ux-pro-max/scripts/search.py`
+- `includes/bundled-skills/ui-ux-pro-max/scripts/core.py` ← `src/ui-ux-pro-max/scripts/core.py`
+- `includes/bundled-skills/ui-ux-pro-max/scripts/design_system.py` ← `src/ui-ux-pro-max/scripts/design_system.py`
+- `includes/bundled-skills/ui-ux-pro-max/data/*.csv` ← `src/ui-ux-pro-max/data/*.csv`
+- `includes/bundled-skills/ui-ux-pro-max/data/stacks/*.csv` ← `src/ui-ux-pro-max/data/stacks/*.csv`
+
+### Upstream MIT license text (`nextlevelbuilder/ui-ux-pro-max-skill`)
+
+```
+MIT License
+
+Copyright (c) 2024 Next Level Builder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

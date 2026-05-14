@@ -2,7 +2,7 @@
 
 > **Specification:** [agentskills.io](https://agentskills.io/specification)  
 > **Since:** 1.7.0  
-> **Available in:** Base plugin (skill registry + 44 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
+> **Available in:** Base plugin (skill registry + 45 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
 
 Agent Skills are portable, reusable behaviour packages that teach an assistant how to handle a specific class of task. Each skill is a single `SKILL.md` file — standard Markdown with a small YAML frontmatter block — stored under `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant runs, any skills assigned to it are automatically injected into the system prompt so the model knows exactly when and how to use them.
 
@@ -10,9 +10,9 @@ Agent Skills are portable, reusable behaviour packages that teach an assistant h
 
 ## Pre-Built Skills (Base Plugin)
 
-The base plugin ships with **44 pre-built skills** inside `includes/bundled-skills/`. They are copied to `wp-content/uploads/mcp-ai-skills/` automatically on first plugin activation. **No Pro add-on is required** — all base skills are available on every install.
+The base plugin ships with **45 pre-built skills** inside `includes/bundled-skills/`. They are copied to `wp-content/uploads/mcp-ai-skills/` automatically on first plugin activation. **No Pro add-on is required** — all base skills are available on every install.
 
-### General-purpose skills (Anthropic-authored)
+### General-purpose skills
 
 | Skill slug | Description |
 |---|---|
@@ -36,10 +36,13 @@ The base plugin ships with **44 pre-built skills** inside `includes/bundled-skil
 | `skill-creator` | Creates, modifies, and measures the performance of other skills |
 | `slack-gif-creator` | Creates animated GIFs optimised for Slack with design best practices |
 | `theme-factory` | Applies consistent visual themes to slides, docs, and other artifacts |
+| `ui-ux-pro-max` | UI/UX design intelligence for web and mobile with searchable style-guide datasets and stack-aware recommendations |
 | `valyu` | Valyu-API research and retrieval skill |
 | `web-artifacts-builder` | Builds elaborate multi-component HTML artifacts for Claude.ai |
 | `webapp-testing` | Tests local web applications using Playwright browser automation |
 | `xlsx` | Handles any spreadsheet file as primary input or output |
+
+Most of these general-purpose skills are sourced from `anthropics/skills`; `ui-ux-pro-max` is curated from [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) (MIT).
 
 ### WordPress-developer skills
 
