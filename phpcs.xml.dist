@@ -40,8 +40,14 @@
 <!-- Test files: PHPUnit test files use the test-*.php naming convention, which does not
      match the WordPress class-*.php convention. The filename sniff is not applicable. -->
 <exclude-pattern>*/tests/test-*</exclude-pattern>
+<!-- Docs Hub addon files intentionally use their own class/file naming scheme. -->
+<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
 <!-- Test files that intentionally contain multiple stub/test classes -->
 <exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
+</rule>
+
+<rule ref="PEAR.NamingConventions.ValidClassName">
+<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
 </rule>
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
@@ -80,6 +86,7 @@
 	See: docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md B6.
 -->
 <rule ref="WordPress.WP.I18n">
+	<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
 	<properties>
 		<property name="text_domain" type="array">
 			<element value="mcp-ai-wpoos"/>

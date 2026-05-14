@@ -17,7 +17,7 @@ and every installed addon, presenting it in a **GitBook-style three-column inter
 | **Markdown rendering** | GFM tables, task lists, fenced code blocks, `:::note/tip/warning/danger` callouts |
 | **Dark / light theme** | CSS custom-property tokens, togglable per user, respects `prefers-color-scheme` |
 | **Caching** | Filesystem + WordPress transient two-layer cache; auto-invalidated on plugin updates |
-| **Shortcode** | `[nvoos_docs]` embeds the SPA on any page or post |
+| **Shortcode** | `[nvoos_docs]` embeds the SPA on any page or post — works for guests by default |
 | **Gutenberg block** | `nvoos/docs-hub` block (same output as shortcode) |
 | **WP-CLI** | `wp nvoos-docs sync / clear / status` |
 | **Cron rebuild** | Automatic nightly rebuild; also triggered on plugin activate/deactivate |
@@ -54,6 +54,53 @@ and every installed addon, presenting it in a **GitBook-style three-column inter
 | `search` | `1` | `0` to disable the search box |
 | `sidebar` | `1` | `0` to hide the left sidebar |
 | `home` | first page | Slug of the default landing page |
+
+---
+
+## Guest / Public Access
+
+The shortcode is designed for **public-facing pages** — no login is required by default.
+
+### How it works
+
+- The **Allow Public (Guest) Access** setting (**Settings → NV oOS Docs Hub**) controls whether unauthenticated visitors can reach the REST endpoints (`/manifest`, `/pages/`, `/search`).
+- When **enabled** (default): all visitors see the documentation browser. The React SPA makes requests without an authentication header so third-party REST auth plugins cannot accidentally block guests.
+- When **disabled**: guests receive an HTTP 401 from the REST API and the SPA displays an error state. Logged-in users of any role are always allowed through.
+
+### `.context/` files are always admin-only
+
+Even when public access is enabled, pages whose `source` is `context` (i.e. files from the `.context/` directory) are **never** served to non-administrators:
+- The manifest strips those groups for non-admins.
+- Direct page requests for context slugs return HTTP 403.
+
+This ensures internal agent-context documentation is never exposed to the public regardless of the public access setting.
+
+### Restricting access programmatically
+
+Use the `nvoos_docs_hub_can_render` filter to suppress the shortcode entirely:
+
+```php
+// Only show docs to logged-in users.
+add_filter( 'nvoos_docs_hub_can_render', function( $can ) {
+    return is_user_logged_in();
+} );
+```
+
+Use the `nvoos_docs_hub_can_read_section` filter to restrict individual sections:
+
+```php
+// Hide the "internal" section from non-admins.
+add_filter( 'nvoos_docs_hub_can_read_section', function( $can, $slug ) {
+    if ( str_starts_with( $slug, 'internal/' ) ) {
+        return current_user_can( 'manage_options' );
+    }
+    return $can;
+}, 10, 2 );
+```
+
+### Admin notice
+
+When an administrator views a page containing `[nvoos_docs]` while **Allow Public (Guest) Access** is disabled, a dismissible admin notice appears with a direct link to the settings page.
 
 ---
 
@@ -109,8 +156,9 @@ wp nvoos-docs status
 | Setting | Description |
 |---------|-------------|
 | Enable Docs Hub | Master on/off switch |
+| **Allow Public (Guest) Access** | When on (default), all visitors can read docs without logging in. When off, a WordPress account is required. |
 | Sources | Which sources to scan (base, addons, root, custom) |
-| Context files | Whether to include `.context/*.md` files |
+| Context files | Whether to include `.context/*.md` files (always admin-only in REST responses) |
 | Default theme | `light` or `dark` |
 | Enable search | Toggle search box |
 | Enable sidebar | Toggle left sidebar |
@@ -134,8 +182,8 @@ wp nvoos-docs status
 | `nvoos_docs_hub_rebuild_chunk_size` | Number of files processed per chunked-rebuild tick (default `25`). |
 | `nvoos_docs_hub_rebuild_tick_budget` | Per-tick wall-clock budget in seconds (default `15`). |
 | `nvoos_docs_hub_max_files_total` | Aggregate cap on total indexed files per rebuild (default `5000`). |
-| `nvoos_docs_hub_can_read_section` | Return `false` or `WP_Error` to restrict public REST access |
-| `nvoos_docs_hub_can_render` | Return `false` to suppress the shortcode output |
+| `nvoos_docs_hub_can_read_section` | Return `false` or `WP_Error` to restrict public REST access to a specific slug |
+| `nvoos_docs_hub_can_render` | Return `false` to suppress the shortcode/block output entirely (e.g. for role-gating) |
 | `nvoos_docs_hub_manifest` | Filter the final manifest array before caching |
 | `nvoos_docs_hub_page` | Filter a page payload array before caching |
 | `nvoos_docs_hub_page_content` | Filter the raw Markdown string before caching |
