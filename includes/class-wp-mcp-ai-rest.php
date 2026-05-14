@@ -5205,6 +5205,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			try {
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
+				$wp_mcp_ai_tool_start = microtime( true );
+
 				/**
 				 * Filter that allows interceptors (e.g. the markup subsystem) to
 				 * short-circuit tool execution. When the filter returns a non-null
@@ -5242,12 +5244,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				/**
 				 * Fires after a registered tool has completed execution.
 				 *
-				 * @param string           $tool_slug Tool identifier.
-				 * @param array            $arguments Arguments passed in the request.
-				 * @param array            $context   Execution context including user_id and assistant_id.
-				 * @param mixed            $result    Tool result after filters have been applied.
+				 * @param string $tool_slug  Tool identifier.
+				 * @param array  $arguments  Arguments passed in the request.
+				 * @param array  $context    Execution context including user_id and assistant_id.
+				 * @param mixed  $result     Tool result after filters have been applied.
+				 * @param array  $descriptor Normalised lifecycle descriptor
+				 *                           ({success, error_code, data_type, duration_ms}).
+				 *                           Subscribers with `accepted_args = 4` ignore this.
 				 */
-				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
+				do_action(
+					'wp_mcp_ai_after_tool_execution',
+					$tool_slug,
+					$prepared_arguments,
+					$context,
+					$result,
+					WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, $wp_mcp_ai_tool_start, $tool_slug, $context )
+				);
 
 			} catch ( Exception $e ) {
 				// Orchestration Layer: Budget constraint violation.
@@ -10319,6 +10331,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
+				$wp_mcp_ai_tool_start = microtime( true );
+
 				/**
 				 * Filter that allows interceptors (e.g. the markup subsystem) to
 				 * short-circuit tool execution inside the agentic loop. When the
@@ -10385,7 +10399,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
 
-				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+				do_action(
+					'wp_mcp_ai_after_tool_execution',
+					$tool_slug,
+					$arguments,
+					$context,
+					$result,
+					WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, $wp_mcp_ai_tool_start, $tool_slug, $context )
+				);
 
 				return $result;
 

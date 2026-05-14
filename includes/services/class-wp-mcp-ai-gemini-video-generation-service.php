@@ -2268,7 +2268,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$arguments = isset( $parent_metadata['arguments'] ) ? $parent_metadata['arguments'] : array();
 		$context   = isset( $parent_metadata['context'] ) ? $parent_metadata['context'] : array();
 
-		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+		do_action(
+			'wp_mcp_ai_after_tool_execution',
+			$tool_slug,
+			$arguments,
+			$context,
+			$result,
+			WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context )
+		);
 	}
 
 	/**
@@ -2550,7 +2557,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$context['assistant_id'] = absint( $metadata['assistant_id'] );
 		}
 
-		do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+		do_action(
+			'wp_mcp_ai_after_tool_execution',
+			$tool_slug,
+			$arguments,
+			$context,
+			$result,
+			WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context )
+		);
 
 		// Complete parent async job if present.
 		if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {

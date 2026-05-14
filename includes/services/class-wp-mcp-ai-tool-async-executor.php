@@ -895,7 +895,16 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// with media-only responses (like veo video generation).
 			// NOTE: This must fire AFTER the result is stored but BEFORE job cleanup,
 			// so token usage can be recorded for the completed async job.
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+			$wp_mcp_ai_descriptor                = WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context );
+			$wp_mcp_ai_descriptor['duration_ms'] = round( (float) $duration * 1000.0, 3 );
+			do_action(
+				'wp_mcp_ai_after_tool_execution',
+				$tool_slug,
+				$arguments,
+				$context,
+				$result,
+				$wp_mcp_ai_descriptor
+			);
 
 		} catch ( Exception $e ) {
 			$this->handle_execution_error( $job_id, $metadata, $e->getMessage() );

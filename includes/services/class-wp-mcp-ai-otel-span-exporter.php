@@ -134,11 +134,11 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		add_action( 'wp_mcp_ai_chat_jobs_retry', array( __CLASS__, 'on_chat_jobs_retry' ), 99, 2 );
 
 		// Async chat continuation lifecycle.
-		add_action( 'wp_mcp_ai_chat_continuation_stored',     array( __CLASS__, 'on_chat_continuation_stored' ), 99, 2 );
-		add_action( 'wp_mcp_ai_chat_continuation_ready',      array( __CLASS__, 'on_chat_continuation_ready' ), 99, 3 );
+		add_action( 'wp_mcp_ai_chat_continuation_stored', array( __CLASS__, 'on_chat_continuation_stored' ), 99, 2 );
+		add_action( 'wp_mcp_ai_chat_continuation_ready', array( __CLASS__, 'on_chat_continuation_ready' ), 99, 3 );
 		add_action( 'wp_mcp_ai_chat_continuation_dispatched', array( __CLASS__, 'on_chat_continuation_dispatched' ), 99, 3 );
-		add_action( 'wp_mcp_ai_chat_continuation_resumed',    array( __CLASS__, 'on_chat_continuation_resumed' ), 99, 3 );
-		add_action( 'wp_mcp_ai_chat_continuation_errored',    array( __CLASS__, 'on_chat_continuation_errored' ), 99, 3 );
+		add_action( 'wp_mcp_ai_chat_continuation_resumed', array( __CLASS__, 'on_chat_continuation_resumed' ), 99, 3 );
+		add_action( 'wp_mcp_ai_chat_continuation_errored', array( __CLASS__, 'on_chat_continuation_errored' ), 99, 3 );
 
 		if ( ! self::$shutdown_registered ) {
 			register_shutdown_function( array( __CLASS__, 'flush' ) );
@@ -225,8 +225,11 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param array  $arguments  Tool arguments.
 	 * @param array  $context    Execution context.
 	 * @param mixed  $result     Tool result.
+	 * @param array  $descriptor Optional normalised lifecycle descriptor
+	 *                           ({success, error_code, data_type, duration_ms}).
+	 *                           Added in Phase P4 of the Unix-theory proposal.
 	 */
-	public static function on_after_tool( $tool_slug, $arguments, $context, $result ) {
+	public static function on_after_tool( $tool_slug, $arguments, $context, $result, $descriptor = array() ) {
 		$tool_slug = sanitize_key( (string) $tool_slug );
 		$key       = 'tool:' . $tool_slug;
 		if ( ! isset( self::$open_spans[ $key ] ) ) {
@@ -239,6 +242,16 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		if ( is_wp_error( $result ) ) {
 			$attrs['error.type']    = $result->get_error_code();
 			$attrs['error.message'] = $result->get_error_message();
+		}
+
+		// Phase P4: enrich the span with the normalised descriptor when supplied.
+		if ( is_array( $descriptor ) ) {
+			if ( isset( $descriptor['data_type'] ) && '' !== $descriptor['data_type'] ) {
+				$attrs['nvoos.tool.data_type'] = (string) $descriptor['data_type'];
+			}
+			if ( isset( $descriptor['duration_ms'] ) && is_numeric( $descriptor['duration_ms'] ) ) {
+				$attrs['nvoos.tool.duration_ms'] = (float) $descriptor['duration_ms'];
+			}
 		}
 
 		self::buffer_span( 'nvoos.tool.' . $tool_slug, $open['span_id'], $open['start_micros'], $attrs );
@@ -553,11 +566,13 @@ class WP_MCP_AI_Otel_Span_Exporter {
 			'resourceSpans' => array(
 				array(
 					'resource'   => array(
-						'attributes' => self::encode_attributes( array(
-							'service.name'    => 'nvoos',
-							'service.version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
-							'host.name'       => wp_parse_url( home_url(), PHP_URL_HOST ),
-						) ),
+						'attributes' => self::encode_attributes(
+							array(
+								'service.name'    => 'nvoos',
+								'service.version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
+								'host.name'       => wp_parse_url( home_url(), PHP_URL_HOST ),
+							)
+						),
 					),
 					'scopeSpans' => array(
 						array(

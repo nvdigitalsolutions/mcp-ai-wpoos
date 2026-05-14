@@ -219,10 +219,35 @@ Fires after a tool completes execution.
 - `array $arguments` — Tool arguments.
 - `array $context` — Execution context.
 - `mixed $result` — Tool execution result (array or WP_Error).
+- `array $descriptor` *(since v1.2.1, optional)* — Normalised lifecycle
+  descriptor pre-derived from `$result`. Shape:
+  `{ success: bool, error_code: ?string, data_type: ?string, duration_ms: ?float }`.
+  Subscribers registered with `accepted_args = 4` ignore this parameter and
+  continue to work unchanged. Subscribers that bump to `accepted_args = 5`
+  receive the descriptor.
 
-**Fired in:** `class-wp-mcp-ai-rest.php:4739`, `class-wp-mcp-ai-rest.php:9731`, `class-wp-mcp-ai-rest-tools-controller.php:677`
+  - `success` — `true` for non-`WP_Error` results.
+  - `error_code` — `WP_Error::get_error_code()` when failed, else `null`.
+  - `data_type` — A coarse type label (`array`, `string`, `int`, `bool`,
+    `float`, `null`, `object`, `generic`) for success results; if the
+    tool's success array carries a `produces` field (see
+    [Phase P3](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#3-implementation-phases)),
+    that field is used instead.
+  - `duration_ms` — Milliseconds elapsed between the `before_tool_execution`
+    and `after_tool_execution` hooks, when the firing site captures a
+    start timestamp; `null` otherwise (e.g. async-job completion fired
+    from a different process than start).
 
-**Example:**
+  Build the descriptor via `WP_MCP_AI_Tool_Lifecycle_Descriptor::build()`
+  if you fire this action from custom code. Filter the descriptor before
+  dispatch via `wp_mcp_ai_tool_lifecycle_descriptor`.
+
+**Fired in:** `class-wp-mcp-ai-rest.php` (sync tool dispatch + agentic loop),
+`class-wp-mcp-ai-rest-tools-controller.php`,
+`class-wp-mcp-ai-tool-async-executor.php` (async completion),
+`class-wp-mcp-ai-gemini-video-generation-service.php` (Veo job completion).
+
+**Example (legacy 4-arg subscriber — still supported):**
 ```php
 add_action( 'wp_mcp_ai_after_tool_execution', function( $tool_slug, $arguments, $context, $result ) {
     if ( is_wp_error( $result ) ) {
@@ -230,6 +255,25 @@ add_action( 'wp_mcp_ai_after_tool_execution', function( $tool_slug, $arguments, 
         error_log( sprintf( 'Tool %s failed: %s', $tool_slug, $result->get_error_message() ) );
     }
 }, 10, 4 );
+```
+
+**Example (new 5-arg subscriber using the descriptor):**
+```php
+add_action( 'wp_mcp_ai_after_tool_execution', function( $tool_slug, $arguments, $context, $result, $descriptor ) {
+    if ( ! $descriptor['success'] ) {
+        my_metrics_counter( 'tool.failure', 1, array(
+            'tool'  => $tool_slug,
+            'error' => $descriptor['error_code'],
+        ) );
+        return;
+    }
+    if ( isset( $descriptor['duration_ms'] ) ) {
+        my_metrics_histogram( 'tool.duration_ms', $descriptor['duration_ms'], array(
+            'tool'      => $tool_slug,
+            'data_type' => $descriptor['data_type'],
+        ) );
+    }
+}, 10, 5 );
 ```
 
 ---
