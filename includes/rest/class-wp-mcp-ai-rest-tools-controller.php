@@ -108,50 +108,15 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * Provides async health and orchestration health status for the chat UI's
 	 * status bar. This is a lightweight version suitable for frequent polling.
 	 *
+	 * Delegates to {@see WP_MCP_AI_Cron_Status_Service::get_system_status()} so
+	 * the production REST handler and the controller fallback share one
+	 * implementation.
+	 *
 	 * @since 1.9.1
 	 * @return array System status data with async and health information.
 	 */
 	private function get_system_status_for_chat() {
-		$status = array(
-			'async'  => array(
-				'status'       => 'unknown',
-				'stuck_jobs'   => 0,
-				'long_running' => 0,
-			),
-			'health' => array(
-				'status' => 'unknown',
-				'label'  => 'Unknown',
-			),
-		);
-
-		// Get async health status if monitor is available.
-		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
-			try {
-				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
-				$status['async'] = array(
-					'status'       => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
-					'stuck_jobs'   => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
-					'long_running' => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
-				);
-			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: async health monitoring is optional and should not break REST API response.
-				// Silently fail - status monitoring should not break the chat.
-			}
-		}
-
-		// Get orchestration health status if service is available.
-		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
-			try {
-				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
-				$status['health'] = array(
-					'status' => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
-					'label'  => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
-				);
-			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: orchestration health monitoring is optional and should not break REST API response.
-				// Silently fail.
-			}
-		}
-
-		return $status;
+		return $this->get_cron_status_service()->get_system_status();
 	}
 
 	/**
@@ -340,6 +305,50 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'type'        => 'boolean',
 							'required'    => false,
 							'default'     => false,
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /cron-status/{job_id}/cancel — cancel a running or queued job.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cron-status/(?P<job_id>[a-zA-Z0-9_.]+)/cancel',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
+					'callback'            => array( $this, 'handle_cancel_job_request' ),
+					'args'                => array(
+						'job_id' => array(
+							'description'       => __( 'Job identifier to cancel.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this, 'sanitize_job_id' ),
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /cron-status/{job_id}/retry — retry a failed or cancelled job.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cron-status/(?P<job_id>[a-zA-Z0-9_.]+)/retry',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
+					'callback'            => array( $this, 'handle_retry_job_request' ),
+					'args'                => array(
+						'job_id' => array(
+							'description'       => __( 'Job identifier to retry.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this, 'sanitize_job_id' ),
 						),
 					),
 				),
@@ -984,5 +993,191 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Handle POST /cron-status/{job_id}/cancel request.
+	 *
+	 * Cancels a pending or running async job. Native async_* jobs are handled
+	 * by WP_MCP_AI_Tool_Async_Executor; other job types may be cancelled via
+	 * the job-source registry if the source implements a cancel_job() method.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error REST response or error.
+	 */
+	public function handle_cancel_job_request( WP_REST_Request $request ) {
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_cancel_job_request' ) ) {
+			return $this->main_controller->handle_cancel_job_request( $request );
+		}
+
+		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
+		$user_id = get_current_user_id();
+
+		if ( empty( $job_id ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_job_id', __( 'A valid job ID is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Try registered job-source registry first (Phase 1 contract).
+		$source_result = $this->try_source_cancel( $job_id, $user_id );
+		if ( true === $source_result ) {
+			do_action( 'wp_mcp_ai_chat_jobs_cancel', $job_id, $user_id );
+			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+		}
+		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
+			$source_result->add_data( array( 'status' => 400 ) );
+			return $source_result;
+		}
+
+		// Native async_* executor fallback.
+		if ( 0 !== strpos( $job_id, 'async_' ) ) {
+			return new WP_Error( 'wp_mcp_ai_unsupported_job', __( 'This job type does not support cancellation.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			return new WP_Error( 'wp_mcp_ai_executor_unavailable', __( 'Async executor is unavailable.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$result   = $executor->cancel_job( $job_id, $user_id );
+
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 400 ) );
+			return $result;
+		}
+
+		/**
+		 * Fires when a job has been successfully cancelled.
+		 *
+		 * @since 1.9.4
+		 *
+		 * @param string $job_id  Cancelled job ID.
+		 * @param int    $user_id User who requested the cancellation.
+		 */
+		do_action( 'wp_mcp_ai_chat_jobs_cancel', $job_id, $user_id );
+
+		return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+	}
+
+	/**
+	 * Retries a failed or cancelled async job. Native async_* jobs are handled
+	 * by WP_MCP_AI_Tool_Async_Executor; other job types may be retried via
+	 * the job-source registry if the source implements a retry_job() method.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error REST response or error.
+	 */
+	public function handle_retry_job_request( WP_REST_Request $request ) {
+		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_retry_job_request' ) ) {
+			return $this->main_controller->handle_retry_job_request( $request );
+		}
+
+		$job_id  = $this->sanitize_job_id( $request->get_param( 'job_id' ) );
+		$user_id = get_current_user_id();
+
+		if ( empty( $job_id ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_job_id', __( 'A valid job ID is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Try registered job-source registry first (Phase 1 contract).
+		$source_result = $this->try_source_retry( $job_id, $user_id );
+		if ( true === $source_result ) {
+			do_action( 'wp_mcp_ai_chat_jobs_retry', $job_id, $user_id );
+			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+		}
+		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
+			$source_result->add_data( array( 'status' => 400 ) );
+			return $source_result;
+		}
+
+		// Native async_* executor fallback.
+		if ( 0 !== strpos( $job_id, 'async_' ) ) {
+			return new WP_Error( 'wp_mcp_ai_unsupported_job', __( 'This job type does not support retry.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			return new WP_Error( 'wp_mcp_ai_executor_unavailable', __( 'Async executor is unavailable.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$result   = $executor->retry_job( $job_id, $user_id );
+
+		if ( is_wp_error( $result ) ) {
+			$result->add_data( array( 'status' => 400 ) );
+			return $result;
+		}
+
+		/**
+		 * Fires when a job has been successfully retried.
+		 *
+		 * @since 1.9.4
+		 *
+		 * @param string $job_id  Retried job ID.
+		 * @param int    $user_id User who requested the retry.
+		 */
+		do_action( 'wp_mcp_ai_chat_jobs_retry', $job_id, $user_id );
+
+		return rest_ensure_response( array( 'success' => true, 'job_id' => $result ) );
+	}
+
+	/**
+	 * Attempt to cancel a job via the registered job-source registry.
+	 *
+	 * Returns true on success, WP_Error('wp_mcp_ai_no_source') if no source
+	 * claims the job, or a WP_Error with a different code if the source
+	 * rejects the cancellation.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id User requesting the cancellation.
+	 * @return true|WP_Error
+	 */
+	protected function try_source_cancel( $job_id, $user_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_source', '' );
+		}
+
+		$service = $this->get_cron_status_service();
+		$sources = $service->get_registered_sources();
+
+		foreach ( $sources as $source ) {
+			if ( method_exists( $source, 'cancel_job' ) ) {
+				$result = $source->cancel_job( $job_id, $user_id );
+				if ( true === $result || is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
+		}
+
+		return new WP_Error( 'wp_mcp_ai_no_source', '' );
+	}
+
+	/**
+	 * Attempt to retry a job via the registered job-source registry.
+	 *
+	 * Returns true on success, WP_Error('wp_mcp_ai_no_source') if no source
+	 * claims the job, or a WP_Error with a different code if the source
+	 * rejects the retry.
+	 *
+	 * @param string $job_id  Job identifier.
+	 * @param int    $user_id User requesting the retry.
+	 * @return true|WP_Error
+	 */
+	protected function try_source_retry( $job_id, $user_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_source', '' );
+		}
+
+		$service = $this->get_cron_status_service();
+		$sources = $service->get_registered_sources();
+
+		foreach ( $sources as $source ) {
+			if ( method_exists( $source, 'retry_job' ) ) {
+				$result = $source->retry_job( $job_id, $user_id );
+				if ( true === $result || is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
+		}
+
+		return new WP_Error( 'wp_mcp_ai_no_source', '' );
 	}
 }

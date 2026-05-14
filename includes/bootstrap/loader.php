@@ -121,6 +121,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-capabilit
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-http-client.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-bulk-operation.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-options-store.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-capability-checker.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/http/class-wp-mcp-ai-wp-http-client.php';
@@ -242,6 +243,16 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
 require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
+
+// ---------------------------------------------------------------------------
+// Async chat continuation — durable correlation between async jobs and the
+// chat sessions that started them. Listens to wp_mcp_ai_job_completed (and
+// _failed / _cancelled) at priority 20 (after Job_Notifier caches status at
+// priority 10) so the chat session can be resumed off-hook and the LLM can
+// produce a follow-up message. See docs/features/chat/async-continuation.md
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/chat-continuation-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
@@ -310,6 +321,11 @@ require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-approval-queue.php';
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cpt' ), 11 );
 add_action( 'init', array( 'WP_MCP_AI_Approval_Queue', 'register_cron' ), 1 );
+
+// ---------------------------------------------------------------------------
+// PR-E: base-plugin job-source adapters (transcript mining, Crawl4AI, HITL)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/services/job-sources/job-sources-init.php';
 
 // ---------------------------------------------------------------------------
 // Phase 3 — Workflow CPT + Engine V2

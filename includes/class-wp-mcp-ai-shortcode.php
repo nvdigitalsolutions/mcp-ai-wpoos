@@ -998,6 +998,29 @@ class WP_MCP_AI_Shortcode {
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
+			// Chat-session stream endpoint for async continuation delivery.
+			// The {session_id} placeholder is replaced client-side when the session ID is known.
+			$config['sessionStreamEndpoint'] = esc_url_raw(
+				WP_MCP_AI_Request_Context::normalise_rest_url(
+					rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-sessions/{session_id}/stream' )
+				)
+			);
+
+			/**
+			 * Feature flag: async chat continuation (server-side LLM re-entry after
+			 * an async tool finishes).  Defaults to true for new installs.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param bool $enabled Whether the client-side SSE session stream is enabled.
+			 */
+			$config['asyncChatContinuation'] = (bool) apply_filters( 'wp_mcp_ai_chat_continuation_enabled', true );
+
+			// Feature flag: replace the 4-counter strip with the full Tasks drawer + toasts.
+			// Off by default; flip on once the flag has been tested in production for one patch cycle.
+			// See docs/features/chat/cron-status-tasks-drawer-plan.md Phase 3b / PR-D.
+			$config['chatTasksDrawer'] = (bool) apply_filters( 'wp_mcp_ai_chat_tasks_drawer', true );
+
 			// Add provider and model for client-side execution (embedded provider).
 			// Also include system_prompt and temperature for embedded provider to use assistant defaults.
 			if ( ! empty( $assistant_provider ) ) {
@@ -1421,6 +1444,39 @@ class WP_MCP_AI_Shortcode {
 						<span class="wp-mcp-ai-chat__cron-status-icon">●</span>
 					</span>
 				</div>
+				<?php /* Tasks-drawer button (only visible when the chatTasksDrawer feature flag is on). */ ?>
+				<button type="button" class="wp-mcp-ai-chat__tasks-btn" hidden aria-haspopup="dialog" aria-expanded="false">
+					<span class="wp-mcp-ai-chat__tasks-btn__label"><?php esc_html_e( 'Jobs', 'mcp-ai-wpoos' ); ?></span>
+					<span class="wp-mcp-ai-chat__tasks-btn__badge" aria-hidden="true">0</span>
+				</button>
+				<?php /* Tasks drawer panel — populated and toggled by chat.js. */ ?>
+				<div class="wp-mcp-ai-chat__tasks-drawer" hidden role="dialog" aria-label="<?php esc_attr_e( 'Tasks', 'mcp-ai-wpoos' ); ?>">
+					<div class="wp-mcp-ai-chat__tasks-drawer__header">
+						<span class="wp-mcp-ai-chat__tasks-drawer__health" data-status="unknown" aria-hidden="true">●</span>
+						<span class="wp-mcp-ai-chat__tasks-drawer__title"><?php esc_html_e( 'Tasks', 'mcp-ai-wpoos' ); ?></span>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__close" aria-label="<?php esc_attr_e( 'Close Tasks drawer', 'mcp-ai-wpoos' ); ?>">✕</button>
+					</div>
+					<div class="wp-mcp-ai-chat__tasks-drawer__filters" role="tablist">
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter wp-mcp-ai-chat__tasks-drawer__filter--active" role="tab" aria-selected="true" data-filter="all"><?php esc_html_e( 'All', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="running"><?php esc_html_e( 'Running', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="queued"><?php esc_html_e( 'Pending', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="completed"><?php esc_html_e( 'Completed', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__filter" role="tab" aria-selected="false" data-filter="failed"><?php esc_html_e( 'Failed', 'mcp-ai-wpoos' ); ?></button>
+					</div>
+					<div class="wp-mcp-ai-chat__tasks-drawer__batch" hidden>
+						<label class="wp-mcp-ai-chat__tasks-drawer__batch-select">
+							<input type="checkbox" class="wp-mcp-ai-chat__tasks-drawer__select-all" aria-label="<?php esc_attr_e( 'Select all jobs', 'mcp-ai-wpoos' ); ?>">
+							<span><?php esc_html_e( 'Select all', 'mcp-ai-wpoos' ); ?></span>
+						</label>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__batch-cancel" hidden><?php esc_html_e( 'Cancel selected', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__batch-retry" hidden><?php esc_html_e( 'Retry selected', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="wp-mcp-ai-chat__tasks-drawer__batch-dismiss" hidden><?php esc_html_e( 'Dismiss selected', 'mcp-ai-wpoos' ); ?></button>
+					</div>
+					<ul class="wp-mcp-ai-chat__tasks-drawer__list" role="list"></ul>
+					<p class="wp-mcp-ai-chat__tasks-drawer__empty" hidden><?php esc_html_e( 'No tasks found.', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+				<?php /* Toast container — showJobToast() appends/removes items here. */ ?>
+				<div class="wp-mcp-ai-chat__job-toast-container" aria-live="polite" role="status"></div>
 				<div class="wp-mcp-ai-chat__control-buttons">
 					<button
 						type="button"

@@ -586,6 +586,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-workflow-bridge.php';
 		add_action( 'init', array( 'WP_MCP_AI_Pro_Workflow_Bridge', 'get_instance' ), 27 );
 
+		// Load Pro async-continuation multi-channel notifier (always enabled when Pro is active).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-chat-continuation-notifier.php';
+		WP_MCP_AI_Pro_Chat_Continuation_Notifier::init();
+
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';

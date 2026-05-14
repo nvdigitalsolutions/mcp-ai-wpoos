@@ -3686,3 +3686,457 @@
 .wp-mcp-ai-chat__container {
     position: relative;
 }
+
+/* =========================================
+   Inline Job Progress Card (Phase 3a)
+   ========================================= */
+.wp-mcp-ai-job-card {
+    background: var(--wp-mcp-ai-surface, #f9fafb);
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    position: relative;
+}
+
+.wp-mcp-ai-job-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.wp-mcp-ai-job-card__title {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.wp-mcp-ai-job-card__cancel,
+.wp-mcp-ai-job-card__retry {
+    background: none;
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    white-space: nowrap;
+    color: inherit;
+}
+
+.wp-mcp-ai-job-card__cancel:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.wp-mcp-ai-job-card__retry:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.wp-mcp-ai-job-card__progress-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.wp-mcp-ai-job-card__progress-bar {
+    flex: 1;
+    background: var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 9999px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.wp-mcp-ai-job-card__progress-fill {
+    background: var(--wp-mcp-ai-primary, #2563eb);
+    border-radius: 9999px;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.wp-mcp-ai-job-card__progress-pct {
+    font-size: 0.75rem;
+    min-width: 32px;
+    text-align: right;
+}
+
+.wp-mcp-ai-job-card__eta {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.wp-mcp-ai-job-card__message {
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+    font-size: 0.8125rem;
+    margin-bottom: 4px;
+}
+
+.wp-mcp-ai-job-card__steps {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+}
+
+.wp-mcp-ai-job-card__steps li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 2px 0;
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+}
+
+.wp-mcp-ai-job-card__steps li[data-step-status="completed"]::before { content: "✓"; color: #16a34a; }
+.wp-mcp-ai-job-card__steps li[data-step-status="failed"]::before    { content: "✗"; color: #dc2626; }
+.wp-mcp-ai-job-card__steps li[data-step-status="running"]::before   { content: "⏳"; }
+.wp-mcp-ai-job-card__steps li[data-step-status="pending"]::before   { content: "·"; }
+
+
+/* ==========================================================================
+   PR-D: Tasks button, Tasks drawer, Job toasts
+   (Phase 3b + 3c of docs/features/chat/cron-status-tasks-drawer-plan.md)
+   ========================================================================== */
+
+/* ---- Tasks trigger button ---- */
+.wp-mcp-ai-chat__tasks-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 9999px;
+    background: var(--wp-mcp-ai-surface, #fff);
+    color: var(--wp-mcp-ai-text, #374151);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.wp-mcp-ai-chat__tasks-btn:hover,
+.wp-mcp-ai-chat__tasks-btn:focus-visible {
+    background: var(--wp-mcp-ai-surface-hover, #f9fafb);
+    border-color: var(--wp-mcp-ai-border-focus, #6366f1);
+    outline: none;
+}
+
+.wp-mcp-ai-chat__tasks-btn__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9999px;
+    background: var(--wp-mcp-ai-accent, #6366f1);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ---- Tasks drawer panel ---- */
+.wp-mcp-ai-chat__tasks-drawer {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 200;
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 12px;
+    background: var(--wp-mcp-ai-surface, #fff);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+.wp-mcp-ai-chat__tasks-drawer[hidden] { display: none; }
+
+/* Header row */
+.wp-mcp-ai-chat__tasks-drawer__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    background: var(--wp-mcp-ai-surface-alt, #f9fafb);
+}
+
+.wp-mcp-ai-chat__tasks-drawer__health {
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: var(--wp-mcp-ai-text-muted, #9ca3af);
+}
+
+.wp-mcp-ai-chat__tasks-drawer__health[data-status="healthy"]  { color: #16a34a; }
+.wp-mcp-ai-chat__tasks-drawer__health[data-status="warning"]  { color: #d97706; }
+.wp-mcp-ai-chat__tasks-drawer__health[data-status="critical"] { color: #dc2626; }
+
+.wp-mcp-ai-chat__tasks-drawer__title {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-text, #111827);
+}
+
+.wp-mcp-ai-chat__tasks-drawer__close {
+    padding: 2px 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__close:hover { background: var(--wp-mcp-ai-surface-hover, #f3f4f6); }
+
+/* Filter tabs */
+.wp-mcp-ai-chat__tasks-drawer__filters {
+    display: flex;
+    gap: 2px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    overflow-x: auto;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__filter {
+    padding: 3px 10px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__filter:hover { background: var(--wp-mcp-ai-surface-hover, #f3f4f6); }
+
+.wp-mcp-ai-chat__tasks-drawer__filter--active,
+.wp-mcp-ai-chat__tasks-drawer__filter[aria-selected="true"] {
+    background: var(--wp-mcp-ai-accent, #6366f1);
+    color: #fff;
+}
+
+/* Batch action bar */
+.wp-mcp-ai-chat__tasks-drawer__batch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    background: var(--wp-mcp-ai-surface-alt, #f9fafb);
+    font-size: 0.75rem;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__batch[hidden] { display: none; }
+
+.wp-mcp-ai-chat__tasks-drawer__batch-select {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--wp-mcp-ai-text-muted, #6b7280);
+}
+
+.wp-mcp-ai-chat__tasks-drawer__batch-cancel,
+.wp-mcp-ai-chat__tasks-drawer__batch-retry,
+.wp-mcp-ai-chat__tasks-drawer__batch-dismiss {
+    padding: 2px 8px;
+    border: 1px solid var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 4px;
+    background: var(--wp-mcp-ai-surface, #fff);
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--wp-mcp-ai-text, #374151);
+    transition: background 0.12s;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__batch-cancel[hidden],
+.wp-mcp-ai-chat__tasks-drawer__batch-retry[hidden],
+.wp-mcp-ai-chat__tasks-drawer__batch-dismiss[hidden] { display: none; }
+
+.wp-mcp-ai-chat__tasks-drawer__batch-cancel:hover  { background: #fee2e2; border-color: #dc2626; color: #dc2626; }
+.wp-mcp-ai-chat__tasks-drawer__batch-retry:hover   { background: #eff6ff; border-color: #3b82f6; color: #3b82f6; }
+.wp-mcp-ai-chat__tasks-drawer__batch-dismiss:hover { background: var(--wp-mcp-ai-surface-hover, #f3f4f6); }
+
+/* Scrollable job list */
+.wp-mcp-ai-chat__tasks-drawer__list {
+    flex: 1;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__empty {
+    padding: 24px 16px;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--wp-mcp-ai-text-muted, #9ca3af);
+    margin: 0;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__empty[hidden] { display: none; }
+
+/* Job row */
+.wp-mcp-ai-chat__tasks-drawer__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--wp-mcp-ai-border, #f3f4f6);
+    transition: background 0.1s;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__row:last-child { border-bottom: none; }
+.wp-mcp-ai-chat__tasks-drawer__row:hover { background: var(--wp-mcp-ai-surface-alt, #f9fafb); }
+
+.wp-mcp-ai-chat__tasks-drawer__row-check { flex-shrink: 0; }
+
+.wp-mcp-ai-chat__tasks-drawer__row-icon {
+    flex-shrink: 0;
+    font-size: 0.875rem;
+    width: 18px;
+    text-align: center;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__row[data-status="completed"] .wp-mcp-ai-chat__tasks-drawer__row-icon { color: #16a34a; }
+.wp-mcp-ai-chat__tasks-drawer__row[data-status="failed"]    .wp-mcp-ai-chat__tasks-drawer__row-icon { color: #dc2626; }
+.wp-mcp-ai-chat__tasks-drawer__row[data-status="running"]   .wp-mcp-ai-chat__tasks-drawer__row-icon { color: var(--wp-mcp-ai-accent, #6366f1); }
+.wp-mcp-ai-chat__tasks-drawer__row[data-status="cancelled"] .wp-mcp-ai-chat__tasks-drawer__row-icon { color: var(--wp-mcp-ai-text-muted, #9ca3af); }
+
+.wp-mcp-ai-chat__tasks-drawer__row-title {
+    flex: 1;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--wp-mcp-ai-text, #111827);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__row-meta {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    color: var(--wp-mcp-ai-text-muted, #9ca3af);
+    white-space: nowrap;
+}
+
+/* Inline progress bar on each row */
+.wp-mcp-ai-chat__tasks-drawer__row-progress {
+    flex-shrink: 0;
+    width: 60px;
+    height: 4px;
+    background: var(--wp-mcp-ai-border, #e5e7eb);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__row-progress-fill {
+    height: 100%;
+    background: var(--wp-mcp-ai-accent, #6366f1);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* Row action buttons */
+.wp-mcp-ai-chat__tasks-drawer__row-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__row-cancel,
+.wp-mcp-ai-chat__tasks-drawer__row-retry {
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: none;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.wp-mcp-ai-chat__tasks-drawer__row-cancel { color: #dc2626; border-color: #fca5a5; }
+.wp-mcp-ai-chat__tasks-drawer__row-cancel:hover { background: #fee2e2; }
+.wp-mcp-ai-chat__tasks-drawer__row-retry  { color: #3b82f6; border-color: #93c5fd; }
+.wp-mcp-ai-chat__tasks-drawer__row-retry:hover  { background: #eff6ff; }
+
+.wp-mcp-ai-chat__tasks-drawer__row-cancel:disabled,
+.wp-mcp-ai-chat__tasks-drawer__row-retry:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Job toast ---- */
+.wp-mcp-ai-chat__job-toast-container {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    right: 12px;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+    max-width: 320px;
+}
+
+.wp-mcp-ai-job-toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--wp-mcp-ai-surface, #fff);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--wp-mcp-ai-text, #111827);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: auto;
+}
+
+.wp-mcp-ai-job-toast--visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.wp-mcp-ai-job-toast--completed { border-left: 4px solid #16a34a; }
+.wp-mcp-ai-job-toast--failed    { border-left: 4px solid #dc2626; }
+
+.wp-mcp-ai-job-toast__icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+.wp-mcp-ai-job-toast--completed .wp-mcp-ai-job-toast__icon { color: #16a34a; }
+.wp-mcp-ai-job-toast--failed    .wp-mcp-ai-job-toast__icon { color: #dc2626; }
+
+.wp-mcp-ai-job-toast__msg { flex: 1; }
+
+.wp-mcp-ai-job-toast__close {
+    flex-shrink: 0;
+    padding: 0 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--wp-mcp-ai-text-muted, #9ca3af);
+    border-radius: 3px;
+}
+
+.wp-mcp-ai-job-toast__close:hover { background: var(--wp-mcp-ai-surface-hover, #f3f4f6); }
