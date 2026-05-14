@@ -113,5 +113,15 @@
 -->
 <rule ref="./phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php"/>
 
+<!--
+	Phase P6 of the Unix Theory Compliance Enhancement Proposal: warn when a
+	tool interpolates or concatenates `$arguments[...]` directly into a string
+	without first running it through a sanitiser. Codifies Gate 1 of the
+	two-gate rule (sanitize-at-entry, escape-at-exit) documented in
+	`.context/security-checklist.md` and audited at
+	`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php"/>
+
 <file>.</file>
 </ruleset>
