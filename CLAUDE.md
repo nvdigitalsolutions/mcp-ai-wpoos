@@ -117,14 +117,36 @@ class WP_MCP_AI_Tool_Example extends WP_MCP_AI_Tool_Base {
 }
 ```
 
-## Tool Return Format
+## Tool Return Format — Canonical Envelope
+
+Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
 
 ```php
-// Success:
-return array( 'success' => true, 'message' => __( 'Done.', 'mcp-ai-wpoos' ), 'data' => $results );
-// Error:
-return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ) );
+// SUCCESS — array with success/message/data:
+return array(
+    'success' => true,
+    'message' => __( 'Done.', 'mcp-ai-wpoos' ),  // Translated, human-readable.
+    'data'    => $results,                        // Serialisable via wp_json_encode().
+);
+
+// FAILURE — ALWAYS WP_Error, never an array with 'success' => false:
+return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ), $extra_data );
 ```
+
+**Rules:**
+- ✅ Success returns an array with at minimum `success => true` and `message`. `data` is the only pipeable payload — keep it serialisable.
+- ✅ Failure **must** use `WP_Error`. The agentic loop already normalises `WP_Error` correctly for the model.
+- ❌ Do **not** return `array( 'success' => false, 'message' => ... )` for errors. It defeats observability subscribers and produces inconsistent reasoning signals for the LLM.
+- 🛠️ For success responses, compose [`trait-wp-mcp-ai-tool-envelope.php::format_success_response()`](includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;` and call `$this->format_success_response( $message, $data )`. Tools that also need the broader chat-response helpers (`format_chat_response`, `format_collection_response`, `format_empty_result_response`, `ensure_response_message`) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait, so `format_success_response()` is identical from both.
+
+## Tool Sanitisation — Two-Gate Rule
+
+Every tool's `execute()` method must satisfy two gates (Unix Theory Compliance §2.6, Phase P6):
+
+- **Gate 1 — Sanitize at entry:** all `$arguments[...]` values are sanitised at the top of `execute()` **before** any business logic (use `absint`, `sanitize_text_field`, `sanitize_key`, `wp_kses_post`, `esc_url_raw`, etc.).
+- **Gate 2 — Escape at exit:** every value returned in the canonical-envelope `data` array — and every value inserted into a database, redirect URL, response header, or rendered HTML — is escaped/prepared (use `esc_html`, `esc_attr`, `esc_url`, `wp_json_encode`, `$wpdb->prepare()` with placeholders).
+
+The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 
 ## Base vs Pro Decision
 
@@ -160,7 +182,7 @@ In `class-wp-mcp-ai-rest.php` (lines ~2578-2950):
 
 - Singleton: `WP_MCP_AI_Tool_Registry::get_instance()`
 - Hook-based: `do_action( 'wp_mcp_ai_register_tools', $registry )`
-- Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.)
+- Optional interfaces: `WP_MCP_AI_Tool_Capability_Flags_Interface` (read-only, write, async, etc.), `WP_MCP_AI_Tool_Data_Contract_Interface` (`produces`/`consumes` payload hints — surfaced to the model as a `[Data contract: …]` description suffix)
 - Capability flags: `'read-only'`, `'write'`, `'state-changing'`, `'cacheable'`, `'external-api'`
 
 ### Orchestration Phases (1–7)

@@ -659,6 +659,8 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			 */
 			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
+			$wp_mcp_ai_tool_start = microtime( true );
+
 			/**
 			 * Filter that allows interceptors (e.g. the markup subsystem) to
 			 * short-circuit tool execution. When the filter returns a non-null
@@ -700,8 +702,18 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			 * @param array  $prepared_arguments Arguments passed in the request.
 			 * @param array  $context            Execution context.
 			 * @param mixed  $result             Tool execution result.
+			 * @param array  $descriptor         Normalised lifecycle descriptor
+			 *                                   ({success, error_code, data_type, duration_ms}).
+			 *                                   Subscribers with `accepted_args = 4` ignore this.
 			 */
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
+			do_action(
+				'wp_mcp_ai_after_tool_execution',
+				$tool_slug,
+				$prepared_arguments,
+				$context,
+				$result,
+				WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, $wp_mcp_ai_tool_start, $tool_slug, $context )
+			);
 
 			return $this->success( array( 'result' => $result ) );
 		} catch ( Exception $e ) {

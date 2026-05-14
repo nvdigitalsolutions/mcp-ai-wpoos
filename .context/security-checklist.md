@@ -19,6 +19,15 @@ Before writing any code, confirm:
 
 ## Input Sanitization (Required for All User Input)
 
+> **Tools — the two-gate rule (Unix Theory Compliance §2.6, Phase P6):** Every
+> `$arguments` value is sanitised at the **top of `execute()`** before any
+> business logic (Gate 1), and every value returned in the canonical-envelope
+> `data` array is escaped on its way out (Gate 2). The repo enforces the
+> highest-risk Gate-1 violations via the PHPCS sniff
+> `WPMCPAI.Tools.SanitizeAtEntry`. See the codification document at
+> [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](../docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md)
+> for the canonical sanitiser/escaper allow-list and the sniff's scope.
+
 ### Use the Right Function
 
 | Input Type | Function |

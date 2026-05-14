@@ -162,7 +162,7 @@ if ( $this->is_toolkit_enabled( 'enable_crm_toolkit' ) ) {
 
 ## Tool Return Format
 
-Tools should return a structured array:
+Tools return **exactly one of two shapes** — the canonical envelope (see [`CLAUDE.md`](../CLAUDE.md#tool-return-format--canonical-envelope) and [`.context/conventions.md`](conventions.md#tool-return-envelope-canonical)):
 
 ```php
 // Success:
@@ -172,9 +172,13 @@ return array(
     'data'    => $results,
 );
 
-// Error (use WP_Error):
+// Error (use WP_Error — never `success => false`):
 return new WP_Error( 'not_found', __( 'Resource not found.', 'mcp-ai-wpoos' ) );
 ```
+
+For success responses, compose `format_success_response( $message, $data )` from [`trait-wp-mcp-ai-tool-envelope.php`](../includes/tools/trait-wp-mcp-ai-tool-envelope.php) — `use WP_MCP_AI_Tool_Envelope;` in the tool class. Tools that also need the broader chat-response helpers (collections, empty-result messages, etc.) should `use WP_MCP_AI_Tool_Chat_Response;` instead — it composes the envelope trait so `format_success_response()` is identical from either trait.
+
+Returning `array( 'success' => false, ... )` for errors is forbidden in new code; observability subscribers (`wp_mcp_ai_after_tool_execution`, OTel, audit log, token tracking) rely on `is_wp_error( $result )` to classify outcomes. The `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (Phase P1) warns on this pattern.
 
 ---
 

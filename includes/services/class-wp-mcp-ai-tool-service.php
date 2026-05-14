@@ -167,12 +167,25 @@ class WP_MCP_AI_Tool_Service {
 				continue; // Skip if tool not found.
 			}
 
+			$description = $tool_definition['description'] ?? '';
+
+			// Surface the data contract (`produces` / `consumes`) to the model
+			// as a one-line suffix on the description. OpenAI's strict function
+			// schema rejects unknown top-level keys, so we encode the hint in
+			// the description instead of adding a new payload field.
+			if ( ! empty( $tool_definition['data_contract'] ) ) {
+				$suffix = $this->format_data_contract_suffix( $tool_slug, $tool_definition['data_contract'] );
+				if ( '' !== $suffix ) {
+					$description = '' === $description ? $suffix : $description . ' ' . $suffix;
+				}
+			}
+
 			// Convert to OpenAI function calling format.
 			$tools_payload[] = array(
 				'type'     => 'function',
 				'function' => array(
 					'name'        => $tool_slug,
-					'description' => $tool_definition['description'] ?? '',
+					'description' => $description,
 					'parameters'  => $tool_definition['parameters'] ?? array(
 						'type'       => 'object',
 						'properties' => array(),
@@ -182,6 +195,47 @@ class WP_MCP_AI_Tool_Service {
 		}
 
 		return $tools_payload;
+	}
+
+	/**
+	 * Format a tool's data contract as a human-readable suffix appended to its
+	 * description in the OpenAI function-calling payload.
+	 *
+	 * @since 1.2.1
+	 *
+	 * @param string $tool_slug     Tool slug.
+	 * @param array  $data_contract Normalised contract from the registry.
+	 * @return string Suffix to append (empty string if nothing to surface).
+	 */
+	protected function format_data_contract_suffix( $tool_slug, $data_contract ) {
+		$parts = array();
+
+		if ( ! empty( $data_contract['produces'] ) && is_string( $data_contract['produces'] ) ) {
+			$parts[] = 'produces=' . $data_contract['produces'];
+		}
+
+		if ( ! empty( $data_contract['consumes'] ) ) {
+			if ( is_array( $data_contract['consumes'] ) ) {
+				$parts[] = 'consumes=' . implode( '|', $data_contract['consumes'] );
+			} elseif ( is_string( $data_contract['consumes'] ) ) {
+				$parts[] = 'consumes=' . $data_contract['consumes'];
+			}
+		}
+
+		$suffix = empty( $parts ) ? '' : '[Data contract: ' . implode( ', ', $parts ) . ']';
+
+		/**
+		 * Filter the data-contract suffix appended to a tool's description.
+		 *
+		 * Return an empty string to suppress the suffix for a specific tool.
+		 *
+		 * @since 1.2.1
+		 *
+		 * @param string $suffix        Default suffix (e.g. `[Data contract: produces=post_object]`).
+		 * @param string $tool_slug     Tool slug.
+		 * @param array  $data_contract Normalised contract array.
+		 */
+		return (string) apply_filters( 'wp_mcp_ai_tool_data_contract_description_suffix', $suffix, $tool_slug, $data_contract );
 	}
 
 	/**
