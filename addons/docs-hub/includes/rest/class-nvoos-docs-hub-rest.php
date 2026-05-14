@@ -280,6 +280,12 @@ class NV_oOS_Docs_Hub_REST {
 			);
 		}
 
+		// Strip context pages for non-admin users so internal .context/ files
+		// are never disclosed through the public manifest endpoint.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			$manifest = self::strip_context_from_manifest( $manifest );
+		}
+
 		$response = rest_ensure_response( $manifest );
 		$response->header( 'Cache-Control', 'public, max-age=300' );
 		return $response;
@@ -323,8 +329,21 @@ class NV_oOS_Docs_Hub_REST {
 			);
 		}
 
+		// Context pages may only be served to users with manage_options.
+		// They can appear in the cache when a logged-in admin ran the last rebuild.
+		if ( 'context' === ( $payload['source'] ?? '' ) && ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to view this documentation section.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		$response = rest_ensure_response( $payload );
-		$response->header( 'Cache-Control', 'public, max-age=300' );
+		// Use a private no-store directive for context pages so shared HTTP
+		// caches (reverse proxies, CDNs) cannot serve them to other users.
+		$is_context = 'context' === ( $payload['source'] ?? '' );
+		$response->header( 'Cache-Control', $is_context ? 'private, no-store' : 'public, max-age=300' );
 		return $response;
 	}
 
@@ -560,6 +579,74 @@ class NV_oOS_Docs_Hub_REST {
 		}
 
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Remove context-source entries from a manifest for non-admin audiences.
+	 *
+	 * Strips tree groups (and individual pages within mixed groups) whose
+	 * source is 'context', removes their slugs from slug_map, and
+	 * recalculates total_pages. The original manifest is not mutated.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $manifest Raw manifest array.
+	 * @return array Filtered manifest.
+	 */
+	private static function strip_context_from_manifest( array $manifest ) {
+		$context_slugs = array();
+		$filtered_tree = array();
+
+		foreach ( $manifest['tree'] ?? array() as $group ) {
+			if ( 'context' === ( $group['source'] ?? '' ) ) {
+				// Record all slugs in this group for slug_map cleanup.
+				foreach ( $group['pages'] ?? array() as $page ) {
+					if ( ! empty( $page['slug'] ) ) {
+						$context_slugs[] = $page['slug'];
+					}
+				}
+				// Skip the entire group.
+				continue;
+			}
+
+			// For mixed groups (shouldn't occur, but be defensive), drop
+			// any individual page entries that carry source='context'.
+			$filtered_pages = array();
+			foreach ( $group['pages'] ?? array() as $page ) {
+				if ( 'context' === ( $page['source'] ?? '' ) ) {
+					if ( ! empty( $page['slug'] ) ) {
+						$context_slugs[] = $page['slug'];
+					}
+					continue;
+				}
+				$filtered_pages[] = $page;
+			}
+
+			if ( ! empty( $filtered_pages ) ) {
+				$group['pages'] = $filtered_pages;
+				$filtered_tree[] = $group;
+			}
+		}
+
+		$manifest['tree'] = $filtered_tree;
+
+		// Remove context slugs from the slug map.
+		$slug_map = isset( $manifest['slug_map'] ) && is_array( $manifest['slug_map'] )
+			? $manifest['slug_map']
+			: array();
+		foreach ( $context_slugs as $slug ) {
+			unset( $slug_map[ $slug ] );
+		}
+		$manifest['slug_map'] = $slug_map;
+
+		// Recalculate total_pages from the filtered tree.
+		$total = 0;
+		foreach ( $filtered_tree as $group ) {
+			$total += count( $group['pages'] ?? array() );
+		}
+		$manifest['total_pages'] = $total;
+
+		return $manifest;
 	}
 
 	/**

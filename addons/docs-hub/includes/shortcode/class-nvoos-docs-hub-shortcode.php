@@ -32,7 +32,23 @@ class NV_oOS_Docs_Hub_Shortcode {
 	}
 
 	/**
+	 * Alias for register() — kept for back-compat with integrations and tests
+	 * that call NV_oOS_Docs_Hub_Shortcode::init().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		self::register();
+	}
+
+	/**
 	 * Render the [nvoos_docs] shortcode.
+	 *
+	 * The SPA is public-facing by default — logged-out visitors can browse
+	 * documentation without any additional configuration. Use the
+	 * `nvoos_docs_hub_can_render` filter to gate rendering when needed.
 	 *
 	 * @since 1.0.0
 	 *
@@ -40,6 +56,21 @@ class NV_oOS_Docs_Hub_Shortcode {
 	 * @return string HTML output.
 	 */
 	public static function render( $atts ) {
+		/**
+		 * Filter whether the Docs Hub SPA should be rendered at all.
+		 *
+		 * Return false to suppress the shortcode output on the current request.
+		 * Useful for paywall-style gating, maintenance mode, or per-page exclusions.
+		 * The public documentation REST endpoints are unaffected by this filter.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool $can_render Whether to render the SPA. Default true (public).
+		 */
+		if ( ! apply_filters( 'nvoos_docs_hub_can_render', true ) ) {
+			return '';
+		}
+
 		// Multiple shortcode / block instances per page must not re-localize
 		// identical data — track which instance we're on so the static guards
 		// in enqueue_assets() / localize_once() can no-op cleanly. The counter

@@ -11,6 +11,7 @@ The Docs Hub addon discovers, indexes, and renders Markdown documentation from t
 - [Installation](#installation)
 - [Shortcode](#shortcode)
 - [Gutenberg Block](#gutenberg-block)
+- [Public / Guest Access](#public--guest-access)
 - [REST API](#rest-api)
 - [Admin Settings](#admin-settings)
 - [WP-CLI](#wp-cli)
@@ -69,6 +70,51 @@ The compiled bundle is output to `assets/dist/docs-hub.js` and `assets/dist/docs
 
 Search for **NV oOS Docs Hub** in the Block Editor. The block wraps the same
 shortcode logic with an editor settings panel for the same five attributes.
+
+---
+
+## Public / Guest Access
+
+The Docs Hub shortcode and its REST API are **public by default**. Logged-out
+visitors can browse documentation without any WordPress account or nonce.
+
+| Layer | Behaviour |
+|-------|-----------|
+| `[nvoos_docs]` shortcode | Always renders for guests (no login required). |
+| `GET /manifest`, `GET /pages/{slug}`, `GET /search` | Open to all — no authentication needed. |
+| `POST /rebuild`, `GET /rebuild/status`, `GET /health` | **Admin-only** (`manage_options`). |
+| `.context/*.md` pages | Stripped from manifest and blocked in `/pages/` for non-admins, even if a prior admin rebuild included them. |
+
+### Restricting access
+
+Use the `nvoos_docs_hub_can_render` filter to suppress the widget in contexts
+where it should not appear (e.g. maintenance mode, intranet-only pages, or
+content behind a membership paywall):
+
+```php
+// Hide the docs widget on the front page.
+add_filter( 'nvoos_docs_hub_can_render', function ( $can_render ) {
+    if ( is_front_page() ) {
+        return false;
+    }
+    return $can_render;
+} );
+```
+
+To require a WordPress login for all documentation access, combine the render
+filter with the REST section filter:
+
+```php
+// Require login for shortcode rendering.
+add_filter( 'nvoos_docs_hub_can_render', function ( $can_render ) {
+    return is_user_logged_in() ? $can_render : false;
+} );
+
+// Require login for all REST reads.
+add_filter( 'nvoos_docs_hub_can_read_section', function ( $can_read ) {
+    return is_user_logged_in() ? $can_read : false;
+} );
+```
 
 ---
 
@@ -272,6 +318,22 @@ add_filter( 'nvoos_docs_hub_page_payload', function( $payload, $slug ) {
 
 ---
 
+#### `nvoos_docs_hub_can_render`
+
+Control whether the Docs Hub SPA is rendered on the current request. Return
+`false` to suppress the shortcode output entirely. The REST endpoints are
+unaffected by this filter — use `nvoos_docs_hub_can_read_section` to gate
+those separately.
+
+```php
+// Require login to see the documentation browser (shortcode layer only).
+add_filter( 'nvoos_docs_hub_can_render', function ( $can_render ) {
+    return is_user_logged_in() ? $can_render : false;
+} );
+```
+
+---
+
 #### `nvoos_docs_hub_can_read_section`
 
 Gate access to a documentation section by slug.
@@ -353,6 +415,7 @@ add_action( 'nvoos_docs_hub_after_rebuild', function( $result ) {
 | **Cache directory** | `wp-content/uploads/nvoos-docs-hub/` includes `.htaccess` (Deny from all) and `index.php` guards. |
 | **No shell execution** | No `shell_exec`, `exec`, `proc_open`, or `eval` calls anywhere in the addon. |
 | **ABSPATH guard** | Every PHP file begins with `if ( ! defined( 'ABSPATH' ) ) { exit; }`. |
+| **Context-page disclosure** | `.context/` pages are stripped from `/manifest` and blocked in `/pages/{slug}` for non-admin users at the REST layer, regardless of what the cache contains. Admin-served context responses use `Cache-Control: private, no-store` so CDNs and reverse proxies cannot re-serve them to guests. |
 
 ---
 
@@ -407,6 +470,19 @@ The cache is automatically cleared when:
 ---
 
 ## Changelog
+
+### 1.0.1 (2026-05-14)
+
+- **Security:** Context pages (`source=context`) are now stripped from `GET /manifest`
+  and blocked by `GET /pages/{slug}` for users without `manage_options`, even if they
+  were included in the cache by a prior admin rebuild. Admin-served context responses
+  now use `Cache-Control: private, no-store`.
+- **Shortcode:** Implemented the previously-documented `nvoos_docs_hub_can_render` filter.
+  The shortcode now calls `apply_filters('nvoos_docs_hub_can_render', true)` and returns
+  an empty string when the filter returns false.
+- **Shortcode:** Added `NV_oOS_Docs_Hub_Shortcode::init()` as an alias for `register()`.
+- **Docs:** Added _Public / Guest Access_ section documenting the public-by-default access
+  model and the recommended patterns for restricting access when needed.
 
 ### 1.0.0 (2026-05-06)
 

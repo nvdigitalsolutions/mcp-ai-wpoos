@@ -101,6 +101,27 @@ class Test_Docs_Hub_Shortcode extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the shortcode renders the full widget for a logged-out (guest) visitor.
+	 *
+	 * Guest / public-facing usage is the primary supported mode for the Docs Hub
+	 * shortcode. Logged-out users must receive the mount div so the React SPA can
+	 * bootstrap and fetch documentation via the public REST endpoints.
+	 *
+	 * @return void
+	 */
+	public function test_shortcode_renders_for_guest_user() {
+		// Ensure user is logged out.
+		wp_set_current_user( 0 );
+
+		$shortcode = new NV_oOS_Docs_Hub_Shortcode();
+		$output    = $shortcode->render( array() );
+
+		// The mount div must be present for the SPA to bootstrap.
+		$this->assertStringContainsString( 'nvoos-docs-hub-root', $output );
+		$this->assertStringContainsString( 'data-config', $output );
+	}
+
+	/**
 	 * Test that the shortcode is safe to call when the addon is disabled.
 	 *
 	 * When `nvoos_docs_hub_can_render` filter returns false, the shortcode

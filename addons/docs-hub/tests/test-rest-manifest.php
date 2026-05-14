@@ -204,4 +204,228 @@ class Test_Docs_Hub_REST_Manifest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'total', $data );
 		$this->assertArrayHasKey( 'query', $data );
 	}
+
+	// -------------------------------------------------------------------------
+	// Guest / public-access tests
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that the manifest endpoint works for anonymous (logged-out) users.
+	 *
+	 * @return void
+	 */
+	public function test_manifest_accessible_to_anonymous_user() {
+		wp_set_current_user( 0 );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/manifest' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'version', $data );
+	}
+
+	/**
+	 * Test that the pages endpoint is accessible to anonymous users for non-context pages.
+	 *
+	 * An uncached page slug will trigger an attempt to rebuild (which returns
+	 * false in the test environment) and then a 404 — the important thing is
+	 * that the request is NOT blocked with 401/403.
+	 *
+	 * @return void
+	 */
+	public function test_pages_endpoint_accessible_to_anonymous() {
+		wp_set_current_user( 0 );
+
+		// Seed the transient with a normal (non-context) page so we get a 200.
+		$slug    = 'test-public-page';
+		$payload = array(
+			'slug'        => $slug,
+			'title'       => 'Test Page',
+			'source'      => 'base',
+			'plugin_name' => 'Test Plugin',
+			'markdown'    => '# Test',
+			'toc'         => array(),
+		);
+		set_transient( 'nvoos_dh_p_' . md5( $slug ), $payload, 3600 );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/pages/' . $slug );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertEquals( 'base', $data['source'] );
+
+		delete_transient( 'nvoos_dh_p_' . md5( $slug ) );
+	}
+
+	/**
+	 * Test that context pages are blocked for anonymous users (403).
+	 *
+	 * The scanner guards context files at rebuild-time, but if a manifest was
+	 * built by an admin with context_enabled=true the page payloads are stored
+	 * in the cache. The REST layer must prevent anonymous readers from fetching
+	 * them.
+	 *
+	 * @return void
+	 */
+	public function test_context_page_blocked_for_anonymous() {
+		// Seed a context page directly into the transient cache.
+		$slug    = 'context-test';
+		$payload = array(
+			'slug'        => $slug,
+			'title'       => 'Internal Context Page',
+			'source'      => 'context',
+			'plugin_name' => 'NV oOS Base',
+			'markdown'    => '# Secret internal docs',
+			'toc'         => array(),
+		);
+		set_transient( 'nvoos_dh_p_' . md5( $slug ), $payload, 3600 );
+
+		// Anonymous user — should get 403.
+		wp_set_current_user( 0 );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/pages/' . $slug );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 403, $response->get_status() );
+
+		delete_transient( 'nvoos_dh_p_' . md5( $slug ) );
+	}
+
+	/**
+	 * Test that context pages are served to admins (not blocked).
+	 *
+	 * @return void
+	 */
+	public function test_context_page_accessible_to_admin() {
+		$slug    = 'context-admin-test';
+		$payload = array(
+			'slug'        => $slug,
+			'title'       => 'Internal Context Page',
+			'source'      => 'context',
+			'plugin_name' => 'NV oOS Base',
+			'markdown'    => '# Secret internal docs',
+			'toc'         => array(),
+		);
+		set_transient( 'nvoos_dh_p_' . md5( $slug ), $payload, 3600 );
+
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/pages/' . $slug );
+		$response = $this->server->dispatch( $request );
+
+		// Admin gets 200, and response uses private no-store Cache-Control.
+		$this->assertEquals( 200, $response->get_status() );
+		$cc = $response->get_headers()['Cache-Control'] ?? '';
+		$this->assertStringContainsString( 'no-store', (string) $cc );
+
+		delete_transient( 'nvoos_dh_p_' . md5( $slug ) );
+	}
+
+	/**
+	 * Test that context entries are stripped from the manifest for anonymous users.
+	 *
+	 * @return void
+	 */
+	public function test_manifest_strips_context_pages_for_anonymous() {
+		// Seed a manifest that contains one base page and one context page.
+		$manifest = array(
+			'version'      => NVOOS_DOCS_HUB_VERSION,
+			'built_at'     => time(),
+			'total_pages'  => 2,
+			'broken_links' => array(),
+			'tree'         => array(
+				array(
+					'source'      => 'base',
+					'plugin_name' => 'NV oOS Base',
+					'pages'       => array(
+						array( 'slug' => 'readme', 'title' => 'README', 'source' => 'base' ),
+					),
+				),
+				array(
+					'source'      => 'context',
+					'plugin_name' => 'NV oOS Base',
+					'pages'       => array(
+						array( 'slug' => 'context/conventions', 'title' => 'Conventions', 'source' => 'context' ),
+					),
+				),
+			),
+			'slug_map'     => array(
+				'readme'               => array( 'path' => '/docs/README.md' ),
+				'context/conventions'  => array( 'path' => '/.context/conventions.md' ),
+			),
+		);
+		set_transient( 'nvoos_dh_manifest', $manifest, 3600 );
+
+		// Anonymous user.
+		wp_set_current_user( 0 );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/manifest' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+
+		// Only the base page should remain.
+		$this->assertEquals( 1, $data['total_pages'] );
+		$this->assertArrayHasKey( 'readme', $data['slug_map'] );
+		$this->assertArrayNotHasKey( 'context/conventions', $data['slug_map'] );
+
+		// Confirm the context group is gone from tree.
+		$sources = array_column( $data['tree'], 'source' );
+		$this->assertNotContains( 'context', $sources );
+
+		delete_transient( 'nvoos_dh_manifest' );
+	}
+
+	/**
+	 * Test that context entries remain visible to admins in the manifest.
+	 *
+	 * @return void
+	 */
+	public function test_manifest_includes_context_pages_for_admin() {
+		$manifest = array(
+			'version'      => NVOOS_DOCS_HUB_VERSION,
+			'built_at'     => time(),
+			'total_pages'  => 2,
+			'broken_links' => array(),
+			'tree'         => array(
+				array(
+					'source'      => 'base',
+					'plugin_name' => 'NV oOS Base',
+					'pages'       => array(
+						array( 'slug' => 'readme', 'title' => 'README', 'source' => 'base' ),
+					),
+				),
+				array(
+					'source'      => 'context',
+					'plugin_name' => 'NV oOS Base',
+					'pages'       => array(
+						array( 'slug' => 'context/conventions', 'title' => 'Conventions', 'source' => 'context' ),
+					),
+				),
+			),
+			'slug_map'     => array(
+				'readme'              => array( 'path' => '/docs/README.md' ),
+				'context/conventions' => array( 'path' => '/.context/conventions.md' ),
+			),
+		);
+		set_transient( 'nvoos_dh_manifest', $manifest, 3600 );
+
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-docs/v1/manifest' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+
+		$this->assertEquals( 2, $data['total_pages'] );
+		$this->assertArrayHasKey( 'context/conventions', $data['slug_map'] );
+
+		delete_transient( 'nvoos_dh_manifest' );
+	}
 }
