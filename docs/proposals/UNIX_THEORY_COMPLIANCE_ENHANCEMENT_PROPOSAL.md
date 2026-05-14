@@ -1,8 +1,8 @@
 # NV oOS — Unix Theory Compliance Enhancement Proposal
 
-**Date:** May 2026  
-**Status:** 🟡 PROPOSED  
-**Plugin Version:** 1.1.15+  
+**Date:** May 2026 (originally drafted) · **Last reviewed:** May 2026  
+**Status:** 🟡 PROPOSED — refreshed against current code (see [§0 Current State](#0-current-state-may-2026-audit))  
+**Plugin Version:** 1.1.17+  
 **Reviewer:** GitHub Copilot Agent  
 **Branch:** `copilot/enhance-plugin-compliance-unix-theory`
 
@@ -28,6 +28,69 @@ Translated to a WordPress plugin context:
 | Modularity | Base-vs-Pro split, optional integrations guarded behind checks |
 | Transparency | Lifecycle hooks fired at every key transition |
 | Robustness | Sanitize early, escape late, return `WP_Error` on failure |
+
+---
+
+## 0. Current State (May 2026 audit)
+
+This proposal was originally drafted against plugin v1.1.15. Two minor releases (v1.1.16, v1.1.17) have shipped since then, and several adjacent subsystems — the tools interface family, the agentic-loop hook payload, and the docs taxonomy — moved during that window. The recommendations below have been re-scoped to match what is **actually** in the tree at v1.1.17. Read this section before consuming §2–§4.
+
+### 0.1 Tools are interface + traits, not a base class
+
+The original proposal referenced `WP_MCP_AI_Tool_Base::format_success()`. **No such class exists.** Tools implement [`WP_MCP_AI_Tool_Interface`](../../includes/interfaces/interface-wp-mcp-ai-tool.php) directly and pull behaviour in via traits. The closest existing helper is:
+
+- [`trait-wp-mcp-ai-tool-chat-response.php::format_success_response()`](../../includes/tools/trait-wp-mcp-ai-tool-chat-response.php) (line 119) — already returns `array( 'success' => true, 'message' => ..., 'data' => ... )` and is in use across base and Pro tools.
+
+→ §2.2 and the Phase P1 item below have been re-targeted to either extend the trait or introduce a new shared trait/helper, rather than retrofitting an abstract base class. Either approach is acceptable; introducing an abstract base class is a much larger refactor and is **not** required to land the envelope discipline.
+
+### 0.2 The agentic-loop hook signature has 4 args, not 3
+
+The proposal's §2.5 sketched `do_action( 'wp_mcp_ai_after_tool_execution', $slug, $context, $descriptor )`. The hook actually fires with **four** arguments today:
+
+```php
+do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+```
+
+…and is consumed at that arity by `WP_MCP_AI_Tool_Token_Limits`, `WP_MCP_AI_Enhanced_Token_Tracking`, the admin media-library columns, and the Gemini video service. The OTel exporter already registers it with `accepted_args = 5`, so it tolerates one optional extra parameter.
+
+→ §2.5 / Phase P4 must be reframed as **adding an optional 5th descriptor argument** (`$descriptor`) without altering the first four positions; otherwise every existing subscriber breaks. Observability subscribers that want the normalised view should derive it from `$result` themselves until the 5th arg is shipped.
+
+### 0.3 Several "produces/consumes"-style concerns are already covered
+
+Since the original draft, the tools interface file gained two relevant siblings of `WP_MCP_AI_Tool_Interface`:
+
+- `WP_MCP_AI_Tool_Capability_Flags_Interface` — `read-only`, `write`, `state-changing`, `cacheable`, `external-api`, `paginated`, `streaming-capable`, etc.
+- `WP_MCP_AI_Tool_Rules_Interface` — `response_constraints`, `parameter_constraints`, `orchestration_hints`, `dependencies`.
+
+→ §2.4 should position `produces` / `consumes` as a **data-contract** layer (e.g., `post_object`, `attachment_id`, `term_id`) that complements — not duplicates — the existing capability flags and tool rules. The agentic-loop wiring is the only piece still genuinely missing.
+
+### 0.4 Documentation paths moved
+
+The Phase P0 / §6 references must be re-pointed:
+
+| Old path | New path |
+|----------|----------|
+| `docs/CODE_REVIEW.md` | [`docs/archive/code-reviews/CODE_REVIEW.md`](../archive/code-reviews/CODE_REVIEW.md) (archived; consider promoting a new living doc instead) |
+| `docs/BEST_PRACTICES.md` | [`docs/guides/developer/best-practices/BEST_PRACTICES.md`](../guides/developer/best-practices/BEST_PRACTICES.md) |
+| `docs/tool-reference.md` | [`docs/reference/tools/tool-reference.md`](../reference/tools/tool-reference.md) |
+| `docs/hooks-reference.md` | unchanged |
+
+The canonical "where envelope discipline gets enforced" surface is now [`CLAUDE.md`](../../CLAUDE.md) + the relevant `.context/` files (`.context/conventions.md`, `.context/tool-registry.md`), not the archived `docs/CODE_REVIEW.md`.
+
+### 0.5 Optional-dependency guards are already widespread
+
+A spot audit of `function_exists( 'jet_engine' )` and similar guards shows 17+ call sites across `includes/`, including the JetEngine CCT bootstraps, the chat-transcript recorder, the performance monitor, the privacy controller, and the tool handlers. §2.3 / Phase P2 therefore reduces from a green-field rollout to a **gap audit** of the remaining direct integration touch-points (notably any new Pro→Base reach-throughs and the Rank Math / WPCode tools).
+
+### 0.6 Summary of changes to this proposal
+
+| § | Status after audit |
+|---|--------------------|
+| 2.1 — One tool, one responsibility | Unchanged. Still relevant. |
+| 2.2 — Canonical return envelope | Re-targeted: extend the existing `format_success_response()` trait helper instead of inventing `WP_MCP_AI_Tool_Base::format_success()`. |
+| 2.3 — Capability fence for optional deps | Reduced scope: it's mostly an audit-and-fill-gaps task now. |
+| 2.4 — `produces` / `consumes` metadata | Still missing — but should be positioned as a **data contract** layer on top of the existing capability flags / rules interfaces. |
+| 2.5 — Structured lifecycle hook payload | Reframed as an **additive** 5th argument so existing 4-arg subscribers keep working. |
+| 2.6 — Sanitize-at-entry / escape-at-exit | Unchanged. |
 
 ---
 
@@ -86,7 +149,7 @@ Key constraints:
 - Failure **must** use `WP_Error`; `success => false` arrays are forbidden.
 - The agentic loop already handles `WP_Error`; no loop changes are required.
 
-**Implementation:** Add a `WP_MCP_AI_Tool_Base::format_success()` helper and a PHPCS sniff that warns when `success => false` is returned directly.
+**Implementation:** Extend the existing [`trait-wp-mcp-ai-tool-chat-response.php::format_success_response()`](../../includes/tools/trait-wp-mcp-ai-tool-chat-response.php) helper (or introduce a sibling `trait-wp-mcp-ai-tool-envelope.php`) so any tool can compose the canonical success shape without inheriting from a hypothetical base class. Add a PHPCS sniff that warns when a tool returns a literal `array( 'success' => false, ... )`. See [§0.1](#01-tools-are-interface--traits-not-a-base-class) for context.
 
 ---
 
@@ -127,29 +190,39 @@ public function get_definition() {
 
 The agentic loop can surface these hints in the tool list sent to the model, enabling richer autonomous chaining. Both fields are optional and default to `null` for backward compatibility.
 
+> **Note (May 2026 audit):** This is a **data-contract** layer that complements — but does not replace — the existing [`WP_MCP_AI_Tool_Capability_Flags_Interface`](../../includes/interfaces/interface-wp-mcp-ai-tool.php) (which already covers `read-only` / `write` / `external-api` / `cacheable` / `streaming-capable` and similar operational flags) and [`WP_MCP_AI_Tool_Rules_Interface`](../../includes/interfaces/interface-wp-mcp-ai-tool.php) (which covers `response_constraints`, `parameter_constraints`, `orchestration_hints`). `produces` / `consumes` describes the *shape of the payload* (e.g., `post_object`, `attachment_id`), not the tool's runtime characteristics. See [§0.3](#03-several-producesconsumes-style-concerns-are-already-covered).
+
 ---
 
 ### 2.5 Transparency via Structured Lifecycle Hooks
 
-**Problem:** The existing hooks (`wp_mcp_ai_before_tool_execution`, `wp_mcp_ai_after_tool_execution`) carry the tool slug and context, but not the return shape or error state.
+**Problem:** The existing hooks (`wp_mcp_ai_before_tool_execution`, `wp_mcp_ai_after_tool_execution`) carry the tool slug, arguments, context, and raw result, but not a normalised view of the outcome. Observability subscribers each re-derive `success` / `error_code` / `duration_ms` from `$result` independently.
 
-**Proposal:** Augment the `after_tool_execution` hook payload with a normalised result descriptor:
+**Current signature** (see [§0.2](#02-the-agentic-loop-hook-signature-has-4-args-not-3)):
+
+```php
+do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+```
+
+**Proposal:** Add an **optional 5th argument** — a normalised result descriptor — without changing the first four positions. Subscribers registered with `accepted_args = 4` keep working unchanged; subscribers that want the normalised view bump to `accepted_args = 5`.
 
 ```php
 do_action(
     'wp_mcp_ai_after_tool_execution',
-    $slug,
+    $tool_slug,
+    $arguments,
     $context,
+    $result,
     array(
-        'success'       => ! is_wp_error( $result ),
-        'error_code'    => is_wp_error( $result ) ? $result->get_error_code() : null,
-        'data_type'     => is_array( $result ) ? ( $result['produces'] ?? 'generic' ) : null,
-        'duration_ms'   => $duration_ms,
+        'success'     => ! is_wp_error( $result ),
+        'error_code'  => is_wp_error( $result ) ? $result->get_error_code() : null,
+        'data_type'   => is_array( $result ) ? ( $result['produces'] ?? 'generic' ) : null,
+        'duration_ms' => $duration_ms,
     )
 );
 ```
 
-This lets observability subscribers (OTel, audit log) record richer metrics without coupling to the tool's internal return shape.
+This lets observability subscribers (OTel, audit log, token-tracking) record richer metrics without each rolling their own derivation logic, and without coupling to the tool's internal return shape. The OTel exporter already registers with `accepted_args = 5`, so it picks up the descriptor immediately on rollout.
 
 ---
 
@@ -175,11 +248,11 @@ Add a lint comment convention:
 
 | Phase | Description | Effort | Target |
 |-------|-------------|--------|--------|
-| **P0** | Document canonical return envelope in `CLAUDE.md` + `docs/CODE_REVIEW.md` | XS | v1.2.0 |
-| **P1** | Add `format_success()` helper to `WP_MCP_AI_Tool_Base`; add PHPCS warning for `success => false` arrays | S | v1.2.0 |
-| **P2** | Audit all Base tools for optional-dependency guards; add missing `function_exists()` fences | M | v1.2.1 |
-| **P3** | Add `produces` / `consumes` fields to tool definition schema; update agentic loop to forward hints | M | v1.2.1 |
-| **P4** | Augment `wp_mcp_ai_after_tool_execution` hook payload | S | v1.2.1 |
+| **P0** | Document canonical return envelope in [`CLAUDE.md`](../../CLAUDE.md) and `.context/conventions.md` (the archived `docs/CODE_REVIEW.md` is no longer the canonical surface — see [§0.4](#04-documentation-paths-moved)) | XS | v1.2.0 |
+| **P1** | Promote `format_success_response()` from the chat-response trait to a tool-agnostic trait or shared helper; add a PHPCS warning for `'success' => false` arrays (see [§0.1](#01-tools-are-interface--traits-not-a-base-class)) | S | v1.2.0 |
+| **P2** | **Audit-only** for the remaining direct-integration touch-points (Rank Math, WPCode, any new Pro→Base reach-throughs). Most JetEngine/JetFormBuilder paths are already guarded — see [§0.5](#05-optional-dependency-guards-are-already-widespread) | S | v1.2.1 |
+| **P3** | Add `produces` / `consumes` fields to tool definition schema; update agentic loop to forward hints. Position as a data-contract layer on top of the existing capability flags / rules interfaces ([§0.3](#03-several-producesconsumes-style-concerns-are-already-covered)) | M | v1.2.1 |
+| **P4** | Add an **optional 5th descriptor argument** to `wp_mcp_ai_after_tool_execution` without changing positions 1–4 ([§0.2](#02-the-agentic-loop-hook-signature-has-4-args-not-3)); update [`docs/hooks-reference.md`](../hooks-reference.md) | S | v1.2.1 |
 | **P5** | Action-split audit: identify multi-action tools with > 4 values; begin decomposition in Base | L | v1.3.0 |
 | **P6** | Codify sanitize-at-entry / escape-at-exit convention; PHPCS sniff or pre-commit hook | M | v1.3.0 |
 
@@ -187,11 +260,11 @@ Add a lint comment convention:
 
 ## 4. Acceptance Criteria
 
-- [ ] `WP_MCP_AI_Tool_Base::format_success()` exists and all new tools use it.
-- [ ] No new Base tool calls an optional integration without a `function_exists()` guard.
-- [ ] `wp_mcp_ai_after_tool_execution` hook includes `success`, `error_code`, `data_type`, `duration_ms`.
-- [ ] `produces` / `consumes` metadata fields are documented in `docs/tool-reference.md`.
-- [ ] The canonical return envelope is documented in `CLAUDE.md` and enforced in `docs/CODE_REVIEW.md`.
+- [ ] A shared `format_success_response()`-style helper is available to any tool (currently scoped to the chat-response trait) and all new tools use it.
+- [ ] No new Base tool calls an optional integration without a `function_exists()` (or equivalent) guard.
+- [ ] `wp_mcp_ai_after_tool_execution` exposes an optional 5th `$descriptor` argument with `success`, `error_code`, `data_type`, `duration_ms`; existing 4-arg subscribers continue to work unchanged.
+- [ ] `produces` / `consumes` metadata fields are documented in [`docs/reference/tools/tool-reference.md`](../reference/tools/tool-reference.md) and positioned as a data-contract layer alongside the existing capability flags / rules interfaces.
+- [ ] The canonical return envelope is documented in [`CLAUDE.md`](../../CLAUDE.md) and `.context/conventions.md`.
 - [ ] PHPUnit tests updated to assert `WP_Error` on failure paths (no `success => false`).
 - [ ] PHPCS config updated to warn on `'success' => false` returns.
 
@@ -209,11 +282,15 @@ Add a lint comment convention:
 
 ## 6. Related Documents
 
-- [`CLAUDE.md`](../../CLAUDE.md) — Coding conventions and tool pattern
-- [`docs/CODE_REVIEW.md`](../CODE_REVIEW.md) — Code quality standards
-- [`docs/BEST_PRACTICES.md`](../BEST_PRACTICES.md) — Usage recommendations
-- [`docs/tool-reference.md`](../tool-reference.md) — Tool documentation
-- [`docs/hooks-reference.md`](../hooks-reference.md) — Plugin lifecycle hooks
+- [`CLAUDE.md`](../../CLAUDE.md) — Coding conventions and tool pattern (canonical envelope target post-refactor)
+- [`.context/conventions.md`](../../.context/conventions.md) — Naming conventions, PHP-compat, code style
+- [`.context/tool-registry.md`](../../.context/tool-registry.md) — Tool registry and capability-flag reference
+- [`docs/guides/developer/best-practices/BEST_PRACTICES.md`](../guides/developer/best-practices/BEST_PRACTICES.md) — Usage recommendations
+- [`docs/reference/tools/tool-reference.md`](../reference/tools/tool-reference.md) — Tool documentation
+- [`docs/hooks-reference.md`](../hooks-reference.md) — Plugin lifecycle hooks (current 4-arg signature for `wp_mcp_ai_after_tool_execution`)
+- [`includes/interfaces/interface-wp-mcp-ai-tool.php`](../../includes/interfaces/interface-wp-mcp-ai-tool.php) — `WP_MCP_AI_Tool_Interface` and the capability-flag / rules / flow-stage / context-restriction sibling interfaces
+- [`includes/tools/trait-wp-mcp-ai-tool-chat-response.php`](../../includes/tools/trait-wp-mcp-ai-tool-chat-response.php) — Existing `format_success_response()` helper
+- [`docs/archive/code-reviews/CODE_REVIEW.md`](../archive/code-reviews/CODE_REVIEW.md) — Archived legacy code-review checklist (formerly `docs/CODE_REVIEW.md`)
 - [`FEATURE_GAP_ANALYSIS_PROPOSAL_2026_03.md`](./FEATURE_GAP_ANALYSIS_PROPOSAL_2026_03.md) — Prior gap analysis
 
 ---
