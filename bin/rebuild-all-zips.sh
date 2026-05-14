@@ -63,7 +63,7 @@ if [ -n "$SKIP_NPM_ARG" ]; then
     echo "✅ Using pre-built frontend assets"
 else
     echo "Step 0: Rebuilding all CSS/JS assets..."
-    npm ci --silent 2>/dev/null || npm install --silent
+    npm install --silent
     npm run build:full
     echo "✅ All CSS/JS assets rebuilt"
 fi
@@ -71,8 +71,11 @@ echo ""
 
 # Build all versions using the build-plugin-zip.sh script
 # Use --all flag for base, pro, combined, toolkits, and also add --core-only
-# Always pass --skip-npm-build since we already ran the full build above
-"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG --skip-npm-build
+if [ -n "$SKIP_NPM_ARG" ]; then
+    "$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG --skip-npm-build
+else
+    "$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG
+fi
 
 echo ""
 echo "=========================================="
@@ -80,17 +83,7 @@ echo "Building Standalone Add-on Packages"
 echo "=========================================="
 echo ""
 
-# Auto-detect Docker availability: canvas addon requires Docker for native binary
-# compilation. When Docker is unavailable (CI runners, lightweight environments),
-# skip the canvas build — it has its own dedicated workflow (build-canvas-addon.yml).
-ADDON_SKIP_CANVAS=""
-if ! command -v docker >/dev/null 2>&1; then
-echo "ℹ️  Docker not available — skipping canvas addon build."
-echo "   Canvas ZIPs are built by the dedicated 'Build Canvas Addon' workflow."
-echo ""
-ADDON_SKIP_CANVAS="--skip-canvas"
-fi
-"$SCRIPT_DIR/build-addon-zips.sh" $ADDON_SKIP_CANVAS
+"$SCRIPT_DIR/build-addon-zips.sh"
 
 echo ""
 echo "=========================================="
