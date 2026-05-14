@@ -96,13 +96,28 @@ declare global {
 				search?: string;
 				sidebar?: string;
 				home?: string;
+				api_url?: string;
 			};
 		};
 	}
 }
 
 function getConfig() {
-	return window.NVOOS_DOCS_HUB ?? { apiUrl: '/wp-json/nvoos-docs/v1', nonce: '', config: {} };
+	// Resolve the REST base URL. Priority order:
+	// 1. wp_localize_script-injected apiUrl (most reliable, set by PHP shortcode)
+	// 2. api_url field inside the per-instance config (set via data-config fallback in index.tsx)
+	// 3. Origin-relative default (avoids the hardcoded /wp-json path which breaks
+	//    sites with a custom REST prefix)
+	const hub = window.NVOOS_DOCS_HUB;
+	const apiUrl =
+		hub?.apiUrl ||
+		hub?.config?.api_url ||
+		`${ window.location.origin }/wp-json/nvoos-docs/v1`;
+	return {
+		apiUrl,
+		nonce: hub?.nonce ?? '',
+		config: hub?.config ?? {},
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +161,41 @@ function cacheSet<T>( key: string, data: T ): void {
 // Fetch helpers
 // ---------------------------------------------------------------------------
 
-async function apiFetch<T>( path: string, options: RequestInit = {} ): Promise<T> {
+/**
+ * Internal fetch helper for PUBLIC endpoints (manifest, pages, search).
+ *
+ * Deliberately omits the X-WP-Nonce header so that third-party REST
+ * authentication middleware (JWT Auth, Application Passwords guards, etc.)
+ * cannot reject unauthenticated guest requests on routes that are already
+ * declared public via their permission_callback.
+ */
+async function apiFetchPublic<T>( path: string, options: RequestInit = {} ): Promise<T> {
+	const { apiUrl } = getConfig();
+	const url = `${ apiUrl.replace( /\/$/, '' ) }/${ path.replace( /^\//, '' ) }`;
+
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/json',
+	};
+
+	const res = await fetch( url, {
+		...options,
+		headers: { ...headers, ...( options.headers as Record<string, string> ?? {} ) },
+	} );
+
+	if ( ! res.ok ) {
+		throw new Error( `HTTP ${ res.status }: ${ res.statusText }` );
+	}
+
+	return res.json() as Promise<T>;
+}
+
+/**
+ * Internal fetch helper for ADMIN-ONLY endpoints (rebuild, health, remote/tree).
+ *
+ * Attaches X-WP-Nonce when a nonce is available so WordPress cookie-auth
+ * can verify the logged-in session.
+ */
+async function apiFetchAuthed<T>( path: string, options: RequestInit = {} ): Promise<T> {
 	const { apiUrl, nonce } = getConfig();
 	const url = `${ apiUrl.replace( /\/$/, '' ) }/${ path.replace( /^\//, '' ) }`;
 
@@ -176,6 +225,9 @@ async function apiFetch<T>( path: string, options: RequestInit = {} ): Promise<T
 
 /**
  * Fetch the documentation manifest. Result is cached for 5 minutes.
+ *
+ * Uses the public fetch helper — no nonce sent so guests are never
+ * rejected by third-party REST auth middleware.
  */
 export async function fetchManifest(): Promise<Manifest> {
 	const CACHE_KEY = 'nvoos_dh_manifest';
@@ -185,7 +237,7 @@ export async function fetchManifest(): Promise<Manifest> {
 		return cached;
 	}
 
-	const manifest = await apiFetch<Manifest>( 'manifest' );
+	const manifest = await apiFetchPublic<Manifest>( 'manifest' );
 	cacheSet( CACHE_KEY, manifest );
 	return manifest;
 }
@@ -193,6 +245,8 @@ export async function fetchManifest(): Promise<Manifest> {
 /**
  * Fetch the rendered content for a single page by slug.
  * Results are cached by slug.
+ *
+ * Uses the public fetch helper — no nonce sent.
  */
 export async function fetchPage( slug: string ): Promise<DocPage> {
 	const CACHE_KEY = `nvoos_dh_page_${ slug }`;
@@ -202,13 +256,15 @@ export async function fetchPage( slug: string ): Promise<DocPage> {
 		return cached;
 	}
 
-	const page = await apiFetch<DocPage>( `pages/${ slug.split( '/' ).map( encodeURIComponent ).join( '/' ) }` );
+	const page = await apiFetchPublic<DocPage>( `pages/${ slug.split( '/' ).map( encodeURIComponent ).join( '/' ) }` );
 	cacheSet( CACHE_KEY, page );
 	return page;
 }
 
 /**
  * Search the documentation index.
+ *
+ * Uses the public fetch helper — no nonce sent.
  */
 export async function fetchSearch( query: string ): Promise<SearchResponse> {
 	if ( ! query.trim() ) {
@@ -216,8 +272,14 @@ export async function fetchSearch( query: string ): Promise<SearchResponse> {
 	}
 
 	const params = new URLSearchParams( { q: query.trim() } );
-	return apiFetch<SearchResponse>( `search?${ params.toString() }` );
+	return apiFetchPublic<SearchResponse>( `search?${ params.toString() }` );
 }
+
+/**
+ * Export the authed fetch helper for use by admin-only features
+ * (rebuild trigger, health check, remote tree browser).
+ */
+export { apiFetchAuthed };
 
 /**
  * Clear the in-memory sessionStorage caches.

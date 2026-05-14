@@ -195,6 +195,16 @@ class NV_oOS_Docs_Hub_REST {
 	public static function public_permission( $request ) {
 		$slug = $request->get_param( 'slug' );
 
+		// When public access is disabled, require the user to be logged in.
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		if ( empty( $settings['public_access'] ) && ! is_user_logged_in() ) {
+			return new WP_Error(
+				'rest_not_logged_in',
+				__( 'You must be logged in to view this documentation.', 'nvoos-docs-hub' ),
+				array( 'status' => 401 )
+			);
+		}
+
 		/**
 		 * Filter whether the current user can read a documentation section.
 		 *
@@ -280,6 +290,38 @@ class NV_oOS_Docs_Hub_REST {
 			);
 		}
 
+		// Strip .context/ entries for users without manage_options.
+		if ( ! current_user_can( 'manage_options' ) && isset( $manifest['tree'] ) && is_array( $manifest['tree'] ) ) {
+			$manifest['tree'] = array_values(
+				array_filter(
+					$manifest['tree'],
+					static function ( $group ) {
+						return 'context' !== ( $group['source'] ?? '' );
+					}
+				)
+			);
+			// Rebuild slug_map to remove context slugs.
+			if ( isset( $manifest['slug_map'] ) && is_array( $manifest['slug_map'] ) ) {
+				$allowed_slugs = array();
+				foreach ( $manifest['tree'] as $group ) {
+					foreach ( ( $group['pages'] ?? array() ) as $page ) {
+						if ( isset( $page['slug'] ) ) {
+							$allowed_slugs[ $page['slug'] ] = true;
+						}
+					}
+				}
+				$manifest['slug_map'] = array_intersect_key( $manifest['slug_map'], $allowed_slugs );
+			}
+			$manifest['total_pages'] = array_sum(
+				array_map(
+					static function ( $group ) {
+						return count( $group['pages'] ?? array() );
+					},
+					$manifest['tree']
+				)
+			);
+		}
+
 		$response = rest_ensure_response( $manifest );
 		$response->header( 'Cache-Control', 'public, max-age=300' );
 		return $response;
@@ -320,6 +362,15 @@ class NV_oOS_Docs_Hub_REST {
 				'not_found',
 				__( 'Page not found.', 'nvoos-docs-hub' ),
 				array( 'status' => 404 )
+			);
+		}
+
+		// Block .context/ pages for users without manage_options.
+		if ( ! current_user_can( 'manage_options' ) && 'context' === ( $payload['source'] ?? '' ) ) {
+			return new WP_Error(
+				'forbidden',
+				__( 'You do not have permission to view this documentation section.', 'nvoos-docs-hub' ),
+				array( 'status' => 403 )
 			);
 		}
 
