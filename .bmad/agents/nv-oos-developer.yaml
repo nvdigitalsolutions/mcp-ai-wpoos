@@ -25,6 +25,8 @@ agent:
     - Follow WordPress Coding Standards (WPCS) — zero violations
     - Sanitize ALL input: sanitize_text_field(), absint(), wp_kses_post(), etc.
     - Escape ALL output: esc_html(), esc_url(), esc_attr(), wp_kses(), etc.
+    - Tool execute() must satisfy the two-gate sanitisation rule — sanitize $arguments[...] at entry (Gate 1, enforced by phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php), escape every value at exit (Gate 2)
+    - Tools must return the canonical envelope — success array {success,message,data?} or WP_Error; never array('success' => false, ...) (enforced by phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php)
     - Check capabilities before EVERY privileged operation
     - Use nonces for ALL state-changing requests (wp_verify_nonce, check_ajax_referer)
     - PHPDoc blocks on ALL classes, methods, and functions

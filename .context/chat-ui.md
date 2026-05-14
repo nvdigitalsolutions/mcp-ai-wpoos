@@ -246,3 +246,46 @@ container needs `position: relative`; the CSS rule for that lives at the
 bottom of `assets/css/chat.css`.
 
 See `docs/features/memory/chat-client-integration.md` for the full reference.
+
+---
+
+## Jobs / Tasks Drawer (cron-status + async-tool jobs)
+
+Long-running tools queue an async job; the chat surface shows progress inline
+and in a side drawer. Three JS entry points live in `assets/js/chat.js`:
+
+| Function | Role |
+|----------|------|
+| `createJobProgressCard( entry, jobId, toolName, state )` | Replaces the plain "Tool is processing…" line with a BEM card (`.wp-mcp-ai-job-card__*` — progress bar, ETA, step list, Cancel / Retry buttons). Feature-gated via `state.config.inlineJobCard === false`. Wired into both `waitForAsyncToolResultSSE` and `waitForAsyncToolResultPolling`. |
+| `initTasksDrawer( container, config, cronStatusEndpoint, nonce )` | Activates the right-side drawer when `config.chatTasksDrawer === true`. Persists jobs to `localStorage` under `wp_mcp_ai_tasks_{assistantId}` (max 200 entries; oldest terminal jobs pruned first). |
+| `showJobToast( container, type, job )` + `updateTabTitleBadge( delta )` | 6 s auto-dismiss toast on `job:completed` / `job:failed`. `(N)` tab-title prefix while N jobs are running. |
+
+All three subscribe to `window.wpMcpAiJobBus` events:
+`job:started`, `job:step`, `job:progress`, `job:completed`, `job:failed`,
+`job:cancelled`.
+
+PHP surface:
+
+- The `wp_mcp_ai_chat_tasks_drawer` filter (default **true**) gates whether
+  the drawer HTML + JS init code is emitted by the shortcode.
+- The REST cancel / retry routes are documented in
+  [`.context/rest-api.md`](rest-api.md).
+- Five `do_action` hooks at the cron-status REST call sites
+  (`wp_mcp_ai_chat_jobs_snapshot`, `wp_mcp_ai_before_chat_jobs_stream`,
+  `wp_mcp_ai_after_chat_jobs_stream`, `wp_mcp_ai_chat_jobs_cancel`,
+  `wp_mcp_ai_chat_jobs_retry`) are picked up by
+  `WP_MCP_AI_Otel_Span_Exporter` and emitted as `nvoos.chat.jobs.*` OTLP
+  spans.
+
+CSS lives in:
+
+- `assets/css/chat.css` — `.wp-mcp-ai-job-card`, `.wp-mcp-ai-chat__tasks-btn`,
+  `.wp-mcp-ai-chat__tasks-drawer__*`, `.wp-mcp-ai-job-toast`.
+
+References:
+
+- [`docs/features/chat/cron-status-integration.md`](../docs/features/chat/cron-status-integration.md) — architecture, SSE event schema, OTel hooks, REST routes.
+- [`docs/features/chat/async-continuation.md`](../docs/features/chat/async-continuation.md) — async chat continuation slices 1–6 (durable store, dispatcher, LLM re-entry, SSE channel, Pro webhook notifier, OTel + Jest).
+- [`docs/features/chat/cron-status-tasks-drawer-plan.md`](../docs/features/chat/cron-status-tasks-drawer-plan.md) — Tasks Drawer PR-by-PR plan (A–G).
+- [`docs/guides/developer/tool-development/registering-a-job-source.md`](../docs/guides/developer/tool-development/registering-a-job-source.md) — 5-step developer guide for new long-running tools that want to appear in the drawer.
+

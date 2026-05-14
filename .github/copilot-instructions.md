@@ -129,6 +129,7 @@ bin/codex-startup.sh
   - Use nonces for form submissions
   - Validate file uploads and MIME types
 - **Documentation**: All classes, methods, and functions must have PHPDoc blocks
+- **Tool authoring rules (Unix Theory P0–P6)**: Tool `execute()` returns the canonical envelope (success array or `WP_Error`, **never** `array( 'success' => false, ... )`) and obeys the two-gate sanitisation rule (sanitize `$arguments[...]` at entry, escape every value at exit). Two custom PHPCS sniffs (`WPMCPAI.Tools.CanonicalReturnEnvelope`, `WPMCPAI.Tools.SanitizeAtEntry`) enforce this at severity 5. See [`CLAUDE.md`](../CLAUDE.md) → "Tool Return Format — Canonical Envelope" and "Tool Sanitisation — Two-Gate Rule" for full rationale and examples.
 
 ### JavaScript Standards
 

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+_No changes yet._
+
+## [1.1.18] - 2026-05-14
+
+Bumped to 1.1.18 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+The complete set of changes captured in this release is broken down below; the per-PR detail that was previously authored under `[Unreleased]` is preserved verbatim in the following sub-sections.
+
 ### Added — DigitalOcean Serverless Inference provider
 
 - `feat(providers): add DigitalOcean Serverless Inference provider`.

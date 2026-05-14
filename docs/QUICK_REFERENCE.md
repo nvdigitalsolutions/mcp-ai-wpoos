@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.17  
-**Last Updated:** May 10, 2026
+**Version:** 1.1.18  
+**Last Updated:** May 14, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## 🆕 Recent Updates (May 2026)
 
+- **v1.1.18** (May 14): **Unix Theory Compliance Phases P0–P6** (canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` sniff, capability-fence audit, `WP_MCP_AI_Tool_Data_Contract_Interface`, tool-lifecycle descriptor 5th arg + OTel `data_type`/`duration_ms`, back-compat alias infrastructure, `WPMCPAI.Tools.SanitizeAtEntry` sniff); **DigitalOcean Serverless Inference** provider (9th provider); **Async chat continuation** slices 1–6 (durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel + Jest); **Jobs/Tasks Drawer + cron-status** PRs A–G (inline progress cards, cancel/retry routes, OTel hooks); **Toolkit MCP Servers Phase 7** admin UI; **JetEngine CCT memory mirror** hydration; agent-surface refresh across `.bmad/` `.codex/` `.context/` `.devcontainer/` `.github/agents/` `.vscode/` `.zed/`
 - **v1.1.17** (May 10): WP.org compliance hardening B1–B13 all resolved; **Chat SPA addon** v0.6.0 (Phases 1–7 complete); **Docs Hub** v0.3.8; **Toolkit SPA Blueprint** Phases 5–12; PHPUnit + Vitest coverage campaign (PRs #1–#11, 271 AJAX handlers covered); build-pipeline split (WP.org vs full GitHub Release ZIPs); Dependabot security sweep (33 alerts resolved)
 - **v1.1.16** (May 6): **SaaS Controller** v0.1.0 (11 phases, NV oOS Cloud control plane); **Structured Logging** integration across all addons and core; **Docs Hub** v0.1.0; inline-async-tick pattern (8 consumers); **Toolkit MCP servers** all 7 phases complete (26 toolkits); addon licensing split
 - **v1.1.15** (May 5): **OpenRouter + DeepSeek** as first-class providers; **LM Studio** native cURL SSE streaming; **Orchestration Phases 1–7** GA (HITL, OTel, DAG builder, durable runs, triggers/webhooks, sub-agents); **LLM Harnessing GA** (Layers A–H); 19 new slash commands; **Chat-client Memory Bridge** G-series; **Graphify** NV oOS data-source bridge
