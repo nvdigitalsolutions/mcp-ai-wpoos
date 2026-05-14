@@ -1,7 +1,7 @@
 # NV oOS — Unix Theory Compliance Enhancement Proposal
 
 **Date:** May 2026 (originally drafted) · **Last reviewed:** May 2026  
-**Status:** 🟡 PROPOSED — refreshed against current code (see [§0 Current State](#0-current-state-may-2026-audit))  
+**Status:** 🟢 IN PROGRESS — Phase P0 landed (May 2026); P1–P6 remain (see [§3 Implementation Phases](#3-implementation-phases))  
 **Plugin Version:** 1.1.17+  
 **Reviewer:** GitHub Copilot Agent  
 **Branch:** `copilot/enhance-plugin-compliance-unix-theory`
@@ -246,15 +246,15 @@ Add a lint comment convention:
 
 ## 3. Implementation Phases
 
-| Phase | Description | Effort | Target |
-|-------|-------------|--------|--------|
-| **P0** | Document canonical return envelope in [`CLAUDE.md`](../../CLAUDE.md) and `.context/conventions.md` (the archived `docs/CODE_REVIEW.md` is no longer the canonical surface — see [§0.4](#04-documentation-paths-moved)) | XS | v1.2.0 |
-| **P1** | Promote `format_success_response()` from the chat-response trait to a tool-agnostic trait or shared helper; add a PHPCS warning for `'success' => false` arrays (see [§0.1](#01-tools-are-interface--traits-not-a-base-class)) | S | v1.2.0 |
-| **P2** | **Audit-only** for the remaining direct-integration touch-points (Rank Math, WPCode, any new Pro→Base reach-throughs). Most JetEngine/JetFormBuilder paths are already guarded — see [§0.5](#05-optional-dependency-guards-are-already-widespread) | S | v1.2.1 |
-| **P3** | Add `produces` / `consumes` fields to tool definition schema; update agentic loop to forward hints. Position as a data-contract layer on top of the existing capability flags / rules interfaces ([§0.3](#03-several-producesconsumes-style-concerns-are-already-covered)) | M | v1.2.1 |
-| **P4** | Add an **optional 5th descriptor argument** to `wp_mcp_ai_after_tool_execution` without changing positions 1–4 ([§0.2](#02-the-agentic-loop-hook-signature-has-4-args-not-3)); update [`docs/hooks-reference.md`](../hooks-reference.md) | S | v1.2.1 |
-| **P5** | Action-split audit: identify multi-action tools with > 4 values; begin decomposition in Base | L | v1.3.0 |
-| **P6** | Codify sanitize-at-entry / escape-at-exit convention; PHPCS sniff or pre-commit hook | M | v1.3.0 |
+| Phase | Description | Effort | Target | Status |
+|-------|-------------|--------|--------|--------|
+| **P0** | Document canonical return envelope in [`CLAUDE.md`](../../CLAUDE.md) and `.context/conventions.md` (the archived `docs/CODE_REVIEW.md` is no longer the canonical surface — see [§0.4](#04-documentation-paths-moved)) | XS | v1.2.0 | ✅ Landed (May 2026) — `CLAUDE.md` "Tool Return Format — Canonical Envelope" + `.context/conventions.md` "Tool Return Envelope (Canonical)" + `.context/tool-registry.md` cross-link |
+| **P1** | Promote `format_success_response()` from the chat-response trait to a tool-agnostic trait or shared helper; add a PHPCS warning for `'success' => false` arrays (see [§0.1](#01-tools-are-interface--traits-not-a-base-class)) | S | v1.2.0 | ⏳ Pending |
+| **P2** | **Audit-only** for the remaining direct-integration touch-points (Rank Math, WPCode, any new Pro→Base reach-throughs). Most JetEngine/JetFormBuilder paths are already guarded — see [§0.5](#05-optional-dependency-guards-are-already-widespread) | S | v1.2.1 | ⏳ Pending |
+| **P3** | Add `produces` / `consumes` fields to tool definition schema; update agentic loop to forward hints. Position as a data-contract layer on top of the existing capability flags / rules interfaces ([§0.3](#03-several-producesconsumes-style-concerns-are-already-covered)) | M | v1.2.1 | ⏳ Pending |
+| **P4** | Add an **optional 5th descriptor argument** to `wp_mcp_ai_after_tool_execution` without changing positions 1–4 ([§0.2](#02-the-agentic-loop-hook-signature-has-4-args-not-3)); update [`docs/hooks-reference.md`](../hooks-reference.md) | S | v1.2.1 | ⏳ Pending |
+| **P5** | Action-split audit: identify multi-action tools with > 4 values; begin decomposition in Base | L | v1.3.0 | ⏳ Pending |
+| **P6** | Codify sanitize-at-entry / escape-at-exit convention; PHPCS sniff or pre-commit hook | M | v1.3.0 | ⏳ Pending |
 
 ---
 
@@ -295,4 +295,4 @@ Add a lint comment convention:
 
 ---
 
-*Proposal status: **PROPOSED** — awaiting review by project maintainers.*
+*Proposal status: **IN PROGRESS** — Phase P0 (canonical return envelope documentation) landed May 2026. Phases P1–P6 remain.*

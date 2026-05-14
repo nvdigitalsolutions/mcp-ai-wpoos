@@ -117,14 +117,27 @@ class WP_MCP_AI_Tool_Example extends WP_MCP_AI_Tool_Base {
 }
 ```
 
-## Tool Return Format
+## Tool Return Format — Canonical Envelope
+
+Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
 
 ```php
-// Success:
-return array( 'success' => true, 'message' => __( 'Done.', 'mcp-ai-wpoos' ), 'data' => $results );
-// Error:
-return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ) );
+// SUCCESS — array with success/message/data:
+return array(
+    'success' => true,
+    'message' => __( 'Done.', 'mcp-ai-wpoos' ),  // Translated, human-readable.
+    'data'    => $results,                        // Serialisable via wp_json_encode().
+);
+
+// FAILURE — ALWAYS WP_Error, never an array with 'success' => false:
+return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ), $extra_data );
 ```
+
+**Rules:**
+- ✅ Success returns an array with at minimum `success => true` and `message`. `data` is the only pipeable payload — keep it serialisable.
+- ✅ Failure **must** use `WP_Error`. The agentic loop already normalises `WP_Error` correctly for the model.
+- ❌ Do **not** return `array( 'success' => false, 'message' => ... )` for errors. It defeats observability subscribers and produces inconsistent reasoning signals for the LLM.
+- 🛠️ For success responses, prefer the existing helper [`trait-wp-mcp-ai-tool-chat-response.php::format_success_response()`](includes/tools/trait-wp-mcp-ai-tool-chat-response.php) — `use WP_MCP_AI_Tool_Chat_Response;` and call `$this->format_success_response( $message, $data )`.
 
 ## Base vs Pro Decision
 
