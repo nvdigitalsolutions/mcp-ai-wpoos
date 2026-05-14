@@ -339,6 +339,9 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Dispatcher' ) ) {
 
 			$content = wp_json_encode( $payload );
 			if ( false === $content ) {
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log( 'wp_json_encode failed for tool-result payload in chat continuation dispatcher', 'error' );
+				}
 				$content = '{}';
 			}
 

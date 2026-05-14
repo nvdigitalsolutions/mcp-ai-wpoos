@@ -19751,8 +19751,16 @@
             }
         } catch (_) { /* localStorage unavailable */ }
 
-        // Mint a compact random ID.
-        const minted = 'cs' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        // Mint a compact random ID (crypto.getRandomValues when available for better entropy).
+        let rand;
+        try {
+            const arr = new Uint32Array(2);
+            crypto.getRandomValues(arr);
+            rand = arr[0].toString(36) + arr[1].toString(36);
+        } catch (_) {
+            rand = Math.random().toString(36).slice(2, 8);
+        }
+        const minted = 'cs' + Date.now().toString(36) + rand.slice(0, 8);
         try {
             localStorage.setItem(lsKey, minted);
         } catch (_) { /* ignore */ }

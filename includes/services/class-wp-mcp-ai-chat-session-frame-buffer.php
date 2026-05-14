@@ -220,8 +220,8 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
 				return '';
 			}
 			$sanitized = preg_replace( '/[^a-zA-Z0-9_\-]/', '', $session_id );
-			$sanitized = substr( (string) $sanitized, 0, 64 );
-			return (string) $sanitized;
+		$sanitized = substr( $sanitized ?? '', 0, 64 );
+		return (string) $sanitized;
 		}
 	}
 }
