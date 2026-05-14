@@ -998,6 +998,24 @@ class WP_MCP_AI_Shortcode {
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
+			// Chat-session stream endpoint for async continuation delivery.
+			// The {session_id} placeholder is replaced client-side when the session ID is known.
+			$config['sessionStreamEndpoint'] = esc_url_raw(
+				WP_MCP_AI_Request_Context::normalise_rest_url(
+					rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-sessions/{session_id}/stream' )
+				)
+			);
+
+			/**
+			 * Feature flag: async chat continuation (server-side LLM re-entry after
+			 * an async tool finishes).  Defaults to true for new installs.
+			 *
+			 * @since 1.9.4
+			 *
+			 * @param bool $enabled Whether the client-side SSE session stream is enabled.
+			 */
+			$config['asyncChatContinuation'] = (bool) apply_filters( 'wp_mcp_ai_chat_continuation_enabled', true );
+
 			// Feature flag: replace the 4-counter strip with the full Tasks drawer + toasts.
 			// Off by default; flip on once the flag has been tested in production for one patch cycle.
 			// See docs/features/chat/cron-status-tasks-drawer-plan.md Phase 3b / PR-D.

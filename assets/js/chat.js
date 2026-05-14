@@ -12076,6 +12076,14 @@
                 preloadVectorStore(state);
             }
 
+            // Async chat continuation: open the per-session SSE channel so
+            // server-pushed assistant messages (from cron-resumed tool calls)
+            // are delivered in real-time to this chat widget.
+            if (state.config.asyncChatContinuation && state.config.sessionStreamEndpoint) {
+                const sessionId = resolveChatSessionId(state.config);
+                initChatSessionStream(container, state.config, state, sessionId);
+            }
+
             // Mark container as initialized to prevent double-initialization
             container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
@@ -19699,6 +19707,244 @@
                 });
             });
         }, 500);
+    }
+
+    // -------------------------------------------------------------------------
+    // Slice 3 (client side): Chat Session SSE Stream
+    //
+    // Opens a long-lived EventSource on
+    //   GET /mcp-ai/v1/chat-sessions/{session_id}/stream
+    // so that async tool continuations (resumed LLM messages) are delivered
+    // in real-time — even after the original /chat-client request has returned.
+    //
+    // The session_id is derived from config.sessionKey (set by PHP) or minted
+    // once per assistantId and persisted in localStorage.
+    //
+    // Supported SSE events:
+    //   chat:resumed     — assistant continuation message
+    //   chat:tool_result — non-LLM status notification (failed/cancelled)
+    //   chat:error       — LLM-path error
+    //   ping             — heartbeat (no-op in client)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Derive or mint a stable chat session ID for an assistant instance.
+     *
+     * Priority:
+     *   1. config.sessionKey  (PHP-issued, shared with transcript recorder)
+     *   2. localStorage key   wp_mcp_ai_chat_session_id_{assistantId}
+     *   3. Minted UUID-like   (stored immediately in localStorage)
+     *
+     * @param {Object} config  Instance config.
+     * @returns {string}       Non-empty session ID.
+     */
+    function resolveChatSessionId(config) {
+        if (config && config.sessionKey && typeof config.sessionKey === 'string' && config.sessionKey.trim()) {
+            return config.sessionKey.trim();
+        }
+        const assistantId = (config && config.assistantId) ? config.assistantId : 'default';
+        const lsKey = 'wp_mcp_ai_chat_session_id_' + assistantId;
+        try {
+            const stored = localStorage.getItem(lsKey);
+            if (stored && /^[a-zA-Z0-9_-]{1,64}$/.test(stored)) {
+                return stored;
+            }
+        } catch (_) { /* localStorage unavailable */ }
+
+        // Mint a compact random ID.
+        const minted = 'cs' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        try {
+            localStorage.setItem(lsKey, minted);
+        } catch (_) { /* ignore */ }
+        return minted;
+    }
+
+    /**
+     * Handle a `chat:resumed` SSE frame: append the assistant's continuation
+     * message to the transcript, show a toast, and avoid duplicates.
+     *
+     * @param {Object}      state     Chat state.
+     * @param {Object}      frameData Frame payload from the SSE event.
+     */
+    function handleChatResumedFrame(state, frameData) {
+        if (!state || !frameData) {
+            return;
+        }
+        const message = (frameData.message && typeof frameData.message === 'string') ? frameData.message : '';
+        if (!message) {
+            return;
+        }
+        const toolCallId = frameData.tool_call_id || '';
+
+        // Deduplicate: skip if we already have a message for this tool_call_id.
+        if (toolCallId) {
+            const alreadyPresent = state.conversation && state.conversation.some(function(msg) {
+                return msg && msg._continuationToolCallId === toolCallId;
+            });
+            if (alreadyPresent) {
+                return;
+            }
+        }
+
+        // Append assistant message to the transcript (mirrors displayAsyncToolResult flow).
+        const assistantMsg = {
+            role: 'assistant',
+            content: message,
+            _isContinuation: true,
+            _continuationToolCallId: toolCallId || null,
+            _jobId: frameData.job_id || null,
+        };
+
+        if (!state.conversation) {
+            state.conversation = [];
+        }
+        state.conversation.push(assistantMsg);
+
+        // Render the new message.
+        if (state.messagesEl && typeof addMessage === 'function') {
+            addMessage(state, message, 'assistant', { isContinuation: true });
+        }
+
+        // Surface a toast so the user knows the result arrived.
+        if (typeof showJobToast === 'function') {
+            showJobToast(state.container, 'completed', {
+                job_id: frameData.job_id || '',
+                message: message,
+            });
+        }
+    }
+
+    /**
+     * Handle a `chat:tool_result` or `chat:error` SSE frame.
+     *
+     * @param {Object} state     Chat state.
+     * @param {string} eventName `chat:tool_result` or `chat:error`.
+     * @param {Object} frameData Frame payload.
+     */
+    function handleChatStatusFrame(state, eventName, frameData) {
+        if (!state || !frameData) {
+            return;
+        }
+        const type = ('chat:error' === eventName) ? 'failed' : frameData.terminal_status || 'failed';
+        const message = frameData.message || frameData.error || '';
+
+        if (typeof showJobToast === 'function') {
+            showJobToast(state.container, ('failed' === type || 'cancelled' === type) ? 'failed' : 'completed', {
+                job_id: frameData.job_id || '',
+                message: message,
+            });
+        }
+    }
+
+    /**
+     * Open (or re-open) the chat-session SSE stream for a specific container.
+     *
+     * The EventSource reconnects automatically via the Last-Event-ID header
+     * (built into the browser EventSource spec — no manual reconnect needed).
+     *
+     * @param {HTMLElement} container         Chat root element.
+     * @param {Object}      config            Instance config (must have sessionStreamEndpoint).
+     * @param {Object}      state             Chat state (may be null if init is deferred).
+     * @param {string}      sessionId         Resolved chat session ID.
+     */
+    function initChatSessionStream(container, config, state, sessionId) {
+        if (!config || !config.sessionStreamEndpoint) {
+            return;
+        }
+        if (!sessionId || !/^[a-zA-Z0-9_-]{1,64}$/.test(sessionId)) {
+            return;
+        }
+        if (!window.EventSource) {
+            return; // SSE not supported in this browser.
+        }
+
+        const endpoint = config.sessionStreamEndpoint.replace('{session_id}', encodeURIComponent(sessionId));
+        const nonce    = config.restNonce || '';
+
+        // Append nonce and last_event_id query params (EventSource cannot send headers).
+        function buildUrl(lastId) {
+            let url = endpoint;
+            const sep = (url.indexOf('?') >= 0) ? '&' : '?';
+            url += sep + '_wpnonce=' + encodeURIComponent(nonce);
+            if (lastId > 0) {
+                url += '&last_event_id=' + lastId;
+            }
+            return url;
+        }
+
+        let lastEventId = 0;
+        let es = null;
+
+        function open() {
+            if (es) {
+                try { es.close(); } catch (_) {}
+            }
+            es = new EventSource(buildUrl(lastEventId));
+
+            es.addEventListener('chat:resumed', function(ev) {
+                try {
+                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                    const data = JSON.parse(ev.data);
+                    if (state) {
+                        handleChatResumedFrame(state, data);
+                    }
+                } catch (_) {}
+            });
+
+            es.addEventListener('chat:tool_result', function(ev) {
+                try {
+                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                    const data = JSON.parse(ev.data);
+                    if (state) {
+                        handleChatStatusFrame(state, 'chat:tool_result', data);
+                    }
+                } catch (_) {}
+            });
+
+            es.addEventListener('chat:error', function(ev) {
+                try {
+                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                    const data = JSON.parse(ev.data);
+                    if (state) {
+                        handleChatStatusFrame(state, 'chat:error', data);
+                    }
+                } catch (_) {}
+            });
+
+            es.addEventListener('ping', function(ev) {
+                if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+            });
+
+            // When the server closes the stream (max ticks / [DONE]), the
+            // EventSource would normally try to reconnect automatically.
+            // We close it manually on clean [DONE] to avoid unnecessary reconnects.
+            es.addEventListener('message', function(ev) {
+                if (ev.data === '[DONE]') {
+                    try { es.close(); } catch (_) {}
+                }
+            });
+        }
+
+        open();
+
+        // Re-open on tab visibility restore so the stream survives tab switches.
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && es && es.readyState === 2 /* CLOSED */) {
+                open();
+            }
+        });
+
+        // Clean up when container is hidden/removed.
+        const streamObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+                    if (container.hasAttribute('hidden') && es) {
+                        try { es.close(); } catch (_) {}
+                    }
+                }
+            });
+        });
+        streamObserver.observe(container, { attributes: true });
     }
 
     // Expose public API for dynamic initialization (e.g., when chat is inserted via AJAX)
