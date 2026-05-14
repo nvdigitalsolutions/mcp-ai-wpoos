@@ -51,6 +51,38 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		protected $unavailable_tool_messages = array();
 
 		/**
+		 * Deprecated tool aliases keyed by the old slug.
+		 *
+		 * Used by Phase P5 Part 2 (tool decomposition) so that splitting a tool
+		 * into focused sub-tools does not break assistants that still reference
+		 * the old slug. Aliases are *not* exposed to the LLM payload assembler —
+		 * the model only sees the new sub-tools — but they resolve transparently
+		 * when an old slug is requested via {@see self::get_tool()}.
+		 *
+		 * Each entry is an array of the shape:
+		 *   array(
+		 *     'new_slug' => string,  // Required. Slug of the replacement tool.
+		 *     'since'    => string,  // Optional. Version where the alias was introduced.
+		 *     'remove'   => string,  // Optional. Version where the alias will be removed.
+		 *     'message'  => string,  // Optional. Human-readable migration note.
+		 *   )
+		 *
+		 * @since 1.2.2
+		 * @var array<string, array{new_slug:string, since:string, remove:string, message:string}>
+		 */
+		protected $deprecated_aliases = array();
+
+		/**
+		 * Set of deprecated slugs whose invocation has already fired the
+		 * {@see 'wp_mcp_ai_tool_deprecated_alias_invoked'} action during the
+		 * current request, used to throttle the hook to once-per-(request, slug).
+		 *
+		 * @since 1.2.2
+		 * @var array<string, bool>
+		 */
+		protected $deprecated_alias_invocations = array();
+
+		/**
 		 * Retrieve the singleton instance.
 		 *
 		 * @return WP_MCP_AI_Tool_Registry
@@ -193,9 +225,130 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Register a deprecated tool alias.
+		 *
+		 * When Phase P5 Part 2 decomposes a multi-action tool into focused
+		 * sub-tools, the old slug is registered as an alias pointing at the most
+		 * appropriate replacement so any assistant or saved tool-call referencing
+		 * the old slug continues to function for one release cycle. Aliases are
+		 * invisible to the LLM payload assembler (the model only sees the new
+		 * sub-tools), so re-trained assistants will naturally migrate.
+		 *
+		 * The action {@see 'wp_mcp_ai_tool_deprecated_alias_invoked'} fires the
+		 * first time per request that each alias is resolved, allowing OTel /
+		 * activity-log subscribers to count and surface usage.
+		 *
+		 * @since 1.2.2
+		 *
+		 * @param string $old_slug Slug of the deprecated tool.
+		 * @param string $new_slug Slug of the replacement tool.
+		 * @param array  $args     Optional metadata: {
+		 *     @type string $since   Version where the alias was introduced (e.g. '1.3.0').
+		 *     @type string $remove  Version where the alias will be removed (e.g. '1.4.0').
+		 *     @type string $message Human-readable migration note.
+		 * }
+		 * @return bool True on success, false if either slug is empty / identical.
+		 */
+		public function register_deprecated_alias( $old_slug, $new_slug, $args = array() ) {
+			$old = sanitize_key( $old_slug );
+			$new = sanitize_key( $new_slug );
+
+			if ( '' === $old || '' === $new || $old === $new ) {
+				return false;
+			}
+
+			// Refuse to overwrite an existing real tool — aliases must never
+			// shadow a registered slug.
+			if ( isset( $this->tools[ $old ] ) ) {
+				return false;
+			}
+
+			$args = is_array( $args ) ? $args : array();
+
+			$this->deprecated_aliases[ $old ] = array(
+				'new_slug' => $new,
+				'since'    => isset( $args['since'] ) ? (string) $args['since'] : '',
+				'remove'   => isset( $args['remove'] ) ? (string) $args['remove'] : '',
+				'message'  => isset( $args['message'] ) ? (string) $args['message'] : '',
+			);
+
+			return true;
+		}
+
+		/**
+		 * Retrieve all registered deprecated aliases.
+		 *
+		 * @since 1.2.2
+		 *
+		 * @return array<string, array{new_slug:string, since:string, remove:string, message:string}>
+		 */
+		public function get_deprecated_aliases() {
+			return $this->deprecated_aliases;
+		}
+
+		/**
+		 * Resolve a slug to its replacement if it is a deprecated alias.
+		 *
+		 * Fires {@see 'wp_mcp_ai_tool_deprecated_alias_invoked'} exactly once per
+		 * (request, $slug) pair so OTel and activity-log subscribers can surface
+		 * usage without spamming.
+		 *
+		 * @since 1.2.2
+		 *
+		 * @param string $slug Tool slug (sanitized by caller).
+		 * @return string Replacement slug if `$slug` is a deprecated alias, otherwise `$slug`.
+		 */
+		public function resolve_deprecated_alias( $slug ) {
+			if ( ! isset( $this->deprecated_aliases[ $slug ] ) ) {
+				return $slug;
+			}
+
+			$entry = $this->deprecated_aliases[ $slug ];
+			$new   = $entry['new_slug'];
+
+			if ( empty( $this->deprecated_alias_invocations[ $slug ] ) ) {
+				$this->deprecated_alias_invocations[ $slug ] = true;
+
+				/**
+				 * Fires the first time per request that a deprecated tool alias
+				 * is resolved to its replacement. Subscribers may log usage,
+				 * emit OTel spans, or surface admin notices.
+				 *
+				 * @since 1.2.2
+				 *
+				 * @param string $old_slug Deprecated slug that was invoked.
+				 * @param string $new_slug Replacement slug the call was rerouted to.
+				 * @param array  $entry    Alias metadata: { new_slug, since, remove, message }.
+				 */
+				do_action( 'wp_mcp_ai_tool_deprecated_alias_invoked', $slug, $new, $entry );
+			}
+
+			return $new;
+		}
+
+		/**
+		 * Clear the once-per-request invocation throttle.
+		 *
+		 * Intended for test isolation only.
+		 *
+		 * @since 1.2.2
+		 *
+		 * @return void
+		 */
+		public function reset_deprecated_alias_invocations() {
+			$this->deprecated_alias_invocations = array();
+		}
+
+		/**
 		 * Retrieve a tool instance.
 		 *
-		 * @param string $slug Tool slug.
+		 * Resolves deprecated aliases registered via {@see self::register_deprecated_alias()}:
+		 * if `$slug` is a known alias, the call is transparently rerouted to the
+		 * replacement tool and the
+		 * {@see 'wp_mcp_ai_tool_deprecated_alias_invoked'} action is fired (once
+		 * per request per alias).
+		 *
+		 * @param string $slug Tool slug. May be a deprecated alias.
 		 * @return WP_MCP_AI_Tool_Interface|null
 		 */
 		public function get_tool( $slug ) {
@@ -204,7 +357,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			$slug = sanitize_key( $slug );
 
-			return isset( $this->tools[ $slug ] ) ? $this->tools[ $slug ] : null;
+			$resolved = $this->resolve_deprecated_alias( $slug );
+
+			return isset( $this->tools[ $resolved ] ) ? $this->tools[ $resolved ] : null;
 		}
 
 		/**
@@ -697,6 +852,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->init();
 
 			$slug = sanitize_key( $slug );
+
+			// Resolve deprecated aliases without firing the deprecation hook —
+			// callers that only want to test for registration should not pay the
+			// log/observability cost of a real invocation.
+			if ( isset( $this->deprecated_aliases[ $slug ] ) ) {
+				$slug = $this->deprecated_aliases[ $slug ]['new_slug'];
+			}
+
 			return isset( $this->tools[ $slug ] );
 		}
 
