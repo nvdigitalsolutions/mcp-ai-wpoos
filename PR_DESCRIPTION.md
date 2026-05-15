@@ -1,5 +1,7 @@
 # Add Kimi AI Provider Support
 
+> **Status**: ✅ The implementation scope for this PR is complete.
+
 ## Description
 
 This PR adds **Kimi (Moonshot AI)** as a new AI provider for NV oOS. Kimi is a powerful Chinese LLM with an OpenAI-compatible API, supporting state-of-the-art models like Kimi K2.5 and K2.6 with 256K+ context windows.
@@ -12,7 +14,7 @@ This PR adds **Kimi (Moonshot AI)** as a new AI provider for NV oOS. Kimi is a p
 
 ## Related Issues
 
-Closes #[TBD - Create issue for Kimi provider implementation]
+Tracked via `docs/KIMI_PROVIDER_IMPLEMENTATION_PLAN.md`.
 
 ## GSD × BMAD Phase Reference
 
@@ -157,8 +159,8 @@ includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php      (MODIFY)
 - [x] Settings integration tests
 - [x] Error handling tests
 - [x] Constants validation tests
-- [ ] Streaming response tests (manual testing required)
-- [ ] Tool calling tests (manual testing required)
+- [ ] Streaming response manual E2E validation (follow-up)
+- [ ] Tool calling manual E2E validation (follow-up)
 - [ ] End-to-end integration tests (future PR)
 
 Run tests:

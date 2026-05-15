@@ -72,7 +72,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * kimi-k2.6 is the latest multimodal model with 256K context window.
+		 * Kimi-k2.6 is the latest multimodal model with 256K context window.
 		 *
 		 * @var string
 		 */
@@ -92,7 +92,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Models that do not support tool calling.
 		 *
-		 * kimi-k2-thinking is a chain-of-thought model that may reject tools.
+		 * Kimi-k2-thinking is a chain-of-thought model that may reject tools.
 		 *
 		 * @var array
 		 */
