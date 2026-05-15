@@ -494,7 +494,11 @@
 	border: none;
 	border-radius: 0;
 	box-shadow: none;
-	height: 100%;
+	/* Use flex growth instead of height: 100% so the element reliably fills
+	   the panel body in all browsers, including the deferred bootstrap path
+	   where the chat is lazily initialised after the panel first opens. */
+	flex: 1;
+	min-height: 0;
 	display: flex;
 	flex-direction: column;
 	padding: 12px;
@@ -516,6 +520,14 @@
 .wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__messages {
 	flex: 1;
 	min-height: 0;
+	/* Prevent chat.css max-height: 360px from capping the messages area.
+	   Without this override the form overflows the panel-body's
+	   overflow: hidden boundary, clipping buttons and making them
+	   unclickable (the "buttons do nothing" symptom). */
+	max-height: none;
+	/* Prevent chat.css margin-bottom: 0.75rem from eating into the
+	   available height and pushing the form out of the visible area. */
+	margin-bottom: 0;
 	overflow-y: auto;
 }
 
