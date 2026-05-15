@@ -758,6 +758,76 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Kimi (Moonshot AI) -->
+				<div class="card">
+					<h2><?php esc_html_e( '12. Kimi (Moonshot AI)', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_kimi'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['kimi_api_key'] ) ) : ?>
+										<span style="color: green;">&#x2713; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['kimi_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">&#x2717; <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<code><?php echo esc_html( isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k2.6' ); ?></code>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Base URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['kimi_base_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['kimi_base_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">&#x26a0; <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://api.moonshot.cn/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="kimi-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="kimi"
+						<?php echo esc_attr( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Kimi Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_kimi'] ) || empty( $settings['kimi_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Kimi settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=kimi' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Kimi (Moonshot AI) provides OpenAI-compatible models. kimi-k2.x models are the latest agentic generation with 256K context and tool calling. moonshot-v1-* models are stable general-purpose models. kimi-k2-thinking is a chain-of-thought model without tool calling.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
@@ -1040,6 +1110,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['enable_digitalocean'] ) && ! empty( $settings['digitalocean_api_key'] ) ) {
 						$configured[] = 'DigitalOcean Serverless Inference';
+					}
+					if ( ! empty( $settings['enable_kimi'] ) && ! empty( $settings['kimi_api_key'] ) ) {
+						$configured[] = 'Kimi (Moonshot AI)';
 					}
 					if ( ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
@@ -1327,6 +1400,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'digitalocean':
 					self::test_digitalocean( $settings );
+					break;
+
+				case 'kimi':
+					self::test_kimi( $settings );
 					break;
 
 				case 'embedded':
@@ -2220,6 +2297,113 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							__( 'API Endpoint', 'mcp-ai-wpoos' )    => $base_url,
 							__( 'Models Available', 'mcp-ai-wpoos' ) => (string) $model_cnt,
 							__( 'Latency', 'mcp-ai-wpoos' )         => $latency_ms . ' ms',
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Kimi (Moonshot AI) connection.
+		 *
+		 * Sends a minimal chat completion request to verify the API key and connectivity.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_kimi( $settings ) {
+			if ( empty( $settings['enable_kimi'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Kimi provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['kimi_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Kimi API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Kimi client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$model = isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k2.6';
+
+				$base_url = isset( $settings['kimi_base_url'] ) && '' !== trim( $settings['kimi_base_url'] )
+					? untrailingslashit( esc_url_raw( $settings['kimi_base_url'] ) )
+					: 'https://api.moonshot.cn/v1';
+
+				$start = microtime( true );
+
+				$response = wp_remote_post(
+					$base_url . '/chat/completions',
+					array(
+						'headers' => array(
+							'Content-Type'  => 'application/json',
+							'Authorization' => 'Bearer ' . $settings['kimi_api_key'],
+							'User-Agent'    => 'WP-MCP-AI-Kimi-Client/1.0',
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 5,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hi',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				$latency_ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+					wp_send_json_error( array( 'message' => $error_message ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Kimi connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' )        => $model,
+							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
+							__( 'Latency', 'mcp-ai-wpoos' )      => $latency_ms . ' ms',
 						),
 					)
 				);

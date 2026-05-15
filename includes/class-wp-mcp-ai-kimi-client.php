@@ -1,12 +1,12 @@
 <?php
 /**
- * Kimi API client wrapper.
+ * Kimi (Moonshot AI) API client wrapper.
  *
- * Kimi exposes an OpenAI-compatible REST API at https://api.moonshot.cn/v1.
+ * Moonshot AI exposes an OpenAI-compatible REST API at https://api.moonshot.cn/v1.
  * This client handles chat completions, model listing, and connection testing
  * without vendoring any third-party SDK.
  *
- * @link    https://platform.moonshot.cn/docs
+ * @link    https://platform.moonshot.cn/docs/api-reference
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
@@ -19,23 +19,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 	/**
-	 * Provides a wrapper around the Kimi API (OpenAI-compatible).
+	 * Provides a wrapper around the Kimi (Moonshot AI) API (OpenAI-compatible).
 	 *
 	 * Supports chat completions, tool/function calling, streaming (SSE identical
-	 * to OpenAI), JSON mode, and live model listing.
+	 * to OpenAI), JSON mode, live model listing, and token counting.
+	 *
+	 * Note on tool calling: kimi-k2-thinking and kimi-k1.5-* are reasoning
+	 * models that do not support function/tool calling. All moonshot-v1-* and
+	 * kimi-k2/k2.5/k2.6 models support tools.
 	 *
 	 * Note on embeddings: Kimi does not currently expose a public embeddings
 	 * endpoint. No WP_MCP_AI_Embedding_Provider_Kimi is registered.
 	 *
-	 * Note on vision: Kimi K2.5/K2.6 models support multimodal input including
-	 * images and video via base64 encoding or file references.
-	 *
-	 * @since 1.0.0
+	 * @since 2026.05
 	 */
 	class WP_MCP_AI_Kimi_Client {
 
 		/**
-		 * Default base URL for the Kimi API (no trailing slash, no path).
+		 * Default base URL for the Kimi (Moonshot AI) API (no trailing slash, no path).
 		 *
 		 * @var string
 		 */
@@ -72,14 +73,14 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * Kimi-k2.6 is the latest multimodal model with 256K context window.
+		 * kimi-k2.6 is the latest agentic model with 256K context and tool calling.
 		 *
 		 * @var string
 		 */
 		const DEFAULT_MODEL = 'kimi-k2.6';
 
 		/**
-		 * Models that support tool/function calling.
+		 * Models that explicitly support tool/function calling.
 		 *
 		 * @var array
 		 */
@@ -90,18 +91,22 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		);
 
 		/**
-		 * Models that do not support tool calling.
+		 * Models that do not support tool/function calling.
 		 *
-		 * Kimi-k2-thinking is a chain-of-thought model that may reject tools.
+		 * kimi-k2-thinking is a chain-of-thought model that rejects the `tools`
+		 * parameter. kimi-k1.5-* are long-context reasoning models without tool
+		 * support. Tools are stripped automatically when these models are selected.
 		 *
 		 * @var array
 		 */
 		const MODELS_WITHOUT_TOOL_CALLING = array(
 			'kimi-k2-thinking',
+			'kimi-k1.5-32k',
+			'kimi-k1.5-128k',
 		);
 
 		/**
-		 * Maximum context window sizes by model family.
+		 * Maximum context window sizes by model family prefix.
 		 *
 		 * @var array
 		 */
@@ -109,8 +114,11 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			'kimi-k2.6'        => 256000,
 			'kimi-k2.5'        => 256000,
 			'kimi-k2'          => 256000,
-			'kimi-k2-thinking' => 256000,
-			'moonshot-v1'      => 128000,
+			'kimi-k1.5'        => 131072,
+			'moonshot-v1-8k'   => 8192,
+			'moonshot-v1-32k'  => 32768,
+			'moonshot-v1-128k' => 131072,
+			'moonshot-v1'      => 131072,
 		);
 
 		// -------------------------------------------------------------------------
@@ -120,7 +128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Retrieve the configured Kimi API key.
 		 *
-		 * @since 1.0.0
+		 * @since 2026.05
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
@@ -132,7 +140,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Retrieve the configured default model.
 		 *
-		 * @since 1.0.0
+		 * @since 2026.05
 		 * @return string Empty string when not configured.
 		 */
 		public function get_model() {
@@ -144,10 +152,10 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Retrieve the configured base URL.
 		 *
-		 * Supports custom proxies via the kimi_base_url setting.
+		 * Supports custom proxy endpoints via the kimi_base_url setting.
 		 * Falls back to {@see DEFAULT_BASE_URL}.
 		 *
-		 * @since 1.0.0
+		 * @since 2026.05
 		 * @return string Base URL without trailing slash.
 		 */
 		public function get_base_url() {
@@ -162,23 +170,23 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		}
 
 		/**
-		 * Get the context window size for a model.
+		 * Get the context window size for a given model.
 		 *
-		 * @since 1.0.0
+		 * @since 2026.05
 		 * @param string $model Model identifier.
 		 * @return int Context window size in tokens.
 		 */
 		public function get_context_window( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// Check exact match first.
+			// Exact match first.
 			if ( isset( self::MODEL_CONTEXT_WINDOWS[ $model ] ) ) {
 				return self::MODEL_CONTEXT_WINDOWS[ $model ];
 			}
 
-			// Check prefix match for model families.
-			foreach ( self::MODEL_CONTEXT_WINDOWS as $model_key => $window ) {
-				if ( 0 === strpos( $model, $model_key ) ) {
+			// Prefix match for model families.
+			foreach ( self::MODEL_CONTEXT_WINDOWS as $prefix => $window ) {
+				if ( 0 === strpos( $model, $prefix ) ) {
 					return $window;
 				}
 			}
@@ -188,27 +196,38 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		}
 
 		/**
-		 * Check if a model supports tool calling.
+		 * Return true when the model supports tool/function calling.
 		 *
-		 * @since 1.0.0
+		 * @since 2026.05
 		 * @param string $model Model identifier.
-		 * @return bool True if tools are supported.
+		 * @return bool
 		 */
 		public function model_supports_tools( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// Check explicit non-support first.
-			if ( in_array( $model, self::MODELS_WITHOUT_TOOL_CALLING, true ) ) {
-				return false;
+			// Explicit denylist takes precedence.
+			foreach ( self::MODELS_WITHOUT_TOOL_CALLING as $no_tools ) {
+				if ( $model === $no_tools || 0 === strpos( $model, $no_tools ) ) {
+					return false;
+				}
 			}
 
-			// Check explicit support.
-			if ( in_array( $model, self::MODELS_WITH_TOOL_CALLING, true ) ) {
-				return true;
-			}
-
-			// Default to true for unknown models (most Kimi models support tools).
+			// Default: tools are supported (covers moonshot-v1-* and unknown kimi-k2-* variants).
 			return true;
+		}
+
+		/**
+		 * Return true when the model does not support tool/function calling.
+		 *
+		 * Thin inverse wrapper kept for backward compatibility with callers that
+		 * used the original model_lacks_tool_calling() convention.
+		 *
+		 * @since 2026.05
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		public function model_lacks_tool_calling( $model ) {
+			return ! $this->model_supports_tools( $model );
 		}
 
 		// -------------------------------------------------------------------------
@@ -218,8 +237,8 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Build standard HTTP request headers for Kimi API calls.
 		 *
-		 * @since 1.0.0
-		 * @param string $api_key API key to authorize the request.
+		 * @since 2026.05
+		 * @param string $api_key API key to authorise the request.
 		 * @return array Associative array of HTTP headers.
 		 */
 		protected function build_request_headers( $api_key ) {
@@ -232,7 +251,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			/**
 			 * Filter the Kimi request headers before sending.
 			 *
-			 * @since 1.0.0
+			 * @since 2026.05
 			 *
 			 * @param array  $headers Associative array of HTTP headers.
 			 * @param string $api_key The API key being used.
@@ -241,208 +260,267 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		}
 
 		/**
-		 * Resolve timeout for Kimi requests.
+		 * Resolve the request timeout in seconds.
 		 *
-		 * @since 1.0.0
-		 * @return int Timeout in seconds.
+		 * Checks $options['timeout'] first (per-request override), then the
+		 * kimi_timeout setting, then falls back to 60 seconds.
+		 *
+		 * @since 2026.05
+		 * @param array $options Request options may carry a 'timeout' key.
+		 * @return int
 		 */
-		protected function resolve_timeout() {
+		protected function resolve_timeout( array $options = array() ) {
+			if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
+				return max( 10, absint( $options['timeout'] ) );
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$timeout  = isset( $settings['kimi_timeout'] ) ? absint( $settings['kimi_timeout'] ) : 0;
 
-			if ( $timeout <= 0 ) {
-				$timeout = 60; // Default 60 seconds.
-			}
-
-			/**
-			 * Filter the Kimi request timeout.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param int $timeout Timeout in seconds.
-			 */
-			return apply_filters( 'wp_mcp_ai_kimi_timeout', $timeout );
+			return ( $timeout > 0 ) ? $timeout : 60;
 		}
 
 		/**
-		 * Resolve the model to use for a request.
+		 * Resolve the model from $options, falling back to the configured default.
 		 *
-		 * @since 1.0.0
-		 * @param string $model Optional model override.
-		 * @return string Resolved model identifier.
+		 * @since 2026.05
+		 * @param array $options Request options.
+		 * @return string
 		 */
-		protected function resolve_model( $model = '' ) {
-			$model = sanitize_text_field( $model );
-
-			if ( '' === $model ) {
-				$model = $this->get_model();
+		protected function resolve_model( array $options = array() ) {
+			if ( ! empty( $options['model'] ) ) {
+				return sanitize_text_field( $options['model'] );
 			}
 
-			if ( '' === $model ) {
-				$model = self::DEFAULT_MODEL;
-			}
+			$model = $this->get_model();
 
-			/**
-			 * Filter the resolved Kimi model.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $model The resolved model.
-			 */
-			return apply_filters( 'wp_mcp_ai_kimi_model', $model );
+			return ! empty( $model ) ? $model : self::DEFAULT_MODEL;
 		}
 
 		// -------------------------------------------------------------------------
-		// API methods.
+		// Core methods.
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Create a chat completion.
+		 * Perform a chat completion request against the Kimi API.
 		 *
-		 * Sends a chat completion request to the Kimi API. Supports streaming
-		 * via the 'stream' option.
+		 * The Kimi (Moonshot AI) API is OpenAI-compatible: messages, tools,
+		 * response_format, and streaming options are passed through unchanged.
 		 *
-		 * @since 1.0.0
-		 * @param array $messages Array of message arrays with 'role' and 'content'.
-		 * @param array $options  Optional. Additional options:
-		 *                        - model: string - Model to use.
-		 *                        - temperature: float - Sampling temperature.
-		 *                        - max_completion_tokens: int - Max tokens to generate.
-		 *                        - stream: bool - Enable streaming.
-		 *                        - tools: array - Tool definitions for function calling.
-		 *                        - tool_choice: string|array - Tool selection mode.
-		 *                        - response_format: array - JSON mode configuration.
-		 *                        - stop: string|array - Stop sequences.
-		 *                        - top_p: float - Nucleus sampling parameter.
-		 *                        - prompt_cache_key: string - Cache key for similar requests.
-		 *                        - thinking: array - Thinking mode configuration.
-		 * @return array|WP_Error Response array or error.
+		 * @since 2026.05
+		 * @param array $messages Message payload (OpenAI-compatible format).
+		 * @param array $options  Additional options:
+		 *                        - model (string): Override the model.
+		 *                        - temperature (float): Sampling temperature.
+		 *                        - top_p (float): Nucleus sampling.
+		 *                        - max_tokens (int): Maximum output tokens.
+		 *                        - tools (array): OpenAI-compatible tool definitions.
+		 *                        - tool_choice (string|array): Tool selection.
+		 *                        - response_format (array): e.g. ['type' => 'json_object'].
+		 *                        - stream (bool): Enable SSE streaming.
+		 *                        - stream_options (array): SSE stream options.
+		 *                        - timeout (int): HTTP timeout in seconds.
+		 *                        - system_prompt (string): System instruction.
+		 *                        - prompt_cache_key (string): Cache key for similar requests.
+		 *                        - safety_identifier (string): Usage-policy identifier.
+		 *                        - thinking (array): Thinking-mode configuration for K2.6.
+		 *                        - stop (string|array): Stop sequences.
+		 * @return array|WP_Error Normalised completion response or WP_Error on failure.
 		 */
-		public function create_chat_completion( $messages, $options = array() ) {
+		public function create_chat_completion( array $messages, array $options = array() ) {
 			$api_key = $this->get_api_key();
 
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
-					'kimi_api_key_missing',
-					__( 'Kimi API key is not configured.', 'mcp-ai-wpoos' )
+					'wp_mcp_ai_missing_kimi_api_key',
+					__( 'No Kimi API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_kimi_api_key' => __( 'Add a Kimi API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
 				);
 			}
 
-			if ( ! is_array( $messages ) || empty( $messages ) ) {
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
 				return new WP_Error(
-					'kimi_invalid_messages',
-					__( 'Messages must be a non-empty array.', 'mcp-ai-wpoos' )
+					'wp_mcp_ai_missing_kimi_model',
+					__( 'No Kimi model has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_kimi_model' => __( 'Choose a Kimi model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
 				);
 			}
 
-			$model   = $this->resolve_model( $options['model'] ?? '' );
 			$payload = $this->build_payload( $messages, $options, $model );
 
-			$headers = $this->build_request_headers( $api_key );
-			$url     = $this->get_base_url() . self::API_ENDPOINT;
-			$timeout = $this->resolve_timeout();
+			if ( is_wp_error( $payload ) ) {
+				return $payload;
+			}
 
-			/**
-			 * Filter the Kimi chat completion URL.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $url     The request URL.
-			 * @param string $model   The model being used.
-			 * @param array  $payload The request payload.
-			 */
-			$url = apply_filters( 'wp_mcp_ai_kimi_chat_url', $url, $model, $payload );
+			$url = $this->get_base_url() . self::API_ENDPOINT;
 
-			$args = array(
-				'headers' => $headers,
+			$request_args = array(
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
-				'timeout' => $timeout,
-				'method'  => 'POST',
+				'timeout' => $this->resolve_timeout( $options ),
 			);
 
-			$response = wp_remote_post( $url, $args );
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'kimi_request',
+					'Sending request to Kimi.',
+					array(
+						'model'         => $model,
+						'message_count' => count( $messages ),
+						'has_tools'     => ! empty( $payload['tools'] ),
+					)
+				);
+			}
+
+			$response = wp_remote_post( $url, $request_args );
 
 			if ( is_wp_error( $response ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error( 'Kimi request failed.', array( 'error' => $response->get_error_message() ) );
+				}
+
+				if ( class_exists( 'WP_MCP_AI_HTTP' ) ) {
+					return WP_MCP_AI_HTTP::prepare_transport_error(
+						$response,
+						'wp_mcp_ai_http_error',
+						__( 'The Kimi API request failed to complete.', 'mcp-ai-wpoos' ),
+						__( 'Kimi', 'mcp-ai-wpoos' )
+					);
+				}
+
 				return $response;
 			}
 
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$body          = wp_remote_retrieve_body( $response );
+			$code     = wp_remote_retrieve_response_code( $response );
+			$body     = wp_remote_retrieve_body( $response );
+			$decoded  = json_decode( $body, true );
+			$json_err = json_last_error();
 
-			if ( 200 !== $response_code ) {
-				return $this->handle_api_error( $response_code, $body );
+			if ( JSON_ERROR_NONE !== $json_err ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error( 'Failed to decode Kimi response.', array( 'body' => $body ) );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_kimi_invalid_response', __( 'The Kimi API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
-			$data = json_decode( $body, true );
-
-			if ( ! is_array( $data ) ) {
-				return new WP_Error(
-					'kimi_invalid_response',
-					__( 'Invalid response from Kimi API.', 'mcp-ai-wpoos' )
-				);
+			if ( $code < 200 || $code >= 300 ) {
+				return $this->handle_api_error( $code, $decoded, $response );
 			}
 
-			return $this->normalize_response( $data );
+			$normalized = $this->normalize_response( $decoded );
+
+			if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
+				$normalized['model'] = $model;
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'kimi_response', 'Kimi request completed.', array( 'model' => $model ) );
+			}
+
+			return $normalized;
 		}
 
 		/**
 		 * List available models from the Kimi API.
 		 *
-		 * @since 1.0.0
-		 * @return array|WP_Error Array of model data or error.
+		 * The /models endpoint returns an OpenAI-shaped JSON object with a `data`
+		 * array of model objects each containing an `id` field.
+		 *
+		 * @since 2026.05
+		 * @return array|WP_Error Array of model objects or WP_Error on failure.
 		 */
 		public function list_models() {
 			$api_key = $this->get_api_key();
 
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
-					'kimi_api_key_missing',
-					__( 'Kimi API key is not configured.', 'mcp-ai-wpoos' )
+					'wp_mcp_ai_missing_kimi_api_key',
+					__( 'No Kimi API key has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
 				);
 			}
 
-			$headers = $this->build_request_headers( $api_key );
-			$url     = $this->get_base_url() . self::API_MODELS;
-			$timeout = $this->resolve_timeout();
+			$url = $this->get_base_url() . self::API_MODELS;
 
-			$args = array(
-				'headers' => $headers,
-				'timeout' => $timeout,
-				'method'  => 'GET',
+			$request_args = array(
+				'timeout' => 30,
+				'headers' => $this->build_request_headers( $api_key ),
 			);
 
-			$response = wp_remote_get( $url, $args );
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'kimi_list_models', 'Fetching models from Kimi.', array( 'url' => $url ) );
+			}
+
+			$response = wp_remote_get( $url, $request_args );
 
 			if ( is_wp_error( $response ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error( 'Kimi model listing failed.', array( 'error' => $response->get_error_message() ) );
+				}
+
 				return $response;
 			}
 
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$body          = wp_remote_retrieve_body( $response );
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
 
-			if ( 200 !== $response_code ) {
-				return $this->handle_api_error( $response_code, $body );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error( 'wp_mcp_ai_kimi_invalid_response', __( 'The Kimi API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
-			$data = json_decode( $body, true );
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected error from Kimi models endpoint.', 'mcp-ai-wpoos' );
 
-			if ( ! is_array( $data ) || ! isset( $data['data'] ) ) {
 				return new WP_Error(
-					'kimi_invalid_response',
-					__( 'Invalid response from Kimi API.', 'mcp-ai-wpoos' )
+					'wp_mcp_ai_kimi_api_error',
+					$error_message,
+					array( 'status' => $code )
 				);
 			}
 
-			return $data['data'];
+			$models = array();
+
+			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
+				foreach ( $decoded['data'] as $model ) {
+					if ( isset( $model['id'] ) ) {
+						$models[] = array(
+							'id'       => sanitize_text_field( $model['id'] ),
+							'owned_by' => isset( $model['owned_by'] ) ? sanitize_text_field( $model['owned_by'] ) : '',
+							'created'  => isset( $model['created'] ) ? absint( $model['created'] ) : 0,
+						);
+					}
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'kimi_list_models', 'Kimi models retrieved.', array( 'count' => count( $models ) ) );
+			}
+
+			return $models;
 		}
 
 		/**
 		 * Test the connection to the Kimi API.
 		 *
-		 * Attempts to list models to verify the API key is valid.
+		 * Lists available models to verify the API key and network connectivity.
+		 * Using the models endpoint avoids consuming chat tokens during the test.
 		 *
-		 * @since 1.0.0
-		 * @return array|WP_Error Success array or error.
+		 * @since 2026.05
+		 * @return array|WP_Error Success array or WP_Error on failure.
 		 */
 		public function test_connection() {
 			$models = $this->list_models();
@@ -457,112 +535,130 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 				'success'     => true,
 				'message'     => sprintf(
 					/* translators: %d: number of models */
-					__( 'Connection successful. Found %d models.', 'mcp-ai-wpoos' ),
+					__( 'Successfully connected to Kimi. Found %d models.', 'mcp-ai-wpoos' ),
 					$model_count
 				),
+				'model'       => $this->get_model() ? $this->get_model() : self::DEFAULT_MODEL,
 				'model_count' => $model_count,
-				'models'      => array_slice( $models, 0, 5 ), // Return first 5 models.
 			);
 		}
 
 		/**
-		 * Estimate token count for messages.
+		 * Count tokens for the given messages.
 		 *
-		 * Uses the Kimi token estimation endpoint.
+		 * Uses the Kimi /tokenizers/estimate-token-count endpoint when available;
+		 * falls back to the heuristic chars/4 estimator used by other providers.
 		 *
-		 * @since 1.0.0
-		 * @param array  $messages Array of messages.
-		 * @param string $model    Optional model identifier.
-		 * @return array|WP_Error Token count data or error.
+		 * @since 2026.05
+		 * @param array $messages Chat messages in OpenAI-compatible format.
+		 * @param array $options  Optional parameters (model, system_prompt, timeout).
+		 * @return int Estimated input token count.
 		 */
-		public function count_tokens( $messages, $model = null ) {
+		public function count_tokens( array $messages, array $options = array() ) {
 			$api_key = $this->get_api_key();
+			$model   = $this->resolve_model( $options );
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'kimi_api_key_missing',
-					__( 'Kimi API key is not configured.', 'mcp-ai-wpoos' )
+			// Attempt the API token count endpoint when a key is available.
+			if ( ! empty( $api_key ) ) {
+				$url = $this->get_base_url() . self::API_TOKEN_COUNT;
+
+				$payload = array(
+					'model'    => $model,
+					'messages' => $messages,
 				);
-			}
 
-			$model = $this->resolve_model( $model );
-
-			$headers = $this->build_request_headers( $api_key );
-			$url     = $this->get_base_url() . self::API_TOKEN_COUNT;
-			$timeout = $this->resolve_timeout();
-
-			$payload = array(
-				'model'    => $model,
-				'messages' => $messages,
-			);
-
-			$args = array(
-				'headers' => $headers,
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => $timeout,
-				'method'  => 'POST',
-			);
-
-			$response = wp_remote_post( $url, $args );
-
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$body          = wp_remote_retrieve_body( $response );
-
-			if ( 200 !== $response_code ) {
-				return $this->handle_api_error( $response_code, $body );
-			}
-
-			$data = json_decode( $body, true );
-
-			if ( ! is_array( $data ) ) {
-				return new WP_Error(
-					'kimi_invalid_response',
-					__( 'Invalid response from Kimi API.', 'mcp-ai-wpoos' )
+				$response = wp_remote_post(
+					$url,
+					array(
+						'headers' => $this->build_request_headers( $api_key ),
+						'body'    => wp_json_encode( $payload ),
+						'timeout' => 15,
+					)
 				);
+
+				if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+					$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+					if ( isset( $data['data']['total_tokens'] ) ) {
+						return absint( $data['data']['total_tokens'] );
+					}
+				}
 			}
 
-			return $data;
+			// Heuristic fallback: ~4 chars per token.
+			$char_count = 0;
+
+			foreach ( $messages as $message ) {
+				if ( is_array( $message ) && isset( $message['content'] ) ) {
+					$char_count += strlen( (string) $message['content'] );
+				}
+			}
+
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$char_count += strlen( (string) $options['system_prompt'] );
+			}
+
+			return max( 1, (int) ceil( $char_count / 4 ) );
 		}
 
 		// -------------------------------------------------------------------------
-		// Payload builders.
+		// Private helpers.
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Build the request payload for chat completions.
+		 * Build the JSON payload sent to Kimi.
 		 *
-		 * @since 1.0.0
-		 * @param array  $messages Array of messages.
-		 * @param array  $options  Additional options.
-		 * @param string $model    Resolved model.
-		 * @return array Payload array.
+		 * @since 2026.05
+		 * @param array  $messages Chat messages.
+		 * @param array  $options  Request options.
+		 * @param string $model    Resolved model identifier.
+		 * @return array|WP_Error
 		 */
-		protected function build_payload( $messages, $options, $model ) {
+		protected function build_payload( array $messages, array $options, $model ) {
+			if ( empty( $messages ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_messages',
+					__( 'No chat messages were provided for the Kimi request.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
 			$payload = array(
 				'model'    => $model,
-				'messages' => $messages,
+				'messages' => array(),
 			);
 
-			// Temperature (0-2).
-			if ( isset( $options['temperature'] ) ) {
-				$payload['temperature'] = max( 0, min( 2, floatval( $options['temperature'] ) ) );
+			// Inject system prompt when provided as a top-level option.
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$payload['messages'][] = array(
+					'role'    => 'system',
+					'content' => wp_kses_post( (string) $options['system_prompt'] ),
+				);
 			}
 
-			// Max completion tokens.
-			if ( isset( $options['max_completion_tokens'] ) ) {
+			// Pass through messages unchanged (OpenAI-compatible format).
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+				$payload['messages'][] = $message;
+			}
+
+			// Temperature (0–2).
+			if ( isset( $options['temperature'] ) && is_numeric( $options['temperature'] ) ) {
+				$payload['temperature'] = max( 0.0, min( 2.0, (float) $options['temperature'] ) );
+			}
+
+			// Nucleus sampling.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = max( 0.0, min( 1.0, (float) $options['top_p'] ) );
+			}
+
+			// Max tokens — support both naming conventions.
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
 				$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
-			} elseif ( isset( $options['max_tokens'] ) ) {
-				// Support legacy max_tokens parameter.
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
 				$payload['max_completion_tokens'] = absint( $options['max_tokens'] );
-			}
-
-			// Top P sampling.
-			if ( isset( $options['top_p'] ) ) {
-				$payload['top_p'] = max( 0, min( 1, floatval( $options['top_p'] ) ) );
 			}
 
 			// Stop sequences.
@@ -570,180 +666,153 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 				$payload['stop'] = $options['stop'];
 			}
 
-			// Response format (JSON mode).
+			// JSON / structured output mode.
 			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				$payload['response_format'] = $options['response_format'];
 			}
 
 			// Streaming.
-			if ( isset( $options['stream'] ) && $options['stream'] ) {
+			if ( ! empty( $options['stream'] ) ) {
 				$payload['stream'] = true;
 
-				// Stream options.
 				if ( isset( $options['stream_options'] ) && is_array( $options['stream_options'] ) ) {
 					$payload['stream_options'] = $options['stream_options'];
 				}
 			}
 
-			// Tools (function calling).
-			if ( isset( $options['tools'] ) && is_array( $options['tools'] ) && $this->model_supports_tools( $model ) ) {
-				$payload['tools'] = $options['tools'];
+			// Tool/function calling — only for models that support it.
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				if ( $this->model_supports_tools( $model ) ) {
+					$payload['tools'] = $options['tools'];
 
-				if ( isset( $options['tool_choice'] ) ) {
-					$payload['tool_choice'] = $options['tool_choice'];
+					if ( isset( $options['tool_choice'] ) ) {
+						$payload['tool_choice'] = $options['tool_choice'];
+					}
+				} else {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'kimi_tools_skipped',
+							sprintf(
+								/* translators: %s: model name */
+								'Tools stripped for Kimi model %s (does not support function calling).',
+								$model
+							),
+							array( 'model' => $model )
+						);
+					}
 				}
 			}
 
-			// Prompt cache key for optimization.
-			if ( isset( $options['prompt_cache_key'] ) && ! empty( $options['prompt_cache_key'] ) ) {
+			// Kimi-specific: prompt cache key for cost optimisation.
+			if ( ! empty( $options['prompt_cache_key'] ) ) {
 				$payload['prompt_cache_key'] = sanitize_text_field( $options['prompt_cache_key'] );
 			}
 
-			// Safety identifier for usage policy.
-			if ( isset( $options['safety_identifier'] ) && ! empty( $options['safety_identifier'] ) ) {
+			// Kimi-specific: safety identifier for usage policy.
+			if ( ! empty( $options['safety_identifier'] ) ) {
 				$payload['safety_identifier'] = sanitize_text_field( $options['safety_identifier'] );
 			}
 
-			// Thinking mode configuration.
+			// Kimi K2.6 thinking mode configuration.
 			if ( isset( $options['thinking'] ) && is_array( $options['thinking'] ) ) {
 				$payload['thinking'] = $options['thinking'];
 			}
 
 			/**
-			 * Filter the Kimi request payload before sending.
+			 * Filter the Kimi request payload before it is sent.
 			 *
-			 * @since 1.0.0
+			 * @since 2026.05
 			 *
-			 * @param array  $payload The request payload.
-			 * @param string $model   The model being used.
-			 * @param array  $options The original options.
+			 * @param array  $payload  Request payload.
+			 * @param array  $messages Original messages.
+			 * @param array  $options  Request options.
+			 * @param string $model    Resolved model identifier.
 			 */
-			return apply_filters( 'wp_mcp_ai_kimi_payload', $payload, $model, $options );
+			return apply_filters( 'wp_mcp_ai_kimi_request_payload', $payload, $messages, $options, $model );
 		}
 
-		// -------------------------------------------------------------------------
-		// Error handling.
-		// -------------------------------------------------------------------------
-
 		/**
-		 * Handle API error responses.
+		 * Handle a non-2xx API response and return an appropriate WP_Error.
 		 *
-		 * Parses Kimi API error responses and returns appropriate WP_Error.
-		 *
-		 * @since 1.0.0
-		 * @param int    $response_code HTTP response code.
-		 * @param string $body          Response body.
-		 * @return WP_Error Error object.
+		 * @since 2026.05
+		 * @param int          $code     HTTP status code.
+		 * @param array        $decoded  Decoded JSON response body.
+		 * @param array|object $response Full WP HTTP response.
+		 * @return WP_Error
 		 */
-		protected function handle_api_error( $response_code, $body ) {
-			$data = json_decode( $body, true );
-			$code = 'kimi_api_error';
-
-			if ( is_array( $data ) && isset( $data['error'] ) ) {
-				$error_info = $data['error'];
-				$message    = isset( $error_info['message'] ) ? $error_info['message'] : __( 'Unknown error from Kimi API.', 'mcp-ai-wpoos' );
-
-				if ( isset( $error_info['code'] ) ) {
-					$code = 'kimi_' . sanitize_key( $error_info['code'] );
-				}
-			} else {
-				$message = sprintf(
-					/* translators: %d: HTTP response code */
-					__( 'Kimi API returned HTTP %d.', 'mcp-ai-wpoos' ),
-					$response_code
-				);
-			}
-
-			$error = new WP_Error( $code, $message, array( 'status' => $response_code ) );
-
-			/**
-			 * Filter the Kimi API error.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param WP_Error $error         The error object.
-			 * @param int      $response_code HTTP response code.
-			 * @param string   $body          Response body.
-			 */
-			return apply_filters( 'wp_mcp_ai_kimi_api_error', $error, $response_code, $body );
-		}
-
-		// -------------------------------------------------------------------------
-		// Response normalization.
-		// -------------------------------------------------------------------------
-
-		/**
-		 * Normalize Kimi API response to standard format.
-		 *
-		 * Ensures consistent response structure across providers.
-		 *
-		 * @since 1.0.0
-		 * @param array $api_response Raw API response.
-		 * @return array Normalized response.
-		 */
-		protected function normalize_response( $api_response ) {
-			$normalized = array(
-				'id'      => isset( $api_response['id'] ) ? sanitize_text_field( $api_response['id'] ) : '',
-				'object'  => isset( $api_response['object'] ) ? sanitize_text_field( $api_response['object'] ) : 'chat.completion',
-				'created' => isset( $api_response['created'] ) ? absint( $api_response['created'] ) : time(),
-				'model'   => isset( $api_response['model'] ) ? sanitize_text_field( $api_response['model'] ) : '',
-				'choices' => array(),
-				'usage'   => array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-				),
+		protected function handle_api_error( $code, array $decoded, $response ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Kimi.', 'mcp-ai-wpoos' );
+			$error_data    = array(
+				'status' => $code,
+				'body'   => $decoded,
 			);
 
-			// Normalize choices.
-			if ( isset( $api_response['choices'] ) && is_array( $api_response['choices'] ) ) {
-				foreach ( $api_response['choices'] as $choice ) {
-					$normalized_choice = array(
-						'index'         => isset( $choice['index'] ) ? absint( $choice['index'] ) : 0,
-						'message'       => array(
-							'role'    => isset( $choice['message']['role'] ) ? sanitize_text_field( $choice['message']['role'] ) : 'assistant',
-							'content' => isset( $choice['message']['content'] ) ? $choice['message']['content'] : '',
-						),
-						'finish_reason' => isset( $choice['finish_reason'] ) ? sanitize_text_field( $choice['finish_reason'] ) : null,
-					);
+			$error_code = 'wp_mcp_ai_kimi_api_error';
 
-					// Handle tool calls.
-					if ( isset( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] ) ) {
-						$normalized_choice['message']['tool_calls'] = $choice['message']['tool_calls'];
-					}
-
-					// Handle reasoning content (thinking models).
-					if ( isset( $choice['message']['reasoning_content'] ) ) {
-						$normalized_choice['message']['reasoning_content'] = $choice['message']['reasoning_content'];
-					}
-
-					$normalized['choices'][] = $normalized_choice;
-				}
-			}
-
-			// Normalize usage.
-			if ( isset( $api_response['usage'] ) && is_array( $api_response['usage'] ) ) {
-				$normalized['usage'] = array(
-					'prompt_tokens'     => isset( $api_response['usage']['prompt_tokens'] ) ? absint( $api_response['usage']['prompt_tokens'] ) : 0,
-					'completion_tokens' => isset( $api_response['usage']['completion_tokens'] ) ? absint( $api_response['usage']['completion_tokens'] ) : 0,
-					'total_tokens'      => isset( $api_response['usage']['total_tokens'] ) ? absint( $api_response['usage']['total_tokens'] ) : 0,
+			if ( 401 === $code ) {
+				$error_code            = 'wp_mcp_ai_kimi_auth_error';
+				$error_data['actions'] = array(
+					'auth_info' => __( 'Verify your Kimi API key in NV oOS → Providers → Kimi.', 'mcp-ai-wpoos' ),
 				);
-
-				// Handle cached tokens if present.
-				if ( isset( $api_response['usage']['cached_tokens'] ) ) {
-					$normalized['usage']['cached_tokens'] = absint( $api_response['usage']['cached_tokens'] );
+			} elseif ( 429 === $code ) {
+				$error_code  = 'wp_mcp_ai_rate_limit_exceeded';
+				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( ! empty( $retry_after ) ) {
+					$error_data['retry_after'] = absint( $retry_after );
 				}
+				$error_data['actions'] = array(
+					'rate_limit_info' => __( 'The Kimi API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
+				);
 			}
 
-			/**
-			 * Filter the normalized Kimi response.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param array $normalized   The normalized response.
-			 * @param array $api_response The original API response.
-			 */
-			return apply_filters( 'wp_mcp_ai_kimi_normalized_response', $normalized, $api_response );
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Kimi returned an error response.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+			}
+
+			return new WP_Error( $error_code, $error_message, $error_data );
+		}
+
+		/**
+		 * Normalise a Kimi response to the plugin's internal flat format.
+		 *
+		 * The REST layer and chat service expect `content` at the top level,
+		 * matching the contract used by all other providers (DeepSeek, OpenRouter,
+		 * DigitalOcean, etc.). The full API response is preserved in `raw`.
+		 *
+		 * @since 2026.05
+		 * @param array $decoded Decoded JSON response.
+		 * @return array Normalised response.
+		 */
+		protected function normalize_response( array $decoded ) {
+			$choice  = isset( $decoded['choices'][0] ) ? $decoded['choices'][0] : array();
+			$message = isset( $choice['message'] ) ? $choice['message'] : array();
+			$content = isset( $message['content'] ) ? $message['content'] : '';
+
+			$normalized = array(
+				'content'       => $content,
+				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
+				'usage'         => isset( $decoded['usage'] ) ? $decoded['usage'] : array(),
+				'raw'           => $decoded,
+			);
+
+			// Tool calls (function calling).
+			if ( ! empty( $message['tool_calls'] ) ) {
+				$normalized['tool_calls'] = $message['tool_calls'];
+			}
+
+			// Reasoning content for thinking models (kimi-k2-thinking).
+			if ( ! empty( $message['reasoning_content'] ) ) {
+				$normalized['reasoning_content'] = $message['reasoning_content'];
+			}
+
+			return $normalized;
 		}
 	}
 }

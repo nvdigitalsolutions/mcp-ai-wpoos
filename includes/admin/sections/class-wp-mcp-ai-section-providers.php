@@ -219,8 +219,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get Kimi (Moonshot AI) models from Model Config.
+			$kimi_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$kimi_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'kimi' );
+			}
+
+			// Fallback to curated list when catalog is not available.
+			if ( empty( $kimi_models ) ) {
+				$kimi_models = array(
+					'kimi-k2.6'        => 'Kimi K2.6 (Latest, 256K, Recommended)',
+					'kimi-k2.5'        => 'Kimi K2.5 (256K, tool calling)',
+					'kimi-k2'          => 'Kimi K2 (256K, tool calling)',
+					'kimi-k2-thinking'  => 'Kimi K2 Thinking (256K, no tools)',
+					'moonshot-v1-128k' => 'Moonshot V1 128K (128K, tool calling)',
+					'moonshot-v1-32k'  => 'Moonshot V1 32K',
+					'moonshot-v1-8k'   => 'Moonshot V1 8K',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1276,6 +1295,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'gte-large-en-v1.5',
 				),
 
+				// Kimi (Moonshot AI) Provider Settings.
+				'enable_kimi'                        => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Kimi Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Kimi (Moonshot AI) as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Kimi is Moonshot AI\'s OpenAI-compatible large language model family. moonshot-v1-* models support tool calling and long context. kimi-k1.5-* models are reasoning-focused and do not support tools. kimi-k2-* models offer advanced agentic capabilities with tool calling.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'kimi_api_key'                       => array(
+					'type'         => 'password',
+					'label'        => __( 'Kimi API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Moonshot AI Platform URL */
+						__( 'Your Moonshot AI (Kimi) API key. Get one from <a href="%s" target="_blank">Moonshot AI Platform</a>. The same key works for all Kimi / Moonshot models.', 'mcp-ai-wpoos' ),
+						'https://platform.moonshot.cn/console/api-keys'
+					),
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
+				),
+				'kimi_model'                         => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Kimi Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Kimi model to use. kimi-k2.6 is the latest agentic model with 256K context and tool calling (recommended). moonshot-v1-128k is the stable general-purpose option. kimi-k2-thinking is a chain-of-thought reasoning model without tool support.', 'mcp-ai-wpoos' ),
+					'options'     => $kimi_models,
+					'default'     => 'kimi-k2.6',
+				),
+				'kimi_base_url'                      => array(
+					'type'        => 'url',
+					'label'       => __( 'Kimi API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Kimi API requests. Leave empty to use the default (https://api.moonshot.cn/v1). Useful for regional proxies or Kimi-compatible endpoints.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.moonshot.cn/v1',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1375,6 +1427,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'DigitalOcean', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'enable_digitalocean', 'digitalocean_api_key', 'digitalocean_model', 'digitalocean_base_url', 'digitalocean_embedding_model' ),
+				),
+				'kimi'                 => array(
+					'id'     => 'kimi',
+					'label'  => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_kimi', 'kimi_api_key', 'kimi_model', 'kimi_base_url' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1718,7 +1776,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

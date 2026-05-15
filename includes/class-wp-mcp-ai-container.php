@@ -339,6 +339,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'client.kimi',
+			function () {
+				return new WP_MCP_AI_Kimi_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
@@ -355,7 +362,8 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.nvidia' ),
 					$container->get( 'client.deepseek' ),
 					$container->get( 'client.openrouter' ),
-					$container->get( 'client.digitalocean' )
+					$container->get( 'client.digitalocean' ),
+					$container->get( 'client.kimi' )
 				);
 			}
 		);
