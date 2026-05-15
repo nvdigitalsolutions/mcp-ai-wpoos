@@ -19690,6 +19690,15 @@
         // Call original init with optional scope
         init( scope );
 
+        // Initialize any chat-bubble widgets in the same pass as chat widgets.
+        // chat-bubble.js defines window.wpMcpAiChatBubble synchronously when
+        // it executes (before DOMContentLoaded), so it is always available here.
+        // This mirrors how the chat widget is discovered via [data-wp-mcp-ai-chat],
+        // making bubble initialization part of the same single reliable init pass.
+        if ( window.wpMcpAiChatBubble && typeof window.wpMcpAiChatBubble.init === 'function' ) {
+            window.wpMcpAiChatBubble.init( scope );
+        }
+
         // Initialize global job event bus listeners (once)
         initializeGlobalJobListeners();
 

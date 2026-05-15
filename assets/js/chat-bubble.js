@@ -500,6 +500,13 @@
 	 * Global API
 	 * ------------------------------------------------------------- */
 
+	// Register the global API immediately (synchronously, before DOMContentLoaded).
+	// chat-bundle.min.js loads first and calls initWithCronStatus() on
+	// DOMContentLoaded; by the time that fires, this global is already defined,
+	// so initWithCronStatus can call window.wpMcpAiChatBubble.init() directly.
+	// This makes bubble initialization mirror the chat-widget discovery pattern:
+	// both happen in the same single DOMContentLoaded pass rather than relying on
+	// a second independent DOMContentLoaded listener.
 	window.wpMcpAiChatBubble = {
 
 		/**
@@ -599,9 +606,17 @@
 	 * Bootstrap
 	 * ------------------------------------------------------------- */
 
+	// Primary path: wpMcpAiChatBubble.init() is called by chat-bundle.min.js
+	// inside initWithCronStatus() on DOMContentLoaded (see chat.js).  This is
+	// the same reliable single-pass mechanism that initialises chat widgets.
+	//
+	// Fallback path: own DOMContentLoaded / immediate-call handles edge cases
+	// such as deferred script loading or the bubble appearing without the bundle.
 	if ( document.readyState === 'loading' ) {
 		document.addEventListener( 'DOMContentLoaded', init );
 	} else {
+		// Script loaded after DOMContentLoaded (e.g. deferred by a caching plugin).
+		// Call init() directly so bubble events are bound regardless.
 		init();
 	}
 
