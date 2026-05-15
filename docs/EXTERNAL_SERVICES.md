@@ -2,8 +2,8 @@
 
 This document provides a comprehensive list of all external services used by the Open Operator System (oOS) plugin, including their purpose, data transmission details, and links to Terms of Service and Privacy Policies.
 
-**Last Updated:** March 2026  
-**Plugin Version:** 1.1.4
+**Last Updated:** May 2026  
+**Plugin Version:** 1.1.18
 
 ---
 
@@ -121,14 +121,15 @@ These are the core AI services that power the plugin's assistant functionality. 
 ### 4. Ollama (Self-Hosted)
 
 **Service URL:** Your local server (typically `http://localhost:11434`)  
-**Purpose:** Privacy-focused local AI processing  
-**Data Sent:** None (runs entirely on your server)  
+**Purpose:** Privacy-focused local AI processing; also supports cloud-routed models via Ollama's `:cloud` model-suffix feature  
+**Data Sent:** None for standard local models (runs entirely on your server). **Cloud-routed models only:** chat messages and system prompts are forwarded by your Ollama server to the respective third-party cloud AI provider (e.g. Moonshot AI for Kimi cloud models — see section 6e below).  
 **When Used:** When configured as AI provider
 
 **Legal & Privacy:**
-- **No external data transmission**
-- **Complete data privacy and control**
-- **Recommended for sensitive data**
+- **No external data transmission** for standard local models
+- **Cloud-routed models:** Data is forwarded by the Ollama server to the relevant upstream provider (see section 6e for Kimi/Moonshot AI)
+- **Complete data privacy and control** when using local models
+- **Recommended for sensitive data** (use local models only, not cloud-routed models)
 - **GitHub:** https://github.com/ollama/ollama
 - **Documentation:** https://ollama.ai/
 
@@ -198,6 +199,100 @@ These are the core AI services that power the plugin's assistant functionality. 
 **Related Files:**
 - `includes/class-wp-mcp-ai-nvidia-client.php`
 - `includes/infrastructure/providers/class-wp-mcp-ai-nvidia-provider-client.php`
+
+---
+
+### 6b. DeepSeek API
+
+**Service URL:** `https://api.deepseek.com` (default; supports custom base URL for proxies or regional endpoints)  
+**Purpose:** Cloud AI inference via DeepSeek's OpenAI-compatible API (deepseek-chat, deepseek-reasoner, deepseek-coder)  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and assistant instructions
+- Tool definitions and execution results
+
+**When Used:** Every time an AI assistant is used with DeepSeek as the provider
+
+**Legal & Privacy:**
+- **Terms of Service:** https://platform.deepseek.com/terms
+- **Privacy Policy:** https://platform.deepseek.com/privacy
+- **API Documentation:** https://platform.deepseek.com/api-docs
+- **Data Usage:** See DeepSeek's privacy policy for data-handling details
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-deepseek-client.php`
+
+---
+
+### 6c. OpenRouter API
+
+**Service URL:** `https://openrouter.ai/api/v1` (default; supports custom base URL for proxies)  
+**Purpose:** Unified AI gateway providing access to OpenAI, Anthropic, Google, Meta, Mistral, and 100+ models via a single API key and an OpenAI-compatible interface  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and assistant instructions
+- Tool definitions and execution results
+- HTTP-Referer (set to your site URL) and X-Title (set to your site name) headers per OpenRouter API documentation for dashboard attribution — no private user data is included in these headers
+
+**When Used:** Every time an AI assistant is used with OpenRouter as the provider
+
+**Legal & Privacy:**
+- **Terms of Service:** https://openrouter.ai/terms
+- **Privacy Policy:** https://openrouter.ai/privacy
+- **API Documentation:** https://openrouter.ai/docs/api-reference/overview
+- **Data Usage:** OpenRouter forwards requests to the selected upstream model provider; review both OpenRouter's privacy policy and the chosen upstream provider's policies for data-handling details
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-openrouter-client.php`
+- `includes/infrastructure/providers/class-wp-mcp-ai-openrouter-provider-client.php`
+
+---
+
+### 6d. DigitalOcean Serverless Inference API
+
+**Service URL:** `https://inference.do-ai.run/v1` (default; supports custom base URL)  
+**Purpose:** Cloud AI inference via DigitalOcean's Gradient Platform — hosts Llama, DeepSeek-R1 distill, OpenAI gpt-oss, embedding models (e.g. `gte-large-en-v1.5`), and more without requiring users to manage GPU infrastructure  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and assistant instructions
+- Tool definitions and execution results
+- Text to embed (when using the DigitalOcean embedding service)
+
+**When Used:**
+- Every time an AI assistant is used with DigitalOcean as the provider
+- When the embedding service uses the configured DigitalOcean embedding model (default: `gte-large-en-v1.5`)
+
+**Legal & Privacy:**
+- **Terms of Service:** https://www.digitalocean.com/legal/terms-of-service-agreement
+- **Privacy Policy:** https://www.digitalocean.com/legal/privacy-policy
+- **Gradient Platform Docs:** https://docs.digitalocean.com/products/paperspace/
+- **Data Usage:** Review DigitalOcean's privacy policy for data-handling details
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-digitalocean-client.php`
+- `includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php`
+
+---
+
+### 6e. Kimi (Moonshot AI) — Accessed via Ollama Cloud Routing
+
+**Service URL:** Routed via your Ollama endpoint to Moonshot AI cloud infrastructure at `https://api.moonshot.cn`  
+**Purpose:** Cloud AI inference via Moonshot AI's Kimi large language models, accessed through Ollama's cloud-model routing feature (model IDs: `kimi-k2.5:cloud`, `kimi-k2.6:cloud`)  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts
+
+**When Used:** Only when Ollama is configured as the AI provider **and** a Kimi cloud model is selected (`kimi-k2.5:cloud` or `kimi-k2.6:cloud`). Standard local Ollama models do not involve this service.
+
+**Legal & Privacy:**
+- **Terms of Service:** https://platform.moonshot.cn/docs/terms-of-use
+- **Privacy Policy:** https://platform.moonshot.cn/docs/privacy-policy
+- **Moonshot AI Website:** https://www.moonshot.cn
+- **Note:** NV oOS connects only to your configured Ollama endpoint. Ollama's cloud routing feature then forwards those requests to Moonshot AI. This transmission is not initiated directly by NV oOS; review Moonshot AI's policies before selecting Kimi cloud models.
+
+**Related Files:**
+- `includes/services/class-wp-mcp-ai-model-service.php` (model catalog entry)
+- `includes/admin/class-wp-mcp-ai-model-config-renderer.php` (capability flags)
 
 ---
 
@@ -988,6 +1083,10 @@ When adding a new external service integration:
 | LM Studio | Active | 2026-02 | Self-hosted |
 | Cloudflare Workers AI | Active | 2026-02 | Image generation |
 | NVIDIA NIM | Active | 2026-04 | Cloud AI inference |
+| DeepSeek API | Active | 2026-05 | Cloud AI inference (added v1.1.15) |
+| OpenRouter API | Active | 2026-05 | Unified AI gateway (added v1.1.15) |
+| DigitalOcean Serverless Inference | Active | 2026-05 | Cloud AI + embeddings (added v1.1.18) |
+| Kimi / Moonshot AI (via Ollama) | Active | 2026-05 | Cloud-routed via Ollama (added v1.1.15) |
 | Brave Search | Active | 2026-02 | Requires API key |
 | Open-Meteo | Active | 2026-02 | Free tier available |
 | ReliefWeb | Active | 2026-02 | Public API |
