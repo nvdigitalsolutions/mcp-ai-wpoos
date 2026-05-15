@@ -491,6 +491,11 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		$html = $response['data']['html'];
 		$this->assertStringContainsString( 'wp-mcp-ai-chat', $html, 'HTML should contain chat container' );
 		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $html, 'HTML should contain chat data attribute' );
+
+		// Ensure interactive chat controls are preserved after sanitization.
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__submit', $html, 'HTML should preserve submit button markup' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__voice-chat', $html, 'HTML should preserve voice chat button markup' );
+		$this->assertStringContainsString( '<svg', $html, 'HTML should preserve SVG button icons used by chat controls' );
 	}
 
 	/**
