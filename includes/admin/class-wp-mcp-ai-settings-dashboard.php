@@ -655,6 +655,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'gemini_api_key',
 					'anthropic_api_key',
 					'huggingface_api_key',
+					'kimi_api_key',
 					'ollama_endpoint_url',
 					'lm_studio_endpoint_url',
 					'cloudflare_account_id',
