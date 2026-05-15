@@ -356,6 +356,67 @@ add_action( 'nvoos_docs_hub_after_rebuild', function( $result ) {
 
 ---
 
+## Guest / Public Access (v0.3.8+)
+
+The `[nvoos_docs]` shortcode supports guest/public access with configurable security controls:
+
+### Public Access Setting
+
+Navigate to **Settings → NV oOS Docs Hub → General Settings**:
+
+- **Allow Public (Guest) Access** — When enabled, unauthenticated users can view documentation via the `[nvoos_docs]` shortcode. When disabled, only logged-in users can access the documentation.
+
+### Context File Protection
+
+`.context/` source pages (internal agent context files) are automatically protected:
+
+- **Non-admin users** — Context pages are stripped from the manifest and return HTTP 403 if accessed directly.
+- **Admin users** (`manage_options`) — Can view context pages when the "Sources: Context Files" setting is enabled.
+
+### Filter Hooks
+
+#### `nvoos_docs_hub_can_render`
+
+Control whether the shortcode should render on a specific page:
+
+```php
+add_filter( 'nvoos_docs_hub_can_render', function( $can_render, $post_id ) {
+    // Disable docs hub on specific pages
+    if ( 123 === $post_id ) {
+        return false;
+    }
+    return $can_render;
+}, 10, 2 );
+```
+
+#### `nvoos_docs_hub_public_permission`
+
+Customize the public access permission check:
+
+```php
+add_filter( 'nvoos_docs_hub_public_permission', function( $allowed ) {
+    // Add custom logic (e.g., check for a specific cookie)
+    return $allowed;
+} );
+```
+
+### Admin Notice
+
+When the `[nvoos_docs]` shortcode is present on a page but public access is disabled, administrators see a dismissible notice:
+
+> **Docs Hub:** The `[nvoos_docs]` shortcode is active on this page, but public access is disabled in settings. Only logged-in users will see the documentation.
+
+### REST API Permissions
+
+| Endpoint | Guest (Public Access ON) | Guest (Public Access OFF) | Logged-in |
+|----------|-------------------------|--------------------------|-----------|
+| `GET /manifest` | ✅ | ❌ 401 | ✅ |
+| `GET /page/{slug}` | ✅ (context pages excluded) | ❌ 401 | ✅ |
+| `GET /search` | ✅ | ❌ 401 | ✅ |
+| `POST /rebuild` | ❌ 403 | ❌ 403 | ❌ 403 (requires `manage_options`) |
+
+---
+
 ## Technical Architecture
 
 ```
