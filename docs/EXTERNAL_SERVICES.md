@@ -2,8 +2,8 @@
 
 This document provides a comprehensive list of all external services used by the Open Operator System (oOS) plugin, including their purpose, data transmission details, and links to Terms of Service and Privacy Policies.
 
-**Last Updated:** March 2026  
-**Plugin Version:** 1.1.4
+**Last Updated:** May 2026  
+**Plugin Version:** 1.1.18
 
 ---
 
@@ -198,6 +198,117 @@ These are the core AI services that power the plugin's assistant functionality. 
 **Related Files:**
 - `includes/class-wp-mcp-ai-nvidia-client.php`
 - `includes/infrastructure/providers/class-wp-mcp-ai-nvidia-provider-client.php`
+
+---
+
+### 6b. DeepSeek API
+
+**Service URL:** `https://api.deepseek.com` (default; supports custom base URL for proxies or regional endpoints)  
+**Purpose:** Cloud AI inference via DeepSeek's OpenAI-compatible API (deepseek-chat, deepseek-reasoner, deepseek-coder)  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and instructions
+- Tool definitions and tool execution results
+- Reasoning content passthrough (deepseek-reasoner)
+
+**When Used:** Every time an AI assistant is used with DeepSeek as the provider
+
+**Legal & Privacy:**
+- **Terms of Service:** https://platform.deepseek.com/terms
+- **Privacy Policy:** https://platform.deepseek.com/privacy
+- **Data Usage:** See DeepSeek's privacy policy for data handling details
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-deepseek-client.php`
+
+---
+
+### 6c. OpenRouter API
+
+**Service URL:** `https://openrouter.ai/api/v1`  
+**Purpose:** Unified OpenAI-compatible gateway routing to 200+ models from OpenAI, Anthropic, Google, Meta, Mistral, and more via a single API key  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and instructions
+- Tool definitions and tool execution results
+
+**When Used:** Every time an AI assistant is used with OpenRouter as the provider
+
+**Legal & Privacy:**
+- **Terms of Service:** https://openrouter.ai/terms
+- **Privacy Policy:** https://openrouter.ai/privacy
+- **Documentation:** https://openrouter.ai/docs
+- **Data Usage:** Requests are routed to upstream provider APIs; review both OpenRouter and the upstream provider's policies
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-openrouter-client.php`
+
+---
+
+### 6d. Kimi (Moonshot AI) API
+
+**Service URL:** `https://api.moonshot.cn/v1` (default; supports custom base URL for proxies)  
+**Purpose:** Cloud AI inference via Moonshot AI's OpenAI-compatible API supporting Kimi K2.6, K2.5, K2, K2-Thinking (chain-of-thought), and legacy moonshot-v1 model families with up to 256K context windows  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and instructions
+- Tool definitions and tool execution results (stripped automatically for reasoning models that do not support tool calling)
+- Token estimation requests (messages only, for pre-request token counting)
+
+**When Used:**
+- Every time an AI assistant is used with Kimi as the provider
+- Token estimation endpoint called before each request when configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://platform.moonshot.cn/docs/policy/service-agreement
+- **Privacy Policy:** https://platform.moonshot.cn/docs/policy/privacy-policy
+- **API Documentation:** https://platform.moonshot.cn/docs/api-reference
+- **Data Usage:** See Moonshot AI's privacy policy for data handling details
+
+**Supported Models:**
+- `kimi-k2.6` — 256K context, multimodal, tool calling (default)
+- `kimi-k2.5` — 256K context, multimodal, tool calling
+- `kimi-k2` — 256K context, tool calling
+- `kimi-k2-thinking` — 256K context, chain-of-thought reasoning (no tool calling)
+- `moonshot-v1-128k`, `moonshot-v1-32k`, `moonshot-v1-8k` — legacy models
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-kimi-client.php`
+- `includes/admin/sections/class-wp-mcp-ai-section-kimi.php`
+
+---
+
+### 6e. DigitalOcean Serverless Inference API
+
+**Service URL:** `https://inference.do-ai.run/v1` (supports custom base URL override)  
+**Purpose:** Cloud AI inference via DigitalOcean's OpenAI-compatible serverless inference platform; also provides native embeddings via the `/embeddings` endpoint  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and instructions
+- Tool definitions and tool execution results
+- Embedding text (when DigitalOcean is the configured embedding provider)
+
+**When Used:**
+- Every time an AI assistant is used with DigitalOcean as the provider
+- Embedding requests when DigitalOcean is configured as the embedding provider and vector-context features are active
+
+**Legal & Privacy:**
+- **Terms of Service:** https://www.digitalocean.com/legal/terms-of-service-agreement
+- **Privacy Policy:** https://www.digitalocean.com/legal/privacy-policy
+- **AI / Inference Documentation:** https://docs.digitalocean.com/products/ai-ml/
+- **Data Usage:** Processed within DigitalOcean's infrastructure; see their privacy policy
+
+**Supported Models (seeded catalogue):**
+- `llama3.3-70b-instruct` (default chat model)
+- `llama3.1-8b-instruct`
+- `deepseek-r1-distill-llama-70b`
+- `openai-gpt-oss-120b`
+- `gte-large-en-v1.5` (default embedding model)
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-digitalocean-client.php`
+- `includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php`
+- `includes/services/embedding/class-wp-mcp-ai-embedding-provider-digitalocean.php`
 
 ---
 
@@ -988,6 +1099,10 @@ When adding a new external service integration:
 | LM Studio | Active | 2026-02 | Self-hosted |
 | Cloudflare Workers AI | Active | 2026-02 | Image generation |
 | NVIDIA NIM | Active | 2026-04 | Cloud AI inference |
+| DeepSeek API | Active | 2026-05 | Cloud AI inference |
+| OpenRouter API | Active | 2026-05 | Multi-model gateway |
+| Kimi (Moonshot AI) | Active | 2026-05 | Cloud AI inference |
+| DigitalOcean Serverless Inference | Active | 2026-05 | Cloud AI inference + embeddings |
 | Brave Search | Active | 2026-02 | Requires API key |
 | Open-Meteo | Active | 2026-02 | Free tier available |
 | ReliefWeb | Active | 2026-02 | Public API |
