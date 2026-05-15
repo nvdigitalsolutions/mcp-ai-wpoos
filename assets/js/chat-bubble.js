@@ -45,11 +45,25 @@
 	const STORAGE_PREFIX = 'wp-mcp-ai-chat-bubble-state-';
 
 	/**
+	 * Console log prefix for chat-bubble diagnostics.
+	 *
+	 * @type {string}
+	 */
+	const LOG_PREFIX = '[NV oOS][ChatBubble]';
+
+	/**
 	 * Registry of initialised bubble instances keyed by bubble ID.
 	 *
 	 * @type {Object<string, BubbleInstance>}
 	 */
 	const instances = {};
+
+	/**
+	 * MutationObserver instance for late-injected bubble markup.
+	 *
+	 * @type {MutationObserver|null}
+	 */
+	let domObserver = null;
 
 	/* ---------------------------------------------------------------
 	 * Helpers
@@ -114,6 +128,25 @@
 		return window.innerWidth <= 480;
 	}
 
+	/**
+	 * Emit a scoped, low-noise console log when available.
+	 *
+	 * @param {string} message Log message.
+	 * @param {Object} details Optional structured details.
+	 */
+	function log( message, details ) {
+		if ( ! window.console || typeof console.log !== 'function' ) {
+			return;
+		}
+
+		if ( details ) {
+			console.log( LOG_PREFIX + ' ' + message, details );
+			return;
+		}
+
+		console.log( LOG_PREFIX + ' ' + message );
+	}
+
 	/* ---------------------------------------------------------------
 	 * BubbleInstance – encapsulates one chat bubble
 	 * ------------------------------------------------------------- */
@@ -129,6 +162,7 @@
 		this.rememberState = rootEl.getAttribute( 'data-remember-state' ) === 'true';
 		this.autoOpenDelay = parseInt( rootEl.getAttribute( 'data-auto-open-delay' ), 10 ) || 0;
 		this.isOpen        = false;
+		this.ready         = false;
 		this.chatInited    = false;
 		this.autoOpenTimer = null;
 		this.promoted      = false;
@@ -152,6 +186,7 @@
 		this._bindEvents();
 		this._restoreState();
 		this._scheduleAutoOpen();
+		this.ready = true;
 	}
 
 	/**
@@ -193,6 +228,10 @@
 		// Trigger button – click and keyboard.
 		this.trigger.addEventListener( 'click', function( e ) {
 			e.preventDefault();
+			log( 'Trigger clicked', {
+				bubbleId: self.bubbleId,
+				action: self.isOpen ? 'close' : 'open',
+			} );
 			self.toggle();
 		} );
 
@@ -302,6 +341,9 @@
 			window.wpMcpAiChatInit &&
 			typeof window.wpMcpAiChatInit.init === 'function'
 		) {
+			log( 'Initializing embedded chat', {
+				bubbleId: this.bubbleId,
+			} );
 			window.wpMcpAiChatInit.init( this.panel );
 		}
 	};
@@ -331,6 +373,10 @@
 		if ( this.isOpen ) {
 			return;
 		}
+
+		log( 'Opening bubble', {
+			bubbleId: this.bubbleId,
+		} );
 
 		this.isOpen = true;
 		this.root.classList.add( CLASSES.OPEN );
@@ -464,6 +510,7 @@
 	function init( scope ) {
 		let roots;
 		const container = scope || document;
+		const initializedIds = [];
 
 		// When Elementor passes the widget wrapper it may or may not be the
 		// root element itself – handle both cases.
@@ -481,7 +528,7 @@
 
 			if ( instances[ id ] ) {
 				// Same DOM node – already initialised, skip.
-				if ( instances[ id ].root === root ) {
+				if ( instances[ id ].root === root && instances[ id ].ready ) {
 					continue;
 				}
 
@@ -493,6 +540,49 @@
 			}
 
 			instances[ id ] = new BubbleInstance( root );
+
+			if ( ! instances[ id ].ready ) {
+				delete instances[ id ];
+				continue;
+			}
+
+			initializedIds.push( id );
+		}
+
+		if ( initializedIds.length ) {
+			log( 'Initialized bubble instances', {
+				bubbleIds: initializedIds,
+			} );
+		}
+	}
+
+	/**
+	 * Inspect an added DOM node and initialize any bubble markup it contains.
+	 *
+	 * @param {Node} node Added DOM node.
+	 */
+	function maybeInitAddedNode( node ) {
+		if ( ! node || node.nodeType !== 1 ) {
+			return;
+		}
+
+		if (
+			node.classList &&
+			node.classList.contains( CLASSES.ROOT )
+		) {
+			log( 'Detected late-added bubble root', {
+				bubbleId: node.getAttribute( 'data-bubble-id' ) || 'default',
+			} );
+			init( node );
+			return;
+		}
+
+		if (
+			node.querySelector &&
+			node.querySelector( '.' + CLASSES.ROOT )
+		) {
+			log( 'Detected late-added bubble subtree' );
+			init( node );
 		}
 	}
 
@@ -602,6 +692,34 @@
 		}
 	}
 
+	/**
+	 * Register a MutationObserver so late-injected bubble markup self-initializes.
+	 */
+	function registerDomObserver() {
+		if ( domObserver || ! window.MutationObserver ) {
+			return;
+		}
+
+		if ( ! document.body ) {
+			return;
+		}
+
+		domObserver = new MutationObserver( function( mutations ) {
+			for ( let i = 0; i < mutations.length; i++ ) {
+				const addedNodes = mutations[ i ].addedNodes;
+
+				for ( let j = 0; j < addedNodes.length; j++ ) {
+					maybeInitAddedNode( addedNodes[ j ] );
+				}
+			}
+		} );
+
+		domObserver.observe( document.body, {
+			childList: true,
+			subtree: true,
+		} );
+	}
+
 	/* ---------------------------------------------------------------
 	 * Bootstrap
 	 * ------------------------------------------------------------- */
@@ -613,11 +731,15 @@
 	// Fallback path: own DOMContentLoaded / immediate-call handles edge cases
 	// such as deferred script loading or the bubble appearing without the bundle.
 	if ( document.readyState === 'loading' ) {
-		document.addEventListener( 'DOMContentLoaded', init );
+		document.addEventListener( 'DOMContentLoaded', function() {
+			init();
+			registerDomObserver();
+		} );
 	} else {
 		// Script loaded after DOMContentLoaded (e.g. deferred by a caching plugin).
 		// Call init() directly so bubble events are bound regardless.
 		init();
+		registerDomObserver();
 	}
 
 	// Elementor: register immediately if elementorFrontend is already loaded.
