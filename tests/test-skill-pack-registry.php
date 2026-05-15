@@ -130,12 +130,13 @@ class WP_MCP_AI_Skill_Pack_Registry_Test extends WP_UnitTestCase {
 	/* ── Default packs ────────────────────────────────────────────────────── */
 
 	/**
-	 * The two built-in packs are auto-registered.
+	 * The three built-in packs are auto-registered.
 	 */
 	public function test_default_packs_are_registered() {
 		$packs = WP_MCP_AI_Skill_Pack_Registry::instance()->get_packs();
 		$this->assertArrayHasKey( 'wordpress-developer', $packs );
 		$this->assertArrayHasKey( 'document-authoring', $packs );
+		$this->assertArrayHasKey( 'ui-ux-design', $packs );
 
 		$wp_pack = $packs['wordpress-developer'];
 		$this->assertSame( 'wordpress-developer', $wp_pack['slug'] );
@@ -145,6 +146,12 @@ class WP_MCP_AI_Skill_Pack_Registry_Test extends WP_UnitTestCase {
 		$doc_pack = $packs['document-authoring'];
 		$this->assertContains( 'docx', $doc_pack['skills'] );
 		$this->assertContains( 'pdf', $doc_pack['skills'] );
+
+		$ui_pack = $packs['ui-ux-design'];
+		$this->assertSame( 'ui-ux-design', $ui_pack['slug'] );
+		$this->assertContains( 'ui-ux-pro-max', $ui_pack['skills'] );
+		$this->assertContains( 'frontend-design', $ui_pack['skills'] );
+		$this->assertContains( 'canvas-design', $ui_pack['skills'] );
 	}
 
 	/* ── Filter extensibility ─────────────────────────────────────────────── */

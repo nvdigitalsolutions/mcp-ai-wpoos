@@ -47,7 +47,7 @@ class NV_oOS_Docs_Hub_Shortcode {
 		// (just before the sprintf below) so any early return added in the
 		// future does not skew instance numbering.
 		static $instance_count = 0;
-		$atts = shortcode_atts(
+		$atts                  = shortcode_atts(
 			array(
 				'section' => 'all',
 				'theme'   => 'auto',
@@ -77,6 +77,40 @@ class NV_oOS_Docs_Hub_Shortcode {
 			$home     = sanitize_text_field( $settings['default_home'] );
 		}
 
+		/**
+		 * Filter whether the shortcode should render at all.
+		 *
+		 * Return false to suppress output entirely (e.g. when the addon is
+		 * disabled or the current user lacks access).
+		 *
+		 * @since 0.4.0
+		 *
+		 * @param bool $can_render Whether to render the shortcode.
+		 */
+		if ( ! apply_filters( 'nvoos_docs_hub_can_render', true ) ) {
+			return '';
+		}
+
+		// When an admin views a page with the shortcode while public access is
+		// disabled, surface a dismissible notice so they know guests will be
+		// blocked. The notice is injected into the page via an admin_notices
+		// hook rather than inline so it renders in the standard WP notice area.
+		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+		if ( is_admin() && current_user_can( 'manage_options' ) && empty( $settings['public_access'] ) ) {
+			add_action(
+				'admin_notices',
+				static function () {
+					echo '<div class="notice notice-warning is-dismissible"><p>';
+					printf(
+						/* translators: %s: settings page link */
+						esc_html__( 'Docs Hub: Public (guest) access is currently disabled. Visitors who are not logged in will see a login prompt instead of the documentation browser. %s', 'nvoos-docs-hub' ),
+						'<a href="' . esc_url( admin_url( 'options-general.php?page=nvoos-docs-hub' ) ) . '">' . esc_html__( 'Update settings', 'nvoos-docs-hub' ) . '</a>'
+					);
+					echo '</p></div>';
+				}
+			);
+		}
+
 		self::enqueue_assets();
 
 		$config = array(
@@ -85,6 +119,11 @@ class NV_oOS_Docs_Hub_Shortcode {
 			'search'  => $search,
 			'sidebar' => $sidebar,
 			'home'    => $home,
+			// Include the REST base URL in the per-instance data attribute so the
+			// React bundle can bootstrap without relying solely on the
+			// wp_localize_script global (which may be absent when the script is
+			// loaded async or the global is overwritten by another instance).
+			'api_url' => esc_url_raw( rest_url( 'nvoos-docs/v1' ) ),
 		);
 
 		// Localize once per page-load. wp_localize_script is idempotent in

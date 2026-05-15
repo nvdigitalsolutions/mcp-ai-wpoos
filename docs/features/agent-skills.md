@@ -199,7 +199,7 @@ The base plugin ships three packs out of the box:
 |---|---|
 | `wordpress-developer` | `wp-abilities-api`, `wp-action-scheduler`, `wp-html-api`, `wp-i18n-audit`, `wp-plugin-architecture`, `wp-plugin-assets-loading`, `wp-rest-api`, `wp-security-audit`, `wp-security-deep` |
 | `document-authoring`  | `docx`, `pdf`, `pptx`, `doc-coauthoring`, `internal-comms` |
-| `ui-ux-design` | `ui-ux-pro-max`, `frontend-design`, `canvas-design`, `theme-factory` |
+| `ui-ux-design`        | `ui-ux-pro-max`, `frontend-design`, `canvas-design` |
 
 **Install a pack** via *Settings → NV oOS → Advanced → Skill Management → Skill Packs*: each row shows the pack name, member skills, the installed-vs-total count, and an *Install Pack* button. Members already present in `wp-content/uploads/mcp-ai-skills/` are skipped (existing customisations are preserved).
 
