@@ -162,6 +162,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_delete_old_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_kimi_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_kimi_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 
 			// Delegate allowed redirect hosts to the OAuth manager component.
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this->oauth_manager, 'allow_gmail_oauth_redirect_host' ) ) ) {
@@ -214,6 +216,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 					'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'mcp-ai-wpoos' ),
 					'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'mcp-ai-wpoos' ),
+				),
+				'kimi'             => array(
+					'label'            => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'kimi_api_key' ),
+					'fields'           => array(
+						'kimi_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Provides access to Kimi K2.5/K2.6 models with 256K context windows and multimodal capabilities.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add your Moonshot AI API key to use Kimi as a provider.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://platform.moonshot.cn/',
 				),
 				'ollama'           => array(
 					'label'            => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
