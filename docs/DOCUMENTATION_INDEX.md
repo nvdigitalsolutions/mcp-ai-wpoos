@@ -17,6 +17,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **JetEngine CCT memory mirror** — `retrieve_agent_memory` + `recall` hydrate from the CCT mirror when available.
 > - **Security / maintenance** — langsmith `>=0.6.0` (GHSA-3644-q5cj-c5c7); `wp_read_video_metadata` guard in Veo/Sora tools; production autoload restoration.
 > - **Agent surfaces refreshed** — `.bmad/`, `.codex/`, `.context/`, `.devcontainer/`, `.github/agents/`, `.vscode/`, `.zed/` all reviewed and brought in lockstep. `toolkit-spa-maintainer` now mirrored from `examples/agents/` into both `.github/agents/` and `.zed/settings.json` (13 profiles).
+> - **UI/UX Pro Max Skill Bundle** — New bundled Agent Skill `ui-ux-pro-max` with comprehensive UI/UX Design Pack. Includes 25+ CSV data files covering color palettes, typography scales (including Google Fonts), icon libraries, UI components, design patterns, and stack-specific guidelines for React, Vue, Angular, Laravel, Astro, Svelte, Flutter, SwiftUI, Jetpack Compose, and more. Python utility scripts for design system search and core operations. New `ui-ux-design` skill pack. See `includes/bundled-skills/ui-ux-pro-max/`.
 > - **Versioning** — bumped to 1.1.18 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 10, 2026 UPDATE (v1.1.17):** 🛡️💬📚🧪 **WP.ORG COMPLIANCE, CHAT SPA PHASES 1–7, DOCS HUB v0.3.8, TOOLKIT SPA PHASES 5–12, COVERAGE CAMPAIGN**

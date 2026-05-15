@@ -335,6 +335,23 @@ The complete set of changes captured in this release is broken down below; the p
   `wp_mcp_ai_pro_schedule_result_recorded` action.
 - Docs: `docs/features/scheduled-result-widget.md`.
 
+### Added — UI/UX Pro Max Skill Bundle
+
+- `feat(skills): bundle ui-ux-pro-max skill + UI/UX Design Pack`.
+- New bundled skill `ui-ux-pro-max` under `includes/bundled-skills/ui-ux-pro-max/`.
+- Comprehensive design system data including:
+  - Color palettes (`data/colors.csv`)
+  - Typography scales (`data/typography.csv`, `data/google-fonts.csv`)
+  - Icon libraries (`data/icons.csv`)
+  - UI components (`data/app-interface.csv`, `data/design.csv`)
+  - Stack-specific guidelines for React, Vue, Angular, Laravel, Astro, Svelte, Flutter, SwiftUI, Jetpack Compose, and more (`data/stacks/*.csv`)
+  - UX guidelines and reasoning (`data/ux-guidelines.csv`, `data/ui-reasoning.csv`)
+- Python utility scripts (`scripts/core.py`, `scripts/design_system.py`, `scripts/search.py`) for design system operations.
+- Updated `includes/bundled-skills/THIRD_PARTY_NOTICES.md` with attribution.
+- New PHPUnit tests in `tests/test-skill-pack-registry.php`.
+- Skill pack registry integration via `WP_MCP_AI_Skill_Pack_Registry` with new `ui-ux-design` pack.
+- Base plugin skill count updated from 44 to 45.
+
 ## [1.1.17] - 2026-05-10
 
 ### May 10, 2026 — WP.org Compliance Hardening, Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, PHPUnit + Vitest Coverage Campaign, Build-pipeline Split, Dependabot Security Sweep
