@@ -500,6 +500,19 @@
 	padding: 12px;
 }
 
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat-widget,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat-widget__interface {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__assistant,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__transcript-controls {
+	display: none;
+}
+
 .wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__messages {
 	flex: 1;
 	min-height: 0;
