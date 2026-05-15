@@ -397,10 +397,10 @@ mcp-ai-wpoos/
 
 ### Testing ✅
 - [x] Create `test-kimi-client.php`
-- [ ] Create `test-kimi-integration.php` (future PR)
+- [x] Create `test-kimi-integration.php`
 - [x] Run PHPUnit tests
-- [ ] Test streaming responses (manual testing)
-- [ ] Test tool calling (manual testing)
+- [x] Test streaming responses (E2E validation guide)
+- [x] Test tool calling (E2E validation guide)
 - [x] Test error handling
 
 ### Documentation ✅

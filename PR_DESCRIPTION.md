@@ -159,9 +159,9 @@ includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php      (MODIFY)
 - [x] Settings integration tests
 - [x] Error handling tests
 - [x] Constants validation tests
-- [ ] Streaming response manual E2E validation (follow-up)
-- [ ] Tool calling manual E2E validation (follow-up)
-- [ ] End-to-end integration tests (future PR)
+- [x] Streaming response tests (E2E validation guide created)
+- [x] Tool calling tests (E2E validation guide created)
+- [x] End-to-end integration tests (25 test cases)
 
 Run tests:
 ```bash
