@@ -11,6 +11,8 @@
 (function($) {
 	'use strict';
 
+	const config = window.wpMcpAiAssetInventory || null;
+
 	/**
 	 * Asset Inventory Manager
 	 */
@@ -52,22 +54,27 @@
 			const $button = $('#wp-mcp-ai-discover-assets');
 			const $notice = $('.wp-mcp-ai-inventory-notice');
 
+			if (!config) {
+				this.showError('Asset inventory configuration is missing.');
+				return;
+			}
+
 			// Show loading state
-			$button.addClass('loading').text(wpMcpAiAssetInventory.strings.discovering);
+			$button.addClass('loading').text(config.strings.discovering);
 			$notice.hide().removeClass('notice-success notice-error');
 
 			// Make API request
 			$.ajax({
-				url: wpMcpAiAssetInventory.apiUrl + '/discover',
+				url: config.apiUrl + '/discover',
 				method: 'POST',
 				beforeSend: function(xhr) {
-					xhr.setRequestHeader('X-WP-Nonce', wpMcpAiAssetInventory.nonce);
+					xhr.setRequestHeader('X-WP-Nonce', config.nonce);
 				},
 				success: function(response) {
 					if (response.success) {
 						$notice
 							.addClass('notice notice-success')
-							.html('<p>' + wpMcpAiAssetInventory.strings.discoverySuccess + ' (' + parseInt(response.count, 10) + ' assets)</p>')
+							.html('<p>' + config.strings.discoverySuccess + ' (' + parseInt(response.count, 10) + ' assets)</p>')
 							.show();
 
 						// Reload page to show updated inventory
@@ -79,10 +86,10 @@
 					}
 				},
 				error: function(xhr, status, error) {
-					AssetInventoryManager.showError(wpMcpAiAssetInventory.strings.discoveryError + ' ' + error);
+					AssetInventoryManager.showError(config.strings.discoveryError + ' ' + error);
 				},
 				complete: function() {
-					$button.removeClass('loading').text('Discover Assets');
+					$button.removeClass('loading').text(config.strings.discoverButton);
 				}
 			});
 		},
