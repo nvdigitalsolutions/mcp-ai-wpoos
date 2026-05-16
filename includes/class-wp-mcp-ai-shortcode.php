@@ -1741,57 +1741,97 @@ class WP_MCP_AI_Shortcode {
 				}
 			}
 
-			// Additional form element attributes.
-			if ( isset( $tags['form'] ) && is_array( $tags['form'] ) ) {
-				$tags['form']['id']     = true;
-				$tags['form']['class']  = true;
-				$tags['form']['method'] = true;
-				$tags['form']['action'] = true;
-			}
+			// Form element tags must be allowed unconditionally because wp_kses_allowed_html('post')
+			// does not include them in all WordPress versions.  Relying on isset( $tags['form'] )
+			// meant that the <form> tag — and therefore the chat submit handler — was silently
+			// stripped by kses whenever WordPress's default 'post' allowlist lacked form elements,
+			// leaving the rendered chat container with inert buttons.
+			//
+			// Pattern: merge any attrs already on the tag (if WordPress added it), then apply ours.
+			$form_base    = ( isset( $tags['form'] ) && is_array( $tags['form'] ) ) ? $tags['form'] : array();
+			$tags['form'] = array_merge(
+				$form_base,
+				$extra_attrs,
+				array(
+					'id'               => true,
+					'class'            => true,
+					'method'           => true,
+					'action'           => true,
+					'data-instance-id' => true,
+				)
+			);
 
-			if ( isset( $tags['button'] ) && is_array( $tags['button'] ) ) {
-				$tags['button']['type']          = true;
-				$tags['button']['name']          = true;
-				$tags['button']['value']         = true;
-				$tags['button']['title']         = true;
-				$tags['button']['disabled']      = true;
-				$tags['button']['aria-haspopup'] = true;
-				$tags['button']['aria-atomic']   = true;
-				$tags['button']['aria-selected'] = true;
-			}
+			$button_base    = ( isset( $tags['button'] ) && is_array( $tags['button'] ) ) ? $tags['button'] : array();
+			$tags['button'] = array_merge(
+				$button_base,
+				$extra_attrs,
+				array(
+					'type'          => true,
+					'name'          => true,
+					'value'         => true,
+					'title'         => true,
+					'disabled'      => true,
+					'aria-haspopup' => true,
+					'aria-atomic'   => true,
+					'aria-selected' => true,
+				)
+			);
 
-			if ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) {
-				$tags['input']['type']      = true;
-				$tags['input']['name']      = true;
-				$tags['input']['value']     = true;
-				$tags['input']['disabled']  = true;
-				$tags['input']['checked']   = true;
-				$tags['input']['accept']    = true;
-				$tags['input']['multiple']  = true;
-				$tags['input']['min']       = true;
-				$tags['input']['max']       = true;
-				$tags['input']['step']      = true;
-				$tags['input']['maxlength'] = true;
-			}
+			$input_base    = ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) ? $tags['input'] : array();
+			$tags['input'] = array_merge(
+				$input_base,
+				$extra_attrs,
+				array(
+					'type'      => true,
+					'name'      => true,
+					'value'     => true,
+					'disabled'  => true,
+					'checked'   => true,
+					'accept'    => true,
+					'multiple'  => true,
+					'min'       => true,
+					'max'       => true,
+					'step'      => true,
+					'maxlength' => true,
+				)
+			);
 
-			if ( isset( $tags['select'] ) && is_array( $tags['select'] ) ) {
-				$tags['select']['name']     = true;
-				$tags['select']['disabled'] = true;
-				$tags['select']['required'] = true;
-			}
+			$select_base    = ( isset( $tags['select'] ) && is_array( $tags['select'] ) ) ? $tags['select'] : array();
+			$tags['select'] = array_merge(
+				$select_base,
+				$extra_attrs,
+				array(
+					'name'     => true,
+					'disabled' => true,
+					'required' => true,
+				)
+			);
 
-			if ( isset( $tags['option'] ) && is_array( $tags['option'] ) ) {
-				$tags['option']['value']    = true;
-				$tags['option']['selected'] = true;
-			}
+			$option_base    = ( isset( $tags['option'] ) && is_array( $tags['option'] ) ) ? $tags['option'] : array();
+			$tags['option'] = array_merge(
+				$option_base,
+				$extra_attrs,
+				array(
+					'value'    => true,
+					'selected' => true,
+				)
+			);
 
-			if ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) {
-				$tags['textarea']['name']        = true;
-				$tags['textarea']['disabled']    = true;
-				$tags['textarea']['maxlength']   = true;
-				$tags['textarea']['required']    = true;
-				$tags['textarea']['placeholder'] = true;
-			}
+			$textarea_base    = ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) ? $tags['textarea'] : array();
+			$tags['textarea'] = array_merge(
+				$textarea_base,
+				$extra_attrs,
+				array(
+					'id'          => true,
+					'class'       => true,
+					'rows'        => true,
+					'name'        => true,
+					'disabled'    => true,
+					'maxlength'   => true,
+					'required'    => true,
+					'placeholder' => true,
+				)
+			);
 
 			// Safe SVG elements for chat UI icons (no script, foreignObject,
 			// or event-handler attributes).
