@@ -495,6 +495,9 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		// Ensure interactive chat controls are preserved after sanitization.
 		$this->assertStringContainsString( 'wp-mcp-ai-chat__submit', $html, 'HTML should preserve submit button markup' );
 		$this->assertStringContainsString( 'wp-mcp-ai-chat__voice-chat', $html, 'HTML should preserve voice chat button markup' );
+		$this->assertStringContainsString( 'type="button"', $html, 'HTML should preserve button types for interactive chat controls.' );
+		$this->assertStringContainsString( 'type="submit"', $html, 'HTML should preserve submit button type for chat form submission.' );
+		$this->assertStringContainsString( 'hidden', $html, 'HTML should preserve hidden-state attributes required by chat UI toggles.' );
 		$this->assertStringContainsString( '<svg', $html, 'HTML should preserve SVG button icons used by chat controls' );
 	}
 
