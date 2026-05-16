@@ -5928,8 +5928,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $team_response;
 			}
 
-			// Return the unified team response.
-			return rest_ensure_response( $team_response );
+			$assistant_slug = 'unified_team_' . $team_id;
+			$payload        = array(
+				'assistant_id' => $assistant_slug,
+				'data'         => $team_response,
+			);
+
+			if ( $this->request_wants_event_stream( $request ) ) {
+				return $this->stream_event_stream_payload( $payload, 'message' );
+			}
+
+			// Return the unified team response in the same shape as chat-client payloads.
+			return rest_ensure_response( $payload );
 		}
 
 		/**
@@ -5999,15 +6009,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			// Format response similar to regular assistant response.
+			// Format response in the same shape returned by chat-client responses.
 			return array(
-				'role'     => 'assistant',
-				'content'  => $aggregated_response,
-				'metadata' => array(
-					'team_id'            => $team_id,
-					'orchestration_mode' => $orchestration_mode,
-					'result_aggregation' => $result_aggregation,
-					'members_involved'   => count( $member_responses ),
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'     => 'assistant',
+							'content'  => $aggregated_response,
+							'metadata' => array(
+								'team_id'            => $team_id,
+								'orchestration_mode' => $orchestration_mode,
+								'result_aggregation' => $result_aggregation,
+								'members_involved'   => count( $member_responses ),
+							),
+						),
+					),
 				),
 			);
 		}
