@@ -580,9 +580,13 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			return;
 		}
 
+		$sanitized_html = class_exists( 'WP_MCP_AI_Shortcode' )
+			? WP_MCP_AI_Shortcode::kses_chat_output( $html )
+			: wp_kses_post( $html );
+
 		wp_send_json_success(
 			array(
-				'html'   => wp_kses_post( $html ),
+				'html'   => $sanitized_html,
 				'config' => $config,
 			)
 		);
