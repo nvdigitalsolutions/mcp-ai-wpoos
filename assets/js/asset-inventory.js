@@ -75,7 +75,7 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						const assetCount = parseInt(response.count, 10);
+						const assetCount = parseInt(response.count, 10) || 0;
 						console.log('[WP MCP AI] Asset discovery succeeded.', assetCount, 'assets found.');
 						$notice
 							.addClass('notice notice-success')
@@ -101,7 +101,7 @@
 						status: status,
 						error: error,
 						httpStatus: xhr.status,
-						responseText: xhr.responseText
+						responseText: String(xhr.responseText || '').substring(0, 200)
 					});
 					AssetInventoryManager.showError(config.strings.discoveryError + ' ' + error);
 				},

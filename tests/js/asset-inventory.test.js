@@ -55,11 +55,11 @@ describe( 'asset-inventory.js — source structure', () => {
 		);
 	} );
 
-	test( 'logs AJAX error with console.error including responseText', () => {
+	test( 'logs AJAX error with console.error including truncated responseText', () => {
 		expect( sourceCode ).toMatch(
 			/console\.error\s*\(\s*'\[WP MCP AI\] Asset discovery AJAX error\./
 		);
-		expect( sourceCode ).toMatch( /responseText\s*:\s*xhr\.responseText/ );
+		expect( sourceCode ).toMatch( /responseText\s*:.*responseText.*substring/ );
 	} );
 
 	test( 'success notice uses DOM-safe .append($(<p>).text()) instead of .html()', () => {
@@ -366,10 +366,11 @@ describe( 'AssetInventoryManager — runtime', () => {
 	// ── discoverAssets — AJAX transport error ────────────────────────────────
 
 	describe( 'discoverAssets — AJAX transport error', () => {
-		test( 'logs console.error with status, error, httpStatus, and responseText', () => {
+		test( 'logs console.error with status, error, httpStatus, and truncated responseText', () => {
 			mockButton._eventHandlers.click[ 0 ].call( {} );
 
-			const fakeXhr = { status: 403, responseText: '{"code":"rest_forbidden"}' };
+			const rawResponse = '{"code":"rest_forbidden"}';
+			const fakeXhr = { status: 403, responseText: rawResponse };
 			ajaxCalls[ 0 ].error( fakeXhr, 'error', 'Forbidden' );
 
 			expect( consoleError ).toHaveBeenCalledWith(
@@ -378,7 +379,8 @@ describe( 'AssetInventoryManager — runtime', () => {
 					status:       'error',
 					error:        'Forbidden',
 					httpStatus:   403,
-					responseText: '{"code":"rest_forbidden"}',
+					// responseText is truncated to 200 chars to avoid leaking sensitive data.
+					responseText: rawResponse.substring( 0, 200 ),
 				} )
 			);
 		} );
