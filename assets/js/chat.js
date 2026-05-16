@@ -4021,14 +4021,13 @@
                 state.textarea.value = result.text.trim();
                 setStatus(state.container, getString('voiceChatSending', 'Sending your message…'));
 
-                // Trigger form submission
-                const form = state.container.querySelector('.wp-mcp-ai-chat__form');
-                if (form) {
-                    const submitEvent = new Event('submit', {
-                        bubbles: true,
-                        cancelable: true,
-                    });
-                    form.dispatchEvent(submitEvent);
+                // Trigger form submission via the submit button so the correct event path
+                // fires whether the chat form is a standalone <form> or is nested inside an
+                // outer page <form> (in which case the button type has been changed to
+                // 'button' and a click listener handles submission instead).
+                const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+                if (submitButton) {
+                    submitButton.click();
                 }
             })
             .catch(function (error) {
@@ -11954,21 +11953,39 @@
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             
             // Handle form submission (for proper <form> elements)
-            // Use toUpperCase() for reliable tag name comparison across browsers
-            if (form.tagName && form.tagName.toUpperCase() === 'FORM') {
+            // Use toUpperCase() for reliable tag name comparison across browsers.
+            //
+            // Edge case — nested forms: when the chat bubble is rendered inside an outer page
+            // <form>, browsers silently ignore the inner <form> tag (HTML spec forbids nesting).
+            // In that scenario the submit button is associated with the outer form, so clicking
+            // it would submit the outer form instead of triggering a 'submit' event on the chat
+            // form.  Detect this by checking whether the form element has an ancestor <form>,
+            // then fall back to the same click-listener path used for div-based chat surfaces.
+            const isNestedInOuterForm = (
+                form.tagName &&
+                form.tagName.toUpperCase() === 'FORM' &&
+                form.parentElement &&
+                !!form.parentElement.closest( 'form' )
+            );
+            if ( form.tagName && form.tagName.toUpperCase() === 'FORM' && !isNestedInOuterForm ) {
                 form.addEventListener('submit', function (event) {
                     handleSubmit(event, state);
                 });
             } else {
-                // Handle submit button click for div-based forms (e.g., in modals inside other forms)
+                // Handle submit button click for div-based forms (e.g., in modals inside other
+                // forms) OR when the chat form is nested inside an outer page <form>.
                 const submitButton = container.querySelector('.wp-mcp-ai-chat__submit');
                 if (submitButton) {
+                    if (isNestedInOuterForm) {
+                        // Prevent the button from triggering the outer form's submission.
+                        submitButton.setAttribute('type', 'button');
+                    }
                     submitButton.addEventListener('click', function (event) {
                         handleSubmit(event, state);
                     });
                 }
                 
-                // Also handle Enter key in textarea for div-based forms
+                // Also handle Enter key in textarea for div-based / nested-form surfaces.
                 textarea.addEventListener('keydown', function (event) {
                     if (event.key === 'Enter' && !event.shiftKey) {
                         event.preventDefault();
