@@ -55,9 +55,12 @@
 			const $notice = $('.wp-mcp-ai-inventory-notice');
 
 			if (!config) {
+				console.error('[WP MCP AI] Asset discovery: configuration object (wpMcpAiAssetInventory) is missing.');
 				this.showError('Asset inventory configuration is missing.');
 				return;
 			}
+
+			console.log('[WP MCP AI] Asset discovery starting. Endpoint:', config.apiUrl + '/discover');
 
 			// Show loading state
 			$button.addClass('loading').text(config.strings.discovering);
@@ -72,9 +75,16 @@
 				},
 				success: function(response) {
 					if (response.success) {
+						const assetCount = parseInt(response.count, 10) || 0;
+						console.log('[WP MCP AI] Asset discovery succeeded.', assetCount, 'assets found.');
 						$notice
 							.addClass('notice notice-success')
-							.html('<p>' + config.strings.discoverySuccess + ' (' + parseInt(response.count, 10) + ' assets)</p>')
+							.empty()
+							.append(
+								$('<p>').text(
+									config.strings.discoverySuccess + ' (' + assetCount + ' assets)'
+								)
+							)
 							.show();
 
 						// Reload page to show updated inventory
@@ -82,10 +92,17 @@
 							window.location.reload();
 						}, 1500);
 					} else {
-						AssetInventoryManager.showError(response.message);
+						console.warn('[WP MCP AI] Asset discovery returned failure.', response.message || '(no message)');
+						AssetInventoryManager.showError(response.message || config.strings.discoveryError);
 					}
 				},
 				error: function(xhr, status, error) {
+					console.error('[WP MCP AI] Asset discovery AJAX error.', {
+						status: status,
+						error: error,
+						httpStatus: xhr.status,
+						responseText: String(xhr.responseText || '').substring(0, 200)
+					});
 					AssetInventoryManager.showError(config.strings.discoveryError + ' ' + error);
 				},
 				complete: function() {
@@ -151,7 +168,7 @@
 			const totalCount = $('#wp-mcp-ai-assets-table tbody tr').length;
 
 			// Could add a counter display here if needed
-			console.log('Showing ' + visibleCount + ' of ' + totalCount + ' assets');
+			console.log('[WP MCP AI] Asset filter: showing ' + visibleCount + ' of ' + totalCount + ' assets');
 		}
 	};
 
