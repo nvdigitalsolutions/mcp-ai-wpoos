@@ -1825,7 +1825,6 @@ class WP_MCP_AI_Shortcode {
 					'id'          => true,
 					'class'       => true,
 					'rows'        => true,
-					'cols'        => true,
 					'name'        => true,
 					'disabled'    => true,
 					'maxlength'   => true,
