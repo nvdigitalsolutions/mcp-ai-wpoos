@@ -532,6 +532,27 @@
 }
 
 .wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__form {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__actions,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__controls,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__control-buttons,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__tasks-btn,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__submit,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__attach,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__translate,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__voice-chat,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__transcribe {
+	position: relative;
+	z-index: 2;
+}
+
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__actions,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__controls {
 	flex-shrink: 0;
 }
 

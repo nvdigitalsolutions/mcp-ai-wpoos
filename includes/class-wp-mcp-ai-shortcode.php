@@ -1742,12 +1742,53 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Additional form element attributes.
+			if ( isset( $tags['form'] ) && is_array( $tags['form'] ) ) {
+				$tags['form']['id']     = true;
+				$tags['form']['class']  = true;
+				$tags['form']['method'] = true;
+				$tags['form']['action'] = true;
+			}
+
+			if ( isset( $tags['button'] ) && is_array( $tags['button'] ) ) {
+				$tags['button']['type']          = true;
+				$tags['button']['name']          = true;
+				$tags['button']['value']         = true;
+				$tags['button']['title']         = true;
+				$tags['button']['disabled']      = true;
+				$tags['button']['aria-haspopup'] = true;
+				$tags['button']['aria-atomic']   = true;
+				$tags['button']['aria-selected'] = true;
+			}
+
 			if ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) {
-				$tags['input']['accept']   = true;
-				$tags['input']['multiple'] = true;
+				$tags['input']['type']      = true;
+				$tags['input']['name']      = true;
+				$tags['input']['value']     = true;
+				$tags['input']['disabled']  = true;
+				$tags['input']['checked']   = true;
+				$tags['input']['accept']    = true;
+				$tags['input']['multiple']  = true;
+				$tags['input']['min']       = true;
+				$tags['input']['max']       = true;
+				$tags['input']['step']      = true;
+				$tags['input']['maxlength'] = true;
+			}
+
+			if ( isset( $tags['select'] ) && is_array( $tags['select'] ) ) {
+				$tags['select']['name']     = true;
+				$tags['select']['disabled'] = true;
+				$tags['select']['required'] = true;
+			}
+
+			if ( isset( $tags['option'] ) && is_array( $tags['option'] ) ) {
+				$tags['option']['value']    = true;
+				$tags['option']['selected'] = true;
 			}
 
 			if ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) {
+				$tags['textarea']['name']        = true;
+				$tags['textarea']['disabled']    = true;
+				$tags['textarea']['maxlength']   = true;
 				$tags['textarea']['required']    = true;
 				$tags['textarea']['placeholder'] = true;
 			}
