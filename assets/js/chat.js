@@ -11655,7 +11655,7 @@
             const historyLoadMore = container.querySelector('.wp-mcp-ai-chat__history-load-more');
             const cptActionsContainer = container.querySelector('.wp-mcp-ai-chat__cpt-actions');
 
-            if (!form || !textarea || !messagesEl || !statusEl) {
+            if (!textarea || !messagesEl || !statusEl) {
                 return;
             }
 
@@ -11954,8 +11954,12 @@
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             
             // Handle form submission (for proper <form> elements)
-            // Use toUpperCase() for reliable tag name comparison across browsers
-            if (form.tagName && form.tagName.toUpperCase() === 'FORM') {
+            // Use toUpperCase() for reliable tag name comparison across browsers.
+            // Guard against a null form: when the chat widget is placed on a page
+            // that already contains an outer <form> (WooCommerce checkout, CF7, etc.)
+            // the HTML5 parser silently drops the inner <form> tag, leaving form=null.
+            // In that case we fall through to the click-listener + Enter-key path.
+            if (form && form.tagName && form.tagName.toUpperCase() === 'FORM') {
                 form.addEventListener('submit', function (event) {
                     handleSubmit(event, state);
                 });
