@@ -9,7 +9,7 @@ Stable tag: 1.1.18
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 230+ built-in tools.
+AI Assistant framework with 10 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare & Ollama. 230+ built-in tools.
 
 == Submission Scope ==
 
@@ -45,6 +45,10 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 * [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 * [NVIDIA Terms](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/) | [NIM Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/)
+* [DeepSeek Terms](https://platform.deepseek.com/terms) | [Privacy](https://platform.deepseek.com/privacy)
+* [OpenRouter Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy)
+* [Kimi (Moonshot AI) Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy)
+* [DigitalOcean Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy)
 * Ollama (self-hosted, no external data transmission)
 * LM Studio (self-hosted, no external data transmission)
 
@@ -55,7 +59,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 * **Comprehensive Tool Library** - Content management, media generation, research, site operations
 * **Optional Integrations** - Enhanced features with WooCommerce, JetEngine, Elementor when installed
-* **Multi-Provider Support** - OpenAI, Google Gemini, NVIDIA NIM, Ollama (local AI), and LM Studio
+* **Multi-Provider Support** - OpenAI, Google Gemini, Anthropic, DeepSeek, OpenRouter, Kimi (Moonshot AI), DigitalOcean Serverless Inference, NVIDIA NIM, Cloudflare, Hugging Face, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
 * **Zero Lock-in** - Works with vanilla WordPress; optional integrations enhance functionality
@@ -78,6 +82,10 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **NVIDIA NIM** - Llama, Mistral, Nemotron via NVIDIA cloud inference ([Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/) | [Privacy](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/))
 * **Ollama** - Privacy-focused local AI (self-hosted, no external data)
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
+* **DeepSeek** - deepseek-chat, deepseek-reasoner, deepseek-coder ([Terms](https://platform.deepseek.com/terms) | [Privacy](https://platform.deepseek.com/privacy))
+* **OpenRouter** - Unified gateway to 200+ models (OpenAI, Anthropic, Meta, Mistral and more) via one API key ([Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy))
+* **Kimi (Moonshot AI)** - Kimi K2.6, K2.5, K2 with 256K context and tool calling ([Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy))
+* **DigitalOcean Serverless Inference** - Llama, DeepSeek-R1, and more via DigitalOcean's OpenAI-compatible cloud inference API ([Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy))
 * Automatic provider fallback for maximum uptime
 
 **Built-in Tools:**
@@ -1196,6 +1204,33 @@ Initial release. Welcome to Open Operator System!
 * **Privacy Policy:** https://platform.deepseek.com/privacy
 * **Data Usage:** See DeepSeek's privacy policy for data handling details
 
+**6c. OpenRouter API**
+* **Purpose:** Unified OpenAI-compatible AI gateway routing to 200+ models across providers (OpenAI, Anthropic, Google, Meta, Mistral, and more) via a single API key
+* **Data Sent:** Chat messages, system prompts, tool definitions, and tool results
+* **When:** Every time an AI assistant is used with OpenRouter as the provider
+* **Service URL:** https://openrouter.ai/api/v1
+* **Terms of Service:** https://openrouter.ai/terms
+* **Privacy Policy:** https://openrouter.ai/privacy
+* **Data Usage:** See OpenRouter's privacy policy; requests may be routed to upstream provider APIs
+
+**6d. Kimi (Moonshot AI) API**
+* **Purpose:** Cloud AI inference via Moonshot AI's OpenAI-compatible API (Kimi K2.6, K2.5, K2, K2-Thinking, and legacy moonshot-v1-* models)
+* **Data Sent:** Chat messages, system prompts, tool definitions, and tool results; token-count estimation requests (messages only, no user-identifying data)
+* **When:** Every time an AI assistant is used with Kimi as the provider; token estimation runs before each request when configured
+* **Service URL:** https://api.moonshot.cn/v1 (default; supports custom base URL for proxies)
+* **Terms of Service:** https://platform.moonshot.cn/docs/policy/service-agreement
+* **Privacy Policy:** https://platform.moonshot.cn/docs/policy/privacy-policy
+* **Data Usage:** See Moonshot AI's privacy policy for data handling details
+
+**6e. DigitalOcean Serverless Inference API**
+* **Purpose:** Cloud AI inference via DigitalOcean's OpenAI-compatible serverless inference platform (Llama, DeepSeek-R1, GTE embeddings, and more)
+* **Data Sent:** Chat messages, system prompts, tool definitions, tool results, and embedding requests (text only)
+* **When:** Every time an AI assistant is used with DigitalOcean as the provider; embedding requests sent when vector-context features are active and DigitalOcean is the embedding provider
+* **Service URL:** https://inference.do-ai.run/v1
+* **Terms of Service:** https://www.digitalocean.com/legal/terms-of-service-agreement
+* **Privacy Policy:** https://www.digitalocean.com/legal/privacy-policy
+* **Data Usage:** See DigitalOcean's privacy policy; processed within DigitalOcean's infrastructure
+
 = Optional Third-Party Service Integrations =
 
 These services are only contacted when specific tools/features are used:
@@ -1695,6 +1730,30 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Complete data privacy and control
 * Recommended for sensitive data
 
+**DeepSeek (when configured):**
+* Data sent to: https://api.deepseek.com
+* Processed according to: [DeepSeek Privacy Policy](https://platform.deepseek.com/privacy)
+* Terms of Service: [DeepSeek Terms](https://platform.deepseek.com/terms)
+* Used for: Chat completions with deepseek-chat, deepseek-reasoner, and deepseek-coder models
+
+**OpenRouter (when configured):**
+* Data sent to: https://openrouter.ai/api/v1
+* Processed according to: [OpenRouter Privacy Policy](https://openrouter.ai/privacy)
+* Terms of Service: [OpenRouter Terms](https://openrouter.ai/terms)
+* Used for: Unified AI gateway routing requests to 200+ upstream models
+
+**Kimi (Moonshot AI) (when configured):**
+* Data sent to: https://api.moonshot.cn/v1
+* Processed according to: [Moonshot AI Privacy Policy](https://platform.moonshot.cn/docs/policy/privacy-policy)
+* Terms of Service: [Moonshot AI Service Agreement](https://platform.moonshot.cn/docs/policy/service-agreement)
+* Used for: Chat completions with Kimi K2.6, K2.5, K2, and moonshot-v1 model families; supports 256K context and tool calling
+
+**DigitalOcean Serverless Inference (when configured):**
+* Data sent to: https://inference.do-ai.run/v1
+* Processed according to: [DigitalOcean Privacy Policy](https://www.digitalocean.com/legal/privacy-policy)
+* Terms of Service: [DigitalOcean Terms of Service](https://www.digitalocean.com/legal/terms-of-service-agreement)
+* Used for: Chat completions and embeddings via DigitalOcean's cloud AI inference platform
+
 **Web Search Providers (when configured):**
 * Brave Search: data sent to https://api.search.brave.com — [Privacy](https://brave.com/privacy/browser/) | [Terms](https://brave.com/terms-of-use/)
 * Tavily: data sent to https://api.tavily.com — [Privacy](https://docs.tavily.com/documentation/privacy) | [Terms](https://www.tavily.com/terms)
@@ -1777,6 +1836,10 @@ This plugin may connect to the following external services based on your configu
 * OpenAI API - [Privacy](https://openai.com/privacy) | [Terms](https://openai.com/policies/terms-of-use)
 * Google Gemini API - [Privacy](https://policies.google.com/privacy) | [Terms](https://ai.google.dev/terms)
 * Anthropic API - [Privacy](https://www.anthropic.com/legal/privacy) | [Terms](https://www.anthropic.com/legal/consumer-terms)
+* DeepSeek API - [Privacy](https://platform.deepseek.com/privacy) | [Terms](https://platform.deepseek.com/terms)
+* OpenRouter API - [Privacy](https://openrouter.ai/privacy) | [Terms](https://openrouter.ai/terms)
+* Kimi (Moonshot AI) API - [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy) | [Terms](https://platform.moonshot.cn/docs/policy/service-agreement)
+* DigitalOcean Serverless Inference - [Privacy](https://www.digitalocean.com/legal/privacy-policy) | [Terms](https://www.digitalocean.com/legal/terms-of-service-agreement)
 * Ollama (self-hosted) - No external service
 * LM Studio (self-hosted) - No external service
 

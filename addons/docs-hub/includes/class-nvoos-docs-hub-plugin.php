@@ -99,6 +99,7 @@ class NV_oOS_Docs_Hub_Plugin {
 			is_array( $option ) ? $option : array(),
 			array(
 				'enabled'               => true,
+				'public_access'         => true,
 				'sources'               => $default_sources,
 				'context_enabled'       => false,
 				'default_theme'         => 'auto',

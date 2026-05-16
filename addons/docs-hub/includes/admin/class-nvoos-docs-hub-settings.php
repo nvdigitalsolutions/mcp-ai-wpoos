@@ -129,6 +129,18 @@ class NV_oOS_Docs_Hub_Settings {
 		);
 
 		add_settings_field(
+			'public_access',
+			__( 'Allow Public (Guest) Access', 'nvoos-docs-hub' ),
+			array( __CLASS__, 'render_checkbox' ),
+			'nvoos-docs-hub',
+			'nvoos_docs_hub_general',
+			array(
+				'id'          => 'public_access',
+				'description' => __( 'When enabled, the documentation browser is accessible to all visitors without logging in. Disable to require a WordPress account.', 'nvoos-docs-hub' ),
+			)
+		);
+
+		add_settings_field(
 			'default_theme',
 			__( 'Default Theme', 'nvoos-docs-hub' ),
 			array( __CLASS__, 'render_select' ),
@@ -398,6 +410,7 @@ class NV_oOS_Docs_Hub_Settings {
 		$sanitized = array();
 
 		$sanitized['enabled']               = ! empty( $input['enabled'] );
+		$sanitized['public_access']         = ! empty( $input['public_access'] );
 		$sanitized['search_enabled']        = ! empty( $input['search_enabled'] );
 		$sanitized['sidebar_enabled']       = ! empty( $input['sidebar_enabled'] );
 		$sanitized['context_enabled']       = ! empty( $input['context_enabled'] );
@@ -443,7 +456,7 @@ class NV_oOS_Docs_Hub_Settings {
 				$new_token = $existing_repos[ $i ]['token'];
 			}
 
-			// Selection mode: 'all' (default) | 'prefix' | 'selected'.
+			// Selection mode values: all (default), prefix, or selected.
 			$raw_mode       = sanitize_text_field( $repo['selection_mode'] ?? 'all' );
 			$selection_mode = in_array( $raw_mode, array( 'all', 'prefix', 'selected' ), true ) ? $raw_mode : 'all';
 

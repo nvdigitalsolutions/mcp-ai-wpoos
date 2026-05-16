@@ -347,6 +347,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **JetEngine CCT memory mirror.** `retrieve_agent_memory` + `recall` now hydrate directly from the JetEngine CCT mirror when available; pipeline deduped to avoid double-suppression.
 - ✅ **Security / maintenance.** Bumped npm `langsmith` minimum to `>=0.6.0` (GHSA-3644-q5cj-c5c7). Added `wp_read_video_metadata` guard (`media.php`) in Veo and Sora video tools. Production autoload restored: `--no-dev --classmap-authoritative` with manual `dev: false` / `dev-package-names: []` patches.
 - ✅ **Agent surfaces refreshed.** All hidden folders that host coding-agent context (`.bmad/`, `.codex/`, `.context/`, `.devcontainer/`, `.github/agents/`, `.vscode/`, `.zed/`) refreshed in this release so contributors get consistent guidance regardless of editor or agent. The `toolkit-spa-maintainer` agent is now mirrored from `examples/agents/` into both `.github/agents/` and `.zed/settings.json` (13 profiles).
+- ✅ **UI/UX Pro Max Skill Bundle.** New bundled Agent Skill `ui-ux-pro-max` with comprehensive UI/UX Design Pack — 25+ CSV data files covering color palettes, typography scales (including Google Fonts), icon libraries, UI components, design patterns, and stack-specific guidelines for React, Vue, Angular, Laravel, Astro, Svelte, Flutter, SwiftUI, Jetpack Compose, and more. Includes Python utility scripts for design system search and core operations. Skill pack registry updated with new `ui-ux-design` pack. See `includes/bundled-skills/ui-ux-pro-max/`.
 - 📦 **Versioning** — bumped to **1.1.18** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 ## 🆕 Latest Updates (v1.1.17 — May 2026)
@@ -3419,9 +3420,9 @@ Developers can extend or replace these prompts with filters such as `wp_mcp_ai_a
 
 **Agent Skills** ([agentskills.io](https://agentskills.io/specification)) are reusable, portable behaviour packages that extend any assistant without touching its system prompt. Each skill is a `SKILL.md` file — a standard Markdown document with a small YAML frontmatter block — that lives in `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant loads a skill, its instructions are automatically injected into the conversation context so the model knows exactly when and how to use that capability.
 
-### 16 Pre-Built Skills (Base Plugin)
+### 45 Pre-Built Skills (Base Plugin)
 
-The **base plugin** ships with 16 pre-built skills that are automatically installed to `wp-content/uploads/mcp-ai-skills/` on first activation. No Pro add-on is required — they are available on every install out of the box.
+The **base plugin** ships with 45 pre-built skills that are automatically installed to `wp-content/uploads/mcp-ai-skills/` on first activation. No Pro add-on is required — they are available on every install out of the box. The skills include 24 general-purpose tools (document handling, design, testing), 20 WordPress developer skills (security, APIs, plugin patterns), and the new UI/UX Pro Max design system skill.
 
 | Skill slug | What it does |
 |---|---|
@@ -3438,6 +3439,7 @@ The **base plugin** ships with 16 pre-built skills that are automatically instal
 | `skill-creator` | Creates, modifies, and measures the performance of other skills |
 | `slack-gif-creator` | Creates animated GIFs optimised for Slack with design best practices |
 | `theme-factory` | Applies consistent visual themes to slides, docs, and other artifacts |
+| `ui-ux-pro-max` | Comprehensive UI/UX design system with component libraries, color palettes, typography scales, and stack-specific guidelines (React, Vue, Angular, Laravel, etc.) |
 | `web-artifacts-builder` | Builds elaborate multi-component HTML artifacts for Claude.ai |
 | `webapp-testing` | Tests local web applications using Playwright browser automation |
 | `xlsx` | Handles any spreadsheet file as primary input or output |

@@ -2,7 +2,7 @@
 
 > **Specification:** [agentskills.io](https://agentskills.io/specification)  
 > **Since:** 1.7.0  
-> **Available in:** Base plugin (skill registry + 44 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
+> **Available in:** Base plugin (skill registry + 45 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
 
 Agent Skills are portable, reusable behaviour packages that teach an assistant how to handle a specific class of task. Each skill is a single `SKILL.md` file — standard Markdown with a small YAML frontmatter block — stored under `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant runs, any skills assigned to it are automatically injected into the system prompt so the model knows exactly when and how to use them.
 
@@ -10,7 +10,7 @@ Agent Skills are portable, reusable behaviour packages that teach an assistant h
 
 ## Pre-Built Skills (Base Plugin)
 
-The base plugin ships with **44 pre-built skills** inside `includes/bundled-skills/`. They are copied to `wp-content/uploads/mcp-ai-skills/` automatically on first plugin activation. **No Pro add-on is required** — all base skills are available on every install.
+The base plugin ships with **45 pre-built skills** inside `includes/bundled-skills/`. They are copied to `wp-content/uploads/mcp-ai-skills/` automatically on first plugin activation. **No Pro add-on is required** — all base skills are available on every install.
 
 ### General-purpose skills (Anthropic-authored)
 
@@ -36,6 +36,7 @@ The base plugin ships with **44 pre-built skills** inside `includes/bundled-skil
 | `skill-creator` | Creates, modifies, and measures the performance of other skills |
 | `slack-gif-creator` | Creates animated GIFs optimised for Slack with design best practices |
 | `theme-factory` | Applies consistent visual themes to slides, docs, and other artifacts |
+| `ui-ux-pro-max` | Comprehensive UI/UX design system with component libraries, color palettes, typography scales, and stack-specific guidelines (React, Vue, Angular, Laravel, Flutter, SwiftUI, etc.) |
 | `valyu` | Valyu-API research and retrieval skill |
 | `web-artifacts-builder` | Builds elaborate multi-component HTML artifacts for Claude.ai |
 | `webapp-testing` | Tests local web applications using Playwright browser automation |
@@ -192,12 +193,13 @@ This matches the pattern described at [agentskills.io](https://agentskills.io/sp
 
 A **skill pack** is a curated, named collection of related skills that ships as a single addressable unit. Use them when you want to install several related skills with one click and describe them as a coherent capability ("WordPress Developer", "Document Authoring", etc.).
 
-The base plugin ships two packs out of the box:
+The base plugin ships three packs out of the box:
 
 | Pack slug | Members |
 |---|---|
 | `wordpress-developer` | `wp-abilities-api`, `wp-action-scheduler`, `wp-html-api`, `wp-i18n-audit`, `wp-plugin-architecture`, `wp-plugin-assets-loading`, `wp-rest-api`, `wp-security-audit`, `wp-security-deep` |
 | `document-authoring`  | `docx`, `pdf`, `pptx`, `doc-coauthoring`, `internal-comms` |
+| `ui-ux-design`        | `ui-ux-pro-max`, `frontend-design`, `canvas-design` |
 
 **Install a pack** via *Settings → NV oOS → Advanced → Skill Management → Skill Packs*: each row shows the pack name, member skills, the installed-vs-total count, and an *Install Pack* button. Members already present in `wp-content/uploads/mcp-ai-skills/` are skipped (existing customisations are preserved).
 

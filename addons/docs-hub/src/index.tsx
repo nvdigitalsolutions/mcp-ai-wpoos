@@ -22,9 +22,12 @@ function mount() {
 
 			// Expose config on window so API client / App can read it.
 			if ( ! window.NVOOS_DOCS_HUB ) {
-				// wp_localize_script should have set this; create a fallback.
+				// wp_localize_script should have set this; create a fallback
+				// using the api_url baked into the data-config attribute by
+				// the PHP shortcode. This ensures the correct REST base URL
+				// is used even on sites with a custom REST prefix.
 				window.NVOOS_DOCS_HUB = {
-					apiUrl: config.api_url ?? '/wp-json/nvoos-docs/v1',
+					apiUrl: config.api_url ?? `${ window.location.origin }/wp-json/nvoos-docs/v1`,
 					nonce: config.nonce ?? '',
 					config: {
 						section: config.section,
@@ -32,6 +35,7 @@ function mount() {
 						search: config.search,
 						sidebar: config.sidebar,
 						home: config.home,
+						api_url: config.api_url,
 					},
 				};
 			}
