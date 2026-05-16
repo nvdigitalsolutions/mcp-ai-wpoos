@@ -502,10 +502,15 @@
 					return;
 				}
 
-				// Trigger a DOMContentLoaded event to re-init chat.js
-				const event = document.createEvent('Event');
-				event.initEvent('DOMContentLoaded', true, true);
-				document.dispatchEvent(event);
+				// Prefer chat.js public init API for dynamically inserted chat containers.
+				// Fallback to synthetic DOMContentLoaded for legacy compatibility.
+				if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {
+					window.wpMcpAiChatInit.init(container);
+				} else {
+					const event = document.createEvent('Event');
+					event.initEvent('DOMContentLoaded', true, true);
+					document.dispatchEvent(event);
+				}
 
 				// Focus the textarea to give user immediate access
 				setTimeout(() => {
