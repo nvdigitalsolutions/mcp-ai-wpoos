@@ -32,7 +32,7 @@
 	--wp-mcp-ai-chat-bubble-offset-x: 24px;
 	--wp-mcp-ai-chat-bubble-offset-y: 24px;
 	--wp-mcp-ai-chat-bubble-panel-width: 400px;
-	--wp-mcp-ai-chat-bubble-panel-height: 550px;
+	--wp-mcp-ai-chat-bubble-panel-height: 80vh;
 	--wp-mcp-ai-chat-bubble-trigger-size: 60px;
 }
 
