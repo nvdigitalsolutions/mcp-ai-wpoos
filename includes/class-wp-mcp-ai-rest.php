@@ -221,6 +221,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			);
 
+			// Register ACP Transport REST endpoints.
+			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
+			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
+			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
+			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
+			require_once WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
+			
+			add_action(
+				'rest_api_init',
+				function () {
+					// Only mount the ACP server if enabled in settings
+					$settings = get_option( 'wp_mcp_ai_settings', array() );
+					if ( empty( $settings['enable_acp_server'] ) ) {
+						return;
+					}
+
+					$session_manager = new WP_MCP_AI_ACP_Session_Manager();
+					$session_bridge  = new WP_MCP_AI_ACP_Session_Bridge();
+					$dispatcher      = new WP_MCP_AI_ACP_JSONRPC_Dispatcher( $session_manager, $session_bridge );
+					$controller      = new WP_MCP_AI_ACP_Transport_HTTP( $dispatcher );
+					$controller->register_routes();
+				}
+			);
+
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );

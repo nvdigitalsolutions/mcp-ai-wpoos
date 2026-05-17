@@ -11,6 +11,14 @@ This document provides a comprehensive index of all documentation available for 
 
 > **📌 MAY 17, 2026 DOCUMENTATION REFRESH:** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` was refreshed to independent doc revision 2.0 and now cites `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the companion source for point-in-time counts. Current public framing is ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, and model catalog `2026.05.04`; the live registry remains authoritative.
 
+> **📌 MAY 18, 2026 UPDATE (v1.1.19):** 📡 **AGENT CLIENT PROTOCOL (ACP) INTEGRATION, JSON-RPC 2.0 SERVER, HTTP/SSE TRANSPORT**
+> - **Agent Client Protocol (ACP)** — Full implementation of the ACP standard allowing external IDEs (Zed, JetBrains, Neovim) to natively drive NV oOS assistants. 
+> - **ACP Architecture** — `WP_MCP_AI_ACP_Server`, `WP_MCP_AI_ACP_JSONRPC_Dispatcher`, `WP_MCP_AI_ACP_Session_Manager`, `WP_MCP_AI_ACP_Session_Bridge`, `WP_MCP_AI_ACP_Transport_HTTP`. 
+> - **Federation Discovery** — Extended `/.well-known/ai-peer` to actively advertise `acp` protocol endpoints, versions, transports (`http+sse`), and supported `auth_methods`.
+> - **CLI Shim** — Added `bin/acp-shim.php` for stdio-to-HTTP bridging, laying the groundwork for the official `agentclientprotocol/registry` submission.
+> - **UI & Control** — Added ACP admin section (`includes/admin/sections/class-wp-mcp-ai-section-acp.php`) to toggle server status and require strict tool approvals.
+> - **Testing** — 100% PHPUnit coverage scaffolding inside `tests/acp/` for JSON-RPC mappings, session bridging, and transient persistence logic.
+
 > **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
 > - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 > - **DigitalOcean Serverless Inference provider** (9th provider) — `WP_MCP_AI_DigitalOcean_Client` + OpenAI-compatible chat / tool calls / streaming / embeddings; default embedding model `gte-large-en-v1.5`; Provider Diagnostics card. Reference: [`docs/features/ai-providers/digitalocean.md`](features/ai-providers/digitalocean.md).
@@ -74,9 +82,9 @@ This document provides a comprehensive index of all documentation available for 
 
 > **📌 APRIL 8, 2026 UPDATE:** 📐 **ARCHITECTURE REFRESH & REQUEST FLOW WALKTHROUGH**
 > - **Architecture Overview Refreshed** – Updated from Dec 2025 (3 providers, 133 tools) to current state: **9 providers**, **837 tool classes** (227 base + 610 pro), **34 REST controllers** (16 base + 18 pro), **64 service classes**, accurate directory structure with file counts, v1.1.6 version history entry.
-> - **Request Flow Walkthrough** (NEW) – End-to-end trace of a chat message through every layer: `sendChat()` → `POST /chat-client` → Authentication (5 methods) → Assistant resolution → SSE setup → Language Model Router (9 providers) → Agentic loop (up to 15 iterations) → Token budget validation (auto-model switch) → SSE events → Frontend render. Covers provider routing table, agentic loop mechanics, tool execution internals, SSE event types, key source file reference, and hooks in the request path.
+- **Request Flow Walkthrough** (NEW) – End-to-end trace of a chat message through every layer: `sendChat()` → `POST /chat-client` → Authentication (5 methods) → Assistant resolution → SSE setup → Language Model Router (9 providers) → Agentic loop (up to 15 iterations) → Token budget validation (auto-model switch) → SSE events → Frontend render. Covers provider routing table, agentic loop mechanics, tool execution internals, SSE event types, key source file reference, and hooks in the request path.
 > - **README.md** – Architecture section updated with current statistics; documentation section fixed stale tool/doc counts, added walkthrough link.
-> - **See**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md), [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md)
+> - **See**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md), [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md), [ACP_INTEGRATION.md](ACP_INTEGRATION.md)
 
 > **📌 APRIL 2–6, 2026 UPDATE:** 🤝 **A2A PROTOCOL, JETENGINE MCP, AGENT COMMAND CENTER, CHAT BUBBLE, IMAGE VALIDATION**
 > - **JetEngine 3.8 MCP Server Integration** (PR #4608) – JSON-RPC 2.0 client bridging into JetEngine's native MCP Server. 7 new Pro tools: `jetengine_mcp`, `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field`, `jetengine_manage_relations`, `jetengine_site_context`, `jetengine_prompts`. MCP-first dispatch with REST v2 fallback.

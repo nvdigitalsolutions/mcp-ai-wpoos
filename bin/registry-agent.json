@@ -1,0 +1,29 @@
+{
+  "$schema": "https://cdn.agentclientprotocol.com/registry/v1/latest/agent.schema.json",
+  "id": "nv-oos",
+  "name": "NV oOS",
+  "description": "Enterprise WordPress Agent integration powered by the Open Operator System. Connect Zed or JetBrains directly to your secure WordPress assistants over HTTP.",
+  "author": "NV Digital Solutions",
+  "iconUrl": "https://nvdigitalsolutions.com/assets/img/nv-oos-icon.svg",
+  "repository": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+  "website": "https://nvdigitalsolutions.com",
+  "capabilities": {
+    "authMethods": ["bearer_credential", "bearer_auth0"],
+    "promptCapabilities": ["image", "embeddedContext"],
+    "mcpCapabilities": ["http"],
+    "loadSession": true
+  },
+  "distribution": {
+    "type": "npm",
+    "packageName": "@nvdigitalsolutions/nv-oos-acp",
+    "defaultCommand": "npx -y @nvdigitalsolutions/nv-oos-acp"
+  },
+  "tags": [
+    "wordpress",
+    "remote",
+    "http",
+    "enterprise",
+    "mcp",
+    "agent"
+  ]
+}
