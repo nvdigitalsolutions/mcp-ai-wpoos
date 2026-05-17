@@ -161,7 +161,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ### Creating an Assistant
 
 ![Create Assistant](screenshots/admin/61-create-assistant.png)
-*Create Assistant page with 204 profession templates*
+*Create Assistant page with ~190 profession templates*
 
 ```
 1. Navigate to AI Assistants → Add New

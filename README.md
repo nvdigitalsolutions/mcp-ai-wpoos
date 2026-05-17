@@ -1641,7 +1641,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
-- 👔 **Professional & Team Templates** - Deploy assistants from 182 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
+- 👔 **Professional & Team Templates** - Deploy assistants from ~190 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
 - 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
@@ -3488,7 +3488,7 @@ The `name` field (max 64 chars) becomes the skill's slug. The `description` fiel
 
 NV oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
 
-1. **Select from 182 pre-built professional templates** spanning 12 industry categories
+1. **Select from ~190 pre-built professional templates** spanning 12 industry categories
 2. **Create custom profession templates** with reusable configurations
 3. **Deploy entire teams** of specialized assistants with one click
 4. **Test everything from the backend** before exposing to end users
@@ -3502,7 +3502,7 @@ Professions are reusable assistant templates with pre-configured:
 - **AI model defaults** (provider, model, temperature)
 - **Warnings and disclaimers** for professional contexts
 
-**Available Categories (182 professions):**
+**Available Categories (~190 professions across 12 categories):**
 - 🌾 Agriculture & Natural Resources (10 professions)
 - 🎨 Art, Media & Entertainment (24 professions)
 - 💼 Business & Finance (16 professions)
@@ -3522,7 +3522,7 @@ Professions are reusable assistant templates with pre-configured:
 - Registered Nurse, Physician, Pharmacist
 - Attorney, Paralegal, Mediator
 - Content Writer, Graphic Designer, Social Media Manager
-- And 170+ more...
+- And 180+ more...
 
 ### Creating Assistants from Templates
 
