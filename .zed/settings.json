@@ -73,15 +73,29 @@
     // /wp-json/mcp-ai/v1/ once the plugin is active in a local WordPress
     // site. Point this at your Docker site to give the agent live access to
     // the ~830 in-product tools while developing.
+    //
+    // Two equivalent options — uncomment ONE:
+    //
+    // Option A: Node.js bridge script (uses bin/mcp-bridge.js in this repo)
     // "nv-oos-local": {
     //   "source": "custom",
     //   "command": {
     //     "path": "node",
     //     "args": ["bin/mcp-bridge.js"],
     //     "env": {
-    //       "MCP_AI_BASE_URL": "http://localhost:8000/wp-json/mcp-ai/v1",
+    //       "MCP_AI_BASE_URL": "http://localhost:8000/wp-json/mcp-ai/v1/mcp",
     //       "MCP_AI_TOKEN":    "cred_…"
     //     }
+    //   }
+    // }
+    //
+    // Option B: npx relay — no extra files needed (requires network + npm)
+    // "nv-oos-local": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "npx",
+    //     "args": ["-y", "@modelcontextprotocol/server-http", "http://localhost:8000/wp-json/mcp-ai/v1/mcp"],
+    //     "env": { "AUTHORIZATION": "Bearer cred_…" }
     //   }
     // }
   },
