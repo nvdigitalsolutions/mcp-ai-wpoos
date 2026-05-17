@@ -11,7 +11,7 @@
 
 /* Cron Status Container */
 .wp-mcp-ai-chat__cron-status {
-	display: inline-flex;
+	display: none;
 	align-items: center;
 	gap: 8px;
 	padding: 4px 8px;
