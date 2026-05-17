@@ -153,10 +153,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_A2A' ) ) {
 
 		/**
 		 * Render the settings section content.
+		 *
+		 * The base wrapper opens `<table class="form-table">` for us, and our
+		 * job here is to emit the `<tr>` rows for each field. We also support
+		 * `heading`-typed fields by closing/reopening the wrapper table so
+		 * group headings render as standalone `<h3>` blocks between field
+		 * groups (the same trick the Orchestration section uses for its
+		 * `html` separator fields).
 		 */
 		public function render() {
-			// Render the A2A settings form using the standard rendering approach.
-			// The parent class handles the field rendering.
+			$fields = $this->get_fields();
+
+			foreach ( $fields as $key => $field ) {
+				$type = isset( $field['type'] ) ? $field['type'] : 'text';
+
+				if ( 'heading' === $type ) {
+					$label = isset( $field['label'] ) ? $field['label'] : '';
+
+					// Close the wrapper-opened table, emit the heading, then
+					// reopen a fresh form-table so following fields render as
+					// proper <tr> rows under their heading.
+					echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+					echo '<h3 class="wp-mcp-ai-section-subheading">' . esc_html( $label ) . '</h3>';
+					echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+					continue;
+				}
+
+				$this->render_field( $key, $field );
+			}
 		}
 	}
 }

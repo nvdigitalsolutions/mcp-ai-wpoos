@@ -16,7 +16,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **ACP Architecture** — `WP_MCP_AI_ACP_Server`, `WP_MCP_AI_ACP_JSONRPC_Dispatcher`, `WP_MCP_AI_ACP_Session_Manager`, `WP_MCP_AI_ACP_Session_Bridge`, `WP_MCP_AI_ACP_Transport_HTTP`. 
 > - **Federation Discovery** — Extended `/.well-known/ai-peer` to actively advertise `acp` protocol endpoints, versions, transports (`http+sse`), and supported `auth_methods`.
 > - **CLI Shim** — Added `bin/acp-shim.php` for stdio-to-HTTP bridging, laying the groundwork for the official `agentclientprotocol/registry` submission.
-> - **UI & Control** — Added ACP admin section (`includes/admin/sections/class-wp-mcp-ai-section-acp.php`) to toggle server status and require strict tool approvals.
+> - **UI & Control** — ACP server toggle and strict tool-approval toggle are rendered inline within the Orchestration → Settings view (see the `section_acp` / `enable_acp_server` / `acp_require_approval` fields in `WP_MCP_AI_Section_Orchestration`), matching the Agent Memory and Multi-Agent groupings.
 > - **Testing** — 100% PHPUnit coverage scaffolding inside `tests/acp/` for JSON-RPC mappings, session bridging, and transient persistence logic.
 
 > **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
