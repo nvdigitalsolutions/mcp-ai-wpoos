@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 0.6.0
  */
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid,Squiz.Commenting.ClassComment.Missing -- NV_oOS intentional branding; consistent with all other addon classes.
 class NV_oOS_Graphify_Embeddings {
 
 	/**
@@ -100,7 +101,7 @@ class NV_oOS_Graphify_Embeddings {
 	 */
 	public static function cosine_similarity( array $a, array $b ) {
 		$len = count( $a );
-		if ( $len !== count( $b ) || 0 === $len ) {
+		if ( count( $b ) !== $len || 0 === $len ) {
 			return 0.0;
 		}
 

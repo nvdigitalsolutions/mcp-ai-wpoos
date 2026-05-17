@@ -25,6 +25,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 	 */
 	class WP_MCP_AI_Admin_Settings_Base {
 		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
+		const MASKED_SECRET_PLACEHOLDER      = '**************';
 		const OPTION_NAME                    = 'wp_mcp_ai_settings';
 		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
 		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
@@ -80,13 +81,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 				// Sanitize based on key patterns and types.
 				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
-				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) || false !== strpos( $key, '_refresh_token' ) ) {
-					$val = sanitize_text_field( $value );
-					if ( '**************' === $val ) {
-						$sanitized[ $key ] = isset( $current[ $key ] ) ? $current[ $key ] : '';
-					} else {
-						$sanitized[ $key ] = ( class_exists( 'WP_MCP_AI_Encryption' ) && ! empty( $val ) ) ? ( WP_MCP_AI_Encryption::encrypt( $val ) ?: $val ) : $val;
-					}
+				if ( self::is_sensitive_setting_key( $key ) ) {
+					$current_value     = isset( $current[ $key ] ) ? $current[ $key ] : '';
+					$sanitized[ $key ] = self::sanitize_sensitive_setting_value( $value, $current_value );
 				} elseif ( false !== strpos( $key, '_email' ) ) {
 					$sanitized[ $key ] = sanitize_email( $value );
 				} elseif ( false !== strpos( $key, '_url' ) || false !== strpos( $key, '_endpoint' ) ) {
@@ -250,15 +247,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			$settings = wp_parse_args( $saved, $defaults );
 
-			$sensitive_fields = self::get_sensitive_fields();
 			foreach ( $settings as $key => $val ) {
-				if ( in_array( $key, $sensitive_fields, true ) || false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) || false !== strpos( $key, '_refresh_token' ) ) {
-					if ( ! empty( $val ) && class_exists( 'WP_MCP_AI_Encryption' ) ) {
-						$decrypted = WP_MCP_AI_Encryption::decrypt( $val );
-						if ( false !== $decrypted ) {
-							$settings[ $key ] = $decrypted;
-						}
-					}
+				if ( self::is_sensitive_setting_key( $key ) ) {
+					$settings[ $key ] = self::maybe_decrypt_sensitive_setting_value( $val );
 				}
 			}
 
@@ -279,6 +270,81 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		public static function reset_settings_cache() {
 			self::$settings_cache = null;
+		}
+
+		/**
+		 * Determine whether a setting key stores sensitive credentials.
+		 *
+		 * @param string $key Setting key.
+		 * @return bool
+		 */
+		public static function is_sensitive_setting_key( $key ) {
+			return in_array( $key, self::get_sensitive_fields(), true )
+				|| false !== strpos( $key, '_api_key' )
+				|| false !== strpos( $key, '_api_token' )
+				|| false !== strpos( $key, '_secret' )
+				|| false !== strpos( $key, '_refresh_token' );
+		}
+
+		/**
+		 * Sanitize and encrypt a sensitive setting value.
+		 *
+		 * @param mixed  $value         Submitted value.
+		 * @param string $current_value Existing stored value.
+		 * @return string
+		 */
+		public static function sanitize_sensitive_setting_value( $value, $current_value = '' ) {
+			$sanitized_value = sanitize_text_field( $value );
+
+			if ( self::MASKED_SECRET_PLACEHOLDER === $sanitized_value ) {
+				return is_string( $current_value ) ? $current_value : '';
+			}
+
+			if ( '' === $sanitized_value || ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				return $sanitized_value;
+			}
+
+			$encrypted_value = WP_MCP_AI_Encryption::encrypt( $sanitized_value );
+
+			if ( false !== $encrypted_value && '' !== $encrypted_value ) {
+				return $encrypted_value;
+			}
+
+			return $sanitized_value;
+		}
+
+		/**
+		 * Decrypt a sensitive setting value when possible.
+		 *
+		 * @param mixed $value Stored value.
+		 * @return mixed
+		 */
+		public static function maybe_decrypt_sensitive_setting_value( $value ) {
+			if ( empty( $value ) || ! is_string( $value ) || ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				return $value;
+			}
+
+			$decrypted_value = WP_MCP_AI_Encryption::decrypt( $value );
+
+			if ( false !== $decrypted_value ) {
+				return $decrypted_value;
+			}
+
+			return $value;
+		}
+
+		/**
+		 * Return the masked placeholder for a saved sensitive value.
+		 *
+		 * @param mixed $value Stored value.
+		 * @return string
+		 */
+		public static function mask_sensitive_setting_value( $value ) {
+			if ( empty( $value ) ) {
+				return '';
+			}
+
+			return self::MASKED_SECRET_PLACEHOLDER;
 		}
 
 		/**
@@ -313,7 +379,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'auth0_management_client_secret',
 				'mesh_inbound_api_key',
 				'digitalocean_api_key',
-								'isams_api_key',
+				'isams_api_key',
 				'isams_api_secret',
 				'webchat_api_key',
 				'socs_api_key',
@@ -321,8 +387,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'google_drive_client_secret',
 				'google_drive_refresh_token',
 				'kimi_api_key',
-				'anthropic_api_key', // if this exists
-				'huggingface_api_key', // if this exists
+				'anthropic_api_key',
+				'huggingface_api_key',
 			);
 		}
 
