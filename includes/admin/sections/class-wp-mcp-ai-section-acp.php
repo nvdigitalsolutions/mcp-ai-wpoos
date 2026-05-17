@@ -32,15 +32,24 @@ class WP_MCP_AI_Section_ACP extends WP_MCP_AI_Settings_Section {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Agent Client Protocol (ACP)', 'wp-mcp-ai' );
+		return __( 'Agent Client Protocol (ACP)', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get tab ID.
+	 *
+	 * @return string
+	 */
+	public function get_tab() {
+		return 'orchestration';
 	}
 
 	/**
 	 * Render section description.
 	 */
 	public function render_description() {
-		echo '<p>' . esc_html__( 'Configure the Agent Client Protocol (ACP) server. This allows external IDEs like Zed and JetBrains to connect to your WordPress assistants using the standardized ACP JSON-RPC format.', 'wp-mcp-ai' ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Connection Endpoint:', 'wp-mcp-ai' ) . '</strong> <code>' . esc_url( rest_url( 'mcp-ai/v1/acp' ) ) . '</code></p>';
+		echo '<p>' . esc_html__( 'Configure the Agent Client Protocol (ACP) server. This allows external IDEs like Zed and JetBrains to connect to your WordPress assistants using the standardized ACP JSON-RPC format.', 'mcp-ai-wpoos' ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Connection Endpoint:', 'mcp-ai-wpoos' ) . '</strong> <code>' . esc_url( rest_url( 'mcp-ai/v1/acp' ) ) . '</code></p>';
 	}
 
 	/**
@@ -52,18 +61,25 @@ class WP_MCP_AI_Section_ACP extends WP_MCP_AI_Settings_Section {
 		return array(
 			array(
 				'id'          => 'enable_acp_server',
-				'title'       => __( 'Enable ACP Server', 'wp-mcp-ai' ),
+				'title'       => __( 'Enable ACP Server', 'mcp-ai-wpoos' ),
 				'type'        => 'checkbox',
-				'description' => __( 'If enabled, the /acp REST routes will be available and the site will advertise ACP capabilities via the .well-known/ai-peer endpoint.', 'wp-mcp-ai' ),
+				'description' => __( 'If enabled, the /acp REST routes will be available and the site will advertise ACP capabilities via the .well-known/ai-peer endpoint.', 'mcp-ai-wpoos' ),
 				'default'     => '1',
 			),
 			array(
 				'id'          => 'acp_require_approval',
-				'title'       => __( 'Require Tool Approval', 'wp-mcp-ai' ),
+				'title'       => __( 'Require Tool Approval', 'mcp-ai-wpoos' ),
 				'type'        => 'checkbox',
-				'description' => __( 'If enabled, dangerous tool calls initiated from an ACP client will trigger the interactive session/request_permission flow in the IDE.', 'wp-mcp-ai' ),
+				'description' => __( 'If enabled, dangerous tool calls initiated from an ACP client will trigger the interactive session/request_permission flow in the IDE.', 'mcp-ai-wpoos' ),
 				'default'     => '1',
 			),
 		);
+	}
+
+	/**
+	 * Render the settings section content.
+	 */
+	public function render() {
+		// The settings dashboard renderer handles field output.
 	}
 }
