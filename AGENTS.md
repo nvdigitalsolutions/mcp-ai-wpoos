@@ -89,6 +89,18 @@ Every agent session loads these two files:
 | [`docs/llm-harness.md`](docs/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
 | [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md) | Working on the Chat-client Memory Bridge or Memory Drawer |
 
+### Folder context (loaded per folder being edited)
+
+Every PHP-bearing subdirectory under `includes/` (Base) and `addons/pro/includes/` (Pro) ships a `README.md` that follows the [folder README convention](docs/guides/developer/folder-readme-convention.md). When an agent edits a file inside `includes/<folder>/`, it should first read `includes/<folder>/README.md` for the folder's purpose, public surface, neighbors, and which `.context/*.md` files to also load.
+
+Folder READMEs are the **persistent, code-co-located, structural** layer of context. They:
+
+- Restate **nothing** from the cross-cutting canonical sources (naming, security, PHP-compat). They link instead — same layering rule as `.github/agents/*.agent.md`.
+- Are enforced by `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
+- Use the canonical template at [`.context/templates/folder-readme-template.md`](.context/templates/folder-readme-template.md).
+
+Full convention: [`docs/guides/developer/folder-readme-convention.md`](docs/guides/developer/folder-readme-convention.md).
+
 ### Feature context (loaded per active feature)
 
 Active features get a context file in `.context/active/[feature].md`. These are created at Phase 0, updated during development, and archived to `.context/archive/` at Phase 9.
@@ -228,6 +240,7 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New BMAD agent or workflow change | `.bmad/agents/*.yaml`, `AGENTS.md`, `.bmad/teams/feature-development.yaml` |
 | New subsystem context | `.context/`, `AGENTS.md` (context-loading table) |
 | New external AI agent | `AGENTS.md` (agent inventory), `MAINTAINER_MAP.md` (AI coordination section) |
+| New `includes/` or `addons/pro/includes/` subdirectory | Add `README.md` per [folder README convention](docs/guides/developer/folder-readme-convention.md); run `composer run docs:check-folder-readmes` |
 | New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR. If a matching agent also exists in [`examples/agents/`](examples/agents/), update `.zed/settings.json` so the Zed profile's tool block stays in sync. |
 | New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
 
