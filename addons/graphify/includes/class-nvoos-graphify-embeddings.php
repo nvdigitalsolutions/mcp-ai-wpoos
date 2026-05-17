@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 0.6.0
  */
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid,Squiz.Commenting.ClassComment.Missing -- NV_oOS intentional branding; consistent with all other addon classes.
 class NV_oOS_Graphify_Embeddings {
 
 	/**
@@ -100,7 +101,7 @@ class NV_oOS_Graphify_Embeddings {
 	 */
 	public static function cosine_similarity( array $a, array $b ) {
 		$len = count( $a );
-		if ( $len !== count( $b ) || 0 === $len ) {
+		if ( count( $b ) !== $len || 0 === $len ) {
 			return 0.0;
 		}
 
@@ -208,7 +209,7 @@ class NV_oOS_Graphify_Embeddings {
 			// not as a top-level option, so check that location before falling back
 			// to the legacy top-level option name.
 			if ( empty( $api_key ) ) {
-				$nvoos_settings = get_option( 'wp_mcp_ai_settings', array() );
+				$nvoos_settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 				if ( is_array( $nvoos_settings ) && ! empty( $nvoos_settings['openai_api_key'] ) ) {
 					$api_key = sanitize_text_field( $nvoos_settings['openai_api_key'] );
 				}

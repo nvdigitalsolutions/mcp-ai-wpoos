@@ -40,10 +40,12 @@
 <!-- Test files: PHPUnit test files use the test-*.php naming convention, which does not
      match the WordPress class-*.php convention. The filename sniff is not applicable. -->
 <exclude-pattern>*/tests/test-*</exclude-pattern>
-<!-- Docs Hub addon files intentionally use their own class/file naming scheme. -->
-<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
-<!-- Test files that intentionally contain multiple stub/test classes -->
-<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
+	<!-- Docs Hub addon files intentionally use their own class/file naming scheme. -->
+	<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
+	<!-- Graphify embeddings keeps the historical nvoos filename for backward compatibility. -->
+	<exclude-pattern>*/addons/graphify/includes/class-nvoos-graphify-embeddings.php</exclude-pattern>
+	<!-- Test files that intentionally contain multiple stub/test classes -->
+	<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
 </rule>
 
 <rule ref="PEAR.NamingConventions.ValidClassName">

@@ -185,7 +185,7 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$api_secret = ! empty( $connection['api_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] ) : '';
 		} else {
 			// Fallback to settings (old approach - for backward compatibility).
-			$settings   = get_option( 'wp_mcp_ai_settings', array() );
+			$settings   = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 			$api_url    = isset( $settings['isams_api_url'] ) ? trailingslashit( $settings['isams_api_url'] ) : '';
 			$api_key    = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
 			$api_secret = isset( $settings['isams_api_secret'] ) ? $settings['isams_api_secret'] : '';

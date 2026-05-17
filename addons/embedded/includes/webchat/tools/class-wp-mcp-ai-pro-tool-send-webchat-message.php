@@ -40,7 +40,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 	 * @return bool True if WebChat is enabled in settings.
 	 */
 	public static function is_available() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_webchat_integration'] );
 	}
 
@@ -55,14 +55,14 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Send WebChat Message', 'mcp-ai-wpoos-pro' );
+		return __( 'Send WebChat Message', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends a message to WebChat P2P rooms on this site. WebChat is a decentralized browser extension for anonymous peer-to-peer chat.', 'mcp-ai-wpoos-pro' );
+		return __( 'Sends a message to WebChat P2P rooms on this site. WebChat is a decentralized browser extension for anonymous peer-to-peer chat.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -74,15 +74,15 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'message'     => array(
 					'type'        => 'string',
-					'description' => __( 'Message text to broadcast to WebChat rooms.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Message text to broadcast to WebChat rooms.', 'mcp-ai-wpoos' ),
 				),
 				'room_id'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional room ID to target. If omitted, broadcasts to all active rooms on this site.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional room ID to target. If omitted, broadcasts to all active rooms on this site.', 'mcp-ai-wpoos' ),
 				),
 				'sender_name' => array(
 					'type'        => 'string',
-					'description' => __( 'Display name for the sender (default: "WordPress Assistant").', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Display name for the sender (default: "WordPress Assistant").', 'mcp-ai-wpoos' ),
 					'default'     => 'WordPress Assistant',
 				),
 			),
@@ -105,24 +105,24 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 		$required_capability = apply_filters( 'wp_mcp_ai_send_webchat_message_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send WebChat messages.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send WebChat messages.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$message = isset( $arguments['message'] ) ? sanitize_textarea_field( $arguments['message'] ) : '';
 
 		if ( '' === $message ) {
-			return new WP_Error( 'wp_mcp_ai_missing_message', __( 'Message text must be provided.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_message', __( 'Message text must be provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		$room_id     = isset( $arguments['room_id'] ) ? sanitize_text_field( $arguments['room_id'] ) : '';
 		$sender_name = isset( $arguments['sender_name'] ) ? sanitize_text_field( $arguments['sender_name'] ) : 'WordPress Assistant';
 
 		// Get WebChat settings.
-		$settings      = get_option( 'wp_mcp_ai_settings', array() );
+		$settings      = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$signaling_url = isset( $settings['webchat_signaling_url'] ) ? $settings['webchat_signaling_url'] : '';
 		$api_key       = isset( $settings['webchat_api_key'] ) ? $settings['webchat_api_key'] : '';
 		$use_rest_api  = ! empty( $settings['webchat_use_rest_api'] );
@@ -171,7 +171,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 
 		$body = wp_json_encode( $payload );
 		if ( false === $body ) {
-			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode WebChat message payload.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode WebChat message payload.', 'mcp-ai-wpoos' ) );
 		}
 
 		$headers = array( 'Content-Type' => 'application/json' );
@@ -192,7 +192,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			WP_MCP_AI_Logger::log_error( 'WebChat REST API request failed.', array( 'error' => $response->get_error_message() ) );
 			return new WP_Error(
 				'wp_mcp_ai_webchat_http_error',
-				__( 'The WebChat signaling server request failed.', 'mcp-ai-wpoos-pro' ),
+				__( 'The WebChat signaling server request failed.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -202,7 +202,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 		$decoded = json_decode( $body, true );
 
 		if ( 200 !== $code && 201 !== $code ) {
-			$message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'WebChat signaling server returned an error.', 'mcp-ai-wpoos-pro' );
+			$message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'WebChat signaling server returned an error.', 'mcp-ai-wpoos' );
 			WP_MCP_AI_Logger::log_error(
 				'WebChat message broadcast failed.',
 				array(
@@ -260,7 +260,7 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			'method'  => 'websocket',
 			'queued'  => true,
 			'room'    => $payload['room'],
-			'message' => __( 'Message queued for WebSocket broadcast. Ensure WebSocket server is running.', 'mcp-ai-wpoos-pro' ),
+			'message' => __( 'Message queued for WebSocket broadcast. Ensure WebSocket server is running.', 'mcp-ai-wpoos' ),
 		);
 
 		// Save message to CCT if available.
