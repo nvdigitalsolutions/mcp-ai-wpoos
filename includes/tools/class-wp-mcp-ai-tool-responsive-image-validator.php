@@ -737,7 +737,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @return string Page content.
 	 */
 	private function fetch_page_content( $url ) {
-		$response = wp_remote_get( $url );
+		$response = wp_safe_remote_get( $url );
 
 		if ( is_wp_error( $response ) ) {
 			return '';

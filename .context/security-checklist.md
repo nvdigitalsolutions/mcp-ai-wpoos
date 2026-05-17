@@ -193,8 +193,8 @@ $wpdb->query( "SELECT * FROM $table WHERE id = $id" ); // ❌ SQL injection risk
 ## External HTTP Requests
 
 ```php
-// Always use wp_remote_get/post — never curl directly:
-$response = wp_remote_post(
+// Always use wp_safe_remote_get/post for user-provided URLs — never curl directly:
+$response = wp_safe_remote_post(
     esc_url_raw( $api_url ),
     array(
         'timeout' => 30,

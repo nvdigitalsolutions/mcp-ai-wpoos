@@ -357,7 +357,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 
 		// If we have a URL, we need to download the image to get base64.
 		if ( ! empty( $image_url ) && empty( $image_content ) ) {
-			$image_response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
+			$image_response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 			if ( is_wp_error( $image_response ) ) {
 				return $image_response;

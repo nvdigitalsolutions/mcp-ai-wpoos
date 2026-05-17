@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- base64_decode used to decode binary image/file data received from the API, not for code obfuscation.
 			$image_content = base64_decode( $image_data['b64_json'] );
 		} elseif ( isset( $image_data['url'] ) ) {
-			$response = wp_remote_get( $image_data['url'], array( 'timeout' => 30 ) );
+			$response = wp_safe_remote_get( $image_data['url'], array( 'timeout' => 30 ) );
 			if ( ! is_wp_error( $response ) ) {
 				$image_content = wp_remote_retrieve_body( $response );
 			}
