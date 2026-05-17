@@ -373,6 +373,7 @@ This repository is developed by multiple AI coding agents. You (Claude Code) are
 **Key points for Claude Code sessions:**
 - Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.
 - Load subsystem-specific context files (listed in "Context Engineering Files" above) only when working on that subsystem.
+- **When editing files inside `includes/<folder>/`, also read `includes/<folder>/README.md` first.** Folder READMEs declare each folder's purpose, public surface, and neighbors, and tell you which `.context/*.md` files to also load. See [`docs/guides/developer/folder-readme-convention.md`](docs/guides/developer/folder-readme-convention.md). The same applies to `addons/pro/includes/<folder>/README.md`.
 - If a BMAD workflow is active, the orchestrator agent coordinates — follow the phase gates documented in `CONTRIBUTING.md`.
 - Do **not** duplicate work that another agent has already completed. Check `git log` for recent commits by other agents.
 

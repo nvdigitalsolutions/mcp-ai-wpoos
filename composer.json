@@ -52,9 +52,13 @@
         "test:coverage-dashboard": "bash bin/generate-coverage-dashboard.sh",
         "test:gaps": "bash bin/find-untested-classes.sh",
         "test:gaps:check": "bash bin/find-untested-classes.sh --check",
+        "docs:check-folder-readmes": "php bin/check-folder-readmes.php --scope=base",
+        "docs:check-folder-readmes:all": "php bin/check-folder-readmes.php --scope=all",
+        "docs:check-folder-readmes:strict": "php bin/check-folder-readmes.php --scope=base --strict",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
         "ci:all": [
             "@lint:errors-only",
+            "@docs:check-folder-readmes",
             "@test:gaps:check",
             "@test:coverage"
         ]

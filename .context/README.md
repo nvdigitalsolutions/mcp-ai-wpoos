@@ -32,14 +32,25 @@ These context files solve that problem by giving agents a fast, focused referenc
 | `archive/` | Completed feature context files (for historical reference) |
 | `templates/` | Templates for creating new context files |
 
+## Folder-Level Context (NEW)
+
+In addition to the subsystem files above, every PHP-bearing subdirectory under `includes/` and `addons/pro/includes/` ships its own `README.md` that declares the folder's purpose, public surface, neighbors, and which `.context/*.md` files to load alongside it.
+
+This is the **structural** layer of context engineering: it stays close to the code, doesn't drift, and slots between subsystem files (this directory) and feature files (`active/`). See:
+
+- Template: [`templates/folder-readme-template.md`](templates/folder-readme-template.md)
+- Convention: [`../docs/guides/developer/folder-readme-convention.md`](../docs/guides/developer/folder-readme-convention.md)
+- Enforcement: `composer run docs:check-folder-readmes` (part of `composer run ci:all`)
+
 ## Context Loading Strategy (GSD Principle)
 
 Following the GSD 0–30% context window rule:
 
 1. **Load base context** — always load `conventions.md` + `security-checklist.md`
 2. **Load subsystem context** — only load subsystem files relevant to the current task
-3. **Load feature context** — load `.context/active/[feature].md` for active features
-4. **Keep context lean** — only load what's needed; avoid loading everything
+3. **Load folder context** — when editing files inside `includes/<folder>/`, read `includes/<folder>/README.md` first
+4. **Load feature context** — load `.context/active/[feature].md` for active features
+5. **Keep context lean** — only load what's needed; avoid loading everything
 
 ## Active Feature Contexts
 
