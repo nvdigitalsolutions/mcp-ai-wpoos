@@ -102,11 +102,11 @@ You just:
 **Add More Tools**
 - **Settings → NV oOS → Tools**
 - Enable image generation, web search
-- [See all 159 tools →](../reference/tools/tool-reference.md)
+- [See the live tool reference →](../reference/tools/tool-reference.md)
 
 **Use Templates**
 - **Professions → Browse**
-- 182 pre-built experts
+- ~190 pre-built profession templates
 - One-click deploy
 
 **Set Token Limits**

@@ -38,7 +38,7 @@
 - [📦 Installation](#-installation)
   - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](-configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
@@ -56,7 +56,7 @@
 ### Orchestration & AI Features
 - [🎛 Orchestration Phases 1–7](#-orchestration-phases-17)
 - [🧠 LLM Harnessing (Layers A–H)](#-llm-harnessing-layers-ah)
-- [🔗 Toolkit MCP Servers (26 toolkits)](#-toolkit-mcp-servers-26-toolkits)
+- [🔗 Toolkit MCP Servers](#-toolkit-mcp-servers)
 - [🧵 Chat-client Memory Bridge](#-chat-client-memory-bridge)
 
 ### AI Providers & Integration
@@ -120,7 +120,7 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - ✅ **LLM Harnessing Subsystem (Layers A–H)** — seven opt-in epistemic layers per-assistant: prompt cues, reasoning/self-consistency, tool router, retrieval+citation, self-refine, memory scoping+PII filter, eval scheduler (+ Pro Layer H fine-tune curriculum export). See [`docs/llm-harness.md`](docs/llm-harness.md).
 - ✅ **Chat SPA addon (`addons/chat-spa/`)** — React-based replacement for the legacy chat shortcode (Phases 1–7, v0.6.0); opt out via `WP_MCP_AI_LEGACY_CHAT_JS` constant. See [`docs/addons/chat-spa.md`](docs/addons/chat-spa.md).
 - ✅ **NV oOS Cloud / SaaS Controller** — operator-side WordPress admin toolkit for provisioning Cloudflare Workers + D1 + KV + AI Gateway + Stripe + OpenRouter from WP-Admin. See [`docs/saas-controller.md`](docs/saas-controller.md).
-- ✅ **26 Toolkit MCP Servers + `/.well-known/mcp`** — every Pro toolkit is now an MCP server discoverable at `/.well-known/mcp`; toolkit-scoped credentials, cross-mount audit trail, `/mcp-server` slash command. See [`docs/mcp-servers.md`](docs/mcp-servers.md).
+- ✅ **Toolkit MCP Servers + `/.well-known/mcp`** — Pro toolkits can expose scoped MCP servers discoverable at `/.well-known/mcp`; toolkit-scoped credentials, cross-mount audit trail, `/mcp-server` slash command. See [`docs/mcp-servers.md`](docs/mcp-servers.md).
 - ✅ **WordPress.org Compliance Hardening** — B-series reviewer findings B1–B13 all resolved; WP.org submission ZIP now built separately via `bin/build-plugin-zip.sh --wp-org`. See [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
 
 **Privacy & Terms Notice:** This plugin connects to external AI services. Review each provider's policies:
@@ -211,7 +211,7 @@ NV oOS implements a comprehensive orchestration layer for managing AI operations
 - **34 REST controllers** (16 base + 18 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
-- **26 Toolkit MCP servers** (19 Tier-1 + 7 Tier-2) — per-toolkit JSON-RPC 2.0 servers exposed under `/wp-json/mcp-ai-pro/v1/mcp/{slug}`; discoverable at `/.well-known/mcp`
+- **Toolkit MCP servers** — per-toolkit JSON-RPC 2.0 servers exposed under `/wp-json/mcp-ai-pro/v1/mcp/{slug}`; discoverable at `/.well-known/mcp`
 - **8 inline-async-tick consumers** — cooperative tick-lock pattern eliminates WP-Cron startup latency for background jobs (transcript mining, async tool executor, SaaS Apply, Crawl4AI, Docs Hub rebuild, Graphify reindex, Harness eval, Gemini Veo polling)
 - **7 LLM Harness layers (+ 1 Pro)** — opt-in epistemic layers A–H activated per-assistant via the **LLM Harness** metabox
 - **Orchestration Phases 1–7** — HITL approval queue, prompt-injection detector, structured output, OTel exporter, DAG builder, durable runs, triggers/webhooks, sub-agents
@@ -517,7 +517,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### April 30 – May 1, 2026 — OpenAI `gpt-image-2` (Images 2.0), Phase 4a/4b durable agent-memory bridge, AI Harmonization toolkit, production-only Composer autoloader 🎨🧠🛠️
 
-- ✅ **OpenAI `gpt-image-2` (Images 2.0)** — first-class support added in [`WP_MCP_AI_OpenAI_Client`](includes/openai/class-wp-mcp-ai-openai-client.php) and [`WP_MCP_AI_Tool_Generate_OpenAI_Image`](includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php), now the default image model across the base plugin and Pro image tools. New 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square), `2048x1152` (16:9), `1152x2048` (9:16). Cost / token tables and admin model dropdowns ("Images 2.0 (Recommended)") updated to match. Pro tools `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` default to `gpt-image-2` as well. Existing sites with a saved `openai_image_model` setting are unaffected. Filters unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`. New PHPUnit `test_gpt_image_2_is_recognized_and_default` covers the default, the `hd → high` quality remap, and the suppression of `response_format` on the wire.
+- ✅ **OpenAI `gpt-image-2` (Images 2.0)** — first-class support added in [`WP_MCP_AI_OpenAI_Client`](includes/class-wp-mcp-ai-openai-client.php) and [`WP_MCP_AI_Tool_Generate_OpenAI_Image`](includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php), now the default image model across the base plugin and Pro image tools. New 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square), `2048x1152` (16:9), `1152x2048` (9:16). Cost / token tables and admin model dropdowns ("Images 2.0 (Recommended)") updated to match. Pro tools `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` default to `gpt-image-2` as well. Existing sites with a saved `openai_image_model` setting are unaffected. Filters unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`. New PHPUnit `test_gpt_image_2_is_recognized_and_default` covers the default, the `hd → high` quality remap, and the suppression of `response_format` on the wire.
 
 - ✅ **Phase 4a/4b — durable agent-memory bridge (MemPalace-inspired)** — agent memory was the only persistent surface in the plugin still backed solely by transients (cache-evictable). With JetEngine active, every transient memory write is now mirrored into a durable `ai_agent_memories` Custom Content Type with an industry-standard schema combining ideas from **Letta / MemGPT** (memory tier, verbatim immutability flag, expires_at TTL anchor), **Zep** (bi-temporal validity, source provenance), **mem0** (importance, verbatim discipline, source tracking), **Cognee**, and [**MemPalace**](https://github.com/MemPalace/mempalace) (hierarchical scope via wing/room, verbatim-storage discipline). Transients remain the primary fast read path; the CCT is the durable backing store. Vector and graph references (`embedding_id`, `graph_node_id`) are nullable forward-compatibility hooks. New `wp_mcp_ai_memory_deleted` action fires from `manage_context_lifecycle` delete path with subscriber-driven CCT cleanup. The agent-memory dashboard now surfaces a **"Persistent (CCT) / Cache only"** stat card. Source files inspired by MemPalace now cite the upstream project in their file headers so attribution matches `docs/AGENT-MEMORY-COMPLETE-GUIDE.md`. Tests: `tests/test-jetengine-agent-memories-cct.php` + `tests/test-agent-memory-cct-bridge.php` (13 new tests; 24 existing regression tests still pass).
 
@@ -556,7 +556,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ### WordPress.org Compliance Hardening 🛡️
 
 - ✅ Dead support-forum URL fixed in `readme.txt` (now points at the canonical `nvdigital-open-operator-system-oos` slug).
-- ✅ Tool-count consistency: headline description and Base Plugin section both report `230+ tools`.
+- ✅ Tool-count consistency: historical WordPress.org hardening note; current public framing is ~830 tools (~195 base + ~635 Pro), with the live registry authoritative.
 - ✅ Missing `mcp` tag added to `Tags:` line.
 - ✅ `bin/build-wordpress-org-from-base.sh` and `bin/review-zips.sh` now verify the readme invariants and fail the build if a legacy `wp-mcp-ai` slug or unrewritten text-domain header survives.
 
@@ -619,7 +619,7 @@ New [`docs/ORCHESTRATION_REFERENCE.md`](docs/ORCHESTRATION_REFERENCE.md) is the 
 
 ### Full Tool-Reference Audit (April 15, 2026)
 
-**`docs/reference/tools/tool-reference.md` now documents all 230+ tools in `load_default_tools`**, with 14 new sections covering previously-undocumented tool groups:
+**`docs/reference/tools/tool-reference.md` was audited in April 2026 and is superseded for headline counts by the current ~830-tool framing**, with 14 sections covering previously-undocumented tool groups:
 
 OpenAI file/model management · text embeddings & vector stores · multi-agent orchestration · agent memory management · reasoning & code analysis · deep research · browser-native AI (client-side NLP) · Yahoo Fantasy Football toolkit · Newsletter plugin integration · WP All Import/Export integration · Flowhub cannabis dispensary · PayHere payment gateway · Erlang C queue tools.
 
@@ -1005,7 +1005,7 @@ A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, 
 - ✅ **`test_connection()` stderr fix**: Builds b8479+ write `--version` output to stderr; `run_binary()` now has a `$use_stderr_fallback` parameter so the binary is correctly detected.
 - ✅ **Provider diagnostic page**: Now shows the resolved llama-cli binary path and all co-located shared library filenames.
 - ✅ **Re-install button**: New **Re-install llama.cpp Binary** button in embedded provider settings for easy recovery after failed extractions.
-- [Embedded LLM Setup Guide →](docs/EMBEDDED_LLM.md)
+- [Embedded LLM Setup Guide →](addons/embedded/docs/features/ai-providers/embedded/README.md)
 
 ### Embedded Chat Client — SSE Streaming Reliability (March 22–24, 2026) 🔧 **FIXED**
 
@@ -1489,7 +1489,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - ✅ ~30% faster class loading with authoritative classmap
   - ✅ All distribution packages regenerated
   
-- **Documentation:** [BUILD.md](BUILD.md#troubleshooting) includes troubleshooting section for this error
+- **Documentation:** [BUILD.md](docs/BUILD.md#troubleshooting) includes troubleshooting section for this error
 - **Implementation:** Root directory cleaned - 9 planning/implementation docs moved to [`docs/implementation-history/2026/january/`](docs/implementation-history/2026/january/)
 
 > **Repository Maintenance:** Root now contains only 6 essential markdown files: README, CHANGELOG, CONTRIBUTING, SECURITY, BUILD, and DEPENDENCIES_BUNDLING.
@@ -1545,9 +1545,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 > 
 > Repository root now contains only 6 essential files: README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, and BUILD.
 
-> **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
+> **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](docs/implementation-history/2026/ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
 
-> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md) - **100% ISO 27001:2022 Compliance Achieved** + SOC 2 (100%) and HIPAA (98%) frameworks, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment.
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md) - historical compliance-posture work, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment. For current compliance posture, see `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`.
 
 > **📌 DECEMBER 23, 2025 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
 
@@ -1563,9 +1563,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - [Proposals Status →](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
 
 ### 📅 Weekly Summary (Dec 30 - Jan 6, 2026)
-- **100% ISO 27001:2022 Compliance** - 83 of 83 applicable controls implemented (was 56%)
-- **SOC 2 Framework** - 100% compliant (54 of 54 Trust Services Criteria)
-- **HIPAA Framework** - 98% compliant (42 of 43 Security Rule safeguards)
+- **Compliance posture documentation** - historical ISO 27001, SOC 2, and HIPAA framework work landed; current docs avoid unbacked percentage claims and point operators to `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`
 - **Pro Dashboard Modernization** - Singleton pattern with industry standards (lazy loading, type-safe constants)
 - **PM Assistant Fixes** - 6 critical modal and chat fixes (rendering, localization, validation, diagnostics)
 - **WordPress 6.7+ Compatibility** - Translation loading timing fixes
@@ -1641,7 +1639,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
-- 👔 **Professional & Team Templates** - Deploy assistants from 182 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
+- 👔 **Professional & Team Templates** - Deploy assistants from ~190 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
 - 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
@@ -3355,7 +3353,7 @@ See [Error Handling Documentation](docs/guides/developer/best-practices/ERROR_HA
 Assistant posts ship with dedicated controls that map directly to runtime behaviour:
 
 - **Available Tools** – Choose which registered tools (core, WooCommerce, JetEngine, or custom) the model may invoke. Dependency-aware notices explain why certain tools are unavailable, and you can now disable the pre-built prompt shortcuts that tools normally contribute.
-- **Quick Tool Selection Presets** – 61 one-click presets group all 760 tools by use-case (🤖 Agentic Workflow, 🛒 E-commerce, ⚕️ Healthcare, 💬 Communication, 💻 Development, 📋 Registration & Compliance, and more). Click a preset to add its tools to the current selection; click again to remove them. Combine multiple presets freely. Use **✓ Select All** / **✗ Clear All** for bulk actions. Implemented in `includes/helpers/class-wp-mcp-ai-tool-presets-helper.php`.
+- **Quick Tool Selection Presets** – one-click presets group the current live registry by use-case (🤖 Agentic Workflow, 🛒 E-commerce, ⚕️ Healthcare, 💬 Communication, 💻 Development, 📋 Registration & Compliance, and more). Click a preset to add its tools to the current selection; click again to remove them. Combine multiple presets freely. Use **✓ Select All** / **✗ Clear All** for bulk actions. Implemented in `includes/helpers/class-wp-mcp-ai-tool-presets-helper.php`.
 - **Model Defaults** – Provide assistant-specific overrides for the OpenAI model, temperature (0–2), and system prompt applied to every conversation.
 - **Base Knowledge** – Attach Media Library items that are chunked, truncated, and streamed as memory context, and optionally store an external **Vector Store ID** to coordinate retrieval workflows.
 - **Prompt Shortcuts** – Capture labelled prompts with optional descriptions and tool affinities; they render as accessible quick actions in the chat UI so operators can seed conversations instantly.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
@@ -3488,7 +3486,7 @@ The `name` field (max 64 chars) becomes the skill's slug. The `description` fiel
 
 NV oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
 
-1. **Select from 182 pre-built professional templates** spanning 12 industry categories
+1. **Select from ~190 pre-built professional templates** spanning 12 industry categories
 2. **Create custom profession templates** with reusable configurations
 3. **Deploy entire teams** of specialized assistants with one click
 4. **Test everything from the backend** before exposing to end users
@@ -3502,19 +3500,22 @@ Professions are reusable assistant templates with pre-configured:
 - **AI model defaults** (provider, model, temperature)
 - **Warnings and disclaimers** for professional contexts
 
-**Available Categories (182 professions):**
-- 🌾 Agriculture & Natural Resources (10 professions)
-- 🎨 Art, Media & Entertainment (24 professions)
-- 💼 Business & Finance (16 professions)
-- 🎓 Education (10 professions)
-- 🏥 Healthcare & Medicine (25 professions)
-- ⚖️ Law & Public Safety (11 professions)
-- 🔬 Science & Engineering (17 professions)
-- 🍽️ Service Industry (12 professions)
-- 💻 Technology (12 professions)
-- 🔧 Trades & Manual Labor (13 professions)
-- 🚚 Transportation (10 professions)
-- 📋 Miscellaneous (22 professions)
+**Available Categories (~190 professions across 12 categories):**
+
+Methodology note: the current sanity check counts 190 profession knowledge documents; runtime availability can vary with seeders, filters, and installed features.
+
+- 🌾 Agriculture & Natural Resources
+- 🎨 Art, Media & Entertainment
+- 💼 Business & Finance
+- 🎓 Education
+- 🏥 Healthcare & Medicine
+- ⚖️ Law & Public Safety
+- 🔬 Science & Engineering
+- 🍽️ Service Industry
+- 💻 Technology
+- 🔧 Trades & Manual Labor
+- 🚚 Transportation
+- 📋 Miscellaneous
 
 **Example Professions:**
 - Software Developer, Web Developer, Data Scientist
@@ -3522,7 +3523,7 @@ Professions are reusable assistant templates with pre-configured:
 - Registered Nurse, Physician, Pharmacist
 - Attorney, Paralegal, Mediator
 - Content Writer, Graphic Designer, Social Media Manager
-- And 170+ more...
+- And ~180 more, depending on active seeders and installed features...
 
 ### Creating Assistants from Templates
 
@@ -3715,7 +3716,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ### NPM Dependencies & Bundling
 
-For details on how NPM dependencies are managed and bundled for both the base plugin and Pro addon, see [DEPENDENCIES_BUNDLING.md](DEPENDENCIES_BUNDLING.md).
+For details on how NPM dependencies are managed and bundled for both the base plugin and Pro addon, see [DEPENDENCIES_BUNDLING.md](docs/DEPENDENCIES_BUNDLING.md).
 
 **Quick Reference:**
 - Base plugin dependencies: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`, `chart.js`, `@neplex/vectorizer`, `@langchain/*`, `@mlc-ai/web-llm`

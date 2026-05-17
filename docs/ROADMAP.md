@@ -162,9 +162,9 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
   - Competitor analysis
   - Influencer identification
 - ✅ **Pro Toolkit Memory-Based Tracking** - Replaced hard 5-toolkit limit with transparent memory usage display
-- ✅ **Cloudflare Image Generation Models** - 3 new models (Flux-2 Dev, Leonardo Lucid Origin, Phoenix 1.0)
+- ✅ **Cloudflare Workers AI provider work** - historical roadmap item; current catalog-backed docs list active Cloudflare LLM rows rather than fabricated image-model prices
 - ✅ **7 Critical Bug Fixes** - Settings persistence, API keys, transcripts, OAuth, model dropdowns
-- ✅ **100% ISO 27001/SOC 2/HIPAA Compliance** - Up from 56% (83/83 controls implemented)
+- ✅ **Compliance posture documentation** - historical framework work; current public docs avoid unbacked percentage claims and point operators to posture references
 
 **AI Integrations:**
 - ✅ OpenAI Batch API (50% cost savings)

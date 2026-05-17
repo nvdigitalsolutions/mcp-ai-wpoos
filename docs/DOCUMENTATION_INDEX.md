@@ -8,6 +8,9 @@ This document provides a comprehensive index of all documentation available for 
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **📌 MAY 17, 2026 DOCUMENTATION REFRESH:** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` was refreshed to independent doc revision 2.0 and now cites `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the companion source for point-in-time counts. Current public framing is ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, and model catalog `2026.05.04`; the live registry remains authoritative.
+
 > **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
 > - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 > - **DigitalOcean Serverless Inference provider** (9th provider) — `WP_MCP_AI_DigitalOcean_Client` + OpenAI-compatible chat / tool calls / streaming / embeddings; default embedding model `gte-large-en-v1.5`; Provider Diagnostics card. Reference: [`docs/features/ai-providers/digitalocean.md`](features/ai-providers/digitalocean.md).
@@ -65,7 +68,7 @@ This document provides a comprehensive index of all documentation available for 
 > **📌 APRIL 15, 2026 UPDATE:** 📋 **ERLANG C TOOLS & FULL TOOL-REFERENCE AUDIT**
 > - **Erlang C Queuing Theory Tools** (v1.1.8) — 4 new workforce-management tools: `calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`. New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications.
 > - **New Feature Doc**: [features/erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md)
-> - **tool-reference.md fully audited** — All 230+ tools in `load_default_tools` (base + extended) now documented. Added 14 new sections: OpenAI file/model management, embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI, Yahoo Fantasy Football toolkit, Newsletter integration, WP All Import/Export, Flowhub, PayHere, and Erlang C tools.
+> - **tool-reference.md fully audited** — historical April audit; headline counts are now superseded by the May 17 Rev 2.0 fact sheet (~830 tools, live registry authoritative). Added 14 new sections: OpenAI file/model management, embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI, Yahoo Fantasy Football toolkit, Newsletter integration, WP All Import/Export, Flowhub, PayHere, and Erlang C tools.
 > - **hooks-reference.md** — Added `wp_mcp_ai_queue_alert` action with full parameter schema and usage examples.
 > - **QUICK_REFERENCE.md** — Updated to v1.1.8 with new Recent Updates section.
 
@@ -130,11 +133,11 @@ This document provides a comprehensive index of all documentation available for 
 > - **In-app Documentation Tab** — Keyboard shortcut reference, W/L presets table, DICOM modality codes, full REST API reference, Privacy & HIPAA notes
 > - **New Doc**: [features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)
 
-> **📌 MARCH 16, 2026 UPDATE:** 🗂️ **QUICK TOOL SELECTION PRESETS – FULL 760-TOOL COVERAGE**
-> - **Quick Tool Presets Expanded** – All 760 available tools are now reachable via one-click presets on the assistant CPT edit page (was ~527 tools)
-> - **New Preset** – `📋 Registration & Compliance` (44 tools): registration lifecycle, regulated products, compliance certificates, authority submission, NMRA/MOHAP sync
+> **📌 MARCH 16, 2026 UPDATE:** 🗂️ **QUICK TOOL SELECTION PRESETS – BROAD REGISTRY COVERAGE**
+> - **Quick Tool Presets Expanded** – historical preset expansion on the assistant CPT edit page; exact coverage should now be verified against the live registry
+> - **New Preset** – `📋 Registration & Compliance`: registration lifecycle, regulated products, compliance certificates, authority submission, NMRA/MOHAP sync
 > - **20+ Updated Presets** – E-commerce (Shopify), Communication (Discord/Slack/Teams/Apple/Telegram/WhatsApp/Messenger/Google Chat), Development (tool scaffolding), Files (cloud storage/PDF/Excel), SEO (social listening/competitor analysis), Site Management (page builder sections), Healthcare (health metrics/vitals import), Sales/CRM, Finance, and more
-> - **Total**: 61 presets covering all 760 tools (2,030 tool references) — up from 60 presets covering ~527 tools
+> - **Current Count Note**: May 2026 public framing is ~830 tools (~195 base + ~635 Pro); live registry remains authoritative
 
 > **📌 MARCH 15, 2026 UPDATE:** 🔒 **SECURITY HARDENING + CHANNEL FIXES + v1.1.4**
 > - **Security** – AES-256-GCM encryption, finfo fail-closed, Discord replay protection, HTTPS enforcement, ZIP bomb guard, OCR info-disclosure fix
@@ -270,7 +273,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **667 Violations Analyzed**: 91 fixable, 127 to suppress, 469 intentional
 > - **Implementation Status**: Phase 1 complete (file upload security, privacy compliance verified)
 > - **January 2026 Fixes**: 16 critical security errors resolved
-> - **Start Here**: [PHPCS_DOCUMENTATION_INDEX.md](../PHPCS_DOCUMENTATION_INDEX.md)
+> - **Start Here**: [PHPCS_DOCUMENTATION_INDEX.md](archive/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)
 
 > **📌 JANUARY 31, 2026 UPDATE:** 
 > - **Root Directory Organization Complete** - 5 documentation files moved from root to appropriate docs/ subdirectories
@@ -292,11 +295,10 @@ This document provides a comprehensive index of all documentation available for 
 > - **Root Now Contains**: Only 8 essential files (README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, BUILD, DEPENDENCIES_BUNDLING, CODEOWNERS)
 
 > **📌 JANUARY 23, 2026 UPDATE:** 
-> - **Tool Count Documentation Updated** - Corrected tool counts across all primary documentation
-> - **Accurate Counts**: 398 tools total (141 base/extended + 257 Pro addon)
-> - **Files Updated**: docs/README.md, docs/reference/README.md, docs/reference/tools/tool-reference.md
-> - **Verified**: Counts verified against actual tool registry and Pro addon registration
-> - **Previous counts were outdated**: Was showing 133-193 tools, now shows accurate 398 tools
+> - **Tool Count Documentation Updated** - Historical January 2026 count sweep; superseded by the May 17, 2026 Rev 2.0 fact sheet
+> - **Current Framing**: ~830 tools total (~195 base + ~635 Pro); live registry remains authoritative
+> - **Files Updated in Rev 2.0 follow-up**: README.md, docs/DOCUMENTATION_INDEX.md, docs/getting-started/USE_CASES_AND_QUICKSTARTS.md, docs/getting-started/_USE_CASES_FACT_SHEET.md
+> - **Verified**: Current counts reconcile against readme.txt 1.1.18 and live-code sanity checks
 
 > **📌 JANUARY 22, 2026 UPDATE:** 
 > - **Documentation Consolidation Complete** - Menu-related documentation consolidated
@@ -322,11 +324,10 @@ This document provides a comprehensive index of all documentation available for 
 > **📌 JANUARY 8, 2026 UPDATE (WEEK 2):** 
 > - **Complete Code Review & Gap Analysis** - Comprehensive audit completed. Grade: A- (93/100). Production ready! See [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
 > - **Development Dependencies Removed** - Repository now production-ready with `composer install --no-dev` completed
-> - **Root Directory Reorganization** - 19 temporary fix documents consolidated. See [Root Directory Consolidation](../ROOT-DOCS-REORGANIZATION.md)
+> - **Root Directory Reorganization** - 19 temporary fix documents consolidated. See [Root Directory Consolidation](implementation-history/2026/ROOT-DOCS-REORGANIZATION.md)
 
 > **📌 JANUARY 6, 2026 UPDATE (WEEK 2)**: 
-> - **100% ISO 27001:2022 Compliance Achieved** - 83 of 83 applicable controls implemented (was 56%)
-> - **SOC 2 & HIPAA Frameworks Added** - SOC 2: 100% (54/54), HIPAA: 98% (42/43)
+> - **Compliance posture documentation added** - historical ISO 27001, SOC 2, and HIPAA framework work landed; current docs avoid unbacked percentage claims and point operators to posture references
 > - **Pro CPT Documentation** - Events, Quizzes, and Places (21 tools total)
 > - **Root Directory Organization** - Moved 25 files to organized subdirectories
 > - **Pro Dashboard Modernization** - Singleton pattern with industry standards
@@ -337,7 +338,7 @@ This document provides a comprehensive index of all documentation available for 
 
 > **📌 JANUARY 3, 2026 UPDATE**: Gap Documentation Review completed - 100% high-priority completion achieved! All 10 critical items complete including Code Coverage Dashboard. Overall quality score: 98/100 (up from 95/100). Production ready with A+ grade. See [Gap Documentation Review Summary](GAP_DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Status Update](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) for details.
 
-> **📌 JANUARY 2, 2026 UPDATE**: Code Review and Root Directory Organization completed. Tool count verification: 193 unique tools (127 base + 66 Pro). Repository organization improved - moved 8 fix/implementation files from root to proper docs/ subdirectories. See [Code Review Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md) and [Organization Summary](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md) for details.
+> **📌 JANUARY 2, 2026 UPDATE**: Code Review and Root Directory Organization completed. Historical tool count verification completed; current May 2026 framing is ~830 tools (~195 base + ~635 Pro). Repository organization improved - moved 8 fix/implementation files from root to proper docs/ subdirectories. See [Code Review Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md) and [Organization Summary](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md) for details.
 
 > **📌 DECEMBER 29, 2025 UPDATE**: Comprehensive documentation review completed - 659 files reviewed, 100% feature coverage verified, zero significant gaps found. Overall documentation grade A (95/100). See [Documentation Review Summary](DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Review](implementation-history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md) for details.
 
@@ -350,7 +351,7 @@ This document provides a comprehensive index of all documentation available for 
 ### New documents (Phase 7 gap-fill)
 
 - **[docs/orchestration-reference.md](orchestration-reference.md)** ⭐ **NEW** — Canonical orchestration documentation hub. 2-paragraph NV oOS overview, links to every orchestration-relevant doc, full Phase 1 Observability reference (Run Timeline, Layer I Prompt Injection Detector, Structured Output Guardrail, OTel span exporter), full Phase 2 HITL reference (`request_user_approval` tool, `WP_MCP_AI_Approval_Queue`, REST `/mcp-ai/v1/approvals/*`, admin Approvals page), and Phase 3–6 roadmap table. Distinct from [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) (the deep infrastructure reference).
-- **[docs/comparisons/orchestration-platform-comparison.md](orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
+- **[docs/comparisons/orchestration-platform-comparison.md](proposals/orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
 - **[docs/quickstart-workflow.md](quickstart-workflow.md)** ⭐ **NEW** — "Build your first workflow in 10 minutes" tutorial. Creates an assistant, enables `write_post` + `request_user_approval`, writes a system prompt, triggers the HITL loop from the chat UI, reviews the approval request in **NV oOS → Approvals**, approves, and watches the post publish. Welcoming tone; H2/H3 headings, numbered steps, code blocks.
 
 ---
@@ -535,7 +536,7 @@ This document provides a comprehensive index of all documentation available for 
 
 Complete consolidation and reorganization of temporary documentation files:
 
-- **[Root Directory Consolidation](../ROOT-DOCS-REORGANIZATION.md)** ⭐ **NEW (Jan 8)**
+- **[Root Directory Consolidation](implementation-history/2026/ROOT-DOCS-REORGANIZATION.md)** ⭐ **NEW (Jan 8)**
   - Cleaned up 19 temporary fix documentation files from root
   - Consolidated Chart.js and Pro Dashboard fixes into single document
   - Root directory now contains only 6 essential files
@@ -635,16 +636,16 @@ Complete code coverage tracking and visualization system:
 
 ### Code Review and Repository Organization (January 2, 2026)
 
-Post-December 23 changes review with tool count verification:
+Post-December 23 changes review with historical tool count verification (superseded by the May 17, 2026 Rev 2.0 fact sheet):
 
 - **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** ⭐ **NEW (Jan 2)**
   - Comprehensive code review (A- grade, 92/100)
   - Security: 10/10 (zero vulnerabilities)
   - JavaScript: 10/10 (ESLint clean)
   - Architecture: 9.5/10 (excellent design)
-  - Tool count verification: 193 unique tools
-    - Base tools: 127 (corrected from 95)
-    - Pro tools: 66 (corrected from 64)
+  - Historical tool count verification completed
+    - Superseded current framing: ~830 tools (~195 base + ~635 Pro)
+    - Live registry remains authoritative
   - PHP linting results: 1,083 errors, 1,294 warnings
   - 235 auto-fixable issues identified
   - Production ready status confirmed
@@ -1208,7 +1209,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [rate-limit-protection.md](features/performance/rate-limit-protection.md) | Rate limiting configuration | Admins |
 | [../SECURITY.md](../SECURITY.md) | Security policies and vulnerability reporting | Everyone |
 
-### Compliance Frameworks ⭐ **100% ISO 27001, SOC 2, HIPAA**
+### Compliance Frameworks
 
 | Document | Description | Audience |
 |----------|-------------|----------|
@@ -1329,10 +1330,10 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[../PHPCS_DOCUMENTATION_INDEX.md](../PHPCS_DOCUMENTATION_INDEX.md)** | **⭐ NEW (Feb 1, 2026):** Complete PHPCS documentation suite - 7 files covering 667 violations, implementation plan | Developers/QA |
+| **[../PHPCS_DOCUMENTATION_INDEX.md](archive/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)** | **⭐ NEW (Feb 1, 2026):** Complete PHPCS documentation suite - 7 files covering 667 violations, implementation plan | Developers/QA |
 | **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** | **⭐ NEW (Jan 3, 2026):** Gap documentation review - 100% high-priority completion! Quality: 98/100 | Everyone |
 | **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** | **NEW (Jan 3, 2026):** Master status update - all 6 gap documents reviewed, phase tracking | Developers/PM |
-| **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** | **NEW (Jan 2, 2026):** Comprehensive code review - Tool count verification (193 tools), Grade A- (92/100) | Developers/QA |
+| **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** | **NEW (Jan 2, 2026):** Comprehensive code review - historical tool-count verification superseded by Rev 2.0 fact sheet, Grade A- (92/100) | Developers/QA |
 | **[CODE_REVIEW_SUMMARY_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** | **NEW (Jan 2, 2026):** Quick summary of January 2 code review findings and actions | Everyone |
 | **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** | **NEW (Jan 2, 2026):** Root cleanup - moved 8 files to proper docs/ locations | Developers |
 | **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | Executive summary of comprehensive gap analysis (Dec 6, 2025) | Everyone |
@@ -1349,11 +1350,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Size | Audience |
 |----------|-------------|------|----------|
-| **[../PHPCS_DOCUMENTATION_INDEX.md](../PHPCS_DOCUMENTATION_INDEX.md)** | Master index for all PHPCS documentation - Start here! | 11 KB | Everyone |
-| [../PHPCS_VIOLATIONS_FLOWCHART.md](../PHPCS_VIOLATIONS_FLOWCHART.md) | Visual decision-making guide with ASCII flowchart | 8.6 KB | Developers |
-| [../SAFE_PHPCS_FIX_PLAN.md](../SAFE_PHPCS_FIX_PLAN.md) | 4-phase implementation plan with examples | 13 KB | Developers |
-| [../PHPCS_FIX_QUICK_REFERENCE.md](../PHPCS_FIX_QUICK_REFERENCE.md) | Quick lookup reference for development | 5.9 KB | Developers |
-| [../PHPCS_IGNORE_ANALYSIS.md](../PHPCS_IGNORE_ANALYSIS.md) | Detailed analysis of 149 phpcs:ignore instances | 76 KB | Developers |
+| **[../PHPCS_DOCUMENTATION_INDEX.md](archive/fixes/phpcs/PHPCS_DOCUMENTATION_INDEX.md)** | Master index for all PHPCS documentation - Start here! | 11 KB | Everyone |
+| [../PHPCS_VIOLATIONS_FLOWCHART.md](archive/fixes/phpcs/PHPCS_VIOLATIONS_FLOWCHART.md) | Visual decision-making guide with ASCII flowchart | 8.6 KB | Developers |
+| [../SAFE_PHPCS_FIX_PLAN.md](archive/fixes/phpcs/SAFE_PHPCS_FIX_PLAN.md) | 4-phase implementation plan with examples | 13 KB | Developers |
+| [../PHPCS_FIX_QUICK_REFERENCE.md](archive/fixes/phpcs/PHPCS_FIX_QUICK_REFERENCE.md) | Quick lookup reference for development | 5.9 KB | Developers |
+| [../PHPCS_IGNORE_ANALYSIS.md](archive/fixes/phpcs/PHPCS_IGNORE_ANALYSIS.md) | Detailed analysis of 149 phpcs:ignore instances | 76 KB | Developers |
 | [PHPCS_IGNORE_REVIEW_SUMMARY.md](PHPCS_IGNORE_REVIEW_SUMMARY.md) | Executive summary of unused parameter analysis | 6.2 KB | Developers/QA |
 | [HIGH_PRIORITY_PHPCS_IMPLEMENTATION.md](HIGH_PRIORITY_PHPCS_IMPLEMENTATION.md) | Phase 1 implementation status (4 of 7 complete) | 5.3 KB | Developers |
 | [development/PHPCS_FIXES_NEEDED.md](development/PHPCS_FIXES_NEEDED.md) | Historical record of January 2026 fixes (16 security errors) | 8.7 KB | Developers |
