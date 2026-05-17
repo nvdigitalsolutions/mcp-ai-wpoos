@@ -58,9 +58,15 @@ The Rev 2.0 guide keeps the existing 12-category user-facing grouping but update
 | Transportation | Logistics Coordinator, Transportation Manager |
 | Miscellaneous | Project Manager, Technical Writer, Translator |
 
-### Team-size follow-up flags
+### Team-size verification (completed)
 
-The following team counts remain intentionally marked for future verification because there is no single clean enumeration method in this pass: IGCSE, Engineering, Pharmaceutical Development, Research & Data Science, and Marketing & Growth team member counts.
+| Team pattern | Verified member count | Source |
+|---|---:|---|
+| IGCSE teams | 2–5 members across 6 IGCSE team presets (canonical `igcse_academic_support_team` = 5) | `includes/knowledge-base/teams/education-extended-teams.json`, `includes/knowledge-base/teams/education-training-teams.json` |
+| Engineering Team | 4 | `includes/knowledge-base/teams/tech-marketing-teams.json` |
+| Pharmaceutical Development Team | 4 | `includes/knowledge-base/teams/tech-marketing-teams.json` |
+| Research & Data Science Team | 5 | `includes/knowledge-base/teams/tech-marketing-teams.json` |
+| Marketing & Growth Team | 4 | `includes/knowledge-base/teams/tech-marketing-teams.json` |
 
 ## 4. GA Pro toolkit inventory
 
