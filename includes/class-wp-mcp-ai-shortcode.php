@@ -209,6 +209,7 @@ class WP_MCP_AI_Shortcode {
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$chat_debug_mode = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 			wp_localize_script(
 				self::SCRIPT_HANDLE,
 				'wpMcpAiChat',
@@ -227,6 +228,7 @@ class WP_MCP_AI_Shortcode {
 					'showUsageCosts'      => false,
 					'showCapabilityFlags' => false,
 					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+					'chatDebugMode'       => $chat_debug_mode,
 					'isElementorEditor'   => true,
 					'strings'             => array(
 						'placeholder' => __( 'Ask something…', 'mcp-ai-wpoos' ),
@@ -238,6 +240,7 @@ class WP_MCP_AI_Shortcode {
 
 		// Get plugin settings for cost display configuration.
 		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
 
 		// Allow filtering of cost display setting.
@@ -267,6 +270,7 @@ class WP_MCP_AI_Shortcode {
 				'showUsageCosts'      => $show_usage_costs,
 				'showCapabilityFlags' => $show_capability_flags,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'chatDebugMode'       => $chat_debug_mode,
 				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
 				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
@@ -1741,16 +1745,97 @@ class WP_MCP_AI_Shortcode {
 				}
 			}
 
-			// Additional form element attributes.
-			if ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) {
-				$tags['input']['accept']   = true;
-				$tags['input']['multiple'] = true;
-			}
+			// Form element tags must be allowed unconditionally because wp_kses_allowed_html('post')
+			// does not include them in all WordPress versions.  Relying on isset( $tags['form'] )
+			// meant that the <form> tag — and therefore the chat submit handler — was silently
+			// stripped by kses whenever WordPress's default 'post' allowlist lacked form elements,
+			// leaving the rendered chat container with inert buttons.
+			//
+			// Pattern: merge any attrs already on the tag (if WordPress added it), then apply ours.
+			$form_base    = ( isset( $tags['form'] ) && is_array( $tags['form'] ) ) ? $tags['form'] : array();
+			$tags['form'] = array_merge(
+				$form_base,
+				$extra_attrs,
+				array(
+					'id'               => true,
+					'class'            => true,
+					'method'           => true,
+					'action'           => true,
+					'data-instance-id' => true,
+				)
+			);
 
-			if ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) {
-				$tags['textarea']['required']    = true;
-				$tags['textarea']['placeholder'] = true;
-			}
+			$button_base    = ( isset( $tags['button'] ) && is_array( $tags['button'] ) ) ? $tags['button'] : array();
+			$tags['button'] = array_merge(
+				$button_base,
+				$extra_attrs,
+				array(
+					'type'          => true,
+					'name'          => true,
+					'value'         => true,
+					'title'         => true,
+					'disabled'      => true,
+					'aria-haspopup' => true,
+					'aria-atomic'   => true,
+					'aria-selected' => true,
+				)
+			);
+
+			$input_base    = ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) ? $tags['input'] : array();
+			$tags['input'] = array_merge(
+				$input_base,
+				$extra_attrs,
+				array(
+					'type'      => true,
+					'name'      => true,
+					'value'     => true,
+					'disabled'  => true,
+					'checked'   => true,
+					'accept'    => true,
+					'multiple'  => true,
+					'min'       => true,
+					'max'       => true,
+					'step'      => true,
+					'maxlength' => true,
+				)
+			);
+
+			$select_base    = ( isset( $tags['select'] ) && is_array( $tags['select'] ) ) ? $tags['select'] : array();
+			$tags['select'] = array_merge(
+				$select_base,
+				$extra_attrs,
+				array(
+					'name'     => true,
+					'disabled' => true,
+					'required' => true,
+				)
+			);
+
+			$option_base    = ( isset( $tags['option'] ) && is_array( $tags['option'] ) ) ? $tags['option'] : array();
+			$tags['option'] = array_merge(
+				$option_base,
+				$extra_attrs,
+				array(
+					'value'    => true,
+					'selected' => true,
+				)
+			);
+
+			$textarea_base    = ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) ? $tags['textarea'] : array();
+			$tags['textarea'] = array_merge(
+				$textarea_base,
+				$extra_attrs,
+				array(
+					'id'          => true,
+					'class'       => true,
+					'rows'        => true,
+					'name'        => true,
+					'disabled'    => true,
+					'maxlength'   => true,
+					'required'    => true,
+					'placeholder' => true,
+				)
+			);
 
 			// Safe SVG elements for chat UI icons (no script, foreignObject,
 			// or event-handler attributes).

@@ -32,7 +32,7 @@
 	--wp-mcp-ai-chat-bubble-offset-x: 24px;
 	--wp-mcp-ai-chat-bubble-offset-y: 24px;
 	--wp-mcp-ai-chat-bubble-panel-width: 400px;
-	--wp-mcp-ai-chat-bubble-panel-height: 550px;
+	--wp-mcp-ai-chat-bubble-panel-height: 80vh;
 	--wp-mcp-ai-chat-bubble-trigger-size: 60px;
 }
 
@@ -494,19 +494,65 @@
 	border: none;
 	border-radius: 0;
 	box-shadow: none;
-	height: 100%;
+	/* Use flex growth instead of height: 100% so the element reliably fills
+	   the panel body in all browsers, including the deferred bootstrap path
+	   where the chat is lazily initialised after the panel first opens. */
+	flex: 1;
+	min-height: 0;
 	display: flex;
 	flex-direction: column;
 	padding: 12px;
 }
 
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat-widget,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat-widget__interface {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__assistant,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__transcript-controls {
+	display: none;
+}
+
 .wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__messages {
 	flex: 1;
 	min-height: 0;
+	/* Prevent chat.css max-height: 360px from capping the messages area.
+	   Without this override the form overflows the panel-body's
+	   overflow: hidden boundary, clipping buttons and making them
+	   unclickable (the "buttons do nothing" symptom). */
+	max-height: none;
+	/* Prevent chat.css margin-bottom: 0.75rem from eating into the
+	   available height and pushing the form out of the visible area. */
+	margin-bottom: 0;
 	overflow-y: auto;
 }
 
 .wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__form {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__actions,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__controls,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__control-buttons,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__tasks-btn,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__submit,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__attach,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__translate,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__voice-chat,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__transcribe {
+	position: relative;
+	z-index: 2;
+}
+
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__actions,
+.wp-mcp-ai-chat-bubble__panel-body .wp-mcp-ai-chat__controls {
 	flex-shrink: 0;
 }
 

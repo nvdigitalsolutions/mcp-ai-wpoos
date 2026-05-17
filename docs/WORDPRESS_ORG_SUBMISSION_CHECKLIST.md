@@ -164,7 +164,7 @@ This creates a clean ZIP with:
 
 ### What Gets Submitted
 - **Base version only** (not Pro add-on)
-- **127 base tools** (70 Pro tools excluded)
+- **Base distribution tools only** (Pro addon tools excluded; current public framing is ~195 base / ~635 Pro, live registry authoritative)
 - **Vendor dependencies included** (all GPL-compatible)
 - **Clean build** (no tests, docs, or dev files)
 

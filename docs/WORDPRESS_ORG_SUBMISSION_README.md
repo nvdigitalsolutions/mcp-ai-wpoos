@@ -33,7 +33,7 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 **WordPress.org:** `nvdigital-open-operator-system-oos-1.1.0.zip` (8.5M)
 
 **What's Included:**
-- 127 base tools
+- Base distribution tools only (current public framing is ~195 base; live registry authoritative)
 - Multi-provider AI (OpenAI, Gemini, Ollama)
 - Chat interface
 - Tool management system
@@ -54,7 +54,7 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 **WordPress.org:** `nvdigital-open-operator-system-oos-pro-1.1.0.zip` (19M)
 
 **What's Included:**
-- 70+ Pro tools
+- Pro addon tools (current public framing is ~635 Pro; live registry authoritative)
 - Pro Dashboard
 - Advanced integrations (WooCommerce, JetEngine, GitHub, Google, etc.)
 - Social media tools
