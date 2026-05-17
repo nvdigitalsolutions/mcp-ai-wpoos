@@ -219,6 +219,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'max'         => 1,
 					'step'        => 0.1,
 				),
+				'section_acp'                     => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Agent Client Protocol (ACP)', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . wp_kses(
+						sprintf(
+							/* translators: %s: ACP REST endpoint URL wrapped in <code> tags. */
+							__( 'Configure the Agent Client Protocol (ACP) server. This allows external IDEs like Zed and JetBrains to connect to your WordPress assistants using the standardized ACP JSON-RPC format. Connection endpoint: %s', 'mcp-ai-wpoos' ),
+							'<code>' . esc_url( rest_url( 'mcp-ai/v1/acp' ) ) . '</code>'
+						),
+						array( 'code' => array() )
+					) . '</p>',
+				),
+				'enable_acp_server'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable ACP Server', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable the Agent Client Protocol REST routes', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the /acp REST routes will be available and the site will advertise ACP capabilities via the .well-known/ai-peer endpoint.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'acp_require_approval'            => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Require Tool Approval', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Require interactive approval for dangerous tool calls', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, dangerous tool calls initiated from an ACP client will trigger the interactive session/request_permission flow in the IDE.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 				'async_tool_timeout'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Async Tool Timeout (seconds)', 'mcp-ai-wpoos' ),
@@ -1991,6 +2016,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'team_default_provider',
 				'team_default_model',
 				'team_default_temperature',
+				'section_acp', // Section header.
+				'enable_acp_server',
+				'acp_require_approval',
 			);
 
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
@@ -2174,6 +2202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'settings'      => array(
 					'label'  => __( 'Settings', 'mcp-ai-wpoos' ),
 					'fields' => array(
+						// Core orchestration toggles.
 						'enable_budget_management',
 						'enable_predictive_optimization',
 						'enable_capability_gating',
@@ -2181,6 +2210,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'enable_auto_async_execution',
 						'async_tool_timeout',
 						'cron_job_retention_period',
+						// Multi-agent orchestration toggles.
+						'enable_agent_roles',
+						'enable_professions',
+						'enable_multi_agent_teams',
+						'enable_agent_coordination_tools',
+						// Agent memory + profession/team defaults.
+						'enable_chat_memory',
+						'profession_default_provider',
+						'profession_default_model',
+						'profession_default_temperature',
+						'team_default_provider',
+						'team_default_model',
+						'team_default_temperature',
+						// Agent Client Protocol (ACP).
+						'enable_acp_server',
+						'acp_require_approval',
 					),
 				),
 				'thresholds'    => array(

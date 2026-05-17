@@ -135,10 +135,10 @@ try {
 	// Get container for dependency management.
 	$container = wp_mcp_ai_container();
 
-	// Ensure the ACP section is loaded
-	require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-acp.php';
-
 	// Register all sections with the registry using container.
+	// Note: ACP settings are rendered inline within the Orchestration section's
+	// Settings view (see WP_MCP_AI_Section_Orchestration::render_settings_view()),
+	// so there is no standalone ACP section to register here.
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.overview' ) );
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.general' ) );
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.chat_client' ) );
@@ -147,9 +147,6 @@ try {
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
-		
-	// Register the new ACP section
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_ACP() );
 
 	// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) are now consolidated in integrations section.
 	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
