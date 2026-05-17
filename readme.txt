@@ -147,7 +147,7 @@ NV oOS works perfectly standalone. Optional integrations add enhanced functional
 
 Comprehensive documentation is available in the plugin's `/docs/` directory:
 
-* [Quick Reference Guide (raw Markdown)](https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/main/docs/QUICK_REFERENCE.md)
+* [Quick Reference Guide (unformatted source)](https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/main/docs/QUICK_REFERENCE.md)
 * [REST API Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/rest-api.md)
 * [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md)
 * [MCP Server Authentication](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/mcp-server-authentication.md)
@@ -1125,7 +1125,7 @@ Initial release. Welcome to Open Operator System!
 
 **IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. All external services used by this plugin are documented below.
 
-**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference (raw Markdown)](https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/main/docs/EXTERNAL_SERVICES.md).
+**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference (unformatted source)](https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/main/docs/EXTERNAL_SERVICES.md).
 
 = AI Provider Services (Required - At Least One Must Be Configured) =
 
