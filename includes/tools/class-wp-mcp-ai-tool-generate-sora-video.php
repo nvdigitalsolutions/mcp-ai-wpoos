@@ -556,7 +556,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Download the completed video.
-		$video_response = wp_remote_get(
+		$video_response = wp_safe_remote_get(
 			$video_url,
 			array(
 				'headers' => array(
