@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 		}
 
 		// Check if iSAMS is configured.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['isams_api_url'] ) || empty( $settings['isams_api_key'] ) ) {
 			return false;
 		}
@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 
 		if ( empty( $settings['isams_api_url'] ) || empty( $settings['isams_api_key'] ) ) {
 			return __( 'iSAMS API credentials are not configured.', 'mcp-ai-wpoos-pro' );
@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 		}
 
 		// Get iSAMS connection settings.
-		$settings     = get_option( 'wp_mcp_ai_settings', array() );
+		$settings     = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$isams_url    = isset( $settings['isams_api_url'] ) ? esc_url_raw( $settings['isams_api_url'] ) : '';
 		$isams_key    = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
 

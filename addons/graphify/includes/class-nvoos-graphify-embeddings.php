@@ -208,7 +208,7 @@ class NV_oOS_Graphify_Embeddings {
 			// not as a top-level option, so check that location before falling back
 			// to the legacy top-level option name.
 			if ( empty( $api_key ) ) {
-				$nvoos_settings = get_option( 'wp_mcp_ai_settings', array() );
+				$nvoos_settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 				if ( is_array( $nvoos_settings ) && ! empty( $nvoos_settings['openai_api_key'] ) ) {
 					$api_key = sanitize_text_field( $nvoos_settings['openai_api_key'] );
 				}

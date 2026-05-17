@@ -80,8 +80,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 				// Sanitize based on key patterns and types.
 				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
-				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) ) {
-					$sanitized[ $key ] = sanitize_text_field( $value );
+				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) || false !== strpos( $key, '_refresh_token' ) ) {
+					$val = sanitize_text_field( $value );
+					if ( '**************' === $val ) {
+						$sanitized[ $key ] = isset( $current[ $key ] ) ? $current[ $key ] : '';
+					} else {
+						$sanitized[ $key ] = ( class_exists( 'WP_MCP_AI_Encryption' ) && ! empty( $val ) ) ? ( WP_MCP_AI_Encryption::encrypt( $val ) ?: $val ) : $val;
+					}
 				} elseif ( false !== strpos( $key, '_email' ) ) {
 					$sanitized[ $key ] = sanitize_email( $value );
 				} elseif ( false !== strpos( $key, '_url' ) || false !== strpos( $key, '_endpoint' ) ) {
@@ -245,6 +250,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			$settings = wp_parse_args( $saved, $defaults );
 
+			$sensitive_fields = self::get_sensitive_fields();
+			foreach ( $settings as $key => $val ) {
+				if ( in_array( $key, $sensitive_fields, true ) || false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) || false !== strpos( $key, '_refresh_token' ) ) {
+					if ( ! empty( $val ) && class_exists( 'WP_MCP_AI_Encryption' ) ) {
+						$decrypted = WP_MCP_AI_Encryption::decrypt( $val );
+						if ( false !== $decrypted ) {
+							$settings[ $key ] = $decrypted;
+						}
+					}
+				}
+			}
+
 			// Ensure chat_colors is properly merged.
 			if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
 				$settings['chat_colors'] = self::get_default_chat_colors();
@@ -262,6 +279,51 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		public static function reset_settings_cache() {
 			self::$settings_cache = null;
+		}
+
+		/**
+		 * Get the list of sensitive fields that should be encrypted.
+		 *
+		 * @return array
+		 */
+		public static function get_sensitive_fields() {
+			return array(
+				'openai_api_key',
+				'gemini_api_key',
+				'google_maps_api_key',
+				'lm_studio_api_key',
+				'brave_search_api_key',
+				'tavily_api_key',
+				'exa_api_key',
+				'perplexity_api_key',
+				'mubert_api_key',
+				'ita_tariff_api_key',
+				'crawl4ai_api_key',
+				'cloudflare_api_token',
+				'nvidia_api_key',
+				'cloudways_api_key',
+				'mailjet_api_key',
+				'mailjet_api_secret',
+				'brevo_api_key',
+				'brevo_webhook_secret',
+				'mailgun_api_key',
+				'quickbooks_api_key',
+				'gmail_client_secret',
+				'gmail_refresh_token',
+				'auth0_management_client_secret',
+				'mesh_inbound_api_key',
+				'digitalocean_api_key',
+								'isams_api_key',
+				'isams_api_secret',
+				'webchat_api_key',
+				'socs_api_key',
+				'yahoo_client_secret',
+				'google_drive_client_secret',
+				'google_drive_refresh_token',
+				'kimi_api_key',
+				'anthropic_api_key', // if this exists
+				'huggingface_api_key', // if this exists
+			);
 		}
 
 		/**
