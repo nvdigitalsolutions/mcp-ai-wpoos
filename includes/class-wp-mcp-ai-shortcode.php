@@ -209,6 +209,7 @@ class WP_MCP_AI_Shortcode {
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$chat_debug_mode = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 			wp_localize_script(
 				self::SCRIPT_HANDLE,
 				'wpMcpAiChat',
@@ -227,6 +228,7 @@ class WP_MCP_AI_Shortcode {
 					'showUsageCosts'      => false,
 					'showCapabilityFlags' => false,
 					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+					'chatDebugMode'       => $chat_debug_mode,
 					'isElementorEditor'   => true,
 					'strings'             => array(
 						'placeholder' => __( 'Ask something…', 'mcp-ai-wpoos' ),
@@ -238,6 +240,7 @@ class WP_MCP_AI_Shortcode {
 
 		// Get plugin settings for cost display configuration.
 		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
 
 		// Allow filtering of cost display setting.
@@ -267,6 +270,7 @@ class WP_MCP_AI_Shortcode {
 				'showUsageCosts'      => $show_usage_costs,
 				'showCapabilityFlags' => $show_capability_flags,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'chatDebugMode'       => $chat_debug_mode,
 				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
 				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,

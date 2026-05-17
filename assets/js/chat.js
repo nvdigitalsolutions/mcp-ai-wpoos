@@ -120,7 +120,7 @@
     
     // Performance optimization settings - can be disabled for debugging
     // Set window.wpMcpAiChatDebugMode = true to disable optimizations
-    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
+    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true || ( typeof globalConfig !== 'undefined' && globalConfig.chatDebugMode === true );
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
     /**
@@ -192,7 +192,7 @@
              * @param {Object} context - Request context
              */
             logRequestStart: function(context) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' Starting streaming request:', {
                         endpoint: context.endpoint,
                         assistantId: context.assistantId,
@@ -208,7 +208,7 @@
              * @param {Response} response - Fetch Response object
              */
             logResponseReceived: function(response) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' Streaming response received:', {
                         status: response.status,
                         statusText: response.statusText,
@@ -256,7 +256,7 @@
                     
                     // Extract response text if available (async, non-blocking)
                     // This runs asynchronously and doesn't block the error flow
-                    if (error && typeof error.text === 'function') {
+                    if (DEBUG_MODE && error && typeof error.text === 'function') {
                         error.text().then(function(responseText) {
                             console.error(LOG_PREFIX + ' Server response text:', responseText);
                         }).catch(function(extractError) {
@@ -271,7 +271,7 @@
              * Log SSE stream processing start.
              */
             logStreamStart: function() {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' Starting SSE stream processing');
                 }
             },
@@ -281,7 +281,7 @@
              * @param {Object} result - Stream completion result
              */
             logStreamComplete: function(result) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log(LOG_PREFIX + ' SSE stream completed:', {
                         totalContentLength: result.contentLength,
                         contentSample: result.contentSample
@@ -295,7 +295,7 @@
              * @param {Object} context - Parsing context
              */
             logParseError: function(parseError, context) {
-                if (window.console && console.warn) {
+                if (DEBUG_MODE && window.console && console.warn) {
                     console.warn(LOG_PREFIX + ' Failed to parse SSE event data:', {
                         eventType: context.eventType || '(none)',
                         eventData: context.eventData,
@@ -989,19 +989,18 @@
                 };
                 
                 // Log save attempt
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] Saving conversation to localStorage:', {
                         assistant_id: assistantId,
-                        session_key: state.config.sessionKey || '',
                         message_count: (state.conversation || []).length,
-                        storage_key: storageKey
+                        storage_key: storageKey,
                     });
                 }
                 
                 window.localStorage.setItem(storageKey, JSON.stringify(data));
                 
                 // Log successful save
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] Conversation saved successfully to localStorage');
                 }
                 
@@ -1028,14 +1027,14 @@
                             };
                             
                             // Log retry attempt
-                            if (window.console && console.log) {
+                            if (DEBUG_MODE && window.console && console.log) {
                                 console.log('[NV oOS] Retrying localStorage save after cleanup (cleaned ' + cleaned + ' entries)');
                             }
                             
                             window.localStorage.setItem(storageKey, JSON.stringify(data));
                             
                             // Log successful retry
-                            if (window.console && console.log) {
+                            if (DEBUG_MODE && window.console && console.log) {
                                 console.log('[NV oOS] Conversation saved successfully to localStorage after cleanup');
                             }
                             
@@ -1173,7 +1172,7 @@
             const storageKey = getStorageKey(state.config.assistantId);
             
             // Log load attempt
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Loading conversation from localStorage:', {
                     assistant_id: state.config.assistantId,
                     storage_key: storageKey
@@ -1184,7 +1183,7 @@
 
             if (!stored) {
                 // Log when no data found
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] No conversation found in localStorage');
                 }
                 return null;
@@ -1202,7 +1201,7 @@
             // Check if data is expired
             const age = Date.now() - (data.timestamp || 0);
             if (age > STORAGE_EXPIRY_MS) {
-                if (window.console && console.log) {
+                if (DEBUG_MODE && window.console && console.log) {
                     console.log('[NV oOS] Conversation expired in localStorage (age: ' + Math.floor(age / 1000 / 60) + ' minutes)');
                 }
                 window.localStorage.removeItem(storageKey);
@@ -1218,11 +1217,10 @@
             }
 
             // Log successful load
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Conversation loaded successfully from localStorage:', {
-                    session_key: data.sessionKey || '',
                     message_count: Array.isArray(data.conversation) ? data.conversation.length : 0,
-                    age_minutes: Math.floor(age / 1000 / 60)
+                    age_minutes: Math.floor(age / 1000 / 60),
                 });
             }
 
@@ -1264,7 +1262,7 @@
             const storageKey = getStorageKey(state.config.assistantId);
             
             // Log delete attempt
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Clearing conversation from localStorage:', {
                     assistant_id: state.config.assistantId,
                     session_key: state.config.sessionKey || '',
@@ -1275,7 +1273,7 @@
             window.localStorage.removeItem(storageKey);
             
             // Log successful delete
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Conversation cleared successfully from localStorage');
             }
         } catch (error) {
@@ -1832,9 +1830,8 @@
          */
         function attemptSave(attempt) {
             // Log save attempt
-            if (!silent && window.console && console.log) {
+            if (!silent && DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] Saving conversation to CCT:', {
-                    session_key: payload.session_key,
                     assistant_id: payload.assistant_id,
                     message_count: payload.messages.length,
                     attempt: attempt + 1
@@ -1892,7 +1889,7 @@
                             }
 
                             // Log successful save
-                            if (!silent && window.console && console.log) {
+                            if (!silent && DEBUG_MODE && window.console && console.log) {
                                 console.log('[NV oOS] Conversation saved successfully to CCT');
                             }
 
@@ -1911,7 +1908,7 @@
                     const shouldRetry = (isTimeout || isNetworkError || isServerError) && attempt < maxRetries;
                     
                     if (shouldRetry) {
-                        if (!silent && window.console && console.warn) {
+                        if (!silent && DEBUG_MODE && window.console && console.warn) {
                             console.warn('Retrying CCT save (attempt ' + (attempt + 1) + ' of ' + maxRetries + ') after ' + retryDelay + 'ms...');
                         }
                         
@@ -1983,12 +1980,16 @@
             })
             .then(function(data) {
                 if (data && data.success) {
-                    console.log('[NV oOS] Embedded usage tracked successfully');
+                    if (DEBUG_MODE && window.console && console.log) {
+                        console.log('[NV oOS] Embedded usage tracked successfully');
+                    }
                 }
             })
             .catch(function(error) {
                 // Log but don't fail - usage tracking is optional
-                console.warn('[NV oOS] Failed to track embedded usage:', error);
+                if (DEBUG_MODE && window.console && console.warn) {
+                    console.warn('[NV oOS] Failed to track embedded usage:', error);
+                }
             });
     }
 
@@ -12878,7 +12879,7 @@
                 // PHP has already merged any professional-role content into systemPrompt.
                 // Use it directly to avoid duplicating professional content.
                 completeSystemPrompt = state.config.systemPrompt;
-                if (state.config.professionalPrompt) {
+                if (DEBUG_MODE && state.config.professionalPrompt) {
                     console.log('[NV oOS] Using pre-combined system prompt (includes professional role):', {
                         professionalPromptLength: state.config.professionalPrompt.length,
                         totalLength: completeSystemPrompt.length
@@ -12887,9 +12888,11 @@
             } else if (state.config.professionalPrompt) {
                 // Fallback for stale cached configs from before this change: combine here in JS.
                 completeSystemPrompt = state.config.professionalPrompt;
-                console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
-                    professionalPromptLength: state.config.professionalPrompt.length
-                });
+                if (DEBUG_MODE) {
+                    console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
+                        professionalPromptLength: state.config.professionalPrompt.length
+                    });
+                }
             }
             
             // Prepare assistant configuration for embedded client
@@ -13373,12 +13376,14 @@
         }
 
         if (rawSystemPrompt && effectiveSystemPrompt) {
-            console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
-                systemPromptLength: effectiveSystemPrompt.length,
-                hasProfessionalPrompt: !!state.config.professionalPrompt,
-                hasAssistantPrompt: !!state.config.systemPrompt,
-                assistantId: state.config.assistantId
-            });
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
+                    systemPromptLength: effectiveSystemPrompt.length,
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    hasAssistantPrompt: !!state.config.systemPrompt,
+                    assistantId: state.config.assistantId
+                });
+            }
         }
         if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
             let systemPromptContent = effectiveSystemPrompt;
@@ -13392,10 +13397,12 @@
                 knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
                 systemPromptContent += knowledgeContext;
 
-                console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
-                    memoryFileCount: state.config.memoryFiles.length,
-                    vectorStoreId: state.config.vectorStoreId || 'none'
-                });
+                if (DEBUG_MODE) {
+                    console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
+                        memoryFileCount: state.config.memoryFiles.length,
+                        vectorStoreId: state.config.vectorStoreId || 'none'
+                    });
+                }
             }
 
             // Inject current date/time context so the model knows the current date.
@@ -13418,7 +13425,9 @@
                 const modelConfig = window.WP_MCP_AI_EmbeddedLLM.availableModels[state.config.model];
                 if (modelConfig && modelConfig.isThinkingModel) {
                     systemPromptContent += '\n/no_think';
-                    console.log('[NV oOS] Added /no_think directive for thinking model with tools:', state.config.model);
+                    if (DEBUG_MODE) {
+                        console.log('[NV oOS] Added /no_think directive for thinking model with tools:', state.config.model);
+                    }
                 }
             }
 
@@ -13427,27 +13436,31 @@
                 content: systemPromptContent
             });
 
-            console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
-            console.log('[NV oOS] Prepended system prompt to embedded request:', {
-                systemPromptLength: systemPromptContent.length,
-                systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
-                hasProfessionalPrompt: !!state.config.professionalPrompt,
-                hasAssistantPrompt: !!state.config.systemPrompt,
-                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
-                hasDateTimeContext: true,
-                assistantId: state.config.assistantId
-            });
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
+                console.log('[NV oOS] Prepended system prompt to embedded request:', {
+                    systemPromptLength: systemPromptContent.length,
+                    systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    hasAssistantPrompt: !!state.config.systemPrompt,
+                    hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
+                    hasDateTimeContext: true,
+                    assistantId: state.config.assistantId
+                });
+            }
         }
 
-        console.log('[NV oOS] ===== FORMATTED MESSAGES FOR EMBEDDED CLIENT =====');
-        console.log('[NV oOS] Formatted messages for embedded client:', {
-            messageCount: formattedMessages.length,
-            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
-            systemPromptLength: formattedMessages[0] && formattedMessages[0].role === 'system' ? formattedMessages[0].content.length : 0,
-            messageRoles: formattedMessages.map(function(msg) { return msg.role; }),
-            lastMessageRole: formattedMessages[formattedMessages.length - 1].role,
-            lastMessagePreview: formattedMessages[formattedMessages.length - 1].content && formattedMessages[formattedMessages.length - 1].content.length > 100 ? formattedMessages[formattedMessages.length - 1].content.substring(0, 100) + '...' : formattedMessages[formattedMessages.length - 1].content
-        });
+        if (DEBUG_MODE) {
+            console.log('[NV oOS] ===== FORMATTED MESSAGES FOR EMBEDDED CLIENT =====');
+            console.log('[NV oOS] Formatted messages for embedded client:', {
+                messageCount: formattedMessages.length,
+                hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+                systemPromptLength: formattedMessages[0] && formattedMessages[0].role === 'system' ? formattedMessages[0].content.length : 0,
+                messageRoles: formattedMessages.map(function(msg) { return msg.role; }),
+                lastMessageRole: formattedMessages[formattedMessages.length - 1].role,
+                lastMessagePreview: formattedMessages[formattedMessages.length - 1].content && formattedMessages[formattedMessages.length - 1].content.length > 100 ? formattedMessages[formattedMessages.length - 1].content.substring(0, 100) + '...' : formattedMessages[formattedMessages.length - 1].content
+            });
+        }
 
         // Use streaming for better UX
         const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
@@ -13472,7 +13485,9 @@
         bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
         bubble.setAttribute('data-message-id', assistantMessageId);
         state.messagesEl.appendChild(bubble);
-        console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        if (DEBUG_MODE) {
+            console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        }
         
         // Scroll to show the new message
         scrollBatcher.scrollToBottom(state.messagesEl);
@@ -13486,13 +13501,15 @@
             ? parseFloat(state.config.temperature) 
             : 0.7;
 
-        console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
-            temperature: temperature,
-            maxTokens: maxTokens,
-            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
-            hasTools: !!(state.config.tools && state.config.tools.length > 0),
-            toolCount: state.config.tools ? state.config.tools.length : 0
-        });
+        if (DEBUG_MODE) {
+            console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
+                temperature: temperature,
+                maxTokens: maxTokens,
+                hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+                hasTools: !!(state.config.tools && state.config.tools.length > 0),
+                toolCount: state.config.tools ? state.config.tools.length : 0
+            });
+        }
 
         // Build request options (Phase 2: Tool Support)
         const requestOptions = {
@@ -13731,7 +13748,7 @@
             .filter(function(msg) { return msg !== null; });
 
         // Debug logging to trace attachment segments
-        if (window.console && console.log) {
+        if (DEBUG_MODE && window.console && console.log) {
             console.log('[NV oOS] Sending messages to API:', JSON.stringify(cleanMessages, null, 2));
         }
 
@@ -13906,8 +13923,7 @@
             // Ensure content is a string
             const safeContent = content != null ? String(content) : '';
             
-            // ALWAYS log streaming updates for debugging (even when DEBUG_MODE is off)
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[NV oOS] updateStreamingMessage called:', {
                     contentLength: safeContent.length,
                     contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
@@ -14069,7 +14085,7 @@
                         }
                         
                         // Log extraction for debugging
-                        if (finalContent && window.console && console.log) {
+                        if (DEBUG_MODE && finalContent && window.console && console.log) {
                             console.log('[NV oOS] Extracted final content from finalData (no streaming chunks):', {
                                 contentLength: finalContent.length,
                                 contentSample: finalContent.substring(0, 100)
