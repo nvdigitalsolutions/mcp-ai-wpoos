@@ -21,6 +21,7 @@
  * Minimal new-style tool that the deprecated alias will resolve to.
  */
 class WP_MCP_AI_Test_Tool_Alias_New implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	public function get_slug() {
 		return 'test_alias_new';
 	}

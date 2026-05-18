@@ -19,6 +19,7 @@
  * A minimal tool that declares only a `produces` contract.
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_Producer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	public function get_slug() {
 		return 'test_dc_producer';
 	}
@@ -52,6 +53,7 @@ class WP_MCP_AI_Test_Tool_Data_Contract_Producer implements WP_MCP_AI_Tool_Inter
  * A tool that declares a `consumes` array (multiple accepted contracts).
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_Consumer implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	public function get_slug() {
 		return 'test_dc_consumer';
 	}
@@ -85,6 +87,7 @@ class WP_MCP_AI_Test_Tool_Data_Contract_Consumer implements WP_MCP_AI_Tool_Inter
  * A tool that returns malformed contract data — registry should normalise it away.
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_Malformed implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Data_Contract_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	public function get_slug() {
 		return 'test_dc_malformed';
 	}
@@ -119,6 +122,7 @@ class WP_MCP_AI_Test_Tool_Data_Contract_Malformed implements WP_MCP_AI_Tool_Inte
  * A tool that does NOT implement the data-contract interface.
  */
 class WP_MCP_AI_Test_Tool_Data_Contract_NoContract implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	public function get_slug() {
 		return 'test_dc_none';
 	}
