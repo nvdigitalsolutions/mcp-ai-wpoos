@@ -14,7 +14,7 @@ detection, provenance, session replay) **alongside** the existing MemPalace /
 Letta / Zep / mem0 / Cognee-derived foundation. Strictly additive — no breaking
 changes to existing filters, actions, REST shapes, or CCT schema.
 
-**Current Phase:** 0 (preflight)
+**Current Phase:** 3–6 (parallel, sub-agent delegated). Phases 0–2 complete.
 **Feature Version:** v1.1.20
 **Branch:** `feature/memory-layer-2026-enhancements` (off `alpha-working`)
 **Brief:** _N/A — proposed and approved inline in chat (Nov 2026)_
@@ -103,15 +103,15 @@ Which parts of NV oOS are affected:
 
 | Story ID | Title | Status | Notes |
 |----------|-------|--------|-------|
-| 0.1 | Create branch + active context file | Complete | This commit |
-| 0.2 | Baseline test counts | In Progress | Skip — composer not run on Windows dev; CI baseline used instead |
-| 1.1 | Privacy filter service + tests | Pending | Phase 1 |
-| 2.1 | CCT schema v2 + migrator + tests | Pending | Phase 2 |
-| 3.1 | Auto-capture service + tests | Pending | Phase 3 (sub-agent) |
-| 4.1 | RRF fusion service + tests | Pending | Phase 4 (sub-agent) |
-| 5.1 | Decay sweep extension + tests | Pending | Phase 5 (sub-agent) |
-| 5.2 | Contradiction detector + tests | Pending | Phase 5 (sub-agent) |
-| 6.1 | Provenance tracer tool + tests | Pending | Phase 6 (sub-agent) |
+| 0.1 | Create branch + active context file | Complete | commit 47d2fa4a5 |
+| 0.2 | Baseline test counts | Complete | composer not run on Windows dev; CI baseline used instead |
+| 1.1 | Privacy filter service + tests | Complete | commit 3aff9e15c (22 tests, all linted) |
+| 2.1 | CCT schema v2 + migrator + tests | Complete | commit 19995d6f1 (14 tests, all linted) |
+| 3.1 | Auto-capture service + tests | In Progress | Phase 3 (sub-agent) |
+| 4.1 | RRF fusion service + tests | In Progress | Phase 4 (sub-agent) |
+| 5.1 | Decay sweep extension + tests | In Progress | Phase 5 (sub-agent) |
+| 5.2 | Contradiction detector + tests | In Progress | Phase 5 (sub-agent) |
+| 6.1 | Provenance tracer tool + tests | In Progress | Phase 6 (sub-agent) |
 | 7.1 | Memory Health subtab | Pending | Phase 7a |
 | 7.2 | Retrieval waterfall in drawer | Pending | Phase 7b |
 | 7.3 | Session Replay tab | Pending | Phase 7c |
