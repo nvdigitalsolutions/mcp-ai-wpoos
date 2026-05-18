@@ -138,9 +138,10 @@ class WP_MCP_AI_Tool_CRE_CLO_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {

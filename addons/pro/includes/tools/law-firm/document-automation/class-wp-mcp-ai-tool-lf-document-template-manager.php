@@ -56,6 +56,13 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 
 	public function get_capability_flags(): array { return array( 'pro', 'write', 'state-changing' ); }
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'manage_options' ) ) {

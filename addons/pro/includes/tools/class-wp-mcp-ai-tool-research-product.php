@@ -32,6 +32,13 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Maximum number of search queries to perform.
 	 *
 	 * @var int

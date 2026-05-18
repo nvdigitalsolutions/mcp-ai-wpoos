@@ -190,6 +190,13 @@ class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

@@ -104,6 +104,13 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

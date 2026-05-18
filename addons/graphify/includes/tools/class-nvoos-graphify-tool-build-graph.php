@@ -69,6 +69,13 @@ class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		return array( 'write', 'state-changing', 'async', 'long-running', 'performance-impact' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
 	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

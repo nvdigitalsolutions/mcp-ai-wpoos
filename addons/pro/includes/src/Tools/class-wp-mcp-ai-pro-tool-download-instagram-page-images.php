@@ -31,6 +31,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Instagram Graph API version.
 	 */
 	const GRAPH_API_VERSION = 'v21.0';

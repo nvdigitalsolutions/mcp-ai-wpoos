@@ -49,6 +49,13 @@ class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, W
 	}
 	public function get_capability_flags() {
 		return array( 'pro', 'external-api', 'phase-2.6' ); }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_options' ) ) {

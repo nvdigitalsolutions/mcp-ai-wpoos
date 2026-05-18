@@ -98,6 +98,13 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

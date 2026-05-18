@@ -151,6 +151,13 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the remote tool via the MCP App client.
 	 *
 	 * @since 1.8.0

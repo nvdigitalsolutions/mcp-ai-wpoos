@@ -112,6 +112,10 @@ class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['document_id'] ) ) {

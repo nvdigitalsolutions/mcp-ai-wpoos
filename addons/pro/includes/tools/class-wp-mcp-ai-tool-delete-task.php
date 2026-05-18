@@ -17,6 +17,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get the unique slug identifier for this tool.
 	 *
 	 * @return string Tool slug identifier.
