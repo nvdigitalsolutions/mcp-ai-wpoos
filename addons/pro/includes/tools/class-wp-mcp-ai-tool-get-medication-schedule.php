@@ -20,15 +20,6 @@ class WP_MCP_AI_Tool_Get_Medication_Schedule implements WP_MCP_AI_Tool_Interface
 		return 'get_medication_schedule';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'Get Medication Schedule', 'mcp-ai-wpoos-pro' );
 	}

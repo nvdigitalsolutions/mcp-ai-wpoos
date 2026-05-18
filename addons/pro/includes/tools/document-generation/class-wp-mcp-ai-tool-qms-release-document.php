@@ -18,15 +18,6 @@ class WP_MCP_AI_Tool_QMS_Release_Document implements WP_MCP_AI_Tool_Interface, W
 	public function get_slug() {
 		return 'qms_release_document';
 	}
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
 	public function get_name() {
 		return __( 'QMS: Release Document', 'mcp-ai-wpoos-pro' );
 	}

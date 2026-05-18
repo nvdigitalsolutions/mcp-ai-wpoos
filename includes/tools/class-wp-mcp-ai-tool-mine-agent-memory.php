@@ -53,15 +53,6 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

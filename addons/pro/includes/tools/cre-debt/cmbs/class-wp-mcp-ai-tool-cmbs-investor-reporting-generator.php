@@ -50,15 +50,6 @@ class WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator implements WP_MCP_AI_Tool
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name(): string {

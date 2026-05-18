@@ -63,15 +63,6 @@ class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

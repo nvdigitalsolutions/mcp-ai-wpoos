@@ -55,33 +55,6 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 	abstract protected function get_validation_class();
 
 	/**
-	 * {@inheritdoc}
-	 *
-	 * Delegates to the original (un-validated) tool's
-	 * `get_required_capability()` when `$this->original_tool` is set;
-	 * otherwise falls back to the central capability map.
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		if ( property_exists( $this, 'original_tool' )
-			&& is_object( $this->original_tool )
-			&& method_exists( $this->original_tool, 'get_required_capability' )
-		) {
-			return $this->original_tool->get_required_capability();
-		}
-
-		if ( class_exists( 'WP_MCP_AI_Tool_Capability_Map' ) ) {
-			$cap = WP_MCP_AI_Tool_Capability_Map::get_capability( $this->get_slug() );
-			if ( null !== $cap ) {
-				return $cap;
-			}
-		}
-
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute the tool with validated arguments.
 	 *
 	 * This method receives an object of the validation class type

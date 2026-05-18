@@ -52,15 +52,6 @@ class WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * {@inheritDoc}
 	 */
 	public function get_name() {

@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_LF_Profitability_Analyzer implements WP_MCP_AI_Tool_Interfa
 	}
 
 	public function get_slug() { return 'lf_profitability_analyzer'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Profitability Analyzer', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Analyzes matter profitability by calculating total revenue, costs (hours × cost rate), overhead, profit margin, and realization rate.', 'mcp-ai-wpoos-pro' ); }
 

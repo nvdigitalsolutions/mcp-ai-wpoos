@@ -7682,13 +7682,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';
 
-			// Guest requests bypass the central-map fallback so existing guest
-			// assistants are not broken when their tools default to the safe
-			// `edit_posts` cap. Per-class `get_required_capability()` methods
-			// continue to apply for guests (matching prior behaviour).
-			$auth_context = $this->get_auth_context();
-			$is_guest     = ! empty( $auth_context['is_guest'] );
-
 			$tools_payload = array();
 			foreach ( $allowed_tool_slugs as $slug ) {
 				$tool = $this->registry->get_tool( $slug );
@@ -7698,41 +7691,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Filter tools by user capabilities.
-				// Resolve the required capability via the central resolver, which
-				// honours (1) the tool's `get_required_capability()` method, then
-				// (2) the authoritative slug→capability map, then (3) the safe
-				// default `edit_posts`. This closes the historical leak where a
-				// tool registered without `get_required_capability()` was exposed
-				// to every user the assistant was reachable to.
-				//
-				// Guest requests bypass the central-map fallback (only per-class
-				// methods continue to apply) so existing guest assistants remain
-				// reachable. See:
-				//   includes/class-wp-mcp-ai-tool-capability-map.php
-				//   docs/proposals/audits/P2b-required-capability-assignment-2026-05.md
-				$required_capability = '';
+				// If the tool requires a specific capability, only include it if the current user has that capability.
 				if ( method_exists( $tool, 'get_required_capability' ) ) {
-					$declared = $tool->get_required_capability();
-					if ( is_string( $declared ) && '' !== $declared ) {
-						$required_capability = $declared;
+					$required_capability = $tool->get_required_capability();
+					if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'tool_filtered_by_capability',
+							sprintf( 'Tool "%s" filtered from payload - user lacks required capability: %s', $slug, $required_capability ),
+							array(
+								'tool_slug'           => $slug,
+								'required_capability' => $required_capability,
+								'user_id'             => get_current_user_id(),
+							)
+						);
+						continue;
 					}
-				}
-
-				if ( '' === $required_capability && ! $is_guest && class_exists( 'WP_MCP_AI_Tool_Capability_Map' ) ) {
-					$required_capability = WP_MCP_AI_Tool_Capability_Map::resolve( $tool, $slug );
-				}
-
-				if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) {
-					WP_MCP_AI_Logger::log_event(
-						'tool_filtered_by_capability',
-						sprintf( 'Tool "%s" filtered from payload - user lacks required capability: %s', $slug, $required_capability ),
-						array(
-							'tool_slug'           => $slug,
-							'required_capability' => $required_capability,
-							'user_id'             => get_current_user_id(),
-						)
-					);
-					continue;
 				}
 
 				try {

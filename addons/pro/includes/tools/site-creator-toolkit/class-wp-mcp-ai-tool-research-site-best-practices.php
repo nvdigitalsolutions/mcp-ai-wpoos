@@ -52,15 +52,6 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

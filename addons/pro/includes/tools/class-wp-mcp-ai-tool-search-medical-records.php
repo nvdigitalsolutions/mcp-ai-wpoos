@@ -26,15 +26,6 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

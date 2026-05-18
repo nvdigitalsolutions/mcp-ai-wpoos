@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_LF_Matter_Analytics_Generator implements WP_MCP_AI_Tool_Int
 	}
 
 	public function get_slug() { return 'lf_matter_analytics_generator'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Matter Analytics Generator', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Generates detailed analytics for a specific matter including time analysis, budget status, deadline compliance, and communication frequency.', 'mcp-ai-wpoos-pro' ); }
 

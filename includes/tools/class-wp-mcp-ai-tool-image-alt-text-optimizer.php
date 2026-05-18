@@ -37,15 +37,6 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

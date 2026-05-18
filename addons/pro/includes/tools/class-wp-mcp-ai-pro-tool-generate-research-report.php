@@ -63,15 +63,6 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		return 'generate_research_report';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_definition() {
 		return array(
 			'name'                => 'generate_research_report',

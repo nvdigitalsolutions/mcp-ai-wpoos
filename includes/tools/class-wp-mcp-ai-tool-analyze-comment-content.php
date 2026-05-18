@@ -28,15 +28,6 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'read';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

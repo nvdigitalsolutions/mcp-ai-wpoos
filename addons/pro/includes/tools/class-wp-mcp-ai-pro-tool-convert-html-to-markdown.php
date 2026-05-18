@@ -30,15 +30,6 @@ class WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown {
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'read';
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @return array

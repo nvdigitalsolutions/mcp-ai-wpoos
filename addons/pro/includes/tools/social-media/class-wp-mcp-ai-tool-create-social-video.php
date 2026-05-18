@@ -162,15 +162,6 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * Get the tool name.
 	 *
 	 * @return string

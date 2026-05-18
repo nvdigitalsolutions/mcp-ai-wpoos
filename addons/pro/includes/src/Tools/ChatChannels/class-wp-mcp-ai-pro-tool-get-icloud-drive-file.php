@@ -27,7 +27,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for retrieving iCloud Drive file metadata via a configured gateway API.
  */
 class WP_MCP_AI_Pro_Tool_Get_iCloud_Drive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Default timeout for iCloud gateway API requests (seconds).
