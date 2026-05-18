@@ -58,6 +58,15 @@ class WP_MCP_AI_Tool_Propose_Value_Engineering_Options implements WP_MCP_AI_Tool
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

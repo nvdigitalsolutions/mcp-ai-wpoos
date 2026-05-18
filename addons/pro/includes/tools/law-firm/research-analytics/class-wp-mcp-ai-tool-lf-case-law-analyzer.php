@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_LF_Case_Law_Analyzer implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	public function get_slug() { return 'lf_case_law_analyzer'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Case Law Analyzer', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Analyzes case law for holdings, reasoning, dissent, and impact. Supports comparison with other cases.', 'mcp-ai-wpoos-pro' ); }
 

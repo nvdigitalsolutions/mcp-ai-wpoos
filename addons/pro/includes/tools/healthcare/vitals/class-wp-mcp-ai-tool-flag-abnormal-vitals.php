@@ -53,6 +53,15 @@ class WP_MCP_AI_Tool_Flag_Abnormal_Vitals implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

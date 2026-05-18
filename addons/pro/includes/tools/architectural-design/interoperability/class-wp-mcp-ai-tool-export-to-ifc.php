@@ -39,6 +39,15 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return 'export_to_ifc';
 	}
 
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function get_name() {
 		return __( 'Export to IFC', 'mcp-ai-wpoos-pro' );
 	}

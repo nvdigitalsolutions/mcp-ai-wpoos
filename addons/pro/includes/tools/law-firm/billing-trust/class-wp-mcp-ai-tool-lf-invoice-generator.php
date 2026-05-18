@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_LF_Invoice_Generator implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	public function get_slug() { return 'lf_invoice_generator'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Invoice Generator', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Generates invoices from time entries for a matter with optional LEDES format and expense inclusion.', 'mcp-ai-wpoos-pro' ); }
 

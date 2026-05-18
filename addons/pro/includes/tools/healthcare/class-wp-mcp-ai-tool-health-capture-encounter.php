@@ -42,6 +42,15 @@ class WP_MCP_AI_Tool_Health_Capture_Encounter extends WP_MCP_AI_Pro_Capture_Tool
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

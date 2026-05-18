@@ -17,6 +17,15 @@ class WP_MCP_AI_Tool_QMS_Approve_Document implements WP_MCP_AI_Tool_Interface, W
 	public function get_slug() {
 		return 'qms_approve_document';
 	}
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
 	public function get_name() {
 		return __( 'QMS: Approve Document', 'mcp-ai-wpoos-pro' );
 	}

@@ -18,6 +18,15 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		return 'analyze_data_patterns';
 	}
 
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function get_definition() {
 		return array(
 			'name'                => 'analyze_data_patterns',

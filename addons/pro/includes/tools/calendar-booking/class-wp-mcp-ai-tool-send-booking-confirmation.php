@@ -22,6 +22,15 @@ class WP_MCP_AI_Tool_Send_Booking_Confirmation implements WP_MCP_AI_Tool_Interfa
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
 	public function get_slug() {
 		return 'send_booking_confirmation'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 	public function get_name() {
 		return __( 'Send Booking Confirmation', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {

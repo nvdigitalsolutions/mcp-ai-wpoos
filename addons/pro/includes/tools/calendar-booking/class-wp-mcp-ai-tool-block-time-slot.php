@@ -23,6 +23,15 @@ class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
 	public function get_slug() {
 		return 'block_time_slot'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 	public function get_name() {
 		return __( 'Block Time Slot', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {

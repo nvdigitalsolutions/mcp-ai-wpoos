@@ -41,6 +41,15 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

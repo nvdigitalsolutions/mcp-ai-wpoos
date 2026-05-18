@@ -41,6 +41,15 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 		return 'get_jetformbuilder_forms';
 	}
 
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_name() {
 		return __( 'Get JetFormBuilder Forms', 'mcp-ai-wpoos' );

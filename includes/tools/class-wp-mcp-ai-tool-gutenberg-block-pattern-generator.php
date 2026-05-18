@@ -43,6 +43,15 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

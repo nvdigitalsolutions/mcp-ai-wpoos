@@ -36,6 +36,15 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 	}
 
 	public function get_slug() { return 'lf_attorney_utilization_tracker'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Attorney Utilization Tracker', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Tracks attorney time utilization against targets including billable hours, non-billable hours, utilization rate, and target variance.', 'mcp-ai-wpoos-pro' ); }
 

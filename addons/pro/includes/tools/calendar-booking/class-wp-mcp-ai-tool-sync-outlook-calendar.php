@@ -22,6 +22,15 @@ class WP_MCP_AI_Tool_Sync_Outlook_Calendar implements WP_MCP_AI_Tool_Interface, 
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
 	public function get_slug() {
 		return 'sync_outlook_calendar'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 	public function get_name() {
 		return __( 'Sync Outlook Calendar', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {

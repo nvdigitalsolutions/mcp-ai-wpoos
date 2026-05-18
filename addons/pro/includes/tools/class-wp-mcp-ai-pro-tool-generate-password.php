@@ -32,6 +32,15 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'read';
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @return array

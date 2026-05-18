@@ -52,6 +52,15 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

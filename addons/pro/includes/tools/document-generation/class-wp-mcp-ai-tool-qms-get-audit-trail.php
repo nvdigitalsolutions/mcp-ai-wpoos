@@ -18,6 +18,15 @@ class WP_MCP_AI_Tool_QMS_Get_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP
 	public function get_slug() {
 		return 'qms_get_audit_trail';
 	}
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
 	public function get_name() {
 		return __( 'QMS: Get Audit Trail', 'mcp-ai-wpoos-pro' );
 	}
