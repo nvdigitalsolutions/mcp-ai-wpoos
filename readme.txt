@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.18
+Stable tag: 1.1.19
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -295,6 +295,28 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.19 - May 18, 2026 =
+
+Bumped to 1.1.19 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative. Provider count: 10 first-class language-model providers.
+
+**Kimi (Moonshot AI) provider (10th provider) + Agent Client Protocol (ACP) Server + MCP Bridge + Unix Theory P7 + GDPR + Security Hardening (5 patches) + Chat Bubble / Test Model UI Sweep (13 PRs)**
+
+* **Kimi (Moonshot AI) provider — 10th first-class language-model provider.** New `WP_MCP_AI_Kimi_Client` wrapping the OpenAI-compatible API at `https://api.moonshot.cn/v1`. Models: `kimi-k2.6` (256K context, multimodal, tool calling — default), `kimi-k2.5`, `kimi-k2` (reasoning), `kimi-k2-thinking` (chain-of-thought), legacy `moonshot-v1-8k/-32k/-128k`. Settings → Providers → Kimi subtab. WP.org compliance docs updated with Kimi, OpenRouter, and DigitalOcean service disclosures.
+
+* **Agent Client Protocol (ACP) Server.** Full ACP standard enabling external AI clients (Zed, JetBrains, Neovim, Claude Desktop) to natively drive NV oOS assistants over JSON-RPC 2.0 + HTTP/SSE. Core: `WP_MCP_AI_ACP_Server`, `WP_MCP_AI_ACP_JSONRPC_Dispatcher`, `WP_MCP_AI_ACP_Session_Manager`, `WP_MCP_AI_ACP_Session_Bridge`, `WP_MCP_AI_ACP_Transport_HTTP`. `/.well-known/ai-peer` extended; `enable_acp_server` + `acp_require_approval` toggles in Orchestration → Settings. PHPUnit coverage scaffolding in `tests/acp/`.
+
+* **MCP Bridge (`bin/mcp-bridge.js`).** Node.js stdio-to-HTTP relay for Claude Desktop, Cursor, Zed. Bridges MCP stdio transport to the plugin's HTTP + SSE endpoint.
+
+* **Unix Theory Phase P7 — Folder README convention.** Every PHP-bearing `includes/` subdirectory ships a `README.md`. Enforced by `composer run docs:check-folder-readmes`. Completes P0–P7.
+
+* **GDPR — JetEngine Privacy Exporters.** Privacy exporter classes for JetEngine CCT data (transcripts, agent memory, approval queue entries) via `wp_privacy_personal_data_exporters`.
+
+* **Security hardening (5 patches).** Settings-key encryption + admin-UI masking (#4990); webhook secret enforcement (#4988); SSRF hardening via `wp_safe_remote_get` (#4991); attachment URL scheme allowlist (#4975); client-log debug-gate (#4984).
+
+* **Chat Bubble / Test Model UI sweep (13 PRs).** Self-init via `wpMcpAiChatInit.init(scope)`; `kses_chat_output()` preserves form/button/input controls; Test Model submission restored; panel-fit + scoped CSS; bubble re-init isolated; submit button fixed inside outer page forms; unified team chat response normalization.
+
+* **Asset Inventory.** Discover Assets button restored; `discover_assets` gains debug logging + Jest coverage.
 
 = 1.1.18 - May 14, 2026 =
 

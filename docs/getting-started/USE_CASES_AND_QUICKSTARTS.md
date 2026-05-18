@@ -1,7 +1,7 @@
 # NV oOS Use Cases & Quickstart Guides
 
 **Doc revision:** 2.0  
-**Tested against plugin version:** 1.1.18 (May 14, 2026)  
+**Tested against plugin version:** 1.1.19 (May 18, 2026)  
 **Last updated:** May 17, 2026  
 **Estimated reading time:** 35 minutes
 

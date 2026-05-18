@@ -11,9 +11,10 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.18  
-**Release Date:** 2026-05-14 (May 14, 2026 — **Unix Theory Compliance Phases P0–P6** (canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` sniff, capability-fence audit, `WP_MCP_AI_Tool_Data_Contract_Interface`, tool-lifecycle descriptor 5th arg + OTel data_type/duration_ms, back-compat alias infrastructure, `WPMCPAI.Tools.SanitizeAtEntry` sniff), **DigitalOcean Serverless Inference provider** (9th provider — `WP_MCP_AI_DigitalOcean_Client` + embeddings + diagnostics), **Async chat continuation** (slices 1–6 — durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel + Jest), **Jobs/Tasks Drawer + cron-status** (PRs A–G — inline job-progress cards, `POST /mcp-ai/v1/cron-status/{job_id}/cancel|retry` routes, Tasks Drawer + toasts, OTel hooks), **Toolkit MCP Servers Phase 7 admin UI** (`WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` — 5-tab admin page), **JetEngine CCT memory mirror** hydration, langsmith `>=0.6.0` (GHSA-3644-q5cj-c5c7), `wp_read_video_metadata` guard in Veo/Sora tools; v1.1.17 — WP.org Compliance Hardening (B1–B13), Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, Coverage Campaign, Dependabot security sweep)  
-**Latest Updates:** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
+**Version:** 1.1.19  
+**Release Date:** 2026-05-18 (May 18, 2026 — **Kimi (Moonshot AI) provider** (10th provider — `WP_MCP_AI_Kimi_Client` + 256K context + kimi-k2-thinking CoT), **Agent Client Protocol (ACP) Server** (JSON-RPC 2.0 / HTTP+SSE — `WP_MCP_AI_ACP_Server` + session bridge + IDE integration), **MCP Bridge** (`bin/mcp-bridge.js` stdio relay for Claude Desktop / Cursor / Zed), **Unix Theory P7** (folder README convention — all `includes/` subdirs ship `README.md`), **GDPR** (JetEngine privacy exporters), **Security hardening** (settings-key encryption, webhook secret enforcement, SSRF via `wp_safe_remote_get`, attachment URL scheme validation, client-log debug-gate), **Chat bubble sweep** (13 PRs — self-init, kses form controls, Test Model restored, panel-fit, scoped CSS))  
+**Latest Updates:** May 18, 2026 (v1.1.19) — See [§ Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026) below.  
+**Previous Updates (v1.1.18):** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
 **Previous Updates (v1.1.17):** May 10, 2026 (v1.1.17) — See [§ Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026) below.  
 **Previous Updates (v1.1.16):** May 6, 2026 (v1.1.16) — See [§ Latest Updates (v1.1.16 — May 2026)](#-latest-updates-v1116--may-2026) below.  
 **Previous Updates (v1.1.15):** May 5, 2026 — **New Providers (OpenRouter + DeepSeek), Orchestration Phases 1–7, LLM Harnessing GA, Memory Bridge G-series, Graphify Data-source Bridge.** (1) **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) unified gateway for 100+ models (OpenAI / Anthropic / Google / Meta / Mistral) via one key; **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) first-class provider with `reasoning_content` passthrough; **Kimi K2.6** + **Qwen 3.6** added to model catalog; **LM Studio** native cURL SSE streaming + full May-2026 parity (native `/api/v0`, embeddings, bearer auth, capability-aware tool gating). (2) **Orchestration Phases 1–7 re-landed** with JetEngine CCT `init` priority 11+ fix: Phase 1 (Run Timeline, prompt-injection detector, OTel span exporter), Phase 2 (HITL `WP_MCP_AI_Approval_Queue` + REST `/mcp-ai/v1/approvals/*`), Phase 3 (structured output), Phase 4 (DAG builder), Phase 5 (durable runs `WP_MCP_AI_Durable_Run_Store`), Phase 6 (triggers + webhooks `WP_MCP_AI_Workflow_Trigger_CPT`), Phase 7 (sub-agents, Pro vector-store adapter, Pro team budget manager). (3) **LLM Harnessing GA** (Layers A–H) — seven opt-in per-assistant epistemic layers. Reference: [`docs/llm-harness.md`](docs/llm-harness.md). (4) **19 new slash commands** (11 base + 8 Pro): `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/clear`, `/reset`, `/resume` + Pro `/schedule`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`. (5) **Chat-client Memory Bridge G-series** — REST proxy + Memory Drawer (Memories/Scope/Audit tabs) + SSE `memory_event` frame + pagehide auto-capture + 3 gates. (6) **Retroactive Transcript Mining** stuck-job root causes fixed (PRs #4804 #4826). (7) **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace `RECALLS` edges, external `$wpdb` tables; Sources tab + Observability dashboard. See [§ Latest Updates (v1.1.15 — May 2026)](#-latest-updates-v1115--may-2026) below for the full list.  
@@ -27,6 +28,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
+- [🆕 Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026)
 - [🆕 Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026)
 - [🆕 Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026)
 - [🧩 Overview](#-overview)
@@ -206,7 +208,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
-- **9 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Embedded
+- **10 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Kimi (Moonshot AI), Embedded
 - **~830 tool classes** (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **34 REST controllers** (16 base + 18 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
@@ -328,6 +330,21 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.19 — May 2026)
+
+### May 18, 2026 — Kimi Provider, ACP Server, MCP Bridge, Unix Theory P7, Security Hardening, Chat Bubble Sweep 📡🔒🧩💬
+
+- ✅ **Kimi (Moonshot AI) provider — 10th first-class language-model provider.** New `WP_MCP_AI_Kimi_Client` wrapping the OpenAI-compatible API at `https://api.moonshot.cn/v1`. Models: `kimi-k2.6` (256K context, multimodal, tool calling — default), `kimi-k2.5`, `kimi-k2` (reasoning), `kimi-k2-thinking` (chain-of-thought), legacy `moonshot-v1-8k/-32k/-128k`. Settings → Providers → **Kimi** subtab; Provider Diagnostics card. WP.org compliance docs updated with Kimi, OpenRouter, and DigitalOcean service disclosures.
+- ✅ **Agent Client Protocol (ACP) Server.** Full ACP standard implementation enabling external AI clients (Zed, JetBrains, Neovim, Claude Desktop) to natively drive NV oOS assistants over JSON-RPC 2.0 + HTTP/SSE transport. Core: `WP_MCP_AI_ACP_Server`, `WP_MCP_AI_ACP_JSONRPC_Dispatcher`, `WP_MCP_AI_ACP_Session_Manager`, `WP_MCP_AI_ACP_Session_Bridge`, `WP_MCP_AI_ACP_Transport_HTTP`. `/.well-known/ai-peer` extended to advertise ACP endpoint, transports, and auth methods. **Orchestration → Settings** gains `enable_acp_server` + `acp_require_approval` toggles. PHPUnit coverage scaffolding in `tests/acp/`. See `docs/features/acp-server.md`.
+- ✅ **MCP Bridge (`bin/mcp-bridge.js`).** Lightweight Node.js stdio-to-HTTP relay for local MCP clients (Claude Desktop, Cursor, Zed). Bridges the MCP stdio transport to the plugin's HTTP + SSE endpoint — no server-side changes required.
+- ✅ **Unix Theory Phase P7 — Folder README convention.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/guides/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`. Completes P0–P7 for the base plugin.
+- ✅ **GDPR — JetEngine Privacy Exporters.** New privacy exporter classes for JetEngine CCT data (chat transcripts, agent memory, approval queue entries), registered via WordPress's `wp_privacy_personal_data_exporters` hook when JetEngine is active.
+- ✅ **Security hardening (5 patches).** (1) Sensitive settings keys (API keys, tokens) encrypted at rest + masked in admin UI (#4990). (2) Webhook endpoints now reject requests missing the required shared secret (#4988). (3) User-configurable URLs in outgoing HTTP requests replaced with `wp_safe_remote_get`/`wp_safe_remote_post` to block SSRF (#4991). (4) Attachment URLs in tool results validated against `https`/`http` scheme allowlist to prevent `javascript:`/`data:` injection (#4975). (5) Sensitive console logs gated behind `WP_MCP_AI_DEBUG` + admin-only JS toggle (#4984).
+- ✅ **Chat Bubble / Test Model UI sweep (13 PRs).** Chat bubble self-init via `wpMcpAiChatInit.init(scope)`; panel CSS scoped to bubble context; `kses_chat_output()` preserves interactive form/button/input controls; Test Model chat submission fully restored; professional selector AJAX render uses `kses_chat_output()`; bubble re-init isolated to its own ID/panel; submit button fixed inside outer page forms; unified team chat response normalization.
+- ✅ **Asset Inventory.** Discover Assets button restored; `discover_assets` flow gains debug logging + Jest test coverage.
+- ✅ **Docs — USE_CASES_AND_QUICKSTARTS Rev 2.0** refresh + stale-count sweep; `_USE_CASES_FACT_SHEET.md` is now the source of truth for point-in-time counts.
+- 📦 **Versioning** — bumped to **1.1.19** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Provider count: **10** first-class language-model providers.
 
 ## 🆕 Latest Updates (v1.1.18 — May 2026)
 
@@ -2464,7 +2481,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
-## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face & Cloudflare)
+## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare & Kimi)
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, NVIDIA NIM, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
