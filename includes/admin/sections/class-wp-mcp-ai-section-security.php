@@ -1360,7 +1360,7 @@ jQuery(function($){
 				<?php
 				$registry = WP_MCP_AI_Tool_Registry::get_instance();
 				// Use get_all_tools() so the array is keyed by slug rather than numerically.
-				$tools = method_exists( $registry, 'get_all_tools' ) ? $registry->get_all_tools() : $registry->get_tools();
+				$tools    = $registry->get_all_tools();
 				if ( empty( $tools ) ) {
 					echo '<p style="color:#646970;">' . esc_html__( 'No tools registered.', 'mcp-ai-wpoos' ) . '</p>';
 				} else {
@@ -1372,11 +1372,6 @@ jQuery(function($){
 					echo '<th>' . esc_html__( 'Flags', 'mcp-ai-wpoos' ) . '</th>';
 					echo '</tr></thead><tbody>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static HTML
 					foreach ( $tools as $slug => $tool ) {
-						// Fallback to the tool's own slug when iterating a non-keyed array.
-						if ( is_int( $slug ) && method_exists( $tool, 'get_slug' ) ) {
-							$slug = $tool->get_slug();
-						}
-
 						$def = method_exists( $tool, 'get_definition' ) ? (array) $tool->get_definition() : array();
 
 						// Capability can live either in the definition array or behind a dedicated getter.
@@ -1389,8 +1384,6 @@ jQuery(function($){
 								$cap = $resolved;
 							}
 						}
-						$cap = trim( $cap );
-
 						// Normalize capability flags: tolerate both indexed arrays of strings
 						// (interface contract) and legacy associative `flag => bool` shapes.
 						$flags     = array();
