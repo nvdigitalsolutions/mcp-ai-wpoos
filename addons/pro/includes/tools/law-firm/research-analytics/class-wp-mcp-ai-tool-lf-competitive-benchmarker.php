@@ -76,6 +76,15 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 	}
 
 	public function get_slug() { return 'lf_competitive_benchmarker'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Competitive Benchmarker', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Compares firm performance against industry benchmarks by firm size, practice areas, and region. Returns benchmark data alongside actual firm metrics.', 'mcp-ai-wpoos-pro' ); }
 

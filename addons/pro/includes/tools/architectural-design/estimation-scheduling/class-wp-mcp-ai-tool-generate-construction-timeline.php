@@ -61,6 +61,15 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

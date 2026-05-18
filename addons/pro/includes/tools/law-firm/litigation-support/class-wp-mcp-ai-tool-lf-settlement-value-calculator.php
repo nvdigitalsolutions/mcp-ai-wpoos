@@ -55,6 +55,15 @@ class WP_MCP_AI_Tool_LF_Settlement_Value_Calculator implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function get_name() {

@@ -33,6 +33,15 @@ class WP_MCP_AI_Tool_Generate_Responsive_Images extends WP_MCP_AI_Tool_Image_Bas
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

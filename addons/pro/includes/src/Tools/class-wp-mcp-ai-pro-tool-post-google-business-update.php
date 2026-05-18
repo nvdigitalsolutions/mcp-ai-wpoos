@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a tool for creating Google Business Profile posts via the My Business API.
  */
 class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Check if this tool is available.

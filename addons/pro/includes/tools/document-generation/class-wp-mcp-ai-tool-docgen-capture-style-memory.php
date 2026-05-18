@@ -38,6 +38,15 @@ class WP_MCP_AI_Tool_DocGen_Capture_Style_Memory extends WP_MCP_AI_Pro_Capture_T
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

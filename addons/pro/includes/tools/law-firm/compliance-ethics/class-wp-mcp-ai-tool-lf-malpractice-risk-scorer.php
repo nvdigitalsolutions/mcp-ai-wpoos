@@ -74,6 +74,15 @@ class WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function get_name() {

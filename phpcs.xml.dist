@@ -132,5 +132,18 @@
 -->
 <rule ref="./phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php"/>
 
+<!--
+	Phase 3 of the Unix Theory Compliance Enhancement Proposal: warn when a
+	concrete tool class that directly implements WP_MCP_AI_Tool_Interface
+	declares neither a get_required_capability() method nor a literal
+	'required_capability' key inside get_definition(). Without the declaration
+	the capability fence in build_tools_payload() cannot filter low-privilege
+	users from destructive tools.
+
+	Abstract classes and classes that extend a base (inheriting the method from
+	their parent) are intentionally excluded from the check.
+-->
+<rule ref="./phpcs/WPMCPAI/Sniffs/Tools/RequiredCapabilityDeclaredSniff.php"/>
+
 <file>.</file>
 </ruleset>

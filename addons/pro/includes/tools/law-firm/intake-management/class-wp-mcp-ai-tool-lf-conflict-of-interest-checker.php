@@ -52,6 +52,15 @@ class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_I
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function get_name() {

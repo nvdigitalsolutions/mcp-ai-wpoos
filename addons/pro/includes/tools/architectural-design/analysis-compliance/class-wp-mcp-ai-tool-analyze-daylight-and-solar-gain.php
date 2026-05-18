@@ -59,6 +59,15 @@ class WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain implements WP_MCP_AI_Tool_I
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

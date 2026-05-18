@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Inte
 	}
 
 	public function get_slug() { return 'lf_trust_reconciliation_tool'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Trust Reconciliation Tool', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Performs three-way reconciliation of trust accounts comparing bank balance, book balance, and client ledger totals.', 'mcp-ai-wpoos-pro' ); }
 

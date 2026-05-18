@@ -72,6 +72,15 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * Get the tool name.
 	 *
 	 * @return string

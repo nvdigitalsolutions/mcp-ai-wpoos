@@ -74,6 +74,15 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * Get the tool name.
 	 *
 	 * @return string

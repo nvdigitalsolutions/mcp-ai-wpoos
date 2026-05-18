@@ -30,6 +30,15 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

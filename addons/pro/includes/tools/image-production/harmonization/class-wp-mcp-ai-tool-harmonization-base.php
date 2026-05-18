@@ -94,6 +94,17 @@ abstract class WP_MCP_AI_Tool_Harmonization_Base implements
 	}
 
 	/**
+	 * {@inheritdoc}
+	 *
+	 * Harmonization tools write files to the media library.
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * Default schema is empty; concrete tools must override.
 	 *
 	 * @return array

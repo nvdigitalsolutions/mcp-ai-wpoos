@@ -42,6 +42,15 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0
