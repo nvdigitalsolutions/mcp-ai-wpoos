@@ -222,8 +222,6 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 
 		// Create mock tool with async flag.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-			use WP_MCP_AI_Tool_Default_Capability;
-
 			/**
 			 * Get the tool slug.
 			 *
@@ -285,8 +283,6 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 
 		// Create mock tool without async flag.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
-			use WP_MCP_AI_Tool_Default_Capability;
-
 			/**
 			 * Get the tool slug.
 			 *
@@ -344,8 +340,6 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
-			use WP_MCP_AI_Tool_Default_Capability;
-
 			/**
 			 * Get the tool slug.
 			 *
@@ -414,8 +408,6 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 
 		// Create a mock tool with 'async' capability flag (like generate_openai_image).
 		$mock_async_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-			use WP_MCP_AI_Tool_Default_Capability;
-
 			/**
 			 * Get the tool slug.
 			 *
@@ -479,8 +471,6 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 
 		// Background-only tools should still run async even in agentic loop.
 		$mock_background_only_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-			use WP_MCP_AI_Tool_Default_Capability;
-
 			/**
 			 * Get the tool slug.
 			 *

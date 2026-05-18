@@ -21,15 +21,6 @@ class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, 
 		return 'para_move_to_archives';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'PARA: Move to Archives', 'mcp-ai-wpoos-pro' );
 	}

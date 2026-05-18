@@ -14,8 +14,6 @@
  * Mock tool with broken schema for testing error handling.
  */
 class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
-
 	/**
 	 * Get the tool slug.
 	 *
@@ -68,8 +66,6 @@ class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
  * Mock tool that returns invalid schema (not an array).
  */
 class WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
-
 	/**
 	 * Get the tool slug.
 	 *
@@ -123,8 +119,6 @@ class WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
  * Mock tool that works correctly.
  */
 class WP_MCP_AI_Mock_Working_Tool implements WP_MCP_AI_Tool_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
-
 	/**
 	 * Get the tool slug.
 	 *

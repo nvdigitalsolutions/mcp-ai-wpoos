@@ -19,7 +19,6 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-github-clie
  * Provides an assistant tool for listing GitHub repositories.
  */
 class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * {@inheritdoc}
 	 */

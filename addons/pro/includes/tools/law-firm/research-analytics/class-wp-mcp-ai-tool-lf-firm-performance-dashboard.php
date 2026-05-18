@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 	}
 
 	public function get_slug() { return 'lf_firm_performance_dashboard'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Firm Performance Dashboard', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Generates firm-wide KPIs including realization rate, collection rate, utilization rate, revenue per lawyer, and matters per attorney for a given period.', 'mcp-ai-wpoos-pro' ); }
 

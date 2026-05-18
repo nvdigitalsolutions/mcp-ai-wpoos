@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 	}
 
 	public function get_slug() { return 'lf_legal_citation_checker'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Legal Citation Checker', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Extracts and validates legal citations from text, checking Bluebook or ALWD format compliance with ABA Opinion 512 hallucination warnings.', 'mcp-ai-wpoos-pro' ); }
 

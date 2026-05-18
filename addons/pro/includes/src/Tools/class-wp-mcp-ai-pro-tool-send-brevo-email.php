@@ -22,7 +22,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Brevo (formerly Sendinblue) API docs: https://developers.brevo.com/docs/getting-started
  */
 class WP_MCP_AI_Pro_Tool_Send_Brevo_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 	const API_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
 
 	/**

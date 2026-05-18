@@ -23,15 +23,6 @@ class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_
 		return 'para_classify_item';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'PARA: Classify Item', 'mcp-ai-wpoos-pro' );
 	}

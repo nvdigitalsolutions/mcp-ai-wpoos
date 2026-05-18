@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_LF_Time_Entry_Recorder implements WP_MCP_AI_Tool_Interface,
 	}
 
 	public function get_slug() { return 'lf_time_entry_recorder'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Time Entry Recorder', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Records billable time entries for legal matters with UTBMS code validation and block billing detection.', 'mcp-ai-wpoos-pro' ); }
 

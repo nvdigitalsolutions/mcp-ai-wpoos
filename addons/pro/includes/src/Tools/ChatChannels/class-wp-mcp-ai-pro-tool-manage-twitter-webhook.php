@@ -24,7 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * @see https://developer.twitter.com/en/docs/twitter-api/enterprise/account-activity-api/api-reference
  */
 class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Default timeout for Twitter API requests.

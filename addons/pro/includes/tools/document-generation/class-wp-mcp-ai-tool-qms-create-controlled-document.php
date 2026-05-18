@@ -22,15 +22,6 @@ class WP_MCP_AI_Tool_QMS_Create_Controlled_Document implements WP_MCP_AI_Tool_In
 		return 'qms_create_controlled_document';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
 	public function get_name() {
 		return __( 'QMS: Create Controlled Document', 'mcp-ai-wpoos-pro' );
 	}

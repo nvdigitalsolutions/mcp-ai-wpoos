@@ -43,15 +43,6 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

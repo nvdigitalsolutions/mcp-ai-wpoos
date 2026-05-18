@@ -41,15 +41,6 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return 'manage_rfi_log';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'Manage RFI Log', 'mcp-ai-wpoos-pro' );
 	}

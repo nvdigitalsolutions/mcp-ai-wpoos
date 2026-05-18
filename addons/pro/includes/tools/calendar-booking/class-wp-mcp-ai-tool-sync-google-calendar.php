@@ -22,15 +22,6 @@ class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, W
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
 	public function get_slug() {
 		return 'sync_google_calendar'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
 	public function get_name() {
 		return __( 'Sync Google Calendar', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {

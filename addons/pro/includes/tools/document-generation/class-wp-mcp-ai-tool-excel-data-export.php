@@ -37,15 +37,6 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
