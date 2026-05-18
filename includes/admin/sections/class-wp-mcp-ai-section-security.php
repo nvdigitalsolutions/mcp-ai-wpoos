@@ -245,9 +245,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			$roles = wp_roles()->get_names();
+			$roles  = wp_roles()->get_names();
 
-			return array(
+			$fields = array(
 				// ========================================
 				// GLOBAL ACCESS CONTROL
 				// ========================================
@@ -737,6 +737,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'default'        => false,
 				),
 			);
+
+			// ====================================================
+			// PRO-ONLY: OTel security export field definitions.
+			// These keys are referenced by the 'audit' subtab
+			// group only when Pro is active (see get_subtab_groups).
+			// ====================================================
+			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+				$fields['_heading_otel_security']         = array(
+					'type'  => 'heading',
+					'label' => __( 'OTel Security Export (Pro)', 'mcp-ai-wpoos' ),
+				);
+				$fields['enable_otel_security_export']    = array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Export Security Spans to OTel', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Send auth-fail, IP-block, and injection events as OTLP spans', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Reuses the existing OTel exporter. Endpoint and token are shared with <em>Tools → Connections → OTel</em>. Override below for security spans only.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				);
+				$fields['otel_security_endpoint']         = array(
+					'type'        => 'text',
+					'label'       => __( 'OTel Endpoint Override (Security)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional: override the global OTel endpoint for security spans only. Leave blank to use <code>otel_endpoint</code> from Tools → Connections.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://otel-collector.example.com:4318/v1/traces',
+					'default'     => '',
+				);
+				$fields['otel_security_bearer_token']     = array(
+					'type'        => 'password',
+					'label'       => __( 'OTel Bearer Token Override (Security)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional: override the global OTel bearer token for security spans only.', 'mcp-ai-wpoos' ),
+					'default'     => '',
+				);
+				$fields['otel_security_sampling_percent'] = array(
+					'type'        => 'number',
+					'label'       => __( 'Security Span Sampling (%)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Percentage of security spans to export (0–100). 100 = export all.', 'mcp-ai-wpoos' ),
+					'default'     => 100,
+					'min'         => 0,
+					'max'         => 100,
+				);
+			}
+
+			return $fields;
 		}
 
 		/**
@@ -1029,6 +1071,8 @@ jQuery(function($){
 				$this->render_audit_tools();
 			} elseif ( 'ai_safety' === $active_subtab ) {
 				$this->render_capability_fence_hint();
+				$this->render_deprecated_alias_telemetry();
+				$this->render_mcp_token_inventory();
 			}
 		}
 
@@ -1141,6 +1185,26 @@ jQuery(function($){
 				<div id="wp-mcp-ai-snapshot-list"   style="margin-top:12px;display:none;"></div>
 			</div>
 
+
+			<!-- Compliance Report Builder -->
+			<div class="wp-mcp-ai-audit-tool" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin:16px 0;">
+				<h3 style="margin-top:0;"><?php esc_html_e( '📋 Compliance Report Builder', 'mcp-ai-wpoos' ); ?></h3>
+				<p><?php esc_html_e( 'Export a CSV evidence pack showing current control status, posture score, and recent security events for your chosen compliance framework.', 'mcp-ai-wpoos' ); ?></p>
+				<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+					<select id="wp-mcp-ai-compliance-framework" class="regular-text" style="max-width:200px;">
+						<option value="owasp"><?php esc_html_e( 'OWASP Top 10', 'mcp-ai-wpoos' ); ?></option>
+						<option value="gdpr"><?php esc_html_e( 'GDPR', 'mcp-ai-wpoos' ); ?></option>
+						<option value="soc2"><?php esc_html_e( 'SOC 2', 'mcp-ai-wpoos' ); ?></option>
+						<option value="hipaa"><?php esc_html_e( 'HIPAA', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+					<button type="button" id="wp-mcp-ai-export-report-btn" class="button button-primary">
+						<span class="dashicons dashicons-download" style="vertical-align:middle;"></span>
+						<?php esc_html_e( 'Export CSV', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</div>
+				<div id="wp-mcp-ai-compliance-result" style="margin-top:12px;display:none;"></div>
+			</div>
+
 			<!-- Self-test runner -->
 			<div class="wp-mcp-ai-audit-tool" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin:16px 0;">
 				<h3 style="margin-top:0;"><?php esc_html_e( '🧪 Security Self-Test', 'mcp-ai-wpoos' ); ?></h3>
@@ -1226,6 +1290,33 @@ jQuery(function($){
 					}).always(function(){ $('#wp-mcp-ai-load-snapshots-btn').prop('disabled', false); });
 				});
 
+
+				// Compliance report builder.
+				$('#wp-mcp-ai-export-report-btn').on('click', function(){
+					var fw = $('#wp-mcp-ai-compliance-framework').val();
+					$(this).prop('disabled', true);
+					var $result = $('#wp-mcp-ai-compliance-result').show().html('<em><?php echo esc_js( __( 'Generating report…', 'mcp-ai-wpoos' ) ); ?></em>');
+					wp.apiRequest({
+						path: '/mcp-ai/v1/security/compliance-report',
+						method: 'POST',
+						data: { framework: fw },
+						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+					}).done(function(res){
+						// Trigger CSV download.
+						var blob = new Blob([res.csv], { type: 'text/csv' });
+						var url  = URL.createObjectURL(blob);
+						var a    = document.createElement('a');
+						a.href     = url;
+						a.download = 'security-compliance-' + fw + '-' + res.generated_at.replace(/[^0-9]/g, '') + '.csv';
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+						$result.html('<p style="color:#46b450;">✅ <?php echo esc_js( __( 'Report downloaded.', 'mcp-ai-wpoos' ) ); ?> (' + $('<span>').text(res.title).html() + ')</p>');
+					}).fail(function(){
+						$result.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Report generation failed.', 'mcp-ai-wpoos' ) ); ?></p>');
+					}).always(function(){ $('#wp-mcp-ai-export-report-btn').prop('disabled', false); });
+				});
 				$('#wp-mcp-ai-self-test-btn').on('click', function(){
 					$(this).prop('disabled', true);
 					var $result = $('#wp-mcp-ai-self-test-result').show().html('<em><?php echo esc_js( __( 'Running…', 'mcp-ai-wpoos' ) ); ?></em>');
@@ -1303,6 +1394,137 @@ jQuery(function($){
 			<table class="form-table" role="presentation">
 			<?php
 		}
+
+/**
+ * Render a deprecated-alias telemetry table on the AI Safety sub-tab.
+ *
+ * Shows every registered deprecated alias (from P5 Part 2 infrastructure) so
+ * admins can see which legacy slugs are still being called and plan migrations.
+ */
+private function render_deprecated_alias_telemetry() {
+if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+return;
+}
+
+$registry = WP_MCP_AI_Tool_Registry::get_instance();
+if ( ! method_exists( $registry, 'get_deprecated_aliases' ) ) {
+return;
+}
+
+$aliases = $registry->get_deprecated_aliases();
+?>
+</table>
+
+<div class="wp-mcp-ai-cap-fence" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin:16px 0;">
+<h3 style="margin-top:0;"><?php esc_html_e( '⚠️ Deprecated Tool-Alias Telemetry (read-only)', 'mcp-ai-wpoos' ); ?></h3>
+<p><?php esc_html_e( 'Tool slugs that have been renamed. Legacy callers are still routed to the replacement but should be updated. Each alias fires the', 'mcp-ai-wpoos' ); ?>
+<code>wp_mcp_ai_tool_deprecated_alias_invoked</code>
+<?php esc_html_e( 'action once per request.', 'mcp-ai-wpoos' ); ?>
+</p>
+<?php if ( empty( $aliases ) ) : ?>
+<p style="color:#46b450;"><?php esc_html_e( '✅ No deprecated aliases registered.', 'mcp-ai-wpoos' ); ?></p>
+<?php else : ?>
+<table class="widefat striped">
+<thead>
+<tr>
+<th><?php esc_html_e( 'Legacy Slug', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'Replaced By', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'Deprecated Since', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'Remove In', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'Notes', 'mcp-ai-wpoos' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<?php foreach ( $aliases as $old_slug => $entry ) : ?>
+<tr>
+<td><code><?php echo esc_html( $old_slug ); ?></code></td>
+<td><code><?php echo esc_html( $entry['new_slug'] ); ?></code></td>
+<td><?php echo esc_html( $entry['since'] ?: '—' ); ?></td>
+<td><?php echo esc_html( $entry['remove'] ?: '—' ); ?></td>
+<td style="color:#646970;"><?php echo esc_html( $entry['message'] ?: '—' ); ?></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<?php endif; ?>
+</div>
+
+<table class="form-table" role="presentation">
+<?php
+}
+
+/**
+ * Render a Pro-only MCP-server token inventory panel on the AI Safety sub-tab.
+ *
+ * Shows configured MCP server names and their last-rotated timestamps.
+ * Only rendered when WP_MCP_AI_PRO_VERSION is defined.
+ */
+private function render_mcp_token_inventory() {
+if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+return;
+}
+
+$settings    = get_option( 'wp_mcp_ai_settings', array() );
+$mcp_servers = isset( $settings['mcp_servers'] ) && is_array( $settings['mcp_servers'] )
+? $settings['mcp_servers']
+: array();
+
+// Also check dedicated MCP connections option.
+$connections = get_option( 'wp_mcp_ai_mcp_connections', array() );
+if ( is_array( $connections ) ) {
+foreach ( $connections as $conn ) {
+$mcp_servers[] = $conn;
+}
+}
+?>
+</table>
+
+<div class="wp-mcp-ai-cap-fence" style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:16px;margin:16px 0;">
+<h3 style="margin-top:0;"><?php esc_html_e( '🔌 MCP Server Token Inventory (Pro)', 'mcp-ai-wpoos' ); ?></h3>
+<p><?php esc_html_e( 'Connected MCP servers and their bearer-token rotation status. Tokens should be rotated every 90 days.', 'mcp-ai-wpoos' ); ?></p>
+<?php if ( empty( $mcp_servers ) ) : ?>
+<p style="color:#646970;"><?php esc_html_e( 'No MCP servers configured. Add servers under Tools → Connections.', 'mcp-ai-wpoos' ); ?></p>
+<?php else : ?>
+<table class="widefat striped">
+<thead>
+<tr>
+<th><?php esc_html_e( 'Server', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'URL', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'Token Last Rotated', 'mcp-ai-wpoos' ); ?></th>
+<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<?php foreach ( $mcp_servers as $server ) : ?>
+<?php
+$name          = esc_html( $server['name'] ?? $server['url'] ?? __( '(unnamed)', 'mcp-ai-wpoos' ) );
+$url           = esc_url( $server['url'] ?? '' );
+$rotated_raw   = $server['token_rotated_at'] ?? '';
+$rotated_ts    = $rotated_raw ? strtotime( $rotated_raw ) : 0;
+$days_since    = $rotated_ts ? (int) ( ( time() - $rotated_ts ) / DAY_IN_SECONDS ) : PHP_INT_MAX;
+$needs_rotation = $days_since > 90;
+$rotated_label = $rotated_ts
+? wp_date( get_option( 'date_format' ), $rotated_ts )
+: __( 'Unknown', 'mcp-ai-wpoos' );
+$status_html   = $needs_rotation
+? '<span style="color:#d63638;">⚠️ ' . esc_html__( 'Rotation overdue', 'mcp-ai-wpoos' ) . '</span>'
+: '<span style="color:#46b450;">✅ ' . esc_html__( 'OK', 'mcp-ai-wpoos' ) . '</span>';
+?>
+<tr>
+<td><?php echo esc_html( $name ); ?></td>
+<td><?php echo esc_html( $url ); ?></td>
+<td><?php echo esc_html( $rotated_label ); ?></td>
+<td><?php echo $status_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- composed of esc_html() calls above ?></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<?php endif; ?>
+</div>
+
+<table class="form-table" role="presentation">
+<?php
+}
 
 		/**
 		 * Validate section input.

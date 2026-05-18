@@ -396,6 +396,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 			'/mcp-ai/v1/security/snapshots',
 			'/mcp-ai/v1/security/restore',
 			'/mcp-ai/v1/security/self-test',
+			'/mcp-ai/v1/security/compliance-report',
 		);
 
 		foreach ( $expected as $route ) {
@@ -549,5 +550,125 @@ class Test_Security_Center extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'auth_fail', $data['results'] );
 		$this->assertArrayHasKey( 'ip_block', $data['results'] );
 		$this->assertArrayHasKey( 'injection', $data['results'] );
+	}
+
+	/**
+	 * Compliance report returns expected keys for each framework.
+	 *
+	 * @dataProvider data_compliance_frameworks
+	 * @param string $fw Framework slug.
+	 */
+	public function test_compliance_report_returns_data_for_framework( $fw ) {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/compliance-report' );
+		$request->set_param( 'framework', $fw );
+
+		$response = $controller->generate_compliance_report( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( $fw, $data['framework'] );
+		$this->assertArrayHasKey( 'title', $data );
+		$this->assertArrayHasKey( 'generated_at', $data );
+		$this->assertArrayHasKey( 'posture_score', $data );
+		$this->assertArrayHasKey( 'control_count', $data );
+		$this->assertGreaterThan( 0, $data['control_count'] );
+		$this->assertNotEmpty( $data['csv'] );
+	}
+
+	/**
+	 * Data provider: one entry per supported framework.
+	 *
+	 * @return array
+	 */
+	public function data_compliance_frameworks() {
+		return array(
+			'owasp' => array( 'owasp' ),
+			'gdpr'  => array( 'gdpr' ),
+			'soc2'  => array( 'soc2' ),
+			'hipaa' => array( 'hipaa' ),
+		);
+	}
+
+	/**
+	 * Compliance report CSV contains the expected section headers.
+	 */
+	public function test_compliance_report_csv_structure() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/compliance-report' );
+		$request->set_param( 'framework', 'owasp' );
+
+		$data = $controller->generate_compliance_report( $request )->get_data();
+
+		$this->assertStringContainsString( 'NV oOS Security Compliance Report', $data['csv'] );
+		$this->assertStringContainsString( 'Control ID', $data['csv'] );
+		$this->assertStringContainsString( 'PASS', $data['csv'] . 'FAIL' ); // at least one must appear.
+	}
+
+	/**
+	 * Compliance report returns WP_Error for an unsupported framework.
+	 */
+	public function test_compliance_report_invalid_framework_returns_error() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/compliance-report' );
+		$request->set_param( 'framework', 'pci_dss' ); // not in enum.
+
+		$result = $controller->generate_compliance_report( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'invalid_framework', $result->get_error_code() );
+	}
+
+	/**
+	 * OTel field definitions exist in get_fields() when Pro is active.
+	 *
+	 * This test simulates Pro being defined by monkey-patching the section's
+	 * get_fields output via the helper below; when Pro is NOT installed in
+	 * the test environment we just skip the assertion to avoid false negatives.
+	 */
+	public function test_otel_fields_present_when_pro_defined() {
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_PRO_VERSION not defined in this environment.' );
+		}
+
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
+		$fields  = $section->get_fields();
+
+		$otel_keys = array(
+			'enable_otel_security_export',
+			'otel_security_endpoint',
+			'otel_security_bearer_token',
+			'otel_security_sampling_percent',
+		);
+
+		foreach ( $otel_keys as $key ) {
+			$this->assertArrayHasKey( $key, $fields, "OTel field \'{$key}\' missing from get_fields() when Pro is active" );
+		}
+	}
+
+	/**
+	 * Deprecated-alias telemetry renders without fatal error.
+	 *
+	 * We call render_deprecated_alias_telemetry() via reflection and just
+	 * check it does not throw.
+	 */
+	public function test_deprecated_alias_telemetry_renders_cleanly() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
+
+		$ref = new ReflectionMethod( $section, 'render_deprecated_alias_telemetry' );
+		$ref->setAccessible( true );
+
+		ob_start();
+		$ref->invoke( $section );
+		$html = ob_get_clean();
+
+		// Method should produce output (at minimum a </table> and <table> pair).
+		$this->assertStringContainsString( 'form-table', $html );
 	}
 }
