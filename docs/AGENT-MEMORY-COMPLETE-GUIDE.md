@@ -1,8 +1,8 @@
 # Agent Memory Management - Complete Guide
 
-**Version:** 1.1.0  
-**Date:** February 18, 2026  
-**Status:** Production Ready
+**Version:** 1.1.20  
+**Date:** May 18, 2026  
+**Status:** Production Ready (Phase 8 docs sync complete)
 
 ## Table of Contents
 
@@ -20,6 +20,13 @@
 ## Overview
 
 The Agent Memory Management system now provides enterprise-grade capabilities for managing AI agent memory/context with complete CRUD operations, batch processing, versioning, and audit trails.
+
+### Memory Layer 2026 (Phase 7/8) wiring checkpoints
+
+- **Memory Health (Phase 7a):** Orchestration read-only view is active in `includes/admin/sections/class-wp-mcp-ai-section-orchestration.php`.
+- **Retrieval Waterfall (Phase 7b):** Drawer uses existing retrieval metadata (`rrf_breakdown`, `boost_breakdown`, `retrieval_path`) with no REST-shape changes.
+- **Session Replay (Phase 7c):** `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` is exposed by `WP_MCP_AI_REST_Chat_Memory_Controller`, localized to `memoryEndpoints.sessionBase`, and consumed by `chat-memory-service.sessionReplay()`.
+- **Release/docs sync (Phase 8):** version `1.1.20` is reflected in plugin metadata and release docs (`README.md`, `readme.txt`, `CHANGELOG.md`).
 
 ### Key Capabilities
 
