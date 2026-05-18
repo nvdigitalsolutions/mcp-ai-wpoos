@@ -457,6 +457,12 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-man
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-privacy-filter.php';
 WP_MCP_AI_Memory_Privacy_Filter::bootstrap();
 
+// Memory Layer 2026 Enhancements Phase 3 — auto-capture service (default OFF).
+// Hooks `wp_mcp_ai_tool_executed` and `wp_mcp_ai_before_chat_request`
+// silently. Master kill: filter `wp_mcp_ai_memory_auto_capture_enabled`.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-auto-capture-service.php';
+WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
+
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
