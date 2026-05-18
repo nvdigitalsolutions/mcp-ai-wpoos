@@ -1639,25 +1639,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 				// Priority 3: Check active standalone addon dist bundles.
-			// react, react-dom, and related packages are compiled into each SPA addon's
-			// bundle, so any active addon with a dist file means these are available.
-			$react_addon_dist = array(
-				'NVOOS_CANVAS_TOOLKIT_PATH'   => 'assets/dist/canvas-toolkit.js',
-				'NVOOS_CHAT_SPA_PATH'         => 'assets/dist/chat-spa.js',
-				'NVOOS_DOCS_HUB_PATH'         => 'assets/dist/docs-hub.js',
-				'NVOOS_DOCUMENT_EDITOR_PATH'  => 'assets/dist/document-editor.js',
-				'NVOOS_MEDIA_STUDIO_PATH'     => 'assets/dist/media-studio.js',
-				'NVOOS_TOOLKIT_SHELL_PATH'    => 'assets/dist/toolkit-shell.js',
-			);
-			foreach ( $react_addon_dist as $constant => $dist_rel ) {
-				if ( defined( $constant ) ) {
-					if ( file_exists( constant( $constant ) . $dist_rel ) ) {
-						return true;
+				// react, react-dom, and related packages are compiled into each SPA addon's
+				// bundle, so any active addon with a dist file means these are available.
+				$react_addon_dist = array(
+					'NVOOS_CANVAS_TOOLKIT_PATH'  => 'assets/dist/canvas-toolkit.js',
+					'NVOOS_CHAT_SPA_PATH'        => 'assets/dist/chat-spa.js',
+					'NVOOS_DOCS_HUB_PATH'        => 'assets/dist/docs-hub.js',
+					'NVOOS_DOCUMENT_EDITOR_PATH' => 'assets/dist/document-editor.js',
+					'NVOOS_MEDIA_STUDIO_PATH'    => 'assets/dist/media-studio.js',
+					'NVOOS_TOOLKIT_SHELL_PATH'   => 'assets/dist/toolkit-shell.js',
+				);
+				foreach ( $react_addon_dist as $constant => $dist_rel ) {
+					if ( defined( $constant ) ) {
+						if ( file_exists( constant( $constant ) . $dist_rel ) ) {
+							return true;
+						}
 					}
 				}
-			}
-
-			// Priority 4: Check base node_modules (development).
+				// Priority 4: Check base node_modules (development).
 				// These packages are in base package.json but used for Pro feature.
 				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
 				if ( file_exists( $node_modules_path ) ) {
@@ -2301,9 +2300,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								// They are build-time tools (babel, eslint, jest …) that are never
 								// deployed to production, so "Not Found" for every one of them is
 								// misleading. Reveal them with ?show_dev=1 or the WP_MCP_AI_SHOW_DEV_DEPS constant.
-								// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag, no state change.
 								$show_dev = ( defined( 'WP_MCP_AI_SHOW_DEV_DEPS' ) && WP_MCP_AI_SHOW_DEV_DEPS )
-									|| ( isset( $_GET['show_dev'] ) && '1' === $_GET['show_dev'] && current_user_can( 'manage_options' ) );
+									|| ( isset( $_GET['show_dev'] ) && '1' === $_GET['show_dev'] && current_user_can( 'manage_options' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag, no state change.
 								?>
 
 								<?php if ( $show_dev ) : ?>

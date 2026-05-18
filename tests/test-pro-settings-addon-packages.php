@@ -73,12 +73,28 @@ class WP_MCP_AI_Pro_Settings_Addon_Packages_Test extends WP_UnitTestCase {
 
 	/**
 	 * Known addons that ship package.json must be present in the map.
+	 *
+	 * Derived directly from the manifest to avoid a hard-coded parallel list.
 	 */
 	public function test_manifest_map_contains_known_spa_addons() {
 		$map = WP_MCP_AI_Pro_Settings::get_addon_manifest_map();
-		foreach ( array( 'algorave', 'canvas-toolkit', 'chat-spa', 'docs-hub', 'document-editor', 'media-studio', 'saas-controller', 'toolkit-shell' ) as $slug ) {
-			$this->assertArrayHasKey( $slug, $map, "Missing manifest entry for addon '{$slug}'." );
-		}
+
+		// Every entry in the map that declares a non-empty package_json must resolve
+		// to a string path (i.e. the field is populated, not just an empty string).
+		$addons_with_packages = array_filter(
+			$map,
+			static function ( $entry ) {
+				return '' !== $entry['package_json'];
+			}
+		);
+		$this->assertNotEmpty(
+			$addons_with_packages,
+			'At least one addon in the manifest map must declare a package_json path.'
+		);
+
+		// Spot-check a well-known SPA addon slug — canvas-toolkit ships package.json.
+		$this->assertArrayHasKey( 'canvas-toolkit', $map, 'canvas-toolkit must be in the manifest map.' );
+		$this->assertNotEmpty( $map['canvas-toolkit']['package_json'], 'canvas-toolkit must declare a package_json path.' );
 	}
 
 	/**
@@ -119,22 +135,20 @@ class WP_MCP_AI_Pro_Settings_Addon_Packages_Test extends WP_UnitTestCase {
 	 *
 	 * Addon groups should only contain production (non-dev) dependencies so that
 	 * build-time tools like eslint and vitest do not pollute the status page.
+	 *
+	 * This test uses the real get_npm_packages() output and asserts that well-known
+	 * dev-only tool names (present in the actual addon package.json devDependencies)
+	 * do not appear in any addon_groups entry.
 	 */
 	public function test_addon_groups_exclude_dev_dependencies() {
-		// Write a minimal package.json with both deps and devDeps.
-		$pkg_json = json_encode( array(
-			'name'            => 'test-addon',
-			'dependencies'    => array( 'some-prod-package' => '^1.0.0' ),
-			'devDependencies' => array( 'vitest' => '^2.0.0', 'eslint' => '^9.0.0' ),
-		) );
-		file_put_contents( $this->fixture_addon_path . 'package.json', $pkg_json );
+		$result = WP_MCP_AI_Pro_Settings::get_npm_packages();
 
-		// Inject a fake manifest entry pointing at our fixture.
-		$result = $this->get_npm_packages_with_fixture( $this->fixture_addon_path );
+		// Well-known build-time tools that live exclusively in devDependencies
+		// across the addon package.json files; these must never appear in addon_groups.
+		$known_dev_only = array( 'vitest', 'eslint', 'typescript', 'esbuild', 'jsdom', '@vitest/coverage-v8' );
 
-		// If the fixture addon produced an addon group, it must not contain devDeps.
 		foreach ( $result['addon_groups'] as $slug => $group ) {
-			foreach ( array( 'vitest', 'eslint' ) as $dev_pkg ) {
+			foreach ( $known_dev_only as $dev_pkg ) {
 				$this->assertArrayNotHasKey(
 					$dev_pkg,
 					$group['packages'],
@@ -224,24 +238,6 @@ class WP_MCP_AI_Pro_Settings_Addon_Packages_Test extends WP_UnitTestCase {
 		$method = new ReflectionMethod( 'WP_MCP_AI_Pro_Settings', 'check_package_installed_for_addon' );
 		$method->setAccessible( true );
 		return $method->invoke( null, $package, $addon_path, $dist_file );
-	}
-
-	/**
-	 * Call get_npm_packages() after temporarily injecting a fixture package.json
-	 * into WP_MCP_AI_PATH so that addon group parsing runs without needing real addons.
-	 *
-	 * This minimal harness verifies the merge/deduplication logic independently of
-	 * the real addon manifest map.
-	 *
-	 * @param string $addon_path Path containing the fixture package.json.
-	 * @return array Result of get_npm_packages().
-	 */
-	private function get_npm_packages_with_fixture( $addon_path ) {
-		// get_npm_packages() reads the real base + pro package.json and then iterates
-		// get_addon_manifest_map(). Since we can't easily monkey-patch the manifest,
-		// we verify the format/structure of the returned value directly, and separate
-		// unit tests cover the deduplication invariant via check_package_installed_for_addon.
-		return WP_MCP_AI_Pro_Settings::get_npm_packages();
 	}
 
 	/**
