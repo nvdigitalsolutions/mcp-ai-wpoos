@@ -187,7 +187,7 @@ In `class-wp-mcp-ai-rest.php` (lines ~2578-2950):
 
 ### Orchestration Phases (1–7)
 
-All seven orchestration phases are active as of v1.1.15. The Unix Theory Compliance Phases P0–P6 (canonical return envelope + sniff, capability-fence audit, data-contract interface, tool-lifecycle descriptor, back-compat alias infrastructure, sanitize-at-entry sniff) landed across v1.1.16–v1.1.18 on top of these. Key components:
+All seven orchestration phases are active as of v1.1.15. The Unix Theory Compliance Phases P0–P7 (canonical return envelope + sniff, capability-fence audit, data-contract interface, tool-lifecycle descriptor, back-compat alias infrastructure, sanitize-at-entry sniff, folder README convention) landed across v1.1.16–v1.1.19 on top of these. Key components:
 - **HITL** (`WP_MCP_AI_Approval_Queue`, CPT `mcp_ai_approval`, REST `/mcp-ai/v1/approvals/*`)
 - **Prompt Injection Detector** (`WP_MCP_AI_Prompt_Injection_Detector`, harness profile key `injection_detector.enabled`, action `wp_mcp_ai_prompt_injection_detected`)
 - **OTel** — OTLP endpoint + token configurable under **Tools → Connections**
@@ -198,11 +198,12 @@ All seven orchestration phases are active as of v1.1.15. The Unix Theory Complia
 
 ### Provider Clients
 
-Nine providers supported. New across v1.1.15–v1.1.17:
+Ten providers supported. New across v1.1.15–v1.1.19:
 - **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`, v1.1.15) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
 - **DigitalOcean Serverless Inference** (`WP_MCP_AI_DigitalOcean_Client`, v1.1.17) — OpenAI-compatible API at `https://inference.do-ai.run/v1`; Llama 3.3, DeepSeek-R1 distill, gpt-oss, plus native `/embeddings`
 - **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`, v1.1.15) — `reasoning_content` / `<think>…</think>` passthrough
 - **LM Studio** (v1.1.15) — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
+- **Kimi (Moonshot AI)** (`WP_MCP_AI_Kimi_Client`, v1.1.19) — OpenAI-compatible API at `https://api.moonshot.cn/v1`; kimi-k2.6 (256K context, default), kimi-k2-thinking (CoT), moonshot-v1-8k/-32k/-128k
 
 ### Slash Commands
 

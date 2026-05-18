@@ -2,7 +2,7 @@
 
 **Document revision supported:** 2.0  
 **Refresh date:** May 17, 2026  
-**Tested against plugin:** `1.1.18`  
+**Tested against plugin:** `1.1.19`  
 **Purpose:** Permanent companion record for `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md`. Future refreshes should update this file first, then update the public guide from these facts.
 
 > Counts below are point-in-time sanity checks. The live tool registry (`WP_MCP_AI_Tool_Registry::get_tools()`) is authoritative for runtime availability because optional plugins, Pro addons, and site configuration can change the exposed tool list.
@@ -11,10 +11,10 @@
 
 | Measure | Value | Source |
 |---|---:|---|
-| `WP_MCP_AI_VERSION` | `1.1.18` | `includes/bootstrap/constants.php` |
-| Plugin header `Version:` | `1.1.18` | `mcp-ai-wpoos.php` |
-| Latest release date | May 14, 2026 | `CHANGELOG.md` |
-| Readme stable tag | `1.1.18` | `readme.txt` |
+| `WP_MCP_AI_VERSION` | `1.1.19` | `includes/bootstrap/constants.php` |
+| Plugin header `Version:` | `1.1.19` | `mcp-ai-wpoos.php` |
+| Latest release date | May 18, 2026 | `CHANGELOG.md` |
+| Readme stable tag | `1.1.19` | `readme.txt` |
 | Model catalog version | `2026.05.04` | `includes/data/model-catalog.json` |
 | Active model providers | 16 | Derived from active catalog entries |
 | Active model entries | 186 | Derived from active catalog entries |

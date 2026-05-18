@@ -4,6 +4,69 @@
 
 _No changes yet._
 
+## [1.1.19] - 2026-05-18
+
+Bumped to 1.1.19 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative. Provider count: 10 first-class language-model providers.
+
+### Added — Kimi (Moonshot AI) provider (10th provider)
+
+- New first-class AI provider `WP_MCP_AI_Kimi_Client` wrapping the OpenAI-compatible API at `https://api.moonshot.cn/v1`. Supports chat completions, tool/function calling, JSON mode, SSE streaming, native multi-turn context up to 256K tokens.
+- Models: `kimi-k2.6` (256K context, multimodal, tool calling — default), `kimi-k2.5`, `kimi-k2` (base reasoning), `kimi-k2-thinking` (chain-of-thought), legacy `moonshot-v1-8k / -32k / -128k`.
+- Settings UI: new **Kimi** subtab under **Settings → Providers** with `enable_kimi`, `kimi_api_key`, `kimi_model`, and `kimi_base_url` fields.
+- `WP_MCP_AI_Model_Config::get_active_providers()` now includes `kimi` when the provider is enabled with an API key configured.
+- Provider Diagnostics card with a lightweight model-list probe.
+- WP.org compliance docs updated: `docs/EXTERNAL_SERVICES.md` now documents Kimi (Moonshot AI), OpenRouter, and DigitalOcean API endpoints with service URLs, data-sharing disclosures, and ToS links.
+
+### Added — Agent Client Protocol (ACP) Server
+
+- Full ACP standard implementation enabling external AI clients (Zed, JetBrains, Neovim, Claude Desktop) to natively drive NV oOS assistants over JSON-RPC 2.0 and HTTP/SSE transport.
+- Core classes: `WP_MCP_AI_ACP_Server` (bootstrap + DI wiring), `WP_MCP_AI_ACP_JSONRPC_Dispatcher` (JSON-RPC 2.0 routing), `WP_MCP_AI_ACP_Session_Manager` (session lifecycle + transient store), `WP_MCP_AI_ACP_Session_Bridge` (bridges ACP sessions to the existing agentic loop), `WP_MCP_AI_ACP_Transport_HTTP` (HTTP+SSE framing).
+- `/.well-known/ai-peer` discovery endpoint extended to advertise `acp` protocol version, transports (`http+sse`), and supported `auth_methods`.
+- Settings: ACP server toggle (`enable_acp_server`) and strict tool-approval toggle (`acp_require_approval`) rendered inline within **Orchestration → Settings** — matching the Agent Memory and Multi-Agent groupings.
+- PHPUnit coverage scaffolding in `tests/acp/` for JSON-RPC mappings, session bridging, and transient persistence.
+- Follow-up fixes: abstract-method fatal resolved (#4994); orphan ACP settings section, A2A empty `render()`, and orchestration view-save data loss resolved (#4995).
+
+### Added — MCP Bridge (stdio-to-HTTP relay)
+
+- New `bin/mcp-bridge.js` — lightweight Node.js relay that bridges the MCP stdio transport (used by Claude Desktop, Cursor, Zed) to the plugin's existing HTTP + SSE MCP endpoint. Enables local MCP clients to connect to a remote NV oOS installation without any server-side changes.
+- Usage: `node bin/mcp-bridge.js --url https://yoursite.com/wp-json/mcp-ai/v1 --token <bearer>`.
+
+### Added — Unix Theory Phase P7: Folder README Convention
+
+- Every PHP-bearing subdirectory under `includes/` (base plugin) now ships a `README.md` declaring the folder's purpose, public surface, neighbor folders, and which `.context/*.md` files to load alongside it.
+- Convention defined in `docs/guides/developer/folder-readme-convention.md`; canonical template at `.context/templates/folder-readme-template.md`.
+- Enforced by `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
+- Extends the Unix Theory Compliance series (P0–P7 now complete for base plugin).
+
+### Added — GDPR: JetEngine Privacy Exporters
+
+- New privacy exporter classes for JetEngine CCT data (chat transcripts, agent memory, approval queue entries) compliant with WordPress's `wp_privacy_personal_data_exporters` hook.
+- Registered automatically when JetEngine is active.
+
+### Fixed — Security Hardening (5 independent patches)
+
+- **Settings key encryption** (#4990) — sensitive settings values (API keys, tokens, secrets) are now encrypted at rest in WordPress options and masked in the admin UI using `●●●●●●●●` placeholders.
+- **Webhook secret enforcement** (#4988) — incoming webhook endpoints now reject requests with missing or invalid shared-secret header, preventing unauthenticated webhook execution.
+- **SSRF hardening** (#4991) — all outgoing HTTP requests that accept a user-configurable URL now use `wp_safe_remote_get` / `wp_safe_remote_post` (which blocks private IP ranges) instead of raw `wp_remote_get`.
+- **Attachment URL scheme validation** (#4975) — tool results that include attachment URLs are validated against an allowlist of schemes (`https`, `http`) before being included in chat output, preventing `javascript:` or `data:` URL injection.
+- **Client-log gating** (#4984) — sensitive console log messages (raw API keys, full request payloads, assistant credentials) are now gated behind a debug flag (`WP_MCP_AI_DEBUG`) and an admin-only JavaScript toggle, preventing accidental exposure in browser DevTools on public-facing pages.
+
+### Fixed — Chat Bubble / Test Model UI (sweep)
+
+- Chat bubble now self-initializes via `window.wpMcpAiChatInit.init(scope)` matching the main chat widget pattern, fixing deferred-load race conditions.
+- Panel CSS scoped to chat bubble panel context; panel-fit layout fixed for both shortcode and Elementor widget render paths.
+- `WP_MCP_AI_Shortcode::kses_chat_output()` now preserves `<form>`, `<button>`, `<input>` tags and interactive attributes (`type`, `disabled`, `hidden`, etc.) so chat controls remain functional in AJAX-rendered surfaces.
+- Test Model (Test AI Models with Professions) chat buttons and submission flow fully restored.
+- Professional selector AJAX render now uses `kses_chat_output()` (fallback to `wp_kses_post`), preserving the interactive markup.
+- Unified team chat response normalization for the Test Team modal.
+- Chat bubble re-init isolated to its own bubble ID/panel; no longer re-initializes other chat widgets on the same page.
+- Submit button re-enabled when chat bubble panel is rendered inside an outer page `<form>`.
+
+### Fixed — Asset Inventory
+
+- Discover Assets button on the Asset Inventory admin page re-enabled (was inert due to missing event binding after admin-page refactor).
+- `discover_assets` flow now emits debug log events and is covered by Jest tests.
+
 ## [1.1.18] - 2026-05-14
 
 Bumped to 1.1.18 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
