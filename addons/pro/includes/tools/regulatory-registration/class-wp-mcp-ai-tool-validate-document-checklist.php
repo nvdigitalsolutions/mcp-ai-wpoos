@@ -94,6 +94,13 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Must have either product_id or registration_id.
 		if ( empty( $arguments['product_id'] ) && empty( $arguments['registration_id'] ) ) {

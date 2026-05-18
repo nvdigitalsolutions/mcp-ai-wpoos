@@ -72,6 +72,13 @@ class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
 

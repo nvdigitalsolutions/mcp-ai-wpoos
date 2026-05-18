@@ -100,6 +100,13 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get schema from arguments or file.
 		$schema = null;

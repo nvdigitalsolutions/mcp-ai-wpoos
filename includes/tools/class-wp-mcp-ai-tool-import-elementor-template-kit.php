@@ -109,6 +109,13 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

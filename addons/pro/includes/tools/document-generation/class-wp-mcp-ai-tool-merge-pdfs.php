@@ -98,6 +98,13 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * {@inheritdoc}
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 // Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
 if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {

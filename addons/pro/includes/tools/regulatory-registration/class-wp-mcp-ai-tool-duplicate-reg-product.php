@@ -107,6 +107,13 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['product_id'] ) ) {

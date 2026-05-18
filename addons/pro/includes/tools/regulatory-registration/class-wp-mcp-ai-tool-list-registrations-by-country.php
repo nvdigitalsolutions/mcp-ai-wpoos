@@ -94,6 +94,13 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Build query arguments.
 		$query_args = array(

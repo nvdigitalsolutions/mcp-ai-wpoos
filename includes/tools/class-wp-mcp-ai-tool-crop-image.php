@@ -146,6 +146,13 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base implements WP_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

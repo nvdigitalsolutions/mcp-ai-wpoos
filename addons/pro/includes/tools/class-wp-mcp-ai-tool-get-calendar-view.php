@@ -89,6 +89,13 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @return array Tool definition with metadata.

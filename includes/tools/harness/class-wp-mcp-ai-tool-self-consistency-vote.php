@@ -64,6 +64,13 @@ class WP_MCP_AI_Tool_Self_Consistency_Vote implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$candidates = array();
 		if ( isset( $arguments['candidates'] ) && is_array( $arguments['candidates'] ) ) {

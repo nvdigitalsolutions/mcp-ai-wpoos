@@ -23,6 +23,13 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

@@ -92,6 +92,13 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['ingredients'] ) ) {

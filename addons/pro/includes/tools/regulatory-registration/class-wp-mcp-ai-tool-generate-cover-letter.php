@@ -94,6 +94,13 @@ class WP_MCP_AI_Tool_Generate_Cover_Letter implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
