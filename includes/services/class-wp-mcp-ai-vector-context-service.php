@@ -132,7 +132,13 @@ class WP_MCP_AI_Vector_Context_Service {
 	}
 
 	/**
-	 * Search contexts using semantic similarity.
+	 * Search contexts using cosine similarity + MemPalace booster pipeline.
+	 *
+	 * **Backward-compat fallback.** This is the original retrieval path and
+	 * remains the canonical entry point when the Phase 4 RRF fusion service is
+	 * disabled via the `wp_mcp_ai_memory_rrf_enabled` master filter. The newer
+	 * {@see self::search_context_rrf()} method is additive and returns the
+	 * same response shape with an extra `rrf_breakdown` key per record.
 	 *
 	 * @param string     $query    Search query.
 	 * @param int|string $agent_id Agent identifier.
@@ -236,6 +242,127 @@ class WP_MCP_AI_Vector_Context_Service {
 			'count'    => count( $results ),
 			'query'    => $query,
 		);
+	}
+
+	/**
+	 * RRF-fused hybrid retrieval — Phase 4 of the 2026 Memory Layer Enhancements.
+	 *
+	 * Additive thin wrapper around
+	 * {@see WP_MCP_AI_Memory_RRF_Fusion_Service::search()}. The legacy
+	 * {@see self::search_context()} method is intentionally untouched; this
+	 * method exists alongside it so existing consumers keep working while new
+	 * consumers (and the `semantic_context_search` / `recall_memory` tools
+	 * when their `use_rrf` arg is on) opt-in to the fused pipeline.
+	 *
+	 * Response shape matches `search_context()` exactly and adds one
+	 * additional `rrf_breakdown` key per record (see
+	 * {@see WP_MCP_AI_Memory_RRF_Fusion_Service::search()} for the shape).
+	 *
+	 * Behaviour when the RRF master switch
+	 * (`wp_mcp_ai_memory_rrf_enabled`) is OFF: this method falls through to
+	 * {@see self::search_context()} unchanged so callers always get a valid
+	 * envelope.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string     $query    Search query.
+	 * @param int|string $agent_id Agent identifier.
+	 * @param int        $limit    Maximum results.
+	 * @param array      $filters  Optional filters.
+	 * @return array Array of contexts with similarity scores.
+	 */
+	public function search_context_rrf( $query, $agent_id, $limit = 10, $filters = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Memory_RRF_Fusion_Service' )
+			|| ! WP_MCP_AI_Memory_RRF_Fusion_Service::is_enabled() ) {
+			return $this->search_context( $query, $agent_id, $limit, $filters );
+		}
+		return WP_MCP_AI_Memory_RRF_Fusion_Service::search( $query, $agent_id, $limit, $filters );
+	}
+
+	/**
+	 * Return ranked candidate records by cosine similarity (no boosters).
+	 *
+	 * Exposed so the Phase 4 RRF fusion service can extract a pure vector
+	 * ranking without paying the booster cost (the booster pipeline lives
+	 * in {@see self::calculate_score_boosters()} and is intentionally
+	 * private). This helper is the **only** read-side method exposed by the
+	 * vector service that bypasses the legacy boost step.
+	 *
+	 * Each returned record is a transient-shape array (the same shape
+	 * returned by {@see WP_MCP_AI_Agent_Context_Manager::search_contexts()})
+	 * plus a `_vector_similarity` key carrying the raw cosine score for
+	 * debugging.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string     $query    Search query.
+	 * @param int|string $agent_id Agent identifier.
+	 * @param int        $limit    Maximum candidates to return.
+	 * @param array      $filters  Optional context-manager filters.
+	 * @return array<int, array> Ordered candidate records, best match first.
+	 */
+	public function get_vector_candidates( $query, $agent_id, $limit = 20, $filters = array() ) {
+		$query = (string) $query;
+		if ( '' === trim( $query ) ) {
+			return array();
+		}
+
+		$query_embedding = $this->embed_context( $query );
+		if ( is_wp_error( $query_embedding ) ) {
+			return array();
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Agent_Context_Manager' ) ) {
+			return array();
+		}
+
+		$mgr      = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$contexts = $mgr->search_contexts( $agent_id, is_array( $filters ) ? $filters : array(), 100, false );
+		if ( empty( $contexts ) ) {
+			return array();
+		}
+
+		$scored = array();
+		foreach ( $contexts as $context ) {
+			$text = '';
+			if ( isset( $context['data']['title'] ) ) {
+				$text .= $context['data']['title'] . ' ';
+			}
+			if ( isset( $context['data']['content'] ) ) {
+				$text .= $context['data']['content'];
+			}
+			$text = trim( $text );
+			if ( '' === $text ) {
+				continue;
+			}
+
+			$ctx_embedding = $this->embed_context( $text );
+			if ( is_wp_error( $ctx_embedding ) ) {
+				continue;
+			}
+
+			$similarity = $this->cosine_similarity( $query_embedding, $ctx_embedding );
+
+			$context['_vector_similarity'] = (float) $similarity;
+			$scored[] = array(
+				'record'     => $context,
+				'similarity' => (float) $similarity,
+			);
+		}
+
+		usort(
+			$scored,
+			static function ( $a, $b ) {
+				return $b['similarity'] <=> $a['similarity'];
+			}
+		);
+
+		$limit = max( 1, (int) $limit );
+		$out   = array();
+		foreach ( array_slice( $scored, 0, $limit ) as $entry ) {
+			$out[] = $entry['record'];
+		}
+		return $out;
 	}
 
 	/**

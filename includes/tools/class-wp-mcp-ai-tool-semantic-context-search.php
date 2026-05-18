@@ -101,6 +101,10 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Whether to automatically include the assistant\'s configured vector store in the search. Defaults to true when a vector store is configured.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
+				'use_rrf'              => array(
+					'type'        => array( 'boolean', 'null' ),
+					'description' => __( 'Optional override: when set, forces (true) or disables (false) the Phase 4 RRF fusion retrieval path. Leave unset (null) to use the site-wide `wp_mcp_ai_memory_rrf_default_enabled` filter (default true when the master switch is on).', 'mcp-ai-wpoos' ),
+				),
 			),
 			'required'             => array( 'agent_id', 'query' ),
 			'additionalProperties' => false,
@@ -169,8 +173,15 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		// Get vector context service.
 		$vector_service = WP_MCP_AI_Vector_Context_Service::get_instance();
 
+		// Phase 4 RRF routing decision — per-call override > tool-level default > master switch.
+		$use_rrf = $this->resolve_use_rrf( $arguments );
+
 		// Perform local semantic search against stored agent contexts.
-		$result = $vector_service->search_context( $query, $agent_id, $limit, $filters );
+		if ( $use_rrf && method_exists( $vector_service, 'search_context_rrf' ) ) {
+			$result = $vector_service->search_context_rrf( $query, $agent_id, $limit, $filters );
+		} else {
+			$result = $vector_service->search_context( $query, $agent_id, $limit, $filters );
+		}
 
 		if ( ! $result['success'] ) {
 			return array(
@@ -222,6 +233,41 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Resolve whether RRF fusion should be used for this call.
+	 *
+	 * Precedence: explicit `use_rrf` arg > tool-level default filter >
+	 * master kill-switch filter.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool
+	 */
+	private function resolve_use_rrf( array $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_Memory_RRF_Fusion_Service' ) ) {
+			return false;
+		}
+		if ( ! WP_MCP_AI_Memory_RRF_Fusion_Service::is_enabled() ) {
+			// Master switch off — a `use_rrf=true` arg still wins per spec.
+			if ( array_key_exists( 'use_rrf', $arguments ) && null !== $arguments['use_rrf'] ) {
+				return (bool) $arguments['use_rrf'];
+			}
+			return false;
+		}
+		if ( array_key_exists( 'use_rrf', $arguments ) && null !== $arguments['use_rrf'] ) {
+			return (bool) $arguments['use_rrf'];
+		}
+		/**
+		 * Tool-level default for RRF routing.
+		 *
+		 * @since 1.1.20
+		 *
+		 * @param bool $enabled Default true.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_memory_rrf_default_enabled', true );
 	}
 
 	/**

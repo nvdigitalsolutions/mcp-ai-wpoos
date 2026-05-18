@@ -457,6 +457,12 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-man
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-privacy-filter.php';
 WP_MCP_AI_Memory_Privacy_Filter::bootstrap();
 
+// Memory Layer 2026 Enhancements Phase 4 — RRF fusion retrieval service.
+// Stateless / static; no bootstrap hook required. Loaded eagerly here so
+// `WP_MCP_AI_Vector_Context_Service::search_context_rrf()` can resolve it
+// without lazy `require_once` calls inside the hot retrieval path.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-rrf-fusion-service.php';
+
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
