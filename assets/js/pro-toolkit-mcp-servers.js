@@ -304,13 +304,53 @@
 		if ( ! discoveryPreview ) { return; }
 		discoveryPreview.textContent = t.loading || 'Loading…';
 
-		fetch( cfg.wellKnownUrl, { headers: { 'Accept': 'application/json' } } )
-			.then( function ( r ) { return r.json(); } )
+		// Prefer the REST mirror — works regardless of permalink/rewrite state.
+		// Fall back to the pretty /.well-known/mcp URL if the REST mirror is
+		// unavailable for some reason (e.g. older Pro build without the route).
+		const primaryUrl  = cfg.discoveryFetchUrl || cfg.wellKnownUrl;
+		const fallbackUrl = cfg.discoveryFetchUrl && cfg.wellKnownUrl && cfg.discoveryFetchUrl !== cfg.wellKnownUrl
+			? cfg.wellKnownUrl
+			: '';
+
+		function parseJsonResponse( r ) {
+			const contentType = r.headers.get( 'Content-Type' ) || '';
+			if ( ! r.ok ) {
+				throw new Error( 'HTTP ' + r.status + ' ' + r.statusText );
+			}
+			if ( contentType.indexOf( 'application/json' ) === -1 ) {
+				throw new Error( 'Expected JSON, got ' + ( contentType || 'unknown content-type' ) );
+			}
+			return r.json();
+		}
+
+		function fetchJson( url ) {
+			const headers = { 'Accept': 'application/json' };
+			// Send the REST nonce when hitting an in-site REST endpoint so
+			// privileged hooks (e.g. `_doing_it_wrong` notices on cookies) stay quiet.
+			if ( cfg.nonce && cfg.discoveryFetchUrl && url === cfg.discoveryFetchUrl ) {
+				headers['X-WP-Nonce'] = cfg.nonce;
+			}
+			return fetch( url, { headers: headers, credentials: 'same-origin' } )
+				.then( parseJsonResponse );
+		}
+
+		fetchJson( primaryUrl )
 			.then( function ( data ) {
 				discoveryPreview.textContent = JSON.stringify( data, null, 2 );
 			} )
 			.catch( function ( err ) {
-				discoveryPreview.textContent = 'Error: ' + ( err.message || 'could not fetch' );
+				if ( ! fallbackUrl ) {
+					discoveryPreview.textContent = 'Error: ' + ( err.message || 'could not fetch' );
+					return;
+				}
+				// Try the pretty URL as a fallback.
+				fetchJson( fallbackUrl )
+					.then( function ( data ) {
+						discoveryPreview.textContent = JSON.stringify( data, null, 2 );
+					} )
+					.catch( function ( err2 ) {
+						discoveryPreview.textContent = 'Error: ' + ( err2.message || err.message || 'could not fetch' );
+					} );
 			} );
 	}
 
