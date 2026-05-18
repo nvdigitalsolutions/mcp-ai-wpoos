@@ -92,6 +92,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		// Create a mock tool that returns success.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
@@ -205,6 +206,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		// Create a mock tool that returns an error.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
@@ -309,6 +311,7 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 
 		// Create a mock tool that throws an exception.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			/**
 			 * Get the tool slug.
 			 *
