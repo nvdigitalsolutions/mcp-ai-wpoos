@@ -20,7 +20,6 @@ require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
  * Provides a tool for retrieving Google Chat message history via the Google Chat API.
  */
 class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * Default timeout for Google Chat requests.
 	 */

@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 	}
 
 	public function get_slug() { return 'lf_expense_reimbursement_tracker'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Expense Reimbursement Tracker', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Tracks case-related expenses including filing fees, expert witnesses, travel, and marks reimbursement status.', 'mcp-ai-wpoos-pro' ); }
 

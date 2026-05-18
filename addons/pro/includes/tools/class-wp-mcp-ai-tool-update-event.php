@@ -20,15 +20,6 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return 'update_event';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'Update Event', 'mcp-ai-wpoos-pro' );
 	}

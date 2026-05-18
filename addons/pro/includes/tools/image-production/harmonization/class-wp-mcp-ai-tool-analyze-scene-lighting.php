@@ -31,15 +31,6 @@ class WP_MCP_AI_Tool_Analyze_Scene_Lighting extends WP_MCP_AI_Tool_Harmonization
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

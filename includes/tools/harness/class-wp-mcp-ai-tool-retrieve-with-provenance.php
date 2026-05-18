@@ -32,13 +32,6 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_name() {
 		return __( 'Retrieve With Provenance', 'mcp-ai-wpoos' );
 	}

@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_PM_Capture_Decision extends WP_MCP_AI_Pro_Capture_Tool_Base
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

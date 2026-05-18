@@ -42,15 +42,6 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

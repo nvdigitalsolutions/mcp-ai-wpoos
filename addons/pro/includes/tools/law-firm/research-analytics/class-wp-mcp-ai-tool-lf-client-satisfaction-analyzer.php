@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer implements WP_MCP_AI_Tool_I
 	}
 
 	public function get_slug() { return 'lf_client_satisfaction_analyzer'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Client Satisfaction Analyzer', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Analyzes client satisfaction by evaluating communication responsiveness, payment timeliness, matter outcomes, and retention risk with a 0-100 satisfaction score.', 'mcp-ai-wpoos-pro' ); }
 

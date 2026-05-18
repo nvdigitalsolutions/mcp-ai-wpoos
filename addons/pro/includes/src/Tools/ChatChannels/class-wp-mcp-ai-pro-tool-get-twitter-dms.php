@@ -24,7 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * @see https://developer.twitter.com/en/docs/twitter-api/direct-messages/lookup/api-reference/get-dm_events
  */
 class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Default timeout for Twitter API requests.

@@ -19,7 +19,6 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-github-clie
  * Provides an assistant tool for managing GitHub Codespaces.
  */
 class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * {@inheritdoc}
 	 */

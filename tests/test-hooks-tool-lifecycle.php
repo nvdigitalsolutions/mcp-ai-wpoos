@@ -23,8 +23,6 @@ if ( ! class_exists( 'Test_Lifecycle_Stub_Tool' ) ) {
 	 * Minimal tool stub used by lifecycle hook tests.
 	 */
 	class Test_Lifecycle_Stub_Tool implements WP_MCP_AI_Tool_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
-
 		/**
 		 * Return the tool slug.
 		 *

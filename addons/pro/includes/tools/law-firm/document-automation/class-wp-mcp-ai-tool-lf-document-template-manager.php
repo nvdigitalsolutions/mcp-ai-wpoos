@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_LF_Document_Template_Manager implements WP_MCP_AI_Tool_Inte
 	}
 
 	public function get_slug() { return 'lf_document_template_manager'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Document Template Manager', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Manages reusable document templates for legal document assembly. Supports create, list, get, and delete operations.', 'mcp-ai-wpoos-pro' ); }
 

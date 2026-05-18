@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 	}
 
 	public function get_slug() { return 'lf_legal_research_assistant'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Assists with legal research by generating research outlines, suggesting primary and secondary sources, and providing search strategies for legal issues.', 'mcp-ai-wpoos-pro' ); }
 

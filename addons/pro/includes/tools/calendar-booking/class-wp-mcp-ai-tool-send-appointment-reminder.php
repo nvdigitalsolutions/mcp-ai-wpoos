@@ -22,15 +22,6 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
 	public function get_slug() {
 		return 'send_appointment_reminder'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
 	public function get_name() {
 		return __( 'Send Appointment Reminder', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {

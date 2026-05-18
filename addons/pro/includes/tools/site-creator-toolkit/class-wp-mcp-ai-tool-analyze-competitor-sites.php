@@ -51,15 +51,6 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

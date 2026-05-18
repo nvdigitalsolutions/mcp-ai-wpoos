@@ -30,15 +30,6 @@ class WP_MCP_AI_Tool_Outpaint_Background extends WP_MCP_AI_Tool_Harmonization_Ba
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

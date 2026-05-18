@@ -36,15 +36,6 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	public function get_slug() { return 'lf_revenue_forecaster'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Revenue Forecaster', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Forecasts firm revenue based on historical billing data, current pipeline, and collection trends. Includes confidence intervals and breakdown by source.', 'mcp-ai-wpoos-pro' ); }
 

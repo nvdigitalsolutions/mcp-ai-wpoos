@@ -17,7 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a tool for publishing LinkedIn UGC posts via the v2 API.
  */
 class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Check if this tool is available.

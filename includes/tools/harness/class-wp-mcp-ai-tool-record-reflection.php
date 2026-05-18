@@ -32,13 +32,6 @@ class WP_MCP_AI_Tool_Record_Reflection implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_name() {
 		return __( 'Record Reflection', 'mcp-ai-wpoos' );
 	}
