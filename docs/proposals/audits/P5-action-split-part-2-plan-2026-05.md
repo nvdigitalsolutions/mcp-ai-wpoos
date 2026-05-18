@@ -5,7 +5,7 @@
 **Branch:** `copilot/start-next-steps-unix-theory-compliance`  
 **Proposal:** [Unix Theory Compliance Enhancement Proposal §2.1 / Phase P5](../UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#21-one-tool-one-responsibility)  
 **Predecessor:** [Phase P5 — Part 1 Audit](P5-action-split-audit-2026-05.md)  
-**Status:** 🟢 **Infrastructure landed** (May 2026) — per-tool decomposition PRs queued for v1.3.0.
+**Status:** 🟢 **Infrastructure landed** (May 2026); **Decomposition #1 (`git_operations`) landed** (May 2026) — remaining: `web_browser` (Order 2) → `batch_manage_memory` (Order 3) → `manage_context_lifecycle` (Order 4) → `remote_wp_connection` (Order 5), plus three Tier-C-overflow trims.
 
 ---
 

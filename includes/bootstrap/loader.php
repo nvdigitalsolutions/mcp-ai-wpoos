@@ -665,6 +665,17 @@ add_action(
 
 new WP_MCP_AI_Mesh_Peer_Test_REST();
 
+// Security Center REST controller.
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-security-posture.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-security-center-controller.php';
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$controller->register_routes();
+	}
+);
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-stdio-transport.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-command.php';

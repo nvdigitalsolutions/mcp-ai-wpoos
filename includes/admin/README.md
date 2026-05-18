@@ -24,6 +24,7 @@ The classes below are referenced from outside `includes/admin/`. Everything else
 | `WP_MCP_AI_Settings_Registry` | `class-wp-mcp-ai-settings-registry.php` | All section classes, Pro addon, tests |
 | `WP_MCP_AI_Settings_Validator` | `class-wp-mcp-ai-settings-validator.php` | Sections, AJAX handlers |
 | `WP_MCP_AI_Settings_Section` (abstract) | `sections/abstract-wp-mcp-ai-settings-section.php` | Every concrete section in `sections/` plus Pro sections |
+| `WP_MCP_AI_Section_Security` | `sections/class-wp-mcp-ai-section-security.php` | **Security Center** — five sub-tabs (overview, access, network, ai\_safety, audit) including posture score, IP dry-run, header preview, AI safety controls, snapshot/restore |
 | `WP_MCP_AI_Admin_AJAX_Handlers` | `class-wp-mcp-ai-admin-ajax-handlers.php` | `Admin_Settings`, `Settings_Dashboard`, Pro addon |
 | `WP_MCP_AI_Admin_Scripts` | `class-wp-mcp-ai-admin-scripts.php` | Bootstrap (admin-only) |
 | `WP_MCP_AI_Pro_Dashboard` / `_REST` / `_Helper` | `class-wp-mcp-ai-pro-dashboard*.php` | Bootstrap, Pro addon |
