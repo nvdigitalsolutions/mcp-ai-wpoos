@@ -92,10 +92,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Capability_Map' ) ) {
 			 */
 			$map = apply_filters( 'wp_mcp_ai_tool_capability_map', $map );
 
-			// Normalise: lowercase keys, string values, drop empties.
+			// Normalise: lowercase keys, sanitised capability strings, drop empties.
 			$normalised = array();
 			foreach ( (array) $map as $slug => $cap ) {
-				if ( ! is_string( $slug ) || '' === $slug || ! is_string( $cap ) || '' === $cap ) {
+				if ( ! is_string( $slug ) || '' === $slug || ! is_string( $cap ) ) {
+					continue;
+				}
+				$cap = sanitize_key( $cap );
+				if ( '' === $cap ) {
 					continue;
 				}
 				$normalised[ sanitize_key( $slug ) ] = $cap;
@@ -175,7 +179,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Capability_Map' ) ) {
 			 */
 			$filtered = apply_filters( 'wp_mcp_ai_tool_required_capability', $capability, $slug, $tool );
 
-			return is_string( $filtered ) && '' !== $filtered ? $filtered : self::DEFAULT_CAPABILITY;
+			if ( ! is_string( $filtered ) || '' === $filtered ) {
+				return self::DEFAULT_CAPABILITY;
+			}
+
+			$filtered = sanitize_key( $filtered );
+
+			return '' !== $filtered ? $filtered : self::DEFAULT_CAPABILITY;
 		}
 
 		/**
