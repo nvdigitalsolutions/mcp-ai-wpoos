@@ -44,6 +44,11 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/** {@inheritdoc} */
+	public function get_required_capability() {
+		return 'read_posts';
+	}
+
+	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only', 'cacheable' );
 	}

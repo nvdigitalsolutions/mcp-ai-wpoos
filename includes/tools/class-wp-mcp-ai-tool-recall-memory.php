@@ -109,7 +109,22 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to recall agent memory.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
+		}
+
 		$agent_id = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : '';
+		if ( is_numeric( $agent_id ) ) {
+			$agent_id = absint( $agent_id );
+		} else {
+			$agent_id = sanitize_text_field( (string) $agent_id );
+		}
 		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( (string) $arguments['wing'] ) : '';
 		$room     = isset( $arguments['room'] ) ? sanitize_text_field( (string) $arguments['room'] ) : '';
 		$query    = isset( $arguments['query'] ) ? sanitize_text_field( (string) $arguments['query'] ) : '';
@@ -268,6 +283,6 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array
 	 */
 	public function get_capability_flags() {
-		return array( 'read-only', 'cacheable' );
+		return array( 'read-only', 'requires-capability', 'cacheable' );
 	}
 }

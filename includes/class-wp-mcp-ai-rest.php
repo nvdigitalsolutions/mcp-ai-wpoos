@@ -2305,19 +2305,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
-			// This enables the diagnostic page to test MCP endpoint connectivity without requiring.
-			// bearer tokens for internal REST API calls made via rest_do_request().
-			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
-				// Verify this is an internal request (not from external source).
-				// Internal requests via rest_do_request() won't have HTTP_ORIGIN or HTTP_REFERER headers.
-				$is_internal = empty( $_SERVER['HTTP_ORIGIN'] ) ||
-					( isset( $_SERVER['HTTP_ORIGIN'] ) && wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST ) );
+				// This enables the diagnostic page to test MCP endpoint connectivity without requiring
+				// bearer tokens for internal REST API calls made via rest_do_request().
+				if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+					// Require a custom internal-diagnostic header to prevent CSRF-style attacks
+					// where an admin's session cookie could be used cross-origin.
+					// The Origin header check alone is insecure — most programmatic HTTP
+					// clients (curl, Postman, fetch without CORS) do not send an Origin
+					// header by default, making empty( $_SERVER['HTTP_ORIGIN'] ) trivially
+					// exploitable. Use a custom header that cannot be sent cross-origin.
+					$internal_header = $request->get_header( 'X-WP-MCP-AI-Internal-Diagnostic' );
+					$is_local_origin = isset( $_SERVER['HTTP_ORIGIN'] )
+						&& wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST );
 
-				if ( $is_internal ) {
-					$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
-					return true;
+					$is_internal = ( '1' === $internal_header ) || $is_local_origin;
+
+					if ( $is_internal ) {
+						$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
+						return true;
+					}
 				}
-			}
 
 			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted for remote access.
 			return new WP_Error(

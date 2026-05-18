@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Validate and sanitize inputs.
 		$title   = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$content = isset( $arguments['content'] ) ? $arguments['content'] : '';
+		$content = isset( $arguments['content'] ) ? wp_kses_post( $arguments['content'] ) : '';
 
 		if ( '' === $title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Post title is required.', 'mcp-ai-wpoos' ) );
