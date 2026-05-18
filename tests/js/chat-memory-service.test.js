@@ -21,6 +21,7 @@ describe( 'chat-memory-service', () => {
 		recall: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/recall',
 		store: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/store',
 		audit: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/audit',
+		sessionBase: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/sessions/',
 		itemBase: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/',
 	};
 
@@ -202,5 +203,31 @@ describe( 'chat-memory-service', () => {
 
 		const [ url ] = fetchMock.mock.calls[ 0 ];
 		expect( url ).not.toContain( 'action_type' );
+	} );
+
+	test( 'sessionReplay() builds GET query string with limit and sends nonce', async () => {
+		window.wpMcpAiChat = { nonce: 'abc', memoryEndpoints: ENDPOINTS };
+		const fetchMock = jest.fn().mockResolvedValue( {
+			ok: true,
+			json: () => Promise.resolve( { events: [] } ),
+		} );
+		window.fetch = fetchMock;
+
+		await memory.sessionReplay( 'sess_123', { limit: 50 } );
+
+		expect( fetchMock ).toHaveBeenCalledTimes( 1 );
+		const [ url, options ] = fetchMock.mock.calls[ 0 ];
+		expect( url ).toBe( 'https://example.test/wp-json/mcp-ai/v1/chat-memory/sessions/sess_123?limit=50' );
+		expect( options.method ).toBe( 'GET' );
+		expect( options.headers[ 'X-WP-Nonce' ] ).toBe( 'abc' );
+	} );
+
+	test( 'sessionReplay() rejects with disabled error when sessionBase is missing', async () => {
+		const stale = Object.assign( {}, ENDPOINTS );
+		delete stale.sessionBase;
+		window.wpMcpAiChat = { nonce: 'abc', memoryEndpoints: stale };
+		await expect( memory.sessionReplay( 'sess_123', { limit: 10 } ) ).rejects.toMatchObject( {
+			code: 'chat_memory_disabled',
+		} );
 	} );
 } );

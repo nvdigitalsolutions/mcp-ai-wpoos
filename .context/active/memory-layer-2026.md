@@ -114,7 +114,7 @@ Which parts of NV oOS are affected:
 | 6.1 | Provenance tracer tool + tests | Complete | PR #5015 merged (commit `600d0b3dd`); 11 tests |
 | 7.1 | Memory Health subtab | Complete | Phase 7a (orchestration Memory Health view) |
 | 7.2 | Retrieval waterfall in drawer | Complete | Phase 7b (chat memory drawer retrieval waterfall panel) |
-| 7.3 | Session Replay tab | Pending | Phase 7c |
+| 7.3 | Session Replay tab | Complete | Phase 7c (chat-memory sessions replay route + drawer tab) |
 | 8.1 | Docs + version bump | Pending | Phase 8 |
 
 ---
@@ -142,7 +142,6 @@ Which parts of NV oOS are affected:
 
 > What is the immediate next action when this context file is loaded?
 
-**Phase 7c**: Add the Session Replay tab by wiring
-`GET /chat-memory/sessions/{session_id}` into the drawer and rendering
-session chronology (messages + memory events) with the existing bridge auth
-guards and kill-switch behavior.
+**Phase 8**: Finalize docs and release metadata updates for v1.1.20
+(coversheet/checklist sync, user-facing memory docs, and version bump
+artifacts) without changing the existing REST/tool contracts.

@@ -343,6 +343,27 @@
 	}
 
 	/**
+	 * Read replay events for a specific chat session.
+	 *
+	 * @param {string} sessionId Session identifier.
+	 * @param {Object} options   { limit }
+	 * @return {Promise<Object>} Resolves with `{ session_id, events, ... }`.
+	 */
+	function sessionReplay(sessionId, options) {
+		if (!isAvailable()) {
+			return Promise.reject(disabledError());
+		}
+		const eps = getEndpoints();
+		if (!eps.sessionBase || !sessionId) {
+			return Promise.reject(disabledError());
+		}
+		const qs = buildQuery({
+			limit: options && options.limit
+		});
+		return request(eps.sessionBase + encodeURIComponent(sessionId) + qs, { method: 'GET' });
+	}
+
+	/**
 	 * Detect whether a tool result describes memory retrieval, mirroring the
 	 * detection in chat.js so the in-chat "🧠 Memory" badge can also surface
 	 * server-pushed retrieval events without re-implementing the logic.
@@ -372,6 +393,7 @@
 		'delete': remove,
 		remove: remove,
 		audit: audit,
+		sessionReplay: sessionReplay,
 		getPreferences: getPreferences,
 		setPreferences: setPreferences,
 		isMemoryRetrievalResult: isMemoryRetrievalResult

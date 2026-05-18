@@ -2277,6 +2277,7 @@ class WP_MCP_AI_Shortcode {
 			'recall'      => $base . '/recall',
 			'store'       => $base . '/store',
 			'audit'       => $base . '/audit',
+			'sessionBase' => $base . '/sessions/',
 			'itemBase'    => $base . '/',
 		);
 

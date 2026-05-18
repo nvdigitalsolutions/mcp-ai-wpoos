@@ -9,9 +9,11 @@
  *
  * Surface:
  *   - Toggle button injected next to `.wp-mcp-ai-chat__transcript-controls`.
- *   - Side panel (role="dialog", aria-modal="false") with two tabs:
- *       Memories — paginated list of recent records with edit/delete inline.
- *       Scope    — wing/room selector (writes to `state.config.memoryWing/Room`).
+ *   - Side panel (role="dialog", aria-modal="false") with tabs:
+ *       Memories       — paginated list of recent records with edit/delete inline.
+ *       Scope          — wing/room selector (writes to `state.config.memoryWing/Room`).
+ *       Audit          — recent memory-audit events.
+ *       Session Replay — replay feed for a chat session_id.
  *   - Single page-level ARIA-live toast region (`#wp-mcp-ai-memory-toasts`)
  *     used to announce memory events to assistive tech.
  *
@@ -109,6 +111,24 @@
 	function isAvailable() {
 		const svc = memoryService();
 		return !!(svc && svc.isAvailable && svc.isAvailable());
+	}
+
+	function resolveReplaySessionId(config, agentId) {
+		const cfg = config || {};
+		if (cfg.sessionKey && typeof cfg.sessionKey === 'string' && cfg.sessionKey.trim()) {
+			return cfg.sessionKey.trim();
+		}
+		const assistantId = cfg.assistantId || agentId || 'default';
+		const key = 'wp_mcp_ai_chat_session_id_' + assistantId;
+		try {
+			const stored = window.localStorage ? window.localStorage.getItem(key) : '';
+			if (stored && /^[a-zA-Z0-9_-]{1,64}$/.test(stored)) {
+				return stored;
+			}
+		} catch (e) {
+			return '';
+		}
+		return '';
 	}
 
 	/**
@@ -506,9 +526,18 @@
 		auditTab.setAttribute('data-testid', 'wp-mcp-ai-memory-audit-tab');
 		auditTab.textContent = __( 'Audit', 'mcp-ai-wpoos' );
 
+		const replayTab = document.createElement('button');
+		replayTab.type = 'button';
+		replayTab.className = 'wp-mcp-ai-memory-drawer__tab';
+		replayTab.setAttribute('role', 'tab');
+		replayTab.setAttribute('aria-selected', 'false');
+		replayTab.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-tab');
+		replayTab.textContent = __( 'Session Replay', 'mcp-ai-wpoos' );
+
 		tabs.appendChild(memoriesTab);
 		tabs.appendChild(scopeTab);
 		tabs.appendChild(auditTab);
+		tabs.appendChild(replayTab);
 
 		// Memories panel.
 		const memoriesPanel = document.createElement('div');
@@ -667,39 +696,93 @@
 		auditPanel.appendChild(auditError);
 		auditPanel.appendChild(auditList);
 
+		const replayPanel = document.createElement('div');
+		replayPanel.className = 'wp-mcp-ai-memory-drawer__panel';
+		replayPanel.setAttribute('role', 'tabpanel');
+		replayPanel.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-panel');
+		replayPanel.hidden = true;
+
+		const replayFilterRow = document.createElement('div');
+		replayFilterRow.className = 'wp-mcp-ai-memory-drawer__filter';
+
+		const replaySessionInput = document.createElement('input');
+		replaySessionInput.type = 'text';
+		replaySessionInput.className = 'wp-mcp-ai-memory-drawer__query';
+		replaySessionInput.placeholder = __( 'Session ID…', 'mcp-ai-wpoos' );
+		replaySessionInput.setAttribute('aria-label', __( 'Session ID for replay', 'mcp-ai-wpoos' ));
+		replaySessionInput.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-session');
+		replaySessionInput.value = resolveReplaySessionId(config, agentId);
+		replayFilterRow.appendChild(replaySessionInput);
+
+		const replayRefreshBtn = document.createElement('button');
+		replayRefreshBtn.type = 'button';
+		replayRefreshBtn.className = 'wp-mcp-ai-memory-drawer__refresh';
+		replayRefreshBtn.textContent = __( 'Load', 'mcp-ai-wpoos' );
+		replayFilterRow.appendChild(replayRefreshBtn);
+
+		const replayList = document.createElement('ul');
+		replayList.className = 'wp-mcp-ai-memory-drawer__audit-list';
+		replayList.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-list');
+
+		const replayEmpty = document.createElement('p');
+		replayEmpty.className = 'wp-mcp-ai-memory-drawer__empty';
+		replayEmpty.hidden = true;
+		replayEmpty.textContent = __( 'No session replay events yet.', 'mcp-ai-wpoos' );
+
+		const replayError = document.createElement('p');
+		replayError.className = 'wp-mcp-ai-memory-drawer__error';
+		replayError.setAttribute('role', 'alert');
+		replayError.hidden = true;
+
+		replayPanel.appendChild(replayFilterRow);
+		replayPanel.appendChild(replayEmpty);
+		replayPanel.appendChild(replayError);
+		replayPanel.appendChild(replayList);
+
 		drawer.appendChild(closeBtn);
 		drawer.appendChild(heading);
 		drawer.appendChild(tabs);
 		drawer.appendChild(memoriesPanel);
 		drawer.appendChild(scopePanel);
 		drawer.appendChild(auditPanel);
+		drawer.appendChild(replayPanel);
 
 		container.appendChild(drawer);
 
 		let auditLoaded = false;
+		let replayLoaded = false;
 
 		function setTab(name) {
 			const isMemories = name === 'memories';
 			const isScope = name === 'scope';
 			const isAudit = name === 'audit';
+			const isReplay = name === 'replay';
 			memoriesTab.classList.toggle('is-active', isMemories);
 			memoriesTab.setAttribute('aria-selected', isMemories ? 'true' : 'false');
 			scopeTab.classList.toggle('is-active', isScope);
 			scopeTab.setAttribute('aria-selected', isScope ? 'true' : 'false');
 			auditTab.classList.toggle('is-active', isAudit);
 			auditTab.setAttribute('aria-selected', isAudit ? 'true' : 'false');
+			replayTab.classList.toggle('is-active', isReplay);
+			replayTab.setAttribute('aria-selected', isReplay ? 'true' : 'false');
 			memoriesPanel.hidden = !isMemories;
 			scopePanel.hidden = !isScope;
 			auditPanel.hidden = !isAudit;
+			replayPanel.hidden = !isReplay;
 			if (isAudit && !auditLoaded) {
 				auditLoaded = true;
 				loadAudit();
+			}
+			if (isReplay && !replayLoaded) {
+				replayLoaded = true;
+				loadReplay();
 			}
 		}
 
 		memoriesTab.addEventListener('click', function() { setTab('memories'); });
 		scopeTab.addEventListener('click', function() { setTab('scope'); });
 		auditTab.addEventListener('click', function() { setTab('audit'); });
+		replayTab.addEventListener('click', function() { setTab('replay'); });
 
 		function clearList() {
 			while (list.firstChild) {
@@ -1061,8 +1144,110 @@
 			});
 		}
 
+		function extractReplayEvents(response) {
+			if (!response || typeof response !== 'object') {
+				return [];
+			}
+			if (Array.isArray(response.events)) { return response.events; }
+			if (response.data && Array.isArray(response.data.events)) { return response.data.events; }
+			return [];
+		}
+
+		function clearReplayList() {
+			while (replayList.firstChild) {
+				replayList.removeChild(replayList.firstChild);
+			}
+		}
+
+		function renderReplayEvent(entry) {
+			const li = document.createElement('li');
+			li.className = 'wp-mcp-ai-memory-drawer__audit-item';
+			li.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-item');
+
+			const eventName = entry && entry.event ? String(entry.event) : '';
+			if (eventName) {
+				li.setAttribute('data-event', eventName);
+			}
+
+			const timestamp = document.createElement('time');
+			timestamp.className = 'wp-mcp-ai-memory-drawer__audit-time';
+			const ts = entry && entry.timestamp ? String(entry.timestamp) : '';
+			if (ts) {
+				timestamp.setAttribute('datetime', ts);
+				timestamp.textContent = ts;
+			} else {
+				timestamp.textContent = __( '(no timestamp)', 'mcp-ai-wpoos' );
+			}
+
+			const actionLabel = document.createElement('span');
+			actionLabel.className = 'wp-mcp-ai-memory-drawer__audit-action';
+			actionLabel.textContent = eventName || __( 'event', 'mcp-ai-wpoos' );
+
+			const meta = document.createElement('span');
+			meta.className = 'wp-mcp-ai-memory-drawer__audit-meta';
+			const data = entry && entry.data && typeof entry.data === 'object' ? entry.data : {};
+			const message = data.message || data.error || data.action || '';
+			meta.textContent = message ? String(message) : '';
+
+			li.appendChild(timestamp);
+			li.appendChild(document.createTextNode(' '));
+			li.appendChild(actionLabel);
+			if (meta.textContent) {
+				li.appendChild(document.createTextNode(' — '));
+				li.appendChild(meta);
+			}
+
+			return li;
+		}
+
+		function loadReplay() {
+			if (!isAvailable()) {
+				return;
+			}
+			replayError.hidden = true;
+			replayEmpty.hidden = true;
+			clearReplayList();
+
+			const sessionId = (replaySessionInput.value || '').trim();
+			if (!sessionId) {
+				replayEmpty.textContent = __( 'Enter a session ID to replay events.', 'mcp-ai-wpoos' );
+				replayEmpty.hidden = false;
+				return;
+			}
+
+			const loading = document.createElement('li');
+			loading.className = 'wp-mcp-ai-memory-drawer__loading';
+			loading.textContent = __( 'Loading session replay…', 'mcp-ai-wpoos' );
+			replayList.appendChild(loading);
+
+			if (!memoryService().sessionReplay || typeof memoryService().sessionReplay !== 'function') {
+				clearReplayList();
+				replayError.textContent = __( 'Session replay endpoint is unavailable.', 'mcp-ai-wpoos' );
+				replayError.hidden = false;
+				return;
+			}
+
+			memoryService().sessionReplay(sessionId, { limit: 100 }).then(function(response) {
+				clearReplayList();
+				const events = extractReplayEvents(response);
+				if (!events.length) {
+					replayEmpty.textContent = __( 'No session replay events yet.', 'mcp-ai-wpoos' );
+					replayEmpty.hidden = false;
+					return;
+				}
+				events.forEach(function(event) {
+					replayList.appendChild(renderReplayEvent(event));
+				});
+			}).catch(function(err) {
+				clearReplayList();
+				replayError.textContent = (err && err.message) || __( 'Could not load session replay.', 'mcp-ai-wpoos' );
+				replayError.hidden = false;
+			});
+		}
+
 		auditRefreshBtn.addEventListener('click', loadAudit);
 		auditActionFilter.addEventListener('change', loadAudit);
+		replayRefreshBtn.addEventListener('click', loadReplay);
 
 		// Debounced filter.
 		let filterTimer = null;

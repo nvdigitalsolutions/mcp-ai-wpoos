@@ -38,6 +38,7 @@ function installMemoryStub( overrides ) {
 			calls.remove.push( id );
 			return Promise.resolve( { success: true } );
 		} ),
+		sessionReplay: jest.fn().mockResolvedValue( { events: [] } ),
 		isMemoryRetrievalResult: () => false,
 		getPreferences: jest.fn(),
 		setPreferences: jest.fn()
@@ -64,7 +65,8 @@ function makeContainer() {
 		config: {
 			embeddedAssistantId: 7,
 			memoryWing: 'wing-a',
-			memoryRoom: ''
+			memoryRoom: '',
+			sessionKey: 'sess_default_7'
 		}
 	};
 	return container;
@@ -402,6 +404,52 @@ describe( 'chat-memory-drawer', () => {
 			const error = panel.querySelector( '.wp-mcp-ai-memory-drawer__error' );
 			expect( error.hidden ).toBe( false );
 			expect( error.textContent ).toContain( 'forbidden' );
+		} );
+	} );
+
+	describe( 'session replay tab', () => {
+		test( 'switching to Session Replay lazy-loads via memoryService.sessionReplay()', async () => {
+			const sessionReplayMock = jest.fn().mockResolvedValue( {
+				events: [
+					{ id: 1, event: 'chat:resumed', timestamp: '2026-05-18T19:00:00Z', data: { message: 'done' } },
+					{ id: 2, event: 'memory_event', timestamp: '2026-05-18T19:00:01Z', data: { action: 'stored' } }
+				]
+			} );
+			installMemoryStub( { sessionReplay: sessionReplayMock } );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const drawer = container.querySelector( '.wp-mcp-ai-memory-drawer' );
+
+			const replayTab = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-replay-tab"]' );
+			replayTab.click();
+
+			expect( sessionReplayMock ).toHaveBeenCalledTimes( 1 );
+			expect( sessionReplayMock ).toHaveBeenCalledWith( 'sess_default_7', { limit: 100 } );
+
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const panel = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-replay-panel"]' );
+			expect( panel.hidden ).toBe( false );
+			const items = panel.querySelectorAll( '[data-testid="wp-mcp-ai-memory-replay-item"]' );
+			expect( items.length ).toBe( 2 );
+		} );
+
+		test( 'empty Session Replay response shows the empty state', async () => {
+			installMemoryStub( { sessionReplay: jest.fn().mockResolvedValue( { events: [] } ) } );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const drawer = container.querySelector( '.wp-mcp-ai-memory-drawer' );
+			drawer.querySelector( '[data-testid="wp-mcp-ai-memory-replay-tab"]' ).click();
+
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const panel = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-replay-panel"]' );
+			const empty = panel.querySelector( '.wp-mcp-ai-memory-drawer__empty' );
+			expect( empty.hidden ).toBe( false );
 		} );
 	} );
 
