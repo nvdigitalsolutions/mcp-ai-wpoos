@@ -1,8 +1,8 @@
-# Memory Layer 2026 Enhancements — Active Context
+# Memory Layer 2026 Enhancements — Archived Context
 
-> **GSD Context File** — Initialize from the Project Brief summary at the start of Phase 0.
+> **GSD Context File** — Archived after feature completion in Phase 9.
 > Keep this file under **500 lines** (GSD conciseness rule).
-> Archive to `.context/archive/memory-layer-2026-v1.1.20.md` during Phase 9.
+> Archived to `.context/archive/memory-layer-2026-v1.1.20.md`.
 
 ---
 
@@ -14,7 +14,7 @@ detection, provenance, session replay) **alongside** the existing MemPalace /
 Letta / Zep / mem0 / Cognee-derived foundation. Strictly additive — no breaking
 changes to existing filters, actions, REST shapes, or CCT schema.
 
-**Current Phase:** 8 (Docs + release). Phases 0–7 complete + merged into parent feature branch.
+**Current Phase:** 9 (Archive + post-release monitoring). Phases 0–8 complete + merged into parent feature branch.
 **Feature Version:** v1.1.20
 **Branch:** `feature/memory-layer-2026-enhancements` (off `alpha-working`)
 **Brief:** _N/A — proposed and approved inline in chat (Nov 2026)_
@@ -30,7 +30,7 @@ Load these files at the start of each AI session for this feature (GSD 0–30% r
 Always:
   .context/conventions.md
   .context/security-checklist.md
-  .context/active/memory-layer-2026.md        ← this file
+  .context/archive/memory-layer-2026-v1.1.20.md  ← archived feature context (reference only)
   docs/AGENT-MEMORY-COMPLETE-GUIDE.md
   includes/services/README.md
   includes/tools/README.md
@@ -142,6 +142,5 @@ Which parts of NV oOS are affected:
 
 > What is the immediate next action when this context file is loaded?
 
-**Phase 9**: Archive this active context to
-`.context/archive/memory-layer-2026-v1.1.20.md` and monitor post-release
-stability.
+**Complete**: Phase 9 archival is finished. Continue post-release monitoring and
+move any retrospective notes to docs as needed.
