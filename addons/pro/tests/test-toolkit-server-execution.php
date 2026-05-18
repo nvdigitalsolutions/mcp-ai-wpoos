@@ -16,6 +16,7 @@ require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
  */
 if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool' ) ) {
 	class WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool implements WP_MCP_AI_Tool_Interface {
+		use WP_MCP_AI_Tool_Default_Capability;
 		public function get_slug() {
 			return 'toolkit_mcp_test_echo';
 		}
