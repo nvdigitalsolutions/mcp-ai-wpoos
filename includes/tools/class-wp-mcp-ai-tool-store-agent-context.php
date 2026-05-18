@@ -312,6 +312,41 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		// Generate unique context ID.
 		$context_id = 'ctx_' . wp_generate_password( 12, false );
 
+		// Memory Layer 2026 Phase 5 — contradiction detection (additive, gated).
+		//
+		// Runs AFTER the privacy filter + pre-store transform but BEFORE persistence,
+		// so the detector sees the same content that will be written. Wrapped in a
+		// guarded block so a misbehaving detector NEVER blocks the store: every
+		// failure is logged and the write proceeds unchanged.
+		if ( (bool) apply_filters( 'wp_mcp_ai_memory_contradiction_detection_on_store', true )
+			&& class_exists( 'WP_MCP_AI_Memory_Contradiction_Detector' )
+		) {
+			try {
+				WP_MCP_AI_Memory_Contradiction_Detector::get_instance()->detect(
+					array_merge(
+						$context_data,
+						array(
+							'context_id' => $context_id,
+							'agent_id'   => $agent_id,
+							'wing'       => $wing,
+							'room'       => $room,
+						)
+					)
+				);
+			} catch ( Throwable $contradiction_exception ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'store_agent_context: contradiction detector threw; store proceeds unaffected.',
+						array(
+							'context_id' => $context_id,
+							'agent_id'   => $agent_id,
+							'message'    => $contradiction_exception->getMessage(),
+						)
+					);
+				}
+			}
+		}
+
 		// Prepare context record.
 		$context_record = array(
 			'context_id'   => $context_id,
