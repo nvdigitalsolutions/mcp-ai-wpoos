@@ -2321,14 +2321,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$memory_critical     = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 85 );
 			$chat_memory_enabled = (bool) WP_MCP_AI_Settings_Registry::get_setting( 'enable_chat_memory', true );
 			$memory_limit_label  = __( 'Unavailable', 'mcp-ai-wpoos' );
+			$memory_status_label = __( 'Good', 'mcp-ai-wpoos' );
+
+			if ( 'critical' === $health['memory_status'] ) {
+				$memory_status_label = __( 'Critical', 'mcp-ai-wpoos' );
+			} elseif ( 'warning' === $health['memory_status'] ) {
+				$memory_status_label = __( 'Warning', 'mcp-ai-wpoos' );
+			}
 
 			if ( class_exists( 'WP_MCP_AI_Memory_Manager' ) ) {
 				$memory_limit_bytes = (int) WP_MCP_AI_Memory_Manager::get_memory_limit_bytes();
-				if ( $memory_limit_bytes > 0 ) {
-					$memory_limit_label = size_format( $memory_limit_bytes, 1 );
-				} else {
-					$memory_limit_label = __( 'Unlimited', 'mcp-ai-wpoos' );
-				}
+				$memory_limit_label = $memory_limit_bytes > 0 ? size_format( $memory_limit_bytes, 1 ) : __( 'Unlimited', 'mcp-ai-wpoos' );
 			}
 			?>
 			<div class="wp-mcp-ai-observability-view">
@@ -2340,7 +2343,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></th>
 						<td>
-							<strong><?php echo esc_html( ucfirst( (string) $health['memory_status'] ) ); ?></strong>
+							<strong><?php echo esc_html( $memory_status_label ); ?></strong>
 							<p class="description">
 								<?php
 								printf(
