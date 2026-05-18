@@ -73,6 +73,13 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_In
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

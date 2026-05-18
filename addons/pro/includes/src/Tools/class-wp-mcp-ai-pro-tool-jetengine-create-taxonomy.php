@@ -23,6 +23,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @return bool True if JetEngine 3.8+ MCP server is available.
