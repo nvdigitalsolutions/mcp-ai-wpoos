@@ -33,6 +33,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Manages OAuth tokens and authorization for accessing user's fantasy leagues.
  */
 class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**

@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+
+	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * {@inheritdoc}
 	 */
