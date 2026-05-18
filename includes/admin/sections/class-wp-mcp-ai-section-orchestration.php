@@ -1235,6 +1235,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'mcp-ai-wpoos' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'memory_health' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'memory_health' === $active_view ? 'active' : '' ); ?>">
+<span class="dashicons dashicons-heart"></span>
+			<?php esc_html_e( 'Memory Health', 'mcp-ai-wpoos' ); ?>
+</a>
 <a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'tools' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
@@ -1294,6 +1298,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'thresholds':
 					$this->render_thresholds_view();
+					break;
+				case 'memory_health':
+					$this->render_memory_health_view();
 					break;
 				case 'tools':
 					$this->render_tools_view();
@@ -2256,6 +2263,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'prediction_safety_buffer',
 					),
 				),
+				'memory_health' => array(
+					'label'  => __( 'Memory Health', 'mcp-ai-wpoos' ),
+					'fields' => array(
+						// Memory Health view is read-only, no editable fields.
+					),
+				),
 				'tools'         => array(
 					'label'  => __( 'Tools', 'mcp-ai-wpoos' ),
 					'fields' => array(
@@ -2292,6 +2305,93 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		public function validate( $input ) {
 			// All fields are boolean checkboxes or sliders, no special validation needed.
 			return $input;
+		}
+
+		/**
+		 * Render memory health view.
+		 *
+		 * Surfaces memory-specific orchestration health signals and links admins
+		 * back to the threshold controls that influence warning/critical states.
+		 *
+		 * @return void
+		 */
+		private function render_memory_health_view() {
+			$health              = $this->get_orchestration_health_metrics();
+			$memory_warning      = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
+			$memory_critical     = (int) WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 85 );
+			$chat_memory_enabled = (bool) WP_MCP_AI_Settings_Registry::get_setting( 'enable_chat_memory', true );
+			$memory_limit_label  = __( 'Unavailable', 'mcp-ai-wpoos' );
+
+			if ( class_exists( 'WP_MCP_AI_Memory_Manager' ) ) {
+				$memory_limit_bytes = (int) WP_MCP_AI_Memory_Manager::get_memory_limit_bytes();
+				if ( $memory_limit_bytes > 0 ) {
+					$memory_limit_label = size_format( $memory_limit_bytes, 1 );
+				} else {
+					$memory_limit_label = __( 'Unlimited', 'mcp-ai-wpoos' );
+				}
+			}
+			?>
+			<div class="wp-mcp-ai-observability-view">
+				<h2><?php esc_html_e( 'Memory Health', 'mcp-ai-wpoos' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Review live memory pressure, threshold policy, and chat-memory availability for the orchestration layer.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<strong><?php echo esc_html( ucfirst( (string) $health['memory_status'] ) ); ?></strong>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: memory usage percentage */
+									esc_html__( 'Current memory usage: %s%%', 'mcp-ai-wpoos' ),
+									esc_html( number_format( (float) $health['memory_usage'], 1 ) )
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Configured Thresholds', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<p>
+								<?php
+								printf(
+									/* translators: 1: warning threshold percentage, 2: critical threshold percentage */
+									esc_html__( 'Warning: %1$s%% · Critical: %2$s%%', 'mcp-ai-wpoos' ),
+									esc_html( (string) $memory_warning ),
+									esc_html( (string) $memory_critical )
+								);
+								?>
+							</p>
+							<p class="description">
+								<a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>">
+									<?php esc_html_e( 'Adjust thresholds', 'mcp-ai-wpoos' ); ?>
+								</a>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Memory Budget', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<?php echo esc_html( $memory_limit_label ); ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Chat-Client Memory', 'mcp-ai-wpoos' ); ?></th>
+						<td>
+							<?php echo esc_html( $chat_memory_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ); ?>
+							<p class="description">
+								<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>">
+									<?php esc_html_e( 'Open orchestration settings', 'mcp-ai-wpoos' ); ?>
+								</a>
+							</p>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<?php
 		}
 
 		/**

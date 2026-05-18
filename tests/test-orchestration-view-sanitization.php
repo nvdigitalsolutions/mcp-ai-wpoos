@@ -164,6 +164,25 @@ class WP_MCP_AI_Orchestration_View_Sanitization_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that read-only memory health view does not process input fields.
+	 */
+	public function test_memory_health_view_returns_empty() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'orchestration' );
+
+		$_POST['view'] = 'memory_health';
+		$input         = array(
+			'enable_budget_management' => '1',
+			'memory_warning_threshold' => '80',
+		);
+
+		$sanitized = $section->sanitize( $input );
+
+		$this->assertEmpty( $sanitized, 'Read-only memory health view should return empty sanitized input.' );
+
+		unset( $_POST['view'] );
+	}
+
+	/**
 	 * Test that invalid view doesn't process any fields.
 	 */
 	public function test_invalid_view_returns_empty() {

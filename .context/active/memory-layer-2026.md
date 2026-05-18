@@ -112,7 +112,7 @@ Which parts of NV oOS are affected:
 | 5.1 | Decay sweep extension + tests | Complete | PR #5013 merged (commit `5009c7ee5`); 9 tests |
 | 5.2 | Contradiction detector + tests | Complete | PR #5013 merged (commit `5009c7ee5`); 8 tests; auto-supersede OFF |
 | 6.1 | Provenance tracer tool + tests | Complete | PR #5015 merged (commit `600d0b3dd`); 11 tests |
-| 7.1 | Memory Health subtab | Pending | Phase 7a |
+| 7.1 | Memory Health subtab | Complete | Phase 7a (orchestration Memory Health view) |
 | 7.2 | Retrieval waterfall in drawer | Pending | Phase 7b |
 | 7.3 | Session Replay tab | Pending | Phase 7c |
 | 8.1 | Docs + version bump | Pending | Phase 8 |
@@ -142,7 +142,6 @@ Which parts of NV oOS are affected:
 
 > What is the immediate next action when this context file is loaded?
 
-**Phase 1**: Create `includes/services/class-wp-mcp-ai-memory-privacy-filter.php`,
-wire it into `wp_mcp_ai_memory_pre_store_transform` at priority 5, ship
-default redaction patterns, write the test suite in
-`tests/test-memory-privacy-filter.php`, and add folder README + feature doc.
+**Phase 7b**: Extend `assets/js/chat-memory-drawer.js` with a Retrieval
+Waterfall panel that surfaces graph/transient/CCT retrieval path telemetry
+without changing existing REST response keys or breaking current drawer tabs.
