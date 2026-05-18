@@ -47,6 +47,44 @@ class WP_MCP_AI_Pro_Well_Known_MCP {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
 		add_action( 'template_redirect', array( $this, 'handle_request' ) );
+		add_action( 'rest_api_init', array( $this, 'register_rest_route' ) );
+	}
+
+	/**
+	 * Register a REST mirror of the discovery document.
+	 *
+	 * The pretty `/.well-known/mcp` URL depends on WordPress rewrite rules and
+	 * therefore returns a 404 HTML page on sites that use plain permalinks or
+	 * have not flushed rewrites since the Pro addon was activated/updated. The
+	 * admin Discovery tab relies on this document, so we expose an additional
+	 * REST mirror under `mcp-ai-pro/v1/well-known/mcp` that works regardless
+	 * of permalink structure.
+	 *
+	 * @since 1.6.1
+	 * @return void
+	 */
+	public function register_rest_route() {
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/well-known/mcp',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_rest_request' ),
+					'permission_callback' => '__return_true',
+				),
+			)
+		);
+	}
+
+	/**
+	 * REST callback for the discovery mirror.
+	 *
+	 * @since 1.6.1
+	 * @return WP_REST_Response
+	 */
+	public function handle_rest_request() {
+		return new WP_REST_Response( $this->build_discovery_document(), 200 );
 	}
 
 	/**

@@ -256,5 +256,41 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 			has_action( 'template_redirect', array( $controller, 'handle_request' ) ),
 			'template_redirect hook for handle_request must be registered'
 		);
+		$this->assertGreaterThan(
+			0,
+			has_action( 'rest_api_init', array( $controller, 'register_rest_route' ) ),
+			'rest_api_init hook for register_rest_route must be registered'
+		);
+	}
+
+	// -----------------------------------------------------------------------
+	// 11. REST mirror — permalink-independent discovery
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test that the REST mirror `/mcp-ai-pro/v1/well-known/mcp` returns the
+	 * discovery document as JSON. The pretty `/.well-known/mcp` URL depends on
+	 * rewrite rules; the admin Discovery tab relies on this REST mirror so it
+	 * works on plain-permalink sites and freshly-activated installs where the
+	 * rewrite rules have not yet been flushed.
+	 *
+	 * @since 1.6.1
+	 */
+	public function test_well_known_rest_mirror_returns_discovery_document() {
+		// Trigger rest_api_init so the route is registered against the test server.
+		do_action( 'rest_api_init' );
+
+		$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+		$registry->register( new WP_MCP_AI_Analytics_MCP_Server() );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/well-known/mcp' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status(), 'REST mirror must return HTTP 200' );
+
+		$data = $response->get_data();
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'mcpServers', $data );
+		$this->assertIsArray( $data['mcpServers'] );
 	}
 }

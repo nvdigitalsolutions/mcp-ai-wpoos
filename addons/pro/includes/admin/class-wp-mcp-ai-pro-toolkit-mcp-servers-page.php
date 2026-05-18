@@ -168,6 +168,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 					'adminPostUrl'  => admin_url( 'admin-post.php' ),
 					'pageUrl'       => admin_url( 'admin.php?page=' . self::PAGE_SLUG ),
 					'wellKnownUrl'  => home_url( '/.well-known/mcp' ),
+					'discoveryFetchUrl' => rest_url( 'mcp-ai-pro/v1/well-known/mcp' ),
 					'i18n'          => array(
 						'confirmDisable'   => __( 'Disable this server? Clients connected to it will lose access.', 'mcp-ai-wpoos-pro' ),
 						'confirmRevoke'    => __( 'Revoke this token? This cannot be undone.', 'mcp-ai-wpoos-pro' ),
