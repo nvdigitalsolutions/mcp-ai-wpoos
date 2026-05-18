@@ -151,6 +151,20 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 			'attachments'      => isset( $event['attachments'] ) && is_array( $event['attachments'] )
 				? wp_json_encode( $event['attachments'] )
 				: '',
+			// Memory Layer 2026 Enhancements Phase 2 — schema v2 fields.
+			// Each field is optional in the event payload; legacy callers that
+			// don't pass these continue to work — sensible defaults are written
+			// and read consumers (Phase 5 decay sweep, Phase 3 dedup) fall back
+			// gracefully when the field is empty on legacy rows.
+			'content_hash'     => self::resolve_content_hash( $event ),
+			'confidence_score' => isset( $event['confidence_score'] ) && is_numeric( $event['confidence_score'] )
+				? (string) max( 0.0, min( 1.0, (float) $event['confidence_score'] ) )
+				: '1.0',
+			'last_accessed_at' => isset( $event['last_accessed_at'] ) && '' !== $event['last_accessed_at']
+				? sanitize_text_field( (string) $event['last_accessed_at'] )
+				: $stored_at,
+			'superseded_by'    => isset( $event['superseded_by'] ) ? sanitize_text_field( (string) $event['superseded_by'] ) : '',
+			'auto_captured'    => ! empty( $event['auto_captured'] ) ? 1 : 0,
 		);
 
 		/**
@@ -167,6 +181,64 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 		$record = apply_filters( 'wp_mcp_ai_memory_cct_record', $record, $event );
 
 		return is_array( $record ) ? $record : array();
+	}
+
+	/**
+	 * Resolve the content hash for a stored-memory event.
+	 *
+	 * Uses the caller-supplied `content_hash` when present (e.g. from Phase 3's
+	 * auto-capture service which computes it before the dedup window check).
+	 * Otherwise computes a SHA-256 over normalised content so legacy callers
+	 * still produce hashable records for downstream contradiction detection.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array $event Memory event payload.
+	 * @return string Lower-case 64-char hex SHA-256, or '' when no content is available.
+	 */
+	protected static function resolve_content_hash( array $event ) {
+		if ( isset( $event['content_hash'] ) && is_string( $event['content_hash'] ) && '' !== $event['content_hash'] ) {
+			return sanitize_text_field( $event['content_hash'] );
+		}
+
+		$content = isset( $event['content'] ) ? (string) $event['content'] : '';
+		if ( '' === $content ) {
+			return '';
+		}
+
+		// Normalise before hashing so trivial whitespace / case differences
+		// don't fragment the dedup window in Phase 3.
+		$normalised = self::normalise_for_hash( $content );
+
+		return hash( 'sha256', $normalised );
+	}
+
+	/**
+	 * Normalise text for content-hash computation.
+	 *
+	 * Lower-cases (where multibyte support is available), collapses runs of
+	 * whitespace to single spaces, and trims. Stateless; safe to call from any
+	 * thread or hook context.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param string $text Raw text.
+	 * @return string Normalised text.
+	 */
+	public static function normalise_for_hash( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return '';
+		}
+
+		if ( function_exists( 'mb_strtolower' ) ) {
+			$text = mb_strtolower( $text, 'UTF-8' );
+		} else {
+			$text = strtolower( $text );
+		}
+
+		$text = preg_replace( '/\s+/u', ' ', $text );
+
+		return null === $text ? '' : trim( $text );
 	}
 
 	/**
