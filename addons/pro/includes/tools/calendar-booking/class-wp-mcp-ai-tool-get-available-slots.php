@@ -48,6 +48,13 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 	}
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'phase-2.6' ); }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'toolkit_not_available', self::get_unavailable_reason() );

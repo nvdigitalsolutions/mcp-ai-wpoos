@@ -153,6 +153,7 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 	 */
 	protected function create_mock_tool( $slug ) {
 		return new class( $slug ) implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			private $slug;
 
 			/**

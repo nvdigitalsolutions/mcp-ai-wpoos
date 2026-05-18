@@ -119,6 +119,13 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.2.0

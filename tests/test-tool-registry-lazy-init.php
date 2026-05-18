@@ -16,6 +16,7 @@
  * Mock pro tool for testing dynamic registration.
  */
 class WP_MCP_AI_Mock_Pro_Tool implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * Get the tool slug.
 	 *

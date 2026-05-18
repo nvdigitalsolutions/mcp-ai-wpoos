@@ -47,6 +47,17 @@ interface WP_MCP_AI_Tool_Interface {
 	public function get_parameters_schema();
 
 	/**
+	 * WordPress capability required to execute this tool.
+	 *
+	 * Return a capability string (e.g. 'edit_posts', 'manage_options').
+	 * Use {@see WP_MCP_AI_Tool_Default_Capability} to provide the standard
+	 * map-lookup → 'edit_posts' fallback without boilerplate.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability();
+
+	/**
 	 * Execute the tool with supplied arguments.
 	 *
 	 * @param array $arguments Parsed arguments from the assistant.
@@ -344,3 +355,6 @@ interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
 	 */
 	public function is_allowed_in_context( $context );
 }
+
+// Load the default capability trait so it is available wherever this interface file is included.
+require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-default-capability.php';

@@ -98,6 +98,13 @@ class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @since 1.2.0

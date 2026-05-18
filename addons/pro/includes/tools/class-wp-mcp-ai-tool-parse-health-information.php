@@ -82,6 +82,9 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 
 	/**
 	 * Get extended tool definition including toolkit metadata.

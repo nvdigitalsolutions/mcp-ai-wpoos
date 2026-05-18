@@ -98,6 +98,13 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute a cache purge against the Cloudflare API.
 	 *
 	 * @param array $arguments Parsed tool arguments.

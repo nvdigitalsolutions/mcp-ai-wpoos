@@ -168,6 +168,13 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check whether the tool is available.
 	 *
 	 * The tool is always available: even without a Playwright service the

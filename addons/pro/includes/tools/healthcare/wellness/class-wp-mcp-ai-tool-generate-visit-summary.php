@@ -95,6 +95,13 @@ class WP_MCP_AI_Tool_Generate_Visit_Summary implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

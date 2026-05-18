@@ -87,9 +87,10 @@ class WP_MCP_AI_Tool_Scope_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$assistant_id = isset( $arguments['assistant_id'] ) ? (int) $arguments['assistant_id'] : 0;
 		$task_class   = isset( $arguments['task_class'] ) ? sanitize_key( (string) $arguments['task_class'] ) : 'general';

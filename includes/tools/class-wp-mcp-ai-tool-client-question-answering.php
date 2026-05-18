@@ -111,6 +111,13 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

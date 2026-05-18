@@ -22,6 +22,7 @@ if ( ! class_exists( 'Test_Registry_Hook_Stub_Tool' ) ) {
 	 * Minimal tool stub for registry hook tests.
 	 */
 	class Test_Registry_Hook_Stub_Tool implements WP_MCP_AI_Tool_Interface {
+		use WP_MCP_AI_Tool_Default_Capability;
 		/**
 		 * Return the tool slug.
 		 *

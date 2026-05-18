@@ -24,6 +24,8 @@ require_once __DIR__ . '/class-wp-mcp-ai-validator-service.php';
  */
 abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Validator service instance.
 	 *

@@ -42,6 +42,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		// Create a mock tool that simulates veo video generation returning a nested async response.
 		$veo_job_id = 'veo_test_12345';
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			private $veo_job_id;
 
 			/**
@@ -172,6 +173,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		// Create a mock tool that simulates veo video generation.
 		$veo_job_id = 'veo_test_67890';
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
 			private $veo_job_id;
 
 			/**

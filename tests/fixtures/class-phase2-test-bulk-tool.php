@@ -13,6 +13,8 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-bulk
  */
 class Phase2_Test_Bulk_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Bulk_Operation_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Estimated row count.
 	 *

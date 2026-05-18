@@ -12,6 +12,7 @@
 // Test stub: a minimal tool that records the args/context passed to execute().
 if ( ! class_exists( 'Test_Slash_Memory_Stub_Tool' ) ) {
 	class Test_Slash_Memory_Stub_Tool implements WP_MCP_AI_Tool_Interface {
+		use WP_MCP_AI_Tool_Default_Capability;
 
 		public $slug;
 		public $last_args    = null;
