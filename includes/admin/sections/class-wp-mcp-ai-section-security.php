@@ -1359,7 +1359,8 @@ jQuery(function($){
 				<p><?php esc_html_e( 'Every registered tool with its required capability and capability flags. Tools missing a capability declaration are highlighted.', 'mcp-ai-wpoos' ); ?></p>
 				<?php
 				$registry = WP_MCP_AI_Tool_Registry::get_instance();
-				$tools    = $registry->get_tools();
+				// Use get_all_tools() so the array is keyed by slug rather than numerically.
+				$tools = method_exists( $registry, 'get_all_tools' ) ? $registry->get_all_tools() : $registry->get_tools();
 				if ( empty( $tools ) ) {
 					echo '<p style="color:#646970;">' . esc_html__( 'No tools registered.', 'mcp-ai-wpoos' ) . '</p>';
 				} else {
@@ -1371,16 +1372,48 @@ jQuery(function($){
 					echo '<th>' . esc_html__( 'Flags', 'mcp-ai-wpoos' ) . '</th>';
 					echo '</tr></thead><tbody>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static HTML
 					foreach ( $tools as $slug => $tool ) {
-						$def   = method_exists( $tool, 'get_definition' ) ? $tool->get_definition() : array();
-						$cap   = $def['required_capability'] ?? '—';
-						$flags = array();
-						if ( method_exists( $tool, 'get_capability_flags' ) ) {
-							$flags = (array) $tool->get_capability_flags();
+						// Fallback to the tool's own slug when iterating a non-keyed array.
+						if ( is_int( $slug ) && method_exists( $tool, 'get_slug' ) ) {
+							$slug = $tool->get_slug();
 						}
-						$missing    = ( '—' === $cap );
-						$row_class  = $missing ? 'wp-mcp-ai-cap-fence-missing' : '';
+
+						$def = method_exists( $tool, 'get_definition' ) ? (array) $tool->get_definition() : array();
+
+						// Capability can live either in the definition array or behind a dedicated getter.
+						$cap = '';
+						if ( ! empty( $def['required_capability'] ) && is_string( $def['required_capability'] ) ) {
+							$cap = $def['required_capability'];
+						} elseif ( method_exists( $tool, 'get_required_capability' ) ) {
+							$resolved = $tool->get_required_capability();
+							if ( is_string( $resolved ) ) {
+								$cap = $resolved;
+							}
+						}
+						$cap = trim( $cap );
+
+						// Normalize capability flags: tolerate both indexed arrays of strings
+						// (interface contract) and legacy associative `flag => bool` shapes.
+						$flags     = array();
+						$raw_flags = array();
+						if ( method_exists( $tool, 'get_capability_flags' ) ) {
+							$raw_flags = (array) $tool->get_capability_flags();
+						}
+						foreach ( $raw_flags as $flag_key => $flag_value ) {
+							if ( is_string( $flag_key ) ) {
+								// Associative form: include the key when the value is truthy.
+								if ( $flag_value ) {
+									$flags[] = $flag_key;
+								}
+							} elseif ( is_string( $flag_value ) && '' !== $flag_value ) {
+								// Indexed form: include the string value as-is.
+								$flags[] = $flag_value;
+							}
+						}
+
+						$missing   = ( '' === $cap );
+						$row_class = $missing ? 'wp-mcp-ai-cap-fence-missing' : '';
 						echo '<tr class="' . esc_attr( $row_class ) . '">';
-						echo '<td><code>' . esc_html( $slug ) . '</code></td>';
+						echo '<td><code>' . esc_html( (string) $slug ) . '</code></td>';
 						echo '<td>' . ( $missing ? '<span style="color:#d63638;">' . esc_html__( 'Missing!', 'mcp-ai-wpoos' ) . '</span>' : '<code>' . esc_html( $cap ) . '</code>' ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- conditional of esc_html outputs
 						echo '<td>' . esc_html( implode( ', ', $flags ) ) . '</td>';
 						echo '</tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static HTML
