@@ -174,6 +174,7 @@ async function apiFetchPublic<T>( path: string, options: RequestInit = {} ): Pro
 	const url = `${ apiUrl.replace( /\/$/, '' ) }/${ path.replace( /^\//, '' ) }`;
 
 	const headers: Record<string, string> = {
+		'Accept': 'application/json',
 		'Content-Type': 'application/json',
 	};
 
@@ -184,6 +185,18 @@ async function apiFetchPublic<T>( path: string, options: RequestInit = {} ): Pro
 
 	if ( ! res.ok ) {
 		throw new Error( `HTTP ${ res.status }: ${ res.statusText }` );
+	}
+
+	// Guard against non-JSON responses (e.g. a page-caching plugin serving
+	// cached HTML for a REST API endpoint URL).  Calling res.json() on an
+	// HTML body throws a raw SyntaxError which is confusing for end-users.
+	const ct = res.headers.get( 'content-type' ) ?? '';
+	if ( ! ct.includes( 'application/json' ) ) {
+		throw new Error(
+			`The REST API returned a non-JSON response (content-type: ${ ct || 'none' }). ` +
+			'This is usually caused by a page-caching plugin serving cached HTML for the REST endpoint URL. ' +
+			'Please exclude REST API paths (/wp-json/) from caching and try again.'
+		);
 	}
 
 	return res.json() as Promise<T>;
@@ -200,6 +213,7 @@ async function apiFetchAuthed<T>( path: string, options: RequestInit = {} ): Pro
 	const url = `${ apiUrl.replace( /\/$/, '' ) }/${ path.replace( /^\//, '' ) }`;
 
 	const headers: Record<string, string> = {
+		'Accept': 'application/json',
 		'Content-Type': 'application/json',
 	};
 
@@ -214,6 +228,17 @@ async function apiFetchAuthed<T>( path: string, options: RequestInit = {} ): Pro
 
 	if ( ! res.ok ) {
 		throw new Error( `HTTP ${ res.status }: ${ res.statusText }` );
+	}
+
+	// Guard against non-JSON responses (e.g. a page-caching plugin serving
+	// cached HTML for a REST API endpoint URL).
+	const ct = res.headers.get( 'content-type' ) ?? '';
+	if ( ! ct.includes( 'application/json' ) ) {
+		throw new Error(
+			`The REST API returned a non-JSON response (content-type: ${ ct || 'none' }). ` +
+			'This is usually caused by a page-caching plugin serving cached HTML for the REST endpoint URL. ' +
+			'Please exclude REST API paths (/wp-json/) from caching and try again.'
+		);
 	}
 
 	return res.json() as Promise<T>;
