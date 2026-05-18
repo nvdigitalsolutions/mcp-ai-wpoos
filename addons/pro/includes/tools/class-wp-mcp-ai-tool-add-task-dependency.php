@@ -53,6 +53,15 @@ class WP_MCP_AI_Tool_Add_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get the human-readable name of this tool.
 	 *
 	 * @return string Tool name.

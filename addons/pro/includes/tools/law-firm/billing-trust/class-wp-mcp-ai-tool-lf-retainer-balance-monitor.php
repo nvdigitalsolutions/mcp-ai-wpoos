@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 	}
 
 	public function get_slug() { return 'lf_retainer_balance_monitor'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Retainer Balance Monitor', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Monitors retainer balances against original retainer amounts and alerts when balance falls below threshold.', 'mcp-ai-wpoos-pro' ); }
 

@@ -55,6 +55,15 @@ class WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function get_name() {

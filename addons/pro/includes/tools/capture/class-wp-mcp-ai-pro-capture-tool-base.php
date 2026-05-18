@@ -108,6 +108,17 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * {@inheritdoc}
 	 *
+	 * Capture tools write structured data to CPTs via the wing context.
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
 	 * Subclasses can override but most do not need to.
 	 */
 	public function get_parameters_schema() {

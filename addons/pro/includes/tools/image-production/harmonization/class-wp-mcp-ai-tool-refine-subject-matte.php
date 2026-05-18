@@ -30,6 +30,15 @@ class WP_MCP_AI_Tool_Refine_Subject_Matte extends WP_MCP_AI_Tool_Harmonization_B
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

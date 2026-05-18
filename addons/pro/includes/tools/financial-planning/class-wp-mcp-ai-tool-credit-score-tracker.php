@@ -72,6 +72,15 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * Get the tool name.
 	 *
 	 * @return string

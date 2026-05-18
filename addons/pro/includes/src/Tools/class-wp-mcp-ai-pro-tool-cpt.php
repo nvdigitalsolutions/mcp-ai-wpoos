@@ -26,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 3.6.0
  */
 class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Top-level parameter keys that belong to the tool's own interface and

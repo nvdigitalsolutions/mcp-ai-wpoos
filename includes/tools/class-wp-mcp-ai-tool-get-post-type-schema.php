@@ -31,6 +31,15 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'read';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

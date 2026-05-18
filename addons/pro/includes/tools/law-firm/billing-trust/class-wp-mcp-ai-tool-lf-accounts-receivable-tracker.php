@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 	}
 
 	public function get_slug() { return 'lf_accounts_receivable_tracker'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Accounts Receivable Tracker', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Tracks outstanding invoices with aging bucket analysis (0-30, 31-60, 61-90, 90+ days) and collection rate metrics.', 'mcp-ai-wpoos-pro' ); }
 

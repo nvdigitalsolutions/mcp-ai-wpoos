@@ -36,6 +36,15 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'read';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

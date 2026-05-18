@@ -193,6 +193,15 @@ class WP_MCP_AI_Tool_LF_Data_Privacy_Compliance_Checker implements WP_MCP_AI_Too
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function get_name() {

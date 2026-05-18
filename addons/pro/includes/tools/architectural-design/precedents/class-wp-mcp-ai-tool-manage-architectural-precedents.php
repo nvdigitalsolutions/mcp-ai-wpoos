@@ -42,6 +42,15 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return 'manage_architectural_precedents';
 	}
 
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function get_name() {
 		return __( 'Manage Architectural Precedents', 'mcp-ai-wpoos-pro' );
 	}

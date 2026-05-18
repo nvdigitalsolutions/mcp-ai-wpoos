@@ -47,6 +47,15 @@ class WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name(): string {

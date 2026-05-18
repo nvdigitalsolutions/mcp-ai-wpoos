@@ -36,6 +36,15 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'read';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

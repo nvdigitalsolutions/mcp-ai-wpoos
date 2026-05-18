@@ -20,6 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
  * Retrieves import duty rates from the ITA Tariff Rates API.
  */
 class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	const API_ENDPOINT = 'https://api.trade.gov/v1/tariff_rates/search';
 
 	/**
