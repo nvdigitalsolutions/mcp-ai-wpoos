@@ -47,7 +47,7 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 	 * @return string
 	 */
 	private static function fake_openai_key() {
-		return 'sk-' . 'NOTAREAL' . str_repeat( 'a', 30 );
+		return 'sk-NOTAREAL' . str_repeat( 'a', 30 );
 	}
 
 	/**
@@ -161,10 +161,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		return $key;
 	}
 
-	/* ------------------------------------------------------------------
-	 * 1. Default-off — no hooks registered when the master filter is missing.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures bootstrap registers no hooks while auto-capture is disabled.
+	 */
 	public function test_default_off_does_not_register_hooks() {
 		WP_MCP_AI_Memory_Auto_Capture_Service::reset_for_tests();
 		WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
@@ -179,10 +178,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		);
 	}
 
-	/* ------------------------------------------------------------------
-	 * 2. Bootstrap is idempotent.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures bootstrap is idempotent and does not duplicate hook callbacks.
+	 */
 	public function test_bootstrap_is_idempotent() {
 		add_filter( 'wp_mcp_ai_memory_auto_capture_enabled', '__return_true' );
 
@@ -226,10 +224,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertSame( 1, $count_chat, 'before_chat_request hook must register exactly once.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 3. Kill-switch (filter returns false) prevents capture.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures the master kill-switch blocks auto-capture.
+	 */
 	public function test_kill_switch_prevents_capture() {
 		add_filter( 'wp_mcp_ai_memory_auto_capture_enabled', '__return_false' );
 
@@ -244,10 +241,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured_events, 'No capture should happen when kill-switch is off.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 4. Denylisted tool is skipped silently.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures denylisted tools are skipped.
+	 */
 	public function test_denylisted_tool_is_skipped() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -257,10 +253,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured_events, 'Denylisted tool must not trigger a capture.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 5. Allowlist gates capture when non-empty.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures a non-empty allowlist limits capture to listed tools.
+	 */
 	public function test_allowlist_when_non_empty_excludes_other_tools() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -282,10 +277,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->captured_events, 'Allowlisted tool must trigger a capture.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 6. SHA-256 dedup within window — first stores, second is skipped.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures a repeated capture within dedup window is dropped.
+	 */
 	public function test_sha256_dedup_within_window_skips_second_capture() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -299,10 +293,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->captured_events, 'Second identical capture within window must be deduped.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 7. Dedup window expiry — identical content captures again after TTL.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures captures are accepted again once dedup state expires.
+	 */
 	public function test_dedup_window_expiry_allows_recapture() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -328,11 +321,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertCount( 2, $this->captured_events, 'Capture must succeed again after the dedup window expires.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 8. Privacy filter runs BEFORE hashing — secrets do not contaminate the
-	 *    dedup key.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures redaction is applied before hashing for dedup.
+	 */
 	public function test_privacy_filter_applied_before_hashing() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -340,7 +331,7 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		// redaction they MUST collapse to the same content hash and
 		// therefore the same dedup key.
 		$secret_a = self::fake_openai_key();
-		$secret_b = 'sk-' . 'OTHERFAKE' . str_repeat( 'b', 30 );
+		$secret_b = 'sk-OTHERFAKE' . str_repeat( 'b', 30 );
 
 		$content_a = 'token A is ' . $secret_a . ' end';
 		$content_b = 'token A is ' . $secret_b . ' end';
@@ -348,12 +339,12 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		// The dedup key is computed from `hash('sha256', lowercased + redacted)`.
 		// Redaction uses the literal `[REDACTED]` replacement (mixed-case), so the
 		// post-redaction content used for hashing is `'token a is [REDACTED] end'`.
-		$expected_hashed = 'token a is [REDACTED] end';
+		$expected_hashed            = 'token a is [REDACTED] end';
 		$this->created_dedup_keys[] = 'wp_mcp_ai_memory_dedup_' . substr( hash( 'sha256', $expected_hashed ), 0, 32 );
 
 		// Drive the capture pipeline directly (bypasses tool denylist logic so
 		// we keep the test focused on the redaction-before-hash contract).
-		$first = WP_MCP_AI_Memory_Auto_Capture_Service::capture(
+		$first  = WP_MCP_AI_Memory_Auto_Capture_Service::capture(
 			$content_a,
 			array(
 				'source'   => 'unit_test',
@@ -382,10 +373,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertStringContainsString( '[REDACTED]', $stored['content'] );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 9. Guest user skipped by default; allowed when filter says so.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures guests are blocked by default and allowed when opted in.
+	 */
 	public function test_guest_skipped_by_default_and_allowed_when_filter_true() {
 		add_filter( 'wp_mcp_ai_memory_auto_capture_enabled', '__return_true' );
 
@@ -409,10 +399,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->captured_events, 'Guest capture must succeed when the filter allows guests.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 10. Per-user `wp_mcp_ai_chat_memory_enabled` meta blocks capture.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures user-level memory opt-out blocks auto-capture.
+	 */
 	public function test_per_user_meta_false_blocks_capture() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -424,10 +413,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured_events, 'Per-user meta opt-out must block auto-capture.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 11. Site-wide `wp_mcp_ai_chat_memory_enabled` filter false blocks capture.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures site-level chat memory filter can block auto-capture.
+	 */
 	public function test_site_wide_filter_false_blocks_capture() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -438,11 +426,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured_events, 'Site-wide kill-switch must block auto-capture.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 12. Captured record has auto_captured = true, importance 0.3,
-	 *     tier 'recall'.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures stored envelopes include expected auto-capture metadata.
+	 */
 	public function test_captured_record_envelope_shape() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -461,11 +447,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertSame( 64, strlen( $envelope['content_hash'] ), 'content_hash must be a 64-char hex SHA-256.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 13. Dedup-detect action `wp_mcp_ai_memory_auto_capture_deduped` fires
-	 *     on a window hit.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures dedup action fires on duplicate capture attempts.
+	 */
 	public function test_deduped_action_fires_on_window_hit() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -490,11 +474,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertSame( 'tool_execution', $dedup_calls[0][1], 'deduped action must receive the source label.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * 14. `wp_mcp_ai_memory_auto_captured` action fires once on a fresh
-	 *     capture.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures auto-captured action fires on fresh captures.
+	 */
 	public function test_auto_captured_action_fires_on_fresh_capture() {
 		$user_id = $this->arrange_enabled_with_user();
 
@@ -519,10 +501,9 @@ class Test_Memory_Auto_Capture_Service extends WP_UnitTestCase {
 		$this->assertSame( 'tool_execution', $captured_calls[0][2], 'auto_captured must receive the source label.' );
 	}
 
-	/* ------------------------------------------------------------------
-	 * Bonus — chat-request hook also captures.
-	 * ------------------------------------------------------------------ */
-
+	/**
+	 * Ensures chat hook captures the latest user message.
+	 */
 	public function test_chat_request_captures_latest_user_message() {
 		$user_id = $this->arrange_enabled_with_user();
 

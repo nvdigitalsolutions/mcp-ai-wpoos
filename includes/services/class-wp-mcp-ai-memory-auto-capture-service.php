@@ -187,9 +187,9 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 		);
 	}
 
-	/* ---------------------------------------------------------------------
-	 * Hook callbacks
-	 * ------------------------------------------------------------------ */
+	// ---------------------------------------------------------------------
+	// Hook callbacks.
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Callback for `wp_mcp_ai_tool_executed`.
@@ -237,11 +237,11 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 		self::capture(
 			$content,
 			array(
-				'source'        => 'tool_execution',
-				'user_id'       => $user_id,
-				'agent_id'      => self::resolve_agent_id( $context, $user_id ),
-				'tool_slug'     => $tool_slug,
-				'context_meta'  => $context,
+				'source'       => 'tool_execution',
+				'user_id'      => $user_id,
+				'agent_id'     => self::resolve_agent_id( $context, $user_id ),
+				'tool_slug'    => $tool_slug,
+				'context_meta' => $context,
 			)
 		);
 	}
@@ -298,9 +298,9 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 		);
 	}
 
-	/* ---------------------------------------------------------------------
-	 * Core capture pipeline
-	 * ------------------------------------------------------------------ */
+	// ---------------------------------------------------------------------
+	// Core capture pipeline.
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Run the dedup + store pipeline for a single observation.
@@ -493,9 +493,9 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 		return true;
 	}
 
-	/* ---------------------------------------------------------------------
-	 * Gate helpers
-	 * ------------------------------------------------------------------ */
+	// ---------------------------------------------------------------------
+	// Gate helpers.
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Whether the given tool slug is allowed by the allowlist + denylist gates.
@@ -627,9 +627,9 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 		return $user_id > 0 ? 'user_' . $user_id : 0;
 	}
 
-	/* ---------------------------------------------------------------------
-	 * Dedup transient helpers
-	 * ------------------------------------------------------------------ */
+	// ---------------------------------------------------------------------
+	// Dedup transient helpers.
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Build the transient key for a given SHA-256 hash.
@@ -679,9 +679,9 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 		set_transient( self::dedup_key( $sha256 ), 1, $window );
 	}
 
-	/* ---------------------------------------------------------------------
-	 * Content extraction
-	 * ------------------------------------------------------------------ */
+	// ---------------------------------------------------------------------
+	// Content extraction.
+	// ---------------------------------------------------------------------
 
 	/**
 	 * Pull the most recent user-role message from a chat messages array.
