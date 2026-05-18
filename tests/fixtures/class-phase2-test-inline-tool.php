@@ -11,6 +11,8 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  * Plain tool fixture used by Test_Tool_Registry_Bulk_Auto_Dispatch.
  */
 class Phase2_Test_Inline_Tool implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
+
 
 	/**
 	 * Whether execute() ran.
