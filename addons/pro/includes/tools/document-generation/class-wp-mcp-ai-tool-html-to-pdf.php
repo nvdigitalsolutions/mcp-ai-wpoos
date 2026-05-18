@@ -100,12 +100,6 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

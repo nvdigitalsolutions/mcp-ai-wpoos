@@ -102,12 +102,6 @@ class WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker implements WP_MCP_AI_Tool_In
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

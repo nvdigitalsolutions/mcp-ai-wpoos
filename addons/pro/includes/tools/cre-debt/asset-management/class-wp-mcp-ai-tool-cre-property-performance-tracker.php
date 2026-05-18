@@ -122,12 +122,6 @@ class WP_MCP_AI_Tool_CRE_Property_Performance_Tracker implements WP_MCP_AI_Tool_
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

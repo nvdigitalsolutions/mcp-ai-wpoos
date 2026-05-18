@@ -119,12 +119,6 @@ class WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker implements WP_MCP_AI_Tool_I
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

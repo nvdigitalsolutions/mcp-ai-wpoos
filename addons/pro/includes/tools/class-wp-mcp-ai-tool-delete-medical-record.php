@@ -58,10 +58,6 @@ class WP_MCP_AI_Tool_Delete_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -118,12 +118,6 @@ class WP_MCP_AI_Tool_CRE_NOI_Calculator implements WP_MCP_AI_Tool_Interface, WP_
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -101,12 +101,6 @@ class WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager implements WP_MCP_AI_Tool_Int
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

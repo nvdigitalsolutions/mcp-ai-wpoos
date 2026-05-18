@@ -142,12 +142,6 @@ class WP_MCP_AI_Tool_CMBS_Deal_Structurer implements WP_MCP_AI_Tool_Interface, W
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -136,12 +136,6 @@ class WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager implements WP_MCP_AI_Tool_Inte
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

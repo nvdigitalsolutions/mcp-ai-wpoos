@@ -140,12 +140,6 @@ class WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler implements WP_MCP_AI_Tool_Interfa
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

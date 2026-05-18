@@ -63,12 +63,6 @@ class WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result implements WP_MCP_AI_Tool_In
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

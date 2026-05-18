@@ -106,12 +106,6 @@ class WP_MCP_AI_Tool_CMBS_Defeasance_Calculator implements WP_MCP_AI_Tool_Interf
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -124,12 +124,6 @@ class WP_MCP_AI_Tool_CRE_Watchlist_Manager implements WP_MCP_AI_Tool_Interface, 
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

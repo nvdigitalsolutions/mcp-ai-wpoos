@@ -85,12 +85,6 @@ class WP_MCP_AI_Pro_Tool_Render_Schedule_Result implements WP_MCP_AI_Tool_Interf
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -122,12 +122,6 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

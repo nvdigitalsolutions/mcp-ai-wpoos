@@ -148,12 +148,6 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

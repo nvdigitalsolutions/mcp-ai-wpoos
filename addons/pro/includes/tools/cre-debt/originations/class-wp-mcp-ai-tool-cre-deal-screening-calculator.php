@@ -116,12 +116,6 @@ class WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator implements WP_MCP_AI_Tool_Int
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

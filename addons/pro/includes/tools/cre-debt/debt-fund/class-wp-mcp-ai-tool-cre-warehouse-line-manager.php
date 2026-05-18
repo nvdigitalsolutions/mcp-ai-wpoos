@@ -132,12 +132,6 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

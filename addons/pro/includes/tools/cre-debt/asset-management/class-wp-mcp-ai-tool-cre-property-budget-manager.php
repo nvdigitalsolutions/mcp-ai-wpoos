@@ -129,12 +129,6 @@ class WP_MCP_AI_Tool_CRE_Property_Budget_Manager implements WP_MCP_AI_Tool_Inter
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

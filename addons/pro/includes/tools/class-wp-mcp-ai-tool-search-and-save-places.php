@@ -92,10 +92,6 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * {@inheritdoc}
 	 */
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

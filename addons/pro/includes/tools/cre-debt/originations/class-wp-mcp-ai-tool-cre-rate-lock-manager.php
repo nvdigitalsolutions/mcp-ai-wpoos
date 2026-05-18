@@ -108,12 +108,6 @@ class WP_MCP_AI_Tool_CRE_Rate_Lock_Manager implements WP_MCP_AI_Tool_Interface, 
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -102,12 +102,6 @@ class WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity implements WP_MCP_AI_Tool_Interfac
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -99,12 +99,6 @@ class WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults implements WP_MCP_AI
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

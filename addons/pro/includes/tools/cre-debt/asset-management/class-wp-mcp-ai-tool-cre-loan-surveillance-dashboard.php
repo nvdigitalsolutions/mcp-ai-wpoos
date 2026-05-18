@@ -126,12 +126,6 @@ class WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard implements WP_MCP_AI_Tool_I
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

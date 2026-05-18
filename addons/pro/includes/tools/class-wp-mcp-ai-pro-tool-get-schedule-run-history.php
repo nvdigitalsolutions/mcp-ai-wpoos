@@ -66,12 +66,6 @@ class WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History implements WP_MCP_AI_Tool_Inte
 		);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

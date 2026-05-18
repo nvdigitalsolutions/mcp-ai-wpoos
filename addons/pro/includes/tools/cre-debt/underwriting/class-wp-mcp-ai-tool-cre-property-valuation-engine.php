@@ -145,12 +145,6 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

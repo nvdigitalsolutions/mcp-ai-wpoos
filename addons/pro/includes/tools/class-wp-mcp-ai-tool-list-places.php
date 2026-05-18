@@ -114,10 +114,6 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	/**
 	 * {@inheritdoc}
 	 */
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

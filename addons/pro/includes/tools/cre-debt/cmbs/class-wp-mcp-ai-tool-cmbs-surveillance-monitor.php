@@ -121,12 +121,6 @@ class WP_MCP_AI_Tool_CMBS_Surveillance_Monitor implements WP_MCP_AI_Tool_Interfa
 		return array( 'pro', 'read-only' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

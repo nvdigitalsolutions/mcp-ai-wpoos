@@ -158,12 +158,6 @@ class WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker implements WP_MCP_AI_Tool_In
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
