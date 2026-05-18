@@ -97,6 +97,13 @@ class WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members implements WP_MCP_AI_
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

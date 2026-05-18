@@ -22,6 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Delegate_To_A2A_Agent implements WP_MCP_AI_Tool_Interface {
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Maximum poll attempts for task completion.
 	 *
 	 * @var int

@@ -25,6 +25,13 @@ class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interfa
 	const OPTION_KEY = 'wp_mcp_ai_lf_clause_library';
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

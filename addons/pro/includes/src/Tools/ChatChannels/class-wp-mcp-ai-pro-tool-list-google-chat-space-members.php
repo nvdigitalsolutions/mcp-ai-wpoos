@@ -103,6 +103,13 @@ class WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members implements WP_MCP_AI_Too
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

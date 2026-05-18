@@ -48,6 +48,13 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 		return array( 'read-only' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$gaps        = NV_oOS_Graphify_Analyzer::get_knowledge_gaps();

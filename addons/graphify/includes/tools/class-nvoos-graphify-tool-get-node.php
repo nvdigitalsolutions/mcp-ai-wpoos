@@ -63,6 +63,13 @@ class NV_oOS_Graphify_Tool_Get_Node implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array( 'read-only', 'cacheable' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$node = null;

@@ -123,6 +123,10 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['tool_slug'] ) ) {
