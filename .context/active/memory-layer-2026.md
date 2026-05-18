@@ -113,7 +113,7 @@ Which parts of NV oOS are affected:
 | 5.2 | Contradiction detector + tests | Complete | PR #5013 merged (commit `5009c7ee5`); 8 tests; auto-supersede OFF |
 | 6.1 | Provenance tracer tool + tests | Complete | PR #5015 merged (commit `600d0b3dd`); 11 tests |
 | 7.1 | Memory Health subtab | Complete | Phase 7a (orchestration Memory Health view) |
-| 7.2 | Retrieval waterfall in drawer | Pending | Phase 7b |
+| 7.2 | Retrieval waterfall in drawer | Complete | Phase 7b (chat memory drawer retrieval waterfall panel) |
 | 7.3 | Session Replay tab | Pending | Phase 7c |
 | 8.1 | Docs + version bump | Pending | Phase 8 |
 
@@ -142,6 +142,7 @@ Which parts of NV oOS are affected:
 
 > What is the immediate next action when this context file is loaded?
 
-**Phase 7b**: Extend `assets/js/chat-memory-drawer.js` with a Retrieval
-Waterfall panel that surfaces graph/transient/CCT retrieval path telemetry
-without changing existing REST response keys or breaking current drawer tabs.
+**Phase 7c**: Add the Session Replay tab by wiring
+`GET /chat-memory/sessions/{session_id}` into the drawer and rendering
+session chronology (messages + memory events) with the existing bridge auth
+guards and kill-switch behavior.

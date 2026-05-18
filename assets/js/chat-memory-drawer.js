@@ -542,6 +542,11 @@
 		list.className = 'wp-mcp-ai-memory-drawer__list';
 		list.setAttribute('data-testid', 'wp-mcp-ai-memory-list');
 
+		const waterfall = document.createElement('section');
+		waterfall.className = 'wp-mcp-ai-memory-drawer__waterfall';
+		waterfall.setAttribute('data-testid', 'wp-mcp-ai-memory-waterfall');
+		waterfall.hidden = true;
+
 		const emptyState = document.createElement('p');
 		emptyState.className = 'wp-mcp-ai-memory-drawer__empty';
 		emptyState.hidden = true;
@@ -553,6 +558,7 @@
 		errorState.hidden = true;
 
 		memoriesPanel.appendChild(filterRow);
+		memoriesPanel.appendChild(waterfall);
 		memoriesPanel.appendChild(emptyState);
 		memoriesPanel.appendChild(errorState);
 		memoriesPanel.appendChild(list);
@@ -711,6 +717,7 @@
 			}
 			errorState.hidden = true;
 			emptyState.hidden = true;
+			waterfall.hidden = true;
 			clearList();
 
 			const loading = document.createElement('li');
@@ -728,6 +735,7 @@
 			memoryService().recall(queryInput.value || '', filters).then(function(response) {
 				clearList();
 				const records = extractRecords(response);
+				renderRetrievalWaterfall(response, records);
 				if (!records.length) {
 					emptyState.hidden = false;
 					return;
@@ -737,6 +745,7 @@
 				});
 			}).catch(function(err) {
 				clearList();
+				waterfall.hidden = true;
 				showError((err && err.message) || __( 'Could not load memories.', 'mcp-ai-wpoos' ));
 			});
 		}
@@ -799,6 +808,139 @@
 			if (response.data && Array.isArray(response.data.results))  { return response.data.results; }
 			if (response.data && Array.isArray(response.data.memories)) { return response.data.memories; }
 			return [];
+		}
+
+		function extractRetrievalWaterfall(response, records) {
+			const safeRecords = Array.isArray(records) ? records : [];
+			const rrfHits = { bm25: 0, vector: 0, graph: 0 };
+			const legacyHits = { keyword: 0, temporal: 0, exact_match: 0 };
+			let hasRrfBreakdown = false;
+			let hasLegacyBreakdown = false;
+
+			safeRecords.forEach(function(record) {
+				const rrfBreakdown = record && record.rrf_breakdown;
+				if (rrfBreakdown && typeof rrfBreakdown === 'object') {
+					hasRrfBreakdown = true;
+					if (rrfBreakdown.bm25_rank !== null && rrfBreakdown.bm25_rank !== undefined) {
+						rrfHits.bm25++;
+					}
+					if (rrfBreakdown.vector_rank !== null && rrfBreakdown.vector_rank !== undefined) {
+						rrfHits.vector++;
+					}
+					if (rrfBreakdown.graph_rank !== null && rrfBreakdown.graph_rank !== undefined) {
+						rrfHits.graph++;
+					}
+				}
+
+				const boostBreakdown = record && record.boost_breakdown;
+				if (boostBreakdown && typeof boostBreakdown === 'object') {
+					hasLegacyBreakdown = true;
+					if (Number(boostBreakdown.keyword || 0) > 0) {
+						legacyHits.keyword++;
+					}
+					if (Number(boostBreakdown.temporal || 0) > 0) {
+						legacyHits.temporal++;
+					}
+					if (Number(boostBreakdown.exact_match || 0) > 0) {
+						legacyHits.exact_match++;
+					}
+				}
+			});
+
+			if (hasRrfBreakdown) {
+				return {
+					label: __( 'RRF hybrid retrieval', 'mcp-ai-wpoos' ),
+					rows: [
+						{ label: __( 'BM25', 'mcp-ai-wpoos' ), count: rrfHits.bm25 },
+						{ label: __( 'Vector', 'mcp-ai-wpoos' ), count: rrfHits.vector },
+						{ label: __( 'Graph', 'mcp-ai-wpoos' ), count: rrfHits.graph }
+					]
+				};
+			}
+
+			if (hasLegacyBreakdown) {
+				return {
+					label: __( 'Legacy booster retrieval', 'mcp-ai-wpoos' ),
+					rows: [
+						{ label: __( 'Keyword', 'mcp-ai-wpoos' ), count: legacyHits.keyword },
+						{ label: __( 'Temporal', 'mcp-ai-wpoos' ), count: legacyHits.temporal },
+						{ label: __( 'Exact', 'mcp-ai-wpoos' ), count: legacyHits.exact_match }
+					]
+				};
+			}
+
+			const retrievalPath = response && response.retrieval_path ? String(response.retrieval_path) : '';
+			if (retrievalPath) {
+				return {
+					label: __( 'Retrieval path', 'mcp-ai-wpoos' ),
+					rows: [
+						{ label: retrievalPath, count: safeRecords.length }
+					]
+				};
+			}
+
+			return null;
+		}
+
+		function renderRetrievalWaterfall(response, records) {
+			const data = extractRetrievalWaterfall(response, records);
+			while (waterfall.firstChild) {
+				waterfall.removeChild(waterfall.firstChild);
+			}
+			if (!data || !Array.isArray(data.rows) || !data.rows.length) {
+				waterfall.hidden = true;
+				return;
+			}
+
+			const heading = document.createElement('h4');
+			heading.className = 'wp-mcp-ai-memory-drawer__waterfall-heading';
+			heading.textContent = __( 'Retrieval waterfall', 'mcp-ai-wpoos' );
+			waterfall.appendChild(heading);
+
+			const subheading = document.createElement('p');
+			subheading.className = 'wp-mcp-ai-memory-drawer__waterfall-label';
+			subheading.textContent = data.label;
+			waterfall.appendChild(subheading);
+
+			const maxCount = data.rows.reduce(function(max, row) {
+				const count = Number(row.count || 0);
+				return count > max ? count : max;
+			}, 0);
+
+			const rows = document.createElement('ul');
+			rows.className = 'wp-mcp-ai-memory-drawer__waterfall-rows';
+
+			data.rows.forEach(function(row) {
+				const count = Number(row.count || 0);
+				const width = maxCount > 0 ? Math.max(6, Math.round((count / maxCount) * 100)) : 6;
+
+				const li = document.createElement('li');
+				li.className = 'wp-mcp-ai-memory-drawer__waterfall-row';
+				li.setAttribute('data-testid', 'wp-mcp-ai-memory-waterfall-row');
+
+				const label = document.createElement('span');
+				label.className = 'wp-mcp-ai-memory-drawer__waterfall-row-label';
+				label.textContent = row.label;
+
+				const meter = document.createElement('span');
+				meter.className = 'wp-mcp-ai-memory-drawer__waterfall-meter';
+				const fill = document.createElement('span');
+				fill.className = 'wp-mcp-ai-memory-drawer__waterfall-meter-fill';
+				fill.style.width = width + '%';
+				meter.appendChild(fill);
+
+				const value = document.createElement('span');
+				value.className = 'wp-mcp-ai-memory-drawer__waterfall-row-value';
+				value.textContent = String(count);
+
+				li.appendChild(label);
+				li.appendChild(meter);
+				li.appendChild(value);
+				rows.appendChild(li);
+			});
+
+			waterfall.appendChild(rows);
+			waterfall.hidden = false;
 		}
 
 		/**

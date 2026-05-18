@@ -158,6 +158,46 @@ describe( 'chat-memory-drawer', () => {
 		expect( items[ 0 ].getAttribute( 'data-context-id' ) ).toBe( 'm-1' );
 	} );
 
+	test( 'memories panel renders retrieval waterfall rows from rrf_breakdown metadata', async () => {
+		const recallMock = jest.fn().mockResolvedValue( {
+			contexts: [
+				{
+					context_id: 'm-1',
+					title: 'First',
+					content: 'Hello world',
+					tags: [ 'a' ],
+					tier: 'recall',
+					rrf_breakdown: { bm25_rank: 0, vector_rank: 2, graph_rank: null }
+				},
+				{
+					context_id: 'm-2',
+					title: 'Second',
+					content: 'Another note',
+					tags: [],
+					tier: 'core',
+					rrf_breakdown: { bm25_rank: null, vector_rank: 0, graph_rank: 1 }
+				}
+			]
+		} );
+		installMemoryStub( { recall: recallMock } );
+		const container = makeContainer();
+		window.wpMcpAiChatMemoryDrawer.attach( container );
+		container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+
+		await Promise.resolve();
+		await Promise.resolve();
+
+		const waterfall = container.querySelector( '[data-testid="wp-mcp-ai-memory-waterfall"]' );
+		expect( waterfall ).not.toBeNull();
+		expect( waterfall.hidden ).toBe( false );
+
+		const rows = waterfall.querySelectorAll( '[data-testid="wp-mcp-ai-memory-waterfall-row"]' );
+		expect( rows.length ).toBe( 3 );
+		expect( rows[ 0 ].textContent ).toContain( 'BM25' );
+		expect( rows[ 1 ].textContent ).toContain( 'Vector' );
+		expect( rows[ 2 ].textContent ).toContain( 'Graph' );
+	} );
+
 	test( 'pressing Escape closes the drawer and restores focus to the toggle', () => {
 		installMemoryStub();
 		const container = makeContainer();

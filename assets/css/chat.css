@@ -3462,6 +3462,68 @@
     border-radius: 4px;
 }
 
+.wp-mcp-ai-memory-drawer__waterfall {
+    border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
+    border-radius: 6px;
+    padding: 8px;
+    margin: 0 0 10px;
+    background: #f6f7f7;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-heading {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-label {
+    margin: 4px 0 8px;
+    font-size: 11px;
+    color: #50575e;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-row {
+    display: grid;
+    grid-template-columns: 54px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-row-label {
+    color: #1d2327;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-meter {
+    display: inline-flex;
+    width: 100%;
+    height: 6px;
+    background: rgba(34, 113, 177, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-meter-fill {
+    display: inline-block;
+    height: 6px;
+    background: #2271b1;
+}
+
+.wp-mcp-ai-memory-drawer__waterfall-row-value {
+    min-width: 12px;
+    text-align: right;
+    color: #1d2327;
+}
+
 .wp-mcp-ai-memory-drawer__refresh {
     padding: 6px 10px;
     border: 1px solid var(--wp-mcp-ai-chat-border, #d0d4dc);
