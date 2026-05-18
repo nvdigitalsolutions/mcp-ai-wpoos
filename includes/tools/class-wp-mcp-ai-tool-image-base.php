@@ -993,13 +993,6 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_capability_flags() {
 		return array(
 			'requires-capability',  // Requires user capabilities.

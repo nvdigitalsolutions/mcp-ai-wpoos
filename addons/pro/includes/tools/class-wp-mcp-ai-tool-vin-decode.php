@@ -118,13 +118,6 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Get extended tool definition.
 	 *
 	 * @since 2.2.0

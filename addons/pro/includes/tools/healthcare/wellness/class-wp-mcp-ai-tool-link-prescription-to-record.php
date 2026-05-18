@@ -95,13 +95,6 @@ class WP_MCP_AI_Tool_Link_Prescription_To_Record implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

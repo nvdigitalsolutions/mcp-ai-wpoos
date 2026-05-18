@@ -85,13 +85,6 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return array( 'pro', 'requires-capability', 'write', 'state-changing' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {

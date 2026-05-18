@@ -86,13 +86,6 @@ class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface,
 		return array( 'pro', 'database-write', 'phase-2.6' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 

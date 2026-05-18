@@ -101,13 +101,6 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Map of child post types and the meta keys that reference a member.
 	 *
 	 * @return array

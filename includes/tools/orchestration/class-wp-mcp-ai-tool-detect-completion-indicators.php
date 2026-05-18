@@ -21,13 +21,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Detect_Completion_Indicators {
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Completion indicator patterns
 	 *
 	 * @var array

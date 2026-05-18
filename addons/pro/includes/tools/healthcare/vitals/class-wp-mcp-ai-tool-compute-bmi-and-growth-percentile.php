@@ -112,13 +112,6 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

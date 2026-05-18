@@ -55,13 +55,6 @@ class NV_oOS_Graphify_Tool_List_Remote_Sources implements WP_MCP_AI_Tool_Interfa
 		return array( 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$enabled_only = ! empty( $arguments['enabled_only'] );

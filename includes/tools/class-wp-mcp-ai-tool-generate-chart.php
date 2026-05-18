@@ -26,13 +26,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Get tool slug.
 	 *
 	 * @return string Tool slug.

@@ -109,13 +109,6 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.

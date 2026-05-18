@@ -103,13 +103,6 @@ class WP_MCP_AI_Tool_Connect_DICOMweb implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

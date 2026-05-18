@@ -104,10 +104,9 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$agent_id = isset( $arguments['agent_id'] ) ? $arguments['agent_id'] : '';
 		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( (string) $arguments['wing'] ) : '';

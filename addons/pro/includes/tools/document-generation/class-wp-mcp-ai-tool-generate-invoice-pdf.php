@@ -113,10 +113,9 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'upload_files' ) ) {

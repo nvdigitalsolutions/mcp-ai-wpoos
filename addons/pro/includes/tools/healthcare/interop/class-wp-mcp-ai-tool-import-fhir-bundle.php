@@ -92,13 +92,6 @@ class WP_MCP_AI_Tool_Import_FHIR_Bundle implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

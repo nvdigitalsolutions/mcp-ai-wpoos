@@ -23,13 +23,6 @@ class WP_MCP_AI_Tool_LF_Data_Privacy_Compliance_Checker implements WP_MCP_AI_Too
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Regulation database mapping data types to applicable regulations.
 	 *
 	 * @var array

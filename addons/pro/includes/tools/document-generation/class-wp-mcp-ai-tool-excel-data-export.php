@@ -103,10 +103,9 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 	}
 
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'upload_files' ) ) {

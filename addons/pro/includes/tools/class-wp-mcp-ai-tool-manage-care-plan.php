@@ -138,9 +138,6 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
 
 	/**
 	 * Get extended tool definition including toolkit metadata.

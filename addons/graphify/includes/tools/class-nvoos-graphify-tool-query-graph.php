@@ -76,13 +76,6 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		return array( 'read-only', 'cacheable' );
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$question  = sanitize_text_field( $arguments['question'] ?? '' );

@@ -113,10 +113,6 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'view_medical_imaging' ) ) {
 			return new WP_Error(

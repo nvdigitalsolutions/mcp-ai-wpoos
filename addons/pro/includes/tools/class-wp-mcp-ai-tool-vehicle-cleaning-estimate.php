@@ -212,13 +212,6 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Get extended tool definition (toolkit metadata).
 	 *
 	 * @since 2.2.0

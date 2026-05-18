@@ -120,9 +120,6 @@ class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
 
 	/**
 	 * Get extended tool definition including toolkit metadata.

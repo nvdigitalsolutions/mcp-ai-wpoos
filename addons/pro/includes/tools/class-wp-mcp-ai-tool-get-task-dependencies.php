@@ -22,13 +22,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Meta key: list of task IDs that must finish before this task can start.
 	 */
 	const META_DEPENDS_ON = '_task_depends_on';
