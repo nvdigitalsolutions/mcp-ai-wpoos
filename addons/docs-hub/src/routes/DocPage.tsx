@@ -24,6 +24,7 @@ export default function DocPage() {
 	const [ page, setPage ] = useState<DocPageData | null>( null );
 	const [ loading, setLoading ] = useState( true );
 	const [ notFound, setNotFound ] = useState( false );
+	const [ pageError, setPageError ] = useState<string | null>( null );
 
 	useEffect( () => {
 		if ( ! slug ) {
@@ -35,6 +36,7 @@ export default function DocPage() {
 		setLoading( true );
 		setNotFound( false );
 		setPage( null );
+		setPageError( null );
 
 		fetchPage( slug )
 			.then( ( data ) => {
@@ -47,8 +49,12 @@ export default function DocPage() {
 				}
 			} )
 			.catch( ( err: unknown ) => {
-				const status = ( err instanceof Error && err.message.startsWith( 'HTTP 404' ) ) ? 404 : 0;
-				setNotFound( status === 404 );
+				const msg = err instanceof Error ? err.message : String( err );
+				const is404 = msg.startsWith( 'HTTP 404' );
+				setNotFound( is404 );
+				if ( ! is404 ) {
+					setPageError( msg );
+				}
 				setLoading( false );
 			} );
 	}, [ slug ] );
@@ -67,6 +73,15 @@ export default function DocPage() {
 				<span className="dh-spinner" role="status" aria-label="Loading" />
 				Loading…
 			</div>
+		);
+	}
+
+	if ( pageError ) {
+		return (
+			<main id="nvoos-dh-main" tabIndex={ -1 } className="dh-error dh-main-area">
+				<h2>Could not load page</h2>
+				<p style={ { marginTop: '0.5rem', fontSize: 'var(--dh-font-size-sm)' } }>{ pageError }</p>
+			</main>
 		);
 	}
 

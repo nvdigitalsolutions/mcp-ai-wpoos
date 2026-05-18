@@ -1,5 +1,13 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.0 — 2026-05-18
+
+### Fixed
+- **`Unexpected token '<', "<!DOCTYPE..."` error when opening docs pages.** Page-caching plugins (WP Rocket, W3 Total Cache, WP Super Cache, etc.) sometimes serve a cached HTML page in response to REST API requests, producing a 200 OK with an HTML body. `apiFetchPublic` and `apiFetchAuthed` previously called `res.json()` unconditionally once `res.ok` was true, so a cached HTML body caused the raw `SyntaxError: Unexpected token '<', "<!DOCTYPE..."` to surface — either in the "Could not load documentation" error banner (manifest fetch) or silently masked as a "404 Page Not Found" in `DocPage` (page fetch). Two changes close this gap:
+  1. Both fetch helpers now send `Accept: application/json` so CDNs and caching layers know to vary on content type (and typically skip their HTML cache for API requests).
+  2. Both fetch helpers now inspect the `Content-Type` response header before calling `res.json()`. When the content type is not `application/json` they throw a human-readable error: *"The REST API returned a non-JSON response … This is usually caused by a page-caching plugin … Please exclude REST API paths (/wp-json/) from caching."*
+- **Non-404 page-load failures shown as "404 Page Not Found".** `DocPage` now tracks a separate `pageError` state. A genuine REST 404 still shows the "404 Page Not Found" component (with the slug displayed). Any other error (non-JSON response, network failure, etc.) now renders a "Could not load page" error block with the full diagnostic message instead of the misleading 404 heading.
+
 ## 0.3.9 — 2026-05-08
 
 ### Fixed
