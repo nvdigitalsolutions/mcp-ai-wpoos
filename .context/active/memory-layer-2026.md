@@ -14,7 +14,7 @@ detection, provenance, session replay) **alongside** the existing MemPalace /
 Letta / Zep / mem0 / Cognee-derived foundation. Strictly additive — no breaking
 changes to existing filters, actions, REST shapes, or CCT schema.
 
-**Current Phase:** 7 (UI/UX). Phases 0–6 complete + merged into parent feature branch.
+**Current Phase:** 8 (Docs + release). Phases 0–7 complete + merged into parent feature branch.
 **Feature Version:** v1.1.20
 **Branch:** `feature/memory-layer-2026-enhancements` (off `alpha-working`)
 **Brief:** _N/A — proposed and approved inline in chat (Nov 2026)_
@@ -115,7 +115,7 @@ Which parts of NV oOS are affected:
 | 7.1 | Memory Health subtab | Complete | Phase 7a (orchestration Memory Health view) |
 | 7.2 | Retrieval waterfall in drawer | Complete | Phase 7b (chat memory drawer retrieval waterfall panel) |
 | 7.3 | Session Replay tab | Complete | Phase 7c (chat-memory sessions replay route + drawer tab) |
-| 8.1 | Docs + version bump | Pending | Phase 8 |
+| 8.1 | Docs + version bump | Complete | Phase 8 (v1.1.20 metadata + changelog/docs sync) |
 
 ---
 
@@ -142,6 +142,6 @@ Which parts of NV oOS are affected:
 
 > What is the immediate next action when this context file is loaded?
 
-**Phase 8**: Finalize docs and release metadata updates for v1.1.20
-(coversheet/checklist sync, user-facing memory docs, and version bump
-artifacts) without changing the existing REST/tool contracts.
+**Phase 9**: Archive this active context to
+`.context/archive/memory-layer-2026-v1.1.20.md` and monitor post-release
+stability.

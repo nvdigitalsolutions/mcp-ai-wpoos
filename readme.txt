@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.19
+Stable tag: 1.1.20
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -295,6 +295,16 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.20 - May 18, 2026 =
+
+Bumped to 1.1.20 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+**Memory Layer 2026 — Phase 7 UI/UX complete (7a/7b/7c)**
+
+* **Phase 7a — Memory Health subtab.** Added Orchestration → Memory Health view with live status, threshold policy, memory budget insights, and chat-memory gate state.
+* **Phase 7b — Retrieval Waterfall panel.** Added Memory Drawer retrieval-path panel (RRF + legacy breakdowns + path metadata) using existing recall response metadata, with no REST shape breakage.
+* **Phase 7c — Session Replay tab.** Added read-only chat-memory replay endpoint `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` and wired a new Session Replay tab in the Memory Drawer (`sessionReplay` via localized `memoryEndpoints.sessionBase`).
 
 = 1.1.19 - May 18, 2026 =
 

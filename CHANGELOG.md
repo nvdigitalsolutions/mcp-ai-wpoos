@@ -4,6 +4,20 @@
 
 _No changes yet._
 
+## [1.1.20] - 2026-05-18
+
+Bumped to 1.1.20 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+### Added — Memory Layer 2026 (Phase 7 UI/UX completion)
+
+- **Phase 7a — Memory Health subtab:** Added an Orchestration Memory Health view with live status, threshold policy, budget posture, and chat-memory availability indicators.
+- **Phase 7b — Retrieval Waterfall:** Added Memory Drawer retrieval waterfall panel (RRF + legacy breakdown + retrieval path metadata), preserving backward-compatible response keys.
+- **Phase 7c — Session Replay:** Added read-only route `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` and wired a Session Replay tab in the Memory Drawer via `memoryEndpoints.sessionBase` + `chat-memory-service.sessionReplay()`.
+- Added/updated targeted coverage for the new route and UI behavior:
+  - `tests/rest/test-rest-chat-memory-controller.php`
+  - `tests/js/chat-memory-service.test.js`
+  - `tests/js/chat-memory-drawer.test.js`
+
 ## [1.1.19] - 2026-05-18
 
 Bumped to 1.1.19 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative. Provider count: 10 first-class language-model providers.
