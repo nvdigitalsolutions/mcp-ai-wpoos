@@ -98,6 +98,10 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					),
 					'default'     => array( 'core', 'recall' ),
 				),
+				'use_rrf'       => array(
+					'type'        => array( 'boolean', 'null' ),
+					'description' => __( 'Optional override: when true, re-rank the ranked-slot pool using the Phase 4 RRF fusion service (BM25 + vector + graph). When false, use the legacy importance + token-overlap ranking. Leave unset (null) to honour the `wp_mcp_ai_memory_rrf_default_enabled` filter.', 'mcp-ai-wpoos' ),
+				),
 			),
 			'required'             => array( 'agent_id', 'wing' ),
 			'additionalProperties' => false,
@@ -211,19 +215,24 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			}
 		}
 
-		// Step 5: rank by importance + naive query overlap.
-		usort(
-			$rankable,
-			static function ( $a, $b ) use ( $query ) {
-				$score_a = self::score( $a, $query );
-				$score_b = self::score( $b, $query );
-				if ( $score_a === $score_b ) {
-					return 0;
+		// Step 5: rank by importance + naive query overlap, or RRF fusion when opted-in.
+		$use_rrf = self::resolve_use_rrf( $arguments );
+		if ( $use_rrf && '' !== $query && class_exists( 'WP_MCP_AI_Memory_RRF_Fusion_Service' ) ) {
+			$rankable = self::rerank_with_rrf( $rankable, $query, $agent_id, $wing, $room, $limit );
+		} else {
+			usort(
+				$rankable,
+				static function ( $a, $b ) use ( $query ) {
+					$score_a = self::score( $a, $query );
+					$score_b = self::score( $b, $query );
+					if ( $score_a === $score_b ) {
+						return 0;
+					}
+					return $score_a > $score_b ? -1 : 1;
 				}
-				return $score_a > $score_b ? -1 : 1;
-			}
-		);
-		$rankable = array_slice( $rankable, 0, $limit );
+			);
+			$rankable = array_slice( $rankable, 0, $limit );
+		}
 
 		// Step 6: union (core ∪ ranked), preserving uniqueness on context_id.
 		$seen   = array();
@@ -248,6 +257,122 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'returned_count'  => count( $result ),
 			'memories'        => $result,
 		);
+	}
+
+	/**
+	 * Decide whether to use the Phase 4 RRF fusion path for ranking.
+	 *
+	 * Mirrors the precedence used by `semantic_context_search`: explicit
+	 * `use_rrf` argument > tool-level default filter > master kill-switch.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool
+	 */
+	protected static function resolve_use_rrf( array $arguments ) {
+		if ( ! class_exists( 'WP_MCP_AI_Memory_RRF_Fusion_Service' ) ) {
+			return false;
+		}
+		$master = WP_MCP_AI_Memory_RRF_Fusion_Service::is_enabled();
+		if ( array_key_exists( 'use_rrf', $arguments ) && null !== $arguments['use_rrf'] ) {
+			// Explicit override wins regardless of the master switch.
+			return (bool) $arguments['use_rrf'];
+		}
+		if ( ! $master ) {
+			return false;
+		}
+		return (bool) apply_filters( 'wp_mcp_ai_memory_rrf_default_enabled', true );
+	}
+
+	/**
+	 * Re-rank a wing/room-pre-filtered candidate pool using RRF fusion.
+	 *
+	 * The recall pool is already constrained to a single wing/room/tier slice
+	 * and a bi-temporal window before this method runs, so we use RRF only as
+	 * a smarter ranker over that pool — we do not re-fetch candidates from
+	 * other streams. Records in the pool that the fusion service returns are
+	 * lifted to the top in the order the service ranks them; pool records the
+	 * service did not score fall through with their legacy score order.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param array      $rankable Pre-filtered candidate records.
+	 * @param string     $query    Query string.
+	 * @param int|string $agent_id Agent identifier.
+	 * @param string     $wing     Wing filter.
+	 * @param string     $room     Room filter.
+	 * @param int        $limit    Max records to return.
+	 * @return array Re-ranked + sliced candidate list.
+	 */
+	protected static function rerank_with_rrf( array $rankable, $query, $agent_id, $wing, $room, $limit ) {
+		$filters = array();
+		if ( '' !== $wing ) {
+			$filters['wing'] = $wing;
+		}
+		if ( '' !== $room ) {
+			$filters['room'] = $room;
+		}
+
+		// Run RRF (no cache bypass — same agent_id + query + filters reuses the cache).
+		$rrf_result = WP_MCP_AI_Memory_RRF_Fusion_Service::search( (string) $query, $agent_id, max( 1, (int) $limit ), $filters );
+		$ordered_ids = array();
+		if ( isset( $rrf_result['contexts'] ) && is_array( $rrf_result['contexts'] ) ) {
+			foreach ( $rrf_result['contexts'] as $ctx ) {
+				if ( isset( $ctx['context_id'] ) && '' !== $ctx['context_id'] ) {
+					$ordered_ids[] = (string) $ctx['context_id'];
+				}
+			}
+		}
+
+		if ( empty( $ordered_ids ) ) {
+			// RRF returned nothing — fall back to the legacy ranker so the
+			// caller never sees an empty pool just because BM25 + vector +
+			// graph all happened to miss this slice.
+			usort(
+				$rankable,
+				static function ( $a, $b ) use ( $query ) {
+					$score_a = self::score( $a, $query );
+					$score_b = self::score( $b, $query );
+					if ( $score_a === $score_b ) {
+						return 0;
+					}
+					return $score_a > $score_b ? -1 : 1;
+				}
+			);
+			return array_slice( $rankable, 0, $limit );
+		}
+
+		// Build an index for O(1) lookup.
+		$rank_map = array_flip( $ordered_ids );
+
+		// Stable partition: records ranked by RRF first (in RRF order), then
+		// the rest in legacy order.
+		$ranked   = array();
+		$rest     = array();
+		foreach ( $rankable as $rec ) {
+			$cid = isset( $rec['context_id'] ) ? (string) $rec['context_id'] : '';
+			if ( '' !== $cid && isset( $rank_map[ $cid ] ) ) {
+				$ranked[ $rank_map[ $cid ] ] = $rec;
+			} else {
+				$rest[] = $rec;
+			}
+		}
+		ksort( $ranked );
+		usort(
+			$rest,
+			static function ( $a, $b ) use ( $query ) {
+				$score_a = self::score( $a, $query );
+				$score_b = self::score( $b, $query );
+				if ( $score_a === $score_b ) {
+					return 0;
+				}
+				return $score_a > $score_b ? -1 : 1;
+			}
+		);
+
+		$out = array_merge( array_values( $ranked ), $rest );
+		return array_slice( $out, 0, $limit );
 	}
 
 	/**

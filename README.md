@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.19  
-**Release Date:** 2026-05-18 (May 18, 2026 — **Kimi (Moonshot AI) provider** (10th provider — `WP_MCP_AI_Kimi_Client` + 256K context + kimi-k2-thinking CoT), **Agent Client Protocol (ACP) Server** (JSON-RPC 2.0 / HTTP+SSE — `WP_MCP_AI_ACP_Server` + session bridge + IDE integration), **MCP Bridge** (`bin/mcp-bridge.js` stdio relay for Claude Desktop / Cursor / Zed), **Unix Theory P7** (folder README convention — all `includes/` subdirs ship `README.md`), **GDPR** (JetEngine privacy exporters), **Security hardening** (settings-key encryption, webhook secret enforcement, SSRF via `wp_safe_remote_get`, attachment URL scheme validation, client-log debug-gate), **Chat bubble sweep** (13 PRs — self-init, kses form controls, Test Model restored, panel-fit, scoped CSS))  
-**Latest Updates:** May 18, 2026 (v1.1.19) — See [§ Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026) below.  
+**Version:** 1.1.20  
+**Release Date:** 2026-05-18 (May 18, 2026 — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route)  
+**Latest Updates:** May 18, 2026 (v1.1.20) — See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
 **Previous Updates (v1.1.18):** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
 **Previous Updates (v1.1.17):** May 10, 2026 (v1.1.17) — See [§ Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026) below.  
 **Previous Updates (v1.1.16):** May 6, 2026 (v1.1.16) — See [§ Latest Updates (v1.1.16 — May 2026)](#-latest-updates-v1116--may-2026) below.  
@@ -28,6 +28,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
+- [🆕 Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026)
 - [🆕 Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026)
 - [🆕 Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026)
 - [🆕 Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026)
@@ -330,6 +331,16 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.20 — May 2026)
+
+### May 18, 2026 — Memory Layer 2026 Phase 7 UI/UX complete 🧠🎛️
+
+- ✅ **Phase 7a — Memory Health subtab.** Added an Orchestration Memory Health view with live memory status, threshold policy, and chat-memory availability indicators.
+- ✅ **Phase 7b — Retrieval Waterfall panel.** Added Memory Drawer retrieval-path visibility (RRF + legacy breakdown + retrieval path metadata) using existing response metadata without REST shape breaks.
+- ✅ **Phase 7c — Session Replay tab + route.** Added read-only replay endpoint `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` and wired Session Replay in the Memory Drawer via localized `memoryEndpoints.sessionBase` and `chat-memory-service.sessionReplay()`.
+- ✅ **Coverage added.** Added REST + JS tests for session replay route/service/drawer behavior.
+- 📦 **Versioning** — bumped to **1.1.20** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 ## 🆕 Latest Updates (v1.1.19 — May 2026)
 

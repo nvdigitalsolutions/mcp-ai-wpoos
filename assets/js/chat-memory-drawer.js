@@ -9,9 +9,11 @@
  *
  * Surface:
  *   - Toggle button injected next to `.wp-mcp-ai-chat__transcript-controls`.
- *   - Side panel (role="dialog", aria-modal="false") with two tabs:
- *       Memories — paginated list of recent records with edit/delete inline.
- *       Scope    — wing/room selector (writes to `state.config.memoryWing/Room`).
+ *   - Side panel (role="dialog", aria-modal="false") with tabs:
+ *       Memories       — paginated list of recent records with edit/delete inline.
+ *       Scope          — wing/room selector (writes to `state.config.memoryWing/Room`).
+ *       Audit          — recent memory-audit events.
+ *       Session Replay — replay feed for a chat session_id.
  *   - Single page-level ARIA-live toast region (`#wp-mcp-ai-memory-toasts`)
  *     used to announce memory events to assistive tech.
  *
@@ -54,6 +56,7 @@
 		'update_agent_memory',
 		'capture_memory'
 	];
+	const MIN_WATERFALL_BAR_WIDTH_PERCENT = 6;
 
 	// G8 Phase 2 — counter of mid-stream `memory_event` SSE toasts that have
 	// already fired for the in-flight assistant turn. The end-of-stream
@@ -108,6 +111,24 @@
 	function isAvailable() {
 		const svc = memoryService();
 		return !!(svc && svc.isAvailable && svc.isAvailable());
+	}
+
+	function resolveReplaySessionId(config, agentId) {
+		const cfg = config || {};
+		if (cfg.sessionKey && typeof cfg.sessionKey === 'string' && cfg.sessionKey.trim()) {
+			return cfg.sessionKey.trim();
+		}
+		const assistantId = cfg.assistantId || agentId || 'default';
+		const key = 'wp_mcp_ai_chat_session_id_' + assistantId;
+		try {
+			const stored = window.localStorage ? window.localStorage.getItem(key) : '';
+			if (stored && /^[a-zA-Z0-9_-]{1,64}$/.test(stored)) {
+				return stored;
+			}
+		} catch (e) {
+			return '';
+		}
+		return '';
 	}
 
 	/**
@@ -505,9 +526,18 @@
 		auditTab.setAttribute('data-testid', 'wp-mcp-ai-memory-audit-tab');
 		auditTab.textContent = __( 'Audit', 'mcp-ai-wpoos' );
 
+		const replayTab = document.createElement('button');
+		replayTab.type = 'button';
+		replayTab.className = 'wp-mcp-ai-memory-drawer__tab';
+		replayTab.setAttribute('role', 'tab');
+		replayTab.setAttribute('aria-selected', 'false');
+		replayTab.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-tab');
+		replayTab.textContent = __( 'Session Replay', 'mcp-ai-wpoos' );
+
 		tabs.appendChild(memoriesTab);
 		tabs.appendChild(scopeTab);
 		tabs.appendChild(auditTab);
+		tabs.appendChild(replayTab);
 
 		// Memories panel.
 		const memoriesPanel = document.createElement('div');
@@ -542,6 +572,11 @@
 		list.className = 'wp-mcp-ai-memory-drawer__list';
 		list.setAttribute('data-testid', 'wp-mcp-ai-memory-list');
 
+		const waterfall = document.createElement('section');
+		waterfall.className = 'wp-mcp-ai-memory-drawer__waterfall';
+		waterfall.setAttribute('data-testid', 'wp-mcp-ai-memory-waterfall');
+		waterfall.hidden = true;
+
 		const emptyState = document.createElement('p');
 		emptyState.className = 'wp-mcp-ai-memory-drawer__empty';
 		emptyState.hidden = true;
@@ -553,6 +588,7 @@
 		errorState.hidden = true;
 
 		memoriesPanel.appendChild(filterRow);
+		memoriesPanel.appendChild(waterfall);
 		memoriesPanel.appendChild(emptyState);
 		memoriesPanel.appendChild(errorState);
 		memoriesPanel.appendChild(list);
@@ -660,39 +696,93 @@
 		auditPanel.appendChild(auditError);
 		auditPanel.appendChild(auditList);
 
+		const replayPanel = document.createElement('div');
+		replayPanel.className = 'wp-mcp-ai-memory-drawer__panel';
+		replayPanel.setAttribute('role', 'tabpanel');
+		replayPanel.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-panel');
+		replayPanel.hidden = true;
+
+		const replayFilterRow = document.createElement('div');
+		replayFilterRow.className = 'wp-mcp-ai-memory-drawer__filter';
+
+		const replaySessionInput = document.createElement('input');
+		replaySessionInput.type = 'text';
+		replaySessionInput.className = 'wp-mcp-ai-memory-drawer__query';
+		replaySessionInput.placeholder = __( 'Session ID…', 'mcp-ai-wpoos' );
+		replaySessionInput.setAttribute('aria-label', __( 'Session ID for replay', 'mcp-ai-wpoos' ));
+		replaySessionInput.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-session');
+		replaySessionInput.value = resolveReplaySessionId(config, agentId);
+		replayFilterRow.appendChild(replaySessionInput);
+
+		const replayRefreshBtn = document.createElement('button');
+		replayRefreshBtn.type = 'button';
+		replayRefreshBtn.className = 'wp-mcp-ai-memory-drawer__refresh';
+		replayRefreshBtn.textContent = __( 'Load', 'mcp-ai-wpoos' );
+		replayFilterRow.appendChild(replayRefreshBtn);
+
+		const replayList = document.createElement('ul');
+		replayList.className = 'wp-mcp-ai-memory-drawer__audit-list';
+		replayList.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-list');
+
+		const replayEmpty = document.createElement('p');
+		replayEmpty.className = 'wp-mcp-ai-memory-drawer__empty';
+		replayEmpty.hidden = true;
+		replayEmpty.textContent = __( 'No session replay events yet.', 'mcp-ai-wpoos' );
+
+		const replayError = document.createElement('p');
+		replayError.className = 'wp-mcp-ai-memory-drawer__error';
+		replayError.setAttribute('role', 'alert');
+		replayError.hidden = true;
+
+		replayPanel.appendChild(replayFilterRow);
+		replayPanel.appendChild(replayEmpty);
+		replayPanel.appendChild(replayError);
+		replayPanel.appendChild(replayList);
+
 		drawer.appendChild(closeBtn);
 		drawer.appendChild(heading);
 		drawer.appendChild(tabs);
 		drawer.appendChild(memoriesPanel);
 		drawer.appendChild(scopePanel);
 		drawer.appendChild(auditPanel);
+		drawer.appendChild(replayPanel);
 
 		container.appendChild(drawer);
 
 		let auditLoaded = false;
+		let replayLoaded = false;
 
 		function setTab(name) {
 			const isMemories = name === 'memories';
 			const isScope = name === 'scope';
 			const isAudit = name === 'audit';
+			const isReplay = name === 'replay';
 			memoriesTab.classList.toggle('is-active', isMemories);
 			memoriesTab.setAttribute('aria-selected', isMemories ? 'true' : 'false');
 			scopeTab.classList.toggle('is-active', isScope);
 			scopeTab.setAttribute('aria-selected', isScope ? 'true' : 'false');
 			auditTab.classList.toggle('is-active', isAudit);
 			auditTab.setAttribute('aria-selected', isAudit ? 'true' : 'false');
+			replayTab.classList.toggle('is-active', isReplay);
+			replayTab.setAttribute('aria-selected', isReplay ? 'true' : 'false');
 			memoriesPanel.hidden = !isMemories;
 			scopePanel.hidden = !isScope;
 			auditPanel.hidden = !isAudit;
+			replayPanel.hidden = !isReplay;
 			if (isAudit && !auditLoaded) {
 				auditLoaded = true;
 				loadAudit();
+			}
+			if (isReplay && !replayLoaded) {
+				replayLoaded = true;
+				loadReplay();
 			}
 		}
 
 		memoriesTab.addEventListener('click', function() { setTab('memories'); });
 		scopeTab.addEventListener('click', function() { setTab('scope'); });
 		auditTab.addEventListener('click', function() { setTab('audit'); });
+		replayTab.addEventListener('click', function() { setTab('replay'); });
 
 		function clearList() {
 			while (list.firstChild) {
@@ -711,6 +801,7 @@
 			}
 			errorState.hidden = true;
 			emptyState.hidden = true;
+			waterfall.hidden = true;
 			clearList();
 
 			const loading = document.createElement('li');
@@ -728,6 +819,7 @@
 			memoryService().recall(queryInput.value || '', filters).then(function(response) {
 				clearList();
 				const records = extractRecords(response);
+				renderRetrievalWaterfall(response, records);
 				if (!records.length) {
 					emptyState.hidden = false;
 					return;
@@ -737,6 +829,7 @@
 				});
 			}).catch(function(err) {
 				clearList();
+				waterfall.hidden = true;
 				showError((err && err.message) || __( 'Could not load memories.', 'mcp-ai-wpoos' ));
 			});
 		}
@@ -799,6 +892,157 @@
 			if (response.data && Array.isArray(response.data.results))  { return response.data.results; }
 			if (response.data && Array.isArray(response.data.memories)) { return response.data.memories; }
 			return [];
+		}
+
+		function extractRrfWaterfall(records) {
+			const safeRecords = Array.isArray(records) ? records : [];
+			const rrfHits = { bm25: 0, vector: 0, graph: 0 };
+			let hasRrfBreakdown = false;
+
+			safeRecords.forEach(function(record) {
+				const rrfBreakdown = record && record.rrf_breakdown;
+				if (rrfBreakdown && typeof rrfBreakdown === 'object') {
+					hasRrfBreakdown = true;
+					if (rrfBreakdown.bm25_rank !== null && rrfBreakdown.bm25_rank !== undefined) {
+						rrfHits.bm25++;
+					}
+					if (rrfBreakdown.vector_rank !== null && rrfBreakdown.vector_rank !== undefined) {
+						rrfHits.vector++;
+					}
+					if (rrfBreakdown.graph_rank !== null && rrfBreakdown.graph_rank !== undefined) {
+						rrfHits.graph++;
+					}
+				}
+			});
+
+			if (!hasRrfBreakdown) {
+				return null;
+			}
+
+			return {
+				label: __( 'RRF hybrid retrieval', 'mcp-ai-wpoos' ),
+				rows: [
+					{ label: __( 'BM25', 'mcp-ai-wpoos' ), count: rrfHits.bm25 },
+					{ label: __( 'Vector', 'mcp-ai-wpoos' ), count: rrfHits.vector },
+					{ label: __( 'Graph', 'mcp-ai-wpoos' ), count: rrfHits.graph }
+				]
+			};
+		}
+
+		function extractLegacyWaterfall(records) {
+			const safeRecords = Array.isArray(records) ? records : [];
+			const legacyHits = { keyword: 0, temporal: 0, exact_match: 0 };
+			let hasLegacyBreakdown = false;
+
+			safeRecords.forEach(function(record) {
+				const boostBreakdown = record && record.boost_breakdown;
+				if (boostBreakdown && typeof boostBreakdown === 'object') {
+					hasLegacyBreakdown = true;
+					if (Number(boostBreakdown.keyword || 0) > 0) {
+						legacyHits.keyword++;
+					}
+					if (Number(boostBreakdown.temporal || 0) > 0) {
+						legacyHits.temporal++;
+					}
+					if (Number(boostBreakdown.exact_match || 0) > 0) {
+						legacyHits.exact_match++;
+					}
+				}
+			});
+
+			if (!hasLegacyBreakdown) {
+				return null;
+			}
+
+			return {
+				label: __( 'Legacy booster retrieval', 'mcp-ai-wpoos' ),
+				rows: [
+					{ label: __( 'Keyword', 'mcp-ai-wpoos' ), count: legacyHits.keyword },
+					{ label: __( 'Temporal', 'mcp-ai-wpoos' ), count: legacyHits.temporal },
+					{ label: __( 'Exact', 'mcp-ai-wpoos' ), count: legacyHits.exact_match }
+				]
+			};
+		}
+
+		function extractPathWaterfall(response, totalRecords) {
+			const retrievalPath = response && response.retrieval_path ? String(response.retrieval_path) : '';
+			if (!retrievalPath) {
+				return null;
+			}
+			return {
+				label: __( 'Retrieval path', 'mcp-ai-wpoos' ),
+				rows: [
+					{ label: retrievalPath, count: totalRecords }
+				]
+			};
+		}
+
+		function extractRetrievalWaterfall(response, records) {
+			const totalRecords = Array.isArray(records) ? records.length : 0;
+			return extractRrfWaterfall(records) || extractLegacyWaterfall(records) || extractPathWaterfall(response, totalRecords);
+		}
+
+		function renderRetrievalWaterfall(response, records) {
+			const data = extractRetrievalWaterfall(response, records);
+			while (waterfall.firstChild) {
+				waterfall.removeChild(waterfall.firstChild);
+			}
+			if (!data || !Array.isArray(data.rows) || !data.rows.length) {
+				waterfall.hidden = true;
+				return;
+			}
+
+			const heading = document.createElement('h4');
+			heading.className = 'wp-mcp-ai-memory-drawer__waterfall-heading';
+			heading.textContent = __( 'Retrieval waterfall', 'mcp-ai-wpoos' );
+			waterfall.appendChild(heading);
+
+			const subheading = document.createElement('p');
+			subheading.className = 'wp-mcp-ai-memory-drawer__waterfall-label';
+			subheading.textContent = data.label;
+			waterfall.appendChild(subheading);
+
+			const maxCount = data.rows.reduce(function(max, row) {
+				const count = Number(row.count || 0);
+				return count > max ? count : max;
+			}, 0);
+
+			const rows = document.createElement('ul');
+			rows.className = 'wp-mcp-ai-memory-drawer__waterfall-rows';
+
+			data.rows.forEach(function(row) {
+				const count = Number(row.count || 0);
+				const width = maxCount > 0
+					? Math.max(MIN_WATERFALL_BAR_WIDTH_PERCENT, Math.round((count / maxCount) * 100))
+					: MIN_WATERFALL_BAR_WIDTH_PERCENT;
+
+				const li = document.createElement('li');
+				li.className = 'wp-mcp-ai-memory-drawer__waterfall-row';
+				li.setAttribute('data-testid', 'wp-mcp-ai-memory-waterfall-row');
+
+				const label = document.createElement('span');
+				label.className = 'wp-mcp-ai-memory-drawer__waterfall-row-label';
+				label.textContent = row.label;
+
+				const meter = document.createElement('span');
+				meter.className = 'wp-mcp-ai-memory-drawer__waterfall-meter';
+				const fill = document.createElement('span');
+				fill.className = 'wp-mcp-ai-memory-drawer__waterfall-meter-fill';
+				fill.style.width = width + '%';
+				meter.appendChild(fill);
+
+				const value = document.createElement('span');
+				value.className = 'wp-mcp-ai-memory-drawer__waterfall-row-value';
+				value.textContent = String(count);
+
+				li.appendChild(label);
+				li.appendChild(meter);
+				li.appendChild(value);
+				rows.appendChild(li);
+			});
+
+			waterfall.appendChild(rows);
+			waterfall.hidden = false;
 		}
 
 		/**
@@ -900,8 +1144,110 @@
 			});
 		}
 
+		function extractReplayEvents(response) {
+			if (!response || typeof response !== 'object') {
+				return [];
+			}
+			if (Array.isArray(response.events)) { return response.events; }
+			if (response.data && Array.isArray(response.data.events)) { return response.data.events; }
+			return [];
+		}
+
+		function clearReplayList() {
+			while (replayList.firstChild) {
+				replayList.removeChild(replayList.firstChild);
+			}
+		}
+
+		function renderReplayEvent(entry) {
+			const li = document.createElement('li');
+			li.className = 'wp-mcp-ai-memory-drawer__audit-item';
+			li.setAttribute('data-testid', 'wp-mcp-ai-memory-replay-item');
+
+			const eventName = entry && entry.event ? String(entry.event) : '';
+			if (eventName) {
+				li.setAttribute('data-event', eventName);
+			}
+
+			const timestamp = document.createElement('time');
+			timestamp.className = 'wp-mcp-ai-memory-drawer__audit-time';
+			const ts = entry && entry.timestamp ? String(entry.timestamp) : '';
+			if (ts) {
+				timestamp.setAttribute('datetime', ts);
+				timestamp.textContent = ts;
+			} else {
+				timestamp.textContent = __( '(no timestamp)', 'mcp-ai-wpoos' );
+			}
+
+			const actionLabel = document.createElement('span');
+			actionLabel.className = 'wp-mcp-ai-memory-drawer__audit-action';
+			actionLabel.textContent = eventName || __( 'event', 'mcp-ai-wpoos' );
+
+			const meta = document.createElement('span');
+			meta.className = 'wp-mcp-ai-memory-drawer__audit-meta';
+			const data = entry && entry.data && typeof entry.data === 'object' ? entry.data : {};
+			const message = data.message || data.error || data.action || '';
+			meta.textContent = message ? String(message) : '';
+
+			li.appendChild(timestamp);
+			li.appendChild(document.createTextNode(' '));
+			li.appendChild(actionLabel);
+			if (meta.textContent) {
+				li.appendChild(document.createTextNode(' — '));
+				li.appendChild(meta);
+			}
+
+			return li;
+		}
+
+		function loadReplay() {
+			if (!isAvailable()) {
+				return;
+			}
+			replayError.hidden = true;
+			replayEmpty.hidden = true;
+			clearReplayList();
+
+			const sessionId = (replaySessionInput.value || '').trim();
+			if (!sessionId) {
+				replayEmpty.textContent = __( 'Enter a session ID to replay events.', 'mcp-ai-wpoos' );
+				replayEmpty.hidden = false;
+				return;
+			}
+
+			const loading = document.createElement('li');
+			loading.className = 'wp-mcp-ai-memory-drawer__loading';
+			loading.textContent = __( 'Loading session replay…', 'mcp-ai-wpoos' );
+			replayList.appendChild(loading);
+
+			if (!memoryService().sessionReplay || typeof memoryService().sessionReplay !== 'function') {
+				clearReplayList();
+				replayError.textContent = __( 'Session replay endpoint is unavailable.', 'mcp-ai-wpoos' );
+				replayError.hidden = false;
+				return;
+			}
+
+			memoryService().sessionReplay(sessionId, { limit: 100 }).then(function(response) {
+				clearReplayList();
+				const events = extractReplayEvents(response);
+				if (!events.length) {
+					replayEmpty.textContent = __( 'No session replay events yet.', 'mcp-ai-wpoos' );
+					replayEmpty.hidden = false;
+					return;
+				}
+				events.forEach(function(event) {
+					replayList.appendChild(renderReplayEvent(event));
+				});
+			}).catch(function(err) {
+				clearReplayList();
+				replayError.textContent = (err && err.message) || __( 'Could not load session replay.', 'mcp-ai-wpoos' );
+				replayError.hidden = false;
+			});
+		}
+
 		auditRefreshBtn.addEventListener('click', loadAudit);
 		auditActionFilter.addEventListener('change', loadAudit);
+		replayRefreshBtn.addEventListener('click', loadReplay);
 
 		// Debounced filter.
 		let filterTimer = null;

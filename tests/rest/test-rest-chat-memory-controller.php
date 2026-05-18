@@ -76,6 +76,15 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/recall', $routes );
 		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/store', $routes );
 		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/audit', $routes );
+		$this->assertTrue(
+			(bool) array_filter(
+				array_keys( $routes ),
+				static function ( $route ) {
+					return false !== strpos( $route, '/chat-memory/sessions/(?P<session_id>' );
+				}
+			),
+			'Per-session replay route should be registered.'
+		);
 		// Item routes use a path parameter so check the regex form.
 		$this->assertTrue(
 			(bool) array_filter(
@@ -199,6 +208,16 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * sanitize_session_id() must strip everything outside [A-Za-z0-9_-].
+	 */
+	public function test_sanitize_session_id_strips_unsafe_characters() {
+		$controller = new WP_MCP_AI_REST_Chat_Memory_Controller();
+		$this->assertSame( 'sess_abc-123', $controller->sanitize_session_id( 'sess_abc-123' ) );
+		$this->assertSame( 'sessabc123', $controller->sanitize_session_id( 'sess/../abc 123' ) );
+		$this->assertSame( '', $controller->sanitize_session_id( '!@#$%^&*()' ) );
+	}
+
+	/**
 	 * The audit endpoint requires authentication.
 	 */
 	public function test_audit_requires_login() {
@@ -264,6 +283,41 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		// Either a 200 envelope (tool present + responded) or a 503 (tool not registered
 		// in this minimal test build). Both prove the route + permission gate are wired.
 		$this->assertContains( $status, array( 200, 503 ) );
+	}
+
+	/**
+	 * Session replay endpoint should return buffered frames for a valid session.
+	 */
+	public function test_session_replay_returns_buffered_frames() {
+		if ( ! class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
+			$this->markTestSkipped( 'Chat session frame buffer is unavailable in this test build.' );
+		}
+
+		wp_set_current_user( $this->editor_id );
+		$session_id = 'sess_replay_' . $this->editor_id;
+		WP_MCP_AI_Chat_Session_Frame_Buffer::flush( $session_id );
+		WP_MCP_AI_Chat_Session_Frame_Buffer::push(
+			$session_id,
+			'chat:resumed',
+			array(
+				'session_id' => $session_id,
+				'message'    => 'Replay message',
+				'ts'         => time(),
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/sessions/' . $session_id );
+		$request->set_param( 'limit', 10 );
+		$response = $this->server->dispatch( $request );
+
+		WP_MCP_AI_Chat_Session_Frame_Buffer::flush( $session_id );
+
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertSame( $session_id, $data['session_id'] );
+		$this->assertArrayHasKey( 'events', $data );
+		$this->assertNotEmpty( $data['events'] );
+		$this->assertSame( 'chat:resumed', $data['events'][0]['event'] );
 	}
 
 	/**

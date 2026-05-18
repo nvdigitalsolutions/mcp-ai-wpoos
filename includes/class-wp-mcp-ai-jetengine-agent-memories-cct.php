@@ -620,6 +620,59 @@ class WP_MCP_AI_JetEngine_Agent_Memories_CCT {
 					'rows'        => 3,
 				)
 			),
+			// Memory Layer 2026 Enhancements Phase 2 — schema v2 fields.
+			// These power Phases 3 (auto-capture dedup), 5 (decay + contradiction),
+			// and 7 (Memory Health diagnostics). Each field is forward-compatible:
+			// existing rows without these fields read as the documented defaults.
+			self::build_field(
+				++$base_id,
+				'content_hash',
+				__( 'Content Hash', 'mcp-ai-wpoos' ),
+				'text',
+				array(
+					'description' => __( 'SHA-256 of normalised content used for auto-capture dedup. Empty for pre-v2 rows (recomputed lazily on first read).', 'mcp-ai-wpoos' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'confidence_score',
+				__( 'Confidence Score', 'mcp-ai-wpoos' ),
+				'text',
+				array(
+					'description' => __( 'Decay-aware retrieval signal in [0.0, 1.0]. Decays on an Ebbinghaus curve; strengthens on retrieval access. Empty / unset defaults to 1.0.', 'mcp-ai-wpoos' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'last_accessed_at',
+				__( 'Last Accessed At', 'mcp-ai-wpoos' ),
+				'datetime-local',
+				array(
+					'is_timestamp' => true,
+					'description'  => __( 'Most recent retrieval timestamp. Empty / unset falls back to transaction_time for legacy rows.', 'mcp-ai-wpoos' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'superseded_by',
+				__( 'Superseded By', 'mcp-ai-wpoos' ),
+				'text',
+				array(
+					'description' => __( 'context_id of the record that supersedes this one (contradiction resolution chain). Empty when not superseded.', 'mcp-ai-wpoos' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'auto_captured',
+				__( 'Auto Captured', 'mcp-ai-wpoos' ),
+				'number',
+				array(
+					'min'         => 0,
+					'max'         => 1,
+					'step'        => 1,
+					'description' => __( '1 when the record was written by the Phase 3 auto-capture service; 0 (or unset) for explicit writes.', 'mcp-ai-wpoos' ),
+				)
+			),
 		);
 
 		foreach ( $fields as &$field ) {

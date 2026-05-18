@@ -414,6 +414,8 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php';
+	WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
 	require_once WP_MCP_AI_PATH . 'includes/renderers/class-wp-mcp-ai-scheduled-result-renderer.php';
@@ -440,12 +442,32 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-reader.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php';
+	WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
 }
 
 // MemPalace Capture Framework Phase A — capture service + tier manager are
 // transport-agnostic (work on transient-only sites too), so they always load.
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-capture-service.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-manager.php';
+
+// Memory Layer 2026 Enhancements Phase 1 — privacy filter must load before
+// any memory write happens so the `wp_mcp_ai_memory_pre_store_transform`
+// hook is registered at priority 5 (before user transforms at priority 10).
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-privacy-filter.php';
+WP_MCP_AI_Memory_Privacy_Filter::bootstrap();
+
+// Memory Layer 2026 Enhancements Phase 3 — auto-capture service (default OFF).
+// Hooks `wp_mcp_ai_tool_executed` and `wp_mcp_ai_before_chat_request`
+// silently. Master kill: filter `wp_mcp_ai_memory_auto_capture_enabled`.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-auto-capture-service.php';
+WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
+
+// Memory Layer 2026 Enhancements Phase 4 — RRF fusion retrieval service.
+// Stateless / static; no bootstrap hook required. Loaded eagerly here so
+// `WP_MCP_AI_Vector_Context_Service::search_context_rrf()` can resolve it
+// without lazy `require_once` calls inside the hot retrieval path.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-rrf-fusion-service.php';
 
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';

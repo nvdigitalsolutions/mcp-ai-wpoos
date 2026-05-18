@@ -15,6 +15,7 @@
  *  - GET    /chat-memory/recall                Hierarchical recall (wing/room/query).
  *  - POST   /chat-memory/store                 Store a verbatim user-driven memory.
  *  - GET    /chat-memory/audit                 Read-only audit-log feed (drawer Audit tab).
+ *  - GET    /chat-memory/sessions/{session_id} Read-only session replay feed (drawer Session Replay tab).
  *  - PUT    /chat-memory/(?P<context_id>...)   Update an existing memory.
  *  - DELETE /chat-memory/(?P<context_id>...)   Delete an existing memory.
  *
@@ -248,6 +249,31 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 
 		register_rest_route(
 			self::REST_NAMESPACE,
+			'/chat-memory/sessions/(?P<session_id>[a-zA-Z0-9_\-]{1,64})',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_logged_in' ),
+					'callback'            => array( $this, 'handle_session_replay' ),
+					'args'                => array(
+						'session_id' => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => array( $this, 'sanitize_session_id' ),
+						),
+						'limit'      => array(
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			),
+			true
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
 			'/chat-memory/(?P<context_id>[A-Za-z0-9_\-]+)',
 			array(
 				array(
@@ -340,6 +366,17 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 	public function sanitize_context_id( $value ) {
 		$value = is_string( $value ) ? $value : '';
 		// Allow alphanumerics, underscore, dash; everything else is dropped.
+		return preg_replace( '/[^A-Za-z0-9_\-]/', '', $value );
+	}
+
+	/**
+	 * Sanitize a session ID (`[A-Za-z0-9_-]{1,64}` shape).
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string Sanitized value.
+	 */
+	public function sanitize_session_id( $value ) {
+		$value = is_string( $value ) ? $value : '';
 		return preg_replace( '/[^A-Za-z0-9_\-]/', '', $value );
 	}
 
@@ -753,6 +790,85 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		);
 
 		return $this->dispatch_tool( 'memory_audit_trail', $args );
+	}
+
+	/**
+	 * GET /chat-memory/sessions/{session_id}
+	 *
+	 * Read-only replay feed of buffered per-session chat frames so the Memory
+	 * Drawer can show chronology for async continuation events.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_session_replay( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
+			return $this->error(
+				'session_replay_unavailable',
+				__( 'Session replay is not available in this build.', 'mcp-ai-wpoos' ),
+				503
+			);
+		}
+
+		$session_id = WP_MCP_AI_Chat_Session_Frame_Buffer::sanitize_session_id(
+			(string) $request->get_param( 'session_id' )
+		);
+		if ( '' === $session_id ) {
+			return $this->error(
+				'invalid_session_id',
+				__( 'session_id is required.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		$limit = absint( $request->get_param( 'limit' ) );
+		if ( $limit <= 0 ) {
+			$limit = 100;
+		}
+		$limit = min( 200, $limit );
+
+		$frames = WP_MCP_AI_Chat_Session_Frame_Buffer::get_frames_since( $session_id, 0 );
+		if ( ! is_array( $frames ) ) {
+			$frames = array();
+		}
+
+		usort(
+			$frames,
+			static function ( $a, $b ) {
+				$aid = isset( $a['id'] ) ? (int) $a['id'] : 0;
+				$bid = isset( $b['id'] ) ? (int) $b['id'] : 0;
+				return $aid - $bid;
+			}
+		);
+
+		if ( count( $frames ) > $limit ) {
+			$frames = array_slice( $frames, -$limit );
+		}
+
+		$events = array();
+		foreach ( $frames as $frame ) {
+			if ( ! is_array( $frame ) ) {
+				continue;
+			}
+			$events[] = array(
+				'id'        => isset( $frame['id'] ) ? (int) $frame['id'] : 0,
+				'event'     => isset( $frame['event'] ) ? sanitize_text_field( (string) $frame['event'] ) : '',
+				'timestamp' => isset( $frame['ts'] ) ? gmdate( 'c', (int) $frame['ts'] ) : '',
+				'data'      => isset( $frame['data'] ) && is_array( $frame['data'] ) ? $frame['data'] : array(),
+			);
+		}
+
+		return $this->success(
+			array(
+				'session_id'    => $session_id,
+				'events'        => $events,
+				'total_events'  => count( $events ),
+				'latest_event'  => WP_MCP_AI_Chat_Session_Frame_Buffer::latest_id( $session_id ),
+				'requested_max' => $limit,
+			)
+		);
 	}
 
 

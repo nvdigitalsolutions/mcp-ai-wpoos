@@ -208,6 +208,11 @@ button is rendered when the bridge is missing (e.g. on a Base build with no
   - **Scope** — wing/room form. Submitting writes
     `state.config.memoryWing` and `state.config.memoryRoom` and re-runs the
     recall.
+  - **Audit** — lazy-loads `GET /mcp-ai/v1/chat-memory/audit` for recent
+    create/update/delete/access events.
+  - **Session Replay** — lazy-loads
+    `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` and renders buffered
+    chronology for the supplied session ID.
 - **ARIA-live toasts** — a singleton `#wp-mcp-ai-memory-toasts` region is
   appended to `<body>` and used to announce memory store/update/delete
   results to assistive tech (`aria-live="polite"`, `role="status"`).
@@ -341,6 +346,12 @@ tracked as follow-up work:
   is in flight to prevent duplicate downloads. No new REST route required —
   the existing `/recall` endpoint already enforces the kill-switch + per-user
   toggle.
+- **G12 Session Replay tab** — **shipped.** Adds
+  `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` to the chat-memory REST
+  bridge and wires a Session Replay tab in the Memory Drawer. The endpoint is
+  read-only, uses the same `permissions_check_logged_in` gate as `/recall`,
+  and returns bounded frame chronology from
+  `WP_MCP_AI_Chat_Session_Frame_Buffer`.
 
 ## Related docs
 
