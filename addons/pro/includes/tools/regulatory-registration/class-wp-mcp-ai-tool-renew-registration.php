@@ -91,9 +91,6 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -67,9 +67,6 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

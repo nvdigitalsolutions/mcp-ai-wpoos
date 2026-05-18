@@ -117,9 +117,6 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

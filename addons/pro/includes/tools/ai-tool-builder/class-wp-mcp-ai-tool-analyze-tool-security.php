@@ -114,9 +114,6 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

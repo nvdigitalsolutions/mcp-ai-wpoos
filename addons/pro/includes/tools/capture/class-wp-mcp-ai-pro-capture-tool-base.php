@@ -200,9 +200,6 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 	 * Subclasses normally do not override this — the heavy lifting happens in
 	 * {@see WP_MCP_AI_Memory_Capture_Service::store()}.
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

@@ -104,9 +104,6 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}

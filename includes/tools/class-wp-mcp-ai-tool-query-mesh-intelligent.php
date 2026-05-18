@@ -67,9 +67,6 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
