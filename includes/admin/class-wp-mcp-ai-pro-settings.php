@@ -42,10 +42,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * Get npm package information from package.json.
 		 *
 		 * Parses package.json to extract dependencies, devDependencies, and optionalDependencies.
-		 * Now includes Pro addon packages as well.
+		 * Includes Pro addon packages and, when active, standalone addon packages.
 		 * Lightweight approach that doesn't require npm CLI.
 		 *
-		 * @return array Array containing dependencies, devDependencies, and optionalDependencies.
+		 * The returned array also contains an 'addon_groups' key: a map of addon slug =>
+		 * [ label, active, packages, dist_file, path ] for packages that are *unique* to
+		 * each addon (i.e. not already listed in the base or Pro dependencies).
+		 *
+		 * @since 1.1.0
+		 * @return array{
+		 *   dependencies: array<string,string>,
+		 *   devDependencies: array<string,string>,
+		 *   optionalDependencies: array<string,string>,
+		 *   addon_groups: array<string,array{label:string,active:bool,packages:array<string,string>,dist_file:string,path:string}>,
+		 *   error: string|null,
+		 *   name: string,
+		 *   version: string
+		 * }
 		 */
 		public static function get_npm_packages() {
 			$package_json_path = WP_MCP_AI_PATH . 'package.json';
@@ -53,6 +66,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'dependencies'         => array(),
 				'devDependencies'      => array(),
 				'optionalDependencies' => array(),
+				'addon_groups'         => array(),
 				'error'                => null,
 			);
 
@@ -115,6 +129,53 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						}
 					}
 				}
+			}
+
+			// Build per-addon groups for active and inactive standalone addons.
+			// Only packages that are NOT already in the base/Pro dependency list are shown
+			// in the addon section to avoid duplicate rows in the UI.
+			$addon_manifest = self::get_addon_manifest_map();
+			foreach ( $addon_manifest as $slug => $addon ) {
+				if ( empty( $addon['package_json'] ) || ! file_exists( $addon['package_json'] ) ) {
+					continue;
+				}
+
+				$addon_json = file_get_contents( $addon['package_json'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
+				if ( false === $addon_json ) {
+					continue;
+				}
+
+				$addon_data = json_decode( $addon_json, true );
+				if ( null === $addon_data ) {
+					continue;
+				}
+
+				// Collect production deps only — devDependencies are build-time tools.
+				$addon_deps = array();
+				if ( isset( $addon_data['dependencies'] ) && is_array( $addon_data['dependencies'] ) ) {
+					$addon_deps = array_merge( $addon_deps, $addon_data['dependencies'] );
+				}
+				if ( isset( $addon_data['optionalDependencies'] ) && is_array( $addon_data['optionalDependencies'] ) ) {
+					$addon_deps = array_merge( $addon_deps, $addon_data['optionalDependencies'] );
+				}
+
+				// Drop packages already listed in the merged base+Pro table.
+				$unique_deps = array_diff_key( $addon_deps, $packages['dependencies'] );
+
+				// Skip addons with no unique packages to avoid empty sections.
+				if ( empty( $unique_deps ) ) {
+					continue;
+				}
+
+				$is_active = defined( $addon['path_constant'] );
+
+				$packages['addon_groups'][ $slug ] = array(
+					'label'     => $addon['label'],
+					'active'    => $is_active,
+					'packages'  => $unique_deps,
+					'dist_file' => $addon['dist_file'],
+					'path'      => $is_active ? constant( $addon['path_constant'] ) : '',
+				);
 			}
 
 			return $packages;
@@ -199,6 +260,127 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			return $packages;
+		}
+
+		/**
+		 * Get the manifest map of all standalone (non-Pro) addons.
+		 *
+		 * Returns metadata for each addon so that package detection and rendering can
+		 * iterate over addons without hard-coded per-addon branches. Add a new entry
+		 * here whenever a new standalone addon ships its own package.json.
+		 *
+		 * Each entry contains:
+		 *  - label         Human-readable addon name.
+		 *  - plugin_file   Relative path used by is_plugin_active() (dir/file.php).
+		 *  - path_constant PHP constant that holds the addon root path when active.
+		 *  - dist_file     Relative path from addon root to the compiled JS bundle, or ''.
+		 *  - package_json  Absolute path to the addon's package.json, or ''.
+		 *  - composer_json Absolute path to the addon's composer.json, or ''.
+		 *
+		 * @since 1.1.21
+		 * @return array<string, array<string, string>>
+		 */
+		public static function get_addon_manifest_map() {
+			$base = WP_MCP_AI_PATH . 'addons/';
+
+			return array(
+				'algorave'        => array(
+					'label'         => __( 'NV oOS Algorave', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-algorave/nvoos-algorave.php',
+					'path_constant' => 'NVOOS_ALGORAVE_PATH',
+					'dist_file'     => 'assets/js/algorave-visualizer.js',
+					'package_json'  => $base . 'algorave/package.json',
+					'composer_json' => '',
+				),
+				'canvas-toolkit'  => array(
+					'label'         => __( 'NV oOS Canvas Toolkit', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-canvas-toolkit/nvoos-canvas-toolkit.php',
+					'path_constant' => 'NVOOS_CANVAS_TOOLKIT_PATH',
+					'dist_file'     => 'assets/dist/canvas-toolkit.js',
+					'package_json'  => $base . 'canvas-toolkit/package.json',
+					'composer_json' => '',
+				),
+				'chat-spa'        => array(
+					'label'         => __( 'NV oOS Chat SPA', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-chat-spa/nvoos-chat-spa.php',
+					'path_constant' => 'NVOOS_CHAT_SPA_PATH',
+					'dist_file'     => 'assets/dist/chat-spa.js',
+					'package_json'  => $base . 'chat-spa/package.json',
+					'composer_json' => '',
+				),
+				'cornerstone3d'   => array(
+					'label'         => __( 'NV oOS Cornerstone3D', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-cornerstone3d/nvoos-cornerstone3d.php',
+					'path_constant' => 'NVOOS_CORNERSTONE3D_PATH',
+					'dist_file'     => '',
+					'package_json'  => '',
+					'composer_json' => '',
+				),
+				'docs-hub'        => array(
+					'label'         => __( 'NV oOS Docs Hub', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-docs-hub/nvoos-docs-hub.php',
+					'path_constant' => 'NVOOS_DOCS_HUB_PATH',
+					'dist_file'     => 'assets/dist/docs-hub.js',
+					'package_json'  => $base . 'docs-hub/package.json',
+					'composer_json' => '',
+				),
+				'document-editor' => array(
+					'label'         => __( 'NV oOS Document Editor', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-document-editor/nvoos-document-editor.php',
+					'path_constant' => 'NVOOS_DOCUMENT_EDITOR_PATH',
+					'dist_file'     => 'assets/dist/document-editor.js',
+					'package_json'  => $base . 'document-editor/package.json',
+					'composer_json' => '',
+				),
+				'embedded'        => array(
+					'label'         => __( 'NV oOS Embedded AI', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-embedded/nvoos-embedded.php',
+					'path_constant' => 'NVOOS_EMBEDDED_PATH',
+					'dist_file'     => 'assets/js/embedded-llm-client.min.js',
+					'package_json'  => '',
+					'composer_json' => '',
+				),
+				'fantasy-football' => array(
+					'label'         => __( 'NV oOS Fantasy Football', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-fantasy-football/nvoos-fantasy-football.php',
+					'path_constant' => 'NVOOS_FANTASY_FOOTBALL_PATH',
+					'dist_file'     => '',
+					'package_json'  => $base . 'fantasy-football/package.json',
+					'composer_json' => $base . 'fantasy-football/composer.json',
+				),
+				'graphify'        => array(
+					'label'         => __( 'NV oOS Graphify', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-graphify/nvoos-graphify.php',
+					'path_constant' => 'NVOOS_GRAPHIFY_PATH',
+					'dist_file'     => '',
+					'package_json'  => '',
+					'composer_json' => $base . 'graphify/composer.json',
+				),
+				'media-studio'    => array(
+					'label'         => __( 'NV oOS Media Studio', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-media-studio/nvoos-media-studio.php',
+					'path_constant' => 'NVOOS_MEDIA_STUDIO_PATH',
+					'dist_file'     => 'assets/dist/media-studio.js',
+					'package_json'  => $base . 'media-studio/package.json',
+					'composer_json' => '',
+				),
+				'saas-controller' => array(
+					'label'         => __( 'NV oOS SaaS Controller', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-saas-controller/nvoos-saas-controller.php',
+					'path_constant' => 'NVOOS_SAAS_CONTROLLER_PATH',
+					'dist_file'     => 'assets/build/index.js',
+					'package_json'  => $base . 'saas-controller/package.json',
+					'composer_json' => '',
+				),
+				'toolkit-shell'   => array(
+					'label'         => __( 'NV oOS Toolkit Shell', 'mcp-ai-wpoos' ),
+					'plugin_file'   => 'nvoos-toolkit-shell/nvoos-toolkit-shell.php',
+					'path_constant' => 'NVOOS_TOOLKIT_SHELL_PATH',
+					'dist_file'     => 'assets/dist/toolkit-shell.js',
+					'package_json'  => $base . 'toolkit-shell/package.json',
+					'composer_json' => '',
+				),
+			);
 		}
 
 		/**
@@ -1456,7 +1638,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				if ( file_exists( $legacy_workflow_build_path ) ) {
 					return true;
 				}
-				// Priority 3: Check base node_modules (development).
+				// Priority 3: Check active standalone addon dist bundles.
+				// react, react-dom, and related packages are compiled into each SPA addon's
+				// bundle, so any active addon with a dist file means these are available.
+				$react_addon_dist = array(
+					'NVOOS_CANVAS_TOOLKIT_PATH'  => 'assets/dist/canvas-toolkit.js',
+					'NVOOS_CHAT_SPA_PATH'        => 'assets/dist/chat-spa.js',
+					'NVOOS_DOCS_HUB_PATH'        => 'assets/dist/docs-hub.js',
+					'NVOOS_DOCUMENT_EDITOR_PATH' => 'assets/dist/document-editor.js',
+					'NVOOS_MEDIA_STUDIO_PATH'    => 'assets/dist/media-studio.js',
+					'NVOOS_TOOLKIT_SHELL_PATH'   => 'assets/dist/toolkit-shell.js',
+				);
+				foreach ( $react_addon_dist as $constant => $dist_rel ) {
+					if ( defined( $constant ) ) {
+						if ( file_exists( constant( $constant ) . $dist_rel ) ) {
+							return true;
+						}
+					}
+				}
+				// Priority 4: Check base node_modules (development).
 				// These packages are in base package.json but used for Pro feature.
 				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
 				if ( file_exists( $node_modules_path ) ) {
@@ -1744,6 +1944,132 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * Check whether a package belonging to a standalone addon is installed.
+		 *
+		 * Uses a generic, priority-ordered discovery pipeline so that new addon packages
+		 * do not require hard-coded branches. Detection order:
+		 *
+		 * 1. Compiled dist bundle — if the addon ships a single built JS file that bundles
+		 *    all of its dependencies, that file's presence means every package is available.
+		 * 2. `{addon_path}/assets/vendor/{package}/` directory — vendor-copied package.
+		 * 3. `{addon_path}/node_modules/{package}/package.json` — local node_modules (dev).
+		 *
+		 * @since 1.1.21
+		 *
+		 * @param string $package   NPM package name.
+		 * @param string $addon_path Absolute root path of the addon (trailing slash).
+		 * @param string $dist_file  Relative path from $addon_path to the compiled bundle, or ''.
+		 * @return bool True if the package appears to be installed/compiled.
+		 */
+		private static function check_package_installed_for_addon( $package, $addon_path, $dist_file ) {
+			// Priority 1: compiled bundle means all deps are baked in.
+			if ( '' !== $dist_file && file_exists( $addon_path . $dist_file ) ) {
+				return true;
+			}
+
+			// Priority 2: vendor copy.
+			$vendor_dir = $addon_path . 'assets/vendor/' . $package;
+			if ( is_dir( $vendor_dir ) ) {
+				return true;
+			}
+
+			// Priority 3: development node_modules.
+			$nm_path = $addon_path . 'node_modules/' . $package . '/package.json';
+			if ( file_exists( $nm_path ) ) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * Render per-addon NPM package sections.
+		 *
+		 * Outputs one collapsible sub-section per addon that has unique production
+		 * dependencies not already listed in the base/Pro table. Uses three badge states:
+		 *
+		 * - Installed          — package found via dist bundle, vendor copy, or node_modules.
+		 * - Missing (required) — addon is active but the package was not found.
+		 * - Optional           — addon is inactive; the package is not currently needed.
+		 *
+		 * @since 1.1.21
+		 *
+		 * @param array $addon_groups The 'addon_groups' key returned by get_npm_packages().
+		 * @return void
+		 */
+		private static function render_addon_packages_sections( $addon_groups ) {
+			if ( empty( $addon_groups ) ) {
+				return;
+			}
+			?>
+			<div style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Addon-Specific Packages', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description" style="margin-bottom: 15px;">
+					<?php esc_html_e( 'Production dependencies provided by each standalone addon. Only packages not already listed above are shown here.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<?php foreach ( $addon_groups as $slug => $group ) : ?>
+					<?php
+					$label     = $group['label'];
+					$active    = $group['active'];
+					$packages  = $group['packages'];
+					$dist_file = $group['dist_file'];
+					$addon_path = $group['path'];
+					?>
+					<details style="margin-bottom: 10px; border: 1px solid #c3c4c7; border-radius: 2px;">
+						<summary style="padding: 10px 15px; cursor: pointer; background: #f6f7f7; display: flex; align-items: center; gap: 8px; font-weight: 600; list-style: none;">
+							<?php echo esc_html( $label ); ?>
+							<span class="count">(<?php echo count( $packages ); ?>)</span>
+							<?php if ( ! $active ) : ?>
+								<em style="font-weight: normal; color: #72aee6; font-size: 12px;">
+									— <?php esc_html_e( 'addon inactive', 'mcp-ai-wpoos' ); ?>
+								</em>
+							<?php endif; ?>
+						</summary>
+						<div style="padding: 0 0 10px 0;">
+							<table class="wp-list-table widefat fixed striped">
+								<thead>
+									<tr>
+										<th style="width: 40%;"><?php esc_html_e( 'Package Name', 'mcp-ai-wpoos' ); ?></th>
+										<th style="width: 20%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php ksort( $packages ); ?>
+									<?php foreach ( $packages as $pkg => $version ) : ?>
+										<?php
+										if ( $active && '' !== $addon_path ) {
+											$found        = self::check_package_installed_for_addon( $pkg, $addon_path, $dist_file );
+											$badge_class  = $found ? 'installed' : 'not-installed missing-required';
+											$badge_text   = $found
+												? __( 'Installed', 'mcp-ai-wpoos' )
+												: __( 'Missing — required', 'mcp-ai-wpoos' );
+										} else {
+											$badge_class = 'not-installed optional';
+											$badge_text  = __( 'Optional', 'mcp-ai-wpoos' );
+										}
+										?>
+										<tr>
+											<td><code><?php echo esc_html( $pkg ); ?></code></td>
+											<td><code><?php echo esc_html( $version ); ?></code></td>
+											<td>
+												<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $badge_class ); ?>">
+													<?php echo esc_html( $badge_text ); ?>
+												</span>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</div>
+					</details>
+				<?php endforeach; ?>
+			</div>
+			<?php
+		}
+
+		/**
 		 * Render pro toolkit status section.
 		 *
 		 * @param array $status Pro toolkit status.
@@ -1961,15 +2287,47 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 							<?php if ( ! isset( $packages['error'] ) ) : ?>
 								<?php self::render_packages_table( $packages['dependencies'], __( 'Production Dependencies', 'mcp-ai-wpoos' ) ); ?>
-								
-								<div style="margin-top: 30px;"></div>
-								
-								<?php self::render_packages_table( $packages['devDependencies'], __( 'Development Dependencies', 'mcp-ai-wpoos' ) ); ?>
+
+								<?php
+								// Addon-specific packages — shown in collapsible per-addon sub-sections.
+								if ( ! empty( $packages['addon_groups'] ) ) :
+									self::render_addon_packages_sections( $packages['addon_groups'] );
+								endif;
+								?>
+
+								<?php
+								// Development dependencies are hidden by default to reduce noise.
+								// They are build-time tools (babel, eslint, jest …) that are never
+								// deployed to production, so "Not Found" for every one of them is
+								// misleading. Reveal them with ?show_dev=1 or the WP_MCP_AI_SHOW_DEV_DEPS constant.
+								$show_dev = ( defined( 'WP_MCP_AI_SHOW_DEV_DEPS' ) && WP_MCP_AI_SHOW_DEV_DEPS )
+									|| ( isset( $_GET['show_dev'] ) && '1' === $_GET['show_dev'] && current_user_can( 'manage_options' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display flag, no state change.
+								?>
+
+								<?php if ( $show_dev ) : ?>
+									<div style="margin-top: 30px;"></div>
+									<?php self::render_packages_table( $packages['devDependencies'], __( 'Development Dependencies', 'mcp-ai-wpoos' ) ); ?>
+								<?php elseif ( ! empty( $packages['devDependencies'] ) ) : ?>
+									<div style="margin-top: 15px; padding: 10px 15px; background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 2px;">
+										<p style="margin: 0; font-size: 12px; color: #50575e;">
+											<?php
+											printf(
+												/* translators: 1: number of dev dependencies, 2: HTML link to show them */
+												esc_html__( '%1$d development dependencies are hidden (build-time tools, never deployed). %2$s', 'mcp-ai-wpoos' ),
+												count( $packages['devDependencies'] ),
+												'<a href="' . esc_url( add_query_arg( 'show_dev', '1' ) ) . '">'
+													. esc_html__( 'Show dev dependencies', 'mcp-ai-wpoos' )
+												. '</a>'
+											);
+											?>
+										</p>
+									</div>
+								<?php endif; ?>
 
 								<div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #72aee6;">
 									<p style="margin: 0;">
 										<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
-										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment.', 'mcp-ai-wpoos' ); ?>
+										<?php esc_html_e( 'Production status is determined by checking vendor files and compiled bundles. Addon-specific packages are shown in collapsible sections above and use three states: Installed, Missing (required by active addon), or Optional (addon inactive).', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</div>
 							<?php else : ?>
@@ -2124,6 +2482,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					background: #dba617;
 					color: #fff;
 				}
+
+				/* "Missing — required" (active addon, package absent) */
+				.wp-mcp-ai-status-badge.missing-required {
+					background: #d63638;
+					color: #fff;
+				}
+
+				/* "Optional" (inactive addon, package not needed right now) */
+				.wp-mcp-ai-status-badge.optional {
+					background: #72aee6;
+					color: #fff;
+				}
+
+				/* details/summary reset for addon groups */
+				details > summary::-webkit-details-marker { display: none; }
+				details > summary::before {
+					content: '▶';
+					display: inline-block;
+					margin-right: 6px;
+					font-size: 10px;
+					transition: transform .2s;
+				}
+				details[open] > summary::before { transform: rotate(90deg); }
 
 				.wp-mcp-ai-pro-settings .wp-list-table {
 					margin-top: 10px;
