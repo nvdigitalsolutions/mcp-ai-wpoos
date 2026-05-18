@@ -408,19 +408,16 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 		}
 
 		// Save current state as a pre-restore safety snapshot.
-		$this->create_snapshot(
-			new WP_REST_Request(
-				'POST',
-				'/' . self::NS . '/security/snapshot',
-				array(
-					'label' => sprintf(
-						/* translators: %s: snapshot label */
-						__( 'Pre-restore backup (before restoring "%s")', 'mcp-ai-wpoos' ),
-						$found['label']
-					),
-				)
+		$pre_restore_req = new WP_REST_Request( 'POST', '/' . self::NS . '/security/snapshot' );
+		$pre_restore_req->set_param(
+			'label',
+			sprintf(
+				/* translators: %s: snapshot label */
+				__( 'Pre-restore backup (before restoring "%s")', 'mcp-ai-wpoos' ),
+				$found['label']
 			)
 		);
+		$this->create_snapshot( $pre_restore_req );
 
 		$current     = get_option( 'wp_mcp_ai_settings', array() );
 		$new_current = array_merge( $current, $found['settings'] );

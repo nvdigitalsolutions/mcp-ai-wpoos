@@ -923,10 +923,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			<tbody>
 			<?php foreach ( $signals as $signal ) : ?>
 				<tr>
-					<td style="text-align:center;font-size:18px;"><?php echo $signal['passed'] ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- emoji only ?></td>
+					<td style="text-align:center;font-size:18px;"><?php echo (bool) $signal['passed'] ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- emoji literals, bool-cast prevents unexpected output ?></td>
 					<td><?php echo esc_html( $signal['label'] ); ?></td>
 					<td><?php echo esc_html( $signal['weight'] ); ?></td>
-					<td style="color:<?php echo $signal['passed'] ? '#46b450' : '#d63638'; ?>;"><?php echo esc_html( $signal['detail'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html applied above ?></td>
+					<td style="color:<?php echo esc_attr( (bool) $signal['passed'] ? '#46b450' : '#d63638' ); ?>;"><?php echo esc_html( $signal['detail'] ); ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
@@ -1286,9 +1286,9 @@ jQuery(function($){
 						if ( method_exists( $tool, 'get_capability_flags' ) ) {
 							$flags = (array) $tool->get_capability_flags();
 						}
-						$missing   = ( '—' === $cap );
-						$row_style = $missing ? 'background:#fef9f9;' : '';
-						echo '<tr style="' . esc_attr( $row_style ) . '">';
+						$missing    = ( '—' === $cap );
+						$row_class  = $missing ? 'wp-mcp-ai-cap-fence-missing' : '';
+						echo '<tr class="' . esc_attr( $row_class ) . '">';
 						echo '<td><code>' . esc_html( $slug ) . '</code></td>';
 						echo '<td>' . ( $missing ? '<span style="color:#d63638;">' . esc_html__( 'Missing!', 'mcp-ai-wpoos' ) . '</span>' : '<code>' . esc_html( $cap ) . '</code>' ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- conditional of esc_html outputs
 						echo '<td>' . esc_html( implode( ', ', $flags ) ) . '</td>';
@@ -1298,7 +1298,8 @@ jQuery(function($){
 				}
 				?>
 			</div>
-
+			<!-- phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- inline admin-only style for cap-fence table -->
+			<style>.wp-mcp-ai-cap-fence-missing { background: #fef9f9; }</style>
 			<table class="form-table" role="presentation">
 			<?php
 		}

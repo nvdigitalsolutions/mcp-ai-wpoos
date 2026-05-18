@@ -173,17 +173,17 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 * invalidate_cache() causes a recompute on the next call.
 	 */
 	public function test_invalidate_cache_forces_recompute() {
-		$posture = new WP_MCP_AI_Security_Posture();
-		$posture->get_report( true );
+		$posture     = new WP_MCP_AI_Security_Posture();
+		$first_score = $posture->get_report( true )['score'];
 
 		update_option( 'wp_mcp_ai_settings', array() );
 
 		$posture->invalidate_cache();
 
-		$fresh = $posture->get_report( false );
+		$fresh_score = $posture->get_report( false )['score'];
 
-		// Fewer controls active → lower score.
-		$this->assertLessThanOrEqual( 30, $fresh['score'] );
+		// Fewer controls active → score should be lower than with base_settings.
+		$this->assertLessThan( $first_score, $fresh_score );
 	}
 
 	/**
