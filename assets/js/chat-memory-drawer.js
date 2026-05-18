@@ -54,6 +54,7 @@
 		'update_agent_memory',
 		'capture_memory'
 	];
+	const MIN_WATERFALL_BAR_WIDTH_PERCENT = 6;
 
 	// G8 Phase 2 — counter of mid-stream `memory_event` SSE toasts that have
 	// already fired for the in-flight assistant turn. The end-of-stream
@@ -810,12 +811,10 @@
 			return [];
 		}
 
-		function extractRetrievalWaterfall(response, records) {
+		function extractRrfWaterfall(records) {
 			const safeRecords = Array.isArray(records) ? records : [];
 			const rrfHits = { bm25: 0, vector: 0, graph: 0 };
-			const legacyHits = { keyword: 0, temporal: 0, exact_match: 0 };
 			let hasRrfBreakdown = false;
-			let hasLegacyBreakdown = false;
 
 			safeRecords.forEach(function(record) {
 				const rrfBreakdown = record && record.rrf_breakdown;
@@ -831,7 +830,28 @@
 						rrfHits.graph++;
 					}
 				}
+			});
 
+			if (!hasRrfBreakdown) {
+				return null;
+			}
+
+			return {
+				label: __( 'RRF hybrid retrieval', 'mcp-ai-wpoos' ),
+				rows: [
+					{ label: __( 'BM25', 'mcp-ai-wpoos' ), count: rrfHits.bm25 },
+					{ label: __( 'Vector', 'mcp-ai-wpoos' ), count: rrfHits.vector },
+					{ label: __( 'Graph', 'mcp-ai-wpoos' ), count: rrfHits.graph }
+				]
+			};
+		}
+
+		function extractLegacyWaterfall(records) {
+			const safeRecords = Array.isArray(records) ? records : [];
+			const legacyHits = { keyword: 0, temporal: 0, exact_match: 0 };
+			let hasLegacyBreakdown = false;
+
+			safeRecords.forEach(function(record) {
 				const boostBreakdown = record && record.boost_breakdown;
 				if (boostBreakdown && typeof boostBreakdown === 'object') {
 					hasLegacyBreakdown = true;
@@ -847,39 +867,36 @@
 				}
 			});
 
-			if (hasRrfBreakdown) {
-				return {
-					label: __( 'RRF hybrid retrieval', 'mcp-ai-wpoos' ),
-					rows: [
-						{ label: __( 'BM25', 'mcp-ai-wpoos' ), count: rrfHits.bm25 },
-						{ label: __( 'Vector', 'mcp-ai-wpoos' ), count: rrfHits.vector },
-						{ label: __( 'Graph', 'mcp-ai-wpoos' ), count: rrfHits.graph }
-					]
-				};
+			if (!hasLegacyBreakdown) {
+				return null;
 			}
 
-			if (hasLegacyBreakdown) {
-				return {
-					label: __( 'Legacy booster retrieval', 'mcp-ai-wpoos' ),
-					rows: [
-						{ label: __( 'Keyword', 'mcp-ai-wpoos' ), count: legacyHits.keyword },
-						{ label: __( 'Temporal', 'mcp-ai-wpoos' ), count: legacyHits.temporal },
-						{ label: __( 'Exact', 'mcp-ai-wpoos' ), count: legacyHits.exact_match }
-					]
-				};
-			}
+			return {
+				label: __( 'Legacy booster retrieval', 'mcp-ai-wpoos' ),
+				rows: [
+					{ label: __( 'Keyword', 'mcp-ai-wpoos' ), count: legacyHits.keyword },
+					{ label: __( 'Temporal', 'mcp-ai-wpoos' ), count: legacyHits.temporal },
+					{ label: __( 'Exact', 'mcp-ai-wpoos' ), count: legacyHits.exact_match }
+				]
+			};
+		}
 
+		function extractPathWaterfall(response, totalRecords) {
 			const retrievalPath = response && response.retrieval_path ? String(response.retrieval_path) : '';
-			if (retrievalPath) {
-				return {
-					label: __( 'Retrieval path', 'mcp-ai-wpoos' ),
-					rows: [
-						{ label: retrievalPath, count: safeRecords.length }
-					]
-				};
+			if (!retrievalPath) {
+				return null;
 			}
+			return {
+				label: __( 'Retrieval path', 'mcp-ai-wpoos' ),
+				rows: [
+					{ label: retrievalPath, count: totalRecords }
+				]
+			};
+		}
 
-			return null;
+		function extractRetrievalWaterfall(response, records) {
+			const totalRecords = Array.isArray(records) ? records.length : 0;
+			return extractRrfWaterfall(records) || extractLegacyWaterfall(records) || extractPathWaterfall(response, totalRecords);
 		}
 
 		function renderRetrievalWaterfall(response, records) {
@@ -912,7 +929,9 @@
 
 			data.rows.forEach(function(row) {
 				const count = Number(row.count || 0);
-				const width = maxCount > 0 ? Math.max(6, Math.round((count / maxCount) * 100)) : 6;
+				const width = maxCount > 0
+					? Math.max(MIN_WATERFALL_BAR_WIDTH_PERCENT, Math.round((count / maxCount) * 100))
+					: MIN_WATERFALL_BAR_WIDTH_PERCENT;
 
 				const li = document.createElement('li');
 				li.className = 'wp-mcp-ai-memory-drawer__waterfall-row';
