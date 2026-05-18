@@ -66,6 +66,7 @@ class RequiredCapabilityDeclaredSniff implements Sniff {
 	const TOOL_PATH_FRAGMENTS = array(
 		'/includes/tools/',
 		'/addons/pro/includes/tools/',
+		'/addons/pro/includes/src/Tools/',
 	);
 
 	/**

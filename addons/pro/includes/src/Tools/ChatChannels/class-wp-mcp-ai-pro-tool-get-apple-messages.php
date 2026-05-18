@@ -27,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for retrieving Apple Messages for Business conversation history via an MSP.
  */
 class WP_MCP_AI_Pro_Tool_Get_Apple_Messages implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Default timeout for MSP API requests (seconds).

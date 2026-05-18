@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for sending email messages via Microsoft Outlook using the Microsoft Graph API.
  */
 class WP_MCP_AI_Pro_Tool_Send_Outlook_Mail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */

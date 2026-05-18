@@ -26,6 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  *                https://api.eu.mailgun.net/v3/{domain}/messages (EU region)
  */
 class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	const API_BASE_US = 'https://api.mailgun.net/v3';
 	const API_BASE_EU = 'https://api.eu.mailgun.net/v3';
 

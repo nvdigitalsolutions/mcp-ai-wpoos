@@ -23,6 +23,7 @@ use NotifyLk\ApiException;
  * Provides a tool for scheduling Notify.lk SMS messages.
  */
 class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	const CRON_HOOK = 'wp_mcp_ai_notifylk_send_scheduled_sms';
 
 	/**

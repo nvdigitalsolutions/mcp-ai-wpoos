@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves QuickBooks Online reports using the configured credentials.
  */
 class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * Base URL for the QuickBooks Online reports API.
 	 */
