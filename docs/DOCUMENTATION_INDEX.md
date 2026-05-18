@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 14, 2026  
-**Plugin Version:** 1.1.18  
+**Last Updated:** May 18, 2026  
+**Plugin Version:** 1.1.19  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -11,13 +11,16 @@ This document provides a comprehensive index of all documentation available for 
 
 > **📌 MAY 17, 2026 DOCUMENTATION REFRESH:** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` was refreshed to independent doc revision 2.0 and now cites `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the companion source for point-in-time counts. Current public framing is ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, and model catalog `2026.05.04`; the live registry remains authoritative.
 
-> **📌 MAY 18, 2026 UPDATE (v1.1.19):** 📡 **AGENT CLIENT PROTOCOL (ACP) INTEGRATION, JSON-RPC 2.0 SERVER, HTTP/SSE TRANSPORT**
-> - **Agent Client Protocol (ACP)** — Full implementation of the ACP standard allowing external IDEs (Zed, JetBrains, Neovim) to natively drive NV oOS assistants. 
-> - **ACP Architecture** — `WP_MCP_AI_ACP_Server`, `WP_MCP_AI_ACP_JSONRPC_Dispatcher`, `WP_MCP_AI_ACP_Session_Manager`, `WP_MCP_AI_ACP_Session_Bridge`, `WP_MCP_AI_ACP_Transport_HTTP`. 
-> - **Federation Discovery** — Extended `/.well-known/ai-peer` to actively advertise `acp` protocol endpoints, versions, transports (`http+sse`), and supported `auth_methods`.
-> - **CLI Shim** — Added `bin/acp-shim.php` for stdio-to-HTTP bridging, laying the groundwork for the official `agentclientprotocol/registry` submission.
-> - **UI & Control** — ACP server toggle and strict tool-approval toggle are rendered inline within the Orchestration → Settings view (see the `section_acp` / `enable_acp_server` / `acp_require_approval` fields in `WP_MCP_AI_Section_Orchestration`), matching the Agent Memory and Multi-Agent groupings.
-> - **Testing** — 100% PHPUnit coverage scaffolding inside `tests/acp/` for JSON-RPC mappings, session bridging, and transient persistence logic.
+> **📌 MAY 18, 2026 UPDATE (v1.1.19):** 📡🔒🧩💬 **KIMI PROVIDER, ACP SERVER, MCP BRIDGE, P7 FOLDER READMES, SECURITY HARDENING, CHAT BUBBLE SWEEP**
+> - **Kimi (Moonshot AI) provider** — 10th first-class language-model provider. `WP_MCP_AI_Kimi_Client` at `https://api.moonshot.cn/v1`. Models: kimi-k2.6 (256K, default), kimi-k2-thinking (CoT), moonshot-v1-*. Settings → Providers → Kimi subtab.
+> - **ACP Server** — Full Agent Client Protocol implementation. `WP_MCP_AI_ACP_Server` + `WP_MCP_AI_ACP_JSONRPC_Dispatcher` + `WP_MCP_AI_ACP_Session_Manager` + `WP_MCP_AI_ACP_Session_Bridge` + `WP_MCP_AI_ACP_Transport_HTTP`. JSON-RPC 2.0 over HTTP/SSE. `/.well-known/ai-peer` extended. `enable_acp_server` + `acp_require_approval` toggles in Orchestration → Settings. PHPUnit coverage in `tests/acp/`. Reference: [`docs/features/acp-server.md`](features/acp-server.md).
+> - **MCP Bridge** — `bin/mcp-bridge.js` stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
+> - **Unix Theory P7** — Folder README convention complete. Every `includes/` subdir ships a `README.md`. Enforced by `composer run docs:check-folder-readmes`. Convention: [`docs/guides/developer/folder-readme-convention.md`](guides/developer/folder-readme-convention.md).
+> - **GDPR** — JetEngine privacy exporters for CCT data (transcripts, memory, approvals).
+> - **Security hardening** — Settings-key encryption + admin-UI masking; webhook secret enforcement; SSRF via `wp_safe_remote_get`; attachment URL scheme allowlist; client-log debug-gate.
+> - **Chat Bubble sweep (13 PRs)** — Self-init via `wpMcpAiChatInit`; `kses_chat_output()` preserves form controls; Test Model fully restored; panel-fit + scoped CSS.
+> - **Docs** — `USE_CASES_AND_QUICKSTARTS.md` Rev 2.0; `_USE_CASES_FACT_SHEET.md` as source of truth.
+> - **Versioning** — bumped to 1.1.19 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
 > - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](proposals/audits/P6-sanitize-escape-codification-2026-05.md).
