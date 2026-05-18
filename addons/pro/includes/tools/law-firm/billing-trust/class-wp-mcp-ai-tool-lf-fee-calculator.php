@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	public function get_slug() { return 'lf_fee_calculator'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Fee Calculator', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Calculates legal fees using hourly, contingency, flat fee, blended rate, or lodestar methods.', 'mcp-ai-wpoos-pro' ); }
 

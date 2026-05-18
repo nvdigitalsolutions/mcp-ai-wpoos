@@ -27,15 +27,6 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

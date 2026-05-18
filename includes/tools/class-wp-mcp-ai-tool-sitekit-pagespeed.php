@@ -59,15 +59,6 @@ class WP_MCP_AI_Tool_SiteKit_PageSpeed implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'read';
-	}
-
-	/**
 	 * Get tool name
 	 *
 	 * @since 1.2.0

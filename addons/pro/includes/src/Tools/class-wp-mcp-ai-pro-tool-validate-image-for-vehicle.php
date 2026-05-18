@@ -47,7 +47,6 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  * @since 1.0.0
  */
 class WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Chat_Response;
 

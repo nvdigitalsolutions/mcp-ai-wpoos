@@ -41,15 +41,6 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		return 'generate_bim_execution_plan';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'Generate BIM Execution Plan', 'mcp-ai-wpoos-pro' );
 	}

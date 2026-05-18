@@ -166,15 +166,6 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * Get the tool name.
 	 *
 	 * @return string

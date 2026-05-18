@@ -17,15 +17,6 @@ class WP_MCP_AI_Tool_QMS_Mark_Obsolete implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_slug() {
 		return 'qms_mark_obsolete';
 	}
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
 	public function get_name() {
 		return __( 'QMS: Mark Obsolete', 'mcp-ai-wpoos-pro' );
 	}

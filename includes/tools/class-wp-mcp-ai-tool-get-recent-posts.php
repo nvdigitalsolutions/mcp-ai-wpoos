@@ -26,15 +26,6 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'read';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

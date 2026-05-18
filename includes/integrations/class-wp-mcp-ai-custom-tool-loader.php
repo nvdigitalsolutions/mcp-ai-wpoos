@@ -398,13 +398,6 @@ class <?php echo esc_html( $class_name ); ?> implements WP_MCP_AI_Tool_Interface
 			'message' => __( 'Tool executed successfully.', 'mcp-ai-wpoos' ),
 		);
 	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
 }
 			<?php
 			$template = ob_get_clean();

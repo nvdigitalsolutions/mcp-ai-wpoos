@@ -50,15 +50,6 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		return 'create_woo_product';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_woocommerce';
-	}
-
 	/** {@inheritdoc} */
 	public function get_name() {
 		return __( 'Create WooCommerce Product Draft', 'mcp-ai-wpoos' );

@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Inter
 	}
 
 	public function get_slug() { return 'lf_document_version_tracker'; }
-
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
 	public function get_name() { return __( 'Document Version Tracker', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Retrieves version history for legal documents using WordPress post revisions.', 'mcp-ai-wpoos-pro' ); }
 

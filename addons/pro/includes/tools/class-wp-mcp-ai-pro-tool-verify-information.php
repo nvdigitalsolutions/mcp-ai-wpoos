@@ -18,15 +18,6 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		return 'verify_information';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_definition() {
 		return array(
 			'name'                => 'verify_information',

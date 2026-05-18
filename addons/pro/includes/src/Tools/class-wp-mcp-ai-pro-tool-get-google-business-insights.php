@@ -17,7 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a tool for querying Google Business Profile insights.
  */
 class WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Check if this tool is available.

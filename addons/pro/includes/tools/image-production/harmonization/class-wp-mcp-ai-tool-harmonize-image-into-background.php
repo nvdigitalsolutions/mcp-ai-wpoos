@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_Harmonize_Image_Into_Background extends WP_MCP_AI_Tool_Harm
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

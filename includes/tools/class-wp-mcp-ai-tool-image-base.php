@@ -936,17 +936,6 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
-	 * {@inheritdoc}
-	 *
-	 * Image manipulation tools write files to the WordPress media library.
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * Sanitize tool result for LLM consumption.
 	 *
 	 * Strips large base64 data to prevent context bloat.

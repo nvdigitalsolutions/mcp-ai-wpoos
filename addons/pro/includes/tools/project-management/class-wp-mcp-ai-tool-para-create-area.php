@@ -22,15 +22,6 @@ class WP_MCP_AI_Tool_PARA_Create_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		return 'para_create_area';
 	}
 
-	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function get_name() {
 		return __( 'PARA: Create Area', 'mcp-ai-wpoos-pro' );
 	}

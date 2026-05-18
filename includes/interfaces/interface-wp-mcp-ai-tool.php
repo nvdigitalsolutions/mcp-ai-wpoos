@@ -54,27 +54,6 @@ interface WP_MCP_AI_Tool_Interface {
 	 * @return mixed|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() );
-
-	/**
-	 * The WordPress capability required to execute this tool.
-	 *
-	 * Introduced as a required interface member in Phase 4 of the Unix Theory
-	 * Compliance Enhancement Proposal. All concrete tool classes that directly
-	 * implement this interface must declare this method.
-	 *
-	 * Classes that extend an abstract base (e.g. WP_MCP_AI_Tool_Image_Base,
-	 * WP_MCP_AI_Validated_Tool, WP_MCP_AI_Pro_Capture_Tool_Base) inherit the
-	 * method from the base and do not need to re-declare it.
-	 *
-	 * Classes that have no base to inherit from should either:
-	 *   a) Declare the method explicitly, OR
-	 *   b) Use {@see WP_MCP_AI_Tool_Default_Capability} — a trait that provides
-	 *      the map-lookup → `edit_posts` fallback used during the migration.
-	 *
-	 * @return string WordPress capability string (e.g. 'edit_posts',
-	 *                'manage_options', 'upload_files').
-	 */
-	public function get_required_capability();
 }
 
 /**
@@ -365,8 +344,3 @@ interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
 	 */
 	public function is_allowed_in_context( $context );
 }
-
-// Load the default-capability trait so that every tool file that requires
-// this interface has WP_MCP_AI_Tool_Default_Capability available without an
-// additional require_once in every individual class.
-require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-default-capability.php';

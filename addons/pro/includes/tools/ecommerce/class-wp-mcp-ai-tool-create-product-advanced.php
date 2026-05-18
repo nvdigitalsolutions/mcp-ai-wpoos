@@ -83,15 +83,6 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_woocommerce';
-	}
-
-	/**
 	 * Get the tool name.
 	 *
 	 * @return string

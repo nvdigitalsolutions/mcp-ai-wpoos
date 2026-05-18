@@ -59,15 +59,6 @@ class WP_MCP_AI_Tool_SiteKit_AdSense implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/**
 	 * Get tool name
 	 *
 	 * @since 1.2.0

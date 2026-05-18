@@ -35,15 +35,6 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 	}
 
 	/**
-	 * {\@inheritdoc}
-	 *
-	 * @return string WordPress capability string.
-	 */
-	public function get_required_capability() {
-		return 'upload_files';
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

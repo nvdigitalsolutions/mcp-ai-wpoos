@@ -31,13 +31,6 @@ class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
 	public function get_name() {
 		return __( 'Apply Prompt Cue', 'mcp-ai-wpoos' );
 	}
