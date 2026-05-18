@@ -1032,19 +1032,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Temporarily set the API key for testing.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$settings['kimi_api_key'] = $api_key;
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
-
-			// Use the Kimi client to test connection.
+			// Pass the API key directly to the client instead of temporarily
+			// writing it to wp_options, which creates a TOCTOU race condition
+			// where concurrent requests or a crash could permanently leak the
+			// key into the database and any persistent object cache.
 			$client = new WP_MCP_AI_Kimi_Client();
+			$client->set_api_key( $api_key );
 			$result = $client->test_connection();
-
-			// Restore original settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			unset( $settings['kimi_api_key'] );
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error(
@@ -1086,19 +1080,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Temporarily set the API key for fetching.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$settings['kimi_api_key'] = $api_key;
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
-
-			// Use the Kimi client to fetch models.
-			$client  = new WP_MCP_AI_Kimi_Client();
-			$models  = $client->list_models();
-
-			// Restore original settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			unset( $settings['kimi_api_key'] );
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+			// Pass the API key directly to the client instead of temporarily
+			// writing it to wp_options, which creates a TOCTOU race condition.
+			$client = new WP_MCP_AI_Kimi_Client();
+			$client->set_api_key( $api_key );
+			$models = $client->list_models();
 
 			if ( is_wp_error( $models ) ) {
 				wp_send_json_error(

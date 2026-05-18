@@ -132,10 +132,39 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['kimi_api_key'] ) ? $settings['kimi_api_key'] : '';
 		}
+
+		/**
+		 * Override the API key for the lifetime of this instance only.
+		 *
+		 * Use this when testing a key before persisting it, instead of
+		 * temporarily writing it to wp_options (which creates a TOCTOU
+		 * race condition).
+		 *
+		 * @since 1.1.20
+		 * @param string $api_key The API key to use for this instance.
+		 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
+		}
+
+		/**
+		 * In-memory API key override. Set via set_api_key().
+		 *
+		 * @since 1.1.20
+		 * @var string|null
+		 */
+		private $api_key_override = null;
 
 		/**
 		 * Retrieve the configured default model.
