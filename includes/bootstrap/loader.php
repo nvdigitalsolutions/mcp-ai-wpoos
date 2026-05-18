@@ -447,6 +447,12 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-capture-service.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-manager.php';
 
+// Memory Layer 2026 Enhancements Phase 1 — privacy filter must load before
+// any memory write happens so the `wp_mcp_ai_memory_pre_store_transform`
+// hook is registered at priority 5 (before user transforms at priority 10).
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-privacy-filter.php';
+WP_MCP_AI_Memory_Privacy_Filter::bootstrap();
+
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
