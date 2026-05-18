@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'read';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

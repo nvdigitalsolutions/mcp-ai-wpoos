@@ -30,6 +30,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  * `allow_sensitive_tools=true` in the shortcode/widget settings.
  */
 class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**

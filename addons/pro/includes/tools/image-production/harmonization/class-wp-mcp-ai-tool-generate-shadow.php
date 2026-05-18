@@ -30,6 +30,15 @@ class WP_MCP_AI_Tool_Generate_Shadow extends WP_MCP_AI_Tool_Harmonization_Base {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

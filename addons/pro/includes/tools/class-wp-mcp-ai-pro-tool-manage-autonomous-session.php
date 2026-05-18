@@ -30,6 +30,15 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @return array

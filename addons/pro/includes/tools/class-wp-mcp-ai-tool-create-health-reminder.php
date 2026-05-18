@@ -26,6 +26,15 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

@@ -74,6 +74,15 @@ class WP_MCP_AI_Tool_Cancel_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get the tool name.
 	 *
 	 * @return string

@@ -46,6 +46,15 @@ class WP_MCP_AI_Tool_Import_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

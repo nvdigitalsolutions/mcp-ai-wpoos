@@ -22,6 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Syncs data between WordPress and QuickBooks Desktop through a QODBC relay.
  */
 class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Maximum number of rows a single query may return.

@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Installs plugins from the WordPress.org repository and activates them.
  */
 class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Check if this tool is available.

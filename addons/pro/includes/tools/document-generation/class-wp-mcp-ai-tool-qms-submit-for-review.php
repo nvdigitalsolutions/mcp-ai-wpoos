@@ -17,6 +17,15 @@ class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, 
 	public function get_slug() {
 		return 'qms_submit_for_review';
 	}
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
 	public function get_name() {
 		return __( 'QMS: Submit for Review', 'mcp-ai-wpoos-pro' );
 	}

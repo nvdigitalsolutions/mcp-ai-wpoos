@@ -32,6 +32,15 @@ class WP_MCP_AI_Tool_Batch_Process_Images implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

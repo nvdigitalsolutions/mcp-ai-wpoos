@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for retrieving metadata and download URL for a file from Microsoft OneDrive via the Microsoft Graph API.
  */
 class WP_MCP_AI_Pro_Tool_Get_OneDrive_File implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 	/**
 	 * Default timeout for Microsoft Graph API requests.
 	 */

@@ -380,6 +380,8 @@ class Test_Harness_Tool_Router extends WP_UnitTestCase {
 	 */
 	private function build_stub_tool( $slug, array $flags ) {
 		return new class( $slug, $flags ) implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+			use WP_MCP_AI_Tool_Default_Capability;
+
 			private $slug;
 			private $flags;
 			public function __construct( $slug, array $flags ) {

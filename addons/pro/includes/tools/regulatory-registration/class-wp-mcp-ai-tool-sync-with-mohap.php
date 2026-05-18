@@ -27,6 +27,15 @@ class WP_MCP_AI_Tool_Sync_With_Mohap implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

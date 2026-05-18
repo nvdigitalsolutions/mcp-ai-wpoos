@@ -28,6 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+	use WP_MCP_AI_Tool_Default_Capability;
 
 	/**
 	 * Facebook Graph API version.

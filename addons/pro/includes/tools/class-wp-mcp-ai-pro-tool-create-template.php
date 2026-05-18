@@ -29,6 +29,15 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * Get tool definition for AI
 	 *
 	 * @return array

@@ -22,6 +22,15 @@ class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP
 	public function get_slug() {
 		return 'qms_schedule_review';
 	}
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
 	public function get_name() {
 		return __( 'QMS: Schedule Review', 'mcp-ai-wpoos-pro' );
 	}

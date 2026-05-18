@@ -42,6 +42,15 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 		return 'manage_submittal_log';
 	}
 
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function get_name() {
 		return __( 'Manage Submittal Log', 'mcp-ai-wpoos-pro' );
 	}

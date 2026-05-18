@@ -18,6 +18,15 @@ class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Int
 	public function get_slug() {
 		return 'qms_list_controlled_documents';
 	}
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'upload_files';
+	}
 	public function get_name() {
 		return __( 'QMS: List Controlled Documents', 'mcp-ai-wpoos-pro' );
 	}

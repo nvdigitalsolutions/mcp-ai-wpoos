@@ -24,6 +24,15 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 	}
 	public function get_slug() {
 		return 'get_available_slots'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
 	public function get_name() {
 		return __( 'Get Available Slots', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {

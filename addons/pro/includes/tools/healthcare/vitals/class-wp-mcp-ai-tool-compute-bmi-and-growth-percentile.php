@@ -45,6 +45,15 @@ class WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile implements WP_MCP_AI_Tool
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {

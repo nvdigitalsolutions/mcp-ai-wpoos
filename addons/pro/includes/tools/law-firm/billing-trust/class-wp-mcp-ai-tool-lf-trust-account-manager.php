@@ -35,6 +35,15 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 	}
 
 	public function get_slug() { return 'lf_trust_account_manager'; }
+
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
 	public function get_name() { return __( 'Trust Account Manager', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() { return __( 'Manages client trust (IOLTA) account deposits, disbursements, balance inquiries, and ledger retrieval.', 'mcp-ai-wpoos-pro' ); }
 

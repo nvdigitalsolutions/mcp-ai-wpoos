@@ -35,6 +35,15 @@ class WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity {
 	}
 
 	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @return array

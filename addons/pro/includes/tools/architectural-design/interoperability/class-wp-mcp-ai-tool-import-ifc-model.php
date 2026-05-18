@@ -42,6 +42,15 @@ class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MC
 		return 'import_ifc_model';
 	}
 
+	/**
+	 * {\@inheritdoc}
+	 *
+	 * @return string WordPress capability string.
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	public function get_name() {
 		return __( 'Import IFC Model', 'mcp-ai-wpoos-pro' );
 	}
