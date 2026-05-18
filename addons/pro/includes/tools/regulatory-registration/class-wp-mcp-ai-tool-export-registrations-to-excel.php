@@ -86,13 +86,6 @@ class WP_MCP_AI_Tool_Export_Registrations_To_Excel implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

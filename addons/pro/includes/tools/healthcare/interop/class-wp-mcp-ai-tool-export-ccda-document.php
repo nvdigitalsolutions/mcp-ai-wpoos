@@ -87,13 +87,6 @@ class WP_MCP_AI_Tool_Export_CCDA_Document implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute.
 	 *
 	 * @param array $arguments Tool arguments.

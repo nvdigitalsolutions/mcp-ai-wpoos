@@ -265,13 +265,6 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle implements WP_MCP_AI_Tool_In
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Execute the vehicle image validation tool.
 	 *
 	 * @param array $arguments Tool arguments.

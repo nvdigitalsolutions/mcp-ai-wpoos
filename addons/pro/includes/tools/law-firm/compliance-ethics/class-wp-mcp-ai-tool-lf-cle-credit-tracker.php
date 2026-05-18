@@ -23,13 +23,6 @@ class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * User meta key for CLE credits.
 	 *
 	 * @var string

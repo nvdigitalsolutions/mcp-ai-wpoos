@@ -81,13 +81,6 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

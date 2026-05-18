@@ -32,13 +32,6 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	use WP_MCP_AI_Tool_WordPress_Native;
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Get tool slug
 	 *
 	 * @since 1.0.0

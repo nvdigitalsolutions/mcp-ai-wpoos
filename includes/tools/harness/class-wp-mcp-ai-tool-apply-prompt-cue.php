@@ -63,10 +63,9 @@ class WP_MCP_AI_Tool_Apply_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$system_prompt = isset( $arguments['system_prompt'] ) ? (string) $arguments['system_prompt'] : '';
 		$cue_slugs     = array();

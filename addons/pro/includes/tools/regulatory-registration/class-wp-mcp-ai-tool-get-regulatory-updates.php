@@ -110,10 +110,6 @@ class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface,
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$page     = ! empty( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$per_page = ! empty( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;

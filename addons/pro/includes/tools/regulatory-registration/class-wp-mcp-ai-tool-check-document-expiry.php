@@ -82,13 +82,6 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool

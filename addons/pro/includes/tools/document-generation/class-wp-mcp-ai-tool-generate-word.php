@@ -104,10 +104,9 @@ class WP_MCP_AI_Tool_Generate_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Delegate to Pro Word tool with simplified parameters.
 		$pro_arguments = array(

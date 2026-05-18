@@ -67,10 +67,9 @@ class WP_MCP_AI_Tool_Select_Prompt_Cue implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 	}
 
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$task_class = isset( $arguments['task_class'] ) ? sanitize_key( (string) $arguments['task_class'] ) : 'general';
 		if ( '' === $task_class ) {

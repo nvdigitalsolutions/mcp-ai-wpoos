@@ -34,13 +34,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/**
 	 * Cache TTL in seconds (10 minutes).
 	 *
 	 * @since 1.1.0
