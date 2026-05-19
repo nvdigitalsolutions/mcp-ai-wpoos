@@ -198,8 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				<?php
 				$js = ob_get_clean();
 				wp_print_inline_script_tag( $js );
-				?>
-		}
+			}
 
 		// -------------------------------------------------------------------------
 		// Asset enqueue
