@@ -64,21 +64,21 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * deepseek-chat is the general-purpose, tool-calling model (DeepSeek-V3).
+		 * deepseek-v4-flash is the current flagship (DeepSeek-V4-Flash).
 		 *
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'deepseek-chat';
+		 const DEFAULT_MODEL = 'deepseek-v4-flash';
 
-		/**
+		 /**
 		 * Models that do not support tool/function calling.
 		 *
-		 * deepseek-reasoner (DeepSeek-R1) is a chain-of-thought model that
-		 * rejects the `tools` parameter. Tools are stripped automatically.
+		 * deepseek-reasoner (legacy DeepSeek-R1) is a chain-of-thought model
+		 * that rejects the `tools` parameter. All V4 models support tools.
 		 *
 		 * @var array
 		 */
-		const MODELS_WITHOUT_TOOL_CALLING = array( 'deepseek-reasoner' );
+		 const MODELS_WITHOUT_TOOL_CALLING = array( 'deepseek-reasoner' );
 
 		// -------------------------------------------------------------------------
 		// Accessors.

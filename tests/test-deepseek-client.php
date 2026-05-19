@@ -54,7 +54,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'https://api.deepseek.com', WP_MCP_AI_DeepSeek_Client::DEFAULT_BASE_URL );
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_DeepSeek_Client::API_ENDPOINT );
 		$this->assertEquals( '/models', WP_MCP_AI_DeepSeek_Client::API_MODELS );
-		$this->assertEquals( 'deepseek-chat', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
+		$this->assertEquals( 'deepseek-v4-flash', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
 		$this->assertContains( 'deepseek-reasoner', WP_MCP_AI_DeepSeek_Client::MODELS_WITHOUT_TOOL_CALLING );
 	}
 

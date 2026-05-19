@@ -90,7 +90,12 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'microsoft/phi-3-small-128k-instruct'  => 'microsoft/phi-4',
 			'microsoft/phi-3-small-8k-instruct'    => 'microsoft/phi-4',
 			// Vertex / GCP stale.
-		);
+
+		// DeepSeek legacy aliases → V4 Flash (May 2026).
+		'deepseek-chat'     => 'deepseek-v4-flash',
+		'deepseek-reasoner' => 'deepseek-v4-flash',
+		'deepseek-coder'    => 'deepseek-v4-flash',
+	);
 	}
 
 	/**

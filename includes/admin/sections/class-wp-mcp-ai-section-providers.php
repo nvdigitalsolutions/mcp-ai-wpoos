@@ -175,10 +175,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $deepseek_models ) ) {
 				$deepseek_models = array(
-					'deepseek-chat'     => 'DeepSeek-V3 (Recommended, supports tools)',
-					'deepseek-reasoner' => 'DeepSeek-R1 (Chain-of-thought, no tools)',
-					'deepseek-coder'    => 'DeepSeek Coder',
-				);
+				'deepseek-v4-flash' => 'DeepSeek-V4 Flash (Recommended, 1M ctx, tools)',
+				'deepseek-v4-pro'   => 'DeepSeek-V4 Pro (Reasoning, coding, agents)',
+				'deepseek-chat'     => 'DeepSeek-V3 [Deprecated]',
+				 'deepseek-reasoner' => 'DeepSeek-R1 [Deprecated]',
+			'deepseek-coder'    => 'DeepSeek Coder [Deprecated]',
+		);
 			}
 
 			// Get OpenRouter models from Model Config.
@@ -1200,9 +1202,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'deepseek_model'                     => array(
 					'type'        => 'select',
 					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default DeepSeek model to use. deepseek-chat (DeepSeek-V3) is the general-purpose model with tool calling support. deepseek-reasoner (DeepSeek-R1) provides chain-of-thought reasoning but does not support tool/function calling.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-v4-flash (1M context, 384K output) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro offers enhanced reasoning for complex agentic workflows. Legacy models (chat, reasoner, coder) are deprecated.', 'mcp-ai-wpoos' ),
 					'options'     => $deepseek_models,
-					'default'     => 'deepseek-chat',
+					'default'     => 'deepseek-v4-flash',
 				),
 				'deepseek_base_url'                  => array(
 					'type'        => 'url',
