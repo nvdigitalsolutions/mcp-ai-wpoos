@@ -633,7 +633,7 @@ See [`addons/saas-controller/README.md`](addons/saas-controller/README.md) for t
 
 The Cloudflare-Worker counterpart to the Pro plugin module shipped on May 5.
 Lives in this monorepo for review convenience and is deployed independently
-to `cloud.nvoos.com`.
+to `nvoos.cloud`.
 
 - **Stack:** TypeScript + Hono router + Stripe (HTTPS API, no Node SDK at request-time) + D1 + KV.
 - **Endpoints:**
@@ -661,7 +661,7 @@ key management required. Sits alongside the existing free BYOK flow.
 - **New base filter** `wp_mcp_ai_route_to_provider` (in `WP_MCP_AI_Language_Model_Router::route_to_provider()`) that lets any add-on register a custom provider id without forking the router.
 - **New Pro module** under `addons/pro/includes/`:
   - `services/class-wp-mcp-ai-nv-cloud-service.php` — singleton with encrypted Connect Token storage (AES-256-CBC keyed by `AUTH_KEY`+`SECURE_AUTH_KEY`), balance cache, prefs, markup math, ledger.
-  - `providers/class-wp-mcp-ai-nv-cloud-client.php` — OpenAI-compatible HTTP client (subclass of the existing OpenRouter client) targeting `cloud.nvoos.com/v1`.
+  - `providers/class-wp-mcp-ai-nv-cloud-client.php` — OpenAI-compatible HTTP client (subclass of the existing OpenRouter client) targeting `nvoos.cloud/v1`.
   - `providers/class-wp-mcp-ai-nv-cloud-provider-client.php` — `Interface_WP_MCP_AI_Provider_Client` adapter.
   - `services/class-wp-mcp-ai-nv-cloud-billing-observer.php` — hooks `wp_mcp_ai_cost_calculated`, writes wholesale + 7% + total ledger entries (200-entry cap).
   - `rest/class-wp-mcp-ai-nv-cloud-rest-controller.php` — `/mcp-ai-pro/v1/cloud/{status,connect,disconnect,refresh-balance,topup-url,ledger,prefs}` (all `manage_options`-gated).

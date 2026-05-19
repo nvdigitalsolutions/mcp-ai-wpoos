@@ -6,7 +6,7 @@
  * Gateway. Wire-format is OpenAI-compatible so we can reuse the OpenRouter
  * client's request/response pipeline 1:1; we only differ in:
  *
- *  - Base URL (NV oOS Cloud gateway, default `https://cloud.nvoos.com/v1`).
+ *  - Base URL (NV oOS Cloud gateway, default `https://nvoos.cloud/v1`).
  *  - Auth header (NV Connect Token, not an OpenRouter API key).
  *  - Custom response headers used to record the wholesale cost so the local
  *    ledger can show the customer the exact 7% fee on every chat turn.

@@ -45,7 +45,7 @@ WordPress. The architecture:
 WordPress (NV oOS plugin)
         │  (HTTPS, Bearer Connect Token)
         ▼
-  cloud.nvoos.com (Cloudflare Worker)
+  nvoos.cloud (Cloudflare Worker)
         │  (Cloudflare AI Gateway with revenue-share)
         ▼
   openrouter.ai (master key, never exposed)
@@ -65,8 +65,8 @@ WordPress / LAMP / Node sites — it doesn't offer an AI inference gateway.
 You could host the NV oOS Cloud Worker code on Cloudways' Node/Vultr servers,
 but you'd lose Cloudflare's per-edge caching, revenue-share, and request
 deduplication. **You can absolutely use both:** Cloudways for the
-marketing/billing dashboard at `nvoos.com` and Cloudflare AI Gateway for the
-inference proxy at `cloud.nvoos.com`. This plugin only cares about the
+marketing/billing dashboard at `nvoos.pro` and Cloudflare AI Gateway for the
+inference proxy at `nvoos.cloud`. This plugin only cares about the
 inference endpoint.
 
 ## Plugin-side architecture
@@ -103,7 +103,7 @@ local mirror (capped at 200 entries). The admin page shows three columns:
 
 The authoritative ledger lives on the SaaS — the local mirror is a
 pleasant offline view; downloadable monthly statements (PDF + CSV) come from
-the SaaS dashboard at `https://cloud.nvoos.com/`.
+the SaaS dashboard at `https://nvoos.cloud/`.
 
 ## Cloudflare Worker contract
 
@@ -136,7 +136,7 @@ namespace. The plugin calls these endpoints with `Authorization: Bearer <connect
 
 ```
 Plugin admin (NV oOS → NV oOS Cloud)
-  ├─ "Connect NV oOS Cloud" button  → opens https://cloud.nvoos.com/connect?site_url=…
+  ├─ "Connect NV oOS Cloud" button  → opens https://nvoos.cloud/connect?site_url=…
   │      Stripe Checkout for $25 → redirects back with ?token=<connect_token>
   │      Plugin POSTs token to /mcp-ai-pro/v1/cloud/connect
   │
@@ -163,7 +163,7 @@ Plugin admin (NV oOS → NV oOS Cloud)
 
 | Hook | Type | Description |
 |---|---|---|
-| `wp_mcp_ai_nv_cloud_base_url` | filter | Override the SaaS base URL (default `https://cloud.nvoos.com/v1`). |
+| `wp_mcp_ai_nv_cloud_base_url` | filter | Override the SaaS base URL (default `https://nvoos.cloud/v1`). |
 | `wp_mcp_ai_nv_cloud_request_headers` | filter | Modify outbound request headers. |
 | `wp_mcp_ai_nv_cloud_connected` | action | Fires after a connect token is stored. |
 | `wp_mcp_ai_nv_cloud_disconnected` | action | Fires after the connection is wiped. |
@@ -174,7 +174,7 @@ Plugin admin (NV oOS → NV oOS Cloud)
 
 | Constant | Default | Purpose |
 |---|---|---|
-| `WP_MCP_AI_NV_CLOUD_BASE_URL` | `https://cloud.nvoos.com/v1` | Override the SaaS endpoint (staging/dev). |
+| `WP_MCP_AI_NV_CLOUD_BASE_URL` | `https://nvoos.cloud/v1` | Override the SaaS endpoint (staging/dev). |
 | `WP_MCP_AI_NV_Cloud_Service::MARKUP_RATE` | `0.07` | Service-fee rate (7%). |
 | `WP_MCP_AI_NV_Cloud_Service::DEFAULT_MIN_TOPUP_USD` | `25.0` | Stripe-fee-protected minimum top-up. |
 | `WP_MCP_AI_NV_Cloud_Service::LOW_BALANCE_THRESHOLD_USD` | `2.0` | When the low-balance banner triggers. |

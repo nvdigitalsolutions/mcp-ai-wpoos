@@ -1,6 +1,6 @@
 # NV oOS Cloud — Cloudflare Worker (SaaS Backend)
 
-> **Status:** Phase 3 reference implementation · Brand: **NV oOS Cloud** · Default host: `cloud.nvoos.com`
+> **Status:** Phase 3 reference implementation · Brand: **NV oOS Cloud** · Default host: `nvoos.cloud`
 
 This addon is **not a WordPress plugin**. It is the SaaS-side counterpart to the
 `addons/pro/` "NV oOS Cloud" plugin module. It is shipped in this monorepo for
@@ -12,7 +12,7 @@ runs inside WordPress.
 WordPress (NV oOS Pro plugin)
         │  HTTPS, Authorization: Bearer <connect_token>
         ▼
-  cloud.nvoos.com  ─── this addon (Cloudflare Worker)
+  nvoos.cloud  ─── this addon (Cloudflare Worker)
         │  Cloudflare AI Gateway with revenue-share
         ▼
   openrouter.ai (master key, never exposed)
@@ -98,8 +98,8 @@ npx wrangler secret put CF_AI_GATEWAY_URL
 # 4. Deploy
 npm run deploy
 
-# 5. Bind the custom domain `cloud.nvoos.com` in the Cloudflare dashboard
-# 6. Configure the Stripe webhook endpoint to https://cloud.nvoos.com/stripe/webhook
+# 5. Bind the custom domain `nvoos.cloud` in the Cloudflare dashboard
+# 6. Configure the Stripe webhook endpoint to https://nvoos.cloud/stripe/webhook
 ```
 
 ## Plugin contract

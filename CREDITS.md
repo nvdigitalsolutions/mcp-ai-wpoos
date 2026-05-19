@@ -427,7 +427,7 @@ the providers' respective Terms of Service.
 
 This addon is **not a WordPress plugin**. It is the SaaS-side counterpart to
 the Pro plugin module that ships in `addons/pro/`. Deployed independently to
-`cloud.nvoos.com` as a Cloudflare Worker.
+`nvoos.cloud` as a Cloudflare Worker.
 
 | Package | License | Purpose |
 |---|---|---|

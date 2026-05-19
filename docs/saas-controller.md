@@ -7,7 +7,7 @@
 
 The SaaS Controller is the operator-side WordPress admin toolkit for provisioning and managing the **NV oOS Cloud control plane** — Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, and OpenRouter — without leaving WP-Admin.
 
-It is the **operator-facing counterpart** to `addons/cloud-worker/`: where the cloud worker is the runtime you deploy to `cloud.nvoos.com`, the SaaS Controller is the admin plugin that lets you provision it, reconcile desired vs live state, apply changes under a Human-in-the-Loop gate, detect drift, and audit every mutation.
+It is the **operator-facing counterpart** to `addons/cloud-worker/`: where the cloud worker is the runtime you deploy to `nvoos.cloud`, the SaaS Controller is the admin plugin that lets you provision it, reconcile desired vs live state, apply changes under a Human-in-the-Loop gate, detect drift, and audit every mutation.
 
 **Full implementation reference:** [`addons/saas-controller/README.md`](../addons/saas-controller/README.md)
 
