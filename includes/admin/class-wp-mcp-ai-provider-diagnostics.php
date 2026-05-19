@@ -2401,9 +2401,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'Kimi connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
-							__( 'Model', 'mcp-ai-wpoos' )        => $model,
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
 							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
-							__( 'Latency', 'mcp-ai-wpoos' )      => $latency_ms . ' ms',
+							__( 'Latency', 'mcp-ai-wpoos' ) => $latency_ms . ' ms',
 						),
 					)
 				);

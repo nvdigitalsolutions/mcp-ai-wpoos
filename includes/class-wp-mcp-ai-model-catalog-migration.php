@@ -91,11 +91,11 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'microsoft/phi-3-small-8k-instruct'    => 'microsoft/phi-4',
 			// Vertex / GCP stale.
 
-		// DeepSeek legacy aliases → V4 Flash (May 2026).
-		'deepseek-chat'     => 'deepseek-v4-flash',
-		'deepseek-reasoner' => 'deepseek-v4-flash',
-		'deepseek-coder'    => 'deepseek-v4-flash',
-	);
+			// DeepSeek legacy aliases → V4 Flash (May 2026).
+			'deepseek-chat'                        => 'deepseek-v4-flash',
+			'deepseek-reasoner'                    => 'deepseek-v4-flash',
+			'deepseek-coder'                       => 'deepseek-v4-flash',
+		);
 	}
 
 	/**
@@ -205,7 +205,7 @@ class WP_MCP_AI_Model_Catalog_Migration {
 		// Single IN-clause query to find every post_id whose stored model is a legacy id,
 		// rather than one query per legacy id.
 		$placeholders = implode( ', ', array_fill( 0, count( $legacy_ids ), '%s' ) );
-		$rows         = $wpdb->get_results(
+		$rows         = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time migration; caching would return stale data.
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a fixed list of %s tokens.
 				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value IN ( {$placeholders} )",
