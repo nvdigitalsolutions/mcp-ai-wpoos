@@ -37,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_NV_Cloud_Service' ) ) {
 		 *
 		 * @var string
 		 */
-		const DEFAULT_BASE_URL = 'https://cloud.nvoos.com/v1';
+		const DEFAULT_BASE_URL = 'https://nvoos.cloud/v1';
 
 		/**
 		 * Service-fee markup applied to upstream wholesale cost (7%).

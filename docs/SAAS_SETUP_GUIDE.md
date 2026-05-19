@@ -36,7 +36,7 @@ Core Setup & Walkthrough → Monitoring & Runbook → Best Practices → Appendi
 
 **NV oOS Cloud** is the hosted "managed-tokens" SaaS that ships alongside the
 NV oOS WordPress plugin. It lets a site route AI inference through a
-managed Cloudflare Worker — `cloud.nvoos.com` — without managing an
+managed Cloudflare Worker — `nvoos.cloud` — without managing an
 OpenAI / Anthropic / OpenRouter API key directly. It is **Pro-only**, opt-in,
 and exists in addition to the plugin's existing **BYOK** (Bring-Your-Own-Key)
 flow, which remains free and the default.
@@ -50,7 +50,7 @@ This guide covers two audiences:
 
 | Audience | Sections Most Relevant |
 |---|---|
-| **SaaS operator** (deploys the Worker at `cloud.nvoos.com`) | §2, §3, §5, §7, §10 |
+| **SaaS operator** (deploys the Worker at `nvoos.cloud`) | §2, §3, §5, §7, §10 |
 | **Site administrator** (connects a WordPress site to an existing NV oOS Cloud account) | §3, §4, §6, §8, §9 |
 
 > **Authoritative references.** When this guide and the following documents disagree, the linked documents win:
@@ -67,7 +67,7 @@ This guide covers two audiences:
 | Requirement | Minimum | Notes |
 |---|---|---|
 | **Cloudflare account** | Workers Paid plan | D1, KV, Workers, AI Gateway are all required. Free plan is **not** sufficient (D1 quotas + Workers CPU). |
-| **Custom domain** | DNS managed by Cloudflare | Default `cloud.nvoos.com`; override via `WP_MCP_AI_NV_CLOUD_BASE_URL` and the `wp_mcp_ai_nv_cloud_base_url` filter for staging. |
+| **Custom domain** | DNS managed by Cloudflare | Default `nvoos.cloud`; override via `WP_MCP_AI_NV_CLOUD_BASE_URL` and the `wp_mcp_ai_nv_cloud_base_url` filter for staging. |
 | **Cloudflare AI Gateway** | One gateway configured for OpenRouter | Provides cost metering (`cf-aig-cost-usd` header), caching, rate limits, and observability. |
 | **OpenRouter account** | Production API key | The single master key the Worker uses to fan out to all upstream providers. Stored as a Wrangler secret — never returned to clients. |
 | **Stripe account** | Live mode + Stripe Tax enabled | Required for top-ups, processor-fee passthrough, and worldwide VAT/GST handling. |
@@ -82,7 +82,7 @@ This guide covers two audiences:
 | **PHP** | 8.1+ | Pro addon requires PHP 8.1+. Base plugin runs on 7.4+. |
 | **NV oOS Pro** | Latest | NV oOS Cloud is **Pro-only**. Base alone cannot connect. |
 | **`manage_options` capability** | Required | All Cloud REST endpoints are gated on `manage_options`. |
-| **Outbound HTTPS to `cloud.nvoos.com`** | Allowed | If the site is firewalled, allowlist the host. |
+| **Outbound HTTPS to `nvoos.cloud`** | Allowed | If the site is firewalled, allowlist the host. |
 | **WordPress secret keys** | `AUTH_KEY` + `SECURE_AUTH_KEY` set | Used to AES-256-CBC-encrypt connect tokens at rest. |
 
 ### 2.3 Supported browsers (admin UI)
@@ -110,7 +110,7 @@ checklist below is the operational sequencing:
 4. **Set Wrangler secrets**: `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`,
    `STRIPE_WEBHOOK_SECRET`, `CF_AI_GATEWAY_URL`.
 5. **Deploy the Worker** (`npm run deploy`) and bind the production hostname
-   (e.g. `cloud.nvoos.com`) in the Cloudflare dashboard.
+   (e.g. `nvoos.cloud`) in the Cloudflare dashboard.
 6. **Configure the Stripe webhook** to `https://<your-host>/stripe/webhook`
    and verify the signing secret matches.
 
@@ -129,7 +129,7 @@ in WordPress admin. The plugin handles the rest:
 
 ```
 WP-Admin → NV oOS → NV oOS Cloud → "Connect NV oOS Cloud"
-   └── opens https://cloud.nvoos.com/connect?site_url=<urlencoded>
+   └── opens https://nvoos.cloud/connect?site_url=<urlencoded>
        └── Stripe Checkout for the configured minimum top-up (default $25)
            └── on success, redirects back with ?token=<connect_token>
                └── plugin POSTs the token to /mcp-ai-pro/v1/cloud/connect
@@ -160,7 +160,7 @@ The plugin authenticates **outbound** to the SaaS:
 
 ```http
 POST /v1/chat/completions HTTP/1.1
-Host: cloud.nvoos.com
+Host: nvoos.cloud
 Authorization: Bearer <connect_token>
 X-NV-Site-Url: https://example.com
 Content-Type: application/json
@@ -220,8 +220,8 @@ UI:
 | Environment | Plugin constant | Worker secret set | Stripe mode |
 |---|---|---|---|
 | **Local dev** | `WP_MCP_AI_NV_CLOUD_BASE_URL = 'http://localhost:8787/v1'` | `.dev.vars` | `sk_test_…` |
-| **Staging** | `WP_MCP_AI_NV_CLOUD_BASE_URL = 'https://staging.cloud.nvoos.com/v1'` | Wrangler secrets on staging Worker | `sk_test_…` |
-| **Production** | unset (defaults to `https://cloud.nvoos.com/v1`) | Wrangler secrets on prod Worker | `sk_live_…` |
+| **Staging** | `WP_MCP_AI_NV_CLOUD_BASE_URL = 'https://staging.nvoos.cloud/v1'` | Wrangler secrets on staging Worker | `sk_test_…` |
+| **Production** | unset (defaults to `https://nvoos.cloud/v1`) | Wrangler secrets on prod Worker | `sk_live_…` |
 
 ---
 
@@ -258,7 +258,7 @@ description.
 
 | Surface | Authority | Retention |
 |---|---|---|
-| **SaaS-side ledger** (D1 `ledger`) | **Authoritative** — used for monthly statements (PDF + CSV) generated by `cloud.nvoos.com`. | Indefinite. |
+| **SaaS-side ledger** (D1 `ledger`) | **Authoritative** — used for monthly statements (PDF + CSV) generated by `nvoos.cloud`. | Indefinite. |
 | **Plugin-side ledger mirror** | Convenience view in WP-Admin. | Capped at 200 entries. |
 
 ### 6.4 Refunds & disputes
@@ -336,11 +336,11 @@ NV oOS Cloud's wallet, independently of the SaaS.
 |---|---|---|
 | 1. Activate NV oOS Pro | WP-Admin → Plugins | "NV oOS Cloud" submenu appears under "NV oOS". |
 | 2. Open NV oOS Cloud settings | WP-Admin → NV oOS → NV oOS Cloud | Settings page renders with "Connect NV oOS Cloud" CTA. |
-| 3. Click **Connect NV oOS Cloud** | Settings page | Redirects to `cloud.nvoos.com/connect?site_url=…`. |
+| 3. Click **Connect NV oOS Cloud** | Settings page | Redirects to `nvoos.cloud/connect?site_url=…`. |
 | 4. Complete Stripe Checkout for $25 | Stripe Checkout | Wallet funded. Connect token issued. |
 | 5. Land back in WP-Admin | Settings page | Token stored encrypted; balance $25 displayed. |
 | 6. (Optional) Tick **Use as default provider** | Settings page | `nv_hosted` promoted in router. |
-| 7. Open any assistant and send a message | Chat UI | Inference routes through `cloud.nvoos.com`. |
+| 7. Open any assistant and send a message | Chat UI | Inference routes through `nvoos.cloud`. |
 | 8. Open the **Ledger** tab | Settings page | Wholesale, fee, total displayed for the most recent turns. |
 
 ### 9.2 Operator setup checklist
@@ -365,7 +365,7 @@ The Pro plugin module exposes the following hooks for downstream addons:
 
 | Hook | Type | Description |
 |---|---|---|
-| `wp_mcp_ai_nv_cloud_base_url` | filter | Override the SaaS base URL (default `https://cloud.nvoos.com/v1`). |
+| `wp_mcp_ai_nv_cloud_base_url` | filter | Override the SaaS base URL (default `https://nvoos.cloud/v1`). |
 | `wp_mcp_ai_nv_cloud_request_headers` | filter | Modify outbound request headers. |
 | `wp_mcp_ai_nv_cloud_connected` | action | Fires after a connect token is stored. |
 | `wp_mcp_ai_nv_cloud_disconnected` | action | Fires after the connection is wiped. |
@@ -400,7 +400,7 @@ Full hook reference: [`docs/features/nv-cloud.md`](features/nv-cloud.md) §"Filt
 | Symptom | Likely Cause | First Response |
 |---|---|---|
 | Plugin shows "Disconnected" after working previously | Token revoked SaaS-side, or `AUTH_KEY` rotated and the encrypted token can no longer be decrypted | Re-connect via the admin UI. If `AUTH_KEY` was rotated, re-issue from the SaaS dashboard. |
-| All chat turns return HTTP 403 from `cloud.nvoos.com` | Site URL changed (e.g. `http` → `https`, or domain migration) breaking site-binding | Issue a new token bound to the new URL via the SaaS dashboard. |
+| All chat turns return HTTP 403 from `nvoos.cloud` | Site URL changed (e.g. `http` → `https`, or domain migration) breaking site-binding | Issue a new token bound to the new URL via the SaaS dashboard. |
 | Wallet credited twice after a Stripe top-up | Webhook idempotency miss (extremely rare) | Verify `topup_sessions` table for duplicate `event_id`; raise a Stripe refund if needed. |
 | `X-NV-Worker-Version` mismatch warning in the plugin | Plugin and Worker on incompatible versions | Update whichever side is older; the markup math contract must match. |
 | Latency spike on streaming responses | Cloudflare edge issue or upstream provider latency | Check Cloudflare status page, then OpenRouter status page; AI Gateway will surface upstream timings. |

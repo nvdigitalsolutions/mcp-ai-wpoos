@@ -9,7 +9,7 @@
  * http://localhost:8787.
  */
 
-// Point the plugin to your local cloud worker instead of cloud.nvoos.com.
+// Point the plugin to your local cloud worker instead of nvoos.cloud.
 if ( ! defined( 'WP_MCP_AI_NV_CLOUD_BASE_URL' ) ) {
 	define( 'WP_MCP_AI_NV_CLOUD_BASE_URL', 'http://localhost:8787/v1' );
 }

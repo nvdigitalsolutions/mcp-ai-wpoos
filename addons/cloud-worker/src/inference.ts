@@ -23,7 +23,7 @@ function assertBalance(walletBalanceMicroUsd: number): Response | null {
 		return errorResponse(
 			402,
 			'insufficient_balance',
-			'Wallet balance is empty. Please top up at https://cloud.nvoos.com/.'
+			'Wallet balance is empty. Please top up at https://nvoos.cloud/.'
 		);
 	}
 	return null;
@@ -73,7 +73,7 @@ async function proxy(ctx: Context<AuthEnv>, path: string): Promise<Response> {
 	headers.set('Authorization', `Bearer ${ctx.env.OPENROUTER_API_KEY}`);
 	headers.set('Content-Type', 'application/json');
 	// Identify ourselves to OpenRouter for revenue-share attribution.
-	headers.set('HTTP-Referer', 'https://cloud.nvoos.com');
+	headers.set('HTTP-Referer', 'https://nvoos.cloud');
 	headers.set('X-Title', 'NV oOS Cloud');
 
 	const upstreamReq = new Request(upstreamUrl, {

@@ -14,7 +14,7 @@ http://localhost:8787 (Cloud Worker — Miniflare)
         │  D1 (local SQLite)
         │  KV (local)
         ▼
-  cloud.nvoos.com (production only — skipped in local dev)
+  nvoos.cloud (production only — skipped in local dev)
 ```
 
 ---
