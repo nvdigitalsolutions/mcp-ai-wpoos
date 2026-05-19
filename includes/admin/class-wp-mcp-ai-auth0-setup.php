@@ -221,55 +221,20 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			</div>
 
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Auth0 setup wizard layout and styling on this admin page only
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Auth0 setup wizard on this admin page only.
-			?>
-			<style>
-				.wp-mcp-ai-setup-wizard { max-width: 900px; }
-				.wp-mcp-ai-setup-wizard .card { margin-bottom: 20px; }
-				.status-badge {
-					padding: 4px 12px;
-					border-radius: 3px;
-					font-weight: 600;
-					display: inline-block;
-				}
-				.status-badge.enabled {
-					background: #4caf50;
-					color: white;
-				}
-				.status-badge.disabled {
-					background: #ccc;
-					color: #666;
-				}
-				.setup-step { margin: 20px 0; }
-				.setup-checklist {
-					line-height: 1.6;
-					margin-left: 20px;
-				}
-				.setup-checklist li {
-					margin-bottom: 20px;
-				}
-				.setup-checklist code {
-					background: #f5f5f5;
-					padding: 2px 6px;
-					border-radius: 3px;
-				}
-				#auto-configure-result.success {
-					padding: 12px;
-					background: #d4edda;
-					border: 1px solid #c3e6cb;
-					border-radius: 4px;
-					color: #155724;
-				}
-				#auto-configure-result.error {
-					padding: 12px;
-					background: #f8d7da;
-					border: 1px solid #f5c6cb;
-					border-radius: 4px;
-					color: #721c24;
-				}
-			</style>
-			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-auth0-setup',
+				'.wp-mcp-ai-setup-wizard{max-width:900px;}'
+				. '.wp-mcp-ai-setup-wizard .card{margin-bottom:20px;}'
+				. '.status-badge{padding:4px 12px;border-radius:3px;font-weight:600;display:inline-block;}'
+				. '.status-badge.enabled{background:#4caf50;color:white;}'
+				. '.status-badge.disabled{background:#ccc;color:#666;}'
+				. '.setup-step{margin:20px 0;}'
+				. '.setup-checklist{line-height:1.6;margin-left:20px;}'
+				. '.setup-checklist li{margin-bottom:20px;}'
+				. '.setup-checklist code{background:#f5f5f5;padding:2px 6px;border-radius:3px;}'
+				. '#auto-configure-result.success{padding:12px;background:#d4edda;border:1px solid #c3e6cb;border-radius:4px;color:#155724;}'
+				. '#auto-configure-result.error{padding:12px;background:#f8d7da;border:1px solid #f5c6cb;border-radius:4px;color:#721c24;}'
+			);
 		}
 
 		/**

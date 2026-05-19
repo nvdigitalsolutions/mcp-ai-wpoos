@@ -101,14 +101,20 @@ class WP_MCP_AI_Profession_Search_Helper {
 
 		$args = wp_parse_args( $args, $defaults );
 
+		$search_input_id_js = wp_json_encode( $args['search_input_id'] );
+		$row_selector_js    = wp_json_encode( $args['row_selector'] );
+		$debounce_delay     = absint( $args['debounce_delay'] );
+		$no_results_text    = wp_json_encode( __( 'No professions found matching your search.', 'mcp-ai-wpoos' ) );
+		$one_result_text    = wp_json_encode( __( '1 profession found.', 'mcp-ai-wpoos' ) );
+		$many_results_text  = wp_json_encode( __( 'professions found.', 'mcp-ai-wpoos' ) );
+		ob_start();
 		?>
-		<script type="text/javascript">
 		( function() {
 			var searchDebounceTimer = null;
 
 			document.addEventListener( 'DOMContentLoaded', function() {
-				var searchInput = document.getElementById( '<?php echo esc_js( $args['search_input_id'] ); ?>' );
-				var professionRows = document.querySelectorAll( '<?php echo esc_js( $args['row_selector'] ); ?>' );
+				var searchInput = document.getElementById( <?php echo wp_json_encode( $args['search_input_id'] ); ?> );
+				var professionRows = document.querySelectorAll( <?php echo wp_json_encode( $args['row_selector'] ); ?> );
 
 				// Handle search filtering.
 				if ( searchInput ) {
@@ -172,16 +178,17 @@ class WP_MCP_AI_Profession_Search_Helper {
 				if ( searchTerm === '' ) {
 					resultsDiv.textContent = '';
 				} else if ( visibleCount === 0 ) {
-					resultsDiv.textContent = '<?php esc_html_e( 'No professions found matching your search.', 'mcp-ai-wpoos' ); ?>';
+					resultsDiv.textContent = <?php echo wp_json_encode( __( 'No professions found matching your search.', 'mcp-ai-wpoos' ) ); ?>;
 				} else if ( visibleCount === 1 ) {
-					resultsDiv.textContent = '<?php esc_html_e( '1 profession found.', 'mcp-ai-wpoos' ); ?>';
+					resultsDiv.textContent = <?php echo wp_json_encode( __( '1 profession found.', 'mcp-ai-wpoos' ) ); ?>;
 				} else {
-					resultsDiv.textContent = visibleCount + ' <?php esc_html_e( 'professions found.', 'mcp-ai-wpoos' ); ?>';
+					resultsDiv.textContent = visibleCount + ' ' + <?php echo wp_json_encode( __( 'professions found.', 'mcp-ai-wpoos' ) ); ?>;
 				}
 			}
 		} )();
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 	}
 
 	/**
@@ -191,43 +198,14 @@ class WP_MCP_AI_Profession_Search_Helper {
 	 * @return void
 	 */
 	public static function render_search_styles() {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for profession search helper UI.
-		?>
-		<style>
-			.wp-mcp-ai-profession-search-wrapper {
-				position: relative;
-			}
-			#wp-mcp-ai-profession-search {
-				padding: 8px 12px;
-				font-size: 14px;
-				border: 1px solid #8c8f94;
-				border-radius: 4px;
-				box-shadow: 0 0 0 transparent;
-				transition: border-color .1s ease-in-out, box-shadow .1s linear;
-			}
-			#wp-mcp-ai-profession-search:focus {
-				border-color: #2271b1;
-				box-shadow: 0 0 0 1px #2271b1;
-				outline: 2px solid transparent;
-			}
-			.wp-mcp-ai-profession-row {
-				transition: opacity 0.2s ease-in-out;
-			}
-			.wp-mcp-ai-profession-row[style*="display: none"] {
-				opacity: 0;
-			}
-			.screen-reader-text {
-				clip: rect(1px, 1px, 1px, 1px);
-				clip-path: inset(50%);
-				height: 1px;
-				width: 1px;
-				margin: -1px;
-				overflow: hidden;
-				padding: 0;
-				position: absolute;
-				word-wrap: normal !important;
-			}
-		</style>
-		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-profession-search-helper',
+			'.wp-mcp-ai-profession-search-wrapper{position:relative;}'
+			. '#wp-mcp-ai-profession-search{padding:8px 12px;font-size:14px;border:1px solid #8c8f94;border-radius:4px;box-shadow:0 0 0 transparent;transition:border-color .1s ease-in-out,box-shadow .1s linear;}'
+			. '#wp-mcp-ai-profession-search:focus{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1;outline:2px solid transparent;}'
+			. '.wp-mcp-ai-profession-row{transition:opacity 0.2s ease-in-out;}'
+			. '.wp-mcp-ai-profession-row[style*="display: none"]{opacity:0;}'
+			. '.screen-reader-text{clip:rect(1px,1px,1px,1px);clip-path:inset(50%);height:1px;width:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;word-wrap:normal !important;}'
+		);
 	}
 }

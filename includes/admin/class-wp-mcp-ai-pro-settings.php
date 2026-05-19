@@ -2051,310 +2051,55 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			</div>
 
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for pro settings page layout and styling on this admin page only
-			?>
-			<style>
-				.wp-mcp-ai-pro-settings h1 .dashicons {
-					font-size: 30px;
-					width: 30px;
-					height: 30px;
-					vertical-align: middle;
-					margin-right: 8px;
-					color: #2271b1;
-				}
-
-				.wp-mcp-ai-settings-columns {
-					display: grid;
-					grid-template-columns: 1fr 1fr;
-					gap: 20px;
-					margin-top: 20px;
-				}
-
-				@media (max-width: 1280px) {
-					.wp-mcp-ai-settings-columns {
-						grid-template-columns: 1fr;
-					}
-				}
-
-				.wp-mcp-ai-settings-card {
-					background: #fff;
-					border: 1px solid #c3c4c7;
-					padding: 20px;
-					box-shadow: 0 1px 1px rgba(0,0,0,.04);
-				}
-
-				.wp-mcp-ai-settings-card h2 {
-					margin-top: 0;
-					padding-bottom: 10px;
-					border-bottom: 1px solid #c3c4c7;
-				}
-
-				.wp-mcp-ai-settings-card h3 {
-					margin-top: 20px;
-					margin-bottom: 10px;
-					font-size: 14px;
-					font-weight: 600;
-					color: #1d2327;
-				}
-
-				.wp-mcp-ai-settings-card h3 .count {
-					color: #646970;
-					font-weight: 400;
-				}
-
-				.wp-mcp-ai-status-badge {
-					display: inline-block;
-					padding: 3px 10px;
-					border-radius: 3px;
-					font-size: 12px;
-					font-weight: 600;
-					text-transform: uppercase;
-				}
-
-				.wp-mcp-ai-status-badge.installed,
-				.wp-mcp-ai-status-badge.enabled,
-				.wp-mcp-ai-status-badge.active {
-					background: #00a32a;
-					color: #fff;
-				}
-
-				.wp-mcp-ai-status-badge.not-installed,
-				.wp-mcp-ai-status-badge.disabled,
-				.wp-mcp-ai-status-badge.inactive {
-					background: #dba617;
-					color: #fff;
-				}
-
-				.wp-mcp-ai-pro-settings .wp-list-table {
-					margin-top: 10px;
-				}
-
-				.wp-mcp-ai-pro-settings code {
-					background: #f0f0f1;
-					padding: 2px 6px;
-					border-radius: 3px;
-					font-size: 13px;
-				}
-
-				/* Toolkit Grid */
-				.wp-mcp-ai-toolkit-grid {
-					display: grid;
-					grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-					gap: 20px;
-					margin-top: 20px;
-				}
-
-				@media (max-width: 768px) {
-					.wp-mcp-ai-toolkit-grid {
-						grid-template-columns: 1fr;
-					}
-				}
-
-				/* Toolkit Cards */
-				.wp-mcp-ai-toolkit-card {
-					background: #fff;
-					border: 1px solid #c3c4c7;
-					padding: 20px;
-					box-shadow: 0 1px 1px rgba(0,0,0,.04);
-					border-radius: 4px;
-				}
-
-				.wp-mcp-ai-toolkit-card .toolkit-header h3 {
-					margin: 0 0 10px 0;
-					font-size: 16px;
-					font-weight: 600;
-					display: flex;
-					align-items: center;
-					gap: 8px;
-					flex-wrap: wrap;
-				}
-
-				.wp-mcp-ai-toolkit-card .toolkit-description {
-					margin: 0 0 15px 0;
-					color: #646970;
-					font-size: 14px;
-				}
-
-				/* Toolkit Status Badges */
-				.toolkit-status-badge {
-					display: inline-block;
-					padding: 3px 10px;
-					border-radius: 3px;
-					font-size: 11px;
-					font-weight: 600;
-					text-transform: uppercase;
-				}
-
-				.toolkit-status-badge.operational {
-					background: #00a32a;
-					color: #fff;
-				}
-
-				.toolkit-status-badge.partial {
-					background: #d63638;
-					color: #fff;
-				}
-
-				.toolkit-status-badge.disabled {
-					background: #646970;
-					color: #fff;
-				}
-
-				/* Category Badges */
-				.toolkit-category-badge {
-					display: inline-block;
-					padding: 3px 10px;
-					border-radius: 3px;
-					font-size: 11px;
-					font-weight: 600;
-					text-transform: uppercase;
-				}
-
-				.toolkit-category-badge.core {
-					background: #2271b1;
-					color: #fff;
-				}
-
-				.toolkit-category-badge.specialized {
-					background: #8c7ae6;
-					color: #fff;
-				}
-
-				.toolkit-category-badge.infrastructure {
-					background: #50e3c2;
-					color: #000;
-				}
-
-				/* Toolkit Warning */
-				.toolkit-warning {
-					background: #fcf0f1;
-					border-left: 4px solid #d63638;
-					padding: 12px;
-					margin-bottom: 15px;
-					display: flex;
-					align-items: center;
-					gap: 8px;
-					font-size: 13px;
-				}
-
-				.toolkit-warning .dashicons {
-					color: #d63638;
-					flex-shrink: 0;
-				}
-
-				/* Toolkit Sections (Collapsible) */
-				.toolkit-section {
-					margin: 15px 0;
-					border: 1px solid #e0e0e0;
-					border-radius: 4px;
-					overflow: hidden;
-				}
-
-				.toolkit-section summary {
-					padding: 12px 15px;
-					background: #f6f7f7;
-					cursor: pointer;
-					font-weight: 600;
-					font-size: 13px;
-					display: flex;
-					justify-content: space-between;
-					align-items: center;
-					user-select: none;
-				}
-
-				.toolkit-section summary:hover {
-					background: #e9eaeb;
-				}
-
-				.toolkit-section[open] summary {
-					border-bottom: 1px solid #e0e0e0;
-				}
-
-				.toolkit-section .section-badge {
-					display: inline-block;
-					padding: 2px 8px;
-					border-radius: 3px;
-					font-size: 11px;
-					font-weight: 600;
-					text-transform: uppercase;
-				}
-
-				.toolkit-section .section-badge.ok {
-					background: #00a32a;
-					color: #fff;
-				}
-
-				.toolkit-section .section-badge.error {
-					background: #d63638;
-					color: #fff;
-				}
-
-				.toolkit-section .tools-count {
-					color: #646970;
-					font-weight: 400;
-				}
-
-				/* Toolkit Details Tables */
-				.toolkit-details-table {
-					width: 100%;
-					border-collapse: collapse;
-					margin: 0;
-				}
-
-				.toolkit-details-table thead th {
-					background: #f9f9f9;
-					padding: 10px 15px;
-					text-align: left;
-					font-size: 12px;
-					font-weight: 600;
-					border-bottom: 1px solid #e0e0e0;
-				}
-
-				.toolkit-details-table tbody td {
-					padding: 10px 15px;
-					border-bottom: 1px solid #f0f0f1;
-					font-size: 13px;
-				}
-
-				.toolkit-details-table tbody tr:last-child td {
-					border-bottom: none;
-				}
-
-				.toolkit-details-table .status-indicator {
-					font-size: 16px;
-					font-weight: bold;
-				}
-
-				.toolkit-details-table .status-indicator.available {
-					color: #00a32a;
-				}
-
-				.toolkit-details-table .status-indicator.unavailable {
-					color: #d63638;
-				}
-
-				.toolkit-details-table .status-source {
-					font-size: 11px;
-					font-weight: 500;
-					color: #2271b1;
-					margin-left: 4px;
-					text-transform: uppercase;
-				}
-
-				/* Toolkit Tools List */
-				.toolkit-tools-list {
-					margin: 0;
-					padding: 15px 15px 15px 40px;
-					list-style: disc;
-				}
-
-				.toolkit-tools-list li {
-					padding: 5px 0;
-					font-size: 13px;
-					color: #646970;
-				}
-			</style>
-			<?php
+				wp_add_inline_style(
+					'wp-mcp-ai-pro-settings',
+					'.wp-mcp-ai-pro-settings h1 .dashicons{font-size:30px;width:30px;height:30px;vertical-align:middle;margin-right:8px;color:#2271b1;}'
+					. '.wp-mcp-ai-settings-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;}'
+					. '@media (max-width:1280px){.wp-mcp-ai-settings-columns{grid-template-columns:1fr;}}'
+					. '.wp-mcp-ai-settings-card{background:#fff;border:1px solid #c3c4c7;padding:20px;box-shadow:0 1px 1px rgba(0,0,0,.04);}'
+					. '.wp-mcp-ai-settings-card h2{margin-top:0;padding-bottom:10px;border-bottom:1px solid #c3c4c7;}'
+					. '.wp-mcp-ai-settings-card h3{margin-top:20px;margin-bottom:10px;font-size:14px;font-weight:600;color:#1d2327;}'
+					. '.wp-mcp-ai-settings-card h3 .count{color:#646970;font-weight:400;}'
+					. '.wp-mcp-ai-status-badge{display:inline-block;padding:3px 10px;border-radius:3px;font-size:12px;font-weight:600;text-transform:uppercase;}'
+					. '.wp-mcp-ai-status-badge.installed,.wp-mcp-ai-status-badge.enabled,.wp-mcp-ai-status-badge.active{background:#00a32a;color:#fff;}'
+					. '.wp-mcp-ai-status-badge.not-installed,.wp-mcp-ai-status-badge.disabled,.wp-mcp-ai-status-badge.inactive{background:#dba617;color:#fff;}'
+					. '.wp-mcp-ai-pro-settings .wp-list-table{margin-top:10px;}'
+					. '.wp-mcp-ai-pro-settings code{background:#f0f0f1;padding:2px 6px;border-radius:3px;font-size:13px;}'
+					. '.wp-mcp-ai-toolkit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(450px,1fr));gap:20px;margin-top:20px;}'
+					. '@media (max-width:768px){.wp-mcp-ai-toolkit-grid{grid-template-columns:1fr;}}'
+					. '.wp-mcp-ai-toolkit-card{background:#fff;border:1px solid #c3c4c7;padding:20px;box-shadow:0 1px 1px rgba(0,0,0,.04);border-radius:4px;}'
+					. '.wp-mcp-ai-toolkit-card .toolkit-header h3{margin:0 0 10px 0;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}'
+					. '.wp-mcp-ai-toolkit-card .toolkit-description{margin:0 0 15px 0;color:#646970;font-size:14px;}'
+					. '.toolkit-status-badge{display:inline-block;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:600;text-transform:uppercase;}'
+					. '.toolkit-status-badge.operational{background:#00a32a;color:#fff;}'
+					. '.toolkit-status-badge.partial{background:#d63638;color:#fff;}'
+					. '.toolkit-status-badge.disabled{background:#646970;color:#fff;}'
+					. '.toolkit-category-badge{display:inline-block;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:600;text-transform:uppercase;}'
+					. '.toolkit-category-badge.core{background:#2271b1;color:#fff;}'
+					. '.toolkit-category-badge.specialized{background:#8c7ae6;color:#fff;}'
+					. '.toolkit-category-badge.infrastructure{background:#50e3c2;color:#000;}'
+					. '.toolkit-warning{background:#fcf0f1;border-left:4px solid #d63638;padding:12px;margin-bottom:15px;display:flex;align-items:center;gap:8px;font-size:13px;}'
+					. '.toolkit-warning .dashicons{color:#d63638;flex-shrink:0;}'
+					. '.toolkit-section{margin:15px 0;border:1px solid #e0e0e0;border-radius:4px;overflow:hidden;}'
+					. '.toolkit-section summary{padding:12px 15px;background:#f6f7f7;cursor:pointer;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center;user-select:none;}'
+					. '.toolkit-section summary:hover{background:#e9eaeb;}'
+					. '.toolkit-section[open] summary{border-bottom:1px solid #e0e0e0;}'
+					. '.toolkit-section .section-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;text-transform:uppercase;}'
+					. '.toolkit-section .section-badge.ok{background:#00a32a;color:#fff;}'
+					. '.toolkit-section .section-badge.error{background:#d63638;color:#fff;}'
+					. '.toolkit-section .tools-count{color:#646970;font-weight:400;}'
+					. '.toolkit-details-table{width:100%;border-collapse:collapse;margin:0;}'
+					. '.toolkit-details-table thead th{background:#f9f9f9;padding:10px 15px;text-align:left;font-size:12px;font-weight:600;border-bottom:1px solid #e0e0e0;}'
+					. '.toolkit-details-table tbody td{padding:10px 15px;border-bottom:1px solid #f0f0f1;font-size:13px;}'
+					. '.toolkit-details-table tbody tr:last-child td{border-bottom:none;}'
+					. '.toolkit-details-table .status-indicator{font-size:16px;font-weight:bold;}'
+					. '.toolkit-details-table .status-indicator.available{color:#00a32a;}'
+					. '.toolkit-details-table .status-indicator.unavailable{color:#d63638;}'
+					. '.toolkit-details-table .status-source{font-size:11px;font-weight:500;color:#2271b1;margin-left:4px;text-transform:uppercase;}'
+					. '.toolkit-tools-list{margin:0;padding:15px 15px 15px 40px;list-style:disc;}'
+					. '.toolkit-tools-list li{padding:5px 0;font-size:13px;color:#646970;}'
+				);
+				?>
 		}
 
 		/**

@@ -236,7 +236,9 @@ if ( ! function_exists( 'wp_mcp_ai_plugin_directory_pending_notice' ) ) {
 				<?php esc_html_e( 'This plugin is currently pending approval in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards.', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
-		<script type="text/javascript">
+		<?php
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$(document).on('click', '[data-dismissible="wp_mcp_ai_directory_notice"] .notice-dismiss', function() {
 				$.ajax({
@@ -244,12 +246,15 @@ if ( ! function_exists( 'wp_mcp_ai_plugin_directory_pending_notice' ) ) {
 					type: 'POST',
 					data: {
 						action: 'wp_mcp_ai_dismiss_directory_notice',
-						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) ); ?>'
+						nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) ); ?>
 					}
 				});
 			});
 		});
-		</script>
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		?>
 		<?php
 	}
 }

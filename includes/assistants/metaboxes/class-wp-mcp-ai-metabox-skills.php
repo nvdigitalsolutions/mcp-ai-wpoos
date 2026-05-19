@@ -207,7 +207,9 @@ class WP_MCP_AI_Metabox_Skills extends WP_MCP_AI_Metabox_Base {
 			<?php endif; ?>
 		</div>
 
-		<script type="text/javascript">
+		<?php
+		ob_start();
+		?>
 		( function() {
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var searchInput = document.getElementById( 'wp-mcp-ai-skill-search' );
@@ -233,8 +235,9 @@ class WP_MCP_AI_Metabox_Skills extends WP_MCP_AI_Metabox_Base {
 				} );
 			} );
 		} )();
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 		$this->render_documentation_link();
 	}
 }

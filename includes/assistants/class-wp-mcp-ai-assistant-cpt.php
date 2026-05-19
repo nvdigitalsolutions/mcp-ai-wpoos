@@ -180,7 +180,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</div>
 			</div>
 
-			<script type="text/javascript">
+			<?php
+			$no_tools_message = esc_js( __( 'No tools found matching your criteria.', 'mcp-ai-wpoos' ) );
+
+			ob_start();
+			?>
 			( function() {
 				document.addEventListener( 'DOMContentLoaded', function() {
 					var searchInput = document.getElementById( 'wp-mcp-ai-metabox-tool-search' );
@@ -280,7 +284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								message.style.padding = '20px';
 								message.style.textAlign = 'center';
 								message.style.color = '#646970';
-								message.textContent = '<?php echo esc_js( __( 'No tools found matching your criteria.', 'mcp-ai-wpoos' ) ); ?>';
+								message.textContent = <?php echo wp_json_encode( $no_tools_message ); ?>;
 								toolsContainer.appendChild( message );
 							}
 						} else if ( existingMessage ) {
@@ -307,8 +311,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			</script>
 			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -894,7 +899,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</div>
 			</div>
 
-			<script type="text/javascript">
+			<?php
+			$no_tools_match_message = esc_js( __( 'No tools match your search criteria.', 'mcp-ai-wpoos' ) );
+
+			ob_start();
+			?>
 			( function() {
 				document.addEventListener( 'DOMContentLoaded', function() {
 					var searchInput = document.getElementById( 'wp-mcp-ai-shortcuts-search' );
@@ -974,7 +983,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								message.style.padding = '20px';
 								message.style.textAlign = 'center';
 								message.style.color = '#646970';
-								message.textContent = '<?php echo esc_js( __( 'No tools match your search criteria.', 'mcp-ai-wpoos' ) ); ?>';
+								message.textContent = <?php echo wp_json_encode( $no_tools_match_message ); ?>;
 								shortcutsContainer.appendChild( message );
 							}
 						} else if ( existingMessage ) {
@@ -1003,8 +1012,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			</script>
-			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
 		}
 
 		/**
@@ -1017,182 +1026,43 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 			$styles_printed = true;
 			?>
-			<style>
-			.wp-mcp-ai-prebuilt-shortcuts__group {
-				margin-bottom: 2rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__group-title {
-				margin: 0 0 1rem 0;
-				padding: 0.75rem;
-				background: #f0f0f1;
-				border-left: 4px solid #2271b1;
-				font-size: 14px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__group-count {
-				color: #646970;
-				font-weight: normal;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool {
-				border: 1px solid #dcdcde;
-				border-radius: 4px;
-				margin-bottom: 0.5rem;
-				background: #fff;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary {
-				cursor: pointer;
-				padding: 1rem;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				list-style: none;
-				user-select: none;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker {
-				display: none;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary:hover {
-				background: #f6f7f7;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-title {
-				font-weight: 600;
-				flex: 1;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-badge {
-				display: flex;
-				gap: 0.5rem;
-				align-items: center;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-count {
-				font-size: 0.875rem;
-				color: #646970;
-				background: #f0f0f1;
-				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-mode {
-				font-size: 0.875rem;
-				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
-				background: #e0e0e0;
-				color: #1d2327;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open] {
-				border-color: #2271b1;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary {
-				border-bottom: 1px solid #dcdcde;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__content {
-				padding: 1rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__tool-description {
-				margin: 0 0 1rem 0;
-				padding: 0.75rem;
-				background: #f6f7f7;
-				border-left: 3px solid #72aee6;
-				font-size: 13px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-selector {
-				margin: 1rem 0;
-				padding: 1rem;
-				background: #f9f9f9;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-option {
-				display: block;
-				margin-bottom: 0.75rem;
-				padding: 0.5rem;
-				cursor: pointer;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-option:hover {
-				background: #fff;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__mode-option input {
-				margin-right: 0.5rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list {
-				margin: 0.5rem 0;
-				padding: 0;
-				list-style: none;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list > li {
-				margin-bottom: 1rem;
-				padding: 0.75rem;
-				background: #fff;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-label {
-				display: block;
-				margin-bottom: 0.5rem;
-				color: #1d2327;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-description {
-				margin: 0.5rem 0;
-				font-size: 13px;
-				color: #646970;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary {
-				margin: 0.5rem 0 0 0;
-				font-size: 12px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary code {
-				display: block;
-				padding: 0.5rem;
-				background: #f0f0f1;
-				border-left: 2px solid #2271b1;
-				word-wrap: break-word;
-				white-space: pre-wrap;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row {
-				margin: 1rem 0;
-				padding: 1rem;
-				background: #fff;
-				border: 1px solid #ddd;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row--hidden {
-				opacity: 0.6;
-				background: #f9f9f9;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row--hidden::before {
-				content: "Hidden";
-				display: inline-block;
-				padding: 0.25rem 0.5rem;
-				background: #f0f0f1;
-				color: #646970;
-				border-radius: 3px;
-				font-size: 11px;
-				font-weight: 600;
-				text-transform: uppercase;
-				margin-bottom: 0.5rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row-header {
-				margin-bottom: 1rem;
-				padding-bottom: 1rem;
-				border-bottom: 1px solid #ddd;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__hide-toggle {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row p label strong {
-				display: block;
-				margin-bottom: 0.25rem;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__row p label .description {
-				display: block;
-				margin-bottom: 0.5rem;
-				font-size: 13px;
-				color: #646970;
-			}
-			.wp-mcp-ai-prebuilt-shortcuts__add {
-				margin-top: 1rem;
-			}
-			</style>
 			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-assistant-prebuilt-shortcuts',
+				'.wp-mcp-ai-prebuilt-shortcuts__group{margin-bottom:2rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__group-title{margin:0 0 1rem 0;padding:0.75rem;background:#f0f0f1;border-left:4px solid #2271b1;font-size:14px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__group-count{color:#646970;font-weight:normal}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;margin-bottom:0.5rem;background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary{cursor:pointer;padding:1rem;display:flex;align-items:center;justify-content:space-between;list-style:none;user-select:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary:hover{background:#f6f7f7}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{font-weight:600;flex:1}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-badge{display:flex;gap:0.5rem;align-items:center}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-count{font-size:0.875rem;color:#646970;background:#f0f0f1;padding:0.25rem 0.5rem;border-radius:3px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;padding:0.25rem 0.5rem;border-radius:3px;background:#e0e0e0;color:#1d2327}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{border-color:#2271b1}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool-description{margin:0 0 1rem 0;padding:0.75rem;background:#f6f7f7;border-left:3px solid #72aee6;font-size:13px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-selector{margin:1rem 0;padding:1rem;background:#f9f9f9;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-option{display:block;margin-bottom:0.75rem;padding:0.5rem;cursor:pointer}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-option:hover{background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode-option input{margin-right:0.5rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0;padding:0;list-style:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list>li{margin-bottom:1rem;padding:0.75rem;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-label{display:block;margin-bottom:0.5rem;color:#1d2327}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-description{margin:0.5rem 0;font-size:13px;color:#646970}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{margin:0.5rem 0 0 0;font-size:12px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary code{display:block;padding:0.5rem;background:#f0f0f1;border-left:2px solid #2271b1;word-wrap:break-word;white-space:pre-wrap}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row{margin:1rem 0;padding:1rem;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row--hidden{opacity:0.6;background:#f9f9f9}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row--hidden::before{content:"Hidden";display:inline-block;padding:0.25rem 0.5rem;background:#f0f0f1;color:#646970;border-radius:3px;font-size:11px;font-weight:600;text-transform:uppercase;margin-bottom:0.5rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row-header{margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #ddd}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__hide-toggle{display:inline-flex;align-items:center;gap:0.5rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row p label strong{display:block;margin-bottom:0.25rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row p label .description{display:block;margin-bottom:0.5rem;font-size:13px;color:#646970}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__add{margin-top:1rem}'
+			);
 		}
 
 		/**
@@ -1260,72 +1130,24 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 			$styles_printed = true;
 			?>
-			<style>
-			.wp-mcp-ai-tool-shortcuts__item {
-				border: 1px solid #dcdcde;
-				border-radius: 4px;
-				margin-bottom: 0.5rem;
-				background: #fff;
-			}
-			.wp-mcp-ai-tool-shortcuts__item--hidden {
-				opacity: 0.6;
-				background: #f9f9f9;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary {
-				cursor: pointer;
-				padding: 1rem;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				list-style: none;
-				user-select: none;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker {
-				display: none;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary:hover {
-				background: #f6f7f7;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary-title {
-				font-weight: 600;
-				flex: 1;
-			}
-			.wp-mcp-ai-tool-shortcuts__summary-tool {
-				font-size: 0.875rem;
-				color: #646970;
-				background: #f0f0f1;
-				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
-			}
-			.wp-mcp-ai-tool-shortcuts__item[open] {
-				border-color: #2271b1;
-			}
-			.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary {
-				border-bottom: 1px solid #dcdcde;
-			}
-			.wp-mcp-ai-tool-shortcuts__row {
-				padding: 1rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__row-header {
-				margin-bottom: 1rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__hide-toggle {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__row p label strong {
-				display: block;
-				margin-bottom: 0.25rem;
-			}
-			.wp-mcp-ai-tool-shortcuts__row p label .description {
-				display: block;
-				margin-bottom: 0.5rem;
-				font-size: 13px;
-				color: #646970;
-			}
-			</style>
 			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-assistant-custom-shortcuts',
+				'.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;margin-bottom:0.5rem;background:#fff}'
+				. '.wp-mcp-ai-tool-shortcuts__item--hidden{opacity:0.6;background:#f9f9f9}'
+				. '.wp-mcp-ai-tool-shortcuts__summary{cursor:pointer;padding:1rem;display:flex;align-items:center;justify-content:space-between;list-style:none;user-select:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary:hover{background:#f6f7f7}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-title{font-weight:600;flex:1}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#646970;background:#f0f0f1;padding:0.25rem 0.5rem;border-radius:3px}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open]{border-color:#2271b1}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tool-shortcuts__row{padding:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts__row-header{margin-bottom:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts__hide-toggle{display:inline-flex;align-items:center;gap:0.5rem}'
+				. '.wp-mcp-ai-tool-shortcuts__row p label strong{display:block;margin-bottom:0.25rem}'
+				. '.wp-mcp-ai-tool-shortcuts__row p label .description{display:block;margin-bottom:0.5rem;font-size:13px;color:#646970}'
+			);
 		}
 
 		/**
@@ -2380,67 +2202,69 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			self::$credential_action_script_printed = true;
-			?>
-		<script type="text/javascript">
-		( function() {
-			function submitCredentialAction( button ) {
-				if ( ! button ) {
-					return;
-				}
 
-				var confirmMessage = button.getAttribute( 'data-confirm' );
-				if ( confirmMessage && ! window.confirm( confirmMessage ) ) {
-					return;
-				}
-
-				var endpoint = button.getAttribute( 'data-endpoint' );
-				if ( ! endpoint ) {
-					return;
-				}
-
-				var form = document.createElement( 'form' );
-				form.method = 'post';
-				form.action = endpoint;
-				form.style.display = 'none';
-
-				var fields = {
-					action: button.getAttribute( 'data-action' ),
-					post_id: button.getAttribute( 'data-post-id' ),
-					credential_id: button.getAttribute( 'data-credential-id' )
-				};
-
-				var nonceName = button.getAttribute( 'data-nonce-name' );
-				var nonceValue = button.getAttribute( 'data-nonce-value' );
-
-				if ( nonceName && nonceValue ) {
-					fields[ nonceName ] = nonceValue;
-				}
-
-				for ( var key in fields ) {
-					if ( Object.prototype.hasOwnProperty.call( fields, key ) && fields[ key ] ) {
-						var input = document.createElement( 'input' );
-						input.type = 'hidden';
-						input.name = key;
-						input.value = fields[ key ];
-						form.appendChild( input );
+				ob_start();
+				?>
+			( function() {
+				function submitCredentialAction( button ) {
+					if ( ! button ) {
+						return;
 					}
+
+					var confirmMessage = button.getAttribute( 'data-confirm' );
+					if ( confirmMessage && ! window.confirm( confirmMessage ) ) {
+						return;
+					}
+
+					var endpoint = button.getAttribute( 'data-endpoint' );
+					if ( ! endpoint ) {
+						return;
+					}
+
+					var form = document.createElement( 'form' );
+					form.method = 'post';
+					form.action = endpoint;
+					form.style.display = 'none';
+
+					var fields = {
+						action: button.getAttribute( 'data-action' ),
+						post_id: button.getAttribute( 'data-post-id' ),
+						credential_id: button.getAttribute( 'data-credential-id' )
+					};
+
+					var nonceName = button.getAttribute( 'data-nonce-name' );
+					var nonceValue = button.getAttribute( 'data-nonce-value' );
+
+					if ( nonceName && nonceValue ) {
+						fields[ nonceName ] = nonceValue;
+					}
+
+					for ( var key in fields ) {
+						if ( Object.prototype.hasOwnProperty.call( fields, key ) && fields[ key ] ) {
+							var input = document.createElement( 'input' );
+							input.type = 'hidden';
+							input.name = key;
+							input.value = fields[ key ];
+							form.appendChild( input );
+						}
+					}
+
+					document.body.appendChild( form );
+					form.submit();
 				}
 
-				document.body.appendChild( form );
-				form.submit();
+				document.addEventListener( 'click', function( event ) {
+					var target = event.target;
+					if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-credential-action' ) ) {
+						event.preventDefault();
+						submitCredentialAction( target );
+					}
+				} );
+			} )();
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
 			}
-
-			document.addEventListener( 'click', function( event ) {
-				var target = event.target;
-				if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-credential-action' ) ) {
-					event.preventDefault();
-					submitCredentialAction( target );
-				}
-			} );
-		} )();
-		</script>
-			<?php
-		}
 
 		/**
 		 * Generate a nonce field name unique to a credential.
@@ -2658,75 +2482,75 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			if ( ! $tools_styles_printed ) {
 				$tools_styles_printed = true;
-				?>
-			<style>
-			.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}
-			.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
-			.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
-			.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}
-			.wp-mcp-ai-tools__summary-title{flex:1 1 auto}
-			.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
-			.wp-mcp-ai-tools__group[open]{background:#fff}
-			.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}
-			.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
-			.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}
-			.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}
-			.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}
-			.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}
-			.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}
-			.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}
-			.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}
-			.wp-mcp-ai-tools__role-select{width:100%}
-			.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}
-			.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}
-			.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}
-			.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}
-			.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}
-			.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}
-			.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}
-			.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}
-			.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
-			.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
-			.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}
-			.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}
-			.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}
-			.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}
-			.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}
-			.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}
-			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}
-			.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}
-			.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}
-			.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}
-			.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}
-			.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
-			.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}
-			.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
-			.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}
-			.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}
-			.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
-			.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}
-			.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}
-			.wp-mcp-ai-tool-shortcuts__row hr{display:none}
-			@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}
-			</style>
-				<?php
+				wp_add_inline_style(
+					'wp-mcp-ai-assistant-tools',
+					'.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
+					. '.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+					. '.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+					. '.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}'
+					. '.wp-mcp-ai-tools__summary-title{flex:1 1 auto}'
+					. '.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+					. '.wp-mcp-ai-tools__group[open]{background:#fff}'
+					. '.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}'
+					. '.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
+					. '.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}'
+					. '.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}'
+					. '.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}'
+					. '.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}'
+					. '.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}'
+					. '.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}'
+					. '.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}'
+					. '.wp-mcp-ai-tools__role-select{width:100%}'
+					. '.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}'
+					. '.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}'
+					. '.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}'
+					. '.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}'
+					. '.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}'
+					. '.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}'
+					. '.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}'
+					. '.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}'
+					. '.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}'
+					. '.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}'
+					. '.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+					. '.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+					. '.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}'
+					. '.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+					. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
+					. '.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}'
+					. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+					. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+					. '.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}'
+					. '.wp-mcp-ai-tool-shortcuts__row hr{display:none}'
+					. '@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}'
+				);
 			}
 
 			static $tools_script_printed = false;
 
 			if ( ! $tools_script_printed ) {
 				$tools_script_printed = true;
+
+				ob_start();
 				?>
-			<script>
 			( function() {
 				function syncToolControls( container ) {
 					if ( ! container ) {
@@ -3010,8 +2834,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			</script>
 				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
 			}
 
 			echo '<div class="wp-mcp-ai-tools" role="group" aria-label="' . esc_attr__( 'Assistant tool permissions', 'mcp-ai-wpoos' ) . '">';
@@ -3436,7 +3261,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			</details>
 		</template>
 
-		<script>
+		<?php
+		ob_start();
+		?>
 		( function() {
 			var container = document.getElementById( 'wp-mcp-ai-tool-shortcuts-rows' );
 			var addButton = document.getElementById( 'wp-mcp-ai-add-tool-shortcut' );
@@ -3618,12 +3445,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				bindItem( item );
 			} );
 		} )();
-		</script>
-			<?php
-		}
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+			}
 
-		/**
-		 * Render the defaults meta box content.
+			/**
+			 * Render the defaults meta box content.
 		 *
 		 * @param WP_Post $post Post object.
 		 */
@@ -3799,84 +3627,90 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			<input type="text" id="wp-mcp-ai-vector-store-id" name="wp_mcp_ai_vector_store_id" value="<?php echo esc_attr( $vector_store_id ); ?>" class="widefat" />
 			<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'mcp-ai-wpoos' ); ?></span>
 		</p>
-		<style type="text/css">
-			.wp-mcp-ai-memory-file-size {
-				color: #646970;
-				font-size: 0.9em;
-				margin-left: 0.5em;
-			}
-		</style>
-		<script type="text/javascript">
-		jQuery( function( $ ) {
-			var frame;
-			var list = $( '#wp-mcp-ai-memory-files-list' );
+			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-assistant-base-knowledge',
+				'.wp-mcp-ai-memory-file-size{color:#646970;font-size:0.9em;margin-left:0.5em}'
+			);
 
-			function addAttachment( attachment ) {
-				var id = attachment.id || attachment.ID;
-				if ( ! id ) {
-					return;
-				}
+			$attachment_label   = esc_js( __( 'Attachment', 'mcp-ai-wpoos' ) );
+			$remove_label       = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+			$select_files_title = esc_js( __( 'Select knowledge files', 'mcp-ai-wpoos' ) );
+			$use_files_text     = esc_js( __( 'Use files', 'mcp-ai-wpoos' ) );
 
-				if ( list.find( 'li[data-id="' + id + '"]' ).length ) {
-					return;
-				}
+			ob_start();
+			?>
+			jQuery( function( $ ) {
+				var frame;
+				var list = $( '#wp-mcp-ai-memory-files-list' );
 
-				var title = attachment.title || attachment.filename || attachment.name || '<?php echo esc_js( __( 'Attachment', 'mcp-ai-wpoos' ) ); ?>';
-				var label = title + ' (ID: ' + id + ')';
-				var filesize = attachment.filesizeHumanReadable || '';
-
-				var item = $( '<li />', { 'data-id': id } );
-				item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-title', 'text': label } ) );
-				if ( filesize ) {
-					item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-size', 'text': '(' + filesize + ')' } ) );
-				}
-				item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': '<?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?>' } ) );
-				item.append( $( '<input />', { 'type': 'hidden', 'name': 'wp_mcp_ai_memory_files[]', 'value': id } ) );
-
-				list.append( item );
-			}
-
-			$( '#wp-mcp-ai-memory-select' ).on( 'click', function( event ) {
-				event.preventDefault();
-
-				if ( frame ) {
-					frame.open();
-					return;
-				}
-
-				frame = wp.media({
-					title: '<?php echo esc_js( __( 'Select knowledge files', 'mcp-ai-wpoos' ) ); ?>',
-					button: {
-						text: '<?php echo esc_js( __( 'Use files', 'mcp-ai-wpoos' ) ); ?>'
-					},
-					multiple: true
-				});
-
-				frame.on( 'select', function() {
-					var selection = frame.state().get( 'selection' );
-					if ( ! selection ) {
+				function addAttachment( attachment ) {
+					var id = attachment.id || attachment.ID;
+					if ( ! id ) {
 						return;
 					}
 
-					selection.each( function( attachment ) {
-						addAttachment( attachment.toJSON() );
-					} );
-				});
+					if ( list.find( 'li[data-id="' + id + '"]' ).length ) {
+						return;
+					}
 
-				frame.open();
-			} );
+					var title = attachment.title || attachment.filename || attachment.name || <?php echo wp_json_encode( $attachment_label ); ?>;
+					var label = title + ' (ID: ' + id + ')';
+					var filesize = attachment.filesizeHumanReadable || '';
 
-			list.on( 'click', '.wp-mcp-ai-remove-memory', function( event ) {
-				event.preventDefault();
-				$( this ).closest( 'li' ).remove();
+					var item = $( '<li />', { 'data-id': id } );
+					item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-title', 'text': label } ) );
+					if ( filesize ) {
+						item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-size', 'text': '(' + filesize + ')' } ) );
+					}
+					item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': <?php echo wp_json_encode( $remove_label ); ?> } ) );
+					item.append( $( '<input />', { 'type': 'hidden', 'name': 'wp_mcp_ai_memory_files[]', 'value': id } ) );
+
+					list.append( item );
+				}
+
+				$( '#wp-mcp-ai-memory-select' ).on( 'click', function( event ) {
+					event.preventDefault();
+
+					if ( frame ) {
+						frame.open();
+						return;
+					}
+
+					frame = wp.media({
+						title: <?php echo wp_json_encode( $select_files_title ); ?>,
+						button: {
+							text: <?php echo wp_json_encode( $use_files_text ); ?>
+						},
+						multiple: true
+					});
+
+					frame.on( 'select', function() {
+						var selection = frame.state().get( 'selection' );
+						if ( ! selection ) {
+							return;
+						}
+
+						selection.each( function( attachment ) {
+							addAttachment( attachment.toJSON() );
+						} );
+					});
+
+					frame.open();
+				} );
+
+				list.on( 'click', '.wp-mcp-ai-remove-memory', function( event ) {
+					event.preventDefault();
+					$( this ).closest( 'li' ).remove();
+				} );
 			} );
-		} );
-		</script>
 			<?php
-		}
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
+			}
 
-		/**
-		 * Render the required capability meta box.
+			/**
+			 * Render the required capability meta box.
 		 *
 		 * @param WP_Post $post Post object.
 		 */
@@ -5554,12 +5388,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					</tr>
 				</table>
 
-				<script type="text/javascript">
+				<?php
+				$peer_options    = wp_json_encode( array_column( $peer_sites, 'name' ) );
+				$select_peer     = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
+				$remove_label    = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+
+				ob_start();
+				?>
 				jQuery(document).ready(function($) {
-					var peerOptions = <?php echo wp_json_encode( array_column( $peer_sites, 'name' ) ); ?>;
+					var peerOptions = <?php echo $peer_options; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode already escaped. ?>;
 
 					$('#wp-mcp-ai-add-preferred-peer').on('click', function() {
-						var optionsHtml = '<option value=""><?php echo esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) ); ?></option>';
+						var optionsHtml = '<option value=""><?php echo esc_js( $select_peer ); ?></option>';
 						peerOptions.forEach(function(peerName) {
 							optionsHtml += '<option value="' + peerName + '">' + peerName + '</option>';
 						});
@@ -5568,7 +5408,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							'<select name="wp_mcp_ai_mesh_routing[preferred_peers][]" class="regular-text">' +
 							optionsHtml +
 							'</select> ' +
-							'<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
+							'<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php echo esc_js( $remove_label ); ?></button>' +
 							'</div>');
 						$('#wp-mcp-ai-preferred-peers-list').append(newRow);
 					});
@@ -5577,7 +5417,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						$(this).closest('.wp-mcp-ai-preferred-peer-row').remove();
 					});
 				});
-				</script>
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			</div>
 			<?php
 		}

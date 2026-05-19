@@ -1267,13 +1267,23 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			</div>
 
 			<?php
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for provider diagnostics real-time testing functionality on this admin page only
+			// Pre-compute all dynamic PHP values for the provider test script.
+			$diag_ajax_url         = admin_url( 'admin-ajax.php' );
+			$diag_nonce            = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+			$diag_testing_text     = __( 'Testing...', 'mcp-ai-wpoos' );
+			$diag_testing_conn     = __( 'Testing connection...', 'mcp-ai-wpoos' );
+			$diag_success_text     = __( 'Success!', 'mcp-ai-wpoos' );
+			$diag_error_text       = __( 'Error!', 'mcp-ai-wpoos' );
+			$diag_unknown_error    = __( 'Unknown error occurred', 'mcp-ai-wpoos' );
+			$diag_test_text        = __( 'Test', 'mcp-ai-wpoos' );
+			$diag_connection_text  = __( 'Connection', 'mcp-ai-wpoos' );
+
+			ob_start();
 			?>
-			<script type="text/javascript">
 			/* global ajaxurl */
 			jQuery(document).ready(function($) {
 				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
-				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : <?php echo wp_json_encode( $diag_ajax_url ); ?>;
 
 				// Test provider connection.
 				$('.test-provider').on('click', function() {
@@ -1281,15 +1291,15 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					var provider = button.data('provider');
 					var resultDiv = $('#' + provider + '-test-result');
 
-					button.prop('disabled', true).text('<?php esc_attr_e( 'Testing...', 'mcp-ai-wpoos' ); ?>');
-					resultDiv.html('<p><?php esc_html_e( 'Testing connection...', 'mcp-ai-wpoos' ); ?></p>');
+					button.prop('disabled', true).text(<?php echo wp_json_encode( $diag_testing_text ); ?>);
+					resultDiv.html('<p>' + <?php echo wp_json_encode( $diag_testing_conn ); ?> + '</p>');
 
 					$.ajax({
 						url: ajaxUrl,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_provider',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' ) ); ?>',
+							nonce: <?php echo wp_json_encode( $diag_nonce ); ?>,
 							provider: provider
 						},
 						success: function(response) {
@@ -1307,14 +1317,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 								resultDiv.html(
 									'<div class="notice notice-success inline"><p><strong>' +
-									'<?php esc_html_e( 'Success!', 'mcp-ai-wpoos' ); ?>' +
+									<?php echo wp_json_encode( $diag_success_text ); ?> +
 									'</strong> ' + message + '</p>' + details + '</div>'
 								);
 							} else {
-								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'mcp-ai-wpoos' ) ); ?>';
+								var errorMessage = (response.data && response.data.message) ? response.data.message : <?php echo wp_json_encode( $diag_unknown_error ); ?>;
 								resultDiv.html(
 									'<div class="notice notice-error inline"><p><strong>' +
-									'<?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?>' +
+									<?php echo wp_json_encode( $diag_error_text ); ?> +
 									'</strong> ' + errorMessage + '</p></div>'
 								);
 							}
@@ -1322,19 +1332,20 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						error: function(xhr, status, error) {
 							resultDiv.html(
 								'<div class="notice notice-error inline"><p><strong>' +
-								'<?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?>' +
+								<?php echo wp_json_encode( $diag_error_text ); ?> +
 								'</strong> ' + error + '</p></div>'
 							);
 						},
 						complete: function() {
 							var providerName = provider.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-							button.prop('disabled', false).text('<?php esc_attr_e( 'Test', 'mcp-ai-wpoos' ); ?> ' + providerName + ' <?php esc_attr_e( 'Connection', 'mcp-ai-wpoos' ); ?>');
+							button.prop('disabled', false).text(<?php echo wp_json_encode( $diag_test_text ); ?> + ' ' + providerName + ' ' + <?php echo wp_json_encode( $diag_connection_text ); ?>);
 						}
 					});
 				});
 			});
-			</script>
 			<?php
+			$diag_js = ob_get_clean();
+			wp_print_inline_script_tag( $diag_js );
 		}
 
 		/**

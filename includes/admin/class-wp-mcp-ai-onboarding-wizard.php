@@ -179,22 +179,26 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					</a>
 				</p>
 			</div>
-			<script>
-			/* Minimal inline dismiss handler — runs outside the wizard page. */
-			(function(){
-				var n = document.querySelector('.wp-mcp-ai-welcome-notice');
-				if (!n) return;
-				n.addEventListener('click', function(e){
-					if (e.target.classList.contains('notice-dismiss')) {
-						var fd = new FormData();
-						fd.append('action', 'wp_mcp_ai_dismiss_welcome_notice');
-						fd.append('nonce', n.dataset.nonce);
-						fetch(ajaxurl, {method:'POST', credentials:'same-origin', body:fd});
-					}
-				});
-			})();
-			</script>
 			<?php
+				ob_start();
+				?>
+				/* Minimal inline dismiss handler — runs outside the wizard page. */
+				(function(){
+					var n = document.querySelector('.wp-mcp-ai-welcome-notice');
+					if (!n) return;
+					n.addEventListener('click', function(e){
+						if (e.target.classList.contains('notice-dismiss')) {
+							var fd = new FormData();
+							fd.append('action', 'wp_mcp_ai_dismiss_welcome_notice');
+							fd.append('nonce', n.dataset.nonce);
+							fetch(ajaxurl, {method:'POST', credentials:'same-origin', body:fd});
+						}
+					});
+				})();
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 		}
 
 		// -------------------------------------------------------------------------

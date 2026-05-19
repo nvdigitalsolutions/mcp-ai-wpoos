@@ -244,30 +244,17 @@ class WP_MCP_AI_Information_Labelling {
 	 */
 	public function add_classification_styles() {
 		?>
-		<style>
-		.wp-mcp-ai-classification-selector {
-			margin: 10px 0;
-		}
-		.wp-mcp-ai-classification-option {
-			display: block;
-			margin: 10px 0;
-			cursor: pointer;
-		}
-		.wp-mcp-ai-classification-option input[type="radio"] {
-			margin-right: 5px;
-		}
-		.wp-mcp-ai-classification-label {
-			font-size: 13px;
-		}
-		.wp-mcp-ai-classification-icon {
-			font-size: 16px;
-			margin-right: 5px;
-		}
-		.wp-mcp-ai-classification-badge {
-			white-space: nowrap;
-			display: inline-block;
-		}
-		</style>
+		<?php
+		wp_add_inline_style(
+			'wp-mcp-ai-information-labelling',
+			'.wp-mcp-ai-classification-selector{margin:10px 0;}'
+			. '.wp-mcp-ai-classification-option{display:block;margin:10px 0;cursor:pointer;}'
+			. '.wp-mcp-ai-classification-option input[type="radio"]{margin-right:5px;}'
+			. '.wp-mcp-ai-classification-label{font-size:13px;}'
+			. '.wp-mcp-ai-classification-icon{font-size:16px;margin-right:5px;}'
+			. '.wp-mcp-ai-classification-badge{white-space:nowrap;display:inline-block;}'
+		);
+		?>
 		<?php
 	}
 

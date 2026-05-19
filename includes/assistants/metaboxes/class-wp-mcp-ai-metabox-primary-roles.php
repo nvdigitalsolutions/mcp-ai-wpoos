@@ -187,17 +187,14 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 				WP_MCP_AI_Profession_Search_Helper::render_search_script();
 				?>
 
-				<style>
-					.wp-mcp-ai-category-badge {
-						display: inline-block;
-						padding: 2px 8px;
-						border-radius: 3px;
-						background: #f0f0f1;
-						font-size: 12px;
-					}
-				</style>
+				<?php
+				wp_add_inline_style(
+					'wp-mcp-ai-metabox-primary-roles',
+					'.wp-mcp-ai-category-badge{display:inline-block;padding:2px 8px;border-radius:3px;background:#f0f0f1;font-size:12px}'
+				);
 
-				<script type="text/javascript">
+				ob_start();
+				?>
 				( function() {
 					var maxRoles = 3;
 
@@ -217,7 +214,9 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 						} );
 					} );
 				} )();
-				</script>
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			<?php endif; ?>
 		</div>
 		<?php

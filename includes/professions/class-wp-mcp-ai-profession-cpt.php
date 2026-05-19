@@ -773,12 +773,16 @@ class WP_MCP_AI_Profession_CPT {
 			</tbody>
 		</table>
 
-		<script type="text/javascript">
+		<?php
+		$remove_label = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$('#add-profession-warning').on('click', function() {
 				var warningHtml = '<div class="profession-warning-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_warnings[]" value="" class="large-text" />' +
-					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
+					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( $remove_label ); ?></button>' +
 					'</div>';
 				$('#profession-warnings-list').append(warningHtml);
 			});
@@ -787,12 +791,13 @@ class WP_MCP_AI_Profession_CPT {
 				$(this).closest('.profession-warning-item').remove();
 			});
 		});
-		</script>
 		<?php
-	}
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		}
 
-	/**
-	 * Render expertise metabox.
+		/**
+		 * Render expertise metabox.
 	 *
 	 * @param WP_Post $post Post object.
 	 */
@@ -909,12 +914,16 @@ class WP_MCP_AI_Profession_CPT {
 			</tbody>
 		</table>
 
-		<script type="text/javascript">
+		<?php
+		$remove_label = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$('#add-profession-expertise').on('click', function() {
 				var expertiseHtml = '<div class="profession-expertise-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_expertise[]" value="" class="large-text" />' +
-					'<button type="button" class="button button-small remove-expertise"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
+					'<button type="button" class="button button-small remove-expertise"><?php echo esc_js( $remove_label ); ?></button>' +
 					'</div>';
 				$('#profession-expertise-list').append(expertiseHtml);
 			});
@@ -923,8 +932,9 @@ class WP_MCP_AI_Profession_CPT {
 				$(this).closest('.profession-expertise-item').remove();
 			});
 		});
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 	}
 
 	/**

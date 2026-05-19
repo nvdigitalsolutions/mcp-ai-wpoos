@@ -4926,51 +4926,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php esc_html_e( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable. The first provider is used as the default.', 'mcp-ai-wpoos' ); ?>
 		</p>
 			<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for provider sortable list styling and layout on this admin page only
+			wp_add_inline_style(
+				'wp-mcp-ai-admin-settings',
+				'#wp-mcp-ai-provider-sortable{list-style:none;margin:0;padding:0;}'
+				. '.wp-mcp-ai-provider-item{background:#fff;border:1px solid #ddd;padding:10px 15px;margin:5px 0;cursor:move;display:flex;align-items:center;gap:10px;border-radius:3px;transition:box-shadow 0.2s ease;}'
+				. '.wp-mcp-ai-provider-item:hover{box-shadow:0 2px 4px rgba(0,0,0,0.1);}'
+				. '.wp-mcp-ai-provider-item .dashicons{color:#999;flex-shrink:0;}'
+				. '.wp-mcp-ai-provider-item.ui-sortable-helper{background:#f0f0f0;border-color:#0073aa;box-shadow:0 4px 8px rgba(0,0,0,0.2);}'
+				. '.wp-mcp-ai-provider-item.ui-sortable-placeholder{background:#f9f9f9;border:2px dashed #ddd;visibility:visible !important;height:42px;}'
+				. '.wp-mcp-ai-provider-item .provider-label{flex:1;font-weight:500;user-select:none;}'
+			);
 			?>
-		<style>
-			#wp-mcp-ai-provider-sortable {
-				list-style: none;
-				margin: 0;
-				padding: 0;
-			}
-			.wp-mcp-ai-provider-item {
-				background: #fff;
-				border: 1px solid #ddd;
-				padding: 10px 15px;
-				margin: 5px 0;
-				cursor: move;
-				display: flex;
-				align-items: center;
-				gap: 10px;
-				border-radius: 3px;
-				transition: box-shadow 0.2s ease;
-			}
-			.wp-mcp-ai-provider-item:hover {
-				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			}
-			.wp-mcp-ai-provider-item .dashicons {
-				color: #999;
-				flex-shrink: 0;
-			}
-			.wp-mcp-ai-provider-item.ui-sortable-helper {
-				background: #f0f0f0;
-				border-color: #0073aa;
-				box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-			}
-			.wp-mcp-ai-provider-item.ui-sortable-placeholder {
-				background: #f9f9f9;
-				border: 2px dashed #ddd;
-				visibility: visible !important;
-				height: 42px;
-			}
-			.wp-mcp-ai-provider-item .provider-label {
-				flex: 1;
-				font-weight: 500;
-				user-select: none;
-			}
-		</style>
-			<?php
 		}
 
 		/**
