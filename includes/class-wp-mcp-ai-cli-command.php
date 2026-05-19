@@ -422,7 +422,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				foreach ( $supported as $slug => $plugin ) {
 					$plugin_file = isset( $plugin['plugin_file'] ) ? $plugin['plugin_file'] : '';
-					$plugin_path = $plugin_file ? WP_PLUGIN_DIR . '/' . $plugin_file : '';
+					$plugin_path = ( $plugin_file && defined( 'WP_PLUGIN_DIR' ) ) ? WP_PLUGIN_DIR . '/' . $plugin_file : '';
 					$installed   = $plugin_path && file_exists( $plugin_path );
 					$active      = $installed && ( is_plugin_active( $plugin_file ) || is_plugin_active_for_network( $plugin_file ) );
 					$version     = null;
@@ -537,9 +537,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$this->ensure_plugin_file_loaded();
 
 				$plugin_file = $plugin['plugin_file'];
-				$plugin_path = WP_PLUGIN_DIR . '/' . $plugin_file;
+				$plugin_path = defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR . '/' . $plugin_file : '';
 
-				if ( ! file_exists( $plugin_path ) ) {
+				if ( ! $plugin_path || ! file_exists( $plugin_path ) ) {
 					/* translators: 1: plugin name, 2: plugin slug */
 					WP_CLI::error( sprintf( __( '%1$s is not installed. Install it with `wp plugin install %2$s`.', 'mcp-ai-wpoos' ), $plugin['name'], $plugin['slug'] ) );
 				}

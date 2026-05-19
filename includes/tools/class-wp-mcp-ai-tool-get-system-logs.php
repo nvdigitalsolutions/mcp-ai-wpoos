@@ -538,12 +538,12 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 			if ( true === WP_DEBUG_LOG ) {
-				$path = WP_CONTENT_DIR . '/debug.log';
+				$path = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR . '/debug.log' : null;
 			} else {
 				$path = WP_DEBUG_LOG;
 			}
 		} else {
-			$path = WP_CONTENT_DIR . '/debug.log';
+			$path = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR . '/debug.log' : null;
 		}
 
 		if ( ! $path ) {
@@ -659,9 +659,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return array
 	 */
 	protected function get_default_log_directories() {
-		$directories = array(
-			$this->normalize_path( WP_CONTENT_DIR ),
-		);
+		$directories = array();
 
 		$uploads = wp_get_upload_dir();
 		if ( ! empty( $uploads['basedir'] ) ) {

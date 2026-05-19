@@ -131,7 +131,9 @@ class WP_MCP_AI_Metric_Event_Store {
 			KEY privacy_recorded (privacy, recorded_at)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 
 		update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION, false );

@@ -3692,21 +3692,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		}
 
 		$preset_script_printed = true;
-		?>
-		<script type="text/javascript">
-		( function() {
+		$checkbox_selector_json = wp_json_encode( $checkbox_selector );
+		$script = "( function() {
 			'use strict';
 
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var presetButtons = document.querySelectorAll( '.wp-mcp-ai-tool-preset-btn' );
-				var checkboxSelector = <?php echo wp_json_encode( $checkbox_selector ); ?>;
+				var checkboxSelector = {$checkbox_selector_json};
 				var selectAllBtn = document.querySelector( '.wp-mcp-ai-select-all-tools' );
 				var clearAllBtn = document.querySelector( '.wp-mcp-ai-clear-all-tools' );
 
 				// Helper function to toggle checkboxes.
 				function toggleCheckboxes( toolSlugs, checked ) {
 					toolSlugs.forEach( function( toolSlug ) {
-						var checkbox = document.querySelector( checkboxSelector + '[value="' + toolSlug + '"]' );
+						var checkbox = document.querySelector( checkboxSelector + '[value=\"' + toolSlug + '\"]' );
 						if ( checkbox ) {
 							checkbox.checked = checked;
 							var event = new Event( 'change', { bubbles: true } );
@@ -3799,8 +3798,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					} );
 				} );
 			} );
-		} )();
-		</script>
-		<?php
+		} )();";
+		wp_print_inline_script_tag( $script );
 	}
 }

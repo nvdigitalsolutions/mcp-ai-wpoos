@@ -189,13 +189,16 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 		$files = array();
 
 		// Check plugin directory.
-		$plugin_dir      = WP_PLUGIN_DIR;
 		$readme_patterns = array( 'README.md', 'readme.txt', 'README.txt', 'DOCUMENTATION.md' );
 
-		foreach ( $readme_patterns as $pattern ) {
-			$found = glob( $plugin_dir . '/*/' . $pattern );
-			if ( $found ) {
-				$files = array_merge( $files, $found );
+		if ( defined( 'WP_PLUGIN_DIR' ) && is_dir( WP_PLUGIN_DIR ) ) {
+			$plugin_dir = WP_PLUGIN_DIR;
+
+			foreach ( $readme_patterns as $pattern ) {
+				$found = glob( $plugin_dir . '/*/' . $pattern );
+				if ( $found ) {
+					$files = array_merge( $files, $found );
+				}
 			}
 		}
 
