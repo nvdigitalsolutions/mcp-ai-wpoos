@@ -331,7 +331,7 @@ function wp_mcp_ai_check_rate_limit( $user_id, $endpoint ) {
 
 ```
 Production Environment:
-- Domain: app.nvoos.com
+- Domain: app.nvoos.pro
 - Database: prod-db.internal
 - No direct access from public internet
 - Behind Web Application Firewall (WAF)
@@ -340,7 +340,7 @@ Production Environment:
 - Automated backups (daily)
 
 Staging Environment:
-- Domain: staging.nvoos.com
+- Domain: staging.nvoos.pro
 - Database: staging-db.internal
 - Isolated from production
 - Test with production-like configuration
