@@ -65,7 +65,7 @@ WordPress / LAMP / Node sites — it doesn't offer an AI inference gateway.
 You could host the NV oOS Cloud Worker code on Cloudways' Node/Vultr servers,
 but you'd lose Cloudflare's per-edge caching, revenue-share, and request
 deduplication. **You can absolutely use both:** Cloudways for the
-marketing/billing dashboard at `nvoos.com` and Cloudflare AI Gateway for the
+marketing/billing dashboard at `nvoos.pro` and Cloudflare AI Gateway for the
 inference proxy at `nvoos.cloud`. This plugin only cares about the
 inference endpoint.
 

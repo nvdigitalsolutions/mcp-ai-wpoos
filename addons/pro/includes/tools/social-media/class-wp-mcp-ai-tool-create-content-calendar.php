@@ -491,7 +491,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 			$end_time   = $start_time + ( 30 * 60 ); // 30 minute duration.
 
 			$ics .= "BEGIN:VEVENT\r\n";
-			$ics .= 'UID:' . md5( $post['scheduled_at'] . $post['platform'] . $index ) . "@nvoos.com\r\n";
+			$ics .= 'UID:' . md5( $post['scheduled_at'] . $post['platform'] . $index ) . "@nvoos.pro\r\n";
 			$ics .= 'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ) . "\r\n";
 			$ics .= 'DTSTART:' . gmdate( 'Ymd\THis\Z', $start_time ) . "\r\n";
 			$ics .= 'DTEND:' . gmdate( 'Ymd\THis\Z', $end_time ) . "\r\n";
