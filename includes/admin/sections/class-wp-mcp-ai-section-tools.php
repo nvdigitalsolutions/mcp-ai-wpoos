@@ -1164,12 +1164,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
 						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }'
 					);
-					<?php
+
 					$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
 					ob_start();
 					?>
 					jQuery(document).ready(function($) {
-					var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; ?>;
+					var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() output is safe for inline script context. ?>;
 						
 						// Fallback to empty object if encoding failed.
 						if (!toolkitMemory || typeof toolkitMemory !== 'object') {
