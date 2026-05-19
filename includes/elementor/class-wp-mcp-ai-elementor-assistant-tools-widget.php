@@ -258,36 +258,14 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		$printed = true;
 
-		ob_start();
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor assistant tools widget layout and styling
-		?>
-<style>
-.wp-mcp-ai-assistant-tools__copy-button {
-	background: none;
-	border: 0;
-	padding: 0;
-	font: inherit;
-	color: inherit;
-	display: inline-flex;
-	align-items: center;
-	cursor: pointer;
-}
-
-.wp-mcp-ai-assistant-tools__copy-button:focus-visible {
-	outline: 2px solid currentColor;
-	outline-offset: 2px;
-}
-
-.wp-mcp-ai-assistant-tools__copy-feedback {
-	margin-left: 0.5rem;
-	font-size: 0.85em;
-}
-</style>
-		<?php
-		$style = ob_get_clean();
-
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS output is static content above.
-		echo $style;
+		wp_register_style( 'wp-mcp-ai-el-assistant-tools', false );
+		wp_enqueue_style( 'wp-mcp-ai-el-assistant-tools' );
+		wp_add_inline_style(
+			'wp-mcp-ai-el-assistant-tools',
+			'.wp-mcp-ai-assistant-tools__copy-button{background:none;border:0;padding:0;font:inherit;color:inherit;display:inline-flex;align-items:center;cursor:pointer}'
+			. '.wp-mcp-ai-assistant-tools__copy-button:focus-visible{outline:2px solid currentColor;outline-offset:2px}'
+			. '.wp-mcp-ai-assistant-tools__copy-feedback{margin-left:0.5rem;font-size:0.85em}'
+		);
 
 		ob_start();
 		?>

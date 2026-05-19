@@ -1019,21 +1019,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 
 </div><!-- /.wp-mcp-ai-security-overview -->
 
-<script>
-jQuery(function($){
-	$('.wp-mcp-ai-refresh-posture').on('click', function(){
-		var $btn = $(this).prop('disabled', true).text('<?php echo esc_js( __( 'Refreshing…', 'mcp-ai-wpoos' ) ); ?>');
-		wp.apiRequest({
-			path: '/mcp-ai/v1/security/posture?refresh=1',
-			method: 'GET'
-		}).done(function(){
-			window.location.reload();
-		}).fail(function(){
-			$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Refresh Now', 'mcp-ai-wpoos' ) ); ?>');
+<?php
+		$refresh_text    = wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) );
+		$refresh_now_text = wp_json_encode( __( 'Refresh Now', 'mcp-ai-wpoos' ) );
+		ob_start();
+		?>
+		jQuery(function($){
+			$('.wp-mcp-ai-refresh-posture').on('click', function(){
+				var $btn = $(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) ); ?>);
+				wp.apiRequest({
+					path: '/mcp-ai/v1/security/posture?refresh=1',
+					method: 'GET'
+				}).done(function(){
+					window.location.reload();
+				}).fail(function(){
+					$btn.prop('disabled', false).text(<?php echo wp_json_encode( __( 'Refresh Now', 'mcp-ai-wpoos' ) ); ?>);
+				});
+			});
 		});
-	});
-});
-</script>
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		?>
 			<?php
 		}
 
@@ -1109,54 +1116,60 @@ jQuery(function($){
 
 			<table class="form-table" role="presentation"><!-- reopen form-table for remaining fields -->
 
-			<script>
-			jQuery(function($){
-				var nonce = '<?php echo esc_js( $posture_nonce ); ?>';
+			<?php
+				$posture_nonce_js = wp_json_encode( $posture_nonce );
+				ob_start();
+				?>
+				jQuery(function($){
+					var nonce = <?php echo wp_json_encode( $posture_nonce ); ?>;
 
-				$('#wp-mcp-ai-test-ip-btn').on('click', function(){
-					var ip = $('#wp-mcp-ai-test-ip-input').val().trim();
-					if (!ip) return;
-					$(this).prop('disabled', true);
-					var $result = $('#wp-mcp-ai-test-ip-result').show().html('<em><?php echo esc_js( __( 'Testing…', 'mcp-ai-wpoos' ) ); ?></em>');
-					wp.apiRequest({
-						path: '/mcp-ai/v1/security/test-ip',
-						method: 'POST',
-						data: { ip: ip },
-						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-					}).done(function(res){
-						var icon  = res.allowed ? '✅' : '🚫';
-						var color = res.allowed ? '#46b450' : '#d63638';
-						$result.html('<p style="color:' + color + ';font-weight:600;">' + icon + ' ' + $('<span>').text(res.reason).html() + '</p>');
-					}).fail(function(xhr){
-						var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '<?php echo esc_js( __( 'Request failed.', 'mcp-ai-wpoos' ) ); ?>';
-						$result.html('<p style="color:#d63638;">' + $('<span>').text(msg).html() + '</p>');
-					}).always(function(){ $('#wp-mcp-ai-test-ip-btn').prop('disabled', false); });
-				});
+					$('#wp-mcp-ai-test-ip-btn').on('click', function(){
+						var ip = $('#wp-mcp-ai-test-ip-input').val().trim();
+						if (!ip) return;
+						$(this).prop('disabled', true);
+						var $result = $('#wp-mcp-ai-test-ip-result').show().html('<em>' + <?php echo wp_json_encode( __( 'Testing…', 'mcp-ai-wpoos' ) ); ?> + '</em>');
+						wp.apiRequest({
+							path: '/mcp-ai/v1/security/test-ip',
+							method: 'POST',
+							data: { ip: ip },
+							beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+						}).done(function(res){
+							var icon  = res.allowed ? '✅' : '🚫';
+							var color = res.allowed ? '#46b450' : '#d63638';
+							$result.html('<p style="color:' + color + ';font-weight:600;">' + icon + ' ' + $('<span>').text(res.reason).html() + '</p>');
+						}).fail(function(xhr){
+							var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : <?php echo wp_json_encode( __( 'Request failed.', 'mcp-ai-wpoos' ) ); ?>;
+							$result.html('<p style="color:#d63638;">' + $('<span>').text(msg).html() + '</p>');
+						}).always(function(){ $('#wp-mcp-ai-test-ip-btn').prop('disabled', false); });
+					});
 
-				$('#wp-mcp-ai-preview-headers-btn').on('click', function(){
-					$(this).prop('disabled', true);
-					var $result = $('#wp-mcp-ai-preview-headers-result').show().html('<em><?php echo esc_js( __( 'Loading…', 'mcp-ai-wpoos' ) ); ?></em>');
-					wp.apiRequest({
-						path: '/mcp-ai/v1/security/preview-headers',
-						method: 'GET',
-						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-					}).done(function(res){
-						var html = '<table class="widefat striped" style="max-width:700px;"><thead><tr><th><?php echo esc_js( __( 'Header', 'mcp-ai-wpoos' ) ); ?></th><th><?php echo esc_js( __( 'Value', 'mcp-ai-wpoos' ) ); ?></th></tr></thead><tbody>';
-						if (res.headers && Object.keys(res.headers).length > 0) {
-							$.each(res.headers, function(name, val){
-								html += '<tr><td><code>' + $('<span>').text(name).html() + '</code></td><td><code>' + $('<span>').text(val).html() + '</code></td></tr>';
-							});
-						} else {
-							html += '<tr><td colspan="2" style="color:#646970;"><?php echo esc_js( __( 'No security headers are currently configured. Enable "OWASP security headers" above.', 'mcp-ai-wpoos' ) ); ?></td></tr>';
-						}
-						html += '</tbody></table>';
-						$result.html(html);
-					}).fail(function(){
-						$result.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Could not retrieve headers.', 'mcp-ai-wpoos' ) ); ?></p>');
-					}).always(function(){ $('#wp-mcp-ai-preview-headers-btn').prop('disabled', false); });
+					$('#wp-mcp-ai-preview-headers-btn').on('click', function(){
+						$(this).prop('disabled', true);
+						var $result = $('#wp-mcp-ai-preview-headers-result').show().html('<em>' + <?php echo wp_json_encode( __( 'Loading…', 'mcp-ai-wpoos' ) ); ?> + '</em>');
+						wp.apiRequest({
+							path: '/mcp-ai/v1/security/preview-headers',
+							method: 'GET',
+							beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+						}).done(function(res){
+							var html = '<table class="widefat striped" style="max-width:700px;"><thead><tr><th>' + <?php echo wp_json_encode( __( 'Header', 'mcp-ai-wpoos' ) ); ?> + '</th><th>' + <?php echo wp_json_encode( __( 'Value', 'mcp-ai-wpoos' ) ); ?> + '</th></tr></thead><tbody>';
+							if (res.headers && Object.keys(res.headers).length > 0) {
+								$.each(res.headers, function(name, val){
+									html += '<tr><td><code>' + $('<span>').text(name).html() + '</code></td><td><code>' + $('<span>').text(val).html() + '</code></td></tr>';
+								});
+							} else {
+								html += '<tr><td colspan="2" style="color:#646970;">' + <?php echo wp_json_encode( __( 'No security headers are currently configured. Enable "OWASP security headers" above.', 'mcp-ai-wpoos' ) ); ?> + '</td></tr>';
+							}
+							html += '</tbody></table>';
+							$result.html(html);
+						}).fail(function(){
+							$result.html('<p style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Could not retrieve headers.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+						}).always(function(){ $('#wp-mcp-ai-preview-headers-btn').prop('disabled', false); });
+					});
 				});
-			});
-			</script>
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			<?php
 		}
 
@@ -1229,115 +1242,121 @@ jQuery(function($){
 
 			<table class="form-table" role="presentation"><!-- reopen form-table -->
 
-			<script>
-			jQuery(function($){
-				var nonce = '<?php echo esc_js( $posture_nonce ); ?>';
+			<?php
+				$posture_nonce_js = wp_json_encode( $posture_nonce );
+				ob_start();
+				?>
+				jQuery(function($){
+					var nonce = <?php echo wp_json_encode( $posture_nonce ); ?>;
 
-				$('#wp-mcp-ai-save-snapshot-btn').on('click', function(){
-					var label = $('#wp-mcp-ai-snapshot-label').val().trim();
-					$(this).prop('disabled', true);
-					var $result = $('#wp-mcp-ai-snapshot-result').show().html('<em><?php echo esc_js( __( 'Saving…', 'mcp-ai-wpoos' ) ); ?></em>');
-					wp.apiRequest({
-						path: '/mcp-ai/v1/security/snapshot',
-						method: 'POST',
-						data: { label: label },
-						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-					}).done(function(res){
-						$result.html('<p style="color:#46b450;">✅ <?php echo esc_js( __( 'Snapshot saved:', 'mcp-ai-wpoos' ) ); ?> ' + $('<span>').text(res.label).html() + ' (' + $('<span>').text(res.snapshot_id).html() + ')</p>');
-					}).fail(function(){
-						$result.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Save failed.', 'mcp-ai-wpoos' ) ); ?></p>');
-					}).always(function(){ $('#wp-mcp-ai-save-snapshot-btn').prop('disabled', false); });
-				});
+					$('#wp-mcp-ai-save-snapshot-btn').on('click', function(){
+						var label = $('#wp-mcp-ai-snapshot-label').val().trim();
+						$(this).prop('disabled', true);
+						var $result = $('#wp-mcp-ai-snapshot-result').show().html('<em>' + <?php echo wp_json_encode( __( 'Saving…', 'mcp-ai-wpoos' ) ); ?> + '</em>');
+						wp.apiRequest({
+							path: '/mcp-ai/v1/security/snapshot',
+							method: 'POST',
+							data: { label: label },
+							beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+						}).done(function(res){
+							$result.html('<p style="color:#46b450;">✅ ' + <?php echo wp_json_encode( __( 'Snapshot saved:', 'mcp-ai-wpoos' ) ); ?> + ' ' + $('<span>').text(res.label).html() + ' (' + $('<span>').text(res.snapshot_id).html() + ')</p>');
+						}).fail(function(){
+							$result.html('<p style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Save failed.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+						}).always(function(){ $('#wp-mcp-ai-save-snapshot-btn').prop('disabled', false); });
+					});
 
-				$('#wp-mcp-ai-load-snapshots-btn').on('click', function(){
-					$(this).prop('disabled', true);
-					var $list = $('#wp-mcp-ai-snapshot-list').show().html('<em><?php echo esc_js( __( 'Loading…', 'mcp-ai-wpoos' ) ); ?></em>');
-					wp.apiRequest({
-						path: '/mcp-ai/v1/security/snapshots',
-						method: 'GET',
-						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-					}).done(function(res){
-						if (!res.snapshots || !res.snapshots.length) {
-							$list.html('<p style="color:#646970;"><?php echo esc_js( __( 'No snapshots yet.', 'mcp-ai-wpoos' ) ); ?></p>');
-							return;
-						}
-						var html = '<table class="widefat striped" style="max-width:700px;"><thead><tr><th><?php echo esc_js( __( 'Label', 'mcp-ai-wpoos' ) ); ?></th><th><?php echo esc_js( __( 'Created', 'mcp-ai-wpoos' ) ); ?></th><th></th></tr></thead><tbody>';
-						$.each(res.snapshots, function(i, snap){
-							html += '<tr><td>' + $('<span>').text(snap.label).html() + '</td><td>' + $('<span>').text(snap.created_at).html() + '</td>';
-							html += '<td><button type="button" class="button button-small wp-mcp-ai-restore-btn" data-id="' + $('<span>').text(snap.id).html() + '"><?php echo esc_js( __( 'Restore', 'mcp-ai-wpoos' ) ); ?></button></td></tr>';
-						});
-						html += '</tbody></table>';
-						$list.html(html);
-
-						$list.on('click', '.wp-mcp-ai-restore-btn', function(){
-							var id = $(this).data('id');
-							if (!confirm('<?php echo esc_js( __( 'Restore this snapshot? A backup of current settings will be saved automatically.', 'mcp-ai-wpoos' ) ); ?>')) return;
-							$(this).prop('disabled', true);
-							wp.apiRequest({
-								path: '/mcp-ai/v1/security/restore',
-								method: 'POST',
-								data: { snapshot_id: id },
-								beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-							}).done(function(res){
-								$list.html('<p style="color:#46b450;">✅ <?php echo esc_js( __( 'Restored. Reloading page…', 'mcp-ai-wpoos' ) ); ?></p>');
-								setTimeout(function(){ window.location.reload(); }, 1500);
-							}).fail(function(){
-								$list.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Restore failed.', 'mcp-ai-wpoos' ) ); ?></p>');
+					$('#wp-mcp-ai-load-snapshots-btn').on('click', function(){
+						$(this).prop('disabled', true);
+						var $list = $('#wp-mcp-ai-snapshot-list').show().html('<em>' + <?php echo wp_json_encode( __( 'Loading…', 'mcp-ai-wpoos' ) ); ?> + '</em>');
+						wp.apiRequest({
+							path: '/mcp-ai/v1/security/snapshots',
+							method: 'GET',
+							beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+						}).done(function(res){
+							if (!res.snapshots || !res.snapshots.length) {
+								$list.html('<p style="color:#646970;">' + <?php echo wp_json_encode( __( 'No snapshots yet.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+								return;
+							}
+							var html = '<table class="widefat striped" style="max-width:700px;"><thead><tr><th>' + <?php echo wp_json_encode( __( 'Label', 'mcp-ai-wpoos' ) ); ?> + '</th><th>' + <?php echo wp_json_encode( __( 'Created', 'mcp-ai-wpoos' ) ); ?> + '</th><th></th></tr></thead><tbody>';
+							$.each(res.snapshots, function(i, snap){
+								html += '<tr><td>' + $('<span>').text(snap.label).html() + '</td><td>' + $('<span>').text(snap.created_at).html() + '</td>';
+								html += '<td><button type="button" class="button button-small wp-mcp-ai-restore-btn" data-id="' + $('<span>').text(snap.id).html() + '">' + <?php echo wp_json_encode( __( 'Restore', 'mcp-ai-wpoos' ) ); ?> + '</button></td></tr>';
 							});
-						});
-					}).fail(function(){
-						$list.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Could not load snapshots.', 'mcp-ai-wpoos' ) ); ?></p>');
-					}).always(function(){ $('#wp-mcp-ai-load-snapshots-btn').prop('disabled', false); });
-				});
+							html += '</tbody></table>';
+							$list.html(html);
+
+							$list.on('click', '.wp-mcp-ai-restore-btn', function(){
+								var id = $(this).data('id');
+								if (!confirm(<?php echo wp_json_encode( __( 'Restore this snapshot? A backup of current settings will be saved automatically.', 'mcp-ai-wpoos' ) ); ?>)) return;
+								$(this).prop('disabled', true);
+								wp.apiRequest({
+									path: '/mcp-ai/v1/security/restore',
+									method: 'POST',
+									data: { snapshot_id: id },
+									beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+								}).done(function(res){
+									$list.html('<p style="color:#46b450;">✅ ' + <?php echo wp_json_encode( __( 'Restored. Reloading page…', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+									setTimeout(function(){ window.location.reload(); }, 1500);
+								}).fail(function(){
+									$list.html('<p style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Restore failed.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+								});
+							});
+						}).fail(function(){
+							$list.html('<p style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Could not load snapshots.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+						}).always(function(){ $('#wp-mcp-ai-load-snapshots-btn').prop('disabled', false); });
+					});
 
 
-				// Compliance report builder.
-				$('#wp-mcp-ai-export-report-btn').on('click', function(){
-					var fw = $('#wp-mcp-ai-compliance-framework').val();
-					$(this).prop('disabled', true);
-					var $result = $('#wp-mcp-ai-compliance-result').show().html('<em><?php echo esc_js( __( 'Generating report…', 'mcp-ai-wpoos' ) ); ?></em>');
-					wp.apiRequest({
-						path: '/mcp-ai/v1/security/compliance-report',
-						method: 'POST',
-						data: { framework: fw },
-						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-					}).done(function(res){
-						// Trigger CSV download.
-						var blob = new Blob([res.csv], { type: 'text/csv' });
-						var url  = URL.createObjectURL(blob);
-						var a    = document.createElement('a');
-						a.href     = url;
-						a.download = 'security-compliance-' + fw + '-' + res.generated_at.replace(/[^0-9]/g, '') + '.csv';
-						document.body.appendChild(a);
-						a.click();
-						document.body.removeChild(a);
-						URL.revokeObjectURL(url);
-						$result.html('<p style="color:#46b450;">✅ <?php echo esc_js( __( 'Report downloaded.', 'mcp-ai-wpoos' ) ); ?> (' + $('<span>').text(res.title).html() + ')</p>');
-					}).fail(function(){
-						$result.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Report generation failed.', 'mcp-ai-wpoos' ) ); ?></p>');
-					}).always(function(){ $('#wp-mcp-ai-export-report-btn').prop('disabled', false); });
+					// Compliance report builder.
+					$('#wp-mcp-ai-export-report-btn').on('click', function(){
+						var fw = $('#wp-mcp-ai-compliance-framework').val();
+						$(this).prop('disabled', true);
+						var $result = $('#wp-mcp-ai-compliance-result').show().html('<em>' + <?php echo wp_json_encode( __( 'Generating report…', 'mcp-ai-wpoos' ) ); ?> + '</em>');
+						wp.apiRequest({
+							path: '/mcp-ai/v1/security/compliance-report',
+							method: 'POST',
+							data: { framework: fw },
+							beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+						}).done(function(res){
+							// Trigger CSV download.
+							var blob = new Blob([res.csv], { type: 'text/csv' });
+							var url  = URL.createObjectURL(blob);
+							var a    = document.createElement('a');
+							a.href     = url;
+							a.download = 'security-compliance-' + fw + '-' + res.generated_at.replace(/[^0-9]/g, '') + '.csv';
+							document.body.appendChild(a);
+							a.click();
+							document.body.removeChild(a);
+							URL.revokeObjectURL(url);
+							$result.html('<p style="color:#46b450;">✅ ' + <?php echo wp_json_encode( __( 'Report downloaded.', 'mcp-ai-wpoos' ) ); ?> + ' (' + $('<span>').text(res.title).html() + ')</p>');
+						}).fail(function(){
+							$result.html('<p style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Report generation failed.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+						}).always(function(){ $('#wp-mcp-ai-export-report-btn').prop('disabled', false); });
+					});
+					$('#wp-mcp-ai-self-test-btn').on('click', function(){
+						$(this).prop('disabled', true);
+						var $result = $('#wp-mcp-ai-self-test-result').show().html('<em>' + <?php echo wp_json_encode( __( 'Running…', 'mcp-ai-wpoos' ) ); ?> + '</em>');
+						wp.apiRequest({
+							path: '/mcp-ai/v1/security/self-test',
+							method: 'POST',
+							beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
+						}).done(function(res){
+							var html = '<table class="widefat striped" style="max-width:600px;"><thead><tr><th>' + <?php echo wp_json_encode( __( 'Test', 'mcp-ai-wpoos' ) ); ?> + '</th><th>' + <?php echo wp_json_encode( __( 'Result', 'mcp-ai-wpoos' ) ); ?> + '</th></tr></thead><tbody>';
+							$.each(res.results, function(key, r){
+								var icon = r.passed ? '✅' : '❌';
+								html += '<tr><td><code>' + $('<span>').text(key).html() + '</code></td><td>' + icon + ' ' + $('<span>').text(r.message).html() + '</td></tr>';
+							});
+							html += '</tbody></table>';
+							$result.html(html);
+						}).fail(function(){
+							$result.html('<p style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Self-test failed.', 'mcp-ai-wpoos' ) ); ?> + '</p>');
+						}).always(function(){ $('#wp-mcp-ai-self-test-btn').prop('disabled', false); });
+					});
 				});
-				$('#wp-mcp-ai-self-test-btn').on('click', function(){
-					$(this).prop('disabled', true);
-					var $result = $('#wp-mcp-ai-self-test-result').show().html('<em><?php echo esc_js( __( 'Running…', 'mcp-ai-wpoos' ) ); ?></em>');
-					wp.apiRequest({
-						path: '/mcp-ai/v1/security/self-test',
-						method: 'POST',
-						beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', nonce); }
-					}).done(function(res){
-						var html = '<table class="widefat striped" style="max-width:600px;"><thead><tr><th><?php echo esc_js( __( 'Test', 'mcp-ai-wpoos' ) ); ?></th><th><?php echo esc_js( __( 'Result', 'mcp-ai-wpoos' ) ); ?></th></tr></thead><tbody>';
-						$.each(res.results, function(key, r){
-							var icon = r.passed ? '✅' : '❌';
-							html += '<tr><td><code>' + $('<span>').text(key).html() + '</code></td><td>' + icon + ' ' + $('<span>').text(r.message).html() + '</td></tr>';
-						});
-						html += '</tbody></table>';
-						$result.html(html);
-					}).fail(function(){
-						$result.html('<p style="color:#d63638;"><?php echo esc_js( __( 'Self-test failed.', 'mcp-ai-wpoos' ) ); ?></p>');
-					}).always(function(){ $('#wp-mcp-ai-self-test-btn').prop('disabled', false); });
-				});
-			});
-			</script>
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			<?php
 		}
 
@@ -1415,8 +1434,12 @@ jQuery(function($){
 				}
 				?>
 			</div>
-			<!-- phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- inline admin-only style for cap-fence table -->
-			<style>.wp-mcp-ai-cap-fence-missing { background: #fef9f9; }</style>
+			<?php
+			wp_add_inline_style(
+				'wp-mcp-ai-section-security',
+				'.wp-mcp-ai-cap-fence-missing{background:#fef9f9;}'
+			);
+			?>
 			<table class="form-table" role="presentation">
 			<?php
 		}

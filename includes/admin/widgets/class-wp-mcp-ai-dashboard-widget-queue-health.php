@@ -49,39 +49,18 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 	 * Render the dashboard widget content.
 	 */
 	public function render_widget() {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for queue health dashboard widget layout and styling on this admin page only
+		wp_add_inline_style(
+			'wp-mcp-ai-queue-health-dashboard',
+			'#wp_mcp_ai_queue_health .wp-mcp-ai-widget-stat{display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #f0f0f1;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-stat:last-child{border-bottom:none;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-label{font-weight:500;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value{font-weight:600;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value--success{color:#2ea44f;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value--warning{color:#fb8c00;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value--error{color:#d73a49;}'
+			. '#wp_mcp_ai_queue_health .wp-mcp-ai-widget-actions{margin-top:1rem;padding-top:1rem;border-top:1px solid #f0f0f1;}'
+		);
 		?>
-		<style>
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-stat {
-				display: flex;
-				justify-content: space-between;
-				padding: 0.5rem 0;
-				border-bottom: 1px solid #f0f0f1;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-stat:last-child {
-				border-bottom: none;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-label {
-				font-weight: 500;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value {
-				font-weight: 600;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value--success {
-				color: #2ea44f;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value--warning {
-				color: #fb8c00;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-value--error {
-				color: #d73a49;
-			}
-			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-actions {
-				margin-top: 1rem;
-				padding-top: 1rem;
-				border-top: 1px solid #f0f0f1;
-			}
-		</style>
 
 		<?php if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) : ?>
 			<?php

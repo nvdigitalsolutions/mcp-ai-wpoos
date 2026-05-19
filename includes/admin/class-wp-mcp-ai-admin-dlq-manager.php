@@ -443,15 +443,15 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		</form>
 
 		<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for select-all checkbox functionality on this admin page only.
+		ob_start();
 		?>
-		<script>
 		document.getElementById('select-all').addEventListener('change', function() {
 			const checkboxes = document.querySelectorAll('input[name="dlq_items[]"]');
 			checkboxes.forEach(cb => cb.checked = this.checked);
 		});
-		</script>
 		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 	}
 
 	/**

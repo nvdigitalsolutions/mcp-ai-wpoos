@@ -173,108 +173,123 @@ class Test_Model_Config_Renderer extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that render_javascript outputs script tags.
+	 * Test that render_javascript outputs script via wp_print_inline_script_tag.
 	 */
 	public function test_render_javascript_outputs_script() {
+		ob_start();
 		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+		$echoed = ob_get_clean();
 
 		$this->assertIsString( $output );
-		$this->assertStringContainsString( '<script', $output );
-		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $output );
-		$this->assertStringContainsString( 'jQuery', $output );
+		$this->assertEmpty( $output, 'render_javascript should return empty string; JS is echoed via wp_print_inline_script_tag' );
+		$this->assertStringContainsString( '<script', $echoed );
+		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $echoed );
+		$this->assertStringContainsString( 'jQuery', $echoed );
 	}
 
 	/**
-	 * Test that render_model_table outputs style tags.
+	 * Test that render_model_table no longer outputs inline style tags.
+	 *
+	 * Styles are now added via wp_add_inline_style() which hooks into WordPress's
+	 * style enqueue system instead of emitting raw <style> tags.
 	 */
 	public function test_render_model_table_outputs_style() {
 		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
 		$this->assertIsString( $output );
-		$this->assertStringContainsString( '<style', $output );
-		$this->assertStringContainsString( '</style>', $output );
-		$this->assertStringContainsString( '.wp-mcp-ai-model-config-table-wrapper', $output );
-		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge', $output );
+		// Styles are now enqueued via wp_add_inline_style, not raw <style> tags.
+		$this->assertStringNotContainsString( '<style', $output );
+		$this->assertStringNotContainsString( '</style>', $output );
+		// Verify the style handle was registered and has inline styles attached.
+		$styles = wp_styles();
+		$this->assertTrue( wp_style_is( 'wp-mcp-ai-model-config', 'enqueued' ) || wp_style_is( 'wp-mcp-ai-model-config', 'registered' ) );
 	}
 
 	/**
 	 * Test that render_javascript is not stripped by wp_kses_post.
 	 *
-	 * This test ensures that script tags remain intact when the output
-	 * is used without wp_kses_post() wrapper, as required by the fix.
+	 * This test ensures that the echoed output from wp_print_inline_script_tag
+	 * contains the expected script content.
 	 */
 	public function test_render_javascript_not_stripped() {
-		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+		ob_start();
+		WP_MCP_AI_Model_Config_Renderer::render_javascript();
+		$echoed = ob_get_clean();
 
-		// Verify script tags exist before wp_kses_post.
-		$this->assertStringContainsString( '<script', $output );
-		$this->assertStringContainsString( '</script>', $output );
+		// Verify script tags exist in echoed output from wp_print_inline_script_tag.
+		$this->assertStringContainsString( '<script', $echoed );
+		$this->assertStringContainsString( '</script>', $echoed );
 
 		// Verify script functionality is present.
-		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $output );
-		$this->assertStringContainsString( 'searchModels', $output );
+		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $echoed );
+		$this->assertStringContainsString( 'searchModels', $echoed );
 
-		// Note: If wp_kses_post() were applied, these script tags would be stripped.
-		// This test verifies the renderer outputs script tags that should NOT be passed through wp_kses_post.
+		// Note: The script is output via wp_print_inline_script_tag() which properly
+		// generates <script> tags with type and id attributes for WordPress compatibility.
 	}
 
 	/**
 	 * Test that render_model_table styles are not stripped.
 	 *
-	 * This test ensures that style tags remain intact when the output
-	 * is used without wp_kses_post() wrapper, as required by the fix.
+	 * Styles are now registered via wp_add_inline_style and will be output
+	 * by WordPress's style system during wp_print_styles.
 	 */
 	public function test_render_model_table_styles_not_stripped() {
 		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
-		// Verify style tags exist.
-		$this->assertStringContainsString( '<style', $output );
-		$this->assertStringContainsString( '</style>', $output );
+		// Verify style tags are NOT emitted raw in the HTML output.
+		$this->assertStringNotContainsString( '<style', $output );
+		$this->assertStringNotContainsString( '</style>', $output );
 
-		// Verify critical CSS rules are present.
-		$this->assertStringContainsString( '.wp-mcp-ai-model-config-table-wrapper', $output );
-		$this->assertStringContainsString( 'background: #fff', $output );
-		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge', $output );
-
-		// Note: If wp_kses_post() were applied, these style tags would be stripped.
-		// This test verifies the renderer outputs style tags that should NOT be passed through wp_kses_post.
+		// Verify the CSS is registered with WordPress's style system.
+		$styles = wp_styles();
+		$is_enqueued = wp_style_is( 'wp-mcp-ai-model-config', 'enqueued' ) || wp_style_is( 'wp-mcp-ai-model-config', 'registered' );
+		$this->assertTrue( $is_enqueued, 'Model config styles should be registered/enqueued via wp_add_inline_style' );
 	}
 
 	/**
 	 * Test that WEBLLM and GOOGLE provider badges have color styles.
 	 */
 	public function test_webllm_and_google_provider_badges_have_colors() {
-		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+		WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
-		// Verify WEBLLM provider badge style exists.
-		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.webllm', $output );
-		$this->assertStringContainsString( '#9b59b6', $output );
-
-		// Verify GOOGLE provider badge style exists.
-		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.google', $output );
-		$this->assertStringContainsString( '#4285f4', $output );
+		// Verify styles are in the registered inline styles for the model config handle.
+		$styles = wp_styles();
+		$inline_styles = $styles->get_data( 'wp-mcp-ai-model-config', 'after' );
+		$this->assertNotEmpty( $inline_styles, 'Inline styles should be registered for wp-mcp-ai-model-config' );
+		$all_styles = is_array( $inline_styles ) ? implode( ' ', $inline_styles ) : $inline_styles;
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.webllm', $all_styles );
+		$this->assertStringContainsString( '#9b59b6', $all_styles );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.google', $all_styles );
+		$this->assertStringContainsString( '#4285f4', $all_styles );
 	}
 
 	/**
 	 * Test that save button has max-width style.
 	 */
 	public function test_save_button_has_max_width() {
-		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+		WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
-		// Verify save button max-width style exists.
-		$this->assertStringContainsString( '.wp-mcp-ai-save-model-config', $output );
-		$this->assertStringContainsString( 'max-width: 75px', $output );
+		// Verify the max-width style is in the registered inline styles.
+		$styles = wp_styles();
+		$inline_styles = $styles->get_data( 'wp-mcp-ai-model-config', 'after' );
+		$this->assertNotEmpty( $inline_styles, 'Inline styles should be registered for wp-mcp-ai-model-config' );
+		$all_styles = is_array( $inline_styles ) ? implode( ' ', $inline_styles ) : $inline_styles;
+		$this->assertStringContainsString( '.wp-mcp-ai-save-model-config', $all_styles );
+		$this->assertStringContainsString( 'max-width:75px', $all_styles );
 	}
 
 	/**
 	 * Test that JavaScript includes sorting functionality.
 	 */
 	public function test_javascript_includes_sorting() {
-		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+		ob_start();
+		WP_MCP_AI_Model_Config_Renderer::render_javascript();
+		$echoed = ob_get_clean();
 
-		// Verify sorting function exists.
-		$this->assertStringContainsString( 'sortModelsByProvider', $output );
-		$this->assertStringContainsString( 'Sort models by provider on page load', $output );
-		$this->assertStringContainsString( '$modelTable.append(row)', $output );
+		// Verify sorting function exists in echoed output.
+		$this->assertStringContainsString( 'sortModelsByProvider', $echoed );
+		$this->assertStringContainsString( 'Sort models by provider on page load', $echoed );
+		$this->assertStringContainsString( '$modelTable.append(row)', $echoed );
 	}
 }

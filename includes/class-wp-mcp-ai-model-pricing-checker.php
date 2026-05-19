@@ -177,13 +177,15 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				<span class="wp-mcp-ai-update-status" style="margin-left: 10px;"></span>
 			</p>
 		</div>
-		<script>
+		<?php
+		ob_start();
+		?>
 		jQuery(document).ready(function($) {
 			$('.wp-mcp-ai-price-notice').on('click', '.notice-dismiss', function() {
 				$.post(ajaxurl, {
 					action: 'wp_mcp_ai_dismiss_price_notice',
-					nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_price_notice' ) ); ?>',
-					count: <?php echo esc_js( absint( count( $price_changes ) ) ); ?>
+					nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_dismiss_price_notice' ) ); ?>,
+					count: <?php echo absint( count( $price_changes ) ); ?>
 				});
 			});
 
@@ -191,12 +193,12 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				var $btn = $(this);
 				var $status = $('.wp-mcp-ai-update-status');
 				
-				$btn.prop('disabled', true).text('<?php echo esc_js( __( 'Updating...', 'mcp-ai-wpoos' ) ); ?>');
+				$btn.prop('disabled', true).text(<?php echo wp_json_encode( __( 'Updating...', 'mcp-ai-wpoos' ) ); ?>);
 				$status.text('');
 				
 				$.post(ajaxurl, {
 					action: 'wp_mcp_ai_update_model_costs',
-					nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_update_model_costs' ) ); ?>'
+					nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_update_model_costs' ) ); ?>
 				})
 				.done(function(response) {
 					if (response.success) {
@@ -207,17 +209,20 @@ class WP_MCP_AI_Model_Pricing_Checker {
 							});
 						}, 2000);
 					} else {
-						$status.html('<span style="color: red;">✗ ' + (response.data.message || '<?php echo esc_js( __( 'Update failed', 'mcp-ai-wpoos' ) ); ?>') + '</span>');
-						$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Update Costs Automatically', 'mcp-ai-wpoos' ) ); ?>');
+						$status.html('<span style="color: red;">✗ ' + (response.data.message || <?php echo wp_json_encode( __( 'Update failed', 'mcp-ai-wpoos' ) ); ?>) + '</span>');
+						$btn.prop('disabled', false).text(<?php echo wp_json_encode( __( 'Update Costs Automatically', 'mcp-ai-wpoos' ) ); ?>);
 					}
 				})
 				.fail(function() {
-					$status.html('<span style="color: red;">✗ <?php echo esc_js( __( 'Network error occurred', 'mcp-ai-wpoos' ) ); ?></span>');
-					$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Update Costs Automatically', 'mcp-ai-wpoos' ) ); ?>');
+					$status.html('<span style="color: red;">✗ ' + <?php echo wp_json_encode( __( 'Network error occurred', 'mcp-ai-wpoos' ) ); ?> + '</span>');
+					$btn.prop('disabled', false).text(<?php echo wp_json_encode( __( 'Update Costs Automatically', 'mcp-ai-wpoos' ) ); ?>);
 				});
 			});
 		});
-		</script>
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+		?>
 		<?php
 	}
 

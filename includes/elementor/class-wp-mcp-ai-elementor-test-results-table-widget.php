@@ -306,9 +306,12 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	 * Enqueue details modal script.
 	 */
 	protected function enqueue_details_modal_script() {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		static $printed = false;
+
+		$test_id_label = __( 'Test ID:', 'mcp-ai-wpoos' );
+
+		ob_start();
 		?>
-		<script>
 		(function($) {
 			$(document).ready(function() {
 				$('.wp-mcp-ai-test-results__details-btn').on('click', function(e) {
@@ -316,71 +319,35 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 					var testId = $(this).data('test-id');
 
 					// In a real implementation, this would fetch and display full test details.
-					alert('<?php echo esc_js( __( 'Test ID:', 'mcp-ai-wpoos' ) ); ?> ' + testId);
+					alert(<?php echo wp_json_encode( $test_id_label ); ?> + ' ' + testId);
 				});
 			});
 		})(jQuery);
-		</script>
-		<style>
-		.wp-mcp-ai-test-results {
-			padding: 20px;
-			background: #fff;
-			border: 1px solid #ddd;
-			border-radius: 4px;
-		}
-		.wp-mcp-ai-test-results__title {
-			margin-top: 0;
-			margin-bottom: 20px;
-		}
-		.wp-mcp-ai-test-results__table-container {
-			overflow-x: auto;
-		}
-		.wp-mcp-ai-test-results__table {
-			width: 100%;
-			border-collapse: collapse;
-			font-size: 14px;
-		}
-		.wp-mcp-ai-test-results__table th,
-		.wp-mcp-ai-test-results__table td {
-			padding: 12px;
-			text-align: left;
-			border-bottom: 1px solid #ddd;
-		}
-		.wp-mcp-ai-test-results__table th {
-			background: #f9f9f9;
-			font-weight: 600;
-		}
-		.wp-mcp-ai-test-status {
-			padding: 4px 8px;
-			border-radius: 3px;
-			font-size: 12px;
-			font-weight: 500;
-		}
-		.status-passed {
-			background: #d4edda;
-			color: #155724;
-		}
-		.status-warning {
-			background: #fff3cd;
-			color: #856404;
-		}
-		.status-failed {
-			background: #f8d7da;
-			color: #721c24;
-		}
-		.wp-mcp-ai-test-results__details-btn {
-			padding: 4px 12px;
-			background: #2271b1;
-			color: #fff;
-			border: none;
-			border-radius: 3px;
-			cursor: pointer;
-			font-size: 12px;
-		}
-		.wp-mcp-ai-test-results__details-btn:hover {
-			background: #135e96;
-		}
-		</style>
 		<?php
+		$js = ob_get_clean();
+
+		wp_print_inline_script_tag( $js );
+
+		if ( ! $printed ) {
+			$printed = true;
+
+			wp_register_style( 'wp-mcp-ai-el-test-results', false );
+			wp_enqueue_style( 'wp-mcp-ai-el-test-results' );
+			wp_add_inline_style(
+				'wp-mcp-ai-el-test-results',
+				'.wp-mcp-ai-test-results{padding:20px;background:#fff;border:1px solid #ddd;border-radius:4px}'
+				. '.wp-mcp-ai-test-results__title{margin-top:0;margin-bottom:20px}'
+				. '.wp-mcp-ai-test-results__table-container{overflow-x:auto}'
+				. '.wp-mcp-ai-test-results__table{width:100%;border-collapse:collapse;font-size:14px}'
+				. '.wp-mcp-ai-test-results__table th,.wp-mcp-ai-test-results__table td{padding:12px;text-align:left;border-bottom:1px solid #ddd}'
+				. '.wp-mcp-ai-test-results__table th{background:#f9f9f9;font-weight:600}'
+				. '.wp-mcp-ai-test-status{padding:4px 8px;border-radius:3px;font-size:12px;font-weight:500}'
+				. '.status-passed{background:#d4edda;color:#155724}'
+				. '.status-warning{background:#fff3cd;color:#856404}'
+				. '.status-failed{background:#f8d7da;color:#721c24}'
+				. '.wp-mcp-ai-test-results__details-btn{padding:4px 12px;background:#2271b1;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:12px}'
+				. '.wp-mcp-ai-test-results__details-btn:hover{background:#135e96}'
+			);
+		}
 	}
 }

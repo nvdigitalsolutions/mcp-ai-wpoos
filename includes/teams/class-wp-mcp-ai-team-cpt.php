@@ -492,25 +492,15 @@ class WP_MCP_AI_Team_CPT {
 				?>
 			</p>
 
-			<style>
-				.wp-mcp-ai-team-orchestration-field {
-					margin-bottom: 20px;
-				}
-				.wp-mcp-ai-team-orchestration-field label {
-					display: block;
-					font-weight: 600;
-					margin-bottom: 8px;
-				}
-				.wp-mcp-ai-team-orchestration-field textarea {
-					width: 100%;
-					font-family: 'Courier New', Courier, monospace;
-					font-size: 13px;
-				}
-				.wp-mcp-ai-team-orchestration-field .description {
-					margin-top: 5px;
-					font-style: italic;
-				}
-			</style>
+			<?php
+				wp_add_inline_style(
+					'wp-mcp-ai-team-cpt',
+					'.wp-mcp-ai-team-orchestration-field{margin-bottom:20px;}'
+					. '.wp-mcp-ai-team-orchestration-field label{display:block;font-weight:600;margin-bottom:8px;}'
+					. '.wp-mcp-ai-team-orchestration-field textarea{width:100%;font-family:\'Courier New\',Courier,monospace;font-size:13px;}'
+					. '.wp-mcp-ai-team-orchestration-field .description{margin-top:5px;font-style:italic;}'
+				);
+				?>
 
 			<!-- Orchestration Mode -->
 			<div class="wp-mcp-ai-team-orchestration-field">
