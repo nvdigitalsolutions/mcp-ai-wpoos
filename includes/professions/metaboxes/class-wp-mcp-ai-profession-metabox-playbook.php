@@ -263,7 +263,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 		<?php
 		$js = ob_get_clean();
 		wp_print_inline_script_tag( $js );
-		<?php
+
 		$this->render_documentation_link();
 	}
 

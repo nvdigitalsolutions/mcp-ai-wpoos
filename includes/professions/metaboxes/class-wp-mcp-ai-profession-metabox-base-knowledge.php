@@ -364,7 +364,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 		<?php
 		$js = ob_get_clean();
 		wp_print_inline_script_tag( $js );
-		<?php
+
 		$this->render_documentation_link();
 	}
 

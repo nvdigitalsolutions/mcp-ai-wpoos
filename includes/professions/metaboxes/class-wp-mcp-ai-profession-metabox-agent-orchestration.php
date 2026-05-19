@@ -118,6 +118,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 				. '.wp-mcp-ai-orchestration-field .description{margin-top:5px;font-style:italic}'
 				. '.wp-mcp-ai-role-option{margin-bottom:10px}'
 			);
+			?>
 
 			<!-- Agent Role -->
 			<div class="wp-mcp-ai-orchestration-field">
