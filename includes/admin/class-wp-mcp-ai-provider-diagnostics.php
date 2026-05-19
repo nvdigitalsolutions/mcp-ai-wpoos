@@ -577,7 +577,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<tr>
 								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<code><?php echo esc_html( isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-chat' ); ?></code>
+									<code><?php echo esc_html( isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-v4-flash' ); ?></code>
 								</td>
 							</tr>
 							<tr>
@@ -613,7 +613,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						</p>
 					<?php else : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-chat supports tool calling; deepseek-reasoner offers chain-of-thought reasoning.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'DeepSeek provides fast, cost-effective AI models with OpenAI-compatible API. deepseek-v4-flash (1M ctx) supports tool calling and thinking modes; deepseek-v4-pro offers enhanced reasoning for complex agentic workflows.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 				</div>
@@ -2401,9 +2401,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'Kimi connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
-							__( 'Model', 'mcp-ai-wpoos' )        => $model,
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
 							__( 'API Endpoint', 'mcp-ai-wpoos' ) => $base_url,
-							__( 'Latency', 'mcp-ai-wpoos' )      => $latency_ms . ' ms',
+							__( 'Latency', 'mcp-ai-wpoos' ) => $latency_ms . ' ms',
 						),
 					)
 				);

@@ -54,7 +54,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'https://api.deepseek.com', WP_MCP_AI_DeepSeek_Client::DEFAULT_BASE_URL );
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_DeepSeek_Client::API_ENDPOINT );
 		$this->assertEquals( '/models', WP_MCP_AI_DeepSeek_Client::API_MODELS );
-		$this->assertEquals( 'deepseek-chat', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
+		$this->assertEquals( 'deepseek-v4-flash', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
 		$this->assertContains( 'deepseek-reasoner', WP_MCP_AI_DeepSeek_Client::MODELS_WITHOUT_TOOL_CALLING );
 	}
 
@@ -142,7 +142,12 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 
 		$result = $this->client->create_chat_completion(
-			array( array( 'role' => 'user', 'content' => 'Hello' ) )
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			)
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
@@ -198,10 +203,18 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'build_payload' );
 		$method->setAccessible( true );
 
-		$messages = array( array( 'role' => 'user', 'content' => 'Hello' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
 		$options  = array(
 			'tools' => array(
-				array( 'type' => 'function', 'function' => array( 'name' => 'test_fn' ) ),
+				array(
+					'type'     => 'function',
+					'function' => array( 'name' => 'test_fn' ),
+				),
 			),
 		);
 
@@ -221,8 +234,16 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'build_payload' );
 		$method->setAccessible( true );
 
-		$tool     = array( 'type' => 'function', 'function' => array( 'name' => 'my_tool' ) );
-		$messages = array( array( 'role' => 'user', 'content' => 'Hello' ) );
+		$tool     = array(
+			'type'     => 'function',
+			'function' => array( 'name' => 'my_tool' ),
+		);
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
 		$options  = array( 'tools' => array( $tool ) );
 
 		$payload = $method->invoke( $this->client, $messages, $options, 'deepseek-chat' );
@@ -241,7 +262,10 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	 */
 	public function test_count_tokens_returns_positive_int() {
 		$messages = array(
-			array( 'role' => 'user', 'content' => 'Hello, how are you?' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello, how are you?',
+			),
 		);
 
 		$count = $this->client->count_tokens( $messages );
@@ -254,9 +278,14 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	 * Test count_tokens includes system_prompt in estimate.
 	 */
 	public function test_count_tokens_includes_system_prompt() {
-		$messages     = array( array( 'role' => 'user', 'content' => 'Hi' ) );
-		$without      = $this->client->count_tokens( $messages );
-		$with         = $this->client->count_tokens( $messages, array( 'system_prompt' => str_repeat( 'x', 400 ) ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
+		);
+		$without  = $this->client->count_tokens( $messages );
+		$with     = $this->client->count_tokens( $messages, array( 'system_prompt' => str_repeat( 'x', 400 ) ) );
 
 		$this->assertGreaterThan( $without, $with );
 	}

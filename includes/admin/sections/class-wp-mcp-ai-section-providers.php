@@ -175,9 +175,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $deepseek_models ) ) {
 				$deepseek_models = array(
-					'deepseek-chat'     => 'DeepSeek-V3 (Recommended, supports tools)',
-					'deepseek-reasoner' => 'DeepSeek-R1 (Chain-of-thought, no tools)',
-					'deepseek-coder'    => 'DeepSeek Coder',
+					'deepseek-v4-flash' => 'DeepSeek-V4 Flash (Recommended, 1M ctx, tools)',
+					'deepseek-v4-pro'   => 'DeepSeek-V4 Pro (Reasoning, coding, agents)',
+					'deepseek-chat'     => 'DeepSeek-V3 [Deprecated]',
+					'deepseek-reasoner' => 'DeepSeek-R1 [Deprecated]',
+					'deepseek-coder'    => 'DeepSeek Coder [Deprecated]',
 				);
 			}
 
@@ -231,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'kimi-k2.6'        => 'Kimi K2.6 (Latest, 256K, Recommended)',
 					'kimi-k2.5'        => 'Kimi K2.5 (256K, tool calling)',
 					'kimi-k2'          => 'Kimi K2 (256K, tool calling)',
-					'kimi-k2-thinking'  => 'Kimi K2 Thinking (256K, no tools)',
+					'kimi-k2-thinking' => 'Kimi K2 Thinking (256K, no tools)',
 					'moonshot-v1-128k' => 'Moonshot V1 128K (128K, tool calling)',
 					'moonshot-v1-32k'  => 'Moonshot V1 32K',
 					'moonshot-v1-8k'   => 'Moonshot V1 8K',
@@ -1200,9 +1202,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'deepseek_model'                     => array(
 					'type'        => 'select',
 					'label'       => __( 'Default DeepSeek Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default DeepSeek model to use. deepseek-chat (DeepSeek-V3) is the general-purpose model with tool calling support. deepseek-reasoner (DeepSeek-R1) provides chain-of-thought reasoning but does not support tool/function calling.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default DeepSeek model to use. deepseek-v4-flash (1M context, 384K output) is the recommended general-purpose model supporting both non-thinking and thinking modes. deepseek-v4-pro offers enhanced reasoning for complex agentic workflows. Legacy models (chat, reasoner, coder) are deprecated.', 'mcp-ai-wpoos' ),
 					'options'     => $deepseek_models,
-					'default'     => 'deepseek-chat',
+					'default'     => 'deepseek-v4-flash',
 				),
 				'deepseek_base_url'                  => array(
 					'type'        => 'url',
@@ -1641,18 +1643,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			$provider_labels = array(
-				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
-				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
-				'deepseek'    => __( 'DeepSeek', 'mcp-ai-wpoos' ),
-				'openrouter'  => __( 'OpenRouter (Multi-provider gateway)', 'mcp-ai-wpoos' ),
+				'openai'       => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'       => __( 'Gemini', 'mcp-ai-wpoos' ),
+				'huggingface'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'nvidia'       => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+				'deepseek'     => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+				'openrouter'   => __( 'OpenRouter (Multi-provider gateway)', 'mcp-ai-wpoos' ),
 				'digitalocean' => __( 'DigitalOcean (Serverless Inference)', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
-				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
-				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
-				'embedded'    => __( 'Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ),
+				'ollama'       => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+				'lm_studio'    => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+				'cloudflare'   => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
+				'embedded'     => __( 'Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ),
 			);
 			?>
 			<tr>
