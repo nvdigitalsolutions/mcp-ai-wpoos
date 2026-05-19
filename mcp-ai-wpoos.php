@@ -80,6 +80,24 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	return;
 }
 
+// ---------------------------------------------------------------------------
+// Pre-populate the l10n global with a NOOP_Translations instance before
+// loader.php runs. This prevents WordPress 6.7+ from firing
+// _load_textdomain_just_in_time warnings when translation functions
+// (__(), esc_html__(), etc.) are called during plugin bootstrap (pre-init).
+//
+// NOOP_Translations is a WordPress core class (wp-includes/pomo/mo.php,
+// loaded before plugins) that returns strings unchanged — exactly what
+// English sites need when no .mo files exist.
+//
+// When real .mo files are loaded later on 'init' by WordPress's automatic
+// locale machinery, load_textdomain() merges them into the existing object.
+// ---------------------------------------------------------------------------
+global $l10n;
+if ( ! isset( $l10n['mcp-ai-wpoos'] ) && class_exists( 'NOOP_Translations' ) ) {
+	$l10n['mcp-ai-wpoos'] = new NOOP_Translations();
+}
+
 // Load bootstrap files in dependency order.
 require_once __DIR__ . '/includes/bootstrap/constants.php';
 require_once __DIR__ . '/includes/bootstrap/autoload.php';
