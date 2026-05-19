@@ -82,7 +82,7 @@ class WP_MCP_AI_Security_Audit {
 	 * Constructor
 	 */
 	private function __construct() {
-		$this->register_post_type();
+		add_action( 'init', array( $this, 'register_post_type' ) );
 		$this->schedule_audits();
 		add_action( 'wp_mcp_ai_quarterly_audit', array( $this, 'trigger_quarterly_audit' ) );
 		add_action( 'admin_init', array( $this, 'register_meta_boxes' ) );
