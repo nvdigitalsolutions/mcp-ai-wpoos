@@ -157,7 +157,9 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				KEY created_at (created_at)
 			) $charset_collate;";
 
-			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			if ( ! function_exists( 'dbDelta' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			}
 			dbDelta( $sql );
 		}
 

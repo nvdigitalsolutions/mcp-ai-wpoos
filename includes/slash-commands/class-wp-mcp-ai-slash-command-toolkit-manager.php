@@ -2214,7 +2214,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$sizes = isset( $args['sizes'] ) ? array_map( 'trim', explode( ', ', $args['sizes'] ) ) : null;
 
 			// Regenerate thumbnails.
-			require_once ABSPATH . 'wp-admin/includes/image.php';
+			if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/image.php';
+			}
 			$metadata = wp_generate_attachment_metadata( $attachment_id, $file_path );
 			wp_update_attachment_metadata( $attachment_id, $metadata );
 
@@ -7027,13 +7029,18 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			foreach ( $all_plugins as $path => $data ) {
 				if ( strpos( $path, $plugin . '/' ) === 0 || $path === $plugin . '.php' ) {
-					$plugin_found = true;
-					$plugin_path  = WP_PLUGIN_DIR . '/' . $path;
+					if ( defined( 'WP_PLUGIN_DIR' ) ) {
+						$candidate_path = WP_PLUGIN_DIR . '/' . $path;
+						if ( file_exists( $candidate_path ) ) {
+							$plugin_found = true;
+							$plugin_path  = $candidate_path;
+						}
+					}
 					break;
 				}
 			}
 
-			if ( ! $plugin_found ) {
+			if ( ! $plugin_found || ! $plugin_path ) {
 				return $this->error_response( __( 'Plugin not found.', 'mcp-ai-wpoos' ) );
 			}
 
@@ -7344,7 +7351,17 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$issues = array();
 
 			if ( 'plugin' === $type && ! empty( $name ) ) {
-				$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $name );
+				if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+					return $this->error_response( __( 'Plugin directory is not defined.', 'mcp-ai-wpoos' ) );
+				}
+
+				$plugin_path = WP_PLUGIN_DIR . '/' . $name;
+
+				if ( ! file_exists( $plugin_path ) ) {
+					return $this->error_response( __( 'Plugin not found.', 'mcp-ai-wpoos' ) );
+				}
+
+				$plugin = get_plugin_data( $plugin_path );
 
 				if ( empty( $plugin ) ) {
 					return $this->error_response( __( 'Plugin not found.', 'mcp-ai-wpoos' ) );

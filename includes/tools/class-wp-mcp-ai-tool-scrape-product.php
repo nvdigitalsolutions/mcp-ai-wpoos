@@ -338,7 +338,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Allow WordPress content directory.
-		if ( defined( 'WP_CONTENT_DIR' ) ) {
+		if ( defined( 'WP_CONTENT_DIR' ) && is_dir( WP_CONTENT_DIR ) ) {
 			$safe_directories[] = wp_normalize_path( WP_CONTENT_DIR );
 		}
 

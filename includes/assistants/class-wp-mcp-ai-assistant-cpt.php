@@ -4472,11 +4472,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( isset( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) ), 'wp_mcp_ai_datasets_meta' ) ) {
 				$preferred_datasets = array();
 				if ( isset( $_POST['wp_mcp_ai_preferred_datasets'] ) && is_array( $_POST['wp_mcp_ai_preferred_datasets'] ) ) {
-					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_text_field() and sanitize_preferred_datasets_meta().
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_preferred_datasets_meta() after json_decode.
 					$raw_datasets = wp_unslash( $_POST['wp_mcp_ai_preferred_datasets'] );
 					// Each checkbox value is a JSON-encoded dataset object.
+					// NOTE: Do NOT sanitize_text_field() before json_decode() — it corrupts JSON strings.
 					foreach ( $raw_datasets as $dataset_json ) {
-						$dataset = json_decode( sanitize_text_field( $dataset_json ), true );
+						$dataset = json_decode( $dataset_json, true );
 						if ( is_array( $dataset ) ) {
 							$preferred_datasets[] = $dataset;
 						}
