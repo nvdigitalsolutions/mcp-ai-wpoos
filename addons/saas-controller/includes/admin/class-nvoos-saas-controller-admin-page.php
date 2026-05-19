@@ -196,7 +196,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 					<tr>
 						<td><?php esc_html_e( 'Base plugin', 'nvoos-saas-controller' ); ?></td>
 						<td>
-							<?php if ( class_exists( 'WP_MCP_AI_Plugin' ) ) : ?>
+							<?php if ( nvoos_saas_controller_base_is_active() ) : ?>
 								<span style="color:#2e7d32;">●</span> <?php esc_html_e( 'Active', 'nvoos-saas-controller' ); ?>
 							<?php else : ?>
 								<span style="color:#c62828;">●</span> <?php esc_html_e( 'Missing', 'nvoos-saas-controller' ); ?>
