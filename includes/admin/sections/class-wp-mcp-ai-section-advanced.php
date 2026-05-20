@@ -216,24 +216,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'description' => __( 'Configure peer sites for mesh computing. These are remote NV oOS instances that this site can query for distributed workload processing.', 'mcp-ai-wpoos' ),
 					'callback'    => array( $this, 'render_mesh_peer_sites_custom_field' ),
 				),
-				'enable_semantic_compression'   => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
-				'semantic_compression_level'    => array(
-					'type'        => 'select',
-					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
-					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
-					'default'     => '2',
-					'options'     => array(
-						'1' => __( 'Conservative — Remove only connectives and intensifiers (10-15% savings)', 'mcp-ai-wpoos' ),
-						'2' => __( 'Balanced (Recommended) — Full caveman compression (20-35% savings)', 'mcp-ai-wpoos' ),
-						'3' => __( 'Aggressive — Maximum compression, shortest sentences (30-40% savings)', 'mcp-ai-wpoos' ),
-					),
-				),
 			);
 		}
 
