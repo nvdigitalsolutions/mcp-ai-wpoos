@@ -212,6 +212,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.github' \
         --exclude '.wordpress-org' \
         --exclude '.codex' \
+        --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
         --exclude '.bmad' \
@@ -258,6 +259,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'webpack.config.tma.js' \
         --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
+        --exclude 'phpcs' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
@@ -675,6 +677,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.github' \
         --exclude '.wordpress-org' \
         --exclude '.codex' \
+        --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
         --exclude '.bmad' \
@@ -721,6 +724,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'webpack.config.tma.js' \
         --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
+        --exclude 'phpcs' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \

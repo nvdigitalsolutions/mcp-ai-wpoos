@@ -145,6 +145,7 @@ DEV_PATHS=(
 	# AI agent and editor configuration (dev-only)
 	".bmad"
 	".codex"
+	".codex-wordpress"
 	".context"
 	".devcontainer"
 	".wordpress-org"
@@ -159,6 +160,7 @@ DEV_PATHS=(
 	".npmrc"
 
 	# Code-style / lint configs
+	"phpcs"
 	"phpcs.xml.dist"
 	"CODEOWNERS"
 	"MAINTAINER_MAP.md"
