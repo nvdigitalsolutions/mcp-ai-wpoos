@@ -341,10 +341,10 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			return;
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is resolved from an internal allowlist only.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is resolved from a strict internal allowlist.
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT id, args FROM {$table} WHERE slug = %s AND status = %s LIMIT 1",
+				"SELECT id, args FROM `{$table}` WHERE slug = %s AND status = %s LIMIT 1",
 				WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug(),
 				'content-type'
 			),
@@ -394,6 +394,15 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 					'table'  => $table,
 				)
 			);
+		} elseif ( false === $updated && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Agent Memory CCT migrator: failed to repair args payload in JetEngine CCT registration.',
+				array(
+					'cct_id'      => (int) $row['id'],
+					'table'       => $table,
+					'last_error'  => isset( $wpdb->last_error ) ? (string) $wpdb->last_error : '',
+				)
+			);
 		}
 	}
 
@@ -430,7 +439,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	protected static function get_jetengine_cct_table_candidates( $wpdb ) {
 		$prefix = isset( $wpdb->prefix ) ? (string) $wpdb->prefix : '';
 
-		if ( '' === $prefix || 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $prefix ) ) {
+		if ( '' === $prefix || 1 !== preg_match( '/^[a-z0-9_]+$/', $prefix ) ) {
 			return array();
 		}
 
