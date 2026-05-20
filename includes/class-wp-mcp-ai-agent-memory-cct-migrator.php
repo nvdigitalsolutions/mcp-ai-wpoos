@@ -335,8 +335,9 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 		}
 
 		$table = self::get_jetengine_cct_table_name( $wpdb );
+		$valid_tables = self::get_jetengine_cct_table_candidates( $wpdb );
 
-		if ( '' === $table || 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+		if ( '' === $table || ! in_array( $table, $valid_tables, true ) ) {
 			return;
 		}
 
@@ -405,10 +406,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	 * @return string
 	 */
 	protected static function get_jetengine_cct_table_name( $wpdb ) {
-		$candidates = array(
-			$wpdb->prefix . 'jet_post_types',
-			$wpdb->prefix . 'jet_engine_post_types',
-		);
+		$candidates = self::get_jetengine_cct_table_candidates( $wpdb );
 
 		foreach ( $candidates as $table ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- SHOW TABLES cannot use placeholders for identifiers.
@@ -419,6 +417,27 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Return allowlisted JetEngine CCT registration table names.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param wpdb $wpdb WordPress database handle.
+	 * @return array
+	 */
+	protected static function get_jetengine_cct_table_candidates( $wpdb ) {
+		$prefix = isset( $wpdb->prefix ) ? (string) $wpdb->prefix : '';
+
+		if ( '' === $prefix || 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $prefix ) ) {
+			return array();
+		}
+
+		return array(
+			$prefix . 'jet_post_types',
+			$prefix . 'jet_engine_post_types',
+		);
 	}
 
 	/**
@@ -433,10 +452,6 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	protected static function normalise_structured_payload( $value, $fallback = array() ) {
 		if ( is_array( $value ) ) {
 			return $value;
-		}
-
-		if ( is_object( $value ) ) {
-			return (array) $value;
 		}
 
 		if ( ! is_string( $value ) ) {
