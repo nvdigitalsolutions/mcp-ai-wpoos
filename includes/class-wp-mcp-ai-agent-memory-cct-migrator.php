@@ -83,7 +83,11 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			return;
 		}
 
-		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_repair_corrupt_cct_args' ), 20 );
+		// Repair must fire BEFORE JetEngine's CCT manager runs `register_instances()`
+		// during its own `plugins_loaded:10` bootstrap. A late priority (e.g. 20)
+		// fatals at JE's `factory.php` array_merge() before we ever get a chance to
+		// run, so we hook at priority 0.
+		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_repair_corrupt_cct_args' ), 0 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_run' ), 20 );
 	}
 
@@ -248,12 +252,17 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			global $wpdb;
 
 			$table = $wpdb->prefix . 'jet_post_types';
+			// JetEngine reads the `args` / `meta_fields` columns via maybe_unserialize().
+			// maybe_unserialize() only handles PHP-serialized payloads, so writing JSON
+			// (as PR #5039 did) leaves the string unchanged on read and fatals JE's
+			// `Factory->__construct()` at array_merge() with a string argument. Match
+			// JE's native on-disk format by using maybe_serialize() here.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows  = $wpdb->update(
 				$table,
 				array(
-					'args'        => wp_json_encode( $request['args'] ),
-					'meta_fields' => wp_json_encode( $request['meta_fields'] ),
+					'args'        => maybe_serialize( $request['args'] ),
+					'meta_fields' => maybe_serialize( $request['meta_fields'] ),
 				),
 				array( 'id' => $existing_id ),
 				array( '%s', '%s' ),
@@ -317,8 +326,11 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	 * Recover from older migrator runs that may have persisted a non-array
 	 * `args` payload for the agent-memories CCT.
 	 *
-	 * This runs on `plugins_loaded` so the row is fixed before JetEngine reads
-	 * CCT definitions during `init`.
+	 * This runs on `plugins_loaded` at priority 0 so the row is fixed before
+	 * JetEngine's CCT manager runs `register_instances()` during its own
+	 * `plugins_loaded:10` bootstrap. Hooking later (e.g. priority 20) is too
+	 * late — JE's `Factory->__construct()` will already have fatal-errored at
+	 * `array_merge()` because the on-disk `args` payload is still a string.
 	 *
 	 * @since 1.1.20
 	 * @return void
