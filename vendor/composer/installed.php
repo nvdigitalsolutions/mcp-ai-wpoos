@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-main',
-        'version' => 'dev-main',
-        'reference' => '598fb540f6eb5373ff9f02a5d6f19ef7d9fabc16',
+        'pretty_version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+        'version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+        'reference' => '6322f6a2996b6f8bf3ab71cfda5c45624ce3cb31',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => '598fb540f6eb5373ff9f02a5d6f19ef7d9fabc16',
+            'pretty_version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+            'version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+            'reference' => '6322f6a2996b6f8bf3ab71cfda5c45624ce3cb31',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
