@@ -100,8 +100,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		public function render_wrapper() {
 			$description       = $this->get_description();
 			$documentation_url = $this->get_documentation_url();
+
+			// Register a dummy stylesheet handle for inline overview styles.
+			// The render_content() method calls wp_add_inline_style() with this handle;
+			// it must be registered and enqueued first for the CSS to be output.
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
+			wp_register_style( 'wp-mcp-ai-section-overview', false );
+			wp_enqueue_style( 'wp-mcp-ai-section-overview' );
+
 			?>
-<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+	<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 <h2><?php echo esc_html( $this->get_title() ); ?></h2>
 			<?php if ( $description ) : ?>
 <p class="section-description"><?php echo wp_kses_post( $description ); ?></p>

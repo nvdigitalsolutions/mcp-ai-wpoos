@@ -1569,6 +1569,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			$subtab_groups = $this->get_subtab_groups();
 			$active_subtab = $this->get_active_subtab();
 
+			// Register a dummy stylesheet handle for inline provider styles.
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
+			wp_register_style( 'wp-mcp-ai-section-providers', false );
+			wp_enqueue_style( 'wp-mcp-ai-section-providers' );
+
 			// Get the active group.
 			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
 				return;
