@@ -76,14 +76,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->registry = $registry;
 
 			// Initialize metabox instances.
-			$this->metaboxes['credentials']     = new WP_MCP_AI_Metabox_Credentials( $this );
-			$this->metaboxes['defaults']        = new WP_MCP_AI_Metabox_Defaults( $this );
-			$this->metaboxes['primary-roles']   = new WP_MCP_AI_Metabox_Primary_Roles( $this );
-			$this->metaboxes['base-knowledge']  = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
-			$this->metaboxes['mesh-routing']    = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
-			$this->metaboxes['datasets']        = new WP_MCP_AI_Metabox_Datasets( $this );
-			$this->metaboxes['skills']          = new WP_MCP_AI_Metabox_Skills( $this );
-			$this->metaboxes['mcp-apps']        = new WP_MCP_AI_Metabox_MCP_Apps( $this );
+			$this->metaboxes['credentials']    = new WP_MCP_AI_Metabox_Credentials( $this );
+			$this->metaboxes['defaults']       = new WP_MCP_AI_Metabox_Defaults( $this );
+			$this->metaboxes['primary-roles']  = new WP_MCP_AI_Metabox_Primary_Roles( $this );
+			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
+			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
+			$this->metaboxes['datasets']       = new WP_MCP_AI_Metabox_Datasets( $this );
+			$this->metaboxes['skills']         = new WP_MCP_AI_Metabox_Skills( $this );
+			$this->metaboxes['mcp-apps']       = new WP_MCP_AI_Metabox_MCP_Apps( $this );
 			$this->metaboxes['harness-profile'] = new WP_MCP_AI_Metabox_Harness_Profile( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
@@ -1012,7 +1012,6 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
-			<?php
 			$js = ob_get_clean();
 			wp_print_inline_script_tag( $js );
 		}
@@ -1026,9 +1025,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 			$styles_printed = true;
-
-			wp_register_style( 'wp-mcp-ai-assistant-prebuilt-shortcuts', false, array(), WP_MCP_AI_VERSION );
-			wp_enqueue_style( 'wp-mcp-ai-assistant-prebuilt-shortcuts' );
+			?>
+			<?php
 			wp_add_inline_style(
 				'wp-mcp-ai-assistant-prebuilt-shortcuts',
 				'.wp-mcp-ai-prebuilt-shortcuts__group{margin-bottom:2rem}'
@@ -1131,9 +1129,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 			$styles_printed = true;
-
-			wp_register_style( 'wp-mcp-ai-assistant-custom-shortcuts', false, array(), WP_MCP_AI_VERSION );
-			wp_enqueue_style( 'wp-mcp-ai-assistant-custom-shortcuts' );
+			?>
+			<?php
 			wp_add_inline_style(
 				'wp-mcp-ai-assistant-custom-shortcuts',
 				'.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;margin-bottom:0.5rem;background:#fff}'
@@ -2206,8 +2203,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			self::$credential_action_script_printed = true;
 
-			ob_start();
-			?>
+				ob_start();
+				?>
 			( function() {
 				function submitCredentialAction( button ) {
 					if ( ! button ) {
@@ -2264,10 +2261,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					}
 				} );
 			} )();
-			<?php
-			$js = ob_get_clean();
-			wp_print_inline_script_tag( $js );
-		}
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+			}
 
 		/**
 		 * Generate a nonce field name unique to a credential.
@@ -3264,9 +3261,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			</details>
 		</template>
 
-			<?php
-			ob_start();
-			?>
+		<?php
+		ob_start();
+		?>
 		( function() {
 			var container = document.getElementById( 'wp-mcp-ai-tool-shortcuts-rows' );
 			var addButton = document.getElementById( 'wp-mcp-ai-add-tool-shortcut' );
@@ -3448,13 +3445,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				bindItem( item );
 			} );
 		} )();
-			<?php
-			$js = ob_get_clean();
-			wp_print_inline_script_tag( $js );
-		}
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+			}
 
-		/**
-		 * Render the defaults meta box content.
+			/**
+			 * Render the defaults meta box content.
 		 *
 		 * @param WP_Post $post Post object.
 		 */
@@ -3710,10 +3707,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			<?php
 			$js = ob_get_clean();
 			wp_print_inline_script_tag( $js );
-		}
+			}
 
-		/**
-		 * Render the required capability meta box.
+			/**
+			 * Render the required capability meta box.
 		 *
 		 * @param WP_Post $post Post object.
 		 */
@@ -3917,9 +3914,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				delete_transient( $transient_key );
 
 				printf(
-					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+									'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 					sprintf(
-						/* translators: %s: credential token */
+					/* translators: %s: credential token */
 						esc_html__( 'New credential issued. Copy this token now: %s', 'mcp-ai-wpoos' ),
 						'<code>' . esc_html( $token_notice['token'] ) . '</code>'
 					)
@@ -4015,7 +4012,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param int     $post_id Post ID being deleted.
 		 * @param WP_Post $post    Post object being deleted (optional, provided by WordPress).
 		 */
-		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress hook signature.
+		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 			// Post type check is no longer needed since we use delete_{post_type} hook.
 			WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
 
@@ -4811,7 +4808,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Load MCP Apps configuration if available.
-			$mcp_apps          = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
+			$mcp_apps = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
 			$config['mcp_apps'] = is_array( $mcp_apps ) ? $mcp_apps : array();
 
 			return $config;
@@ -5392,9 +5389,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</table>
 
 				<?php
-				$peer_options = wp_json_encode( array_column( $peer_sites, 'name' ) );
-				$select_peer  = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
-				$remove_label = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
+				$peer_options    = wp_json_encode( array_column( $peer_sites, 'name' ) );
+				$select_peer     = esc_js( __( '-- Select Peer --', 'mcp-ai-wpoos' ) );
+				$remove_label    = esc_js( __( 'Remove', 'mcp-ai-wpoos' ) );
 
 				ob_start();
 				?>
