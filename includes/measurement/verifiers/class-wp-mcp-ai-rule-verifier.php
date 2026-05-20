@@ -221,8 +221,7 @@ class WP_MCP_AI_Rule_Verifier extends WP_MCP_AI_Verifier_Base {
 				if ( ! is_string( $value ) || ! is_string( $rule['value'] ) ) {
 					return false;
 				}
-				// Suppress preg_match warnings on invalid user patterns.
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: preg_match() may emit warnings for invalid user-supplied regex patterns; return value validated with 1 === $match check.
 				$match = @preg_match( $rule['value'], $value );
 				return 1 === $match;
 
