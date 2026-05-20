@@ -211,9 +211,9 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			$plugin_file = isset( $definition['plugin_file'] ) ? $definition['plugin_file'] : $slug . '/' . $slug . '.php';
 			$status      = 'missing';
 
-			if ( file_exists( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
-				$status = is_plugin_active( $plugin_file ) ? 'active' : 'inactive';
-			}
+			if ( defined( 'WP_PLUGIN_DIR' ) && file_exists( WP_PLUGIN_DIR . '/' . $plugin_file ) ) {
+							$status = is_plugin_active( $plugin_file ) ? 'active' : 'inactive';
+						}
 
 			$statuses[] = array(
 				'slug'        => $slug,

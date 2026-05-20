@@ -185,7 +185,7 @@ class WP_MCP_AI_Admin_Approvals {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ), 403 );
 		}
 
-		$assistant_id = (int) ( $_GET['assistant_id'] ?? 0 );
+		$assistant_id = (int) ( $_GET['assistant_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only cast; (int) is safe for integer values.
 		$queue        = WP_MCP_AI_Approval_Queue::get_instance();
 		$items        = $queue->get_pending(
 			array(

@@ -89,7 +89,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 
 		// Resolve workflow_id from query string; verify it belongs to the right CPT.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL parameter for page display; value is cast to absint() and ownership is verified via get_post() check below.
-		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( $_GET['workflow_id'] ) : 0;
+		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( wp_unslash( $_GET['workflow_id'] ) ) : 0;
 		if ( $workflow_id > 0 ) {
 			$wf_post = get_post( $workflow_id );
 			if ( ! $wf_post || WP_MCP_AI_Workflow_CPT::CPT !== $wf_post->post_type ) {
@@ -126,7 +126,7 @@ class WP_MCP_AI_Admin_DAG_Builder {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL parameter for page display; value is cast to absint() and ownership is verified via get_post() check below.
-		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( $_GET['workflow_id'] ) : 0;
+		$workflow_id = isset( $_GET['workflow_id'] ) ? absint( wp_unslash( $_GET['workflow_id'] ) ) : 0;
 		if ( $workflow_id > 0 ) {
 			$wf_check = get_post( $workflow_id );
 			if ( ! $wf_check || WP_MCP_AI_Workflow_CPT::CPT !== $wf_check->post_type ) {

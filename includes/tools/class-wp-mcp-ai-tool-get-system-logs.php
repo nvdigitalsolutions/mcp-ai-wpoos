@@ -407,10 +407,12 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		$allowed_directories   = $this->get_default_log_directories();
-		$allowed_directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+			if ( defined( 'WP_PLUGIN_DIR' ) ) {
+				$allowed_directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+			}
 
-		$allowed = false;
-		foreach ( $allowed_directories as $directory ) {
+			$allowed = false;
+			foreach ( $allowed_directories as $directory ) {
 			if ( '' === $directory ) {
 				continue;
 			}
@@ -666,9 +668,11 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$directories[] = $this->normalize_path( $uploads['basedir'] );
 		}
 
-		$directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+		if ( defined( 'WP_PLUGIN_DIR' ) ) {
+					$directories[] = $this->normalize_path( WP_PLUGIN_DIR );
+				}
 
-		$directories = array_filter( array_unique( $directories ) );
+				$directories = array_filter( array_unique( $directories ) );
 
 		$validated = array();
 		foreach ( $directories as $directory ) {
