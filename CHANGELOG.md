@@ -4,6 +4,82 @@
 
 _No changes yet._
 
+## [1.1.21] - 2026-05-20
+
+Bumped to 1.1.21 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+### Fixed — WordPress.org Compliance Multi-Sweep Hardening
+
+- **Comprehensive inline JS/CSS removal.** Converted all remaining inline `<script>`/`<style>` echoes to `wp_add_inline_style()` and `wp_print_inline_script_tag()` across 53 base-plugin files — admin settings, profession settings, team settings, onboarding wizard, model config renderer, orchestration renderer, Pro dashboard, Pro settings, provider diagnostics, report generator, sections (overview, providers, RabbitMQ, security, token manager, tools, advanced, orchestration), assistant CPT, all metaboxes (base-knowledge, credentials, datasets, MCP apps, mesh routing, primary roles, skills), AI Peer CPT, information labelling, model pricing checker, optional components, security audit CPT, Elementor widgets (assistant tools, performance metrics, recommendations, test runner, trends, system health, test results), profession search helper, markup admin page, profession CPT, profession metaboxes (agent orchestration, base knowledge, datasets, details, playbook), team CPT, and model config renderer tests.
+- **PHP parse error fixes.** Removed duplicate `<?php` tag in `section-tools.php`; removed spurious `?>` closing tags after `wp_add_inline_style()` conversions that caused method declarations to be treated as HTML output (admin profession settings, admin settings, admin team settings, Pro dashboard, Pro settings, section overview, section token manager).
+- **Profession metabox parse errors.** Fixed syntax errors in three profession metabox files (`agent-orchestration`, `base-knowledge`, `playbook`) caused by the inline-CSS migration.
+- **WordPress.org findings F3, F5, F6, F7b resolved.** Hardened `json_decode()` calls with sanitization wrappers; added `require_once` guards; replaced bare `WP_CONTENT_DIR` paths with `wp_upload_dir()`-based alternatives; added HTTP timeout guards to outgoing requests.
+- **May 20 re-audit pass.** Added four new audit categories: dangerous-functions scan (zero `eval`/`exec`/`system`/`shell_exec`/`passthru` calls), superglobal-access audit (`$_GET`/`$_POST`/`$_SERVER` only accessed through sanitization gates), HTTP-timeout audit (all `wp_remote_*` calls have explicit `timeout`), inline-notice audit (zero `admin_notices`-hooked inline echoes). Updated F6 status to resolved.
+- **Build-pipeline hardening.** Excluded `.codex-wordpress` and `phpcs` directories from distribution ZIPs via `bin/build-plugin-zip.sh` and `bin/strip-dev-files.sh`; added `.gitignore` rule.
+- **Pro Settings CSS loading fix.** Restored Pro Settings admin CSS enqueue that was broken during the inline-to-external stylesheet migration.
+
+### Added — Security: Capability Fence P2b (Full Rollout)
+
+- **`get_required_capability()` on `WP_MCP_AI_Tool_Interface`.** Every tool must now declare its minimum capability requirement through this required interface method. The tool service enforces the check at execution time, closing the payload-filter capability leak.
+- **`WP_MCP_AI_Tool_Default_Capability` trait.** Provides a default `get_required_capability()` returning `'edit_posts'` for all tool stubs that implement the interface — added to `WP_MCP_AI_Validated_Tool`, all test stubs, anonymous class implementations, and fixture classes.
+- **Per-class capability declarations.** `get_required_capability()` deployed to all ~830 tool classes across base and Pro, including all addon tools (Algorave, Embedded, Fantasy Football, Graphify) and the MCP App tool bridge.
+- **Central capability map.** `WP_MCP_AI_Tool_Capability_Map` with sanitized capability values and a resolver that gates payload-filter dispatch. Capability values are run through `sanitize_key()` at registration.
+- **`WPMCPAI.Tools.RequiredCapabilityDeclared` PHPCS sniff.** Flags any tool class that implements `WP_MCP_AI_Tool_Interface` without declaring `get_required_capability()` — severity 5, enforced in CI.
+- **Capability Fence Audit UI.** Admin security section now renders per-tool slug/capability/flags correctly in the Capability Fence Audit view.
+
+### Added — Security Center (5 Sub-Tabs)
+
+- **Security Center admin page** with 5 sub-tabs: Posture, Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, and MCP Token Inventory.
+- **Posture service** with live security posture scoring and REST endpoints.
+- **Compliance report** generator with WordPress.org finding status tracking.
+- **OTel fields** for deprecated-alias telemetry: `nvoos.tool.data_type` + `nvoos.tool.duration_ms` span attributes.
+- **MCP token inventory** with per-assistant credential audit.
+- Comprehensive PHPUnit test coverage for the Security Center.
+
+### Changed — Model Catalog May 2026 Refresh
+
+- **DeepSeek V4 support.** Model catalog, DeepSeek client, and cost calculator updated for the DeepSeek V4 model family (`deepseek-chat-v4`, `deepseek-reasoner-v4`).
+- **Gemini consolidation.** Gemini model entries consolidated and deduplicated; legacy endpoint aliases preserved for backward compatibility.
+- **Pricing updates.** All provider pricing refreshed to May 2026 rates across `model-catalog.json` and the cost calculator.
+- **88 WPCS lint errors** resolved across model catalog files (provider diagnostics, section providers, cost calculator, DeepSeek client, model catalog migration, and DeepSeek client tests).
+- Reverted accidental `vendor/composer` changes that were shipped with the catalog refresh.
+
+### Changed — Domain Migration (nvoos.com → nvoos.pro / nvoos.cloud)
+
+- Updated plain `nvoos.com` references to `nvoos.pro` across all documentation.
+- Updated `nvoos.com` subdomains to `nvoos.pro` in ISO 27001 compliance documentation.
+- Corrected cloud-worker domain from `cloud.nvoos.com` to `nvoos.cloud`.
+
+### Added — Cloud Worker Local Development Setup
+
+- New `addons/cloud-worker/README-LOCAL.md` — step-by-step local dev guide.
+- New `addons/cloud-worker/scripts/seed-local.mjs` — seed script for local D1 database.
+- New `addons/cloud-worker/wp-config-local.php` — WordPress config for local cloud-worker testing.
+- CI workflow triggers configured.
+
+### Fixed — Translation Loading Too Early
+
+- Pre-populated `$l10n` global with `NOOP_Translations` instances to prevent "Too early to translate" warnings during bootstrap.
+- Deferred Security Audit CPT registration from `plugins_loaded` to `init` hook to prevent early translation loading.
+- Rebuilt all plugin ZIPs with the translation-loading fix.
+
+### Changed — Unix Theory P5 Part 2
+
+- Decomposed `git_operations` tool into `git_inspect` (read-only) + `git_change` (mutating), advancing the P5 back-compat alias decomposition roadmap.
+
+### Fixed — Docs Hub REST Response Guard
+
+- Added non-JSON response guard in the Docs Hub manifest client to prevent "Unexpected token '<'" errors caused by caching plugins returning HTML instead of JSON.
+
+### Fixed — SaaS Controller Base-Plugin Detection
+
+- Corrected base-plugin detection logic in the SaaS Controller admin status display.
+
+### Added — Folder README Convention Phase P7
+
+- **Base backfill.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/guides/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`.
+- **Pro reconciliation.** `addons/pro/includes/` subdirectories documented with the same README convention, completing P0–P7 for the full plugin tree.
+
 ## [1.1.20] - 2026-05-18
 
 Bumped to 1.1.20 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
