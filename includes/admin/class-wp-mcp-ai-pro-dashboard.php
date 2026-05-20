@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'admin_notices',
 						function () use ( $key, $class_name, $e ) {
 							printf(
-								'<div class="notice notice-error"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
+															'<div class="notice notice-error is-dismissible"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
 								esc_html__( 'Pro Dashboard Error', 'mcp-ai-wpoos' ),
 								esc_html( sprintf( 'Failed to initialize %s', $key ) ),
 								esc_html( $class_name ),

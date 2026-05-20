@@ -3914,7 +3914,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				delete_transient( $transient_key );
 
 				printf(
-					'<div class="notice notice-success"><p>%s</p></div>',
+									'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 					sprintf(
 					/* translators: %s: credential token */
 						esc_html__( 'New credential issued. Copy this token now: %s', 'mcp-ai-wpoos' ),
@@ -3941,7 +3941,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			$class = in_array( $notice, array( 'credential_created', 'credential_revoked', 'credential_deleted' ), true ) ? 'notice-success' : 'notice-error';
 
-			printf( '<div class="notice %1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
+			printf( '<div class="notice %1$s is-dismissible"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
 		}
 
 		/**

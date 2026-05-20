@@ -242,9 +242,9 @@ try {
 			'admin_notices',
 			function () use ( $e ) {
 				?>
-				<div class="notice notice-error">
-					<p>
-						<strong>NV oOS Settings Dashboard Error:</strong>
+				<div class="notice notice-error is-dismissible">
+									<p>
+										<strong>NV oOS Settings Dashboard Error:</strong>
 						<?php echo esc_html( $e->getMessage() ); ?>
 					</p>
 					<p>

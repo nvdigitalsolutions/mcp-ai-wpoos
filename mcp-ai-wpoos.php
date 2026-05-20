@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: NV Digital Open Operator System Complete (oOS)
+ * Plugin Name: NV Digital Open Operator System (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 230+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top.
+ * Description: AI Assistant framework with 10+ AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare & Ollama). Includes 230+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top.
  * Version: 1.1.20
  * Requires at least: 6.0
  * Requires PHP: 7.4
