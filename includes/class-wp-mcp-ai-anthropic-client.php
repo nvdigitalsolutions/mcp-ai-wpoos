@@ -1811,6 +1811,14 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					$usage['total_tokens'] = $usage['prompt_tokens'] + $usage['completion_tokens'];
 				}
 
+				// Extract Anthropic cache tokens.
+				if ( isset( $response['usage']['cache_read_input_tokens'] ) ) {
+					$usage['cached_tokens'] = (int) $response['usage']['cache_read_input_tokens'];
+				} elseif ( isset( $response['usage']['cache_creation_input_tokens'] ) ) {
+					// Cache write: tokens written to cache (not a hit, but track for cost visibility).
+					$usage['cache_write_tokens'] = (int) $response['usage']['cache_creation_input_tokens'];
+				}
+
 				if ( ! empty( $usage ) ) {
 					$normalized['usage'] = $usage;
 				}

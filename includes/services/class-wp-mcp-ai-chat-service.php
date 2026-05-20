@@ -170,6 +170,18 @@ class WP_MCP_AI_Chat_Service {
 		// Apply filters to options before processing.
 		$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, null );
 
+		// Inject prompt caching options when the assistant has it enabled.
+		if ( ! empty( $assistant_config['prompt_caching'] ) ) {
+			$options['cache_system_prompt'] = true;
+
+			// Generate stable prompt_cache_key for OpenAI/DeepSeek/OpenRouter.
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$assistant_id = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
+				$prompt_prefix = substr( $options['system_prompt'], 0, 256 );
+				$options['prompt_cache_key'] = 'wp_mcp_ai_' . $assistant_id . '_' . md5( $prompt_prefix );
+			}
+		}
+
 		// Fire action before chat request.
 		do_action( 'wp_mcp_ai_before_chat_request', $assistant_id, $messages, $options, null );
 

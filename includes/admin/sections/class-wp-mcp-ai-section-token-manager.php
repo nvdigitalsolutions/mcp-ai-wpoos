@@ -983,6 +983,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</tbody>
 			</table>
 
+			<?php $this->render_cache_performance_section(); ?>
+
 			<!-- Top Models -->
 			<h4><?php esc_html_e( 'Top Models by Usage', 'mcp-ai-wpoos' ); ?></h4>
 			<p class="description" style="margin-top: -5px; margin-bottom: 10px;">
@@ -1102,6 +1104,121 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</tbody>
 			</table>
 			</div>
+			<?php
+		}
+
+		/**
+		 * Render the cache performance section.
+		 *
+		 * @since 1.5.0
+		 */
+		protected function render_cache_performance_section() {
+			$site_stats = $this->get_site_wide_statistics();
+
+			if ( empty( $site_stats['by_provider'] ) ) {
+				return;
+			}
+
+			$provider_pricing = array(
+				'openai'      => array( 'input_price' => 0.0025, 'cache_multiplier' => 0.50, 'label' => 'OpenAI' ),
+				'anthropic'   => array( 'input_price' => 0.0030, 'cache_multiplier' => 0.10, 'label' => 'Anthropic' ),
+				'deepseek'    => array( 'input_price' => 0.00027, 'cache_multiplier' => 0.10, 'label' => 'DeepSeek' ),
+				'gemini'      => array( 'input_price' => 0.00125, 'cache_multiplier' => 0.25, 'label' => 'Gemini' ),
+				'openrouter'  => array( 'input_price' => 0.0025, 'cache_multiplier' => 0.50, 'label' => 'OpenRouter' ),
+			);
+
+			$total_prompt_tokens     = 0;
+			$total_cached_tokens     = 0;
+			$total_estimated_savings = 0.0;
+			$rows = array();
+
+			foreach ( $site_stats['by_provider'] as $provider => $stats ) {
+				$prompt_tokens = isset( $stats['prompt_tokens'] ) ? (int) $stats['prompt_tokens'] : 0;
+				$cached_tokens = isset( $stats['cached_tokens'] ) ? (int) $stats['cached_tokens'] : 0;
+
+				$total_prompt_tokens += $prompt_tokens;
+				$total_cached_tokens += $cached_tokens;
+
+				$hit_rate = $prompt_tokens > 0 ? round( ( $cached_tokens / $prompt_tokens ) * 100, 1 ) : 0;
+
+				$pricing = isset( $provider_pricing[ $provider ] )
+					? $provider_pricing[ $provider ]
+					: array( 'input_price' => 0.002, 'cache_multiplier' => 0.50, 'label' => ucfirst( $provider ) );
+
+				// Cost without caching: cached_tokens * input_price / 1000.
+				$cost_without_cache = ( $cached_tokens / 1000 ) * $pricing['input_price'];
+				// Cost with caching: cached_tokens * input_price * cache_multiplier / 1000.
+				$cost_with_cache = ( $cached_tokens / 1000 ) * $pricing['input_price'] * $pricing['cache_multiplier'];
+				$savings = $cost_without_cache - $cost_with_cache;
+				$total_estimated_savings += $savings;
+
+				$rows[] = array(
+					'provider'      => $pricing['label'],
+					'prompt_tokens' => $prompt_tokens,
+					'cached_tokens' => $cached_tokens,
+					'hit_rate'      => $hit_rate,
+					'savings'       => $savings,
+				);
+			}
+
+			$overall_hit_rate = $total_prompt_tokens > 0
+				? round( ( $total_cached_tokens / $total_prompt_tokens ) * 100, 1 )
+				: 0;
+			?>
+			<h3><?php esc_html_e( 'Cache Performance', 'mcp-ai-wpoos' ); ?></h3>
+			<p class="description">
+				<?php esc_html_e( 'Prompt caching reduces input token costs by reusing computed prefixes. Lower cache read multipliers mean higher savings.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<table class="widefat striped" style="max-width: 800px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Prompt Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Cached Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Cache Hit Rate', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Est. Savings', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $rows as $row ) : ?>
+						<tr>
+							<td><strong><?php echo esc_html( $row['provider'] ); ?></strong></td>
+							<td><?php echo esc_html( number_format_i18n( $row['prompt_tokens'] ) ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( $row['cached_tokens'] ) ); ?></td>
+							<td>
+								<?php echo esc_html( $row['hit_rate'] . '%' ); ?>
+								<?php if ( $row['hit_rate'] < 10 && $row['prompt_tokens'] > 10000 ) : ?>
+									<span class="dashicons dashicons-warning" style="color: #dba617;" title="<?php esc_attr_e( 'Low cache hit rate. Ensure static content is at the beginning of prompts.', 'mcp-ai-wpoos' ); ?>"></span>
+								<?php endif; ?>
+							</td>
+							<td><?php echo esc_html( '$' . number_format( $row['savings'], 4 ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+				<tfoot>
+					<tr style="font-weight: bold;">
+						<td><?php esc_html_e( 'Total', 'mcp-ai-wpoos' ); ?></td>
+						<td><?php echo esc_html( number_format_i18n( $total_prompt_tokens ) ); ?></td>
+						<td><?php echo esc_html( number_format_i18n( $total_cached_tokens ) ); ?></td>
+						<td><?php echo esc_html( $overall_hit_rate . '%' ); ?></td>
+						<td><?php echo esc_html( '$' . number_format( $total_estimated_savings, 4 ) ); ?></td>
+					</tr>
+				</tfoot>
+			</table>
+
+			<?php if ( $overall_hit_rate < 10 && $total_prompt_tokens > 50000 ) : ?>
+				<div class="notice notice-warning inline" style="margin: 12px 0;">
+					<p>
+						<strong><?php esc_html_e( 'Low Cache Hit Rate Detected', 'mcp-ai-wpoos' ); ?></strong><br>
+						<?php esc_html_e( 'Your cache hit rate is below 10%. To improve cache performance:', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<ul style="list-style: disc; padding-left: 20px;">
+						<li><?php esc_html_e( 'Enable "Prompt Caching" in your assistant settings', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Place static instructions at the beginning of system prompts', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Keep tool definitions consistent across requests', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+				</div>
+			<?php endif; ?>
 			<?php
 		}
 
