@@ -1012,6 +1012,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				} );
 			} )();
+			<?php
 			$js = ob_get_clean();
 			wp_print_inline_script_tag( $js );
 		}
@@ -1025,8 +1026,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 			$styles_printed = true;
-			?>
-			<?php
+
+			wp_register_style( 'wp-mcp-ai-assistant-prebuilt-shortcuts', false );
+			wp_enqueue_style( 'wp-mcp-ai-assistant-prebuilt-shortcuts' );
 			wp_add_inline_style(
 				'wp-mcp-ai-assistant-prebuilt-shortcuts',
 				'.wp-mcp-ai-prebuilt-shortcuts__group{margin-bottom:2rem}'
@@ -1129,8 +1131,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 			$styles_printed = true;
-			?>
-			<?php
+
+			wp_register_style( 'wp-mcp-ai-assistant-custom-shortcuts', false );
+			wp_enqueue_style( 'wp-mcp-ai-assistant-custom-shortcuts' );
 			wp_add_inline_style(
 				'wp-mcp-ai-assistant-custom-shortcuts',
 				'.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;margin-bottom:0.5rem;background:#fff}'
