@@ -321,6 +321,54 @@ class Test_Agent_Memory_CCT_Schema_V2 extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Structured payload normaliser should decode serialized arrays.
+	 */
+	public function test_payload_normaliser_decodes_serialized_arrays() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_structured_payload' );
+		$method->setAccessible( true );
+
+		$serialized = maybe_serialize(
+			array(
+				'key' => 'value',
+			)
+		);
+
+		$decoded = $method->invoke( null, $serialized, array() );
+
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'value', $decoded['key'] );
+	}
+
+	/**
+	 * Structured payload normaliser should decode JSON object payloads.
+	 */
+	public function test_payload_normaliser_decodes_json_objects() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_structured_payload' );
+		$method->setAccessible( true );
+
+		$decoded = $method->invoke( null, '{"alpha":"beta"}', array() );
+
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'beta', $decoded['alpha'] );
+	}
+
+	/**
+	 * Structured payload normaliser should return fallback for invalid strings.
+	 */
+	public function test_payload_normaliser_falls_back_for_invalid_string() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_structured_payload' );
+		$method->setAccessible( true );
+
+		$fallback = array( 'safe' => 'default' );
+		$decoded  = $method->invoke( null, 'not-an-array', $fallback );
+
+		$this->assertSame( $fallback, $decoded );
+	}
+
+	/**
 	 * Version accessors return the expected integers.
 	 */
 	public function test_version_accessors_report_expected_integers() {

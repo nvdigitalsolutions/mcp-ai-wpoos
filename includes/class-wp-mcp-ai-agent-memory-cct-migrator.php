@@ -83,6 +83,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			return;
 		}
 
+		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_repair_corrupt_cct_args' ), 20 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_run' ), 20 );
 	}
 
@@ -228,6 +229,10 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 		// Rebuild the registration request from the current source-of-truth
 		// (so schema v3+ in future ships without a new migrator class).
 		$request = self::build_registration_request();
+		$request['args'] = self::normalise_structured_payload(
+			isset( $existing_row['args'] ) ? $existing_row['args'] : array(),
+			isset( $request['args'] ) ? (array) $request['args'] : array()
+		);
 		$request['_ID'] = $existing_id;
 
 		try {
@@ -240,6 +245,14 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			$item = $data->sanitize_item_from_request();
 			if ( empty( $item ) || ! is_array( $item ) ) {
 				return $failure( 'JetEngine produced an empty upgrade item.' );
+			}
+
+			$item['args'] = self::normalise_structured_payload(
+				isset( $item['args'] ) ? $item['args'] : array(),
+				isset( $request['args'] ) ? (array) $request['args'] : array()
+			);
+			if ( empty( $item['args'] ) || ! is_array( $item['args'] ) ) {
+				return $failure( 'Upgrade item args payload is invalid; aborting to avoid corrupting JetEngine CCT registration.' );
 			}
 
 			// Preserve the existing ID so update_item_in_db updates, not inserts.
@@ -302,6 +315,145 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			'args'        => $args,
 			'meta_fields' => $meta_fields,
 		);
+	}
+
+	/**
+	 * Recover from older migrator runs that may have persisted a non-array
+	 * `args` payload for the agent-memories CCT.
+	 *
+	 * This runs on `plugins_loaded` so the row is fixed before JetEngine reads
+	 * CCT definitions during `init`.
+	 *
+	 * @since 1.1.20
+	 * @return void
+	 */
+	public static function maybe_repair_corrupt_cct_args() {
+		global $wpdb;
+
+		if ( ! ( $wpdb instanceof wpdb ) ) {
+			return;
+		}
+
+		$table = self::get_jetengine_cct_table_name( $wpdb );
+
+		if ( '' === $table ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is resolved from an internal allowlist only.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, args FROM {$table} WHERE slug = %s AND status = %s LIMIT 1",
+				WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug(),
+				'content-type'
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $row ) || ! is_array( $row ) || empty( $row['id'] ) ) {
+			return;
+		}
+
+		$stored_args = isset( $row['args'] ) ? maybe_unserialize( $row['args'] ) : array();
+		if ( is_array( $stored_args ) ) {
+			return;
+		}
+
+		$request   = self::build_registration_request();
+		$fallback  = isset( $request['args'] ) ? (array) $request['args'] : array();
+		$fixed     = self::normalise_structured_payload(
+			isset( $row['args'] ) ? $row['args'] : '',
+			$fallback
+		);
+
+		if ( empty( $fixed ) || ! is_array( $fixed ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-row integrity repair before JetEngine init.
+		$updated = $wpdb->update(
+			$table,
+			array( 'args' => maybe_serialize( $fixed ) ),
+			array( 'id' => (int) $row['id'] ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		if ( false !== $updated && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Agent Memory CCT migrator: repaired non-array args payload in JetEngine CCT registration.',
+				array(
+					'cct_id' => (int) $row['id'],
+					'table'  => $table,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Resolve the JetEngine CCT registration table name.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param wpdb $wpdb WordPress database handle.
+	 * @return string
+	 */
+	protected static function get_jetengine_cct_table_name( $wpdb ) {
+		$candidates = array(
+			$wpdb->prefix . 'jet_post_types',
+			$wpdb->prefix . 'jet_engine_post_types',
+		);
+
+		foreach ( $candidates as $table ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- SHOW TABLES cannot use placeholders for identifiers.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $exists === $table ) {
+				return $table;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Normalize potentially serialized/JSON payloads to arrays.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param mixed $value    Raw value to normalize.
+	 * @param array $fallback Fallback array when value is not coercible.
+	 * @return array
+	 */
+	protected static function normalise_structured_payload( $value, $fallback = array() ) {
+		if ( is_array( $value ) ) {
+			return $value;
+		}
+
+		if ( is_object( $value ) ) {
+			return (array) $value;
+		}
+
+		if ( ! is_string( $value ) ) {
+			return $fallback;
+		}
+
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return $fallback;
+		}
+
+		$unserialized = maybe_unserialize( $value );
+		if ( is_array( $unserialized ) ) {
+			return $unserialized;
+		}
+
+		$json = json_decode( $value, true );
+		if ( is_array( $json ) ) {
+			return $json;
+		}
+
+		return $fallback;
 	}
 
 	/**
