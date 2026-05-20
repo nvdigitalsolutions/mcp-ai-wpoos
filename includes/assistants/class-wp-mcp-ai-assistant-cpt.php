@@ -4015,7 +4015,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param int     $post_id Post ID being deleted.
 		 * @param WP_Post $post    Post object being deleted (optional, provided by WordPress).
 		 */
-		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
+		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress hook signature.
 			// Post type check is no longer needed since we use delete_{post_type} hook.
 			WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
 
