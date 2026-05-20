@@ -177,7 +177,7 @@ class WP_MCP_AI_Schema_Verifier extends WP_MCP_AI_Verifier_Base {
 				);
 			}
 			if ( isset( $schema['pattern'] ) && is_string( $schema['pattern'] ) ) {
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: preg_match() may emit warnings for invalid schema patterns; return value validated with 1 !== check.
 				if ( 1 !== @preg_match( $schema['pattern'], $value ) ) {
 					$errors[] = sprintf(
 						/* translators: %s: path. */
@@ -231,7 +231,7 @@ class WP_MCP_AI_Schema_Verifier extends WP_MCP_AI_Verifier_Base {
 					}
 					break;
 				case 'integer':
-					if ( is_int( $value ) || ( is_numeric( $value ) && (int) $value == $value ) ) {  // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
+					if ( is_int( $value ) || ( is_numeric( $value ) && (int) $value == $value ) ) {  // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual -- Intentional loose comparison: "42" == 42 is valid for JSON Schema integer type matching per spec.
 						return true;
 					}
 					break;

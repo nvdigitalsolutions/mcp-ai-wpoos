@@ -753,14 +753,14 @@ if ( ! function_exists( 'wp_mcp_ai_get_temp_dir' ) ) {
 				);
 			}
 			// Restrict directory permissions (0750 = owner rwx, group r-x, other ---).
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			@chmod( $temp_dir, 0750 );
 		}
 
 		// Drop an .htaccess to deny direct HTTP access on Apache hosts.
 		$htaccess = $temp_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
 		}
 
@@ -793,7 +793,7 @@ if ( ! function_exists( 'wp_mcp_ai_tempnam' ) ) {
 		$full_path = $dir . $unique;
 
 		// Create the file immediately so the path is reserved (mirrors tempnam behaviour).
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		if ( false === file_put_contents( $full_path, '' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_tempnam',
