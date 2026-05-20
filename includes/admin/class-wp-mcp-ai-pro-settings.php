@@ -1882,6 +1882,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
+			// Register a dummy stylesheet handle so that wp_add_inline_style()
+			// (called at the end of this method) has a valid handle to attach to.
+			wp_register_style( 'wp-mcp-ai-pro-settings', false );
+			wp_enqueue_style( 'wp-mcp-ai-pro-settings' );
+
 			$packages        = self::get_npm_packages();
 			$composer        = self::get_composer_packages();
 			$pro_status      = self::get_pro_toolkit_status();
