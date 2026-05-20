@@ -142,7 +142,7 @@ class WP_MCP_AI_Admin_Team_Settings {
 			. '.tool-item strong{display:inline-block;min-width:200px;}'
 		);
 		?>
-	}
+	<?php }
 
 	/**
 	 * Render tab navigation.
