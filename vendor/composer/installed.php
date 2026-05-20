@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-chore/release-v1.1.21-readme-docs-update',
-        'version' => 'dev-chore/release-v1.1.21-readme-docs-update',
-        'reference' => 'fb2263b5f0ccf3fbcdb0232a2ebdffc40157dbd9',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '598fb540f6eb5373ff9f02a5d6f19ef7d9fabc16',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-chore/release-v1.1.21-readme-docs-update',
-            'version' => 'dev-chore/release-v1.1.21-readme-docs-update',
-            'reference' => 'fb2263b5f0ccf3fbcdb0232a2ebdffc40157dbd9',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '598fb540f6eb5373ff9f02a5d6f19ef7d9fabc16',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
