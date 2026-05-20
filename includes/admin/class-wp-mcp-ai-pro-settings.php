@@ -2098,17 +2098,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					. '.toolkit-details-table .status-source{font-size:11px;font-weight:500;color:#2271b1;margin-left:4px;text-transform:uppercase;}'
 					. '.toolkit-tools-list{margin:0;padding:15px 15px 15px 40px;list-style:disc;}'
 					. '.toolkit-tools-list li{padding:5px 0;font-size:13px;color:#646970;}'
-				);
-				?>
-		}
+					);
+					?>
+			<?php }
 
-		/**
-		 * Add Pro Settings page to Pro Dashboard menu.
-		 *
-		 * @return void
-		 */
-		/**
-		 * Render Embedded LLM (Client-Side) section.
+			/**
+			 * Render Embedded LLM (Client-Side) section.
 		 *
 		 * @return void
 		 */

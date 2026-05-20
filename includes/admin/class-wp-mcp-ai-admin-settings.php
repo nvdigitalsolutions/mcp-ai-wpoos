@@ -4937,7 +4937,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				. '.wp-mcp-ai-provider-item .provider-label{flex:1;font-weight:500;user-select:none;}'
 			);
 			?>
-		}
+		<?php }
 
 		/**
 		 * Render the default assistant dropdown field.
