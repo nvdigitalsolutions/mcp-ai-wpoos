@@ -2452,6 +2452,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					. '.chart-container.chart-third{min-height:250px}'
 					. '.chart-container h5{margin:0 0 5px 0;color:#1d2327;font-size:14px;font-weight:600}'
 					. '.chart-description{font-size:12px;color:#666;margin:0 0 15px 0;line-height:1.4}';
+				wp_register_style( 'wp-mcp-ai-orch-agents', false, array(), WP_MCP_AI_VERSION );
+				wp_enqueue_style( 'wp-mcp-ai-orch-agents' );
 				wp_add_inline_style( 'wp-mcp-ai-orch-agents', $agents_css );
 				wp_print_styles( 'wp-mcp-ai-orch-agents' );
 				?>
@@ -2937,6 +2939,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				. '.management-card:hover{border-color:#2271b1;box-shadow:0 2px 8px rgba(34,113,177,0.1)}'
 				. '.management-card h4{margin:15px 0 10px;color:#1d2327}'
 				. '.management-card .description{min-height:40px;margin-bottom:15px}';
+			wp_register_style( 'wp-mcp-ai-orch-professions', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-orch-professions' );
 			wp_add_inline_style( 'wp-mcp-ai-orch-professions', $prof_css );
 			wp_print_styles( 'wp-mcp-ai-orch-professions' );
 			?>
@@ -3271,6 +3275,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				. '.team-role-badge.generalist{background: #f5f5f5; color: #616161;}'
 				. '.team-aggregation{margin-top: 10px; padding: 8px; background: #f9f9f9; border-radius: 3px; font-size: 12px;}';
 
+			wp_register_style( 'wp-mcp-ai-orch-teams', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-orch-teams' );
 			wp_add_inline_style( 'wp-mcp-ai-orch-teams', $teams_css );
 			wp_print_styles( 'wp-mcp-ai-orch-teams' );
 			?>

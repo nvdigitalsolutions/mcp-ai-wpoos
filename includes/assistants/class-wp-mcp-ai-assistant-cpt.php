@@ -2508,6 +2508,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			if ( ! $tools_styles_printed ) {
 				$tools_styles_printed = true;
+
+				// Register a dummy style handle so wp_add_inline_style has a target.
+				wp_register_style( 'wp-mcp-ai-assistant-tools', false, array(), WP_MCP_AI_VERSION );
+				wp_enqueue_style( 'wp-mcp-ai-assistant-tools' );
+
 				wp_add_inline_style(
 					'wp-mcp-ai-assistant-tools',
 					'.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
@@ -3654,6 +3659,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'mcp-ai-wpoos' ); ?></span>
 		</p>
 			<?php
+			wp_register_style( 'wp-mcp-ai-assistant-base-knowledge', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-assistant-base-knowledge' );
 			wp_add_inline_style(
 				'wp-mcp-ai-assistant-base-knowledge',
 				'.wp-mcp-ai-memory-file-size{color:#646970;font-size:0.9em;margin-left:0.5em}'

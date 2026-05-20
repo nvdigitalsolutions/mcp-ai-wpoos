@@ -284,6 +284,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 					$(this).closest('.wp-mcp-ai-preferred-peer-row').remove();
 				});
 			});
+			<?php
 			$js = ob_get_clean();
 			wp_print_inline_script_tag( $js );
 			?>

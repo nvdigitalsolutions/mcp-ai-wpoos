@@ -188,6 +188,8 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 				?>
 
 				<?php
+				wp_register_style( 'wp-mcp-ai-metabox-primary-roles', false, array(), WP_MCP_AI_VERSION );
+				wp_enqueue_style( 'wp-mcp-ai-metabox-primary-roles' );
 				wp_add_inline_style(
 					'wp-mcp-ai-metabox-primary-roles',
 					'.wp-mcp-ai-category-badge{display:inline-block;padding:2px 8px;border-radius:3px;background:#f0f0f1;font-size:12px}'
@@ -214,6 +216,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 						} );
 					} );
 				} )();
+				<?php
 				$js = ob_get_clean();
 				wp_print_inline_script_tag( $js );
 				?>
