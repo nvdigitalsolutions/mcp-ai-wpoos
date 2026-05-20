@@ -587,7 +587,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.stat-value{font-size:32px;font-weight:bold;color:#2271b1}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-perf-dashboard' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -774,7 +774,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.recommendations-list li{margin:5px 0}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-load-monitor' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -884,7 +884,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.wp-mcp-ai-performance-stats table{margin-top:20px}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-perf-stats' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -1150,6 +1150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'wp-mcp-ai-orch-teams',
 				);
 				foreach ( $style_handles as $handle ) {
+					// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline styles only; no external URL, version not applicable.
 					wp_register_style( $handle, false );
 					wp_enqueue_style( $handle );
 				}
@@ -1600,11 +1601,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 					$overview_script = 'jQuery(document).ready(function($) {'
 						. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - overview charts will not display");return;}'
-						. 'var d=' . wp_json_encode( array(
-							'workforce' => $overview_workforce_data,
-							'tools'     => $overview_tools_data,
-							'capacity'  => $overview_capacity_data,
-						) ) . ';'
+						. 'var d=' . wp_json_encode(
+							array(
+								'workforce' => $overview_workforce_data,
+								'tools'     => $overview_tools_data,
+								'capacity'  => $overview_capacity_data,
+							)
+						)
+						. ';'
 						. 'var c=document.getElementById("wp-mcp-ai-overview-workforce-chart");'
 						. 'if(c&&d.workforce.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"pie",data:d.workforce,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"bottom",labels:{padding:10,font:{size:11}}}}}})}'
 						. 'var t=document.getElementById("wp-mcp-ai-overview-tools-chart");'
@@ -1670,7 +1674,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					?>
 				</div>
 				<?php
-			}
+		}
 
 		/**
 		 * Render settings view.
@@ -2171,6 +2175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									printf(
 										/* translators: %s: link to the OpenTelemetry connection settings page */
 										wp_kses(
+											// translators: %s: link to the OpenTelemetry connection settings page
 											__( 'Configure your OTLP/HTTP endpoint on the %s page.', 'mcp-ai-wpoos' ),
 											array( 'a' => array( 'href' => array() ) )
 										),
@@ -2481,7 +2486,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				?>
 
 				<!-- Chart.js Initialization -->
-					<?php
+			<?php
 			// Pre-compute chart data and translatable strings for inline script.
 			$agents_role_data   = $this->get_agent_role_distribution_data();
 			$agents_tier_data   = $this->get_workload_tier_distribution_data();
@@ -2490,10 +2495,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			$agents_script = 'jQuery(document).ready(function($){'
 				. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - charts will not display");return;}'
-				. 'var d=' . wp_json_encode( array(
-					'roleDistribution' => $agents_role_data,
-					'workloadTier'     => $agents_tier_data,
-				) ) . ';'
+				. 'var d=' . wp_json_encode(
+					array(
+						'roleDistribution' => $agents_role_data,
+						'workloadTier'     => $agents_tier_data,
+					)
+				)
+				. ';'
 				. 'var c=document.getElementById("wp-mcp-ai-agent-role-distribution-chart");'
 				. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
 				. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $agents_no_data_msg ) . '</p>"}'
@@ -2978,10 +2986,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			$prof_script = 'jQuery(document).ready(function($){'
 				. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - profession charts will not display");return;}'
-				. 'var d=' . wp_json_encode( array(
-					'roleDistribution' => $prof_role_data,
-					'toolDistribution' => $prof_tool_data,
-				) ) . ';'
+				. 'var d=' . wp_json_encode(
+					array(
+						'roleDistribution' => $prof_role_data,
+						'toolDistribution' => $prof_tool_data,
+					)
+				)
+				. ';'
 				. 'var c=document.getElementById("wp-mcp-ai-profession-role-chart");'
 				. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
 				. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $prof_no_data_msg ) . '</p>"}'
