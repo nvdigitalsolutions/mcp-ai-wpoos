@@ -1,0 +1,22 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
+	"core": null,
+	"phpVersion": "8.1",
+	"plugins": [ "." ],
+	"themes": [],
+	"port": 8888,
+	"testsPort": 8889,
+	"mysqlPort": 13306,
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"WP_DEBUG_DISPLAY": false,
+		"SCRIPT_DEBUG": true,
+		"WP_ENVIRONMENT_TYPE": "development",
+		"WP_MCP_AI_DEBUG": true,
+		"WP_MEMORY_LIMIT": "256M"
+	},
+	"lifecycleScripts": {
+		"afterStart": "wp-env run cli wp rewrite structure '/%postname%/'; wp-env run cli wp option update blogdescription 'NV oOS Dev Environment'"
+	}
+}
