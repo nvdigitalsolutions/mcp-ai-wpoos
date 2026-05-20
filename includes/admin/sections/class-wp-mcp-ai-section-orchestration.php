@@ -2173,7 +2173,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<p class="description">
 									<?php
 									printf(
-										/* translators: %s: link to the OpenTelemetry connection settings page */
 										wp_kses(
 											// translators: %s: link to the OpenTelemetry connection settings page
 											__( 'Configure your OTLP/HTTP endpoint on the %s page.', 'mcp-ai-wpoos' ),
