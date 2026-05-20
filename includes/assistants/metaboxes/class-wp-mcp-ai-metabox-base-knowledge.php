@@ -202,6 +202,8 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 		</span>
 	</p>
 	<?php
+	wp_register_style( 'wp-mcp-ai-metabox-base-knowledge', false, array(), WP_MCP_AI_VERSION );
+	wp_enqueue_style( 'wp-mcp-ai-metabox-base-knowledge' );
 	wp_add_inline_style(
 		'wp-mcp-ai-metabox-base-knowledge',
 		'.wp-mcp-ai-memory-file-size{color:#646970;font-size:0.9em;margin-left:0.5em}'
