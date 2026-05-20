@@ -1076,6 +1076,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
+			$inline_style_handles = array(
+				'wp-mcp-ai-orchestration-renderer',
+				'wp-mcp-ai-section-overview',
+				'wp-mcp-ai-section-providers',
+				'wp-mcp-ai-section-security',
+			);
+
+			foreach ( $inline_style_handles as $inline_style_handle ) {
+				// Register dummy stylesheet handles for section renderers that print inline styles later.
+				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
+				wp_register_style( $inline_style_handle, false );
+				wp_enqueue_style( $inline_style_handle );
+			}
+
 			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-ajax-error-service',

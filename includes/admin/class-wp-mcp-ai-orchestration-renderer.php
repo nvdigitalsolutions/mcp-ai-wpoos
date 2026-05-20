@@ -634,7 +634,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						. '.wp-mcp-ai-stats-card__subtitle{font-size:12px;color:#666;margin-top:4px;font-weight:normal;}'
 						. '.wp-mcp-ai-tooltip-trigger{cursor:help;font-size:16px;color:#2271b1;vertical-align:middle;}'
 					);
-					?>
+
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
