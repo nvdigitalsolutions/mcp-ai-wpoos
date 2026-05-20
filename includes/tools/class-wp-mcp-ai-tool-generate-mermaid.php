@@ -119,30 +119,37 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		// Note: We use wp_kses_post to allow basic HTML but strip dangerous tags.
 		$mermaid_code = wp_kses_post( $arguments['code'] );
 
-		// Generate HTML with embedded Mermaid.js code.
+		// Generate HTML with Mermaid.js code via wp_print_inline_script_tag().
+		$script_js = sprintf(
+			'(function() {
+				if (typeof mermaid === "undefined") {
+					console.error("Mermaid.js not loaded");
+					return;
+				}
+				mermaid.initialize({ 
+					startOnLoad: true,
+					theme: "%s",
+					securityLevel: "strict"
+				});
+			})();',
+			esc_js( $theme )
+		);
+
+		ob_start();
+		wp_print_inline_script_tag( $script_js );
+		$script_tag = ob_get_clean();
+
 		$html = sprintf(
 			'<div class="wp-mcp-ai-mermaid-container">
 				<div class="mermaid" id="%s" data-theme="%s">
 %s
 				</div>
-				<script>
-				(function() {
-					if (typeof mermaid === "undefined") {
-						console.error("Mermaid.js not loaded");
-						return;
-					}
-					mermaid.initialize({ 
-						startOnLoad: true,
-						theme: "%s",
-						securityLevel: "strict"
-					});
-				})();
-				</script>
+				%s
 			</div>',
 			esc_attr( $diagram_id ),
 			esc_attr( $theme ),
 			$mermaid_code,
-			esc_attr( $theme )
+			$script_tag
 		);
 
 		return array(

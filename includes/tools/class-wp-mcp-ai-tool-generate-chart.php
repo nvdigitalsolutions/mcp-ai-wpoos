@@ -157,24 +157,31 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 			}
 		}
 
-		// Generate HTML with embedded Chart.js code.
+		// Generate HTML with Chart.js code via wp_print_inline_script_tag().
+		$script_js = sprintf(
+			'(function() {
+				if (typeof Chart === "undefined") {
+					console.error("Chart.js not loaded");
+					return;
+				}
+				const ctx = document.getElementById("%s").getContext("2d");
+				new Chart(ctx, %s);
+			})();',
+			esc_js( $chart_id ),
+			wp_json_encode( $chart_config )
+		);
+
+		ob_start();
+		wp_print_inline_script_tag( $script_js );
+		$script_tag = ob_get_clean();
+
 		$html = sprintf(
 			'<div class="wp-mcp-ai-chart-container">
 				<canvas id="%s" width="400" height="200"></canvas>
-				<script>
-				(function() {
-					if (typeof Chart === "undefined") {
-						console.error("Chart.js not loaded");
-						return;
-					}
-					const ctx = document.getElementById("%s").getContext("2d");
-					new Chart(ctx, %s);
-				})();
-				</script>
+				%s
 			</div>',
 			esc_attr( $chart_id ),
-			esc_attr( $chart_id ),
-			wp_json_encode( $chart_config )
+			$script_tag
 		);
 
 		return array(

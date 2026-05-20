@@ -1494,7 +1494,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$mm_js = ob_get_clean();
 			wp_print_inline_script_tag( $mm_js );
 			?>
-		}
+		<?php }
 
 		/**
 		 * Render detailed usage breakdown for a user.

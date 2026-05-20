@@ -263,7 +263,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 		$cutoff  = time() - HOUR_IN_SECONDS;
 		$deleted = 0;
 
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: glob() may emit warnings on restricted hosts; failure is handled below with is_array() check.
 		$files = @glob( trailingslashit( $temp_dir ) . '*' );
 		if ( ! is_array( $files ) ) {
 			return;
@@ -279,10 +279,10 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 				continue;
 			}
 
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: filemtime() may emit warnings for files deleted between glob() and stat; failure is handled with false !== $mtime check.
 			$mtime = @filemtime( $file );
 			if ( false !== $mtime && $mtime < $cutoff ) {
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: unlink() may emit warnings on permission errors; best-effort cleanup, failure is non-critical.
 				if ( @unlink( $file ) ) {
 					++$deleted;
 				}

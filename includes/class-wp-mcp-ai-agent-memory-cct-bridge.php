@@ -405,17 +405,17 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 		$table = $wpdb->prefix . 'jet_cct_' . $slug;
 
 		// Confirm the table exists before querying (CCT may not be registered yet).
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- Direct query on JetEngine CCT table; table name from class constant. WP_Query does not support SHOW TABLES.
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( $exists !== $table ) {
 			$cache[ $context_id ] = null;
 			return null;
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on JetEngine CCT table; table name from class constant, not user input.
 		$row_id = $wpdb->get_var(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from class constant, not user input.
 				"SELECT _ID FROM `{$table}` WHERE context_id = %s LIMIT 1",
 				$context_id
 			)
@@ -497,7 +497,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 			global $wpdb;
 			$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
 			$table = $wpdb->prefix . 'jet_cct_' . $slug;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct diagnostic query on JetEngine CCT table; table name from class constant. WP_Query does not support SHOW TABLES.
 			$found                          = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			$status['agent_memories_table'] = ( $found === $table );
 		}

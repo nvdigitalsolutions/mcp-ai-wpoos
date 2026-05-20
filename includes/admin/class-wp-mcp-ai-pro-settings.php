@@ -1882,6 +1882,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
+			// Register a dummy stylesheet handle so that wp_add_inline_style()
+			// (called at the end of this method) has a valid handle to attach to.
+			wp_register_style( 'wp-mcp-ai-pro-settings', false );
+			wp_enqueue_style( 'wp-mcp-ai-pro-settings' );
+
 			$packages        = self::get_npm_packages();
 			$composer        = self::get_composer_packages();
 			$pro_status      = self::get_pro_toolkit_status();
@@ -2098,17 +2103,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					. '.toolkit-details-table .status-source{font-size:11px;font-weight:500;color:#2271b1;margin-left:4px;text-transform:uppercase;}'
 					. '.toolkit-tools-list{margin:0;padding:15px 15px 15px 40px;list-style:disc;}'
 					. '.toolkit-tools-list li{padding:5px 0;font-size:13px;color:#646970;}'
-				);
-				?>
-		}
+					);
+					?>
+			<?php }
 
-		/**
-		 * Add Pro Settings page to Pro Dashboard menu.
-		 *
-		 * @return void
-		 */
-		/**
-		 * Render Embedded LLM (Client-Side) section.
+			/**
+			 * Render Embedded LLM (Client-Side) section.
 		 *
 		 * @return void
 		 */
