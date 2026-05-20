@@ -241,6 +241,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-tracking-database.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-token-tracking.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-recommendations.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-prompt-optimizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
@@ -256,6 +257,7 @@ require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
 // produce a follow-up message. See docs/features/chat/async-continuation.md
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/chat-continuation-init.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-response-cache.php';
 
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';

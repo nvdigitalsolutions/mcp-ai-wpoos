@@ -44,6 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_SKILLS                  = '_wp_mcp_ai_skills';
 		const META_SKILLS_PROGRESSIVE      = '_wp_mcp_ai_skills_progressive';
 		const META_MCP_APPS                = '_wp_mcp_ai_mcp_apps';
+		const META_PROMPT_CACHING          = '_wp_mcp_ai_prompt_caching';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -1470,6 +1471,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			register_post_meta(
 				self::POST_TYPE,
+				self::META_PROMPT_CACHING,
+				array(
+					'type'              => 'boolean',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_prompt_caching_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+
+			register_post_meta(
+				self::POST_TYPE,
 				self::META_EXTERNAL_ACTION_ID,
 				array(
 					'type'              => 'string',
@@ -1682,6 +1695,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return wp_kses_post( $prompt );
+		}
+
+		/**
+		 * Sanitize prompt caching meta value.
+		 *
+		 * @param mixed $value Raw value.
+		 * @return bool
+		 */
+		public static function sanitize_prompt_caching_meta( $value ) {
+			return (bool) $value;
 		}
 
 		/**
@@ -4386,6 +4409,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_system_prompt_meta().
 				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
+
+				$prompt_caching = ! empty( $_POST['wp_mcp_ai_prompt_caching'] );
+				update_post_meta( $post_id, self::META_PROMPT_CACHING, $prompt_caching );
 			}
 
 			// Handle base knowledge meta.
@@ -4674,6 +4700,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'tool_prebuilt_shortcuts'    => get_post_meta( $assistant_id, self::META_TOOL_PREBUILT_SHORTCUTS, true ),
 				'tool_role_rules'            => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
 				'disable_prebuilt_shortcuts' => get_post_meta( $assistant_id, self::META_DISABLE_TOOL_SHORTCUTS, true ),
+				'prompt_caching'             => (bool) get_post_meta( $assistant_id, self::META_PROMPT_CACHING, true ),
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
 				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),

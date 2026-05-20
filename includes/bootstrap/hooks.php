@@ -150,6 +150,9 @@ function wp_mcp_ai_setup_cache_invalidation_hooks() {
 		add_action( 'wp_trash_post', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_delete' ), 10, 1 );
 		add_action( 'update_option_' . WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_settings_save' ) );
 	}
+
+	// Invalidate chat response cache when assistant config changes.
+	add_action( 'save_post_mcp_ai_assistant', 'wp_mcp_ai_invalidate_chat_response_cache', 10, 1 );
 }
 
 /**
@@ -200,6 +203,18 @@ function wp_mcp_ai_invalidate_assistant_cache_on_meta_update( $meta_id, $object_
 		if ( $post && 'mcp_ai_assistant' === $post->post_type ) {
 			WP_MCP_AI_Cache_Helper::invalidate_assistant_cache( $object_id );
 		}
+	}
+}
+
+/**
+ * Invalidate chat response cache for the saved assistant.
+ *
+ * @param int $post_id Assistant post ID.
+ */
+function wp_mcp_ai_invalidate_chat_response_cache( $post_id ) {
+	if ( class_exists( 'WP_MCP_AI_Chat_Response_Cache' ) ) {
+		$cache = new WP_MCP_AI_Chat_Response_Cache();
+		$cache->invalidate_for_assistant( $post_id );
 	}
 }
 
