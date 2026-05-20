@@ -142,10 +142,11 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	/**
 	 * Perform the actual schema upgrade from `$from_version` to CURRENT_VERSION.
 	 *
-	 * Re-pushes the full registration request with the up-to-date field set
-	 * through JetEngine's existing data layer. JetEngine treats this as an
-	 * "update existing content type" operation when the slug already exists,
-	 * merging the new field declarations into the stored CCT definition.
+	 * Writes the up-to-date `args` and `meta_fields` JSON directly into the
+	 * `wp_jet_post_types` row, bypassing JetEngine's creation-oriented
+	 * `sanitize_item_request()` validator which rejects update requests for
+	 * existing CCT slugs. JetEngine's in-memory cache is then refreshed so
+	 * the admin UI immediately picks up the new columns.
 	 *
 	 * @since 1.1.20
 	 *
@@ -203,7 +204,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 
 		// Find the existing CCT registration row by slug so we can update in
 		// place rather than create a duplicate. JetEngine's `data->query()`
-		// returns rows from `wp_jet_content_types` for the chosen post_type.
+		// returns rows from `wp_jet_post_types` for the chosen post_type.
 		$existing = $data->db->query(
 			'post_types',
 			array(
@@ -228,32 +229,31 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 		// Rebuild the registration request from the current source-of-truth
 		// (so schema v3+ in future ships without a new migrator class).
 		$request = self::build_registration_request();
-		$request['_ID'] = $existing_id;
 
+		// Direct DB update: JetEngine's sanitize_item_request() is designed
+		// for creation (validates slug uniqueness), so it rejects update
+		// requests for existing CCTs. Bypass that validation layer and
+		// write the new args + meta_fields JSON directly into the
+		// wp_jet_post_types row, then refresh JetEngine's in-memory cache.
 		try {
-			$data->set_request( $request );
+			global $wpdb;
 
-			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
-				return $failure( 'JetEngine refused to sanitize the upgrade request.' );
+			$table = $wpdb->prefix . 'jet_post_types';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$rows  = $wpdb->update(
+				$table,
+				array(
+					'args'        => wp_json_encode( $request['args'] ),
+					'meta_fields' => wp_json_encode( $request['meta_fields'] ),
+				),
+				array( 'id' => $existing_id ),
+				array( '%s', '%s' ),
+				array( '%d' )
+			);
+
+			if ( false === $rows ) {
+				return $failure( 'Direct DB update failed: ' . ( $wpdb->last_error ?: 'unknown error' ) );
 			}
-
-			$item = $data->sanitize_item_from_request();
-			if ( empty( $item ) || ! is_array( $item ) ) {
-				return $failure( 'JetEngine produced an empty upgrade item.' );
-			}
-
-			// Preserve the existing ID so update_item_in_db updates, not inserts.
-			$item['_ID'] = $existing_id;
-
-			$data->before_item_update( $item, false );
-
-			$item_id = $data->update_item_in_db( $item );
-
-			if ( ! $item_id ) {
-				return $failure( 'update_item_in_db returned a falsy id.' );
-			}
-
-			$data->after_item_update( $item, false );
 
 			// Force a reload of post types so the in-memory cache picks up the
 			// new field set on the same request.
