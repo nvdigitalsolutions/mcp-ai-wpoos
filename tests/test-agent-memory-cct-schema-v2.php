@@ -321,6 +321,92 @@ class Test_Agent_Memory_CCT_Schema_V2 extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Structured payload normaliser should decode serialized arrays.
+	 */
+	public function test_payload_normaliser_decodes_serialized_arrays() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_structured_payload' );
+		$method->setAccessible( true );
+
+		$serialized = maybe_serialize(
+			array(
+				'key' => 'value',
+			)
+		);
+
+		$decoded = $method->invoke( null, $serialized, array() );
+
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'value', $decoded['key'] );
+	}
+
+	/**
+	 * Structured payload normaliser should decode JSON object payloads.
+	 */
+	public function test_payload_normaliser_decodes_json_objects() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_structured_payload' );
+		$method->setAccessible( true );
+
+		$decoded = $method->invoke( null, '{"alpha":"beta"}', array() );
+
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'beta', $decoded['alpha'] );
+	}
+
+	/**
+	 * Structured payload normaliser should return fallback for invalid strings.
+	 */
+	public function test_payload_normaliser_falls_back_for_invalid_string() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_structured_payload' );
+		$method->setAccessible( true );
+
+		$fallback = array( 'safe' => 'default' );
+		$decoded  = $method->invoke( null, 'not-an-array', $fallback );
+
+		$this->assertSame( $fallback, $decoded );
+	}
+
+	/**
+	 * CCT args normaliser should merge partial payloads over canonical defaults.
+	 */
+	public function test_cct_args_normaliser_merges_with_fallback() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_cct_args_payload' );
+		$method->setAccessible( true );
+
+		$fallback = array(
+			'name'          => 'Default',
+			'admin_columns' => array(
+				'context_id' => array(
+					'enabled' => true,
+				),
+				'agent_id'   => array(
+					'enabled' => true,
+				),
+			),
+		);
+
+		$partial = maybe_serialize(
+			array(
+				'name'          => 'Custom',
+				'admin_columns' => array(
+					'context_id' => array(
+						'enabled' => false,
+					),
+				),
+			)
+		);
+
+		$merged = $method->invoke( null, $partial, $fallback );
+
+		$this->assertSame( 'Custom', $merged['name'] );
+		$this->assertFalse( $merged['admin_columns']['context_id']['enabled'] );
+		$this->assertTrue( $merged['admin_columns']['agent_id']['enabled'] );
+	}
+
+	/**
 	 * Version accessors return the expected integers.
 	 */
 	public function test_version_accessors_report_expected_integers() {

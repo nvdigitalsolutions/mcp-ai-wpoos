@@ -83,6 +83,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			return;
 		}
 
+		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_repair_corrupt_cct_args' ), 20 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_run' ), 20 );
 	}
 
@@ -228,7 +229,15 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 
 		// Rebuild the registration request from the current source-of-truth
 		// (so schema v3+ in future ships without a new migrator class).
-		$request = self::build_registration_request();
+		$request          = self::build_registration_request();
+		$request['args']  = self::normalise_cct_args_payload(
+			isset( $existing_row['args'] ) ? $existing_row['args'] : array(),
+			isset( $request['args'] ) ? (array) $request['args'] : array()
+		);
+
+		if ( empty( $request['args'] ) || ! is_array( $request['args'] ) ) {
+			return $failure( 'Upgrade item args payload is invalid; aborting to avoid corrupting JetEngine CCT registration.' );
+		}
 
 		// Direct DB update: JetEngine's sanitize_item_request() is designed
 		// for creation (validates slug uniqueness), so it rejects update
@@ -305,8 +314,199 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	}
 
 	/**
-	 * Return the installed schema version (0 when unset).
+	 * Recover from older migrator runs that may have persisted a non-array
+	 * `args` payload for the agent-memories CCT.
 	 *
+	 * This runs on `plugins_loaded` so the row is fixed before JetEngine reads
+	 * CCT definitions during `init`.
+	 *
+	 * @since 1.1.20
+	 * @return void
+	 */
+	public static function maybe_repair_corrupt_cct_args() {
+		global $wpdb;
+
+		if ( ! ( $wpdb instanceof wpdb ) ) {
+			return;
+		}
+
+		$table        = self::get_jetengine_cct_table_name( $wpdb );
+		$valid_tables = self::get_jetengine_cct_table_candidates( $wpdb );
+
+		if ( '' === $table || ! in_array( $table, $valid_tables, true ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is resolved from a strict internal allowlist.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT id, args FROM `' . $table . '` WHERE slug = %s AND status = %s LIMIT 1',
+				WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug(),
+				'content-type'
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $row ) || ! is_array( $row ) || empty( $row['id'] ) ) {
+			return;
+		}
+
+		$request  = self::build_registration_request();
+		$fallback = isset( $request['args'] ) ? (array) $request['args'] : array();
+		$fixed    = self::normalise_cct_args_payload(
+			isset( $row['args'] ) ? $row['args'] : '',
+			$fallback
+		);
+
+		if ( empty( $fixed ) || ! is_array( $fixed ) ) {
+			return;
+		}
+
+		$stored_args       = self::normalise_structured_payload(
+			isset( $row['args'] ) ? $row['args'] : '',
+			array()
+		);
+		$stored_serialized = maybe_serialize( $stored_args );
+		$fixed_serialized  = maybe_serialize( $fixed );
+
+		if ( $stored_serialized === $fixed_serialized ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-row integrity repair before JetEngine init.
+		$updated = $wpdb->update(
+			$table,
+			array( 'args' => $fixed_serialized ),
+			array( 'id' => (int) $row['id'] ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		if ( false !== $updated && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Agent Memory CCT migrator: repaired non-array args payload in JetEngine CCT registration.',
+				array(
+					'cct_id' => (int) $row['id'],
+					'table'  => $table,
+				)
+			);
+		} elseif ( false === $updated && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Agent Memory CCT migrator: failed to repair args payload in JetEngine CCT registration.',
+				array(
+					'cct_id'     => (int) $row['id'],
+					'table'      => $table,
+					'last_error' => isset( $wpdb->last_error ) ? (string) $wpdb->last_error : '',
+				)
+			);
+		}
+	}
+
+	/**
+	 * Resolve the JetEngine CCT registration table name.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param wpdb $wpdb WordPress database handle.
+	 * @return string
+	 */
+	protected static function get_jetengine_cct_table_name( $wpdb ) {
+		$candidates = self::get_jetengine_cct_table_candidates( $wpdb );
+
+		foreach ( $candidates as $table ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- SHOW TABLES cannot use placeholders for identifiers.
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $exists === $table ) {
+				return $table;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Return allowlisted JetEngine CCT registration table names.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param wpdb $wpdb WordPress database handle.
+	 * @return array
+	 */
+	protected static function get_jetengine_cct_table_candidates( $wpdb ) {
+		$prefix = isset( $wpdb->prefix ) ? (string) $wpdb->prefix : '';
+
+		if ( '' === $prefix || 1 !== preg_match( '/^[A-Za-z_][A-Za-z0-9_]*$/', $prefix ) ) {
+			return array();
+		}
+
+		return array(
+			$prefix . 'jet_post_types',
+			$prefix . 'jet_engine_post_types',
+		);
+	}
+
+	/**
+	 * Normalize potentially serialized/JSON payloads to arrays.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param mixed $value    Raw value to normalize.
+	 * @param array $fallback Fallback array when value is not coercible.
+	 * @return array
+	 */
+	protected static function normalise_structured_payload( $value, $fallback = array() ) {
+		if ( is_array( $value ) ) {
+			return $value;
+		}
+
+		if ( ! is_string( $value ) ) {
+			return $fallback;
+		}
+
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return $fallback;
+		}
+
+		$unserialized = maybe_unserialize( $value );
+		if ( is_array( $unserialized ) ) {
+			return $unserialized;
+		}
+
+		$json = json_decode( $value, true );
+		if ( is_array( $json ) ) {
+			return $json;
+		}
+
+		return $fallback;
+	}
+
+	/**
+	 * Normalize an `args` payload and merge it over the canonical defaults.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param mixed $value    Raw args value.
+	 * @param array $fallback Canonical default args.
+	 * @return array
+	 */
+	protected static function normalise_cct_args_payload( $value, $fallback = array() ) {
+		$normalised = self::normalise_structured_payload( $value, array() );
+
+		if ( empty( $fallback ) ) {
+			return $normalised;
+		}
+
+		if ( empty( $normalised ) ) {
+			return $fallback;
+		}
+
+		return array_replace_recursive( $fallback, $normalised );
+	}
+
+	/**
+	 * Return the installed schema version (0 when unset).	 *
 	 * Convenience accessor used by the Phase 7a Memory Health subtab.
 	 *
 	 * @since 1.1.20
