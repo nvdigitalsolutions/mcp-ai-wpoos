@@ -1055,11 +1055,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			$active_subtab = $this->get_active_subtab();
 			$all_fields    = $this->get_fields();
 
-			// Register a dummy stylesheet handle for inline security styles.
-			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
-			wp_register_style( 'wp-mcp-ai-section-security', false );
-			wp_enqueue_style( 'wp-mcp-ai-section-security' );
-
 			if ( 'overview' === $active_subtab ) {
 				return; // Handled by render_wrapper().
 			}

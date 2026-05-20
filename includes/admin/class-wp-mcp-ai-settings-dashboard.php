@@ -1076,12 +1076,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Register a dummy stylesheet handle for orchestration renderer inline styles.
-			// The renderer calls wp_add_inline_style() during page rendering; this handle
-			// must be registered and enqueued before wp_print_styles runs.
-			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
-			wp_register_style( 'wp-mcp-ai-orchestration-renderer', false );
-			wp_enqueue_style( 'wp-mcp-ai-orchestration-renderer' );
+			$inline_style_handles = array(
+				'wp-mcp-ai-orchestration-renderer',
+				'wp-mcp-ai-section-overview',
+				'wp-mcp-ai-section-providers',
+				'wp-mcp-ai-section-security',
+			);
+
+			foreach ( $inline_style_handles as $inline_style_handle ) {
+				// Register dummy stylesheet handles for section renderers that print inline styles later.
+				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Dummy handle; version not applicable.
+				wp_register_style( $inline_style_handle, false );
+				wp_enqueue_style( $inline_style_handle );
+			}
 
 			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
 			wp_enqueue_script(
