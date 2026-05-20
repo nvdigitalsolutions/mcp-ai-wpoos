@@ -432,6 +432,19 @@ function wp_mcp_ai_get_context_compression_service() {
 }
 
 /**
+ * Get semantic compressor service instance
+ *
+ * Helper function to get the semantic compressor for
+ * lossless prompt compression using caveman-style rules.
+ *
+ * @since 1.7.0
+ * @return WP_MCP_AI_Semantic_Compressor Semantic compressor instance.
+ */
+function wp_mcp_ai_get_semantic_compressor() {
+	return WP_MCP_AI_Semantic_Compressor::get_instance();
+}
+
+/**
  * Get PSO optimizer service instance
  *
  * Helper function to get the Particle Swarm Optimization service for

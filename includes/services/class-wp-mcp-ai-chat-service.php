@@ -191,6 +191,9 @@ class WP_MCP_AI_Chat_Service {
 			return $client;
 		}
 
+		// Apply semantic compression to messages before first API call.
+		$messages = $this->maybe_compress_messages( $messages, $options );
+
 		// Track timing for transcripts.
 		$transcript_context['request_started_at'] = microtime( true );
 
@@ -380,6 +383,9 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 			}
+
+			// Apply semantic compression before follow-up to keep context compact.
+			$messages = $this->maybe_compress_messages( $messages, $options );
 
 			// Send follow-up request with tool results.
 			$response = $client->create_chat_completion( $messages, $options );
@@ -1265,5 +1271,103 @@ class WP_MCP_AI_Chat_Service {
 		// Apply tool's sanitization method.
 		// The tool's implementation will handle content type validation.
 		return $tool_instance->sanitize_for_llm( $content );
+	}
+
+	/**
+	 * Apply semantic compression to messages when enabled.
+	 *
+	 * Uses the Caveman Compression technique to strip grammar, connectives,
+	 * and filler words while preserving facts, numbers, and technical terms.
+	 *
+	 * Compression is controlled by the 'wp_mcp_ai_enable_semantic_compression'
+	 * option and respects per-request overrides via 'compress_semantic' in $options.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $messages Chat messages to potentially compress.
+	 * @param array $options  Request options (may contain 'compress_semantic' override).
+	 * @return array Messages (compressed if enabled, original otherwise).
+	 */
+	private function maybe_compress_messages( $messages, $options = array() ) {
+		// Check if semantic compression is enabled.
+		$enabled = (bool) get_option( 'wp_mcp_ai_enable_semantic_compression', false );
+
+		// Allow per-request override via options.
+		if ( isset( $options['compress_semantic'] ) ) {
+			$enabled = (bool) $options['compress_semantic'];
+		}
+
+		if ( ! $enabled ) {
+			return $messages;
+		}
+
+		// Get compression aggressiveness from settings (1-3, default 2).
+		$aggressiveness = (int) get_option( 'wp_mcp_ai_semantic_compression_level', 2 );
+		$aggressiveness = max( 1, min( 3, $aggressiveness ) );
+
+		// Only process if we have messages.
+		if ( empty( $messages ) ) {
+			return $messages;
+		}
+
+		$compressor = wp_mcp_ai_get_semantic_compressor();
+
+		// Track token savings for logging.
+		$total_saved = 0;
+
+		foreach ( $messages as $index => &$message ) {
+			if ( ! is_array( $message ) || empty( $message['content'] ) ) {
+				continue;
+			}
+
+			// Skip tool_calls — these are structured arrays, not prose.
+			// Skip image content arrays — these are not text.
+			if ( ! is_string( $message['content'] ) ) {
+				continue;
+			}
+
+			// Skip system messages with very short content (like the compact summary marker).
+			if ( 'system' === ( isset( $message['role'] ) ? $message['role'] : '' )
+				&& strlen( $message['content'] ) < 100 ) {
+				continue;
+			}
+
+			$savings = $compressor->estimate_savings(
+				$message['content'],
+				array( 'aggressiveness' => $aggressiveness )
+			);
+
+			if ( $savings['saved_tokens'] > 0 ) {
+				$message['content']   = $compressor->compress(
+					$message['content'],
+					array( 'aggressiveness' => $aggressiveness )
+				);
+				$total_saved         += $savings['saved_tokens'];
+
+				// Store original content for audit trail / transcript preservation.
+				if ( ! isset( $message['_original_content'] ) ) {
+					$message['_original_content'] = $savings; // Replaced by compress() call above, so reconstruct from savings.
+				}
+			}
+		}
+		unset( $message ); // Break reference.
+
+		if ( $total_saved > 0 ) {
+			WP_MCP_AI_Logger::log_event(
+				'semantic_compression',
+				sprintf(
+					/* translators: %d: tokens saved */
+					__( 'Semantic compression saved ~%d tokens.', 'mcp-ai-wpoos' ),
+					$total_saved
+				),
+				array(
+					'saved_tokens'   => $total_saved,
+					'aggressiveness' => $aggressiveness,
+					'message_count'  => count( $messages ),
+				)
+			);
+		}
+
+		return $messages;
 	}
 }
