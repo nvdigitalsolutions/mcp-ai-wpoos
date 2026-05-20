@@ -191,7 +191,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 	}
 
 	// ------------------------------------------------------------------ //
-	//  Permission check                                                     //
+	// Permission check                                                     //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -213,7 +213,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 	}
 
 	// ------------------------------------------------------------------ //
-	//  Handlers                                                            //
+	// Handlers                                                            //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -533,7 +533,10 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 		}
 
 		$settings     = get_option( 'wp_mcp_ai_settings', array() );
-		$posture_data = array( 'score' => 0, 'grade' => 'F' );
+		$posture_data = array(
+			'score' => 0,
+			'grade' => 'F',
+		);
 		if ( class_exists( 'WP_MCP_AI_Security_Posture' ) ) {
 			$posture_data = ( new WP_MCP_AI_Security_Posture() )->get_report();
 		}
@@ -576,7 +579,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 	}
 
 	// ------------------------------------------------------------------ //
-	//  Validation helpers                                                  //
+	// Validation helpers                                                  //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -600,7 +603,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 	}
 
 	// ------------------------------------------------------------------ //
-	//  Private helpers                                                     //
+	// Private helpers                                                     //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -795,43 +798,43 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 
 		$definitions = array(
 			'owasp' => array(
-				array( 'A01', 'Broken Access Control',      $is( 'require_authentication_all' ) || $is( 'minimum_capability' ),                                         'require_authentication_all, minimum_capability',  __( 'Auth switch or minimum capability configured', 'mcp-ai-wpoos' ) ),
-				array( 'A02', 'Cryptographic Failures',     $is( 'require_https' ) && $is( 'enable_hsts' ),                                                            'require_https, enable_hsts',                       __( 'HTTPS required and HSTS enabled', 'mcp-ai-wpoos' ) ),
-				array( 'A03', 'Injection',                  $is( 'enable_prompt_injection_detector' ),                                                                  'enable_prompt_injection_detector',                 __( 'Prompt-injection detector active', 'mcp-ai-wpoos' ) ),
-				array( 'A04', 'Insecure Design',            $is( 'enable_hitl_for_write_tools' ) || $is( 'enable_sandbox_mode' ),                                       'enable_hitl_for_write_tools, enable_sandbox_mode', __( 'HITL approvals or sandbox mode on', 'mcp-ai-wpoos' ) ),
-				array( 'A05', 'Security Misconfiguration',  $is( 'enable_security_headers' ),                                                                           'enable_security_headers',                          __( 'OWASP security headers enabled', 'mcp-ai-wpoos' ) ),
-				array( 'A06', 'Vulnerable Components',      $is( 'enable_security_audit_log' ),                                                                         'enable_security_audit_log',                        __( 'Audit log active for anomaly detection', 'mcp-ai-wpoos' ) ),
-				array( 'A07', 'Auth & Session Management',  ! $is( 'allow_guest_access' ) || ( $is( 'guest_token_ttl_hours' ) && (int) ( $settings['guest_token_ttl_hours'] ?? 24 ) <= 168 ), 'allow_guest_access, guest_token_ttl_hours', __( 'Guest tokens are TTL-scoped (<= 7 days)', 'mcp-ai-wpoos' ) ),
-				array( 'A08', 'Software & Data Integrity',  $is( 'enable_root_security_key' ),                                                                          'enable_root_security_key',                         __( 'Root security key set', 'mcp-ai-wpoos' ) ),
-				array( 'A09', 'Logging & Monitoring',       $is( 'enable_security_audit_log' ),                                                                         'enable_security_audit_log',                        __( 'Security audit log enabled', 'mcp-ai-wpoos' ) ),
-				array( 'A10', 'SSRF',                       $is( 'enable_ip_whitelist' ) || $is( 'enable_ip_blacklist' ),                                               'enable_ip_whitelist, enable_ip_blacklist',          __( 'IP allow/deny rules active', 'mcp-ai-wpoos' ) ),
+				array( 'A01', 'Broken Access Control', $is( 'require_authentication_all' ) || $is( 'minimum_capability' ), 'require_authentication_all, minimum_capability', __( 'Auth switch or minimum capability configured', 'mcp-ai-wpoos' ) ),
+				array( 'A02', 'Cryptographic Failures', $is( 'require_https' ) && $is( 'enable_hsts' ), 'require_https, enable_hsts', __( 'HTTPS required and HSTS enabled', 'mcp-ai-wpoos' ) ),
+				array( 'A03', 'Injection', $is( 'enable_prompt_injection_detector' ), 'enable_prompt_injection_detector', __( 'Prompt-injection detector active', 'mcp-ai-wpoos' ) ),
+				array( 'A04', 'Insecure Design', $is( 'enable_hitl_for_write_tools' ) || $is( 'enable_sandbox_mode' ), 'enable_hitl_for_write_tools, enable_sandbox_mode', __( 'HITL approvals or sandbox mode on', 'mcp-ai-wpoos' ) ),
+				array( 'A05', 'Security Misconfiguration', $is( 'enable_security_headers' ), 'enable_security_headers', __( 'OWASP security headers enabled', 'mcp-ai-wpoos' ) ),
+				array( 'A06', 'Vulnerable Components', $is( 'enable_security_audit_log' ), 'enable_security_audit_log', __( 'Audit log active for anomaly detection', 'mcp-ai-wpoos' ) ),
+				array( 'A07', 'Auth & Session Management', ! $is( 'allow_guest_access' ) || ( $is( 'guest_token_ttl_hours' ) && (int) ( $settings['guest_token_ttl_hours'] ?? 24 ) <= 168 ), 'allow_guest_access, guest_token_ttl_hours', __( 'Guest tokens are TTL-scoped (<= 7 days)', 'mcp-ai-wpoos' ) ),
+				array( 'A08', 'Software & Data Integrity', $is( 'enable_root_security_key' ), 'enable_root_security_key', __( 'Root security key set', 'mcp-ai-wpoos' ) ),
+				array( 'A09', 'Logging & Monitoring', $is( 'enable_security_audit_log' ), 'enable_security_audit_log', __( 'Security audit log enabled', 'mcp-ai-wpoos' ) ),
+				array( 'A10', 'SSRF', $is( 'enable_ip_whitelist' ) || $is( 'enable_ip_blacklist' ), 'enable_ip_whitelist, enable_ip_blacklist', __( 'IP allow/deny rules active', 'mcp-ai-wpoos' ) ),
 			),
 			'gdpr' => array(
-				array( 'Art.5(1)(f)',  'Integrity & Confidentiality',          $is( 'require_authentication_all' ) || $is( 'require_auth_chat_endpoints' ), 'require_authentication_all',   __( 'Authentication enforced', 'mcp-ai-wpoos' ) ),
-				array( 'Art.25',      'Data Protection by Design',             $is( 'enable_pii_filter' ),                                                   'enable_pii_filter',            __( 'PII filter enabled', 'mcp-ai-wpoos' ) ),
-				array( 'Art.30',      'Records of Processing',                 $is( 'enable_security_audit_log' ),                                           'enable_security_audit_log',    __( 'Audit log active', 'mcp-ai-wpoos' ) ),
-				array( 'Art.32',      'Security of Processing',                $is( 'require_https' ) && $is( 'enable_hsts' ),                               'require_https, enable_hsts',   __( 'Transport encryption enforced', 'mcp-ai-wpoos' ) ),
-				array( 'Art.33',      'Breach Notification Readiness',         $is( 'enable_security_audit_log' ),                                           'enable_security_audit_log',    __( 'Audit log enables breach detection', 'mcp-ai-wpoos' ) ),
-				array( 'Art.35',      'DPIA — Access Control',                 ! empty( $settings['restrict_to_roles'] ),                                    'restrict_to_roles',            __( 'Role restriction configured', 'mcp-ai-wpoos' ) ),
+				array( 'Art.5(1)(f)', 'Integrity & Confidentiality', $is( 'require_authentication_all' ) || $is( 'require_auth_chat_endpoints' ), 'require_authentication_all', __( 'Authentication enforced', 'mcp-ai-wpoos' ) ),
+				array( 'Art.25', 'Data Protection by Design', $is( 'enable_pii_filter' ), 'enable_pii_filter', __( 'PII filter enabled', 'mcp-ai-wpoos' ) ),
+				array( 'Art.30', 'Records of Processing', $is( 'enable_security_audit_log' ), 'enable_security_audit_log', __( 'Audit log active', 'mcp-ai-wpoos' ) ),
+				array( 'Art.32', 'Security of Processing', $is( 'require_https' ) && $is( 'enable_hsts' ), 'require_https, enable_hsts', __( 'Transport encryption enforced', 'mcp-ai-wpoos' ) ),
+				array( 'Art.33', 'Breach Notification Readiness', $is( 'enable_security_audit_log' ), 'enable_security_audit_log', __( 'Audit log enables breach detection', 'mcp-ai-wpoos' ) ),
+				array( 'Art.35', 'DPIA — Access Control', ! empty( $settings['restrict_to_roles'] ), 'restrict_to_roles', __( 'Role restriction configured', 'mcp-ai-wpoos' ) ),
 			),
 			'soc2' => array(
-				array( 'CC6.1', 'Logical Access Controls',    $is( 'require_authentication_all' ),                                            'require_authentication_all',             __( 'Master auth switch on', 'mcp-ai-wpoos' ) ),
-				array( 'CC6.2', 'Privileged Access',          $is( 'enable_root_security_key' ),                                              'enable_root_security_key',               __( 'Root security key set', 'mcp-ai-wpoos' ) ),
-				array( 'CC6.3', 'Network Protection',         $is( 'enable_ip_whitelist' ) || $is( 'enable_ip_blacklist' ),                    'IP filtering',                           __( 'IP allow/deny active', 'mcp-ai-wpoos' ) ),
-				array( 'CC6.6', 'Vulnerability Management',   $is( 'enable_prompt_injection_detector' ) && $is( 'enable_pii_filter' ),         'AI safety controls',                     __( 'Injection detector + PII filter on', 'mcp-ai-wpoos' ) ),
-				array( 'CC6.7', 'Data Transmission Security', $is( 'require_https' ),                                                         'require_https',                          __( 'HTTPS enforced', 'mcp-ai-wpoos' ) ),
-				array( 'CC7.1', 'Change Detection',           $is( 'enable_security_audit_log' ),                                             'enable_security_audit_log',              __( 'Audit log active', 'mcp-ai-wpoos' ) ),
-				array( 'CC7.2', 'Incident Response',          $is( 'enable_security_audit_log' ) && $is( 'enable_rate_limiting' ),             'enable_security_audit_log + rate limit', __( 'Logging and rate limiting on', 'mcp-ai-wpoos' ) ),
-				array( 'CC8.1', 'Change Management Approval', $is( 'enable_hitl_for_write_tools' ),                                            'enable_hitl_for_write_tools',            __( 'HITL approvals for write tools', 'mcp-ai-wpoos' ) ),
+				array( 'CC6.1', 'Logical Access Controls', $is( 'require_authentication_all' ), 'require_authentication_all', __( 'Master auth switch on', 'mcp-ai-wpoos' ) ),
+				array( 'CC6.2', 'Privileged Access', $is( 'enable_root_security_key' ), 'enable_root_security_key', __( 'Root security key set', 'mcp-ai-wpoos' ) ),
+				array( 'CC6.3', 'Network Protection', $is( 'enable_ip_whitelist' ) || $is( 'enable_ip_blacklist' ), 'IP filtering', __( 'IP allow/deny active', 'mcp-ai-wpoos' ) ),
+				array( 'CC6.6', 'Vulnerability Management', $is( 'enable_prompt_injection_detector' ) && $is( 'enable_pii_filter' ), 'AI safety controls', __( 'Injection detector + PII filter on', 'mcp-ai-wpoos' ) ),
+				array( 'CC6.7', 'Data Transmission Security', $is( 'require_https' ), 'require_https', __( 'HTTPS enforced', 'mcp-ai-wpoos' ) ),
+				array( 'CC7.1', 'Change Detection', $is( 'enable_security_audit_log' ), 'enable_security_audit_log', __( 'Audit log active', 'mcp-ai-wpoos' ) ),
+				array( 'CC7.2', 'Incident Response', $is( 'enable_security_audit_log' ) && $is( 'enable_rate_limiting' ), 'enable_security_audit_log + rate limit', __( 'Logging and rate limiting on', 'mcp-ai-wpoos' ) ),
+				array( 'CC8.1', 'Change Management Approval', $is( 'enable_hitl_for_write_tools' ), 'enable_hitl_for_write_tools', __( 'HITL approvals for write tools', 'mcp-ai-wpoos' ) ),
 			),
 			'hipaa' => array(
-				array( '164.312(a)(1)',    'Access Control',          $is( 'require_authentication_all' ) || $is( 'minimum_capability' ),        'Authentication controls',    __( 'User authentication enforced', 'mcp-ai-wpoos' ) ),
-				array( '164.312(a)(2)(i)','Unique User Identification',$is( 'bypass_auth_for_logged_in' ) || $is( 'require_authentication_all' ),'User ID tracking',           __( 'Each user uniquely identified', 'mcp-ai-wpoos' ) ),
-				array( '164.312(b)',       'Audit Controls',           $is( 'enable_security_audit_log' ),                                        'enable_security_audit_log',  __( 'Audit log enabled', 'mcp-ai-wpoos' ) ),
-				array( '164.312(c)(1)',    'Integrity',                $is( 'enable_root_security_key' ),                                         'enable_root_security_key',   __( 'Root security key set', 'mcp-ai-wpoos' ) ),
-				array( '164.312(d)',       'Authentication Person',    $is( 'enable_2fa_requirement' ) || $is( 'enable_root_security_key' ),      '2FA or root key',            __( '2FA requirement or root key active', 'mcp-ai-wpoos' ) ),
-				array( '164.312(e)(1)',    'Transmission Security',    $is( 'require_https' ) && $is( 'enable_hsts' ),                            'require_https, enable_hsts', __( 'HTTPS and HSTS enforced', 'mcp-ai-wpoos' ) ),
-				array( '164.312(e)(2)(ii)','Encryption',              $is( 'enable_security_headers' ),                                          'enable_security_headers',    __( 'Security headers enabled', 'mcp-ai-wpoos' ) ),
+				array( '164.312(a)(1)', 'Access Control', $is( 'require_authentication_all' ) || $is( 'minimum_capability' ), 'Authentication controls', __( 'User authentication enforced', 'mcp-ai-wpoos' ) ),
+				array( '164.312(a)(2)(i)', 'Unique User Identification', $is( 'bypass_auth_for_logged_in' ) || $is( 'require_authentication_all' ), 'User ID tracking', __( 'Each user uniquely identified', 'mcp-ai-wpoos' ) ),
+				array( '164.312(b)', 'Audit Controls', $is( 'enable_security_audit_log' ), 'enable_security_audit_log', __( 'Audit log enabled', 'mcp-ai-wpoos' ) ),
+				array( '164.312(c)(1)', 'Integrity', $is( 'enable_root_security_key' ), 'enable_root_security_key', __( 'Root security key set', 'mcp-ai-wpoos' ) ),
+				array( '164.312(d)', 'Authentication Person', $is( 'enable_2fa_requirement' ) || $is( 'enable_root_security_key' ), '2FA or root key', __( '2FA requirement or root key active', 'mcp-ai-wpoos' ) ),
+				array( '164.312(e)(1)', 'Transmission Security', $is( 'require_https' ) && $is( 'enable_hsts' ), 'require_https, enable_hsts', __( 'HTTPS and HSTS enforced', 'mcp-ai-wpoos' ) ),
+				array( '164.312(e)(2)(ii)', 'Encryption', $is( 'enable_security_headers' ), 'enable_security_headers', __( 'Security headers enabled', 'mcp-ai-wpoos' ) ),
 			),
 		);
 
@@ -872,25 +875,29 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 
 		$lines[] = $this->csv_row( array( 'Control ID', 'Control Name', 'Status', 'Setting Key(s)', 'Notes' ) );
 		foreach ( $controls as $ctrl ) {
-			$lines[] = $this->csv_row( array(
-				$ctrl['control_id'],
-				$ctrl['control_name'],
-				$ctrl['status'],
-				$ctrl['setting_key'],
-				$ctrl['notes'],
-			) );
+			$lines[] = $this->csv_row(
+				array(
+					$ctrl['control_id'],
+					$ctrl['control_name'],
+					$ctrl['status'],
+					$ctrl['setting_key'],
+					$ctrl['notes'],
+				)
+			);
 		}
 
 		$lines[] = $this->csv_row( array() );
 		$lines[] = $this->csv_row( array( 'Recent Security Events (last 20)' ) );
 		$lines[] = $this->csv_row( array( 'Timestamp', 'Event', 'IP', 'User ID' ) );
 		foreach ( $recent_events as $event ) {
-			$lines[] = $this->csv_row( array(
-				$event['timestamp'] ?? '',
-				$event['event'] ?? ( $event['type'] ?? '' ),
-				$event['ip'] ?? '',
-				$event['user_id'] ?? '',
-			) );
+			$lines[] = $this->csv_row(
+				array(
+					$event['timestamp'] ?? '',
+					$event['event'] ?? ( $event['type'] ?? '' ),
+					$event['ip'] ?? '',
+					$event['user_id'] ?? '',
+				)
+			);
 		}
 
 		return implode( "\r\n", $lines );
@@ -910,5 +917,4 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 		}
 		return implode( ',', $parts );
 	}
-
 }

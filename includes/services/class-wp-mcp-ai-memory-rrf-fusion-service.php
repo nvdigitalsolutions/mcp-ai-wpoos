@@ -349,11 +349,11 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name interpolation, see above.
-				"SELECT *, MATCH(title, content) AGAINST(%s IN NATURAL LANGUAGE MODE) AS relevance "
+				'SELECT *, MATCH(title, content) AGAINST(%s IN NATURAL LANGUAGE MODE) AS relevance '
 				. "FROM `{$table}` "
-				. "WHERE agent_id = %s "
+				. 'WHERE agent_id = %s '
 				. "AND ( cct_status IS NULL OR cct_status = 'publish' ) "
-				. "AND MATCH(title, content) AGAINST(%s IN NATURAL LANGUAGE MODE) "
+				. 'AND MATCH(title, content) AGAINST(%s IN NATURAL LANGUAGE MODE) '
 				. 'ORDER BY relevance DESC LIMIT %d',
 				$query,
 				$agent_id_s,
@@ -598,7 +598,8 @@ class WP_MCP_AI_Memory_RRF_Fusion_Service {
 		return $weighted;
 	}
 
-	/* ----------------------------------------------------------------------
+	/*
+	 ----------------------------------------------------------------------
 	 * Internal helpers
 	 * ------------------------------------------------------------------- */
 

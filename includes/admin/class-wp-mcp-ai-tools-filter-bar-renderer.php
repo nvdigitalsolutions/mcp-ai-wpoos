@@ -127,7 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				$view_js      = ! empty( $args['view'] ) ? wp_json_encode( $args['view'] ) : '';
 				$subtab_js    = ! empty( $args['subtab'] ) ? wp_json_encode( $args['subtab'] ) : '';
 				ob_start();
-				?>
+			?>
 				(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
 						const $button = $(this);

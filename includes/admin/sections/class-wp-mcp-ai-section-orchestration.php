@@ -565,7 +565,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.stat-value{font-size:32px;font-weight:bold;color:#2271b1}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-perf-dashboard' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -752,7 +752,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.recommendations-list li{margin:5px 0}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-load-monitor' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -862,7 +862,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.wp-mcp-ai-performance-stats table{margin-top:20px}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-perf-stats' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -1578,11 +1578,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 					$overview_script = 'jQuery(document).ready(function($) {'
 						. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - overview charts will not display");return;}'
-						. 'var d=' . wp_json_encode( array(
-							'workforce' => $overview_workforce_data,
-							'tools'     => $overview_tools_data,
-							'capacity'  => $overview_capacity_data,
-						) ) . ';'
+						. 'var d=' . wp_json_encode(
+							array(
+								'workforce' => $overview_workforce_data,
+								'tools'     => $overview_tools_data,
+								'capacity'  => $overview_capacity_data,
+							)
+						) . ';'
 						. 'var c=document.getElementById("wp-mcp-ai-overview-workforce-chart");'
 						. 'if(c&&d.workforce.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"pie",data:d.workforce,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"bottom",labels:{padding:10,font:{size:11}}}}}})}'
 						. 'var t=document.getElementById("wp-mcp-ai-overview-tools-chart");'
@@ -1648,7 +1650,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					?>
 				</div>
 				<?php
-			}
+		}
 
 		/**
 		 * Render settings view.
@@ -2460,27 +2462,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 				<!-- Chart.js Initialization -->
 					<?php
-			// Pre-compute chart data and translatable strings for inline script.
-			$agents_role_data   = $this->get_agent_role_distribution_data();
-			$agents_tier_data   = $this->get_workload_tier_distribution_data();
-			$agents_no_data_msg = esc_html__( 'No profession data available. Create professions to see distribution.', 'mcp-ai-wpoos' );
-			$agents_tier_label  = esc_html__( 'Max Tokens per Request', 'mcp-ai-wpoos' );
+					// Pre-compute chart data and translatable strings for inline script.
+					$agents_role_data   = $this->get_agent_role_distribution_data();
+					$agents_tier_data   = $this->get_workload_tier_distribution_data();
+					$agents_no_data_msg = esc_html__( 'No profession data available. Create professions to see distribution.', 'mcp-ai-wpoos' );
+					$agents_tier_label  = esc_html__( 'Max Tokens per Request', 'mcp-ai-wpoos' );
 
-			$agents_script = 'jQuery(document).ready(function($){'
-				. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - charts will not display");return;}'
-				. 'var d=' . wp_json_encode( array(
-					'roleDistribution' => $agents_role_data,
-					'workloadTier'     => $agents_tier_data,
-				) ) . ';'
-				. 'var c=document.getElementById("wp-mcp-ai-agent-role-distribution-chart");'
-				. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
-				. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $agents_no_data_msg ) . '</p>"}'
-				. 'var t=document.getElementById("wp-mcp-ai-workload-tier-chart");'
-				. 'if(t){new Chart(t.getContext("2d"),{type:"bar",data:{labels:d.workloadTier.labels,datasets:d.workloadTier.datasets},options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!1},tooltip:{callbacks:{label:function(t){return t.parsed.y.toLocaleString()+" tokens"}}}},scales:{y:{beginAtZero:!0,ticks:{callback:function(v){return v.toLocaleString()}},title:{display:!0,text:"' . esc_js( $agents_tier_label ) . '"}}}}})}'
-				. '});';
+					$agents_script = 'jQuery(document).ready(function($){'
+					. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - charts will not display");return;}'
+					. 'var d=' . wp_json_encode(
+						array(
+							'roleDistribution' => $agents_role_data,
+							'workloadTier'     => $agents_tier_data,
+						)
+					) . ';'
+					. 'var c=document.getElementById("wp-mcp-ai-agent-role-distribution-chart");'
+					. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
+					. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $agents_no_data_msg ) . '</p>"}'
+					. 'var t=document.getElementById("wp-mcp-ai-workload-tier-chart");'
+					. 'if(t){new Chart(t.getContext("2d"),{type:"bar",data:{labels:d.workloadTier.labels,datasets:d.workloadTier.datasets},options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!1},tooltip:{callbacks:{label:function(t){return t.parsed.y.toLocaleString()+" tokens"}}}},scales:{y:{beginAtZero:!0,ticks:{callback:function(v){return v.toLocaleString()}},title:{display:!0,text:"' . esc_js( $agents_tier_label ) . '"}}}}})}'
+					. '});';
 
-			wp_print_inline_script_tag( $agents_script );
-			?>
+					wp_print_inline_script_tag( $agents_script );
+					?>
 		</div>
 			<?php
 		}
@@ -2956,10 +2960,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			$prof_script = 'jQuery(document).ready(function($){'
 				. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - profession charts will not display");return;}'
-				. 'var d=' . wp_json_encode( array(
-					'roleDistribution' => $prof_role_data,
-					'toolDistribution' => $prof_tool_data,
-				) ) . ';'
+				. 'var d=' . wp_json_encode(
+					array(
+						'roleDistribution' => $prof_role_data,
+						'toolDistribution' => $prof_tool_data,
+					)
+				) . ';'
 				. 'var c=document.getElementById("wp-mcp-ai-profession-role-chart");'
 				. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
 				. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $prof_no_data_msg ) . '</p>"}'

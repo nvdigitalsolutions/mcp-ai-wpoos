@@ -83,10 +83,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 	public function store_context( $agent_id, $context_type, $context_data, $ttl = DAY_IN_SECONDS ) {
 		// Validate inputs.
 		if ( empty( $agent_id ) || empty( $context_type ) || empty( $context_data ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID, context type, and context data are required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID, context type, and context data are required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate TTL bounds (1 hour to 1 year).
@@ -474,10 +471,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 		$context = $this->retrieve_context( $agent_id, $context_id, false );
 
 		if ( ! $context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Context not found or has expired.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Update the context data.
@@ -506,10 +500,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 			);
 		}
 
-		return array(
-			'success' => false,
-			'message' => __( 'Context has expired.', 'mcp-ai-wpoos' ),
-		);
+		return new WP_Error( 'wp_mcp_ai_error', __( 'Context has expired.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**
@@ -523,10 +514,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 		$context = $this->retrieve_context( $agent_id, $context_id, true );
 
 		if ( ! $context ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Context not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Delete the context.

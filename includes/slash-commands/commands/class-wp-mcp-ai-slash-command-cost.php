@@ -62,10 +62,7 @@ class WP_MCP_AI_Slash_Command_Cost {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Cost_Tracking_Service' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Cost tracking service is not available.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Cost tracking service is not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Calculate date range.

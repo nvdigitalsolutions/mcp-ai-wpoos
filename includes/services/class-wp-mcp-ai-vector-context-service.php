@@ -150,10 +150,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		// Generate query embedding.
 		$query_embedding = $this->embed_context( $query );
 		if ( is_wp_error( $query_embedding ) ) {
-			return array(
-				'success' => false,
-				'error'   => $query_embedding->get_error_message(),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', $query_embedding->get_error_message() );
 		}
 
 		// Get all contexts for agent.
@@ -377,19 +374,13 @@ class WP_MCP_AI_Vector_Context_Service {
 	 */
 	public function optimize_context_window( $candidate_contexts, $token_budget, $current_task ) {
 		if ( empty( $candidate_contexts ) || empty( $current_task['query'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Candidate contexts and task query are required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Candidate contexts and task query are required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Generate query embedding.
 		$query_embedding = $this->embed_context( $current_task['query'] );
 		if ( is_wp_error( $query_embedding ) ) {
-			return array(
-				'success' => false,
-				'error'   => $query_embedding->get_error_message(),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', $query_embedding->get_error_message() );
 		}
 
 		// Score contexts by semantic similarity.

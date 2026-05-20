@@ -113,17 +113,17 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 		// Validate chart type.
 		$valid_types = array( 'line', 'bar', 'pie', 'doughnut', 'scatter', 'radar' );
 		if ( ! isset( $arguments['type'] ) || ! in_array( $arguments['type'], $valid_types, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Invalid chart type. Must be one of: ' . implode( ', ', $valid_types ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Invalid chart type. Must be one of: ' . implode( ', ', $valid_types )
 			);
 		}
 
 		// Validate data.
 		if ( ! isset( $arguments['data'] ) || ! is_array( $arguments['data'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Chart data is required',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Chart data is required'
 			);
 		}
 

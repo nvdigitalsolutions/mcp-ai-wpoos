@@ -91,17 +91,17 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		// Validate diagram type.
 		$valid_types = array( 'flowchart', 'sequence', 'gantt', 'class' );
 		if ( ! isset( $arguments['type'] ) || ! in_array( $arguments['type'], $valid_types, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Invalid diagram type. Must be one of: ' . implode( ', ', $valid_types ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Invalid diagram type. Must be one of: ' . implode( ', ', $valid_types )
 			);
 		}
 
 		// Validate code.
 		if ( empty( $arguments['code'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Mermaid diagram code is required',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				'Mermaid diagram code is required'
 			);
 		}
 

@@ -337,7 +337,10 @@ class WP_MCP_AI_REST_Workflow_CPT_Controller extends WP_REST_Controller {
 		$data = array(
 			'name'    => $name,
 			'version' => '1.0.0',
-			'graph'   => is_array( $graph ) ? $graph : array( 'nodes' => array(), 'edges' => array() ),
+			'graph'   => is_array( $graph ) ? $graph : array(
+				'nodes' => array(),
+				'edges' => array(),
+			),
 			'tags'    => is_array( $tags ) ? $tags : array(),
 		);
 

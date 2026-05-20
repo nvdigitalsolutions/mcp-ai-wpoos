@@ -151,10 +151,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Sanitize inputs.
@@ -206,21 +203,14 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		$context_record  = $context_manager->retrieve_context_compressed( $agent_id, $context_id, true );
 
 		if ( ! $context_record ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Context not found or has expired.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check expiration.
 		if ( ! $include_expired && isset( $context_record['expires_at'] ) ) {
 			$expires_timestamp = strtotime( $context_record['expires_at'] );
 			if ( $expires_timestamp && time() > $expires_timestamp ) {
-				return array(
-					'success' => false,
-					'message' => __( 'Context has expired.', 'mcp-ai-wpoos' ),
-					'expired' => true,
-				);
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Context has expired.', 'mcp-ai-wpoos' ) );
 			}
 		}
 

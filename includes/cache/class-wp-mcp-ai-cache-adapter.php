@@ -305,10 +305,7 @@ class WP_MCP_AI_Cache_Adapter {
 	 */
 	public function warmup() {
 		if ( ! $this->is_available() ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Cache backend not available.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Cache backend not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$warmed = 0;
@@ -336,16 +333,21 @@ class WP_MCP_AI_Cache_Adapter {
 			}
 		}
 
+		$message = sprintf(
+			/* translators: 1: warmed count, 2: failed count */
+			__( 'Cache warmup complete. Warmed: %1$d, Failed: %2$d', 'mcp-ai-wpoos' ),
+			$warmed,
+			$failed
+		);
+
+		if ( 0 === $warmed ) {
+			return new WP_Error( 'wp_mcp_ai_error', $message );
+		}
+
 		return array(
-			'success' => $warmed > 0,
 			'warmed'  => $warmed,
 			'failed'  => $failed,
-			'message' => sprintf(
-				/* translators: 1: warmed count, 2: failed count */
-				__( 'Cache warmup complete. Warmed: %1$d, Failed: %2$d', 'mcp-ai-wpoos' ),
-				$warmed,
-				$failed
-			),
+			'message' => $message,
 		);
 	}
 }

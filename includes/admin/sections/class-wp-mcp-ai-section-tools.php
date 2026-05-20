@@ -975,14 +975,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render section fields.
 		 */
 		public function render() {
-		$fields        = $this->get_fields();
-		$subtab_groups = $this->get_subtab_groups();
-		$active_subtab = $this->get_active_subtab();
+			$fields        = $this->get_fields();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
 
-		// Register inline style handle for section tools CSS (populated via
-		// wp_add_inline_style in render_features_footer when features subtab is active).
-		wp_register_style( 'wp-mcp-ai-section-tools', false );
-		wp_enqueue_style( 'wp-mcp-ai-section-tools' );
+			// Register inline style handle for section tools CSS (populated via
+			// wp_add_inline_style in render_features_footer when features subtab is active).
+			wp_register_style( 'wp-mcp-ai-section-tools', false );
+			wp_enqueue_style( 'wp-mcp-ai-section-tools' );
 
 			// Get the active group.
 			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {

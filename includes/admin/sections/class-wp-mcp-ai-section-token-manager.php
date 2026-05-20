@@ -1120,11 +1120,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			$provider_pricing = array(
-				'openai'      => array( 'input_price' => 0.0025, 'cache_multiplier' => 0.50, 'label' => 'OpenAI' ),
-				'anthropic'   => array( 'input_price' => 0.0030, 'cache_multiplier' => 0.10, 'label' => 'Anthropic' ),
-				'deepseek'    => array( 'input_price' => 0.00027, 'cache_multiplier' => 0.10, 'label' => 'DeepSeek' ),
-				'gemini'      => array( 'input_price' => 0.00125, 'cache_multiplier' => 0.25, 'label' => 'Gemini' ),
-				'openrouter'  => array( 'input_price' => 0.0025, 'cache_multiplier' => 0.50, 'label' => 'OpenRouter' ),
+				'openai'      => array(
+					'input_price' => 0.0025,
+					'cache_multiplier' => 0.50,
+					'label' => 'OpenAI',
+				),
+				'anthropic'   => array(
+					'input_price' => 0.0030,
+					'cache_multiplier' => 0.10,
+					'label' => 'Anthropic',
+				),
+				'deepseek'    => array(
+					'input_price' => 0.00027,
+					'cache_multiplier' => 0.10,
+					'label' => 'DeepSeek',
+				),
+				'gemini'      => array(
+					'input_price' => 0.00125,
+					'cache_multiplier' => 0.25,
+					'label' => 'Gemini',
+				),
+				'openrouter'  => array(
+					'input_price' => 0.0025,
+					'cache_multiplier' => 0.50,
+					'label' => 'OpenRouter',
+				),
 			);
 
 			$total_prompt_tokens     = 0;
@@ -1143,7 +1163,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 				$pricing = isset( $provider_pricing[ $provider ] )
 					? $provider_pricing[ $provider ]
-					: array( 'input_price' => 0.002, 'cache_multiplier' => 0.50, 'label' => ucfirst( $provider ) );
+					: array(
+						'input_price' => 0.002,
+						'cache_multiplier' => 0.50,
+						'label' => ucfirst( $provider ),
+					);
 
 				// Cost without caching: cached_tokens * input_price / 1000.
 				$cost_without_cache = ( $cached_tokens / 1000 ) * $pricing['input_price'];
@@ -1611,7 +1635,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$mm_js = ob_get_clean();
 			wp_print_inline_script_tag( $mm_js );
 			?>
-		<?php }
+			<?php
+		}
 
 		/**
 		 * Render detailed usage breakdown for a user.

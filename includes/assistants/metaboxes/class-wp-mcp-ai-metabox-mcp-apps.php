@@ -402,7 +402,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 			</div>
 		</script>
 		<?php
-		}
+	}
 
 		/**
 		 * Render the JavaScript for the MCP Apps metabox.
@@ -410,14 +410,14 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		 * @since 1.8.0
 		 * @return void
 		 */
-		protected function render_script() {
-			$app_index          = (int) count( $this->get_current_apps_count() );
-			$max_apps_message   = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
-			$confirm_message    = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
-			$mcp_app_label      = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
+	protected function render_script() {
+		$app_index          = (int) count( $this->get_current_apps_count() );
+		$max_apps_message   = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
+		$confirm_message    = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
+		$mcp_app_label      = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
 
-			ob_start();
-			?>
+		ob_start();
+		?>
 			( function() {
 				var appIndex = <?php echo (int) $app_index; ?>;
 				var maxApps = 10;

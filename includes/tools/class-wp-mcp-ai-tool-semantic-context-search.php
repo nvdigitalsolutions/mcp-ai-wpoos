@@ -128,27 +128,21 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $arguments['query'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Search query is required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Search query is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if OpenAI is configured.
 		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
 		$api_key  = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 		if ( empty( $api_key ) ) {
-			return array(
-				'success'  => false,
-				'message'  => __( 'OpenAI API key is required for semantic search. Please configure it in plugin settings or use retrieve_agent_memory for keyword-based search.', 'mcp-ai-wpoos' ),
-				'fallback' => 'retrieve_agent_memory',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'OpenAI API key is required for semantic search. Please configure it in plugin settings or use retrieve_agent_memory for keyword-based search.', 'mcp-ai-wpoos' ),
+				array( 'fallback' => 'retrieve_agent_memory' )
 			);
 		}
 
@@ -184,10 +178,10 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( ! $result['success'] ) {
-			return array(
-				'success'  => false,
-				'message'  => isset( $result['error'] ) ? $result['error'] : __( 'Semantic search failed.', 'mcp-ai-wpoos' ),
-				'fallback' => 'retrieve_agent_memory',
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				isset( $result['error'] ) ? $result['error'] : __( 'Semantic search failed.', 'mcp-ai-wpoos' ),
+				array( 'fallback' => 'retrieve_agent_memory' )
 			);
 		}
 

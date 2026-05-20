@@ -1033,7 +1033,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$source_result = $this->try_source_cancel( $job_id, $user_id );
 		if ( true === $source_result ) {
 			do_action( 'wp_mcp_ai_chat_jobs_cancel', $job_id, $user_id );
-			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'job_id' => $job_id,
+				)
+			);
 		}
 		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
 			$source_result->add_data( array( 'status' => 400 ) );
@@ -1067,7 +1072,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		 */
 		do_action( 'wp_mcp_ai_chat_jobs_cancel', $job_id, $user_id );
 
-		return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'job_id' => $job_id,
+			)
+		);
 	}
 
 	/**
@@ -1094,7 +1104,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$source_result = $this->try_source_retry( $job_id, $user_id );
 		if ( true === $source_result ) {
 			do_action( 'wp_mcp_ai_chat_jobs_retry', $job_id, $user_id );
-			return rest_ensure_response( array( 'success' => true, 'job_id' => $job_id ) );
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'job_id' => $job_id,
+				)
+			);
 		}
 		if ( is_wp_error( $source_result ) && 'wp_mcp_ai_no_source' !== $source_result->get_error_code() ) {
 			$source_result->add_data( array( 'status' => 400 ) );
@@ -1128,7 +1143,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		 */
 		do_action( 'wp_mcp_ai_chat_jobs_retry', $job_id, $user_id );
 
-		return rest_ensure_response( array( 'success' => true, 'job_id' => $result ) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'job_id' => $result,
+			)
+		);
 	}
 
 	/**

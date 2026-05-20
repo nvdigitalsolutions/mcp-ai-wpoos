@@ -302,13 +302,13 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 		$js = ob_get_clean();
 		wp_print_inline_script_tag( $js );
 		$this->render_documentation_link();
-		}
+	}
 
 		/**
 		 * Get the dataset catalog (reusing the logic from the recommended datasets tool).
-	 *
-	 * @return array Array of dataset information.
-	 */
+		 *
+		 * @return array Array of dataset information.
+		 */
 	private function get_dataset_catalog() {
 		// Include a subset of top datasets for the UI. Full catalog is in the tool.
 		return array(
