@@ -438,6 +438,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 50000,
 					'suffix'      => '',
 				),
+				'section_semantic_compression'    => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Caveman-style compression strips unnecessary grammar and filler from prompts before sending to AI models. All facts, numbers, and technical terms are preserved verbatim.', 'mcp-ai-wpoos' ) . '</p>',
+				),
+				'enable_semantic_compression'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Reduces token usage by 20-35% with no quality loss. Strips grammar, connectives, and filler words while preserving all facts and specific data.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'semantic_compression_level'      => array(
+					'type'        => 'select',
+					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
+					'default'     => '2',
+					'options'     => array(
+						'1' => __( 'Conservative — Remove only connectives and intensifiers (10-15% savings)', 'mcp-ai-wpoos' ),
+						'2' => __( 'Balanced (Recommended) — Full caveman compression (20-35% savings)', 'mcp-ai-wpoos' ),
+						'3' => __( 'Aggressive — Maximum compression, shortest sentences (30-40% savings)', 'mcp-ai-wpoos' ),
+					),
+				),
 				'slider_section_predictive'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'mcp-ai-wpoos' ) . '</h3>',
