@@ -55,35 +55,18 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 	public static function execute( $workflow_post_id, $input = array(), $context = array() ) {
 		$workflow_post_id = absint( $workflow_post_id );
 
-		$noop = array(
-			'success' => false,
-			'run_id'  => '',
-			'results' => array(),
-			'message' => __( 'Workflow Engine V2 is disabled.', 'mcp-ai-wpoos' ),
-		);
-
 		if ( ! self::is_enabled() ) {
-			return $noop;
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Workflow Engine V2 is disabled.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'run_id'  => '',
-				'results' => array(),
-				'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Permission denied.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post = get_post( $workflow_post_id );
 
 		if ( ! $post || WP_MCP_AI_Workflow_CPT::CPT !== $post->post_type ) {
-			return array(
-				'success' => false,
-				'run_id'  => '',
-				'results' => array(),
-				'message' => __( 'Workflow post not found.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Workflow post not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		/**

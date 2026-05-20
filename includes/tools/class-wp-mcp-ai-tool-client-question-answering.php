@@ -127,9 +127,9 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||
 			! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Browser-native AI tasks are not enabled.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Browser-native AI tasks are not enabled.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -137,9 +137,9 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 		$ctx      = isset( $arguments['context'] ) ? $arguments['context'] : '';
 
 		if ( empty( $question ) || empty( $ctx ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Both question and context parameters are required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Both question and context parameters are required.', 'mcp-ai-wpoos' )
 			);
 		}
 

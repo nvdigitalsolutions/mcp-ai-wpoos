@@ -122,9 +122,9 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['agent_id'] ) || empty( $arguments['task'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID and task description are required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent ID and task description are required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -162,9 +162,9 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Get communication service.
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent communication system not available.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent communication system not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -200,10 +200,10 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 				)
 			);
 
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-				'code'    => $result->get_error_code(),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$result->get_error_message(),
+				array( 'code' => $result->get_error_code() )
 			);
 		}
 

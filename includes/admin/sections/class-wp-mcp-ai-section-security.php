@@ -35,7 +35,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	class WP_MCP_AI_Section_Security extends WP_MCP_AI_Settings_Section {
 
 		// ---------------------------------------------------------------- //
-		//  Identity                                                          //
+		// Identity                                                          //
 		// ---------------------------------------------------------------- //
 
 		/**
@@ -84,7 +84,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		}
 
 		// ---------------------------------------------------------------- //
-		//  Sub-tab routing                                                   //
+		// Sub-tab routing                                                   //
 		// ---------------------------------------------------------------- //
 
 		/**
@@ -233,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		}
 
 		// ---------------------------------------------------------------- //
-		//  Fields                                                            //
+		// Fields                                                            //
 		// ---------------------------------------------------------------- //
 
 		/**
@@ -798,7 +798,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
 	<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/security/SECURITY_HARDENING.md"
 		target="_blank" rel="noopener noreferrer">
-		<?php esc_html_e( 'View Security Hardening Docs', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'View Security Hardening Docs', 'mcp-ai-wpoos' ); ?>
 		<span class="dashicons dashicons-external" style="font-size: 14px;"></span>
 	</a>
 </p>
@@ -821,7 +821,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 <a href="<?php echo esc_url( $subtab_url ); ?>"
 	class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
 	data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
-	<?php echo esc_html( $group['label'] ); ?>
+				<?php echo esc_html( $group['label'] ); ?>
 </a>
 		<?php endforeach; ?>
 </nav>
@@ -928,20 +928,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	</div>
 
 	<!-- Quick wins -->
-	<?php if ( ! empty( $quick_wins ) ) : ?>
+			<?php if ( ! empty( $quick_wins ) ) : ?>
 	<div class="wp-mcp-ai-quick-wins" style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:16px;margin-bottom:24px;">
 		<h4 style="margin-top:0;"><?php esc_html_e( '⚡ Quick Wins (highest-impact unmet signals)', 'mcp-ai-wpoos' ); ?></h4>
 		<ul style="margin:0;padding-left:20px;">
-			<?php foreach ( $quick_wins as $win ) : ?>
+				<?php foreach ( $quick_wins as $win ) : ?>
 			<li style="margin-bottom:8px;">
 				<strong><?php echo esc_html( $win['label'] ); ?></strong>
-				<?php if ( ! empty( $win['detail'] ) ) : ?>
+					<?php if ( ! empty( $win['detail'] ) ) : ?>
 				<span style="color:#646970;"> — <?php echo esc_html( $win['detail'] ); ?></span>
 				<?php endif; ?>
-				<?php if ( ! empty( $win['subtab'] ) ) : ?>
-				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'wp-mcp-ai-dashboard', 'tab' => 'security', 'subtab' => $win['subtab'] ), admin_url( 'admin.php' ) ) . ( ! empty( $win['anchor'] ) ? '#' . $win['anchor'] : '' ) ); ?>"
+					<?php if ( ! empty( $win['subtab'] ) ) : ?>
+				<a href="
+						<?php
+						echo esc_url(
+							add_query_arg(
+								array(
+									'page' => 'wp-mcp-ai-dashboard',
+									'tab' => 'security',
+									'subtab' => $win['subtab'],
+								),
+								admin_url( 'admin.php' )
+							) . ( ! empty( $win['anchor'] ) ? '#' . $win['anchor'] : '' )
+						);
+						?>
+							"
 					style="margin-left:8px;" class="button button-small">
-					<?php esc_html_e( 'Fix →', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Fix →', 'mcp-ai-wpoos' ); ?>
 				</a>
 				<?php endif; ?>
 			</li>
@@ -978,7 +991,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	<!-- Recent security events -->
 	<div class="wp-mcp-ai-recent-events" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin-bottom:24px;">
 		<h4 style="margin-top:0;"><?php esc_html_e( 'Recent Security Events (last 10)', 'mcp-ai-wpoos' ); ?></h4>
-		<?php if ( empty( $recent_events ) ) : ?>
+			<?php if ( empty( $recent_events ) ) : ?>
 			<p style="color:#646970;margin:0;"><?php esc_html_e( 'No security events logged yet. Enable the audit log under Audit & Compliance to start recording events.', 'mcp-ai-wpoos' ); ?></p>
 		<?php else : ?>
 			<table class="widefat striped" style="margin:0;">
@@ -1008,7 +1021,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	<div class="wp-mcp-ai-security-links" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;">
 		<h4 style="margin-top:0;"><?php esc_html_e( 'Security Administration Pages', 'mcp-ai-wpoos' ); ?></h4>
 		<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
-		<?php foreach ( $sibling_links as $link ) : ?>
+			<?php foreach ( $sibling_links as $link ) : ?>
 			<a href="<?php echo esc_url( $link['url'] ); ?>" class="button button-secondary" style="display:flex;align-items:center;gap:6px;justify-content:center;padding:8px 12px;">
 				<span class="dashicons <?php echo esc_attr( $link['icon'] ); ?>"></span>
 				<?php echo esc_html( $link['label'] ); ?>
@@ -1019,11 +1032,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 
 </div><!-- /.wp-mcp-ai-security-overview -->
 
-<?php
-		$refresh_text    = wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) );
-		$refresh_now_text = wp_json_encode( __( 'Refresh Now', 'mcp-ai-wpoos' ) );
-		ob_start();
-		?>
+			<?php
+			$refresh_text    = wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) );
+			$refresh_now_text = wp_json_encode( __( 'Refresh Now', 'mcp-ai-wpoos' ) );
+			ob_start();
+			?>
 		jQuery(function($){
 			$('.wp-mcp-ai-refresh-posture').on('click', function(){
 				var $btn = $(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) ); ?>);
@@ -1037,10 +1050,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				});
 			});
 		});
-		<?php
-		$js = ob_get_clean();
-		wp_print_inline_script_tag( $js );
-		?>
+			<?php
+			$js = ob_get_clean();
+			wp_print_inline_script_tag( $js );
+			?>
 			<?php
 		}
 
@@ -1119,7 +1132,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			<?php
 				$posture_nonce_js = wp_json_encode( $posture_nonce );
 				ob_start();
-				?>
+			?>
 				jQuery(function($){
 					var nonce = <?php echo wp_json_encode( $posture_nonce ); ?>;
 
@@ -1245,7 +1258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			<?php
 				$posture_nonce_js = wp_json_encode( $posture_nonce );
 				ob_start();
-				?>
+			?>
 				jQuery(function($){
 					var nonce = <?php echo wp_json_encode( $posture_nonce ); ?>;
 
@@ -1444,33 +1457,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			<?php
 		}
 
-/**
- * Render a deprecated-alias telemetry table on the AI Safety sub-tab.
- *
- * Shows every registered deprecated alias (from P5 Part 2 infrastructure) so
- * admins can see which legacy slugs are still being called and plan migrations.
- */
-private function render_deprecated_alias_telemetry() {
-if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-return;
-}
+		/**
+		 * Render a deprecated-alias telemetry table on the AI Safety sub-tab.
+		 *
+		 * Shows every registered deprecated alias (from P5 Part 2 infrastructure) so
+		 * admins can see which legacy slugs are still being called and plan migrations.
+		 */
+		private function render_deprecated_alias_telemetry() {
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				return;
+			}
 
-$registry = WP_MCP_AI_Tool_Registry::get_instance();
-if ( ! method_exists( $registry, 'get_deprecated_aliases' ) ) {
-return;
-}
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			if ( ! method_exists( $registry, 'get_deprecated_aliases' ) ) {
+				return;
+			}
 
-$aliases = $registry->get_deprecated_aliases();
-?>
+			$aliases = $registry->get_deprecated_aliases();
+			?>
 </table>
 
 <div class="wp-mcp-ai-cap-fence" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin:16px 0;">
 <h3 style="margin-top:0;"><?php esc_html_e( '⚠️ Deprecated Tool-Alias Telemetry (read-only)', 'mcp-ai-wpoos' ); ?></h3>
 <p><?php esc_html_e( 'Tool slugs that have been renamed. Legacy callers are still routed to the replacement but should be updated. Each alias fires the', 'mcp-ai-wpoos' ); ?>
 <code>wp_mcp_ai_tool_deprecated_alias_invoked</code>
-<?php esc_html_e( 'action once per request.', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'action once per request.', 'mcp-ai-wpoos' ); ?>
 </p>
-<?php if ( empty( $aliases ) ) : ?>
+			<?php if ( empty( $aliases ) ) : ?>
 <p style="color:#46b450;"><?php esc_html_e( '✅ No deprecated aliases registered.', 'mcp-ai-wpoos' ); ?></p>
 <?php else : ?>
 <table class="widefat striped">
@@ -1484,7 +1497,7 @@ $aliases = $registry->get_deprecated_aliases();
 </tr>
 </thead>
 <tbody>
-<?php foreach ( $aliases as $old_slug => $entry ) : ?>
+	<?php foreach ( $aliases as $old_slug => $entry ) : ?>
 <tr>
 <td><code><?php echo esc_html( $old_slug ); ?></code></td>
 <td><code><?php echo esc_html( $entry['new_slug'] ); ?></code></td>
@@ -1499,39 +1512,39 @@ $aliases = $registry->get_deprecated_aliases();
 </div>
 
 <table class="form-table" role="presentation">
-<?php
-}
+			<?php
+		}
 
-/**
- * Render a Pro-only MCP-server token inventory panel on the AI Safety sub-tab.
- *
- * Shows configured MCP server names and their last-rotated timestamps.
- * Only rendered when WP_MCP_AI_PRO_VERSION is defined.
- */
-private function render_mcp_token_inventory() {
-if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-return;
-}
+		/**
+		 * Render a Pro-only MCP-server token inventory panel on the AI Safety sub-tab.
+		 *
+		 * Shows configured MCP server names and their last-rotated timestamps.
+		 * Only rendered when WP_MCP_AI_PRO_VERSION is defined.
+		 */
+		private function render_mcp_token_inventory() {
+			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+				return;
+			}
 
-$settings    = get_option( 'wp_mcp_ai_settings', array() );
-$mcp_servers = isset( $settings['mcp_servers'] ) && is_array( $settings['mcp_servers'] )
-? $settings['mcp_servers']
-: array();
+			$settings    = get_option( 'wp_mcp_ai_settings', array() );
+			$mcp_servers = isset( $settings['mcp_servers'] ) && is_array( $settings['mcp_servers'] )
+			? $settings['mcp_servers']
+			: array();
 
-// Also check dedicated MCP connections option.
-$connections = get_option( 'wp_mcp_ai_mcp_connections', array() );
-if ( is_array( $connections ) ) {
-foreach ( $connections as $conn ) {
-$mcp_servers[] = $conn;
-}
-}
-?>
+			// Also check dedicated MCP connections option.
+			$connections = get_option( 'wp_mcp_ai_mcp_connections', array() );
+			if ( is_array( $connections ) ) {
+				foreach ( $connections as $conn ) {
+					$mcp_servers[] = $conn;
+				}
+			}
+			?>
 </table>
 
 <div class="wp-mcp-ai-cap-fence" style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:16px;margin:16px 0;">
 <h3 style="margin-top:0;"><?php esc_html_e( '🔌 MCP Server Token Inventory (Pro)', 'mcp-ai-wpoos' ); ?></h3>
 <p><?php esc_html_e( 'Connected MCP servers and their bearer-token rotation status. Tokens should be rotated every 90 days.', 'mcp-ai-wpoos' ); ?></p>
-<?php if ( empty( $mcp_servers ) ) : ?>
+			<?php if ( empty( $mcp_servers ) ) : ?>
 <p style="color:#646970;"><?php esc_html_e( 'No MCP servers configured. Add servers under Tools → Connections.', 'mcp-ai-wpoos' ); ?></p>
 <?php else : ?>
 <table class="widefat striped">
@@ -1544,21 +1557,21 @@ $mcp_servers[] = $conn;
 </tr>
 </thead>
 <tbody>
-<?php foreach ( $mcp_servers as $server ) : ?>
-<?php
-$name          = esc_html( $server['name'] ?? $server['url'] ?? __( '(unnamed)', 'mcp-ai-wpoos' ) );
-$url           = esc_url( $server['url'] ?? '' );
-$rotated_raw   = $server['token_rotated_at'] ?? '';
-$rotated_ts    = $rotated_raw ? strtotime( $rotated_raw ) : 0;
-$days_since    = $rotated_ts ? (int) ( ( time() - $rotated_ts ) / DAY_IN_SECONDS ) : PHP_INT_MAX;
-$needs_rotation = $days_since > 90;
-$rotated_label = $rotated_ts
-? wp_date( get_option( 'date_format' ), $rotated_ts )
-: __( 'Unknown', 'mcp-ai-wpoos' );
-$status_html   = $needs_rotation
-? '<span style="color:#d63638;">⚠️ ' . esc_html__( 'Rotation overdue', 'mcp-ai-wpoos' ) . '</span>'
-: '<span style="color:#46b450;">✅ ' . esc_html__( 'OK', 'mcp-ai-wpoos' ) . '</span>';
-?>
+	<?php foreach ( $mcp_servers as $server ) : ?>
+		<?php
+		$name          = esc_html( $server['name'] ?? $server['url'] ?? __( '(unnamed)', 'mcp-ai-wpoos' ) );
+		$url           = esc_url( $server['url'] ?? '' );
+		$rotated_raw   = $server['token_rotated_at'] ?? '';
+		$rotated_ts    = $rotated_raw ? strtotime( $rotated_raw ) : 0;
+		$days_since    = $rotated_ts ? (int) ( ( time() - $rotated_ts ) / DAY_IN_SECONDS ) : PHP_INT_MAX;
+		$needs_rotation = $days_since > 90;
+		$rotated_label = $rotated_ts
+		? wp_date( get_option( 'date_format' ), $rotated_ts )
+		: __( 'Unknown', 'mcp-ai-wpoos' );
+		$status_html   = $needs_rotation
+		? '<span style="color:#d63638;">⚠️ ' . esc_html__( 'Rotation overdue', 'mcp-ai-wpoos' ) . '</span>'
+		: '<span style="color:#46b450;">✅ ' . esc_html__( 'OK', 'mcp-ai-wpoos' ) . '</span>';
+		?>
 <tr>
 <td><?php echo esc_html( $name ); ?></td>
 <td><?php echo esc_html( $url ); ?></td>
@@ -1572,8 +1585,8 @@ $status_html   = $needs_rotation
 </div>
 
 <table class="form-table" role="presentation">
-<?php
-}
+			<?php
+		}
 
 		/**
 		 * Validate section input.

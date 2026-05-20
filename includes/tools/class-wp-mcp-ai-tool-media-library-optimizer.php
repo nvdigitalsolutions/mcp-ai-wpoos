@@ -149,9 +149,9 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
+				$result = new WP_Error(
+					'wp_mcp_ai_error',
+					__( 'Invalid action specified', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -579,14 +579,14 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$image_editor = wp_get_image_editor( $file_path );
 
 		if ( is_wp_error( $image_editor ) ) {
-			return array( 'success' => false );
+			return $image_editor;
 		}
 
 		$image_editor->set_quality( $quality );
 		$saved = $image_editor->save( $file_path );
 
 		if ( is_wp_error( $saved ) ) {
-			return array( 'success' => false );
+			return $saved;
 		}
 
 		return array( 'success' => true );
@@ -606,7 +606,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$image_editor = wp_get_image_editor( $file_path );
 
 		if ( is_wp_error( $image_editor ) ) {
-			return array( 'success' => false );
+			return $image_editor;
 		}
 
 		$image_editor->set_quality( $quality );
@@ -626,7 +626,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$saved = $image_editor->save( $new_file, $mime_type );
 
 		if ( is_wp_error( $saved ) ) {
-			return array( 'success' => false );
+			return $saved;
 		}
 
 		// Delete original if not preserving.

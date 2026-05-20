@@ -20,39 +20,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			/**
 			 * Constructor.
 			 */
-			public function __construct() {
-				add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
-			}
+		public function __construct() {
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+		}
 
 			/**
 			 * Enqueue admin styles for this section's inline CSS.
 			 *
 			 * @param string $hook_suffix The current admin page hook suffix.
 			 */
-			public function enqueue_admin_assets( $hook_suffix ) {
-				// Only on our plugin's settings page.
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only check of page parameter.
-				if ( ! isset( $_GET['page'] ) || 'wp-mcp-ai-dashboard' !== $_GET['page'] ) {
-					return;
-				}
-
-				// Register a dummy handle for inline styles (no source file).
-				// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
-				wp_register_style( 'wp-mcp-ai-advanced-section', false );
-				wp_enqueue_style( 'wp-mcp-ai-advanced-section' );
-
-				$inline_css = '.wp-mcp-ai-status-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;}'
-					. '.wp-mcp-ai-status-success{background:#d4edda;color:#155724;}'
-					. '.wp-mcp-ai-status-warning{background:#fff3cd;color:#856404;}'
-					. '.wp-mcp-ai-status-error{background:#f8d7da;color:#721c24;}'
-					. '.wp-mcp-ai-status-unknown{background:#e2e3e5;color:#383d41;}'
-					. '.wp-mcp-ai-reseed-actions button .dashicons{vertical-align:middle;}'
-					. '.wp-mcp-ai-reseed-actions button.disabled{opacity:0.6;cursor:not-allowed;}'
-					. '@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}'
-					. '.dashicons.spin{animation:spin 1s linear infinite;}';
-
-				wp_add_inline_style( 'wp-mcp-ai-advanced-section', $inline_css );
+		public function enqueue_admin_assets( $hook_suffix ) {
+			// Only on our plugin's settings page.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only check of page parameter.
+			if ( ! isset( $_GET['page'] ) || 'wp-mcp-ai-dashboard' !== $_GET['page'] ) {
+				return;
 			}
+
+			// Register a dummy handle for inline styles (no source file).
+			// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
+			wp_register_style( 'wp-mcp-ai-advanced-section', false );
+			wp_enqueue_style( 'wp-mcp-ai-advanced-section' );
+
+			$inline_css = '.wp-mcp-ai-status-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;}'
+				. '.wp-mcp-ai-status-success{background:#d4edda;color:#155724;}'
+				. '.wp-mcp-ai-status-warning{background:#fff3cd;color:#856404;}'
+				. '.wp-mcp-ai-status-error{background:#f8d7da;color:#721c24;}'
+				. '.wp-mcp-ai-status-unknown{background:#e2e3e5;color:#383d41;}'
+				. '.wp-mcp-ai-reseed-actions button .dashicons{vertical-align:middle;}'
+				. '.wp-mcp-ai-reseed-actions button.disabled{opacity:0.6;cursor:not-allowed;}'
+				. '@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}'
+				. '.dashicons.spin{animation:spin 1s linear infinite;}';
+
+			wp_add_inline_style( 'wp-mcp-ai-advanced-section', $inline_css );
+		}
 
 			/**
 			 * Get section ID.
@@ -1424,7 +1424,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						}
 					});
 				});
-				<?php
+					<?php
 					$template_js = ob_get_clean();
 					wp_print_inline_script_tag( $template_js );
 					?>
@@ -2969,7 +2969,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				<?php endif; ?>
 			</div>
 
-		<?php
+			<?php
 		}
 
 		/**
@@ -3302,7 +3302,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$settings_mgmt_js = ob_get_clean();
 			wp_print_inline_script_tag( $settings_mgmt_js );
 			?>
-		<?php
+			<?php
 		}
 	}
 }

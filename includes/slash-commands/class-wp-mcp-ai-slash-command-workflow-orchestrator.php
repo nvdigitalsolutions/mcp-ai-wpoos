@@ -628,14 +628,13 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	 */
 	public function execute_workflow( $workflow_name, $params = array(), $context = array(), $options = array() ) {
 		if ( ! isset( $this->workflows[ $workflow_name ] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'workflow_not_found',
-				'message' => sprintf(
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				sprintf(
 					/* translators: %s: workflow name */
 					__( 'Workflow "%s" not found.', 'mcp-ai-wpoos' ),
 					$workflow_name
-				),
+				)
 			);
 		}
 
@@ -698,12 +697,12 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			);
 
 			// Update execution state (batched - only on errors or every 5 steps).
-			if ( $save_state && ( 0 === $step_number % 5 || ! $step_result['result']['success'] ) ) {
+			if ( $save_state && ( 0 === $step_number % 5 || is_wp_error( $step_result['result'] ) || ! $step_result['result']['success'] ) ) {
 				$this->update_execution_state( $execution_id, $step_number, $step_result );
 			}
 
 			// Check for errors.
-			if ( is_array( $step_result['result'] ) && ! $step_result['result']['success'] ) {
+			if ( is_wp_error( $step_result['result'] ) || ( is_array( $step_result['result'] ) && ! $step_result['result']['success'] ) ) {
 				// Check for fallback step.
 				if ( isset( $step['on_error'] ) && isset( $step['on_error']['fallback'] ) ) {
 					$fallback_result = $this->execute_fallback_step(
@@ -725,18 +724,19 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 				// If not continuing on error, return failure.
 				if ( ! $continue_on_error ) {
-					return array(
-						'success'      => false,
-						'error'        => 'workflow_step_failed',
-						'message'      => sprintf(
+					return new WP_Error(
+						'wp_mcp_ai_error',
+						sprintf(
 							/* translators: 1: step number, 2: command name */
 							__( 'Workflow failed at step %1$d (%2$s).', 'mcp-ai-wpoos' ),
 							$step_number,
 							$step['command']
 						),
-						'workflow'     => $workflow_name,
-						'execution_id' => $execution_id,
-						'steps'        => $results,
+						array(
+							'workflow'     => $workflow_name,
+							'execution_id' => $execution_id,
+							'steps'        => $results,
+						)
 					);
 				}
 
@@ -875,11 +875,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 		// Return failed result with retry information.
 		if ( ! $result ) {
-			$result = array(
-				'success' => false,
-				'error'   => 'command_execution_failed',
-				'message' => __( 'Command execution failed after retries.', 'mcp-ai-wpoos' ),
-			);
+			$result = new WP_Error( 'wp_mcp_ai_error', __( 'Command execution failed after retries.', 'mcp-ai-wpoos' ) );
 		}
 
 		return array(
@@ -909,14 +905,14 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 		// If condition: check if previous step was successful.
 		if ( isset( $condition['if_success'] ) && $condition['if_success'] ) {
-			if ( ! $previous_result || ! isset( $previous_result['success'] ) || ! $previous_result['success'] ) {
+			if ( ! $previous_result || is_wp_error( $previous_result ) || ! isset( $previous_result['success'] ) || ! $previous_result['success'] ) {
 				return true;
 			}
 		}
 
 		// If not condition: check if previous step failed.
 		if ( isset( $condition['if_failure'] ) && $condition['if_failure'] ) {
-			if ( $previous_result && isset( $previous_result['success'] ) && $previous_result['success'] ) {
+			if ( $previous_result && ! is_wp_error( $previous_result ) && isset( $previous_result['success'] ) && $previous_result['success'] ) {
 				return true;
 			}
 		}
@@ -1029,7 +1025,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 		$this->execution_state[ $execution_id ]['steps'][ $step_number ] = array(
 			'completed_at' => current_time( 'mysql' ),
-			'success'      => isset( $step_result['result']['success'] ) ? $step_result['result']['success'] : false,
+			'success'      => ! is_wp_error( $step_result['result'] ) && isset( $step_result['result']['success'] ) ? $step_result['result']['success'] : false,
 			'retries'      => isset( $step_result['retries'] ) ? $step_result['retries'] : 0,
 		);
 
@@ -1069,11 +1065,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
 
 		if ( ! isset( $saved_states[ $execution_id ] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'execution_not_found',
-				'message' => __( 'Workflow execution not found.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Workflow execution not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		$state               = $saved_states[ $execution_id ];

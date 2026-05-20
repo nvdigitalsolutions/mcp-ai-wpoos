@@ -165,6 +165,7 @@ class WP_MCP_AI_Process_Service {
 	public function run_silent( $command, array $options = array() ) {
 		// Check if process functions are available.
 		if ( ! $this->is_process_available() ) {
+			// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-service utility method.
 			return array(
 				'output'    => '',
 				'error'     => 'Process control functions (proc_open, proc_close) are disabled on this server.',
@@ -198,6 +199,7 @@ class WP_MCP_AI_Process_Service {
 				'success'   => $process->isSuccessful(),
 			);
 		} catch ( ProcessTimedOutException $e ) {
+			// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-service utility method.
 			return array(
 				'output'    => $e->getProcess()->getOutput(),
 				'error'     => $e->getProcess()->getErrorOutput(),
@@ -206,6 +208,7 @@ class WP_MCP_AI_Process_Service {
 				'timeout'   => true,
 			);
 		} catch ( \Exception $e ) {
+			// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-service utility method.
 			return array(
 				'output'    => '',
 				'error'     => $e->getMessage(),

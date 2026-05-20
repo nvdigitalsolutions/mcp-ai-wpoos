@@ -248,15 +248,15 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Agent ID is required.', 'mcp-ai-wpoos' )
 			);
 		}
 		if ( empty( $arguments['source'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Source is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Source is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -290,18 +290,15 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 				);
 				break;
 			default:
-				return array(
-					'success' => false,
+				return new WP_Error(
+					'wp_mcp_ai_error',
 					/* translators: %s: source value */
-					'message' => sprintf( __( 'Unsupported source "%s".', 'mcp-ai-wpoos' ), $source ),
+					sprintf( __( 'Unsupported source "%s".', 'mcp-ai-wpoos' ), $source )
 				);
 		}
 
 		if ( is_wp_error( $items ) ) {
-			return array(
-				'success' => false,
-				'message' => $items->get_error_message(),
-			);
+			return $items;
 		}
 
 		if ( empty( $items ) ) {

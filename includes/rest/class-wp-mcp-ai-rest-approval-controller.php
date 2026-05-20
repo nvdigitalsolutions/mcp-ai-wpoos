@@ -149,16 +149,20 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$queue = WP_MCP_AI_Approval_Queue::get_instance();
-		$items = $queue->get_pending( array(
-			'assistant_id' => (int) $request['assistant_id'],
-			'session_id'   => (string) $request['session_id'],
-			'limit'        => min( 100, (int) $request['limit'] ),
-		) );
+		$items = $queue->get_pending(
+			array(
+				'assistant_id' => (int) $request['assistant_id'],
+				'session_id'   => (string) $request['session_id'],
+				'limit'        => min( 100, (int) $request['limit'] ),
+			)
+		);
 
-		return rest_ensure_response( array(
-			'approvals' => $items,
-			'total'     => count( $items ),
-		) );
+		return rest_ensure_response(
+			array(
+				'approvals' => $items,
+				'total'     => count( $items ),
+			)
+		);
 	}
 
 	/**
@@ -200,11 +204,13 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( array(
-			'success'     => true,
-			'approval_id' => (int) $request['id'],
-			'status'      => 'approved',
-		) );
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'approval_id' => (int) $request['id'],
+				'status'      => 'approved',
+			)
+		);
 	}
 
 	/**
@@ -229,11 +235,13 @@ class WP_MCP_AI_REST_Approval_Controller extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( array(
-			'success'     => true,
-			'approval_id' => (int) $request['id'],
-			'status'      => 'denied',
-		) );
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'approval_id' => (int) $request['id'],
+				'status'      => 'denied',
+			)
+		);
 	}
 
 	/**

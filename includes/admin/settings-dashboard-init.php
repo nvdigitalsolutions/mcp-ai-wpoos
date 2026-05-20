@@ -131,27 +131,27 @@ function wp_mcp_ai_init_settings_dashboard() {
 	}
 
 	// Wrap initialization in try-catch to prevent silent failures.
-try {
-	// Get container for dependency management.
-	$container = wp_mcp_ai_container();
+	try {
+		// Get container for dependency management.
+		$container = wp_mcp_ai_container();
 
-	// Register all sections with the registry using container.
-	// Note: ACP settings are rendered inline within the Orchestration section's
-	// Settings view (see WP_MCP_AI_Section_Orchestration::render_settings_view()),
-	// so there is no standalone ACP section to register here.
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.overview' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.general' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.chat_client' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.custom_filters' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.providers' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
+		// Register all sections with the registry using container.
+		// Note: ACP settings are rendered inline within the Orchestration section's
+		// Settings view (see WP_MCP_AI_Section_Orchestration::render_settings_view()),
+		// so there is no standalone ACP section to register here.
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.overview' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.general' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.chat_client' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.custom_filters' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.providers' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
 
-	// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) are now consolidated in integrations section.
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
-	// Plugin integrations (JetEngine, WooCommerce, Elementor) are now consolidated in a single section.
-	WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.plugins_integration' ) );
+		// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) are now consolidated in integrations section.
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
+		// Plugin integrations (JetEngine, WooCommerce, Elementor) are now consolidated in a single section.
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.plugins_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.a2a' ) );

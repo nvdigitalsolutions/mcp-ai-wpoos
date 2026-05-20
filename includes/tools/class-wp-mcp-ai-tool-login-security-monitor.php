@@ -134,10 +134,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// Calculate time range.
 		$time_range = $this->calculate_time_range( $time_period, $start_date, $end_date );
 		if ( is_wp_error( $time_range ) ) {
-			return array(
-				'success' => false,
-				'error'   => $time_range->get_error_message(),
-			);
+			return $time_range;
 		}
 
 		// Collect login data.

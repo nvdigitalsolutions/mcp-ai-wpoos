@@ -51,18 +51,12 @@ class WP_MCP_AI_Slash_Command_Markup_Stats {
 		$reset   = isset( $flags['reset'] );
 
 		if ( ! class_exists( 'WP_MCP_AI_Markup_Telemetry' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Markup telemetry recorder is not loaded.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Markup telemetry recorder is not loaded.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $reset ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				return array(
-					'success' => false,
-					'message' => __( 'Resetting markup telemetry requires the manage_options capability.', 'mcp-ai-wpoos' ),
-				);
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Resetting markup telemetry requires the manage_options capability.', 'mcp-ai-wpoos' ) );
 			}
 			WP_MCP_AI_Markup_Telemetry::reset();
 			return array(

@@ -155,10 +155,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['agent_id'] ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Agent ID is required.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Agent ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$agent_id        = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
@@ -202,10 +199,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$retrieve = $registry->get_tool( 'retrieve_agent_memory' );
 		if ( ! $retrieve ) {
-			return array(
-				'success' => false,
-				'message' => __( 'retrieve_agent_memory tool is not available.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'retrieve_agent_memory tool is not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$filters = array();
@@ -243,10 +237,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$use_graph          = false;
 		if ( 'graph' === $mode ) {
 			if ( ! $graphify_available ) {
-				return array(
-					'success' => false,
-					'message' => __( 'Graph mode requested but the Graphify addon is not active.', 'mcp-ai-wpoos' ),
-				);
+				return new WP_Error( 'wp_mcp_ai_error', __( 'Graph mode requested but the Graphify addon is not active.', 'mcp-ai-wpoos' ) );
 			}
 			$use_graph = true;
 		} elseif ( 'auto' === $mode && $graphify_available ) {

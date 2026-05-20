@@ -83,10 +83,9 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Get profession service.
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
-			return array(
-				'success'     => false,
-				'message'     => __( 'Profession system not available.', 'mcp-ai-wpoos' ),
-				'professions' => array(),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'Profession system not available.', 'mcp-ai-wpoos' )
 			);
 		}
 

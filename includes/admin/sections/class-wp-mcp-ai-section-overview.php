@@ -205,7 +205,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				. '.wp-mcp-ai-link-card .description{font-size:12px;color:#646970;}'
 			);
 			?>
-		<?php }
+			<?php
+		}
 
 		/**
 		 * Render Auth0 status card.

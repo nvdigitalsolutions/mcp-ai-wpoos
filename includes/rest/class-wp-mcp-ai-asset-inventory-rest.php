@@ -127,13 +127,7 @@ class WP_MCP_AI_Asset_Inventory_REST {
 		$inventory = WP_MCP_AI_Asset_Inventory::get_instance()->get_asset_inventory();
 
 		if ( ! $inventory ) {
-			return new WP_REST_Response(
-				array(
-					'success' => false,
-					'message' => 'No asset inventory found. Please run asset discovery first.',
-				),
-				404
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'No asset inventory found. Please run asset discovery first.', array( 'status' => 404 ) );
 		}
 
 		return new WP_REST_Response(

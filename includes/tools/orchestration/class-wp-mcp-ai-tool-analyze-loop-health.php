@@ -94,10 +94,7 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		if ( empty( $arguments['session_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: session_id',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: session_id' );
 		}
 
 		$session_id    = $arguments['session_id'];
@@ -108,10 +105,7 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 		$session = $this->get_session( $session_id );
 
 		if ( ! $session ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'Session %s not found', $session_id ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', sprintf( 'Session %s not found', $session_id ) );
 		}
 
 		// Analyze various health indicators.
