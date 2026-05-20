@@ -100,7 +100,7 @@
 		"yauzl": ">=3.2.1",
 		"path-to-regexp": ">=0.1.13",
 		"tmp": ">=0.2.4",
-		"webpack-dev-server": ">=5.2.1",
+		"webpack-dev-server": ">=5.2.4",
 		"langsmith": ">=0.6.0",
 		"basic-ftp": ">=6.0.1",
 		"axios": ">=1.16.0",
