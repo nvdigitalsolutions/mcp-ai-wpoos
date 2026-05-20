@@ -369,6 +369,44 @@ class Test_Agent_Memory_CCT_Schema_V2 extends WP_UnitTestCase {
 	}
 
 	/**
+	 * CCT args normaliser should merge partial payloads over canonical defaults.
+	 */
+	public function test_cct_args_normaliser_merges_with_fallback() {
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Agent_Memory_CCT_Migrator' );
+		$method = $ref->getMethod( 'normalise_cct_args_payload' );
+		$method->setAccessible( true );
+
+		$fallback = array(
+			'name'          => 'Default',
+			'admin_columns' => array(
+				'context_id' => array(
+					'enabled' => true,
+				),
+				'agent_id'   => array(
+					'enabled' => true,
+				),
+			),
+		);
+
+		$partial = maybe_serialize(
+			array(
+				'name'          => 'Custom',
+				'admin_columns' => array(
+					'context_id' => array(
+						'enabled' => false,
+					),
+				),
+			)
+		);
+
+		$merged = $method->invoke( null, $partial, $fallback );
+
+		$this->assertSame( 'Custom', $merged['name'] );
+		$this->assertFalse( $merged['admin_columns']['context_id']['enabled'] );
+		$this->assertTrue( $merged['admin_columns']['agent_id']['enabled'] );
+	}
+
+	/**
 	 * Version accessors return the expected integers.
 	 */
 	public function test_version_accessors_report_expected_integers() {

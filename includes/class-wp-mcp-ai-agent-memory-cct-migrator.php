@@ -229,7 +229,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 		// Rebuild the registration request from the current source-of-truth
 		// (so schema v3+ in future ships without a new migrator class).
 		$request = self::build_registration_request();
-		$request['args'] = self::normalise_structured_payload(
+		$request['args'] = self::normalise_cct_args_payload(
 			isset( $existing_row['args'] ) ? $existing_row['args'] : array(),
 			isset( $request['args'] ) ? (array) $request['args'] : array()
 		);
@@ -247,7 +247,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 				return $failure( 'JetEngine produced an empty upgrade item.' );
 			}
 
-			$item['args'] = self::normalise_structured_payload(
+			$item['args'] = self::normalise_cct_args_payload(
 				isset( $item['args'] ) ? $item['args'] : array(),
 				isset( $request['args'] ) ? (array) $request['args'] : array()
 			);
@@ -336,7 +336,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 
 		$table = self::get_jetengine_cct_table_name( $wpdb );
 
-		if ( '' === $table ) {
+		if ( '' === $table || 1 !== preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
 			return;
 		}
 
@@ -354,14 +354,9 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			return;
 		}
 
-		$stored_args = isset( $row['args'] ) ? maybe_unserialize( $row['args'] ) : array();
-		if ( is_array( $stored_args ) ) {
-			return;
-		}
-
 		$request   = self::build_registration_request();
 		$fallback  = isset( $request['args'] ) ? (array) $request['args'] : array();
-		$fixed     = self::normalise_structured_payload(
+		$fixed     = self::normalise_cct_args_payload(
 			isset( $row['args'] ) ? $row['args'] : '',
 			$fallback
 		);
@@ -370,10 +365,21 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 			return;
 		}
 
+		$stored_args       = self::normalise_structured_payload(
+			isset( $row['args'] ) ? $row['args'] : '',
+			array()
+		);
+		$stored_serialized = maybe_serialize( $stored_args );
+		$fixed_serialized  = maybe_serialize( $fixed );
+
+		if ( $stored_serialized === $fixed_serialized ) {
+			return;
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-row integrity repair before JetEngine init.
 		$updated = $wpdb->update(
 			$table,
-			array( 'args' => maybe_serialize( $fixed ) ),
+			array( 'args' => $fixed_serialized ),
 			array( 'id' => (int) $row['id'] ),
 			array( '%s' ),
 			array( '%d' )
@@ -454,6 +460,29 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 		}
 
 		return $fallback;
+	}
+
+	/**
+	 * Normalize an `args` payload and merge it over the canonical defaults.
+	 *
+	 * @since 1.1.20
+	 *
+	 * @param mixed $value    Raw args value.
+	 * @param array $fallback Canonical default args.
+	 * @return array
+	 */
+	protected static function normalise_cct_args_payload( $value, $fallback = array() ) {
+		$normalised = self::normalise_structured_payload( $value, array() );
+
+		if ( empty( $fallback ) ) {
+			return $normalised;
+		}
+
+		if ( empty( $normalised ) ) {
+			return $fallback;
+		}
+
+		return array_replace_recursive( $fallback, $normalised );
 	}
 
 	/**
