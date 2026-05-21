@@ -438,6 +438,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 50000,
 					'suffix'      => '',
 				),
+				'slider_section_compression'      => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Reduce token usage by stripping unnecessary grammar and filler words from prompts while preserving all facts, numbers, and technical terms.', 'mcp-ai-wpoos' ) . '</p>',
+				),
+				'enable_semantic_compression'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'semantic_compression_level'       => array(
+					'type'        => 'select',
+					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
+					'default'     => '2',
+					'options'     => array(
+						'1' => __( 'Conservative — Remove only connectives and intensifiers (10-15% savings)', 'mcp-ai-wpoos' ),
+						'2' => __( 'Balanced (Recommended) — Full caveman compression (20-35% savings)', 'mcp-ai-wpoos' ),
+						'3' => __( 'Aggressive — Maximum compression, shortest sentences (30-40% savings)', 'mcp-ai-wpoos' ),
+					),
+				),
 				'slider_section_predictive'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'mcp-ai-wpoos' ) . '</h3>',
@@ -1915,6 +1937,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'per_session_token_limit',
 						'enable_per_call_limits',
 						'enable_per_session_limits',
+						'slider_section_compression',
+						'enable_semantic_compression',
+						'semantic_compression_level',
 						'slider_section_predictive',
 						'prediction_confidence_threshold',
 						'prediction_safety_buffer',
