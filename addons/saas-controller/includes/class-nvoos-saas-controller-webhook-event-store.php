@@ -246,7 +246,7 @@ class NVOOS_SaaS_Controller_Webhook_Event_Store {
 	 */
 	protected static function sanitise_short( $value ) {
 		$value = is_scalar( $value ) ? (string) $value : '';
-		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( wp_strip_all_tags( $value ) );
 		if ( strlen( $value ) > 96 ) {
 			$value = substr( $value, 0, 96 );
 		}
@@ -263,7 +263,7 @@ class NVOOS_SaaS_Controller_Webhook_Event_Store {
 	 */
 	protected static function sanitise_message( $value ) {
 		$value = is_scalar( $value ) ? (string) $value : '';
-		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( wp_strip_all_tags( $value ) );
 		if ( strlen( $value ) > 512 ) {
 			$value = substr( $value, 0, 512 );
 		}
