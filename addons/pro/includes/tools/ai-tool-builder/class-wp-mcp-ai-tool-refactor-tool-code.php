@@ -141,6 +141,12 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
+			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				return array(
 					'success' => false,

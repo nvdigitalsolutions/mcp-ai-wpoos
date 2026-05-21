@@ -11,13 +11,13 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.20  
-**Release Date:** 2026-05-18 (May 18, 2026 — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route)  
-**Latest Updates:** May 18, 2026 (v1.1.20) — See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
+**Version:** 1.1.21  
+**Release Date:** 2026-05-20 (May 20, 2026 — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration, Cloud Worker Local Dev Setup, Translation Loading Fix, Unix Theory P5, Docs Hub/SaaS Controller fixes, Folder README P7)  
+**Latest Updates:** May 20, 2026 (v1.1.21) — See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
+**Previous Updates (v1.1.20):** May 18, 2026 (v1.1.20) — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route. See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
+**Previous Updates (v1.1.19):** May 18, 2026 (v1.1.19) — Kimi Provider, ACP Server, MCP Bridge, Unix Theory P7, Security Hardening, Chat Bubble Sweep. See [§ Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026) below.  
 **Previous Updates (v1.1.18):** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
 **Previous Updates (v1.1.17):** May 10, 2026 (v1.1.17) — See [§ Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026) below.  
-**Previous Updates (v1.1.16):** May 6, 2026 (v1.1.16) — See [§ Latest Updates (v1.1.16 — May 2026)](#-latest-updates-v1116--may-2026) below.  
-**Previous Updates (v1.1.15):** May 5, 2026 — **New Providers (OpenRouter + DeepSeek), Orchestration Phases 1–7, LLM Harnessing GA, Memory Bridge G-series, Graphify Data-source Bridge.** (1) **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`) unified gateway for 100+ models (OpenAI / Anthropic / Google / Meta / Mistral) via one key; **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`) first-class provider with `reasoning_content` passthrough; **Kimi K2.6** + **Qwen 3.6** added to model catalog; **LM Studio** native cURL SSE streaming + full May-2026 parity (native `/api/v0`, embeddings, bearer auth, capability-aware tool gating). (2) **Orchestration Phases 1–7 re-landed** with JetEngine CCT `init` priority 11+ fix: Phase 1 (Run Timeline, prompt-injection detector, OTel span exporter), Phase 2 (HITL `WP_MCP_AI_Approval_Queue` + REST `/mcp-ai/v1/approvals/*`), Phase 3 (structured output), Phase 4 (DAG builder), Phase 5 (durable runs `WP_MCP_AI_Durable_Run_Store`), Phase 6 (triggers + webhooks `WP_MCP_AI_Workflow_Trigger_CPT`), Phase 7 (sub-agents, Pro vector-store adapter, Pro team budget manager). (3) **LLM Harnessing GA** (Layers A–H) — seven opt-in per-assistant epistemic layers. Reference: [`docs/llm-harness.md`](docs/llm-harness.md). (4) **19 new slash commands** (11 base + 8 Pro): `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/clear`, `/reset`, `/resume` + Pro `/schedule`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`. (5) **Chat-client Memory Bridge G-series** — REST proxy + Memory Drawer (Memories/Scope/Audit tabs) + SSE `memory_event` frame + pagehide auto-capture + 3 gates. (6) **Retroactive Transcript Mining** stuck-job root causes fixed (PRs #4804 #4826). (7) **Graphify NV oOS data-source bridge** — private CPTs, CCT resolvers, MemPalace `RECALLS` edges, external `$wpdb` tables; Sources tab + Observability dashboard. See [§ Latest Updates (v1.1.15 — May 2026)](#-latest-updates-v1115--may-2026) below for the full list.  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -117,14 +117,15 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare Worker AI, Ollama, LM Studio, OpenRouter, and DeepSeek.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.17)
+### ✨ What's New at a Glance (v1.1.21)
 
-- ✅ **Orchestration Phases 1–7 GA** — HITL approval queue, OTel span exporter, DAG builder, durable runs, triggers/webhooks, sub-agents, Pro vector-store, Pro team budget manager
-- ✅ **LLM Harnessing Subsystem (Layers A–H)** — seven opt-in epistemic layers per-assistant: prompt cues, reasoning/self-consistency, tool router, retrieval+citation, self-refine, memory scoping+PII filter, eval scheduler (+ Pro Layer H fine-tune curriculum export). See [`docs/llm-harness.md`](docs/llm-harness.md).
-- ✅ **Chat SPA addon (`addons/chat-spa/`)** — React-based replacement for the legacy chat shortcode (Phases 1–7, v0.6.0); opt out via `WP_MCP_AI_LEGACY_CHAT_JS` constant. See [`docs/addons/chat-spa.md`](docs/addons/chat-spa.md).
-- ✅ **NV oOS Cloud / SaaS Controller** — operator-side WordPress admin toolkit for provisioning Cloudflare Workers + D1 + KV + AI Gateway + Stripe + OpenRouter from WP-Admin. See [`docs/saas-controller.md`](docs/saas-controller.md).
-- ✅ **Toolkit MCP Servers + `/.well-known/mcp`** — Pro toolkits can expose scoped MCP servers discoverable at `/.well-known/mcp`; toolkit-scoped credentials, cross-mount audit trail, `/mcp-server` slash command. See [`docs/mcp-servers.md`](docs/mcp-servers.md).
-- ✅ **WordPress.org Compliance Hardening** — B-series reviewer findings B1–B13 all resolved; WP.org submission ZIP now built separately via `bin/build-plugin-zip.sh --wp-org`. See [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
+- ✅ **WordPress.org Compliance Re-Audit (May 20)** — all inline JS/CSS removed from 53 base-plugin files; dangerous-functions, superglobal, HTTP-timeout, and inline-notice audits passed; F3/F5/F6/F7b findings resolved; build-pipeline hardened with ZIP exclusions.
+- ✅ **Capability Fence P2b — Full Rollout** — `get_required_capability()` now required on every tool class (~830 tools); `WP_MCP_AI_Tool_Default_Capability` trait; central capability map; PHPCS sniff enforcement. Payload-filter capability leak closed.
+- ✅ **Security Center** — new 5-tab admin page (Posture, Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory) with live security scoring and REST endpoints.
+- ✅ **Model Catalog May 2026 Refresh** — DeepSeek V4 support, Gemini model consolidation, updated pricing across all providers.
+- ✅ **Memory Layer 2026 Phase 7 complete** — Memory Health subtab, Retrieval Waterfall panel, Session Replay tab with read-only chat-memory replay endpoint.
+- ✅ **Kimi (Moonshot AI) — 10th provider** + **ACP Server** (Agent Client Protocol) + **MCP Bridge** (stdio-to-HTTP relay) + **Unix Theory P0–P7 complete**.
+- ✅ **Domain Migration** — all nvoos.com references migrated to nvoos.pro / nvoos.cloud.
 
 **Privacy & Terms Notice:** This plugin connects to external AI services. Review each provider's policies:
 - **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
@@ -331,6 +332,22 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.21 — May 2026)
+
+### May 20, 2026 — WP.org Compliance Re-Audit, Capability Fence P2b, Security Center, Model Catalog Refresh 🛡️🔒📊🧠
+
+- ✅ **WordPress.org Compliance — Multi-Sweep Hardening.** All inline `<script>`/`<style>` echoes removed from 53 base-plugin files and converted to `wp_add_inline_style()` / `wp_print_inline_script_tag()`. Fixed PHP parse errors (duplicate `<?php`, spurious `?>`) across 7 files. Resolved findings F3, F5, F6, F7b with `json_decode()` sanitization, `require_once` guards, path hardening, and HTTP timeout guards. May 20 re-audit: four new audit categories verified clean (dangerous-functions, superglobal-access, HTTP-timeout, inline-notice). Build pipeline hardened — `.codex-wordpress` and `phpcs` excluded from distribution ZIPs. Pro Settings CSS loading restored.
+- ✅ **Capability Fence P2b — Full Rollout.** `get_required_capability()` added to `WP_MCP_AI_Tool_Interface` and deployed across all ~830 tool classes (base + Pro + all addons). `WP_MCP_AI_Tool_Default_Capability` trait for test stubs and anonymous classes. Central `WP_MCP_AI_Tool_Capability_Map` with sanitized values. New `WPMCPAI.Tools.RequiredCapabilityDeclared` PHPCS sniff at severity 5. Capability Fence Audit UI renders per-tool slug/capability/flags correctly.
+- ✅ **Security Center.** New 5-tab admin page: Posture (live security scoring), Compliance Report (WP.org finding tracker), OTel Telemetry (`nvoos.tool.data_type` + `nvoos.tool.duration_ms` span attributes), Deprecated-Alias Tracking, MCP Token Inventory (per-assistant credential audit). REST endpoints + comprehensive PHPUnit coverage.
+- ✅ **Model Catalog May 2026 Refresh.** DeepSeek V4 model family added (`deepseek-chat-v4`, `deepseek-reasoner-v4`). Gemini model entries consolidated and deduplicated. All provider pricing refreshed to May 2026 rates. 88 WPCS lint errors resolved.
+- ✅ **Domain Migration.** All `nvoos.com` references migrated to `nvoos.pro` (documentation + ISO 27001) and `nvoos.cloud` (cloud-worker).
+- ✅ **Cloud Worker Local Dev Setup.** New `README-LOCAL.md`, `scripts/seed-local.mjs`, and `wp-config-local.php` for local cloud-worker development.
+- ✅ **Translation Loading Fix.** Pre-populated `$l10n` with `NOOP_Translations` to prevent early-translation warnings. Deferred Security Audit CPT registration from `plugins_loaded` to `init`.
+- ✅ **Unix Theory P5 Part 2.** Decomposed `git_operations` into `git_inspect` (read-only) + `git_change` (mutating).
+- ✅ **Docs Hub + SaaS Controller fixes.** Non-JSON REST response guard for caching-plugin compatibility. Base-plugin detection corrected in SaaS Controller admin.
+- ✅ **Folder README Convention Phase P7.** Every `includes/` and `addons/pro/includes/` PHP subdirectory now ships a `README.md` — completing Unix Theory P0–P7.
+- 📦 **Versioning** — bumped to **1.1.21** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 ## 🆕 Latest Updates (v1.1.20 — May 2026)
 

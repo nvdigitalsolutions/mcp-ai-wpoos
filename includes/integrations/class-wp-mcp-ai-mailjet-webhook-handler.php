@@ -83,13 +83,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 			$events = $request->get_json_params();
 
 			if ( empty( $events ) || ! is_array( $events ) ) {
-				return new WP_REST_Response(
-					array(
-						'success' => false,
-						'message' => 'Invalid webhook payload',
-					),
-					400
-				);
+				return new WP_Error( 'wp_mcp_ai_error', 'Invalid webhook payload', array( 'status' => 400 ) );
 			}
 
 			$processed = 0;

@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'admin_notices',
 						function () use ( $key, $class_name, $e ) {
 							printf(
-															'<div class="notice notice-error is-dismissible"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
+								'<div class="notice notice-error is-dismissible"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
 								esc_html__( 'Pro Dashboard Error', 'mcp-ai-wpoos' ),
 								esc_html( sprintf( 'Failed to initialize %s', $key ) ),
 								esc_html( $class_name ),
@@ -1607,7 +1607,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$frameworks_js = ob_get_clean();
 			wp_print_inline_script_tag( $frameworks_js );
 			?>
-		<?php }
+			<?php
+		}
 
 		/**
 		 * Render Compliance Reports page.
@@ -2318,7 +2319,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			wp_add_inline_style( 'wp-mcp-ai-chat-statistics', $chat_stats_css );
 			?>
-		<?php }
+			<?php
+		}
 
 		/**
 		 * Render controls summary.
@@ -2800,7 +2802,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			wp_add_inline_style( 'wp-mcp-ai-risk-matrix', $risk_matrix_css );
 			?>
-		<?php }
+			<?php
+		}
 
 		/**
 		 * Render risk register.
@@ -3227,7 +3230,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$fw_ctrl_js = ob_get_clean();
 			wp_print_inline_script_tag( $fw_ctrl_js );
 			?>
-		<?php }
+			<?php
+		}
 
 		/**
 		 * Get ISO 27001 controls from Statement of Applicability.

@@ -152,6 +152,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 		if ( ! empty( $tool_file_raw ) ) {
 			$resolved_tool = realpath( $tool_file_raw );
 			if ( false !== $resolved_tool &&
+				defined( 'WP_CONTENT_DIR' ) &&
 				0 === strpos( wp_normalize_path( $resolved_tool ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				$tool_file = $resolved_tool;
 			} else {
@@ -223,7 +224,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 			$resolved_parent = realpath( dirname( $output_file ) );
 			if ( false === $resolved_parent ) {
 				$result['warning'] = __( 'Invalid output path: parent directory does not exist.', 'mcp-ai-wpoos-pro' );
-			} elseif ( 0 !== strpos( wp_normalize_path( $resolved_parent ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+			} elseif ( ! defined( 'WP_CONTENT_DIR' ) || 0 !== strpos( wp_normalize_path( $resolved_parent ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				$result['warning'] = __( 'Output file must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' );
 			} else {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing documentation markdown file to local disk.

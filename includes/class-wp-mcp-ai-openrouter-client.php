@@ -623,6 +623,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				$payload['transforms'] = array_values( array_map( 'sanitize_text_field', $options['transforms'] ) );
 			}
 
+			// Prompt caching: pass through to upstream providers via OpenRouter.
+			if ( ! empty( $options['prompt_cache_key'] ) ) {
+				$payload['prompt_cache_key'] = sanitize_text_field( $options['prompt_cache_key'] );
+			}
+
+			// Prompt cache retention for providers that support it.
+			if ( ! empty( $options['prompt_cache_retention'] ) && in_array( $options['prompt_cache_retention'], array( 'in_memory', '24h' ), true ) ) {
+				$payload['prompt_cache_retention'] = $options['prompt_cache_retention'];
+			}
+
 			/**
 			 * Filter the OpenRouter request payload before it is sent.
 			 *

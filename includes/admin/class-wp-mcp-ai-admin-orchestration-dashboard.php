@@ -1642,7 +1642,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
 		$table = $wpdb->prefix . 'jet_cct_' . $slug;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Direct read on custom plugin transient and stats tables; no WP Core API available for these schemas. ALTER TABLE on custom plugin tables only; managed by the plugin's own schema migration system.
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 
 		return $exists === $table;
@@ -1685,17 +1685,17 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// where `$slug` is a class constant.
 		$table = $wpdb->prefix . 'jet_cct_' . $slug;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Direct read on custom plugin transient and stats tables; no WP Core API available for these schemas. ALTER TABLE on custom plugin tables only; managed by the plugin's own schema migration system.
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 		if ( $exists !== $table ) {
 			return $default;
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct read on custom plugin transient and stats tables; no WP Core API available for these schemas. Table name is a hardcoded plugin constant; cannot be parameterised in a CREATE/ALTER statement.
 		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
 
 		$tiers = array();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct read on custom plugin transient and stats tables; no WP Core API available for these schemas. Table name is a hardcoded plugin constant; cannot be parameterised in a CREATE/ALTER statement.
 		$rows = $wpdb->get_results( "SELECT memory_tier, COUNT(*) AS n FROM `{$table}` GROUP BY memory_tier" );
 		if ( is_array( $rows ) ) {
 			foreach ( $rows as $row ) {

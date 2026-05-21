@@ -1032,11 +1032,7 @@ function wp_mcp_ai_execute_workflow( $workflow_name, $params = array(), $context
 	$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
 
 	if ( ! $orchestrator ) {
-		return array(
-			'success' => false,
-			'error'   => 'orchestrator_not_available',
-			'message' => __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ),
-		);
+		return new WP_Error( 'wp_mcp_ai_error', __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ) );
 	}
 
 	return $orchestrator->execute_workflow( $workflow_name, $params, $context );

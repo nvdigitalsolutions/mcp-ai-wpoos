@@ -88,14 +88,13 @@ class WP_MCP_AI_Remote_Tester {
 				),
 			);
 
-			return array(
-				'success'  => false,
-				'base_url' => $normalized,
-				'checks'   => $checks,
-				'error'    => array(
-					'code'    => $response->get_error_code(),
-					'message' => $response->get_error_message(),
-				),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$response->get_error_message(),
+				array(
+					'base_url' => $normalized,
+					'checks'   => $checks,
+				)
 			);
 		}
 
@@ -179,16 +178,15 @@ class WP_MCP_AI_Remote_Tester {
 				'details'   => array(),
 			);
 
-			return array(
-				'success'   => false,
-				'base_url'  => $normalized,
-				'checks'    => $checks,
-				'responses' => $responses,
-				'response'  => $responses['directory'],
-				'error'     => array(
-					'code'    => 'wp_mcp_ai_remote_missing_assistant',
-					'message' => $message,
-				),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$message,
+				array(
+					'base_url'  => $normalized,
+					'checks'    => $checks,
+					'responses' => $responses,
+					'response'  => $responses['directory'],
+				)
 			);
 		}
 
@@ -236,16 +234,15 @@ class WP_MCP_AI_Remote_Tester {
 				),
 			);
 
-			return array(
-				'success'   => false,
-				'base_url'  => $normalized,
-				'checks'    => $checks,
-				'responses' => $responses,
-				'response'  => $responses['directory'],
-				'error'     => array(
-					'code'    => $chat_response->get_error_code(),
-					'message' => $chat_response->get_error_message(),
-				),
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$chat_response->get_error_message(),
+				array(
+					'base_url'  => $normalized,
+					'checks'    => $checks,
+					'responses' => $responses,
+					'response'  => $responses['directory'],
+				)
 			);
 		}
 

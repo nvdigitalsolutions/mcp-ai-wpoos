@@ -3258,6 +3258,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
+			// Prompt caching: route similar requests to the same server.
+			if ( ! empty( $options['prompt_cache_key'] ) ) {
+				$payload['prompt_cache_key'] = sanitize_text_field( $options['prompt_cache_key'] );
+			}
+
+			// Prompt cache retention: "in_memory" (default) or "24h" for extended retention.
+			if ( ! empty( $options['prompt_cache_retention'] ) && in_array( $options['prompt_cache_retention'], array( 'in_memory', '24h' ), true ) ) {
+				$payload['prompt_cache_retention'] = $options['prompt_cache_retention'];
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
 				$max_tokens = $resource_mgr->get_max_tokens();
@@ -3365,11 +3375,19 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( ! isset( $decoded['model'] ) && ! empty( $model ) ) {
 					$decoded['model'] = $model;
 				}
+
+				// Extract cached tokens from OpenAI's prompt_tokens_details.
+				if ( isset( $decoded['usage']['prompt_tokens_details']['cached_tokens'] ) ) {
+					if ( ! isset( $decoded['usage'] ) || ! is_array( $decoded['usage'] ) ) {
+						$decoded['usage'] = array();
+					}
+					$decoded['usage']['cached_tokens'] = (int) $decoded['usage']['prompt_tokens_details']['cached_tokens'];
+				}
 			}
 
-			WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
+		WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
 
-			return $decoded;
+		return $decoded;
 		}
 
 		/**

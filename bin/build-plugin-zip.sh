@@ -218,6 +218,9 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.bmad' \
         --exclude '.context' \
         --exclude '.zed' \
+        --exclude '.wp-env.json' \
+        --exclude '.wp-env.test.json' \
+        --exclude '.wp-env.override.json' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -683,6 +686,9 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.bmad' \
         --exclude '.context' \
         --exclude '.zed' \
+        --exclude '.wp-env.json' \
+        --exclude '.wp-env.test.json' \
+        --exclude '.wp-env.override.json' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \

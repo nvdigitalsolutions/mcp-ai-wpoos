@@ -239,7 +239,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			$ingestion_result = $this->ingest_content_source( $arguments['content_source'], $context );
 			if ( is_wp_error( $ingestion_result ) ) {
 					return $ingestion_result;
-				}
+			}
 			if ( is_array( $ingestion_result ) ) {
 				$ingested_source = $ingestion_result;
 				// Merge ingested content into context_data when fields are not already set.

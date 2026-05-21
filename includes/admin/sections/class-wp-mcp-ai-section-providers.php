@@ -1689,7 +1689,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						. '.wp-mcp-ai-provider-item.ui-sortable-placeholder{background:#f9f9f9;border:2px dashed #ddd;visibility:visible !important;height:42px;}'
 						. '.wp-mcp-ai-provider-item .provider-label{flex:1;font-weight:500;}'
 					);
-				?>
+			?>
 				</td>
 			</tr>
 			<?php

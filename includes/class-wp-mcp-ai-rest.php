@@ -2854,6 +2854,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
 
+			// Reorder messages for optimal prompt caching when enabled.
+			if ( ! empty( $options['cache_system_prompt'] ) && class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+				$messages = WP_MCP_AI_Prompt_Optimizer::order_for_cache_hit( $messages, $options );
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'prompt_cache_reordered',
+						'Messages reordered for prefix cache optimization',
+						array(
+							'message_count' => count( $messages ),
+							'first_role'    => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'none',
+						)
+					);
+				}
+			}
+
 			// Check if streaming is requested for agentic loop support.
 			$wants_streaming = $this->request_wants_event_stream( $request );
 
@@ -2923,6 +2939,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 			$messages = $preflight['messages'];
 			$options  = $preflight['options'];
+
+			// Check response cache before making LLM call.
+			$response_cache  = new WP_MCP_AI_Chat_Response_Cache();
+			$cached_response = $response_cache->get_cached_response( $messages, $options );
+			if ( false !== $cached_response ) {
+				// Fire the after-chat-response action for cache hits too.
+				do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $cached_response, $request );
+				return rest_ensure_response( $cached_response );
+			}
 
 			$transcript_context['request_started_at']    = microtime( true );
 			$response                                    = $this->client->create_chat_completion( $messages, $options );
@@ -3415,6 +3440,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( $this->request_wants_event_stream( $request ) ) {
 				return $this->stream_event_stream_payload( $payload, 'message' );
+			}
+
+			// Cache the successful LLM response to avoid redundant API calls.
+			if ( isset( $response_cache ) && isset( $response ) && ! is_wp_error( $response ) ) {
+				$response_cache->set_cached_response( $messages, $options, $response );
 			}
 
 				return rest_ensure_response( $payload );

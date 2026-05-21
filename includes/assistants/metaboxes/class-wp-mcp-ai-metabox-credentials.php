@@ -231,9 +231,9 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 
 		self::$credential_action_script_printed = true;
 		?>
-	<?php
-	ob_start();
-	?>
+		<?php
+		ob_start();
+		?>
 	( function() {
 		function submitCredentialAction( button ) {
 			if ( ! button ) {
@@ -290,9 +290,9 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 			}
 		} );
 	} )();
-	<?php
-	$js = ob_get_clean();
-	wp_print_inline_script_tag( $js );
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
 	}
 
 	/**

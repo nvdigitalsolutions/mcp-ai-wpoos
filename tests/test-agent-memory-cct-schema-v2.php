@@ -321,6 +321,85 @@ class Test_Agent_Memory_CCT_Schema_V2 extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Since v1.1.22 the migrator is disabled by default. With no filter
+	 * overrides in place, bootstrap() must NOT register the admin_init hook
+	 * — this is the regression test that guards against the historical
+	 * sanitize-loop log spam (PRs #5038 / #5039 / #5040 / #5042).
+	 */
+	public function test_migrator_disabled_by_default_does_not_register_admin_init() {
+		remove_all_filters( 'wp_mcp_ai_memory_cct_migrator_enabled' );
+		remove_all_actions( 'admin_init' );
+
+		WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
+
+		$this->assertFalse(
+			has_action( 'admin_init', array( 'WP_MCP_AI_Agent_Memory_CCT_Migrator', 'maybe_run' ) ),
+			'Migrator must be disabled by default (do not call sanitize_item_request on existing CCTs).'
+		);
+	}
+
+	/**
+	 * When the migrator is disabled (default), bootstrap opportunistically
+	 * advances the stored schema version to CURRENT_VERSION so the Memory
+	 * Health subtab reads as healthy and downstream consumers short-circuit.
+	 */
+	public function test_disabled_bootstrap_advances_stored_version_to_current() {
+		remove_all_filters( 'wp_mcp_ai_memory_cct_migrator_enabled' );
+		delete_option( WP_MCP_AI_Agent_Memory_CCT_Migrator::VERSION_OPTION );
+
+		WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
+
+		$this->assertSame(
+			WP_MCP_AI_Agent_Memory_CCT_Migrator::CURRENT_VERSION,
+			WP_MCP_AI_Agent_Memory_CCT_Migrator::get_installed_version(),
+			'Disabled bootstrap must bump the stored version so health checks pass.'
+		);
+	}
+
+	/**
+	 * The opportunistic version bump in bootstrap must never roll a higher
+	 * stored version backwards (forward-compat guard for future schema bumps
+	 * that ship before this bootstrap is updated).
+	 */
+	public function test_disabled_bootstrap_does_not_roll_back_higher_version() {
+		remove_all_filters( 'wp_mcp_ai_memory_cct_migrator_enabled' );
+
+		$future = WP_MCP_AI_Agent_Memory_CCT_Migrator::CURRENT_VERSION + 5;
+		update_option( WP_MCP_AI_Agent_Memory_CCT_Migrator::VERSION_OPTION, $future );
+
+		WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
+
+		$this->assertSame(
+			$future,
+			WP_MCP_AI_Agent_Memory_CCT_Migrator::get_installed_version(),
+			'Disabled bootstrap must never lower a stored version that is already ahead of CURRENT_VERSION.'
+		);
+	}
+
+	/**
+	 * Enabling the filter explicitly (e.g. for development / regression
+	 * testing) restores the legacy behaviour: the admin_init hook is wired
+	 * and the stored version is NOT auto-bumped in bootstrap.
+	 */
+	public function test_explicit_enable_restores_admin_init_registration() {
+		add_filter( 'wp_mcp_ai_memory_cct_migrator_enabled', '__return_true' );
+		delete_option( WP_MCP_AI_Agent_Memory_CCT_Migrator::VERSION_OPTION );
+		remove_all_actions( 'admin_init' );
+
+		WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
+
+		$this->assertNotFalse(
+			has_action( 'admin_init', array( 'WP_MCP_AI_Agent_Memory_CCT_Migrator', 'maybe_run' ) ),
+			'Explicit enable must wire the admin_init hook.'
+		);
+		$this->assertSame(
+			0,
+			WP_MCP_AI_Agent_Memory_CCT_Migrator::get_installed_version(),
+			'Explicit enable must NOT auto-advance the stored version; that is maybe_run()\'s job after a real upgrade.'
+		);
+	}
+
+	/**
 	 * Version accessors return the expected integers.
 	 */
 	public function test_version_accessors_report_expected_integers() {

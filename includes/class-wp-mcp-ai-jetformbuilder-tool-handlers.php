@@ -628,15 +628,18 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$status = (int) $data;
 		}
 
-		return array(
-			'success'   => false,
-			'transport' => $transport,
-			'status'    => $status,
-			'error'     => array(
-				'code'    => $code,
-				'message' => $message,
-				'data'    => $data,
-			),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			$message,
+			array(
+				'transport' => $transport,
+				'status'    => $status,
+				'error'     => array(
+					'code'    => $code,
+					'message' => $message,
+					'data'    => $data,
+				),
+			)
 		);
 	}
 
@@ -667,15 +670,18 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$message = sprintf( __( 'JetFormBuilder request returned HTTP %d.', 'mcp-ai-wpoos' ), (int) $status );
 		}
 
-		return array(
-			'success'   => false,
-			'transport' => $transport,
-			'status'    => (int) $status,
-			'error'     => array(
-				'code'    => $code,
-				'message' => $message,
-				'data'    => $data,
-			),
+		return new WP_Error(
+			'wp_mcp_ai_error',
+			$message,
+			array(
+				'transport' => $transport,
+				'status'    => (int) $status,
+				'error'     => array(
+					'code'    => $code,
+					'message' => $message,
+					'data'    => $data,
+				),
+			)
 		);
 	}
 }

@@ -181,7 +181,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			</div>
 			<?php
 				ob_start();
-				?>
+			?>
 				/* Minimal inline dismiss handler — runs outside the wizard page. */
 				(function(){
 					var n = document.querySelector('.wp-mcp-ai-welcome-notice');
@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				<?php
 				$js = ob_get_clean();
 				wp_print_inline_script_tag( $js );
-			}
+		}
 
 		// -------------------------------------------------------------------------
 		// Asset enqueue

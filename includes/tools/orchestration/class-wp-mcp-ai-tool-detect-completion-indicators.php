@@ -96,10 +96,7 @@ class WP_MCP_AI_Tool_Detect_Completion_Indicators {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		if ( empty( $arguments['text'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: text',
-			);
+			return new WP_Error( 'wp_mcp_ai_error', 'Missing required argument: text' );
 		}
 
 		$text      = $arguments['text'];

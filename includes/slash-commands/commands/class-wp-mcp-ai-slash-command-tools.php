@@ -50,10 +50,7 @@ class WP_MCP_AI_Slash_Command_Tools {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Tool registry is not available.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Tool registry is not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$as_json   = isset( $flags['json'] );

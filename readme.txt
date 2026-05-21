@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.20
+Stable tag: 1.1.21
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -295,6 +295,23 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.21 - May 20, 2026 =
+
+Bumped to 1.1.21 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+**WordPress.org Compliance Multi-Sweep Hardening + Capability Fence P2b Full Rollout + Security Center + Model Catalog May 2026 Refresh**
+
+* **WordPress.org Compliance Re-Audit (May 20).** All inline JS/CSS removed from 53 base-plugin files — converted to `wp_add_inline_style()` and `wp_print_inline_script_tag()`. PHP parse errors fixed (duplicate `<?php`, spurious `?>` tags) across 7 files. Findings F3/F5/F6/F7b resolved. Four new audit categories verified clean (dangerous-functions, superglobal-access, HTTP-timeout, inline-notice). Build pipeline excludes `.codex-wordpress` and `phpcs` from ZIPs. Pro Settings CSS loading restored.
+* **Capability Fence P2b — Full Rollout.** `get_required_capability()` on `WP_MCP_AI_Tool_Interface` deployed to all ~830 tool classes. `WP_MCP_AI_Tool_Default_Capability` trait for test stubs. Central capability map with sanitized values. `WPMCPAI.Tools.RequiredCapabilityDeclared` PHPCS sniff at severity 5. Capability Fence Audit UI fixed.
+* **Security Center.** 5-tab admin page: Posture (live scoring), Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory. REST endpoints + PHPUnit coverage.
+* **Model Catalog May 2026 Refresh.** DeepSeek V4 model family. Gemini consolidation. May 2026 pricing across all providers. 88 WPCS lint errors resolved.
+* **Domain Migration.** `nvoos.com` → `nvoos.pro` / `nvoos.cloud` (docs + ISO 27001 + cloud-worker).
+* **Cloud Worker Local Dev Setup.** `README-LOCAL.md`, `scripts/seed-local.mjs`, `wp-config-local.php`.
+* **Translation Loading Fix.** `NOOP_Translations` pre-population + deferred Security Audit CPT registration to `init`.
+* **Unix Theory P5 Part 2.** `git_operations` → `git_inspect` + `git_change`.
+* **Docs Hub + SaaS Controller fixes.** Non-JSON REST response guard. Base-plugin detection corrected.
+* **Folder README Convention Phase P7.** Every `includes/` and `addons/pro/includes/` PHP subdirectory ships a `README.md` — completing Unix Theory P0–P7.
 
 = 1.1.20 - May 18, 2026 =
 

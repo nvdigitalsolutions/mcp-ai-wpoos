@@ -58,7 +58,7 @@ class WP_MCP_AI_Slash_Command_Compact {
 		$strategy    = isset( $flags['strategy'] ) ? sanitize_key( $flags['strategy'] ) : 'summarize';
 		$keep_recent = isset( $flags['keep'] ) ? absint( $flags['keep'] ) : self::DEFAULT_KEEP_RECENT;
 
-		$valid_strategies = array( 'summarize', 'trim-tools', 'keep-recent', 'full' );
+		$valid_strategies = array( 'summarize', 'trim-tools', 'keep-recent', 'full', 'caveman' );
 		if ( ! in_array( $strategy, $valid_strategies, true ) ) {
 			return new WP_Error(
 				'invalid_strategy',
@@ -96,6 +96,9 @@ class WP_MCP_AI_Slash_Command_Compact {
 
 			case 'full':
 				return $this->strategy_full_compact( $messages, $assistant_id );
+
+			case 'caveman':
+				return $this->strategy_caveman( $messages, $keep_recent, $assistant_id );
 
 			case 'summarize':
 			default:
@@ -432,6 +435,93 @@ class WP_MCP_AI_Slash_Command_Compact {
 				'summary'            => $summary,
 			),
 		);
+	}
+
+	/**
+	 * Caveman strategy: apply semantic compression to the conversation summary.
+	 *
+	 * Uses the caveman compression technique to strip grammar and filler
+	 * from the context summary, making it dramatically more token-efficient
+	 * while preserving all facts and decisions.
+	 *
+	 * @param array $messages     Conversation messages.
+	 * @param int   $keep_recent  Number of recent messages to preserve.
+	 * @param int   $assistant_id Assistant post ID.
+	 * @return array Compaction result.
+	 */
+	private function strategy_caveman( $messages, $keep_recent, $assistant_id ) {
+		$message_count = count( $messages );
+		$keep_recent   = min( $keep_recent, $message_count );
+
+		// Build a summary of the full conversation first.
+		$full_result = $this->strategy_summarize( $messages, $keep_recent, $assistant_id );
+
+		if ( ! empty( $full_result['data']['summary'] ) ) {
+			// Compress the summary text using semantic compressor.
+			$compressor = false;
+			if ( function_exists( 'wp_mcp_ai_get_semantic_compressor' ) ) {
+				$compressor = wp_mcp_ai_get_semantic_compressor();
+			}
+
+			if ( $compressor ) {
+				$original_summary   = $full_result['data']['summary'];
+				$compressed_summary = $compressor->compress(
+					$original_summary,
+					array( 'aggressiveness' => 2 )
+				);
+
+				// Update the compacted messages with the caveman-compressed summary.
+				if ( ! empty( $full_result['data']['compacted_messages'] ) ) {
+					foreach ( $full_result['data']['compacted_messages'] as &$msg ) {
+						if ( 'system' === ( isset( $msg['role'] ) ? $msg['role'] : '' )
+							&& isset( $msg['content'] )
+							&& $original_summary === $msg['content'] ) {
+							$msg['content'] = $compressed_summary;
+							break;
+						}
+					}
+					unset( $msg );
+				}
+
+				// Recalculate savings.
+				$chars_before = strlen( $original_summary );
+				$chars_after  = strlen( $compressed_summary );
+				$extra_saved  = max( 0, intval( ( $chars_before - $chars_after ) / self::CHARS_PER_TOKEN ) );
+				$total_saved  = $full_result['data']['tokens_saved'] + $extra_saved;
+
+				return array(
+					'success' => true,
+					'message' => sprintf(
+						/* translators: 1: original messages, 2: compacted count, 3: tokens saved */
+						__( 'Caveman compact: %1$d → %2$d messages (~%3$s tokens saved). Strategy: caveman.', 'mcp-ai-wpoos' ),
+						$message_count,
+						count( $full_result['data']['compacted_messages'] ),
+						number_format_i18n( $total_saved )
+					),
+					'data'    => array(
+						'messages_before'       => $message_count,
+						'messages_after'        => count( $full_result['data']['compacted_messages'] ),
+						'strategy'              => 'caveman',
+						'tokens_saved'          => $total_saved,
+						'compacted_messages'    => $full_result['data']['compacted_messages'],
+						'summary'               => $compressed_summary,
+						'extra_caveman_savings' => $extra_saved,
+					),
+				);
+			}
+		}
+
+		// Fallback: return the summarize result if compressor not available.
+		$full_result['data']['strategy'] = 'caveman';
+		$full_result['message']          = sprintf(
+			/* translators: 1: original message count, 2: compacted count, 3: tokens saved */
+			__( 'Caveman compact (fallback): %1$d → %2$d messages (~%3$s tokens saved). Strategy: caveman.', 'mcp-ai-wpoos' ),
+			$message_count,
+			count( $full_result['data']['compacted_messages'] ),
+			number_format_i18n( $full_result['data']['tokens_saved'] )
+		);
+
+		return $full_result;
 	}
 
 	/**

@@ -152,6 +152,12 @@ return $this->error_response( __( 'You do not have permission to run shell comma
 			}
 
 			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
+			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				return array(
 					'success' => false,

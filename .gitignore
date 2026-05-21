@@ -1,6 +1,9 @@
 /.codex-wordpress/
 /phpcs/
 /.phpunit.result.cache
+
+# wp-env local overrides (each developer customises their own)
+/.wp-env.override.json
 /node_modules/
 node_modules/
 .DS_Store

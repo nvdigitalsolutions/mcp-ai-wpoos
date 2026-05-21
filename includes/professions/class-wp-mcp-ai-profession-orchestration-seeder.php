@@ -46,10 +46,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		$current_version = get_option( self::VERSION_OPTION, '0.0.0' );
 
 		if ( ! $force && version_compare( $current_version, self::SEEDER_VERSION, '>=' ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Orchestration configurations already seeded. Use --force to re-seed.', 'mcp-ai-wpoos' ),
-			);
+			return new WP_Error( 'wp_mcp_ai_error', __( 'Orchestration configurations already seeded. Use --force to re-seed.', 'mcp-ai-wpoos' ) );
 		}
 
 		$results = array(

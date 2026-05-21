@@ -312,10 +312,10 @@ class WP_MCP_AI_Memory_Privacy_Filter {
 	 * are returned unchanged. Strings shorter than the shortest possible
 	 * pattern match (16 chars by convention) are skipped for speed.
 	 *
-	 * @param array               $input       Array to walk.
+	 * @param array                $input       Array to walk.
 	 * @param array<string,string> $patterns    Active pattern set.
-	 * @param string              $replacement Replacement string.
-	 * @param int                 $counter     Reference counter incremented per match.
+	 * @param string               $replacement Replacement string.
+	 * @param int                  $counter     Reference counter incremented per match.
 	 * @return array Same shape as input, with strings redacted.
 	 */
 	protected static function redact_array_recursive( array $input, array $patterns, $replacement, &$counter ) {
@@ -344,10 +344,10 @@ class WP_MCP_AI_Memory_Privacy_Filter {
 	 *
 	 * @since 1.1.20
 	 *
-	 * @param string              $value       Input string.
+	 * @param string               $value       Input string.
 	 * @param array<string,string> $patterns    Pattern label => regex map.
-	 * @param string              $replacement Replacement to substitute on match.
-	 * @param int                 $counter     Reference counter; incremented by total match count.
+	 * @param string               $replacement Replacement to substitute on match.
+	 * @param int                  $counter     Reference counter; incremented by total match count.
 	 * @return string Redacted string.
 	 */
 	public static function redact_string( $value, array $patterns, $replacement, &$counter ) {

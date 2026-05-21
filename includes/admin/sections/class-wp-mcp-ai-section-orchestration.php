@@ -438,6 +438,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 50000,
 					'suffix'      => '',
 				),
+				'slider_section_compression'      => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Reduce token usage by stripping unnecessary grammar and filler words from prompts while preserving all facts, numbers, and technical terms.', 'mcp-ai-wpoos' ) . '</p>',
+				),
+				'enable_semantic_compression'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'semantic_compression_level'       => array(
+					'type'        => 'select',
+					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
+					'default'     => '2',
+					'options'     => array(
+						'1' => __( 'Conservative — Remove only connectives and intensifiers (10-15% savings)', 'mcp-ai-wpoos' ),
+						'2' => __( 'Balanced (Recommended) — Full caveman compression (20-35% savings)', 'mcp-ai-wpoos' ),
+						'3' => __( 'Aggressive — Maximum compression, shortest sentences (30-40% savings)', 'mcp-ai-wpoos' ),
+					),
+				),
 				'slider_section_predictive'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'mcp-ai-wpoos' ) . '</h3>',
@@ -565,7 +587,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.stat-value{font-size:32px;font-weight:bold;color:#2271b1}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-perf-dashboard' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -752,7 +774,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.recommendations-list li{margin:5px 0}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-load-monitor' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -862,7 +884,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						. '.wp-mcp-ai-performance-stats table{margin-top:20px}'
 					);
 					wp_print_styles( 'wp-mcp-ai-orch-perf-stats' );
-						?>
+				?>
 					<?php
 					return ob_get_clean();
 
@@ -1578,11 +1600,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 					$overview_script = 'jQuery(document).ready(function($) {'
 						. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - overview charts will not display");return;}'
-						. 'var d=' . wp_json_encode( array(
-							'workforce' => $overview_workforce_data,
-							'tools'     => $overview_tools_data,
-							'capacity'  => $overview_capacity_data,
-						) ) . ';'
+						. 'var d=' . wp_json_encode(
+							array(
+								'workforce' => $overview_workforce_data,
+								'tools'     => $overview_tools_data,
+								'capacity'  => $overview_capacity_data,
+							)
+						) . ';'
 						. 'var c=document.getElementById("wp-mcp-ai-overview-workforce-chart");'
 						. 'if(c&&d.workforce.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"pie",data:d.workforce,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"bottom",labels:{padding:10,font:{size:11}}}}}})}'
 						. 'var t=document.getElementById("wp-mcp-ai-overview-tools-chart");'
@@ -1648,7 +1672,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					?>
 				</div>
 				<?php
-			}
+		}
 
 		/**
 		 * Render settings view.
@@ -1681,6 +1705,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'section_acp', // Section header.
 				'enable_acp_server',
 				'acp_require_approval',
+				'slider_section_compression', // Section header.
+				'enable_semantic_compression',
+				'semantic_compression_level',
 			);
 
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
@@ -1888,6 +1915,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						// Agent Client Protocol (ACP).
 						'enable_acp_server',
 						'acp_require_approval',
+						// Semantic compression.
+						'slider_section_compression',
+						'enable_semantic_compression',
+						'semantic_compression_level',
 					),
 				),
 				'thresholds'    => array(
@@ -1913,6 +1944,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'per_session_token_limit',
 						'enable_per_call_limits',
 						'enable_per_session_limits',
+						'slider_section_compression',
+						'enable_semantic_compression',
+						'semantic_compression_level',
 						'slider_section_predictive',
 						'prediction_confidence_threshold',
 						'prediction_safety_buffer',
@@ -2452,33 +2486,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					. '.chart-container.chart-third{min-height:250px}'
 					. '.chart-container h5{margin:0 0 5px 0;color:#1d2327;font-size:14px;font-weight:600}'
 					. '.chart-description{font-size:12px;color:#666;margin:0 0 15px 0;line-height:1.4}';
+				wp_register_style( 'wp-mcp-ai-orch-agents', false, array(), WP_MCP_AI_VERSION );
+				wp_enqueue_style( 'wp-mcp-ai-orch-agents' );
 				wp_add_inline_style( 'wp-mcp-ai-orch-agents', $agents_css );
 				wp_print_styles( 'wp-mcp-ai-orch-agents' );
 				?>
 
 				<!-- Chart.js Initialization -->
 					<?php
-			// Pre-compute chart data and translatable strings for inline script.
-			$agents_role_data   = $this->get_agent_role_distribution_data();
-			$agents_tier_data   = $this->get_workload_tier_distribution_data();
-			$agents_no_data_msg = esc_html__( 'No profession data available. Create professions to see distribution.', 'mcp-ai-wpoos' );
-			$agents_tier_label  = esc_html__( 'Max Tokens per Request', 'mcp-ai-wpoos' );
+					// Pre-compute chart data and translatable strings for inline script.
+					$agents_role_data   = $this->get_agent_role_distribution_data();
+					$agents_tier_data   = $this->get_workload_tier_distribution_data();
+					$agents_no_data_msg = esc_html__( 'No profession data available. Create professions to see distribution.', 'mcp-ai-wpoos' );
+					$agents_tier_label  = esc_html__( 'Max Tokens per Request', 'mcp-ai-wpoos' );
 
-			$agents_script = 'jQuery(document).ready(function($){'
-				. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - charts will not display");return;}'
-				. 'var d=' . wp_json_encode( array(
-					'roleDistribution' => $agents_role_data,
-					'workloadTier'     => $agents_tier_data,
-				) ) . ';'
-				. 'var c=document.getElementById("wp-mcp-ai-agent-role-distribution-chart");'
-				. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
-				. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $agents_no_data_msg ) . '</p>"}'
-				. 'var t=document.getElementById("wp-mcp-ai-workload-tier-chart");'
-				. 'if(t){new Chart(t.getContext("2d"),{type:"bar",data:{labels:d.workloadTier.labels,datasets:d.workloadTier.datasets},options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!1},tooltip:{callbacks:{label:function(t){return t.parsed.y.toLocaleString()+" tokens"}}}},scales:{y:{beginAtZero:!0,ticks:{callback:function(v){return v.toLocaleString()}},title:{display:!0,text:"' . esc_js( $agents_tier_label ) . '"}}}}})}'
-				. '});';
+					$agents_script = 'jQuery(document).ready(function($){'
+					. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - charts will not display");return;}'
+					. 'var d=' . wp_json_encode(
+						array(
+							'roleDistribution' => $agents_role_data,
+							'workloadTier'     => $agents_tier_data,
+						)
+					) . ';'
+					. 'var c=document.getElementById("wp-mcp-ai-agent-role-distribution-chart");'
+					. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
+					. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $agents_no_data_msg ) . '</p>"}'
+					. 'var t=document.getElementById("wp-mcp-ai-workload-tier-chart");'
+					. 'if(t){new Chart(t.getContext("2d"),{type:"bar",data:{labels:d.workloadTier.labels,datasets:d.workloadTier.datasets},options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!1},tooltip:{callbacks:{label:function(t){return t.parsed.y.toLocaleString()+" tokens"}}}},scales:{y:{beginAtZero:!0,ticks:{callback:function(v){return v.toLocaleString()}},title:{display:!0,text:"' . esc_js( $agents_tier_label ) . '"}}}}})}'
+					. '});';
 
-			wp_print_inline_script_tag( $agents_script );
-			?>
+					wp_print_inline_script_tag( $agents_script );
+					?>
 		</div>
 			<?php
 		}
@@ -2937,6 +2975,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				. '.management-card:hover{border-color:#2271b1;box-shadow:0 2px 8px rgba(34,113,177,0.1)}'
 				. '.management-card h4{margin:15px 0 10px;color:#1d2327}'
 				. '.management-card .description{min-height:40px;margin-bottom:15px}';
+			wp_register_style( 'wp-mcp-ai-orch-professions', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-orch-professions' );
 			wp_add_inline_style( 'wp-mcp-ai-orch-professions', $prof_css );
 			wp_print_styles( 'wp-mcp-ai-orch-professions' );
 			?>
@@ -2952,10 +2992,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			$prof_script = 'jQuery(document).ready(function($){'
 				. 'if(typeof Chart==="undefined"){console.warn("Chart.js not loaded - profession charts will not display");return;}'
-				. 'var d=' . wp_json_encode( array(
-					'roleDistribution' => $prof_role_data,
-					'toolDistribution' => $prof_tool_data,
-				) ) . ';'
+				. 'var d=' . wp_json_encode(
+					array(
+						'roleDistribution' => $prof_role_data,
+						'toolDistribution' => $prof_tool_data,
+					)
+				) . ';'
 				. 'var c=document.getElementById("wp-mcp-ai-profession-role-chart");'
 				. 'if(c&&d.roleDistribution.datasets[0].data.length>0){new Chart(c.getContext("2d"),{type:"doughnut",data:d.roleDistribution,options:{responsive:!0,maintainAspectRatio:!1,plugins:{legend:{display:!0,position:"right",labels:{padding:15,font:{size:12}}},tooltip:{callbacks:{label:function(t){var l=t.label||"",v=t.parsed||0,s=t.dataset.data.reduce(function(a,b){return a+b},0),p=((v/s)*100).toFixed(1);return l+": "+v+" ("+p+"%)"}}}}}})}'
 				. 'else if(c){c.parentElement.innerHTML="<p style=\'text-align:center;color:#999;padding:50px 0;\'>' . esc_js( $prof_no_data_msg ) . '</p>"}'
@@ -3271,6 +3313,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				. '.team-role-badge.generalist{background: #f5f5f5; color: #616161;}'
 				. '.team-aggregation{margin-top: 10px; padding: 8px; background: #f9f9f9; border-radius: 3px; font-size: 12px;}';
 
+			wp_register_style( 'wp-mcp-ai-orch-teams', false, array(), WP_MCP_AI_VERSION );
+			wp_enqueue_style( 'wp-mcp-ai-orch-teams' );
 			wp_add_inline_style( 'wp-mcp-ai-orch-teams', $teams_css );
 			wp_print_styles( 'wp-mcp-ai-orch-teams' );
 			?>

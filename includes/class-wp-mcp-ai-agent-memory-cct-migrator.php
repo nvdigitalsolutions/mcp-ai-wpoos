@@ -64,22 +64,54 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 	/**
 	 * Wire the migrator to run once per admin pageview when the version is stale.
 	 *
-	 * Idempotent: re-bootstrapping is a no-op. Disable via the
-	 * `wp_mcp_ai_memory_cct_migrator_enabled` filter.
+	 * Idempotent: re-bootstrapping is a no-op. Disabled by default since
+	 * v1.1.22 — see issue history around PRs #5039 / #5040 / #5042 for the
+	 * trail of attempted upgrade paths through JetEngine's data layer, all
+	 * of which either looped on `sanitize_item_request()` (which validates
+	 * slug uniqueness and therefore always rejects updates to an existing
+	 * CCT) or corrupted the `args` / `meta_fields` columns by writing JSON
+	 * where JetEngine expects PHP-serialized arrays.
+	 *
+	 * Data writes via the bridge / tools layer already persist every Phase
+	 * 2+ field regardless of whether this admin-UI refresh runs, so leaving
+	 * the migrator off is functionally safe — only the JetEngine admin UI
+	 * columns for existing (pre-Phase-2) CCT installs stay at the old
+	 * column set. Opt back in via the
+	 * `wp_mcp_ai_memory_cct_migrator_enabled` filter once a properly
+	 * validated update path (one that does NOT call `sanitize_item_request`
+	 * and does NOT write JSON to `args` / `meta_fields`) is shipped.
 	 */
 	public static function bootstrap() {
 		/**
 		 * Master kill-switch for the CCT schema migrator.
 		 *
-		 * Default: true. Disabling this prevents the JetEngine admin UI from
-		 * showing the Phase 2+ schema columns for existing CCTs, but does
-		 * NOT prevent data writes — the new fields are written either way.
+		 * Default: false (since v1.1.22). When false, the migrator does NOT
+		 * attempt to push a registration request through JetEngine and does
+		 * NOT touch the `wp_jet_post_types` row. The stored schema version
+		 * is opportunistically advanced to {@see self::CURRENT_VERSION} so
+		 * the Memory Health subtab reports a clean state and downstream
+		 * checks short-circuit on subsequent boots.
+		 *
+		 * Set to true via this filter to re-enable the upgrade attempt. This
+		 * is intended for development / regression testing only; the
+		 * production upgrade path needs to be rewritten first (see class
+		 * docblock).
 		 *
 		 * @since 1.1.20
+		 * @since 1.1.22 Default flipped from true to false.
 		 *
-		 * @param bool $enabled Default true.
+		 * @param bool $enabled Default false.
 		 */
-		if ( ! (bool) apply_filters( 'wp_mcp_ai_memory_cct_migrator_enabled', true ) ) {
+		if ( ! (bool) apply_filters( 'wp_mcp_ai_memory_cct_migrator_enabled', false ) ) {
+			// Opportunistically advance the stored version so the Memory
+			// Health subtab and any other consumers of
+			// get_installed_version() see a healthy state. Use a guarded
+			// update so we never roll a higher value backwards if a future
+			// schema bump lands ahead of this bootstrap call.
+			$installed = (int) get_option( self::VERSION_OPTION, 0 );
+			if ( $installed < self::CURRENT_VERSION ) {
+				update_option( self::VERSION_OPTION, self::CURRENT_VERSION, false );
+			}
 			return;
 		}
 

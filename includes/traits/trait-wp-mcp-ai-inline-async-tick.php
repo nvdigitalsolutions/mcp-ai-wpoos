@@ -60,11 +60,11 @@ trait WP_MCP_AI_Inline_Async_Tick_Trait {
 	 */
 	protected static function inline_async_detach_worker_from_client() {
 		if ( function_exists( 'ignore_user_abort' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Stream context detection may trigger warnings on invalid streams; error suppression is intentional with fallback handling.
 			@ignore_user_abort( true );
 		}
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Stream context detection may trigger warnings on invalid streams; error suppression is intentional with fallback handling.
 			@fastcgi_finish_request();
 		}
 	}

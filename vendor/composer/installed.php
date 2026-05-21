@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-fix/translation-loading-too-early',
-        'version' => 'dev-fix/translation-loading-too-early',
-        'reference' => 'b6ef789acd521afdcf0928c96d9cdfc65fe5e7cc',
+        'pretty_version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+        'version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+        'reference' => '6322f6a2996b6f8bf3ab71cfda5c45624ce3cb31',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-fix/translation-loading-too-early',
-            'version' => 'dev-fix/translation-loading-too-early',
-            'reference' => 'b6ef789acd521afdcf0928c96d9cdfc65fe5e7cc',
+            'pretty_version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+            'version' => 'dev-fix/webpack-dev-server-cve-2026-6402',
+            'reference' => '6322f6a2996b6f8bf3ab71cfda5c45624ce3cb31',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

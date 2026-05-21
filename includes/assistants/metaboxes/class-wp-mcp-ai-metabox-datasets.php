@@ -225,6 +225,8 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 		</div>
 
 		<?php
+		wp_register_style( 'wp-mcp-ai-metabox-datasets', false, array(), WP_MCP_AI_VERSION );
+		wp_enqueue_style( 'wp-mcp-ai-metabox-datasets' );
 		wp_add_inline_style(
 			'wp-mcp-ai-metabox-datasets',
 			'.wp-mcp-ai-category-badge,.wp-mcp-ai-priority-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600}'
@@ -300,13 +302,13 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 		$js = ob_get_clean();
 		wp_print_inline_script_tag( $js );
 		$this->render_documentation_link();
-		}
+	}
 
 		/**
 		 * Get the dataset catalog (reusing the logic from the recommended datasets tool).
-	 *
-	 * @return array Array of dataset information.
-	 */
+		 *
+		 * @return array Array of dataset information.
+		 */
 	private function get_dataset_catalog() {
 		// Include a subset of top datasets for the UI. Full catalog is in the tool.
 		return array(
