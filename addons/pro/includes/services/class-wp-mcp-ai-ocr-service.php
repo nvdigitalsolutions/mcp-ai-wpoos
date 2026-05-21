@@ -1054,6 +1054,7 @@ class WP_MCP_AI_OCR_Service {
 			$canvas_dir = nvoos_canvas_get_dir();
 			// Verify the path is within the WordPress plugins directory before use.
 			if ( '' !== $canvas_dir && false !== realpath( $canvas_dir ) &&
+				defined( 'WP_PLUGIN_DIR' ) &&
 				0 === strpos( realpath( $canvas_dir ), realpath( WP_PLUGIN_DIR ) ) ) {
 				$canvas_env = 'NVOOS_CANVAS_PATH=' . escapeshellarg( $canvas_dir ) . ' ';
 			}

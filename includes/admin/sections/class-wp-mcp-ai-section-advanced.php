@@ -31,8 +31,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			 */
 		public function enqueue_admin_assets( $hook_suffix ) {
 			// Only on our plugin's settings page.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only check of page parameter.
-			if ( ! isset( $_GET['page'] ) || 'wp-mcp-ai-dashboard' !== $_GET['page'] ) {
+			if ( ! isset( $_GET['page'] ) || 'wp-mcp-ai-dashboard' !== wp_unslash( $_GET['page'] ) ) {
 				return;
 			}
 

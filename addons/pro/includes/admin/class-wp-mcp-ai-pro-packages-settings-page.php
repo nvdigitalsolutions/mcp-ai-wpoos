@@ -960,7 +960,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 
 		$plugin_file = 'nvoos-canvas/nvoos-canvas.php';
 		$active      = is_plugin_active( $plugin_file );
-		$installed   = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+		$installed   = defined( 'WP_PLUGIN_DIR' ) && file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
 		$zip_path    = $this->get_canvas_zip_path();
 		$zip_found   = ! empty( $zip_path ) && file_exists( $zip_path );
 

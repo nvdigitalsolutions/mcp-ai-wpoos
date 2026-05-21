@@ -185,9 +185,12 @@ class NV_oOS_Docs_Hub_Scanner {
 	 */
 	private function scan_base() {
 		$candidates = array(
-			WP_PLUGIN_DIR . '/mcp-ai-wpoos/docs',
 			dirname( NVOOS_DOCS_HUB_PATH ) . '/mcp-ai-wpoos/docs',
 		);
+
+		if ( defined( 'WP_PLUGIN_DIR' ) ) {
+			array_unshift( $candidates, WP_PLUGIN_DIR . '/mcp-ai-wpoos/docs' );
+		}
 
 		// Also check sibling directory if mcp-ai-wpoos.php exists one level up.
 		$sibling_root = dirname( dirname( NVOOS_DOCS_HUB_PATH ) );

@@ -369,7 +369,7 @@ class WP_MCP_AI_Harness_Eval_Scheduler {
 				'numberposts'      => 200,
 				'fields'           => 'ids',
 				'suppress_filters' => true,
-				'meta_query'       => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				'meta_query'       => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Meta query on custom harness CPT is required for evaluation scheduling; indexed via cron.
 					array(
 						'key'     => WP_MCP_AI_Harness_Profile::META_KEY,
 						'compare' => 'EXISTS',
