@@ -1,0 +1,29 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-chat-memory-ui",
+  "version": "0.1.0-alpha.1",
+  "description": "Chat memory drawer UI — side panel for viewing, editing, scoping, and exporting long-term AI memories — extracted from NV Open Operator System",
+  "main": "dist/nvoos-chat-memory-ui.js",
+  "module": "dist/nvoos-chat-memory-ui.js",
+  "types": "dist/nvoos-chat-memory-ui.d.ts",
+  "exports": {
+    ".": { "import": "./dist/nvoos-chat-memory-ui.js", "default": "./dist/nvoos-chat-memory-ui.js" }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "@nvdigitalsolutions/nvoos-chat-memory": ">=0.1.0-alpha.1"
+  },
+  "peerDependenciesMeta": {
+    "@nvdigitalsolutions/nvoos-chat-memory": {
+      "optional": false
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo ok && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": { "node": ">=18.0.0" }
+}
