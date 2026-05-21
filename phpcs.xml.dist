@@ -30,7 +30,6 @@
 <exclude-pattern>*/tests/fixtures/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 <exclude-pattern>*/addons/pro/*</exclude-pattern>
-<exclude-pattern>*/addons/saas-controller/*</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
@@ -90,7 +89,6 @@
 -->
 <rule ref="WordPress.WP.I18n">
 	<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
-	<exclude-pattern>*/addons/*</exclude-pattern>
 	<properties>
 		<property name="text_domain" type="array">
 			<element value="mcp-ai-wpoos"/>
