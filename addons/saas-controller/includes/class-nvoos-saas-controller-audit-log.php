@@ -106,9 +106,9 @@ class NVOOS_SaaS_Controller_Audit_Log {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $entry {
+	 * @param array $entry { // phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- inline @type comments handle periods individually.
 	 *     @type string $channel    One of {@see self::ALLOWED_CHANNELS}.
-	 *     @type string $action     Short verb (e.g. `list_d1_databases`, `preflight`).
+	 *     @type string $action     Short verb (e.g., `list_d1_databases`, `preflight`).
 	 *     @type string $target     Optional target identifier (account slug, namespace ID).
 	 *     @type string $status     `ok` or `error`.
 	 *     @type int    $latency_ms Optional latency in milliseconds.
@@ -259,7 +259,7 @@ class NVOOS_SaaS_Controller_Audit_Log {
 	 */
 	protected static function sanitise_short( $value ) {
 		$value = is_scalar( $value ) ? (string) $value : '';
-		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( wp_strip_all_tags( $value ) );
 		if ( strlen( $value ) > 96 ) {
 			$value = substr( $value, 0, 96 );
 		}
@@ -276,7 +276,7 @@ class NVOOS_SaaS_Controller_Audit_Log {
 	 */
 	protected static function sanitise_message( $value ) {
 		$value = is_scalar( $value ) ? (string) $value : '';
-		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( strip_tags( $value ) );
+		$value = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $value ) : trim( wp_strip_all_tags( $value ) );
 		if ( strlen( $value ) > 512 ) {
 			$value = substr( $value, 0, 512 );
 		}
