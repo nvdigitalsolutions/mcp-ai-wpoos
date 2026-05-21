@@ -4,7 +4,7 @@
 
 _No changes yet._
 
-## [1.1.21] - 2026-05-20
+## [1.1.21] - 2026-05-21
 
 Bumped to 1.1.21 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
 
@@ -79,6 +79,51 @@ Bumped to 1.1.21 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 
 - **Base backfill.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/guides/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`.
 - **Pro reconciliation.** `addons/pro/includes/` subdirectories documented with the same README convention, completing P0–P7 for the full plugin tree.
+
+### Fixed — Final WP.org Compliance Cleanup (F8–F10, PR #5058)
+
+- **F8 — `$_GET` missing `wp_unslash()` (3 instances).** Fixed in `admin-approvals.php`, `admin-markup-telemetry-page.php`, and `section-advanced.php`. All now follow `absint(wp_unslash())` pattern.
+- **F9 — Bare `phpcs:ignore` without justification (15 instances).** Annotated across 8 files: `admin-orchestration-dashboard.php` (4), `batch-iterator.php` (3), `metric-event-store.php` (2), `inline-async-tick.php` (2), `workflow-triggers.php`, `autoload.php`, `eval-scheduler.php`, `a2a-controller.php`. Zero bare ignores remain.
+- **F10 — Unguarded `WP_CONTENT_DIR`/`WP_PLUGIN_DIR` in addons (11 instances).** `defined()` guards added across `ai-tool-builder/` (6), `docs-hub/` (1), `pro/admin/` (1), `pro/services/` (1) with early-return or `WP_Error` patterns.
+
+### Added — Canonical Return Envelope Compliance (PR #5055)
+
+- **Unix Theory P0/P1 complete.** Converted 191 non-canonical `array('success' => false, ...)` returns to `new WP_Error()` across 105 files (+1212/−1349 lines). 49 tool classes + 24 service/admin/rest/slash-command files.
+- `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff now clean (5 justified non-tool exceptions).
+- `WPMCPAI.Tools.SanitizeAtEntry` violation resolved: `$arguments['plan_name']` and `$arguments['goal']` now sanitized via `sanitize_text_field()` / `sanitize_textarea_field()` before string interpolation.
+- Caller sites hardened: `is_wp_error()` checks replace `$result['success']` / `$result['ok']` tests in site-health, license handler, report generator, workflow orchestrator, and `wp_mcp_ai_find_binary()`.
+
+### Added — Semantic Caveman Compression (PR #5053)
+
+- New `WP_MCP_AI_Semantic_Compressor` service (1,988 lines + 1,156 test lines). Strips grammar, connectives, and filler words while preserving facts, numbers, and technical terms.
+- Opt-in via admin setting (default: disabled). Protects code blocks, JSON, URLs, emails, and HTML from compression.
+- 44 PHPUnit tests covering edge cases and input validation (`tests/test-semantic-compressor.php`).
+- Settings subsequently moved from Advanced → Orchestration tab (PRs #5056, #5057).
+
+### Added — AI Prompt Caching (PR #5050)
+
+- New `WP_MCP_AI_Chat_Response_Cache` and `WP_MCP_AI_Prompt_Optimizer` classes. Comprehensive response caching across all five AI providers.
+- Cache eligibility: non-streaming, temperature=0, `cache_system_prompt` enabled. Keys: `sanitize_key()` + `absint()` + `md5()`. TTL: 60s–3600s.
+- Invalidation on `save_post_mcp_ai_assistant`; version-bump strategy prevents stale cache. `bypass_cache` flag respected.
+- Cache Performance dashboard in Token Manager section with escaped output.
+
+### Fixed — Memory CCT Migrator Disabled by Default (PR #5051)
+
+- Flipped `wp_mcp_ai_memory_cct_migrator_enabled` filter default from `true` → `false` to stop infinite sanitize-loop log spam.
+- When disabled, `bootstrap()` opportunistically advances stored schema version (guarded — never rolls backwards).
+- Zero writes to JetEngine storage layer. Four regression tests prevent the sanitize loop from returning.
+
+### Fixed — Addons/Pro Security Scan Fixes (PR #5059)
+
+- Fixed remote-sites admin pagination warnings in `class-wp-mcp-ai-pro-remote-sites-admin.php`.
+- Removed stale `AI_Assisted` tag from project management AI actions.
+- Added `addons/pro/uninstall.php` for proper cleanup on uninstall.
+- Rebuilt all distribution ZIP artifacts.
+
+### Added — @wordpress/env Dev Dependency (PR #5048)
+
+- Added `@wordpress/env` as dev dependency enabling zero-config local WordPress development environments via `wp-env start`.
+- Updated `package-lock.json` with `@wordpress/env` entries.
 
 ## [1.1.20] - 2026-05-18
 
