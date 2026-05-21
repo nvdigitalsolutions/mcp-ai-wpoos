@@ -119,6 +119,6 @@ Installable addon documentation
 
 ---
 
-**Plugin Version:** 1.1.0  
+**Plugin Version:** 1.1.21  
 **MCP Version:** 2024-11-05  
 **WordPress:** 6.0+ | **PHP:** 7.4+

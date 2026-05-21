@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** March 15, 2026  
-**Version:** 1.1.4
+**Last Updated:** May 21, 2026  
+**Version:** 1.1.21
 
 ---
 
@@ -16,6 +16,38 @@
 3. **Open Standards** - MCP protocol compliance, extensible architecture
 4. **Community Driven** - Open source with transparent development
 5. **Production Ready** - Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.21 / v1.1.20 / v1.1.19 / v1.1.18 — May 2026 ✅
+
+**Release Dates:** May 14–21, 2026
+
+### What was delivered across these four releases
+
+- ✅ **WordPress.org Compliance — Complete (F1–F10 Resolved).** All inline `<script>`/`<style>` echoes removed from 53 files and converted to WP enqueue APIs. 11 PHP parse errors fixed. All 10 reviewer findings resolved with re-audit verification (dangerous-functions, superglobal-access, HTTP-timeout, inline-notice audits). Build pipeline hardened. Zero bare `phpcs:ignore` comments remain. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md). ⭐ **READY FOR RE-SUBMISSION**
+- ✅ **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical `array('success' => false, ...)` returns converted to `new WP_Error()` across 105 files. `WPMCPAI.Tools.CanonicalReturnEnvelope` + `SanitizeAtEntry` PHPCS sniffs clean. Caller sites hardened.
+- ✅ **Capability Fence P2b — Full Rollout.** `get_required_capability()` deployed to all ~830 tool classes (base + Pro + all addons) via `WP_MCP_AI_Tool_Interface`. Central `WP_MCP_AI_Tool_Capability_Map`. New `WPMCPAI.Tools.RequiredCapabilityDeclared` sniff.
+- ✅ **Security Center.** 5-tab admin page: Posture (live security scoring), Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory.
+- ✅ **Semantic Caveman Compression.** New `WP_MCP_AI_Semantic_Compressor` service (1,988 lines + 1,156 test lines). Opt-in prompt token optimization preserving facts/numbers/terms.
+- ✅ **AI Prompt Caching — All Providers.** `WP_MCP_AI_Chat_Response_Cache` + `WP_MCP_AI_Prompt_Optimizer` across all 5 AI providers. Cache Performance dashboard.
+- ✅ **Memory Layer 2026 — Phases 3–8 Merged.** Auto-capture with SHA-256 dedup (P3), RRF fusion retrieval — BM25 + vector + graph (P4), confidence decay + contradiction detection (P5), provenance tracer tool (P6), Memory Health + Retrieval Waterfall + Session Replay (P7), documentation + v1.1.20 bump (P8). CCT migrator disabled by default.
+- ✅ **Kimi (Moonshot AI) provider — 10th first-class provider.** `WP_MCP_AI_Kimi_Client` at `api.moonshot.cn/v1` with kimi-k2.6 (256K, default), kimi-k2-thinking (CoT), moonshot-v1-*.
+- ✅ **ACP Server** — Full Agent Client Protocol implementation (JSON-RPC 2.0 over HTTP/SSE). `/.well-known/ai-peer` extended.
+- ✅ **MCP Bridge** — `bin/mcp-bridge.js` stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
+- ✅ **Unix Theory P0–P6** — canonical return envelope (P0/P1), capability-fence audit (P2), data-contract metadata (P3), tool-lifecycle descriptor (P4), back-compat alias infrastructure (P5), sanitize-at-entry sniff (P6).
+- ✅ **DigitalOcean Serverless Inference provider** (9th provider) — OpenAI-compatible chat/tools/streaming/embeddings.
+- ✅ **Async Chat Continuation** (slices 1–6) — durable store, dispatcher, LLM re-entry, SSE frame buffer.
+- ✅ **Jobs/Tasks Drawer + Cron-Status** — inline job-progress cards, cancel/retry routes, Tasks Drawer + toasts.
+- ✅ **Model Catalog May 2026 Refresh.** DeepSeek V4 model family added. Gemini entries consolidated. All pricing refreshed.
+- ✅ **GDPR — JetEngine Privacy Exporters.** CCT data exporters for transcripts, memory, and approvals.
+- ✅ **Security Hardening (5 patches).** Settings-key encryption, webhook secret enforcement, SSRF via `wp_safe_remote_get`, attachment URL allowlist, client-log debug-gate.
+- ✅ **Folder README Convention Phase P7.** Every `includes/` and `addons/pro/includes/` PHP subdirectory ships a `README.md` — completing Unix Theory P0–P7.
+- ✅ **@wordpress/env Dev Dependency.** Zero-config local WP environments via `wp-env`.
+- ✅ **Domain Migration.** All `nvoos.com` references → `nvoos.pro` / `nvoos.cloud`.
+- ✅ **Addons/pro Security Scan Fixes.** Remote-sites pagination, uninstall.php, stale tag removal.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 
@@ -45,25 +77,12 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 
-## Current Release (v1.1.4) - March 2026 ✅
+---
 
-**Release Date:** March 15, 2026  
-**Focus:** Security hardening, chat channel reliability, Telegram Mini App improvements, AI-powered product actualization, PDF bundling, WordPress.org plugin check compliance
+## Next Minor (v1.2.0) - Q2 2026 ⚡
 
-### What's Included in v1.1.4
-
-**Core Features:**
-- ✅ 165 built-in tools (base version)
-- ✅ 519 total tools (full version with Pro addon)
-- ✅ **Security Hardening** – AES-256-GCM encryption upgrade, finfo fail-closed, Discord replay attack protection, HTTPS enforcement, ZIP bomb guard
-- ✅ **Chat Channels** – Fixed Slack @mentions, Google Chat routing/OIDC, Teams OAuth 1-click + multi-connection, Telegram slash commands + typing indicator
-- ✅ **Telegram Mini App** – Doctor tab uses connection-assigned assistant; AI replies rendered as Markdown HTML
-- ✅ **Gemini Embeddings** – embedding-001 model, output_dimensionality, 9 new task types
-- ✅ **AI Product Actualization** – Provider-agnostic AI integration mode (Gemini/OpenAI)
-- ✅ **PDF Generation** – pdfkit/cheerio/docx/exceljs bundled; no server-side node_modules needed
-- ✅ **WordPress.org Compliance** – Plugin check errors resolved (.gitattributes, composer.json, languages/)
-
-**See** [CHANGELOG.md](../CHANGELOG.md) for the complete v1.1.4 change log.
+**Target:** June 2026  
+**Focus:** AI Provider enhancements, developer experience improvements
 
 ---
 
@@ -684,11 +703,16 @@ We evaluate features using these criteria:
 | Version | Type | Release Date | Focus |
 |---------|------|--------------|-------|
 | v1.0.1 | Patch | Jan 15, 2026 | Stability |
-| v1.1.0 | Minor | Feb 28, 2026 | PM Enhancements |
-| v1.2.0 | Minor | Apr 30, 2026 | AI Provider Enhancements |
-| v1.3.0 | Minor | Jun 30, 2026 | Developer Experience |
-| v2.0.0 | Major | Sep 30, 2026 | Enterprise Features |
-| v2.1.0 | Minor | Nov 30, 2026 | Post-2.0 Improvements |
+| v1.1.0 | Minor | Jan 28, 2026 | Multi-Agent Orchestration |
+| v1.1.1 | Patch | Feb 6, 2026 | Security + Chat Channels |
+| v1.1.2 | Patch | Feb 16, 2026 | WP.org Compliance |
+| v1.1.3 | Patch | Mar 3, 2026 | Gemini RAG + Media Tab |
+| v1.1.4 | Patch | Mar 15, 2026 | Security Hardening |
+| v1.1.14–v1.1.17 | Minor | May 1–10, 2026 | Providers + Orchestration + Coverage |
+| v1.1.18–v1.1.21 | Minor | May 14–21, 2026 | WP.org Compliance Final + P0/P1 + Compression |
+| v1.2.0 | Minor | Jun 2026 | AI Provider Enhancements |
+| v1.3.0 | Minor | Aug 2026 | Developer Experience |
+| v2.0.0 | Major | Q4 2026 | Enterprise Features |
 
 **Note:** Dates are targets and may shift based on development progress and community feedback.
 
@@ -723,6 +747,7 @@ A: They may be in the [Backlog](https://github.com/nvdigitalsolutions/mcp-ai-wpo
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-05-21 | 1.1.21 | Added v1.1.18–v1.1.21 releases; updated release calendar with actual dates; removed stale v1.1.4 "current release" section |
 | 2025-12-24 | 1.0 | Initial roadmap published |
 
 ---
