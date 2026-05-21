@@ -262,9 +262,9 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			)
 		) {
 			$incoming = array(
-				'worker_name'     => isset( $_POST['worker_name'] ) ? sanitize_text_field( wp_unslash( $_POST['worker_name'] ) ) : '',
-				'account_id'      => isset( $_POST['account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['account_id'] ) ) : '',
-				'ai_gateway_slug' => isset( $_POST['ai_gateway_slug'] ) ? sanitize_text_field( wp_unslash( $_POST['ai_gateway_slug'] ) ) : '',
+				'worker_name'     => isset( $_POST['worker_name'] ) ? wp_unslash( $_POST['worker_name'] ) : '',
+				'account_id'      => isset( $_POST['account_id'] ) ? wp_unslash( $_POST['account_id'] ) : '',
+				'ai_gateway_slug' => isset( $_POST['ai_gateway_slug'] ) ? wp_unslash( $_POST['ai_gateway_slug'] ) : '',
 				'd1_databases'    => self::parse_pairs_from_post( 'd1', 'name', 'binding' ),
 				'kv_namespaces'   => self::parse_pairs_from_post( 'kv', 'title', 'binding' ),
 			);
@@ -457,7 +457,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		if ( empty( $_POST[ $prefix ] ) || ! is_array( $_POST[ $prefix ] ) ) {
 			return array();
 		}
-		$raw = array_map( 'sanitize_text_field', wp_unslash( $_POST[ $prefix ] ) );
+		$raw = wp_unslash( $_POST[ $prefix ] );
 		// phpcs:enable
 		$out = array();
 		foreach ( $raw as $row ) {
