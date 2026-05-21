@@ -36,6 +36,91 @@ define( 'NVOOS_DOCS_HUB_PATH', plugin_dir_path( __FILE__ ) );
 /** URL to this plugin directory (trailing slash). */
 define( 'NVOOS_DOCS_HUB_URL', plugin_dir_url( __FILE__ ) );
 
+// Polyfill fnmatch() for Windows (POSIX-only function, unavailable on Windows PHP).
+if ( ! function_exists( 'fnmatch' ) ) {
+	/**
+	 * Match filename against a shell glob pattern.
+	 *
+	 * Native polyfill for Windows where fnmatch() does not exist.
+	 * Supports: * (any chars except /), ? (single char except /),
+	 * [...] (character class), [!...] (negated class).
+	 *
+	 * @since 0.3.9
+	 *
+	 * @param string $pattern Shell glob pattern.
+	 * @param string $string  String to match against.
+	 * @param int    $flags   FNM_PATHNAME (1), FNM_NOESCAPE (2), FNM_PERIOD (4),
+	 *                        FNM_CASEFOLD (16). 0 for default.
+	 * @return bool True if the string matches the pattern.
+	 */
+	function fnmatch( $pattern, $string, $flags = 0 ) {
+		// Translate a shell glob into a PCRE pattern.
+		$regex  = '';
+		$len    = strlen( $pattern );
+		$escape = ! ( $flags & 2 ); // FNM_NOESCAPE = 2.
+
+		for ( $i = 0; $i < $len; $i++ ) {
+			$ch = $pattern[ $i ];
+
+			if ( $escape && '\\' === $ch && $i + 1 < $len ) {
+				// Escaped character — pass through literally.
+				++$i;
+				$regex .= preg_quote( $pattern[ $i ], '#' );
+				continue;
+			}
+
+			switch ( $ch ) {
+				case '*':
+					// FNM_PATHNAME (1) => * does NOT match /.
+					$regex .= ( $flags & 1 ) ? '[^/]*' : '.*';
+					break;
+
+				case '?':
+					$regex .= ( $flags & 1 ) ? '[^/]' : '.';
+					break;
+
+				case '[':
+					// Character class — consume until matching ].
+					$class  = '[';
+					$closed = false;
+					++$i;
+					if ( $i < $len && '!' === $pattern[ $i ] ) {
+						$class .= '^';
+						++$i;
+					} elseif ( $i < $len && '^' === $pattern[ $i ] ) {
+						$class .= '\\^';
+						++$i;
+					}
+					for ( ; $i < $len; $i++ ) {
+						if ( ']' === $pattern[ $i ] ) {
+							$class .= ']';
+							$closed = true;
+							break;
+						}
+						$class .= '\\' . $pattern[ $i ];
+					}
+					// Unclosed bracket — treat as literal.
+					$regex .= $closed ? $class : '\\[';
+					break;
+
+				default:
+					$regex .= preg_quote( $ch, '#' );
+					break;
+			}
+		}
+
+		// Anchor and apply case-folding.
+		$regex   = '#^' . $regex . '$#';
+		$mods    = 'us';
+		if ( $flags & 16 ) { // FNM_CASEFOLD = 16.
+			$mods .= 'i';
+		}
+
+		$result = @preg_match( $regex . $mods, $string );
+		return false !== $result && $result > 0;
+	}
+}
+
 // Load core classes.
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-plugin.php';
 require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-remote-repo.php';
