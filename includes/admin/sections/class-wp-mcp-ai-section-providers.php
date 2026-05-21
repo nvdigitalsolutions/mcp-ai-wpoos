@@ -59,7 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI, DeepSeek).', 'mcp-ai-wpoos' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, NVIDIA NIM, Hugging Face, Cloudflare, DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten, Ollama, LM Studio).', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -240,8 +240,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get Baseten models from Model Config.
+			$baseten_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$baseten_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'baseten' );
+			}
+
+			// Fallback to a curated list of Baseten Model API offerings.
+			if ( empty( $baseten_models ) ) {
+				$baseten_models = array(
+					'deepseek-ai/DeepSeek-V3' => 'DeepSeek-V3 (Recommended)',
+					'deepseek-ai/DeepSeek-R1' => 'DeepSeek-R1 (Reasoning)',
+					'zai-org/GLM-4'           => 'GLM-4',
+					'moonshotai/Kimi-K2'      => 'Kimi K2',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1330,6 +1346,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'https://api.moonshot.cn/v1',
 				),
 
+				// Baseten Provider Settings.
+				'enable_baseten'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Baseten Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Baseten as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Baseten Model APIs offer managed access to open-source LLMs (DeepSeek, GLM, Kimi) through an OpenAI-compatible endpoint with optimized serving. Tool calling and structured outputs supported.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'baseten_api_key'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'Baseten API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Baseten API keys URL */
+						__( 'Your Baseten API key. Create one from <a href="%s" target="_blank">Baseten API Keys</a>. The same key works for all models in the Model APIs catalog.', 'mcp-ai-wpoos' ),
+						'https://app.baseten.co/settings/api-keys'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'baseten_model'                      => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Baseten Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Baseten requests. DeepSeek-V3 is the recommended general-purpose option. DeepSeek-R1 offers chain-of-thought reasoning. GLM-4 and Kimi K2 are also available.', 'mcp-ai-wpoos' ),
+					'options'     => $baseten_models,
+					'default'     => 'deepseek-ai/DeepSeek-V3',
+				),
+				'baseten_base_url'                   => array(
+					'type'        => 'url',
+					'label'       => __( 'Baseten API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Baseten API requests. Leave empty to use the default (https://inference.baseten.co/v1). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://inference.baseten.co/v1',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1435,6 +1484,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'enable_kimi', 'kimi_api_key', 'kimi_model', 'kimi_base_url' ),
+				),
+				'baseten'              => array(
+					'id'     => 'baseten',
+					'label'  => __( 'Baseten', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_baseten', 'baseten_api_key', 'baseten_model', 'baseten_base_url' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',

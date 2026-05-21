@@ -37,7 +37,7 @@ System design and patterns
 
 ### ✨ **[Features](features/)**
 Feature-specific documentation
-- **[AI Providers](features/ai-providers/)** - Gemini, LM Studio, OpenAI, Jukebox
+- **[AI Providers](features/ai-providers/)** - Gemini, LM Studio, OpenAI, Jukebox, Baseten
 - **[Tools](features/tools/)** - Image, video, communication tools
 - **[Security](features/security/)** - Security hardening, key rotation
 - **[Performance](features/performance/)** - Rate limiting, token management

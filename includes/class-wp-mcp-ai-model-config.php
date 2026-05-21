@@ -471,6 +471,12 @@ class WP_MCP_AI_Model_Config {
 			$providers['kimi'] = __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' );
 		}
 
+		// Check enable_baseten setting (defaults to false if not set).
+		$enable_baseten = isset( $settings['enable_baseten'] ) ? $settings['enable_baseten'] : false;
+		if ( $enable_baseten && ! empty( $settings['baseten_api_key'] ) ) {
+			$providers['baseten'] = __( 'Baseten', 'mcp-ai-wpoos' );
+		}
+
 		// Check enable_openrouter setting (defaults to false if not set).
 		$enable_openrouter = isset( $settings['enable_openrouter'] ) ? $settings['enable_openrouter'] : false;
 		if ( $enable_openrouter && ! empty( $settings['openrouter_api_key'] ) ) {
