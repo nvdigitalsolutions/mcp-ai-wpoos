@@ -1,0 +1,21 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-chat-bubble",
+  "version": "0.1.0-alpha.1",
+  "description": "Floating chat bubble widget with accessibility, sessionStorage persistence, badge notifications, and MutationObserver auto-discovery — extracted from NV Open Operator System",
+  "main": "dist/nvoos-chat-bubble.js",
+  "module": "dist/nvoos-chat-bubble.js",
+  "types": "dist/nvoos-chat-bubble.d.ts",
+  "exports": {
+    ".": { "import": "./dist/nvoos-chat-bubble.js", "default": "./dist/nvoos-chat-bubble.js" }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo ok && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

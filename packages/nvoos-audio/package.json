@@ -35,6 +35,14 @@
     "nvdigital",
     "nvoos"
   ],
+  "peerDependencies": {
+    "@nvdigitalsolutions/nvoos-vad": ">=0.1.0-alpha.1"
+  },
+  "peerDependenciesMeta": {
+    "@nvdigitalsolutions/nvoos-vad": {
+      "optional": true
+    }
+  },
   "files": [
     "dist",
     "README.md",
