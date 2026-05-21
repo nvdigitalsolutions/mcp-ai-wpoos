@@ -138,6 +138,12 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 
 			// Security: Restrict to the WordPress content directory so this tool
 			// cannot be used to read arbitrary server files (e.g. /etc/passwd).
+			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				return array(
 					'success' => false,

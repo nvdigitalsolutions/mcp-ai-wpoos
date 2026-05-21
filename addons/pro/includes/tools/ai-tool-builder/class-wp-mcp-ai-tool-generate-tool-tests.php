@@ -140,6 +140,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 			// directory to prevent reading arbitrary server files.
 			$resolved_tool = realpath( $tool_file_raw );
 			if ( false !== $resolved_tool &&
+				defined( 'WP_CONTENT_DIR' ) &&
 				0 === strpos( wp_normalize_path( $resolved_tool ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local PHP tool file; path validated against WP_CONTENT_DIR.
 				$tool_code = file_get_contents( $resolved_tool );
@@ -395,6 +396,12 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 				);
 			}
 
+			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
+				return new WP_Error(
+					'invalid_output_path',
+					__( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' )
+				);
+			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
 				return new WP_Error(
 					'invalid_output_path',

@@ -418,15 +418,15 @@ class WP_MCP_AI_Batch_Iterator {
 		while ( true ) {
 			$last_id = (int) $this->checkpoint['last_id'];
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery -- Table name from plugin constant; cannot be parameterised. Direct read on custom plugin batch-tracking table; no WP Core API for this schema.
 			$sql = $wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from plugin constant; cannot be parameterised.
 				"SELECT {$select_sql} FROM {$table} WHERE {$id_column} > %d {$where_sql} ORDER BY {$id_column} ASC LIMIT %d",
 				$last_id,
 				$batch_size
 			);
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- Direct read on custom plugin batch-tracking table; no WP Core API for this schema. Table name is a hardcoded plugin constant in a CREATE TABLE IF NOT EXISTS statement.
 			$rows = $wpdb->get_results( $sql );
 
 			if ( empty( $rows ) ) {

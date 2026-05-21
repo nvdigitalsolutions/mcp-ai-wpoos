@@ -149,7 +149,7 @@ class WP_MCP_AI_Admin_Workflow_Triggers {
 						$type_label = $type_def ? esc_html( $type_def['label'] ) : esc_html( $type );
 						?>
 					<tr data-trigger-id="<?php echo esc_attr( $trigger->ID ); ?>">
-						<td><?php echo $type_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+						<td><?php echo $type_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $type_label is already esc_html()'d on the preceding line; PHPCS false positive. ?></td>
 						<td class="trigger-label"><?php echo esc_html( $trigger->post_title ); ?></td>
 						<td><?php echo $wf_post ? esc_html( $wf_post->post_title ) : esc_html( (string) $wf_id ); ?></td>
 						<td class="trigger-status"><?php echo $enabled ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?></td>

@@ -1,9 +1,9 @@
-# WordPress.org Compliance — May 20, 2026 (Re-Audit Pass)
+# WordPress.org Compliance — May 21, 2026 (Final Pass)
 
 **Plugin:** NV Digital Open Operator System (oOS) — slug `mcp-ai-wpoos`
 **Prior audit:** [`WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](WORDPRESS_ORG_COMPLIANCE_2026_05_09.md)
 **Review ID:** R nvdigital-open-operator-system-oos/vsamtani/25Dec25/T19 9May26/4.0.1B1
-**Re-Audit date:** May 20, 2026 — all fixes from the May 19 pass re-verified plus additional scanning
+**Audit dates:** May 20, 2026 (re-audit pass) + May 21, 2026 (final clean-up of all remaining bare violations)
 
 ---
 
@@ -616,6 +616,235 @@ These areas were re-audited and confirmed fully compliant:
 | 🟢 P3 | F7 — File writes outside uploads dir | 13 | 2 files | ~15 min | ✅ FIXED |
 
 **All items complete. Zero findings remain. Ready for re-submission.**
+
+---
+
+---
+
+## Post-May-20 Security Updates (PRs #5050–#5055)
+
+**Updated:** May 21, 2026  
+**Plugin version:** v1.1.22  
+**Scope:** Security-relevant changes from the five most recent merged PRs.
+
+### Summary of Security Changes
+
+| PR | Title | Security Impact | Severity |
+|----|-------|----------------|----------|
+| [#5055](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5055) | Canonical return envelope & sanitize-at-entry compliance | Eliminates 191 non-canonical error returns; all tool `execute()` now return `WP_Error` | 🔴 HIGH |
+| [#5052](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5052) | Register inline style handles + missing PHP tags | Prevents silent CSS failure; stops raw PHP code disclosure on admin pages | 🟠 MEDIUM |
+| [#5050](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5050) | AI prompt caching enhancement | New response cache with proper invalidation; sanitized cache keys; `wp_kses_post()` on system prompts | 🟡 LOW |
+| [#5053](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5053) | Semantic caveman compression | Opt-in content processing; all inputs sanitized before transformation | 🟢 INFO |
+| [#5049](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5049) | Disable Agent Memory CCT migrator | Stops infinite sanitize-loop log spam; zero writes to JetEngine storage layer | 🟢 INFO |
+
+---
+
+### #5055 — Canonical Return Envelope & SanitizeAtEntry Compliance
+
+**Severity: 🔴 HIGH — Core Security Architecture**
+
+This PR completes the Unix Theory P0–P6 compliance work, converting all non-canonical error returns to the WordPress `WP_Error` system. Prior to this fix, ~186 locations returned `array('success' => false, 'message' => '...')` instead of `new WP_Error()` — meaning error handling code paths were inconsistent and harder to audit.
+
+**What changed:**
+
+| Metric | Before | After |
+|--------|--------|-------|
+| `WPMCPAI.Tools.CanonicalReturnEnvelope` violations | 191 | 5 (all justified non-tool exceptions) |
+| `WPMCPAI.Tools.SanitizeAtEntry` violations | 2 | 0 |
+| Files changed | — | 105 files, +1212/−1349 lines |
+| Tool classes affected | — | 49 files in `includes/tools/` |
+| Non-tool files affected | — | 24 files in services/admin/rest/slash-commands |
+
+**Security implications:**
+
+1. **Consistent error handling**: All tool `execute()` methods now return the canonical envelope — success array or `WP_Error`. Callers checking `is_wp_error()` get reliable error detection; callers checking `$result['success']` for false-negatives are eliminated.
+2. **Audit trail**: `WP_Error` carries `get_error_code()` and `get_error_data()` — error codes are now traceable through the system rather than bare strings.
+3. **SanitizeAtEntry fix** (`includes/tools/orchestration/class-wp-mcp-ai-tool-create-task-plan.php`): `$arguments['plan_name']` and `$arguments['goal']` now sanitized via `sanitize_text_field()` and `sanitize_textarea_field()` before string interpolation into markdown — prevents HTML injection through plan names.
+
+**Justified exceptions (5 remaining):**
+
+| File | Rationale |
+|------|-----------|
+| `includes/bootstrap/helpers.php` (2×) | `wp_mcp_ai_run_process()` and `wp_mcp_ai_run_shell()` — process-result utility functions, not tool `execute()` |
+| `includes/services/class-wp-mcp-ai-process-service.php` (3×) | `ProcessTimedOutException` catch blocks — utility method, not tool `execute()` |
+
+**Caller hardening:** Multiple caller sites that previously tested `$result['success']` or `$result['ok']` now test `! is_wp_error( $result )`:
+- `includes/class-wp-mcp-ai-site-health.php` — API connectivity tests
+- `includes/admin/class-wp-mcp-ai-pro-license.php` — License activation handler
+- `includes/admin/class-wp-mcp-ai-report-generator.php` — Report generation
+- `includes/slash-commands/class-wp-mcp-ai-slash-command-workflow-orchestrator.php` — Workflow step error handling
+- `includes/bootstrap/helpers.php` — `wp_mcp_ai_find_binary()` now tests `$result['ok']`
+
+---
+
+### #5052 — Inline Style Handle Registration & Missing PHP Tags
+
+**Severity: 🟠 MEDIUM — Information Disclosure / Broken UI**
+
+**Fix A — Inline style handle registration (8 locations):**
+
+`wp_add_inline_style()` silently fails when the target style handle has not been registered. This was causing CSS to not render on admin metaboxes and settings pages. Fix: added `wp_register_style( $handle, false, array(), WP_MCP_AI_VERSION )` + `wp_enqueue_style( $handle )` before each `wp_add_inline_style()` call.
+
+| File | Handle |
+|------|--------|
+| `class-wp-mcp-ai-assistant-cpt.php` (tools metabox) | `wp-mcp-ai-assistant-tools` |
+| `class-wp-mcp-ai-metabox-primary-roles.php` | `wp-mcp-ai-metabox-primary-roles` |
+| `class-wp-mcp-ai-assistant-cpt.php` (base knowledge) | `wp-mcp-ai-assistant-base-knowledge` |
+| `class-wp-mcp-ai-metabox-base-knowledge.php` | `wp-mcp-ai-metabox-base-knowledge` |
+| `class-wp-mcp-ai-metabox-datasets.php` | `wp-mcp-ai-metabox-datasets` |
+| `class-wp-mcp-ai-section-orchestration.php` (3×) | `wp-mcp-ai-orch-agents`, `wp-mcp-ai-orch-professions`, `wp-mcp-ai-orch-teams` |
+
+**Security note:** While this is technically a CSS rendering bug, unrendered inline styles can cause security-critical UI elements (validation messages, error states) to be invisible to admins.
+
+**Fix B — Missing `<?php` tags causing raw PHP disclosure (2 files):**
+
+In two metabox files, `ob_start(); ?>` was used to output JavaScript, but the closing `$js = ob_get_clean();` line was missing the `<?php` tag to re-enter PHP mode. This caused PHP variable names and function calls to appear as visible text on the admin page — a minor information disclosure exposing internal class method names.
+
+| File | Code Disclosed |
+|------|---------------|
+| `class-wp-mcp-ai-metabox-primary-roles.php` | `$js = ob_get_clean(); wp_print_inline_script_tag( $js );` |
+| `class-wp-mcp-ai-metabox-mesh-routing.php` | `$js = ob_get_clean(); wp_print_inline_script_tag( $js );` |
+
+**Fix:** Added the missing `<?php` tag before `$js = ob_get_clean();` in both files.
+
+A comprehensive audit confirmed all other `$js = ob_get_clean()` patterns already have the `<?php` tag, and all other `wp_add_inline_style()` calls either target the core `wp-admin` handle or already register a dummy handle first.
+
+---
+
+### #5050 — AI Prompt Caching Enhancement (Security Review)
+
+**Severity: 🟡 LOW — New Feature, Security Reviewed**
+
+This PR implements prompt caching across five AI providers. The following security-sensitive areas were reviewed:
+
+**New class: `WP_MCP_AI_Chat_Response_Cache`** (`includes/class-wp-mcp-ai-chat-response-cache.php`):
+- ✅ Cache eligibility gating: only non-streaming, temperature=0 requests with `cache_system_prompt` enabled
+- ✅ Cache key construction uses `sanitize_key()`, `absint()`, `md5()` — deterministic and tamper-resistant
+- ✅ Cache invalidation hooked to `save_post_mcp_ai_assistant` — clears on assistant config changes
+- ✅ Version-bump invalidation strategy prevents stale cache after config changes
+- ✅ TTL bounded (60s–3600s via `absint()`) with `apply_filters()` extensibility
+- ✅ `bypass_cache` flag respected for sensitive requests
+- ✅ Cached content stored in WordPress transients (governed by WP's object cache backend)
+
+**New class: `WP_MCP_AI_Prompt_Optimizer`** (`includes/class-wp-mcp-ai-prompt-optimizer.php`):
+- ✅ System prompts passed through `wp_kses_post()` before message construction
+- ✅ `prompt_cache_key` generated from `md5()` of first 256 chars of system prompt — stable but non-reversible
+- ✅ Message reordering preserves content integrity (no injection vector)
+
+**Client modifications (5 files):**
+- ✅ `prompt_cache_key` always passes through `sanitize_text_field()` before injection (OpenAI, DeepSeek, OpenRouter)
+- ✅ `prompt_cache_retention` validated via `in_array( ..., array( 'in_memory', '24h' ), true )` allowlist
+- ✅ Cached token counts extracted from provider response structures (read-only, no injection)
+
+**New post meta: `_wp_mcp_ai_prompt_caching`**:
+- ✅ Registered with `boolean` type, `single => true`, `show_in_rest => true`
+- ✅ Custom `sanitize_prompt_caching_meta()` callback: `(bool) $value`
+- ✅ Save handler uses `! empty( $_POST['wp_mcp_ai_prompt_caching'] )` — no direct DB injection
+
+**Cache Performance dashboard** (`includes/admin/sections/class-wp-mcp-ai-section-token-manager.php`):
+- ✅ All output escaped via `esc_html()`, `number_format_i18n()`, `esc_attr()`, `esc_html__()`
+- ✅ Provider pricing data hardcoded (no user-controlled values)
+- ✅ Warning messages translatable via `esc_html_e()`
+
+---
+
+### #5053 — Semantic Caveman Compression
+
+**Severity: 🟢 INFO — Content Processing, No Injection Risk**
+
+New `WP_MCP_AI_Semantic_Compressor` service (1,988 lines) that strips grammar, connectives, and filler words while preserving facts, numbers, and technical terms. Opt-in by default. Security notes:
+
+- ✅ Pure PHP, zero external dependencies
+- ✅ Defaults to `false` (disabled) — opt-in via admin setting
+- ✅ Protects code blocks, JSON, URLs, emails, and HTML from compression
+- ✅ Singleton pattern consistent with existing services
+- ✅ PHPCS clean: 0 errors, 0 warnings on the compressor service
+- ✅ 44 unit tests covering edge cases and input validation (`tests/test-semantic-compressor.php`)
+
+Subsequent PR #5054 moved these settings from Advanced → Orchestration tab (UI reorganization only, no security impact).
+
+---
+
+### #5049 — Disable Agent Memory CCT Migrator
+
+**Severity: 🟢 INFO — Stops Log Spam / Sanitize Loop**
+
+The Agent Memory CCT schema migrator was calling JetEngine's `sanitize_item_request()` which validates slug uniqueness for **creation** — it always returned `false` for existing CCTs. This caused an identical error to be logged every ~10 seconds on any admin pageview, forever.
+
+**Root cause:** The migrator never reached the `update_option( VERSION_OPTION, CURRENT_VERSION )` call that would mark the upgrade as complete, so it re-ran on every admin pageview.
+
+**Fix:**
+- Flipped `wp_mcp_ai_memory_cct_migrator_enabled` filter default from `true` → `false`
+- When disabled, `bootstrap()` opportunistically advances the stored schema version to `CURRENT_VERSION` (guarded — never rolls backwards)
+- Zero writes to `wp_jet_post_types` or any JetEngine storage layer
+- Four new regression tests prevent the sanitize loop from returning
+
+**Security implication:** Prevents unbounded error log growth from the sanitize loop, maintaining log rotation hygiene and ensuring real security events aren't buried under noise.
+
+---
+
+---
+
+### May 21 Final Touch-Ups — All Remaining Bare Violations Resolved
+
+A final comprehensive sweep across `includes/` and `addons/` for the same violation categories from the WordPress.org review found three remaining minor pre-existing items. All have been fixed.
+
+#### F8 — `$_GET` Missing `wp_unslash()` (3 remaining instances) ✅ FIXED
+
+| # | File | Line | Fix |
+|---|------|------|-----|
+| F8a | `admin-approvals.php` | 189 | `(int) ( $_GET[...] ?? 0 )` → `absint( wp_unslash( $_GET[...] ) )` |
+| F8b | `admin-markup-telemetry-page.php` | 148 | `$_GET['reset']` → `wp_unslash( $_GET['reset'] )` |
+| F8c | `section-advanced.php` | 35 | `$_GET['page']` → `wp_unslash( $_GET['page'] )` |
+
+All three now follow the same `absint(wp_unslash())` pattern as the other ~80 `$_GET` usages. Unnecessary `phpcs:ignore` annotations removed.
+
+#### F9 — Bare `phpcs:ignore` Without Justification (15 remaining instances) ✅ FIXED
+
+| File | Count | Rules |
+|------|:-----:|-------|
+| `admin/class-wp-mcp-ai-admin-orchestration-dashboard.php` | 4 | `DirectQuery`, `SchemaChange`, `InterpolatedNotPrepared` |
+| `services/class-wp-mcp-ai-batch-iterator.php` | 3 | `InterpolatedNotPrepared`, `DirectQuery`, `NotPrepared` |
+| `measurement/class-wp-mcp-ai-metric-event-store.php` | 2 | `InterpolatedNotPrepared` |
+| `traits/trait-wp-mcp-ai-inline-async-tick.php` | 2 | `NoSilencedErrors.Discouraged` |
+| `admin/class-wp-mcp-ai-admin-workflow-triggers.php` | 1 | `OutputNotEscaped` |
+| `bootstrap/autoload.php` | 1 | `error_log` |
+| `harness/class-wp-mcp-ai-harness-eval-scheduler.php` | 1 | `slow_db_query_meta_query` |
+| `rest/class-wp-mcp-ai-rest-a2a-controller.php` | 1 | `UnusedVariable` |
+
+All 15 now carry `-- Justification` suffixes. Combined with the previous ~35-ignore fix batch, the base plugin now has **zero empty `phpcs:ignore` comments**.
+
+#### F10 — Unguarded `WP_CONTENT_DIR` / `WP_PLUGIN_DIR` in `addons/` (11 instances) ✅ FIXED
+
+| Subtree | Files | Constant | Fix pattern |
+|---------|:-----:|----------|------------|
+| `addons/pro/includes/tools/ai-tool-builder/` | 6 | `WP_CONTENT_DIR` | `defined()` guard → early return or WP_Error |
+| `addons/docs-hub/` | 1 | `WP_PLUGIN_DIR` | `defined()` conditional → skips candidate path |
+| `addons/pro/includes/admin/` | 1 | `WP_PLUGIN_DIR` | `defined()` guard on `file_exists()` condition |
+| `addons/pro/includes/services/` | 1 | `WP_PLUGIN_DIR` | `defined()` guard on `strpos()` boundary check |
+
+While `addons/` is not part of the WordPress.org submission, these fixes prevent potential fatal errors on hosts with non-standard constant definitions and align the entire codebase with the pattern used throughout `includes/`.
+
+---
+
+### Cumulative Impact on Compliance Status
+
+All **10 findings (F1–F10)** are now **FIXED/VERIFIED**. The entire WordPress.org audit surface is clean:
+
+| Finding | Guideline | Status |
+|---------|-----------|--------|
+| F1 — Non-dismissible admin notices | 11 | ✅ FIXED — All 4 hook-based notices have `is-dismissible` |
+| F2 — Plugin header / readme mismatches | 12 | ✅ FIXED — Name/description aligned |
+| F3 — Bare `WP_PLUGIN_DIR` guards | 13 | ✅ FIXED — All 4 instances have `defined()` guard |
+| F4 — `$_GET` missing `wp_unslash()` (batch 1) | 13 | ✅ FIXED — 3 instances in dag-builder + approvals |
+| F5 — Tool HTML fragments with raw `<script>` | 13 | ✅ FIXED — Chart/Mermaid init via `wp_print_inline_script_tag()` |
+| F6 — `phpcs:ignore` without justification (batch 1) | 4 | ✅ FIXED — ~35 bare ignores in cron/helpers/measurement |
+| F7 — File writes outside uploads dir | 13 | ✅ FIXED — `tempnam()` + logger path bounding |
+| F8 — `$_GET` missing `wp_unslash()` (batch 2) | 13 | ✅ FIXED — 3 remaining instances in approvals/telemetry/advanced |
+| F9 — `phpcs:ignore` without justification (batch 2) | 4 | ✅ FIXED — 15 remaining bare ignores across 8 files |
+| F10 — Unguarded `WP_CONTENT_DIR`/`WP_PLUGIN_DIR` in addons | 13 | ✅ FIXED — 11 instances in addons with `defined()` guards |
+
+**Zero findings remain. The base plugin is fully compliant with all 18 WordPress.org Plugin Directory Guidelines.**
 
 ---
 

@@ -319,7 +319,7 @@ class WP_MCP_AI_Metric_Event_Store {
 			  AND recorded_at >= %s
 			  AND recorded_at <= %s
 			ORDER BY recorded_at DESC
-			LIMIT %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			LIMIT %d"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a hardcoded plugin constant; neighbouring ignores in the same method already carry this justification.
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query on custom plugin table; WP_Query does not support custom table queries.
 		$rows = $wpdb->get_results(
@@ -364,7 +364,7 @@ class WP_MCP_AI_Metric_Event_Store {
 		}
 
 		$table_name = $this->table_name();
-		$sql        = "SELECT privacy, COUNT(*) AS total FROM $table_name GROUP BY privacy"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sql        = "SELECT privacy, COUNT(*) AS total FROM $table_name GROUP BY privacy"; // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a hardcoded plugin constant; neighbouring ignores in the same method already carry this justification.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- Direct aggregation query on custom plugin table; table name from class constant. WP_Query does not support custom table GROUP BY.
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 
