@@ -10512,19 +10512,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		$response = wp_remote_get(
-			add_query_arg(
-				array(
-					'client_id'     => $app_id,
-					'client_secret' => $app_secret,
-					'grant_type'    => 'client_credentials',
-				),
-				'https://graph.facebook.com/oauth/access_token'
-			),
+		$response = wp_remote_post(
+			'https://graph.facebook.com/oauth/access_token',
 			array(
 				'timeout' => 15,
 				'headers' => array(
 					'Accept' => 'application/json',
+				),
+				'body'    => array(
+					'client_id'     => $app_id,
+					'client_secret' => $app_secret,
+					'grant_type'    => 'client_credentials',
 				),
 			)
 		);

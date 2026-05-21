@@ -31,7 +31,6 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		add_action( 'wp_ajax_wp_mcp_ai_pm_generate_description', array( __CLASS__, 'ajax_generate_description' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_pm_suggest_tasks', array( __CLASS__, 'ajax_suggest_tasks' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_pm_analyze_project', array( __CLASS__, 'ajax_analyze_project' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_pm_bulk_generate', array( __CLASS__, 'ajax_bulk_generate' ) );
 
 		// NOTE: Scripts are now enqueued by WP_MCP_AI_Project_Management_AI_Assistant_Metabox.
 		// add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
