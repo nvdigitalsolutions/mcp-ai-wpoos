@@ -1705,6 +1705,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'section_acp', // Section header.
 				'enable_acp_server',
 				'acp_require_approval',
+				'slider_section_compression', // Section header.
+				'enable_semantic_compression',
+				'semantic_compression_level',
 			);
 
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
@@ -1912,6 +1915,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						// Agent Client Protocol (ACP).
 						'enable_acp_server',
 						'acp_require_approval',
+						// Semantic compression.
+						'slider_section_compression',
+						'enable_semantic_compression',
+						'semantic_compression_level',
 					),
 				),
 				'thresholds'    => array(
@@ -1937,9 +1944,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'per_session_token_limit',
 						'enable_per_call_limits',
 						'enable_per_session_limits',
-						'slider_section_compression',
-						'enable_semantic_compression',
-						'semantic_compression_level',
 						'slider_section_predictive',
 						'prediction_confidence_threshold',
 						'prediction_safety_buffer',
