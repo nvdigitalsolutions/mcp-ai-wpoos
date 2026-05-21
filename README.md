@@ -2527,7 +2527,7 @@ A dedicated router transparently forwards chat completions to the active provide
 - **Cloudflare**: [Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 - **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 - **Ollama/LM Studio**: Self-hosted (no external data transmission)
-- **Baseten**: [Terms](https://www.baseten.co/terms) | [Privacy](https://www.baseten.co/privacy)
+- **Baseten**: [Terms](https://www.baseten.co/terms-and-conditions/) | [Privacy](https://www.baseten.co/privacy-policy/)
 
 ### LM Studio Support
 

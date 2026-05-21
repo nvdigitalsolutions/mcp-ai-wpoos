@@ -90,4 +90,4 @@ Go to **Tools → Provider Diagnostics → Baseten** and click **Test Connection
 
 ---
 
-**Terms & Privacy:** [Baseten Terms](https://www.baseten.co/terms) | [Baseten Privacy](https://www.baseten.co/privacy)
+**Terms & Privacy:** [Baseten Terms](https://www.baseten.co/terms-and-conditions/) | [Baseten Privacy](https://www.baseten.co/privacy-policy/)

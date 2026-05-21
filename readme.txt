@@ -49,7 +49,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [OpenRouter Terms](https://openrouter.ai/terms) | [Privacy](https://openrouter.ai/privacy)
 * [Kimi (Moonshot AI) Terms](https://platform.moonshot.cn/docs/policy/service-agreement) | [Privacy](https://platform.moonshot.cn/docs/policy/privacy-policy)
 * [DigitalOcean Terms](https://www.digitalocean.com/legal/terms-of-service-agreement) | [Privacy](https://www.digitalocean.com/legal/privacy-policy)
-* [Baseten Terms](https://www.baseten.co/terms) | [Privacy](https://www.baseten.co/privacy)
+* [Baseten Terms](https://www.baseten.co/terms-and-conditions/) | [Privacy](https://www.baseten.co/privacy-policy/)
 * Ollama (self-hosted, no external data transmission)
 * LM Studio (self-hosted, no external data transmission)
 
@@ -78,7 +78,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))
 * **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://policies.google.com/privacy))
 * **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
-* **Baseten** - Managed open-source LLMs (DeepSeek, GLM, Kimi) via OpenAI-compatible API ([Terms](https://www.baseten.co/terms) | [Privacy](https://www.baseten.co/privacy))
+* **Baseten** - Managed open-source LLMs (DeepSeek, GLM, Kimi) via OpenAI-compatible API ([Terms](https://www.baseten.co/terms-and-conditions/) | [Privacy](https://www.baseten.co/privacy-policy/))
 * **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
 * **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
 * **NVIDIA NIM** - Llama, Mistral, Nemotron via NVIDIA cloud inference ([Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/) | [Privacy](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/))
