@@ -1,13 +1,31 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 18, 2026  
-**Plugin Version:** 1.1.19  
+**Last Updated:** May 21, 2026  
+**Plugin Version:** 1.1.21  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **📌 MAY 21, 2026 UPDATE (v1.1.21):** 🛡️🔒🧠⚡ **WP.ORG COMPLIANCE COMPLETE, CANONICAL RETURN ENVELOPE, SEMANTIC COMPRESSION, AI PROMPT CACHING, MEMORY LAYER PHASES 3–7**
+> - **WordPress.org Compliance — All 10 Findings (F1–F10) Resolved.** 53 files converted from inline scripts/styles to WP enqueue APIs; 11 PHP parse errors fixed. Re-audit verified: zero dangerous functions, all superglobals sanitized, all HTTP calls timed out, zero bare phpcs:ignore. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md).
+> - **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical returns → `WP_Error` across 105 files. `WPMCPAI.Tools.CanonicalReturnEnvelope` + `SanitizeAtEntry` sniffs clean.
+> - **Semantic Caveman Compression** — `WP_MCP_AI_Semantic_Compressor` (1,988+ lines + 1,156 test lines). Opt-in prompt token optimization. Settings in Orchestration tab.
+> - **AI Prompt Caching** — `WP_MCP_AI_Chat_Response_Cache` + `WP_MCP_AI_Prompt_Optimizer` across all 5 providers. Cache Performance dashboard.
+> - **Memory Layer 2026 Phases 3–7** — Auto-capture (P3), RRF fusion (P4), confidence decay (P5), provenance tracer (P6), Memory Health + Retrieval Waterfall + Session Replay (P7). CCT migrator disabled by default.
+> - **Model Catalog May 2026** — DeepSeek V4, Gemini consolidation, pricing refresh.
+> - **@wordpress/env** dev dependency.
+> - **Domain migration** — nvoos.com → nvoos.pro / nvoos.cloud.
+> - **Versioning** — bumped to 1.1.21 across all manifests.
+
+> **📌 MAY 18, 2026 UPDATE (v1.1.20):** 🧠🎛️ **MEMORY LAYER 2026 PHASE 7 UI/UX COMPLETE**
+> - **Phase 7a — Memory Health subtab** — Orchestration Memory Health view with live status, threshold policy, and chat-memory availability.
+> - **Phase 7b — Retrieval Waterfall panel** — Memory Drawer retrieval-path visibility (RRF + legacy breakdown + path metadata).
+> - **Phase 7c — Session Replay tab + route** — `GET /mcp-ai/v1/chat-memory/sessions/{session_id}` endpoint + drawer integration.
+> - **Coverage** — REST + JS tests for session replay route, service, and drawer behavior.
+> - **Versioning** — bumped to 1.1.20 across all manifests.
 
 > **📌 MAY 17, 2026 DOCUMENTATION REFRESH:** `docs/getting-started/USE_CASES_AND_QUICKSTARTS.md` was refreshed to independent doc revision 2.0 and now cites `docs/getting-started/_USE_CASES_FACT_SHEET.md` as the companion source for point-in-time counts. Current public framing is ~830 tools (~195 base + ~635 Pro), ~190 profession templates, 10 GA SPA-manifested Pro toolkits, and model catalog `2026.05.04`; the live registry remains authoritative.
 
