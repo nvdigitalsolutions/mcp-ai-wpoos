@@ -905,6 +905,13 @@ class WP_MCP_AI_Container {
 				return new WP_MCP_AI_LM_Studio_Provider_Client();
 			}
 		);
+
+		$this->singleton(
+			'provider.baseten',
+			function () {
+				return new WP_MCP_AI_Baseten_Provider_Client();
+			}
+		);
 	}
 
 	/**
