@@ -367,6 +367,15 @@ jobs:
           echo "📦 Base-only ZIP contents (first 30 entries):"
           unzip -l "${PLUGIN_SLUG}-${VERSION}.zip" | head -35
 
+      - name: Build optional component ZIPs (knowledge-base, vectorizer)
+        run: |
+          echo "📦 Building optional component ZIPs for on-demand downloads..."
+          chmod +x bin/build-optional-components.sh
+          ./bin/build-optional-components.sh ${{ steps.version.outputs.version }}
+          echo ""
+          echo "📦 Optional component ZIPs:"
+          ls -lh build/optional-components/knowledge-base.zip build/optional-components/neplex-vectorizer.zip
+
       - name: Upload base-only build artifact (WordPress.org)
         uses: actions/upload-artifact@v4
         with:
@@ -380,6 +389,16 @@ jobs:
         with:
           name: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}-full
           path: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}-full.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload optional components artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}-optional-components
+          path: |
+            build/optional-components/knowledge-base.zip
+            build/optional-components/neplex-vectorizer.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -525,6 +544,11 @@ jobs:
         with:
           name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-full
 
+      - name: Download optional components artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-optional-components
+
       - name: Generate release notes
         id: release_notes
         run: |
@@ -572,6 +596,8 @@ jobs:
 
             - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` — **Base plugin only** (matches what is published to WordPress.org).
             - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-full.zip` — **Full build** including bundled addons (Pro, Embedded, Fantasy-Football, etc.). Not submitted to WordPress.org.
+            - `knowledge-base.zip` — **Optional:** 218+ profession playbooks and knowledge base documents. Downloaded on-demand by the plugin.
+            - `neplex-vectorizer.zip` — **Optional:** Vectorizer library placeholder (now bundled with the base plugin).
 
             **Option 1: Upload ZIP**
             1. Download `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` (base) or `…-full.zip` (everything) below
@@ -598,6 +624,8 @@ jobs:
             
           files: |
             ${{ env.PLUGIN_SLUG }}-*.zip
+            knowledge-base.zip
+            neplex-vectorizer.zip
           fail_on_unmatched_files: true
           generate_release_notes: true
           token: ${{ secrets.GITHUB_TOKEN }}
