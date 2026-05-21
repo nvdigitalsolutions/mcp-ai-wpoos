@@ -337,13 +337,16 @@ class WP_MCP_AI_Optional_Components {
 					<strong><?php esc_html_e( 'Open Operator System:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php esc_html_e( 'Optional components are available for download to enhance your experience (vectorizer library and complete knowledge base with 218 profession playbooks). These are downloaded from the plugin\'s GitHub releases.', 'mcp-ai-wpoos' ); ?>
 				</p>
-				<p>
+				<p style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
 					<button type="button" class="button button-primary" id="wp-mcp-ai-download-components-btn" data-nonce="<?php echo esc_attr( $nonce ); ?>">
 						<?php esc_html_e( 'Download Optional Components', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="button" class="button" id="wp-mcp-ai-dismiss-components-btn">
 						<?php esc_html_e( 'No Thanks', 'mcp-ai-wpoos' ); ?>
 					</button>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ); ?>" class="button">
+						<?php esc_html_e( 'Go to Data Management', 'mcp-ai-wpoos' ); ?>
+					</a>
 				</p>
 			</div>
 			<?php
@@ -379,7 +382,7 @@ class WP_MCP_AI_Optional_Components {
 										if (notice) {
 											var errorP = document.createElement('p');
 											errorP.style.color = '#d63638';
-											errorP.textContent = <?php echo wp_json_encode( __( 'Download failed. Please try again or download manually from the Components page.', 'mcp-ai-wpoos' ) ); ?>;
+											errorP.innerHTML = <?php echo wp_json_encode( sprintf( __( 'Download failed. Please try again or manage your data on the <a href="%s">Data Management</a> page.', 'mcp-ai-wpoos' ), esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ) ) ); ?>;
 											notice.appendChild(errorP);
 										}
 									});
