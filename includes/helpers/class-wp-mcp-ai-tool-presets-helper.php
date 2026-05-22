@@ -3571,10 +3571,19 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		 * @since 1.0.0
 		 */
 		return apply_filters( 'wp_mcp_ai_tool_presets', $presets );
-	}
+		}
 
-	/**
-	 * Render tool preset buttons with Clear All and Select All.
+		/**
+		 * Get all tool presets (alias for get_presets).
+		 *
+		 * @return array
+		 */
+		public static function get_all_presets() {
+			return self::get_presets();
+		}
+
+		/**
+		 * Render tool preset buttons with Clear All and Select All.
 	 *
 	 * @param array $args {
 	 *     Optional. Arguments for rendering presets.

@@ -4048,6 +4048,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$has_file_reference = false;
 
 			foreach ( $messages as $message ) {
+				// Check for file_id / file_ids at the message level.
+
+				if ( isset( $message['file_id'] ) && ! empty( $message['file_id'] ) ) {
+					$has_file_reference = true;
+				}
+
+				if ( isset( $message['file_ids'] ) && is_array( $message['file_ids'] ) && ! empty( $message['file_ids'] ) ) {
+					$has_file_reference = true;
+				}
+
 				if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
 					continue;
 				}
@@ -4081,6 +4091,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						$has_file_reference = true;
 					}
 				}
+			}
+
+			// Check for files in options (alternative to attachments).
+
+			if ( ! $has_file_reference && ! empty( $options['files'] ) && is_array( $options['files'] ) ) {
+				$has_file_reference = true;
 			}
 
 			// Only use Responses API if there are non-image file references.

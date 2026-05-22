@@ -420,8 +420,14 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				return false;
 			}
 
+			// GCM-encrypted values are prefixed with "v2:"; strip it before base64-decoding.
+			$check = $value;
+			if ( 0 === strpos( $check, self::GCM_PREFIX ) ) {
+				$check = substr( $check, strlen( self::GCM_PREFIX ) );
+			}
+
 			// Check if it's valid base64 and has minimum length.
-			$decoded = base64_decode( $value, true );
+			$decoded = base64_decode( $check, true );
 			return false !== $decoded && strlen( $decoded ) >= 17;
 		}
 	}

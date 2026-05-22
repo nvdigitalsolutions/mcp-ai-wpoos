@@ -336,11 +336,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		/**
 		 * Return the masked placeholder for a saved sensitive value.
 		 *
-		 * @param mixed $value Stored value.
+		 * Handles both plaintext and encrypted (v2: base64) stored values.
+		 * When the value is non-empty (or is an encrypted payload), the placeholder
+		 * is returned so the raw secret never appears in UI output.
+		 *
+		 * @param mixed $value Stored value (may be encrypted or plaintext).
 		 * @return string
 		 */
 		public static function mask_sensitive_setting_value( $value ) {
-			if ( empty( $value ) ) {
+			// Treat the value as non-empty when it is a non-empty string.
+			// Use strlen() rather than empty() so that "0" is treated as a
+			// real secret value rather than being silently dropped.
+			if ( ! is_string( $value ) || 0 === strlen( $value ) ) {
 				return '';
 			}
 

@@ -271,7 +271,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		$malformed_logs = array_filter(
 			$logs,
 			function ( $log ) {
-				return isset( $log['event'] ) && 'cloudflare_invalid_tool_call' === $log['event'];
+				return isset( $log['type'] ) && 'cloudflare_invalid_tool_call' === $log['type'];
 			}
 		);
 

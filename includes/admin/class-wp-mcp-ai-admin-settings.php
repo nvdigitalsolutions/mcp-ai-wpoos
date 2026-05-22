@@ -1442,7 +1442,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_agentic_loop_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_agentic_loop_logging'] ) || ! empty( $settings['enable_agentic_loop_logging'] );
 		}
 
 		/**
@@ -1456,7 +1457,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_api_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_api_logging'] ) || ! empty( $settings['enable_api_logging'] );
 		}
 
 		/**
@@ -1470,7 +1472,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_tool_execution_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_tool_execution_logging'] ) || ! empty( $settings['enable_tool_execution_logging'] );
 		}
 
 		/**
@@ -1484,7 +1487,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$settings = self::get_settings();
-			return ! empty( $settings['enable_chat_interaction_logging'] );
+			// When the granular key is absent (not yet configured), default to enabled.
+			return ! isset( $settings['enable_chat_interaction_logging'] ) || ! empty( $settings['enable_chat_interaction_logging'] );
 		}
 
 		/**
@@ -6077,6 +6081,119 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			return $max_bytes;
+		}
+
+		/**
+		 * Render the token usage section.
+		 */
+		public function render_token_usage_section() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+			$usage_data = get_option( 'wp_mcp_ai_token_usage', array() );
+			$totals     = $this->calculate_usage_totals( $usage_data );
+			?>
+			<div class="wp-mcp-ai-token-usage-section">
+				<h2><?php esc_html_e( 'Token Usage Statistics', 'mcp-ai-wpoos' ); ?></h2>
+				<div class="wp-mcp-ai-token-usage-tabs">
+					<button class="tab-button active" data-tab="all"><?php esc_html_e( 'All Users', 'mcp-ai-wpoos' ); ?></button>
+					<button class="tab-button" data-tab="user"><?php esc_html_e( 'Your Usage', 'mcp-ai-wpoos' ); ?></button>
+				</div>
+				<div class="wp-mcp-ai-token-usage-content">
+					<div class="tab-content active" id="tab-all">
+						<p><?php esc_html_e( 'Total Requests:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['requests'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Total Prompt Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['prompt_tokens'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Total Completion Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['completion_tokens'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Total Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['total_tokens'] ); ?></strong></p>
+						<p><?php esc_html_e( 'Cached Tokens:', 'mcp-ai-wpoos' ); ?> <strong><?php echo esc_html( $totals['cached_tokens'] ); ?></strong></p>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Calculate aggregate usage totals across all providers and models.
+		 *
+		 * @param array $usage Usage data keyed by provider then model.
+		 * @return array Aggregated totals.
+		 */
+		private function calculate_usage_totals( $usage ) {
+			$totals = array(
+				'requests'          => 0,
+				'prompt_tokens'     => 0,
+				'completion_tokens' => 0,
+				'total_tokens'      => 0,
+				'cached_tokens'     => 0,
+			);
+
+			if ( ! is_array( $usage ) ) {
+				return $totals;
+			}
+
+			foreach ( $usage as $provider => $models ) {
+				if ( ! is_array( $models ) ) {
+					continue;
+				}
+				foreach ( $models as $model => $data ) {
+					if ( ! is_array( $data ) ) {
+						continue;
+					}
+					$totals['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
+					$totals['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+					$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+					$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
+					$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
+				}
+			}
+
+			return $totals;
+		}
+
+		/**
+		 * AJAX handler: Reset token usage for the current user.
+		 */
+		public function handle_reset_user_token_usage() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to reset token usage.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			$nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'wp-mcp-ai-settings' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			$user_id = isset( $_REQUEST['user_id'] ) ? absint( $_REQUEST['user_id'] ) : get_current_user_id();
+			if ( $user_id > 0 && class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+				delete_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY );
+			}
+
+			wp_die( '1' );
+		}
+
+		/**
+		 * AJAX handler: Reset all token usage for all users.
+		 */
+		public function handle_reset_all_token_usage() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to reset token usage.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			$nonce = isset( $_REQUEST['nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) ) : '';
+			if ( ! wp_verify_nonce( $nonce, 'wp-mcp-ai-settings' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+			}
+
+			global $wpdb;
+			if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+				$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+				// Delete from database.
+				$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => $meta_key ) );
+				// Clear the WP object cache for the meta key.
+				wp_cache_delete( $meta_key, 'user_meta' );
+			}
+
+			wp_die( '1' );
 		}
 
 		// Google Drive OAuth field rendering methods removed - now handled in PRO addon's Remote Sites feature.
