@@ -553,17 +553,17 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function get_z_score( $confidence ) {
 		// Common confidence levels to z-scores.
 		$z_scores = array(
-			0.90 => 1.645,
-			0.95 => 1.96,
-			0.99 => 2.576,
+			'0.90' => 1.645,
+			'0.95' => 1.96,
+			'0.99' => 2.576,
 		);
 
 		// Find closest match.
-		$closest  = 0.95;
-		$min_diff = abs( $confidence - $closest );
+		$closest  = '0.95';
+		$min_diff = abs( $confidence - (float) $closest );
 
 		foreach ( array_keys( $z_scores ) as $level ) {
-			$diff = abs( $confidence - $level );
+			$diff = abs( $confidence - (float) $level );
 			if ( $diff < $min_diff ) {
 				$closest  = $level;
 				$min_diff = $diff;

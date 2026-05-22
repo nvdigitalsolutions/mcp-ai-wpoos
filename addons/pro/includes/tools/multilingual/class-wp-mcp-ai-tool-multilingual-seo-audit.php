@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 		return __( 'Multilingual SEO Audit tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'multilingual_seo_audit';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 		return __( 'SEO optimization audit for translated content including hreflang tags and meta descriptions.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -73,10 +87,22 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,
@@ -85,7 +111,7 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement multilingual_seo_audit logic
+		// TODO: Implement multilingual_seo_audit logic.
 
 		return array(
 			'success' => true,

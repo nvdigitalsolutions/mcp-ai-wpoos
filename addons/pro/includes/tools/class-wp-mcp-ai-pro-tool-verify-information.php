@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WP_MCP_AI_Pro_Tool_Verify_Information {
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'verify_information';
 	}
@@ -52,6 +57,17 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		);
 	}
 
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$claim   = sanitize_text_field( $arguments['claim'] );
 		$sources = $arguments['sources'];

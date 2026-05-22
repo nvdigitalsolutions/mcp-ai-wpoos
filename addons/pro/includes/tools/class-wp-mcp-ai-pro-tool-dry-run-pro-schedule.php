@@ -69,10 +69,28 @@ class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
 
@@ -137,15 +155,15 @@ class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'schedule_id'   => $schedule_id,
-			'name'          => isset( $schedule['name'] ) ? (string) $schedule['name'] : '',
-			'schedule_type' => $schedule_type,
-			'cadence'       => $cadence,
-			'enabled'       => $enabled,
-			'timezone'      => wp_timezone_string(),
-			'next_runs'     => $next_runs,
-			'action'        => $action_preview,
-			'warnings'      => $warnings,
+			'schedule_id'    => $schedule_id,
+			'name'           => isset( $schedule['name'] ) ? (string) $schedule['name'] : '',
+			'schedule_type'  => $schedule_type,
+			'cadence'        => $cadence,
+			'enabled'        => $enabled,
+			'timezone'       => wp_timezone_string(),
+			'next_runs'      => $next_runs,
+			'action'         => $action_preview,
+			'warnings'       => $warnings,
 			'would_dispatch' => $enabled && ! empty( $next_runs ),
 		);
 	}
@@ -172,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule implements WP_MCP_AI_Tool_Interfac
 				);
 
 			case 'workflow':
-				$steps = isset( $schedule['workflow_steps'] ) && is_array( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array();
+				$steps         = isset( $schedule['workflow_steps'] ) && is_array( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array();
 				$preview_steps = array();
 				foreach ( $steps as $index => $step ) {
 					$preview_steps[] = array(

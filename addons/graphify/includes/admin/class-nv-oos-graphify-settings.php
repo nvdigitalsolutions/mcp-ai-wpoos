@@ -1,5 +1,4 @@
 <?php
-// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Intentional: addon uses nvoos prefix without hyphen.
 /**
  * NV oOS Graphify — Admin Settings Page
  *
@@ -11,16 +10,18 @@
  * @since   0.5.0
  */
 
+// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Intentional: addon uses nvoos prefix without hyphen.
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid -- NV_oOS intentional branding; consistent with all other addon classes.
 /**
  * Admin settings for the Graphify addon.
  *
  * @since 0.5.0
  */
-// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid -- NV_oOS intentional branding; consistent with all other addon classes.
 class NV_oOS_Graphify_Settings {
 
 	/**

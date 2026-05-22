@@ -597,7 +597,7 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			'wp_mcp_ai_skill_catalogue_companion_files',
 			array( 'reference.md', 'examples.md', 'NOTES.md', 'LICENSE' )
 		);
-		$extra_files = array();
+		$extra_files     = array();
 		foreach ( $companion_names as $companion ) {
 			$companion = ltrim( (string) $companion, '/' );
 			if ( '' === $companion || false !== strpos( $companion, '..' ) ) {
@@ -704,7 +704,7 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			'User-Agent' => 'WP-MCP-AI-Skill-Catalogue/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.0.0' ) . ' (WordPress/' . get_bloginfo( 'version' ) . ')',
 			'Accept'     => 'text/plain, application/json, */*;q=0.5',
 		);
-		$headers = array_merge( $default_headers, is_array( $headers ) ? $headers : array() );
+		$headers         = array_merge( $default_headers, is_array( $headers ) ? $headers : array() );
 
 		$resolve_entry = $host . ':' . $port . ':' . $resolved_ip;
 		$curl_pin      = static function ( $handle ) use ( $resolve_entry ) {
@@ -766,7 +766,7 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 	public function refresh_all() {
 		$results = array();
 		foreach ( $this->get_sources() as $src ) {
-			$res = $this->get_manifest( $src['id'], true );
+			$res                   = $this->get_manifest( $src['id'], true );
 			$results[ $src['id'] ] = is_wp_error( $res ) ? array(
 				'ok'    => false,
 				'error' => $res->get_error_message(),
@@ -799,7 +799,7 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
 					return null;
 				}
-				$registry = WP_MCP_AI_Skill_Registry::instance();
+				$registry  = WP_MCP_AI_Skill_Registry::instance();
 				$installed = $registry->get_skill( $skill_name );
 				if ( null === $installed ) {
 					return null;

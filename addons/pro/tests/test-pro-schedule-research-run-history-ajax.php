@@ -31,9 +31,13 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $subscriber );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['schedule_id'] = 'any-schedule';
-		$_POST['action']      = 'wp_mcp_ai_run_history_from_research';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['action'] = 'wp_mcp_ai_run_history_from_research';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_run_history_from_research' );
@@ -55,9 +59,13 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 		wp_set_current_user( $admin );
 		grant_super_admin( $admin );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['schedule_id'] = '';
-		$_POST['action']      = 'wp_mcp_ai_run_history_from_research';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['action'] = 'wp_mcp_ai_run_history_from_research';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_run_history_from_research' );
@@ -93,9 +101,13 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 			2
 		);
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['schedule_id'] = 'test-sched-missing-tool';
-		$_POST['action']      = 'wp_mcp_ai_run_history_from_research';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['action'] = 'wp_mcp_ai_run_history_from_research';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_run_history_from_research' );
@@ -106,7 +118,7 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_tool_execute' );
 
 		$response = json_decode( $this->_last_response, true );
-		// Either the filter turned it into an error, OR the handler fell back and
+		// Either the filter turned it into an error, OR the handler fell back and.
 		// returned an error because the tool class doesn't exist in test context.
 		// We just assert the response is parseable and not a PHP fatal.
 		$this->assertIsArray( $response );
@@ -129,18 +141,18 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 
 		$stub_history = array(
 			array(
-				'time'        => '2026-05-10T09:00:00Z',
-				'duration'    => 1.2,
-				'success'     => true,
-				'error'       => '',
-				'action_log'  => array(),
+				'time'       => '2026-05-10T09:00:00Z',
+				'duration'   => 1.2,
+				'success'    => true,
+				'error'      => '',
+				'action_log' => array(),
 			),
 			array(
-				'time'        => '2026-05-11T09:00:00Z',
-				'duration'    => 0.5,
-				'success'     => false,
-				'error'       => 'API timeout',
-				'action_log'  => array(),
+				'time'       => '2026-05-11T09:00:00Z',
+				'duration'   => 0.5,
+				'success'    => false,
+				'error'      => 'API timeout',
+				'action_log' => array(),
 			),
 		);
 
@@ -164,9 +176,12 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 		}
 
 		// Directly test the method outcome via WP Ajax test infrastructure.
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['schedule_id'] = 'test-sched-happy';
-		$_POST['action']      = 'wp_mcp_ai_run_history_from_research';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['action'] = 'wp_mcp_ai_run_history_from_research';
 
 		// Bypass the actual AJAX if the registry isn't patched deep enough:
 		// call the static method directly.
@@ -184,12 +199,12 @@ class Test_Pro_Schedule_Research_Run_History_Ajax extends WP_Ajax_UnitTestCase {
 
 		remove_all_filters( 'wp_mcp_ai_tool_execute' );
 
-		// If the registry doesn't honour the filter, the call may still succeed
-		// by falling through to the tool class (not available here) and return
+		// If the registry doesn't honour the filter, the call may still succeed.
+		// by falling through to the tool class (not available here) and return.
 		// an error. We assert structure rather than exact content.
 		$response = json_decode( ! empty( $raw ) ? $raw : '{}', true );
 		$this->assertIsArray( $response );
-		// We accept both success=true (stub returned data) and success=false
+		// We accept both success=true (stub returned data) and success=false.
 		// (tool class not found in test env). What we must NOT have is a PHP fatal.
 		$this->assertArrayHasKey( 'success', $response );
 	}

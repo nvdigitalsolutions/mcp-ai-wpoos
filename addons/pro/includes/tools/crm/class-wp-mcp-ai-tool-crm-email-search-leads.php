@@ -111,22 +111,30 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		return __( 'The CRM Email Search (Leads) tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_slug() {
 		return 'crm_email_search_leads';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_name() {
 		return __( 'CRM Email Search: New Leads', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_description() {
 		return __( 'Search CRM contacts for new leads by email-based criteria including lead score, email domain, inquiry type, source, and date range. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring and pipeline-stage filtering.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -223,17 +231,23 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function requires_base_pro() {
 		return true;
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -303,7 +317,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// -------------------------------------------------------------------------
-	// Action handlers
+	// Action handlers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -419,6 +433,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'success'    => true,
 			/* translators: %s: cron recurrence label (hourly / twicedaily / daily) */
+			 */
 			'message'    => sprintf( __( 'Lead search scheduled to auto-refresh %s.', 'mcp-ai-wpoos-pro' ), $recurrence ),
 			'recurrence' => $recurrence,
 			'hook'       => self::CRON_HOOK,
@@ -446,7 +461,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// -------------------------------------------------------------------------
-	// Cron callback
+	// Cron callback.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -481,7 +496,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// -------------------------------------------------------------------------
-	// Core query
+	// Core query.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -645,7 +660,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// -------------------------------------------------------------------------
-	// Helpers
+	// Helpers.
 	// -------------------------------------------------------------------------
 
 	/**

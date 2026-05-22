@@ -56,23 +56,17 @@ class NV_oOS_Graphify_Tool_God_Nodes implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'read_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only', 'cacheable' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$limit = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
 		$type  = isset( $arguments['type'] ) ? sanitize_text_field( $arguments['type'] ) : '';

@@ -552,18 +552,18 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return true;
 		}
 
-		// Resolve the hostname to catch SSRF via DNS (e.g., a domain that resolves
+		// Resolve the hostname to catch SSRF via DNS (e.g., a domain that resolves.
 		// to 192.168.x.x passes the literal-IP check above but must still be blocked).
 		$resolved_ip = gethostbyname( $host );
 
 		// gethostbyname() returns the original hostname unchanged on DNS failure.
-		// Block if resolution failed (no valid IP returned) or if the resolved IP
+		// Block if resolution failed (no valid IP returned) or if the resolved IP.
 		// falls in a private or reserved range.
 		if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
 			return true; // DNS resolution failed; block to be safe.
 		}
 
-		// Block private IP ranges (includes 127.x, 10.x, 172.16-31.x, 192.168.x)
+		// Block private IP ranges (includes 127.x, 10.x, 172.16-31.x, 192.168.x).
 		// and reserved/documentation ranges (169.254.x, etc.).
 		if ( filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
 			return true;

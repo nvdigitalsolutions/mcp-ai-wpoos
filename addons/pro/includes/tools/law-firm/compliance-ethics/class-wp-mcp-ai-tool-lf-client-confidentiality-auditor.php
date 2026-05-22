@@ -136,26 +136,26 @@ class WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor implements WP_MCP_AI_Tool
 
 		// Communications audit.
 		if ( 'all' === $audit_scope || 'communications' === $audit_scope ) {
-			$comm_results = $this->audit_communications( $matter_id );
+			$comm_results                    = $this->audit_communications( $matter_id );
 			$audit_results['communications'] = $comm_results;
-			$issues_found += $comm_results['issues_count'];
-			$total_checks += $comm_results['checks_performed'];
+			$issues_found                   += $comm_results['issues_count'];
+			$total_checks                   += $comm_results['checks_performed'];
 		}
 
 		// Documents audit.
 		if ( 'all' === $audit_scope || 'documents' === $audit_scope ) {
-			$doc_results = $this->audit_documents( $matter_id );
+			$doc_results                = $this->audit_documents( $matter_id );
 			$audit_results['documents'] = $doc_results;
-			$issues_found += $doc_results['issues_count'];
-			$total_checks += $doc_results['checks_performed'];
+			$issues_found              += $doc_results['issues_count'];
+			$total_checks              += $doc_results['checks_performed'];
 		}
 
 		// Access controls audit.
 		if ( 'all' === $audit_scope || 'access_controls' === $audit_scope ) {
-			$access_results = $this->audit_access_controls( $matter_id );
+			$access_results                   = $this->audit_access_controls( $matter_id );
 			$audit_results['access_controls'] = $access_results;
-			$issues_found += $access_results['issues_count'];
-			$total_checks += $access_results['checks_performed'];
+			$issues_found                    += $access_results['issues_count'];
+			$total_checks                    += $access_results['checks_performed'];
 		}
 
 		// Determine overall risk level.

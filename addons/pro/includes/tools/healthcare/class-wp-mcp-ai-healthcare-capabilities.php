@@ -54,21 +54,21 @@ class WP_MCP_AI_Healthcare_Capabilities {
 	public static function default_map() {
 		return array(
 			// Member & record management.
-			'view_member'           => 'edit_posts',
-			'edit_member'           => 'edit_posts',
-			'delete_member'         => 'manage_options',
-			'view_medical_record'   => 'edit_posts',
-			'edit_medical_record'   => 'edit_posts',
-			'delete_medical_record' => 'manage_options',
+			'view_member'            => 'edit_posts',
+			'edit_member'            => 'edit_posts',
+			'delete_member'          => 'manage_options',
+			'view_medical_record'    => 'edit_posts',
+			'edit_medical_record'    => 'edit_posts',
+			'delete_medical_record'  => 'manage_options',
 
 			// Vitals.
-			'log_vital_signs'       => 'edit_posts',
-			'view_vital_signs'      => 'edit_posts',
+			'log_vital_signs'        => 'edit_posts',
+			'view_vital_signs'       => 'edit_posts',
 
 			// Prescriptions / allergies / immunisations.
-			'manage_prescriptions'  => 'edit_posts',
-			'manage_allergies'      => 'edit_posts',
-			'manage_immunizations'  => 'edit_posts',
+			'manage_prescriptions'   => 'edit_posts',
+			'manage_allergies'       => 'edit_posts',
+			'manage_immunizations'   => 'edit_posts',
 
 			// Imaging — kept aligned with WP_MCP_AI_Imaging_Capabilities.
 			'view_medical_imaging'   => 'view_medical_imaging',
@@ -77,8 +77,8 @@ class WP_MCP_AI_Healthcare_Capabilities {
 			'manage_medical_imaging' => 'manage_medical_imaging',
 
 			// FHIR / HL7 / DICOM export.
-			'export_phi'            => 'manage_options',
-			'import_phi'            => 'manage_options',
+			'export_phi'             => 'manage_options',
+			'import_phi'             => 'manage_options',
 		);
 	}
 

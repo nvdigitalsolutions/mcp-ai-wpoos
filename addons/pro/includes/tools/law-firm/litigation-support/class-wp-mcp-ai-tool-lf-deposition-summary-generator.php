@@ -155,28 +155,37 @@ class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_I
 				}
 			}
 			$summary_sections[] = array(
-				'section'      => $idx + 1,
-				'word_count'   => $section_word,
-				'excerpt'      => wp_trim_words( $section_text, 40, '...' ),
-				'topic_hits'   => $topic_hits,
+				'section'    => $idx + 1,
+				'word_count' => $section_word,
+				'excerpt'    => wp_trim_words( $section_text, 40, '...' ),
+				'topic_hits' => $topic_hits,
 			);
 		}
 
 		// Detect key admissions — statements containing admission-related language.
 		$admission_patterns = array(
-			'i admit', 'i acknowledge', 'that is correct', 'yes, i did',
-			'i agree', 'i concede', 'i was responsible', 'i confirm',
-			'that\'s true', 'i was aware', 'i knew', 'i authorized',
+			'i admit',
+			'i acknowledge',
+			'that is correct',
+			'yes, i did',
+			'i agree',
+			'i concede',
+			'i was responsible',
+			'i confirm',
+			'that\'s true',
+			'i was aware',
+			'i knew',
+			'i authorized',
 		);
-		$key_admissions = array();
+		$key_admissions     = array();
 		foreach ( $sentences as $idx => $sentence ) {
 			$s_lower = strtolower( $sentence );
 			foreach ( $admission_patterns as $pattern ) {
 				if ( false !== strpos( $s_lower, $pattern ) ) {
 					$key_admissions[] = array(
-						'statement'   => trim( $sentence ),
-						'pattern'     => $pattern,
-						'position'    => $idx + 1,
+						'statement' => trim( $sentence ),
+						'pattern'   => $pattern,
+						'position'  => $idx + 1,
 					);
 					break;
 				}
@@ -185,11 +194,19 @@ class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_I
 
 		// Detect contradictions — look for negation phrases near similar topics.
 		$contradiction_markers = array(
-			'i never', 'i don\'t recall', 'i don\'t remember', 'that\'s not true',
-			'i didn\'t', 'i deny', 'that is incorrect', 'no, i did not',
-			'i was not', 'i wasn\'t', 'i have no knowledge',
+			'i never',
+			'i don\'t recall',
+			'i don\'t remember',
+			'that\'s not true',
+			'i didn\'t',
+			'i deny',
+			'that is incorrect',
+			'no, i did not',
+			'i was not',
+			'i wasn\'t',
+			'i have no knowledge',
 		);
-		$contradictions = array();
+		$contradictions        = array();
 		foreach ( $sentences as $idx => $sentence ) {
 			$s_lower = strtolower( $sentence );
 			foreach ( $contradiction_markers as $marker ) {
@@ -246,12 +263,12 @@ class WP_MCP_AI_Tool_LF_Deposition_Summary_Generator implements WP_MCP_AI_Tool_I
 		}
 
 		$data = array(
-			'deponent_name'      => $deponent,
-			'word_count'         => $word_count,
-			'sentence_count'     => count( $sentences ),
-			'summary_sections'   => $summary_sections,
-			'key_admissions'     => $key_admissions,
-			'contradictions'     => $contradictions,
+			'deponent_name'       => $deponent,
+			'word_count'          => $word_count,
+			'sentence_count'      => count( $sentences ),
+			'summary_sections'    => $summary_sections,
+			'key_admissions'      => $key_admissions,
+			'contradictions'      => $contradictions,
 			'follow_up_questions' => $follow_up_questions,
 		);
 

@@ -52,7 +52,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'          => array(
+				'action'     => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: list_contacts, get_contact, add_contact, update_contact, remove_contact, list_lists, add_to_list, remove_from_list.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
@@ -66,36 +66,36 @@ class WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts implements WP_MCP_AI_Tool_Interfa
 						'remove_from_list',
 					),
 				),
-				'email'           => array(
+				'email'      => array(
 					'type'        => 'string',
 					'description' => __( 'Email address of the contact (required for get, add, update, remove, add_to_list, remove_from_list).', 'mcp-ai-wpoos-pro' ),
 				),
-				'first_name'      => array(
+				'first_name' => array(
 					'type'        => 'string',
 					'description' => __( 'First name of the contact (used with add_contact or update_contact).', 'mcp-ai-wpoos-pro' ),
 				),
-				'last_name'       => array(
+				'last_name'  => array(
 					'type'        => 'string',
 					'description' => __( 'Last name of the contact (used with add_contact or update_contact).', 'mcp-ai-wpoos-pro' ),
 				),
-				'list_ids'        => array(
+				'list_ids'   => array(
 					'type'        => 'array',
 					'description' => __( 'List IDs to assign or unassign the contact from. Used with add_contact, add_to_list, or remove_from_list.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'attributes'      => array(
+				'attributes' => array(
 					'type'                 => 'object',
 					'description'          => __( 'Custom attribute key-value pairs for the contact (used with add_contact or update_contact).', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => true,
 				),
-				'limit'           => array(
+				'limit'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of results to return (default: 10, max: 500).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 500,
 				),
-				'offset'          => array(
+				'offset'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Offset for paginating contact results (default: 0).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,

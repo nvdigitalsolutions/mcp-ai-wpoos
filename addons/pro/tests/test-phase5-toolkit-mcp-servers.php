@@ -35,7 +35,7 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 1. Metabox registration
+	// 1. Metabox registration.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -57,7 +57,7 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 2. save_meta_box() stores slugs
+	// 2. save_meta_box() stores slugs.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -67,9 +67,11 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
 
 		// Create valid nonce.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST[ WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_FIELD ] = wp_create_nonce(
 			WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_ACTION
 		);
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['wp_mcp_ai_pro_allowed_mcp_servers'] = array( 'crm', 'health' );
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
@@ -88,7 +90,7 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 3. save_meta_box() clears meta when nothing posted
+	// 3. save_meta_box() clears meta when nothing posted.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -97,6 +99,8 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	public function test_save_meta_box_clears_when_empty() {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
 		update_post_meta( $post_id, WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::META_KEY, array( 'crm' ) );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$_POST[ WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_FIELD ] = wp_create_nonce(
 			WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_ACTION
@@ -118,7 +122,7 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 4. get_allowed_servers() returns stored array
+	// 4. get_allowed_servers() returns stored array.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -134,7 +138,7 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 5. Observability card noops when classes unavailable
+	// 5. Observability card noops when classes unavailable.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -144,7 +148,7 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	 * produced when an exception guard is in place.
 	 */
 	public function test_observability_card_noops_gracefully() {
-		// This test confirms the card output is empty when there are no servers
+		// This test confirms the card output is empty when there are no servers.
 		// and no audit entries — not an error state.
 		WP_MCP_AI_Toolkit_Server_Registry::reset_instance();
 		WP_MCP_AI_Toolkit_MCP_Audit_Log::reset_instance();
@@ -155,13 +159,13 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 		$card->render_card();
 		$output = ob_get_clean();
 
-		// With zero servers registered, the card still renders its shell
+		// With zero servers registered, the card still renders its shell.
 		// (enabled count = 0, no consumers). Must not throw.
 		$this->assertIsString( $output, 'render_card() should produce string output' );
 	}
 
 	// -----------------------------------------------------------------------
-	// 6. Observability card fires on hook
+	// 6. Observability card fires on hook.
 	// -----------------------------------------------------------------------
 
 	/**

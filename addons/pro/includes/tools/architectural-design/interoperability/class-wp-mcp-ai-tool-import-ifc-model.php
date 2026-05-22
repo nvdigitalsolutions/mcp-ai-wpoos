@@ -26,6 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -38,6 +39,13 @@ class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MC
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'import_ifc_model';
 	}
@@ -50,6 +58,13 @@ class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MC
 		return __( 'Normalise a simplified-IFC JSON payload (project, levels, spaces, walls, openings) into the toolkit canonical floor-plan structure. Returns a model summary (storey + space + wall + opening counts and total floor area). Binary IFC STEP / IFCXML parsing must be done externally; pipe the JSON output here.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -68,6 +83,11 @@ class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'read-only', 'cacheable' );
 	}
@@ -91,8 +111,8 @@ class WP_MCP_AI_Tool_Import_Ifc_Model implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_engine_missing', __( 'Architectural interop engine is unavailable.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$result    = WP_MCP_AI_Architectural_Interop::normalize_floor_plan( $arguments['payload'] );
-		$plan      = isset( $result['payload'] ) ? $result['payload'] : array();
+		$result     = WP_MCP_AI_Architectural_Interop::normalize_floor_plan( $arguments['payload'] );
+		$plan       = isset( $result['payload'] ) ? $result['payload'] : array();
 		$total_area = 0.0;
 		foreach ( (array) ( isset( $plan['spaces'] ) ? $plan['spaces'] : array() ) as $space ) {
 			$total_area += isset( $space['area_m2'] ) ? (float) $space['area_m2'] : 0.0;

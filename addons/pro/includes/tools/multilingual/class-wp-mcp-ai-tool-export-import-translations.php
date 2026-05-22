@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interf
 		return __( 'Export/Import Translations tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'export_import_translations';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interf
 		return __( 'Export and import translations in XLIFF, PO, or JSON formats for professional translation services.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -73,10 +87,22 @@ class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interf
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,
@@ -85,7 +111,7 @@ class WP_MCP_AI_Tool_Export_Import_Translations implements WP_MCP_AI_Tool_Interf
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement export_import_translations logic
+		// TODO: Implement export_import_translations logic.
 
 		return array(
 			'success' => true,

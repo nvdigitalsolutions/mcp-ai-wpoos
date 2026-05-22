@@ -28,29 +28,29 @@ class WP_MCP_AI_QMS_Workflow {
 	 */
 	public static function allowed_transitions() {
 		return array(
-			''                                              => array( WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT ),
-			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT      => array(
+			''                                             => array( WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT ),
+			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT     => array(
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW,
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE,
 			),
-			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW  => array(
+			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW => array(
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT,
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_APPROVED,
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE,
 			),
-			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_APPROVED   => array(
+			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_APPROVED  => array(
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_RELEASED,
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_DRAFT,
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE,
 			),
-			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_RELEASED   => array(
+			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_RELEASED  => array(
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_SUPERSEDED,
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE,
 			),
 			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_SUPERSEDED => array(
 				WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE,
 			),
-			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE   => array(),
+			WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_OBSOLETE  => array(),
 		);
 	}
 
@@ -75,7 +75,7 @@ class WP_MCP_AI_QMS_Workflow {
 				sprintf(
 					/* translators: 1: from state, 2: to state */
 					__( 'Transition from %1$s to %2$s is not permitted.', 'mcp-ai-wpoos-pro' ),
-					$from ?: 'none',
+					$from ? $from : 'none',
 					$to
 				)
 			);
@@ -172,7 +172,7 @@ class WP_MCP_AI_QMS_Workflow {
 	protected static function check_state_preconditions( $post_id, $to_state ) {
 		switch ( $to_state ) {
 			case WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_IN_REVIEW:
-				$reviewers = (array) ( get_post_meta( $post_id, '_qms_reviewer_ids', true ) ?: array() );
+				$reviewers = (array) ( get_post_meta( $post_id, '_qms_reviewer_ids', true ) ? get_post_meta( $post_id, '_qms_reviewer_ids', true ) : array() );
 				if ( empty( $reviewers ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_qms_no_reviewers',
@@ -181,7 +181,7 @@ class WP_MCP_AI_QMS_Workflow {
 				}
 				break;
 			case WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_APPROVED:
-				$approvers = (array) ( get_post_meta( $post_id, '_qms_approver_ids', true ) ?: array() );
+				$approvers = (array) ( get_post_meta( $post_id, '_qms_approver_ids', true ) ? get_post_meta( $post_id, '_qms_approver_ids', true ) : array() );
 				if ( empty( $approvers ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_qms_no_approvers',
@@ -190,7 +190,7 @@ class WP_MCP_AI_QMS_Workflow {
 				}
 				break;
 			case WP_MCP_AI_QMS_Doc_Record_CPT::STATUS_RELEASED:
-				$signatures = (array) ( get_post_meta( $post_id, '_qms_signatures', true ) ?: array() );
+				$signatures       = (array) ( get_post_meta( $post_id, '_qms_signatures', true ) ? get_post_meta( $post_id, '_qms_signatures', true ) : array() );
 				$has_approval_sig = false;
 				foreach ( $signatures as $sig ) {
 					if ( isset( $sig['intent'] ) && 'approved' === $sig['intent'] ) {
@@ -250,8 +250,8 @@ class WP_MCP_AI_QMS_Workflow {
 		}
 
 		// Compute hash binding signature → document content.
-		$content_hash = WP_MCP_AI_QMS_Doc_Record_CPT::recompute_hash( $post_id );
-		$timestamp    = current_time( 'mysql', true );
+		$content_hash      = WP_MCP_AI_QMS_Doc_Record_CPT::recompute_hash( $post_id );
+		$timestamp         = current_time( 'mysql', true );
 		$signature_payload = $intent . '|' . $user->ID . '|' . $timestamp . '|' . $content_hash;
 		$signature_hash    = hash( 'sha256', $signature_payload );
 
@@ -271,7 +271,7 @@ class WP_MCP_AI_QMS_Workflow {
 			'signature_hash' => $signature_hash,
 		);
 
-		$existing = (array) ( get_post_meta( $post_id, '_qms_signatures', true ) ?: array() );
+		$existing   = (array) ( get_post_meta( $post_id, '_qms_signatures', true ) ? get_post_meta( $post_id, '_qms_signatures', true ) : array() );
 		$existing[] = $signature;
 		update_post_meta( $post_id, '_qms_signatures', $existing );
 

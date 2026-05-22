@@ -191,7 +191,10 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 			return array(
 				'success'    => true,
 				'message'    => __( 'No warehouse facility found with that name. Use "update" to create one.', 'mcp-ai-wpoos-pro' ),
-				'data'       => array( 'facility_name' => $facility_name, 'exists' => false ),
+				'data'       => array(
+					'facility_name' => $facility_name,
+					'exists'        => false,
+				),
 				'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
@@ -233,7 +236,7 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 		}
 
 		$facility['updated_at'] = current_time( 'mysql' );
-		$all[ $key ] = $facility;
+		$all[ $key ]            = $facility;
 		update_option( self::OPTION_KEY, $all, false );
 
 		return $this->build_status_response( $facility, $calc, __( 'Facility updated successfully.', 'mcp-ai-wpoos-pro' ) );
@@ -265,7 +268,7 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 
 		$facility['loans_on_line'] = array_merge( $facility['loans_on_line'] ?? array(), $sanitized );
 		$facility['updated_at']    = current_time( 'mysql' );
-		$all[ $key ] = $facility;
+		$all[ $key ]               = $facility;
 		update_option( self::OPTION_KEY, $all, false );
 
 		return $this->build_status_response(
@@ -316,9 +319,9 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 			)
 		);
 
-		$removed = $before - count( $facility['loans_on_line'] );
+		$removed                = $before - count( $facility['loans_on_line'] );
 		$facility['updated_at'] = current_time( 'mysql' );
-		$all[ $key ] = $facility;
+		$all[ $key ]            = $facility;
 		update_option( self::OPTION_KEY, $all, false );
 
 		return $this->build_status_response(
@@ -350,8 +353,8 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 		$wa_advance_num = 0.0;
 
 		foreach ( $loans as $loan ) {
-			$bal     = (float) ( $loan['balance'] ?? 0 );
-			$adv     = (float) ( $loan['advance_amount'] ?? 0 );
+			$bal             = (float) ( $loan['balance'] ?? 0 );
+			$adv             = (float) ( $loan['advance_amount'] ?? 0 );
 			$total_balance  += $bal;
 			$total_advanced += $adv;
 			if ( $bal > 0 ) {
@@ -371,18 +374,18 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 			'success'    => true,
 			'message'    => $message . ' ' . __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'facility_name'       => $facility['name'] ?? '',
-				'facility_size'       => $calc::format_currency( $facility_size ),
-				'advance_rate_pct'    => $advance_rate . '%',
-				'interest_rate'       => isset( $facility['interest_rate'] ) ? $calc::format_percentage( (float) $facility['interest_rate'] ) : __( 'N/A', 'mcp-ai-wpoos-pro' ),
-				'maturity_date'       => $facility['maturity_date'] ?? __( 'N/A', 'mcp-ai-wpoos-pro' ),
-				'num_loans'           => count( $loans ),
-				'total_loan_balance'  => $calc::format_currency( $total_balance ),
-				'total_advanced'      => $calc::format_currency( $total_advanced ),
-				'available_capacity'  => $calc::format_currency( $available ),
-				'utilization_rate'    => $calc::format_percentage( $utilization ),
-				'wa_advance_rate'     => $calc::format_percentage( $wa_advance_pct ),
-				'updated_at'          => $facility['updated_at'] ?? __( 'N/A', 'mcp-ai-wpoos-pro' ),
+				'facility_name'      => $facility['name'] ?? '',
+				'facility_size'      => $calc::format_currency( $facility_size ),
+				'advance_rate_pct'   => $advance_rate . '%',
+				'interest_rate'      => isset( $facility['interest_rate'] ) ? $calc::format_percentage( (float) $facility['interest_rate'] ) : __( 'N/A', 'mcp-ai-wpoos-pro' ),
+				'maturity_date'      => $facility['maturity_date'] ?? __( 'N/A', 'mcp-ai-wpoos-pro' ),
+				'num_loans'          => count( $loans ),
+				'total_loan_balance' => $calc::format_currency( $total_balance ),
+				'total_advanced'     => $calc::format_currency( $total_advanced ),
+				'available_capacity' => $calc::format_currency( $available ),
+				'utilization_rate'   => $calc::format_percentage( $utilization ),
+				'wa_advance_rate'    => $calc::format_percentage( $wa_advance_pct ),
+				'updated_at'         => $facility['updated_at'] ?? __( 'N/A', 'mcp-ai-wpoos-pro' ),
 			),
 			'disclaimer' => __( 'ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 		);
@@ -398,8 +401,8 @@ class WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager implements WP_MCP_AI_Tool_Interf
 	private function sanitize_loans( array $loans, float $advance_rate ): array {
 		$result = array();
 		foreach ( $loans as $loan ) {
-			$balance = (float) ( $loan['balance'] ?? 0 );
-			$advance = (float) ( $loan['advance_amount'] ?? ( $balance * $advance_rate / 100 ) );
+			$balance  = (float) ( $loan['balance'] ?? 0 );
+			$advance  = (float) ( $loan['advance_amount'] ?? ( $balance * $advance_rate / 100 ) );
 			$result[] = array(
 				'name'           => sanitize_text_field( $loan['name'] ?? '' ),
 				'balance'        => $balance,

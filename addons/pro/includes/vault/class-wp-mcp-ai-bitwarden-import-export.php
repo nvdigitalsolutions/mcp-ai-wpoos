@@ -76,7 +76,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		}
 
 		// Check if encrypted.
-		if ( ! empty( $data['encrypted'] ) && $data['encrypted'] === true ) {
+		if ( ! empty( $data['encrypted'] ) && true === $data['encrypted'] ) {
 			$result['errors'][] = 'Encrypted exports are not currently supported. Please export as unencrypted JSON.';
 			return $result;
 		}
@@ -420,7 +420,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			);
 
 			// Encrypt sensitive field values (type 1 = hidden).
-			if ( $field_data['type'] === 1 && ! empty( $field_data['value'] ) ) {
+			if ( 1 === $field_data['type'] && ! empty( $field_data['value'] ) ) {
 				$field_data['value']     = $this->encryption_service->encrypt( $field_data['value'], $user_id );
 				$field_data['encrypted'] = true;
 			}
@@ -567,7 +567,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		// Add favorite status.
 		if ( $options['include_favorites'] ) {
 			$is_favorite                = get_post_meta( $item->ID, '_vault_favorite', true );
-			$bitwarden_item['favorite'] = $is_favorite === '1';
+			$bitwarden_item['favorite'] = '1' === $is_favorite;
 		}
 
 		// Decrypt and add notes.
@@ -576,7 +576,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			try {
 				$bitwarden_item['notes'] = $this->encryption_service->decrypt( $encrypted_notes, $user_id );
 			} catch ( Exception $e ) {
-				// Skip if decryption fails.
+				unset( $e ); // Skip if decryption fails.
 			}
 		}
 
@@ -624,7 +624,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			try {
 				$login_data['username'] = $this->encryption_service->decrypt( $encrypted_username, $user_id );
 			} catch ( Exception $e ) {
-				// Skip if decryption fails.
+				unset( $e ); // Skip if decryption fails.
 			}
 		}
 
@@ -634,7 +634,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			try {
 				$login_data['password'] = $this->encryption_service->decrypt( $encrypted_password, $user_id );
 			} catch ( Exception $e ) {
-				// Skip if decryption fails.
+				unset( $e ); // Skip if decryption fails.
 			}
 		}
 
@@ -645,7 +645,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 				try {
 					$login_data['totp'] = $this->encryption_service->decrypt( $encrypted_totp, $user_id );
 				} catch ( Exception $e ) {
-					// Skip if decryption fails.
+					unset( $e ); // Skip if decryption fails.
 				}
 			}
 		}
@@ -674,7 +674,8 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 		try {
 			$decrypted = $this->encryption_service->decrypt( $encrypted_card, $user_id );
-			return json_decode( $decrypted, true ) ?: array();
+			$decoded   = json_decode( $decrypted, true );
+			return is_array( $decoded ) ? $decoded : array();
 		} catch ( Exception $e ) {
 			return array();
 		}
@@ -695,7 +696,8 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 		try {
 			$decrypted = $this->encryption_service->decrypt( $encrypted_identity, $user_id );
-			return json_decode( $decrypted, true ) ?: array();
+			$decoded   = json_decode( $decrypted, true );
+			return is_array( $decoded ) ? $decoded : array();
 		} catch ( Exception $e ) {
 			return array();
 		}
@@ -818,7 +820,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 				$iv
 			);
 
-			if ( $cipher_text === false ) {
+			if ( false === $cipher_text ) {
 				return new WP_Error( 'encryption_failed', 'Failed to encrypt data' );
 			}
 
@@ -911,7 +913,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			$encrypted_bytes = base64_decode( $encrypted_string );
 			$salt            = base64_decode( $salt_b64 );
 
-			if ( $encrypted_bytes === false || $salt === false ) {
+			if ( false === $encrypted_bytes || false === $salt ) {
 				return new WP_Error( 'decode_error', 'Failed to decode encrypted data' );
 			}
 
@@ -952,7 +954,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 				$iv
 			);
 
-			if ( $plain_text === false ) {
+			if ( false === $plain_text ) {
 				return new WP_Error( 'decryption_failed', 'Failed to decrypt data' );
 			}
 

@@ -15,11 +15,14 @@
 
 require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 
-/**
+/** Summary.
+ *
  * @group toolkit-mcp-servers
  */
 class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 
+	/** Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Toolkit_Server_Registry::reset_instance();
@@ -34,6 +37,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . 'architectural-design' );
 	}
 
+	/** Test architectural design advertises mounted health consolidate.
+	 */
 	public function test_architectural_design_advertises_mounted_health_consolidate() {
 		$server  = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
 		$mounted = $server->effective_mounted_surfaces();
@@ -44,6 +49,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		$this->assertTrue( $mounted[0]['read_only'] );
 	}
 
+	/** Test mounted resources appear under mounted namespace.
+	 */
 	public function test_mounted_resources_appear_under_mounted_namespace() {
 		$server    = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
 		$resources = $server->get_resources();
@@ -61,6 +68,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test mounted prompts carry read only metadata.
+	 */
 	public function test_mounted_prompts_carry_read_only_metadata() {
 		$server  = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
 		$prompts = $server->get_prompts();
@@ -79,6 +88,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test disabling source server hides mount in consumer.
+	 */
 	public function test_disabling_source_server_hides_mount_in_consumer() {
 		$health = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'health' );
 		$arch   = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
@@ -96,6 +107,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		$health->update_configuration( array( 'enabled' => true ) );
 	}
 
+	/** Test disabling source surface hides mount in consumer.
+	 */
 	public function test_disabling_source_surface_hides_mount_in_consumer() {
 		$health = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'health' );
 		$arch   = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
@@ -115,6 +128,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		$health->update_configuration( array( 'enabled' => true ) );
 	}
 
+	/** Test consumer can disable its own mount without affecting source.
+	 */
 	public function test_consumer_can_disable_its_own_mount_without_affecting_source() {
 		$health = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'health' );
 		$arch   = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
@@ -137,6 +152,8 @@ class Test_Cross_Toolkit_Mounts extends WP_UnitTestCase {
 		$arch->update_configuration( array( 'enabled' => true ) );
 	}
 
+	/** Test assistant binding stays with source toolkit.
+	 */
 	public function test_assistant_binding_stays_with_source_toolkit() {
 		$arch = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'architectural-design' );
 

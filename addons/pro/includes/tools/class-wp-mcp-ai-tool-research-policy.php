@@ -150,6 +150,11 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -487,7 +492,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "\n**Available Research Sources:**\n";
+			$prompt      .= "\n**Available Research Sources:**\n";
 			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
 				$source  = $search_results['sources'][ $i ];
@@ -512,7 +517,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Add focus areas if specified.
 		if ( ! empty( $focus_areas ) ) {
-			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+			$prompt .= '**Focus Areas:** ' . implode( ', ', $focus_areas ) . "\n\n";
 		}
 
 		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n";
@@ -828,12 +833,12 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Policy name.
 		if ( ! empty( $policy_data['policy_name'] ) ) {
-			$report .= "**Policy Name:** " . esc_html( $policy_data['policy_name'] ) . "\n\n";
+			$report .= '**Policy Name:** ' . esc_html( $policy_data['policy_name'] ) . "\n\n";
 		}
 
 		// Policy type.
 		if ( ! empty( $policy_data['policy_type'] ) ) {
-			$report .= "**Policy Type:** " . esc_html( $policy_data['policy_type'] ) . "\n\n";
+			$report .= '**Policy Type:** ' . esc_html( $policy_data['policy_type'] ) . "\n\n";
 		}
 
 		// Description.
@@ -850,7 +855,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Coverage limits.
 		if ( ! empty( $policy_data['coverage_limits'] ) ) {
-			$report .= "**Coverage Limits:** " . esc_html( $policy_data['coverage_limits'] ) . "\n\n";
+			$report .= '**Coverage Limits:** ' . esc_html( $policy_data['coverage_limits'] ) . "\n\n";
 		}
 
 		// Terms and conditions section.
@@ -858,15 +863,15 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$report .= "### Terms & Conditions\n";
 
 			if ( ! empty( $policy_data['deductible'] ) ) {
-				$report .= "**Deductible:** " . esc_html( $policy_data['deductible'] ) . "\n";
+				$report .= '**Deductible:** ' . esc_html( $policy_data['deductible'] ) . "\n";
 			}
 
 			if ( ! empty( $policy_data['premium_range'] ) ) {
-				$report .= "**Premium Range:** " . esc_html( $policy_data['premium_range'] ) . "\n";
+				$report .= '**Premium Range:** ' . esc_html( $policy_data['premium_range'] ) . "\n";
 			}
 
 			if ( ! empty( $policy_data['waiting_period'] ) ) {
-				$report .= "**Waiting Period:** " . esc_html( $policy_data['waiting_period'] ) . "\n";
+				$report .= '**Waiting Period:** ' . esc_html( $policy_data['waiting_period'] ) . "\n";
 			}
 
 			$report .= "\n";
@@ -876,7 +881,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! empty( $policy_data['requirements'] ) && is_array( $policy_data['requirements'] ) ) {
 			$report .= "### Requirements\n";
 			foreach ( $policy_data['requirements'] as $requirement ) {
-				$report .= "- " . esc_html( $requirement ) . "\n";
+				$report .= '- ' . esc_html( $requirement ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -885,7 +890,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! empty( $policy_data['exclusions'] ) && is_array( $policy_data['exclusions'] ) ) {
 			$report .= "### Exclusions\n";
 			foreach ( $policy_data['exclusions'] as $exclusion ) {
-				$report .= "- " . esc_html( $exclusion ) . "\n";
+				$report .= '- ' . esc_html( $exclusion ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -894,7 +899,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! empty( $policy_data['benefits'] ) && is_array( $policy_data['benefits'] ) ) {
 			$report .= "### Key Benefits\n";
 			foreach ( $policy_data['benefits'] as $benefit ) {
-				$report .= "- " . esc_html( $benefit ) . "\n";
+				$report .= '- ' . esc_html( $benefit ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -915,22 +920,22 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! empty( $search_results['sources'] ) ) {
 			$sources_count = count( $search_results['sources'] );
 			$report       .= "### Research Sources\n";
-			$report       .= "Research based on **" . absint( $sources_count ) . "** source" . ( $sources_count > 1 ? 's' : '' ) . ".\n\n";
+			$report       .= 'Research based on **' . absint( $sources_count ) . '** source' . ( $sources_count > 1 ? 's' : '' ) . ".\n\n";
 
 			// Show limited sources.
 			$max_display = 3;
 			for ( $i = 0; $i < min( $max_display, $sources_count ); $i++ ) {
 				$source = $search_results['sources'][ $i ];
 				if ( ! empty( $source['title'] ) && ! empty( $source['url'] ) ) {
-					$report .= "- [" . esc_html( $source['title'] ) . "](" . esc_url( $source['url'] ) . ")\n";
+					$report .= '- [' . esc_html( $source['title'] ) . '](' . esc_url( $source['url'] ) . ")\n";
 				} elseif ( ! empty( $source['url'] ) ) {
-					$report .= "- " . esc_url( $source['url'] ) . "\n";
+					$report .= '- ' . esc_url( $source['url'] ) . "\n";
 				}
 			}
 
 			if ( $sources_count > $max_display ) {
 				$remaining = $sources_count - $max_display;
-				$report   .= "\n*... and " . absint( $remaining ) . " more source" . ( $remaining > 1 ? 's' : '' ) . "*\n";
+				$report   .= "\n*... and " . absint( $remaining ) . ' more source' . ( $remaining > 1 ? 's' : '' ) . "*\n";
 			}
 		}
 

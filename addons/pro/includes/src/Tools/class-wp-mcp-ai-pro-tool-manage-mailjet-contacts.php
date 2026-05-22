@@ -257,8 +257,8 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		}
 
 		// First, find the contact ID.
-		$find_url  = add_query_arg( array( 'Email' => $email ), self::API_BASE . '/contact' );
-		$response  = $this->make_api_request( $find_url, 'GET', null, $api_key, $api_secret, $settings );
+		$find_url = add_query_arg( array( 'Email' => $email ), self::API_BASE . '/contact' );
+		$response = $this->make_api_request( $find_url, 'GET', null, $api_key, $api_secret, $settings );
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
@@ -320,12 +320,12 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 	/**
 	 * Make an API request to Mailjet.
 	 *
-	 * @param string      $url URL.
-	 * @param string      $method HTTP method.
-	 * @param array|null  $payload Request payload.
-	 * @param string      $api_key API key.
-	 * @param string      $api_secret API secret.
-	 * @param array       $settings Settings.
+	 * @param string     $url URL.
+	 * @param string     $method HTTP method.
+	 * @param array|null $payload Request payload.
+	 * @param string     $api_key API key.
+	 * @param string     $api_secret API secret.
+	 * @param array      $settings Settings.
 	 * @return array|WP_Error Response or error.
 	 */
 	protected function make_api_request( $url, $method, $payload, $api_key, $api_secret, $settings ) {

@@ -332,7 +332,12 @@ class NV_oOS_Document_Editor_REST {
 			);
 		}
 		wp_trash_post( $id );
-		return rest_ensure_response( array( 'deleted' => true, 'id' => $id ) );
+		return rest_ensure_response(
+			array(
+				'deleted' => true,
+				'id' => $id,
+			)
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -355,4 +360,3 @@ class NV_oOS_Document_Editor_REST {
 		);
 	}
 }
-

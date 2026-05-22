@@ -86,15 +86,15 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 					),
 				),
 				'order'       => array(
-					'type'        => 'string',
-					'enum'        => array( 'asc', 'desc' ),
-					'default'     => 'desc',
+					'type'    => 'string',
+					'enum'    => array( 'asc', 'desc' ),
+					'default' => 'desc',
 				),
 				'per_page'    => array(
-					'type'        => 'integer',
-					'minimum'     => 1,
-					'maximum'     => 200,
-					'default'     => 50,
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 200,
+					'default' => 50,
 				),
 			),
 			'required'   => array( 'member_id' ),
@@ -257,13 +257,13 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 				'no_found_rows'  => true,
 			)
 		);
-		$out = array();
+		$out   = array();
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$id   = get_the_ID();
-				$date = (string) get_post_meta( $id, '_medical_record_date', true );
-				$ts   = '' !== $date ? strtotime( $date ) : strtotime( get_post_field( 'post_date', $id ) );
+				$id    = get_the_ID();
+				$date  = (string) get_post_meta( $id, '_medical_record_date', true );
+				$ts    = '' !== $date ? strtotime( $date ) : strtotime( get_post_field( 'post_date', $id ) );
 				$out[] = array(
 					'event_type' => 'medical_record',
 					'id'         => $id,
@@ -299,7 +299,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 				'no_found_rows'  => true,
 			)
 		);
-		$out = array();
+		$out   = array();
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
@@ -342,13 +342,13 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 				'no_found_rows'  => true,
 			)
 		);
-		$out = array();
+		$out   = array();
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$id  = get_the_ID();
-				$dt  = (string) get_post_meta( $id, '_checkup_datetime', true );
-				$ts  = '' !== $dt ? strtotime( $dt ) : strtotime( get_post_field( 'post_date', $id ) );
+				$id    = get_the_ID();
+				$dt    = (string) get_post_meta( $id, '_checkup_datetime', true );
+				$ts    = '' !== $dt ? strtotime( $dt ) : strtotime( get_post_field( 'post_date', $id ) );
 				$out[] = array(
 					'event_type' => 'checkup',
 					'id'         => $id,
@@ -385,13 +385,13 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 				'no_found_rows'  => true,
 			)
 		);
-		$out = array();
+		$out   = array();
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$id  = get_the_ID();
-				$dx  = (string) get_post_meta( $id, '_allergy_diagnosed_date', true );
-				$ts  = '' !== $dx ? strtotime( $dx ) : strtotime( get_post_field( 'post_date', $id ) );
+				$id    = get_the_ID();
+				$dx    = (string) get_post_meta( $id, '_allergy_diagnosed_date', true );
+				$ts    = '' !== $dx ? strtotime( $dx ) : strtotime( get_post_field( 'post_date', $id ) );
 				$out[] = array(
 					'event_type' => 'allergy',
 					'id'         => $id,
@@ -431,13 +431,13 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 				'no_found_rows'  => true,
 			)
 		);
-		$out = array();
+		$out   = array();
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$id   = get_the_ID();
-				$date = (string) get_post_meta( $id, '_measurement_date', true );
-				$ts   = '' !== $date ? strtotime( $date ) : strtotime( get_post_field( 'post_date', $id ) );
+				$id    = get_the_ID();
+				$date  = (string) get_post_meta( $id, '_measurement_date', true );
+				$ts    = '' !== $date ? strtotime( $date ) : strtotime( get_post_field( 'post_date', $id ) );
 				$out[] = array(
 					'event_type' => 'vital_log',
 					'id'         => $id,

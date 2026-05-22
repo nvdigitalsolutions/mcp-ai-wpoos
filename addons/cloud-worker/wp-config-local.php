@@ -23,10 +23,10 @@ if ( ! defined( 'WP_MCP_AI_NV_CLOUD_BASE_URL' ) ) {
  * The token is stored encrypted; the NV Cloud Service will auto-decrypt it.
  */
 // add_action( 'init', function () {
-//     if ( class_exists( 'WP_MCP_AI_NV_Cloud_Service' ) && ! WP_MCP_AI_NV_Cloud_Service::get_instance()->is_connected() ) {
-//         WP_MCP_AI_NV_Cloud_Service::get_instance()->save_connection(
-//             'nvc_YOUR_TOKEN_HERE',
-//             array( 'account_id' => 'local-dev' )
-//         );
-//     }
+// if ( class_exists( 'WP_MCP_AI_NV_Cloud_Service' ) && ! WP_MCP_AI_NV_Cloud_Service::get_instance()->is_connected() ) {
+// WP_MCP_AI_NV_Cloud_Service::get_instance()->save_connection(
+// 'nvc_YOUR_TOKEN_HERE',
+// array( 'account_id' => 'local-dev' )
+// );
+// }
 // } );

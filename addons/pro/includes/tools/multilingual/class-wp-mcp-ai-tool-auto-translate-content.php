@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		return __( 'Auto translate tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'auto_translate_content';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		return __( 'AI-powered translation of posts and pages. Supports multiple languages with context-aware translation.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -78,10 +92,22 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,

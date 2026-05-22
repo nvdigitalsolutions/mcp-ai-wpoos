@@ -150,6 +150,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -403,7 +408,7 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array Search queries.
 	 */
 	protected function generate_eca_search_queries( $query, $age_group, $depth, $focus_areas ) {
-		$queries = array();
+		$queries   = array();
 		$queries[] = $query . ( $age_group ? ' ' . $age_group : '' );
 
 		if ( 'basic' === $depth ) {
@@ -484,10 +489,10 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "\n**Available Research Sources:**\n";
+			$prompt      .= "\n**Available Research Sources:**\n";
 			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
-				$source = $search_results['sources'][ $i ];
+				$source  = $search_results['sources'][ $i ];
 				$prompt .= sprintf(
 					"[%d] %s - %s\n",
 					$i + 1,
@@ -509,7 +514,7 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Add focus areas if specified.
 		if ( ! empty( $focus_areas ) ) {
-			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+			$prompt .= '**Focus Areas:** ' . implode( ', ', $focus_areas ) . "\n\n";
 		}
 
 		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
@@ -813,8 +818,8 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 
 		// Build user-friendly research report message.
-		$report_message        = $this->build_eca_report_message( $eca_data );
-		$eca_data['report']    = $report_message;
+		$report_message     = $this->build_eca_report_message( $eca_data );
+		$eca_data['report'] = $report_message;
 
 		return $eca_data;
 	}
@@ -830,17 +835,17 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Activity title.
 		if ( ! empty( $data['title'] ) ) {
-			$report .= "**Activity:** " . esc_html( $data['title'] ) . "\n";
+			$report .= '**Activity:** ' . esc_html( $data['title'] ) . "\n";
 		}
 
 		// Category/Type.
 		if ( ! empty( $data['category'] ) ) {
-			$report .= "**Category:** " . esc_html( $data['category'] ) . "\n";
+			$report .= '**Category:** ' . esc_html( $data['category'] ) . "\n";
 		}
 
 		// Age range.
 		if ( ! empty( $data['age_range'] ) ) {
-			$report .= "**Age Range:** " . esc_html( $data['age_range'] ) . "\n";
+			$report .= '**Age Range:** ' . esc_html( $data['age_range'] ) . "\n";
 		}
 
 		$report .= "\n";
@@ -855,55 +860,55 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! empty( $data['duration'] ) || ! empty( $data['session_length'] ) || ! empty( $data['frequency'] ) ) {
 			$report .= "### Schedule\n";
 			if ( ! empty( $data['duration'] ) ) {
-				$report .= "- **Program Duration:** " . esc_html( $data['duration'] ) . "\n";
+				$report .= '- **Program Duration:** ' . esc_html( $data['duration'] ) . "\n";
 			}
 			if ( ! empty( $data['session_length'] ) ) {
-				$report .= "- **Session Length:** " . esc_html( $data['session_length'] ) . "\n";
+				$report .= '- **Session Length:** ' . esc_html( $data['session_length'] ) . "\n";
 			}
 			if ( ! empty( $data['frequency'] ) ) {
-				$report .= "- **Frequency:** " . esc_html( $data['frequency'] ) . "\n";
+				$report .= '- **Frequency:** ' . esc_html( $data['frequency'] ) . "\n";
 			}
 			$report .= "\n";
 		}
 
 		// Group size.
 		if ( ! empty( $data['group_size'] ) ) {
-			$report .= "**Recommended Group Size:** " . esc_html( $data['group_size'] ) . "\n\n";
+			$report .= '**Recommended Group Size:** ' . esc_html( $data['group_size'] ) . "\n\n";
 		}
 
 		// Learning objectives.
 		if ( ! empty( $data['learning_objectives'] ) && is_array( $data['learning_objectives'] ) ) {
 			$report .= "### Learning Objectives\n";
 			foreach ( $data['learning_objectives'] as $objective ) {
-				$report .= "- " . esc_html( $objective ) . "\n";
+				$report .= '- ' . esc_html( $objective ) . "\n";
 			}
 			$report .= "\n";
 		}
 
 		// Materials required.
 		if ( ! empty( $data['materials'] ) && is_array( $data['materials'] ) ) {
-			$report .= "### Materials Required\n";
+			$report        .= "### Materials Required\n";
 			$material_count = 0;
 			foreach ( $data['materials'] as $material ) {
 				if ( $material_count >= 10 ) {
 					$remaining = count( $data['materials'] ) - $material_count;
-					$report .= "- *...and " . absint( $remaining ) . " more*\n";
+					$report   .= '- *...and ' . absint( $remaining ) . " more*\n";
 					break;
 				}
-				$report .= "- " . esc_html( $material ) . "\n";
-				$material_count++;
+				$report .= '- ' . esc_html( $material ) . "\n";
+				++$material_count;
 			}
 			$report .= "\n";
 		}
 
 		// Space requirements.
 		if ( ! empty( $data['space_requirements'] ) ) {
-			$report .= "**Space Requirements:** " . esc_html( $data['space_requirements'] ) . "\n\n";
+			$report .= '**Space Requirements:** ' . esc_html( $data['space_requirements'] ) . "\n\n";
 		}
 
 		// Instructor requirements.
 		if ( ! empty( $data['instructor_requirements'] ) ) {
-			$report .= "**Instructor Requirements:** " . esc_html( $data['instructor_requirements'] ) . "\n\n";
+			$report .= '**Instructor Requirements:** ' . esc_html( $data['instructor_requirements'] ) . "\n\n";
 		}
 
 		// Curriculum outline (if available).
@@ -914,11 +919,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Sources.
 		if ( ! empty( $data['sources'] ) && is_array( $data['sources'] ) ) {
-			$report .= "**Research Sources:** " . absint( count( $data['sources'] ) ) . " reference source(s)\n";
+			$report .= '**Research Sources:** ' . absint( count( $data['sources'] ) ) . " reference source(s)\n";
 		}
 
 		$report .= "\n---\n\n";
-		$report .= "*Research completed successfully. This ECA information can be used to create an activity entry in your system.*";
+		$report .= '*Research completed successfully. This ECA information can be used to create an activity entry in your system.*';
 
 		return $report;
 	}

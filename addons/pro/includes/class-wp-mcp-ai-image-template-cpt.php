@@ -193,8 +193,8 @@ class WP_MCP_AI_Image_Template_CPT {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
 		$post_type     = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_image_page = ( $post_type === self::POST_TYPE );
-		if ( ! $is_image_page && $screen->post_type !== self::POST_TYPE ) {
+		$is_image_page = ( self::POST_TYPE === $post_type );
+		if ( ! $is_image_page && self::POST_TYPE !== $screen->post_type ) {
 			return;
 		}
 

@@ -28,6 +28,13 @@ class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return __( 'Lists allergies with optional filtering by member and severity.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -78,6 +85,11 @@ class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}

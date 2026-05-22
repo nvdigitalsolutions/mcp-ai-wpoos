@@ -4,9 +4,10 @@
  *
  * @package NV_oOS_Media_Studio
  */
-
 class Test_Media_Studio_Shortcode extends WP_UnitTestCase {
-
+	/**
+	 * Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! defined( 'NVOOS_MEDIA_STUDIO_VERSION' ) ) {
@@ -22,6 +23,9 @@ class Test_Media_Studio_Shortcode extends WP_UnitTestCase {
 		require_once NVOOS_MEDIA_STUDIO_PATH . 'includes/shortcode/class-nvoos-media-studio-shortcode.php';
 	}
 
+	/**
+	 * Test that shortcode returns root container div.
+	 */
 	public function test_shortcode_returns_root_container() {
 		$out = NV_oOS_Media_Studio_Shortcode::render( array() );
 		$this->assertStringContainsString( 'nvoos-media-studio-root', $out );
@@ -48,13 +52,16 @@ class Test_Media_Studio_Shortcode extends WP_UnitTestCase {
 		$this->assertStringContainsString( '&quot;mode&quot;:&quot;image-editor&quot;', $out );
 	}
 
-	/** src attribute is included in config. */
+	/** Src attribute is included in config. */
 	public function test_src_attribute_included() {
 		$out = NV_oOS_Media_Studio_Shortcode::render( array( 'src' => 'https://example.com/audio.mp3' ) );
 		$this->assertStringContainsString( '&quot;src&quot;:', $out );
 		$this->assertStringContainsString( 'audio.mp3', $out );
 	}
 
+	/**
+	 * Test that shortcode respects the can_render filter.
+	 */
 	public function test_shortcode_respects_can_render_filter() {
 		add_filter( 'nvoos_media_studio_can_render', '__return_false' );
 		$out = NV_oOS_Media_Studio_Shortcode::render( array() );

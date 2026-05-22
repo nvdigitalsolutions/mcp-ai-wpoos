@@ -38,30 +38,30 @@ class WP_MCP_AI_Pro_CLI_Status_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 * @var array<string,string>
 	 */
 	private static $toolkit_keys = array(
-		'enable_crm_toolkit'                      => 'CRM Toolkit',
-		'enable_ecommerce_toolkit'                => 'E-commerce Toolkit',
-		'enable_social_media_toolkit'             => 'Social Media Toolkit',
-		'enable_analytics_toolkit'                => 'Analytics Toolkit',
-		'enable_multilingual_toolkit'             => 'Multilingual Toolkit',
-		'enable_video_production_toolkit'         => 'Video Production Toolkit',
-		'enable_financial_planner_toolkit'        => 'Financial Planner Toolkit',
-		'enable_dj_management_toolkit'            => 'DJ Management Toolkit',
-		'enable_image_production_toolkit'         => 'Image Production Toolkit',
-		'enable_ai_tool_builder_toolkit'          => 'AI Tool Builder Toolkit',
-		'enable_architect_agent_toolkit'          => 'Architect Agent Toolkit',
-		'enable_architectural_design_toolkit'     => 'Architectural Design Toolkit',
-		'enable_site_creator_toolkit'             => 'Site Creator Toolkit',
-		'enable_document_generation_toolkit'      => 'Document Generation Toolkit',
-		'enable_regulatory_registration_toolkit'  => 'Regulatory Registration Toolkit',
-		'enable_chat_channels_toolkit'            => 'Chat Channels Toolkit',
-		'enable_project_management'               => 'Project Management',
-		'enable_eca_management'                   => 'ECA Management',
-		'enable_quiz_system'                      => 'Quiz System',
-		'enable_places_management'                => 'Places Management',
-		'enable_health_wellness_management'       => 'Health & Wellness Management',
-		'enable_media_toolkit'                    => 'Media Toolkit',
-		'enable_ai_cpt_management'                => 'AI CPT Management',
-		'enable_advanced_analytics_toolkit'       => 'Advanced Analytics Toolkit',
+		'enable_crm_toolkit'                     => 'CRM Toolkit',
+		'enable_ecommerce_toolkit'               => 'E-commerce Toolkit',
+		'enable_social_media_toolkit'            => 'Social Media Toolkit',
+		'enable_analytics_toolkit'               => 'Analytics Toolkit',
+		'enable_multilingual_toolkit'            => 'Multilingual Toolkit',
+		'enable_video_production_toolkit'        => 'Video Production Toolkit',
+		'enable_financial_planner_toolkit'       => 'Financial Planner Toolkit',
+		'enable_dj_management_toolkit'           => 'DJ Management Toolkit',
+		'enable_image_production_toolkit'        => 'Image Production Toolkit',
+		'enable_ai_tool_builder_toolkit'         => 'AI Tool Builder Toolkit',
+		'enable_architect_agent_toolkit'         => 'Architect Agent Toolkit',
+		'enable_architectural_design_toolkit'    => 'Architectural Design Toolkit',
+		'enable_site_creator_toolkit'            => 'Site Creator Toolkit',
+		'enable_document_generation_toolkit'     => 'Document Generation Toolkit',
+		'enable_regulatory_registration_toolkit' => 'Regulatory Registration Toolkit',
+		'enable_chat_channels_toolkit'           => 'Chat Channels Toolkit',
+		'enable_project_management'              => 'Project Management',
+		'enable_eca_management'                  => 'ECA Management',
+		'enable_quiz_system'                     => 'Quiz System',
+		'enable_places_management'               => 'Places Management',
+		'enable_health_wellness_management'      => 'Health & Wellness Management',
+		'enable_media_toolkit'                   => 'Media Toolkit',
+		'enable_ai_cpt_management'               => 'AI CPT Management',
+		'enable_advanced_analytics_toolkit'      => 'Advanced Analytics Toolkit',
 	);
 
 	/**
@@ -98,17 +98,37 @@ class WP_MCP_AI_Pro_CLI_Status_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		$info = array(
-			array( 'key' => 'Pro Version',       'value' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : 'unknown' ),
-			array( 'key' => 'Core Version',      'value' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown' ),
-			array( 'key' => 'Base Version Mode', 'value' => ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) ? 'yes' : 'no' ),
-			array( 'key' => 'Site URL',          'value' => get_option( 'siteurl' ) ),
-			array( 'key' => 'Active Toolkits',   'value' => implode( ', ', $this->get_active_toolkit_labels( $settings ) ) ?: 'none' ),
+			array(
+				'key'   => 'Pro Version',
+				'value' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : 'unknown',
+			),
+			array(
+				'key'   => 'Core Version',
+				'value' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
+			),
+			array(
+				'key'   => 'Base Version Mode',
+				'value' => ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) ? 'yes' : 'no',
+			),
+			array(
+				'key'   => 'Site URL',
+				'value' => get_option( 'siteurl' ),
+			),
+		);
+
+		$toolkit_labels = implode( ', ', $this->get_active_toolkit_labels( $settings ) );
+		$info[]         = array(
+			'key'   => 'Active Toolkits',
+			'value' => ! empty( $toolkit_labels ) ? $toolkit_labels : 'none',
 		);
 
 		// Append connection count.
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-			$info[]      = array( 'key' => 'Remote Connections', 'value' => (string) count( $connections ) );
+			$info[]      = array(
+				'key'   => 'Remote Connections',
+				'value' => (string) count( $connections ),
+			);
 		}
 
 		if ( 'json' === $format ) {

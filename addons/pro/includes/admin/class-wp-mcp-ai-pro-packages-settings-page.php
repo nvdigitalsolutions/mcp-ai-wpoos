@@ -148,7 +148,13 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				/* translators: %s: link to the canonical CREDITS.md file. */
 				wp_kses(
 					__( 'Each package below links back to its upstream maintainer and license. The full repository-wide attribution index lives in <a href="%s" target="_blank" rel="noopener noreferrer">CREDITS.md</a>.', 'mcp-ai-wpoos-pro' ),
-					array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+					array(
+						'a' => array(
+							'href'   => true,
+							'target' => true,
+							'rel'    => true,
+						),
+					)
 				),
 				esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CREDITS.md' )
 			);

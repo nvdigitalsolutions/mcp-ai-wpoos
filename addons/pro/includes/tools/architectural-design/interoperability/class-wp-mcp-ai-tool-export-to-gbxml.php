@@ -24,6 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -36,6 +37,13 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'export_to_gbxml';
 	}
@@ -48,15 +56,22 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return __( 'Generate a gbXML 6.01 XML document from a normalised floor plan. Output is a valid gbXML body for import into EnergyPlus / OpenStudio for whole-building energy modelling.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan' => array(
+				'floor_plan'   => array(
 					'type'        => 'object',
 					'description' => __( 'Normalised floor-plan structure.', 'mcp-ai-wpoos-pro' ),
 				),
-				'author'     => array( 'type' => 'string' ),
+				'author'       => array( 'type' => 'string' ),
 				'organization' => array( 'type' => 'string' ),
 			),
 			'required'             => array( 'floor_plan' ),
@@ -64,6 +79,11 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'read-only' );
 	}
@@ -101,13 +121,13 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$xml          = WP_MCP_AI_Architectural_Interop::build_gbxml( $normalized['payload'], $author, $organization );
 
 		return array(
-			'success'   => true,
-			'format'    => 'gbXML 6.01',
+			'success'    => true,
+			'format'     => 'gbXML 6.01',
 			'media_type' => 'application/xml',
-			'filename'  => sanitize_file_name( ( $normalized['payload']['project']['name'] ?: 'project' ) . '.xml' ),
-			'xml'       => $xml,
-			'byte_size' => strlen( $xml ),
-			'note'      => __( 'Geometry summary only. Add surfaces / constructions in EnergyPlus / OpenStudio.', 'mcp-ai-wpoos-pro' ),
+			'filename'   => sanitize_file_name( ( $normalized['payload']['project']['name'] ?: 'project' ) . '.xml' ),
+			'xml'        => $xml,
+			'byte_size'  => strlen( $xml ),
+			'note'       => __( 'Geometry summary only. Add surfaces / constructions in EnergyPlus / OpenStudio.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

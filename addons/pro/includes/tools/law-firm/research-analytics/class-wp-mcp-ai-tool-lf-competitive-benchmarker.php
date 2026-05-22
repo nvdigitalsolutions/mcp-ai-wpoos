@@ -30,36 +30,36 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 	 */
 	private static $benchmarks = array(
 		'solo'     => array(
-			'avg_billing_rate'     => 250,
-			'avg_realization_rate' => 85,
-			'avg_utilization'      => 60,
+			'avg_billing_rate'       => 250,
+			'avg_realization_rate'   => 85,
+			'avg_utilization'        => 60,
 			'avg_revenue_per_lawyer' => 200000,
-			'avg_overhead_ratio'   => 45,
-			'avg_collection_rate'  => 80,
+			'avg_overhead_ratio'     => 45,
+			'avg_collection_rate'    => 80,
 		),
 		'small'    => array(
-			'avg_billing_rate'     => 325,
-			'avg_realization_rate' => 88,
-			'avg_utilization'      => 65,
+			'avg_billing_rate'       => 325,
+			'avg_realization_rate'   => 88,
+			'avg_utilization'        => 65,
 			'avg_revenue_per_lawyer' => 300000,
-			'avg_overhead_ratio'   => 50,
-			'avg_collection_rate'  => 85,
+			'avg_overhead_ratio'     => 50,
+			'avg_collection_rate'    => 85,
 		),
 		'mid_size' => array(
-			'avg_billing_rate'     => 425,
-			'avg_realization_rate' => 90,
-			'avg_utilization'      => 70,
+			'avg_billing_rate'       => 425,
+			'avg_realization_rate'   => 90,
+			'avg_utilization'        => 70,
 			'avg_revenue_per_lawyer' => 500000,
-			'avg_overhead_ratio'   => 55,
-			'avg_collection_rate'  => 88,
+			'avg_overhead_ratio'     => 55,
+			'avg_collection_rate'    => 88,
 		),
 		'large'    => array(
-			'avg_billing_rate'     => 600,
-			'avg_realization_rate' => 92,
-			'avg_utilization'      => 75,
+			'avg_billing_rate'       => 600,
+			'avg_realization_rate'   => 92,
+			'avg_utilization'        => 75,
 			'avg_revenue_per_lawyer' => 800000,
-			'avg_overhead_ratio'   => 60,
-			'avg_collection_rate'  => 90,
+			'avg_overhead_ratio'     => 60,
+			'avg_collection_rate'    => 90,
 		),
 	);
 
@@ -75,25 +75,42 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_competitive_benchmarker'; }
-	public function get_name() { return __( 'Competitive Benchmarker', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Compares firm performance against industry benchmarks by firm size, practice areas, and region. Returns benchmark data alongside actual firm metrics.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_competitive_benchmarker'; }
+	public function get_name() {
+		return __( 'Competitive Benchmarker', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Compares firm performance against industry benchmarks by firm size, practice areas, and region. Returns benchmark data alongside actual firm metrics.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'firm_size'       => array(
+				'firm_size'      => array(
 					'type'        => 'string',
 					'enum'        => array( 'solo', 'small', 'mid_size', 'large' ),
 					'description' => __( 'Firm size category for benchmark comparison.', 'mcp-ai-wpoos-pro' ),
 				),
-				'practice_areas'  => array(
+				'practice_areas' => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Practice areas to include in analysis.', 'mcp-ai-wpoos-pro' ),
 				),
-				'region'          => array(
+				'region'         => array(
 					'type'        => 'string',
 					'description' => __( 'Geographic region (e.g., "northeast", "west_coast", "midwest").', 'mcp-ai-wpoos-pro' ),
 				),
@@ -102,7 +119,13 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'cacheable' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'cacheable' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -171,12 +194,14 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 			);
 		}
 
-		$entries = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_competitive_benchmarker', 0, 1000 ) : 1000,
-			'post_status'    => 'publish',
-			'meta_query'     => $entry_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$entries = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_competitive_benchmarker', 0, 1000 ) : 1000,
+				'post_status'    => 'publish',
+				'meta_query'     => $entry_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
 		$total_revenue        = 0;
 		$total_standard       = 0;
@@ -194,10 +219,10 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 			$billing_type = get_post_meta( $entry->ID, '_lf_billing_type', true );
 			$author_id    = $entry->post_author;
 
-			$total_standard += $hours * $rate;
-			$total_revenue  += $amount;
+			$total_standard  += $hours * $rate;
+			$total_revenue   += $amount;
 			$total_collected += $collected;
-			$total_hours    += $hours;
+			$total_hours     += $hours;
 
 			if ( 'billable' === $billing_type ) {
 				$total_billable_hours += $hours;
@@ -210,38 +235,38 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 			$attorneys[ $author_id ] = true;
 		}
 
-		$attorney_count    = max( count( $attorneys ), 1 );
-		$avg_billing_rate  = ! empty( $rates ) ? round( array_sum( $rates ) / count( $rates ), 2 ) : 0;
-		$realization_rate  = $total_standard > 0 ? round( ( $total_revenue / $total_standard ) * 100, 1 ) : 0;
-		$collection_rate   = $total_revenue > 0 ? round( ( $total_collected / $total_revenue ) * 100, 1 ) : 0;
-		$utilization_rate  = $total_hours > 0 ? round( ( $total_billable_hours / $total_hours ) * 100, 1 ) : 0;
+		$attorney_count     = max( count( $attorneys ), 1 );
+		$avg_billing_rate   = ! empty( $rates ) ? round( array_sum( $rates ) / count( $rates ), 2 ) : 0;
+		$realization_rate   = $total_standard > 0 ? round( ( $total_revenue / $total_standard ) * 100, 1 ) : 0;
+		$collection_rate    = $total_revenue > 0 ? round( ( $total_collected / $total_revenue ) * 100, 1 ) : 0;
+		$utilization_rate   = $total_hours > 0 ? round( ( $total_billable_hours / $total_hours ) * 100, 1 ) : 0;
 		$revenue_per_lawyer = round( $total_revenue / $attorney_count, 2 );
 
 		$firm_metrics = array(
-			'avg_billing_rate'     => $avg_billing_rate,
-			'realization_rate'     => $realization_rate,
-			'collection_rate'      => $collection_rate,
-			'utilization_rate'     => $utilization_rate,
-			'revenue_per_lawyer'   => $revenue_per_lawyer,
-			'attorney_count'       => $attorney_count,
-			'total_revenue'        => round( $total_revenue, 2 ),
+			'avg_billing_rate'   => $avg_billing_rate,
+			'realization_rate'   => $realization_rate,
+			'collection_rate'    => $collection_rate,
+			'utilization_rate'   => $utilization_rate,
+			'revenue_per_lawyer' => $revenue_per_lawyer,
+			'attorney_count'     => $attorney_count,
+			'total_revenue'      => round( $total_revenue, 2 ),
 		);
 
 		// Compare firm vs benchmarks.
 		$comparisons = array(
-			'billing_rate'     => array(
+			'billing_rate'       => array(
 				'firm'       => $avg_billing_rate,
 				'benchmark'  => $adjusted_benchmarks['avg_billing_rate'],
 				'variance'   => round( $avg_billing_rate - $adjusted_benchmarks['avg_billing_rate'], 2 ),
 				'percentile' => $this->calculate_percentile( $avg_billing_rate, $adjusted_benchmarks['avg_billing_rate'] ),
 			),
-			'realization_rate' => array(
+			'realization_rate'   => array(
 				'firm'       => $realization_rate,
 				'benchmark'  => $adjusted_benchmarks['avg_realization_rate'],
 				'variance'   => round( $realization_rate - $adjusted_benchmarks['avg_realization_rate'], 1 ),
 				'percentile' => $this->calculate_percentile( $realization_rate, $adjusted_benchmarks['avg_realization_rate'] ),
 			),
-			'utilization'      => array(
+			'utilization'        => array(
 				'firm'       => $utilization_rate,
 				'benchmark'  => $adjusted_benchmarks['avg_utilization'],
 				'variance'   => round( $utilization_rate - $adjusted_benchmarks['avg_utilization'], 1 ),
@@ -253,7 +278,7 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 				'variance'   => round( $revenue_per_lawyer - $adjusted_benchmarks['avg_revenue_per_lawyer'], 2 ),
 				'percentile' => $this->calculate_percentile( $revenue_per_lawyer, $adjusted_benchmarks['avg_revenue_per_lawyer'] ),
 			),
-			'collection_rate'  => array(
+			'collection_rate'    => array(
 				'firm'       => $collection_rate,
 				'benchmark'  => $adjusted_benchmarks['avg_collection_rate'],
 				'variance'   => round( $collection_rate - $adjusted_benchmarks['avg_collection_rate'], 1 ),
@@ -262,8 +287,8 @@ class WP_MCP_AI_Tool_LF_Competitive_Benchmarker implements WP_MCP_AI_Tool_Interf
 		);
 
 		// Identify strengths and improvement areas.
-		$strengths     = array();
-		$improvements  = array();
+		$strengths    = array();
+		$improvements = array();
 		foreach ( $comparisons as $metric_name => $comp ) {
 			if ( $comp['variance'] > 0 ) {
 				$strengths[] = str_replace( '_', ' ', $metric_name );

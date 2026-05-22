@@ -227,7 +227,7 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 			'marketPlaceJobFilter' => array(
 				'jobIds' => array( $job_id ),
 			),
-			'paging' => array( 'first' => 1 ),
+			'paging'               => array( 'first' => 1 ),
 		);
 
 		$result = $client->graphql( self::JOB_QUERY, $variables );
@@ -380,21 +380,21 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	 * @return string Prompt string.
 	 */
 	private function build_proposal_prompt( $job, $arguments ) {
-		$job_title   = isset( $job['title'] ) ? $job['title'] : 'Untitled Job';
-		$job_desc    = isset( $job['description'] ) ? $job['description'] : '';
-		$job_type    = isset( $job['jobType'] ) ? $job['jobType'] : '';
-		$category    = isset( $job['category']['name'] ) ? $job['category']['name'] : '';
-		$max_length  = isset( $arguments['max_length'] ) ? max( 100, (int) $arguments['max_length'] ) : 500;
+		$job_title  = isset( $job['title'] ) ? $job['title'] : 'Untitled Job';
+		$job_desc   = isset( $job['description'] ) ? $job['description'] : '';
+		$job_type   = isset( $job['jobType'] ) ? $job['jobType'] : '';
+		$category   = isset( $job['category']['name'] ) ? $job['category']['name'] : '';
+		$max_length = isset( $arguments['max_length'] ) ? max( 100, (int) $arguments['max_length'] ) : 500;
 
 		$tone_instructions = array(
 			'professional' => 'Write in a professional, concise, and business-appropriate tone.',
 			'friendly'     => 'Write in a warm, friendly, and approachable tone while remaining professional.',
 			'confident'    => 'Write in a bold, confident tone that demonstrates deep expertise and enthusiasm.',
 		);
-		$tone        = isset( $arguments['tone'] ) && isset( $tone_instructions[ $arguments['tone'] ] )
+		$tone              = isset( $arguments['tone'] ) && isset( $tone_instructions[ $arguments['tone'] ] )
 			? $arguments['tone']
 			: 'professional';
-		$tone_instr  = $tone_instructions[ $tone ];
+		$tone_instr        = $tone_instructions[ $tone ];
 
 		$freelancer_profile = isset( $arguments['freelancer_profile'] ) ? sanitize_textarea_field( $arguments['freelancer_profile'] ) : '';
 		$freelancer_skills  = isset( $arguments['freelancer_skills'] ) && is_array( $arguments['freelancer_skills'] )
@@ -415,7 +415,7 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 		// Build budget context.
 		$budget_context = '';
 		if ( isset( $arguments['bid_amount'] ) && $arguments['bid_amount'] > 0 ) {
-			$bid_type = isset( $arguments['bid_type'] ) ? $arguments['bid_type'] : $job_type;
+			$bid_type       = isset( $arguments['bid_type'] ) ? $arguments['bid_type'] : $job_type;
 			$budget_context = sprintf(
 				/* translators: 1: bid amount, 2: bid type */
 				__( 'The freelancer is bidding %1$s (%2$s).', 'mcp-ai-wpoos-pro' ),

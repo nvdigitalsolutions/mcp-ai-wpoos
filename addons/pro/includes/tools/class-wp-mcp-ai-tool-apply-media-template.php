@@ -99,6 +99,11 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.

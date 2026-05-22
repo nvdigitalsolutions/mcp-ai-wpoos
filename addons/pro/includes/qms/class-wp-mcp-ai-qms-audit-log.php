@@ -139,7 +139,7 @@ class WP_MCP_AI_QMS_Audit_Log {
 			'meta'        => array(),
 			'created_at'  => current_time( 'mysql', true ),
 		);
-		$data = array_merge( $defaults, $args );
+		$data     = array_merge( $defaults, $args );
 
 		$row = array(
 			'subsystem'   => substr( sanitize_key( (string) $data['subsystem'] ), 0, 20 ),
@@ -154,7 +154,7 @@ class WP_MCP_AI_QMS_Audit_Log {
 			'after_hash'  => substr( preg_replace( '/[^a-f0-9]/i', '', (string) $data['after_hash'] ), 0, 64 ),
 			'ip'          => substr( sanitize_text_field( (string) $data['ip'] ), 0, 64 ),
 			'user_agent'  => substr( sanitize_text_field( (string) $data['user_agent'] ), 0, 255 ),
-			'meta'        => wp_json_encode( $data['meta'] ?: array() ),
+			'meta'        => wp_json_encode( $data['meta'] ? $data['meta'] : array() ),
 			'created_at'  => sanitize_text_field( (string) $data['created_at'] ),
 		);
 
@@ -196,7 +196,7 @@ class WP_MCP_AI_QMS_Audit_Log {
 			'event'     => '',
 			'limit'     => 50,
 		);
-		$args = array_merge( $defaults, $args );
+		$args     = array_merge( $defaults, $args );
 
 		$where  = array( '1=1' );
 		$params = array();

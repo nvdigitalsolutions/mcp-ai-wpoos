@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator implements WP_MCP_AI_T
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'claim_type'           => array(
+				'claim_type'            => array(
 					'type'        => 'string',
 					'description' => __( 'Type of legal claim.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
@@ -97,19 +97,19 @@ class WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator implements WP_MCP_AI_T
 						'professional_negligence',
 					),
 				),
-				'incident_date'        => array(
+				'incident_date'         => array(
 					'type'        => 'string',
 					'description' => __( 'Date of the incident (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'state'                => array(
+				'state'                 => array(
 					'type'        => 'string',
 					'description' => __( 'State jurisdiction (e.g., CA, NY, TX).', 'mcp-ai-wpoos-pro' ),
 				),
-				'discovery_date'       => array(
+				'discovery_date'        => array(
 					'type'        => 'string',
 					'description' => __( 'Date the injury was discovered, if different from incident date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'plaintiff_minor'      => array(
+				'plaintiff_minor'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the plaintiff was a minor at the time of incident.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -194,21 +194,21 @@ class WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator implements WP_MCP_AI_T
 				$result['days_remaining']
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'expiration_date'   => $result['expiration_date'],
-				'days_remaining'    => $result['days_remaining'],
-				'is_expired'        => $result['is_expired'],
-				'warning_level'     => $result['warning_level'],
+				'expiration_date'    => $result['expiration_date'],
+				'days_remaining'     => $result['days_remaining'],
+				'is_expired'         => $result['is_expired'],
+				'warning_level'      => $result['warning_level'],
 				'applicable_statute' => sprintf(
 					/* translators: 1: years, 2: claim type */
 					__( '%1$d-year statute for %2$s claims', 'mcp-ai-wpoos-pro' ),
 					$years,
 					str_replace( '_', ' ', $claim_type )
 				),
-				'claim_type'        => $claim_type,
-				'state'             => $state,
-				'start_date'        => $start_date,
-				'tolling_applied'   => $tolling_days > 0,
-				'tolling_days'      => $tolling_days,
+				'claim_type'         => $claim_type,
+				'state'              => $state,
+				'start_date'         => $start_date,
+				'tolling_applied'    => $tolling_days > 0,
+				'tolling_days'       => $tolling_days,
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

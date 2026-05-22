@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_LF_Settlement_Value_Calculator implements WP_MCP_AI_Tool_In
 		$expected_value_net   = round( $expected_value_gross - $trial_cost_estimate, 2 );
 
 		// Present value discount for time to trial.
-		$years_to_trial     = $time_to_trial_months / 12;
+		$years_to_trial      = $time_to_trial_months / 12;
 		$present_value_total = WP_MCP_AI_Law_Firm_Calculator::calculate_present_value(
 			$expected_value_net,
 			$discount_rate,
@@ -198,29 +198,29 @@ class WP_MCP_AI_Tool_LF_Settlement_Value_Calculator implements WP_MCP_AI_Tool_In
 				WP_MCP_AI_Law_Firm_Calculator::format_currency( $range_high )
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'claim_type'          => $claim_type,
-				'recommended_range'   => array(
+				'claim_type'        => $claim_type,
+				'recommended_range' => array(
 					'low'  => $range_low,
 					'high' => $range_high,
 				),
-				'expected_value'      => array(
-					'gross'          => $expected_value_gross,
-					'net_of_costs'   => $expected_value_net,
-					'present_value'  => $present_value_total,
+				'expected_value'    => array(
+					'gross'         => $expected_value_gross,
+					'net_of_costs'  => $expected_value_net,
+					'present_value' => $present_value_total,
 				),
-				'risk_assessment'     => array(
-					'level'                => $risk_level,
+				'risk_assessment'   => array(
+					'level'                 => $risk_level,
 					'liability_probability' => $liability_probability,
-					'note'                 => $risk_note,
+					'note'                  => $risk_note,
 				),
-				'analysis_factors'    => array(
-					'total_damages'       => $total_damages,
-					'economic_damages'    => $economic_damages,
+				'analysis_factors'  => array(
+					'total_damages'        => $total_damages,
+					'economic_damages'     => $economic_damages,
 					'non_economic_damages' => $non_economic_damages,
-					'trial_cost_estimate' => $trial_cost_estimate,
+					'trial_cost_estimate'  => $trial_cost_estimate,
 					'time_to_trial_months' => $time_to_trial_months,
-					'discount_rate'       => $discount_rate,
-					'settlement_savings'  => $settlement_savings,
+					'discount_rate'        => $discount_rate,
+					'settlement_savings'   => $settlement_savings,
 				),
 			),
 			'disclaimer' => self::DISCLAIMER,

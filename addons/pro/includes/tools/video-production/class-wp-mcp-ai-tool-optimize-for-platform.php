@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, 
 		return __( 'Optimize for Platform tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'optimize_for_platform';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, 
 		return __( 'Optimize videos for specific platforms (YouTube, Instagram, TikTok) with ideal specs.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -70,10 +84,22 @@ class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'upload_files';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'media'         => true,
@@ -82,8 +108,8 @@ class WP_MCP_AI_Tool_Optimize_For_Platform implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement optimize_for_platform logic
-		// This requires FFmpeg or similar video processing library
+		// TODO: Implement optimize_for_platform logic.
+		// This requires FFmpeg or similar video processing library.
 
 		return array(
 			'success' => true,

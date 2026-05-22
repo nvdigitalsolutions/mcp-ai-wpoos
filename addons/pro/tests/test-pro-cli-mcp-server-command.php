@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignore Universal.Files.OneObjectStructurePerFile.MultipleFound
 /**
  * Tests for WP_MCP_AI_Pro_CLI_Mcp_Server_Command.
  *
@@ -17,6 +18,7 @@
  */
 
 // ── \WP_CLI\Utils stub functions ─────────────────────────────────────────────
+// phpcs:disable Universal.Namespaces.DisallowCurlyBraceSyntax,Universal.Namespaces.OneDeclarationPerFile,Universal.Namespaces.DisallowDeclarationWithoutName
 namespace WP_CLI\Utils {
 	if ( ! function_exists( 'WP_CLI\Utils\get_flag_value' ) ) {
 		/**
@@ -44,7 +46,7 @@ namespace WP_CLI\Utils {
 }
 
 // ── Global namespace: stubs + test class ─────────────────────────────────────
-namespace {
+namespace { // phpcs:ignore Universal.Namespaces.DisallowCurlyBraceSyntax,Universal.Namespaces.OneDeclarationPerFile,Universal.Namespaces.DisallowDeclarationWithoutName
 
 	// Bootstrap MCP servers.
 	require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
@@ -64,13 +66,29 @@ namespace {
 		 * without terminating the process.
 		 */
 		class WP_CLI { // phpcs:ignore
-			/** @var string */
+			/**
+			 * Last error message.
+			 *
+			 * @var string
+			 */
 			public static $last_error = '';
-			/** @var string */
+			/**
+			 * Last success message.
+			 *
+			 * @var string
+			 */
 			public static $last_success = '';
-			/** @var string */
+			/**
+			 * Last log message.
+			 *
+			 * @var string
+			 */
 			public static $last_log = '';
-			/** @var string */
+			/**
+			 * Last line message.
+			 *
+			 * @var string
+			 */
 			public static $last_line = '';
 
 			public static function add_command( $name, $class ) {} // phpcs:ignore
@@ -96,17 +114,21 @@ namespace {
 	// Load the command class.
 	require_once dirname( __DIR__ ) . '/includes/cli/class-wp-mcp-ai-pro-cli-mcp-server-command.php';
 
-	/**
+	/** Summary.
+	 *
 	 * @group toolkit-mcp-servers
 	 * @group cli
 	 */
 	class Test_Pro_CLI_Mcp_Server_Command extends WP_UnitTestCase { // phpcs:ignore
 
-		/**
+		/** Summary.
+		 *
 		 * @var WP_MCP_AI_Pro_CLI_Mcp_Server_Command
 		 */
 		private $cmd;
 
+		/** Set up test.
+		 */
 		public function setUp(): void {
 			parent::setUp();
 			WP_MCP_AI_Toolkit_Server_Registry::get_instance()->bootstrap();
@@ -119,19 +141,27 @@ namespace {
 			WP_CLI::$last_line    = '';
 		}
 
+		/** Tear down test.
+		 */
 		public function tearDown(): void {
 			delete_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . 'crm' );
 			parent::tearDown();
 		}
 
+		/** Test command class exists.
+		 */
 		public function test_command_class_exists(): void {
 			$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_CLI_Mcp_Server_Command' ) );
 		}
 
+		/** Test command extends base.
+		 */
 		public function test_command_extends_base(): void {
 			$this->assertInstanceOf( 'WP_MCP_AI_Pro_CLI_Base_Command', $this->cmd );
 		}
 
+		/** Test required methods exist.
+		 */
 		public function test_required_methods_exist(): void {
 			foreach ( array( 'list_', 'get', 'enable', 'disable', 'tools' ) as $method ) {
 				$this->assertTrue(
@@ -141,31 +171,57 @@ namespace {
 			}
 		}
 
+		/** Test list ids contains crm.
+		 */
 		public function test_list_ids_contains_crm(): void {
-			$this->cmd->list_( array(), array( 'status' => 'all', 'format' => 'ids' ) );
+			$this->cmd->list_(
+				array(),
+				array(
+					'status' => 'all',
+					'format' => 'ids',
+				)
+			);
 			$this->assertStringContainsString( 'crm', WP_CLI::$last_line );
 		}
 
+		/** Test list enabled filter excludes disabled server.
+		 */
 		public function test_list_enabled_filter_excludes_disabled_server(): void {
-			$server           = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
-			$cfg              = $server->get_configuration();
-			$cfg['enabled']   = false;
+			$server         = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
+			$cfg            = $server->get_configuration();
+			$cfg['enabled'] = false;
 			$server->update_configuration( $cfg );
 
-			$this->cmd->list_( array(), array( 'status' => 'enabled', 'format' => 'ids' ) );
+			$this->cmd->list_(
+				array(),
+				array(
+					'status' => 'enabled',
+					'format' => 'ids',
+				)
+			);
 			$this->assertStringNotContainsString( 'crm', WP_CLI::$last_line );
 		}
 
+		/** Test list disabled filter includes disabled server.
+		 */
 		public function test_list_disabled_filter_includes_disabled_server(): void {
-			$server           = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
-			$cfg              = $server->get_configuration();
-			$cfg['enabled']   = false;
+			$server         = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
+			$cfg            = $server->get_configuration();
+			$cfg['enabled'] = false;
 			$server->update_configuration( $cfg );
 
-			$this->cmd->list_( array(), array( 'status' => 'disabled', 'format' => 'ids' ) );
+			$this->cmd->list_(
+				array(),
+				array(
+					'status' => 'disabled',
+					'format' => 'ids',
+				)
+			);
 			$this->assertStringContainsString( 'crm', WP_CLI::$last_line );
 		}
 
+		/** Test get json output contains slug.
+		 */
 		public function test_get_json_output_contains_slug(): void {
 			$this->cmd->get( array( 'crm' ), array( 'format' => 'json' ) );
 			$decoded = json_decode( WP_CLI::$last_line, true );
@@ -173,16 +229,22 @@ namespace {
 			$this->assertSame( 'crm', $decoded['slug'] );
 		}
 
+		/** Test get unknown slug throws.
+		 */
 		public function test_get_unknown_slug_throws(): void {
 			$this->expectException( RuntimeException::class );
 			$this->cmd->get( array( 'unknown-xyz-abc' ), array() );
 		}
 
+		/** Test get missing slug throws.
+		 */
 		public function test_get_missing_slug_throws(): void {
 			$this->expectException( RuntimeException::class );
 			$this->cmd->get( array(), array() );
 		}
 
+		/** Test enable disable round trip.
+		 */
 		public function test_enable_disable_round_trip(): void {
 			$this->cmd->disable( array( 'crm' ), array( 'yes' => true ) );
 			$this->assertStringContainsString( 'disabled', WP_CLI::$last_success );
@@ -197,11 +259,15 @@ namespace {
 			$this->assertTrue( $server->is_enabled() );
 		}
 
+		/** Test tools unknown slug throws.
+		 */
 		public function test_tools_unknown_slug_throws(): void {
 			$this->expectException( RuntimeException::class );
 			$this->cmd->tools( array( 'totally-unknown-server-xyz' ), array() );
 		}
 
+		/** Test tools ids for known server does not fatal.
+		 */
 		public function test_tools_ids_for_known_server_does_not_fatal(): void {
 			// Tool classes may not be loaded in unit-test env, but no fatal should occur.
 			$this->cmd->tools( array( 'crm' ), array( 'format' => 'ids' ) );
@@ -209,4 +275,7 @@ namespace {
 		}
 	}
 
-} // namespace
+}
+
+// phpcs:enable Universal.Namespaces.OneDeclarationPerFile,Universal.Namespaces.DisallowDeclarationWithoutName,Universal.Namespaces.EnforceCurlyBraceSyntax
+// namespace.

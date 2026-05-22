@@ -38,7 +38,7 @@ class Test_Docs_Hub_Rebuild_Pipeline_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * enqueue() must register a shutdown action when the inline kick is enabled.
+	 * Enqueue() must register a shutdown action when the inline kick is enabled.
 	 */
 	public function test_enqueue_registers_shutdown_action() {
 		// Clear any pre-existing shutdown hooks.
@@ -53,7 +53,7 @@ class Test_Docs_Hub_Rebuild_Pipeline_Inline_Kick extends WP_UnitTestCase {
 	}
 
 	/**
-	 * enqueue() must NOT register a shutdown action when the
+	 * Enqueue() must NOT register a shutdown action when the
 	 * wp_mcp_ai_inline_kick_enabled filter returns false.
 	 */
 	public function test_enqueue_skips_shutdown_action_when_filter_disabled() {
@@ -75,7 +75,7 @@ class Test_Docs_Hub_Rebuild_Pipeline_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * tick() must bail early when the cooperative tick lock is already held,
+	 * Tick() must bail early when the cooperative tick lock is already held,
 	 * preventing two concurrent ticks from processing the same chunk.
 	 */
 	public function test_tick_bails_when_lock_held() {
@@ -106,7 +106,7 @@ class Test_Docs_Hub_Rebuild_Pipeline_Inline_Kick extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * do_tick() must return without processing when the rebuild state is idle.
+	 * Do_tick() must return without processing when the rebuild state is idle.
 	 */
 	public function test_do_tick_bails_on_idle_state() {
 		// State is idle (nothing enqueued).
@@ -121,7 +121,7 @@ class Test_Docs_Hub_Rebuild_Pipeline_Inline_Kick extends WP_UnitTestCase {
 	}
 
 	/**
-	 * do_tick() must return without processing when the rebuild phase is DONE.
+	 * Do_tick() must return without processing when the rebuild phase is DONE.
 	 */
 	public function test_do_tick_bails_on_done_state() {
 		NV_oOS_Docs_Hub_Rebuild_State::update(

@@ -221,8 +221,8 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array                    $slug_map Slug map from indexer.
-	 * @param NV_oOS_Docs_Hub_Indexer  $indexer  Indexer instance.
+	 * @param array                   $slug_map Slug map from indexer.
+	 * @param NV_oOS_Docs_Hub_Indexer $indexer  Indexer instance.
 	 * @return array
 	 */
 	private static function build_search_index( $slug_map, $indexer ) {

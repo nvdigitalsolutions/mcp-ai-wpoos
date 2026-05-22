@@ -23,6 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -35,6 +36,13 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'export_to_ifc';
 	}
@@ -47,6 +55,13 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return __( 'Generate an IFC 4.3 STEP-format text body (HEADER + DATA) from a normalised floor plan. Output is a valid STEP file body — geometry is minimal but the entity graph (project → site → building → storeys → spaces / walls / openings) is structurally complete.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -69,6 +84,11 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'read-only' );
 	}

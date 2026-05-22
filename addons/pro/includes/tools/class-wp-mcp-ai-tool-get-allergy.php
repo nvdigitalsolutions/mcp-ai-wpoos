@@ -28,6 +28,13 @@ class WP_MCP_AI_Tool_Get_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return __( 'Retrieves detailed information about a specific allergy record.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -61,6 +68,11 @@ class WP_MCP_AI_Tool_Get_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}

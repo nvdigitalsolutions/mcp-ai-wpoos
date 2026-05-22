@@ -94,8 +94,8 @@ class WP_MCP_AI_Media_Template_CPT {
 		// Check if we're on a media template post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
 		$post_type        = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_template_page = ( $post_type === self::POST_TYPE );
-		if ( ! $is_template_page && $screen->post_type !== self::POST_TYPE ) {
+		$is_template_page = ( self::POST_TYPE === $post_type );
+		if ( ! $is_template_page && self::POST_TYPE !== $screen->post_type ) {
 			return;
 		}
 

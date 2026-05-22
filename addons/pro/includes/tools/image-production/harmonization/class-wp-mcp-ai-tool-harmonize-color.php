@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Harmonize_Color extends WP_MCP_AI_Tool_Harmonization_Base {
 				'provider' => $provider,
 			);
 		} else {
-			// Use Reinhard color transfer (mean_std_lab and histogram_match share this implementation
+			// Use Reinhard color transfer (mean_std_lab and histogram_match share this implementation.
 			// at the moment; future extension can plug in true LAB or histogram matching).
 			$report = $this->compositor()->reinhard_color_transfer(
 				$subject['file_path'],

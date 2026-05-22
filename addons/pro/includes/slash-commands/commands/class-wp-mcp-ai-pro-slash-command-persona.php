@@ -105,7 +105,7 @@ class WP_MCP_AI_Pro_Slash_Command_Persona {
 				if ( $service instanceof WP_MCP_AI_Profession_Service ) {
 					return $service;
 				}
-			} catch ( \Throwable $e ) {
+			} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 				// Fall through to direct instantiation.
 			}
 		}
@@ -121,7 +121,7 @@ class WP_MCP_AI_Pro_Slash_Command_Persona {
 	 * List all available professions.
 	 *
 	 * @param WP_MCP_AI_Profession_Service $service  Profession service.
-	 * @param bool                          $as_json  JSON output.
+	 * @param bool                         $as_json  JSON output.
 	 * @return string|array|WP_Error
 	 */
 	private function list_professions( $service, $as_json ) {
@@ -145,11 +145,11 @@ class WP_MCP_AI_Pro_Slash_Command_Persona {
 			return __( 'No professions found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$output = "## " . __( 'Available Professions / Personas', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output = '## ' . __( 'Available Professions / Personas', 'mcp-ai-wpoos-pro' ) . "\n\n";
 		foreach ( $professions as $profession ) {
-			$slug  = is_array( $profession ) ? ( $profession['slug'] ?? '' ) : $profession;
-			$label = is_array( $profession ) ? ( $profession['name'] ?? $profession['label'] ?? $slug ) : $profession;
-			$desc  = is_array( $profession ) && isset( $profession['description'] ) ? ' — ' . esc_html( $profession['description'] ) : '';
+			$slug    = is_array( $profession ) ? ( $profession['slug'] ?? '' ) : $profession;
+			$label   = is_array( $profession ) ? ( $profession['name'] ?? $profession['label'] ?? $slug ) : $profession;
+			$desc    = is_array( $profession ) && isset( $profession['description'] ) ? ' — ' . esc_html( $profession['description'] ) : '';
 			$output .= '- **`' . esc_html( $slug ) . '`** ' . esc_html( $label ) . $desc . "\n";
 		}
 
@@ -162,8 +162,8 @@ class WP_MCP_AI_Pro_Slash_Command_Persona {
 	 * Show details for a single profession.
 	 *
 	 * @param WP_MCP_AI_Profession_Service $service  Profession service.
-	 * @param string                        $slug     Profession slug.
-	 * @param bool                          $as_json  JSON output.
+	 * @param string                       $slug     Profession slug.
+	 * @param bool                         $as_json  JSON output.
 	 * @return string|array|WP_Error
 	 */
 	private function show_profession( $service, $slug, $as_json ) {
@@ -199,8 +199,8 @@ class WP_MCP_AI_Pro_Slash_Command_Persona {
 		$name = is_array( $profession ) ? ( $profession['name'] ?? $profession['label'] ?? $slug ) : $slug;
 		$desc = is_array( $profession ) && isset( $profession['description'] ) ? esc_html( $profession['description'] ) : '–';
 
-		$output  = "## Profession: " . esc_html( $name ) . "\n\n";
-		$output .= "- **Slug:** " . esc_html( $slug ) . "\n";
+		$output  = '## Profession: ' . esc_html( $name ) . "\n\n";
+		$output .= '- **Slug:** ' . esc_html( $slug ) . "\n";
 		$output .= "- **Description:** {$desc}\n";
 
 		if ( is_array( $profession ) ) {
@@ -219,9 +219,9 @@ class WP_MCP_AI_Pro_Slash_Command_Persona {
 	 * Load / activate a profession by slug.
 	 *
 	 * @param WP_MCP_AI_Profession_Service $service  Profession service.
-	 * @param string                        $slug     Profession slug.
-	 * @param array                         $context  Execution context.
-	 * @param bool                          $as_json  JSON output.
+	 * @param string                       $slug     Profession slug.
+	 * @param array                        $context  Execution context.
+	 * @param bool                         $as_json  JSON output.
 	 * @return string|array|WP_Error
 	 */
 	private function load_profession( $service, $slug, $context, $as_json ) {

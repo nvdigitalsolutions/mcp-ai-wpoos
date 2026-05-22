@@ -222,6 +222,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		// Set up AJAX action.
 		try {
 			// Mock AJAX request without nonce.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$_POST['message'] = 'Test message';
 
 			// This should throw an exception for missing nonce.
@@ -253,14 +254,16 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
 
 		// Set up AJAX request with valid nonce.
-		$_POST['nonce']   = wp_create_nonce( 'wp_mcp_ai_cpt_chat' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_cpt_chat' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['message'] = 'Test message';
 
 		// Capture output.
 		ob_start();
 		try {
 			do_action( 'wp_ajax_wp_mcp_ai_cpt_chat' );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected to send JSON error.
 		}
 		$output = ob_get_clean();

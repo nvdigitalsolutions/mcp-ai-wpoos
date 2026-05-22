@@ -337,7 +337,7 @@ class WP_MCP_AI_Image_Production_Research_Add extends WP_MCP_AI_Research_Add_Bas
 				<td><?php echo esc_html( $item['id'] ); ?></td>
 				<td><?php echo esc_html( $item['project_name'] ?? __( '(No name)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 				<td><?php echo esc_html( $item['project_type'] ?? '-' ); ?></td>
-				<td><?php echo esc_html( $dimensions ?: '-' ); ?></td>
+				<td><?php echo esc_html( $dimensions ? $dimensions : '-' ); ?></td>
 				<td><?php echo esc_html( $item['status'] ?? 'Active' ); ?></td>
 				<td class="item-actions">
 					<a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></a>
@@ -356,7 +356,7 @@ class WP_MCP_AI_Image_Production_Research_Add extends WP_MCP_AI_Research_Add_Bas
 				<td><?php echo esc_html( $item['id'] ); ?></td>
 				<td><?php echo esc_html( $item['asset_name'] ?? __( '(No name)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 				<td><?php echo esc_html( $item['asset_type'] ?? '-' ); ?></td>
-				<td><?php echo esc_html( $dimensions ?: '-' ); ?></td>
+				<td><?php echo esc_html( $dimensions ? $dimensions : '-' ); ?></td>
 				<td><?php echo esc_html( $file_size_formatted ); ?></td>
 				<td class="item-actions">
 					<a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></a>

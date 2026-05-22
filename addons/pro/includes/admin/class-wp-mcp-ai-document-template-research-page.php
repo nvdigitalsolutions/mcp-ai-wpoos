@@ -637,8 +637,8 @@ class WP_MCP_AI_Document_Template_Research_Page {
 		$with_page_config = 0;
 
 		foreach ( $templates as $template ) {
-			$doc_type  = get_post_meta( $template->ID, '_document_type', true );
-			$page_size = get_post_meta( $template->ID, '_page_size', true );
+			$doc_type    = get_post_meta( $template->ID, '_document_type', true );
+			$page_size   = get_post_meta( $template->ID, '_page_size', true );
 			$has_content = ! empty( $template->post_content );
 
 			if ( $doc_type ) {

@@ -158,7 +158,7 @@ class WP_MCP_AI_DICOMweb_Client {
 		if ( '' === $conn['base_url'] ) {
 			return new WP_Error( 'wp_mcp_ai_dicomweb_missing_base', __( 'DICOMweb base URL is not configured.', 'mcp-ai-wpoos-pro' ) );
 		}
-		$url      = trailingslashit( $conn['base_url'] ) . 'studies';
+		$url = trailingslashit( $conn['base_url'] ) . 'studies';
 		if ( ! empty( $params ) ) {
 			$url = add_query_arg( array_map( 'rawurlencode', $params ), $url );
 		}
@@ -247,8 +247,8 @@ class WP_MCP_AI_DICOMweb_Client {
 		if ( '' === $conn['base_url'] ) {
 			return new WP_Error( 'wp_mcp_ai_dicomweb_missing_base', __( 'DICOMweb base URL is not configured.', 'mcp-ai-wpoos-pro' ) );
 		}
-		$url      = trailingslashit( $conn['base_url'] ) . 'studies';
-		$args     = self::build_args( $conn, 'application/dicom+json' );
+		$url                             = trailingslashit( $conn['base_url'] ) . 'studies';
+		$args                            = self::build_args( $conn, 'application/dicom+json' );
 		$args['headers']['Content-Type'] = 'application/dicom+json';
 		$args['method']                  = 'POST';
 		$args['body']                    = wp_json_encode( $instances );

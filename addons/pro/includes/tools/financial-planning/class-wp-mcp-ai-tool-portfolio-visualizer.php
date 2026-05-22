@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'holdings'  => array(
+				'holdings'          => array(
 					'type'        => 'array',
 					'description' => __( 'Portfolio holdings with ticker, shares, and current price', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(

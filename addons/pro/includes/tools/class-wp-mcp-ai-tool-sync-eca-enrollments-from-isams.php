@@ -162,9 +162,9 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 		}
 
 		// Get iSAMS connection settings.
-		$settings     = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
-		$isams_url    = isset( $settings['isams_api_url'] ) ? esc_url_raw( $settings['isams_api_url'] ) : '';
-		$isams_key    = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
+		$settings  = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+		$isams_url = isset( $settings['isams_api_url'] ) ? esc_url_raw( $settings['isams_api_url'] ) : '';
+		$isams_key = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
 
 		if ( empty( $isams_url ) || empty( $isams_key ) ) {
 			return new WP_Error(
@@ -452,14 +452,14 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 		foreach ( $student_ecas as $key => $entry ) {
 			if ( isset( $entry['eca_id'] ) && absint( $entry['eca_id'] ) === $eca_post_id ) {
 				$student_ecas[ $key ] = array(
-					'eca_id'         => $eca_post_id,
+					'eca_id'          => $eca_post_id,
 					'enrollment_type' => $enrollment_record['enrollment_type'],
-					'payment_status' => $enrollment_record['payment_status'],
-					'enrolled_date'  => $enrollment_record['enrolled_date'],
-					'synced_from'    => 'isams',
-					'synced_at'      => current_time( 'mysql' ),
+					'payment_status'  => $enrollment_record['payment_status'],
+					'enrolled_date'   => $enrollment_record['enrolled_date'],
+					'synced_from'     => 'isams',
+					'synced_at'       => current_time( 'mysql' ),
 				);
-				$student_eca_exists = true;
+				$student_eca_exists   = true;
 				break;
 			}
 		}

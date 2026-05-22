@@ -122,14 +122,14 @@ class WP_MCP_AI_Media_Collection_Metabox_Stats extends WP_MCP_AI_Media_Template_
 						?>
 					</span>
 				</div>
-			<?php elseif ( $item_count === 0 ) : ?>
+			<?php elseif ( 0 === $item_count ) : ?>
 				<div style="margin-bottom: 15px; padding: 10px; background: #fcf3cf; border-left: 4px solid #ffc107; font-size: 12px;">
 					<strong style="color: #856404;">⚠ <?php esc_html_e( 'No Items', 'mcp-ai-wpoos-pro' ); ?></strong><br>
 					<span style="color: #856404;">
 						<?php esc_html_e( 'Add media items to start', 'mcp-ai-wpoos-pro' ); ?>
 					</span>
 				</div>
-			<?php elseif ( $template_count === 0 ) : ?>
+			<?php elseif ( 0 === $template_count ) : ?>
 				<div style="margin-bottom: 15px; padding: 10px; background: #fcf3cf; border-left: 4px solid #ffc107; font-size: 12px;">
 					<strong style="color: #856404;">⚠ <?php esc_html_e( 'No Templates', 'mcp-ai-wpoos-pro' ); ?></strong><br>
 					<span style="color: #856404;">

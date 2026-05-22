@@ -67,10 +67,28 @@ class WP_MCP_AI_Pro_Tool_List_Pro_Schedules implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
 
@@ -117,20 +135,20 @@ class WP_MCP_AI_Pro_Tool_List_Pro_Schedules implements WP_MCP_AI_Tool_Interface,
 			$next_run = WP_MCP_AI_Pro_Schedule_Manager::get_next_run_time( $schedule['id'] );
 
 			$results[] = array(
-				'schedule_id'    => $schedule['id'],
-				'name'           => $schedule['name'],
-				'description'    => $schedule['description'],
-				'schedule_type'  => isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : 'task',
-				'hook'           => $schedule['hook'],
-				'schedule'       => $schedule['schedule'],
-				'enabled'        => $schedule['enabled'],
-				'priority'       => $schedule['priority'],
-				'tags'           => $schedule['tags'],
+				'schedule_id'     => $schedule['id'],
+				'name'            => $schedule['name'],
+				'description'     => $schedule['description'],
+				'schedule_type'   => isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : 'task',
+				'hook'            => $schedule['hook'],
+				'schedule'        => $schedule['schedule'],
+				'enabled'         => $schedule['enabled'],
+				'priority'        => $schedule['priority'],
+				'tags'            => $schedule['tags'],
 				'last_run_status' => $schedule['last_run_status'],
-				'last_run_time'  => $schedule['last_run_time'] ? wp_date( DATE_ATOM, $schedule['last_run_time'] ) : null,
-				'run_count'      => (int) $schedule['run_count'],
-				'next_run'       => $next_run ? wp_date( DATE_ATOM, $next_run ) : null,
-				'created_at'     => wp_date( DATE_ATOM, $schedule['created_at'] ),
+				'last_run_time'   => $schedule['last_run_time'] ? wp_date( DATE_ATOM, $schedule['last_run_time'] ) : null,
+				'run_count'       => (int) $schedule['run_count'],
+				'next_run'        => $next_run ? wp_date( DATE_ATOM, $next_run ) : null,
+				'created_at'      => wp_date( DATE_ATOM, $schedule['created_at'] ),
 			);
 		}
 

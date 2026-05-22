@@ -134,9 +134,17 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 				),
 			),
 			'required'   => array(
-				'deal_name', 'property_type', 'property_address',
-				'loan_amount', 'property_value', 'noi', 'dscr', 'ltv', 'debt_yield',
-				'borrower_name', 'recommendation',
+				'deal_name',
+				'property_type',
+				'property_address',
+				'loan_amount',
+				'property_value',
+				'noi',
+				'dscr',
+				'ltv',
+				'debt_yield',
+				'borrower_name',
+				'recommendation',
 			),
 		);
 	}
@@ -161,20 +169,20 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$deal_name    = sanitize_text_field( $arguments['deal_name'] ?? '' );
-		$prop_type    = sanitize_text_field( $arguments['property_type'] ?? '' );
-		$prop_address = sanitize_text_field( $arguments['property_address'] ?? '' );
-		$loan_amount  = (float) ( $arguments['loan_amount'] ?? 0 );
-		$prop_value   = (float) ( $arguments['property_value'] ?? 0 );
-		$noi          = (float) ( $arguments['noi'] ?? 0 );
-		$dscr         = (float) ( $arguments['dscr'] ?? 0 );
-		$ltv          = (float) ( $arguments['ltv'] ?? 0 );
-		$debt_yield   = (float) ( $arguments['debt_yield'] ?? 0 );
-		$borrower     = sanitize_text_field( $arguments['borrower_name'] ?? '' );
-		$experience   = sanitize_text_field( $arguments['borrower_experience'] ?? '' );
-		$market       = sanitize_text_field( $arguments['market_overview'] ?? '' );
-		$risks        = array_map( 'sanitize_text_field', $arguments['risk_factors'] ?? array() );
-		$mitigants    = array_map( 'sanitize_text_field', $arguments['mitigants'] ?? array() );
+		$deal_name      = sanitize_text_field( $arguments['deal_name'] ?? '' );
+		$prop_type      = sanitize_text_field( $arguments['property_type'] ?? '' );
+		$prop_address   = sanitize_text_field( $arguments['property_address'] ?? '' );
+		$loan_amount    = (float) ( $arguments['loan_amount'] ?? 0 );
+		$prop_value     = (float) ( $arguments['property_value'] ?? 0 );
+		$noi            = (float) ( $arguments['noi'] ?? 0 );
+		$dscr           = (float) ( $arguments['dscr'] ?? 0 );
+		$ltv            = (float) ( $arguments['ltv'] ?? 0 );
+		$debt_yield     = (float) ( $arguments['debt_yield'] ?? 0 );
+		$borrower       = sanitize_text_field( $arguments['borrower_name'] ?? '' );
+		$experience     = sanitize_text_field( $arguments['borrower_experience'] ?? '' );
+		$market         = sanitize_text_field( $arguments['market_overview'] ?? '' );
+		$risks          = array_map( 'sanitize_text_field', $arguments['risk_factors'] ?? array() );
+		$mitigants      = array_map( 'sanitize_text_field', $arguments['mitigants'] ?? array() );
 		$recommendation = sanitize_text_field( $arguments['recommendation'] ?? 'conditional' );
 
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
@@ -185,7 +193,7 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 			'decline'     => __( 'DECLINE', 'mcp-ai-wpoos-pro' ),
 			'conditional' => __( 'CONDITIONAL APPROVAL', 'mcp-ai-wpoos-pro' ),
 		);
-		$rec_label = $rec_labels[ $recommendation ] ?? $rec_labels['conditional'];
+		$rec_label  = $rec_labels[ $recommendation ] ?? $rec_labels['conditional'];
 
 		// DSCR / LTV / DY rating.
 		$dscr_rating = match ( true ) {
@@ -213,7 +221,7 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 		$date_str = wp_date( 'F j, Y' );
 		$equity   = $prop_value - $loan_amount;
 
-		$memo_lines = array();
+		$memo_lines   = array();
 		$memo_lines[] = '══════════════════════════════════════════════════';
 		$memo_lines[] = strtoupper( __( 'Credit Committee Underwriting Memo', 'mcp-ai-wpoos-pro' ) );
 		$memo_lines[] = '══════════════════════════════════════════════════';
@@ -291,8 +299,8 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 			'success' => true,
 			'message' => __( 'Underwriting memo generated. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'memo_text'       => $memo_text,
-				'deal_summary'    => array(
+				'memo_text'      => $memo_text,
+				'deal_summary'   => array(
 					'deal_name'      => $deal_name,
 					'property_type'  => $prop_type,
 					'address'        => $prop_address,
@@ -300,17 +308,17 @@ class WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator implements WP_MCP_AI_Tool_I
 					'property_value' => $calc::format_currency( $prop_value ),
 					'noi'            => $calc::format_currency( $noi ),
 				),
-				'credit_metrics'  => array(
-					'dscr'       => round( $dscr, 2 ) . 'x',
+				'credit_metrics' => array(
+					'dscr'        => round( $dscr, 2 ) . 'x',
 					'dscr_rating' => $dscr_rating,
-					'ltv'        => $calc::format_percentage( $ltv ),
-					'ltv_rating' => $ltv_rating,
-					'debt_yield' => $calc::format_percentage( $debt_yield ),
-					'dy_rating'  => $dy_rating,
+					'ltv'         => $calc::format_percentage( $ltv ),
+					'ltv_rating'  => $ltv_rating,
+					'debt_yield'  => $calc::format_percentage( $debt_yield ),
+					'dy_rating'   => $dy_rating,
 				),
-				'recommendation'  => $rec_label,
-				'risk_factors'    => $risks,
-				'mitigants'       => $mitigants,
+				'recommendation' => $rec_label,
+				'risk_factors'   => $risks,
+				'mitigants'      => $mitigants,
 			),
 		);
 	}

@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, W
 		return __( 'Convert Video Format tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'convert_video_format';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, W
 		return __( 'Convert videos between formats (MP4, WebM, MOV, AVI) with codec options.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -76,10 +90,22 @@ class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'upload_files';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'media'         => true,
@@ -88,8 +114,8 @@ class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement convert_video_format logic
-		// This requires FFmpeg or similar video processing library
+		// TODO: Implement convert_video_format logic.
+		// This requires FFmpeg or similar video processing library.
 
 		return array(
 			'success' => true,

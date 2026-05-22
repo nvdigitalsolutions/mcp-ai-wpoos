@@ -632,9 +632,9 @@ class WP_MCP_AI_Image_Template_Research_Page {
 			)
 		);
 
-		$complete_count   = 0;
-		$with_generator   = 0;
-		$with_format      = 0;
+		$complete_count = 0;
+		$with_generator = 0;
+		$with_format    = 0;
 
 		foreach ( $templates as $template ) {
 			$generator   = get_post_meta( $template->ID, '_image_generator', true );

@@ -154,15 +154,15 @@ class WP_MCP_AI_Tool_CRE_Fund_Portfolio_Dashboard implements WP_MCP_AI_Tool_Inte
 
 		$calc = WP_MCP_AI_CRE_Debt_Calculator::class;
 
-		$total_balance       = 0.0;
-		$wa_rate_num         = 0.0;
-		$wa_dscr_num         = 0.0;
-		$wa_ltv_num          = 0.0;
-		$property_exposure   = array();
-		$state_exposure      = array();
-		$maturity_schedule   = array();
-		$status_breakdown    = array();
-		$loan_count          = count( $loans );
+		$total_balance     = 0.0;
+		$wa_rate_num       = 0.0;
+		$wa_dscr_num       = 0.0;
+		$wa_ltv_num        = 0.0;
+		$property_exposure = array();
+		$state_exposure    = array();
+		$maturity_schedule = array();
+		$status_breakdown  = array();
+		$loan_count        = count( $loans );
 
 		foreach ( $loans as $loan ) {
 			$balance       = (float) ( $loan['balance'] ?? 0 );
@@ -215,9 +215,9 @@ class WP_MCP_AI_Tool_CRE_Fund_Portfolio_Dashboard implements WP_MCP_AI_Tool_Inte
 			}
 		}
 
-		$wa_rate = ( $total_balance > 0 ) ? $wa_rate_num / $total_balance : 0;
-		$wa_dscr = ( $total_balance > 0 ) ? $wa_dscr_num / $total_balance : 0;
-		$wa_ltv  = ( $total_balance > 0 ) ? $wa_ltv_num / $total_balance : 0;
+		$wa_rate       = ( $total_balance > 0 ) ? $wa_rate_num / $total_balance : 0;
+		$wa_dscr       = ( $total_balance > 0 ) ? $wa_dscr_num / $total_balance : 0;
+		$wa_ltv        = ( $total_balance > 0 ) ? $wa_ltv_num / $total_balance : 0;
 		$avg_loan_size = ( $loan_count > 0 ) ? $total_balance / $loan_count : 0;
 
 		// Convert exposures to percentages.

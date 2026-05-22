@@ -62,6 +62,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
 	}
 }
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- file intentionally contains a stub trait and a class.
 /**
  * Chunked rebuild pipeline.
  *
@@ -529,7 +530,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 		$state = NV_oOS_Docs_Hub_Rebuild_State::get();
 
 		// Reset cursor when entering this phase.
-		if ( $state['phase'] === NV_oOS_Docs_Hub_Rebuild_State::PHASE_LINKS && $state['cursor'] >= $state['total'] ) {
+		if ( NV_oOS_Docs_Hub_Rebuild_State::PHASE_LINKS === $state['phase'] && $state['cursor'] >= $state['total'] ) {
 			$state['cursor'] = 0;
 			NV_oOS_Docs_Hub_Rebuild_State::set( $state );
 		}
@@ -601,7 +602,7 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 		$state = NV_oOS_Docs_Hub_Rebuild_State::get();
 
 		// Reset cursor on phase entry.
-		if ( $state['phase'] === NV_oOS_Docs_Hub_Rebuild_State::PHASE_SEARCH && $state['cursor'] >= $state['total'] ) {
+		if ( NV_oOS_Docs_Hub_Rebuild_State::PHASE_SEARCH === $state['phase'] && $state['cursor'] >= $state['total'] ) {
 			$state['cursor'] = 0;
 			NV_oOS_Docs_Hub_Rebuild_State::set( $state );
 		}
@@ -892,3 +893,4 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 		return $indexer;
 	}
 }
+// phpcs:enable Generic.Files.OneObjectStructurePerFile.MultipleFound

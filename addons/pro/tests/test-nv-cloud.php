@@ -59,6 +59,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		WP_MCP_AI_NV_Cloud_Billing_Observer::reset_instance();
 	}
 
+	/** Tear down test.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_NV_Cloud_Billing_Observer::reset_instance();
 		WP_MCP_AI_NV_Cloud_Service::reset_instance();
@@ -69,12 +71,16 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 	// Service tests.
 	// ------------------------------------------------------------------
 
+	/** Test service singleton returns same instance.
+	 */
 	public function test_service_singleton_returns_same_instance() {
 		$a = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$b = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$this->assertSame( $a, $b );
 	}
 
+	/** Test default state is disconnected.
+	 */
 	public function test_default_state_is_disconnected() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$this->assertFalse( $svc->is_connected() );
@@ -82,6 +88,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( array(), $svc->get_connection_meta() );
 	}
 
+	/** Test save connection round trips token and meta.
+	 */
 	public function test_save_connection_round_trips_token_and_meta() {
 		$svc   = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$token = 'cnvc_live_abcdefghijklmnop';
@@ -97,6 +105,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'token', $meta );
 	}
 
+	/** Test save connection rejects empty token.
+	 */
 	public function test_save_connection_rejects_empty_token() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$this->assertFalse( $svc->save_connection( '' ) );
@@ -104,6 +114,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertFalse( $svc->is_connected() );
 	}
 
+	/** Test token is encrypted at rest.
+	 */
 	public function test_token_is_encrypted_at_rest() {
 		$svc   = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$token = 'cnvc_secret_value';
@@ -118,6 +130,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( $token, $svc->get_connect_token() );
 	}
 
+	/** Test forget connection clears local state.
+	 */
 	public function test_forget_connection_clears_local_state() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$svc->save_connection( 'cnvc_x' );
@@ -132,6 +146,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( array(), $svc->get_ledger() );
 	}
 
+	/** Test compute markup uses seven percent.
+	 */
 	public function test_compute_markup_uses_seven_percent() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$this->assertEquals( 0.07, WP_MCP_AI_NV_Cloud_Service::MARKUP_RATE );
@@ -140,6 +156,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( 0.0, $svc->compute_markup( -5 ) );
 	}
 
+	/** Test compute stripe passthrough uses 2 9 percent plus 30c.
+	 */
 	public function test_compute_stripe_passthrough_uses_2_9_percent_plus_30c() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		// $25 * 0.029 + $0.30 = 0.725 + 0.30 = 1.025, rounded to 1.03.
@@ -148,6 +166,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertEquals( 3.20, $svc->compute_stripe_passthrough( 100.00 ) );
 	}
 
+	/** Test ledger append and cap.
+	 */
 	public function test_ledger_append_and_cap() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		for ( $i = 0; $i < 250; $i++ ) {
@@ -164,6 +184,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertCount( WP_MCP_AI_NV_Cloud_Service::LEDGER_MAX_ENTRIES, $ledger );
 	}
 
+	/** Test prefs round trip clamps minimums.
+	 */
 	public function test_prefs_round_trip_clamps_minimums() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$svc->save_prefs(
@@ -179,6 +201,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertEquals( WP_MCP_AI_NV_Cloud_Service::DEFAULT_MIN_TOPUP_USD, $prefs['auto_topup_amount_usd'] );
 	}
 
+	/** Test is default provider requires connection and pref.
+	 */
 	public function test_is_default_provider_requires_connection_and_pref() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$this->assertFalse( $svc->is_default_provider() );
@@ -190,8 +214,10 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertTrue( $svc->is_default_provider() );
 	}
 
+	/** Test base url can be overridden via filter.
+	 */
 	public function test_base_url_can_be_overridden_via_filter() {
-		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
+		$svc      = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$override = static function () {
 			return 'https://staging.example.com/v1';
 		};
@@ -204,6 +230,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 	// Billing observer tests.
 	// ------------------------------------------------------------------
 
+	/** Test billing observer ignores non nv hosted requests.
+	 */
 	public function test_billing_observer_ignores_non_nv_hosted_requests() {
 		WP_MCP_AI_NV_Cloud_Billing_Observer::init();
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
@@ -218,6 +246,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( array(), $svc->get_ledger() );
 	}
 
+	/** Test billing observer records nv hosted request.
+	 */
 	public function test_billing_observer_records_nv_hosted_request() {
 		WP_MCP_AI_NV_Cloud_Billing_Observer::init();
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
@@ -251,12 +281,14 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 24.9893, $svc->get_cached_balance()['balance'], 0.0001 );
 	}
 
+	/** Test billing observer derives wholesale when header missing.
+	 */
 	public function test_billing_observer_derives_wholesale_when_header_missing() {
 		WP_MCP_AI_NV_Cloud_Billing_Observer::init();
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 
-		// No `nv_cloud_wholesale_usd` in the response — observer must derive
-		// the wholesale figure from `cost_usd / (1 + markup)`. We still flag
+		// No `nv_cloud_wholesale_usd` in the response — observer must derive.
+		// the wholesale figure from `cost_usd / (1 + markup)`. We still flag.
 		// this as an NV-hosted call via `request['provider']`.
 		do_action(
 			'wp_mcp_ai_cost_calculated',
@@ -278,19 +310,32 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 	// Provider client tests.
 	// ------------------------------------------------------------------
 
+	/** Test provider adapter reports correct slug.
+	 */
 	public function test_provider_adapter_reports_correct_slug() {
 		$adapter = new WP_MCP_AI_NV_Cloud_Provider_Client();
 		$this->assertSame( 'nv_hosted', $adapter->get_provider_slug() );
 		$this->assertInstanceOf( 'WP_MCP_AI_NV_Cloud_Client', $adapter->get_client() );
 	}
 
+	/** Test client returns wp error when disconnected.
+	 */
 	public function test_client_returns_wp_error_when_disconnected() {
 		$client = new WP_MCP_AI_NV_Cloud_Client();
-		$result = $client->create_chat_completion( array( array( 'role' => 'user', 'content' => 'hi' ) ) );
+		$result = $client->create_chat_completion(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hi',
+				),
+			)
+		);
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertSame( 'wp_mcp_ai_nv_cloud_not_connected', $result->get_error_code() );
 	}
 
+	/** Test client uses service base url and token.
+	 */
 	public function test_client_uses_service_base_url_and_token() {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$svc->save_connection( 'cnvc_xyz' );
@@ -305,6 +350,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 	// REST controller tests.
 	// ------------------------------------------------------------------
 
+	/** Test rest status endpoint reports connection state.
+	 */
 	public function test_rest_status_endpoint_reports_connection_state() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -318,6 +365,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertEquals( 25.0, $data['min_topup_usd'] );
 	}
 
+	/** Test rest connect persists token.
+	 */
 	public function test_rest_connect_persists_token() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -335,6 +384,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( 'cnvc_test_token', $svc->get_connect_token() );
 	}
 
+	/** Test rest connect rejects empty token.
+	 */
 	public function test_rest_connect_rejects_empty_token() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -348,6 +399,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_nv_cloud_invalid_token', $response->get_error_code() );
 	}
 
+	/** Test rest topup url enforces minimum.
+	 */
 	public function test_rest_topup_url_enforces_minimum() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -364,6 +417,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_nv_cloud_topup_too_small', $response->get_error_code() );
 	}
 
+	/** Test rest permission check requires manage options.
+	 */
 	public function test_rest_permission_check_requires_manage_options() {
 		$controller = new WP_MCP_AI_REST_NV_Cloud_Controller();
 
@@ -379,6 +434,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertTrue( $controller->permission_check() );
 	}
 
+	/** Test rest ledger returns recorded entries.
+	 */
 	public function test_rest_ledger_returns_recorded_entries() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -407,16 +464,23 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 	// Router filter tests.
 	// ------------------------------------------------------------------
 
+	/** Test router filter short circuits for nv hosted.
+	 */
 	public function test_router_filter_short_circuits_for_nv_hosted() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
 
-		// Without a connection, the filter should still return a WP_Error
+		// Without a connection, the filter should still return a WP_Error.
 		// (not null) so the router doesn't fall through to the OpenAI default.
 		$result = apply_filters(
 			'wp_mcp_ai_route_to_provider',
 			null,
 			'nv_hosted',
-			array( array( 'role' => 'user', 'content' => 'hi' ) ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'hi',
+				),
+			),
 			array()
 		);
 
@@ -424,6 +488,8 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_nv_cloud_not_connected', $result->get_error_code() );
 	}
 
+	/** Test router filter passes through other providers.
+	 */
 	public function test_router_filter_passes_through_other_providers() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
 

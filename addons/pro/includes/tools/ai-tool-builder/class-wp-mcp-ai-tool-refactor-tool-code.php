@@ -105,17 +105,21 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$code          = '';
-		$file_path     = '';
+		$code      = '';
+		$file_path = '';
 
 		if ( ! empty( $arguments['code'] ) ) {
 			$code = $arguments['code'];
@@ -299,6 +303,7 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 	 * Get AI service instance.
 	 *
 	 * @param array $arguments Tool arguments.
+	 *
 	 * @param array $context   Execution context.
 	 * @return object|WP_Error AI service or error.
 	 */

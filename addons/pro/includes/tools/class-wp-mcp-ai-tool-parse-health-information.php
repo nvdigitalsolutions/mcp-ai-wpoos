@@ -103,6 +103,11 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'ai-powered' );
 	}
@@ -219,16 +224,16 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function parse_information( $raw_text, $member_id ) {
 		$parsed = array(
-			'medical_records' => array(),
-			'checkups'        => array(),
-			'prescriptions'   => array(),
-			'policies'        => array(),
-			'allergies'       => array(),
-			'demographics'    => array(),
+			'medical_records'       => array(),
+			'checkups'              => array(),
+			'prescriptions'         => array(),
+			'policies'              => array(),
+			'allergies'             => array(),
+			'demographics'          => array(),
 			// Advisory hints — suggest dedicated tools rather than creating CPT posts.
 			'vaccinations_detected' => array(),
 			'vital_signs_detected'  => array(),
-			'metadata'        => array(
+			'metadata'              => array(
 				'parsed_at'    => current_time( 'mysql' ),
 				'data_quality' => array(),
 				'completeness' => 0,
@@ -277,7 +282,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				}
 				$current_section = $detected_type;
 				$current_record  = array(
-					'raw_line'          => $line,
+					'raw_line'           => $line,
 					'fhir_resource_type' => self::FHIR_RESOURCE_MAP[ $detected_type ] ?? '',
 				);
 			} elseif ( null !== $current_section && in_array( $current_section, self::RECORD_TYPES, true ) ) {
@@ -455,25 +460,25 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			if ( preg_match( '/\b(food|drug|medication|environmental|environment|insect|latex|contrast\s*dye|biologic|other)\b/i', $line, $matches ) ) {
 				$raw_type = strtolower( trim( $matches[1] ) );
 				// Map to FHIR AllergyIntolerance.category: food | medication | environment | biologic | other.
-				$fhir_category_map = array(
-					'drug'         => 'medication',
-					'medication'   => 'medication',
-					'food'         => 'food',
-					'environment'  => 'environment',
+				$fhir_category_map              = array(
+					'drug'          => 'medication',
+					'medication'    => 'medication',
+					'food'          => 'food',
+					'environment'   => 'environment',
 					'environmental' => 'environment',
-					'biologic'     => 'biologic',
-					'insect'       => 'environment',
-					'latex'        => 'environment',
-					'contrastdye'  => 'medication',
+					'biologic'      => 'biologic',
+					'insect'        => 'environment',
+					'latex'         => 'environment',
+					'contrastdye'   => 'medication',
 				);
-				$normalized = str_replace( array( ' ', '-' ), '', $raw_type );
+				$normalized                     = str_replace( array( ' ', '-' ), '', $raw_type );
 				$current_record['allergy_type'] = isset( $fhir_category_map[ $normalized ] ) ? $fhir_category_map[ $normalized ] : 'other';
 			}
 			// Onset type — mapped to FHIR AllergyIntolerance.reaction.onset categories.
 			if ( preg_match( '/\b(immediate|anaphylactic|anaphylaxis|delayed|contact|late[\s-]?phase)\b/i', $line, $matches ) ) {
 				$onset_raw = strtolower( str_replace( array( ' ', '-' ), '', $matches[1] ) );
 				// Map variants: anaphylactic/anaphylaxis → immediate; contact/latephase → delayed.
-				$onset_map = array(
+				$onset_map                    = array(
 					'immediate'    => 'immediate',
 					'anaphylactic' => 'immediate',
 					'anaphylaxis'  => 'immediate',

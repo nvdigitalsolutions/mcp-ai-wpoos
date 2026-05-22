@@ -87,7 +87,7 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 					'type'        => 'object',
 					'description' => __( 'Credentials object containing tokens/keys for each channel.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'telegram' => array(
+						'telegram'  => array(
 							'type'       => 'object',
 							'properties' => array(
 								'token'   => array( 'type' => 'string' ),
@@ -186,7 +186,7 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 			'unified_channel_broadcast_request',
 			'Broadcasting message to multiple channels.',
 			array(
-				'channels'      => $channels,
+				'channels'       => $channels,
 				'message_length' => strlen( $message ),
 			)
 		);

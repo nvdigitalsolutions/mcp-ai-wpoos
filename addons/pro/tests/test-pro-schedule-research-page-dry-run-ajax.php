@@ -39,10 +39,10 @@ class Test_Pro_Schedule_Research_Page_Dry_Run_Ajax extends WP_Ajax_UnitTestCase 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_dry_run_schedule_from_research' );
 			$this->fail( 'Expected WPAjaxDieStopException.' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// fall through
-		} catch ( WPAjaxDieStopException $e ) {
-			// fall through
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through. -- phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -80,10 +80,10 @@ class Test_Pro_Schedule_Research_Page_Dry_Run_Ajax extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_dry_run_schedule_from_research' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// fall through
-		} catch ( WPAjaxDieStopException $e ) {
-			// fall through
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through. -- phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -112,10 +112,10 @@ class Test_Pro_Schedule_Research_Page_Dry_Run_Ajax extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_dry_run_schedule_from_research' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// fall through
-		} catch ( WPAjaxDieStopException $e ) {
-			// fall through
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through. -- phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch.
 		}
 
 		$response = json_decode( $this->_last_response, true );

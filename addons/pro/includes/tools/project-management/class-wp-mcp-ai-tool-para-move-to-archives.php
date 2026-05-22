@@ -25,6 +25,13 @@ class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, 
 		return __( 'PARA: Move to Archives', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Archive a project, task, event, area, or document by moving it to the PARA Archives bucket. A reason string is recorded for audit purposes.', 'mcp-ai-wpoos-pro' );
 	}
@@ -50,6 +57,11 @@ class WP_MCP_AI_Tool_PARA_Move_To_Archives implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing', 'reversible' );
 	}

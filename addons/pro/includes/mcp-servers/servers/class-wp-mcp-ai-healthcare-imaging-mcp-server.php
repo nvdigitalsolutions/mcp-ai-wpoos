@@ -22,6 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Healthcare_Imaging_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 
 	/**
+	 * Get the server slug.
+	 *
 	 * @return string
 	 */
 	public function get_slug() {
@@ -29,6 +31,8 @@ class WP_MCP_AI_Healthcare_Imaging_MCP_Server extends WP_MCP_AI_Toolkit_Server_B
 	}
 
 	/**
+	 * Get the server name.
+	 *
 	 * @return string
 	 */
 	public function get_name() {
@@ -36,6 +40,8 @@ class WP_MCP_AI_Healthcare_Imaging_MCP_Server extends WP_MCP_AI_Toolkit_Server_B
 	}
 
 	/**
+	 * Get the server description.
+	 *
 	 * @return string
 	 */
 	public function get_description() {
@@ -46,6 +52,8 @@ class WP_MCP_AI_Healthcare_Imaging_MCP_Server extends WP_MCP_AI_Toolkit_Server_B
 	}
 
 	/**
+	 * Get the ingestion surfaces for this server.
+	 *
 	 * @return array<int,array<string,mixed>>
 	 */
 	public function ingestion_surfaces() {
@@ -53,6 +61,8 @@ class WP_MCP_AI_Healthcare_Imaging_MCP_Server extends WP_MCP_AI_Toolkit_Server_B
 	}
 
 	/**
+	 * Get the candidate tool slugs for this server.
+	 *
 	 * @return string[]
 	 */
 	public function candidate_tool_slugs() {

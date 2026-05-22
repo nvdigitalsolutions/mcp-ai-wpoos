@@ -56,7 +56,7 @@ class Test_Docs_Hub_Remote_Repos_Defensive extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_settings() must drop non-array rows from remote_repos so the
+	 * Get_settings() must drop non-array rows from remote_repos so the
 	 * indexer and renderer never see a malformed row.
 	 */
 	public function test_get_settings_filters_malformed_rows() {
@@ -86,7 +86,7 @@ class Test_Docs_Hub_Remote_Repos_Defensive extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_settings() must also handle remote_repos being stored as a non-array
+	 * Get_settings() must also handle remote_repos being stored as a non-array
 	 * value entirely (e.g. a string from a corrupted import).
 	 */
 	public function test_get_settings_handles_non_array_remote_repos() {
@@ -102,7 +102,7 @@ class Test_Docs_Hub_Remote_Repos_Defensive extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The renderer's loop must survive a non-array row even when the
+	 * Renderer's loop must survive a non-array row even when the
 	 * defensive filter in get_settings() is bypassed (e.g. callers that
 	 * pass settings through their own pipeline). Render is captured
 	 * via output buffering and the absence of a fatal is the assertion.
@@ -141,7 +141,7 @@ class Test_Docs_Hub_Remote_Repos_Defensive extends WP_UnitTestCase {
 	}
 
 	/**
-	 * coerce_path_list() must accept a newline string and split on newlines.
+	 * Coerce_path_list() must accept a newline string and split on newlines.
 	 */
 	public function test_coerce_path_list_accepts_newline_string() {
 		$result = NV_oOS_Docs_Hub_Settings::coerce_path_list( "docs/intro.md\nguides/\nREADME.md" );
@@ -152,7 +152,7 @@ class Test_Docs_Hub_Remote_Repos_Defensive extends WP_UnitTestCase {
 	}
 
 	/**
-	 * coerce_path_list() must drop nested arrays and trim whitespace.
+	 * Coerce_path_list() must drop nested arrays and trim whitespace.
 	 */
 	public function test_coerce_path_list_drops_nested_and_trims() {
 		$result = NV_oOS_Docs_Hub_Settings::coerce_path_list(
@@ -171,7 +171,7 @@ class Test_Docs_Hub_Remote_Repos_Defensive extends WP_UnitTestCase {
 	}
 
 	/**
-	 * coerce_path_list() must return an empty array for completely bogus input.
+	 * Coerce_path_list() must return an empty array for completely bogus input.
 	 */
 	public function test_coerce_path_list_returns_empty_for_bogus_input() {
 		$this->assertSame( array(), NV_oOS_Docs_Hub_Settings::coerce_path_list( null ) );

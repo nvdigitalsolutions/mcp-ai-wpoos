@@ -20,12 +20,22 @@ class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, 
 	}
 	public static function get_unavailable_reason() {
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'generate_booking_link'; }
 	public function get_name() {
 		return __( 'Generate Booking Link', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {
 		return __( 'Generate public booking links for appointment scheduling.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -52,6 +62,11 @@ class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, 
 			),
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'phase-2.6' ); }
 	/**

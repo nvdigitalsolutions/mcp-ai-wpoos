@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- File contains a stub trait and the main class.
+
 // ---------------------------------------------------------------------------
 // Inline-async-tick trait — load from the base plugin when available, or
 // define a no-op stub so this file can be parsed in bare unit-test
@@ -26,10 +28,47 @@ if ( ! trait_exists( 'WP_MCP_AI_Inline_Async_Tick_Trait' ) ) {
 	} else {
 		// Stub — all methods are no-ops so the class loads cleanly.
 		trait WP_MCP_AI_Inline_Async_Tick_Trait { // phpcs:ignore
-			protected static function inline_async_kick_enabled( $job_id, $class ) { return false; }
-			protected static function inline_async_acquire_tick_lock( $lock_key, $cache_group, $ttl_seconds = 60 ) { return true; }
+			/**
+			 * Check if inline async kick is enabled.
+			 *
+			 * @param string $job_id Job ID.
+			 * @param string $class  Class name.
+			 * @return bool
+			 */
+			protected static function inline_async_kick_enabled( $job_id, $class ) {
+				return false; }
+			/**
+			 * Acquire a tick lock.
+			 *
+			 * @param string $lock_key    Lock key.
+			 * @param string $cache_group Cache group.
+			 * @param int    $ttl_seconds TTL in seconds.
+			 * @return bool
+			 */
+			protected static function inline_async_acquire_tick_lock( $lock_key, $cache_group, $ttl_seconds = 60 ) {
+				return true; }
+			/**
+			 * Release a tick lock.
+			 *
+			 * @param string $lock_key    Lock key.
+			 * @param string $cache_group Cache group.
+			 * @return void
+			 */
 			protected static function inline_async_release_tick_lock( $lock_key, $cache_group ) {}
+			/**
+			 * Detach worker from client.
+			 *
+			 * @return void
+			 */
 			protected static function inline_async_detach_worker_from_client() {}
+			/**
+			 * Run inline async kick.
+			 *
+			 * @param string   $class    Class name.
+			 * @param string   $job_id   Job ID.
+			 * @param callable $callable Callable to execute.
+			 * @return void
+			 */
 			protected static function inline_async_run_kick( $class, $job_id, $callable ) {}
 		}
 	}
@@ -134,7 +173,7 @@ class NV_oOS_Graphify {
 
 		// Upgrade DB schema if needed.
 		$installed_ver = get_option( 'nvoos_graphify_db_version', '0' );
-		if ( $installed_ver !== NVOOS_GRAPHIFY_DB_VERSION ) {
+		if ( NVOOS_GRAPHIFY_DB_VERSION !== $installed_ver ) {
 			NV_oOS_Graphify_DB::upgrade();
 		}
 

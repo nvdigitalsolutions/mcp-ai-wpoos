@@ -107,9 +107,9 @@ class WP_MCP_AI_Pro_Slash_Command_Run {
 		if ( $dry_run ) {
 			if ( $as_json ) {
 				return array(
-					'success'  => true,
-					'message'  => __( 'Dry run — workflow not executed.', 'mcp-ai-wpoos-pro' ),
-					'data'     => array(
+					'success' => true,
+					'message' => __( 'Dry run — workflow not executed.', 'mcp-ai-wpoos-pro' ),
+					'data'    => array(
 						'workflow_id'   => $workflow_id,
 						'workflow_name' => $workflow_name,
 						'node_count'    => $node_count,
@@ -119,9 +119,9 @@ class WP_MCP_AI_Pro_Slash_Command_Run {
 				);
 			}
 
-			$output  = "## " . __( 'Dry Run — Workflow Preview', 'mcp-ai-wpoos-pro' ) . "\n\n";
-			$output .= "- **Name:** " . esc_html( $workflow_name ) . "\n";
-			$output .= "- **ID:** " . esc_html( $workflow_id ) . "\n";
+			$output  = '## ' . __( 'Dry Run — Workflow Preview', 'mcp-ai-wpoos-pro' ) . "\n\n";
+			$output .= '- **Name:** ' . esc_html( $workflow_name ) . "\n";
+			$output .= '- **ID:** ' . esc_html( $workflow_id ) . "\n";
 			$output .= "- **Nodes:** {$node_count}\n";
 			$output .= "- **Edges:** {$edge_count}\n\n";
 			$output .= "_Run without `--dry-run` to execute._\n";
@@ -178,7 +178,7 @@ class WP_MCP_AI_Pro_Slash_Command_Run {
 			);
 		}
 
-		$output  = "## " . __( 'Saved Workflows', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output  = '## ' . __( 'Saved Workflows', 'mcp-ai-wpoos-pro' ) . "\n\n";
 		$output .= "| ID | Name | Nodes | Edges | Updated |\n";
 		$output .= "|----|------|-------|-------|---------|\n";
 
@@ -187,7 +187,7 @@ class WP_MCP_AI_Pro_Slash_Command_Run {
 			$nodes   = isset( $wdata['nodes'] ) ? count( (array) $wdata['nodes'] ) : 0;
 			$edges   = isset( $wdata['edges'] ) ? count( (array) $wdata['edges'] ) : 0;
 			$updated = isset( $wdata['updated_at'] ) ? esc_html( $wdata['updated_at'] ) : '–';
-			$output .= "| " . esc_html( $wid ) . " | {$name} | {$nodes} | {$edges} | {$updated} |\n";
+			$output .= '| ' . esc_html( $wid ) . " | {$name} | {$nodes} | {$edges} | {$updated} |\n";
 		}
 
 		$output .= "\n_Usage: `/run <workflow-id-or-name>` — Use `--dry-run` to preview._\n";

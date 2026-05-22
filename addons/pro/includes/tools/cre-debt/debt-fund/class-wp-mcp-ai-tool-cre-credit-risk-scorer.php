@@ -215,8 +215,8 @@ class WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer implements WP_MCP_AI_Tool_Interface,
 			}
 
 			// Sponsor quality adjustment (1=worst, 5=best).
-			$sponsor_q   = max( 1, min( 5, $sponsor_q ) );
-			$sponsor_adj = 1.0 + ( ( 3 - $sponsor_q ) * 0.10 );
+			$sponsor_q    = max( 1, min( 5, $sponsor_q ) );
+			$sponsor_adj  = 1.0 + ( ( 3 - $sponsor_q ) * 0.10 );
 			$adjusted_pd *= $sponsor_adj;
 
 			// Cap PD at 100%.
@@ -275,8 +275,8 @@ class WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer implements WP_MCP_AI_Tool_Interface,
 			'success'    => true,
 			'message'    => __( 'Credit risk scoring complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'       => array(
-				'scored_loans'       => $scored_loans,
-				'portfolio_summary'  => array(
+				'scored_loans'      => $scored_loans,
+				'portfolio_summary' => array(
 					'total_balance'       => $calc::format_currency( $total_balance ),
 					'total_expected_loss' => $calc::format_currency( $total_expected_loss ),
 					'total_rwa'           => $calc::format_currency( $total_rwa ),

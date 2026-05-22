@@ -83,27 +83,27 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'msp_api_url'      => array(
+				'msp_api_url'  => array(
 					'type'        => 'string',
 					'description' => __( 'Base URL of your Messaging Service Provider REST API endpoint for group messaging.', 'mcp-ai-wpoos-pro' ),
 				),
-				'api_key'          => array(
+				'api_key'      => array(
 					'type'        => 'string',
 					'description' => __( 'API key or bearer token issued by your MSP.', 'mcp-ai-wpoos-pro' ),
 				),
-				'business_id'      => array(
+				'business_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Your Apple Messages for Business ID issued during Apple registration.', 'mcp-ai-wpoos-pro' ),
 				),
-				'group_id'         => array(
+				'group_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'Existing group conversation ID. Provide to send a message to an existing group. Omit to create a new group conversation.', 'mcp-ai-wpoos-pro' ),
 				),
-				'group_name'       => array(
+				'group_name'   => array(
 					'type'        => 'string',
 					'description' => __( 'Display name for the group conversation (required when creating a new group, optional when updating).', 'mcp-ai-wpoos-pro' ),
 				),
-				'participants'     => array(
+				'participants' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of participant identifiers to add when creating or updating a group (opaque Apple customer IDs or agent IDs, max 32 total).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -111,15 +111,15 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group implements WP_MCP_AI_Tool_Inte
 					),
 					'maxItems'    => 32,
 				),
-				'message'          => array(
+				'message'      => array(
 					'type'        => 'string',
 					'description' => __( 'Plain-text message body to send to the group (max 2000 characters).', 'mcp-ai-wpoos-pro' ),
 				),
-				'sender_name'      => array(
+				'sender_name'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional display name of the agent or system sending the message (shown in the group conversation).', 'mcp-ai-wpoos-pro' ),
 				),
-				'locale'           => array(
+				'locale'       => array(
 					'type'        => 'string',
 					'description' => __( 'BCP 47 locale code for the message (e.g. en-US).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'en-US',

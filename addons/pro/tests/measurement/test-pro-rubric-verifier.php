@@ -29,18 +29,20 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test callback criteria return weighted score.
 	 */
 	public function test_callback_criteria_return_weighted_score() {
-		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
+		$v   = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
 				array(
 					'slug'     => 'a',
 					'weight'   => 3,
-					'callback' => static function () { return 1.0; },
+					'callback' => static function () {
+						return 1.0; },
 				),
 				array(
 					'slug'     => 'b',
 					'weight'   => 1,
-					'callback' => static function () { return 0.0; },
+					'callback' => static function () {
+						return 0.0; },
 				),
 			),
 			'',
@@ -59,11 +61,21 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test callback bool return normalized.
 	 */
 	public function test_callback_bool_return_normalized() {
-		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
+		$v   = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'a', 'weight' => 1, 'callback' => static function () { return true; } ),
-				array( 'slug' => 'b', 'weight' => 1, 'callback' => static function () { return false; } ),
+				array(
+					'slug'     => 'a',
+					'weight'   => 1,
+					'callback' => static function () {
+																	return true; },
+				),
+				array(
+					'slug'     => 'b',
+					'weight'   => 1,
+					'callback' => static function () {
+												return false; },
+				),
 			)
 		);
 		$res = $v->verify( array() );
@@ -76,11 +88,21 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test bad callback shape yields error reason.
 	 */
 	public function test_bad_callback_shape_yields_error_reason() {
-		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
+		$v   = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'a', 'weight' => 1, 'callback' => static function () { return 'nope'; } ),
-				array( 'slug' => 'b', 'weight' => 1, 'callback' => static function () { return 1.0; } ),
+				array(
+					'slug'     => 'a',
+					'weight'   => 1,
+					'callback' => static function () {
+															return 'nope'; },
+				),
+				array(
+					'slug'     => 'b',
+					'weight'   => 1,
+					'callback' => static function () {
+												return 1.0; },
+				),
 			)
 		);
 		$res = $v->verify( array() );
@@ -98,8 +120,16 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'a', 'weight' => 1, 'callback' => static function () { return 1.0; } ),
-				array( 'slug' => 'b', 'weight' => 1 ), // No evaluator — dropped.
+				array(
+					'slug'     => 'a',
+					'weight'   => 1,
+					'callback' => static function () {
+															return 1.0; },
+				),
+				array(
+					'slug'   => 'b',
+					'weight' => 1,
+				), // No evaluator — dropped.
 			)
 		);
 		$this->assertCount( 1, $v->get_criteria() );
@@ -113,8 +143,14 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'a', 'weight' => 1 ),
-				array( 'slug' => 'b', 'weight' => 1 ),
+				array(
+					'slug'   => 'a',
+					'weight' => 1,
+				),
+				array(
+					'slug'   => 'b',
+					'weight' => 1,
+				),
 			)
 		);
 	}
@@ -123,17 +159,17 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test sub verifier chaining.
 	 */
 	public function test_sub_verifier_chaining() {
-		// Register a fake sub-verifier on the base registry and have the
+		// Register a fake sub-verifier on the base registry and have the.
 		// rubric call it.
 		$registry = WP_MCP_AI_Verifier_Registry::get_instance();
 		$fake     = new class() extends WP_MCP_AI_Verifier_Base {
 			/**
-			 *   construct.
+			 *   Construct.
 			 */
 			public function __construct() {
-				$this->slug  = 'fake_sub';
-				$this->label = 'fake';
-				$this->kind  = 'rule';
+				$this->slug                 = 'fake_sub';
+				$this->label                = 'fake';
+				$this->kind                 = 'rule';
 				$this->independence_profile = array(
 					'disallowed_providers' => array(),
 					'disallowed_models'    => array(),
@@ -141,6 +177,10 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 			}
 			/**
 			 * Verify.
+			 *
+			 * @param array $subject Subject data.
+			 * @param array $context  Context data.
+			 * @return array
 			 */
 			public function verify( array $subject, array $context = array() ) {
 				return $this->result_pass( 0.9, 1.0, array( 'ok' ) );
@@ -148,10 +188,14 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		};
 		$registry->register( $fake );
 
-		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
+		$v   = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'sub', 'weight' => 1, 'verifier' => 'fake_sub' ),
+				array(
+					'slug'     => 'sub',
+					'weight'   => 1,
+					'verifier' => 'fake_sub',
+				),
 			),
 			'',
 			0.5
@@ -167,10 +211,14 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test unknown sub verifier produces error reason.
 	 */
 	public function test_unknown_sub_verifier_produces_error_reason() {
-		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
+		$v   = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'sub', 'weight' => 1, 'verifier' => 'definitely_not_registered' ),
+				array(
+					'slug'     => 'sub',
+					'weight'   => 1,
+					'verifier' => 'definitely_not_registered',
+				),
 			)
 		);
 		$res = $v->verify( array() );
@@ -182,11 +230,21 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test zero weight criterion is skipped.
 	 */
 	public function test_zero_weight_criterion_is_skipped() {
-		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
+		$v   = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
 			array(
-				array( 'slug' => 'a', 'weight' => 1, 'callback' => static function () { return 1.0; } ),
-				array( 'slug' => 'b', 'weight' => 0, 'callback' => static function () { return 0.0; } ),
+				array(
+					'slug'     => 'a',
+					'weight'   => 1,
+					'callback' => static function () {
+															return 1.0; },
+				),
+				array(
+					'slug'     => 'b',
+					'weight'   => 0,
+					'callback' => static function () {
+												return 0.0; },
+				),
 			)
 		);
 		$res = $v->verify( array() );
@@ -198,14 +256,23 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 	 * Test self reference is rejected.
 	 */
 	public function test_self_reference_is_rejected() {
-		// A rubric that lists itself as a sub-verifier should produce an
-		// explicit self-reference error (via the verifier-registry lookup
+		// A rubric that lists itself as a sub-verifier should produce an.
+		// explicit self-reference error (via the verifier-registry lookup.
 		// path), not silently loop.
 		$rubric = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'self_ref_rubric',
 			array(
-				array( 'slug' => 'anchor', 'weight' => 1, 'callback' => static function () { return 1.0; } ),
-				array( 'slug' => 'self',   'weight' => 1, 'verifier' => 'self_ref_rubric' ),
+				array(
+					'slug'     => 'anchor',
+					'weight'   => 1,
+					'callback' => static function () {
+															return 1.0; },
+				),
+				array(
+					'slug'     => 'self',
+					'weight'   => 1,
+					'verifier' => 'self_ref_rubric',
+				),
 			)
 		);
 		WP_MCP_AI_Verifier_Registry::get_instance()->register( $rubric );

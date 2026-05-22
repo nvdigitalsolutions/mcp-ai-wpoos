@@ -542,7 +542,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Determine file extension from content-type.
-		$ext_map = array(
+		$ext_map   = array(
 			'image/jpeg' => 'jpg',
 			'image/jpg'  => 'jpg',
 			'image/png'  => 'png',
@@ -622,7 +622,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 					$image = new Imagick( $file_path );
 					$alpha = $image->getImageAlphaChannel();
 					$image->destroy();
-					return $alpha !== Imagick::ALPHACHANNEL_UNDEFINED;
+					return Imagick::ALPHACHANNEL_UNDEFINED !== $alpha;
 				} catch ( Exception $e ) {
 					// Intentionally empty - error handled elsewhere.
 					// Fall through to GD check.
@@ -841,9 +841,9 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
-		$mime_info      = wp_check_filetype( $product_path );
-		$mime_type      = ( isset( $mime_info['type'] ) && '' !== $mime_info['type'] ) ? $mime_info['type'] : 'image/png';
-		$encoded_image  = base64_encode( $image_data );
+		$mime_info     = wp_check_filetype( $product_path );
+		$mime_type     = ( isset( $mime_info['type'] ) && '' !== $mime_info['type'] ) ? $mime_info['type'] : 'image/png';
+		$encoded_image = base64_encode( $image_data );
 
 		$client  = new WP_MCP_AI_Gemini_Client();
 		$options = array(
@@ -1720,7 +1720,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			),
 			'dependencies'          => array(
 				'required_settings'   => array(
-					// At least one of these API keys must be present:
+					// At least one of these API keys must be present.
 					'gemini_api_key' => 'gemini_api_key', // Preferred for AI integration.
 					'openai_api_key' => 'openai_api_key', // Fallback for AI integration and composite mode.
 				),

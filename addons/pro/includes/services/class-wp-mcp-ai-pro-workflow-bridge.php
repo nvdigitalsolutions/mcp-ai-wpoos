@@ -97,9 +97,11 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		add_action( 'admin_menu', array( $this, 'maybe_remove_base_dag_builder' ), 99 );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Phase 1 — Prompt-injection guardrail
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Block an agent node when its prompt is flagged by the injection detector.
@@ -121,10 +123,14 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		}
 
 		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
-		$analysis     = WP_MCP_AI_Prompt_Injection_Detector::analyze( (string) $prompt, $assistant_id, array(
-			'source' => 'pro_workflow_agent_node',
-			'agent'  => (string) $agent_id,
-		) );
+		$analysis     = WP_MCP_AI_Prompt_Injection_Detector::analyze(
+			(string) $prompt,
+			$assistant_id,
+			array(
+				'source' => 'pro_workflow_agent_node',
+				'agent'  => (string) $agent_id,
+			)
+		);
 
 		if ( ! is_array( $analysis ) || empty( $analysis['flagged'] ) ) {
 			return $result;
@@ -134,7 +140,7 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		// the analysis itself returned `block => true`.
 		$should_block = ! empty( $analysis['block'] );
 		if ( ! $should_block ) {
-			$opt_block = get_option( WP_MCP_AI_Prompt_Injection_Detector::OPTION_BLOCK_ON_DETECT, 0 );
+			$opt_block    = get_option( WP_MCP_AI_Prompt_Injection_Detector::OPTION_BLOCK_ON_DETECT, 0 );
 			$should_block = (bool) $opt_block;
 		}
 
@@ -154,9 +160,11 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		);
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Phase 2 — HITL approval gate
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Enqueue a HITL approval request when a tool requires approval.
@@ -186,7 +194,7 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		// Detect requires-approval capability flag.
 		$requires_approval = false;
 		if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
-			$flags = (array) $tool->get_capability_flags();
+			$flags             = (array) $tool->get_capability_flags();
 			$requires_approval = in_array( 'requires-approval', $flags, true );
 		}
 
@@ -212,14 +220,16 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 			return $short_circuit;
 		}
 
-		$queue        = WP_MCP_AI_Approval_Queue::get_instance();
-		$approval_id  = $queue->enqueue( array(
-			'tool'         => $tool_name,
-			'arguments'    => $arguments,
-			'assistant_id' => isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0,
-			'requester_id' => get_current_user_id(),
-			'reason'       => __( 'Tool node from Pro workflow builder requires approval.', 'mcp-ai-wpoos' ),
-		) );
+		$queue       = WP_MCP_AI_Approval_Queue::get_instance();
+		$approval_id = $queue->enqueue(
+			array(
+				'tool'         => $tool_name,
+				'arguments'    => $arguments,
+				'assistant_id' => isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0,
+				'requester_id' => get_current_user_id(),
+				'reason'       => __( 'Tool node from Pro workflow builder requires approval.', 'mcp-ai-wpoos' ),
+			)
+		);
 
 		if ( is_wp_error( $approval_id ) ) {
 			return $approval_id;
@@ -228,18 +238,20 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		// Return a non-WP_Error short-circuit so the node reports as pending
 		// rather than failed; the front-end can poll the approval queue.
 		return array(
-			'type'         => 'tool',
-			'tool_name'    => $tool_name,
-			'arguments'    => $arguments,
-			'status'       => 'awaiting_approval',
-			'approval_id'  => (int) $approval_id,
-			'message'      => __( 'Tool execution queued for human approval.', 'mcp-ai-wpoos' ),
+			'type'        => 'tool',
+			'tool_name'   => $tool_name,
+			'arguments'   => $arguments,
+			'status'      => 'awaiting_approval',
+			'approval_id' => (int) $approval_id,
+			'message'     => __( 'Tool execution queued for human approval.', 'mcp-ai-wpoos' ),
 		);
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Phase 4 — Run-log mirror
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Mirror a Pro node execution into the base Workflow Run CPT.
@@ -282,7 +294,7 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 			$type,
 			// Fall back to a synthetic id only when the Pro builder did not pass a node_id;
 			// this is unexpected but keeps the run-log consistent rather than dropping the event.
-			$node_id !== '' ? $node_id : ( $node_type . '_' . wp_generate_uuid4() ),
+			'' !== $node_id ? $node_id : ( $node_type . '_' . wp_generate_uuid4() ),
 			$node_type,
 			$is_error
 				? array( 'error' => $result->get_error_message() )
@@ -339,9 +351,11 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		delete_transient( self::RUN_MAP_PREFIX . md5( (string) $execution['id'] ) );
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Internal helpers
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Map a Pro execution_id to a base run id, creating the run on first call.
@@ -393,9 +407,11 @@ class WP_MCP_AI_Pro_Workflow_Bridge {
 		return $run_id ? (int) $run_id : 0;
 	}
 
-	/* ------------------------------------------------------------------ *
+	/*
+	------------------------------------------------------------------ *
 	 * Phase 8 — Pluggable executor + admin-menu unification
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Resolve string-keyed Pro workflow IDs through the dispatcher.

@@ -96,6 +96,11 @@ abstract class WP_MCP_AI_Tool_Harmonization_Base implements
 	 *
 	 * @return array
 	 */
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return $this->harmonization_capability_flags();
 	}

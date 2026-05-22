@@ -123,6 +123,11 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
@@ -231,7 +236,7 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		// Filter active only: match by status field (more reliable than date ranges,
+		// Filter active only: match by status field (more reliable than date ranges,.
 		// which fail when start_date or end_date are not set on a prescription).
 		if ( $active_only ) {
 			$meta_query[] = array(

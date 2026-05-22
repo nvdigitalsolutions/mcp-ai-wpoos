@@ -30,14 +30,14 @@ class Test_Pro_Schedule_Result_Envelope extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_result_envelope() produces a typed envelope with summary/data/render.
+	 * Build_result_envelope() produces a typed envelope with summary/data/render.
 	 */
 	public function test_build_envelope_assistant_run_success() {
-		$schedule  = array(
+		$schedule = array(
 			'schedule_type' => 'assistant_run',
 			'name'          => 'Daily Digest',
 		);
-		$log       = array(
+		$log      = array(
 			'assistant' => array(
 				'assistant_id' => 42,
 				'response'     => 'Five priority emails today.',
@@ -59,7 +59,10 @@ class Test_Pro_Schedule_Result_Envelope extends WP_UnitTestCase {
 	 */
 	public function test_build_envelope_failure_status() {
 		$envelope = WP_MCP_AI_Pro_Schedule_Manager::build_result_envelope(
-			array( 'schedule_type' => 'task', 'name' => 'X' ),
+			array(
+				'schedule_type' => 'task',
+				'name'          => 'X',
+			),
 			array( 'hook' => 'do_thing' ),
 			false,
 			'boom'
@@ -144,11 +147,11 @@ class Test_Pro_Schedule_Result_Envelope extends WP_UnitTestCase {
 			),
 		);
 		$envelope = array(
-			'summary' => 'top secret',
-			'data'    => array( 'secret_field' => 'should not leak' ),
-			'render'  => 'text',
-			'status'  => 'success',
-			'error'   => '',
+			'summary'      => 'top secret',
+			'data'         => array( 'secret_field' => 'should not leak' ),
+			'render'       => 'text',
+			'status'       => 'success',
+			'error'        => '',
 			'generated_at' => 1000,
 		);
 		$redacted = WP_MCP_AI_Pro_Schedule_Manager::redact_envelope_for_public( $envelope, $schedule );
@@ -171,8 +174,8 @@ class Test_Pro_Schedule_Result_Envelope extends WP_UnitTestCase {
 		$envelope = array(
 			'summary'      => 'Five emails today',
 			'data'         => array(
-				'top_3'      => array( 'A', 'B', 'C' ),
-				'secret'     => 'redacted',
+				'top_3'  => array( 'A', 'B', 'C' ),
+				'secret' => 'redacted',
 			),
 			'render'       => 'list',
 			'status'       => 'success',
@@ -188,7 +191,7 @@ class Test_Pro_Schedule_Result_Envelope extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sanitize_display_fields clamps retention and validates render mode.
+	 * Sanitize_display_fields clamps retention and validates render mode.
 	 */
 	public function test_sanitize_display_fields_clamps_and_validates() {
 		$out = WP_MCP_AI_Pro_Schedule_Manager::sanitize_display_fields(

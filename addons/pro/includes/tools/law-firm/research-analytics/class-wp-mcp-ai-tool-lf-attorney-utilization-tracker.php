@@ -35,10 +35,27 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_attorney_utilization_tracker'; }
-	public function get_name() { return __( 'Attorney Utilization Tracker', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Tracks attorney time utilization against targets including billable hours, non-billable hours, utilization rate, and target variance.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_attorney_utilization_tracker'; }
+	public function get_name() {
+		return __( 'Attorney Utilization Tracker', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Tracks attorney time utilization against targets including billable hours, non-billable hours, utilization rate, and target variance.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -61,7 +78,13 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -143,7 +166,7 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 			$entry_date   = get_post_meta( $entry->ID, '_lf_entry_date', true );
 
 			if ( ! isset( $attorneys[ $author_id ] ) ) {
-				$user = get_userdata( $author_id );
+				$user                    = get_userdata( $author_id );
 				$attorneys[ $author_id ] = array(
 					'attorney_id'        => $author_id,
 					'name'               => $user ? $user->display_name : __( 'Unknown', 'mcp-ai-wpoos-pro' ),
@@ -181,7 +204,7 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 		while ( $check_date <= $end_dt ) {
 			$dow = (int) $check_date->format( 'N' );
 			if ( $dow <= 5 ) {
-				$business_days++;
+				++$business_days;
 			}
 			$check_date->modify( '+1 day' );
 		}
@@ -226,7 +249,7 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 		}
 
 		$atty_count      = max( count( $attorney_results ), 1 );
-		$avg_utilization  = ( $total_billable + $total_non_bill ) > 0 ? round( ( $total_billable / ( $total_billable + $total_non_bill ) ) * 100, 1 ) : 0;
+		$avg_utilization = ( $total_billable + $total_non_bill ) > 0 ? round( ( $total_billable / ( $total_billable + $total_non_bill ) ) * 100, 1 ) : 0;
 
 		return array(
 			'success'    => true,
@@ -238,20 +261,20 @@ class WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker implements WP_MCP_AI_Tool_I
 				$period
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'period'             => $period,
-				'date_range'         => array(
+				'period'        => $period,
+				'date_range'    => array(
 					'start' => $start_date,
 					'end'   => $now,
 				),
-				'target_hours'       => $target_hours,
-				'business_days'      => $business_days,
-				'summary'            => array(
+				'target_hours'  => $target_hours,
+				'business_days' => $business_days,
+				'summary'       => array(
 					'total_billable_hours'     => round( $total_billable, 1 ),
 					'total_non_billable_hours' => round( $total_non_bill, 1 ),
 					'avg_utilization_rate'     => $avg_utilization,
 					'attorney_count'           => $atty_count,
 				),
-				'attorneys'          => $attorney_results,
+				'attorneys'     => $attorney_results,
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

@@ -146,7 +146,12 @@ class WP_MCP_AI_Tool_Net_Worth_Calculator implements WP_MCP_AI_Tool_Interface, W
 	 *
 	 * @return array Capability flags.
 	 */
-	public function get_capability_flags() {
+		/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array
+	 */
+public function get_capability_flags() {
 		return array( 'pro', 'computation' );
 	}
 
@@ -192,6 +197,7 @@ class WP_MCP_AI_Tool_Net_Worth_Calculator implements WP_MCP_AI_Tool_Interface, W
 			'assets'            => $assets,
 			'liabilities'       => $liabilities,
 			/* translators: %s: formatted currency amount */
+			 */
 			'message'           => sprintf( __( 'Your net worth is $%s.', 'mcp-ai-wpoos-pro' ), number_format( $net_worth, 2 ) ),
 		);
 	}

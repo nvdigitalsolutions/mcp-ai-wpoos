@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_I
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'covenants'            => array(
+				'covenants'           => array(
 					'type'        => 'array',
 					'description' => __( 'Array of covenant objects to check.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_I
 						'required'   => array( 'name', 'type', 'threshold', 'current_value' ),
 					),
 				),
-				'reporting_deadlines'  => array(
+				'reporting_deadlines' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of reporting deadline objects.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -168,19 +168,19 @@ class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_I
 
 			if ( 'minimum' === $type ) {
 				if ( $current < $threshold ) {
-					$status = 'breach';
+					$status     = 'breach';
 					$breaches[] = $name;
 				} elseif ( $threshold > 0 && $current < $threshold * 1.10 ) {
-					$status = 'warning';
+					$status     = 'warning';
 					$warnings[] = $name;
 				}
 				$cushion = ( $threshold > 0 ) ? ( $current - $threshold ) / $threshold : 0;
 			} elseif ( 'maximum' === $type ) {
 				if ( $current > $threshold ) {
-					$status = 'breach';
+					$status     = 'breach';
 					$breaches[] = $name;
 				} elseif ( $threshold > 0 && $current > $threshold * 0.90 ) {
-					$status = 'warning';
+					$status     = 'warning';
 					$warnings[] = $name;
 				}
 				$cushion = ( $threshold > 0 ) ? ( $threshold - $current ) / $threshold : 0;
@@ -219,9 +219,9 @@ class WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker implements WP_MCP_AI_Tool_I
 					$days_diff = (int) $diff->format( '%r%a' );
 
 					if ( ! $submitted && $days_diff < 0 ) {
-						$is_overdue      = true;
+						$is_overdue        = true;
 						$overdue_reports[] = $report_name;
-						$days_info = sprintf(
+						$days_info         = sprintf(
 							/* translators: %d: number of days overdue */
 							__( '%d days overdue', 'mcp-ai-wpoos-pro' ),
 							abs( $days_diff )

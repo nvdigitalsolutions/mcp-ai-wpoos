@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 /**
  * Test_Pro_Toolkit_MCP_Servers_Page
  *
@@ -26,15 +27,59 @@ require_once dirname( __DIR__ ) . '/includes/admin/class-wp-mcp-ai-pro-toolkit-m
 
 /**
  * Minimal concrete server stub for testing.
+ *
+ * @phpcs:ignore Universal.Files.OneObjectStructurePerFile.MultipleFound
  */
 class WP_MCP_AI_Test_Stub_Server_Phase7 extends WP_MCP_AI_Toolkit_Server_Base {
-	public function get_slug() { return 'test-phase7'; }
-	public function get_name() { return 'Test Phase 7'; }
-	public function get_description() { return 'Stub.'; }
-	public function get_version() { return '0.1.0'; }
-	public function ingestion_surfaces() { return array(); }
-	public function mounted_surfaces() { return array(); }
-	public function candidate_tool_slugs() { return array( 'tool_a', 'tool_b' ); }
+	/**
+	 * Get slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'test-phase7'; }
+	/**
+	 * Get name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return 'Test Phase 7'; }
+	/**
+	 * Get description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return 'Stub.'; }
+	/**
+	 * Get version.
+	 *
+	 * @return string
+	 */
+	public function get_version() {
+		return '0.1.0'; }
+	/**
+	 * Get ingestion surfaces.
+	 *
+	 * @return array
+	 */
+	public function ingestion_surfaces() {
+		return array(); }
+	/**
+	 * Get mounted surfaces.
+	 *
+	 * @return array
+	 */
+	public function mounted_surfaces() {
+		return array(); }
+	/**
+	 * Get candidate tool slugs.
+	 *
+	 * @return array
+	 */
+	public function candidate_tool_slugs() {
+		return array( 'tool_a', 'tool_b' ); }
 }
 
 /**
@@ -52,7 +97,7 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 1. Constructor hooks
+	// 1. Constructor hooks.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -69,7 +114,7 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 2. PAGE_SLUG constant
+	// 2. PAGE_SLUG constant.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -80,11 +125,11 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 3. register_page() creates the submenu
+	// 3. register_page() creates the submenu.
 	// -----------------------------------------------------------------------
 
 	/**
-	 * register_page() adds a submenu page under nvoos-pro-dashboard.
+	 * Register_page() adds a submenu page under nvoos-pro-dashboard.
 	 */
 	public function test_register_page_creates_submenu() {
 		global $submenu;
@@ -101,11 +146,11 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 4. handle_toggle() updates the option
+	// 4. handle_toggle() updates the option.
 	// -----------------------------------------------------------------------
 
 	/**
-	 * handle_toggle() sets enabled=false on the server option then redirects.
+	 * Handle_toggle() sets enabled=false on the server option then redirects.
 	 */
 	public function test_handle_toggle_disables_server() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
@@ -114,17 +159,26 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 		// Seed as enabled.
 		update_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array( 'enabled' => true ) );
 
-		$_POST['server_slug']            = $slug;
-		$_POST['enable']                 = '0';
-		$_POST['_wpnonce']               = wp_create_nonce( WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page::TOGGLE_NONCE );
-		$_REQUEST['_wpnonce']            = $_POST['_wpnonce'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['server_slug'] = $slug;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['enable'] = '0';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput
+		$_POST['_wpnonce'] = wp_create_nonce( WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page::TOGGLE_NONCE );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
 
 		// Call handler with output buffering and exit suppression.
 		$redirected_to = null;
-		add_filter( 'wp_redirect', static function ( $location ) use ( &$redirected_to ) {
-			$redirected_to = $location;
-			return $location;
-		} );
+		add_filter(
+			'wp_redirect',
+			static function ( $location ) use ( &$redirected_to ) {
+				$redirected_to = $location;
+				return $location;
+			}
+		);
 
 		try {
 			// Suppress the exit() call inside the handler.
@@ -134,22 +188,23 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 			$page   = new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
 			$config = get_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array() );
 			update_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array_merge( $config, array( 'enabled' => false ) ) );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// noop.
 		}
 
 		$stored = get_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array() );
 		$this->assertFalse( (bool) ( $stored['enabled'] ?? true ), 'Server should be disabled' );
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput
 		unset( $_POST['server_slug'], $_POST['enable'], $_POST['_wpnonce'], $_REQUEST['_wpnonce'] );
 	}
 
 	// -----------------------------------------------------------------------
-	// 5. handle_limits_save() stores limits
+	// 5. handle_limits_save() stores limits.
 	// -----------------------------------------------------------------------
 
 	/**
-	 * handle_limits_save() persists RPM/MPB/MI into the server option.
+	 * Handle_limits_save() persists RPM/MPB/MI into the server option.
 	 */
 	public function test_handle_limits_save_persists_values() {
 		$slug = 'test-phase7';
@@ -168,17 +223,17 @@ class Test_Pro_Toolkit_MCP_Servers_Page extends WP_UnitTestCase {
 		update_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, $updated );
 
 		$stored = get_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug );
-		$this->assertSame( 30,    $stored['requests_per_minute'] );
+		$this->assertSame( 30, $stored['requests_per_minute'] );
 		$this->assertSame( 65536, $stored['max_payload_bytes'] );
-		$this->assertSame( 5,     $stored['max_iterations'] );
+		$this->assertSame( 5, $stored['max_iterations'] );
 	}
 
 	// -----------------------------------------------------------------------
-	// 6. handle_clear_audit() deletes the log option
+	// 6. handle_clear_audit() deletes the log option.
 	// -----------------------------------------------------------------------
 
 	/**
-	 * handle_clear_audit() removes the audit log option.
+	 * Handle_clear_audit() removes the audit log option.
 	 */
 	public function test_handle_clear_audit_deletes_option() {
 		// Seed an audit log option.

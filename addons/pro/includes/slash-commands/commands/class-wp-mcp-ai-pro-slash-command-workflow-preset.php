@@ -122,7 +122,7 @@ class WP_MCP_AI_Pro_Slash_Command_Workflow_Preset {
 			return __( 'No workflow preset categories found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$output = "## " . __( 'Workflow Preset Categories', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output = '## ' . __( 'Workflow Preset Categories', 'mcp-ai-wpoos-pro' ) . "\n\n";
 		foreach ( $categories as $cat ) {
 			$label   = is_array( $cat ) ? ( $cat['label'] ?? $cat['id'] ?? '' ) : $cat;
 			$output .= '- ' . esc_html( $label ) . "\n";
@@ -168,7 +168,7 @@ class WP_MCP_AI_Pro_Slash_Command_Workflow_Preset {
 		$edges = isset( $preset['edges'] ) ? count( (array) $preset['edges'] ) : '–';
 
 		$output  = "## Workflow Preset: {$name}\n\n";
-		$output .= "- **ID:** " . esc_html( $preset_id ) . "\n";
+		$output .= '- **ID:** ' . esc_html( $preset_id ) . "\n";
 		$output .= "- **Category:** {$cat}\n";
 		$output .= "- **Nodes:** {$nodes}\n";
 		$output .= "- **Edges:** {$edges}\n";
@@ -209,7 +209,7 @@ class WP_MCP_AI_Pro_Slash_Command_Workflow_Preset {
 			return __( 'No workflow presets found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$header  = $category
+		$header = $category
 			? sprintf(
 				/* translators: %s: category name */
 				__( 'Workflow Presets — %s', 'mcp-ai-wpoos-pro' ),
@@ -222,9 +222,9 @@ class WP_MCP_AI_Pro_Slash_Command_Workflow_Preset {
 		$output .= "|----|------|----------|\n";
 
 		foreach ( $presets as $id => $preset ) {
-			$p_id   = esc_html( is_array( $preset ) ? ( $preset['id'] ?? $id ) : $id );
-			$name   = is_array( $preset ) ? esc_html( $preset['name'] ?? '–' ) : esc_html( $preset );
-			$cat    = is_array( $preset ) ? esc_html( $preset['category'] ?? '–' ) : '–';
+			$p_id    = esc_html( is_array( $preset ) ? ( $preset['id'] ?? $id ) : $id );
+			$name    = is_array( $preset ) ? esc_html( $preset['name'] ?? '–' ) : esc_html( $preset );
+			$cat     = is_array( $preset ) ? esc_html( $preset['category'] ?? '–' ) : '–';
 			$output .= "| {$p_id} | {$name} | {$cat} |\n";
 		}
 

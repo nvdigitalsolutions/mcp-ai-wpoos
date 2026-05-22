@@ -307,8 +307,8 @@ class WP_MCP_AI_Pro_Schedule_Result_Controller {
 		}
 
 		// Simple per-user rate limit: 1 preview every 10 seconds.
-		$user_id     = get_current_user_id();
-		$rate_key    = 'wp_mcp_ai_pro_preview_' . $user_id . '_' . md5( $schedule_id );
+		$user_id  = get_current_user_id();
+		$rate_key = 'wp_mcp_ai_pro_preview_' . $user_id . '_' . md5( $schedule_id );
 		if ( get_transient( $rate_key ) ) {
 			return new WP_Error(
 				'rate_limited',
@@ -346,6 +346,7 @@ class WP_MCP_AI_Pro_Schedule_Result_Controller {
 	}
 }
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- Bootstrap function must live beside the class.
 if ( ! function_exists( 'wp_mcp_ai_register_pro_schedule_result_routes' ) ) {
 	/**
 	 * Bootstrap the controller on `rest_api_init`.
@@ -359,5 +360,6 @@ if ( ! function_exists( 'wp_mcp_ai_register_pro_schedule_result_routes' ) ) {
 		$controller = new WP_MCP_AI_Pro_Schedule_Result_Controller();
 		$controller->register_routes();
 	}
-	add_action( 'rest_api_init', 'wp_mcp_ai_register_pro_schedule_result_routes' );
 }
+add_action( 'rest_api_init', 'wp_mcp_ai_register_pro_schedule_result_routes' );
+// phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed

@@ -373,9 +373,9 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 
 			$history[] = array(
-				'timestamp'  => current_time( 'mysql' ),
-				'user_id'    => $current_user_id,
-				'changes'    => $changes,
+				'timestamp' => current_time( 'mysql' ),
+				'user_id'   => $current_user_id,
+				'changes'   => $changes,
 			);
 
 			// Keep last 100 entries.
@@ -387,11 +387,11 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		return array(
-			'success'       => true,
-			'message'       => __( 'ECA updated successfully.', 'mcp-ai-wpoos-pro' ),
-			'eca_id'        => $eca_id,
+			'success'        => true,
+			'message'        => __( 'ECA updated successfully.', 'mcp-ai-wpoos-pro' ),
+			'eca_id'         => $eca_id,
 			'fields_changed' => count( $changes ),
-			'changes'       => $changes,
+			'changes'        => $changes,
 		);
 	}
 }

@@ -73,23 +73,23 @@ class WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction implements WP_MCP_AI_Tool
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'token'          => array(
+				'token'      => array(
 					'type'        => 'string',
 					'description' => __( 'Telegram bot token used for authentication.', 'mcp-ai-wpoos-pro' ),
 				),
-				'chat_id'        => array(
+				'chat_id'    => array(
 					'type'        => array( 'string', 'integer' ),
 					'description' => __( 'Unique identifier or username of the target chat (e.g. @channelusername or a numeric chat ID).', 'mcp-ai-wpoos-pro' ),
 				),
-				'message_id'     => array(
+				'message_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Identifier of the target message within the chat.', 'mcp-ai-wpoos-pro' ),
 				),
-				'emoji'          => array(
+				'emoji'      => array(
 					'type'        => 'string',
 					'description' => __( 'Unicode emoji to use as the reaction (e.g. "👍", "🔥", "⚡"). Must be one of the Telegram-supported reaction emoji.', 'mcp-ai-wpoos-pro' ),
 				),
-				'is_big'         => array(
+				'is_big'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Pass true to set the reaction as a big reaction animation (default: false).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,

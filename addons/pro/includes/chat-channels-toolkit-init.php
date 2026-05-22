@@ -166,66 +166,66 @@ function wp_mcp_ai_load_chat_channels_tools() {
 		// They are registered via the Embedded addon's register_webchat_tools() method.
 
 		// Google Chat space tools.
-		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
-		'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
-		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
-		'WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-list-google-chat-space-members.php',
-		'WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-google-chat-space-member.php',
+		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
+		'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space'      => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
+		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages'      => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message'      => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
+		'WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members' => $tools_dir . 'class-wp-mcp-ai-pro-tool-list-google-chat-space-members.php',
+		'WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-google-chat-space-member.php',
 		'WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member' => $tools_dir . 'class-wp-mcp-ai-pro-tool-remove-google-chat-space-member.php',
 
 		// Telegram tools.
-		'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'       => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
-		'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
+		'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
+		'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'       => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
 		'WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction' => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php',
-		'WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands'   => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-telegram-commands.php',
+		'WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands'      => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-telegram-commands.php',
 
 		// WhatsApp (Meta Cloud API) tools.
-		'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-whatsapp-interactive.php',
-		'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Media'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-whatsapp-media.php',
-		'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template'       => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-whatsapp-template.php',
+		'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'         => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive'     => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-whatsapp-interactive.php',
+		'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Media'           => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-whatsapp-media.php',
+		'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-whatsapp-template.php',
 
 		// Slack tools.
-		'WP_MCP_AI_Pro_Tool_Get_Slack_Channels'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-slack-channels.php',
-		'WP_MCP_AI_Pro_Tool_Get_Slack_Messages'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-slack-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_Slack_Message'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-slack-message.php',
-		'WP_MCP_AI_Pro_Tool_Create_Slack_Channel' => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-slack-channel.php',
+		'WP_MCP_AI_Pro_Tool_Get_Slack_Channels'            => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-slack-channels.php',
+		'WP_MCP_AI_Pro_Tool_Get_Slack_Messages'            => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-slack-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Slack_Message'            => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-slack-message.php',
+		'WP_MCP_AI_Pro_Tool_Create_Slack_Channel'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-slack-channel.php',
 
 		// Discord tools.
-		'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-channels.php',
-		'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_Discord_Message'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-discord-message.php',
-		'WP_MCP_AI_Pro_Tool_Create_Discord_Channel'           => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-discord-channel.php',
-		'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction'     => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php',
+		'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-channels.php',
+		'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Discord_Message'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-discord-message.php',
+		'WP_MCP_AI_Pro_Tool_Create_Discord_Channel'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-discord-channel.php',
+		'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php',
 		'WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-voice-channel-members.php',
 
 		// Microsoft Teams tools.
-		'WP_MCP_AI_Pro_Tool_Get_Teams_Channels' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-teams-channels.php',
-		'WP_MCP_AI_Pro_Tool_Get_Teams_Messages' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-teams-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_Teams_Message' => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-teams-message.php',
+		'WP_MCP_AI_Pro_Tool_Get_Teams_Channels'            => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-teams-channels.php',
+		'WP_MCP_AI_Pro_Tool_Get_Teams_Messages'            => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-teams-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Teams_Message'            => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-teams-message.php',
 
 		// Office 365 – Outlook mail tools.
-		'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-outlook-mail.php',
-		'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-outlook-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-outlook-mail.php',
+		'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-outlook-messages.php',
 
 		// Office 365 – OneDrive file tools.
-		'WP_MCP_AI_Pro_Tool_List_OneDrive_Files'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-list-onedrive-files.php',
-		'WP_MCP_AI_Pro_Tool_Get_OneDrive_File'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-onedrive-file.php',
-		'WP_MCP_AI_Pro_Tool_Upload_OneDrive_File' => $tools_dir . 'class-wp-mcp-ai-pro-tool-upload-onedrive-file.php',
+		'WP_MCP_AI_Pro_Tool_List_OneDrive_Files'           => $tools_dir . 'class-wp-mcp-ai-pro-tool-list-onedrive-files.php',
+		'WP_MCP_AI_Pro_Tool_Get_OneDrive_File'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-onedrive-file.php',
+		'WP_MCP_AI_Pro_Tool_Upload_OneDrive_File'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-upload-onedrive-file.php',
 
 		// Facebook Messenger tools.
-		'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
-		'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'      => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-messenger-message.php',
-		'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
+		'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations'   => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
+		'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-messenger-message.php',
+		'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
 
 		// Twitter/X DM tools.
-		'WP_MCP_AI_Pro_Tool_Send_Twitter_DM'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-twitter-dm.php',
-		'WP_MCP_AI_Pro_Tool_Get_Twitter_DMs'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-twitter-dms.php',
-		'WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook' => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-twitter-webhook.php',
+		'WP_MCP_AI_Pro_Tool_Send_Twitter_DM'               => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-twitter-dm.php',
+		'WP_MCP_AI_Pro_Tool_Get_Twitter_DMs'               => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-twitter-dms.php',
+		'WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-twitter-webhook.php',
 
 		// Unified cross-channel broadcast tool.
-		'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => $tools_dir . 'class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
+		'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast'     => $tools_dir . 'class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
 	);
 
 	foreach ( $all_tools as $class => $file ) {
@@ -254,10 +254,10 @@ function wp_mcp_ai_load_chat_channels_tools() {
 	// Apple Messages for Business (iMessage) tools.
 	$apple_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
 	$apple_tools     = array(
-		'WP_MCP_AI_Pro_Tool_Send_Apple_Message'             => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message.php',
+		'WP_MCP_AI_Pro_Tool_Send_Apple_Message'       => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message.php',
 		'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive' => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php',
-		'WP_MCP_AI_Pro_Tool_Get_Apple_Messages'             => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-get-apple-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group'       => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message-group.php',
+		'WP_MCP_AI_Pro_Tool_Get_Apple_Messages'       => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-get-apple-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group' => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message-group.php',
 	);
 
 	foreach ( $apple_tools as $class => $file ) {
@@ -393,4 +393,3 @@ if ( ! function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) ) {
 		return false;
 	}
 }
-

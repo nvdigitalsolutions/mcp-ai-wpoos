@@ -158,6 +158,11 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.

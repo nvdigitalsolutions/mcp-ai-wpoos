@@ -24,10 +24,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Team_Budget_Manager {
 
-	const META_BUDGET_COST   = '_wp_mcp_ai_team_budget_max_cost_usd_daily';
-	const META_BUDGET_TOKENS = '_wp_mcp_ai_team_budget_max_tokens_daily';
-	const META_BUDGET_RUNS   = '_wp_mcp_ai_team_budget_max_runs_daily';
-	const META_NAMESPACE     = '_wp_mcp_ai_team_namespace';
+	const META_BUDGET_COST    = '_wp_mcp_ai_team_budget_max_cost_usd_daily';
+	const META_BUDGET_TOKENS  = '_wp_mcp_ai_team_budget_max_tokens_daily';
+	const META_BUDGET_RUNS    = '_wp_mcp_ai_team_budget_max_runs_daily';
+	const META_NAMESPACE      = '_wp_mcp_ai_team_namespace';
 	const USAGE_OPTION_PREFIX = 'wp_mcp_ai_team_usage_';
 
 	/**

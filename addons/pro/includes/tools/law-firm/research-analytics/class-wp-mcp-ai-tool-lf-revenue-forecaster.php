@@ -35,10 +35,27 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_revenue_forecaster'; }
-	public function get_name() { return __( 'Revenue Forecaster', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Forecasts firm revenue based on historical billing data, current pipeline, and collection trends. Includes confidence intervals and breakdown by source.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_revenue_forecaster'; }
+	public function get_name() {
+		return __( 'Revenue Forecaster', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Forecasts firm revenue based on historical billing data, current pipeline, and collection trends. Includes confidence intervals and breakdown by source.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -61,7 +78,13 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'cacheable' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'cacheable' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -91,11 +114,15 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Determine historical lookback (use same-length past period for comparison).
-		$months_map = array( 'month' => 1, 'quarter' => 3, 'year' => 12 );
+		$months_map = array(
+			'month'   => 1,
+			'quarter' => 3,
+			'year'    => 12,
+		);
 		$months     = $months_map[ $forecast_period ];
 
 		$historical_start = gmdate( 'Y-m-d', strtotime( "-{$months} months" ) );
-		$two_periods_back = gmdate( 'Y-m-d', strtotime( "-" . ( $months * 2 ) . " months" ) );
+		$two_periods_back = gmdate( 'Y-m-d', strtotime( '-' . ( $months * 2 ) . ' months' ) );
 
 		// Query recent period revenue.
 		$recent_meta_query = array(
@@ -114,12 +141,14 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		$recent_entries = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
-			'post_status'    => 'publish',
-			'meta_query'     => $recent_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$recent_entries = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
+				'post_status'    => 'publish',
+				'meta_query'     => $recent_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
 		$recent_revenue    = 0;
 		$recent_collected  = 0;
@@ -142,7 +171,7 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 			$recent_revenue   += $amount;
 			$recent_collected += $collected;
 
-			$source_key = isset( $revenue_by_source[ $fee_type ] ) ? $fee_type : 'hourly';
+			$source_key                        = isset( $revenue_by_source[ $fee_type ] ) ? $fee_type : 'hourly';
 			$revenue_by_source[ $source_key ] += $amount;
 		}
 
@@ -170,12 +199,14 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		$prior_entries = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
-			'post_status'    => 'publish',
-			'meta_query'     => $prior_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$prior_entries = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_revenue_forecaster', 0, 1000 ) : 1000,
+				'post_status'    => 'publish',
+				'meta_query'     => $prior_meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
 		$prior_revenue = 0;
 		foreach ( $prior_entries as $entry ) {
@@ -196,7 +227,7 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 		$forecast_amount = round( $recent_revenue * ( 1 + $growth_rate ), 2 );
 
 		// Collection rate for adjustment.
-		$collection_rate = $recent_revenue > 0 ? $recent_collected / $recent_revenue : 0.85;
+		$collection_rate   = $recent_revenue > 0 ? $recent_collected / $recent_revenue : 0.85;
 		$adjusted_forecast = round( $forecast_amount * $collection_rate, 2 );
 
 		// Confidence interval based on variance between periods.
@@ -229,8 +260,8 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 
 		$pipeline_value = 0;
 		foreach ( $active_matters as $am ) {
-			$budget = (float) get_post_meta( $am->ID, '_lf_budget', true );
-			$spent  = (float) get_post_meta( $am->ID, '_lf_total_billed', true );
+			$budget          = (float) get_post_meta( $am->ID, '_lf_budget', true );
+			$spent           = (float) get_post_meta( $am->ID, '_lf_total_billed', true );
 			$pipeline_value += max( 0, $budget - $spent );
 		}
 
@@ -268,15 +299,15 @@ class WP_MCP_AI_Tool_LF_Revenue_Forecaster implements WP_MCP_AI_Tool_Interface, 
 				),
 				'breakdown_by_source' => $forecast_by_source,
 				'trend_analysis'      => array(
-					'direction'            => $trend,
-					'growth_rate'          => round( $growth_rate * 100, 1 ),
-					'prior_period_revenue' => round( $prior_revenue, 2 ),
+					'direction'             => $trend,
+					'growth_rate'           => round( $growth_rate * 100, 1 ),
+					'prior_period_revenue'  => round( $prior_revenue, 2 ),
 					'recent_period_revenue' => round( $recent_revenue, 2 ),
-					'collection_rate'      => round( $collection_rate * 100, 1 ),
+					'collection_rate'       => round( $collection_rate * 100, 1 ),
 				),
 				'pipeline'            => array(
-					'active_matters'  => count( $active_matters ),
-					'pipeline_value'  => round( $pipeline_value, 2 ),
+					'active_matters' => count( $active_matters ),
+					'pipeline_value' => round( $pipeline_value, 2 ),
 				),
 			),
 			'disclaimer' => self::DISCLAIMER,

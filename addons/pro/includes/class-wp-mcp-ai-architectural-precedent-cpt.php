@@ -75,7 +75,7 @@ class WP_MCP_AI_Architectural_Precedent_CPT {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'labels'             => array(
+				'labels'          => array(
 					'name'               => _x( 'Precedents', 'post type general name', 'mcp-ai-wpoos-pro' ),
 					'singular_name'      => _x( 'Precedent', 'post type singular name', 'mcp-ai-wpoos-pro' ),
 					'menu_name'          => _x( 'Precedents', 'admin menu', 'mcp-ai-wpoos-pro' ),
@@ -87,17 +87,17 @@ class WP_MCP_AI_Architectural_Precedent_CPT {
 					'not_found'          => __( 'No precedents found', 'mcp-ai-wpoos-pro' ),
 					'not_found_in_trash' => __( 'No precedents found in trash', 'mcp-ai-wpoos-pro' ),
 				),
-				'public'             => false,
-				'show_ui'            => true,
-				'show_in_menu'       => 'edit.php?post_type=mcp_ai_arch_proj',
-				'show_in_rest'       => true,
-				'capability_type'    => 'post',
-				'map_meta_cap'       => true,
-				'hierarchical'       => false,
-				'supports'           => array( 'title', 'editor', 'excerpt', 'custom-fields' ),
-				'has_archive'        => false,
-				'rewrite'            => false,
-				'query_var'          => false,
+				'public'          => false,
+				'show_ui'         => true,
+				'show_in_menu'    => 'edit.php?post_type=mcp_ai_arch_proj',
+				'show_in_rest'    => true,
+				'capability_type' => 'post',
+				'map_meta_cap'    => true,
+				'hierarchical'    => false,
+				'supports'        => array( 'title', 'editor', 'excerpt', 'custom-fields' ),
+				'has_archive'     => false,
+				'rewrite'         => false,
+				'query_var'       => false,
 			)
 		);
 	}
@@ -109,11 +109,11 @@ class WP_MCP_AI_Architectural_Precedent_CPT {
 	 */
 	public static function register_meta() {
 		$string_meta = array(
-			'_arch_prec_country_code'        => 'ISO 3166-1 alpha-2 country code (e.g. LK, JM, US).',
-			'_arch_prec_climate_zone'        => 'ASHRAE / Köppen climate zone classification.',
+			'_arch_prec_country_code'          => 'ISO 3166-1 alpha-2 country code (e.g. LK, JM, US).',
+			'_arch_prec_climate_zone'          => 'ASHRAE / Köppen climate zone classification.',
 			'_arch_prec_sustainability_rating' => 'Sustainability rating (e.g. EDGE Certified, LEED Silver).',
-			'_arch_prec_references_url'      => 'External references URL.',
-			'_arch_prec_architect'           => 'Lead architect or design firm.',
+			'_arch_prec_references_url'        => 'External references URL.',
+			'_arch_prec_architect'             => 'Lead architect or design firm.',
 		);
 		foreach ( $string_meta as $key => $description ) {
 			$sanitize = ( '_arch_prec_references_url' === $key ) ? 'esc_url_raw' : 'sanitize_text_field';

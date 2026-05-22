@@ -44,73 +44,73 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'checkup_id' => array(
+				'checkup_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional checkup ID. If provided, updates the existing checkup instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'member_id'  => array(
+				'member_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this checkup belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'      => array(
+				'title'            => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup title (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'datetime'   => array(
+				'datetime'         => array(
 					'type'        => 'string',
 					'description' => __( 'Date and time (YYYY-MM-DD HH:MM) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$',
 				),
-				'provider'   => array(
+				'provider'         => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'location'   => array(
+				'location'         => array(
 					'type'        => 'string',
 					'description' => __( 'Location or facility name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'type'       => array(
+				'type'             => array(
 					'type'        => 'string',
 					'description' => __( 'Type of checkup (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wellness', 'follow-up', 'consultation', 'procedure', 'vaccination', 'dental', 'vision', '' ),
 				),
-				'status'     => array(
+				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'Appointment status (optional, defaults to scheduled)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'scheduled', 'completed', 'cancelled', 'no-show' ),
 					'default'     => 'scheduled',
 				),
-				'notes'      => array(
+				'notes'            => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'chief_complaint'    => array(
+				'chief_complaint'  => array(
 					'type'        => 'string',
 					'description' => __( 'Chief complaint or reason for the visit (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'diagnosis'          => array(
+				'diagnosis'        => array(
 					'type'        => 'string',
 					'description' => __( 'Working or final diagnosis (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'duration_minutes'   => array(
+				'duration_minutes' => array(
 					'type'        => 'integer',
 					'description' => __( 'Duration of appointment in minutes (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'follow_up_date'     => array(
+				'follow_up_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'Recommended follow-up date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'copay_amount'       => array(
+				'copay_amount'     => array(
 					'type'        => 'string',
 					'description' => __( 'Copay amount paid (optional, e.g. "$25.00")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
@@ -145,6 +145,11 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -286,21 +291,21 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'message'    => __( 'Checkup updated successfully.', 'mcp-ai-wpoos-pro' ),
 				'checkup_id' => $checkup_id,
 				'checkup'    => array(
-					'id'              => $checkup_id,
-					'member_id'       => $member_id,
-					'title'           => $title,
-					'datetime'        => $datetime,
-					'provider'        => $provider,
-					'location'        => $location,
-					'type'            => $type,
-					'status'          => $status,
-					'notes'           => $notes,
-					'chief_complaint' => $chief_complaint,
-					'diagnosis'       => $diagnosis,
+					'id'               => $checkup_id,
+					'member_id'        => $member_id,
+					'title'            => $title,
+					'datetime'         => $datetime,
+					'provider'         => $provider,
+					'location'         => $location,
+					'type'             => $type,
+					'status'           => $status,
+					'notes'            => $notes,
+					'chief_complaint'  => $chief_complaint,
+					'diagnosis'        => $diagnosis,
 					'duration_minutes' => $duration,
-					'follow_up_date'  => $follow_up_date,
-					'copay_amount'    => $copay_amount,
-					'updated_at'      => $checkup->post_modified,
+					'follow_up_date'   => $follow_up_date,
+					'copay_amount'     => $copay_amount,
+					'updated_at'       => $checkup->post_modified,
 				),
 				'updated'    => true,
 			);

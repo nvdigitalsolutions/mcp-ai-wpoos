@@ -419,7 +419,7 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 		$mentions = array();
 
 		// Simulated data for demonstration (replace with actual API call).
-		// In production, use Twitter API v2: https://api.twitter.com/2/tweets/search/recent
+		// In production, use Twitter API v2: https://api.twitter.com/2/tweets/search/recent.
 		$sample_data = array(
 			array(
 				'id'          => 'tw_' . wp_generate_uuid4(),

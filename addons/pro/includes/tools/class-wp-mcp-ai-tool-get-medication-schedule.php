@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_Get_Medication_Schedule implements WP_MCP_AI_Tool_Interface
 		return __( 'Get Medication Schedule', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Retrieves a daily medication schedule for a member, listing all active prescriptions with dosage and frequency.', 'mcp-ai-wpoos-pro' );
 	}
@@ -61,6 +68,11 @@ class WP_MCP_AI_Tool_Get_Medication_Schedule implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}

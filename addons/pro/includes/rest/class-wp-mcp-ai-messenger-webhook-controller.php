@@ -432,8 +432,8 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 				'messenger_webhook_unknown_event',
 				'Unknown Messenger webhook event type received.',
 				array(
-					'sender_id'    => substr( $sender_id, 0, 4 ) . '***',
-					'event_keys'   => array_keys( $event ),
+					'sender_id'  => substr( $sender_id, 0, 4 ) . '***',
+					'event_keys' => array_keys( $event ),
 				)
 			);
 		}
@@ -475,10 +475,10 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			'messenger_incoming_message',
 			'Incoming Messenger message received.',
 			array(
-				'message_id'   => $message_id,
-				'sender_id'    => substr( $sender_id, 0, 4 ) . '***',
-				'type'         => isset( $message['attachments'] ) ? 'attachment' : 'text',
-				'timestamp'    => $timestamp,
+				'message_id' => $message_id,
+				'sender_id'  => substr( $sender_id, 0, 4 ) . '***',
+				'type'       => isset( $message['attachments'] ) ? 'attachment' : 'text',
+				'timestamp'  => $timestamp,
 			)
 		);
 
@@ -724,8 +724,8 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	 * @param string $page_id      Page ID.
 	 */
 	protected function process_read_receipt( $event, $sender_id, $recipient_id, $timestamp, $page_id ) {
-		$read        = $event['read'];
-		$watermark   = isset( $read['watermark'] ) ? absint( $read['watermark'] ) : 0;
+		$read      = $event['read'];
+		$watermark = isset( $read['watermark'] ) ? absint( $read['watermark'] ) : 0;
 
 		WP_MCP_AI_Logger::log_event(
 			'messenger_read_receipt',
@@ -779,10 +779,10 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			'messenger_delivery_receipt',
 			'Messenger delivery receipt received.',
 			array(
-				'sender_id'   => substr( $sender_id, 0, 4 ) . '***',
-				'watermark'   => $watermark,
-				'mids_count'  => count( $mids ),
-				'timestamp'   => $timestamp,
+				'sender_id'  => substr( $sender_id, 0, 4 ) . '***',
+				'watermark'  => $watermark,
+				'mids_count' => count( $mids ),
+				'timestamp'  => $timestamp,
 			)
 		);
 
@@ -821,10 +821,10 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	 * @param string $page_id      Page ID.
 	 */
 	protected function process_reaction( $event, $sender_id, $recipient_id, $timestamp, $page_id ) {
-		$reaction  = $event['reaction'];
-		$action    = isset( $reaction['action'] ) ? sanitize_text_field( $reaction['action'] ) : '';
-		$emoji     = isset( $reaction['emoji'] ) ? $reaction['emoji'] : '';
-		$mid       = isset( $reaction['mid'] ) ? sanitize_text_field( $reaction['mid'] ) : '';
+		$reaction = $event['reaction'];
+		$action   = isset( $reaction['action'] ) ? sanitize_text_field( $reaction['action'] ) : '';
+		$emoji    = isset( $reaction['emoji'] ) ? $reaction['emoji'] : '';
+		$mid      = isset( $reaction['mid'] ) ? sanitize_text_field( $reaction['mid'] ) : '';
 
 		WP_MCP_AI_Logger::log_event(
 			'messenger_reaction',
@@ -947,7 +947,11 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'messenger',
 				$sender_id,
-				array( 'display_name' => $sender_id, 'connection_id' => $connection_id, 'conversation_type' => 'dm' )
+				array(
+					'display_name'      => $sender_id,
+					'connection_id'     => $connection_id,
+					'conversation_type' => 'dm',
+				)
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -1245,7 +1249,14 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$msng_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'messenger', $sender_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
+			$msng_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'messenger',
+				$sender_id,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => 'dm',
+				)
+			);
 			if ( $msng_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $msng_contact_row_id );
 			}
@@ -1368,7 +1379,7 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
 
-		$all_connections      = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		$all_connections       = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 		$messenger_connections = array();
 
 		foreach ( $all_connections as $connection ) {

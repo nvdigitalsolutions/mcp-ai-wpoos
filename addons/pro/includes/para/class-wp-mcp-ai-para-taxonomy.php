@@ -216,7 +216,7 @@ class WP_MCP_AI_PARA_Taxonomy {
 	 * @param WP_Post $post Post being edited.
 	 */
 	public static function render_metabox( $post ) {
-		$terms = get_the_terms( $post->ID, self::TAXONOMY );
+		$terms   = get_the_terms( $post->ID, self::TAXONOMY );
 		$current = ( ! is_wp_error( $terms ) && ! empty( $terms ) ) ? (int) $terms[0]->term_id : 0;
 
 		$all_terms = get_terms(

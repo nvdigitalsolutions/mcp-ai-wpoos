@@ -44,42 +44,42 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'allergy_id'     => array(
+				'allergy_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional allergy ID. If provided, updates the existing allergy instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'member_id'      => array(
+				'member_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this allergy belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergen'       => array(
+				'allergen'           => array(
 					'type'        => 'string',
 					'description' => __( 'Allergen name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'severity'       => array(
+				'severity'           => array(
 					'type'        => 'string',
 					'description' => __( 'Severity level (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mild', 'moderate', 'severe' ),
 				),
-				'reactions'      => array(
+				'reactions'          => array(
 					'type'        => 'string',
 					'description' => __( 'Typical reactions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'diagnosed_date' => array(
+				'diagnosed_date'     => array(
 					'type'        => 'string',
 					'description' => __( 'Date diagnosed (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'allergy_type'   => array(
+				'allergy_type'       => array(
 					'type'        => 'string',
 					'description' => __( 'Allergy category (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'food', 'drug', 'environmental', 'contact', 'latex', 'insect', 'other', '' ),
 				),
-				'onset_type'     => array(
+				'onset_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Onset type: immediate (< 1 hour) or delayed (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'immediate', 'delayed', 'unknown', '' ),
@@ -89,12 +89,12 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Date of most recent allergic reaction (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'treatment'      => array(
+				'treatment'          => array(
 					'type'        => 'string',
 					'description' => __( 'Treatment or management protocol (optional, e.g. "EpiPen, avoid peanuts")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'notes'          => array(
+				'notes'              => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -129,6 +129,11 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

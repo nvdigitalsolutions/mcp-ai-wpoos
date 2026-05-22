@@ -173,11 +173,14 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type implements WP_MCP_AI_Tool_In
 		}
 
 		if ( post_type_exists( $slug ) ) {
-			return new WP_Error( 'post_type_exists', sprintf(
+			return new WP_Error(
+				'post_type_exists',
+				sprintf(
 				/* translators: %s: post type slug */
-				__( 'Post type "%s" already exists.', 'mcp-ai-wpoos-pro' ),
-				$slug
-			) );
+					__( 'Post type "%s" already exists.', 'mcp-ai-wpoos-pro' ),
+					$slug
+				)
+			);
 		}
 
 		$mcp_args = array(

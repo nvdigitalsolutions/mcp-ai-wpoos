@@ -154,9 +154,9 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		 */
 		$asset_file = $build_dir . 'tma-template-builder.asset.php';
 		if ( file_exists( $asset_file ) ) {
-			$asset            = require $asset_file;
-			$js_dependencies  = isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ? $asset['dependencies'] : array();
-			$asset_version    = isset( $asset['version'] ) ? $asset['version'] : null;
+			$asset           = require $asset_file;
+			$js_dependencies = isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ? $asset['dependencies'] : array();
+			$asset_version   = isset( $asset['version'] ) ? $asset['version'] : null;
 		} else {
 			$js_dependencies = array();
 			$asset_version   = null;
@@ -417,10 +417,10 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	protected function render_configuration_form() {
 		$settings = get_option( $this->option_name, array() );
 
-		$saved_assistant       = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
-		$enable_logging        = ! empty( $settings['enable_logging'] );
-		$enable_rate_limiting  = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
-		$verify_webhook        = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
+		$saved_assistant      = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+		$enable_logging       = ! empty( $settings['enable_logging'] );
+		$enable_rate_limiting = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
+		$verify_webhook       = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
 
 		$assistants = get_posts(
 			array(
@@ -505,9 +505,9 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		$sanitized = parent::sanitize_settings( $input );
 
 		// Chat Channels Global Settings fields.
-		$sanitized['default_assistant']        = isset( $input['default_assistant'] ) ? absint( $input['default_assistant'] ) : 0;
-		$sanitized['enable_logging']           = ! empty( $input['enable_logging'] );
-		$sanitized['enable_rate_limiting']     = ! empty( $input['enable_rate_limiting'] );
+		$sanitized['default_assistant']         = isset( $input['default_assistant'] ) ? absint( $input['default_assistant'] ) : 0;
+		$sanitized['enable_logging']            = ! empty( $input['enable_logging'] );
+		$sanitized['enable_rate_limiting']      = ! empty( $input['enable_rate_limiting'] );
 		$sanitized['verify_webhook_signatures'] = ! empty( $input['verify_webhook_signatures'] );
 
 		return $sanitized;
@@ -689,7 +689,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 						&& 'telegram' === $conn['connection_type']
 						&& ! empty( $conn['enabled'] )
 					) {
-						$label = ! empty( $conn['name'] ) ? $conn['name'] : $conn_id;
+						$label                 = ! empty( $conn['name'] ) ? $conn['name'] : $conn_id;
 						$per_connection_urls[] = array(
 							'id'    => sanitize_key( $conn_id ),
 							'label' => $label,
@@ -1193,7 +1193,11 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 								'https://discord.com/developers/applications'
 							),
 							array(
-								'a'      => array( 'href' => true, 'target' => true, 'rel' => true ),
+								'a'      => array(
+									'href'   => true,
+									'target' => true,
+									'rel'    => true,
+								),
 								'strong' => array(),
 							)
 						);
@@ -2050,7 +2054,13 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 								__( 'Go to the <a href="%s" target="_blank" rel="noopener noreferrer">Google Cloud Console</a> and create or select a project.', 'mcp-ai-wpoos-pro' ),
 								'https://console.cloud.google.com/'
 							),
-							array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+							array(
+								'a' => array(
+									'href'   => true,
+									'target' => true,
+									'rel'    => true,
+								),
+							)
 						);
 						?>
 					</li>
@@ -2062,7 +2072,13 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 								__( '<a href="%s" target="_blank" rel="noopener noreferrer">Enable the Google Chat API</a> for your project.', 'mcp-ai-wpoos-pro' ),
 								'https://console.cloud.google.com/apis/library/chat.googleapis.com'
 							),
-							array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+							array(
+								'a' => array(
+									'href'   => true,
+									'target' => true,
+									'rel'    => true,
+								),
+							)
 						);
 						?>
 					</li>
@@ -2130,7 +2146,13 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 							__( 'Google Chat signs HTTP endpoint requests using a Bearer token in the Authorization header. The token is a Google-signed JWT that can be verified against Google\'s public keys. See the <a href="%s" target="_blank" rel="noopener noreferrer">Google Chat security documentation</a> for verification details.', 'mcp-ai-wpoos-pro' ),
 							'https://developers.google.com/chat/how-tos/bots-develop#verifying_requests'
 						),
-						array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+						array(
+							'a' => array(
+								'href'   => true,
+								'target' => true,
+								'rel'    => true,
+							),
+						)
 					);
 					?>
 				</p>
@@ -2163,41 +2185,41 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	protected function get_tools_list() {
 		return array(
 			// Core messaging tools.
-			'send_chat_message'               => __( 'Send Chat Message', 'mcp-ai-wpoos-pro' ),
-			'receive_chat_message'            => __( 'Receive Chat Message', 'mcp-ai-wpoos-pro' ),
-			'send_multiplatform_message'      => __( 'Send Multi-Platform Message', 'mcp-ai-wpoos-pro' ),
+			'send_chat_message'          => __( 'Send Chat Message', 'mcp-ai-wpoos-pro' ),
+			'receive_chat_message'       => __( 'Receive Chat Message', 'mcp-ai-wpoos-pro' ),
+			'send_multiplatform_message' => __( 'Send Multi-Platform Message', 'mcp-ai-wpoos-pro' ),
 
 			// Media tools.
-			'send_chat_image'                 => __( 'Send Chat Image', 'mcp-ai-wpoos-pro' ),
-			'send_chat_video'                 => __( 'Send Chat Video', 'mcp-ai-wpoos-pro' ),
-			'send_chat_document'              => __( 'Send Chat Document', 'mcp-ai-wpoos-pro' ),
+			'send_chat_image'            => __( 'Send Chat Image', 'mcp-ai-wpoos-pro' ),
+			'send_chat_video'            => __( 'Send Chat Video', 'mcp-ai-wpoos-pro' ),
+			'send_chat_document'         => __( 'Send Chat Document', 'mcp-ai-wpoos-pro' ),
 
 			// Channel/Group management.
-			'create_chat_channel'             => __( 'Create Chat Channel', 'mcp-ai-wpoos-pro' ),
-			'manage_chat_channel'             => __( 'Manage Chat Channel', 'mcp-ai-wpoos-pro' ),
-			'list_chat_channels'              => __( 'List Chat Channels', 'mcp-ai-wpoos-pro' ),
-			'add_channel_member'              => __( 'Add Channel Member', 'mcp-ai-wpoos-pro' ),
-			'remove_channel_member'           => __( 'Remove Channel Member', 'mcp-ai-wpoos-pro' ),
+			'create_chat_channel'        => __( 'Create Chat Channel', 'mcp-ai-wpoos-pro' ),
+			'manage_chat_channel'        => __( 'Manage Chat Channel', 'mcp-ai-wpoos-pro' ),
+			'list_chat_channels'         => __( 'List Chat Channels', 'mcp-ai-wpoos-pro' ),
+			'add_channel_member'         => __( 'Add Channel Member', 'mcp-ai-wpoos-pro' ),
+			'remove_channel_member'      => __( 'Remove Channel Member', 'mcp-ai-wpoos-pro' ),
 
 			// Interactive elements.
-			'send_interactive_message'        => __( 'Send Interactive Message', 'mcp-ai-wpoos-pro' ),
-			'handle_callback_query'           => __( 'Handle Callback Query', 'mcp-ai-wpoos-pro' ),
+			'send_interactive_message'   => __( 'Send Interactive Message', 'mcp-ai-wpoos-pro' ),
+			'handle_callback_query'      => __( 'Handle Callback Query', 'mcp-ai-wpoos-pro' ),
 
 			// User management.
-			'get_chat_user_info'              => __( 'Get Chat User Info', 'mcp-ai-wpoos-pro' ),
-			'manage_user_permissions'         => __( 'Manage User Permissions', 'mcp-ai-wpoos-pro' ),
+			'get_chat_user_info'         => __( 'Get Chat User Info', 'mcp-ai-wpoos-pro' ),
+			'manage_user_permissions'    => __( 'Manage User Permissions', 'mcp-ai-wpoos-pro' ),
 
 			// Analytics.
-			'get_chat_analytics'              => __( 'Get Chat Analytics', 'mcp-ai-wpoos-pro' ),
-			'track_message_delivery'          => __( 'Track Message Delivery', 'mcp-ai-wpoos-pro' ),
+			'get_chat_analytics'         => __( 'Get Chat Analytics', 'mcp-ai-wpoos-pro' ),
+			'track_message_delivery'     => __( 'Track Message Delivery', 'mcp-ai-wpoos-pro' ),
 
 			// Webhooks.
-			'configure_chat_webhook'          => __( 'Configure Chat Webhook', 'mcp-ai-wpoos-pro' ),
-			'process_webhook_event'           => __( 'Process Webhook Event', 'mcp-ai-wpoos-pro' ),
+			'configure_chat_webhook'     => __( 'Configure Chat Webhook', 'mcp-ai-wpoos-pro' ),
+			'process_webhook_event'      => __( 'Process Webhook Event', 'mcp-ai-wpoos-pro' ),
 
 			// Advanced features.
-			'moderate_chat_content'           => __( 'Moderate Chat Content', 'mcp-ai-wpoos-pro' ),
-			'auto_translate_message'          => __( 'Auto-Translate Message', 'mcp-ai-wpoos-pro' ),
+			'moderate_chat_content'      => __( 'Moderate Chat Content', 'mcp-ai-wpoos-pro' ),
+			'auto_translate_message'     => __( 'Auto-Translate Message', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

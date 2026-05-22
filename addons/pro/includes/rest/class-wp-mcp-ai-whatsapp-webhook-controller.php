@@ -886,13 +886,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$from = isset( $message_data['from'] ) ? $message_data['from'] : '';
 
 		// --- Automation keyword checks ---
-		$automation_rules    = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
-		$message_text_lower  = strtolower( is_string( $message_data['content'] ) ? $message_data['content'] : '' );
+		$automation_rules   = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		$message_text_lower = strtolower( is_string( $message_data['content'] ) ? $message_data['content'] : '' );
 
-		if ( ! empty( $automation_rules['human_takeover_keywords'] ) && $message_text_lower !== '' ) {
+		if ( ! empty( $automation_rules['human_takeover_keywords'] ) && '' !== $message_text_lower ) {
 			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
 			foreach ( $takeover_kws as $kw ) {
-				if ( $kw !== '' && strpos( $message_text_lower, $kw ) !== false ) {
+				if ( '' !== $kw && false !== strpos( $message_text_lower, $kw ) ) {
 					// Enable human takeover for this contact.
 					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 						$contact_id = $this->get_channel_contact_id( 'whatsapp', $from );
@@ -903,17 +903,20 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 					WP_MCP_AI_Logger::log_event(
 						'whatsapp_human_takeover_triggered',
 						'Human takeover triggered by keyword.',
-						array( 'from' => substr( $from, 0, 4 ) . '***', 'keyword' => $kw )
+						array(
+							'from'    => substr( $from, 0, 4 ) . '***',
+							'keyword' => $kw,
+						)
 					);
 					return; // Do not auto-reply; human agent will respond.
 				}
 			}
 		}
 
-		if ( ! empty( $automation_rules['ai_resume_keywords'] ) && $message_text_lower !== '' ) {
+		if ( ! empty( $automation_rules['ai_resume_keywords'] ) && '' !== $message_text_lower ) {
 			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
 			foreach ( $resume_kws as $kw ) {
-				if ( $kw !== '' && strpos( $message_text_lower, $kw ) !== false ) {
+				if ( '' !== $kw && false !== strpos( $message_text_lower, $kw ) ) {
 					// Disable human takeover → resume AI.
 					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 						$contact_id = $this->get_channel_contact_id( 'whatsapp', $from );
@@ -924,7 +927,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 					WP_MCP_AI_Logger::log_event(
 						'whatsapp_ai_resumed',
 						'AI auto-reply resumed by keyword.',
-						array( 'from' => substr( $from, 0, 4 ) . '***', 'keyword' => $kw )
+						array(
+							'from'    => substr( $from, 0, 4 ) . '***',
+							'keyword' => $kw,
+						)
 					);
 					break; // Continue and allow AI to reply.
 				}
@@ -951,7 +957,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		// Fall back to the global default assistant from automation settings.
 		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
 			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
-    }
+		}
 		// When the connection requires an @slug mention, only reply if the message
 		// explicitly addresses an assigned assistant by its WordPress post slug.
 		if ( ! empty( $connection['require_mention'] ) ) {
@@ -1347,7 +1353,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 						}
 						// Touch the contact record to update last_message_at.
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
+							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+								'whatsapp',
+								$to,
+								array(
+									'connection_id'     => $connection_id,
+									'conversation_type' => 'dm',
+								)
+							);
 							if ( $wa_contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 							}
@@ -1401,7 +1414,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
+			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'whatsapp',
+				$to,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => 'dm',
+				)
+			);
 			if ( $wa_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 			}
@@ -1409,8 +1429,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// Persist the updated conversation history so subsequent messages from
 		// this sender include the context built up in this exchange.
-		$history[] = array( 'role' => 'user', 'content' => $message_text );
-		$history[] = array( 'role' => 'assistant', 'content' => $content );
+		$history[] = array(
+			'role'    => 'user',
+			'content' => $message_text,
+		);
+		$history[] = array(
+			'role'    => 'assistant',
+			'content' => $content,
+		);
 		if ( count( $history ) > $max_history ) {
 			$history = array_slice( $history, -$max_history );
 		}
@@ -1437,7 +1463,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				return is_string( $content ) ? trim( $content ) : '';
 
 			case 'interactive':
-				// button_reply: { id, title }  |  list_reply: { id, title, description }
+				// button_reply: { id, title }  |  list_reply: { id, title, description }.
 				if ( is_array( $content ) ) {
 					$title       = isset( $content['title'] ) ? trim( (string) $content['title'] ) : '';
 					$description = isset( $content['description'] ) ? trim( (string) $content['description'] ) : '';
@@ -1446,7 +1472,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				return '';
 
 			case 'button':
-				// Quick-reply button tap: content is the button array { payload, text }
+				// Quick-reply button tap: content is the button array { payload, text }.
 				if ( is_array( $content ) ) {
 					return isset( $content['text'] ) ? trim( (string) $content['text'] ) : '';
 				}
@@ -1699,7 +1725,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @param array $value Phone number name update data.
 	 */
 	protected function process_phone_number_name_update( $value ) {
-		$display_phone = isset( $value['display_phone_number'] ) ? sanitize_text_field( $value['display_phone_number'] ) : '';
+		$display_phone   = isset( $value['display_phone_number'] ) ? sanitize_text_field( $value['display_phone_number'] ) : '';
 		$phone_number_id = isset( $value['phone_number_id'] ) ? sanitize_text_field( $value['phone_number_id'] ) : '';
 
 		WP_MCP_AI_Logger::log_event(
@@ -1716,7 +1742,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 			if ( $connection && isset( $connection['id'] ) ) {
 				$connection['display_phone_number'] = $display_phone;
-				$save_result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection );
+				$save_result                        = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection );
 
 				if ( is_wp_error( $save_result ) ) {
 					WP_MCP_AI_Logger::log_event(

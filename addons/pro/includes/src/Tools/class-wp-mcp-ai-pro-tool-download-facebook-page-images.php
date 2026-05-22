@@ -278,8 +278,8 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 				continue;
 			}
 
-			$photo_name    = isset( $photo['name'] ) ? sanitize_text_field( $photo['name'] ) : '';
-			$created_time  = isset( $photo['created_time'] ) ? sanitize_text_field( $photo['created_time'] ) : '';
+			$photo_name   = isset( $photo['name'] ) ? sanitize_text_field( $photo['name'] ) : '';
+			$created_time = isset( $photo['created_time'] ) ? sanitize_text_field( $photo['created_time'] ) : '';
 
 			$downloaded[] = array(
 				'image_body'   => $image_data['body'],
@@ -345,9 +345,9 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 	 * @return array|WP_Error Array of photo data or error.
 	 */
 	protected function fetch_album_photos( $access_token, $page_id, $album, $max_images ) {
-		$photos    = array();
-		$after     = '';
-		$per_page  = min( $max_images, 25 );
+		$photos   = array();
+		$after    = '';
+		$per_page = min( $max_images, 25 );
 
 		do {
 			$url = sprintf(
@@ -429,7 +429,8 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 			// Stop if we have enough images or there are no more pages.
 			$has_next = ! empty( $decoded['paging']['next'] );
 
-		} while ( count( $photos ) < $max_images && $has_next && '' !== $after );
+			$photos_count = count( $photos );
+		} while ( $photos_count < $max_images && $has_next && '' !== $after );
 
 		return $photos;
 	}
@@ -503,7 +504,7 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 		// Return cover photo in a format consistent with album photos.
 		return array(
 			array(
-				'images' => array(
+				'images'       => array(
 					array(
 						'source' => $decoded['cover']['source'],
 					),

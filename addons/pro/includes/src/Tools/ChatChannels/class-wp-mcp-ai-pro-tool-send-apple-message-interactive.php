@@ -92,43 +92,43 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'msp_api_url'          => array(
+				'msp_api_url'             => array(
 					'type'        => 'string',
 					'description' => __( 'Base URL of your Messaging Service Provider REST API endpoint.', 'mcp-ai-wpoos-pro' ),
 				),
-				'api_key'              => array(
+				'api_key'                 => array(
 					'type'        => 'string',
 					'description' => __( 'API key or bearer token issued by your MSP.', 'mcp-ai-wpoos-pro' ),
 				),
-				'business_id'          => array(
+				'business_id'             => array(
 					'type'        => 'string',
 					'description' => __( 'Your Apple Messages for Business ID issued during Apple registration.', 'mcp-ai-wpoos-pro' ),
 				),
-				'conversation_id'      => array(
+				'conversation_id'         => array(
 					'type'        => 'string',
 					'description' => __( 'Active conversation ID. Provide to continue an ongoing conversation.', 'mcp-ai-wpoos-pro' ),
 				),
-				'recipient_id'         => array(
+				'recipient_id'            => array(
 					'type'        => 'string',
 					'description' => __( 'Opaque Apple customer identifier. Provide when no conversation_id exists yet.', 'mcp-ai-wpoos-pro' ),
 				),
-				'interactive_type'     => array(
+				'interactive_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Interactive message type: list_picker, time_picker, rich_link, or authenticate.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list_picker', 'time_picker', 'rich_link', 'authenticate' ),
 				),
-				'body_text'            => array(
+				'body_text'               => array(
 					'type'        => 'string',
 					'description' => __( 'Main body text shown to the customer above the interactive widget.', 'mcp-ai-wpoos-pro' ),
 				),
 				// List Picker parameters.
-				'list_picker_sections' => array(
+				'list_picker_sections'    => array(
 					'type'        => 'array',
 					'description' => __( 'Sections for list_picker type. Each section has a title and items array. Max 10 sections with max 10 items each.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'title'         => array(
+							'title'             => array(
 								'type'        => 'string',
 								'description' => __( 'Optional section title.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -137,28 +137,28 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 								'description' => __( 'Allow multiple item selection in this section.', 'mcp-ai-wpoos-pro' ),
 								'default'     => false,
 							),
-							'items'         => array(
+							'items'             => array(
 								'type'  => 'array',
 								'items' => array(
 									'type'       => 'object',
 									'properties' => array(
-										'identifier'  => array(
+										'identifier' => array(
 											'type'        => 'string',
 											'description' => __( 'Unique identifier returned when item is selected.', 'mcp-ai-wpoos-pro' ),
 										),
-										'title'       => array(
+										'title'      => array(
 											'type'        => 'string',
 											'description' => __( 'Display text shown to the customer.', 'mcp-ai-wpoos-pro' ),
 										),
-										'subtitle'    => array(
+										'subtitle'   => array(
 											'type'        => 'string',
 											'description' => __( 'Optional secondary text (e.g. price, description).', 'mcp-ai-wpoos-pro' ),
 										),
-										'imageData'   => array(
+										'imageData'  => array(
 											'type'        => 'string',
 											'description' => __( 'Optional base64-encoded image or URL for item illustration.', 'mcp-ai-wpoos-pro' ),
 										),
-										'style'       => array(
+										'style'      => array(
 											'type'        => 'string',
 											'description' => __( 'Optional visual style: default or emphasize.', 'mcp-ai-wpoos-pro' ),
 											'enum'        => array( 'default', 'emphasize' ),
@@ -170,19 +170,19 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 					),
 				),
 				// Time Picker parameters.
-				'time_picker_event'    => array(
+				'time_picker_event'       => array(
 					'type'        => 'object',
 					'description' => __( 'Event details for time_picker type.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'identifier'  => array(
+						'identifier' => array(
 							'type'        => 'string',
 							'description' => __( 'Unique identifier for this event/appointment.', 'mcp-ai-wpoos-pro' ),
 						),
-						'title'       => array(
+						'title'      => array(
 							'type'        => 'string',
 							'description' => __( 'Event title shown at the top of the picker.', 'mcp-ai-wpoos-pro' ),
 						),
-						'location'    => array(
+						'location'   => array(
 							'type'        => 'object',
 							'description' => __( 'Physical or virtual location of the event.', 'mcp-ai-wpoos-pro' ),
 							'properties'  => array(
@@ -192,7 +192,7 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 								'radius'    => array( 'type' => 'number' ),
 							),
 						),
-						'timeslots'   => array(
+						'timeslots'  => array(
 							'type'        => 'array',
 							'description' => __( 'Array of available time slots (ISO 8601 start/end pairs).', 'mcp-ai-wpoos-pro' ),
 							'items'       => array(
@@ -213,15 +213,15 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 					),
 				),
 				// Rich Link parameters.
-				'rich_link_url'        => array(
+				'rich_link_url'           => array(
 					'type'        => 'string',
 					'description' => __( 'For rich_link type: destination URL for the rich link card (must be HTTPS).', 'mcp-ai-wpoos-pro' ),
 				),
-				'rich_link_title'      => array(
+				'rich_link_title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Title text displayed on the rich link card.', 'mcp-ai-wpoos-pro' ),
 				),
-				'rich_link_image_url'  => array(
+				'rich_link_image_url'     => array(
 					'type'        => 'string',
 					'description' => __( 'Optional image URL to display in the rich link preview (must be HTTPS).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -230,7 +230,7 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 					'type'        => 'string',
 					'description' => __( 'For authenticate type: unique request ID to correlate authentication responses.', 'mcp-ai-wpoos-pro' ),
 				),
-				'locale'               => array(
+				'locale'                  => array(
 					'type'        => 'string',
 					'description' => __( 'BCP 47 locale code for the message (e.g. en-US).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'en-US',
@@ -471,7 +471,7 @@ class WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive implements WP_MCP_AI_Too
 				$sanitized_section['multipleSelection'] = (bool) $section['multipleSelection'];
 			}
 
-			$items = array_slice( $section['items'], 0, self::MAX_LIST_PICKER_ITEMS );
+			$items           = array_slice( $section['items'], 0, self::MAX_LIST_PICKER_ITEMS );
 			$sanitized_items = array();
 
 			foreach ( $items as $item ) {

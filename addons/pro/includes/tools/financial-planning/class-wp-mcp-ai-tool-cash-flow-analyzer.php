@@ -134,7 +134,12 @@ class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 	 *
 	 * @return array Capability flags.
 	 */
-	public function get_capability_flags() {
+		/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array
+	 */
+public function get_capability_flags() {
 		return array( 'pro', 'computation' );
 	}
 
@@ -186,6 +191,7 @@ class WP_MCP_AI_Tool_Cash_Flow_Analyzer implements WP_MCP_AI_Tool_Interface, WP_
 			'is_positive'               => $monthly_cash_flow > 0,
 			'projections'               => $projections,
 			/* translators: %s: formatted currency amount */
+			 */
 			'message'                   => sprintf( __( 'Current monthly cash flow: $%s', 'mcp-ai-wpoos-pro' ), number_format( $monthly_cash_flow, 2 ) ),
 		);
 	}

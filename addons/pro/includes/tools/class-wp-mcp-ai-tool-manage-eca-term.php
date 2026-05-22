@@ -433,13 +433,13 @@ class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		return array(
-			'success'             => true,
-			'action'              => 'transition',
+			'success'            => true,
+			'action'             => 'transition',
 			'previous_term'      => null !== $current_index ? $terms[ $current_index ] : null,
-			'active_term'         => $terms[ $target_index ],
-			'enrollments_rolled'  => $enrollments_rolled,
-			'attendance_reset'    => $attendance_reset,
-			'message'             => sprintf(
+			'active_term'        => $terms[ $target_index ],
+			'enrollments_rolled' => $enrollments_rolled,
+			'attendance_reset'   => $attendance_reset,
+			'message'            => sprintf(
 				/* translators: %s: term name */
 				__( 'Successfully transitioned to term "%s".', 'mcp-ai-wpoos-pro' ),
 				$terms[ $target_index ]['name']

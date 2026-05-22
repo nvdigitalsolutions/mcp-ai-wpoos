@@ -44,10 +44,29 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @var array<string, int>
 	 */
 	const VIN_TRANSLITERATION = array(
-		'A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'F' => 6,
-		'G' => 7, 'H' => 8, 'J' => 1, 'K' => 2, 'L' => 3, 'M' => 4,
-		'N' => 5, 'P' => 7, 'R' => 9, 'S' => 2, 'T' => 3, 'U' => 4,
-		'V' => 5, 'W' => 6, 'X' => 7, 'Y' => 8, 'Z' => 9,
+		'A' => 1,
+		'B' => 2,
+		'C' => 3,
+		'D' => 4,
+		'E' => 5,
+		'F' => 6,
+		'G' => 7,
+		'H' => 8,
+		'J' => 1,
+		'K' => 2,
+		'L' => 3,
+		'M' => 4,
+		'N' => 5,
+		'P' => 7,
+		'R' => 9,
+		'S' => 2,
+		'T' => 3,
+		'U' => 4,
+		'V' => 5,
+		'W' => 6,
+		'X' => 7,
+		'Y' => 8,
+		'Z' => 9,
 	);
 
 	/**
@@ -85,7 +104,7 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'vin'       => array(
+				'vin'        => array(
 					'type'        => 'string',
 					'description' => __( 'The 17-character Vehicle Identification Number to decode.', 'mcp-ai-wpoos' ),
 					'minLength'   => 17,
@@ -304,8 +323,8 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array Check-digit validation result with 'valid' boolean and 'details' string.
 	 */
 	public function validate_check_digit( $vin ) {
-		$chars   = str_split( strtoupper( $vin ) );
-		$sum     = 0;
+		$chars = str_split( strtoupper( $vin ) );
+		$sum   = 0;
 
 		for ( $i = 0; $i < 17; $i++ ) {
 			$char = $chars[ $i ];
@@ -327,10 +346,10 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$sum += $value * self::VIN_WEIGHTS[ $i ];
 		}
 
-		$remainder      = $sum % 11;
-		$expected        = ( 10 === $remainder ) ? 'X' : (string) $remainder;
-		$actual          = $chars[8];
-		$is_valid        = ( $expected === $actual );
+		$remainder = $sum % 11;
+		$expected  = ( 10 === $remainder ) ? 'X' : (string) $remainder;
+		$actual    = $chars[8];
+		$is_valid  = ( $expected === $actual );
 
 		return array(
 			'valid'   => $is_valid,
@@ -358,36 +377,36 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		};
 
 		return array(
-			'vin'                  => $vin,
-			'year'                 => $clean( 'ModelYear' ),
-			'make'                 => $clean( 'Make' ),
-			'model'                => $clean( 'Model' ),
-			'trim'                 => $clean( 'Trim' ),
-			'body_class'           => $clean( 'BodyClass' ),
-			'vehicle_type'         => $clean( 'VehicleType' ),
-			'drive_type'           => $clean( 'DriveType' ),
-			'fuel_type'            => $clean( 'FuelTypePrimary' ),
-			'engine_displacement'  => $clean( 'DisplacementL' ),
-			'engine_cylinders'     => $clean( 'EngineCylinders' ),
-			'engine_model'         => $clean( 'EngineModel' ),
-			'transmission'         => $clean( 'TransmissionStyle' ),
-			'plant_country'        => $clean( 'PlantCountry' ),
-			'plant_city'           => $clean( 'PlantCity' ),
-			'manufacturer'         => $clean( 'Manufacturer' ),
-			'doors'                => $clean( 'Doors' ),
-			'gvwr'                 => $clean( 'GVWR' ),
-			'abs'                  => $clean( 'ABS' ),
-			'esc'                  => $clean( 'ESC' ),
-			'forward_collision'    => $clean( 'ForwardCollisionWarning' ),
-			'lane_departure'       => $clean( 'LaneDepartureWarning' ),
-			'adaptive_cruise'      => $clean( 'AdaptiveCruiseControl' ),
-			'blind_spot'           => $clean( 'BlindSpotMon' ),
-			'parking_assist'       => $clean( 'ParkAssist' ),
-			'backup_camera'        => $clean( 'RearVisibilitySystem' ),
-			'airbag_locations'     => $clean( 'AirBagLocFront' ),
-			'check_digit'          => $check_digit,
-			'source'               => 'nhtsa_vpic',
-			'decoded_at'           => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			'vin'                 => $vin,
+			'year'                => $clean( 'ModelYear' ),
+			'make'                => $clean( 'Make' ),
+			'model'               => $clean( 'Model' ),
+			'trim'                => $clean( 'Trim' ),
+			'body_class'          => $clean( 'BodyClass' ),
+			'vehicle_type'        => $clean( 'VehicleType' ),
+			'drive_type'          => $clean( 'DriveType' ),
+			'fuel_type'           => $clean( 'FuelTypePrimary' ),
+			'engine_displacement' => $clean( 'DisplacementL' ),
+			'engine_cylinders'    => $clean( 'EngineCylinders' ),
+			'engine_model'        => $clean( 'EngineModel' ),
+			'transmission'        => $clean( 'TransmissionStyle' ),
+			'plant_country'       => $clean( 'PlantCountry' ),
+			'plant_city'          => $clean( 'PlantCity' ),
+			'manufacturer'        => $clean( 'Manufacturer' ),
+			'doors'               => $clean( 'Doors' ),
+			'gvwr'                => $clean( 'GVWR' ),
+			'abs'                 => $clean( 'ABS' ),
+			'esc'                 => $clean( 'ESC' ),
+			'forward_collision'   => $clean( 'ForwardCollisionWarning' ),
+			'lane_departure'      => $clean( 'LaneDepartureWarning' ),
+			'adaptive_cruise'     => $clean( 'AdaptiveCruiseControl' ),
+			'blind_spot'          => $clean( 'BlindSpotMon' ),
+			'parking_assist'      => $clean( 'ParkAssist' ),
+			'backup_camera'       => $clean( 'RearVisibilitySystem' ),
+			'airbag_locations'    => $clean( 'AirBagLocFront' ),
+			'check_digit'         => $check_digit,
+			'source'              => 'nhtsa_vpic',
+			'decoded_at'          => gmdate( 'Y-m-d\TH:i:s\Z' ),
 		);
 	}
 

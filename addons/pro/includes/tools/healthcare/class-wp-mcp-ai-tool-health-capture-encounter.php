@@ -106,6 +106,11 @@ class WP_MCP_AI_Tool_Health_Capture_Encounter extends WP_MCP_AI_Pro_Capture_Tool
 	 *
 	 * @return string[]
 	 */
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array_merge(
 			parent::get_capability_flags(),

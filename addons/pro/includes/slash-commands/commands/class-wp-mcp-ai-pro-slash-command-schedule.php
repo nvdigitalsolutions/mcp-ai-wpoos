@@ -184,7 +184,7 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule {
 			return __( 'No schedules found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$output  = "## " . __( 'Schedules', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output  = '## ' . __( 'Schedules', 'mcp-ai-wpoos-pro' ) . "\n\n";
 		$output .= "| ID | Name | Type | Cron | Enabled |\n";
 		$output .= "|----|------|------|------|---------|\n";
 		foreach ( $schedules as $s ) {
@@ -346,14 +346,17 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule {
 
 		if ( $as_json ) {
 			return array(
-				'success'     => true,
-				'message'     => sprintf(
+				'success' => true,
+				'message' => sprintf(
 					/* translators: %1$d: schedule ID, %2$s: state label */
 					__( 'Schedule %1$d %2$s.', 'mcp-ai-wpoos-pro' ),
 					$schedule_id,
 					$state_label
 				),
-				'data'        => array( 'schedule_id' => $schedule_id, 'enabled' => $enabled ),
+				'data'    => array(
+					'schedule_id' => $schedule_id,
+					'enabled'     => $enabled,
+				),
 			);
 		}
 
@@ -465,9 +468,9 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule {
 			);
 		}
 
-		$output  = sprintf(
+		$output = sprintf(
 			/* translators: %d: schedule ID */
-			"## " . __( 'Run History for Schedule %d', 'mcp-ai-wpoos-pro' ) . "\n\n",
+			'## ' . __( 'Run History for Schedule %d', 'mcp-ai-wpoos-pro' ) . "\n\n",
 			$schedule_id
 		);
 		$output .= "| # | Ran At | Status | Duration |\n";

@@ -9,6 +9,8 @@
  */
 
 /**
+ * Tests for connection testing across all providers.
+ *
  * @covers NVOOS_SaaS_Controller_Connection_Tester
  */
 class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
@@ -27,6 +29,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 	 */
 	private $canned = array();
 
+	/**
+	 * Set up test.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->captured = array();
@@ -34,6 +41,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', array( $this, 'intercept' ), 10, 3 );
 	}
 
+	/**
+	 * Tear down test.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		remove_filter( 'pre_http_request', array( $this, 'intercept' ), 10 );
 		parent::tearDown();
@@ -60,14 +72,29 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		return new WP_Error( 'no_canned_response', 'No canned response for ' . $url );
 	}
 
+	/**
+	 * Build an OK HTTP response with a given body and status.
+	 *
+	 * @param string $body   Response body.
+	 * @param int    $status HTTP status code.
+	 * @return array HTTP response array.
+	 */
 	private function ok_response( $body = '{}', $status = 200 ) {
 		return array(
-			'response' => array( 'code' => $status, 'message' => 'OK' ),
+			'response' => array(
+				'code' => $status,
+				'message' => 'OK',
+			),
 			'body'     => $body,
 			'headers'  => array(),
 		);
 	}
 
+	/**
+	 * Test that Cloudflare connection test succeeds.
+	 *
+	 * @return void
+	 */
 	public function test_cloudflare_success() {
 		$this->canned['api.cloudflare.com'] = $this->ok_response( wp_json_encode( array( 'success' => true ) ) );
 		$tester = new NVOOS_SaaS_Controller_Connection_Tester();
@@ -88,6 +115,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test that Cloudflare invalid account ID short-circuits.
+	 *
+	 * @return void
+	 */
 	public function test_cloudflare_invalid_account_id_short_circuits() {
 		$tester = new NVOOS_SaaS_Controller_Connection_Tester();
 		$result = $tester->test_cloudflare( 'not-hex', 'whatever' );
@@ -96,12 +128,22 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured, 'No HTTP request should fire for invalid account ID.' );
 	}
 
+	/**
+	 * Test that Cloudflare 4xx extracts the provider message.
+	 *
+	 * @return void
+	 */
 	public function test_cloudflare_4xx_extracts_provider_message() {
 		$this->canned['api.cloudflare.com'] = $this->ok_response(
 			wp_json_encode(
 				array(
 					'success' => false,
-					'errors'  => array( array( 'code' => 9109, 'message' => 'Invalid access token' ) ),
+					'errors'  => array(
+						array(
+							'code' => 9109,
+							'message' => 'Invalid access token',
+						),
+					),
 				)
 			),
 			403
@@ -115,6 +157,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'HTTP 403', $result['message'] );
 	}
 
+	/**
+	 * Test that Stripe connection test succeeds.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_success() {
 		$this->canned['api.stripe.com'] = $this->ok_response( wp_json_encode( array( 'id' => 'acct_123' ) ) );
 		$tester = new NVOOS_SaaS_Controller_Connection_Tester();
@@ -127,6 +174,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertSame( 'sk_test_abcdef1234567890:', $decoded );
 	}
 
+	/**
+	 * Test that Stripe rejects a bad key prefix.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_rejects_bad_prefix() {
 		$tester = new NVOOS_SaaS_Controller_Connection_Tester();
 		$result = $tester->test_stripe( 'pk_test_should_not_work' );
@@ -135,6 +187,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured );
 	}
 
+	/**
+	 * Test that Stripe extracts the error message.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_extracts_error_message() {
 		$this->canned['api.stripe.com'] = $this->ok_response(
 			wp_json_encode( array( 'error' => array( 'message' => 'Invalid API Key provided.' ) ) ),
@@ -148,6 +205,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Invalid API Key', $result['message'] );
 	}
 
+	/**
+	 * Test that OpenRouter connection test succeeds.
+	 *
+	 * @return void
+	 */
 	public function test_openrouter_success() {
 		$this->canned['openrouter.ai'] = $this->ok_response( wp_json_encode( array( 'data' => array( 'label' => 'My Key' ) ) ) );
 		$tester = new NVOOS_SaaS_Controller_Connection_Tester();
@@ -159,6 +221,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test that network failure returns a WP_Error message.
+	 *
+	 * @return void
+	 */
 	public function test_network_failure_returns_wp_error_message() {
 		$this->canned['openrouter.ai'] = new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' );
 		$tester = new NVOOS_SaaS_Controller_Connection_Tester();
@@ -169,6 +236,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'cURL error 28', $result['message'] );
 	}
 
+	/**
+	 * Test that secrets never appear in the message.
+	 *
+	 * @return void
+	 */
 	public function test_secrets_never_appear_in_message() {
 		$secret = 'sk_live_TOPSECRETKEY12345abcdef';
 		$this->canned['api.stripe.com'] = $this->ok_response(
@@ -183,6 +255,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'TOPSECRETKEY', $result['message'] );
 	}
 
+	/**
+	 * Test that test_all falls back to stored credentials.
+	 *
+	 * @return void
+	 */
 	public function test_test_all_falls_back_to_stored_credentials() {
 		// Pre-populate the store.
 		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
@@ -224,6 +301,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$store->clear_all();
 	}
 
+	/**
+	 * Test that a supplied value overrides the stored value.
+	 *
+	 * @return void
+	 */
 	public function test_supplied_value_overrides_stored() {
 		$store = NVOOS_SaaS_Controller_Credential_Store::instance();
 		$store->set( array( 'openrouter_api_key' => 'sk-or-v1-storedkey1234567890' ) );
@@ -249,6 +331,11 @@ class Test_NVOOS_SaaS_Controller_Connection_Tester extends WP_UnitTestCase {
 		$store->clear_all();
 	}
 
+	/**
+	 * Test that an oversized response body is truncated.
+	 *
+	 * @return void
+	 */
 	public function test_oversized_response_body_is_truncated() {
 		$big = str_repeat( 'A', 100000 );
 		$this->canned['api.cloudflare.com'] = $this->ok_response(

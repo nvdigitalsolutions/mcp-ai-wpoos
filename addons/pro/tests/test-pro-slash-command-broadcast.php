@@ -10,7 +10,8 @@
  */
 class Test_Pro_Slash_Command_Broadcast extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Pro_Slash_Command_Broadcast
 	 */
 	private $command;
@@ -137,7 +138,10 @@ class Test_Pro_Slash_Command_Broadcast extends WP_UnitTestCase {
 
 		$result = $this->command->execute(
 			array( 'Test message' ),
-			array( 'channel' => 'slack', 'dry-run' => true ),
+			array(
+				'channel' => 'slack',
+				'dry-run' => true,
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 

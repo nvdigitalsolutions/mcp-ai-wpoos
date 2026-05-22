@@ -123,12 +123,12 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 			$total_principal += $principal_paid;
 
 			$schedule[] = array(
-				'month'         => $month,
-				'period_type'   => $period_type,
-				'payment'       => round( $payment, 2 ),
-				'principal'     => round( $principal_paid, 2 ),
-				'interest'      => round( $interest, 2 ),
-				'balance'       => round( max( 0, $balance ), 2 ),
+				'month'       => $month,
+				'period_type' => $period_type,
+				'payment'     => round( $payment, 2 ),
+				'principal'   => round( $principal_paid, 2 ),
+				'interest'    => round( $interest, 2 ),
+				'balance'     => round( max( 0, $balance ), 2 ),
 			);
 		}
 
@@ -293,8 +293,8 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 			$npv_prime = 0.0;
 
 			foreach ( $cash_flows as $period => $cf ) {
-				$factor     = pow( 1 + $rate, $period );
-				$npv       += $cf / $factor;
+				$factor = pow( 1 + $rate, $period );
+				$npv   += $cf / $factor;
 				if ( $period > 0 ) {
 					$npv_prime -= $period * $cf / pow( 1 + $rate, $period + 1 );
 				}
@@ -351,8 +351,8 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 		// For $1 of loan: monthly pmt * 12.
 		$monthly_rate = $annual_rate / 12;
 		if ( $monthly_rate > 0 && $amort_months > 0 ) {
-			$factor           = pow( 1 + $monthly_rate, $amort_months );
-			$ds_constant      = ( $monthly_rate * $factor / ( $factor - 1 ) ) * 12;
+			$factor      = pow( 1 + $monthly_rate, $amort_months );
+			$ds_constant = ( $monthly_rate * $factor / ( $factor - 1 ) ) * 12;
 		} else {
 			$ds_constant = 12.0 / max( $amort_months, 1 );
 		}
@@ -410,8 +410,8 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 		$num_years     = count( $annual_nois );
 
 		foreach ( $annual_nois as $year => $noi ) {
-			$period = $year + 1;
-			$pv     = $noi / pow( 1 + $discount_rate, $period );
+			$period         = $year + 1;
+			$pv             = $noi / pow( 1 + $discount_rate, $period );
 			$pv_cash_flows += $pv;
 
 			$yearly_detail[] = array(
@@ -466,43 +466,43 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 		$tiers            = array();
 
 		// Tier 1: Return of capital.
-		$roc           = min( $remaining, $total_commitment );
-		$remaining    -= $roc;
-		$tiers[]       = array(
-			'tier'        => 'Return of Capital',
-			'amount'      => round( $roc, 2 ),
-			'lp_amount'   => round( $roc * $lp_share, 2 ),
-			'gp_amount'   => round( $roc * $gp_share, 2 ),
+		$roc        = min( $remaining, $total_commitment );
+		$remaining -= $roc;
+		$tiers[]    = array(
+			'tier'      => 'Return of Capital',
+			'amount'    => round( $roc, 2 ),
+			'lp_amount' => round( $roc * $lp_share, 2 ),
+			'gp_amount' => round( $roc * $gp_share, 2 ),
 		);
 
 		// Tier 2: Preferred return.
-		$pref_amount   = $total_commitment * $preferred_return;
-		$pref_paid     = min( $remaining, $pref_amount );
-		$remaining    -= $pref_paid;
-		$tiers[]       = array(
-			'tier'        => 'Preferred Return',
-			'amount'      => round( $pref_paid, 2 ),
-			'lp_amount'   => round( $pref_paid * $lp_share, 2 ),
-			'gp_amount'   => round( $pref_paid * $gp_share, 2 ),
+		$pref_amount = $total_commitment * $preferred_return;
+		$pref_paid   = min( $remaining, $pref_amount );
+		$remaining  -= $pref_paid;
+		$tiers[]     = array(
+			'tier'      => 'Preferred Return',
+			'amount'    => round( $pref_paid, 2 ),
+			'lp_amount' => round( $pref_paid * $lp_share, 2 ),
+			'gp_amount' => round( $pref_paid * $gp_share, 2 ),
 		);
 
 		// Tier 3+: Promote tiers.
 		$prev_hurdle = $preferred_return;
 		foreach ( $promote_tiers as $tier ) {
-			$hurdle   = $tier['hurdle'] ?? 0.0;
-			$gp_pct   = $tier['gp_share'] ?? 0.20;
-			$lp_pct   = 1.0 - $gp_pct;
+			$hurdle = $tier['hurdle'] ?? 0.0;
+			$gp_pct = $tier['gp_share'] ?? 0.20;
+			$lp_pct = 1.0 - $gp_pct;
 
 			$tier_amount = $total_commitment * ( $hurdle - $prev_hurdle );
 			$tier_paid   = min( $remaining, max( 0, $tier_amount ) );
 			$remaining  -= $tier_paid;
 
-			$tiers[]     = array(
-				'tier'        => sprintf( 'Promote (>%s%% IRR)', round( $prev_hurdle * 100, 1 ) ),
-				'hurdle'      => $hurdle,
-				'amount'      => round( $tier_paid, 2 ),
-				'lp_amount'   => round( $tier_paid * $lp_pct, 2 ),
-				'gp_amount'   => round( $tier_paid * $gp_pct, 2 ),
+			$tiers[] = array(
+				'tier'      => sprintf( 'Promote (>%s%% IRR)', round( $prev_hurdle * 100, 1 ) ),
+				'hurdle'    => $hurdle,
+				'amount'    => round( $tier_paid, 2 ),
+				'lp_amount' => round( $tier_paid * $lp_pct, 2 ),
+				'gp_amount' => round( $tier_paid * $gp_pct, 2 ),
 			);
 
 			$prev_hurdle = $hurdle;
@@ -513,10 +513,10 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 			$final_gp = ! empty( $promote_tiers ) ? end( $promote_tiers )['gp_share'] ?? 0.20 : $gp_share;
 			$final_lp = 1.0 - $final_gp;
 			$tiers[]  = array(
-				'tier'        => 'Residual',
-				'amount'      => round( $remaining, 2 ),
-				'lp_amount'   => round( $remaining * $final_lp, 2 ),
-				'gp_amount'   => round( $remaining * $final_gp, 2 ),
+				'tier'      => 'Residual',
+				'amount'    => round( $remaining, 2 ),
+				'lp_amount' => round( $remaining * $final_lp, 2 ),
+				'gp_amount' => round( $remaining * $final_gp, 2 ),
 			);
 		}
 
@@ -574,11 +574,11 @@ class WP_MCP_AI_CRE_Debt_Calculator {
 		$total_cost         = $defeasance_premium + $transaction_costs;
 
 		return array(
-			'loan_balance'        => round( $loan_balance, 2 ),
-			'treasury_portfolio'  => round( $pv_at_treasury, 2 ),
-			'defeasance_premium'  => round( $defeasance_premium, 2 ),
-			'transaction_costs'   => round( $transaction_costs, 2 ),
-			'total_cost'          => round( $total_cost, 2 ),
+			'loan_balance'       => round( $loan_balance, 2 ),
+			'treasury_portfolio' => round( $pv_at_treasury, 2 ),
+			'defeasance_premium' => round( $defeasance_premium, 2 ),
+			'transaction_costs'  => round( $transaction_costs, 2 ),
+			'total_cost'         => round( $total_cost, 2 ),
 		);
 	}
 

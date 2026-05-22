@@ -162,8 +162,8 @@ class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interfac
 						number_format( $amount, 2 )
 					) . self::DISCLAIMER,
 					'data'       => array(
-						'matter_id'   => $matter_id,
-						'budget'      => $budget,
+						'matter_id' => $matter_id,
+						'budget'    => $budget,
 					),
 					'disclaimer' => self::DISCLAIMER,
 				);
@@ -179,8 +179,8 @@ class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interfac
 				$total_spent  = 0.0;
 				if ( is_array( $time_entries ) ) {
 					foreach ( $time_entries as $entry ) {
-						$hours = (float) ( $entry['hours'] ?? 0 );
-						$rate  = (float) ( $entry['rate'] ?? 0 );
+						$hours        = (float) ( $entry['hours'] ?? 0 );
+						$rate         = (float) ( $entry['rate'] ?? 0 );
 						$total_spent += $hours * $rate;
 					}
 				}
@@ -205,13 +205,13 @@ class WP_MCP_AI_Tool_LF_Matter_Budget_Manager implements WP_MCP_AI_Tool_Interfac
 						$status
 					) . self::DISCLAIMER,
 					'data'       => array(
-						'matter_id'   => $matter_id,
+						'matter_id'    => $matter_id,
 						'total_budget' => $total_budget,
-						'total_spent' => round( $total_spent, 2 ),
-						'remaining'   => round( $remaining, 2 ),
-						'utilization' => $utilization,
-						'status'      => $status,
-						'categories'  => $budget['categories'] ?? array(),
+						'total_spent'  => round( $total_spent, 2 ),
+						'remaining'    => round( $remaining, 2 ),
+						'utilization'  => $utilization,
+						'status'       => $status,
+						'categories'   => $budget['categories'] ?? array(),
 					),
 					'disclaimer' => self::DISCLAIMER,
 				);

@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 			}
 		}
 
-		$comparisons      = array();
+		$comparisons       = array();
 		$total_actual      = 0.0;
 		$total_benchmark   = 0.0;
 		$total_variance    = 0.0;
@@ -168,12 +168,12 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 		$outlier_threshold = 0.20; // 20% above benchmark = outlier
 
 		foreach ( $opex_cats as $cat ) {
-			$category = sanitize_text_field( $cat['category'] ?? '' );
-			$amount   = (float) ( $cat['amount'] ?? 0 );
-			$actual_psf = $amount / $total_sf;
+			$category      = sanitize_text_field( $cat['category'] ?? '' );
+			$amount        = (float) ( $cat['amount'] ?? 0 );
+			$actual_psf    = $amount / $total_sf;
 			$total_actual += $amount;
 
-			$bench_psf = $bench_map[ $category ] ?? null;
+			$bench_psf   = $bench_map[ $category ] ?? null;
 			$bench_total = ( $bench_psf !== null ) ? $bench_psf * $total_sf : null;
 
 			if ( $bench_psf !== null ) {
@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker implements WP_MCP_AI_Tool
 					'benchmark_opex_psf'   => ( $total_benchmark > 0 ) ? round( $total_benchmark / $total_sf, 2 ) : 'N/A',
 				),
 				'category_detail'   => $comparisons,
-				'savings_potential'  => array(
+				'savings_potential' => array(
 					'annual_savings_if_at_benchmark' => $calc::format_currency( $savings_potential ),
 					'savings_per_sf'                 => round( $savings_potential / $total_sf, 2 ),
 				),

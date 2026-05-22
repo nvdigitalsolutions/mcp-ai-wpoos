@@ -27,10 +27,24 @@ class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_
 		return __( 'PARA: Classify Item', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Assign a project, task, event, area, or document to one of the four PARA buckets: projects, areas, resources, or archives. A sub-bucket term ID may be provided instead of the root slug to use a user-defined sub-bucket. The item must already exist.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -61,6 +75,11 @@ class WP_MCP_AI_Tool_PARA_Classify_Item implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}

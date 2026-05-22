@@ -236,7 +236,7 @@ class WP_MCP_AI_Pro_Toolkit_Server_Token {
 	/**
 	 * Persist raw token records to the WP option.
 	 *
-	 * @param string                       $slug   Sanitized server slug.
+	 * @param string                         $slug   Sanitized server slug.
 	 * @param array<int,array<string,mixed>> $tokens Token records.
 	 * @return void
 	 */

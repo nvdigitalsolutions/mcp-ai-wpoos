@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interfa
 		return __( 'Translation Quality Check tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'translation_quality_check';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interfa
 		return __( 'Validate translation completeness, consistency, and quality with automated checks.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -68,10 +82,22 @@ class WP_MCP_AI_Tool_Translation_Quality_Check implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,

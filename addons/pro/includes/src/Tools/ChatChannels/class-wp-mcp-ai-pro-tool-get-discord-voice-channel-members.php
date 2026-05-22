@@ -217,14 +217,14 @@ class WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members implements WP_MCP_AI_
 
 		foreach ( $voice_states as $state ) {
 			$member_info = array(
-				'user_id'  => isset( $state['user_id'] ) ? sanitize_text_field( $state['user_id'] ) : '',
-				'mute'     => ! empty( $state['mute'] ),
-				'deaf'     => ! empty( $state['deaf'] ),
-				'self_mute' => ! empty( $state['self_mute'] ),
-				'self_deaf' => ! empty( $state['self_deaf'] ),
+				'user_id'     => isset( $state['user_id'] ) ? sanitize_text_field( $state['user_id'] ) : '',
+				'mute'        => ! empty( $state['mute'] ),
+				'deaf'        => ! empty( $state['deaf'] ),
+				'self_mute'   => ! empty( $state['self_mute'] ),
+				'self_deaf'   => ! empty( $state['self_deaf'] ),
 				'self_stream' => ! empty( $state['self_stream'] ),
-				'self_video' => ! empty( $state['self_video'] ),
-				'suppress'  => ! empty( $state['suppress'] ),
+				'self_video'  => ! empty( $state['self_video'] ),
+				'suppress'    => ! empty( $state['suppress'] ),
 			);
 
 			// Include member display name when available.

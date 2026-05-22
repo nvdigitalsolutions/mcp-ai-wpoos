@@ -270,7 +270,9 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$id = null;
 			if ( isset( $type->id ) && null !== $type->id ) {
 				$id = $type->id;
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			} elseif ( isset( $type->_ID ) ) {
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 				$id = $type->_ID;
 			}
 

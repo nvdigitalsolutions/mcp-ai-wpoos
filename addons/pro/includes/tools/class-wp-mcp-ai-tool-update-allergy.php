@@ -24,6 +24,13 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return __( 'Update Allergy', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Updates an existing allergy record with new information.', 'mcp-ai-wpoos-pro' );
 	}
@@ -106,6 +113,11 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

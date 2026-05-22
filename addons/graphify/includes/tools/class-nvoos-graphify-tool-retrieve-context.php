@@ -78,23 +78,17 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'read_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only', 'cacheable', 'external-api' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$question      = sanitize_text_field( $arguments['question'] ?? '' );
 		$hops          = max( 1, min( 3, absint( $arguments['hops'] ?? 2 ) ) );
@@ -152,19 +146,21 @@ class NV_oOS_Graphify_Tool_Retrieve_Context implements WP_MCP_AI_Tool_Interface,
 		// Step 3: BFS traversal up to $hops.
 		$all_nodes = $node_ids;
 		$frontier  = array_keys( $node_ids );
-		for ( $hop = 0; $hop < $hops && ! empty( $frontier ) && count( $all_nodes ) < $k; $hop++ ) {
+		$all_count = count( $all_nodes );
+		for ( $hop = 0; $hop < $hops && ! empty( $frontier ) && $all_count < $k; $hop++ ) {
 			$next_frontier = array();
 			foreach ( $frontier as $nid ) {
-				if ( count( $all_nodes ) >= $k ) {
+				if ( $all_count >= $k ) {
 					break;
 				}
 				$neighbor_ids = NV_oOS_Graphify_DB::get_neighbor_ids( $nid );
 				foreach ( $neighbor_ids as $neighbor_id ) {
-					if ( ! isset( $all_nodes[ $neighbor_id ] ) && count( $all_nodes ) < $k ) {
+					if ( ! isset( $all_nodes[ $neighbor_id ] ) && $all_count < $k ) {
 						$n = NV_oOS_Graphify_DB::get_node( $neighbor_id );
 						if ( $n ) {
 							$all_nodes[ $neighbor_id ] = $n;
 							$next_frontier[]           = $neighbor_id;
+							$all_count                 = count( $all_nodes );
 						}
 					}
 				}

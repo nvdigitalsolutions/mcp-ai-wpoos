@@ -2,7 +2,7 @@
 /**
  * Tool for retrieving metadata and download information for an iCloud Drive file.
  *
- * iCloud does not expose a public REST API for third-party applications.
+ * Apple iCloud does not expose a public REST API for third-party applications.
  * This tool communicates with a user-configured gateway/proxy service that
  * bridges requests to Apple CloudKit or iCloud Drive services.
  *

@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Bulk_Enroll_Students implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Load ECA enrollment data.
-		$eca_enrollments    = get_post_meta( $eca_id, '_eca_student_enrollments', true );
+		$eca_enrollments = get_post_meta( $eca_id, '_eca_student_enrollments', true );
 		if ( ! is_array( $eca_enrollments ) ) {
 			$eca_enrollments = array();
 		}

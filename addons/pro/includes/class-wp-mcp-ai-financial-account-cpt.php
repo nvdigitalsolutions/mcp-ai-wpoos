@@ -61,22 +61,22 @@ class WP_MCP_AI_Financial_Account_CPT {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => true,
-			'show_in_menu'        => true, // Show in main admin menu (creates parent menu).
-			'menu_icon'           => 'dashicons-money-alt', // Financial icon.
-			'menu_position'       => 56,
-			'query_var'           => true,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'has_archive'         => false,
-			'hierarchical'        => false,
-			'supports'            => array( 'title', 'author' ),
-			'show_in_rest'        => true,
-			'rest_base'           => 'financial-accounts',
-			'rest_namespace'      => 'mcp-ai/v1',
+			'labels'             => $labels,
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => true, // Show in main admin menu (creates parent menu).
+			'menu_icon'          => 'dashicons-money-alt', // Financial icon.
+			'menu_position'      => 56,
+			'query_var'          => true,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'supports'           => array( 'title', 'author' ),
+			'show_in_rest'       => true,
+			'rest_base'          => 'financial-accounts',
+			'rest_namespace'     => 'mcp-ai/v1',
 		);
 
 		register_post_type( self::POST_TYPE, $args );
@@ -88,15 +88,15 @@ class WP_MCP_AI_Financial_Account_CPT {
 	public static function register_taxonomies() {
 		// Account types taxonomy.
 		$type_labels = array(
-			'name'              => __( 'Account Types', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Account Type', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Account Types', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Account Types', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Account Type', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Account Type', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Account Type', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Account Type Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Account Types', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Account Types', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Account Type', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Account Types', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Account Types', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Account Type', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Account Type', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Account Type', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Account Type Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Account Types', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -114,29 +114,49 @@ class WP_MCP_AI_Financial_Account_CPT {
 
 		// Add default account types.
 		if ( ! term_exists( 'Checking', 'mcp_ai_account_type' ) ) {
-			wp_insert_term( 'Checking', 'mcp_ai_account_type', array(
-				'description' => __( 'Checking bank account', 'mcp-ai-wpoos-pro' ),
-			) );
+			wp_insert_term(
+				'Checking',
+				'mcp_ai_account_type',
+				array(
+					'description' => __( 'Checking bank account', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 		if ( ! term_exists( 'Savings', 'mcp_ai_account_type' ) ) {
-			wp_insert_term( 'Savings', 'mcp_ai_account_type', array(
-				'description' => __( 'Savings account', 'mcp-ai-wpoos-pro' ),
-			) );
+			wp_insert_term(
+				'Savings',
+				'mcp_ai_account_type',
+				array(
+					'description' => __( 'Savings account', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 		if ( ! term_exists( 'Credit Card', 'mcp_ai_account_type' ) ) {
-			wp_insert_term( 'Credit Card', 'mcp_ai_account_type', array(
-				'description' => __( 'Credit card account', 'mcp-ai-wpoos-pro' ),
-			) );
+			wp_insert_term(
+				'Credit Card',
+				'mcp_ai_account_type',
+				array(
+					'description' => __( 'Credit card account', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 		if ( ! term_exists( 'Investment', 'mcp_ai_account_type' ) ) {
-			wp_insert_term( 'Investment', 'mcp_ai_account_type', array(
-				'description' => __( 'Investment account (brokerage, IRA, 401k)', 'mcp-ai-wpoos-pro' ),
-			) );
+			wp_insert_term(
+				'Investment',
+				'mcp_ai_account_type',
+				array(
+					'description' => __( 'Investment account (brokerage, IRA, 401k)', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 		if ( ! term_exists( 'Loan', 'mcp_ai_account_type' ) ) {
-			wp_insert_term( 'Loan', 'mcp_ai_account_type', array(
-				'description' => __( 'Loan or mortgage account', 'mcp-ai-wpoos-pro' ),
-			) );
+			wp_insert_term(
+				'Loan',
+				'mcp_ai_account_type',
+				array(
+					'description' => __( 'Loan or mortgage account', 'mcp-ai-wpoos-pro' ),
+				)
+			);
 		}
 	}
 
@@ -174,7 +194,7 @@ class WP_MCP_AI_Financial_Account_CPT {
 		$account_number = get_post_meta( $post->ID, '_account_number', true );
 		$institution    = get_post_meta( $post->ID, '_institution', true );
 		$balance        = get_post_meta( $post->ID, '_balance', true );
-		$currency       = get_post_meta( $post->ID, '_currency', true ) ?: 'USD';
+		$currency       = get_post_meta( $post->ID, '_currency', true ) ? get_post_meta( $post->ID, '_currency', true ) : 'USD';
 		$interest_rate  = get_post_meta( $post->ID, '_interest_rate', true );
 		$credit_limit   = get_post_meta( $post->ID, '_credit_limit', true );
 		$notes          = get_post_meta( $post->ID, '_notes', true );
@@ -241,9 +261,9 @@ class WP_MCP_AI_Financial_Account_CPT {
 	public static function render_sync_settings_metabox( $post ) {
 		wp_nonce_field( 'mcp_ai_account_sync', 'mcp_ai_account_sync_nonce' );
 
-		$sync_enabled   = get_post_meta( $post->ID, '_sync_enabled', true );
-		$sync_provider  = get_post_meta( $post->ID, '_sync_provider', true );
-		$last_sync      = get_post_meta( $post->ID, '_last_sync', true );
+		$sync_enabled  = get_post_meta( $post->ID, '_sync_enabled', true );
+		$sync_provider = get_post_meta( $post->ID, '_sync_provider', true );
+		$last_sync     = get_post_meta( $post->ID, '_last_sync', true );
 		?>
 		<div class="mcp-ai-sync-settings">
 			<p>

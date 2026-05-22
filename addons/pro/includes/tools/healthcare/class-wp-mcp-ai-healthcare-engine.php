@@ -54,7 +54,8 @@ class WP_MCP_AI_Healthcare_Engine {
 	 */
 	const FLOZ_PER_ML = 0.0338140227;
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Unit conversions
 	 * ------------------------------------------------------------------ */
 
@@ -216,7 +217,8 @@ class WP_MCP_AI_Healthcare_Engine {
 		return 'normal';
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Reference ranges
 	 * ------------------------------------------------------------------ */
 
@@ -246,32 +248,32 @@ class WP_MCP_AI_Healthcare_Engine {
 		);
 
 		$default = array(
-			'heart_rate'        => array(
+			'heart_rate'         => array(
 				'min'  => 60,
 				'max'  => 100,
 				'unit' => 'bpm',
 			),
-			'systolic_bp'       => array(
+			'systolic_bp'        => array(
 				'min'  => 90,
 				'max'  => 120,
 				'unit' => 'mmHg',
 			),
-			'diastolic_bp'      => array(
+			'diastolic_bp'       => array(
 				'min'  => 60,
 				'max'  => 80,
 				'unit' => 'mmHg',
 			),
-			'temperature_c'     => array(
+			'temperature_c'      => array(
 				'min'  => 36.1,
 				'max'  => 37.5,
 				'unit' => '°C',
 			),
-			'respiratory_rate'  => array(
+			'respiratory_rate'   => array(
 				'min'  => 12,
 				'max'  => 20,
 				'unit' => 'breaths/min',
 			),
-			'spo2'              => array(
+			'spo2'               => array(
 				'min'  => 95,
 				'max'  => 100,
 				'unit' => '%',
@@ -356,7 +358,8 @@ class WP_MCP_AI_Healthcare_Engine {
 		return 'in_range';
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Member identity
 	 * ------------------------------------------------------------------ */
 
@@ -422,7 +425,8 @@ class WP_MCP_AI_Healthcare_Engine {
 		return 0;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	---------------------------------------------------------------------
 	 * Settings
 	 * ------------------------------------------------------------------ */
 
@@ -440,8 +444,8 @@ class WP_MCP_AI_Healthcare_Engine {
 			'audit_retention_days'     => 365,
 			'require_baa_acknowledged' => false,
 			'imaging'                  => array(
-				'viewer_layout'      => 'default',
-				'dicomweb_endpoint'  => '',
+				'viewer_layout'     => 'default',
+				'dicomweb_endpoint' => '',
 			),
 			'vitals'                   => array(
 				'reference_ranges' => array(),
@@ -486,7 +490,7 @@ class WP_MCP_AI_Healthcare_Engine {
 
 		switch ( $sub ) {
 			case 'vitals':
-				// Vitals defaults to the same value as Health & Wellness so
+				// Vitals defaults to the same value as Health & Wellness so.
 				// existing installs auto-opt-in.
 				if ( array_key_exists( 'enable_medical_vitals', $settings ) ) {
 					return ! empty( $settings['enable_medical_vitals'] );

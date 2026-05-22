@@ -68,66 +68,66 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'connection_id'  => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'connection_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Remote Sites connection ID for a Shopify catalog_api mode connection. If omitted, automatically uses the catalog_api Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
-				'action'         => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: search (natural-language product search), lookup (retrieve product details by UPID), lookup_by_variant (retrieve variant details by VID).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'search', 'lookup', 'lookup_by_variant' ),
 					'default'     => 'search',
 				),
-				'query'          => array(
+				'query'         => array(
 					'type'        => 'string',
 					'description' => __( 'Natural-language search query for the search action, e.g. "wireless noise-cancelling headphones".', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'          => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return for the search action (1–10). Default: 10.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 10,
 				),
-				'upid'           => array(
+				'upid'          => array(
 					'type'        => 'string',
 					'description' => __( 'Universal Product ID (UPID) returned by a previous search action. Required for the lookup action.', 'mcp-ai-wpoos-pro' ),
 				),
-				'vid'            => array(
+				'vid'           => array(
 					'type'        => 'string',
 					'description' => __( 'Variant ID (VID) returned by a previous search or lookup action. Required for the lookup_by_variant action.', 'mcp-ai-wpoos-pro' ),
 				),
-				'min_price'      => array(
+				'min_price'     => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum price filter for the search action (inclusive).', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_price'      => array(
+				'max_price'     => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum price filter for the search action (inclusive).', 'mcp-ai-wpoos-pro' ),
 				),
-				'categories'     => array(
+				'categories'    => array(
 					'type'        => 'string',
 					'description' => __( 'Comma-separated category filter for the search action, e.g. "Electronics,Audio".', 'mcp-ai-wpoos-pro' ),
 				),
-				'country_code'   => array(
+				'country_code'  => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 3166-1 alpha-2 country code to filter search results by merchant shipping destination, e.g. "US", "CA", "GB".', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 2,
 					'maxLength'   => 2,
 				),
-				'shop_ids'       => array(
+				'shop_ids'      => array(
 					'type'        => 'string',
 					'description' => __( 'Limit search results to specific Shopify stores. Accepts a numeric shop ID (e.g. "12345"), a Shop GID (e.g. "gid://shopify/Shop/12345"), or a comma-separated list for multiple stores. .myshopify.com domain names are not accepted — use the numeric ID found in the Shopify admin URL.', 'mcp-ai-wpoos-pro' ),
 				),
-				'ships_from'     => array(
+				'ships_from'    => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 3166-1 alpha-2 country code to filter search results by merchant location (where the item ships from), e.g. "US", "GB", "DE".', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 2,
 					'maxLength'   => 2,
 				),
-				'smart_search'   => array(
+				'smart_search'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Enable smart search (default: true). When the full query returns zero results, automatically decomposes it into smaller keyword groups and merges results. Set to false to disable progressive relaxation.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -188,8 +188,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			$available   = $this->get_available_shopify_connections( $context, 'catalog_api' );
-			$conn_list   = $this->format_available_connections_message( $available );
+			$available = $this->get_available_shopify_connections( $context, 'catalog_api' );
+			$conn_list = $this->format_available_connections_message( $available );
 			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {

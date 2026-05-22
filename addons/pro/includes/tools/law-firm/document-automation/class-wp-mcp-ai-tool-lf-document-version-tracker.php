@@ -34,22 +34,52 @@ class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Inter
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_document_version_tracker'; }
-	public function get_name() { return __( 'Document Version Tracker', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Retrieves version history for legal documents using WordPress post revisions.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_document_version_tracker'; }
+	public function get_name() {
+		return __( 'Document Version Tracker', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Retrieves version history for legal documents using WordPress post revisions.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'document_id' => array( 'type' => 'integer', 'description' => __( 'Document post ID.', 'mcp-ai-wpoos-pro' ) ),
-				'action'      => array( 'type' => 'string', 'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ), 'enum' => array( 'get_history', 'get_current_version' ) ),
+				'document_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Document post ID.', 'mcp-ai-wpoos-pro' ),
+				),
+				'action'      => array(
+					'type'        => 'string',
+					'description' => __( 'Action to perform.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'get_history', 'get_current_version' ),
+				),
 			),
 			'required'   => array( 'document_id' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -118,7 +148,11 @@ class WP_MCP_AI_Tool_LF_Document_Version_Tracker implements WP_MCP_AI_Tool_Inter
 		return array(
 			'success'    => true,
 			'message'    => sprintf( __( 'Found %d versions. ', 'mcp-ai-wpoos-pro' ), count( $history ) ) . self::DISCLAIMER,
-			'data'       => array( 'document_id' => $document_id, 'version_history' => $history, 'total_versions' => count( $history ) ),
+			'data'       => array(
+				'document_id'     => $document_id,
+				'version_history' => $history,
+				'total_versions'  => count( $history ),
+			),
 			'disclaimer' => self::DISCLAIMER,
 		);
 	}

@@ -6,20 +6,37 @@
  */
 
 /**
+ * Tests for deployment configuration persistence and sanitisation.
+ *
  * @covers NVOOS_SaaS_Controller_Deployment_Config
  */
 class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 
+	/**
+	 * Set up test.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( NVOOS_SaaS_Controller_Deployment_Config::OPTION_NAME );
 	}
 
+	/**
+	 * Tear down test.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		delete_option( NVOOS_SaaS_Controller_Deployment_Config::OPTION_NAME );
 		parent::tearDown();
 	}
 
+	/**
+	 * Test that defaults are returned when unset.
+	 *
+	 * @return void
+	 */
 	public function test_defaults_returned_when_unset() {
 		$config = NVOOS_SaaS_Controller_Deployment_Config::instance()->get();
 		$this->assertSame( '', $config['worker_name'] );
@@ -27,6 +44,11 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( array(), $config['kv_namespaces'] );
 	}
 
+	/**
+	 * Test that set persists sanitised values.
+	 *
+	 * @return void
+	 */
 	public function test_set_persists_sanitised_values() {
 		$instance = NVOOS_SaaS_Controller_Deployment_Config::instance();
 		$saved    = $instance->set(
@@ -34,7 +56,10 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 				'worker_name' => 'mcp-OOS-Worker',
 				'account_id'  => 'ABCDEF0123456789ABCDEF0123456789',
 				'd1_databases' => array(
-					array( 'name' => 'main_db', 'binding' => 'DB' ),
+					array(
+						'name' => 'main_db',
+						'binding' => 'DB',
+					),
 				),
 			)
 		);
@@ -44,6 +69,11 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( 'DB', $saved['d1_databases'][0]['binding'] );
 	}
 
+	/**
+	 * Test that an invalid worker name is dropped.
+	 *
+	 * @return void
+	 */
 	public function test_invalid_worker_name_dropped() {
 		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
 			array( 'worker_name' => 'Has Spaces!' )
@@ -51,12 +81,23 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( '', $saved['worker_name'] );
 	}
 
+	/**
+	 * Test that an invalid binding drops the row.
+	 *
+	 * @return void
+	 */
 	public function test_invalid_binding_drops_row() {
 		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
 			array(
 				'd1_databases' => array(
-					array( 'name' => 'ok', 'binding' => 'lowercase' ),
-					array( 'name' => 'ok2', 'binding' => 'GOOD_ONE' ),
+					array(
+						'name' => 'ok',
+						'binding' => 'lowercase',
+					),
+					array(
+						'name' => 'ok2',
+						'binding' => 'GOOD_ONE',
+					),
 				),
 			)
 		);
@@ -64,6 +105,11 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( 'GOOD_ONE', $saved['d1_databases'][0]['binding'] );
 	}
 
+	/**
+	 * Test that clear resets to defaults.
+	 *
+	 * @return void
+	 */
 	public function test_clear_resets_to_defaults() {
 		$instance = NVOOS_SaaS_Controller_Deployment_Config::instance();
 		$instance->set( array( 'worker_name' => 'live' ) );
@@ -72,12 +118,23 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( '', $config['worker_name'] );
 	}
 
+	/**
+	 * Test that KV namespaces are sanitised.
+	 *
+	 * @return void
+	 */
 	public function test_kv_namespaces_sanitisation() {
 		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
 			array(
 				'kv_namespaces' => array(
-					array( 'title' => 'cache', 'binding' => 'CACHE' ),
-					array( 'title' => '', 'binding' => 'EMPTY' ),
+					array(
+						'title' => 'cache',
+						'binding' => 'CACHE',
+					),
+					array(
+						'title' => '',
+						'binding' => 'EMPTY',
+					),
 					array( 'binding' => 'NOTITLE' ),
 				),
 			)
@@ -86,13 +143,28 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( 'cache', $saved['kv_namespaces'][0]['title'] );
 	}
 
+	/**
+	 * Test that Stripe products are sanitised.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_products_sanitised() {
 		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
 			array(
 				'stripe_products' => array(
-					array( 'id' => 'prod_basic', 'name' => 'Basic', 'description' => 'Basic plan' ),
-					array( 'id' => '', 'name' => 'Empty id' ),
-					array( 'id' => 'prod_with bad chars!', 'name' => 'X' ),
+					array(
+						'id' => 'prod_basic',
+						'name' => 'Basic',
+						'description' => 'Basic plan',
+					),
+					array(
+						'id' => '',
+						'name' => 'Empty id',
+					),
+					array(
+						'id' => 'prod_with bad chars!',
+						'name' => 'X',
+					),
 					array( 'id' => 'prod_no_name' ),
 				),
 			)
@@ -102,6 +174,11 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( 'Basic plan', $saved['stripe_products'][0]['description'] );
 	}
 
+	/**
+	 * Test that Stripe prices require a full tuple.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_prices_require_full_tuple() {
 		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
 			array(
@@ -144,14 +221,28 @@ class Test_NVOOS_SaaS_Controller_Deployment_Config extends WP_UnitTestCase {
 		$this->assertSame( 'month', $saved['stripe_prices'][0]['recurring_interval'] );
 	}
 
+	/**
+	 * Test that OpenRouter keys are sanitised and limit validated.
+	 *
+	 * @return void
+	 */
 	public function test_openrouter_keys_sanitised_and_limit_validated() {
 		$saved = NVOOS_SaaS_Controller_Deployment_Config::instance()->set(
 			array(
 				'openrouter_keys' => array(
-					array( 'label' => 'production', 'limit_usd' => 250.0 ),
+					array(
+						'label' => 'production',
+						'limit_usd' => 250.0,
+					),
 					array( 'label' => 'staging' ),
-					array( 'label' => '', 'limit_usd' => 100 ),
-					array( 'label' => 'with-zero-limit', 'limit_usd' => -5 ),
+					array(
+						'label' => '',
+						'limit_usd' => 100,
+					),
+					array(
+						'label' => 'with-zero-limit',
+						'limit_usd' => -5,
+					),
 				),
 			)
 		);

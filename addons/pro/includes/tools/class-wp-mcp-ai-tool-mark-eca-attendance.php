@@ -262,15 +262,15 @@ class WP_MCP_AI_Tool_Mark_ECA_Attendance implements WP_MCP_AI_Tool_Interface, WP
 
 		// Build session record.
 		$session_record = array(
-			'date'           => $session_date,
-			'recorded_by'    => $current_user_id,
-			'recorded_at'    => current_time( 'mysql' ),
-			'session_notes'  => $session_notes,
-			'attendees'      => $sanitized_attendees,
-			'present_count'  => $present_count,
-			'absent_count'   => $absent_count,
-			'late_count'     => $late_count,
-			'excused_count'  => $excused_count,
+			'date'          => $session_date,
+			'recorded_by'   => $current_user_id,
+			'recorded_at'   => current_time( 'mysql' ),
+			'session_notes' => $session_notes,
+			'attendees'     => $sanitized_attendees,
+			'present_count' => $present_count,
+			'absent_count'  => $absent_count,
+			'late_count'    => $late_count,
+			'excused_count' => $excused_count,
 		);
 
 		// Store in ECA attendance log.

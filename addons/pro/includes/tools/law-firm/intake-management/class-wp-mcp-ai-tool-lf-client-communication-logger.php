@@ -130,11 +130,11 @@ class WP_MCP_AI_Tool_LF_Client_Communication_Logger implements WP_MCP_AI_Tool_In
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$client_id  = isset( $arguments['client_id'] ) ? absint( $arguments['client_id'] ) : 0;
-		$matter_id  = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
-		$comm_type  = isset( $arguments['communication_type'] ) ? sanitize_text_field( $arguments['communication_type'] ) : '';
-		$summary    = isset( $arguments['summary'] ) ? sanitize_textarea_field( $arguments['summary'] ) : '';
-		$date       = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : current_time( 'Y-m-d' );
+		$client_id    = isset( $arguments['client_id'] ) ? absint( $arguments['client_id'] ) : 0;
+		$matter_id    = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
+		$comm_type    = isset( $arguments['communication_type'] ) ? sanitize_text_field( $arguments['communication_type'] ) : '';
+		$summary      = isset( $arguments['summary'] ) ? sanitize_textarea_field( $arguments['summary'] ) : '';
+		$date         = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : current_time( 'Y-m-d' );
 		$participants = array();
 		if ( ! empty( $arguments['participants'] ) && is_array( $arguments['participants'] ) ) {
 			$participants = array_map( 'sanitize_text_field', $arguments['participants'] );

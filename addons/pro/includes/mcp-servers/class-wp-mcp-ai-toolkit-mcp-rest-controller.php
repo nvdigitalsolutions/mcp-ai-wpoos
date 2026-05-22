@@ -272,7 +272,12 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	 */
 	public function handle_audit_log( WP_REST_Request $request ) {
 		if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Audit_Log' ) ) {
-			return rest_ensure_response( array( 'entries' => array(), 'total' => 0 ) );
+			return rest_ensure_response(
+				array(
+					'entries' => array(),
+					'total'   => 0,
+				)
+			);
 		}
 
 		$log          = WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance();
@@ -998,6 +1003,11 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 		if ( ! $removed ) {
 			return new WP_Error( 'token_not_found', __( 'Token not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
 		}
-		return rest_ensure_response( array( 'revoked' => true, 'prefix' => $prefix ) );
+		return rest_ensure_response(
+			array(
+				'revoked' => true,
+				'prefix'  => $prefix,
+			)
+		);
 	}
 }

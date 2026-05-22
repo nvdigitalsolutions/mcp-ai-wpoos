@@ -133,7 +133,7 @@ if ( ! class_exists( 'WP_MCP_AI_NV_Cloud_Client' ) ) {
 		 * @return array
 		 */
 		protected function build_request_headers( $api_key ) {
-			$headers = parent::build_request_headers( $api_key );
+			$headers                       = parent::build_request_headers( $api_key );
 			$headers['User-Agent']         = self::USER_AGENT;
 			$headers['X-NV-Connect-Token'] = $api_key;
 			$headers['X-NV-Site-Url']      = $this->get_site_url();
@@ -177,13 +177,13 @@ if ( ! class_exists( 'WP_MCP_AI_NV_Cloud_Client' ) ) {
 			// avoids the global `http_response` filter footgun.
 			if ( is_array( $result ) ) {
 				if ( ! empty( $result['raw']['nv_cloud']['wholesale_usd'] ) ) {
-					$wholesale                       = (float) $result['raw']['nv_cloud']['wholesale_usd'];
+					$wholesale                        = (float) $result['raw']['nv_cloud']['wholesale_usd'];
 					$result['nv_cloud_wholesale_usd'] = $wholesale;
-					$this->last_wholesale_usd        = $wholesale;
+					$this->last_wholesale_usd         = $wholesale;
 				} elseif ( ! empty( $result['raw']['usage']['nv_cloud_wholesale_usd'] ) ) {
-					$wholesale                       = (float) $result['raw']['usage']['nv_cloud_wholesale_usd'];
+					$wholesale                        = (float) $result['raw']['usage']['nv_cloud_wholesale_usd'];
 					$result['nv_cloud_wholesale_usd'] = $wholesale;
-					$this->last_wholesale_usd        = $wholesale;
+					$this->last_wholesale_usd         = $wholesale;
 				}
 			}
 

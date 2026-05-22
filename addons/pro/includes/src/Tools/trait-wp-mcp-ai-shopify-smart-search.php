@@ -47,15 +47,80 @@ trait WP_MCP_AI_Shopify_Smart_Search {
 	 * @var array
 	 */
 	protected static $stop_words = array(
-		'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to',
-		'for', 'of', 'with', 'by', 'from', 'is', 'it', 'its', 'as',
-		'be', 'was', 'are', 'been', 'has', 'have', 'had', 'do', 'does',
-		'did', 'will', 'would', 'could', 'should', 'may', 'might',
-		'that', 'this', 'these', 'those', 'i', 'me', 'my', 'we', 'our',
-		'you', 'your', 'he', 'she', 'they', 'them', 'their',
-		'what', 'which', 'who', 'whom', 'how', 'where', 'when',
-		'not', 'no', 'nor', 'so', 'if', 'then', 'than', 'too', 'very',
-		'can', 'just', 'about', 'also', 'some', 'any', 'all',
+		'a',
+		'an',
+		'the',
+		'and',
+		'or',
+		'but',
+		'in',
+		'on',
+		'at',
+		'to',
+		'for',
+		'of',
+		'with',
+		'by',
+		'from',
+		'is',
+		'it',
+		'its',
+		'as',
+		'be',
+		'was',
+		'are',
+		'been',
+		'has',
+		'have',
+		'had',
+		'do',
+		'does',
+		'did',
+		'will',
+		'would',
+		'could',
+		'should',
+		'may',
+		'might',
+		'that',
+		'this',
+		'these',
+		'those',
+		'i',
+		'me',
+		'my',
+		'we',
+		'our',
+		'you',
+		'your',
+		'he',
+		'she',
+		'they',
+		'them',
+		'their',
+		'what',
+		'which',
+		'who',
+		'whom',
+		'how',
+		'where',
+		'when',
+		'not',
+		'no',
+		'nor',
+		'so',
+		'if',
+		'then',
+		'than',
+		'too',
+		'very',
+		'can',
+		'just',
+		'about',
+		'also',
+		'some',
+		'any',
+		'all',
 	);
 
 	/**
@@ -111,16 +176,16 @@ trait WP_MCP_AI_Shopify_Smart_Search {
 		$token_count = count( $tokens );
 
 		// 1. Full token string (stop-words removed). Only include if it differs
-		//    meaningfully from the original query.
-		$full_cleaned = implode( ' ', $tokens );
+		// meaningfully from the original query.
+		$full_cleaned        = implode( ' ', $tokens );
 		$original_normalized = strtolower( trim( $original_query ) );
 		if ( $full_cleaned !== $original_normalized && '' !== $full_cleaned ) {
 			$sub_queries[] = $full_cleaned;
 		}
 
 		// 2. Try dropping purely numeric tokens (measurements/quantities) to
-		//    broaden the search, e.g. "solitaire round diamond engagement ring"
-		//    from "solitaire round diamond engagement ring 2 carat".
+		// broaden the search, e.g. "solitaire round diamond engagement ring"
+		// from "solitaire round diamond engagement ring 2 carat".
 		$non_numeric_tokens = array_values(
 			array_filter(
 				$tokens,
@@ -187,9 +252,9 @@ trait WP_MCP_AI_Shopify_Smart_Search {
 	 * @return array Deduplicated, relevance-sorted product array.
 	 */
 	protected function merge_and_rank_products( array $result_sets, callable $get_id_callback, $limit = 50 ) {
-		$seen       = array();  // id => index in $products.
-		$products   = array();
-		$scores     = array();  // id => match count.
+		$seen     = array();  // id => index in $products.
+		$products = array();
+		$scores   = array();  // id => match count.
 
 		foreach ( $result_sets as $set ) {
 			foreach ( $set as $product ) {
@@ -202,10 +267,10 @@ trait WP_MCP_AI_Shopify_Smart_Search {
 					// Already seen — increment relevance score.
 					++$scores[ $id ];
 				} else {
-					$index           = count( $products );
-					$seen[ $id ]     = $index;
-					$products[]      = $product;
-					$scores[ $id ]   = 1;
+					$index         = count( $products );
+					$seen[ $id ]   = $index;
+					$products[]    = $product;
+					$scores[ $id ] = 1;
 				}
 			}
 		}

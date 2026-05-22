@@ -31,6 +31,13 @@ class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface,
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'set_availability_rules';
 	}
@@ -43,6 +50,13 @@ class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface,
 		return __( 'Define availability rules and business hours for appointment scheduling.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -82,6 +96,11 @@ class WP_MCP_AI_Tool_Set_Availability_Rules implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'phase-2.6' );
 	}

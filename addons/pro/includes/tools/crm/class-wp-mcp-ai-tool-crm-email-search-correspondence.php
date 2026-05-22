@@ -109,22 +109,30 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		return __( 'The CRM Email Search (Correspondence) tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_slug() {
 		return 'crm_email_search_correspondence';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_name() {
 		return __( 'CRM Email Search: Customer Correspondence', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_description() {
 		return __( 'Search CRM contacts for customer correspondence activity. Supports industry-standard email categories (support, general, sales, escalated), response-time analytics, routing suggestions, and follow-up status filtering. Results are cached and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -218,17 +226,23 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function requires_base_pro() {
 		return true;
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -298,7 +312,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	// -------------------------------------------------------------------------
-	// Action handlers
+	// Action handlers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -413,6 +427,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		return array(
 			'success'    => true,
 			/* translators: %s: cron recurrence label */
+			 */
 			'message'    => sprintf( __( 'Correspondence search scheduled to auto-refresh %s.', 'mcp-ai-wpoos-pro' ), $recurrence ),
 			'recurrence' => $recurrence,
 			'hook'       => self::CRON_HOOK,
@@ -440,7 +455,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	// -------------------------------------------------------------------------
-	// Cron callback
+	// Cron callback.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -475,7 +490,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	// -------------------------------------------------------------------------
-	// Core query
+	// Core query.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -647,7 +662,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 				'company'        => sanitize_text_field( (string) get_post_meta( $post->ID, 'company', true ) ),
 				'contact_status' => sanitize_text_field( (string) get_post_meta( $post->ID, 'contact_status', true ) ),
 				'category'       => $category,
-				// Default to 'email' when no channel is stored — email is the primary
+				// Default to 'email' when no channel is stored — email is the primary.
 			// correspondence channel in CRM systems that don't yet track omnichannel.
 			'channel'        => $channel_value ?: 'email',
 				'last_contacted' => sanitize_text_field( $last_contacted ),
@@ -678,7 +693,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	// -------------------------------------------------------------------------
-	// Analytics helpers
+	// Analytics helpers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -759,7 +774,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	}
 
 	// -------------------------------------------------------------------------
-	// Helpers
+	// Helpers.
 	// -------------------------------------------------------------------------
 
 	/**

@@ -188,9 +188,9 @@ class WP_MCP_AI_Pro_Tool_Send_Twitter_DM implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$http_code    = (int) wp_remote_retrieve_response_code( $response );
+		$http_code     = (int) wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
-		$decoded      = json_decode( $response_body, true );
+		$decoded       = json_decode( $response_body, true );
 
 		if ( $http_code < 200 || $http_code >= 300 ) {
 			$error_detail = is_array( $decoded ) && isset( $decoded['detail'] ) ? $decoded['detail'] : $response_body;
@@ -213,7 +213,10 @@ class WP_MCP_AI_Pro_Tool_Send_Twitter_DM implements WP_MCP_AI_Tool_Interface, WP
 						$error_detail
 					)
 				),
-				array( 'http_code' => $http_code, 'response' => $decoded )
+				array(
+					'http_code' => $http_code,
+					'response'  => $decoded,
+				)
 			);
 		}
 

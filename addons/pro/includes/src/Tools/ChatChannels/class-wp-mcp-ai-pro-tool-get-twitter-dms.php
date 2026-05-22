@@ -69,22 +69,22 @@ class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'bearer_token'        => array(
+				'bearer_token'       => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 Bearer Token for authentication. Provides read access to DMs.', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_results'         => array(
+				'max_results'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of DM events to return (1-100).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 25,
 				),
-				'dm_conversation_id'  => array(
+				'dm_conversation_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Optional DM conversation ID to filter results to a specific thread.', 'mcp-ai-wpoos-pro' ),
 				),
-				'pagination_token'    => array(
+				'pagination_token'   => array(
 					'type'        => 'string',
 					'description' => __( 'Pagination token returned by a previous request to retrieve the next page of results.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -181,9 +181,9 @@ class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$http_code    = (int) wp_remote_retrieve_response_code( $response );
+		$http_code     = (int) wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
-		$decoded      = json_decode( $response_body, true );
+		$decoded       = json_decode( $response_body, true );
 
 		if ( $http_code < 200 || $http_code >= 300 ) {
 			$error_detail = is_array( $decoded ) && isset( $decoded['detail'] ) ? $decoded['detail'] : $response_body;
@@ -206,7 +206,10 @@ class WP_MCP_AI_Pro_Tool_Get_Twitter_DMs implements WP_MCP_AI_Tool_Interface, WP
 						$error_detail
 					)
 				),
-				array( 'http_code' => $http_code, 'response' => $decoded )
+				array(
+					'http_code' => $http_code,
+					'response'  => $decoded,
+				)
 			);
 		}
 

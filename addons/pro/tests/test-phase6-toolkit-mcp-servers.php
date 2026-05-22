@@ -21,7 +21,8 @@
 
 require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 
-/**
+/** Summary.
+ *
  * @group toolkit-mcp-servers
  */
 class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
@@ -33,13 +34,13 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	 */
 	public function tier2_servers() {
 		return array(
-			'analytics'            => array( 'WP_MCP_AI_Analytics_MCP_Server', 'analytics' ),
-			'architect-agent'      => array( 'WP_MCP_AI_Architect_Agent_MCP_Server', 'architect-agent' ),
-			'chat-channels'        => array( 'WP_MCP_AI_Chat_Channels_MCP_Server', 'chat-channels' ),
-			'extended-cognition'   => array( 'WP_MCP_AI_Extended_Cognition_MCP_Server', 'extended-cognition' ),
-			'healthcare-imaging'   => array( 'WP_MCP_AI_Healthcare_Imaging_MCP_Server', 'healthcare-imaging' ),
-			'healthcare-wellness'  => array( 'WP_MCP_AI_Healthcare_Wellness_MCP_Server', 'healthcare-wellness' ),
-			'site-creator'         => array( 'WP_MCP_AI_Site_Creator_MCP_Server', 'site-creator' ),
+			'analytics'           => array( 'WP_MCP_AI_Analytics_MCP_Server', 'analytics' ),
+			'architect-agent'     => array( 'WP_MCP_AI_Architect_Agent_MCP_Server', 'architect-agent' ),
+			'chat-channels'       => array( 'WP_MCP_AI_Chat_Channels_MCP_Server', 'chat-channels' ),
+			'extended-cognition'  => array( 'WP_MCP_AI_Extended_Cognition_MCP_Server', 'extended-cognition' ),
+			'healthcare-imaging'  => array( 'WP_MCP_AI_Healthcare_Imaging_MCP_Server', 'healthcare-imaging' ),
+			'healthcare-wellness' => array( 'WP_MCP_AI_Healthcare_Wellness_MCP_Server', 'healthcare-wellness' ),
+			'site-creator'        => array( 'WP_MCP_AI_Site_Creator_MCP_Server', 'site-creator' ),
 		);
 	}
 
@@ -52,7 +53,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 1. Classes exist
+	// 1. Classes exist.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -68,7 +69,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 2. Interface compliance
+	// 2. Interface compliance.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -86,7 +87,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 3. Slugs
+	// 3. Slugs.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -100,7 +101,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 4. Non-empty name and description
+	// 4. Non-empty name and description.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -115,7 +116,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 5. Non-empty candidate tool slugs
+	// 5. Non-empty candidate tool slugs.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -134,7 +135,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 6. Tools-only — empty ingestion surfaces
+	// 6. Tools-only — empty ingestion surfaces.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -152,7 +153,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 7. Well-known discovery document structure
+	// 7. Well-known discovery document structure.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -184,7 +185,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 8. Disabled servers excluded from discovery document
+	// 8. Disabled servers excluded from discovery document.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -207,7 +208,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 9. wp_mcp_ai_well_known_mcp_document filter
+	// 9. wp_mcp_ai_well_known_mcp_document filter.
 	// -----------------------------------------------------------------------
 
 	/**
@@ -232,7 +233,7 @@ class Test_Phase6_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	}
 
 	// -----------------------------------------------------------------------
-	// 10. Constructor registers expected hooks
+	// 10. Constructor registers expected hooks.
 	// -----------------------------------------------------------------------
 
 	/**

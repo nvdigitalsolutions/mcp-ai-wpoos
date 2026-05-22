@@ -50,29 +50,29 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'          => array(
+				'member_id'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Member post ID (mcp_ai_member) to compile data for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'days_back'          => array(
+				'days_back'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of days of vital-sign history to include (optional, default: 90)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 365,
 					'default'     => 90,
 				),
-				'include_vitals'     => array(
+				'include_vitals'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include vital signs history (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_records'    => array(
+				'include_records'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include medical records, prescriptions, checkups, and allergies (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_files'      => array(
+				'include_files'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include references to files attached to the member post (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -82,17 +82,17 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 					'description' => __( 'Include vector store / corpus IDs from the active AI assistant for RAG context (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'assistant_id'       => array(
+				'assistant_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Assistant post ID to read vector_store_id / corpus_name from (optional; auto-detected from context if omitted)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'vital_types'        => array(
+				'vital_types'            => array(
 					'type'        => 'array',
 					'description' => __( 'Limit vital sign history to specific types, e.g. ["blood_pressure","heart_rate"]. Omit or leave empty to include all types (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'output_format'      => array(
+				'output_format'          => array(
 					'type'        => 'string',
 					'description' => __( 'Output format (optional, default: structured)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'structured', 'narrative', 'fhir_bundle' ),
@@ -128,6 +128,11 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'pii-data', 'hipaa-relevant' );
 	}
@@ -179,22 +184,22 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		$assistant_id           = isset( $arguments['assistant_id'] ) ? absint( $arguments['assistant_id'] ) : 0;
 
 		$payload = array(
-			'member'          => $this->get_member_demographics( $member ),
-			'data_sources'    => array(),
-			'compiled_at'     => current_time( 'c' ),
-			'days_back'       => $days_back,
+			'member'       => $this->get_member_demographics( $member ),
+			'data_sources' => array(),
+			'compiled_at'  => current_time( 'c' ),
+			'days_back'    => $days_back,
 		);
 
 		// ── Vital signs ───────────────────────────────────────────────────
 		if ( $include_vitals ) {
-			$vitals_data = $this->compile_vitals( $member_id, $days_back, $vital_types_filter );
+			$vitals_data             = $this->compile_vitals( $member_id, $days_back, $vital_types_filter );
 			$payload['vital_signs']  = $vitals_data['data'];
 			$payload['data_sources'] = array_merge( $payload['data_sources'], $vitals_data['sources'] );
 		}
 
 		// ── Medical records, prescriptions, checkups, allergies ───────────
 		if ( $include_records ) {
-			$records_data = $this->compile_health_records( $member_id );
+			$records_data              = $this->compile_health_records( $member_id );
 			$payload['health_records'] = $records_data;
 			$payload['data_sources'][] = 'wordpress_cpts';
 		}
@@ -235,7 +240,7 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 	}
 
 	// =========================================================================
-	// Private helpers
+	// Private helpers.
 	// =========================================================================
 
 	/**
@@ -246,9 +251,15 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 	 */
 	private function get_member_demographics( $member ) {
 		$meta_keys = array(
-			'member_type', 'date_of_birth', 'gender', 'blood_type',
-			'email', 'phone', 'emergency_contact',
-			'species', 'breed',
+			'member_type',
+			'date_of_birth',
+			'gender',
+			'blood_type',
+			'email',
+			'phone',
+			'emergency_contact',
+			'species',
+			'breed',
 		);
 
 		$demographics = array(
@@ -385,23 +396,25 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		$result = array();
 
 		// Medical records.
-		$records_query = new WP_Query( array(
-			'post_type'      => 'mcp_ai_med_record',
-			'post_status'    => 'publish',
-			'posts_per_page' => 20,
-			'orderby'        => 'meta_value',
-			'meta_key'       => 'date',
-			'order'          => 'DESC',
-			'meta_query'     => array(
-				array(
-					'key'     => 'member_id',
-					'value'   => $member_id,
-					'compare' => '=',
+		$records_query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_med_record',
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'orderby'        => 'meta_value',
+				'meta_key'       => 'date',
+				'order'          => 'DESC',
+				'meta_query'     => array(
+					array(
+						'key'     => 'member_id',
+						'value'   => $member_id,
+						'compare' => '=',
+					),
 				),
-			),
-		) );
+			)
+		);
 		foreach ( $records_query->posts as $post ) {
-			$type = get_the_terms( $post->ID, 'mcp_ai_record_type' );
+			$type                        = get_the_terms( $post->ID, 'mcp_ai_record_type' );
 			$result['medical_records'][] = array(
 				'id'          => $post->ID,
 				'title'       => $post->post_title,
@@ -413,18 +426,20 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Prescriptions.
-		$rx_query = new WP_Query( array(
-			'post_type'      => 'mcp_ai_prescription',
-			'post_status'    => 'publish',
-			'posts_per_page' => 20,
-			'meta_query'     => array(
-				array(
-					'key'     => 'member_id',
-					'value'   => $member_id,
-					'compare' => '=',
+		$rx_query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_prescription',
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'meta_query'     => array(
+					array(
+						'key'     => 'member_id',
+						'value'   => $member_id,
+						'compare' => '=',
+					),
 				),
-			),
-		) );
+			)
+		);
 		foreach ( $rx_query->posts as $post ) {
 			$end_date = get_post_meta( $post->ID, 'end_date', true );
 			if ( $end_date && $end_date < current_time( 'Y-m-d' ) ) {
@@ -441,28 +456,30 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Upcoming checkups (next 180 days).
-		$checkup_query = new WP_Query( array(
-			'post_type'      => 'mcp_ai_checkup',
-			'post_status'    => 'publish',
-			'posts_per_page' => 10,
-			'orderby'        => 'meta_value',
-			'meta_key'       => 'date',
-			'order'          => 'ASC',
-			'meta_query'     => array(
-				'relation' => 'AND',
-				array(
-					'key'     => 'member_id',
-					'value'   => $member_id,
-					'compare' => '=',
+		$checkup_query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_checkup',
+				'post_status'    => 'publish',
+				'posts_per_page' => 10,
+				'orderby'        => 'meta_value',
+				'meta_key'       => 'date',
+				'order'          => 'ASC',
+				'meta_query'     => array(
+					'relation' => 'AND',
+					array(
+						'key'     => 'member_id',
+						'value'   => $member_id,
+						'compare' => '=',
+					),
+					array(
+						'key'     => 'date',
+						'value'   => current_time( 'Y-m-d' ),
+						'compare' => '>=',
+						'type'    => 'DATE',
+					),
 				),
-				array(
-					'key'     => 'date',
-					'value'   => current_time( 'Y-m-d' ),
-					'compare' => '>=',
-					'type'    => 'DATE',
-				),
-			),
-		) );
+			)
+		);
 		foreach ( $checkup_query->posts as $post ) {
 			$result['upcoming_checkups'][] = array(
 				'id'       => $post->ID,
@@ -475,20 +492,22 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Allergies.
-		$allergy_query = new WP_Query( array(
-			'post_type'      => 'mcp_ai_allergy',
-			'post_status'    => 'publish',
-			'posts_per_page' => 50,
-			'meta_query'     => array(
-				array(
-					'key'     => 'member_id',
-					'value'   => $member_id,
-					'compare' => '=',
+		$allergy_query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_allergy',
+				'post_status'    => 'publish',
+				'posts_per_page' => 50,
+				'meta_query'     => array(
+					array(
+						'key'     => 'member_id',
+						'value'   => $member_id,
+						'compare' => '=',
+					),
 				),
-			),
-		) );
+			)
+		);
 		foreach ( $allergy_query->posts as $post ) {
-			$severity = get_the_terms( $post->ID, 'mcp_ai_allergy_severity' );
+			$severity              = get_the_terms( $post->ID, 'mcp_ai_allergy_severity' );
 			$result['allergies'][] = array(
 				'id'       => $post->ID,
 				'allergen' => $post->post_title,
@@ -507,12 +526,14 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 	 * @return array
 	 */
 	private function compile_attached_files( $member_id ) {
-		$attachments = get_posts( array(
-			'post_type'      => 'attachment',
-			'post_parent'    => $member_id,
-			'post_status'    => 'inherit',
-			'posts_per_page' => 50,
-		) );
+		$attachments = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_parent'    => $member_id,
+				'post_status'    => 'inherit',
+				'posts_per_page' => 50,
+			)
+		);
 
 		$files = array();
 		foreach ( $attachments as $att ) {
@@ -666,7 +687,7 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		);
 
 		// Patient resource.
-		$dem = $payload['member'];
+		$dem               = $payload['member'];
 		$bundle['entry'][] = array(
 			'resource' => array(
 				'resourceType' => 'Patient',
@@ -697,10 +718,10 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 			foreach ( $payload['health_records']['allergies'] as $allergy ) {
 				$bundle['entry'][] = array(
 					'resource' => array(
-						'resourceType'         => 'AllergyIntolerance',
-						'patient'              => array( 'reference' => 'Patient/member-' . $member->ID ),
-						'code'                 => array( 'text' => $allergy['allergen'] ),
-						'criticality'          => $allergy['severity'],
+						'resourceType' => 'AllergyIntolerance',
+						'patient'      => array( 'reference' => 'Patient/member-' . $member->ID ),
+						'code'         => array( 'text' => $allergy['allergen'] ),
+						'criticality'  => $allergy['severity'],
 					),
 				);
 			}
@@ -733,26 +754,78 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		$components = array();
 
 		$mappings = array(
-			'bp_systolic'       => array( 'code' => '8480-6', 'display' => 'Systolic blood pressure', 'unit' => 'mmHg' ),
-			'bp_diastolic'      => array( 'code' => '8462-4', 'display' => 'Diastolic blood pressure', 'unit' => 'mmHg' ),
-			'heart_rate'        => array( 'code' => '8867-4', 'display' => 'Heart rate', 'unit' => '/min' ),
-			'temperature'       => array( 'code' => '8310-5', 'display' => 'Body temperature', 'unit' => 'F' ),
-			'oxygen_saturation' => array( 'code' => '59408-5', 'display' => 'Oxygen saturation', 'unit' => '%' ),
-			'respiratory_rate'  => array( 'code' => '9279-1', 'display' => 'Respiratory rate', 'unit' => '/min' ),
-			'blood_glucose'     => array( 'code' => '2339-0', 'display' => 'Glucose [Mass/volume] in Blood', 'unit' => 'mg/dL' ),
-			'egfr'              => array( 'code' => '62238-1', 'display' => 'eGFR', 'unit' => 'mL/min/1.73m2' ),
-			'creatinine'        => array( 'code' => '2160-0', 'display' => 'Creatinine [Mass/volume] in Serum', 'unit' => 'mg/dL' ),
-			'bun'               => array( 'code' => '3094-0', 'display' => 'BUN [Mass/volume] in Serum', 'unit' => 'mg/dL' ),
-			'potassium'         => array( 'code' => '2823-3', 'display' => 'Potassium [Moles/volume] in Serum', 'unit' => 'mEq/L' ),
+			'bp_systolic'       => array(
+				'code'    => '8480-6',
+				'display' => 'Systolic blood pressure',
+				'unit'    => 'mmHg',
+			),
+			'bp_diastolic'      => array(
+				'code'    => '8462-4',
+				'display' => 'Diastolic blood pressure',
+				'unit'    => 'mmHg',
+			),
+			'heart_rate'        => array(
+				'code'    => '8867-4',
+				'display' => 'Heart rate',
+				'unit'    => '/min',
+			),
+			'temperature'       => array(
+				'code'    => '8310-5',
+				'display' => 'Body temperature',
+				'unit'    => 'F',
+			),
+			'oxygen_saturation' => array(
+				'code'    => '59408-5',
+				'display' => 'Oxygen saturation',
+				'unit'    => '%',
+			),
+			'respiratory_rate'  => array(
+				'code'    => '9279-1',
+				'display' => 'Respiratory rate',
+				'unit'    => '/min',
+			),
+			'blood_glucose'     => array(
+				'code'    => '2339-0',
+				'display' => 'Glucose [Mass/volume] in Blood',
+				'unit'    => 'mg/dL',
+			),
+			'egfr'              => array(
+				'code'    => '62238-1',
+				'display' => 'eGFR',
+				'unit'    => 'mL/min/1.73m2',
+			),
+			'creatinine'        => array(
+				'code'    => '2160-0',
+				'display' => 'Creatinine [Mass/volume] in Serum',
+				'unit'    => 'mg/dL',
+			),
+			'bun'               => array(
+				'code'    => '3094-0',
+				'display' => 'BUN [Mass/volume] in Serum',
+				'unit'    => 'mg/dL',
+			),
+			'potassium'         => array(
+				'code'    => '2823-3',
+				'display' => 'Potassium [Moles/volume] in Serum',
+				'unit'    => 'mEq/L',
+			),
 			// sodium is stored as dietary intake (mg/day), not serum level — omitted from FHIR serum observations.
-			'phosphorus'        => array( 'code' => '2777-1', 'display' => 'Phosphate [Mass/volume] in Serum', 'unit' => 'mg/dL' ),
-			'albumin'           => array( 'code' => '1751-7', 'display' => 'Albumin [Mass/volume] in Serum', 'unit' => 'g/dL' ),
+			'phosphorus'        => array(
+				'code'    => '2777-1',
+				'display' => 'Phosphate [Mass/volume] in Serum',
+				'unit'    => 'mg/dL',
+			),
+			'albumin'           => array(
+				'code'    => '1751-7',
+				'display' => 'Albumin [Mass/volume] in Serum',
+				'unit'    => 'g/dL',
+			),
 		);
 
 		foreach ( $mappings as $field => $loinc ) {
 			if ( isset( $vs[ $field ] ) && '' !== $vs[ $field ] ) {
 				$components[] = array(
-					'code'        => array(
+					'code'          => array(
 						'coding' => array(
 							array(
 								'system'  => 'http://loinc.org',

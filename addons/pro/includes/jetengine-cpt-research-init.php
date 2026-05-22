@@ -154,13 +154,13 @@ class WP_MCP_AI_JetEngine_CPT_Research_Init {
 	 */
 	private function is_feature_enabled() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		
+
 		// Check if JetEngine CPT AI is enabled.
 		$jetengine_cpt_ai_enabled = isset( $settings['enable_jetengine_cpt_ai'] ) ? (bool) $settings['enable_jetengine_cpt_ai'] : true;
-		
+
 		// Check if Research & Add is enabled (if there's a separate setting).
 		$research_add_enabled = isset( $settings['enable_jetengine_cpt_research_add'] ) ? (bool) $settings['enable_jetengine_cpt_research_add'] : true;
-		
+
 		return $jetengine_cpt_ai_enabled && $research_add_enabled;
 	}
 

@@ -50,44 +50,44 @@ class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'connection_id'       => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'connection_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'Remote Sites connection ID for the Shopify store. If omitted, automatically uses the Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
-				'action'              => array(
+				'action'            => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: list_levels, adjust, list_locations, get_shop_info.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list_levels', 'adjust', 'list_locations', 'get_shop_info' ),
 					'default'     => 'list_levels',
 				),
-				'location_id'         => array(
+				'location_id'       => array(
 					'type'        => 'string',
 					'description' => __( 'Shopify Location GID for inventory operations (e.g. gid://shopify/Location/123456789). If omitted for list_levels, uses the primary location.', 'mcp-ai-wpoos-pro' ),
 				),
-				'inventory_item_id'   => array(
+				'inventory_item_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Shopify InventoryItem GID for the adjust action (e.g. gid://shopify/InventoryItem/123456789).', 'mcp-ai-wpoos-pro' ),
 				),
-				'delta'               => array(
+				'delta'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Quantity change for the adjust action. Positive to add stock, negative to remove.', 'mcp-ai-wpoos-pro' ),
 				),
-				'reason'              => array(
+				'reason'            => array(
 					'type'        => 'string',
 					'description' => __( 'Reason for inventory adjustment (adjust action). Default: correction.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'correction',
 					'enum'        => array( 'correction', 'cycle_count_available', 'damaged', 'movement_created', 'movement_updated', 'movement_received', 'movement_canceled', 'other', 'promotion', 'quality_control', 'received', 'reservation_created', 'reservation_deleted', 'reservation_updated', 'retail_pack', 'shrinkage', 'unknown', 'unpack' ),
 				),
-				'first'               => array(
+				'first'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of inventory levels to return (1–250). Default: 50.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 250,
 				),
-				'after'               => array(
+				'after'             => array(
 					'type'        => 'string',
 					'description' => __( 'Pagination cursor for list_levels (endCursor from a previous response).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -146,8 +146,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Inventory implements WP_MCP_AI_Tool_Interface, 
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			$available   = $this->get_available_shopify_connections( $context );
-			$conn_list   = $this->format_available_connections_message( $available );
+			$available = $this->get_available_shopify_connections( $context );
+			$conn_list = $this->format_available_connections_message( $available );
 			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {

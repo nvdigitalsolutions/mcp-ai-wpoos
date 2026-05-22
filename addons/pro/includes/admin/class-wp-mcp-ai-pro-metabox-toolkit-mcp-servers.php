@@ -111,11 +111,11 @@ class WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers {
 		<div style="max-height:280px;overflow-y:auto;border:1px solid #ddd;padding:8px;background:#fff;">
 			<?php foreach ( $servers as $slug => $server ) : ?>
 				<?php
-				$is_checked    = in_array( $slug, $allowed, true );
-				$is_server_on  = $server instanceof WP_MCP_AI_Toolkit_Server_Base && $server->is_enabled();
-				$server_label  = ( $server instanceof WP_MCP_AI_Toolkit_Server_Interface ) ? $server->get_name() : $slug;
-				$border_color  = $is_server_on ? '#46b450' : '#dc3232';
-				$status_label  = $is_server_on ? __( 'enabled', 'mcp-ai-wpoos-pro' ) : __( 'disabled', 'mcp-ai-wpoos-pro' );
+				$is_checked   = in_array( $slug, $allowed, true );
+				$is_server_on = $server instanceof WP_MCP_AI_Toolkit_Server_Base && $server->is_enabled();
+				$server_label = ( $server instanceof WP_MCP_AI_Toolkit_Server_Interface ) ? $server->get_name() : $slug;
+				$border_color = $is_server_on ? '#46b450' : '#dc3232';
+				$status_label = $is_server_on ? __( 'enabled', 'mcp-ai-wpoos-pro' ) : __( 'disabled', 'mcp-ai-wpoos-pro' );
 				?>
 				<div style="margin-bottom:8px;padding:6px;background:#f9f9f9;border-left:3px solid <?php echo esc_attr( $border_color ); ?>;">
 					<label style="display:block;">
@@ -135,7 +135,7 @@ class WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers {
 
 		<p style="margin-top:8px;">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-toolkit-mcp-servers' ) ); ?>"
-			   style="font-size:11px;">
+				style="font-size:11px;">
 				<?php esc_html_e( 'Manage Toolkit MCP Servers →', 'mcp-ai-wpoos-pro' ); ?>
 			</a>
 		</p>

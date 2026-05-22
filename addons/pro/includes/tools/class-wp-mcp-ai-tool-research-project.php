@@ -150,6 +150,11 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -406,7 +411,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Search queries.
 	 */
 	protected function generate_project_search_queries( $query, $project_type, $depth, $focus_areas ) {
-		$queries = array();
+		$queries   = array();
 		$queries[] = $query;
 
 		if ( 'basic' === $depth ) {
@@ -487,10 +492,10 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "\n**Available Research Sources:**\n";
+			$prompt      .= "\n**Available Research Sources:**\n";
 			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
-				$source = $search_results['sources'][ $i ];
+				$source  = $search_results['sources'][ $i ];
 				$prompt .= sprintf(
 					"[%d] %s - %s\n",
 					$i + 1,
@@ -512,7 +517,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add focus areas if specified.
 		if ( ! empty( $focus_areas ) ) {
-			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+			$prompt .= '**Focus Areas:** ' . implode( ', ', $focus_areas ) . "\n\n";
 		}
 
 		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
@@ -829,7 +834,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Project name/title.
 		if ( ! empty( $project_data['title'] ) ) {
-			$report .= "**Project Name:** " . esc_html( $project_data['title'] ) . "\n\n";
+			$report .= '**Project Name:** ' . esc_html( $project_data['title'] ) . "\n\n";
 		}
 
 		// Project description/scope.
@@ -842,28 +847,28 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $project_data['objectives'] ) && is_array( $project_data['objectives'] ) ) {
 			$report .= "### Objectives\n";
 			foreach ( $project_data['objectives'] as $objective ) {
-				$report .= "- " . esc_html( $objective ) . "\n";
+				$report .= '- ' . esc_html( $objective ) . "\n";
 			}
 			$report .= "\n";
 		}
 
 		// Timeline and duration.
 		if ( ! empty( $project_data['timeline'] ) ) {
-			$report .= "**Timeline:** " . esc_html( $project_data['timeline'] ) . "\n";
+			$report .= '**Timeline:** ' . esc_html( $project_data['timeline'] ) . "\n";
 		}
 
 		// Status and priority.
 		if ( ! empty( $project_data['status'] ) ) {
-			$report .= "**Status:** " . esc_html( $project_data['status'] ) . "\n";
+			$report .= '**Status:** ' . esc_html( $project_data['status'] ) . "\n";
 		}
 
 		if ( ! empty( $project_data['priority'] ) ) {
-			$report .= "**Priority:** " . esc_html( $project_data['priority'] ) . "\n";
+			$report .= '**Priority:** ' . esc_html( $project_data['priority'] ) . "\n";
 		}
 
 		// Budget.
 		if ( ! empty( $project_data['budget'] ) ) {
-			$report .= "**Budget:** " . esc_html( $project_data['budget'] ) . "\n";
+			$report .= '**Budget:** ' . esc_html( $project_data['budget'] ) . "\n";
 		}
 
 		$report .= "\n";
@@ -872,7 +877,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $project_data['milestones'] ) && is_array( $project_data['milestones'] ) ) {
 			$report .= "### Key Milestones\n";
 			foreach ( $project_data['milestones'] as $milestone ) {
-				$report .= "- " . esc_html( $milestone ) . "\n";
+				$report .= '- ' . esc_html( $milestone ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -881,7 +886,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $project_data['phases'] ) && is_array( $project_data['phases'] ) ) {
 			$report .= "### Project Phases\n";
 			foreach ( $project_data['phases'] as $phase ) {
-				$report .= "- " . esc_html( $phase ) . "\n";
+				$report .= '- ' . esc_html( $phase ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -902,7 +907,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $project_data['deliverables'] ) && is_array( $project_data['deliverables'] ) ) {
 			$report .= "### Deliverables\n";
 			foreach ( $project_data['deliverables'] as $deliverable ) {
-				$report .= "- " . esc_html( $deliverable ) . "\n";
+				$report .= '- ' . esc_html( $deliverable ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -917,7 +922,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $project_data['risks'] ) && is_array( $project_data['risks'] ) ) {
 			$report .= "### Risks & Mitigation\n";
 			foreach ( $project_data['risks'] as $risk ) {
-				$report .= "- " . esc_html( $risk ) . "\n";
+				$report .= '- ' . esc_html( $risk ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -925,16 +930,16 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Sources count.
 		if ( ! empty( $search_results['sources'] ) && is_array( $search_results['sources'] ) ) {
 			$source_count = count( $search_results['sources'] );
-			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+			$report      .= '**Research Sources:** ' . absint( $source_count ) . " source(s)\n";
 		}
 
 		// Research metadata.
 		if ( ! empty( $project_data['research_provider'] ) && ! empty( $project_data['research_model'] ) ) {
-			$report .= "**AI Model:** " . esc_html( $project_data['research_provider'] . ' / ' . $project_data['research_model'] ) . "\n";
+			$report .= '**AI Model:** ' . esc_html( $project_data['research_provider'] . ' / ' . $project_data['research_model'] ) . "\n";
 		}
 
 		$report .= "\n---\n\n";
-		$report .= "*Research completed successfully. Use the project data to create a new project entry in your project management system.*";
+		$report .= '*Research completed successfully. Use the project data to create a new project entry in your project management system.*';
 
 		return $report;
 	}

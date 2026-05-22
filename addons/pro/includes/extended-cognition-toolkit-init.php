@@ -97,7 +97,7 @@ function wp_mcp_ai_ext_cog_enqueue_assets() {
 		'wp-mcp-ai-ext-cog-screen' => 'ext-cognition-screen.js',
 		'wp-mcp-ai-ext-cog-motion' => 'ext-cognition-motion.js',
 	);
-	$deps = array();
+	$deps    = array();
 	foreach ( $scripts as $handle => $file ) {
 		wp_register_script( $handle, WP_MCP_AI_PRO_URL . 'assets/js/' . $file, array(), $ver, true );
 		$deps[] = $handle;
@@ -116,14 +116,14 @@ function wp_mcp_ai_ext_cog_enqueue_assets() {
 		'wp-mcp-ai-ext-cog-bridge',
 		'nvOosExtCog',
 		array(
-			'restUrl'           => esc_url_raw( rest_url( 'mcp-ai/v1/ext-cog/' ) ),
-			'nonce'             => wp_create_nonce( 'wp_rest' ),
-			'sensorCamera'      => ! empty( $settings['ext_cog_sensor_camera'] ),
-			'sensorMicrophone'  => ! empty( $settings['ext_cog_sensor_microphone'] ),
-			'sensorScreen'      => ! empty( $settings['ext_cog_sensor_screen'] ),
-			'sensorMotion'      => ! empty( $settings['ext_cog_sensor_motion'] ),
-			'gdprConsent'       => ! empty( $settings['ext_cog_gdpr_consent'] ),
-			'i18n'              => array(
+			'restUrl'          => esc_url_raw( rest_url( 'mcp-ai/v1/ext-cog/' ) ),
+			'nonce'            => wp_create_nonce( 'wp_rest' ),
+			'sensorCamera'     => ! empty( $settings['ext_cog_sensor_camera'] ),
+			'sensorMicrophone' => ! empty( $settings['ext_cog_sensor_microphone'] ),
+			'sensorScreen'     => ! empty( $settings['ext_cog_sensor_screen'] ),
+			'sensorMotion'     => ! empty( $settings['ext_cog_sensor_motion'] ),
+			'gdprConsent'      => ! empty( $settings['ext_cog_gdpr_consent'] ),
+			'i18n'             => array(
 				'consentRequired' => __( 'Allow AI agent to access your device sensors?', 'mcp-ai-wpoos' ),
 				'httpsRequired'   => __( 'HTTPS is required for sensor access.', 'mcp-ai-wpoos' ),
 			),

@@ -105,18 +105,17 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
-if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
-return array(
-'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
-);
-}
-if ( ! current_user_can( 'manage_options' ) ) {
-return array(
-'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
-);
-}
-
+		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+			return array(
+				'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return array(
+				'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
 
 		// Check user capability.
 		if ( ! current_user_can( 'upload_files' ) ) {
@@ -313,7 +312,7 @@ return array(
 		);
 
 		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_html ) );
-		$return_code  = $proc_result['exit_code'];
+		$return_code = $proc_result['exit_code'];
 
 		// Clean up temp HTML.
 		@unlink( $temp_html ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged

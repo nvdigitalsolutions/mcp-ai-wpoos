@@ -211,10 +211,10 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 			// Categorize by lineup slot.
 			$lineup_slot = isset( $entry['lineupSlotId'] ) ? absint( $entry['lineupSlotId'] ) : 20;
 
-			if ( $lineup_slot === 20 ) {
+			if ( 20 === $lineup_slot ) {
 				// Bench.
 				$bench[] = $player_data;
-			} elseif ( $lineup_slot === 21 ) {
+			} elseif ( 21 === $lineup_slot ) {
 				// IR.
 				$ir[] = $player_data;
 			} else {

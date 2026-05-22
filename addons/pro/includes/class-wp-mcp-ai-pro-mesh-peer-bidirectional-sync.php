@@ -61,8 +61,8 @@ class WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync {
 		}
 
 		// Get current mesh_peer_sites.
-		$settings    = WP_MCP_AI_Admin_Settings::get_settings();
-		$mesh_peers  = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] ) ? $settings['mesh_peer_sites'] : array();
+		$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+		$mesh_peers = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] ) ? $settings['mesh_peer_sites'] : array();
 
 		// Generate mesh peer ID based on URL (consistent with mesh peer sync).
 		$url          = isset( $connection['url'] ) ? $connection['url'] : '';
@@ -100,7 +100,7 @@ class WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync {
 		}
 
 		// Save to settings (set sync flag to prevent loop).
-		self::$syncing = true;
+		self::$syncing               = true;
 		$settings['mesh_peer_sites'] = $mesh_peers;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 		self::$syncing = false;
@@ -111,8 +111,8 @@ class WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync {
 	 *
 	 * Called when mesh settings are saved.
 	 *
-	 * @param mixed $old_value Old option value.
-	 * @param mixed $value     New option value.
+	 * @param mixed  $old_value Old option value.
+	 * @param mixed  $value     New option value.
 	 * @param string $option   Option name.
 	 */
 	public function sync_from_mesh_settings( $old_value, $value, $option ) {
@@ -255,7 +255,7 @@ class WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync {
 			$mesh_peers = array_values( $mesh_peers );
 
 			// Save to settings (set sync flag to prevent loop).
-			self::$syncing = true;
+			self::$syncing               = true;
 			$settings['mesh_peer_sites'] = $mesh_peers;
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 			self::$syncing = false;

@@ -172,7 +172,7 @@ class NV_oOS_Graphify_Analyzer {
 	 * @return array<string, string[]>
 	 */
 	private static function louvain( array $nodes, array $edges ) {
-		// Build adjacency map: node_id => [neighbor_id => weight, ...]
+		// Build adjacency map: node_id => [neighbor_id => weight, ...].
 		$adj          = array();
 		$total_weight = 0.0;
 		foreach ( $nodes as $n ) {
@@ -622,7 +622,8 @@ class NV_oOS_Graphify_Analyzer {
 		$visited[ $seed ] = true;
 		$node_ids[]       = $seed;
 
-		while ( ! empty( $queue ) && count( $node_ids ) < $max_nodes ) {
+		$node_count = count( $node_ids );
+		while ( ! empty( $queue ) && $node_count < $max_nodes ) {
 			$item    = array_shift( $queue );
 			$current = $item['id'];
 			$d       = $item['depth'];
@@ -637,9 +638,10 @@ class NV_oOS_Graphify_Analyzer {
 				$edges[ $edge_key ] = $edge;
 
 				$neighbor = ( $edge->source_node_id === $current ) ? $edge->target_node_id : $edge->source_node_id;
-				if ( ! isset( $visited[ $neighbor ] ) && count( $node_ids ) < $max_nodes ) {
+				if ( ! isset( $visited[ $neighbor ] ) && $node_count < $max_nodes ) {
 					$visited[ $neighbor ] = true;
 					$node_ids[]           = $neighbor;
+					$node_count           = count( $node_ids );
 					$queue[]              = array(
 						'id'    => $neighbor,
 						'depth' => $d + 1,

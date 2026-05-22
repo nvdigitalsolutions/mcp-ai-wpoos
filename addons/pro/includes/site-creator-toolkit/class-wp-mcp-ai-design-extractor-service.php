@@ -268,7 +268,7 @@ class WP_MCP_AI_Design_Extractor_Service {
 		if ( preg_match_all( '/border-radius\s*:\s*([^;}{]+)[;}]/i', $css_or_html, $brs ) ) {
 			$counts = array();
 			foreach ( $brs[1] as $value ) {
-				$value             = trim( $value );
+				$value            = trim( $value );
 				$counts[ $value ] = isset( $counts[ $value ] ) ? $counts[ $value ] + 1 : 1;
 			}
 			arsort( $counts );
@@ -292,18 +292,18 @@ class WP_MCP_AI_Design_Extractor_Service {
 	private static function route_token( array &$out, $key, $val ) {
 		// Palette role detection.
 		$role_map = array(
-			'bg'           => array( 'bg', 'background', 'obsidian' ),
-			'surface'      => array( 'surface' ),
-			'card'         => array( 'card' ),
-			'border'       => array( 'border' ),
+			'bg'            => array( 'bg', 'background', 'obsidian' ),
+			'surface'       => array( 'surface' ),
+			'card'          => array( 'card' ),
+			'border'        => array( 'border' ),
 			'border-accent' => array( 'border-accent', 'border_accent', 'borderaccent' ),
-			'accent'       => array( 'accent', 'green', 'primary' ),
-			'accent-light' => array( 'accent-light', 'accent_light', 'green-light', 'primary-light' ),
-			'accent-pale'  => array( 'accent-pale', 'accent_pale' ),
-			'text'         => array( 'text', 'ivory', 'foreground' ),
-			'dim'          => array( 'dim', 'text-dim' ),
-			'muted'        => array( 'muted', 'text-muted' ),
-			'danger'       => array( 'danger', 'error', 'red' ),
+			'accent'        => array( 'accent', 'green', 'primary' ),
+			'accent-light'  => array( 'accent-light', 'accent_light', 'green-light', 'primary-light' ),
+			'accent-pale'   => array( 'accent-pale', 'accent_pale' ),
+			'text'          => array( 'text', 'ivory', 'foreground' ),
+			'dim'           => array( 'dim', 'text-dim' ),
+			'muted'         => array( 'muted', 'text-muted' ),
+			'danger'        => array( 'danger', 'error', 'red' ),
 		);
 
 		foreach ( $role_map as $role => $needles ) {
@@ -330,20 +330,20 @@ class WP_MCP_AI_Design_Extractor_Service {
 			return;
 		}
 		if ( false !== strpos( $key, 'radius' ) ) {
-			$slot                 = preg_replace( '/^.*radius[-_]?/', '', $key );
-			$slot                 = '' === $slot ? 'md' : $slot;
+			$slot                  = preg_replace( '/^.*radius[-_]?/', '', $key );
+			$slot                  = '' === $slot ? 'md' : $slot;
 			$out['radii'][ $slot ] = $val;
 			return;
 		}
 		if ( false !== strpos( $key, 'shadow' ) ) {
-			$slot                  = preg_replace( '/^.*shadow[-_]?/', '', $key );
-			$slot                  = '' === $slot ? 'md' : $slot;
+			$slot                    = preg_replace( '/^.*shadow[-_]?/', '', $key );
+			$slot                    = '' === $slot ? 'md' : $slot;
 			$out['shadows'][ $slot ] = $val;
 			return;
 		}
 		if ( false !== strpos( $key, 'space' ) || false !== strpos( $key, 'spacing' ) ) {
-			$slot                                  = preg_replace( '/^.*(space|spacing)[-_]?/', '', $key );
-			$out['spacing']['scale'][ $slot ?: 'md' ] = $val;
+			$slot = preg_replace( '/^.*(space|spacing)[-_]?/', '', $key );
+			$out['spacing']['scale'][ $slot ? $slot : 'md' ] = $val;
 			return;
 		}
 		if ( false !== strpos( $key, 'easing' ) ) {
@@ -379,14 +379,14 @@ class WP_MCP_AI_Design_Extractor_Service {
 					}
 					foreach ( $value as $sk => $sv ) {
 						if ( $overwrite || ! isset( $tokens[ $section ][ $key ][ $sk ] ) ) {
-							$tokens[ $section ][ $key ][ $sk ] = $sv;
+							$tokens[ $section ][ $key ][ $sk ]               = $sv;
 							$provenance[ $section . '.' . $key . '.' . $sk ] = $source;
 						}
 					}
 					continue;
 				}
 				if ( $overwrite || ! isset( $tokens[ $section ][ $key ] ) ) {
-					$tokens[ $section ][ $key ] = $value;
+					$tokens[ $section ][ $key ]          = $value;
 					$provenance[ $section . '.' . $key ] = $source;
 				}
 			}
@@ -401,15 +401,15 @@ class WP_MCP_AI_Design_Extractor_Service {
 	public static function default_tokens() {
 		return array(
 			'palette'    => array(
-				'bg'      => '#0f110e',
-				'surface' => '#181b13',
-				'border'  => 'rgba(255,255,255,0.07)',
-				'accent'  => '#2d6a4f',
+				'bg'           => '#0f110e',
+				'surface'      => '#181b13',
+				'border'       => 'rgba(255,255,255,0.07)',
+				'accent'       => '#2d6a4f',
 				'accent-light' => '#52b788',
-				'text'    => '#ffffff',
-				'dim'     => 'rgba(255,255,255,0.65)',
-				'muted'   => 'rgba(255,255,255,0.35)',
-				'danger'  => '#d68080',
+				'text'         => '#ffffff',
+				'dim'          => 'rgba(255,255,255,0.65)',
+				'muted'        => 'rgba(255,255,255,0.35)',
+				'danger'       => '#d68080',
 			),
 			'typography' => array(
 				'sans'         => 'Tenor Sans, Arial, sans-serif',
@@ -452,7 +452,7 @@ class WP_MCP_AI_Design_Extractor_Service {
 		$report = array();
 
 		if ( $bg && $text ) {
-			$ratio = self::contrast_ratio( $bg, $text );
+			$ratio    = self::contrast_ratio( $bg, $text );
 			$report[] = array(
 				'pair'    => 'text on bg',
 				'ratio'   => $ratio,
@@ -461,7 +461,7 @@ class WP_MCP_AI_Design_Extractor_Service {
 			);
 		}
 		if ( $bg && $accent ) {
-			$ratio = self::contrast_ratio( $bg, $accent );
+			$ratio    = self::contrast_ratio( $bg, $accent );
 			$report[] = array(
 				'pair'    => 'accent on bg (non-text)',
 				'ratio'   => $ratio,

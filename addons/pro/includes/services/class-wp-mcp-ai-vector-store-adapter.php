@@ -84,7 +84,7 @@ class WP_MCP_AI_Vector_Store_Adapter {
 	 */
 	protected function get_settings() {
 		$defaults = array(
-			'backend'                 => 'openai',
+			'backend'                => 'openai',
 			'openai_vector_store_id' => '',
 			'pgvector_dsn'           => '',
 			'qdrant_url'             => '',

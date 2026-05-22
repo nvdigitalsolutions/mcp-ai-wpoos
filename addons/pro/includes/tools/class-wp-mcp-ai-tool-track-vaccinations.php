@@ -46,42 +46,42 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'           => array(
+				'action'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'add', 'get', 'list', 'schedule', 'check_compliance', 'update', 'delete' ),
 				),
-				'member_id'        => array(
+				'member_id'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'record_id'        => array(
+				'record_id'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Medical record post ID of the vaccination — required for update and delete actions', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'vaccine_name'     => array(
+				'vaccine_name'           => array(
 					'type'        => 'string',
 					'description' => __( 'Name of vaccine (required for add action)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'vaccine_type'     => array(
+				'vaccine_type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Type/category of vaccine (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'routine', 'travel', 'occupational', 'emergency', 'rabies', 'distemper', 'parvovirus', 'other' ),
 				),
-				'administration_date' => array(
+				'administration_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Date vaccine was administered (YYYY-MM-DD) (required for add)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'lot_number'       => array(
+				'lot_number'             => array(
 					'type'        => 'string',
 					'description' => __( 'Vaccine lot/batch number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'manufacturer'     => array(
+				'manufacturer'           => array(
 					'type'        => 'string',
 					'description' => __( 'Vaccine manufacturer (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
@@ -91,7 +91,7 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Name of healthcare provider who administered (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'facility'         => array(
+				'facility'               => array(
 					'type'        => 'string',
 					'description' => __( 'Facility where administered (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
@@ -101,32 +101,32 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Body site where vaccine was given (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'left_arm', 'right_arm', 'left_thigh', 'right_thigh', 'buttock', 'other' ),
 				),
-				'dose_number'      => array(
+				'dose_number'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Dose number in series (e.g., 1, 2, 3) (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'series_complete'  => array(
+				'series_complete'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the vaccine series is complete (optional)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'booster_required' => array(
+				'booster_required'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether booster shots are required (optional)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'next_booster_date' => array(
+				'next_booster_date'      => array(
 					'type'        => 'string',
 					'description' => __( 'Next booster due date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'reaction_notes'   => array(
+				'reaction_notes'         => array(
 					'type'        => 'string',
 					'description' => __( 'Notes about adverse reactions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
 				),
-				'compliance_program' => array(
+				'compliance_program'     => array(
 					'type'        => 'string',
 					'description' => __( 'Compliance program to check against (optional for check_compliance)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'cdc_routine', 'cdc_adult', 'school_entry', 'pet_boarding', 'travel_international', 'custom' ),
@@ -161,6 +161,11 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'database-write', 'pii-data', 'hipaa-relevant' );
 	}
@@ -351,11 +356,11 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		wp_set_object_terms( $record_id, 'vaccination', 'mcp_ai_record_type' );
 
 		return array(
-			'success'            => true,
-			'message'            => __( 'Vaccination record added successfully.', 'mcp-ai-wpoos-pro' ),
-			'record_id'          => $record_id,
-			'member_id'          => $member_id,
-			'vaccine_name'       => $vaccine_name,
+			'success'             => true,
+			'message'             => __( 'Vaccination record added successfully.', 'mcp-ai-wpoos-pro' ),
+			'record_id'           => $record_id,
+			'member_id'           => $member_id,
+			'vaccine_name'        => $vaccine_name,
 			'administration_date' => $administration_date,
 		);
 	}
@@ -394,30 +399,30 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$record_id           = get_the_ID();
+				$record_id      = get_the_ID();
 				$vaccinations[] = array(
-					'record_id'          => $record_id,
-					'vaccine_name'       => get_post_meta( $record_id, '_vaccination_name', true ),
+					'record_id'           => $record_id,
+					'vaccine_name'        => get_post_meta( $record_id, '_vaccination_name', true ),
 					'administration_date' => get_post_meta( $record_id, '_record_date', true ),
-					'vaccine_type'       => get_post_meta( $record_id, '_vaccination_type', true ),
-					'lot_number'         => get_post_meta( $record_id, '_vaccination_lot_number', true ),
-					'manufacturer'       => get_post_meta( $record_id, '_vaccination_manufacturer', true ),
-					'provider'           => get_post_meta( $record_id, '_record_provider', true ),
-					'dose_number'        => get_post_meta( $record_id, '_vaccination_dose_number', true ),
-					'series_complete'    => (bool) get_post_meta( $record_id, '_vaccination_series_complete', true ),
-					'booster_required'   => (bool) get_post_meta( $record_id, '_vaccination_booster_required', true ),
-					'next_booster_date'  => get_post_meta( $record_id, '_vaccination_next_booster_date', true ),
+					'vaccine_type'        => get_post_meta( $record_id, '_vaccination_type', true ),
+					'lot_number'          => get_post_meta( $record_id, '_vaccination_lot_number', true ),
+					'manufacturer'        => get_post_meta( $record_id, '_vaccination_manufacturer', true ),
+					'provider'            => get_post_meta( $record_id, '_record_provider', true ),
+					'dose_number'         => get_post_meta( $record_id, '_vaccination_dose_number', true ),
+					'series_complete'     => (bool) get_post_meta( $record_id, '_vaccination_series_complete', true ),
+					'booster_required'    => (bool) get_post_meta( $record_id, '_vaccination_booster_required', true ),
+					'next_booster_date'   => get_post_meta( $record_id, '_vaccination_next_booster_date', true ),
 				);
 			}
 			wp_reset_postdata();
 		}
 
 		return array(
-			'success'        => true,
-			'member_id'      => $member_id,
-			'member_type'    => $member_type,
-			'total_count'    => count( $vaccinations ),
-			'vaccinations'   => $vaccinations,
+			'success'      => true,
+			'member_id'    => $member_id,
+			'member_type'  => $member_type,
+			'total_count'  => count( $vaccinations ),
+			'vaccinations' => $vaccinations,
 		);
 	}
 
@@ -432,8 +437,8 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		$vaccinations_result = $this->list_vaccinations( $member_id, $member_type );
 
 		// Add analysis.
-		$boosters_due = array();
-		$completed_series = 0;
+		$boosters_due      = array();
+		$completed_series  = 0;
 		$incomplete_series = 0;
 
 		foreach ( $vaccinations_result['vaccinations'] as $vacc ) {
@@ -457,14 +462,14 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'           => true,
-			'member_id'         => $member_id,
-			'member_type'       => $member_type,
+			'success'            => true,
+			'member_id'          => $member_id,
+			'member_type'        => $member_type,
 			'total_vaccinations' => $vaccinations_result['total_count'],
-			'completed_series'  => $completed_series,
-			'incomplete_series' => $incomplete_series,
-			'boosters_due'      => $boosters_due,
-			'vaccinations'      => $vaccinations_result['vaccinations'],
+			'completed_series'   => $completed_series,
+			'incomplete_series'  => $incomplete_series,
+			'boosters_due'       => $boosters_due,
+			'vaccinations'       => $vaccinations_result['vaccinations'],
 		);
 	}
 
@@ -482,53 +487,53 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		if ( 'person' === $member_type ) {
 			$schedule = array(
 				array(
-					'vaccine'      => 'Influenza',
-					'frequency'    => 'Annual',
-					'recommended'  => true,
-					'notes'        => __( 'Recommended annually before flu season', 'mcp-ai-wpoos-pro' ),
+					'vaccine'     => 'Influenza',
+					'frequency'   => 'Annual',
+					'recommended' => true,
+					'notes'       => __( 'Recommended annually before flu season', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
-					'vaccine'      => 'COVID-19',
-					'frequency'    => 'As recommended',
-					'recommended'  => true,
-					'notes'        => __( 'Follow current public health guidelines', 'mcp-ai-wpoos-pro' ),
+					'vaccine'     => 'COVID-19',
+					'frequency'   => 'As recommended',
+					'recommended' => true,
+					'notes'       => __( 'Follow current public health guidelines', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
-					'vaccine'      => 'Tdap/Td',
-					'frequency'    => 'Every 10 years',
-					'recommended'  => true,
-					'notes'        => __( 'Tetanus, diphtheria, pertussis booster', 'mcp-ai-wpoos-pro' ),
+					'vaccine'     => 'Tdap/Td',
+					'frequency'   => 'Every 10 years',
+					'recommended' => true,
+					'notes'       => __( 'Tetanus, diphtheria, pertussis booster', 'mcp-ai-wpoos-pro' ),
 				),
 			);
 		} else { // Pet.
 			$schedule = array(
 				array(
-					'vaccine'      => 'Rabies',
-					'frequency'    => 'Annual or 3-year',
-					'recommended'  => true,
-					'notes'        => __( 'Required by law in most areas', 'mcp-ai-wpoos-pro' ),
+					'vaccine'     => 'Rabies',
+					'frequency'   => 'Annual or 3-year',
+					'recommended' => true,
+					'notes'       => __( 'Required by law in most areas', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
-					'vaccine'      => 'DHPP',
-					'frequency'    => 'Every 1-3 years',
-					'recommended'  => true,
-					'notes'        => __( 'Distemper, hepatitis, parvovirus, parainfluenza', 'mcp-ai-wpoos-pro' ),
+					'vaccine'     => 'DHPP',
+					'frequency'   => 'Every 1-3 years',
+					'recommended' => true,
+					'notes'       => __( 'Distemper, hepatitis, parvovirus, parainfluenza', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
-					'vaccine'      => 'Bordetella',
-					'frequency'    => 'Every 6-12 months',
-					'recommended'  => false,
-					'notes'        => __( 'Recommended for dogs in boarding or social settings', 'mcp-ai-wpoos-pro' ),
+					'vaccine'     => 'Bordetella',
+					'frequency'   => 'Every 6-12 months',
+					'recommended' => false,
+					'notes'       => __( 'Recommended for dogs in boarding or social settings', 'mcp-ai-wpoos-pro' ),
 				),
 			);
 		}
 
 		return array(
-			'success'            => true,
-			'member_id'          => $member_id,
-			'member_type'        => $member_type,
+			'success'              => true,
+			'member_id'            => $member_id,
+			'member_type'          => $member_type,
 			'vaccination_schedule' => $schedule,
-			'note'               => __( 'Consult with a qualified healthcare provider or veterinarian for personalized vaccination recommendations.', 'mcp-ai-wpoos-pro' ),
+			'note'                 => __( 'Consult with a qualified healthcare provider or veterinarian for personalized vaccination recommendations.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -592,9 +597,9 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 	 * The record must be a published mcp_ai_med_record post that has the
 	 * `_is_vaccination` meta flag set and belongs to the given member.
 	 *
-	 * @param array  $arguments       Tool arguments (includes record_id).
-	 * @param int    $member_id       Verified member post ID.
-	 * @param int    $current_user_id Current WP user ID.
+	 * @param array $arguments       Tool arguments (includes record_id).
+	 * @param int   $member_id       Verified member post ID.
+	 * @param int   $current_user_id Current WP user ID.
 	 * @return array|WP_Error         Result or error.
 	 */
 	private function update_vaccination( $arguments, $member_id, $current_user_id ) {
@@ -711,9 +716,9 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Permanently delete a vaccination record.
 	 *
-	 * @param array  $arguments       Tool arguments (includes record_id).
-	 * @param int    $member_id       Verified member post ID.
-	 * @param int    $current_user_id Current WP user ID.
+	 * @param array $arguments       Tool arguments (includes record_id).
+	 * @param int   $member_id       Verified member post ID.
+	 * @param int   $current_user_id Current WP user ID.
 	 * @return array|WP_Error         Result or error.
 	 */
 	private function delete_vaccination( $arguments, $member_id, $current_user_id ) {
@@ -749,11 +754,11 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'            => true,
-			'message'            => __( 'Vaccination record deleted successfully.', 'mcp-ai-wpoos-pro' ),
-			'record_id'          => $record_id,
-			'member_id'          => $member_id,
-			'vaccine_name'       => $vaccine_name,
+			'success'             => true,
+			'message'             => __( 'Vaccination record deleted successfully.', 'mcp-ai-wpoos-pro' ),
+			'record_id'           => $record_id,
+			'member_id'           => $member_id,
+			'vaccine_name'        => $vaccine_name,
 			'administration_date' => $administration_date,
 		);
 	}

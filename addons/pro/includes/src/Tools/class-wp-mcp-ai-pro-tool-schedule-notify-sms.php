@@ -348,7 +348,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 				)
 			);
 		} catch ( \Exception $exception ) {
-			// Intentionally empty - error handled elsewhere.
+			unset( $exception ); // Intentionally empty - error handled elsewhere.
 			WP_MCP_AI_Logger::log_error(
 				'Unexpected error while sending scheduled Notify.lk SMS.',
 				array(
@@ -380,7 +380,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 		try {
 			$candidate = new DateTimeImmutable( $input, $timezone );
 		} catch ( \Exception $exception ) {
-			// Intentionally empty - error handled elsewhere.
+			unset( $exception ); // Intentionally empty - error handled elsewhere.
 			$candidate = false;
 		}
 
@@ -416,7 +416,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 				try {
 					return new DateTimeZone( $blog_timezone );
 				} catch ( \Exception $exception ) {
-					// Intentionally empty - error handled elsewhere.
+					unset( $exception ); // Intentionally empty - error handled elsewhere.
 					// Fall through to UTC.
 				}
 			}
@@ -427,7 +427,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 		try {
 			return new DateTimeZone( $timezone_string );
 		} catch ( \Exception $exception ) {
-			// Intentionally empty - error handled elsewhere.
+			unset( $exception ); // Intentionally empty - error handled elsewhere.
 			return new WP_Error( 'wp_mcp_ai_invalid_timezone', __( 'The supplied timezone is not valid.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 	}

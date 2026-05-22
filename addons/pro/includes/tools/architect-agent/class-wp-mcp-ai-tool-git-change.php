@@ -202,7 +202,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	// ------------------------------------------------------------------ //
-	// Commit / add / checkout                                              //
+	// Commit / add / checkout                                              //.
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -318,7 +318,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	// ------------------------------------------------------------------ //
-	// Stash dispatcher                                                     //
+	// Stash dispatcher                                                     //.
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -380,7 +380,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	// ------------------------------------------------------------------ //
-	// Stash subcommand handlers                                            //
+	// Stash subcommand handlers                                            //.
 	// ------------------------------------------------------------------ //
 
 	/**

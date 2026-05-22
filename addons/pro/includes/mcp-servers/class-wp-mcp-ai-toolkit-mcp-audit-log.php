@@ -192,7 +192,7 @@ class WP_MCP_AI_Toolkit_MCP_Audit_Log {
 					'last_ts'  => 0,
 				);
 			}
-			$pairs[ $key ]['count']++;
+			++$pairs[ $key ]['count'];
 			if ( $entry['ts'] > $pairs[ $key ]['last_ts'] ) {
 				$pairs[ $key ]['last_ts'] = $entry['ts'];
 			}

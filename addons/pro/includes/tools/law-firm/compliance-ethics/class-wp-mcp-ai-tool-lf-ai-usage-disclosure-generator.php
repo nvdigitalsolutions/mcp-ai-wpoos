@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator implements WP_MCP_AI_Tool_
 		$firm_name = isset( $settings['law_firm_name'] ) ? $settings['law_firm_name'] : get_bloginfo( 'name' );
 
 		// Get the generating attorney's name.
-		$attorney = get_userdata( $uid );
+		$attorney      = get_userdata( $uid );
 		$attorney_name = $attorney ? $attorney->display_name : __( 'Attorney', 'mcp-ai-wpoos-pro' );
 
 		$tools_list = implode( ', ', $ai_tools_used );

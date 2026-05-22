@@ -112,6 +112,11 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'pii-data', 'hipaa-relevant', 'data-export' );
 	}
@@ -145,12 +150,12 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Validate inputs.
-		$member_id = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
-		$resource_types = isset( $arguments['resource_types'] ) ? (array) $arguments['resource_types'] : array( 'Patient', 'Observation', 'MedicationStatement', 'AllergyIntolerance', 'Condition', 'Immunization' );
-		$format = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'json';
+		$member_id        = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$resource_types   = isset( $arguments['resource_types'] ) ? (array) $arguments['resource_types'] : array( 'Patient', 'Observation', 'MedicationStatement', 'AllergyIntolerance', 'Condition', 'Immunization' );
+		$format           = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'json';
 		$include_metadata = isset( $arguments['include_metadata'] ) ? (bool) $arguments['include_metadata'] : true;
-		$date_from = isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : null;
-		$date_to = isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : null;
+		$date_from        = isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : null;
+		$date_to          = isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : null;
 
 		if ( ! $member_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_member_id', __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) );
@@ -172,27 +177,27 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'Observation':
-					$observations = $this->build_observation_resources( $member_id, $date_from, $date_to );
+					$observations   = $this->build_observation_resources( $member_id, $date_from, $date_to );
 					$fhir_resources = array_merge( $fhir_resources, $observations );
 					break;
 
 				case 'MedicationStatement':
-					$medications = $this->build_medication_resources( $member_id, $date_from, $date_to );
+					$medications    = $this->build_medication_resources( $member_id, $date_from, $date_to );
 					$fhir_resources = array_merge( $fhir_resources, $medications );
 					break;
 
 				case 'AllergyIntolerance':
-					$allergies = $this->build_allergy_resources( $member_id );
+					$allergies      = $this->build_allergy_resources( $member_id );
 					$fhir_resources = array_merge( $fhir_resources, $allergies );
 					break;
 
 				case 'Condition':
-					$conditions = $this->build_condition_resources( $member_id, $date_from, $date_to );
+					$conditions     = $this->build_condition_resources( $member_id, $date_from, $date_to );
 					$fhir_resources = array_merge( $fhir_resources, $conditions );
 					break;
 
 				case 'Immunization':
-					$immunizations = $this->build_immunization_resources( $member_id, $date_from, $date_to );
+					$immunizations  = $this->build_immunization_resources( $member_id, $date_from, $date_to );
 					$fhir_resources = array_merge( $fhir_resources, $immunizations );
 					break;
 			}
@@ -239,8 +244,8 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array FHIR Patient resource.
 	 */
 	private function build_patient_resource( $member_id, $include_metadata ) {
-		$member = get_post( $member_id );
-		$types = wp_get_object_terms( $member_id, 'mcp_ai_member_type', array( 'fields' => 'slugs' ) );
+		$member      = get_post( $member_id );
+		$types       = wp_get_object_terms( $member_id, 'mcp_ai_member_type', array( 'fields' => 'slugs' ) );
 		$member_type = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : 'person';
 
 		$resource = array(
@@ -248,8 +253,8 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 			'id'           => 'member-' . $member_id,
 			'name'         => array(
 				array(
-					'use'   => 'official',
-					'text'  => $member->post_title,
+					'use'  => 'official',
+					'text' => $member->post_title,
 				),
 			),
 		);
@@ -492,18 +497,36 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 					array(
 						'code'          => array(
 							'coding' => array(
-								array( 'system' => 'http://loinc.org', 'code' => '8480-6', 'display' => 'Systolic blood pressure' ),
+								array(
+									'system'  => 'http://loinc.org',
+									'code'    => '8480-6',
+									'display' => 'Systolic blood pressure',
+								),
 							),
 						),
-						'valueQuantity' => array( 'value' => (float) $row->bp_systolic, 'unit' => 'mmHg', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]' ),
+						'valueQuantity' => array(
+							'value'  => (float) $row->bp_systolic,
+							'unit'   => 'mmHg',
+							'system' => 'http://unitsofmeasure.org',
+							'code'   => 'mm[Hg]',
+						),
 					),
 					array(
 						'code'          => array(
 							'coding' => array(
-								array( 'system' => 'http://loinc.org', 'code' => '8462-4', 'display' => 'Diastolic blood pressure' ),
+								array(
+									'system'  => 'http://loinc.org',
+									'code'    => '8462-4',
+									'display' => 'Diastolic blood pressure',
+								),
 							),
 						),
-						'valueQuantity' => array( 'value' => (float) $row->bp_diastolic, 'unit' => 'mmHg', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]' ),
+						'valueQuantity' => array(
+							'value'  => (float) $row->bp_diastolic,
+							'unit'   => 'mmHg',
+							'system' => 'http://unitsofmeasure.org',
+							'code'   => 'mm[Hg]',
+						),
 					),
 				),
 			);
@@ -511,20 +534,90 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Simple scalar vital-sign observations.
 		$scalar_map = array(
-			'heart_rate'        => array( 'loinc' => '8867-4', 'display' => 'Heart rate',             'unit' => 'beats/minute', 'ucum' => '/min' ),
-			'temperature'       => array( 'loinc' => '8310-5', 'display' => 'Body temperature',        'unit' => 'degF',         'ucum' => '[degF]' ),
-			'weight'            => array( 'loinc' => '29463-7', 'display' => 'Body weight',            'unit' => 'lbs',          'ucum' => '[lb_av]' ),
-			'bmi'               => array( 'loinc' => '39156-5', 'display' => 'Body mass index',        'unit' => 'kg/m2',        'ucum' => 'kg/m2' ),
-			'blood_glucose'     => array( 'loinc' => '2339-0',  'display' => 'Glucose [Mass/volume] in Blood', 'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
-			'oxygen_saturation' => array( 'loinc' => '59408-5', 'display' => 'Oxygen saturation',      'unit' => '%',            'ucum' => '%' ),
-			'respiratory_rate'  => array( 'loinc' => '9279-1',  'display' => 'Respiratory rate',       'unit' => 'breaths/min',  'ucum' => '/min' ),
-			'egfr'              => array( 'loinc' => '33914-3', 'display' => 'eGFR',                   'unit' => 'mL/min/1.73m2', 'ucum' => 'mL/min/{1.73_m2}' ),
-			'creatinine'        => array( 'loinc' => '38483-4', 'display' => 'Creatinine [Mass/volume] in Blood', 'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
-			'bun'               => array( 'loinc' => '3094-0',  'display' => 'Urea nitrogen [Mass/volume] in Serum or Plasma', 'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
-			'potassium'         => array( 'loinc' => '2823-3',  'display' => 'Potassium [Moles/volume] in Serum or Plasma',    'unit' => 'mEq/L', 'ucum' => 'meq/L' ),
-			'sodium'            => array( 'loinc' => '2951-2',  'display' => 'Sodium [Moles/volume] in Serum or Plasma',       'unit' => 'mEq/L', 'ucum' => 'meq/L' ),
-			'phosphorus'        => array( 'loinc' => '2777-1',  'display' => 'Phosphate [Mass/volume] in Serum or Plasma',     'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
-			'albumin'           => array( 'loinc' => '1751-7',  'display' => 'Albumin [Mass/volume] in Serum or Plasma',       'unit' => 'g/dL',  'ucum' => 'g/dL' ),
+			'heart_rate'        => array(
+				'loinc'   => '8867-4',
+				'display' => 'Heart rate',
+				'unit'    => 'beats/minute',
+				'ucum'    => '/min',
+			),
+			'temperature'       => array(
+				'loinc'   => '8310-5',
+				'display' => 'Body temperature',
+				'unit'    => 'degF',
+				'ucum'    => '[degF]',
+			),
+			'weight'            => array(
+				'loinc'   => '29463-7',
+				'display' => 'Body weight',
+				'unit'    => 'lbs',
+				'ucum'    => '[lb_av]',
+			),
+			'bmi'               => array(
+				'loinc'   => '39156-5',
+				'display' => 'Body mass index',
+				'unit'    => 'kg/m2',
+				'ucum'    => 'kg/m2',
+			),
+			'blood_glucose'     => array(
+				'loinc'   => '2339-0',
+				'display' => 'Glucose [Mass/volume] in Blood',
+				'unit'    => 'mg/dL',
+				'ucum'    => 'mg/dL',
+			),
+			'oxygen_saturation' => array(
+				'loinc'   => '59408-5',
+				'display' => 'Oxygen saturation',
+				'unit'    => '%',
+				'ucum'    => '%',
+			),
+			'respiratory_rate'  => array(
+				'loinc'   => '9279-1',
+				'display' => 'Respiratory rate',
+				'unit'    => 'breaths/min',
+				'ucum'    => '/min',
+			),
+			'egfr'              => array(
+				'loinc'   => '33914-3',
+				'display' => 'eGFR',
+				'unit'    => 'mL/min/1.73m2',
+				'ucum'    => 'mL/min/{1.73_m2}',
+			),
+			'creatinine'        => array(
+				'loinc'   => '38483-4',
+				'display' => 'Creatinine [Mass/volume] in Blood',
+				'unit'    => 'mg/dL',
+				'ucum'    => 'mg/dL',
+			),
+			'bun'               => array(
+				'loinc'   => '3094-0',
+				'display' => 'Urea nitrogen [Mass/volume] in Serum or Plasma',
+				'unit'    => 'mg/dL',
+				'ucum'    => 'mg/dL',
+			),
+			'potassium'         => array(
+				'loinc'   => '2823-3',
+				'display' => 'Potassium [Moles/volume] in Serum or Plasma',
+				'unit'    => 'mEq/L',
+				'ucum'    => 'meq/L',
+			),
+			'sodium'            => array(
+				'loinc'   => '2951-2',
+				'display' => 'Sodium [Moles/volume] in Serum or Plasma',
+				'unit'    => 'mEq/L',
+				'ucum'    => 'meq/L',
+			),
+			'phosphorus'        => array(
+				'loinc'   => '2777-1',
+				'display' => 'Phosphate [Mass/volume] in Serum or Plasma',
+				'unit'    => 'mg/dL',
+				'ucum'    => 'mg/dL',
+			),
+			'albumin'           => array(
+				'loinc'   => '1751-7',
+				'display' => 'Albumin [Mass/volume] in Serum or Plasma',
+				'unit'    => 'g/dL',
+				'ucum'    => 'g/dL',
+			),
 		);
 
 		foreach ( $scalar_map as $field => $meta ) {
@@ -571,10 +664,10 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 		$medications = array();
 
 		$query_args = array(
-			'post_type'      => 'mcp_ai_prescription',
-			'post_status'    => 'publish',
-			'meta_key'       => '_prescription_member_id',
-			'meta_value'     => $member_id,
+			'post_type'   => 'mcp_ai_prescription',
+			'post_status' => 'publish',
+			'meta_key'    => '_prescription_member_id',
+			'meta_value'  => $member_id,
 		);
 
 		if ( $date_from || $date_to ) {

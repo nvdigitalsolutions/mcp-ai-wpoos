@@ -394,7 +394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_social_media_presets() {
 			return array(
-				'daily_content_scheduler'  => array(
+				'daily_content_scheduler' => array(
 					'name'          => __( 'Daily Content Scheduler', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Queues the day\'s social media posts across all connected platforms using your content calendar.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'social_media',
@@ -420,7 +420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'engagement_report'        => array(
+				'engagement_report'       => array(
 					'name'          => __( 'Daily Engagement Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Compiles a summary of likes, shares, comments, and follower growth across social channels.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'social_media',
@@ -435,7 +435,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'trending_topics_monitor'  => array(
+				'trending_topics_monitor' => array(
 					'name'          => __( 'Trending Topics Monitor', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Scans trending topics and hashtags relevant to your industry for timely content opportunities.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'social_media',
@@ -448,7 +448,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_social_trending_monitor',
 					),
 				),
-				'social_analytics_digest'  => array(
+				'social_analytics_digest' => array(
 					'name'          => __( 'Weekly Social Analytics Digest', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Produces a weekly deep-dive into social media performance with actionable recommendations.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'social_media',
@@ -463,7 +463,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'cross_platform_post'      => array(
+				'cross_platform_post'     => array(
 					'name'          => __( 'Cross-Platform Post Syndicator', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Publishes new blog posts to all connected social media platforms with optimised captions per channel.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'social_media',
@@ -989,7 +989,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_dj_management_presets() {
 			return array(
-				'gig_reminder_broadcast'       => array(
+				'gig_reminder_broadcast'      => array(
 					'name'          => __( 'Gig Reminder Broadcast', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily reminders for upcoming gigs including venue details, load-in times, and set requirements.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'dj_management',
@@ -1005,7 +1005,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'playlist_rotation_update'     => array(
+				'playlist_rotation_update'    => array(
 					'name'          => __( 'Playlist Rotation Update', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Rotates and refreshes playlists weekly based on trending tracks, audience preferences, and venue style.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'dj_management',
@@ -1029,7 +1029,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'venue_availability_check'     => array(
+				'venue_availability_check'    => array(
 					'name'          => __( 'Venue Availability Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Checks partner venue availability for upcoming booking windows and flags open slots.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'dj_management',
@@ -1042,7 +1042,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_dj_venue_availability_check',
 					),
 				),
-				'equipment_maintenance_alert'  => array(
+				'equipment_maintenance_alert' => array(
 					'name'          => __( 'Equipment Maintenance Alert', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Alerts the team when DJ equipment is due for maintenance or calibration based on usage hours.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'dj_management',
@@ -1058,7 +1058,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'setlist_generation'           => array(
+				'setlist_generation'          => array(
 					'name'          => __( 'AI Setlist Generation', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates suggested setlists for upcoming gigs based on venue type, audience demographics, and event theme.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'dj_management',
@@ -1088,7 +1088,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_image_production_presets() {
 			return array(
-				'batch_image_optimization'   => array(
+				'batch_image_optimization'  => array(
 					'name'          => __( 'Batch Image Optimisation', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Optimises uncompressed images in the media library by applying lossless compression and WebP conversion.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'image_production',
@@ -1116,7 +1116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'daily_media_library_audit'  => array(
+				'daily_media_library_audit' => array(
 					'name'          => __( 'Daily Media Library Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Audits the media library for oversized images, missing metadata, and duplicate files.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'image_production',
@@ -1131,7 +1131,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'image_alt_text_generation'  => array(
+				'image_alt_text_generation' => array(
 					'name'          => __( 'Image Alt Text Generation', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Uses AI to generate descriptive alt text for images that are missing accessibility attributes.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'image_production',
@@ -1157,7 +1157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'watermark_batch_process'    => array(
+				'watermark_batch_process'   => array(
 					'name'          => __( 'Watermark Batch Process', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Applies configured watermarks to newly uploaded images that match the watermark criteria.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'image_production',
@@ -1181,7 +1181,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'image_cdn_sync'             => array(
+				'image_cdn_sync'            => array(
 					'name'          => __( 'Image CDN Sync', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Synchronises newly uploaded or modified images with the configured CDN for faster global delivery.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'image_production',
@@ -1209,7 +1209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_ai_tool_builder_presets() {
 			return array(
-				'tool_health_check'           => array(
+				'tool_health_check'          => array(
 					'name'          => __( 'Tool Health Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Pings every registered AI tool to verify availability, response time, and error rates.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'ai_tool_builder',
@@ -1222,7 +1222,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_tool_builder_health_check',
 					),
 				),
-				'tool_usage_report'           => array(
+				'tool_usage_report'          => array(
 					'name'          => __( 'Weekly Tool Usage Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Reports on tool invocation counts, success rates, average execution time, and most active users.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'ai_tool_builder',
@@ -1237,7 +1237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'tool_schema_validation'      => array(
+				'tool_schema_validation'     => array(
 					'name'          => __( 'Tool Schema Validation', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Validates all registered tool schemas against the MCP specification to catch definition errors.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'ai_tool_builder',
@@ -1250,7 +1250,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_tool_builder_schema_validation',
 					),
 				),
-				'deprecated_tool_scan'        => array(
+				'deprecated_tool_scan'       => array(
 					'name'          => __( 'Deprecated Tool Scan', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies tools marked as deprecated that are still being invoked and recommends migration paths.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'ai_tool_builder',
@@ -1265,7 +1265,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'tool_performance_benchmark'  => array(
+				'tool_performance_benchmark' => array(
 					'name'          => __( 'Tool Performance Benchmark', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Benchmarks tool execution times and resource consumption to identify performance bottlenecks.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'ai_tool_builder',
@@ -1755,7 +1755,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_crm_presets() {
 			return array(
-				'lead_followup_reminder'     => array(
+				'lead_followup_reminder'      => array(
 					'name'          => __( 'Lead Follow-up Reminder', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily reminders for leads that are due for follow-up based on their pipeline stage and last contact date.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1771,7 +1771,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'contact_engagement_score'   => array(
+				'contact_engagement_score'    => array(
 					'name'          => __( 'Contact Engagement Scoring', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Recalculates engagement scores for all contacts based on recent interactions, email opens, and site visits.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1797,7 +1797,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'pipeline_status_report'     => array(
+				'pipeline_status_report'      => array(
 					'name'          => __( 'Daily Pipeline Status Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a daily snapshot of the sales pipeline showing deals by stage, value, and probability.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1812,7 +1812,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'customer_birthday_alerts'   => array(
+				'customer_birthday_alerts'    => array(
 					'name'          => __( 'Customer Birthday Alerts', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily alerts for customer birthdays coming up in the next 7 days for personalised outreach.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -1828,7 +1828,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'crm_data_cleanup'           => array(
+				'crm_data_cleanup'            => array(
 					'name'          => __( 'CRM Data Cleanup', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies and cleans duplicate contacts, invalid emails, and stale records in the CRM database.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'crm',
@@ -2003,7 +2003,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_regulatory_registration_presets() {
 			return array(
-				'compliance_deadline_check'    => array(
+				'compliance_deadline_check'  => array(
 					'name'          => __( 'Compliance Deadline Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Checks for upcoming regulatory compliance deadlines and ensures all required submissions are on track.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'regulatory_registration',
@@ -2016,7 +2016,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_regulatory_compliance_deadline_check',
 					),
 				),
-				'registration_renewal_alert'   => array(
+				'registration_renewal_alert' => array(
 					'name'          => __( 'Registration Renewal Alert', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Alerts the team about business registrations, licences, and certifications approaching their renewal date.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'regulatory_registration',
@@ -2032,7 +2032,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'audit_log_review'             => array(
+				'audit_log_review'           => array(
 					'name'          => __( 'Weekly Audit Log Review', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Reviews system audit logs for compliance-relevant activities and generates a summary for the compliance team.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'regulatory_registration',
@@ -2047,7 +2047,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'policy_update_notification'   => array(
+				'policy_update_notification' => array(
 					'name'          => __( 'Policy Update Notification', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Notifies stakeholders when internal policies or compliance documents are updated or due for review.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'regulatory_registration',
@@ -2063,7 +2063,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'regulatory_change_monitor'    => array(
+				'regulatory_change_monitor'  => array(
 					'name'          => __( 'Regulatory Change Monitor', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monitors for changes in relevant regulations and standards that may affect business operations.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'regulatory_registration',
@@ -2091,7 +2091,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_chat_channels_presets() {
 			return array(
-				'daily_standup_reminder'       => array(
+				'daily_standup_reminder'      => array(
 					'name'          => __( 'Daily Standup Reminder', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends a daily standup reminder prompting team members to share their status updates.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'chat_channels',
@@ -2107,7 +2107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'channel_activity_digest'      => array(
+				'channel_activity_digest'     => array(
 					'name'          => __( 'Channel Activity Digest', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Compiles a daily digest of activity across all chat channels with key highlights and action items.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'chat_channels',
@@ -2122,7 +2122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'welcome_message_scheduler'    => array(
+				'welcome_message_scheduler'   => array(
 					'name'          => __( 'Welcome Message Scheduler', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Checks for newly joined channel members and sends personalised welcome messages with onboarding links.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'chat_channels',
@@ -2135,7 +2135,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_chat_welcome_message_scheduler',
 					),
 				),
-				'support_queue_alert'          => array(
+				'support_queue_alert'         => array(
 					'name'          => __( 'Support Queue Alert', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Monitors the support queue and broadcasts alerts when response times exceed defined SLA thresholds.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'chat_channels',
@@ -2151,7 +2151,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'team_announcement_broadcast'  => array(
+				'team_announcement_broadcast' => array(
 					'name'          => __( 'Weekly Team Announcement', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Broadcasts a weekly team-wide announcement covering company updates, wins, and upcoming events.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'chat_channels',
@@ -2182,7 +2182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_media_presets() {
 			return array(
-				'media_library_cleanup'      => array(
+				'media_library_cleanup'     => array(
 					'name'          => __( 'Media Library Cleanup', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Removes orphaned media files, clears broken attachment records, and reclaims storage space.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2208,7 +2208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'unused_media_scan'          => array(
+				'unused_media_scan'         => array(
 					'name'          => __( 'Unused Media Scan', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies media files that are not referenced in any post, page, or widget content.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2221,7 +2221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_unused_scan',
 					),
 				),
-				'media_optimization_report'  => array(
+				'media_optimization_report' => array(
 					'name'          => __( 'Weekly Media Optimisation Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Reports on media library health including total storage, compression savings, and files needing optimisation.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2236,7 +2236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'media_backup_check'         => array(
+				'media_backup_check'        => array(
 					'name'          => __( 'Media Backup Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Verifies that all media files are included in the latest backup and flags any files missing from backup sets.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2249,7 +2249,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_media_backup_check',
 					),
 				),
-				'media_usage_audit'          => array(
+				'media_usage_audit'         => array(
 					'name'          => __( 'Monthly Media Usage Audit', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Comprehensive monthly audit of media usage patterns, storage growth trends, and bandwidth consumption.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'media',
@@ -2279,7 +2279,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_calendar_booking_presets() {
 			return array(
-				'daily_appointment_reminder'  => array(
+				'daily_appointment_reminder' => array(
 					'name'          => __( 'Daily Appointment Reminder', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily reminders for upcoming appointments including time, participant details, and meeting links.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'calendar_booking',
@@ -2295,7 +2295,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'availability_sync'           => array(
+				'availability_sync'          => array(
 					'name'          => __( 'Availability Sync', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Synchronises availability across connected calendars to prevent double bookings and conflicts.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'calendar_booking',
@@ -2308,7 +2308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_calendar_availability_sync',
 					),
 				),
-				'no_show_followup'            => array(
+				'no_show_followup'           => array(
 					'name'          => __( 'No-Show Follow-up', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Identifies no-show appointments and triggers a follow-up workflow to reschedule or collect feedback.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'calendar_booking',
@@ -2334,7 +2334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'booking_confirmation_batch'  => array(
+				'booking_confirmation_batch' => array(
 					'name'          => __( 'Booking Confirmation Batch', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Processes new bookings and sends confirmation messages with calendar invites and preparation details.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'calendar_booking',
@@ -2358,7 +2358,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'weekly_schedule_digest'      => array(
+				'weekly_schedule_digest'     => array(
 					'name'          => __( 'Weekly Schedule Digest', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a weekly overview of the upcoming schedule with booking statistics and capacity analysis.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'calendar_booking',
@@ -2388,7 +2388,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_health_wellness_presets() {
 			return array(
-				'daily_vitals_reminder'       => array(
+				'daily_vitals_reminder'      => array(
 					'name'          => __( 'Daily Vitals Reminder', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends daily reminders to log vital signs such as blood pressure, heart rate, and weight.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'health_wellness',
@@ -2404,7 +2404,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'medication_schedule_alert'   => array(
+				'medication_schedule_alert'  => array(
 					'name'          => __( 'Medication Schedule Alert', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Sends medication reminders based on configured schedules to help maintain adherence.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'health_wellness',
@@ -2420,7 +2420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'wellness_check_broadcast'    => array(
+				'wellness_check_broadcast'   => array(
 					'name'          => __( 'Daily Wellness Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Broadcasts a daily wellness check-in prompt encouraging users to log mood, energy, and activity levels.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'health_wellness',
@@ -2436,7 +2436,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'health_metrics_report'       => array(
+				'health_metrics_report'      => array(
 					'name'          => __( 'Weekly Health Metrics Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Compiles a weekly report of health metrics with trend analysis and personalised wellness recommendations.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'health_wellness',
@@ -2451,7 +2451,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'appointment_followup_check'  => array(
+				'appointment_followup_check' => array(
 					'name'          => __( 'Appointment Follow-up Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Checks for recent health appointments and triggers follow-up workflows for post-visit tasks and feedback.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'health_wellness',
@@ -2497,7 +2497,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 */
 		private static function get_upwork_freelancer_presets() {
 			return array(
-				'upwork_job_discovery_scan'    => array(
+				'upwork_job_discovery_scan'  => array(
 					'name'          => __( 'Upwork Job Discovery Scan', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Periodically searches the Upwork marketplace for new job postings matching configured skills, categories, and budget preferences. Surfaces high-potential opportunities before competitors apply. Works in fallback mode via web search when no Upwork connection is configured.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',
@@ -2522,7 +2522,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'upwork_job_scoring'          => array(
+				'upwork_job_scoring'         => array(
 					'name'          => __( 'Upwork Job Fit Scoring', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Scores recently discovered Upwork jobs against your freelancer profile, skills, and rate preferences. Ranks opportunities by fit to prioritise proposal effort on the highest-value postings. Supports text-based fallback scoring when no Upwork connection is configured.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',
@@ -2537,7 +2537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'upwork_proposal_pipeline'    => array(
+				'upwork_proposal_pipeline'   => array(
 					'name'          => __( 'Upwork Proposal Pipeline Report', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Generates a daily overview of submitted proposals, pending invitations, and active contract statuses. Tracks proposal-to-interview conversion rate and highlights stalled applications needing attention.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',
@@ -2552,7 +2552,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'upwork_client_followup'      => array(
+				'upwork_client_followup'     => array(
 					'name'          => __( 'Upwork Client Follow-up Check', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Checks for unanswered client messages and interview invitations on Upwork. Sends reminders to ensure prompt responses, maintaining professional communication standards that boost freelancer ranking.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',
@@ -2568,7 +2568,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
-				'upwork_profile_performance'  => array(
+				'upwork_profile_performance' => array(
 					'name'          => __( 'Upwork Profile Performance Review', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Weekly review of Upwork profile performance metrics including Job Success Score trends, earnings, proposal win rate, and profile visibility. Provides actionable recommendations to improve marketplace competitiveness.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',

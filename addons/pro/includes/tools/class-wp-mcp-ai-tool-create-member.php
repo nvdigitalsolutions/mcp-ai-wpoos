@@ -46,73 +46,73 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'         => array(
+				'member_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional member ID. If provided, updates the existing member instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'name'              => array(
+				'name'               => array(
 					'type'        => 'string',
 					'description' => __( 'Member name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'type'              => array(
+				'type'               => array(
 					'type'        => 'string',
 					'description' => __( 'Member type: person or pet (optional, defaults to person)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'person', 'pet' ),
 					'default'     => 'person',
 				),
-				'description'       => array(
+				'description'        => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes or description about the member (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'date_of_birth'     => array(
+				'date_of_birth'      => array(
 					'type'        => 'string',
 					'description' => __( 'Date of birth in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'gender'            => array(
+				'gender'             => array(
 					'type'        => 'string',
 					'description' => __( 'Gender (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'blood_type'        => array(
+				'blood_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Blood type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', '' ),
 				),
-				'email'             => array(
+				'email'              => array(
 					'type'        => 'string',
 					'description' => __( 'Email address (optional)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'email',
 				),
-				'phone'             => array(
+				'phone'              => array(
 					'type'        => 'string',
 					'description' => __( 'Phone number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'address'           => array(
+				'address'            => array(
 					'type'        => 'string',
 					'description' => __( 'Physical address (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'emergency_contact' => array(
+				'emergency_contact'  => array(
 					'type'        => 'string',
 					'description' => __( 'Emergency contact information (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'species'           => array(
+				'species'            => array(
 					'type'        => 'string',
 					'description' => __( 'Species (for pets only) (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'breed'             => array(
+				'breed'              => array(
 					'type'        => 'string',
 					'description' => __( 'Breed (for pets only) (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'mrn'               => array(
+				'mrn'                => array(
 					'type'        => 'string',
 					'description' => __( 'Medical Record Number (MRN) — internal or provider-assigned identifier (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
@@ -152,6 +152,11 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -212,19 +217,19 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Validate and sanitize inputs.
-		$name              = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
-		$type              = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : 'person';
-		$description       = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
-		$date_of_birth     = isset( $arguments['date_of_birth'] ) ? sanitize_text_field( $arguments['date_of_birth'] ) : '';
-		$gender            = isset( $arguments['gender'] ) ? sanitize_text_field( $arguments['gender'] ) : '';
-		$blood_type        = isset( $arguments['blood_type'] ) ? sanitize_text_field( $arguments['blood_type'] ) : '';
-		$email             = isset( $arguments['email'] ) ? sanitize_email( $arguments['email'] ) : '';
-		$phone             = isset( $arguments['phone'] ) ? sanitize_text_field( $arguments['phone'] ) : '';
-		$address           = isset( $arguments['address'] ) ? sanitize_textarea_field( $arguments['address'] ) : '';
-		$emergency_contact = isset( $arguments['emergency_contact'] ) ? sanitize_textarea_field( $arguments['emergency_contact'] ) : '';
-		$species           = isset( $arguments['species'] ) ? sanitize_text_field( $arguments['species'] ) : '';
-		$breed             = isset( $arguments['breed'] ) ? sanitize_text_field( $arguments['breed'] ) : '';
-		$mrn               = isset( $arguments['mrn'] ) ? sanitize_text_field( $arguments['mrn'] ) : '';
+		$name               = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
+		$type               = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : 'person';
+		$description        = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
+		$date_of_birth      = isset( $arguments['date_of_birth'] ) ? sanitize_text_field( $arguments['date_of_birth'] ) : '';
+		$gender             = isset( $arguments['gender'] ) ? sanitize_text_field( $arguments['gender'] ) : '';
+		$blood_type         = isset( $arguments['blood_type'] ) ? sanitize_text_field( $arguments['blood_type'] ) : '';
+		$email              = isset( $arguments['email'] ) ? sanitize_email( $arguments['email'] ) : '';
+		$phone              = isset( $arguments['phone'] ) ? sanitize_text_field( $arguments['phone'] ) : '';
+		$address            = isset( $arguments['address'] ) ? sanitize_textarea_field( $arguments['address'] ) : '';
+		$emergency_contact  = isset( $arguments['emergency_contact'] ) ? sanitize_textarea_field( $arguments['emergency_contact'] ) : '';
+		$species            = isset( $arguments['species'] ) ? sanitize_text_field( $arguments['species'] ) : '';
+		$breed              = isset( $arguments['breed'] ) ? sanitize_text_field( $arguments['breed'] ) : '';
+		$mrn                = isset( $arguments['mrn'] ) ? sanitize_text_field( $arguments['mrn'] ) : '';
 		$preferred_pharmacy = isset( $arguments['preferred_pharmacy'] ) ? sanitize_text_field( $arguments['preferred_pharmacy'] ) : '';
 
 		if ( '' === $name ) {

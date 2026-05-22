@@ -55,8 +55,8 @@ class NV_oOS_Docs_Hub_Sitemap_Provider extends WP_Sitemaps_Provider {
 	 *
 	 * @since 0.3.8
 	 *
-	 * @param string $object_subtype Unused (docs hub has no subtypes).
 	 * @param int    $page_num       1-based page number.
+	 * @param string $object_subtype Unused (docs hub has no subtypes).
 	 * @return array Array of sitemap entries for this batch.
 	 */
 	public function get_url_list( $page_num, $object_subtype = '' ) {
@@ -183,12 +183,14 @@ class NV_oOS_Docs_Hub_Sitemap_Provider extends WP_Sitemaps_Provider {
 		}
 
 		// Scan published pages for the shortcode.
-		$pages = get_posts( array(
-			'post_type'      => 'page',
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-		) );
+		$pages = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
 
 		$found_url = null;
 		foreach ( (array) $pages as $page_id ) {
@@ -209,6 +211,7 @@ class NV_oOS_Docs_Hub_Sitemap_Provider extends WP_Sitemaps_Provider {
 	}
 }
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- file intentionally contains a class and a standalone function.
 /**
  * Register the Docs Hub sitemap provider with the WordPress sitemap registry.
  *
@@ -255,3 +258,4 @@ function nvoos_docs_hub_register_sitemap_provider( $wp_sitemaps ) {
 	$wp_sitemaps->registry->add_provider( 'nvoos-docs', new NV_oOS_Docs_Hub_Sitemap_Provider() );
 }
 add_action( 'wp_sitemaps_init', 'nvoos_docs_hub_register_sitemap_provider' );
+// phpcs:enable Universal.Files.SeparateFunctionsFromOO.Mixed

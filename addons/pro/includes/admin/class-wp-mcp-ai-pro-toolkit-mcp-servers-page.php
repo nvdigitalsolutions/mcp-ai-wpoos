@@ -162,21 +162,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				'wp-mcp-ai-pro-toolkit-mcp-servers',
 				'wpMcpAiProMcpServers',
 				array(
-					'apiBase'       => rest_url( 'mcp-ai-pro/v1' ),
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
-					'toggleNonce'   => wp_create_nonce( self::TOGGLE_NONCE ),
-					'adminPostUrl'  => admin_url( 'admin-post.php' ),
-					'pageUrl'       => admin_url( 'admin.php?page=' . self::PAGE_SLUG ),
-					'wellKnownUrl'  => home_url( '/.well-known/mcp' ),
-					'i18n'          => array(
-						'confirmDisable'   => __( 'Disable this server? Clients connected to it will lose access.', 'mcp-ai-wpoos-pro' ),
-						'confirmRevoke'    => __( 'Revoke this token? This cannot be undone.', 'mcp-ai-wpoos-pro' ),
-						'confirmClearLog'  => __( 'Clear the entire audit log? This cannot be undone.', 'mcp-ai-wpoos-pro' ),
-						'tokenSavePrompt'  => __( "Copy and store this token — it won't be shown again.", 'mcp-ai-wpoos-pro' ),
-						'tokenCopied'      => __( 'Copied!', 'mcp-ai-wpoos-pro' ),
-						'generating'       => __( 'Generating…', 'mcp-ai-wpoos-pro' ),
-						'revoking'         => __( 'Revoking…', 'mcp-ai-wpoos-pro' ),
-						'loading'          => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
+					'apiBase'      => rest_url( 'mcp-ai-pro/v1' ),
+					'nonce'        => wp_create_nonce( 'wp_rest' ),
+					'toggleNonce'  => wp_create_nonce( self::TOGGLE_NONCE ),
+					'adminPostUrl' => admin_url( 'admin-post.php' ),
+					'pageUrl'      => admin_url( 'admin.php?page=' . self::PAGE_SLUG ),
+					'wellKnownUrl' => home_url( '/.well-known/mcp' ),
+					'i18n'         => array(
+						'confirmDisable'  => __( 'Disable this server? Clients connected to it will lose access.', 'mcp-ai-wpoos-pro' ),
+						'confirmRevoke'   => __( 'Revoke this token? This cannot be undone.', 'mcp-ai-wpoos-pro' ),
+						'confirmClearLog' => __( 'Clear the entire audit log? This cannot be undone.', 'mcp-ai-wpoos-pro' ),
+						'tokenSavePrompt' => __( "Copy and store this token — it won't be shown again.", 'mcp-ai-wpoos-pro' ),
+						'tokenCopied'     => __( 'Copied!', 'mcp-ai-wpoos-pro' ),
+						'generating'      => __( 'Generating…', 'mcp-ai-wpoos-pro' ),
+						'revoking'        => __( 'Revoking…', 'mcp-ai-wpoos-pro' ),
+						'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -203,10 +203,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 			$enable = ! empty( $_POST['enable'] );
 
 			if ( '' !== $slug ) {
-				update_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array_merge(
-					$this->get_server_config( $slug ),
-					array( 'enabled' => $enable )
-				) );
+				update_option(
+					WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug,
+					array_merge(
+						$this->get_server_config( $slug ),
+						array( 'enabled' => $enable )
+					)
+				);
 
 				/**
 				 * Fires after an admin toggles a toolkit MCP server on/off.
@@ -261,10 +264,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 
 			$redirect = add_query_arg(
 				array(
-					'page'        => self::PAGE_SLUG,
-					'tab'         => 'detail',
-					'server'      => rawurlencode( $slug ),
-					'limits_saved'=> '1',
+					'page'         => self::PAGE_SLUG,
+					'tab'          => 'detail',
+					'server'       => rawurlencode( $slug ),
+					'limits_saved' => '1',
 				),
 				admin_url( 'admin.php' )
 			);
@@ -292,9 +295,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 
 			$redirect = add_query_arg(
 				array(
-					'page'         => self::PAGE_SLUG,
-					'tab'          => 'audit',
-					'audit_cleared'=> '1',
+					'page'          => self::PAGE_SLUG,
+					'tab'           => 'audit',
+					'audit_cleared' => '1',
 				),
 				admin_url( 'admin.php' )
 			);
@@ -345,7 +348,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 						'help'      => __( 'Help', 'mcp-ai-wpoos-pro' ),
 					);
 					foreach ( $tab_labels as $tab_slug => $tab_label ) {
-						$url        = add_query_arg( array( 'page' => self::PAGE_SLUG, 'tab' => $tab_slug ), admin_url( 'admin.php' ) );
+						$url        = add_query_arg(
+							array(
+								'page' => self::PAGE_SLUG,
+								'tab'  => $tab_slug,
+							),
+							admin_url( 'admin.php' )
+						);
 						$is_current = $current_tab === $tab_slug;
 						printf(
 							'<a href="%s" class="nav-tab%s">%s</a>',
@@ -465,7 +474,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 					<?php submit_button( __( 'Filter', 'mcp-ai-wpoos-pro' ), 'secondary', 'filter_action', false ); ?>
 
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=discovery' ) ); ?>"
-					   class="button button-secondary" target="_blank">
+						class="button button-secondary" target="_blank">
 						<?php esc_html_e( '/.well-known/mcp', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 				</form>
@@ -489,9 +498,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				$shown = 0;
 				foreach ( $servers as $slug => $server ) {
 					// Apply filters.
-					$is_tier1   = in_array( $slug, $tier_1_slugs, true );
+					$is_tier1    = in_array( $slug, $tier_1_slugs, true );
 					$server_tier = $is_tier1 ? '1' : '2';
-					$is_enabled = $server instanceof WP_MCP_AI_Toolkit_Server_Base && $server->is_enabled();
+					$is_enabled  = $server instanceof WP_MCP_AI_Toolkit_Server_Base && $server->is_enabled();
 
 					if ( '' !== $filter_tier && $filter_tier !== $server_tier ) {
 						continue;
@@ -667,8 +676,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 					<ul class="wp-mcp-ai-server-list-nav" style="margin:0;padding:0;list-style:none;">
 					<?php foreach ( $servers as $slug => $s ) : ?>
 						<?php
-						$nav_url = add_query_arg(
-							array( 'page' => self::PAGE_SLUG, 'tab' => 'detail', 'server' => rawurlencode( $slug ) ),
+						$nav_url       = add_query_arg(
+							array(
+								'page'   => self::PAGE_SLUG,
+								'tab'    => 'detail',
+								'server' => rawurlencode( $slug ),
+							),
 							admin_url( 'admin.php' )
 						);
 						$is_active_nav = $slug === $active_server;
@@ -696,8 +709,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 		 *
 		 * @since 1.6.0
 		 *
-		 * @param string                              $slug   Server slug.
-		 * @param WP_MCP_AI_Toolkit_Server_Interface  $server Server instance.
+		 * @param string                             $slug   Server slug.
+		 * @param WP_MCP_AI_Toolkit_Server_Interface $server Server instance.
 		 * @return void
 		 */
 		private function render_server_detail_panel( $slug, $server ) {
@@ -750,12 +763,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 								<?php
 								$candidate_count = count( $server->candidate_tool_slugs() );
 								$effective_count = $server instanceof WP_MCP_AI_Toolkit_Server_Base ? count( $server->effective_tool_slugs() ) : $candidate_count;
-								echo esc_html( sprintf(
+								echo esc_html(
+									sprintf(
 									/* translators: 1: effective count, 2: total count */
-									__( '%1$d active / %2$d candidate', 'mcp-ai-wpoos-pro' ),
-									$effective_count,
-									$candidate_count
-								) );
+										__( '%1$d active / %2$d candidate', 'mcp-ai-wpoos-pro' ),
+										$effective_count,
+										$candidate_count
+									)
+								);
 								?>
 							</td>
 						</tr>
@@ -820,7 +835,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				<div class="wp-mcp-ai-accordion-body">
 					<?php $this->render_audit_entries( $slug, 50 ); ?>
 					<p style="margin-top:8px;">
-						<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::PAGE_SLUG, 'tab' => 'audit', 'source' => rawurlencode( $slug ) ), admin_url( 'admin.php' ) ) ); ?>">
+						<a href="
+						<?php
+						echo esc_url(
+							add_query_arg(
+								array(
+									'page'   => self::PAGE_SLUG,
+									'tab'    => 'audit',
+									'source' => rawurlencode( $slug ),
+								),
+								admin_url( 'admin.php' )
+							)
+						);
+						?>
+									">
 							<?php esc_html_e( 'View all in Audit Log →', 'mcp-ai-wpoos-pro' ); ?>
 						</a>
 					</p>
@@ -1366,7 +1394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				'max_payload_bytes'   => 0,
 				'max_iterations'      => 0,
 			);
-			$option = get_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array() );
+			$option   = get_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . $slug, array() );
 			if ( ! is_array( $option ) ) {
 				$option = array();
 			}
@@ -1390,24 +1418,36 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 			}
 			$all = WP_MCP_AI_Toolkit_MCP_Audit_Log::get_instance()->get_entries( 200 );
 			if ( '' !== $source ) {
-				$all = array_filter( $all, static function ( $e ) use ( $source ) {
-					return isset( $e['source'] ) && $e['source'] === $source;
-				} );
+				$all = array_filter(
+					$all,
+					static function ( $e ) use ( $source ) {
+						return isset( $e['source'] ) && $e['source'] === $source;
+					}
+				);
 			}
 			if ( '' !== $consumer ) {
-				$all = array_filter( $all, static function ( $e ) use ( $consumer ) {
-					return isset( $e['consumer'] ) && false !== strpos( $e['consumer'], $consumer );
-				} );
+				$all = array_filter(
+					$all,
+					static function ( $e ) use ( $consumer ) {
+						return isset( $e['consumer'] ) && false !== strpos( $e['consumer'], $consumer );
+					}
+				);
 			}
 			if ( '' !== $action ) {
-				$all = array_filter( $all, static function ( $e ) use ( $action ) {
-					return isset( $e['action'] ) && $e['action'] === $action;
-				} );
+				$all = array_filter(
+					$all,
+					static function ( $e ) use ( $action ) {
+						return isset( $e['action'] ) && $e['action'] === $action;
+					}
+				);
 			}
 			$all = array_values( $all );
-			usort( $all, static function ( $a, $b ) {
-				return ( $b['ts'] ?? 0 ) - ( $a['ts'] ?? 0 );
-			} );
+			usort(
+				$all,
+				static function ( $a, $b ) {
+					return ( $b['ts'] ?? 0 ) - ( $a['ts'] ?? 0 );
+				}
+			);
 			return array_slice( $all, 0, $limit );
 		}
 
@@ -1443,12 +1483,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 		 */
 		private function get_tier1_slugs() {
 			return array(
-				'crm', 'health', 'architectural-design',
-				'ai-tool-builder', 'calendar-booking', 'cre-debt',
-				'dj-management', 'document-generation', 'eca',
-				'ecommerce', 'financial-planner', 'image-production',
-				'law-firm', 'media', 'multilingual', 'project-management',
-				'regulatory-registration', 'social-media', 'video-production',
+				'crm',
+				'health',
+				'architectural-design',
+				'ai-tool-builder',
+				'calendar-booking',
+				'cre-debt',
+				'dj-management',
+				'document-generation',
+				'eca',
+				'ecommerce',
+				'financial-planner',
+				'image-production',
+				'law-firm',
+				'media',
+				'multilingual',
+				'project-management',
+				'regulatory-registration',
+				'social-media',
+				'video-production',
 			);
 		}
 	}

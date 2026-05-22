@@ -41,7 +41,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 */
 	public function register_scripts() {
 		// No need to check for pro - this file is in pro addon.
-		
+
 		// Tool adapter (NEW - thin wrapper, ~3KB minified).
 		wp_register_script(
 			'wp-mcp-ai-langchain-tool-adapter',
@@ -70,7 +70,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 		// Register CDN scripts (for reference, not directly enqueued).
 		wp_register_script(
 			'langchain-core',
-			"https://cdn.jsdelivr.net/npm/@langchain/core/+esm",
+			'https://cdn.jsdelivr.net/npm/@langchain/core/+esm',
 			array(),
 			$langchain_core_version,
 			true
@@ -78,7 +78,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		wp_register_script(
 			'langchain',
-			"https://cdn.jsdelivr.net/npm/langchain/+esm",
+			'https://cdn.jsdelivr.net/npm/langchain/+esm',
 			array( 'langchain-core' ),
 			$langchain_version,
 			true
@@ -86,7 +86,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		wp_register_script(
 			'langchain-community',
-			"https://cdn.jsdelivr.net/npm/@langchain/community/+esm",
+			'https://cdn.jsdelivr.net/npm/@langchain/community/+esm',
 			array( 'langchain-core' ),
 			$langchain_community_version,
 			true
@@ -100,7 +100,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 */
 	public function maybe_enqueue_scripts() {
 		// No need to check for pro - this file is in pro addon.
-		
+
 		// Check if LangChain orchestration feature flag is enabled.
 		$langchain_enabled = get_option( 'wp_mcp_ai_enable_langchain_orchestration', false );
 		if ( ! $langchain_enabled ) {
@@ -126,7 +126,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 				'maxIterations'   => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
 				'maxRetries'      => absint( $webllm_settings['langchain_max_retries'] ?? 3 ),
 				'memoryWindowK'   => absint( $webllm_settings['langchain_memory_window'] ?? 10 ),
-				'enableStreaming'  => ! empty( $webllm_settings['langchain_enable_streaming'] ),
+				'enableStreaming' => ! empty( $webllm_settings['langchain_enable_streaming'] ),
 				'verbose'         => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				'cdnUrls'         => array(
 					'core'      => 'https://cdn.jsdelivr.net/npm/@langchain/core/+esm',

@@ -139,6 +139,11 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

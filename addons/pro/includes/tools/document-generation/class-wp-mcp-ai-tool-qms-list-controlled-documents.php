@@ -15,6 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'qms_list_controlled_documents';
 	}
@@ -24,22 +31,43 @@ class WP_MCP_AI_Tool_QMS_List_Controlled_Documents implements WP_MCP_AI_Tool_Int
 	public function get_description() {
 		return __( 'Master document register. List controlled documents with filters for status (draft/in_review/approved/released/superseded/obsolete), doc type, owner, or review-due-by date.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'status'         => array(
+				'status'        => array(
 					'type' => 'string',
 					'enum' => array( 'draft', 'in_review', 'approved', 'released', 'superseded', 'obsolete' ),
 				),
-				'doc_type_slug'  => array( 'type' => 'string' ),
-				'owner_id'       => array( 'type' => 'integer', 'minimum' => 1 ),
-				'review_due_by'  => array( 'type' => 'string', 'pattern' => '^\d{4}-\d{2}-\d{2}$' ),
-				'limit'          => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 25 ),
+				'doc_type_slug' => array( 'type' => 'string' ),
+				'owner_id'      => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'review_due_by' => array(
+					'type'    => 'string',
+					'pattern' => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'limit'         => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 100,
+					'default' => 25,
+				),
 			),
 			'additionalProperties' => false,
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only', 'paginated' );
 	}

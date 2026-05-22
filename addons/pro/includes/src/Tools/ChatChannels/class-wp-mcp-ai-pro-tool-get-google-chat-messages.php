@@ -73,32 +73,32 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token' => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'space'        => array(
+				'space'               => array(
 					'type'        => 'string',
 					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx).', 'mcp-ai-wpoos-pro' ),
 				),
-				'page_size'    => array(
+				'page_size'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of messages to retrieve (default: 50).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'page_token'   => array(
+				'page_token'          => array(
 					'type'        => 'string',
 					'description' => __( 'Page token from a previous response to retrieve the next page of messages.', 'mcp-ai-wpoos-pro' ),
 				),
-				'order_by'     => array(
+				'order_by'            => array(
 					'type'        => 'string',
 					'description' => __( 'Sort order for messages. Use "createTime asc" or "createTime desc" (default: createTime asc).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'createTime asc', 'createTime desc' ),
 					'default'     => 'createTime asc',
 				),
-				'filter'       => array(
+				'filter'              => array(
 					'type'        => 'string',
 					'description' => __( 'Optional filter for messages (e.g., createTime > "2023-01-01T00:00:00Z" or thread.name = "spaces/SPACE/threads/THREAD").', 'mcp-ai-wpoos-pro' ),
 				),

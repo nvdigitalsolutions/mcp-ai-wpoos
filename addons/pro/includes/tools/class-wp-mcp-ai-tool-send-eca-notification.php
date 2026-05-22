@@ -375,9 +375,9 @@ class WP_MCP_AI_Tool_Send_ECA_Notification implements WP_MCP_AI_Tool_Interface, 
 	 * @return string HTML email body.
 	 */
 	private function build_email_body( $notification_type, $eca, $custom_message ) {
-		$eca_name = esc_html( $eca->post_title );
-		$eca_day  = esc_html( get_post_meta( $eca->ID, '_eca_day', true ) );
-		$eca_time = esc_html( get_post_meta( $eca->ID, '_eca_time', true ) );
+		$eca_name  = esc_html( $eca->post_title );
+		$eca_day   = esc_html( get_post_meta( $eca->ID, '_eca_day', true ) );
+		$eca_time  = esc_html( get_post_meta( $eca->ID, '_eca_time', true ) );
 		$eca_venue = esc_html( get_post_meta( $eca->ID, '_eca_venue', true ) );
 
 		$type_messages = array(

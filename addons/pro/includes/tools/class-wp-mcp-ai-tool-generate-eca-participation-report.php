@@ -217,10 +217,10 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			);
 		}
 
-		$enrollment       = absint( get_post_meta( $eca_id, '_eca_current_enrollment', true ) );
-		$max_students     = absint( get_post_meta( $eca_id, '_eca_max_students', true ) );
+		$enrollment        = absint( get_post_meta( $eca_id, '_eca_current_enrollment', true ) );
+		$max_students      = absint( get_post_meta( $eca_id, '_eca_max_students', true ) );
 		$enrolled_students = get_post_meta( $eca_id, '_eca_enrolled_students', true );
-		$attendance_log   = get_post_meta( $eca_id, '_eca_attendance_log', true );
+		$attendance_log    = get_post_meta( $eca_id, '_eca_attendance_log', true );
 
 		$students_data = array();
 		if ( is_array( $enrolled_students ) ) {
@@ -286,9 +286,9 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			)
 		);
 
-		$enrollments     = array();
-		$total_rate_sum  = 0;
-		$rate_count      = 0;
+		$enrollments    = array();
+		$total_rate_sum = 0;
+		$rate_count     = 0;
 
 		foreach ( $eca_query->posts as $eca ) {
 			$attendance_log = get_post_meta( $eca->ID, '_eca_attendance_log', true );
@@ -310,13 +310,13 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 		$avg_attendance = $rate_count > 0 ? round( $total_rate_sum / $rate_count, 1 ) : null;
 
 		return array(
-			'student_id'            => $student_id,
-			'student_name'          => sanitize_text_field( $student->post_title ),
-			'total_students'        => 1,
-			'total_ecas'            => count( $enrollments ),
-			'avg_ecas_per_student'  => count( $enrollments ),
-			'enrollments'           => $enrollments,
-			'avg_attendance_rate'   => $avg_attendance,
+			'student_id'           => $student_id,
+			'student_name'         => sanitize_text_field( $student->post_title ),
+			'total_students'       => 1,
+			'total_ecas'           => count( $enrollments ),
+			'avg_ecas_per_student' => count( $enrollments ),
+			'enrollments'          => $enrollments,
+			'avg_attendance_rate'  => $avg_attendance,
 		);
 	}
 
@@ -343,9 +343,9 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			)
 		);
 
-		$student_ids     = wp_list_pluck( $students_query->posts, 'ID' );
-		$total_students  = count( $student_ids );
-		$eca_set         = array();
+		$student_ids       = wp_list_pluck( $students_query->posts, 'ID' );
+		$total_students    = count( $student_ids );
+		$eca_set           = array();
 		$total_enrollments = 0;
 
 		foreach ( $student_ids as $sid ) {
@@ -413,13 +413,13 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			)
 		);
 
-		$total_students    = $student_query->found_posts;
-		$total_ecas        = $eca_query->found_posts;
-		$total_enrollment  = 0;
-		$all_student_ids   = array();
+		$total_students   = $student_query->found_posts;
+		$total_ecas       = $eca_query->found_posts;
+		$total_enrollment = 0;
+		$all_student_ids  = array();
 
 		foreach ( $eca_query->posts as $eca ) {
-			$enrollment = absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
+			$enrollment        = absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
 			$total_enrollment += $enrollment;
 
 			$enrolled = get_post_meta( $eca->ID, '_eca_enrolled_students', true );
@@ -547,8 +547,8 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 		$overall_rate = $total > 0 ? round( ( $present / $total ) * 100, 1 ) : 0;
 
 		return array(
-			'total_records'          => $total,
-			'total_present_or_late'  => $present,
+			'total_records'           => $total,
+			'total_present_or_late'   => $present,
 			'overall_attendance_rate' => $overall_rate,
 		);
 	}
@@ -561,7 +561,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 	 * @return string Markdown-formatted report.
 	 */
 	private function convert_to_markdown( $scope, $report_data ) {
-		$lines = array();
+		$lines   = array();
 		$lines[] = '# ECA Participation Report';
 		$lines[] = '';
 		$lines[] = '**Scope:** ' . esc_html( $scope );
@@ -600,7 +600,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			$lines[] = '|---------|----------------|';
 
 			foreach ( $report_data['students'] as $student ) {
-				$rate = null !== $student['attendance_rate'] ? $student['attendance_rate'] . '%' : 'N/A';
+				$rate    = null !== $student['attendance_rate'] ? $student['attendance_rate'] . '%' : 'N/A';
 				$lines[] = '| ' . esc_html( $student['student_name'] ) . ' | ' . esc_html( $rate ) . ' |';
 			}
 			$lines[] = '';
@@ -614,7 +614,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Participation_Report implements WP_MCP_AI_Tool
 			$lines[] = '|-----|------|----------------|';
 
 			foreach ( $report_data['enrollments'] as $enrollment ) {
-				$rate = null !== $enrollment['attendance_rate'] ? $enrollment['attendance_rate'] . '%' : 'N/A';
+				$rate    = null !== $enrollment['attendance_rate'] ? $enrollment['attendance_rate'] . '%' : 'N/A';
 				$lines[] = '| ' . esc_html( $enrollment['eca_name'] ) . ' | ' . esc_html( $enrollment['eca_type'] ) . ' | ' . esc_html( $rate ) . ' |';
 			}
 			$lines[] = '';

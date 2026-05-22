@@ -17,9 +17,9 @@ foreach ( array(
 	'class-wp-mcp-ai-tool-generate-visit-summary.php',
 	'class-wp-mcp-ai-tool-merge-duplicate-members.php',
 ) as $file ) {
-	$path = $wellness_dir . '/' . $file;
-	if ( file_exists( $path ) ) {
-		require_once $path;
+	$file_path = $wellness_dir . '/' . $file;
+	if ( file_exists( $file_path ) ) {
+		require_once $file_path;
 	}
 }
 
@@ -53,10 +53,15 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * check_member_allergies: matches a known allergen.
+	 * Check_member_allergies: matches a known allergen.
 	 */
 	public function test_check_member_allergies_matches_known() {
-		$member_id  = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Jane' ) );
+		$member_id  = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Jane',
+			)
+		);
 		$allergy_id = self::factory()->post->create(
 			array(
 				'post_type'  => 'mcp_ai_allergy',
@@ -80,7 +85,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * check_member_allergies: rejects missing args.
+	 * Check_member_allergies: rejects missing args.
 	 */
 	public function test_check_member_allergies_requires_args() {
 		$tool = new WP_MCP_AI_Tool_Check_Member_Allergies();
@@ -89,17 +94,32 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_health_timeline: returns events from at least one source.
+	 * Get_health_timeline: returns events from at least one source.
 	 */
 	public function test_get_health_timeline_collects_events() {
-		$member_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Tim' ) );
-		$rx_id     = self::factory()->post->create( array( 'post_type' => 'mcp_ai_prescription', 'post_title' => 'Atorvastatin Rx' ) );
+		$member_id = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Tim',
+			)
+		);
+		$rx_id     = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_prescription',
+				'post_title' => 'Atorvastatin Rx',
+			)
+		);
 		update_post_meta( $rx_id, '_prescription_member_id', $member_id );
 		update_post_meta( $rx_id, '_prescription_medication_name', 'Atorvastatin' );
 		update_post_meta( $rx_id, '_prescription_start_date', '2025-01-15' );
 		update_post_meta( $rx_id, '_prescription_status', 'active' );
 
-		$record_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_med_record', 'post_title' => 'Visit Note' ) );
+		$record_id = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_med_record',
+				'post_title' => 'Visit Note',
+			)
+		);
 		update_post_meta( $record_id, '_medical_record_member_id', $member_id );
 		update_post_meta( $record_id, '_medical_record_date', '2025-02-10' );
 
@@ -117,7 +137,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_health_timeline: respects event_types filter.
+	 * Get_health_timeline: respects event_types filter.
 	 */
 	public function test_get_health_timeline_filters_event_types() {
 		$member_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member' ) );
@@ -135,7 +155,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * link_prescription_to_record: links and lists.
+	 * Link_prescription_to_record: links and lists.
 	 */
 	public function test_link_prescription_to_record_link_and_list() {
 		$member_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member' ) );
@@ -175,7 +195,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * link_prescription_to_record: rejects different members.
+	 * Link_prescription_to_record: rejects different members.
 	 */
 	public function test_link_prescription_to_record_member_mismatch() {
 		$rx_id     = self::factory()->post->create( array( 'post_type' => 'mcp_ai_prescription' ) );
@@ -196,7 +216,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * verify_prescription_interactions: detects warfarin + ibuprofen.
+	 * Verify_prescription_interactions: detects warfarin + ibuprofen.
 	 */
 	public function test_verify_prescription_interactions_detects_pair() {
 		$tool   = new WP_MCP_AI_Tool_Verify_Prescription_Interactions();
@@ -211,7 +231,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * verify_prescription_interactions: returns empty when fewer than 2 meds.
+	 * Verify_prescription_interactions: returns empty when fewer than 2 meds.
 	 */
 	public function test_verify_prescription_interactions_handles_single_med() {
 		$tool   = new WP_MCP_AI_Tool_Verify_Prescription_Interactions();
@@ -220,7 +240,7 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * verify_prescription_interactions: filterable registry.
+	 * Verify_prescription_interactions: filterable registry.
 	 */
 	public function test_verify_prescription_interactions_filterable_pairs() {
 		add_filter(
@@ -243,17 +263,27 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * generate_visit_summary: produces structured + markdown output.
+	 * Generate_visit_summary: produces structured + markdown output.
 	 */
 	public function test_generate_visit_summary_structured_and_markdown() {
-		$member_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Alex' ) );
-		$checkup   = self::factory()->post->create( array( 'post_type' => 'mcp_ai_checkup', 'post_title' => 'Annual physical' ) );
+		$member_id = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Alex',
+			)
+		);
+		$checkup   = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_checkup',
+				'post_title' => 'Annual physical',
+			)
+		);
 		update_post_meta( $checkup, '_checkup_member_id', $member_id );
 		update_post_meta( $checkup, '_checkup_datetime', '2025-03-04 10:00:00' );
 		update_post_meta( $checkup, '_checkup_provider', 'Dr Smith' );
 		update_post_meta( $checkup, '_checkup_status', 'completed' );
 
-		$tool      = new WP_MCP_AI_Tool_Generate_Visit_Summary();
+		$tool       = new WP_MCP_AI_Tool_Generate_Visit_Summary();
 		$structured = $tool->execute(
 			array(
 				'member_id' => $member_id,
@@ -276,11 +306,21 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * merge_duplicate_members: dry run reports children without changes.
+	 * Merge_duplicate_members: dry run reports children without changes.
 	 */
 	public function test_merge_duplicate_members_dry_run() {
-		$source      = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Dupe' ) );
-		$destination = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Real' ) );
+		$source      = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Dupe',
+			)
+		);
+		$destination = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Real',
+			)
+		);
 		$rx_id       = self::factory()->post->create( array( 'post_type' => 'mcp_ai_prescription' ) );
 		update_post_meta( $rx_id, '_prescription_member_id', $source );
 
@@ -301,11 +341,21 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * merge_duplicate_members: actually re-parents and trashes source.
+	 * Merge_duplicate_members: actually re-parents and trashes source.
 	 */
 	public function test_merge_duplicate_members_applies() {
-		$source      = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Dupe' ) );
-		$destination = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member', 'post_title' => 'Real' ) );
+		$source      = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Dupe',
+			)
+		);
+		$destination = self::factory()->post->create(
+			array(
+				'post_type'  => 'mcp_ai_member',
+				'post_title' => 'Real',
+			)
+		);
 		$rx_id       = self::factory()->post->create( array( 'post_type' => 'mcp_ai_prescription' ) );
 		$allergy_id  = self::factory()->post->create( array( 'post_type' => 'mcp_ai_allergy' ) );
 		update_post_meta( $rx_id, '_prescription_member_id', $source );
@@ -326,10 +376,10 @@ class Test_Healthcare_Wellness extends WP_UnitTestCase {
 	}
 
 	/**
-	 * merge_duplicate_members: rejects same-member merges.
+	 * Merge_duplicate_members: rejects same-member merges.
 	 */
 	public function test_merge_duplicate_members_rejects_same() {
-		$id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member' ) );
+		$id     = self::factory()->post->create( array( 'post_type' => 'mcp_ai_member' ) );
 		$tool   = new WP_MCP_AI_Tool_Merge_Duplicate_Members();
 		$result = $tool->execute(
 			array(
