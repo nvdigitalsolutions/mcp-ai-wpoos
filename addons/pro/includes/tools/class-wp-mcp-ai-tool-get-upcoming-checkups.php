@@ -86,6 +86,11 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
@@ -133,6 +138,7 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 
 		// Calculate date range.
 		$now      = current_time( 'Y-m-d H:i' );
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$end_date = date( 'Y-m-d H:i', strtotime( "+{$days} days", current_time( 'timestamp' ) ) );
 
 		// Build query for upcoming checkups.

@@ -445,7 +445,11 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'twitter',
 				$sender_id,
-				array( 'display_name' => $sender_id, 'connection_id' => $resolved_connection_id, 'conversation_type' => 'dm' )
+				array(
+					'display_name'      => $sender_id,
+					'connection_id'     => $resolved_connection_id,
+					'conversation_type' => 'dm',
+				)
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -524,10 +528,10 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Decrypt credentials — none are stored in cron args.
-		$api_key              = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
-		$api_secret           = isset( $connection['api_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] ) : '';
-		$access_token         = isset( $connection['client_id'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_id'] ) : '';
-		$access_token_secret  = isset( $connection['client_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] ) : '';
+		$api_key             = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		$api_secret          = isset( $connection['api_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] ) : '';
+		$access_token        = isset( $connection['client_id'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_id'] ) : '';
+		$access_token_secret = isset( $connection['client_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] ) : '';
 
 		if ( '' === $api_key || '' === $api_secret || '' === $access_token || '' === $access_token_secret ) {
 			WP_MCP_AI_Logger::log_error(
@@ -667,8 +671,8 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			'twitter_ai_reply_sent',
 			'Twitter AI reply dispatched successfully.',
 			array(
-				'assistant_id'   => $assistant_id,
-				'sender_prefix'  => substr( $sender_id, 0, 4 ) . '***',
+				'assistant_id'  => $assistant_id,
+				'sender_prefix' => substr( $sender_id, 0, 4 ) . '***',
 			)
 		);
 
@@ -693,15 +697,28 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tw_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'twitter', $sender_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
+			$tw_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'twitter',
+				$sender_id,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => 'dm',
+				)
+			);
 			if ( $tw_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tw_contact_row_id );
 			}
 		}
 
 		// Persist conversation history.
-		$history[] = array( 'role' => 'user', 'content' => $message_text );
-		$history[] = array( 'role' => 'assistant', 'content' => $content );
+		$history[] = array(
+			'role'    => 'user',
+			'content' => $message_text,
+		);
+		$history[] = array(
+			'role'    => 'assistant',
+			'content' => $content,
+		);
 		if ( count( $history ) > $max_history ) {
 			$history = array_slice( $history, -$max_history );
 		}
@@ -755,9 +772,9 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$http_code    = (int) wp_remote_retrieve_response_code( $response );
+		$http_code     = (int) wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
-		$decoded      = json_decode( $response_body, true );
+		$decoded       = json_decode( $response_body, true );
 
 		if ( $http_code < 200 || $http_code >= 300 ) {
 			$error_detail = is_array( $decoded ) && isset( $decoded['detail'] ) ? $decoded['detail'] : $response_body;
@@ -769,7 +786,10 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 					$http_code,
 					$error_detail
 				),
-				array( 'http_code' => $http_code, 'response' => $decoded )
+				array(
+					'http_code' => $http_code,
+					'response'  => $decoded,
+				)
 			);
 		}
 

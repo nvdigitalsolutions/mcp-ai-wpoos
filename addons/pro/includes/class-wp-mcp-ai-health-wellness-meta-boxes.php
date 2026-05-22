@@ -41,19 +41,19 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 	 * @var array
 	 */
 	const ROUTES = array(
-		''             => '— Select —',
-		'oral'         => 'Oral',
-		'sublingual'   => 'Sublingual',
-		'topical'      => 'Topical',
-		'transdermal'  => 'Transdermal',
-		'injection'    => 'Injection',
-		'inhalation'   => 'Inhalation',
-		'ophthalmic'   => 'Ophthalmic (Eye)',
-		'otic'         => 'Otic (Ear)',
-		'nasal'        => 'Nasal',
-		'rectal'       => 'Rectal',
-		'vaginal'      => 'Vaginal',
-		'other'        => 'Other',
+		''            => '— Select —',
+		'oral'        => 'Oral',
+		'sublingual'  => 'Sublingual',
+		'topical'     => 'Topical',
+		'transdermal' => 'Transdermal',
+		'injection'   => 'Injection',
+		'inhalation'  => 'Inhalation',
+		'ophthalmic'  => 'Ophthalmic (Eye)',
+		'otic'        => 'Otic (Ear)',
+		'nasal'       => 'Nasal',
+		'rectal'      => 'Rectal',
+		'vaginal'     => 'Vaginal',
+		'other'       => 'Other',
 	);
 
 	/**
@@ -62,17 +62,17 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 	 * @var array
 	 */
 	const QUANTITY_UNITS = array(
-		''          => '— Select —',
-		'tablets'   => 'Tablets',
-		'capsules'  => 'Capsules',
-		'ml'        => 'mL',
-		'mg'        => 'mg',
-		'patches'   => 'Patches',
-		'drops'     => 'Drops',
-		'puffs'     => 'Puffs',
-		'units'     => 'Units (IU)',
+		''              => '— Select —',
+		'tablets'       => 'Tablets',
+		'capsules'      => 'Capsules',
+		'ml'            => 'mL',
+		'mg'            => 'mg',
+		'patches'       => 'Patches',
+		'drops'         => 'Drops',
+		'puffs'         => 'Puffs',
+		'units'         => 'Units (IU)',
 		'suppositories' => 'Suppositories',
-		'other'     => 'Other',
+		'other'         => 'Other',
 	);
 
 	/**
@@ -81,14 +81,14 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 	 * @var array
 	 */
 	const ALLERGY_TYPES = array(
-		''            => '— Select —',
-		'food'        => 'Food',
-		'drug'        => 'Drug / Medication',
+		''              => '— Select —',
+		'food'          => 'Food',
+		'drug'          => 'Drug / Medication',
 		'environmental' => 'Environmental',
-		'contact'     => 'Contact',
-		'latex'       => 'Latex',
-		'insect'      => 'Insect',
-		'other'       => 'Other',
+		'contact'       => 'Contact',
+		'latex'         => 'Latex',
+		'insect'        => 'Insect',
+		'other'         => 'Other',
 	);
 
 	/**
@@ -255,8 +255,14 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 					name="<?php echo esc_attr( $id ); ?>"
 					value="<?php echo esc_attr( $value ); ?>"
 					class="regular-text"
-					<?php if ( $placeholder ) : ?>placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php endif; ?>
-					<?php if ( $required ) : ?>required<?php endif; ?>
+					<?php
+					if ( $placeholder ) :
+						?>
+						placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php endif; ?>
+					<?php
+					if ( $required ) :
+						?>
+						required<?php endif; ?>
 				/>
 			</td>
 		</tr>
@@ -284,7 +290,10 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 					name="<?php echo esc_attr( $id ); ?>"
 					rows="<?php echo absint( $rows ); ?>"
 					class="large-text"
-					<?php if ( $placeholder ) : ?>placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php endif; ?>
+					<?php
+					if ( $placeholder ) :
+						?>
+						placeholder="<?php echo esc_attr( $placeholder ); ?>"<?php endif; ?>
 				><?php echo esc_textarea( $value ); ?></textarea>
 			</td>
 		</tr>
@@ -316,7 +325,10 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 					id="<?php echo esc_attr( $id ); ?>"
 					name="<?php echo esc_attr( $id ); ?>"
 					class="regular-text"
-					<?php if ( $required ) : ?>required<?php endif; ?>
+					<?php
+					if ( $required ) :
+						?>
+						required<?php endif; ?>
 				>
 					<?php foreach ( $options as $val => $lbl ) : ?>
 						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $current, $val ); ?>>
@@ -392,7 +404,10 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 					id="<?php echo esc_attr( $id ); ?>"
 					name="<?php echo esc_attr( $id ); ?>"
 					class="regular-text"
-					<?php if ( $required ) : ?>required<?php endif; ?>
+					<?php
+					if ( $required ) :
+						?>
+						required<?php endif; ?>
 				>
 					<option value=""><?php esc_html_e( '— Select Member —', 'mcp-ai-wpoos-pro' ); ?></option>
 					<?php foreach ( $members as $member ) : ?>
@@ -548,7 +563,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 				self::text_field( __( 'Group Number', 'mcp-ai-wpoos-pro' ), '_policy_group_number', $group_number, 'text', __( 'Group / employer ID', 'mcp-ai-wpoos-pro' ) );
 				self::text_field( __( 'Insurance Provider', 'mcp-ai-wpoos-pro' ), '_policy_provider', $provider, 'text', __( 'e.g. Blue Cross Blue Shield', 'mcp-ai-wpoos-pro' ) );
 				self::select_field( __( 'Plan Type', 'mcp-ai-wpoos-pro' ), '_policy_plan_type', $plan_type, self::PLAN_TYPES );
-				self::select_field( __( 'Status', 'mcp-ai-wpoos-pro' ), '_policy_status', $status ?: 'active', $status_options );
+				self::select_field( __( 'Status', 'mcp-ai-wpoos-pro' ), '_policy_status', $status ? $status : 'active', $status_options );
 				?>
 
 				<?php self::section_heading( __( 'Coverage Dates & Cost', 'mcp-ai-wpoos-pro' ) ); ?>
@@ -664,10 +679,10 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 		);
 
 		$status_options = array(
-			'scheduled'  => __( 'Scheduled', 'mcp-ai-wpoos-pro' ),
-			'completed'  => __( 'Completed', 'mcp-ai-wpoos-pro' ),
-			'cancelled'  => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
-			'no-show'    => __( 'No-Show', 'mcp-ai-wpoos-pro' ),
+			'scheduled' => __( 'Scheduled', 'mcp-ai-wpoos-pro' ),
+			'completed' => __( 'Completed', 'mcp-ai-wpoos-pro' ),
+			'cancelled' => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
+			'no-show'   => __( 'No-Show', 'mcp-ai-wpoos-pro' ),
 		);
 
 		?>
@@ -700,7 +715,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 				self::text_field( __( 'Provider', 'mcp-ai-wpoos-pro' ), '_checkup_provider', $provider, 'text', __( 'Doctor / practitioner name', 'mcp-ai-wpoos-pro' ) );
 				self::text_field( __( 'Location / Facility', 'mcp-ai-wpoos-pro' ), '_checkup_location', $location, 'text', __( 'Clinic or hospital name', 'mcp-ai-wpoos-pro' ) );
 				self::select_field( __( 'Type', 'mcp-ai-wpoos-pro' ), '_checkup_type', $type, $type_options );
-				self::select_field( __( 'Status', 'mcp-ai-wpoos-pro' ), '_checkup_status', $status ?: 'scheduled', $status_options );
+				self::select_field( __( 'Status', 'mcp-ai-wpoos-pro' ), '_checkup_status', $status ? $status : 'scheduled', $status_options );
 				self::text_field( __( 'Duration (minutes)', 'mcp-ai-wpoos-pro' ), '_checkup_duration_minutes', $duration, 'number', __( 'e.g. 30', 'mcp-ai-wpoos-pro' ) );
 				self::text_field( __( 'Copay Paid', 'mcp-ai-wpoos-pro' ), '_checkup_copay_amount', $copay, 'text', __( 'e.g. $25.00', 'mcp-ai-wpoos-pro' ) );
 				?>
@@ -787,7 +802,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 				self::select_field( __( 'Quantity Unit', 'mcp-ai-wpoos-pro' ), '_prescription_quantity_unit', $quantity_unit, self::QUANTITY_UNITS );
 				self::select_field( __( 'Route of Administration', 'mcp-ai-wpoos-pro' ), '_prescription_route', $route, self::ROUTES );
 				self::text_field( __( 'Indication / Reason', 'mcp-ai-wpoos-pro' ), '_prescription_indication', $indication, 'text', __( 'Condition being treated', 'mcp-ai-wpoos-pro' ) );
-				self::select_field( __( 'Status', 'mcp-ai-wpoos-pro' ), '_prescription_status', $status ?: 'active', $status_options );
+				self::select_field( __( 'Status', 'mcp-ai-wpoos-pro' ), '_prescription_status', $status ? $status : 'active', $status_options );
 				?>
 
 				<?php self::section_heading( __( 'Prescriber & Dates', 'mcp-ai-wpoos-pro' ) ); ?>
@@ -1427,7 +1442,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 				$start = get_post_meta( $post_id, '_prescription_start_date', true );
 				$end   = get_post_meta( $post_id, '_prescription_end_date', true );
 				if ( $start || $end ) {
-					echo esc_html( ( $start ?: '?' ) . ' → ' . ( $end ?: '∞' ) );
+					echo esc_html( ( $start ? $start : '?' ) . ' → ' . ( $end ? $end : '∞' ) );
 				} else {
 					echo '—';
 				}

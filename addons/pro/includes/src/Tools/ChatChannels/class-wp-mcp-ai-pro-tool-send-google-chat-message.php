@@ -82,23 +82,23 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token' => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'space'        => array(
+				'space'               => array(
 					'type'        => 'string',
 					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx). Required when not using webhook_url.', 'mcp-ai-wpoos-pro' ),
 				),
-				'text'         => array(
+				'text'                => array(
 					'type'        => 'string',
 					'description' => __( 'Text content of the message to be sent.', 'mcp-ai-wpoos-pro' ),
 				),
-				'thread_key'   => array(
+				'thread_key'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional thread key to reply in an existing thread or start a new named thread within the space.', 'mcp-ai-wpoos-pro' ),
 				),
-				'thread_name'  => array(
+				'thread_name'         => array(
 					'type'        => 'string',
 					'description' => __( 'Optional thread resource name (e.g., spaces/SPACE_ID/threads/THREAD_ID) to reply in an existing thread.', 'mcp-ai-wpoos-pro' ),
 				),

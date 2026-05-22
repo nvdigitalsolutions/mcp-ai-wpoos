@@ -80,7 +80,7 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'practice_area'      => array(
+				'practice_area'       => array(
 					'type'        => 'string',
 					'description' => __( 'Area of law for the case.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -88,16 +88,16 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 					'type'        => 'number',
 					'description' => __( 'Estimated monetary value of the case.', 'mcp-ai-wpoos-pro' ),
 				),
-				'jurisdiction'       => array(
+				'jurisdiction'        => array(
 					'type'        => 'string',
 					'description' => __( 'Jurisdiction (e.g., state abbreviation or federal).', 'mcp-ai-wpoos-pro' ),
 				),
-				'case_complexity'    => array(
+				'case_complexity'     => array(
 					'type'        => 'string',
 					'description' => __( 'Complexity level of the case.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'simple', 'moderate', 'complex' ),
 				),
-				'liability_strength' => array(
+				'liability_strength'  => array(
 					'type'        => 'string',
 					'description' => __( 'Strength of the liability position.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'weak', 'moderate', 'strong' ),
@@ -142,7 +142,7 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 			'moderate' => 25,
 			'weak'     => 10,
 		);
-		$score = $liability_scores[ $liability ] ?? 25;
+		$score            = $liability_scores[ $liability ] ?? 25;
 
 		// Complexity adjustment (-15 to +15).
 		$complexity_adj = array(
@@ -150,7 +150,7 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 			'moderate' => 0,
 			'complex'  => -15,
 		);
-		$score += $complexity_adj[ $complexity ] ?? 0;
+		$score         += $complexity_adj[ $complexity ] ?? 0;
 
 		// Case value factor (0-25).
 		if ( $case_value >= 1000000 ) {
@@ -176,7 +176,7 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 			'criminal'            => 5,
 			'immigration'         => 8,
 		);
-		$score += $settlement_rates[ $practice_area ] ?? 14;
+		$score           += $settlement_rates[ $practice_area ] ?? 14;
 
 		$score = min( 100, max( 0, $score ) );
 
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Duration estimate in months.
-		$duration_map = array(
+		$duration_map   = array(
 			'simple'   => array( 3, 12 ),
 			'moderate' => array( 6, 24 ),
 			'complex'  => array( 12, 48 ),
@@ -235,11 +235,11 @@ class WP_MCP_AI_Tool_LF_Case_Outcome_Predictor implements WP_MCP_AI_Tool_Interfa
 					'high' => $value_high,
 				),
 				'factors'            => array(
-					'practice_area'     => $practice_area,
-					'case_value'        => $case_value,
-					'complexity'        => $complexity,
+					'practice_area'      => $practice_area,
+					'case_value'         => $case_value,
+					'complexity'         => $complexity,
 					'liability_strength' => $liability,
-					'jurisdiction'      => $jurisdiction,
+					'jurisdiction'       => $jurisdiction,
 				),
 			),
 			'disclaimer' => self::DISCLAIMER,

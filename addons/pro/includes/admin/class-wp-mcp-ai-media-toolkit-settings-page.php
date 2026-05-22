@@ -501,17 +501,17 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	protected function get_tools_list() {
 		return array(
 			// Media Template Tools.
-			'list_media_templates'    => __( 'List Media Templates', 'mcp-ai-wpoos-pro' ),
-			'create_media_template'   => __( 'Create Media Template', 'mcp-ai-wpoos-pro' ),
-			'apply_media_template'    => __( 'Apply Media Template', 'mcp-ai-wpoos-pro' ),
+			'list_media_templates'      => __( 'List Media Templates', 'mcp-ai-wpoos-pro' ),
+			'create_media_template'     => __( 'Create Media Template', 'mcp-ai-wpoos-pro' ),
+			'apply_media_template'      => __( 'Apply Media Template', 'mcp-ai-wpoos-pro' ),
 
 			// Media Collection Tools.
-			'create_media_collection' => __( 'Create Media Collection', 'mcp-ai-wpoos-pro' ),
-			'process_collection'      => __( 'Process Collection', 'mcp-ai-wpoos-pro' ),
+			'create_media_collection'   => __( 'Create Media Collection', 'mcp-ai-wpoos-pro' ),
+			'process_collection'        => __( 'Process Collection', 'mcp-ai-wpoos-pro' ),
 			'apply_collection_template' => __( 'Apply Collection Template', 'mcp-ai-wpoos-pro' ),
 
 			// Sharp Image Processing.
-			'optimize_image_sharp'    => __( 'Optimize Image with Sharp', 'mcp-ai-wpoos-pro' ),
+			'optimize_image_sharp'      => __( 'Optimize Image with Sharp', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -566,16 +566,16 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		// Check in vendor directory.
 		$vendor_base = WP_MCP_AI_PRO_PATH . 'assets/vendor/sharp/node_modules/';
 		if ( is_dir( $vendor_base . 'detect-libc' ) &&
-		     is_dir( $vendor_base . 'color' ) &&
-		     is_dir( $vendor_base . 'semver' ) ) {
+			is_dir( $vendor_base . 'color' ) &&
+			is_dir( $vendor_base . 'semver' ) ) {
 			return true;
 		}
 
 		// Check in node_modules directory.
 		$node_modules_base = WP_MCP_AI_PRO_PATH . 'node_modules/sharp/node_modules/';
 		return is_dir( $node_modules_base . 'detect-libc' ) &&
-		       is_dir( $node_modules_base . 'color' ) &&
-		       is_dir( $node_modules_base . 'semver' );
+				is_dir( $node_modules_base . 'color' ) &&
+				is_dir( $node_modules_base . 'semver' );
 	}
 
 	/**
@@ -645,9 +645,9 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 */
 	private function check_sharp_fully_ready() {
 		return $this->check_nodejs_available() &&
-		       $this->check_sharp_library_exists() &&
-		       $this->check_sharp_dependencies_exist() &&
-		       $this->check_sharp_platform_binaries();
+				$this->check_sharp_library_exists() &&
+				$this->check_sharp_dependencies_exist() &&
+				$this->check_sharp_platform_binaries();
 	}
 
 	/**

@@ -265,8 +265,8 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 			if ( ! empty( $date_range['end_date'] ) ) {
 				$date_query['before'] = sanitize_text_field( $date_range['end_date'] );
 			}
-			$date_query['inclusive']    = true;
-			$query_args['date_query']   = array( $date_query );
+			$date_query['inclusive']  = true;
+			$query_args['date_query'] = array( $date_query );
 		}
 
 		$query = new WP_Query( $query_args );
@@ -281,13 +281,13 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 	 * @return array Summary statistics.
 	 */
 	private function build_participation_summary( $ecas ) {
-		$total_ecas           = count( $ecas );
-		$total_enrolled       = 0;
-		$eca_enrollments      = array();
-		$all_student_ids      = array();
+		$total_ecas      = count( $ecas );
+		$total_enrolled  = 0;
+		$eca_enrollments = array();
+		$all_student_ids = array();
 
 		foreach ( $ecas as $eca ) {
-			$enrollment = absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
+			$enrollment      = absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
 			$total_enrolled += $enrollment;
 
 			$eca_enrollments[] = array(
@@ -304,7 +304,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		$unique_students    = count( $all_student_ids );
+		$unique_students      = count( $all_student_ids );
 		$avg_ecas_per_student = $unique_students > 0 ? round( $total_enrolled / $unique_students, 1 ) : 0;
 
 		// Sort to find most and least popular.
@@ -328,18 +328,18 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 			)
 		);
 
-		$total_students     = $all_students_query->found_posts;
+		$total_students        = $all_students_query->found_posts;
 		$students_with_no_ecas = max( 0, $total_students - $unique_students );
 
 		return array(
-			'total_ecas'             => $total_ecas,
-			'total_students'         => $total_students,
-			'unique_students'        => $unique_students,
-			'total_enrolled'         => $total_enrolled,
-			'avg_ecas_per_student'   => $avg_ecas_per_student,
-			'most_popular_ecas'      => $most_popular,
-			'least_popular_ecas'     => $least_popular,
-			'students_with_no_ecas'  => $students_with_no_ecas,
+			'total_ecas'            => $total_ecas,
+			'total_students'        => $total_students,
+			'unique_students'       => $unique_students,
+			'total_enrolled'        => $total_enrolled,
+			'avg_ecas_per_student'  => $avg_ecas_per_student,
+			'most_popular_ecas'     => $most_popular,
+			'least_popular_ecas'    => $least_popular,
+			'students_with_no_ecas' => $students_with_no_ecas,
 		);
 	}
 
@@ -359,8 +359,8 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'type'    => 'bar',
-			'labels'  => $labels,
+			'type'     => 'bar',
+			'labels'   => $labels,
 			'datasets' => array(
 				array(
 					'label' => __( 'Enrolled', 'mcp-ai-wpoos-pro' ),
@@ -384,9 +384,9 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 		$fill_rates       = array();
 
 		foreach ( $ecas as $eca ) {
-			$max        = absint( get_post_meta( $eca->ID, '_eca_max_students', true ) );
-			$enrollment = absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
-			$waitlist   = get_post_meta( $eca->ID, '_eca_waitlist', true );
+			$max            = absint( get_post_meta( $eca->ID, '_eca_max_students', true ) );
+			$enrollment     = absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
+			$waitlist       = get_post_meta( $eca->ID, '_eca_waitlist', true );
 			$waitlist_count = is_array( $waitlist ) ? count( $waitlist ) : 0;
 
 			$total_max        += $max;
@@ -394,7 +394,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 			$total_waitlisted += $waitlist_count;
 
 			if ( $max > 0 ) {
-				$utilization = ( $enrollment / $max ) * 100;
+				$utilization  = ( $enrollment / $max ) * 100;
 				$fill_rates[] = $utilization;
 
 				if ( $utilization >= 90 ) {
@@ -403,19 +403,19 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		$avg_utilization   = ! empty( $fill_rates ) ? round( array_sum( $fill_rates ) / count( $fill_rates ), 1 ) : 0;
-		$avg_waitlist_len  = count( $ecas ) > 0 ? round( $total_waitlisted / count( $ecas ), 1 ) : 0;
-		$total_available   = max( 0, $total_max - $total_enrolled );
+		$avg_utilization  = ! empty( $fill_rates ) ? round( array_sum( $fill_rates ) / count( $fill_rates ), 1 ) : 0;
+		$avg_waitlist_len = count( $ecas ) > 0 ? round( $total_waitlisted / count( $ecas ), 1 ) : 0;
+		$total_available  = max( 0, $total_max - $total_enrolled );
 
 		return array(
-			'total_capacity'          => $total_max,
-			'total_enrolled'          => $total_enrolled,
-			'total_available'         => $total_available,
-			'total_waitlisted'        => $total_waitlisted,
-			'avg_utilization_rate'    => $avg_utilization,
-			'ecas_over_90_percent'    => $over_90_count,
-			'avg_waitlist_length'     => $avg_waitlist_len,
-			'fill_rates'              => $fill_rates,
+			'total_capacity'       => $total_max,
+			'total_enrolled'       => $total_enrolled,
+			'total_available'      => $total_available,
+			'total_waitlisted'     => $total_waitlisted,
+			'avg_utilization_rate' => $avg_utilization,
+			'ecas_over_90_percent' => $over_90_count,
+			'avg_waitlist_length'  => $avg_waitlist_len,
+			'fill_rates'           => $fill_rates,
 		);
 	}
 
@@ -475,9 +475,9 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 
 			if ( $is_paid ) {
 				++$paid_ecas;
-				$revenue = $cost * $enrollment;
+				$revenue        = $cost * $enrollment;
 				$total_revenue += $revenue;
-				$all_costs[] = $cost;
+				$all_costs[]    = $cost;
 
 				// Check for outstanding payments via enrolled students meta.
 				$enrolled_students = get_post_meta( $eca->ID, '_eca_enrolled_students', true );
@@ -494,7 +494,7 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		$total_students  = 0;
+		$total_students = 0;
 		foreach ( $ecas as $eca ) {
 			$total_students += absint( get_post_meta( $eca->ID, '_eca_current_enrollment', true ) );
 		}
@@ -552,9 +552,9 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 	 * @return array Summary statistics.
 	 */
 	private function build_engagement_summary( $ecas ) {
-		$total_sessions    = 0;
-		$total_present     = 0;
-		$total_records     = 0;
+		$total_sessions     = 0;
+		$total_present      = 0;
+		$total_records      = 0;
 		$student_attendance = array();
 
 		foreach ( $ecas as $eca ) {
@@ -613,10 +613,10 @@ class WP_MCP_AI_Tool_Generate_ECA_Analytics implements WP_MCP_AI_Tool_Interface,
 		$most_engaged = array_slice( $student_attendance, 0, 10 );
 
 		return array(
-			'total_sessions'          => $total_sessions,
+			'total_sessions'           => $total_sessions,
 			'total_attendance_records' => $total_records,
-			'overall_attendance_rate' => $overall_rate,
-			'most_engaged_students'  => $most_engaged,
+			'overall_attendance_rate'  => $overall_rate,
+			'most_engaged_students'    => $most_engaged,
 		);
 	}
 

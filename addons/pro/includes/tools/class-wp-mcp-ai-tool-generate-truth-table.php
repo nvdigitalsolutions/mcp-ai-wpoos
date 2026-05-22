@@ -125,7 +125,7 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			return $tokens;
 		}
 
-		$parser = new \stdClass();
+		$parser         = new \stdClass();
 		$parser->tokens = $tokens;
 		$parser->pos    = 0;
 		$parser->depth  = 0;
@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			$env = array();
 			foreach ( $vars as $idx => $name ) {
 				// MSB-first so the table reads in canonical order.
-				$bit_index = count( $vars ) - 1 - $idx;
+				$bit_index    = count( $vars ) - 1 - $idx;
 				$env[ $name ] = (bool) ( ( $mask >> $bit_index ) & 1 );
 			}
 			$value      = $this->eval_ast( $ast, $env );
@@ -240,7 +240,7 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			'↑' => ' NAND ',
 			'↓' => ' NOR ',
 		);
-		$expression = strtr( $expression, $replacements );
+		$expression   = strtr( $expression, $replacements );
 
 		$length = strlen( $expression );
 		$i      = 0;
@@ -251,45 +251,69 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 				continue;
 			}
 			if ( '(' === $ch ) {
-				$tokens[] = array( 'type' => 'LPAREN', 'value' => '(' );
+				$tokens[] = array(
+					'type'  => 'LPAREN',
+					'value' => '(',
+				);
 				++$i;
 				continue;
 			}
 			if ( ')' === $ch ) {
-				$tokens[] = array( 'type' => 'RPAREN', 'value' => ')' );
+				$tokens[] = array(
+					'type'  => 'RPAREN',
+					'value' => ')',
+				);
 				++$i;
 				continue;
 			}
 			if ( '+' === $ch ) {
-				$tokens[] = array( 'type' => 'OP', 'value' => 'OR' );
+				$tokens[] = array(
+					'type'  => 'OP',
+					'value' => 'OR',
+				);
 				++$i;
 				continue;
 			}
 			if ( "'" === $ch ) {
-				// Postfix complement: convert to a NOT applied to the previous
-				// operand by wrapping retroactively. We model it as a postfix
+				// Postfix complement: convert to a NOT applied to the previous.
+				// operand by wrapping retroactively. We model it as a postfix.
 				// operator token so the parser handles it explicitly.
-				$tokens[] = array( 'type' => 'OP', 'value' => 'POSTNOT' );
+				$tokens[] = array(
+					'type'  => 'OP',
+					'value' => 'POSTNOT',
+				);
 				++$i;
 				continue;
 			}
 			if ( '!' === $ch || '~' === $ch ) {
-				$tokens[] = array( 'type' => 'OP', 'value' => 'NOT' );
+				$tokens[] = array(
+					'type'  => 'OP',
+					'value' => 'NOT',
+				);
 				++$i;
 				continue;
 			}
 			if ( '&' === $ch ) {
-				$tokens[] = array( 'type' => 'OP', 'value' => 'AND' );
+				$tokens[] = array(
+					'type'  => 'OP',
+					'value' => 'AND',
+				);
 				++$i;
 				continue;
 			}
 			if ( '|' === $ch ) {
-				$tokens[] = array( 'type' => 'OP', 'value' => 'OR' );
+				$tokens[] = array(
+					'type'  => 'OP',
+					'value' => 'OR',
+				);
 				++$i;
 				continue;
 			}
 			if ( '^' === $ch ) {
-				$tokens[] = array( 'type' => 'OP', 'value' => 'XOR' );
+				$tokens[] = array(
+					'type'  => 'OP',
+					'value' => 'XOR',
+				);
 				++$i;
 				continue;
 			}
@@ -298,26 +322,41 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 				while ( $i < $length && ( ctype_alnum( $expression[ $i ] ) || '_' === $expression[ $i ] ) ) {
 					++$i;
 				}
-				$word    = substr( $expression, $start, $i - $start );
-				$upper   = strtoupper( $word );
+				$word     = substr( $expression, $start, $i - $start );
+				$upper    = strtoupper( $word );
 				$keywords = array( 'AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR', 'XNOR', 'TRUE', 'FALSE' );
 				if ( in_array( $upper, $keywords, true ) ) {
 					if ( 'TRUE' === $upper ) {
-						$tokens[] = array( 'type' => 'CONST', 'value' => '1' );
+						$tokens[] = array(
+							'type'  => 'CONST',
+							'value' => '1',
+						);
 					} elseif ( 'FALSE' === $upper ) {
-						$tokens[] = array( 'type' => 'CONST', 'value' => '0' );
+						$tokens[] = array(
+							'type'  => 'CONST',
+							'value' => '0',
+						);
 					} else {
-						$tokens[] = array( 'type' => 'OP', 'value' => $upper );
+						$tokens[] = array(
+							'type'  => 'OP',
+							'value' => $upper,
+						);
 					}
 				} elseif ( preg_match( '/^[A-Za-z][A-Za-z0-9_]*$/', $word ) ) {
-					$tokens[] = array( 'type' => 'VAR', 'value' => $word );
+					$tokens[] = array(
+						'type'  => 'VAR',
+						'value' => $word,
+					);
 				} else {
 					return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'Invalid identifier in expression.', 'mcp-ai-wpoos-pro' ) );
 				}
 				continue;
 			}
 			if ( '0' === $ch || '1' === $ch ) {
-				$tokens[] = array( 'type' => 'CONST', 'value' => $ch );
+				$tokens[] = array(
+					'type'  => 'CONST',
+					'value' => $ch,
+				);
 				++$i;
 				continue;
 			}
@@ -363,14 +402,18 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			return $left;
 		}
 		while ( $this->peek_op( $parser, array( 'OR', 'NOR' ) ) ) {
-			$op    = $parser->tokens[ $parser->pos ]['value'];
+			$op = $parser->tokens[ $parser->pos ]['value'];
 			++$parser->pos;
 			$right = $this->parse_xor( $parser );
 			if ( is_wp_error( $right ) ) {
 				--$parser->depth;
 				return $right;
 			}
-			$left = array( 'type' => $op, 'left' => $left, 'right' => $right );
+			$left = array(
+				'type'  => $op,
+				'left'  => $left,
+				'right' => $right,
+			);
 		}
 		--$parser->depth;
 		return $left;
@@ -393,14 +436,18 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			return $left;
 		}
 		while ( $this->peek_op( $parser, array( 'XOR', 'XNOR' ) ) ) {
-			$op    = $parser->tokens[ $parser->pos ]['value'];
+			$op = $parser->tokens[ $parser->pos ]['value'];
 			++$parser->pos;
 			$right = $this->parse_and( $parser );
 			if ( is_wp_error( $right ) ) {
 				--$parser->depth;
 				return $right;
 			}
-			$left = array( 'type' => $op, 'left' => $left, 'right' => $right );
+			$left = array(
+				'type'  => $op,
+				'left'  => $left,
+				'right' => $right,
+			);
 		}
 		--$parser->depth;
 		return $left;
@@ -423,14 +470,18 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			return $left;
 		}
 		while ( $this->peek_op( $parser, array( 'AND', 'NAND' ) ) ) {
-			$op    = $parser->tokens[ $parser->pos ]['value'];
+			$op = $parser->tokens[ $parser->pos ]['value'];
 			++$parser->pos;
 			$right = $this->parse_unary( $parser );
 			if ( is_wp_error( $right ) ) {
 				--$parser->depth;
 				return $right;
 			}
-			$left = array( 'type' => $op, 'left' => $left, 'right' => $right );
+			$left = array(
+				'type'  => $op,
+				'left'  => $left,
+				'right' => $right,
+			);
 		}
 		--$parser->depth;
 		return $left;
@@ -455,7 +506,13 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 				return $inner;
 			}
 			--$parser->depth;
-			return $this->maybe_postfix_complement( $parser, array( 'type' => 'NOT', 'right' => $inner ) );
+			return $this->maybe_postfix_complement(
+				$parser,
+				array(
+					'type'  => 'NOT',
+					'right' => $inner,
+				)
+			);
 		}
 		$primary = $this->parse_primary( $parser );
 		if ( is_wp_error( $primary ) ) {
@@ -476,7 +533,10 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 	private function maybe_postfix_complement( $parser, $node ) {
 		while ( $this->peek_op( $parser, array( 'POSTNOT' ) ) ) {
 			++$parser->pos;
-			$node = array( 'type' => 'NOT', 'right' => $node );
+			$node = array(
+				'type'  => 'NOT',
+				'right' => $node,
+			);
 		}
 		return $node;
 	}
@@ -506,11 +566,17 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 		}
 		if ( 'VAR' === $tok['type'] ) {
 			++$parser->pos;
-			return array( 'type' => 'VAR', 'name' => $tok['value'] );
+			return array(
+				'type' => 'VAR',
+				'name' => $tok['value'],
+			);
 		}
 		if ( 'CONST' === $tok['type'] ) {
 			++$parser->pos;
-			return array( 'type' => 'CONST', 'value' => '1' === $tok['value'] );
+			return array(
+				'type'  => 'CONST',
+				'value' => '1' === $tok['value'],
+			);
 		}
 		return new WP_Error(
 			'wp_mcp_ai_unexpected_token',
@@ -585,9 +651,9 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			case 'XNOR':
 				return $this->eval_ast( $node['left'], $env ) === $this->eval_ast( $node['right'], $env );
 			default:
-				// Defensive fallback. The parser only emits the node types
-				// listed above, so this branch is unreachable in normal use;
-				// returning false is the safe Boolean default and avoids
+				// Defensive fallback. The parser only emits the node types.
+				// listed above, so this branch is unreachable in normal use;.
+				// returning false is the safe Boolean default and avoids.
 				// silently propagating an unexpected truthy value.
 				return false;
 		}
@@ -628,7 +694,7 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 	 * @return string
 	 */
 	private function render_plain_table( array $vars, array $rows ) {
-		$lines = array();
+		$lines   = array();
 		$lines[] = implode( ' ', $vars ) . ' | Result';
 		foreach ( $rows as $row ) {
 			$cells = array();
@@ -648,9 +714,9 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 	 * @return string
 	 */
 	private function render_latex_table( array $vars, array $rows ) {
-		$cols    = str_repeat( 'c', count( $vars ) ) . '|c';
-		$header  = implode( ' & ', $vars ) . ' & \\text{Result}';
-		$body    = array();
+		$cols   = str_repeat( 'c', count( $vars ) ) . '|c';
+		$header = implode( ' & ', $vars ) . ' & \\text{Result}';
+		$body   = array();
 		foreach ( $rows as $row ) {
 			$cells = array();
 			foreach ( $vars as $v ) {
@@ -659,6 +725,6 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 			$cells[] = (string) $row['result'];
 			$body[]  = implode( ' & ', $cells ) . ' \\\\';
 		}
-		return "\\begin{array}{" . $cols . "} " . $header . " \\\\ \\hline " . implode( ' ', $body ) . " \\end{array}";
+		return "\\begin{array}{" . $cols . '} ' . $header . ' \\\\ \\hline ' . implode( ' ', $body ) . " \\end{array}";
 	}
 }

@@ -155,15 +155,15 @@ class WP_MCP_AI_Tool_Get_Student_Participation_Summary implements WP_MCP_AI_Tool
 		}
 
 		// Build ECA participation data.
-		$ecas_enrolled       = array();
-		$total_rate_sum      = 0;
-		$rated_eca_count     = 0;
-		$active_count        = 0;
-		$total_sessions      = 0;
-		$total_present       = 0;
+		$ecas_enrolled   = array();
+		$total_rate_sum  = 0;
+		$rated_eca_count = 0;
+		$active_count    = 0;
+		$total_sessions  = 0;
+		$total_present   = 0;
 
 		foreach ( $enrollments as $eca_id => $enrollment ) {
-			$eca_id  = absint( $eca_id );
+			$eca_id   = absint( $eca_id );
 			$eca_post = get_post( $eca_id );
 			if ( ! $eca_post || 'mcp_ai_eca' !== $eca_post->post_type ) {
 				continue;
@@ -195,14 +195,14 @@ class WP_MCP_AI_Tool_Get_Student_Participation_Summary implements WP_MCP_AI_Tool
 
 			// Calculate attendance for this ECA.
 			if ( $include_attendance ) {
-				$attendance_stats           = $this->calculate_student_attendance( $eca_id, $student_id );
-				$eca_entry['attendance']    = $attendance_stats;
+				$attendance_stats        = $this->calculate_student_attendance( $eca_id, $student_id );
+				$eca_entry['attendance'] = $attendance_stats;
 
 				if ( $attendance_stats['sessions_recorded'] > 0 ) {
-					$total_rate_sum  += $attendance_stats['attendance_rate'];
+					$total_rate_sum += $attendance_stats['attendance_rate'];
 					++$rated_eca_count;
-					$total_sessions  += $attendance_stats['sessions_recorded'];
-					$total_present   += $attendance_stats['present'] + $attendance_stats['late'];
+					$total_sessions += $attendance_stats['sessions_recorded'];
+					$total_present  += $attendance_stats['present'] + $attendance_stats['late'];
 				}
 			}
 
@@ -230,11 +230,11 @@ class WP_MCP_AI_Tool_Get_Student_Participation_Summary implements WP_MCP_AI_Tool
 			'student'       => $student_info,
 			'ecas_enrolled' => $ecas_enrolled,
 			'overall_stats' => array(
-				'total_ecas'               => count( $ecas_enrolled ),
-				'active_ecas'              => $active_count,
-				'total_sessions_attended'  => $total_sessions,
-				'overall_attendance_rate'  => $overall_attendance_rate,
-				'engagement_score'         => $engagement_score,
+				'total_ecas'              => count( $ecas_enrolled ),
+				'active_ecas'             => $active_count,
+				'total_sessions_attended' => $total_sessions,
+				'overall_attendance_rate' => $overall_attendance_rate,
+				'engagement_score'        => $engagement_score,
 			),
 			'filters'       => array(
 				'term'               => $term,

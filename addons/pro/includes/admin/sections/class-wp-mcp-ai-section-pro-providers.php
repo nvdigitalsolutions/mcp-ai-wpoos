@@ -295,7 +295,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				);
 				?>
 			</p>
-			<?php if ( 0 === strpos( $platform, 'linux' ) ) : ?>
+				<?php if ( 0 === strpos( $platform, 'linux' ) ) : ?>
 				<button type="button" id="wp-mcp-ai-reinstall-binary" class="button button-secondary" style="margin-right:8px;">
 					<span class="dashicons dashicons-update" style="vertical-align:middle; margin-top:3px;"></span>
 					<?php esc_html_e( 'Re-install llama.cpp Binary', 'mcp-ai-wpoos' ); ?>
@@ -332,10 +332,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				<pre style="margin-top:8px; padding:10px; background:#f6f7f7; border:1px solid #ddd; overflow-x:auto; white-space:pre-wrap; font-size:12px;"># <?php esc_html_e( 'Download the latest release archive from:', 'mcp-ai-wpoos' ); ?>
 
 # https://github.com/ggml-org/llama.cpp/releases/latest
-# (<?php
+# (
+			<?php
 			/* translators: %s: architecture string, e.g. "x64" or "arm64" */
 			printf( esc_html__( 'download the file named like: llama-bXXXX-bin-ubuntu-%s.tar.gz', 'mcp-ai-wpoos' ), esc_html( $arch_suffix ) );
-			?>)
+			?>
+			)
 
 # <?php esc_html_e( 'Extract and install the binary and shared libraries:', 'mcp-ai-wpoos' ); ?>
 
@@ -348,7 +350,7 @@ chmod +x <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
 
 # <?php esc_html_e( 'Verify:', 'mcp-ai-wpoos' ); ?>
 
-<?php echo esc_html( $bin_dir_path ); ?>/llama-cli --version</pre>
+			<?php echo esc_html( $bin_dir_path ); ?>/llama-cli --version</pre>
 			</details>
 		<?php endif; ?>
 	</div>

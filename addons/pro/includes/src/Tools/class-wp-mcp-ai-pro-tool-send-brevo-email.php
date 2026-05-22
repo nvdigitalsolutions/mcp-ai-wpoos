@@ -375,7 +375,7 @@ class WP_MCP_AI_Pro_Tool_Send_Brevo_Email implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'sent'      => true,
+			'sent'       => true,
 			'message_id' => isset( $decoded['messageId'] ) ? $decoded['messageId'] : null,
 		);
 	}

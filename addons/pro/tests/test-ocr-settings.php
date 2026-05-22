@@ -23,11 +23,11 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Load OCR service.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service.php';
 		$this->ocr_service = new WP_MCP_AI_OCR_Service();
-		
+
 		// Clear any existing settings.
 		delete_option( 'wp_mcp_ai_document_generation_settings' );
 		delete_option( 'wp_mcp_ai_settings' );
@@ -40,7 +40,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		// Clean up settings.
 		delete_option( 'wp_mcp_ai_document_generation_settings' );
 		delete_option( 'wp_mcp_ai_settings' );
-		
+
 		parent::tearDown();
 	}
 
@@ -59,7 +59,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$provider = $method->invoke( $this->ocr_service );
-		
+
 		$this->assertEquals( 'gemini', $provider );
 	}
 
@@ -84,7 +84,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$provider = $method->invoke( $this->ocr_service );
-		
+
 		// Should prefer OpenAI when available.
 		$this->assertEquals( 'openai', $provider );
 	}
@@ -104,7 +104,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$fallbacks = $method->invoke( $this->ocr_service, 'openai' );
-		
+
 		// Should return only tesseract.
 		$this->assertEquals( array( 'tesseract' ), $fallbacks );
 	}
@@ -124,7 +124,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$fallbacks = $method->invoke( $this->ocr_service, 'openai' );
-		
+
 		// Should return empty array.
 		$this->assertEmpty( $fallbacks );
 	}
@@ -144,7 +144,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$fallbacks = $method->invoke( $this->ocr_service, 'openai' );
-		
+
 		// Should return all providers except openai.
 		$this->assertNotContains( 'openai', $fallbacks );
 		$this->assertContains( 'gemini', $fallbacks );
@@ -165,7 +165,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		// Get default options that would be used.
 		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
 		$preprocess   = isset( $doc_settings['ocr_preprocessing'] ) ? (bool) $doc_settings['ocr_preprocessing'] : true;
-		
+
 		$this->assertFalse( $preprocess );
 	}
 
@@ -182,7 +182,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		// Get default options that would be used.
 		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
 		$timeout      = isset( $doc_settings['ocr_timeout'] ) ? absint( $doc_settings['ocr_timeout'] ) : 300;
-		
+
 		$this->assertEquals( 180, $timeout );
 	}
 
@@ -193,7 +193,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 		// No settings configured.
 		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
 		$timeout      = isset( $doc_settings['ocr_timeout'] ) ? absint( $doc_settings['ocr_timeout'] ) : 300;
-		
+
 		$this->assertEquals( 300, $timeout );
 	}
 
@@ -203,7 +203,7 @@ class Test_WP_MCP_AI_OCR_Settings extends WP_UnitTestCase {
 	public function test_settings_page_class_exists() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
-		
+
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Document_Generation_Settings_Page' ) );
 	}
 }

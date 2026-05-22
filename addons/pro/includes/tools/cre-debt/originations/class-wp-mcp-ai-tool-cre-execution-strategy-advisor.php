@@ -177,9 +177,12 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		);
 
 		// Sort by score descending.
-		uasort( $paths, function ( $a, $b ) {
-			return $b['score'] <=> $a['score'];
-		} );
+		uasort(
+			$paths,
+			function ( $a, $b ) {
+				return $b['score'] <=> $a['score'];
+			}
+		);
 
 		$ranked = array();
 		$rank   = 1;
@@ -198,7 +201,7 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 			'success' => true,
 			'message' => __( 'Execution strategy analysis complete. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'deal_summary'          => array(
+				'deal_summary'         => array(
 					'loan_amount'   => $calc::format_currency( $loan_amount ),
 					'property_type' => $property_type,
 					'ltv'           => $calc::format_percentage( $ltv ),
@@ -206,8 +209,8 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 					'stabilized'    => $stabilized ? __( 'Yes', 'mcp-ai-wpoos-pro' ) : __( 'No', 'mcp-ai-wpoos-pro' ),
 					'occupancy'     => $occupancy . '%',
 				),
-				'recommended_path'      => $ranked[0]['execution_path'],
-				'execution_strategies'  => $ranked,
+				'recommended_path'     => $ranked[0]['execution_path'],
+				'execution_strategies' => $ranked,
 			),
 		);
 	}
@@ -265,7 +268,11 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$pros[] = __( 'Flexible terms and relationship-based pricing', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Typically shorter terms (3-7 years)', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 
 	/**
@@ -305,7 +312,11 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$pros[] = __( 'Best-in-class pricing for qualifying deals', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Strict underwriting requirements and reporting', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 
 	/**
@@ -345,7 +356,11 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$cons[] = __( 'Defeasance or yield maintenance prepayment penalty', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Limited flexibility after closing', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 
 	/**
@@ -377,7 +392,11 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$cons[] = __( 'Higher spread and pricing than permanent lenders', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Floating rate with shorter terms (2-5 years)', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 
 	/**
@@ -411,7 +430,11 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$cons[] = __( 'Complex structuring and longer lead times', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Requires originator with CLO program', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 
 	/**
@@ -455,7 +478,11 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$pros[] = __( 'Flexible prepayment and long terms available', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Longer approval process and conservative underwriting', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 
 	/**
@@ -493,6 +520,10 @@ class WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor implements WP_MCP_AI_Tool_In
 		$cons[] = __( 'Typically shorter terms with recourse', 'mcp-ai-wpoos-pro' );
 		$cons[] = __( 'Variable rate most common', 'mcp-ai-wpoos-pro' );
 
-		return array( 'score' => max( 0, min( 100, $score ) ), 'pros' => $pros, 'cons' => $cons );
+		return array(
+			'score' => max( 0, min( 100, $score ) ),
+			'pros'  => $pros,
+			'cons'  => $cons,
+		);
 	}
 }

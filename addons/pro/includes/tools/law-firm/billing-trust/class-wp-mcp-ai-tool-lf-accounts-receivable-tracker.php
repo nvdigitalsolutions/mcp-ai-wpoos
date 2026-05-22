@@ -34,23 +34,55 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_accounts_receivable_tracker'; }
-	public function get_name() { return __( 'Accounts Receivable Tracker', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Tracks outstanding invoices with aging bucket analysis (0-30, 31-60, 61-90, 90+ days) and collection rate metrics.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_accounts_receivable_tracker'; }
+	public function get_name() {
+		return __( 'Accounts Receivable Tracker', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Tracks outstanding invoices with aging bucket analysis (0-30, 31-60, 61-90, 90+ days) and collection rate metrics.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'practice_area'    => array( 'type' => 'string', 'description' => __( 'Filter by practice area.', 'mcp-ai-wpoos-pro' ) ),
-				'aging_threshold'  => array( 'type' => 'integer', 'description' => __( 'Days threshold for aging (default 30).', 'mcp-ai-wpoos-pro' ) ),
-				'matter_id'        => array( 'type' => 'integer', 'description' => __( 'Filter by specific matter.', 'mcp-ai-wpoos-pro' ) ),
+				'practice_area'   => array(
+					'type'        => 'string',
+					'description' => __( 'Filter by practice area.', 'mcp-ai-wpoos-pro' ),
+				),
+				'aging_threshold' => array(
+					'type'        => 'integer',
+					'description' => __( 'Days threshold for aging (default 30).', 'mcp-ai-wpoos-pro' ),
+				),
+				'matter_id'       => array(
+					'type'        => 'integer',
+					'description' => __( 'Filter by specific matter.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array(),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -71,20 +103,33 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 		$matter_id = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
 
 		$meta_query = array(
-			array( 'key' => '_lf_billing_type', 'value' => 'billable' ),
+			array(
+				'key'   => '_lf_billing_type',
+				'value' => 'billable',
+			),
 		);
 		if ( $matter_id ) {
-			$meta_query[] = array( 'key' => '_lf_matter_id', 'value' => $matter_id );
+			$meta_query[] = array(
+				'key'   => '_lf_matter_id',
+				'value' => $matter_id,
+			);
 		}
 
-		$entries = get_posts( array(
-			'post_type'      => 'mcp_ai_lf_time_entry',
-			'posts_per_page' => 1000,
-			'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		) );
+		$entries = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lf_time_entry',
+				'posts_per_page' => 1000,
+				'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			)
+		);
 
 		$now     = current_time( 'U' );
-		$buckets = array( '0_30' => 0, '31_60' => 0, '61_90' => 0, '90_plus' => 0 );
+		$buckets = array(
+			'0_30'    => 0,
+			'31_60'   => 0,
+			'61_90'   => 0,
+			'90_plus' => 0,
+		);
 		$total   = 0;
 
 		foreach ( $entries as $entry ) {
@@ -96,7 +141,7 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 				continue;
 			}
 
-			$days = $date ? (int) floor( ( $now - strtotime( $date ) ) / DAY_IN_SECONDS ) : 0;
+			$days   = $date ? (int) floor( ( $now - strtotime( $date ) ) / DAY_IN_SECONDS ) : 0;
 			$total += $amount;
 
 			if ( $days <= 30 ) {
@@ -117,17 +162,22 @@ class WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker implements WP_MCP_AI_Tool_In
 		$collected       = $total_billed - $total;
 		$collection_rate = $total_billed > 0 ? round( ( $collected / $total_billed ) * 100, 1 ) : 100;
 
-		$buckets = array_map( function ( $v ) { return round( $v, 2 ); }, $buckets );
+		$buckets = array_map(
+			function ( $v ) {
+				return round( $v, 2 );
+			},
+			$buckets
+		);
 
 		return array(
 			'success'    => true,
 			'message'    => sprintf( __( 'Total outstanding: $%s. Collection rate: %s%%. ', 'mcp-ai-wpoos-pro' ), number_format( $total, 2 ), $collection_rate ) . self::DISCLAIMER,
 			'data'       => array(
-				'aging_buckets'    => $buckets,
+				'aging_buckets'     => $buckets,
 				'total_outstanding' => round( $total, 2 ),
-				'total_billed'     => round( $total_billed, 2 ),
-				'total_collected'  => round( $collected, 2 ),
-				'collection_rate'  => $collection_rate,
+				'total_billed'      => round( $total_billed, 2 ),
+				'total_collected'   => round( $collected, 2 ),
+				'collection_rate'   => $collection_rate,
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

@@ -20,12 +20,22 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 	}
 	public static function get_unavailable_reason() {
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'send_appointment_reminder'; }
 	public function get_name() {
 		return __( 'Send Appointment Reminder', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {
 		return __( 'Send automated reminders for upcoming appointments.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -48,6 +58,11 @@ class WP_MCP_AI_Tool_Send_Appointment_Reminder implements WP_MCP_AI_Tool_Interfa
 			'required'   => array( 'appointment_id' ),
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'email', 'phase-2.6' ); }
 	/**

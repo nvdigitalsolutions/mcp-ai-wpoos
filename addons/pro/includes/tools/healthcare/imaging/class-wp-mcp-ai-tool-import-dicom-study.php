@@ -66,11 +66,11 @@ class WP_MCP_AI_Tool_Import_DICOM_Study implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'study_uid'        => array(
+				'study_uid' => array(
 					'type'        => 'string',
 					'description' => __( 'DICOM StudyInstanceUID to import.', 'mcp-ai-wpoos-pro' ),
 				),
-				'overwrite'        => array(
+				'overwrite' => array(
 					'type'        => 'boolean',
 					'description' => __( 'If a study with this UID already exists, update its metadata.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,

@@ -141,7 +141,9 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		// Try to call AJAX without nonce - should fail.
-		$_POST['action']    = 'wp_mcp_ai_run_performance_test';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['action'] = 'wp_mcp_ai_run_performance_test';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['test_type'] = 'stress';
 
 		// Expect this to die with nonce error.
@@ -165,16 +167,18 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Set up request with valid nonce.
-		$_POST['action']    = 'wp_mcp_ai_run_performance_test';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['action'] = 'wp_mcp_ai_run_performance_test';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['test_type'] = 'stress';
-		$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_performance' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_performance' );
 
 		// Capture the AJAX response.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_run_performance_test' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Intentionally empty - error handled elsewhere.
-			// Expected - check the response.
 		}
 
 		// Get the JSON response.

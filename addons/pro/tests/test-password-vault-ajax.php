@@ -137,12 +137,18 @@ class Test_Password_Vault_AJAX extends WP_UnitTestCase {
 		wp_set_current_user( $admin_user );
 
 		// Set up request data.
-		$_POST['_wpnonce']  = wp_create_nonce( 'vault_generate_password' );
-		$_POST['length']    = 16;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['_wpnonce'] = wp_create_nonce( 'vault_generate_password' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['length'] = 16;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['uppercase'] = 1;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['lowercase'] = 1;
-		$_POST['numbers']   = 1;
-		$_POST['symbols']   = 1;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['numbers'] = 1;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['symbols'] = 1;
 
 		// Capture JSON output.
 		ob_start();

@@ -26,6 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -38,6 +39,13 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'manage_submittal_log';
 	}
@@ -50,37 +58,58 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 		return __( 'List / create / update construction submittals (shop drawings, product data, samples, mockups) on an architectural project. Stored as JSON post-meta on mcp_ai_arch_proj. Status workflow follows AIA / CSI conventions.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'      => array(
+				'action'          => array(
 					'type' => 'string',
 					'enum' => array( 'list', 'create', 'update', 'get' ),
 				),
-				'project_id'  => array( 'type' => 'integer' ),
-				'submittal_id' => array( 'type' => 'string' ),
-				'spec_section' => array( 'type' => 'string', 'description' => 'CSI MasterFormat or POMI section reference.' ),
-				'title'        => array( 'type' => 'string' ),
-				'submittal_type' => array(
+				'project_id'      => array( 'type' => 'integer' ),
+				'submittal_id'    => array( 'type' => 'string' ),
+				'spec_section'    => array(
+					'type'        => 'string',
+					'description' => 'CSI MasterFormat or POMI section reference.',
+				),
+				'title'           => array( 'type' => 'string' ),
+				'submittal_type'  => array(
 					'type' => 'string',
 					'enum' => array( 'shop_drawing', 'product_data', 'sample', 'mockup', 'test_report', 'certificate', 'other' ),
 				),
-				'status'       => array(
+				'status'          => array(
 					'type' => 'string',
 					'enum' => array( 'submitted', 'under_review', 'approved', 'approved_as_noted', 'revise_and_resubmit', 'rejected', 'void' ),
 				),
-				'submitted_by' => array( 'type' => 'string' ),
-				'reviewer'     => array( 'type' => 'string' ),
-				'due_date'     => array( 'type' => 'string', 'description' => 'YYYY-MM-DD' ),
+				'submitted_by'    => array( 'type' => 'string' ),
+				'reviewer'        => array( 'type' => 'string' ),
+				'due_date'        => array(
+					'type'        => 'string',
+					'description' => 'YYYY-MM-DD',
+				),
 				'review_comments' => array( 'type' => 'string' ),
-				'revision'     => array( 'type' => 'integer', 'description' => 'Revision counter (0,1,2,...).' ),
+				'revision'        => array(
+					'type'        => 'integer',
+					'description' => 'Revision counter (0,1,2,...).',
+				),
 			),
 			'required'             => array( 'action', 'project_id' ),
 			'additionalProperties' => false,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'write', 'state-changing' );
 	}
@@ -115,12 +144,19 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 
 		switch ( $action ) {
 			case 'list':
-				return array( 'success' => true, 'count' => count( $log ), 'submittals' => $log );
+				return array(
+					'success'    => true,
+					'count'      => count( $log ),
+					'submittals' => $log,
+				);
 			case 'get':
 				$sid = isset( $arguments['submittal_id'] ) ? sanitize_text_field( $arguments['submittal_id'] ) : '';
 				foreach ( $log as $entry ) {
 					if ( isset( $entry['id'] ) && $entry['id'] === $sid ) {
-						return array( 'success' => true, 'submittal' => $entry );
+						return array(
+							'success'   => true,
+							'submittal' => $entry,
+						);
 					}
 				}
 				return new WP_Error( 'wp_mcp_ai_not_found', __( 'Submittal not found.', 'mcp-ai-wpoos-pro' ) );
@@ -146,7 +182,10 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 				);
 				$log[] = $entry;
 				WP_MCP_AI_Architectural_Interop::write_log( $project_id, $key, $log );
-				return array( 'success' => true, 'submittal' => $entry );
+				return array(
+					'success'   => true,
+					'submittal' => $entry,
+				);
 			case 'update':
 				$sid = isset( $arguments['submittal_id'] ) ? sanitize_text_field( $arguments['submittal_id'] ) : '';
 				if ( '' === $sid ) {
@@ -181,7 +220,10 @@ class WP_MCP_AI_Tool_Manage_Submittal_Log implements WP_MCP_AI_Tool_Interface, W
 					return new WP_Error( 'wp_mcp_ai_not_found', __( 'Submittal not found.', 'mcp-ai-wpoos-pro' ) );
 				}
 				WP_MCP_AI_Architectural_Interop::write_log( $project_id, $key, $log );
-				return array( 'success' => true, 'submittal' => $log[ $i ] );
+				return array(
+					'success'   => true,
+					'submittal' => $log[ $i ],
+				);
 		}
 
 		return new WP_Error( 'wp_mcp_ai_invalid_arguments', __( 'Unknown action.', 'mcp-ai-wpoos-pro' ) );

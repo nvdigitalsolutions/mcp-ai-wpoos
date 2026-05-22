@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return __( 'Trim Video tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'trim_video';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return __( 'Cut and trim video sections with precise start and end time controls.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -73,10 +87,22 @@ class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'upload_files';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'media'         => true,
@@ -85,8 +111,8 @@ class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement trim_video logic
-		// This requires FFmpeg or similar video processing library
+		// TODO: Implement trim_video logic.
+		// This requires FFmpeg or similar video processing library.
 
 		return array(
 			'success' => true,

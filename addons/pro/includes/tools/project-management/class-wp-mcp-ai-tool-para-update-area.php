@@ -25,6 +25,13 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		return __( 'PARA: Update Area', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Update an existing PARA Area. Only provided fields are changed. Set `mark_reviewed` to true to update the last-reviewed timestamp to now.', 'mcp-ai-wpoos-pro' );
 	}
@@ -33,11 +40,26 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'area_id'        => array( 'type' => 'integer', 'minimum' => 1 ),
-				'title'          => array( 'type' => 'string', 'maxLength' => 200 ),
-				'description'    => array( 'type' => 'string', 'maxLength' => 5000 ),
-				'standard'       => array( 'type' => 'string', 'maxLength' => 1000 ),
-				'owner_id'       => array( 'type' => 'integer', 'minimum' => 1 ),
+				'area_id'        => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'title'          => array(
+					'type'      => 'string',
+					'maxLength' => 200,
+				),
+				'description'    => array(
+					'type'      => 'string',
+					'maxLength' => 5000,
+				),
+				'standard'       => array(
+					'type'      => 'string',
+					'maxLength' => 1000,
+				),
+				'owner_id'       => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
 				'review_cadence' => array(
 					'type' => 'string',
 					'enum' => array( 'weekly', 'biweekly', 'monthly', 'quarterly', 'annually' ),
@@ -49,6 +71,11 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}

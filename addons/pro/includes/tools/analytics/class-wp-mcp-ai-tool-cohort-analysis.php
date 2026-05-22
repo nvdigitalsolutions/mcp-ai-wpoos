@@ -423,7 +423,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 						FROM {$wpdb->posts}
 						WHERE post_type = 'shop_order'
 							AND post_status IN ('wc-completed', 'wc-processing')
-							AND post_author IN ({$user_ids})
+							AND post_author IN ({$user_ids}) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN clause
 							AND post_date BETWEEN %s AND %s",
 						$period_start,
 						$period_end
@@ -447,7 +447,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 						WHERE p.post_type = 'shop_order'
 							AND p.post_status IN ('wc-completed', 'wc-processing')
 							AND pm.meta_key = '_order_total'
-							AND p.post_author IN ({$user_ids})
+							AND p.post_author IN ({$user_ids}) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN clause
 							AND p.post_date BETWEEN %s AND %s",
 						$period_start,
 						$period_end
@@ -466,7 +466,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 						FROM {$wpdb->posts}
 						WHERE post_type = 'shop_order'
 							AND post_status IN ('wc-completed', 'wc-processing')
-							AND post_author IN ({$user_ids})
+							AND post_author IN ({$user_ids}) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic IN clause
 							AND post_date BETWEEN %s AND %s",
 						$period_start,
 						$period_end

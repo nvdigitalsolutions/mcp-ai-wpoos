@@ -21,12 +21,22 @@ class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 	public static function get_unavailable_reason() {
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'block_time_slot'; }
 	public function get_name() {
 		return __( 'Block Time Slot', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {
 		return __( 'Block specific time slots to prevent appointments.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -47,6 +57,11 @@ class WP_MCP_AI_Tool_Block_Time_Slot implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'required'   => array( 'start_time', 'end_time' ),
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'phase-2.6' ); }
 	/**

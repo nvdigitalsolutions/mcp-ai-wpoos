@@ -96,6 +96,11 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -597,18 +602,18 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Place name.
 		if ( ! empty( $place_data['name'] ) ) {
-			$report .= "**Name:** " . esc_html( $place_data['name'] ) . "\n\n";
+			$report .= '**Name:** ' . esc_html( $place_data['name'] ) . "\n\n";
 		}
 
 		// Place type.
 		if ( ! empty( $place_data['place_type'] ) ) {
 			$type_label = ucwords( str_replace( '_', ' ', $place_data['place_type'] ) );
-			$report    .= "**Type:** " . esc_html( $type_label ) . "\n";
+			$report    .= '**Type:** ' . esc_html( $type_label ) . "\n";
 		}
 
 		// Rating and reviews.
 		if ( ! empty( $place_data['rating'] ) ) {
-			$report .= "**Rating:** " . floatval( $place_data['rating'] ) . " / 5.0";
+			$report .= '**Rating:** ' . floatval( $place_data['rating'] ) . ' / 5.0';
 			$report .= "\n";
 		}
 
@@ -616,7 +621,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! empty( $place_data['price_level'] ) ) {
 			$price_level = absint( $place_data['price_level'] );
 			$price_str   = str_repeat( '$', $price_level );
-			$report     .= "**Price Level:** " . esc_html( $price_str ) . "\n";
+			$report     .= '**Price Level:** ' . esc_html( $price_str ) . "\n";
 		}
 
 		$report .= "\n";
@@ -626,7 +631,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Full address.
 		if ( ! empty( $place_data['address'] ) ) {
-			$report .= "**Address:** " . esc_html( $place_data['address'] ) . "\n";
+			$report .= '**Address:** ' . esc_html( $place_data['address'] ) . "\n";
 		} elseif ( ! empty( $place_data['street'] ) || ! empty( $place_data['city'] ) ) {
 			// Build address from components.
 			$address_parts = array_filter(
@@ -639,7 +644,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				)
 			);
 			if ( ! empty( $address_parts ) ) {
-				$report .= "**Address:** " . esc_html( implode( ', ', $address_parts ) ) . "\n";
+				$report .= '**Address:** ' . esc_html( implode( ', ', $address_parts ) ) . "\n";
 			}
 		}
 
@@ -647,7 +652,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! empty( $place_data['latitude'] ) && ! empty( $place_data['longitude'] ) ) {
 			$lat     = floatval( $place_data['latitude'] );
 			$lng     = floatval( $place_data['longitude'] );
-			$report .= "**Coordinates:** " . $lat . ", " . $lng . "\n";
+			$report .= '**Coordinates:** ' . $lat . ', ' . $lng . "\n";
 		}
 
 		$report .= "\n";
@@ -660,15 +665,15 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		if ( ! empty( $place_data['phone'] ) ) {
-			$report .= "**Phone:** " . esc_html( $place_data['phone'] ) . "\n";
+			$report .= '**Phone:** ' . esc_html( $place_data['phone'] ) . "\n";
 		}
 
 		if ( ! empty( $place_data['email'] ) ) {
-			$report .= "**Email:** " . esc_html( $place_data['email'] ) . "\n";
+			$report .= '**Email:** ' . esc_html( $place_data['email'] ) . "\n";
 		}
 
 		if ( ! empty( $place_data['website'] ) ) {
-			$report .= "**Website:** " . esc_url( $place_data['website'] ) . "\n";
+			$report .= '**Website:** ' . esc_url( $place_data['website'] ) . "\n";
 		}
 
 		if ( $has_contact ) {
@@ -683,7 +688,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				if ( isset( $place_data['business_hours'][ $day ] ) ) {
 					$day_label = ucfirst( $day );
 					$hours     = $place_data['business_hours'][ $day ];
-					$report   .= "**" . esc_html( $day_label ) . ":** " . esc_html( $hours ) . "\n";
+					$report   .= '**' . esc_html( $day_label ) . ':** ' . esc_html( $hours ) . "\n";
 				}
 			}
 			$report .= "\n";
@@ -694,16 +699,16 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$report .= "### Amenities & Features\n";
 			foreach ( $place_data['amenities'] as $amenity ) {
 				$amenity_label = ucwords( str_replace( '_', ' ', $amenity ) );
-				$report       .= "- " . esc_html( $amenity_label ) . "\n";
+				$report       .= '- ' . esc_html( $amenity_label ) . "\n";
 			}
 			$report .= "\n";
 		}
 
 		// Description.
 		if ( ! empty( $place_data['description'] ) ) {
-			$report         .= "### Description\n";
-			$plain_desc      = wp_strip_all_tags( $place_data['description'] );
-			$desc_excerpt    = substr( $plain_desc, 0, 300 );
+			$report      .= "### Description\n";
+			$plain_desc   = wp_strip_all_tags( $place_data['description'] );
+			$desc_excerpt = substr( $plain_desc, 0, 300 );
 			if ( strlen( $plain_desc ) > 300 ) {
 				$desc_excerpt .= '...';
 			}
@@ -716,26 +721,26 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Sources count.
 		if ( ! empty( $place_data['sources'] ) && is_array( $place_data['sources'] ) ) {
 			$source_count = count( $place_data['sources'] );
-			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+			$report      .= '**Research Sources:** ' . absint( $source_count ) . " source(s)\n";
 		}
 
 		// Google Place ID.
 		if ( ! empty( $place_data['google_place_id'] ) ) {
-			$report .= "**Google Place ID:** " . esc_html( $place_data['google_place_id'] ) . "\n";
+			$report .= '**Google Place ID:** ' . esc_html( $place_data['google_place_id'] ) . "\n";
 		}
 
 		// AI model used.
 		if ( ! empty( $place_data['research_provider'] ) && ! empty( $place_data['research_model'] ) ) {
-			$report .= "**AI Model:** " . esc_html( $place_data['research_provider'] . ' / ' . $place_data['research_model'] ) . "\n";
+			$report .= '**AI Model:** ' . esc_html( $place_data['research_provider'] . ' / ' . $place_data['research_model'] ) . "\n";
 		}
 
 		// Research timestamp.
 		if ( ! empty( $place_data['researched_at'] ) ) {
-			$report .= "**Researched:** " . esc_html( $place_data['researched_at'] ) . "\n";
+			$report .= '**Researched:** ' . esc_html( $place_data['researched_at'] ) . "\n";
 		}
 
 		$report .= "\n---\n\n";
-		$report .= "*Research completed successfully. This place information is ready to be added to your WordPress site.*";
+		$report .= '*Research completed successfully. This place information is ready to be added to your WordPress site.*';
 
 		return $report;
 	}

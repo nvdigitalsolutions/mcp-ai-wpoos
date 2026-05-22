@@ -7,7 +7,6 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
  */
-
 class Test_JetEngine_MCP_Prompts extends WP_UnitTestCase {
 
 	/**
@@ -33,7 +32,8 @@ class Test_JetEngine_MCP_Prompts extends WP_UnitTestCase {
 		$prop->setValue( null, null );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -42,7 +42,8 @@ class Test_JetEngine_MCP_Prompts extends WP_UnitTestCase {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_JetEngine_MCP_Prompts' ) );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -54,7 +55,8 @@ class Test_JetEngine_MCP_Prompts extends WP_UnitTestCase {
 		$this->assertSame( $instance1, $instance2 );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -63,7 +65,7 @@ class Test_JetEngine_MCP_Prompts extends WP_UnitTestCase {
 		$prompts    = WP_MCP_AI_JetEngine_MCP_Prompts::get_instance();
 		$reflection = new ReflectionClass( $prompts );
 
-		// We can't test render_prompt directly without MCP server, but we can test
+		// We can't test render_prompt directly without MCP server, but we can test.
 		// the method exists and behaves correctly with mock data.
 		$this->assertTrue( method_exists( $prompts, 'render_prompt' ) );
 		$this->assertTrue( method_exists( $prompts, 'list_prompts' ) );

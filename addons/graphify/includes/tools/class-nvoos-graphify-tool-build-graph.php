@@ -65,23 +65,17 @@ class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'write', 'state-changing', 'async', 'long-running', 'performance-impact' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {

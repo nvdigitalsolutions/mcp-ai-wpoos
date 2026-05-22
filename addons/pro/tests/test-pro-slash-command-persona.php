@@ -10,7 +10,8 @@
  */
 class Test_Pro_Slash_Command_Persona extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Pro_Slash_Command_Persona
 	 */
 	private $command;

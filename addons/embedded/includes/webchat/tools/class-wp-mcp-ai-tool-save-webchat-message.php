@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 class WP_MCP_AI_Tool_Save_WebChat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Check if this tool is available.
 	 *
@@ -280,6 +281,11 @@ class WP_MCP_AI_Tool_Save_WebChat_Message implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array Capability flags.
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

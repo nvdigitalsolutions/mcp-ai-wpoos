@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_In
 		return __( 'Translate WooCommerce Products tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'translate_woocommerce_products';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_In
 		return __( 'Translate product catalogs including titles, descriptions, attributes, and categories for multiple languages.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -73,10 +87,22 @@ class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_In
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,
@@ -85,7 +111,7 @@ class WP_MCP_AI_Tool_Translate_WooCommerce_Products implements WP_MCP_AI_Tool_In
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement translate_woocommerce_products logic
+		// TODO: Implement translate_woocommerce_products logic.
 
 		return array(
 			'success' => true,

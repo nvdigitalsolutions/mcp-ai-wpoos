@@ -26,10 +26,24 @@ class WP_MCP_AI_Tool_PARA_Weekly_Review implements WP_MCP_AI_Tool_Interface, WP_
 		return __( 'PARA: Weekly Review', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Generate the PARA weekly-review summary. Returns: areas with no recent activity, resources unreferenced for 90+ days, and archive candidates (completed/cancelled projects not yet archived). Useful for the AI assistant to drive the user through a weekly review.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -44,6 +58,11 @@ class WP_MCP_AI_Tool_PARA_Weekly_Review implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only', 'cacheable' );
 	}

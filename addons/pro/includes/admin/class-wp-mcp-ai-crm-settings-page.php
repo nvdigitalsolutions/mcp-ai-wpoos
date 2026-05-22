@@ -210,26 +210,26 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_company'                    => __( 'Create Company', 'mcp-ai-wpoos-pro' ),
-			'get_companies'                     => __( 'Get Companies', 'mcp-ai-wpoos-pro' ),
-			'research_company'                  => __( 'Research Company (Web Search)', 'mcp-ai-wpoos-pro' ),
-			'manage_crm_contact'                => __( 'Manage CRM Contact', 'mcp-ai-wpoos-pro' ),
+			'create_company'                  => __( 'Create Company', 'mcp-ai-wpoos-pro' ),
+			'get_companies'                   => __( 'Get Companies', 'mcp-ai-wpoos-pro' ),
+			'research_company'                => __( 'Research Company (Web Search)', 'mcp-ai-wpoos-pro' ),
+			'manage_crm_contact'              => __( 'Manage CRM Contact', 'mcp-ai-wpoos-pro' ),
 			// Email Search tools (with caching + scheduling).
-			'crm_email_search_leads'            => __( 'Email Search: New Leads (Cached + Scheduled)', 'mcp-ai-wpoos-pro' ),
-			'crm_email_search_correspondence'   => __( 'Email Search: Customer Correspondence (Cached + Scheduled)', 'mcp-ai-wpoos-pro' ),
-			'crm_email_search_accounting'       => __( 'Email Search: Accounting & Service Tracking (Cached + Scheduled)', 'mcp-ai-wpoos-pro' ),
+			'crm_email_search_leads'          => __( 'Email Search: New Leads (Cached + Scheduled)', 'mcp-ai-wpoos-pro' ),
+			'crm_email_search_correspondence' => __( 'Email Search: Customer Correspondence (Cached + Scheduled)', 'mcp-ai-wpoos-pro' ),
+			'crm_email_search_accounting'     => __( 'Email Search: Accounting & Service Tracking (Cached + Scheduled)', 'mcp-ai-wpoos-pro' ),
 			// Remaining tools.
-			'import_contacts_csv'               => __( 'Import Contacts from CSV (Coming Soon)', 'mcp-ai-wpoos-pro' ),
-			'export_contacts_csv'               => __( 'Export Contacts to CSV (Coming Soon)', 'mcp-ai-wpoos-pro' ),
-			'validate_email'                    => __( 'Validate Email Address (Service)', 'mcp-ai-wpoos-pro' ),
-			'validate_phone'                    => __( 'Validate Phone Number (Service)', 'mcp-ai-wpoos-pro' ),
-			'send_email_nodemailer'             => __( 'Send Email via Nodemailer (Service)', 'mcp-ai-wpoos-pro' ),
-			'generate_email_template'           => __( 'Generate Email Template (MJML)', 'mcp-ai-wpoos-pro' ),
-			'create_email_campaign'             => __( 'Create Email Campaign (Coming Soon)', 'mcp-ai-wpoos-pro' ),
-			'segment_contacts'                  => __( 'Segment Contacts (Coming Soon)', 'mcp-ai-wpoos-pro' ),
-			'calculate_lead_score'              => __( 'Calculate Lead Score (Coming Soon)', 'mcp-ai-wpoos-pro' ),
-			'track_email_engagement'            => __( 'Track Email Engagement (Coming Soon)', 'mcp-ai-wpoos-pro' ),
-			'generate_calendar_invite'          => __( 'Generate Calendar Invite (Service)', 'mcp-ai-wpoos-pro' ),
+			'import_contacts_csv'             => __( 'Import Contacts from CSV (Coming Soon)', 'mcp-ai-wpoos-pro' ),
+			'export_contacts_csv'             => __( 'Export Contacts to CSV (Coming Soon)', 'mcp-ai-wpoos-pro' ),
+			'validate_email'                  => __( 'Validate Email Address (Service)', 'mcp-ai-wpoos-pro' ),
+			'validate_phone'                  => __( 'Validate Phone Number (Service)', 'mcp-ai-wpoos-pro' ),
+			'send_email_nodemailer'           => __( 'Send Email via Nodemailer (Service)', 'mcp-ai-wpoos-pro' ),
+			'generate_email_template'         => __( 'Generate Email Template (MJML)', 'mcp-ai-wpoos-pro' ),
+			'create_email_campaign'           => __( 'Create Email Campaign (Coming Soon)', 'mcp-ai-wpoos-pro' ),
+			'segment_contacts'                => __( 'Segment Contacts (Coming Soon)', 'mcp-ai-wpoos-pro' ),
+			'calculate_lead_score'            => __( 'Calculate Lead Score (Coming Soon)', 'mcp-ai-wpoos-pro' ),
+			'track_email_engagement'          => __( 'Track Email Engagement (Coming Soon)', 'mcp-ai-wpoos-pro' ),
+			'generate_calendar_invite'        => __( 'Generate Calendar Invite (Service)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

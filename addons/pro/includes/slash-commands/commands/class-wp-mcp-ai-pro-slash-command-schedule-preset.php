@@ -122,7 +122,7 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule_Preset {
 			return __( 'No categories found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$output = "## " . __( 'Schedule Preset Categories', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output = '## ' . __( 'Schedule Preset Categories', 'mcp-ai-wpoos-pro' ) . "\n\n";
 		foreach ( $categories as $cat ) {
 			$output .= '- ' . esc_html( is_array( $cat ) ? ( $cat['label'] ?? $cat['id'] ?? $cat ) : $cat ) . "\n";
 		}
@@ -160,14 +160,14 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule_Preset {
 			);
 		}
 
-		$name    = isset( $preset['name'] ) ? esc_html( $preset['name'] ) : esc_html( $preset_id );
-		$desc    = isset( $preset['description'] ) ? esc_html( $preset['description'] ) : '–';
-		$cat     = isset( $preset['category'] ) ? esc_html( $preset['category'] ) : '–';
-		$cron    = isset( $preset['schedule'] ) ? esc_html( $preset['schedule'] ) : '–';
-		$type    = isset( $preset['schedule_type'] ) ? esc_html( $preset['schedule_type'] ) : '–';
+		$name = isset( $preset['name'] ) ? esc_html( $preset['name'] ) : esc_html( $preset_id );
+		$desc = isset( $preset['description'] ) ? esc_html( $preset['description'] ) : '–';
+		$cat  = isset( $preset['category'] ) ? esc_html( $preset['category'] ) : '–';
+		$cron = isset( $preset['schedule'] ) ? esc_html( $preset['schedule'] ) : '–';
+		$type = isset( $preset['schedule_type'] ) ? esc_html( $preset['schedule_type'] ) : '–';
 
 		$output  = "## Preset: {$name}\n\n";
-		$output .= "- **ID:** " . esc_html( $preset_id ) . "\n";
+		$output .= '- **ID:** ' . esc_html( $preset_id ) . "\n";
 		$output .= "- **Category:** {$cat}\n";
 		$output .= "- **Type:** {$type}\n";
 		$output .= "- **Cron:** {$cron}\n";
@@ -208,7 +208,7 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule_Preset {
 			return __( 'No schedule presets found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$header  = $toolkit
+		$header = $toolkit
 			? sprintf(
 				/* translators: %s: toolkit/category name */
 				__( 'Schedule Presets — %s', 'mcp-ai-wpoos-pro' ),
@@ -221,11 +221,11 @@ class WP_MCP_AI_Pro_Slash_Command_Schedule_Preset {
 		$output .= "|----|------|----------|------|------|\n";
 
 		foreach ( $presets as $id => $preset ) {
-			$p_id   = esc_html( is_array( $preset ) ? ( $preset['id'] ?? $id ) : $id );
-			$name   = is_array( $preset ) ? esc_html( $preset['name'] ?? '–' ) : esc_html( $preset );
-			$cat    = is_array( $preset ) ? esc_html( $preset['category'] ?? '–' ) : '–';
-			$type   = is_array( $preset ) ? esc_html( $preset['schedule_type'] ?? '–' ) : '–';
-			$cron   = is_array( $preset ) ? esc_html( $preset['schedule'] ?? '–' ) : '–';
+			$p_id    = esc_html( is_array( $preset ) ? ( $preset['id'] ?? $id ) : $id );
+			$name    = is_array( $preset ) ? esc_html( $preset['name'] ?? '–' ) : esc_html( $preset );
+			$cat     = is_array( $preset ) ? esc_html( $preset['category'] ?? '–' ) : '–';
+			$type    = is_array( $preset ) ? esc_html( $preset['schedule_type'] ?? '–' ) : '–';
+			$cron    = is_array( $preset ) ? esc_html( $preset['schedule'] ?? '–' ) : '–';
 			$output .= "| {$p_id} | {$name} | {$cat} | {$type} | {$cron} |\n";
 		}
 

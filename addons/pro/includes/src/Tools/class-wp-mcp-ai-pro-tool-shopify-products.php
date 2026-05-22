@@ -52,69 +52,69 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'connection_id' => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'connection_id'   => array(
 					'type'        => 'string',
 					'description' => __( 'Remote Sites connection ID for the Shopify store. If omitted, automatically uses the Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
-				'action'        => array(
+				'action'          => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: list, get, create, update, search.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list', 'get', 'create', 'update', 'search' ),
 					'default'     => 'list',
 				),
-				'product_id'    => array(
+				'product_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'Shopify product GID (e.g. gid://shopify/Product/123456789) for get/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'first'         => array(
+				'first'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of products to return (1–250). Default: 10.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 250,
 				),
-				'after'         => array(
+				'after'           => array(
 					'type'        => 'string',
 					'description' => __( 'Pagination cursor (endCursor from a previous response).', 'mcp-ai-wpoos-pro' ),
 				),
-				'query'         => array(
+				'query'           => array(
 					'type'        => 'string',
 					'description' => __( 'Shopify search query string for list/search actions. Supports Shopify filter syntax, e.g. "status:active vendor:Acme".', 'mcp-ai-wpoos-pro' ),
 				),
-				'title'         => array(
+				'title'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product title for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'body_html'     => array(
+				'body_html'       => array(
 					'type'        => 'string',
 					'description' => __( 'Product description HTML for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'vendor'        => array(
+				'vendor'          => array(
 					'type'        => 'string',
 					'description' => __( 'Product vendor for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'product_type'  => array(
+				'product_type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Product type for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'tags'          => array(
+				'tags'            => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Array of tags for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'        => array(
+				'status'          => array(
 					'type'        => 'string',
 					'description' => __( 'Product status: ACTIVE, DRAFT, or ARCHIVED.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'ACTIVE', 'DRAFT', 'ARCHIVED' ),
 				),
-				'variants'      => array(
+				'variants'        => array(
 					'type'        => 'array',
 					'description' => __( 'Array of variant input objects for create/update. Each variant can include: price, compareAtPrice, sku, barcode, inventoryQuantity, weight, weightUnit, options.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'object' ),
 				),
-				'seo_title'     => array(
+				'seo_title'       => array(
 					'type'        => 'string',
 					'description' => __( 'SEO page title for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -193,8 +193,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			$available   = $this->get_available_shopify_connections( $context );
-			$conn_list   = $this->format_available_connections_message( $available );
+			$available = $this->get_available_shopify_connections( $context );
+			$conn_list = $this->format_available_connections_message( $available );
 			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {
@@ -320,7 +320,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 						continue;
 					}
 
-					$sub_edges = isset( $sub_response['data']['products']['edges'] ) ? $sub_response['data']['products']['edges'] : array();
+					$sub_edges    = isset( $sub_response['data']['products']['edges'] ) ? $sub_response['data']['products']['edges'] : array();
 					$sub_products = array();
 					foreach ( $sub_edges as $edge ) {
 						$node           = isset( $edge['node'] ) ? $edge['node'] : array();
@@ -406,7 +406,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Generate rich product card for chat display.
-		$normalized = $this->normalize_product( $node );
+		$normalized   = $this->normalize_product( $node );
 		$card_message = $this->format_single_product_card( $normalized, 'shopify', array( 'max_description' => 200 ) );
 
 		return array(
@@ -577,24 +577,24 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'id'             => isset( $node['id'] ) ? $node['id'] : '',
-			'title'          => isset( $node['title'] ) ? $node['title'] : '',
-			'handle'         => isset( $node['handle'] ) ? $node['handle'] : '',
-			'status'         => isset( $node['status'] ) ? $node['status'] : '',
-			'vendor'         => isset( $node['vendor'] ) ? $node['vendor'] : '',
-			'product_type'   => isset( $node['productType'] ) ? $node['productType'] : '',
-			'tags'           => isset( $node['tags'] ) ? $node['tags'] : array(),
-			'created_at'     => isset( $node['createdAt'] ) ? $node['createdAt'] : '',
-			'updated_at'     => isset( $node['updatedAt'] ) ? $node['updatedAt'] : '',
-			'price_range'    => isset( $node['priceRangeV2'] ) ? $node['priceRangeV2'] : array(),
+			'id'              => isset( $node['id'] ) ? $node['id'] : '',
+			'title'           => isset( $node['title'] ) ? $node['title'] : '',
+			'handle'          => isset( $node['handle'] ) ? $node['handle'] : '',
+			'status'          => isset( $node['status'] ) ? $node['status'] : '',
+			'vendor'          => isset( $node['vendor'] ) ? $node['vendor'] : '',
+			'product_type'    => isset( $node['productType'] ) ? $node['productType'] : '',
+			'tags'            => isset( $node['tags'] ) ? $node['tags'] : array(),
+			'created_at'      => isset( $node['createdAt'] ) ? $node['createdAt'] : '',
+			'updated_at'      => isset( $node['updatedAt'] ) ? $node['updatedAt'] : '',
+			'price_range'     => isset( $node['priceRangeV2'] ) ? $node['priceRangeV2'] : array(),
 			'total_inventory' => isset( $node['totalInventory'] ) ? $node['totalInventory'] : 0,
-			'variants'       => $variants,
-			'images'         => $images,
+			'variants'        => $variants,
+			'images'          => $images,
 		);
 	}
 
 	// ------------------------------------------------------------------ //
-	//  Catalog API helpers                                                  //
+	// Catalog API helpers                                                  //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -825,14 +825,14 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		if ( isset( $item['pricerange'] ) && is_array( $item['pricerange'] ) ) {
 			$pr = $item['pricerange'];
 			if ( isset( $pr['minvariantprice'] ) && is_array( $pr['minvariantprice'] ) ) {
-				$min = $pr['minvariantprice'];
+				$min                            = $pr['minvariantprice'];
 				$price_range['minVariantPrice'] = array(
 					'amount'       => isset( $min['amount'] ) ? ( (float) $min['amount'] / 100 ) : 0,
 					'currencyCode' => isset( $min['currencycode'] ) ? $min['currencycode'] : 'USD',
 				);
 			}
 			if ( isset( $pr['maxvariantprice'] ) && is_array( $pr['maxvariantprice'] ) ) {
-				$max = $pr['maxvariantprice'];
+				$max                            = $pr['maxvariantprice'];
 				$price_range['maxVariantPrice'] = array(
 					'amount'       => isset( $max['amount'] ) ? ( (float) $max['amount'] / 100 ) : 0,
 					'currencyCode' => isset( $max['currencycode'] ) ? $max['currencycode'] : 'USD',
@@ -841,25 +841,25 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'id'                => isset( $item['upid'] ) ? $item['upid'] : ( isset( $item['id'] ) ? $item['id'] : '' ),
-			'title'             => $title,
-			'handle'            => isset( $item['handle'] ) ? $item['handle'] : '',
-			'status'            => isset( $item['availableforsale'] ) && $item['availableforsale'] ? 'ACTIVE' : 'UNAVAILABLE',
-			'vendor'            => isset( $item['vendor'] ) ? $item['vendor'] : '',
-			'product_type'      => isset( $item['producttype'] ) ? $item['producttype'] : ( isset( $item['product_type'] ) ? $item['product_type'] : '' ),
-			'tags'              => isset( $item['tags'] ) ? $item['tags'] : array(),
-			'created_at'        => '',
-			'updated_at'        => '',
-			'price_range'       => $price_range,
-			'total_inventory'   => 0,
-			'variants'          => array(),
-			'images'            => $images,
-			'availableforsale'  => isset( $item['availableforsale'] ) ? $item['availableforsale'] : true,
-			'lookupurl'         => isset( $item['lookupurl'] ) ? $item['lookupurl'] : '',
-			'displayname'       => $title,
+			'id'               => isset( $item['upid'] ) ? $item['upid'] : ( isset( $item['id'] ) ? $item['id'] : '' ),
+			'title'            => $title,
+			'handle'           => isset( $item['handle'] ) ? $item['handle'] : '',
+			'status'           => isset( $item['availableforsale'] ) && $item['availableforsale'] ? 'ACTIVE' : 'UNAVAILABLE',
+			'vendor'           => isset( $item['vendor'] ) ? $item['vendor'] : '',
+			'product_type'     => isset( $item['producttype'] ) ? $item['producttype'] : ( isset( $item['product_type'] ) ? $item['product_type'] : '' ),
+			'tags'             => isset( $item['tags'] ) ? $item['tags'] : array(),
+			'created_at'       => '',
+			'updated_at'       => '',
+			'price_range'      => $price_range,
+			'total_inventory'  => 0,
+			'variants'         => array(),
+			'images'           => $images,
+			'availableforsale' => isset( $item['availableforsale'] ) ? $item['availableforsale'] : true,
+			'lookupurl'        => isset( $item['lookupurl'] ) ? $item['lookupurl'] : '',
+			'displayname'      => $title,
 			// Preserve the raw media/pricerange for the TMA JS renderer.
-			'media'             => isset( $item['media'] ) ? $item['media'] : array(),
-			'pricerange'        => isset( $item['pricerange'] ) ? $item['pricerange'] : array(),
+			'media'            => isset( $item['media'] ) ? $item['media'] : array(),
+			'pricerange'       => isset( $item['pricerange'] ) ? $item['pricerange'] : array(),
 		);
 	}
 }

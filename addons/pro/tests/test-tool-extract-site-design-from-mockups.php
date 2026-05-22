@@ -58,17 +58,17 @@ class Test_Tool_Extract_Site_Design_From_Mockups extends WP_UnitTestCase {
 	private function golden_design_system(): array {
 		return array(
 			'palette'    => array(
-				'bg'           => '#0f110e',
-				'surface'      => '#181b13',
-				'border'       => 'rgba(255,255,255,0.07)',
+				'bg'            => '#0f110e',
+				'surface'       => '#181b13',
+				'border'        => 'rgba(255,255,255,0.07)',
 				'border-accent' => 'rgba(52,107,62,0.35)',
-				'accent'       => '#2d6a4f',
-				'accent-light' => '#52b788',
-				'accent-pale'  => 'rgba(45,106,79,0.09)',
-				'text'         => '#ffffff',
-				'dim'          => 'rgba(255,255,255,0.65)',
-				'muted'        => 'rgba(255,255,255,0.35)',
-				'danger'       => '#d68080',
+				'accent'        => '#2d6a4f',
+				'accent-light'  => '#52b788',
+				'accent-pale'   => 'rgba(45,106,79,0.09)',
+				'text'          => '#ffffff',
+				'dim'           => 'rgba(255,255,255,0.65)',
+				'muted'         => 'rgba(255,255,255,0.35)',
+				'danger'        => '#d68080',
 			),
 			'typography' => array(
 				'serif'        => 'Playfair Display, Georgia, serif',
@@ -207,7 +207,7 @@ class Test_Tool_Extract_Site_Design_From_Mockups extends WP_UnitTestCase {
 	 * The :root CSS tokenizer extracts custom properties and routes them by role.
 	 */
 	public function test_parse_css_tokens_extracts_root_custom_properties(): void {
-		$css = ":root { --nv-bg: #112233; --nv-accent: #2d6a4f; --nv-radius-md: 18px; --nv-shadow-md: 0 32px 80px rgba(0,0,0,0.3); --nv-easing: cubic-bezier(.16,1,.3,1); }";
+		$css = ':root { --nv-bg: #112233; --nv-accent: #2d6a4f; --nv-radius-md: 18px; --nv-shadow-md: 0 32px 80px rgba(0,0,0,0.3); --nv-easing: cubic-bezier(.16,1,.3,1); }';
 
 		$out = WP_MCP_AI_Design_Extractor_Service::parse_css_tokens( $css );
 
@@ -236,7 +236,10 @@ class Test_Tool_Extract_Site_Design_From_Mockups extends WP_UnitTestCase {
 		$result = $service->extract(
 			array(
 				'images'     => array(
-					array( 'media_id' => 1, 'role' => 'mockup' ),
+					array(
+						'media_id' => 1,
+						'role'     => 'mockup',
+					),
 				),
 				'html_files' => array(
 					array( 'content' => ':root { --nv-accent: #2d6a4f; }' ),
@@ -383,7 +386,7 @@ class Test_Tool_Extract_Site_Design_From_Mockups extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'site_template_post_id', $result['persisted'] );
 
 		// Snippet must contain the example-1 cursor IIFE marker (when feature enabled).
-		// (This run does NOT enable custom_cursor; ensure absence too.)
+		// (This run does NOT enable custom_cursor; ensure absence too.).
 		$this->assertStringNotContainsString( '<div id="nv-cursor"', $result['snippet'] );
 		$this->assertStringContainsString( "add_action( 'wp_head'", $result['snippet'] );
 

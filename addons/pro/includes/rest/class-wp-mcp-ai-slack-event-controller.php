@@ -328,17 +328,17 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$text         = isset( $event['text'] ) ? (string) $event['text'] : '';
-		$user_id      = isset( $event['user'] ) ? (string) $event['user'] : '';
-		$channel_id   = isset( $event['channel'] ) ? (string) $event['channel'] : '';
-		$message_ts   = isset( $event['ts'] ) ? (string) $event['ts'] : '';
+		$text       = isset( $event['text'] ) ? (string) $event['text'] : '';
+		$user_id    = isset( $event['user'] ) ? (string) $event['user'] : '';
+		$channel_id = isset( $event['channel'] ) ? (string) $event['channel'] : '';
+		$message_ts = isset( $event['ts'] ) ? (string) $event['ts'] : '';
 		// channel_type is set by Slack: 'channel' (public), 'group' (private),
 		// 'im' (1-on-1 DM), or 'mpim' (multi-person DM).
 		$channel_type = isset( $event['channel_type'] ) ? sanitize_key( $event['channel_type'] ) : '';
 		// thread_ts is present when the message is posted inside an existing thread.
 		// It identifies the root (parent) message of the thread. Passing it through
 		// to the reply job allows the bot to respond in the same thread.
-		$thread_ts    = isset( $event['thread_ts'] ) ? (string) $event['thread_ts'] : '';
+		$thread_ts = isset( $event['thread_ts'] ) ? (string) $event['thread_ts'] : '';
 
 		if ( '' === $text || '' === $user_id || '' === $channel_id ) {
 			return;
@@ -431,7 +431,11 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'slack',
 				$inbox_contact_id,
-				array( 'display_name' => $is_dm ? $user_id : ( '#' . $channel_id ), 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type )
+				array(
+					'display_name'      => $is_dm ? $user_id : ( '#' . $channel_id ),
+					'connection_id'     => $connection_id,
+					'conversation_type' => $inbox_conv_type,
+				)
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -512,11 +516,11 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 		// thread_ts is set when the message was posted inside a Slack thread.
 		// Empty string for top-level (non-threaded) channel messages and DMs.
-		$thread_ts     = isset( $args['thread_ts'] ) ? (string) $args['thread_ts'] : '';
+		$thread_ts = isset( $args['thread_ts'] ) ? (string) $args['thread_ts'] : '';
 		// channel_type distinguishes DMs ('im', 'mpim') from channel messages.
-		$channel_type  = isset( $args['channel_type'] ) ? sanitize_key( $args['channel_type'] ) : '';
+		$channel_type = isset( $args['channel_type'] ) ? sanitize_key( $args['channel_type'] ) : '';
 		// Retry counter incremented each time the job is rescheduled due to a 429.
-		$retry_count   = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
+		$retry_count = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 
 		if ( ! $assistant_id || '' === $message_text || '' === $channel_id || '' === $connection_id ) {
 			WP_MCP_AI_Logger::log_error(
@@ -562,14 +566,14 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$is_dm            = ( 'im' === $channel_type || 'mpim' === $channel_type );
 		$inbox_contact_id = $is_dm ? $user_id : $channel_id;
 		$inbox_conv_type  = $is_dm ? 'dm' : 'channel';
-		$history_key = $this->get_conversation_history_key(
+		$history_key      = $this->get_conversation_history_key(
 			$user_id,
 			$channel_id,
 			$connection_id,
 			( ! $is_dm && '' !== $thread_ts ) ? $thread_ts : ''
 		);
-		$history     = get_transient( $history_key );
-		$history     = is_array( $history ) ? $history : array();
+		$history          = get_transient( $history_key );
+		$history          = is_array( $history ) ? $history : array();
 
 		$max_history = 8;
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -753,7 +757,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 
 			$retry_after = (int) wp_remote_retrieve_header( $result, 'retry-after' );
 			// Always wait at least MIN_RETRY_DELAY s; honour the Retry-After value when larger.
-			$delay       = max( self::MIN_RETRY_DELAY, $retry_after );
+			$delay = max( self::MIN_RETRY_DELAY, $retry_after );
 
 			WP_MCP_AI_Logger::log_error(
 				sprintf(
@@ -765,7 +769,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 				array( 'connection_id' => $connection_id )
 			);
 
-			$retry_args             = $args;
+			$retry_args                = $args;
 			$retry_args['retry_count'] = $retry_count + 1;
 			wp_schedule_single_event( time() + $delay, self::REPLY_CRON_HOOK, array( $retry_args ) );
 			return;
@@ -839,7 +843,14 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$sl_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'slack', $inbox_contact_id, array( 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type ) );
+			$sl_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'slack',
+				$inbox_contact_id,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => $inbox_conv_type,
+				)
+			);
 			if ( $sl_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $sl_contact_row_id );
 			}
@@ -1072,7 +1083,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		// 1. Extract fenced code blocks and replace with placeholders so that
-		//    content inside them is not processed by subsequent regex rules.
+		// content inside them is not processed by subsequent regex rules.
 		$code_blocks            = array();
 		$code_block_placeholder = "\x07SLKCB:";
 		$cb_index               = 0;
@@ -1080,8 +1091,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$text = preg_replace_callback(
 			'/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/s',
 			function ( $m ) use ( &$code_blocks, &$cb_index, $code_block_placeholder ) {
-				$key               = $code_block_placeholder . $cb_index . "\x07";
-				$code_blocks[$key] = '```' . rtrim( $m[2], "\n" ) . '```';
+				$key                 = $code_block_placeholder . $cb_index . "\x07";
+				$code_blocks[ $key ] = '```' . rtrim( $m[2], "\n" ) . '```';
 				++$cb_index;
 				return $key;
 			},
@@ -1096,8 +1107,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$text = preg_replace_callback(
 			'/`([^`\n]+?)`/',
 			function ( $m ) use ( &$inline_codes, &$ic_index, $inline_code_placeholder ) {
-				$key                = $inline_code_placeholder . $ic_index . "\x07";
-				$inline_codes[$key] = '`' . $m[1] . '`';
+				$key                  = $inline_code_placeholder . $ic_index . "\x07";
+				$inline_codes[ $key ] = '`' . $m[1] . '`';
 				++$ic_index;
 				return $key;
 			},
@@ -1105,8 +1116,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		);
 
 		// 3. Convert HTML anchor tags to Slack link syntax <url|link_text>.
-		//    AI responses sometimes emit raw <a href="…">…</a> instead of
-		//    Markdown [text](url) syntax.
+		// AI responses sometimes emit raw <a href="…">…</a> instead of
+		// Markdown [text](url) syntax.
 		$text = preg_replace_callback(
 			'/<a\b[^>]*\bhref=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/si',
 			function ( $m ) {
@@ -1132,12 +1143,12 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$text = preg_replace( '/__(.+?)__/s', '*$1*', $text );
 
 		// 7. Italic: *text* → _text_ (Slack underscore italic).
-		//    Use lookbehind/lookahead to avoid matching Slack's own *bold* tokens
-		//    that were just created in step 6.
+		// Use lookbehind/lookahead to avoid matching Slack's own *bold* tokens
+		// that were just created in step 6.
 		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '_$1_', $text );
 
 		// 8. Underscored italic: _text_ stays as _text_ (already mrkdwn).
-		//    No change needed.
+		// No change needed.
 
 		// 9. Strikethrough: ~~text~~ → ~text~ (Slack single-tilde).
 		$text = preg_replace( '/~~(.+?)~~/s', '~$1~', $text );

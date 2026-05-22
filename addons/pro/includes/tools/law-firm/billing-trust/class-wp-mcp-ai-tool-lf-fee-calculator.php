@@ -34,27 +34,73 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_fee_calculator'; }
-	public function get_name() { return __( 'Fee Calculator', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Calculates legal fees using hourly, contingency, flat fee, blended rate, or lodestar methods.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_fee_calculator'; }
+	public function get_name() {
+		return __( 'Fee Calculator', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Calculates legal fees using hourly, contingency, flat fee, blended rate, or lodestar methods.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'fee_type'         => array( 'type' => 'string', 'description' => __( 'Fee calculation method.', 'mcp-ai-wpoos-pro' ), 'enum' => array( 'hourly', 'contingency', 'flat_fee', 'blended', 'lodestar' ) ),
-				'hours'            => array( 'type' => 'number', 'description' => __( 'Hours worked.', 'mcp-ai-wpoos-pro' ) ),
-				'rate'             => array( 'type' => 'number', 'description' => __( 'Hourly rate.', 'mcp-ai-wpoos-pro' ) ),
-				'recovery_amount'  => array( 'type' => 'number', 'description' => __( 'Recovery amount (contingency).', 'mcp-ai-wpoos-pro' ) ),
-				'contingency_stage' => array( 'type' => 'string', 'description' => __( 'Stage for contingency rate.', 'mcp-ai-wpoos-pro' ) ),
-				'attorneys'        => array( 'type' => 'array', 'description' => __( 'Attorney list with hours/rate (blended).', 'mcp-ai-wpoos-pro' ), 'items' => array( 'type' => 'object' ) ),
-				'multiplier'       => array( 'type' => 'number', 'description' => __( 'Lodestar multiplier.', 'mcp-ai-wpoos-pro' ) ),
+				'fee_type'          => array(
+					'type'        => 'string',
+					'description' => __( 'Fee calculation method.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'hourly', 'contingency', 'flat_fee', 'blended', 'lodestar' ),
+				),
+				'hours'             => array(
+					'type'        => 'number',
+					'description' => __( 'Hours worked.', 'mcp-ai-wpoos-pro' ),
+				),
+				'rate'              => array(
+					'type'        => 'number',
+					'description' => __( 'Hourly rate.', 'mcp-ai-wpoos-pro' ),
+				),
+				'recovery_amount'   => array(
+					'type'        => 'number',
+					'description' => __( 'Recovery amount (contingency).', 'mcp-ai-wpoos-pro' ),
+				),
+				'contingency_stage' => array(
+					'type'        => 'string',
+					'description' => __( 'Stage for contingency rate.', 'mcp-ai-wpoos-pro' ),
+				),
+				'attorneys'         => array(
+					'type'        => 'array',
+					'description' => __( 'Attorney list with hours/rate (blended).', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'object' ),
+				),
+				'multiplier'        => array(
+					'type'        => 'number',
+					'description' => __( 'Lodestar multiplier.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'fee_type' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'cacheable' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'cacheable' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -86,32 +132,50 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 
 		switch ( $fee_type ) {
 			case 'hourly':
-				$fee = WP_MCP_AI_Law_Firm_Calculator::calculate_hourly_fee( $hours, $rate );
-				$result = array( 'fee_amount' => $fee, 'calculation_details' => sprintf( '%s hours × $%s/hr', $hours, number_format( $rate, 2 ) ) );
+				$fee    = WP_MCP_AI_Law_Firm_Calculator::calculate_hourly_fee( $hours, $rate );
+				$result = array(
+					'fee_amount'          => $fee,
+					'calculation_details' => sprintf( '%s hours × $%s/hr', $hours, number_format( $rate, 2 ) ),
+				);
 				break;
 
 			case 'contingency':
-				$calc = WP_MCP_AI_Law_Firm_Calculator::calculate_contingency_fee( $recovery, 0, $stage );
-				$result = array( 'fee_amount' => $calc['fee_amount'], 'client_share' => $calc['client_share'], 'calculation_details' => sprintf( '%s × $%s recovery', WP_MCP_AI_Law_Firm_Calculator::format_percentage( $calc['rate'] ), number_format( $recovery, 2 ) ) );
+				$calc   = WP_MCP_AI_Law_Firm_Calculator::calculate_contingency_fee( $recovery, 0, $stage );
+				$result = array(
+					'fee_amount'          => $calc['fee_amount'],
+					'client_share'        => $calc['client_share'],
+					'calculation_details' => sprintf( '%s × $%s recovery', WP_MCP_AI_Law_Firm_Calculator::format_percentage( $calc['rate'] ), number_format( $recovery, 2 ) ),
+				);
 				break;
 
 			case 'flat_fee':
-				$result = array( 'fee_amount' => $rate, 'calculation_details' => __( 'Flat fee arrangement', 'mcp-ai-wpoos-pro' ) );
+				$result = array(
+					'fee_amount'          => $rate,
+					'calculation_details' => __( 'Flat fee arrangement', 'mcp-ai-wpoos-pro' ),
+				);
 				break;
 
 			case 'blended':
-				$blended = WP_MCP_AI_Law_Firm_Calculator::calculate_blended_rate( $attorneys );
+				$blended     = WP_MCP_AI_Law_Firm_Calculator::calculate_blended_rate( $attorneys );
 				$total_hours = 0;
 				foreach ( $attorneys as $a ) {
 					$total_hours += (float) ( $a['hours'] ?? 0 );
 				}
-				$fee = round( $blended * $total_hours, 2 );
-				$result = array( 'fee_amount' => $fee, 'blended_rate' => $blended, 'total_hours' => $total_hours, 'calculation_details' => sprintf( 'Blended rate $%s × %s hours', number_format( $blended, 2 ), $total_hours ) );
+				$fee    = round( $blended * $total_hours, 2 );
+				$result = array(
+					'fee_amount'          => $fee,
+					'blended_rate'        => $blended,
+					'total_hours'         => $total_hours,
+					'calculation_details' => sprintf( 'Blended rate $%s × %s hours', number_format( $blended, 2 ), $total_hours ),
+				);
 				break;
 
 			case 'lodestar':
-				$fee = WP_MCP_AI_Law_Firm_Calculator::calculate_lodestar( $hours, $rate, $multiplier );
-				$result = array( 'fee_amount' => $fee, 'calculation_details' => sprintf( '%s hours × $%s × %s multiplier', $hours, number_format( $rate, 2 ), $multiplier ) );
+				$fee    = WP_MCP_AI_Law_Firm_Calculator::calculate_lodestar( $hours, $rate, $multiplier );
+				$result = array(
+					'fee_amount'          => $fee,
+					'calculation_details' => sprintf( '%s hours × $%s × %s multiplier', $hours, number_format( $rate, 2 ), $multiplier ),
+				);
 				break;
 
 			default:

@@ -35,20 +35,20 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		}
 
 		// AJAX handlers.
-		add_action( 'wp_ajax_wp_mcp_ai_sm_get_schedules',      array( $this, 'ajax_get_schedules' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_create_schedule',    array( $this, 'ajax_create_schedule' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_update_schedule',    array( $this, 'ajax_update_schedule' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_delete_schedule',    array( $this, 'ajax_delete_schedule' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_toggle_schedule',    array( $this, 'ajax_toggle_schedule' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_trigger_schedule',   array( $this, 'ajax_trigger_schedule' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_get_history',        array( $this, 'ajax_get_history' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_clear_history',      array( $this, 'ajax_clear_history' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_get_schedules', array( $this, 'ajax_get_schedules' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_create_schedule', array( $this, 'ajax_create_schedule' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_update_schedule', array( $this, 'ajax_update_schedule' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_delete_schedule', array( $this, 'ajax_delete_schedule' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_toggle_schedule', array( $this, 'ajax_toggle_schedule' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_trigger_schedule', array( $this, 'ajax_trigger_schedule' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_get_history', array( $this, 'ajax_get_history' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_clear_history', array( $this, 'ajax_clear_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_export_history_csv', array( $this, 'ajax_export_history_csv' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_export_ical',        array( $this, 'ajax_export_ical' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_export_ical', array( $this, 'ajax_export_ical' ) );
 
 		// Schedule presets AJAX handlers.
-		add_action( 'wp_ajax_wp_mcp_ai_sm_get_presets',         array( $this, 'ajax_get_presets' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_sm_install_preset',      array( $this, 'ajax_install_preset' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_get_presets', array( $this, 'ajax_get_presets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_install_preset', array( $this, 'ajax_install_preset' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -125,7 +125,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 	public function enqueue_assets( $hook ) {
 		// Build the standalone page hook from known constants rather than relying on a
 		// global instance variable.  WordPress generates submenu hooks as:
-		//   {sanitized_parent_menu_title}_page_{page_slug}
+		// {sanitized_parent_menu_title}_page_{page_slug}
 		// WP_MCP_AI_Pro_Dashboard::SANITIZED_MENU_TITLE = 'nv-oos-pro'.
 		$standalone_hook = '';
 		if ( class_exists( 'WP_MCP_AI_Pro_Dashboard' ) && class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
@@ -194,8 +194,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			true
 		);
 
-		$cron_schedules     = wp_get_schedules();
-		$schedule_options   = array(
+		$cron_schedules   = wp_get_schedules();
+		$schedule_options = array(
 			'single' => __( 'Once (single)', 'mcp-ai-wpoos-pro' ),
 		);
 		foreach ( $cron_schedules as $key => $cron_schedule ) {
@@ -229,43 +229,43 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'scheduleOptions' => $schedule_options,
 				'assistants'      => $preset_assistants,
 				'strings'         => array(
-					'confirmDelete'   => __( 'Are you sure you want to delete this schedule and all its history?', 'mcp-ai-wpoos-pro' ),
-					'confirmClear'    => __( 'Are you sure you want to clear the run history for this schedule?', 'mcp-ai-wpoos-pro' ),
-					'confirmTrigger'  => __( 'Run this schedule now?', 'mcp-ai-wpoos-pro' ),
-					'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
-					'saving'          => __( 'Saving…', 'mcp-ai-wpoos-pro' ),
-					'saved'           => __( 'Saved.', 'mcp-ai-wpoos-pro' ),
-					'deleted'         => __( 'Deleted.', 'mcp-ai-wpoos-pro' ),
-					'triggered'       => __( 'Schedule triggered successfully.', 'mcp-ai-wpoos-pro' ),
-					'error'           => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'noSchedules'     => __( 'No schedules yet. Create one below.', 'mcp-ai-wpoos-pro' ),
-					'noHistory'       => __( 'No run history for this schedule.', 'mcp-ai-wpoos-pro' ),
-					'typeTask'        => __( 'Task', 'mcp-ai-wpoos-pro' ),
-					'typeWorkflow'    => __( 'Workflow', 'mcp-ai-wpoos-pro' ),
-					'typeAssistant'   => __( 'Assistant Run', 'mcp-ai-wpoos-pro' ),
-					'typeBroadcast'   => __( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ),
-					'typeBuilder'     => __( 'Workflow Builder', 'mcp-ai-wpoos-pro' ),
-					'selectWorkflow'  => __( 'Please select a saved workflow.', 'mcp-ai-wpoos-pro' ),
-					'statusNever'     => __( 'Never run', 'mcp-ai-wpoos-pro' ),
-					'statusSuccess'   => __( 'Success', 'mcp-ai-wpoos-pro' ),
-					'statusFailure'   => __( 'Failed', 'mcp-ai-wpoos-pro' ),
-					'statusPending'   => __( 'Pending', 'mcp-ai-wpoos-pro' ),
-					'enabled'         => __( 'Enabled', 'mcp-ai-wpoos-pro' ),
-					'disabled'        => __( 'Disabled', 'mcp-ai-wpoos-pro' ),
-					'addStep'         => __( '+ Add Step', 'mcp-ai-wpoos-pro' ),
-					'removeStep'      => __( 'Remove', 'mcp-ai-wpoos-pro' ),
-					'exportCsv'       => __( 'Export CSV', 'mcp-ai-wpoos-pro' ),
-					'exportIcal'      => __( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ),
-					'exportIcalTitle' => __( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ),
-					'chartSuccess'    => __( 'Success', 'mcp-ai-wpoos-pro' ),
-					'chartFailure'    => __( 'Failure', 'mcp-ai-wpoos-pro' ),
-					'viewLog'         => __( 'View Log', 'mcp-ai-wpoos-pro' ),
-					'hideLog'         => __( 'Hide Log', 'mcp-ai-wpoos-pro' ),
+					'confirmDelete'          => __( 'Are you sure you want to delete this schedule and all its history?', 'mcp-ai-wpoos-pro' ),
+					'confirmClear'           => __( 'Are you sure you want to clear the run history for this schedule?', 'mcp-ai-wpoos-pro' ),
+					'confirmTrigger'         => __( 'Run this schedule now?', 'mcp-ai-wpoos-pro' ),
+					'loading'                => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
+					'saving'                 => __( 'Saving…', 'mcp-ai-wpoos-pro' ),
+					'saved'                  => __( 'Saved.', 'mcp-ai-wpoos-pro' ),
+					'deleted'                => __( 'Deleted.', 'mcp-ai-wpoos-pro' ),
+					'triggered'              => __( 'Schedule triggered successfully.', 'mcp-ai-wpoos-pro' ),
+					'error'                  => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'noSchedules'            => __( 'No schedules yet. Create one below.', 'mcp-ai-wpoos-pro' ),
+					'noHistory'              => __( 'No run history for this schedule.', 'mcp-ai-wpoos-pro' ),
+					'typeTask'               => __( 'Task', 'mcp-ai-wpoos-pro' ),
+					'typeWorkflow'           => __( 'Workflow', 'mcp-ai-wpoos-pro' ),
+					'typeAssistant'          => __( 'Assistant Run', 'mcp-ai-wpoos-pro' ),
+					'typeBroadcast'          => __( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ),
+					'typeBuilder'            => __( 'Workflow Builder', 'mcp-ai-wpoos-pro' ),
+					'selectWorkflow'         => __( 'Please select a saved workflow.', 'mcp-ai-wpoos-pro' ),
+					'statusNever'            => __( 'Never run', 'mcp-ai-wpoos-pro' ),
+					'statusSuccess'          => __( 'Success', 'mcp-ai-wpoos-pro' ),
+					'statusFailure'          => __( 'Failed', 'mcp-ai-wpoos-pro' ),
+					'statusPending'          => __( 'Pending', 'mcp-ai-wpoos-pro' ),
+					'enabled'                => __( 'Enabled', 'mcp-ai-wpoos-pro' ),
+					'disabled'               => __( 'Disabled', 'mcp-ai-wpoos-pro' ),
+					'addStep'                => __( '+ Add Step', 'mcp-ai-wpoos-pro' ),
+					'removeStep'             => __( 'Remove', 'mcp-ai-wpoos-pro' ),
+					'exportCsv'              => __( 'Export CSV', 'mcp-ai-wpoos-pro' ),
+					'exportIcal'             => __( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ),
+					'exportIcalTitle'        => __( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ),
+					'chartSuccess'           => __( 'Success', 'mcp-ai-wpoos-pro' ),
+					'chartFailure'           => __( 'Failure', 'mcp-ai-wpoos-pro' ),
+					'viewLog'                => __( 'View Log', 'mcp-ai-wpoos-pro' ),
+					'hideLog'                => __( 'Hide Log', 'mcp-ai-wpoos-pro' ),
 					// Preset browser strings.
-					'presetInstall'        => __( 'Install', 'mcp-ai-wpoos-pro' ),
-					'presetInstalling'     => __( 'Installing…', 'mcp-ai-wpoos-pro' ),
-					'presetInstalled'      => __( 'Preset installed successfully.', 'mcp-ai-wpoos-pro' ),
-					'presetNoResults'      => __( 'No presets match your filters.', 'mcp-ai-wpoos-pro' ),
+					'presetInstall'          => __( 'Install', 'mcp-ai-wpoos-pro' ),
+					'presetInstalling'       => __( 'Installing…', 'mcp-ai-wpoos-pro' ),
+					'presetInstalled'        => __( 'Preset installed successfully.', 'mcp-ai-wpoos-pro' ),
+					'presetNoResults'        => __( 'No presets match your filters.', 'mcp-ai-wpoos-pro' ),
 					'presetConfirmInstall'   => __( 'Install this schedule preset?', 'mcp-ai-wpoos-pro' ),
 					'presetSelectAssistant'  => __( 'Select an assistant for this schedule:', 'mcp-ai-wpoos-pro' ),
 					'presetNoAssistants'     => __( 'No assistants found. Please create an assistant first.', 'mcp-ai-wpoos-pro' ),
@@ -776,31 +776,31 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			$next_run = WP_MCP_AI_Pro_Schedule_Manager::get_next_run_time( $schedule['id'] );
 
 			$output[] = array(
-				'id'              => $schedule['id'],
-				'name'            => $schedule['name'],
-				'description'     => $schedule['description'],
-				'schedule_type'   => isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : 'task',
-				'hook'            => $schedule['hook'],
-				'schedule'        => $schedule['schedule'],
-				'enabled'         => (bool) $schedule['enabled'],
-				'priority'        => (int) $schedule['priority'],
-				'tags'            => (array) $schedule['tags'],
+				'id'                => $schedule['id'],
+				'name'              => $schedule['name'],
+				'description'       => $schedule['description'],
+				'schedule_type'     => isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : 'task',
+				'hook'              => $schedule['hook'],
+				'schedule'          => $schedule['schedule'],
+				'enabled'           => (bool) $schedule['enabled'],
+				'priority'          => (int) $schedule['priority'],
+				'tags'              => (array) $schedule['tags'],
 				'notify_on_failure' => (bool) $schedule['notify_on_failure'],
-				'notify_email'    => $schedule['notify_email'],
-				'max_retries'     => (int) $schedule['max_retries'],
-				'retry_delay'     => (int) $schedule['retry_delay'],
-				'timeout'         => isset( $schedule['timeout'] ) ? (int) $schedule['timeout'] : 0,
-				'callback_url'    => isset( $schedule['callback_url'] ) ? $schedule['callback_url'] : '',
-				'last_run_status' => $schedule['last_run_status'],
-				'last_run_time'   => $schedule['last_run_time'] ? wp_date( 'Y-m-d H:i:s', $schedule['last_run_time'] ) : null,
-				'last_error'      => $schedule['last_error'],
-				'run_count'       => (int) $schedule['run_count'],
-				'next_run'        => $next_run ? wp_date( 'Y-m-d H:i:s', $next_run ) : null,
-				'created_at'      => wp_date( 'Y-m-d H:i:s', $schedule['created_at'] ),
-				'workflow_steps'             => isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array(),
-				'assistant_config'           => isset( $schedule['assistant_config'] ) ? $schedule['assistant_config'] : array(),
-				'broadcast_config'           => isset( $schedule['broadcast_config'] ) ? $schedule['broadcast_config'] : array(),
-				'notify_channels'            => isset( $schedule['notify_channels'] ) ? $schedule['notify_channels'] : array(),
+				'notify_email'      => $schedule['notify_email'],
+				'max_retries'       => (int) $schedule['max_retries'],
+				'retry_delay'       => (int) $schedule['retry_delay'],
+				'timeout'           => isset( $schedule['timeout'] ) ? (int) $schedule['timeout'] : 0,
+				'callback_url'      => isset( $schedule['callback_url'] ) ? $schedule['callback_url'] : '',
+				'last_run_status'   => $schedule['last_run_status'],
+				'last_run_time'     => $schedule['last_run_time'] ? wp_date( 'Y-m-d H:i:s', $schedule['last_run_time'] ) : null,
+				'last_error'        => $schedule['last_error'],
+				'run_count'         => (int) $schedule['run_count'],
+				'next_run'          => $next_run ? wp_date( 'Y-m-d H:i:s', $next_run ) : null,
+				'created_at'        => wp_date( 'Y-m-d H:i:s', $schedule['created_at'] ),
+				'workflow_steps'    => isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array(),
+				'assistant_config'  => isset( $schedule['assistant_config'] ) ? $schedule['assistant_config'] : array(),
+				'broadcast_config'  => isset( $schedule['broadcast_config'] ) ? $schedule['broadcast_config'] : array(),
+				'notify_channels'   => isset( $schedule['notify_channels'] ) ? $schedule['notify_channels'] : array(),
 			);
 		}
 

@@ -27,16 +27,36 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 		return __( 'PARA: Promote Resource to Project', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Promote a PARA Resource into a new actionable Project. Creates a `mcp_ai_project` from the resource title/description and links the new project to the source resource via the `_para_source_resource_id` post meta.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'resource_post_id' => array( 'type' => 'integer', 'minimum' => 1 ),
-				'project_title'    => array( 'type' => 'string', 'maxLength' => 200 ),
+				'resource_post_id' => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'project_title'    => array(
+					'type'      => 'string',
+					'maxLength' => 200,
+				),
 				'project_status'   => array(
 					'type' => 'string',
 					'enum' => array( 'planning', 'active' ),
@@ -51,6 +71,11 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}
@@ -115,10 +140,10 @@ class WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project implements WP_MCP_AI_Tool_
 		WP_MCP_AI_PARA_Taxonomy::assign( $project_id, 'projects', __( 'Promoted from resource.', 'mcp-ai-wpoos-pro' ) );
 
 		return array(
-			'success'         => true,
-			'project_id'      => (int) $project_id,
-			'resource_id'     => $resource_id,
-			'message'         => __( 'Resource promoted to project.', 'mcp-ai-wpoos-pro' ),
+			'success'     => true,
+			'project_id'  => (int) $project_id,
+			'resource_id' => $resource_id,
+			'message'     => __( 'Resource promoted to project.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

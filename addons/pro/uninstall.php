@@ -50,7 +50,7 @@ foreach ( $option_keys as $key ) {
 }
 
 // ── 2. Clean up wp_mcp_ai_pro_*-prefixed option keys ─────────────────────
-//    (toolkit settings, schedule settings, etc. follow a consistent prefix)
+// (toolkit settings, schedule settings, etc. follow a consistent prefix)
 
 global $wpdb;
 
@@ -98,8 +98,10 @@ $qms_caps = array( 'manage_qms' );
 
 $all_custom_caps = array_merge( $imaging_caps, $vault_folder_caps, $vault_item_caps, $qms_caps );
 
+// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 $wp_roles = wp_roles();
 foreach ( $wp_roles->roles as $role_slug => $role_data ) {
+	// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 	$role = get_role( $role_slug );
 	if ( ! $role ) {
 		continue;

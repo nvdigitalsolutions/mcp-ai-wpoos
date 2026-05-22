@@ -95,22 +95,22 @@ class WP_MCP_AI_Law_Firm_CPT {
 		register_post_type(
 			self::MATTER_POST_TYPE,
 			array(
-				'labels'              => $matter_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => true,
-				'menu_icon'           => 'dashicons-portfolio',
-				'menu_position'       => 58,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'lf-matters',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $matter_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'menu_icon'          => 'dashicons-portfolio',
+				'menu_position'      => 58,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'lf-matters',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 
@@ -135,20 +135,20 @@ class WP_MCP_AI_Law_Firm_CPT {
 		register_post_type(
 			self::CLIENT_POST_TYPE,
 			array(
-				'labels'              => $client_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'lf-clients',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $client_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'lf-clients',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 
@@ -173,20 +173,20 @@ class WP_MCP_AI_Law_Firm_CPT {
 		register_post_type(
 			self::DOCUMENT_POST_TYPE,
 			array(
-				'labels'              => $document_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'editor', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'lf-documents',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $document_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'editor', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'lf-documents',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 
@@ -211,20 +211,20 @@ class WP_MCP_AI_Law_Firm_CPT {
 		register_post_type(
 			self::TIME_ENTRY_POST_TYPE,
 			array(
-				'labels'              => $time_entry_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'lf-time-entries',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $time_entry_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'lf-time-entries',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 
@@ -249,20 +249,20 @@ class WP_MCP_AI_Law_Firm_CPT {
 		register_post_type(
 			self::TRUST_TXN_POST_TYPE,
 			array(
-				'labels'              => $trust_txn_labels,
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
-				'query_var'           => true,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => true,
-				'rest_base'           => 'lf-trust-transactions',
-				'rest_namespace'      => 'mcp-ai/v1',
+				'labels'             => $trust_txn_labels,
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => 'edit.php?post_type=' . self::MATTER_POST_TYPE,
+				'query_var'          => true,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => true,
+				'rest_base'          => 'lf-trust-transactions',
+				'rest_namespace'     => 'mcp-ai/v1',
 			)
 		);
 	}
@@ -273,15 +273,15 @@ class WP_MCP_AI_Law_Firm_CPT {
 	public static function register_taxonomies() {
 		// ── Practice Area taxonomy ────────────────────────────────────
 		$practice_area_labels = array(
-			'name'              => __( 'Practice Areas', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Practice Area', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Practice Areas', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Practice Areas', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Practice Area', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Practice Area', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Practice Area', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Practice Area Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Practice Areas', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Practice Areas', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Practice Area', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Practice Areas', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Practice Areas', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Practice Area', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Practice Area', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Practice Area', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Practice Area Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Practice Areas', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -299,20 +299,20 @@ class WP_MCP_AI_Law_Firm_CPT {
 
 		// Seed default practice areas.
 		$default_practice_areas = array(
-			'Corporate'          => __( 'Corporate law, M&A, governance', 'mcp-ai-wpoos-pro' ),
-			'Litigation'         => __( 'Civil and commercial litigation', 'mcp-ai-wpoos-pro' ),
-			'Real Estate'        => __( 'Real estate transactions and disputes', 'mcp-ai-wpoos-pro' ),
+			'Corporate'             => __( 'Corporate law, M&A, governance', 'mcp-ai-wpoos-pro' ),
+			'Litigation'            => __( 'Civil and commercial litigation', 'mcp-ai-wpoos-pro' ),
+			'Real Estate'           => __( 'Real estate transactions and disputes', 'mcp-ai-wpoos-pro' ),
 			'Intellectual Property' => __( 'Patents, trademarks, copyrights, trade secrets', 'mcp-ai-wpoos-pro' ),
-			'Employment'         => __( 'Employment and labor law', 'mcp-ai-wpoos-pro' ),
-			'Family Law'         => __( 'Divorce, custody, adoption', 'mcp-ai-wpoos-pro' ),
-			'Criminal Defense'   => __( 'Criminal defense and white-collar crime', 'mcp-ai-wpoos-pro' ),
-			'Bankruptcy'         => __( 'Bankruptcy and restructuring', 'mcp-ai-wpoos-pro' ),
-			'Tax'                => __( 'Tax planning, disputes, compliance', 'mcp-ai-wpoos-pro' ),
-			'Estate Planning'    => __( 'Wills, trusts, estate administration', 'mcp-ai-wpoos-pro' ),
-			'Immigration'        => __( 'Immigration and visa petitions', 'mcp-ai-wpoos-pro' ),
-			'Personal Injury'    => __( 'Personal injury and medical malpractice', 'mcp-ai-wpoos-pro' ),
-			'Environmental'      => __( 'Environmental and regulatory compliance', 'mcp-ai-wpoos-pro' ),
-			'Healthcare'         => __( 'Healthcare regulation and compliance', 'mcp-ai-wpoos-pro' ),
+			'Employment'            => __( 'Employment and labor law', 'mcp-ai-wpoos-pro' ),
+			'Family Law'            => __( 'Divorce, custody, adoption', 'mcp-ai-wpoos-pro' ),
+			'Criminal Defense'      => __( 'Criminal defense and white-collar crime', 'mcp-ai-wpoos-pro' ),
+			'Bankruptcy'            => __( 'Bankruptcy and restructuring', 'mcp-ai-wpoos-pro' ),
+			'Tax'                   => __( 'Tax planning, disputes, compliance', 'mcp-ai-wpoos-pro' ),
+			'Estate Planning'       => __( 'Wills, trusts, estate administration', 'mcp-ai-wpoos-pro' ),
+			'Immigration'           => __( 'Immigration and visa petitions', 'mcp-ai-wpoos-pro' ),
+			'Personal Injury'       => __( 'Personal injury and medical malpractice', 'mcp-ai-wpoos-pro' ),
+			'Environmental'         => __( 'Environmental and regulatory compliance', 'mcp-ai-wpoos-pro' ),
+			'Healthcare'            => __( 'Healthcare regulation and compliance', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $default_practice_areas as $name => $description ) {
@@ -327,15 +327,15 @@ class WP_MCP_AI_Law_Firm_CPT {
 
 		// ── Matter Status taxonomy ────────────────────────────────────
 		$status_labels = array(
-			'name'              => __( 'Matter Statuses', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Matter Status', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Matter Statuses', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Matter Statuses', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Matter Status', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Matter Status', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Matter Status', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Matter Status Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Matter Statuses', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Matter Statuses', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Matter Status', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Matter Statuses', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Matter Statuses', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Matter Status', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Matter Status', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Matter Status', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Matter Status Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Matter Statuses', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -352,11 +352,11 @@ class WP_MCP_AI_Law_Firm_CPT {
 		);
 
 		$default_statuses = array(
-			'Prospect'  => __( 'Potential matter under evaluation', 'mcp-ai-wpoos-pro' ),
-			'Active'    => __( 'Currently active matter', 'mcp-ai-wpoos-pro' ),
-			'Pending'   => __( 'Awaiting court action or client decision', 'mcp-ai-wpoos-pro' ),
-			'Closed'    => __( 'Matter resolved and closed', 'mcp-ai-wpoos-pro' ),
-			'Archived'  => __( 'Archived for record retention', 'mcp-ai-wpoos-pro' ),
+			'Prospect' => __( 'Potential matter under evaluation', 'mcp-ai-wpoos-pro' ),
+			'Active'   => __( 'Currently active matter', 'mcp-ai-wpoos-pro' ),
+			'Pending'  => __( 'Awaiting court action or client decision', 'mcp-ai-wpoos-pro' ),
+			'Closed'   => __( 'Matter resolved and closed', 'mcp-ai-wpoos-pro' ),
+			'Archived' => __( 'Archived for record retention', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $default_statuses as $name => $description ) {
@@ -371,15 +371,15 @@ class WP_MCP_AI_Law_Firm_CPT {
 
 		// ── Document Type taxonomy ────────────────────────────────────
 		$doc_type_labels = array(
-			'name'              => __( 'Document Types', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Document Type', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Document Types', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Document Types', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Document Type', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Document Type', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Document Type', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Document Type Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Document Types', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Document Types', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Document Type', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Document Types', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Document Types', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Document Type', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Document Type', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Document Type', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Document Type Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Document Types', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -419,15 +419,15 @@ class WP_MCP_AI_Law_Firm_CPT {
 
 		// ── Billing Type taxonomy ─────────────────────────────────────
 		$billing_type_labels = array(
-			'name'              => __( 'Billing Types', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => __( 'Billing Type', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Billing Types', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Billing Types', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Billing Type', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Billing Type', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Billing Type', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Billing Type Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Billing Types', 'mcp-ai-wpoos-pro' ),
+			'name'          => __( 'Billing Types', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => __( 'Billing Type', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Billing Types', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Billing Types', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Billing Type', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Billing Type', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Billing Type', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Billing Type Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Billing Types', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -526,13 +526,13 @@ class WP_MCP_AI_Law_Firm_CPT {
 		wp_nonce_field( 'mcp_ai_lf_matter_details', 'mcp_ai_lf_matter_nonce' );
 
 		$fields = array(
-			'_lf_case_number'       => get_post_meta( $post->ID, '_lf_case_number', true ),
-			'_lf_court'             => get_post_meta( $post->ID, '_lf_court', true ),
-			'_lf_judge'             => get_post_meta( $post->ID, '_lf_judge', true ),
-			'_lf_jurisdiction'      => get_post_meta( $post->ID, '_lf_jurisdiction', true ),
-			'_lf_filed_date'        => get_post_meta( $post->ID, '_lf_filed_date', true ),
-			'_lf_client_id'         => get_post_meta( $post->ID, '_lf_client_id', true ),
-			'_lf_opposing_counsel'  => get_post_meta( $post->ID, '_lf_opposing_counsel', true ),
+			'_lf_case_number'      => get_post_meta( $post->ID, '_lf_case_number', true ),
+			'_lf_court'            => get_post_meta( $post->ID, '_lf_court', true ),
+			'_lf_judge'            => get_post_meta( $post->ID, '_lf_judge', true ),
+			'_lf_jurisdiction'     => get_post_meta( $post->ID, '_lf_jurisdiction', true ),
+			'_lf_filed_date'       => get_post_meta( $post->ID, '_lf_filed_date', true ),
+			'_lf_client_id'        => get_post_meta( $post->ID, '_lf_client_id', true ),
+			'_lf_opposing_counsel' => get_post_meta( $post->ID, '_lf_opposing_counsel', true ),
 		);
 		?>
 		<table class="form-table">
@@ -560,7 +560,12 @@ class WP_MCP_AI_Law_Firm_CPT {
 					<select id="lf_jurisdiction" name="lf_jurisdiction">
 						<option value=""><?php esc_html_e( '— Select —', 'mcp-ai-wpoos-pro' ); ?></option>
 						<?php
-						$jurisdictions = array( 'federal' => 'Federal', 'state' => 'State', 'administrative' => 'Administrative', 'arbitration' => 'Arbitration' );
+						$jurisdictions = array(
+							'federal'        => 'Federal',
+							'state'          => 'State',
+							'administrative' => 'Administrative',
+							'arbitration'    => 'Arbitration',
+						);
 						foreach ( $jurisdictions as $val => $label ) :
 							?>
 							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fields['_lf_jurisdiction'], $val ); ?>><?php echo esc_html( $label ); ?></option>
@@ -613,12 +618,12 @@ class WP_MCP_AI_Law_Firm_CPT {
 		wp_nonce_field( 'mcp_ai_lf_client_details', 'mcp_ai_lf_client_nonce' );
 
 		$fields = array(
-			'_lf_client_email'      => get_post_meta( $post->ID, '_lf_client_email', true ),
-			'_lf_client_phone'      => get_post_meta( $post->ID, '_lf_client_phone', true ),
-			'_lf_client_address'    => get_post_meta( $post->ID, '_lf_client_address', true ),
-			'_lf_client_type'       => get_post_meta( $post->ID, '_lf_client_type', true ),
-			'_lf_client_entity'     => get_post_meta( $post->ID, '_lf_client_entity', true ),
-			'_lf_client_notes'      => get_post_meta( $post->ID, '_lf_client_notes', true ),
+			'_lf_client_email'   => get_post_meta( $post->ID, '_lf_client_email', true ),
+			'_lf_client_phone'   => get_post_meta( $post->ID, '_lf_client_phone', true ),
+			'_lf_client_address' => get_post_meta( $post->ID, '_lf_client_address', true ),
+			'_lf_client_type'    => get_post_meta( $post->ID, '_lf_client_type', true ),
+			'_lf_client_entity'  => get_post_meta( $post->ID, '_lf_client_entity', true ),
+			'_lf_client_notes'   => get_post_meta( $post->ID, '_lf_client_notes', true ),
 		);
 		?>
 		<table class="form-table">
@@ -640,7 +645,12 @@ class WP_MCP_AI_Law_Firm_CPT {
 					<select id="lf_client_type" name="lf_client_type">
 						<option value=""><?php esc_html_e( '— Select —', 'mcp-ai-wpoos-pro' ); ?></option>
 						<?php
-						$client_types = array( 'individual' => 'Individual', 'business' => 'Business', 'government' => 'Government', 'nonprofit' => 'Non-Profit' );
+						$client_types = array(
+							'individual' => 'Individual',
+							'business'   => 'Business',
+							'government' => 'Government',
+							'nonprofit'  => 'Non-Profit',
+						);
 						foreach ( $client_types as $val => $label ) :
 							?>
 							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fields['_lf_client_type'], $val ); ?>><?php echo esc_html( $label ); ?></option>
@@ -865,7 +875,11 @@ class WP_MCP_AI_Law_Firm_CPT {
 					<select id="lf_txn_type" name="lf_txn_type">
 						<option value=""><?php esc_html_e( '— Select —', 'mcp-ai-wpoos-pro' ); ?></option>
 						<?php
-						$txn_types = array( 'deposit' => 'Deposit', 'disbursement' => 'Disbursement', 'transfer' => 'Transfer' );
+						$txn_types = array(
+							'deposit'      => 'Deposit',
+							'disbursement' => 'Disbursement',
+							'transfer'     => 'Transfer',
+						);
 						foreach ( $txn_types as $val => $label ) :
 							?>
 							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $fields['_lf_txn_type'], $val ); ?>><?php echo esc_html( $label ); ?></option>

@@ -10,7 +10,8 @@
  */
 class Test_Pro_Slash_Command_Schedule extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Pro_Slash_Command_Schedule
 	 */
 	private $command;
@@ -126,7 +127,11 @@ class Test_Pro_Slash_Command_Schedule extends WP_UnitTestCase {
 
 		$result = $this->command->execute(
 			array( 'create' ),
-			array( 'name' => 'Test', 'type' => 'task', 'cron' => 'daily' ),
+			array(
+				'name' => 'Test',
+				'type' => 'task',
+				'cron' => 'daily',
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 
@@ -146,7 +151,10 @@ class Test_Pro_Slash_Command_Schedule extends WP_UnitTestCase {
 
 		$result = $this->command->execute(
 			array( 'create' ),
-			array( 'type' => 'task', 'cron' => 'daily' ),
+			array(
+				'type' => 'task',
+				'cron' => 'daily',
+			),
 			array( 'user_id' => $this->admin_id )
 		);
 

@@ -10,7 +10,6 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
  */
-
 class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 
 	/**
@@ -47,7 +46,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		}
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -59,7 +59,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		$this->assertTrue( method_exists( 'WP_MCP_AI_JetEngine_Compat', 'get_mcp_capabilities' ) );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -69,13 +70,14 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'jet-engine/v1/mcp', $endpoint );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
 	 */
 	public function test_has_mcp_server_returns_false_without_jetengine() {
-		// Without JetEngine active, has_mcp_server should be false
+		// Without JetEngine active, has_mcp_server should be false.
 		// since is_jetengine_38_plus requires JET_ENGINE_VERSION constant.
 		if ( defined( 'JET_ENGINE_VERSION' ) ) {
 			$this->markTestSkipped( 'JetEngine is active; cannot test absence.' );
@@ -84,7 +86,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_JetEngine_Compat::has_mcp_server() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -99,7 +102,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'mcp_not_available', $result->get_error_code() );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -124,7 +128,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'jet-engine/v1/mcp', $constants['REST_NAMESPACE_MCP'] );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -141,7 +146,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		}
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -153,7 +159,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 'wp_mcp_ai_je_mcp_', WP_MCP_AI_JetEngine_MCP_Client::CACHE_PREFIX );
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp
@@ -189,7 +196,8 @@ class Test_JetEngine_MCP_Integration extends WP_UnitTestCase {
 		}
 	}
 
-	/**
+	/** Summary.
+	 *
 	 * @group jetengine
 	 * @group pro
 	 * @group mcp

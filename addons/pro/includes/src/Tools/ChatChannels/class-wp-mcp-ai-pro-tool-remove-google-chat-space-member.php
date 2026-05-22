@@ -73,11 +73,11 @@ class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_To
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token'  => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'membership'    => array(
+				'membership'          => array(
 					'type'        => 'string',
 					'description' => __( 'Membership resource name to remove (e.g., spaces/SPACE_ID/members/MEMBER_ID).', 'mcp-ai-wpoos-pro' ),
 				),

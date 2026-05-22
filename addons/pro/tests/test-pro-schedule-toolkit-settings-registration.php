@@ -156,7 +156,7 @@ class Test_Pro_Schedule_Toolkit_Settings_Registration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sanitize_settings() coerces unknown values to safe defaults.
+	 * Sanitize_settings() coerces unknown values to safe defaults.
 	 */
 	public function test_sanitize_settings_clamps_and_validates() {
 		$class = $this->load_settings_class();

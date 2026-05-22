@@ -144,7 +144,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Interface: WP_MCP_AI_Tool_Interface
+	// Interface: WP_MCP_AI_Tool_Interface.
 	// ------------------------------------------------------------------
 
 	/**
@@ -272,7 +272,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Execution
+	// Execution.
 	// ------------------------------------------------------------------
 
 	/**
@@ -494,7 +494,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Step 1: Gather information (web search)
+	// Step 1: Gather information (web search).
 	// ------------------------------------------------------------------
 
 	/**
@@ -652,7 +652,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Step 2: Build AI prompt
+	// Step 2: Build AI prompt.
 	// ------------------------------------------------------------------
 
 	/**
@@ -993,7 +993,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Step 3: AI research
+	// Step 3: AI research.
 	// ------------------------------------------------------------------
 
 	/**
@@ -1152,7 +1152,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Step 4: Parse results
+	// Step 4: Parse results.
 	// ------------------------------------------------------------------
 
 	/**
@@ -1343,7 +1343,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Report builder
+	// Report builder.
 	// ------------------------------------------------------------------
 
 	/**
@@ -1465,7 +1465,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	// ------------------------------------------------------------------
-	// Helpers
+	// Helpers.
 	// ------------------------------------------------------------------
 
 	/**

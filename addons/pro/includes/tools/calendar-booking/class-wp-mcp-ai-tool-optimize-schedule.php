@@ -21,12 +21,22 @@ class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 	public static function get_unavailable_reason() {
 		return __( 'Calendar Booking toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'optimize_schedule'; }
 	public function get_name() {
 		return __( 'Optimize Schedule', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {
 		return __( 'AI-optimize appointment scheduling for efficiency.', 'mcp-ai-wpoos-pro' ); }
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -48,6 +58,11 @@ class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_M
 			'required'   => array( 'date_range_start', 'date_range_end' ),
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'ai-feature', 'phase-2.6' ); }
 	/**

@@ -14,9 +14,9 @@ foreach ( array(
 	'class-wp-mcp-ai-healthcare-vaccination-schedules.php',
 	'class-wp-mcp-ai-healthcare-vital-log-cpt.php',
 ) as $file ) {
-	$path = $vitals_dir . '/' . $file;
-	if ( file_exists( $path ) ) {
-		require_once $path;
+	$file_path = $vitals_dir . '/' . $file;
+	if ( file_exists( $file_path ) ) {
+		require_once $file_path;
 	}
 }
 
@@ -48,7 +48,7 @@ class Test_Healthcare_Vitals extends WP_UnitTestCase {
 	}
 
 	/**
-	 * evaluate() classifies doses by age window.
+	 * Evaluate() classifies doses by age window.
 	 */
 	public function test_evaluate_classifies_doses() {
 		$pack = WP_MCP_AI_Healthcare_Vaccination_Schedules::get( 'cdc-pediatric-2025' );
@@ -166,7 +166,7 @@ class Test_Healthcare_Vitals extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_vaccination_schedule tool auto-picks pack and returns due/upcoming.
+	 * Get_vaccination_schedule tool auto-picks pack and returns due/upcoming.
 	 */
 	public function test_get_vaccination_schedule_tool() {
 		require_once dirname( __DIR__, 4 ) . '/includes/interfaces/interface-wp-mcp-ai-tool.php';

@@ -51,7 +51,12 @@ class Test_Pro_Schedule_Result_Renderer extends WP_UnitTestCase {
 			'id'            => $schedule_id,
 			'name'          => 'Test Renderer',
 			'schedule_type' => 'task',
-			'display'       => WP_MCP_AI_Pro_Schedule_Manager::sanitize_display_fields( array( 'public_render' => true, 'public_fields' => array( 'summary' ) ) ),
+			'display'       => WP_MCP_AI_Pro_Schedule_Manager::sanitize_display_fields(
+				array(
+					'public_render' => true,
+					'public_fields' => array( 'summary' ),
+				)
+			),
 		);
 		update_option(
 			WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION,
@@ -94,7 +99,10 @@ class Test_Pro_Schedule_Result_Renderer extends WP_UnitTestCase {
 			'name'          => 'Digest',
 			'schedule_type' => 'assistant_run',
 			'display'       => WP_MCP_AI_Pro_Schedule_Manager::sanitize_display_fields(
-				array( 'public_render' => true, 'public_fields' => array( 'summary', 'data.items' ) )
+				array(
+					'public_render' => true,
+					'public_fields' => array( 'summary', 'data.items' ),
+				)
 			),
 		);
 		update_option(
@@ -106,11 +114,11 @@ class Test_Pro_Schedule_Result_Renderer extends WP_UnitTestCase {
 			array(
 				$schedule_id => array(
 					array(
-						'summary' => '3 items',
-						'data'    => array( 'items' => array( 'Alpha', 'Beta', '<b>Gamma</b>' ) ),
-						'render'  => 'list',
-						'status'  => 'success',
-						'error'   => '',
+						'summary'      => '3 items',
+						'data'         => array( 'items' => array( 'Alpha', 'Beta', '<b>Gamma</b>' ) ),
+						'render'       => 'list',
+						'status'       => 'success',
+						'error'        => '',
 						'generated_at' => time(),
 					),
 				),

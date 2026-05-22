@@ -5,7 +5,6 @@
  * @package WP_MCP_AI
  * @since   1.2.0
  */
-
 class Test_Shipping_Tools extends WP_UnitTestCase {
 
 	/**
@@ -32,7 +31,7 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 		$this->subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $this->admin_id );
 
-		// Grant admin user manage_woocommerce capability for testing
+		// Grant admin user manage_woocommerce capability for testing.
 		// (WooCommerce is not fully loaded in the test environment).
 		$admin_user = get_user_by( 'id', $this->admin_id );
 		$admin_user->add_cap( 'manage_woocommerce' );
@@ -44,7 +43,7 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 		);
 
 		// Ensure tool classes are loaded.
-		$box_packer_path = defined( 'WP_MCP_AI_PRO_PATH' )
+		$box_packer_path     = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-box-packer.php'
 			: dirname( __DIR__ ) . '/includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-box-packer.php';
 		$rate_estimator_path = defined( 'WP_MCP_AI_PRO_PATH' )
@@ -477,7 +476,7 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertTrue( $result['success'] );
-		// Each heavy item (300oz = ~18.75 lbs) fits in 20lb box individually
+		// Each heavy item (300oz = ~18.75 lbs) fits in 20lb box individually.
 		// but 600oz total exceeds max_weight so should be 2 packages.
 		$this->assertSame( 2, $result['total_packages'] );
 	}
@@ -827,16 +826,16 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 		// Create a ShipStation connection with sandbox_mode enabled.
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
 			array(
-				'name'                    => 'Test ShipStation Sandbox',
-				'url'                     => 'https://ssapi.shipstation.com',
-				'connection_type'         => 'shipstation',
-				'auth_type'               => 'basic_auth',
-				'username'                => 'sandbox_test_key',
-				'password'                => 'sandbox_test_secret',
-				'api_key'                 => 'sandbox_test_key',
-				'api_secret'              => 'sandbox_test_secret',
-				'enabled'                 => true,
-				'sandbox_mode'            => true,
+				'name'                     => 'Test ShipStation Sandbox',
+				'url'                      => 'https://ssapi.shipstation.com',
+				'connection_type'          => 'shipstation',
+				'auth_type'                => 'basic_auth',
+				'username'                 => 'sandbox_test_key',
+				'password'                 => 'sandbox_test_secret',
+				'api_key'                  => 'sandbox_test_key',
+				'api_secret'               => 'sandbox_test_secret',
+				'enabled'                  => true,
+				'sandbox_mode'             => true,
 				'shipstation_carrier_code' => 'stamps_com',
 			)
 		);

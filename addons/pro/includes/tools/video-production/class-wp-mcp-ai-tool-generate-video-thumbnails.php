@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interfa
 		return __( 'Generate Video Thumbnails tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'generate_video_thumbnails';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interfa
 		return __( 'Create multiple thumbnail options from video frames at different timestamps.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -76,10 +90,22 @@ class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'upload_files';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'media'         => true,
@@ -88,8 +114,8 @@ class WP_MCP_AI_Tool_Generate_Video_Thumbnails implements WP_MCP_AI_Tool_Interfa
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement generate_video_thumbnails logic
-		// This requires FFmpeg or similar video processing library
+		// TODO: Implement generate_video_thumbnails logic.
+		// This requires FFmpeg or similar video processing library.
 
 		return array(
 			'success' => true,

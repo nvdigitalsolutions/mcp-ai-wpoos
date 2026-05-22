@@ -344,16 +344,16 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Gather all ECA meta data.
-		$eca_name     = get_the_title( $eca_post_id );
-		$eca_code     = get_post_meta( $eca_post_id, '_eca_code', true );
-		$eca_type     = get_post_meta( $eca_post_id, '_eca_type', true );
-		$eca_day      = get_post_meta( $eca_post_id, '_eca_day', true );
-		$start_time   = get_post_meta( $eca_post_id, '_eca_start_time', true );
-		$end_time     = get_post_meta( $eca_post_id, '_eca_end_time', true );
-		$venue        = get_post_meta( $eca_post_id, '_eca_venue', true );
-		$capacity     = get_post_meta( $eca_post_id, '_eca_max_students', true );
-		$teachers     = get_post_meta( $eca_post_id, '_eca_teachers', true );
-		$status       = get_post_meta( $eca_post_id, '_eca_status', true );
+		$eca_name      = get_the_title( $eca_post_id );
+		$eca_code      = get_post_meta( $eca_post_id, '_eca_code', true );
+		$eca_type      = get_post_meta( $eca_post_id, '_eca_type', true );
+		$eca_day       = get_post_meta( $eca_post_id, '_eca_day', true );
+		$start_time    = get_post_meta( $eca_post_id, '_eca_start_time', true );
+		$end_time      = get_post_meta( $eca_post_id, '_eca_end_time', true );
+		$venue         = get_post_meta( $eca_post_id, '_eca_venue', true );
+		$capacity      = get_post_meta( $eca_post_id, '_eca_max_students', true );
+		$teachers      = get_post_meta( $eca_post_id, '_eca_teachers', true );
+		$status        = get_post_meta( $eca_post_id, '_eca_status', true );
 		$isams_sync_id = get_post_meta( $eca_post_id, '_eca_isams_sync_id', true );
 
 		// Build the iSAMS API payload.

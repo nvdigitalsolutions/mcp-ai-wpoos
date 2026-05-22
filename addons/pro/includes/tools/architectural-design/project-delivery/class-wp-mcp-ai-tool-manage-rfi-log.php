@@ -25,6 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -37,6 +38,13 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'manage_rfi_log';
 	}
@@ -49,35 +57,56 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return __( 'List / create / update Requests for Information on an architectural project. Stored on the mcp_ai_arch_proj CPT as JSON post-meta. Status workflow: open → in_review → answered → closed | void.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'      => array(
+				'action'          => array(
 					'type' => 'string',
 					'enum' => array( 'list', 'create', 'update', 'get' ),
 				),
-				'project_id'  => array( 'type' => 'integer' ),
-				'rfi_id'      => array( 'type' => 'string' ),
-				'subject'     => array( 'type' => 'string' ),
-				'question'    => array( 'type' => 'string' ),
-				'answer'      => array( 'type' => 'string' ),
-				'status'      => array(
+				'project_id'      => array( 'type' => 'integer' ),
+				'rfi_id'          => array( 'type' => 'string' ),
+				'subject'         => array( 'type' => 'string' ),
+				'question'        => array( 'type' => 'string' ),
+				'answer'          => array( 'type' => 'string' ),
+				'status'          => array(
 					'type' => 'string',
 					'enum' => array( 'open', 'in_review', 'answered', 'closed', 'void' ),
 				),
-				'requested_by' => array( 'type' => 'string' ),
-				'assigned_to'  => array( 'type' => 'string' ),
-				'due_date'     => array( 'type' => 'string', 'description' => 'YYYY-MM-DD' ),
-				'discipline'   => array( 'type' => 'string' ),
-				'cost_impact'  => array( 'type' => 'string', 'enum' => array( 'none', 'tbd', 'increase', 'decrease' ) ),
-				'schedule_impact' => array( 'type' => 'string', 'enum' => array( 'none', 'tbd', 'delay', 'recovery' ) ),
+				'requested_by'    => array( 'type' => 'string' ),
+				'assigned_to'     => array( 'type' => 'string' ),
+				'due_date'        => array(
+					'type'        => 'string',
+					'description' => 'YYYY-MM-DD',
+				),
+				'discipline'      => array( 'type' => 'string' ),
+				'cost_impact'     => array(
+					'type' => 'string',
+					'enum' => array( 'none', 'tbd', 'increase', 'decrease' ),
+				),
+				'schedule_impact' => array(
+					'type' => 'string',
+					'enum' => array( 'none', 'tbd', 'delay', 'recovery' ),
+				),
 			),
 			'required'             => array( 'action', 'project_id' ),
 			'additionalProperties' => false,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'write', 'state-changing' );
 	}
@@ -121,7 +150,10 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				$rfi_id = isset( $arguments['rfi_id'] ) ? sanitize_text_field( $arguments['rfi_id'] ) : '';
 				foreach ( $log as $entry ) {
 					if ( isset( $entry['id'] ) && $entry['id'] === $rfi_id ) {
-						return array( 'success' => true, 'rfi' => $entry );
+						return array(
+							'success' => true,
+							'rfi'     => $entry,
+						);
 					}
 				}
 				return new WP_Error( 'wp_mcp_ai_not_found', __( 'RFI not found.', 'mcp-ai-wpoos-pro' ) );
@@ -148,7 +180,10 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				);
 				$log[] = $entry;
 				WP_MCP_AI_Architectural_Interop::write_log( $project_id, $key, $log );
-				return array( 'success' => true, 'rfi' => $entry );
+				return array(
+					'success' => true,
+					'rfi'     => $entry,
+				);
 			case 'update':
 				$rfi_id = isset( $arguments['rfi_id'] ) ? sanitize_text_field( $arguments['rfi_id'] ) : '';
 				if ( '' === $rfi_id ) {
@@ -185,7 +220,10 @@ class WP_MCP_AI_Tool_Manage_Rfi_Log implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					return new WP_Error( 'wp_mcp_ai_not_found', __( 'RFI not found.', 'mcp-ai-wpoos-pro' ) );
 				}
 				WP_MCP_AI_Architectural_Interop::write_log( $project_id, $key, $log );
-				return array( 'success' => true, 'rfi' => $log[ $i ] );
+				return array(
+					'success' => true,
+					'rfi'     => $log[ $i ],
+				);
 		}
 
 		return new WP_Error( 'wp_mcp_ai_invalid_arguments', __( 'Unknown action.', 'mcp-ai-wpoos-pro' ) );

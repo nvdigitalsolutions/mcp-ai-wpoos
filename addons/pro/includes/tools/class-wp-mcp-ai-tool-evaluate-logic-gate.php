@@ -183,17 +183,17 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 		$row['result'] = $result ? 1 : 0;
 
 		$response = array(
-			'success'      => true,
-			'gate'         => $gate,
-			'inputs'       => array_map(
+			'success'   => true,
+			'gate'      => $gate,
+			'inputs'    => array_map(
 				static function ( $b ) {
 					return $b ? 1 : 0;
 				},
 				$bools
 			),
-			'result'       => $result,
-			'truth_row'    => $row,
-			'message'      => sprintf(
+			'result'    => $result,
+			'truth_row' => $row,
+			'message'   => sprintf(
 				/* translators: 1: gate name, 2: result value */
 				__( 'Gate %1$s evaluated to %2$s.', 'mcp-ai-wpoos-pro' ),
 				$gate,
@@ -259,8 +259,8 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 	 * Multi-input gates are evaluated as left-folds of their two-input
 	 * counterparts; XOR/XNOR fold as parity.
 	 *
-	 * @param string       $gate  Gate name (uppercase).
-	 * @param array<bool>  $bools Boolean inputs.
+	 * @param string      $gate  Gate name (uppercase).
+	 * @param array<bool> $bools Boolean inputs.
 	 * @return bool
 	 */
 	private function evaluate_gate( $gate, array $bools ) {
@@ -328,8 +328,8 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Build a plain-text symbolic form.
 	 *
-	 * @param string             $gate   Gate name.
-	 * @param array<int,string>  $labels Variable labels.
+	 * @param string            $gate   Gate name.
+	 * @param array<int,string> $labels Variable labels.
 	 * @return string
 	 */
 	private function build_symbolic_text( $gate, array $labels ) {
@@ -342,8 +342,8 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Build a LaTeX symbolic form.
 	 *
-	 * @param string             $gate   Gate name.
-	 * @param array<int,string>  $labels Variable labels.
+	 * @param string            $gate   Gate name.
+	 * @param array<int,string> $labels Variable labels.
 	 * @return string
 	 */
 	private function build_symbolic_latex( $gate, array $labels ) {
@@ -372,8 +372,8 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 	 * Uses the standard universal-NAND identities, generalised to n inputs by
 	 * left-association where applicable.
 	 *
-	 * @param string             $gate   Gate name (uppercase).
-	 * @param array<int,string>  $labels Variable labels.
+	 * @param string            $gate   Gate name (uppercase).
+	 * @param array<int,string> $labels Variable labels.
 	 * @return string
 	 */
 	private function decompose_to_nand_text( $gate, array $labels ) {
@@ -384,7 +384,7 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 			$a = $labels[0];
 			return 'NAND(' . $a . ', ' . $a . ')';
 		}
-		// Reduce to two-input form by left fold so the decomposition stays
+		// Reduce to two-input form by left fold so the decomposition stays.
 		// syntactically simple and demonstrably correct.
 		$current = $labels[0];
 		for ( $i = 1; $i < count( $labels ); $i++ ) {
@@ -414,8 +414,8 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 				$nab = 'NAND(' . $a . ', ' . $b . ')';
 				return 'NAND(NAND(' . $a . ', ' . $nab . '), NAND(' . $b . ', ' . $nab . '))';
 			case 'XNOR':
-				$nab  = 'NAND(' . $a . ', ' . $b . ')';
-				$xor  = 'NAND(NAND(' . $a . ', ' . $nab . '), NAND(' . $b . ', ' . $nab . '))';
+				$nab = 'NAND(' . $a . ', ' . $b . ')';
+				$xor = 'NAND(NAND(' . $a . ', ' . $nab . '), NAND(' . $b . ', ' . $nab . '))';
 				return 'NAND(' . $xor . ', ' . $xor . ')';
 		}
 		return 'NAND(' . $a . ', ' . $b . ')';
@@ -424,12 +424,12 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Build a NAND-only decomposition (LaTeX) for the chosen gate.
 	 *
-	 * @param string             $gate   Gate name.
-	 * @param array<int,string>  $labels Variable labels.
+	 * @param string            $gate   Gate name.
+	 * @param array<int,string> $labels Variable labels.
 	 * @return string
 	 */
 	private function decompose_to_nand_latex( $gate, array $labels ) {
-		// Render NAND as the conventional \uparrow (Sheffer stroke) for
+		// Render NAND as the conventional \uparrow (Sheffer stroke) for.
 		// a compact, mathematically idiomatic LaTeX form.
 		$text = $this->decompose_to_nand_text( $gate, $labels );
 		// Convert NAND(x, y) into (x \uparrow y).

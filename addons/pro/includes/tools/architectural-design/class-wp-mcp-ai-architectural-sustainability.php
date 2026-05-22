@@ -90,38 +90,38 @@ class WP_MCP_AI_Architectural_Sustainability {
 		$baselines = array(
 			'LK' => array(
 				'residential' => array(
-					'eui_kwh_m2_year'              => 60.0,
-					'water_l_person_day'           => 200.0,
-					'embodied_co2_kgco2e_m2'       => 500.0,
+					'eui_kwh_m2_year'        => 60.0,
+					'water_l_person_day'     => 200.0,
+					'embodied_co2_kgco2e_m2' => 500.0,
 				),
-				'commercial' => array(
-					'eui_kwh_m2_year'              => 180.0,
-					'water_l_person_day'           => 80.0,
-					'embodied_co2_kgco2e_m2'       => 650.0,
+				'commercial'  => array(
+					'eui_kwh_m2_year'        => 180.0,
+					'water_l_person_day'     => 80.0,
+					'embodied_co2_kgco2e_m2' => 650.0,
 				),
 			),
 			'JM' => array(
 				'residential' => array(
-					'eui_kwh_m2_year'              => 90.0,
-					'water_l_person_day'           => 220.0,
-					'embodied_co2_kgco2e_m2'       => 520.0,
+					'eui_kwh_m2_year'        => 90.0,
+					'water_l_person_day'     => 220.0,
+					'embodied_co2_kgco2e_m2' => 520.0,
 				),
-				'commercial' => array(
-					'eui_kwh_m2_year'              => 220.0,
-					'water_l_person_day'           => 100.0,
-					'embodied_co2_kgco2e_m2'       => 680.0,
+				'commercial'  => array(
+					'eui_kwh_m2_year'        => 220.0,
+					'water_l_person_day'     => 100.0,
+					'embodied_co2_kgco2e_m2' => 680.0,
 				),
 			),
 			'US' => array(
 				'residential' => array(
-					'eui_kwh_m2_year'              => 130.0,
-					'water_l_person_day'           => 260.0,
-					'embodied_co2_kgco2e_m2'       => 580.0,
+					'eui_kwh_m2_year'        => 130.0,
+					'water_l_person_day'     => 260.0,
+					'embodied_co2_kgco2e_m2' => 580.0,
 				),
-				'commercial' => array(
-					'eui_kwh_m2_year'              => 260.0,
-					'water_l_person_day'           => 110.0,
-					'embodied_co2_kgco2e_m2'       => 720.0,
+				'commercial'  => array(
+					'eui_kwh_m2_year'        => 260.0,
+					'water_l_person_day'     => 110.0,
+					'embodied_co2_kgco2e_m2' => 720.0,
 				),
 			),
 		);
@@ -236,104 +236,227 @@ class WP_MCP_AI_Architectural_Sustainability {
 			'LT' => array(
 				'label'   => 'Location & Transportation',
 				'credits' => array(
-					'LT_c1'  => array( 'label' => 'LEED for Neighborhood Development Location', 'max' => 16 ),
-					'LT_c2'  => array( 'label' => 'Sensitive Land Protection',                  'max' => 1 ),
-					'LT_c3'  => array( 'label' => 'High Priority Site',                          'max' => 2 ),
-					'LT_c4'  => array( 'label' => 'Surrounding Density and Diverse Uses',       'max' => 5 ),
-					'LT_c5'  => array( 'label' => 'Access to Quality Transit',                  'max' => 5 ),
-					'LT_c6'  => array( 'label' => 'Bicycle Facilities',                          'max' => 1 ),
-					'LT_c7'  => array( 'label' => 'Reduced Parking Footprint',                  'max' => 1 ),
-					'LT_c8'  => array( 'label' => 'Green Vehicles',                              'max' => 1 ),
+					'LT_c1' => array(
+						'label' => 'LEED for Neighborhood Development Location',
+						'max'   => 16,
+					),
+					'LT_c2' => array(
+						'label' => 'Sensitive Land Protection',
+						'max'   => 1,
+					),
+					'LT_c3' => array(
+						'label' => 'High Priority Site',
+						'max'   => 2,
+					),
+					'LT_c4' => array(
+						'label' => 'Surrounding Density and Diverse Uses',
+						'max'   => 5,
+					),
+					'LT_c5' => array(
+						'label' => 'Access to Quality Transit',
+						'max'   => 5,
+					),
+					'LT_c6' => array(
+						'label' => 'Bicycle Facilities',
+						'max'   => 1,
+					),
+					'LT_c7' => array(
+						'label' => 'Reduced Parking Footprint',
+						'max'   => 1,
+					),
+					'LT_c8' => array(
+						'label' => 'Green Vehicles',
+						'max'   => 1,
+					),
 				),
 			),
 			'SS' => array(
-				'label'        => 'Sustainable Sites',
+				'label'         => 'Sustainable Sites',
 				'prerequisites' => array(
 					'SS_p1' => 'Construction Activity Pollution Prevention',
 				),
-				'credits' => array(
-					'SS_c1' => array( 'label' => 'Site Assessment',              'max' => 1 ),
-					'SS_c2' => array( 'label' => 'Site Development - Protect/Restore Habitat', 'max' => 2 ),
-					'SS_c3' => array( 'label' => 'Open Space',                    'max' => 1 ),
-					'SS_c4' => array( 'label' => 'Rainwater Management',          'max' => 3 ),
-					'SS_c5' => array( 'label' => 'Heat Island Reduction',         'max' => 2 ),
-					'SS_c6' => array( 'label' => 'Light Pollution Reduction',     'max' => 1 ),
+				'credits'       => array(
+					'SS_c1' => array(
+						'label' => 'Site Assessment',
+						'max'   => 1,
+					),
+					'SS_c2' => array(
+						'label' => 'Site Development - Protect/Restore Habitat',
+						'max'   => 2,
+					),
+					'SS_c3' => array(
+						'label' => 'Open Space',
+						'max'   => 1,
+					),
+					'SS_c4' => array(
+						'label' => 'Rainwater Management',
+						'max'   => 3,
+					),
+					'SS_c5' => array(
+						'label' => 'Heat Island Reduction',
+						'max'   => 2,
+					),
+					'SS_c6' => array(
+						'label' => 'Light Pollution Reduction',
+						'max'   => 1,
+					),
 				),
 			),
 			'WE' => array(
-				'label'        => 'Water Efficiency',
+				'label'         => 'Water Efficiency',
 				'prerequisites' => array(
 					'WE_p1' => 'Outdoor Water Use Reduction',
 					'WE_p2' => 'Indoor Water Use Reduction',
 					'WE_p3' => 'Building-Level Water Metering',
 				),
-				'credits' => array(
-					'WE_c1' => array( 'label' => 'Outdoor Water Use Reduction',   'max' => 2 ),
-					'WE_c2' => array( 'label' => 'Indoor Water Use Reduction',    'max' => 6 ),
-					'WE_c3' => array( 'label' => 'Cooling Tower Water Use',       'max' => 2 ),
-					'WE_c4' => array( 'label' => 'Water Metering',                'max' => 1 ),
+				'credits'       => array(
+					'WE_c1' => array(
+						'label' => 'Outdoor Water Use Reduction',
+						'max'   => 2,
+					),
+					'WE_c2' => array(
+						'label' => 'Indoor Water Use Reduction',
+						'max'   => 6,
+					),
+					'WE_c3' => array(
+						'label' => 'Cooling Tower Water Use',
+						'max'   => 2,
+					),
+					'WE_c4' => array(
+						'label' => 'Water Metering',
+						'max'   => 1,
+					),
 				),
 			),
 			'EA' => array(
-				'label'        => 'Energy & Atmosphere',
+				'label'         => 'Energy & Atmosphere',
 				'prerequisites' => array(
 					'EA_p1' => 'Fundamental Commissioning and Verification',
 					'EA_p2' => 'Minimum Energy Performance',
 					'EA_p3' => 'Building-Level Energy Metering',
 					'EA_p4' => 'Fundamental Refrigerant Management',
 				),
-				'credits' => array(
-					'EA_c1' => array( 'label' => 'Enhanced Commissioning',         'max' => 6 ),
-					'EA_c2' => array( 'label' => 'Optimize Energy Performance',    'max' => 18 ),
-					'EA_c3' => array( 'label' => 'Advanced Energy Metering',       'max' => 1 ),
-					'EA_c4' => array( 'label' => 'Grid Harmonization',             'max' => 2 ),
-					'EA_c5' => array( 'label' => 'Renewable Energy',               'max' => 5 ),
-					'EA_c6' => array( 'label' => 'Enhanced Refrigerant Management','max' => 1 ),
+				'credits'       => array(
+					'EA_c1' => array(
+						'label' => 'Enhanced Commissioning',
+						'max'   => 6,
+					),
+					'EA_c2' => array(
+						'label' => 'Optimize Energy Performance',
+						'max'   => 18,
+					),
+					'EA_c3' => array(
+						'label' => 'Advanced Energy Metering',
+						'max'   => 1,
+					),
+					'EA_c4' => array(
+						'label' => 'Grid Harmonization',
+						'max'   => 2,
+					),
+					'EA_c5' => array(
+						'label' => 'Renewable Energy',
+						'max'   => 5,
+					),
+					'EA_c6' => array(
+						'label' => 'Enhanced Refrigerant Management',
+						'max'   => 1,
+					),
 				),
 			),
 			'MR' => array(
-				'label'        => 'Materials & Resources',
+				'label'         => 'Materials & Resources',
 				'prerequisites' => array(
 					'MR_p1' => 'Storage and Collection of Recyclables',
 					'MR_p2' => 'Construction and Demolition Waste Management Planning',
 				),
-				'credits' => array(
-					'MR_c1' => array( 'label' => 'Building Life-Cycle Impact Reduction',          'max' => 5 ),
-					'MR_c2' => array( 'label' => 'EPDs (Building Product Disclosure - EPDs)',     'max' => 2 ),
-					'MR_c3' => array( 'label' => 'Sourcing of Raw Materials',                     'max' => 2 ),
-					'MR_c4' => array( 'label' => 'Material Ingredients',                          'max' => 2 ),
-					'MR_c5' => array( 'label' => 'Construction and Demolition Waste Management', 'max' => 2 ),
+				'credits'       => array(
+					'MR_c1' => array(
+						'label' => 'Building Life-Cycle Impact Reduction',
+						'max'   => 5,
+					),
+					'MR_c2' => array(
+						'label' => 'EPDs (Building Product Disclosure - EPDs)',
+						'max'   => 2,
+					),
+					'MR_c3' => array(
+						'label' => 'Sourcing of Raw Materials',
+						'max'   => 2,
+					),
+					'MR_c4' => array(
+						'label' => 'Material Ingredients',
+						'max'   => 2,
+					),
+					'MR_c5' => array(
+						'label' => 'Construction and Demolition Waste Management',
+						'max'   => 2,
+					),
 				),
 			),
 			'EQ' => array(
-				'label'        => 'Indoor Environmental Quality',
+				'label'         => 'Indoor Environmental Quality',
 				'prerequisites' => array(
 					'EQ_p1' => 'Minimum Indoor Air Quality Performance',
 					'EQ_p2' => 'Environmental Tobacco Smoke Control',
 				),
-				'credits' => array(
-					'EQ_c1' => array( 'label' => 'Enhanced Indoor Air Quality Strategies', 'max' => 2 ),
-					'EQ_c2' => array( 'label' => 'Low-Emitting Materials',                 'max' => 3 ),
-					'EQ_c3' => array( 'label' => 'Construction Indoor Air Quality Plan',   'max' => 1 ),
-					'EQ_c4' => array( 'label' => 'Indoor Air Quality Assessment',          'max' => 2 ),
-					'EQ_c5' => array( 'label' => 'Thermal Comfort',                         'max' => 1 ),
-					'EQ_c6' => array( 'label' => 'Interior Lighting',                       'max' => 2 ),
-					'EQ_c7' => array( 'label' => 'Daylight',                                'max' => 3 ),
-					'EQ_c8' => array( 'label' => 'Quality Views',                           'max' => 1 ),
-					'EQ_c9' => array( 'label' => 'Acoustic Performance',                    'max' => 1 ),
+				'credits'       => array(
+					'EQ_c1' => array(
+						'label' => 'Enhanced Indoor Air Quality Strategies',
+						'max'   => 2,
+					),
+					'EQ_c2' => array(
+						'label' => 'Low-Emitting Materials',
+						'max'   => 3,
+					),
+					'EQ_c3' => array(
+						'label' => 'Construction Indoor Air Quality Plan',
+						'max'   => 1,
+					),
+					'EQ_c4' => array(
+						'label' => 'Indoor Air Quality Assessment',
+						'max'   => 2,
+					),
+					'EQ_c5' => array(
+						'label' => 'Thermal Comfort',
+						'max'   => 1,
+					),
+					'EQ_c6' => array(
+						'label' => 'Interior Lighting',
+						'max'   => 2,
+					),
+					'EQ_c7' => array(
+						'label' => 'Daylight',
+						'max'   => 3,
+					),
+					'EQ_c8' => array(
+						'label' => 'Quality Views',
+						'max'   => 1,
+					),
+					'EQ_c9' => array(
+						'label' => 'Acoustic Performance',
+						'max'   => 1,
+					),
 				),
 			),
 			'IN' => array(
 				'label'   => 'Innovation',
 				'credits' => array(
-					'IN_c1' => array( 'label' => 'Innovation',           'max' => 5 ),
-					'IN_c2' => array( 'label' => 'LEED Accredited Professional', 'max' => 1 ),
+					'IN_c1' => array(
+						'label' => 'Innovation',
+						'max'   => 5,
+					),
+					'IN_c2' => array(
+						'label' => 'LEED Accredited Professional',
+						'max'   => 1,
+					),
 				),
 			),
 			'RP' => array(
 				'label'   => 'Regional Priority',
 				'credits' => array(
-					'RP_c1' => array( 'label' => 'Regional Priority Credits', 'max' => 4 ),
+					'RP_c1' => array(
+						'label' => 'Regional Priority Credits',
+						'max'   => 4,
+					),
 				),
 			),
 		);
@@ -355,10 +478,26 @@ class WP_MCP_AI_Architectural_Sustainability {
 	 */
 	public static function get_leed_thresholds() {
 		return array(
-			'certified' => array( 'label' => 'Certified', 'min' => 40, 'max' => 49 ),
-			'silver'    => array( 'label' => 'Silver',    'min' => 50, 'max' => 59 ),
-			'gold'      => array( 'label' => 'Gold',      'min' => 60, 'max' => 79 ),
-			'platinum'  => array( 'label' => 'Platinum',  'min' => 80, 'max' => 110 ),
+			'certified' => array(
+				'label' => 'Certified',
+				'min'   => 40,
+				'max'   => 49,
+			),
+			'silver'    => array(
+				'label' => 'Silver',
+				'min'   => 50,
+				'max'   => 59,
+			),
+			'gold'      => array(
+				'label' => 'Gold',
+				'min'   => 60,
+				'max'   => 79,
+			),
+			'platinum'  => array(
+				'label' => 'Platinum',
+				'min'   => 80,
+				'max'   => 110,
+			),
 		);
 	}
 
@@ -416,10 +555,10 @@ class WP_MCP_AI_Architectural_Sustainability {
 						'awarded' => $awarded,
 						'max'     => $max,
 					);
-					$awarded = $max;
+					$awarded    = $max;
 				}
 				$category_totals[ $cat_id ] += $awarded;
-				$total_points              += $awarded;
+				$total_points               += $awarded;
 			}
 		}
 
@@ -450,16 +589,16 @@ class WP_MCP_AI_Architectural_Sustainability {
 		}
 
 		return array(
-			'success'             => true,
-			'total_points'        => $total_points,
-			'max_points'          => 110,
-			'category_totals'     => $category_totals,
-			'awarded_level'       => $awarded_level,
-			'awarded_level_label' => $awarded_level_label,
+			'success'               => true,
+			'total_points'          => $total_points,
+			'max_points'            => 110,
+			'category_totals'       => $category_totals,
+			'awarded_level'         => $awarded_level,
+			'awarded_level_label'   => $awarded_level_label,
 			'missing_prerequisites' => $missing_prereqs,
-			'over_max_credits'    => $over_max,
-			'invalid_credit_ids'  => $invalid_credits,
-			'thresholds'          => $thresholds,
+			'over_max_credits'      => $over_max,
+			'invalid_credit_ids'    => $invalid_credits,
+			'thresholds'            => $thresholds,
 		);
 	}
 
@@ -481,7 +620,7 @@ class WP_MCP_AI_Architectural_Sustainability {
 	 */
 	public static function get_boq_format_catalog() {
 		$catalog = array(
-			'pomi' => array(
+			'pomi'                  => array(
 				'label'           => 'POMI (Principles of Measurement International)',
 				'standard_source' => 'RICS / ICTAD-CIDA Sri Lanka practice',
 				'unit_system'     => 'metric',
@@ -502,7 +641,7 @@ class WP_MCP_AI_Architectural_Sustainability {
 					'P' => 'Provisional & Prime Cost Sums',
 				),
 			),
-			'smm7' => array(
+			'smm7'                  => array(
 				'label'           => 'SMM7 / NRM2 (Standard Method of Measurement)',
 				'standard_source' => 'RICS — common in Caribbean and Commonwealth jurisdictions',
 				'unit_system'     => 'metric',

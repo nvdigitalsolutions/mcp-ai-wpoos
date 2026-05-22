@@ -180,8 +180,8 @@ class WP_MCP_AI_Skill_Catalogue_REST_Controller extends WP_REST_Controller {
 		if ( class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
 			$registry = WP_MCP_AI_Skill_Registry::instance();
 			foreach ( $manifest['skills'] as &$entry ) {
-				$installed = $registry->get_skill( $entry['name'] );
-				$entry['installed']      = ( null !== $installed );
+				$installed                 = $registry->get_skill( $entry['name'] );
+				$entry['installed']        = ( null !== $installed );
 				$entry['update_available'] = $entry['installed'] ? (bool) $service->has_update( $id, $entry['name'] ) : false;
 			}
 			unset( $entry );

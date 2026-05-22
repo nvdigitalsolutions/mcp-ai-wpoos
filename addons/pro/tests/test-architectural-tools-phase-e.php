@@ -43,7 +43,7 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 
 		$pro_path = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH
-			: dirname( dirname( __FILE__ ) ) . '/';
+			: dirname( __DIR__ ) . '/';
 
 		$base = $pro_path . 'includes/tools/architectural-design/';
 		if ( ! file_exists( $base ) ) {
@@ -61,9 +61,9 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 				WP_MCP_AI_Architectural_Precedent_CPT::register_meta();
 			}
 		}
-		if ( ! post_type_exists( 'mcp_ai_arch_precedent' ) ) {
+		if ( ! post_type_exists( 'mcp_arch_precedent' ) ) {
 			register_post_type(
-				'mcp_ai_arch_precedent',
+				'mcp_arch_precedent',
 				array(
 					'public'          => false,
 					'show_ui'         => false,
@@ -127,18 +127,18 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 	 * @return int
 	 */
 	protected function create_precedent( array $extra = array() ) {
-		$tool = new WP_MCP_AI_Tool_Manage_Architectural_Precedents();
-		$args = array_merge(
+		$tool   = new WP_MCP_AI_Tool_Manage_Architectural_Precedents();
+		$args   = array_merge(
 			array(
-				'action'        => 'create',
-				'title'         => 'Test Precedent',
-				'description'   => 'A reference precedent for tests.',
-				'country_code'  => 'LK',
-				'building_type' => 'residential',
-				'climate_zone'  => 'Af',
+				'action'         => 'create',
+				'title'          => 'Test Precedent',
+				'description'    => 'A reference precedent for tests.',
+				'country_code'   => 'LK',
+				'building_type'  => 'residential',
+				'climate_zone'   => 'Af',
 				'year_completed' => 2020,
-				'area_m2'       => 250.0,
-				'key_features'  => array( 'courtyards', 'cross-ventilation' ),
+				'area_m2'        => 250.0,
+				'key_features'   => array( 'courtyards', 'cross-ventilation' ),
 			),
 			$extra
 		);
@@ -156,7 +156,13 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0, $id );
 
 		$tool = new WP_MCP_AI_Tool_Manage_Architectural_Precedents();
-		$got  = $tool->execute( array( 'action' => 'get', 'precedent_id' => $id ), $this->ctx() );
+		$got  = $tool->execute(
+			array(
+				'action'       => 'get',
+				'precedent_id' => $id,
+			),
+			$this->ctx()
+		);
 		$this->assertSame( 'LK', $got['precedent']['country_code'] );
 		$this->assertSame( 'residential', $got['precedent']['building_type'] );
 		$this->assertSame( 250.0, $got['precedent']['area_m2'] );
@@ -177,7 +183,13 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 		$this->assertSame( 'EDGE Certified', $updated['precedent']['sustainability_rating'] );
 		$this->assertSame( 275.0, $updated['precedent']['area_m2'] );
 
-		$del = $tool->execute( array( 'action' => 'delete', 'precedent_id' => $id ), $this->ctx() );
+		$del = $tool->execute(
+			array(
+				'action'       => 'delete',
+				'precedent_id' => $id,
+			),
+			$this->ctx()
+		);
 		$this->assertSame( $id, $del['deleted_id'] );
 		$this->assertNull( get_post( $id ) );
 	}
@@ -188,7 +200,10 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 	public function test_access_control_rejects_subscribers() {
 		$tool   = new WP_MCP_AI_Tool_Manage_Architectural_Precedents();
 		$result = $tool->execute(
-			array( 'action' => 'create', 'title' => 'No-go' ),
+			array(
+				'action' => 'create',
+				'title'  => 'No-go',
+			),
 			$this->sub_ctx()
 		);
 		$this->assertInstanceOf( 'WP_Error', $result );
@@ -234,15 +249,26 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 	 */
 	public function test_search_keyword_fallback() {
 		$this->create_precedent(
-			array( 'title' => 'Tropical Courtyard House', 'description' => 'A tropical courtyard residence with cross-ventilation.' )
+			array(
+				'title'       => 'Tropical Courtyard House',
+				'description' => 'A tropical courtyard residence with cross-ventilation.',
+			)
 		);
 		$this->create_precedent(
-			array( 'title' => 'Hurricane Hardened Office', 'country_code' => 'JM', 'building_type' => 'commercial', 'description' => 'Impact-rated curtain wall and continuous load path.' )
+			array(
+				'title'         => 'Hurricane Hardened Office',
+				'country_code'  => 'JM',
+				'building_type' => 'commercial',
+				'description'   => 'Impact-rated curtain wall and continuous load path.',
+			)
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Search_Architectural_Precedents();
 		$result = $tool->execute(
-			array( 'query' => 'tropical courtyard residence', 'limit' => 2 ),
+			array(
+				'query' => 'tropical courtyard residence',
+				'limit' => 2,
+			),
 			$this->ctx()
 		);
 		$this->assertIsArray( $result );
@@ -263,10 +289,18 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_arch_precedent_embedding', $cb, 10, 2 );
 
 		$id1 = $this->create_precedent(
-			array( 'title' => 'Tropical Courtyard House', 'description' => 'Tropical courtyard residence cross-ventilation.' )
+			array(
+				'title'       => 'Tropical Courtyard House',
+				'description' => 'Tropical courtyard residence cross-ventilation.',
+			)
 		);
 		$id2 = $this->create_precedent(
-			array( 'title' => 'Snow-Belt Lakeside Cabin', 'description' => 'High-snowload mountain cabin in cold climate.', 'country_code' => 'US', 'climate_zone' => 'Dfb' )
+			array(
+				'title'        => 'Snow-Belt Lakeside Cabin',
+				'description'  => 'High-snowload mountain cabin in cold climate.',
+				'country_code' => 'US',
+				'climate_zone' => 'Dfb',
+			)
 		);
 		// Verify embeddings were cached on save.
 		$this->assertNotEmpty( get_post_meta( $id1, '_arch_prec_embedding', true ) );
@@ -274,7 +308,10 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 
 		$tool   = new WP_MCP_AI_Tool_Search_Architectural_Precedents();
 		$result = $tool->execute(
-			array( 'query' => 'tropical courtyard residence cross-ventilation', 'limit' => 2 ),
+			array(
+				'query' => 'tropical courtyard residence cross-ventilation',
+				'limit' => 2,
+			),
 			$this->ctx()
 		);
 		remove_filter( 'wp_mcp_ai_arch_precedent_embedding', $cb, 10 );
@@ -289,20 +326,48 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 	 * Filters narrow the candidate set.
 	 */
 	public function test_search_filters_country_and_btype() {
-		$this->create_precedent( array( 'title' => 'LK House A', 'country_code' => 'LK', 'building_type' => 'residential' ) );
-		$this->create_precedent( array( 'title' => 'JM Office B', 'country_code' => 'JM', 'building_type' => 'commercial' ) );
-		$this->create_precedent( array( 'title' => 'US Tower C', 'country_code' => 'US', 'building_type' => 'commercial', 'area_m2' => 5000.0 ) );
+		$this->create_precedent(
+			array(
+				'title'         => 'LK House A',
+				'country_code'  => 'LK',
+				'building_type' => 'residential',
+			)
+		);
+		$this->create_precedent(
+			array(
+				'title'         => 'JM Office B',
+				'country_code'  => 'JM',
+				'building_type' => 'commercial',
+			)
+		);
+		$this->create_precedent(
+			array(
+				'title'         => 'US Tower C',
+				'country_code'  => 'US',
+				'building_type' => 'commercial',
+				'area_m2'       => 5000.0,
+			)
+		);
 
 		$tool   = new WP_MCP_AI_Tool_Search_Architectural_Precedents();
 		$result = $tool->execute(
-			array( 'query' => 'building project', 'country_code' => 'JM', 'building_type' => 'commercial', 'limit' => 5 ),
+			array(
+				'query'         => 'building project',
+				'country_code'  => 'JM',
+				'building_type' => 'commercial',
+				'limit'         => 5,
+			),
 			$this->ctx()
 		);
 		$this->assertSame( 1, $result['candidate_count'] );
 		$this->assertSame( 'JM Office B', $result['results'][0]['title'] );
 
 		$big = $tool->execute(
-			array( 'query' => 'tower', 'min_area_m2' => 1000.0, 'limit' => 5 ),
+			array(
+				'query'       => 'tower',
+				'min_area_m2' => 1000.0,
+				'limit'       => 5,
+			),
 			$this->ctx()
 		);
 		$this->assertSame( 1, $big['candidate_count'] );
@@ -335,8 +400,8 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 	public function test_example_blueprints_exist() {
 		$pro_path = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH
-			: dirname( dirname( __FILE__ ) ) . '/';
-		$dir = $pro_path . 'includes/tools/architectural-design/examples/';
+			: dirname( __DIR__ ) . '/';
+		$dir      = $pro_path . 'includes/tools/architectural-design/examples/';
 		$expected = array( 'LK-residential.md', 'JM-hurricane-resilient.md', 'US-commercial.md' );
 		foreach ( $expected as $file ) {
 			$this->assertFileExists( $dir . $file, "Blueprint {$file} must exist." );

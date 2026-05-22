@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_I
 			return new WP_Error( 'missing_required', __( 'Party name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$search_terms       = array_merge( array( $party_name ), $related_entities );
+		$search_terms        = array_merge( array( $party_name ), $related_entities );
 		$potential_conflicts = array();
 
 		foreach ( $search_terms as $term ) {
@@ -149,12 +149,12 @@ class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_I
 			if ( $client_query->have_posts() ) {
 				foreach ( $client_query->posts as $client_post ) {
 					$potential_conflicts[] = array(
-						'type'           => 'client',
-						'id'             => $client_post->ID,
-						'name'           => $client_post->post_title,
-						'matched_term'   => $term,
-						'practice_area'  => get_post_meta( $client_post->ID, '_lf_practice_area', true ),
-						'intake_date'    => get_post_meta( $client_post->ID, '_lf_intake_date', true ),
+						'type'          => 'client',
+						'id'            => $client_post->ID,
+						'name'          => $client_post->post_title,
+						'matched_term'  => $term,
+						'practice_area' => get_post_meta( $client_post->ID, '_lf_practice_area', true ),
+						'intake_date'   => get_post_meta( $client_post->ID, '_lf_intake_date', true ),
 					);
 				}
 			}
@@ -171,14 +171,14 @@ class WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker implements WP_MCP_AI_Tool_I
 
 			if ( $matter_query->have_posts() ) {
 				foreach ( $matter_query->posts as $matter_post ) {
-					$opposing = get_post_meta( $matter_post->ID, '_lf_opposing_counsel', true );
+					$opposing              = get_post_meta( $matter_post->ID, '_lf_opposing_counsel', true );
 					$potential_conflicts[] = array(
-						'type'           => 'matter',
-						'id'             => $matter_post->ID,
-						'title'          => $matter_post->post_title,
-						'matched_term'   => $term,
-						'status'         => get_post_meta( $matter_post->ID, '_lf_status', true ),
-						'practice_area'  => get_post_meta( $matter_post->ID, '_lf_practice_area', true ),
+						'type'          => 'matter',
+						'id'            => $matter_post->ID,
+						'title'         => $matter_post->post_title,
+						'matched_term'  => $term,
+						'status'        => get_post_meta( $matter_post->ID, '_lf_status', true ),
+						'practice_area' => get_post_meta( $matter_post->ID, '_lf_practice_area', true ),
 					);
 				}
 			}

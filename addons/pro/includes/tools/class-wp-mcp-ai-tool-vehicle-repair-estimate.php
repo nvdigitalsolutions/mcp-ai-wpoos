@@ -101,10 +101,10 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 * @var float[]
 	 */
 	const CONFIDENCE_THRESHOLDS = array(
-		'vehicle_id'   => 0.8,
-		'part_detect'  => 0.7,
-		'damage_type'  => 0.7,
-		'coverage'     => 0.9,
+		'vehicle_id'  => 0.8,
+		'part_detect' => 0.7,
+		'damage_type' => 0.7,
+		'coverage'    => 0.9,
 	);
 
 	/**
@@ -252,8 +252,8 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				'optional' => array( 'vin_decode', 'vision_object_localization' ),
 			),
 			'cache'        => array(
-				'ttl'     => 1800,
-				'key_by'  => array( 'image_attachment_ids', 'vin' ),
+				'ttl'    => 1800,
+				'key_by' => array( 'image_attachment_ids', 'vin' ),
 			),
 			'retry'        => array(
 				'strategy'    => 'exponential_backoff',
@@ -400,7 +400,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		$vehicle = $this->identify_vehicle( $arguments, $valid_images, $context );
 		if ( is_wp_error( $vehicle ) ) {
 			// Vehicle ID failed but we can still proceed with limited info.
-			$vehicle  = $this->build_unknown_vehicle_descriptor( $arguments );
+			$vehicle    = $this->build_unknown_vehicle_descriptor( $arguments );
 			$warnings[] = $vehicle['warning'] ?? __( 'Could not identify vehicle. Estimate may be less accurate.', 'mcp-ai-wpoos' );
 		}
 
@@ -434,10 +434,10 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			'uncertainty'        => $this->calculate_uncertainty( $vehicle, $findings, $coverage ),
 			'assumptions'        => $this->get_estimate_assumptions( $vehicle, $findings, $price_sheet_id ),
 			'metadata'           => array(
-				'generated_at'       => gmdate( 'Y-m-d\TH:i:s\Z' ),
-				'image_count'        => count( $valid_images ),
-				'detail_level'       => $detail_level,
-				'tool_version'       => '2.2.0',
+				'generated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+				'image_count'  => count( $valid_images ),
+				'detail_level' => $detail_level,
+				'tool_version' => '2.2.0',
 			),
 		);
 
@@ -560,7 +560,13 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 
 		// Fallback: direct NHTSA call.
 		$api_url  = 'https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/' . rawurlencode( $vin ) . '?format=json';
-		$response = wp_remote_get( $api_url, array( 'timeout' => 15, 'sslverify' => true ) );
+		$response = wp_remote_get(
+			$api_url,
+			array(
+				'timeout'   => 15,
+				'sslverify' => true,
+			)
+		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 			return new WP_Error( 'wp_mcp_ai_vin_api_error', __( 'VIN decode API request failed.', 'mcp-ai-wpoos' ) );
@@ -611,7 +617,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		$ocr_result = $registry->execute_tool(
 			'extract_image_text',
 			array(
-				'attachment_id'  => $attachment_id,
+				'attachment_id'   => $attachment_id,
 				'preserve_layout' => true,
 			),
 			$context
@@ -723,13 +729,15 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			return new WP_Error( 'wp_mcp_ai_vision_unavailable', __( 'Image analysis tool not available for damage detection.', 'mcp-ai-wpoos' ) );
 		}
 
-		$vehicle_desc = trim( sprintf(
-			'%s %s %s %s',
-			$vehicle['year'] ?? '',
-			$vehicle['make'] ?? '',
-			$vehicle['model'] ?? '',
-			$vehicle['trim'] ?? ''
-		) );
+		$vehicle_desc = trim(
+			sprintf(
+				'%s %s %s %s',
+				$vehicle['year'] ?? '',
+				$vehicle['make'] ?? '',
+				$vehicle['model'] ?? '',
+				$vehicle['trim'] ?? ''
+			)
+		);
 
 		$prompt = sprintf(
 			/* translators: %s: vehicle description */
@@ -785,13 +793,13 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				foreach ( $damages as $damage ) {
 					$findings[] = array(
 						'image_attachment_id' => $image['attachment_id'],
-						'view'               => $view,
-						'part'               => sanitize_text_field( $damage['part'] ?? 'unknown' ),
-						'damage_type'        => sanitize_text_field( $damage['damage_type'] ?? 'unknown' ),
-						'severity'           => sanitize_text_field( $damage['severity'] ?? 'moderate' ),
-						'location'           => sanitize_text_field( $damage['location'] ?? '' ),
-						'confidence'         => isset( $damage['confidence'] ) ? (float) $damage['confidence'] : 0.5,
-						'description'        => sanitize_text_field( $damage['description'] ?? '' ),
+						'view'                => $view,
+						'part'                => sanitize_text_field( $damage['part'] ?? 'unknown' ),
+						'damage_type'         => sanitize_text_field( $damage['damage_type'] ?? 'unknown' ),
+						'severity'            => sanitize_text_field( $damage['severity'] ?? 'moderate' ),
+						'location'            => sanitize_text_field( $damage['location'] ?? '' ),
+						'confidence'          => isset( $damage['confidence'] ) ? (float) $damage['confidence'] : 0.5,
+						'description'         => sanitize_text_field( $damage['description'] ?? '' ),
 					);
 				}
 			}
@@ -839,14 +847,28 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			$messages[] = sprintf(
 				/* translators: %s: comma-separated list of missing views */
 				__( 'Missing required views: %s. Please add these photos for a more reliable estimate.', 'mcp-ai-wpoos' ),
-				implode( ', ', array_map( function ( $v ) { return str_replace( '_', ' ', $v ); }, $required_missing ) )
+				implode(
+					', ',
+					array_map(
+						function ( $v ) {
+							return str_replace( '_', ' ', $v ); },
+						$required_missing
+					)
+				)
 			);
 		}
 		if ( ! empty( $recommended_missing ) ) {
 			$messages[] = sprintf(
 				/* translators: %s: comma-separated list of missing views */
 				__( 'Missing recommended corner views: %s.', 'mcp-ai-wpoos' ),
-				implode( ', ', array_map( function ( $v ) { return str_replace( '_', ' ', $v ); }, $recommended_missing ) )
+				implode(
+					', ',
+					array_map(
+						function ( $v ) {
+							return str_replace( '_', ' ', $v ); },
+						$recommended_missing
+					)
+				)
 			);
 		}
 
@@ -877,8 +899,8 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			$price_sheet = $this->parse_price_sheet( $price_sheet_id );
 		}
 
-		$line_items   = array();
-		$seen_parts   = array();
+		$line_items = array();
+		$seen_parts = array();
 
 		foreach ( $findings as $finding ) {
 			$part        = $finding['part'];
@@ -893,7 +915,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				if ( $finding['confidence'] > ( $line_items[ $existing_idx ]['confidence'] ?? 0 ) ) {
 					$line_items[ $existing_idx ]['evidence'][] = array(
 						'image_attachment_id' => $finding['image_attachment_id'],
-						'view'               => $finding['view'],
+						'view'                => $finding['view'],
 					);
 				}
 				continue;
@@ -914,8 +936,8 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 					$labor_rates
 				);
 
-				$idx                   = count( $line_items );
-				$line_items[]          = $line_item;
+				$idx                      = count( $line_items );
+				$line_items[]             = $line_item;
 				$seen_parts[ $dedup_key ] = $idx;
 			}
 		}
@@ -1001,25 +1023,25 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 
 		// Use price-sheet values if matched, otherwise use heuristic estimates.
 		if ( ! empty( $matched_row ) ) {
-			$unit_cost    = (float) ( $matched_row['unit_cost'] ?? 0 );
-			$labor_hours  = (float) ( $matched_row['labor_hours'] ?? 0 );
-			$rate_group   = $matched_row['labor_rate_group'] ?? 'body';
-			$code         = $matched_row['line_item_code'] ?? '';
-			$description  = $matched_row['description'] ?? '';
-			$from_sheet   = true;
+			$unit_cost   = (float) ( $matched_row['unit_cost'] ?? 0 );
+			$labor_hours = (float) ( $matched_row['labor_hours'] ?? 0 );
+			$rate_group  = $matched_row['labor_rate_group'] ?? 'body';
+			$code        = $matched_row['line_item_code'] ?? '';
+			$description = $matched_row['description'] ?? '';
+			$from_sheet  = true;
 		} else {
-			$estimates    = $this->heuristic_cost_estimate( $part, $operation, $severity );
-			$unit_cost    = $estimates['unit_cost'];
-			$labor_hours  = $estimates['labor_hours'];
-			$rate_group   = $estimates['rate_group'];
-			$code         = strtoupper( str_replace( ' ', '_', $part ) ) . '_' . strtoupper( $operation );
-			$description  = sprintf(
+			$estimates   = $this->heuristic_cost_estimate( $part, $operation, $severity );
+			$unit_cost   = $estimates['unit_cost'];
+			$labor_hours = $estimates['labor_hours'];
+			$rate_group  = $estimates['rate_group'];
+			$code        = strtoupper( str_replace( ' ', '_', $part ) ) . '_' . strtoupper( $operation );
+			$description = sprintf(
 				/* translators: 1: operation type, 2: part name */
 				__( '%1$s %2$s', 'mcp-ai-wpoos' ),
 				ucfirst( str_replace( '_', ' ', $operation ) ),
 				str_replace( '_', ' ', $part )
 			);
-			$from_sheet   = false;
+			$from_sheet = false;
 		}
 
 		$labor_rate    = $this->get_rate_for_group( $rate_group, $labor_rates );
@@ -1044,7 +1066,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			'evidence'         => array(
 				array(
 					'image_attachment_id' => $finding['image_attachment_id'],
-					'view'               => $finding['view'],
+					'view'                => $finding['view'],
 				),
 			),
 		);
@@ -1215,9 +1237,9 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 * @return array Totals breakdown.
 	 */
 	protected function calculate_totals( $line_items, $labor_rates ) {
-		$parts_total   = 0;
-		$labor_total   = 0;
-		$total_hours   = 0;
+		$parts_total = 0;
+		$labor_total = 0;
+		$total_hours = 0;
 
 		foreach ( $line_items as $item ) {
 			$parts_total += $item['unit_cost'];
@@ -1239,15 +1261,15 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		$total    = round( $subtotal + $tax, 2 );
 
 		return array(
-			'parts_total'    => round( $parts_total, 2 ),
-			'labor_total'    => round( $labor_total, 2 ),
-			'total_hours'    => round( $total_hours, 1 ),
-			'subtotal'       => $subtotal,
-			'tax_rate'       => $tax_rate,
-			'tax'            => $tax,
-			'total'          => $total,
+			'parts_total'     => round( $parts_total, 2 ),
+			'labor_total'     => round( $labor_total, 2 ),
+			'total_hours'     => round( $total_hours, 1 ),
+			'subtotal'        => $subtotal,
+			'tax_rate'        => $tax_rate,
+			'tax'             => $tax,
+			'total'           => $total,
 			'line_item_count' => count( $line_items ),
-			'currency'       => 'USD',
+			'currency'        => 'USD',
 		);
 	}
 
@@ -1307,10 +1329,10 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'confidence_level'    => $level,
-			'factors'             => $factors,
-			'vehicle_confidence'  => $vehicle_conf,
-			'coverage_score'      => $coverage_score,
+			'confidence_level'     => $level,
+			'factors'              => $factors,
+			'vehicle_confidence'   => $vehicle_conf,
+			'coverage_score'       => $coverage_score,
 			'low_confidence_items' => $low_conf_count,
 		);
 	}
@@ -1360,27 +1382,103 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	protected function heuristic_cost_estimate( $part, $operation, $severity ) {
 		// Base part-cost estimates (USD) for common operations.
 		$part_costs = array(
-			'bumper_cover_front'     => array( 'replace' => 350, 'repair' => 0, 'refinish' => 0 ),
-			'bumper_cover_rear'      => array( 'replace' => 350, 'repair' => 0, 'refinish' => 0 ),
-			'headlamp_left'          => array( 'replace' => 250, 'repair' => 0 ),
-			'headlamp_right'         => array( 'replace' => 250, 'repair' => 0 ),
-			'tail_lamp_left'         => array( 'replace' => 150, 'repair' => 0 ),
-			'tail_lamp_right'        => array( 'replace' => 150, 'repair' => 0 ),
-			'fender_front_left'      => array( 'replace' => 250, 'repair' => 0, 'refinish' => 0 ),
-			'fender_front_right'     => array( 'replace' => 250, 'repair' => 0, 'refinish' => 0 ),
-			'door_front_left'        => array( 'replace' => 600, 'repair' => 0, 'refinish' => 0 ),
-			'door_front_right'       => array( 'replace' => 600, 'repair' => 0, 'refinish' => 0 ),
-			'door_rear_left'         => array( 'replace' => 550, 'repair' => 0, 'refinish' => 0 ),
-			'door_rear_right'        => array( 'replace' => 550, 'repair' => 0, 'refinish' => 0 ),
-			'hood'                   => array( 'replace' => 450, 'repair' => 0, 'refinish' => 0 ),
-			'trunk_lid'              => array( 'replace' => 400, 'repair' => 0, 'refinish' => 0 ),
-			'windshield'             => array( 'replace' => 350, 'repair' => 100 ),
-			'quarter_panel_rear_left'  => array( 'replace' => 800, 'repair' => 0, 'refinish' => 0 ),
-			'quarter_panel_rear_right' => array( 'replace' => 800, 'repair' => 0, 'refinish' => 0 ),
-			'mirror_left'            => array( 'replace' => 200, 'repair' => 0 ),
-			'mirror_right'           => array( 'replace' => 200, 'repair' => 0 ),
-			'grille'                 => array( 'replace' => 150, 'repair' => 0 ),
-			'roof'                   => array( 'replace' => 1200, 'repair' => 0, 'refinish' => 0 ),
+			'bumper_cover_front'       => array(
+				'replace'  => 350,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'bumper_cover_rear'        => array(
+				'replace'  => 350,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'headlamp_left'            => array(
+				'replace' => 250,
+				'repair'  => 0,
+			),
+			'headlamp_right'           => array(
+				'replace' => 250,
+				'repair'  => 0,
+			),
+			'tail_lamp_left'           => array(
+				'replace' => 150,
+				'repair'  => 0,
+			),
+			'tail_lamp_right'          => array(
+				'replace' => 150,
+				'repair'  => 0,
+			),
+			'fender_front_left'        => array(
+				'replace'  => 250,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'fender_front_right'       => array(
+				'replace'  => 250,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'door_front_left'          => array(
+				'replace'  => 600,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'door_front_right'         => array(
+				'replace'  => 600,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'door_rear_left'           => array(
+				'replace'  => 550,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'door_rear_right'          => array(
+				'replace'  => 550,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'hood'                     => array(
+				'replace'  => 450,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'trunk_lid'                => array(
+				'replace'  => 400,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'windshield'               => array(
+				'replace' => 350,
+				'repair'  => 100,
+			),
+			'quarter_panel_rear_left'  => array(
+				'replace'  => 800,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'quarter_panel_rear_right' => array(
+				'replace'  => 800,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
+			'mirror_left'              => array(
+				'replace' => 200,
+				'repair'  => 0,
+			),
+			'mirror_right'             => array(
+				'replace' => 200,
+				'repair'  => 0,
+			),
+			'grille'                   => array(
+				'replace' => 150,
+				'repair'  => 0,
+			),
+			'roof'                     => array(
+				'replace'  => 1200,
+				'repair'   => 0,
+				'refinish' => 0,
+			),
 		);
 
 		// Labor hour estimates by operation.
@@ -1414,7 +1512,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			if ( 'replace' === $operation ) {
 				$unit_cost = 300;
 			} elseif ( 'refinish' === $operation ) {
-				$unit_cost = 0; // Paint materials are included in labor typically.
+				$unit_cost  = 0; // Paint materials are included in labor typically.
 				$rate_group = 'paint';
 			}
 		}
@@ -1496,14 +1594,16 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		$totals  = $estimate['totals'] ?? array();
 		$unc     = $estimate['uncertainty'] ?? array();
 
-		$vehicle_name = trim( sprintf(
-			'%s %s %s',
-			$vehicle['year'] ?? '',
-			$vehicle['make'] ?? '',
-			$vehicle['model'] ?? ''
-		) ) ?: __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
+		$vehicle_name = trim(
+			sprintf(
+				'%s %s %s',
+				$vehicle['year'] ?? '',
+				$vehicle['make'] ?? '',
+				$vehicle['model'] ?? ''
+			)
+		) ?: __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
 
-		$parts = array();
+		$parts   = array();
 		$parts[] = sprintf(
 			/* translators: %s: vehicle description */
 			__( 'Vehicle Repair Estimate for %s', 'mcp-ai-wpoos' ),
@@ -1578,12 +1678,24 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 * @return array Sanitized vehicle data.
 	 */
 	protected function sanitize_vehicle_for_output( $vehicle ) {
-		$safe = array();
+		$safe         = array();
 		$allowed_keys = array(
-			'vin', 'year', 'make', 'model', 'trim', 'body_class',
-			'vehicle_type', 'drive_type', 'fuel_type', 'engine_displacement',
-			'engine_cylinders', 'transmission', 'manufacturer', 'doors',
-			'source', 'confidence',
+			'vin',
+			'year',
+			'make',
+			'model',
+			'trim',
+			'body_class',
+			'vehicle_type',
+			'drive_type',
+			'fuel_type',
+			'engine_displacement',
+			'engine_cylinders',
+			'transmission',
+			'manufacturer',
+			'doors',
+			'source',
+			'confidence',
 		);
 		foreach ( $allowed_keys as $key ) {
 			if ( isset( $vehicle[ $key ] ) ) {
@@ -1635,9 +1747,19 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function is_exterior_panel( $part ) {
 		$panels = array(
-			'bumper_cover_front', 'bumper_cover_rear', 'fender_front_left', 'fender_front_right',
-			'door_front_left', 'door_front_right', 'door_rear_left', 'door_rear_right',
-			'hood', 'trunk_lid', 'roof', 'quarter_panel_rear_left', 'quarter_panel_rear_right',
+			'bumper_cover_front',
+			'bumper_cover_rear',
+			'fender_front_left',
+			'fender_front_right',
+			'door_front_left',
+			'door_front_right',
+			'door_rear_left',
+			'door_rear_right',
+			'hood',
+			'trunk_lid',
+			'roof',
+			'quarter_panel_rear_left',
+			'quarter_panel_rear_right',
 		);
 		return in_array( $part, $panels, true );
 	}
@@ -1668,8 +1790,11 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function vehicle_has_adas( $vehicle ) {
 		$adas_fields = array(
-			'forward_collision', 'lane_departure', 'adaptive_cruise',
-			'blind_spot', 'backup_camera',
+			'forward_collision',
+			'lane_departure',
+			'adaptive_cruise',
+			'blind_spot',
+			'backup_camera',
 		);
 		foreach ( $adas_fields as $field ) {
 			if ( ! empty( $vehicle[ $field ] ) ) {

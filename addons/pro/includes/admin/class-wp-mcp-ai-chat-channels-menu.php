@@ -224,7 +224,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 					'nonce'           => wp_create_nonce( 'wp_rest' ),
 					'currentPage'     => $this->current_page_slug( $hook ),
 					'refreshInterval' => (int) apply_filters( 'wp_mcp_ai_chat_channels_refresh_interval', 30 ),
-					'i18n'          => array(
+					'i18n'            => array(
 						'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 						'noConversations' => __( 'No conversations found.', 'mcp-ai-wpoos-pro' ),
 						'noMessages'      => __( 'No messages yet.', 'mcp-ai-wpoos-pro' ),
@@ -243,7 +243,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						'convTypeGroup'   => __( 'Group', 'mcp-ai-wpoos-pro' ),
 						'allTypes'        => __( 'All Types', 'mcp-ai-wpoos-pro' ),
 					),
-					'channelLabels' => array(
+					'channelLabels'   => array(
 						'whatsapp'    => 'WhatsApp',
 						'telegram'    => 'Telegram',
 						'slack'       => 'Slack',
@@ -397,8 +397,8 @@ class WP_MCP_AI_Chat_Channels_Menu {
 					$url = admin_url( 'admin.php?page=' . self::MENU_SLUG . '-inbox' . ( 'all' === $slug ? '' : '&channel=' . $slug ) );
 					?>
 					<a href="<?php echo esc_url( $url ); ?>"
-					   class="cc-channel-tab<?php echo $active_channel === $slug ? ' cc-channel-tab--active' : ''; ?>"
-					   data-channel="<?php echo esc_attr( $slug ); ?>">
+						class="cc-channel-tab<?php echo $active_channel === $slug ? ' cc-channel-tab--active' : ''; ?>"
+						data-channel="<?php echo esc_attr( $slug ); ?>">
 						<?php echo esc_html( $label ); ?>
 					</a>
 				<?php endforeach; ?>
@@ -607,8 +607,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		$lbl_outbound = esc_js( __( 'Outbound', 'mcp-ai-wpoos-pro' ) );
 
 		// phpcs:disable WordPress.WP.EnqueuedResources -- inline script content, not a URL.
-		return <<<JS
-(function() {
+		return "(function() {
 	if ( typeof Chart === 'undefined' || typeof wpMcpAiDashStats === 'undefined' ) { return; }
 	var stats       = wpMcpAiDashStats;
 	var volumeData  = stats.volume_by_day;
@@ -661,8 +660,8 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		},
 		options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
 	} );
-})();
-JS;
+})();";
+
 		// phpcs:enable
 	}
 
@@ -692,13 +691,22 @@ JS;
 			'open_conversations'   => 0,
 			'human_takeover_count' => 0,
 			'inbound_today'        => 0,
-			'volume_by_day'        => array( 'labels' => array(), 'counts' => array() ),
-			'by_channel'           => array( 'labels' => array(), 'counts' => array() ),
-			'by_direction'         => array( 'inbound' => 0, 'outbound' => 0 ),
+			'volume_by_day'        => array(
+				'labels' => array(),
+				'counts' => array(),
+			),
+			'by_channel'           => array(
+				'labels' => array(),
+				'counts' => array(),
+			),
+			'by_direction'         => array(
+				'inbound'  => 0,
+				'outbound' => 0,
+			),
 		);
 
-		$msg_table  = class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ? WP_MCP_AI_Channel_Messages_CCT::get_table_name() : '';
-		$con_table  = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ? WP_MCP_AI_Channel_Contacts_CCT::get_table_name() : '';
+		$msg_table = class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ? WP_MCP_AI_Channel_Messages_CCT::get_table_name() : '';
+		$con_table = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ? WP_MCP_AI_Channel_Contacts_CCT::get_table_name() : '';
 
 		$seven_days_ago = time() - ( 7 * DAY_IN_SECONDS );
 		$today_start    = mktime( 0, 0, 0 );
@@ -733,7 +741,10 @@ JS;
 				$vol_labels[] = isset( $row['day'] ) ? $row['day'] : '';
 				$vol_counts[] = isset( $row['cnt'] ) ? (int) $row['cnt'] : 0;
 			}
-			$default['volume_by_day'] = array( 'labels' => $vol_labels, 'counts' => $vol_counts );
+			$default['volume_by_day'] = array(
+				'labels' => $vol_labels,
+				'counts' => $vol_counts,
+			);
 
 			// By channel.
 			$channel_rows = $wpdb->get_results(
@@ -744,8 +755,8 @@ JS;
 				ARRAY_A
 			);
 
-			$ch_labels = array();
-			$ch_counts = array();
+			$ch_labels   = array();
+			$ch_counts   = array();
 			$channel_map = array(
 				'whatsapp'    => 'WhatsApp',
 				'telegram'    => 'Telegram',
@@ -762,7 +773,10 @@ JS;
 				$ch_labels[] = isset( $channel_map[ $slug ] ) ? $channel_map[ $slug ] : ucfirst( $slug );
 				$ch_counts[] = isset( $row['cnt'] ) ? (int) $row['cnt'] : 0;
 			}
-			$default['by_channel'] = array( 'labels' => $ch_labels, 'counts' => $ch_counts );
+			$default['by_channel'] = array(
+				'labels' => $ch_labels,
+				'counts' => $ch_counts,
+			);
 
 			// Inbound vs outbound.
 			$dir_rows = $wpdb->get_results(
@@ -835,7 +849,7 @@ JS;
 			<nav class="nav-tab-wrapper woo-nav-tab-wrapper cc-nav-tabs" style="margin-top:10px;">
 				<?php foreach ( $tabs as $slug => $tab ) : ?>
 					<a href="<?php echo esc_url( $tab['url'] ); ?>"
-					   class="nav-tab<?php echo $active === $slug ? ' nav-tab-active' : ''; ?>">
+						class="nav-tab<?php echo $active === $slug ? ' nav-tab-active' : ''; ?>">
 						<?php echo esc_html( $tab['label'] ); ?>
 					</a>
 				<?php endforeach; ?>
@@ -968,11 +982,11 @@ JS;
 	 */
 	protected function sanitize_automation_settings( $post ) {
 		return array(
-			'auto_reply_enabled'      => ! empty( $post['auto_reply_enabled'] ),
-			'default_assistant_id'    => isset( $post['default_assistant_id'] ) ? absint( $post['default_assistant_id'] ) : 0,
-			'welcome_message'         => isset( $post['welcome_message'] ) ? sanitize_textarea_field( wp_unslash( $post['welcome_message'] ) ) : '',
-			'human_takeover_keywords' => isset( $post['human_takeover_keywords'] ) ? sanitize_text_field( wp_unslash( $post['human_takeover_keywords'] ) ) : '',
-			'ai_resume_keywords'      => isset( $post['ai_resume_keywords'] ) ? sanitize_text_field( wp_unslash( $post['ai_resume_keywords'] ) ) : '',
+			'auto_reply_enabled'       => ! empty( $post['auto_reply_enabled'] ),
+			'default_assistant_id'     => isset( $post['default_assistant_id'] ) ? absint( $post['default_assistant_id'] ) : 0,
+			'welcome_message'          => isset( $post['welcome_message'] ) ? sanitize_textarea_field( wp_unslash( $post['welcome_message'] ) ) : '',
+			'human_takeover_keywords'  => isset( $post['human_takeover_keywords'] ) ? sanitize_text_field( wp_unslash( $post['human_takeover_keywords'] ) ) : '',
+			'ai_resume_keywords'       => isset( $post['ai_resume_keywords'] ) ? sanitize_text_field( wp_unslash( $post['ai_resume_keywords'] ) ) : '',
 			'auto_resolve_after_hours' => isset( $post['auto_resolve_after_hours'] ) ? absint( $post['auto_resolve_after_hours'] ) : 0,
 		);
 	}

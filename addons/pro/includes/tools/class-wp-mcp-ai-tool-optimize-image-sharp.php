@@ -291,7 +291,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		// Check if required dependencies exist (detect-libc, color, semver).
 		// These should be in Sharp's node_modules subdirectory.
 		$base_dir = file_exists( $vendor_path ) ? WP_MCP_AI_PRO_PATH . 'assets/vendor/sharp/' : WP_MCP_AI_PRO_PATH . 'node_modules/sharp/';
-		
+
 		$required_deps = array( 'detect-libc', 'color', 'semver' );
 		foreach ( $required_deps as $dep ) {
 			$dep_path = $base_dir . 'node_modules/' . $dep;
@@ -370,7 +370,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Create a uniquely-named output path with the correct extension.
-		// wp_tempnam() creates a placeholder file to reserve the path; we delete it
+		// wp_tempnam() creates a placeholder file to reserve the path; we delete it.
 		// immediately so Sharp can write to the extension-appended path without conflict.
 		$output_base = wp_tempnam( 'sharp-output-' );
 		$output_file = $output_base . '.' . $source_ext;

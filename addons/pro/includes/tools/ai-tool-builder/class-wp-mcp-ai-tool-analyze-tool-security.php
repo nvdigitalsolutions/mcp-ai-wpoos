@@ -110,14 +110,18 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get code to analyze.
 		$code = '';
@@ -136,7 +140,7 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 				);
 			}
 
-			// Security: Restrict to the WordPress content directory so this tool
+			// Security: Restrict to the WordPress content directory so this tool.
 			// cannot be used to read arbitrary server files (e.g. /etc/passwd).
 			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
 				return array(

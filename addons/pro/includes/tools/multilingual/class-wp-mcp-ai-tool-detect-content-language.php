@@ -34,6 +34,13 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 		return __( 'Detect Content Language tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'detect_content_language';
 	}
@@ -46,6 +53,13 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 		return __( 'Auto-detect content language using AI-powered language detection algorithms.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -63,10 +77,22 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,

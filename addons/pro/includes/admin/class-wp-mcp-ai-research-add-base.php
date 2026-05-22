@@ -443,13 +443,13 @@ border-radius: 4px;
 <td><?php echo esc_html( date_i18n( get_option( 'date_format' ), time() ) ); ?></td>
 <td class="item-actions">
 <a href="<?php echo esc_url( $edit_url ); ?>"
-   title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+	title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
 	<span class="dashicons dashicons-edit" aria-hidden="true"></span>
 	<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 </a>
 <a href="<?php echo esc_url( $delete_url ); ?>"
-   onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this item?', 'mcp-ai-wpoos-pro' ); ?>');"
-   title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>">
+	onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this item?', 'mcp-ai-wpoos-pro' ); ?>');"
+	title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>">
 	<span class="dashicons dashicons-trash" aria-hidden="true"></span>
 	<span class="screen-reader-text"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></span>
 </a>
@@ -721,7 +721,7 @@ border-radius: 4px;
 
 		// Handle update.
 		if ( isset( $_POST['action'] ) && 'update' === $_POST['action'] ) {
-			$item_id   = isset( $_POST['item_id'] ) ? absint( $_POST['item_id'] ) : 0;
+			$item_id = isset( $_POST['item_id'] ) ? absint( $_POST['item_id'] ) : 0;
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array data; individual fields sanitized by the data store.
 			$item_data = isset( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array();
 

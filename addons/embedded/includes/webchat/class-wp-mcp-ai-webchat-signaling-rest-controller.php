@@ -473,7 +473,7 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		// peer and perform a man-in-the-middle attack on WebRTC signaling.
 		// Fail closed: if user_id is not present in the peer record, reject
 		// rather than bypassing the ownership check.
-		if ( ! isset( $from_peer_data['user_id'] ) || (int) $from_peer_data['user_id'] !== get_current_user_id() ) {
+		if ( ! isset( $from_peer_data['user_id'] ) || get_current_user_id() !== (int) $from_peer_data['user_id'] ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not own this peer identity.', 'mcp-ai-wpoos-pro' ),
@@ -537,7 +537,7 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		// peer and intercept ICE candidates.
 		// Fail closed: if user_id is not present in the peer record, reject
 		// rather than bypassing the ownership check.
-		if ( ! isset( $from_peer_data['user_id'] ) || (int) $from_peer_data['user_id'] !== get_current_user_id() ) {
+		if ( ! isset( $from_peer_data['user_id'] ) || get_current_user_id() !== (int) $from_peer_data['user_id'] ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not own this peer identity.', 'mcp-ai-wpoos-pro' ),

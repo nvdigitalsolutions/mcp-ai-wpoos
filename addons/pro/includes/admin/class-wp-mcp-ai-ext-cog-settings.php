@@ -289,8 +289,8 @@ class WP_MCP_AI_Ext_Cog_Settings {
 			? max( 100, min( 10240, absint( $input['ext_cog_max_capture_size_kb'] ) ) )
 			: 2048;
 
-		$allowed_models = array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-pro-vision', 'gemini-1.5-pro' );
-		$submitted_model = isset( $input['ext_cog_vision_model'] ) ? $input['ext_cog_vision_model'] : 'auto';
+		$allowed_models                  = array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-pro-vision', 'gemini-1.5-pro' );
+		$submitted_model                 = isset( $input['ext_cog_vision_model'] ) ? $input['ext_cog_vision_model'] : 'auto';
 		$current['ext_cog_vision_model'] = in_array( $submitted_model, $allowed_models, true )
 			? sanitize_text_field( $submitted_model )
 			: 'auto';

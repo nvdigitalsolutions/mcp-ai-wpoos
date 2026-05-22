@@ -408,8 +408,8 @@ class WP_MCP_AI_Tool_Import_ECAs_CSV implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'status'       => array( 'status', 'eca_status', 'state' ),
 		);
 
-		$mapping         = array();
-		$headers_lower   = array_map( 'strtolower', $headers );
+		$mapping       = array();
+		$headers_lower = array_map( 'strtolower', $headers );
 
 		foreach ( $known_fields as $field => $aliases ) {
 			foreach ( $aliases as $alias ) {

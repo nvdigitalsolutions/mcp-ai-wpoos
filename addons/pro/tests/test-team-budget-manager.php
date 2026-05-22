@@ -25,15 +25,18 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 	 */
 	protected $team_id = 0;
 
+	/** Set up test. */
 	public function set_up() {
 		parent::set_up();
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
 		// The CPT may not be registered in tests; use a generic post.
-		$this->team_id = self::factory()->post->create( array(
-			'post_type'  => 'post',
-			'post_title' => 'Team Alpha',
-		) );
+		$this->team_id = self::factory()->post->create(
+			array(
+				'post_type'  => 'post',
+				'post_title' => 'Team Alpha',
+			)
+		);
 
 		// Clear today's usage.
 		$key = 'wp_mcp_ai_team_usage_' . gmdate( 'Ymd' );
@@ -43,6 +46,8 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 		WP_MCP_AI_Team_Budget_Manager::get_instance();
 	}
 
+	/** Test default budget is zero.
+	 */
 	public function test_default_budget_is_zero() {
 		$mgr    = WP_MCP_AI_Team_Budget_Manager::get_instance();
 		$budget = $mgr->get_team_budget( $this->team_id );
@@ -51,13 +56,20 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 		$this->assertSame( 0, $budget['max_runs_daily'] );
 	}
 
+	/** Test set and get team budget.
+	 */
 	public function test_set_and_get_team_budget() {
 		$mgr = WP_MCP_AI_Team_Budget_Manager::get_instance();
-		$this->assertTrue( $mgr->set_team_budget( $this->team_id, array(
-			'max_cost_usd_daily' => 12.50,
-			'max_tokens_daily'   => 1000,
-			'max_runs_daily'     => 50,
-		) ) );
+		$this->assertTrue(
+			$mgr->set_team_budget(
+				$this->team_id,
+				array(
+					'max_cost_usd_daily' => 12.50,
+					'max_tokens_daily'   => 1000,
+					'max_runs_daily'     => 50,
+				)
+			)
+		);
 
 		$budget = $mgr->get_team_budget( $this->team_id );
 		$this->assertEqualsWithDelta( 12.50, $budget['max_cost_usd_daily'], 0.001 );
@@ -65,6 +77,8 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 		$this->assertSame( 50, $budget['max_runs_daily'] );
 	}
 
+	/** Test record usage increments totals.
+	 */
 	public function test_record_usage_increments_totals() {
 		$mgr = WP_MCP_AI_Team_Budget_Manager::get_instance();
 		$mgr->record_usage( $this->team_id, 1.25, 100, 1 );
@@ -76,6 +90,8 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 		$this->assertSame( 3, $usage['runs'] );
 	}
 
+	/** Test check budget returns error when cost exceeded.
+	 */
 	public function test_check_budget_returns_error_when_cost_exceeded() {
 		$mgr = WP_MCP_AI_Team_Budget_Manager::get_instance();
 		$mgr->set_team_budget( $this->team_id, array( 'max_cost_usd_daily' => 1.0 ) );
@@ -86,6 +102,8 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_team_budget_exceeded', $result->get_error_code() );
 	}
 
+	/** Test check budget fires action.
+	 */
 	public function test_check_budget_fires_action() {
 		$mgr = WP_MCP_AI_Team_Budget_Manager::get_instance();
 		$mgr->set_team_budget( $this->team_id, array( 'max_tokens_daily' => 100 ) );
@@ -105,12 +123,16 @@ class Test_Team_Budget_Manager extends WP_UnitTestCase {
 		$this->assertSame( 'tokens', $captured[1] );
 	}
 
+	/** Test set and get team namespace.
+	 */
 	public function test_set_and_get_team_namespace() {
 		$mgr = WP_MCP_AI_Team_Budget_Manager::get_instance();
 		$this->assertTrue( $mgr->set_team_namespace( $this->team_id, 'team-alpha' ) );
 		$this->assertSame( 'team-alpha', $mgr->get_team_namespace( $this->team_id ) );
 	}
 
+	/** Test namespace filter prepends team namespace.
+	 */
 	public function test_namespace_filter_prepends_team_namespace() {
 		$mgr = WP_MCP_AI_Team_Budget_Manager::get_instance();
 		$mgr->set_team_namespace( $this->team_id, 'team-alpha' );

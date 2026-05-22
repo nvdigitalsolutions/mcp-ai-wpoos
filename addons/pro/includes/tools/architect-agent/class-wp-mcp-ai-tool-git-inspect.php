@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	// ------------------------------------------------------------------ //
-	// Private operation handlers                                           //
+	// Private operation handlers                                           //.
 	// ------------------------------------------------------------------ //
 
 	/**

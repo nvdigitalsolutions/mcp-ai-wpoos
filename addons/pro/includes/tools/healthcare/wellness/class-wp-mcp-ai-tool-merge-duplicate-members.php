@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 					'no_found_rows'  => true,
 				)
 			);
-			$ids = $query->posts;
+			$ids   = $query->posts;
 			if ( ! is_array( $ids ) ) {
 				$ids = array();
 			}
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 				'count'    => count( $ids ),
 				'ids'      => array_map( 'intval', $ids ),
 			);
-			$total += count( $ids );
+			$total             += count( $ids );
 		}
 
 		if ( $dry_run ) {
@@ -246,11 +246,11 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 				'member',
 				$destination,
 				array(
-					'user_id'       => $current_user_id,
-					'tool'          => $this->get_slug(),
-					'source'        => $source,
-					'children'      => $applied,
-					'source_state'  => $source_state,
+					'user_id'      => $current_user_id,
+					'tool'         => $this->get_slug(),
+					'source'       => $source,
+					'children'     => $applied,
+					'source_state' => $source_state,
 				)
 			);
 		}

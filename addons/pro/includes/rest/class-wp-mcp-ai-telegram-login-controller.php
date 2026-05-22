@@ -615,7 +615,8 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array $auth_data Verified Telegram auth data.
+	 * @param array $auth_data  Verified Telegram auth data.
+	 * @param array $connection Connection configuration.
 	 * @return int|WP_Error WordPress user ID, or WP_Error on failure.
 	 */
 	protected function find_or_create_wp_user( array $auth_data, array $connection = array() ) {
@@ -679,7 +680,7 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 
 		// 3. Build display name from Telegram first/last name.
 		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
-		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$last_name    = ! empty( $auth_data['last_name'] ) ? sanitize_text_field( $auth_data['last_name'] ) : '';
 		$display_name = trim( $first_name . ' ' . $last_name );
 		if ( '' === $display_name ) {
 			$display_name = $login;
@@ -784,7 +785,7 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 
 		// Keep display name in sync when it has changed.
 		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
-		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$last_name    = ! empty( $auth_data['last_name'] ) ? sanitize_text_field( $auth_data['last_name'] ) : '';
 		$display_name = trim( $first_name . ' ' . $last_name );
 		if ( '' !== $display_name ) {
 			$user = get_userdata( $user_id );

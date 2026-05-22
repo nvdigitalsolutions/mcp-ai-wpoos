@@ -253,11 +253,11 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 			'success'    => true,
 			'message'    => __( 'Matter status updated. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
 			'data'       => array(
-				'matter_id'   => $matter_id,
-				'title'       => $matter->post_title,
-				'old_status'  => $old_status,
-				'new_status'  => $status,
-				'updated_at'  => current_time( 'Y-m-d H:i:s' ),
+				'matter_id'  => $matter_id,
+				'title'      => $matter->post_title,
+				'old_status' => $old_status,
+				'new_status' => $status,
+				'updated_at' => current_time( 'Y-m-d H:i:s' ),
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

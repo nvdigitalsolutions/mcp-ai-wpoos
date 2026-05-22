@@ -148,70 +148,69 @@ class NV_oOS_Graphify_Exporter {
 		$fcose_src       = $vendor_url . 'cytoscape-fcose/cytoscape-fcose.js';
 
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone export file, not a WP page.
-		return <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{$title}</title>
-<script src="{$layout_base_src}"></script>
-<script src="{$cose_base_src}"></script>
-<script src="{$cytoscape_src}"></script>
-<script src="{$fcose_src}"></script>
-<style>
-  body { margin: 0; background: #0f0f1a; color: #e0e0ff; font-family: sans-serif; }
-  #cy { width: 100vw; height: 100vh; }
-  #search { position: fixed; top: 12px; left: 12px; z-index: 10; }
-  #search input { padding: 6px 10px; border-radius: 4px; border: 1px solid #444; background: #1a1a2e; color: #e0e0ff; }
-  #info { position: fixed; top: 12px; right: 12px; z-index: 10; background: #1a1a2e; padding: 12px; border-radius: 6px; max-width: 280px; display: none; }
-  #info h3 { margin: 0 0 6px; font-size: 14px; }
-  #info p  { margin: 0; font-size: 12px; opacity: 0.8; }
-  legend { position: fixed; bottom: 12px; left: 12px; background: #1a1a2e; padding: 10px; border-radius: 6px; font-size: 12px; }
-  legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
-</style>
-</head>
-<body>
-<div id="search"><input id="q" type="text" placeholder="Search nodes…"></div>
-<div id="info"></div>
-<div id="cy"></div>
-<legend id="legend"></legend>
-<script>
-const elements = {$cy_json};
-const cy = cytoscape({
-  container: document.getElementById('cy'),
-  elements,
-  style: [
-    { selector: 'node', style: { 'label': 'data(label)', 'font-size': 10, 'color': '#e0e0ff', 'background-color': 'data(color)', 'width': 'mapData(degree,0,50,10,60)', 'height': 'mapData(degree,0,50,10,60)' } },
-    { selector: 'edge', style: { 'width': 1, 'line-color': '#444', 'opacity': 0.6, 'curve-style': 'bezier' } },
-    { selector: ':selected', style: { 'border-width': 2, 'border-color': '#fff' } }
-  ],
-  layout: { name: 'fcose', animate: true }
-});
-cy.on('tap', 'node', function(e){
-  var n=e.target.data();
-  var info=document.getElementById('info');
-  info.style.display='block';
-  // Build DOM safely: never use innerHTML with untrusted node label/type/url.
-  while(info.firstChild){info.removeChild(info.firstChild);}
-  var h=document.createElement('h3');h.textContent=n.label||'';info.appendChild(h);
-  var pt=document.createElement('p');pt.textContent='Type: '+(n.type||'');info.appendChild(pt);
-  var pd=document.createElement('p');pd.textContent='Degree: '+(parseInt(n.degree,10)||0);info.appendChild(pd);
-  if(n.url){
-    // Only allow http(s) URLs to neutralise javascript:/data: schemes.
-    var safe=/^https?:\/\//i.test(String(n.url))?String(n.url):'';
-    if(safe){
-      var pu=document.createElement('p');
-      var a=document.createElement('a');a.href=safe;a.target='_blank';a.rel='noopener noreferrer';a.style.color='#8af';a.textContent='Open \u2197';
-      pu.appendChild(a);info.appendChild(pu);
-    }
-  }
-});
-document.getElementById('q').addEventListener('input', function(){ const v=this.value.toLowerCase(); cy.nodes().forEach(n=>{ n.style('opacity', n.data('label').toLowerCase().includes(v)?1:0.2); }); });
-</script>
-</body>
-</html>
-HTML;
+		$html  = '<!DOCTYPE html>' . "\n";
+		$html .= '<html lang="en">' . "\n";
+		$html .= '<head>' . "\n";
+		$html .= '<meta charset="UTF-8">' . "\n";
+		$html .= '<meta name="viewport" content="width=device-width, initial-scale=1">' . "\n";
+		$html .= '<title>' . $title . '</title>' . "\n";
+		$html .= '<script src="' . $layout_base_src . '"></script>' . "\n";
+		$html .= '<script src="' . $cose_base_src . '"></script>' . "\n";
+		$html .= '<script src="' . $cytoscape_src . '"></script>' . "\n";
+		$html .= '<script src="' . $fcose_src . '"></script>' . "\n";
+		$html .= '<style>' . "\n";
+		$html .= '  body { margin: 0; background: #0f0f1a; color: #e0e0ff; font-family: sans-serif; }' . "\n";
+		$html .= '  #cy { width: 100vw; height: 100vh; }' . "\n";
+		$html .= '  #search { position: fixed; top: 12px; left: 12px; z-index: 10; }' . "\n";
+		$html .= '  #search input { padding: 6px 10px; border-radius: 4px; border: 1px solid #444; background: #1a1a2e; color: #e0e0ff; }' . "\n";
+		$html .= '  #info { position: fixed; top: 12px; right: 12px; z-index: 10; background: #1a1a2e; padding: 12px; border-radius: 6px; max-width: 280px; display: none; }' . "\n";
+		$html .= '  #info h3 { margin: 0 0 6px; font-size: 14px; }' . "\n";
+		$html .= '  #info p  { margin: 0; font-size: 12px; opacity: 0.8; }' . "\n";
+		$html .= '  legend { position: fixed; bottom: 12px; left: 12px; background: #1a1a2e; padding: 10px; border-radius: 6px; font-size: 12px; }' . "\n";
+		$html .= '  legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }' . "\n";
+		$html .= '</style>' . "\n";
+		$html .= '</head>' . "\n";
+		$html .= '<body>' . "\n";
+		$html .= '<div id="search"><input id="q" type="text" placeholder="Search nodes…"></div>' . "\n";
+		$html .= '<div id="info"></div>' . "\n";
+		$html .= '<div id="cy"></div>' . "\n";
+		$html .= '<legend id="legend"></legend>' . "\n";
+		$html .= '<script>' . "\n";
+		$html .= 'const elements = ' . $cy_json . ';' . "\n";
+		$html .= 'const cy = cytoscape({' . "\n";
+		$html .= '  container: document.getElementById(\'cy\'),' . "\n";
+		$html .= '  elements,' . "\n";
+		$html .= '  style: [' . "\n";
+		$html .= '    { selector: \'node\', style: { \'label\': \'data(label)\', \'font-size\': 10, \'color\': \'#e0e0ff\', \'background-color\': \'data(color)\', \'width\': \'mapData(degree,0,50,10,60)\', \'height\': \'mapData(degree,0,50,10,60)\' } },' . "\n";
+		$html .= '    { selector: \'edge\', style: { \'width\': 1, \'line-color\': \'#444\', \'opacity\': 0.6, \'curve-style\': \'bezier\' } },' . "\n";
+		$html .= '    { selector: \':selected\', style: { \'border-width\': 2, \'border-color\': \'#fff\' } }' . "\n";
+		$html .= '  ],' . "\n";
+		$html .= '  layout: { name: \'fcose\', animate: true }' . "\n";
+		$html .= '});' . "\n";
+		$html .= 'cy.on(\'tap\', \'node\', function(e){' . "\n";
+		$html .= '  var n=e.target.data();' . "\n";
+		$html .= '  var info=document.getElementById(\'info\');' . "\n";
+		$html .= '  info.style.display=\'block\';' . "\n";
+		$html .= '  // Build DOM safely: never use innerHTML with untrusted node label/type/url.' . "\n";
+		$html .= '  while(info.firstChild){info.removeChild(info.firstChild);}' . "\n";
+		$html .= '  var h=document.createElement(\'h3\');h.textContent=n.label||\'\';info.appendChild(h);' . "\n";
+		$html .= '  var pt=document.createElement(\'p\');pt.textContent=\'Type: \'+(n.type||\'\');info.appendChild(pt);' . "\n";
+		$html .= '  var pd=document.createElement(\'p\');pd.textContent=\'Degree: \'+(parseInt(n.degree,10)||0);info.appendChild(pd);' . "\n";
+		$html .= '  if(n.url){' . "\n";
+		$html .= '    // Only allow http(s) URLs to neutralise javascript:/data: schemes.' . "\n";
+		$html .= '    var safe=/^https?:\/\//i.test(String(n.url))?String(n.url):\'\';' . "\n";
+		$html .= '    if(safe){' . "\n";
+		$html .= '      var pu=document.createElement(\'p\');' . "\n";
+		$html .= '      var a=document.createElement(\'a\');a.href=safe;a.target=\'_blank\';a.rel=\'noopener noreferrer\';a.style.color=\'#8af\';a.textContent=\'Open \\u2197\';' . "\n";
+		$html .= '      pu.appendChild(a);info.appendChild(pu);' . "\n";
+		$html .= '    }' . "\n";
+		$html .= '  }' . "\n";
+		$html .= '});' . "\n";
+		$html .= 'document.getElementById(\'q\').addEventListener(\'input\', function(){ const v=this.value.toLowerCase(); cy.nodes().forEach(n=>{ n.style(\'opacity\', n.data(\'label\').toLowerCase().includes(v)?1:0.2); }); });' . "\n";
+		$html .= '</script>' . "\n";
+		$html .= '</body>' . "\n";
+		$html .= '</html>' . "\n";
+		return $html;
 		// phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 	}
 
@@ -248,7 +247,7 @@ HTML;
 
 		$edge_idx = 0;
 		foreach ( $edges as $e ) {
-			$xml .= '    <edge id="e' . $edge_idx++ . '" source="' . esc_attr( $e->source_node_id ) . '" target="' . esc_attr( $e->target_node_id ) . '">' . "\n";
+			$xml .= '    <edge id="e' . ( $edge_idx++ ) . '" source="' . esc_attr( $e->source_node_id ) . '" target="' . esc_attr( $e->target_node_id ) . '">' . "\n";
 			$xml .= '      <data key="relation">' . esc_html( $e->relation ) . '</data>' . "\n";
 			$xml .= '      <data key="confidence">' . floatval( $e->confidence ) . '</data>' . "\n";
 			$xml .= '    </edge>' . "\n";

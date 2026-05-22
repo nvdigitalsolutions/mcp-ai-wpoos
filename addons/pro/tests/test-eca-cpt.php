@@ -158,14 +158,22 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0, $post_id );
 
 		// Simulate POST data for metaboxes.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['wp_mcp_ai_eca_details_nonce'] = wp_create_nonce( 'wp_mcp_ai_eca_details_nonce' );
-		$_POST['wp_mcp_ai_eca_code']          = 'ECA-001';
-		$_POST['wp_mcp_ai_eca_type']          = 'club';
-		$_POST['wp_mcp_ai_eca_venue']         = 'Sports Hall';
-		$_POST['wp_mcp_ai_eca_status']        = 'active';
-		$_POST['wp_mcp_ai_eca_is_paid']       = 'yes';
-		$_POST['wp_mcp_ai_eca_cost']          = '50.00';
-		$_POST['wp_mcp_ai_eca_cost_period']   = 'term';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_code'] = 'ECA-001';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_type'] = 'club';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_venue'] = 'Sports Hall';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_status'] = 'active';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_is_paid'] = 'yes';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_cost'] = '50.00';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_cost_period'] = 'term';
 
 		// Get the post object.
 		$post = get_post( $post_id );
@@ -216,12 +224,18 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data for schedule metabox.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['wp_mcp_ai_eca_schedule_nonce'] = wp_create_nonce( 'wp_mcp_ai_eca_schedule_nonce' );
-		$_POST['wp_mcp_ai_eca_day']            = 'Monday';
-		$_POST['wp_mcp_ai_eca_start_time']     = '3:30 PM';
-		$_POST['wp_mcp_ai_eca_end_time']       = '4:30 PM';
-		$_POST['wp_mcp_ai_eca_teachers']       = 'Mr. Smith, Ms. Johnson';
-		$_POST['wp_mcp_ai_eca_year_groups']    = 'Year 7, Year 8';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_day'] = 'Monday';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_start_time'] = '3:30 PM';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_end_time'] = '4:30 PM';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_teachers'] = 'Mr. Smith, Ms. Johnson';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['wp_mcp_ai_eca_year_groups'] = 'Year 7, Year 8';
 
 		// Get the post object.
 		$post = get_post( $post_id );

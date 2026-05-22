@@ -104,25 +104,26 @@ class NV_oOS_Chat_Spa_Shortcode {
 			'nvoos-chat-spa',
 			'NVOOS_CHAT_SPA',
 			array(
-				'apiUrl'    => esc_url_raw( rest_url( NV_oOS_Chat_Spa_REST::REST_NAMESPACE ) ),
-				'proApi'    => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
-				'nonce'     => wp_create_nonce( 'wp_rest' ),
-				'config'    => $config,
+				'apiUrl'        => esc_url_raw( rest_url( NV_oOS_Chat_Spa_REST::REST_NAMESPACE ) ),
+				'proApi'        => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
+				'nonce'         => wp_create_nonce( 'wp_rest' ),
+				'config'        => $config,
+
 				/*
-				 * Endpoint map — the SPA POSTs to these existing NV oOS chat REST
-				 * routes via its custom fetch + SSE → AI SDK Data Stream adapter.
-				 * No new chat endpoints are introduced; the WordPress PHP layer
-				 * remains the AI provider gateway and orchestrator.
-				 */
-				'endpoints' => array(
-					'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
-					'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
-					'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
-					'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
-					'approvals'   => current_user_can( 'manage_options' )
-						? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
-						: '',
-				),
+					 * Endpoint map — the SPA POSTs to these existing NV oOS chat REST
+					 * routes via its custom fetch + SSE → AI SDK Data Stream adapter.
+					 * No new chat endpoints are introduced; the WordPress PHP layer
+					 * remains the AI provider gateway and orchestrator.
+					 */
+					'endpoints' => array(
+						'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
+						'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+						'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
+						'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+						'approvals'   => current_user_can( 'manage_options' )
+							? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
+							: '',
+					),
 			)
 		);
 		wp_enqueue_style( 'nvoos-chat-spa' );

@@ -229,8 +229,8 @@ class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, 
 				$course_name
 			) . ' ' . self::DISCLAIMER,
 			'data'       => array(
-				'credit_id'    => $credit_id,
-				'credit_entry' => $new_credit,
+				'credit_id'     => $credit_id,
+				'credit_entry'  => $new_credit,
 				'total_credits' => $this->calculate_total_credits( $existing_credits ),
 			),
 			'disclaimer' => self::DISCLAIMER,
@@ -367,7 +367,7 @@ class WP_MCP_AI_Tool_LF_CLE_Credit_Tracker implements WP_MCP_AI_Tool_Interface, 
 				$deleted['course_name']
 			) . ' ' . self::DISCLAIMER,
 			'data'       => array(
-				'deleted_entry'  => $deleted,
+				'deleted_entry'     => $deleted,
 				'remaining_credits' => $this->calculate_total_credits( $credits ),
 			),
 			'disclaimer' => self::DISCLAIMER,

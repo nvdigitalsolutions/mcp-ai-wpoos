@@ -72,8 +72,18 @@ class Test_Architectural_Engine extends WP_UnitTestCase {
 	 * Setback validator flags violations and reports compliant.
 	 */
 	public function test_validate_setbacks() {
-		$proposed = array( 'front' => 2.5, 'rear' => 1.0, 'left' => 1.0, 'right' => 0.5 );
-		$required = array( 'front' => 2.0, 'rear' => 1.0, 'left' => 1.0, 'right' => 1.0 );
+		$proposed = array(
+			'front' => 2.5,
+			'rear'  => 1.0,
+			'left'  => 1.0,
+			'right' => 0.5,
+		);
+		$required = array(
+			'front' => 2.0,
+			'rear'  => 1.0,
+			'left'  => 1.0,
+			'right' => 1.0,
+		);
 		$result   = WP_MCP_AI_Architectural_Engine::validate_setbacks( $proposed, $required );
 		$this->assertFalse( $result['compliant'] );
 		$this->assertCount( 1, $result['violations'] );

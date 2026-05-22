@@ -299,7 +299,7 @@ class WP_MCP_AI_Media_Template_Presets {
 	public static function seed_presets() {
 		// Check if already seeded with current version.
 		$seeded_version = get_option( self::SEEDED_VERSION_KEY, '' );
-		if ( $seeded_version === self::PRESET_VERSION ) {
+		if ( self::PRESET_VERSION === $seeded_version ) {
 			return;
 		}
 

@@ -79,6 +79,11 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'destructive' );
 	}

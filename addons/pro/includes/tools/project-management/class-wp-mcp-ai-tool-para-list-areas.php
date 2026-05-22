@@ -29,21 +29,41 @@ class WP_MCP_AI_Tool_PARA_List_Areas implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return __( 'List PARA Areas (ongoing responsibilities), optionally filtered by owner or review cadence. Returns title, owner, standard, cadence, and last-reviewed timestamp.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'owner_id'       => array( 'type' => 'integer', 'minimum' => 1 ),
+				'owner_id'       => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
 				'review_cadence' => array(
 					'type' => 'string',
 					'enum' => array( 'weekly', 'biweekly', 'monthly', 'quarterly', 'annually' ),
 				),
-				'limit'          => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 25 ),
+				'limit'          => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 100,
+					'default' => 25,
+				),
 			),
 			'additionalProperties' => false,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only', 'paginated' );
 	}

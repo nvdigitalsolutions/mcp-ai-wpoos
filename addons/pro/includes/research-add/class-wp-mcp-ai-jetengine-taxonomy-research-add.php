@@ -73,15 +73,15 @@ class WP_MCP_AI_JetEngine_Taxonomy_Research_Add extends WP_MCP_AI_Research_Add_B
 
 		// For taxonomies, we use a special post type identifier.
 		// The base class expects a post_type, so we'll use a convention: 'tax_' prefix.
-		$this->post_type   = 'tax_' . $taxonomy_slug;
-		$this->page_title  = sprintf(
+		$this->post_type  = 'tax_' . $taxonomy_slug;
+		$this->page_title = sprintf(
 			/* translators: %s: Taxonomy name */
 			__( '%s - Research & Add', 'mcp-ai-wpoos-pro' ),
 			$this->get_taxonomy_name()
 		);
-		$this->menu_title  = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
-		$this->page_slug   = 'wp-mcp-ai-jetengine-taxonomy-research-' . $taxonomy_slug;
-		$this->capability  = 'manage_categories'; // Standard taxonomy management capability.
+		$this->menu_title = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
+		$this->page_slug  = 'wp-mcp-ai-jetengine-taxonomy-research-' . $taxonomy_slug;
+		$this->capability = 'manage_categories'; // Standard taxonomy management capability.
 
 		// Initialize parent with dynamic toolkit slug.
 		parent::__construct( 'jetengine_taxonomy_' . $taxonomy_slug );
@@ -279,24 +279,24 @@ class WP_MCP_AI_JetEngine_Taxonomy_Research_Add extends WP_MCP_AI_Research_Add_B
 	 */
 	private function map_jetengine_field_type( $jetengine_type ) {
 		$type_map = array(
-			'text'         => 'text',
-			'textarea'     => 'textarea',
-			'wysiwyg'      => 'wysiwyg',
-			'number'       => 'number',
-			'date'         => 'date',
-			'time'         => 'time',
-			'datetime'     => 'datetime-local',
-			'checkbox'     => 'checkbox',
-			'radio'        => 'radio',
-			'select'       => 'select',
-			'media'        => 'media',
-			'gallery'      => 'gallery',
-			'repeater'     => 'repeater',
-			'iconpicker'   => 'text',
-			'colorpicker'  => 'colorpicker',
-			'switcher'     => 'checkbox', // JetEngine switcher -> checkbox.
-			'posts'        => 'select',
-			'html'         => 'wysiwyg',
+			'text'        => 'text',
+			'textarea'    => 'textarea',
+			'wysiwyg'     => 'wysiwyg',
+			'number'      => 'number',
+			'date'        => 'date',
+			'time'        => 'time',
+			'datetime'    => 'datetime-local',
+			'checkbox'    => 'checkbox',
+			'radio'       => 'radio',
+			'select'      => 'select',
+			'media'       => 'media',
+			'gallery'     => 'gallery',
+			'repeater'    => 'repeater',
+			'iconpicker'  => 'text',
+			'colorpicker' => 'colorpicker',
+			'switcher'    => 'checkbox', // JetEngine switcher -> checkbox.
+			'posts'       => 'select',
+			'html'        => 'wysiwyg',
 		);
 
 		return isset( $type_map[ $jetengine_type ] ) ? $type_map[ $jetengine_type ] : 'text';

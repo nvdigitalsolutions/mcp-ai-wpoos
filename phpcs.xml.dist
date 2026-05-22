@@ -29,9 +29,18 @@
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>*/tests/fixtures/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
-<exclude-pattern>*/addons/pro/*</exclude-pattern>
-<exclude-pattern>*/addons/saas-controller/*</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
+<!-- Cloud-worker wp-config-local.php is a local Docker/development config, not addon code. -->
+<exclude-pattern>*/addons/cloud-worker/wp-config-local.php</exclude-pattern>
+<!-- These files trigger a PHPCS parse error in PHPCSUtils AbstractArrayDeclarationSniff (PHP 8.3 bug). -->
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-get-companies.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-research-company.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
@@ -41,16 +50,15 @@
 <!-- Test files: PHPUnit test files use the test-*.php naming convention, which does not
      match the WordPress class-*.php convention. The filename sniff is not applicable. -->
 <exclude-pattern>*/tests/test-*</exclude-pattern>
-	<!-- Docs Hub addon files intentionally use their own class/file naming scheme. -->
-	<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
-	<!-- Graphify embeddings keeps the historical nvoos filename for backward compatibility. -->
-	<exclude-pattern>*/addons/graphify/includes/class-nvoos-graphify-embeddings.php</exclude-pattern>
+	<!-- Addons intentionally use the NVOOS_* class/file naming scheme. -->
+	<exclude-pattern>*/addons/*</exclude-pattern>
 	<!-- Test files that intentionally contain multiple stub/test classes -->
 	<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
 </rule>
 
 <rule ref="PEAR.NamingConventions.ValidClassName">
-<exclude-pattern>*/addons/docs-hub/includes/*</exclude-pattern>
+	<!-- Addons intentionally use the NVOOS_* class naming scheme. -->
+	<exclude-pattern>*/addons/*</exclude-pattern>
 </rule>
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">

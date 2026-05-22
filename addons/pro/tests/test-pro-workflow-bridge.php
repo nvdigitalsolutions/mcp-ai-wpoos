@@ -17,6 +17,7 @@ class Test_Pro_Workflow_Bridge extends WP_UnitTestCase {
 	/**
 	 * Set up: instantiate the bridge so its hooks are wired.
 	 */
+	/** Set up test. */
 	public function set_up() {
 		parent::set_up();
 
@@ -57,7 +58,11 @@ class Test_Pro_Workflow_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_guard_agent_prompt_respects_prior_short_circuit() {
 		$bridge = WP_MCP_AI_Pro_Workflow_Bridge::get_instance();
-		$prior  = array( 'type' => 'agent', 'status' => 'completed', 'result' => 'pre-handled' );
+		$prior  = array(
+			'type'   => 'agent',
+			'status' => 'completed',
+			'result' => 'pre-handled',
+		);
 		$out    = $bridge->guard_agent_prompt( $prior, 'agent_a', 'hello world', array() );
 		$this->assertSame( $prior, $out );
 	}
@@ -89,7 +94,12 @@ class Test_Pro_Workflow_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_finalize_run_without_mapping_is_noop() {
 		$bridge = WP_MCP_AI_Pro_Workflow_Bridge::get_instance();
-		$bridge->finalize_run( array( 'id' => 'never-existed', 'status' => 'completed' ) );
+		$bridge->finalize_run(
+			array(
+				'id'     => 'never-existed',
+				'status' => 'completed',
+			)
+		);
 		$this->assertTrue( true );
 	}
 }

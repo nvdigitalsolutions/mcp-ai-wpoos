@@ -42,8 +42,8 @@ if ( $is_enabled && ! $is_base ) {
 		WP_MCP_AI_CRE_Debt_Research_Page::init();
 
 		// Load Portfolio Dashboard page.
-		$cre_settings    = get_option( 'wp_mcp_ai_cre_debt_settings', array() );
-		$dashboard_on    = isset( $cre_settings['enable_portfolio_dashboard'] ) ? (bool) $cre_settings['enable_portfolio_dashboard'] : true;
+		$cre_settings = get_option( 'wp_mcp_ai_cre_debt_settings', array() );
+		$dashboard_on = isset( $cre_settings['enable_portfolio_dashboard'] ) ? (bool) $cre_settings['enable_portfolio_dashboard'] : true;
 		if ( $dashboard_on ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cre-debt-dashboard-page.php';
 			WP_MCP_AI_CRE_Debt_Dashboard_Page::init();

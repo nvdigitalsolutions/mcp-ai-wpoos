@@ -64,12 +64,12 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'member_id'  => array(
+				'member_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Member post ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergens'  => array(
+				'allergens' => array(
 					'type'        => 'array',
 					'description' => __( 'Allergen names or substrings to test (case-insensitive).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),

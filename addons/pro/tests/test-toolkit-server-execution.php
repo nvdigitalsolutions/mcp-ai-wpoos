@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 /**
  * Test_Toolkit_Server_Execution
  *
@@ -15,17 +16,41 @@ require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
  * any of the Pro toolkits' real dependencies.
  */
 if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool' ) ) {
+	/**
+	 * Test echo tool for toolkit server execution tests.
+	 */
 	class WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool implements WP_MCP_AI_Tool_Interface {
 		use WP_MCP_AI_Tool_Default_Capability;
+
+		/**
+		 * Get slug.
+		 *
+		 * @return string
+		 */
 		public function get_slug() {
 			return 'toolkit_mcp_test_echo';
 		}
+		/**
+		 * Get name.
+		 *
+		 * @return string
+		 */
 		public function get_name() {
 			return 'Echo';
 		}
+		/**
+		 * Get description.
+		 *
+		 * @return string
+		 */
 		public function get_description() {
 			return 'Echo test tool';
 		}
+		/**
+		 * Get parameters schema.
+		 *
+		 * @return array
+		 */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -34,6 +59,13 @@ if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool' ) ) {
 				),
 			);
 		}
+		/**
+		 * Execute tool.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			return array(
 				'echo'    => isset( $arguments['msg'] ) ? (string) $arguments['msg'] : '',
@@ -44,15 +76,21 @@ if ( ! class_exists( 'WP_MCP_AI_Toolkit_MCP_Test_Echo_Tool' ) ) {
 }
 
 /**
+ * Summary.
+ *
+ * @phpcs:ignore Universal.Files.OneObjectStructurePerFile.MultipleFound
+ *
  * @group toolkit-mcp-servers
  */
 class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var int
 	 */
 	private $admin_user_id = 0;
 
+	/** Set up test. */
 	public function set_up() {
 		parent::set_up();
 
@@ -84,6 +122,7 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_user_id );
 	}
 
+	/** Tear down test. */
 	public function tear_down() {
 		WP_MCP_AI_Tool_Registry::get_instance()->unregister_tool( 'toolkit_mcp_test_echo' );
 		delete_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . 'crm' );
@@ -107,6 +146,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		return $response->get_data();
 	}
 
+	/** Test tools call routes through registry.
+	 */
 	public function test_tools_call_routes_through_registry() {
 		$data = $this->rpc(
 			'crm',
@@ -130,6 +171,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( 'crm', $payload['context'], 'Server slug should be threaded through execution context.' );
 	}
 
+	/** Test tools call rejects tool outside allowlist.
+	 */
 	public function test_tools_call_rejects_tool_outside_allowlist() {
 		// Set an allowlist that excludes the echo tool.
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
@@ -146,7 +189,10 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 				'jsonrpc' => '2.0',
 				'id'      => 2,
 				'method'  => 'tools/call',
-				'params'  => array( 'name' => 'toolkit_mcp_test_echo', 'arguments' => array() ),
+				'params'  => array(
+					'name'      => 'toolkit_mcp_test_echo',
+					'arguments' => array(),
+				),
 			)
 		);
 
@@ -155,6 +201,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( 'toolkit_mcp_test_echo', $data['error']['data']['tool'] );
 	}
 
+	/** Test tools call missing name returns invalid params.
+	 */
 	public function test_tools_call_missing_name_returns_invalid_params() {
 		$data = $this->rpc(
 			'crm',
@@ -169,6 +217,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( -32602, $data['error']['code'] );
 	}
 
+	/** Test tools call disabled server rejects method.
+	 */
 	public function test_tools_call_disabled_server_rejects_method() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$server->update_configuration( array( 'enabled' => false ) );
@@ -179,13 +229,18 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 				'jsonrpc' => '2.0',
 				'id'      => 4,
 				'method'  => 'tools/call',
-				'params'  => array( 'name' => 'toolkit_mcp_test_echo', 'arguments' => array() ),
+				'params'  => array(
+					'name'      => 'toolkit_mcp_test_echo',
+					'arguments' => array(),
+				),
 			)
 		);
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertSame( -32601, $data['error']['code'] );
 	}
 
+	/** Test resources read returns descriptor for native uri.
+	 */
 	public function test_resources_read_returns_descriptor_for_native_uri() {
 		$server  = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$entries = $server->get_resources();
@@ -208,6 +263,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertFalse( $body['mounted'] );
 	}
 
+	/** Test resources read unknown uri errors.
+	 */
 	public function test_resources_read_unknown_uri_errors() {
 		$data = $this->rpc(
 			'crm',
@@ -222,6 +279,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( -32602, $data['error']['code'] );
 	}
 
+	/** Test prompts get returns messages.
+	 */
 	public function test_prompts_get_returns_messages() {
 		$server  = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$prompts = $server->get_prompts();
@@ -242,6 +301,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( 'user', $data['result']['messages'][0]['role'] );
 	}
 
+	/** Test prompts get unknown name errors.
+	 */
 	public function test_prompts_get_unknown_name_errors() {
 		$data = $this->rpc(
 			'crm',
@@ -256,6 +317,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( -32602, $data['error']['code'] );
 	}
 
+	/** Test before and after call hooks fire.
+	 */
 	public function test_before_and_after_call_hooks_fire() {
 		$before = 0;
 		$after  = 0;
@@ -296,6 +359,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$this->assertSame( 1, $after );
 	}
 
+	/** Test mounted uri is marked read only.
+	 */
 	public function test_mounted_uri_is_marked_read_only() {
 		// Architectural Design mounts the Healthcare consolidate page.
 		WP_MCP_AI_Toolkit_Server_Registry::reset_instance();
@@ -303,8 +368,8 @@ class Test_Toolkit_Server_Execution extends WP_UnitTestCase {
 		$registry->register( new WP_MCP_AI_Healthcare_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Architectural_Design_MCP_Server() );
 
-		$server  = $registry->get( 'architectural-design' );
-		$entries = $server->get_resources();
+		$server      = $registry->get( 'architectural-design' );
+		$entries     = $server->get_resources();
 		$mounted_uri = null;
 		foreach ( $entries as $entry ) {
 			if ( isset( $entry['annotations']['readOnly'] ) && true === $entry['annotations']['readOnly'] ) {

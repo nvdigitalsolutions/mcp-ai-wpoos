@@ -46,44 +46,44 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'       => array(
+				'member_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this reminder is for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'reminder_type'   => array(
+				'reminder_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Type of health reminder (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'medication', 'checkup', 'prescription_refill', 'lab_test', 'vaccination', 'follow_up', 'custom' ),
 				),
-				'title'           => array(
+				'title'                => array(
 					'type'        => 'string',
 					'description' => __( 'Reminder title (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'     => array(
+				'description'          => array(
 					'type'        => 'string',
 					'description' => __( 'Reminder description or notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
 				),
-				'reminder_date'   => array(
+				'reminder_date'        => array(
 					'type'        => 'string',
 					'description' => __( 'Date for reminder (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'reminder_time'   => array(
+				'reminder_time'        => array(
 					'type'        => 'string',
 					'description' => __( 'Time for reminder (HH:MM format, 24-hour) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{2}:\d{2}$',
 					'default'     => '09:00',
 				),
-				'is_recurring'    => array(
+				'is_recurring'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether reminder should recur (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'recurrence_rule' => array(
+				'recurrence_rule'      => array(
 					'type'        => 'string',
 					'description' => __( 'Recurrence pattern if recurring (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'daily', 'weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly', 'custom' ),
@@ -97,24 +97,24 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 					),
 					'default'     => array( 'email' ),
 				),
-				'advance_notice_days' => array(
+				'advance_notice_days'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Days before event to send reminder (optional, default: 1)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 365,
 					'default'     => 1,
 				),
-				'related_record_id' => array(
+				'related_record_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of related health record (prescription, checkup, etc.) (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'related_record_type' => array(
+				'related_record_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Type of related health record (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'prescription', 'checkup', 'medical_record', 'allergy' ),
 				),
-				'priority'        => array(
+				'priority'             => array(
 					'type'        => 'string',
 					'description' => __( 'Reminder priority level (optional, default: normal)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'low', 'normal', 'high', 'urgent' ),
@@ -150,6 +150,11 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'cron-scheduling' );
 	}
@@ -232,38 +237,38 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Calculate the actual notification timestamp (reminder_date - advance_notice_days).
-		$reminder_timestamp    = strtotime( $reminder_date . ' ' . $reminder_time );
+		$reminder_timestamp     = strtotime( $reminder_date . ' ' . $reminder_time );
 		$notification_timestamp = $reminder_timestamp - ( $advance_notice_days * DAY_IN_SECONDS );
 
 		// Store reminder as custom post type or option.
 		// Using WordPress option for simplicity. Could be enhanced to use CPT for better management.
 		$reminder_data = array(
-			'member_id'            => $member_id,
-			'member_name'          => $member->post_title,
-			'reminder_type'        => $reminder_type,
-			'title'                => $title,
-			'description'          => $description,
-			'reminder_date'        => $reminder_date,
-			'reminder_time'        => $reminder_time,
-			'reminder_timestamp'   => $reminder_timestamp,
+			'member_id'              => $member_id,
+			'member_name'            => $member->post_title,
+			'reminder_type'          => $reminder_type,
+			'title'                  => $title,
+			'description'            => $description,
+			'reminder_date'          => $reminder_date,
+			'reminder_time'          => $reminder_time,
+			'reminder_timestamp'     => $reminder_timestamp,
 			'notification_timestamp' => $notification_timestamp,
-			'is_recurring'         => $is_recurring,
-			'recurrence_rule'      => $recurrence_rule,
-			'notification_methods' => $notification_methods,
-			'advance_notice_days'  => $advance_notice_days,
-			'related_record_id'    => $related_record_id,
-			'related_record_type'  => $related_record_type,
-			'priority'             => $priority,
-			'status'               => 'active',
-			'created_at'           => current_time( 'mysql' ),
-			'created_by'           => $current_user_id,
+			'is_recurring'           => $is_recurring,
+			'recurrence_rule'        => $recurrence_rule,
+			'notification_methods'   => $notification_methods,
+			'advance_notice_days'    => $advance_notice_days,
+			'related_record_id'      => $related_record_id,
+			'related_record_type'    => $related_record_type,
+			'priority'               => $priority,
+			'status'                 => 'active',
+			'created_at'             => current_time( 'mysql' ),
+			'created_by'             => $current_user_id,
 		);
 
 		// Generate unique reminder ID.
 		$reminder_id = 'health_reminder_' . uniqid();
 
 		// Store reminder in options table (transient-like storage).
-		$all_reminders = get_option( 'wp_mcp_ai_health_reminders', array() );
+		$all_reminders                 = get_option( 'wp_mcp_ai_health_reminders', array() );
 		$all_reminders[ $reminder_id ] = $reminder_data;
 		update_option( 'wp_mcp_ai_health_reminders', $all_reminders );
 
@@ -284,27 +289,27 @@ class WP_MCP_AI_Tool_Create_Health_Reminder implements WP_MCP_AI_Tool_Interface,
 			if ( $next_occurrence ) {
 				// Store recurring schedule info.
 				$reminder_data['next_occurrence'] = $next_occurrence;
-				$all_reminders[ $reminder_id ] = $reminder_data;
+				$all_reminders[ $reminder_id ]    = $reminder_data;
 				update_option( 'wp_mcp_ai_health_reminders', $all_reminders );
 			}
 		}
 
 		return array(
-			'success'               => true,
-			'message'               => __( 'Health reminder created successfully.', 'mcp-ai-wpoos-pro' ),
-			'reminder_id'           => $reminder_id,
-			'member_id'             => $member_id,
-			'member_name'           => $member->post_title,
-			'reminder_type'         => $reminder_type,
-			'title'                 => $title,
-			'reminder_date'         => $reminder_date,
-			'reminder_time'         => $reminder_time,
+			'success'                    => true,
+			'message'                    => __( 'Health reminder created successfully.', 'mcp-ai-wpoos-pro' ),
+			'reminder_id'                => $reminder_id,
+			'member_id'                  => $member_id,
+			'member_name'                => $member->post_title,
+			'reminder_type'              => $reminder_type,
+			'title'                      => $title,
+			'reminder_date'              => $reminder_date,
+			'reminder_time'              => $reminder_time,
 			'notification_scheduled_for' => gmdate( 'Y-m-d H:i:s', $notification_timestamp ),
-			'is_recurring'          => $is_recurring,
-			'recurrence_rule'       => $recurrence_rule,
-			'notification_methods'  => $notification_methods,
-			'priority'              => $priority,
-			'advance_notice_days'   => $advance_notice_days,
+			'is_recurring'               => $is_recurring,
+			'recurrence_rule'            => $recurrence_rule,
+			'notification_methods'       => $notification_methods,
+			'priority'                   => $priority,
+			'advance_notice_days'        => $advance_notice_days,
 		);
 	}
 

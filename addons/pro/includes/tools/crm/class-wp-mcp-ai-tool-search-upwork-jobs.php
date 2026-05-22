@@ -95,57 +95,57 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'connection_id'       => array(
+				'connection_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'Remote Sites Upwork connection ID. Optional — when omitted or invalid, falls back to web search.', 'mcp-ai-wpoos-pro' ),
 				),
-				'query'               => array(
+				'query'              => array(
 					'type'        => 'string',
 					'description' => __( 'Keyword search query.', 'mcp-ai-wpoos-pro' ),
 				),
-				'category2'           => array(
+				'category2'          => array(
 					'type'        => 'string',
 					'description' => __( 'Job category name (e.g. "Web, Mobile & Software Dev").', 'mcp-ai-wpoos-pro' ),
 				),
-				'skills'              => array(
+				'skills'             => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Required skill names.', 'mcp-ai-wpoos-pro' ),
 				),
-				'budget_min'          => array(
+				'budget_min'         => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum budget amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'budget_max'          => array(
+				'budget_max'         => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum budget amount.', 'mcp-ai-wpoos-pro' ),
 				),
-				'job_type'            => array(
+				'job_type'           => array(
 					'type'        => 'string',
 					'enum'        => array( 'hourly', 'fixed' ),
 					'description' => __( 'Job type filter.', 'mcp-ai-wpoos-pro' ),
 				),
-				'experience_level'    => array(
+				'experience_level'   => array(
 					'type'        => 'string',
 					'enum'        => array( 'entry', 'intermediate', 'expert' ),
 					'description' => __( 'Required experience level.', 'mcp-ai-wpoos-pro' ),
 				),
-				'duration_weeks_min'  => array(
+				'duration_weeks_min' => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum engagement duration in weeks.', 'mcp-ai-wpoos-pro' ),
 				),
-				'duration_weeks_max'  => array(
+				'duration_weeks_max' => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum engagement duration in weeks.', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'               => array(
+				'limit'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of results to return (1-50, default 10).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'cursor'              => array(
+				'cursor'             => array(
 					'type'        => 'string',
 					'description' => __( 'Pagination cursor from a previous search response.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -287,10 +287,10 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			? $result['data']['marketplaceJobPostingsSearch']
 			: array();
 
-		$jobs       = array();
-		$page_info  = isset( $search_data['pageInfo'] ) ? $search_data['pageInfo'] : array();
-		$total      = isset( $search_data['totalCount'] ) ? (int) $search_data['totalCount'] : 0;
-		$edges      = isset( $search_data['edges'] ) ? $search_data['edges'] : array();
+		$jobs      = array();
+		$page_info = isset( $search_data['pageInfo'] ) ? $search_data['pageInfo'] : array();
+		$total     = isset( $search_data['totalCount'] ) ? (int) $search_data['totalCount'] : 0;
+		$edges     = isset( $search_data['edges'] ) ? $search_data['edges'] : array();
 
 		foreach ( $edges as $edge ) {
 			$node = isset( $edge['node'] ) ? $edge['node'] : array();
@@ -299,30 +299,30 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			$jobs[] = array(
-				'id'                => isset( $node['id'] ) ? $node['id'] : '',
-				'title'             => isset( $node['title'] ) ? $node['title'] : '',
-				'description'       => isset( $node['description'] ) ? wp_trim_words( $node['description'], 60 ) : '',
-				'created'           => isset( $node['createdDateTime'] ) ? $node['createdDateTime'] : '',
-				'published'         => isset( $node['publishedDateTime'] ) ? $node['publishedDateTime'] : '',
-				'job_type'          => isset( $node['jobType'] ) ? $node['jobType'] : '',
-				'engagement'        => isset( $node['engagement'] ) ? $node['engagement'] : '',
-				'duration'          => isset( $node['duration'] ) ? $node['duration'] : '',
-				'budget'            => isset( $node['budget'] ) ? $node['budget'] : null,
-				'hourly_budget'     => isset( $node['hourlyBudget'] ) ? $node['hourlyBudget'] : null,
-				'skills'            => isset( $node['skills'] ) ? wp_list_pluck( $node['skills'], 'prettyName' ) : array(),
-				'category'          => isset( $node['category']['name'] ) ? $node['category']['name'] : '',
-				'subcategory'       => isset( $node['subcategory']['name'] ) ? $node['subcategory']['name'] : '',
-				'applicants'        => isset( $node['totalApplicants'] ) ? (int) $node['totalApplicants'] : 0,
-				'tier'              => isset( $node['tierText'] ) ? $node['tierText'] : '',
-				'client'            => array(
-					'feedback'             => isset( $node['client']['totalFeedback'] ) ? (float) $node['client']['totalFeedback'] : null,
-					'total_hires'          => isset( $node['client']['totalHires'] ) ? (int) $node['client']['totalHires'] : null,
-					'jobs_posted'          => isset( $node['client']['totalJobsPosted'] ) ? (int) $node['client']['totalJobsPosted'] : null,
-					'total_spent'          => isset( $node['client']['totalSpent'] ) ? $node['client']['totalSpent'] : null,
-					'payment_verified'     => isset( $node['client']['paymentVerificationStatus'] ) ? $node['client']['paymentVerificationStatus'] : null,
-					'country'              => isset( $node['client']['location']['country'] ) ? $node['client']['location']['country'] : '',
+				'id'            => isset( $node['id'] ) ? $node['id'] : '',
+				'title'         => isset( $node['title'] ) ? $node['title'] : '',
+				'description'   => isset( $node['description'] ) ? wp_trim_words( $node['description'], 60 ) : '',
+				'created'       => isset( $node['createdDateTime'] ) ? $node['createdDateTime'] : '',
+				'published'     => isset( $node['publishedDateTime'] ) ? $node['publishedDateTime'] : '',
+				'job_type'      => isset( $node['jobType'] ) ? $node['jobType'] : '',
+				'engagement'    => isset( $node['engagement'] ) ? $node['engagement'] : '',
+				'duration'      => isset( $node['duration'] ) ? $node['duration'] : '',
+				'budget'        => isset( $node['budget'] ) ? $node['budget'] : null,
+				'hourly_budget' => isset( $node['hourlyBudget'] ) ? $node['hourlyBudget'] : null,
+				'skills'        => isset( $node['skills'] ) ? wp_list_pluck( $node['skills'], 'prettyName' ) : array(),
+				'category'      => isset( $node['category']['name'] ) ? $node['category']['name'] : '',
+				'subcategory'   => isset( $node['subcategory']['name'] ) ? $node['subcategory']['name'] : '',
+				'applicants'    => isset( $node['totalApplicants'] ) ? (int) $node['totalApplicants'] : 0,
+				'tier'          => isset( $node['tierText'] ) ? $node['tierText'] : '',
+				'client'        => array(
+					'feedback'         => isset( $node['client']['totalFeedback'] ) ? (float) $node['client']['totalFeedback'] : null,
+					'total_hires'      => isset( $node['client']['totalHires'] ) ? (int) $node['client']['totalHires'] : null,
+					'jobs_posted'      => isset( $node['client']['totalJobsPosted'] ) ? (int) $node['client']['totalJobsPosted'] : null,
+					'total_spent'      => isset( $node['client']['totalSpent'] ) ? $node['client']['totalSpent'] : null,
+					'payment_verified' => isset( $node['client']['paymentVerificationStatus'] ) ? $node['client']['paymentVerificationStatus'] : null,
+					'country'          => isset( $node['client']['location']['country'] ) ? $node['client']['location']['country'] : '',
 				),
-				'cursor'            => isset( $edge['cursor'] ) ? $edge['cursor'] : '',
+				'cursor'        => isset( $edge['cursor'] ) ? $edge['cursor'] : '',
 			);
 		}
 
@@ -394,9 +394,9 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		// Build a descriptive search query from the provided filters.
 		$search_query = $this->build_fallback_query( $arguments );
 
-		$limit          = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
-		$max_results    = min( $limit, 10 ); // Web search typically caps at ~10 results.
-		$search_result  = $web_search_tool->execute(
+		$limit         = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
+		$max_results   = min( $limit, 10 ); // Web search typically caps at ~10 results.
+		$search_result = $web_search_tool->execute(
 			array(
 				'query'       => $search_query,
 				'max_results' => $max_results,

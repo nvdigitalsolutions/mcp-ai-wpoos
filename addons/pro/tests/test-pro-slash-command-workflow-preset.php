@@ -10,7 +10,8 @@
  */
 class Test_Pro_Slash_Command_Workflow_Preset extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Pro_Slash_Command_Workflow_Preset
 	 */
 	private $command;

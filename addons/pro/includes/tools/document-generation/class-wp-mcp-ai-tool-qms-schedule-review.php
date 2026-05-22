@@ -19,6 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'qms_schedule_review';
 	}
@@ -28,18 +35,37 @@ class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP
 	public function get_description() {
 		return __( 'Schedule a periodic review of a controlled document. Creates a PM Task assigned to the document owner with the requested due date and updates the record\'s next_review_date.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id'  => array( 'type' => 'integer', 'minimum' => 1 ),
-				'due_date' => array( 'type' => 'string', 'pattern' => '^\d{4}-\d{2}-\d{2}$' ),
-				'notes'    => array( 'type' => 'string', 'maxLength' => 2000 ),
+				'post_id'  => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'due_date' => array(
+					'type'    => 'string',
+					'pattern' => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'notes'    => array(
+					'type'      => 'string',
+					'maxLength' => 2000,
+				),
 			),
 			'required'             => array( 'post_id', 'due_date' ),
 			'additionalProperties' => false,
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}
@@ -112,16 +138,19 @@ class WP_MCP_AI_Tool_QMS_Schedule_Review implements WP_MCP_AI_Tool_Interface, WP
 				'post_id'  => $post_id,
 				'doc_id'   => $record['document_id'],
 				'revision' => $record['revision'],
-				'meta'     => array( 'task_id' => $task_id, 'due_date' => $due_date ),
+				'meta'     => array(
+					'task_id'  => $task_id,
+					'due_date' => $due_date,
+				),
 			)
 		);
 
 		return array(
-			'success' => true,
-			'post_id' => $post_id,
-			'task_id' => (int) $task_id,
+			'success'  => true,
+			'post_id'  => $post_id,
+			'task_id'  => (int) $task_id,
 			'due_date' => $due_date,
-			'message' => __( 'Review scheduled.', 'mcp-ai-wpoos-pro' ),
+			'message'  => __( 'Review scheduled.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

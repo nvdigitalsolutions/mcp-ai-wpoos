@@ -88,17 +88,18 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 		$section = new WP_MCP_AI_Section_Performance();
 
 		// Set up AJAX request.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['action'] = 'wp_mcp_ai_get_performance_metrics';
-		$_POST['nonce']  = wp_create_nonce( 'wp_mcp_ai_performance' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_performance' );
 
 		// Capture the output.
 		ob_start();
 		try {
 			// This should trigger wp_send_json_error with permission denied.
 			do_action( 'wp_ajax_nopriv_wp_mcp_ai_get_performance_metrics' );
-		} catch ( Exception $e ) {
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Intentionally empty - error handled elsewhere.
-			// wp_send_json_error calls wp_die which might throw.
 		}
 		$output = ob_get_clean();
 

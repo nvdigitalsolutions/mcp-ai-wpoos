@@ -81,7 +81,7 @@ class WP_MCP_AI_Imaging_Capabilities {
 			'delete' => 'delete_medical_imaging',
 			'manage' => 'manage_medical_imaging',
 		);
-		$cap = isset( $cap_map[ $action ] ) ? $cap_map[ $action ] : '';
+		$cap     = isset( $cap_map[ $action ] ) ? $cap_map[ $action ] : '';
 		if ( ! $cap ) {
 			return false;
 		}

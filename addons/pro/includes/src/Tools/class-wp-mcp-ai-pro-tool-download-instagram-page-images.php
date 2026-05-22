@@ -431,7 +431,8 @@ class WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images implements WP_MCP_AI_Too
 			// Stop if we have enough images or there are no more pages.
 			$has_next = ! empty( $decoded['paging']['next'] );
 
-		} while ( count( $collected ) < $max_images && $has_next && '' !== $after );
+			$collected_count = count( $collected );
+		} while ( $collected_count < $max_images && $has_next && '' !== $after );
 
 		return $collected;
 	}

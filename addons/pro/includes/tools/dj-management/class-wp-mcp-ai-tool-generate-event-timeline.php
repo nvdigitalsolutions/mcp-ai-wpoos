@@ -140,6 +140,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 		$timeline = array();
 
 		// Calculate setup time.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$setup_time = date( 'H:i', strtotime( $start_time ) - ( $setup_duration * 60 ) );
 		$timeline[] = array(
 			'time'     => $setup_time,
@@ -167,6 +168,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 			'type'     => 'breakdown',
 		);
 
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$departure_time = date( 'H:i', strtotime( $end_time ) + ( $breakdown_duration * 60 ) );
 		$timeline[]     = array(
 			'time'     => $departure_time,

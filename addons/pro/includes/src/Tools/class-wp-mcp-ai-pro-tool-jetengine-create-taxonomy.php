@@ -174,11 +174,14 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy implements WP_MCP_AI_Tool_Int
 		}
 
 		if ( taxonomy_exists( $slug ) ) {
-			return new WP_Error( 'taxonomy_exists', sprintf(
+			return new WP_Error(
+				'taxonomy_exists',
+				sprintf(
 				/* translators: %s: taxonomy slug */
-				__( 'Taxonomy "%s" already exists.', 'mcp-ai-wpoos-pro' ),
-				$slug
-			) );
+					__( 'Taxonomy "%s" already exists.', 'mcp-ai-wpoos-pro' ),
+					$slug
+				)
+			);
 		}
 
 		$mcp_args = array(

@@ -16,6 +16,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WP_MCP_AI_Tool_QMS_Sign_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'qms_sign_document';
 	}
@@ -25,18 +32,37 @@ class WP_MCP_AI_Tool_QMS_Sign_Document implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_description() {
 		return __( 'Apply an electronic signature to a controlled document. The signer\'s password is required (re-authentication) and the signature is cryptographically bound to the current document content hash. Intent must be one of: reviewed, approved, witnessed.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id'  => array( 'type' => 'integer', 'minimum' => 1 ),
-				'intent'   => array( 'type' => 'string', 'enum' => array( 'reviewed', 'approved', 'witnessed' ) ),
-				'password' => array( 'type' => 'string', 'minLength' => 1 ),
+				'post_id'  => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'intent'   => array(
+					'type' => 'string',
+					'enum' => array( 'reviewed', 'approved', 'witnessed' ),
+				),
+				'password' => array(
+					'type'      => 'string',
+					'minLength' => 1,
+				),
 			),
 			'required'             => array( 'post_id', 'intent', 'password' ),
 			'additionalProperties' => false,
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing', 'pii-data' );
 	}

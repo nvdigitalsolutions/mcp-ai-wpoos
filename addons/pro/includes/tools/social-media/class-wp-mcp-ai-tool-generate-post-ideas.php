@@ -292,7 +292,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array Trending topics.
 	 */
 	protected function get_trending_topics( $platform, $industry ) {
-		// In a production environment, this would integrate with social media APIs
+		// In a production environment, this would integrate with social media APIs.
 		// or trend detection services. For now, return sample data.
 		$trends = array(
 			'facebook'  => array( 'Small Business Success', 'Work From Home', 'Sustainability', 'AI Technology' ),

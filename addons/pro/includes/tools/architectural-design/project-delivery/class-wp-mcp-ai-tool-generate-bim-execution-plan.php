@@ -25,6 +25,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -37,6 +38,13 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'generate_bim_execution_plan';
 	}
@@ -49,6 +57,13 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		return __( 'Produce a BIM Execution Plan (BEP) outline aligned with AIA E202/E203 and ISO 19650-2 — section catalogue and seeded content from the supplied project metadata, plus a ready-to-edit markdown rendering.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -79,6 +94,11 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'requires-capability', 'read-only', 'cacheable' );
 	}
@@ -139,15 +159,15 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		}
 
 		return array(
-			'success'        => true,
-			'project_name'   => $project_name,
-			'standards'      => $standards,
-			'bim_uses'       => $bim_uses,
-			'lod'            => $lod,
-			'cde_platform'   => $cde_platform,
-			'sections'       => $sections,
-			'markdown'       => implode( "\n", $md ),
-			'section_count'  => count( $sections ),
+			'success'       => true,
+			'project_name'  => $project_name,
+			'standards'     => $standards,
+			'bim_uses'      => $bim_uses,
+			'lod'           => $lod,
+			'cde_platform'  => $cde_platform,
+			'sections'      => $sections,
+			'markdown'      => implode( "\n", $md ),
+			'section_count' => count( $sections ),
 		);
 	}
 

@@ -89,17 +89,17 @@ class WP_MCP_AI_Design_Snippet_Renderer {
 
 		$skin_variant = self::pick_skin_variant( $design_system, $options['skin_variant'] );
 
-		$tokens_css        = self::render_tokens_css( $design_system );
-		$interactions_css  = self::render_interactions_css( $options['features'] );
-		$jfb_css           = in_array( 'jet-form-builder', $options['targets'], true )
+		$tokens_css       = self::render_tokens_css( $design_system );
+		$interactions_css = self::render_interactions_css( $options['features'] );
+		$jfb_css          = in_array( 'jet-form-builder', $options['targets'], true )
 			? self::render_jfb_skin_css( $skin_variant )
 			: '';
-		$interactions_js   = self::render_interactions_js( $options['features'] );
-		$cursor_markup     = in_array( 'custom_cursor', $options['features'], true )
+		$interactions_js  = self::render_interactions_js( $options['features'] );
+		$cursor_markup    = in_array( 'custom_cursor', $options['features'], true )
 			? "<div id=\"nv-cursor\" aria-hidden=\"true\"></div>\n\t<div id=\"nv-cursor-ring\" aria-hidden=\"true\"></div>"
 			: '';
 
-		$header  = self::render_file_header( $design_system, $options, $skin_variant );
+		$header = self::render_file_header( $design_system, $options, $skin_variant );
 
 		$head_block = trim( $tokens_css . "\n\n" . $interactions_css . ( '' !== $jfb_css ? "\n\n" . $jfb_css : '' ) );
 		$body_parts = array();
@@ -349,7 +349,7 @@ class WP_MCP_AI_Design_Snippet_Renderer {
 		}
 
 		$lines   = array();
-		$lines[] = "(function () {";
+		$lines[] = '(function () {';
 		$lines[] = "\tdocument.addEventListener('DOMContentLoaded', function () {";
 		$lines[] = "\t\tvar body = document.body;";
 		$lines[] = "\t\tif (body && !body.classList.contains('nv-aerlinn-global')) { body.classList.add('nv-aerlinn-global'); }";
@@ -403,7 +403,7 @@ class WP_MCP_AI_Design_Snippet_Renderer {
 		}
 
 		$lines[] = "\t});";
-		$lines[] = "})();";
+		$lines[] = '})();';
 
 		return implode( "\n", $lines );
 	}
@@ -510,9 +510,9 @@ class WP_MCP_AI_Design_Snippet_Renderer {
 				if ( ! is_array( $row ) ) {
 					continue;
 				}
-				$pair  = isset( $row['pair'] ) ? (string) $row['pair'] : '?';
-				$ratio = isset( $row['ratio'] ) ? number_format( (float) $row['ratio'], 2, '.', '' ) : '?';
-				$ok    = ! empty( $row['wcag_aa'] ) ? 'PASS' : 'FAIL';
+				$pair    = isset( $row['pair'] ) ? (string) $row['pair'] : '?';
+				$ratio   = isset( $row['ratio'] ) ? number_format( (float) $row['ratio'], 2, '.', '' ) : '?';
+				$ok      = ! empty( $row['wcag_aa'] ) ? 'PASS' : 'FAIL';
 				$lines[] = ' *   ' . $pair . ' = ' . $ratio . ' (' . $ok . ')';
 			}
 		}
@@ -520,13 +520,13 @@ class WP_MCP_AI_Design_Snippet_Renderer {
 		if ( ! empty( $options['provenance'] ) ) {
 			$lines[] = ' *';
 			$lines[] = ' * Token provenance (most-significant only):';
-			$shown = 0;
+			$shown   = 0;
 			foreach ( $options['provenance'] as $token => $source ) {
 				if ( $shown >= 12 ) {
 					break;
 				}
 				$lines[] = ' *   ' . self::sanitize_token_key( $token ) . ' <- ' . preg_replace( '/[^a-z0-9_\-:\/.]/i', '', (string) $source );
-				$shown++;
+				++$shown;
 			}
 		}
 

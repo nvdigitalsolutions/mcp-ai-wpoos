@@ -155,8 +155,8 @@ class WP_MCP_AI_Tool_Send_ECA_Parent_Report implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$term                 = isset( $arguments['term'] ) ? sanitize_text_field( $arguments['term'] ) : '';
-		$valid_terms          = array( 'Term 1', 'Term 2', 'Term 3', 'Yearly' );
+		$term        = isset( $arguments['term'] ) ? sanitize_text_field( $arguments['term'] ) : '';
+		$valid_terms = array( 'Term 1', 'Term 2', 'Term 3', 'Yearly' );
 		if ( $term && ! in_array( $term, $valid_terms, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_term',

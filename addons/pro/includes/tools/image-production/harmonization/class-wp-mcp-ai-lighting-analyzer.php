@@ -70,7 +70,7 @@ class WP_MCP_AI_Lighting_Analyzer {
 			return $result;
 		}
 
-		// Optional AI escalation hook (kept lightweight - just a filter,
+		// Optional AI escalation hook (kept lightweight - just a filter,.
 		// callers can wire in a Gemini/OpenAI vision call if they want it).
 		$allow = ! empty( $opts['allow_ai_escalation'] );
 		if ( $allow && $result['confidence'] < $this->low_confidence_threshold ) {

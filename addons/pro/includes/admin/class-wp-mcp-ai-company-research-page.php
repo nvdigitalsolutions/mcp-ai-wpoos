@@ -104,12 +104,12 @@ class WP_MCP_AI_Company_Research_Page {
 			'wp-mcp-ai-enhanced-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'wp_mcp_ai_research_page' ),
-				'entityType'     => 'company',
-				'createAction'   => 'wp_mcp_ai_create_company_from_research',
-				'importAction'   => 'wp_mcp_ai_import_company',
-				'i18n'           => array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'entityType'   => 'company',
+				'createAction' => 'wp_mcp_ai_create_company_from_research',
+				'importAction' => 'wp_mcp_ai_import_company',
+				'i18n'         => array(
 					'creating'       => __( 'Creating company...', 'mcp-ai-wpoos-pro' ),
 					'created'        => __( 'Company created successfully!', 'mcp-ai-wpoos-pro' ),
 					'createError'    => __( 'Error creating company.', 'mcp-ai-wpoos-pro' ),
@@ -166,7 +166,7 @@ class WP_MCP_AI_Company_Research_Page {
 						<?php
 						// Get the assigned assistant for CRM research.
 						$assigned_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
-						
+
 						// Render the AI chat interface with the assigned assistant.
 						if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 							$shortcode_instance = new WP_MCP_AI_Shortcode();
@@ -403,18 +403,18 @@ class WP_MCP_AI_Company_Research_Page {
 
 		// Save company metadata.
 		$meta_fields = array(
-			'_company_industry'       => 'industry',
-			'_company_size'           => 'company_size',
-			'_company_website'        => 'website',
-			'_company_city'           => 'city',
-			'_company_state'          => 'state',
-			'_company_country'        => 'country',
-			'_company_phone'          => 'phone',
-			'_company_revenue'        => 'revenue',
-			'_company_target_status'  => 'target_status',
-			'_company_linkedin'       => 'linkedin',
-			'_company_twitter'        => 'twitter',
-			'_company_notes'          => 'notes',
+			'_company_industry'      => 'industry',
+			'_company_size'          => 'company_size',
+			'_company_website'       => 'website',
+			'_company_city'          => 'city',
+			'_company_state'         => 'state',
+			'_company_country'       => 'country',
+			'_company_phone'         => 'phone',
+			'_company_revenue'       => 'revenue',
+			'_company_target_status' => 'target_status',
+			'_company_linkedin'      => 'linkedin',
+			'_company_twitter'       => 'twitter',
+			'_company_notes'         => 'notes',
 		);
 
 		foreach ( $meta_fields as $meta_key => $post_key ) {
@@ -429,8 +429,8 @@ class WP_MCP_AI_Company_Research_Page {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Company created successfully!', 'mcp-ai-wpoos-pro' ),
-				'post_id' => $post_id,
+				'message'  => __( 'Company created successfully!', 'mcp-ai-wpoos-pro' ),
+				'post_id'  => $post_id,
 				'edit_url' => get_edit_post_link( $post_id, 'raw' ),
 			)
 		);

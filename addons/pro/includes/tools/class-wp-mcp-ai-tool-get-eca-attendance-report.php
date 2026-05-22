@@ -205,9 +205,9 @@ class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Calculate analytics.
-		$analytics      = $this->calculate_analytics( $filtered_log, $student_id );
-		$chart_data     = $this->build_chart_data( $filtered_log );
-		$student_rates  = $this->calculate_student_rates( $filtered_log );
+		$analytics     = $this->calculate_analytics( $filtered_log, $student_id );
+		$chart_data    = $this->build_chart_data( $filtered_log );
+		$student_rates = $this->calculate_student_rates( $filtered_log );
 
 		$result = array(
 			'success'         => true,
@@ -361,11 +361,11 @@ class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interfa
 		// Calculate rates.
 		$rates = array();
 		foreach ( $student_data as $sid => $data ) {
-			$total           = $data['total'];
-			$data['rate']    = $total > 0
+			$total        = $data['total'];
+			$data['rate'] = $total > 0
 				? round( ( ( $data['present'] + $data['late'] ) / $total ) * 100, 1 )
 				: 0;
-			$rates[]         = $data;
+			$rates[]      = $data;
 		}
 
 		return $rates;
@@ -380,11 +380,11 @@ class WP_MCP_AI_Tool_Get_ECA_Attendance_Report implements WP_MCP_AI_Tool_Interfa
 	private function build_chart_data( $filtered_log ) {
 		ksort( $filtered_log );
 
-		$labels   = array();
-		$present  = array();
-		$absent   = array();
-		$late     = array();
-		$excused  = array();
+		$labels  = array();
+		$present = array();
+		$absent  = array();
+		$late    = array();
+		$excused = array();
 
 		foreach ( $filtered_log as $date => $session ) {
 			$labels[]  = $date;

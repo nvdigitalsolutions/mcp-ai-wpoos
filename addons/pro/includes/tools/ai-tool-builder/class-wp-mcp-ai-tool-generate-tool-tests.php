@@ -110,14 +110,18 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['tool_class'] ) ) {
@@ -136,7 +140,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		// Load tool code for analysis.
 		$tool_code = '';
 		if ( ! empty( $tool_file_raw ) ) {
-			// Security: Resolve canonical path and restrict to the WordPress content
+			// Security: Resolve canonical path and restrict to the WordPress content.
 			// directory to prevent reading arbitrary server files.
 			$resolved_tool = realpath( $tool_file_raw );
 			if ( false !== $resolved_tool &&
@@ -328,6 +332,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 	 * Get AI service instance.
 	 *
 	 * @param array $arguments Tool arguments.
+	 *
 	 * @param array $context   Execution context.
 	 * @return object|WP_Error AI service or error.
 	 */
@@ -386,7 +391,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		if ( isset( $arguments['output_path'] ) && ! empty( $arguments['output_path'] ) ) {
 			$output_path = sanitize_text_field( $arguments['output_path'] );
 
-			// Security: Restrict to the WordPress content directory to prevent
+			// Security: Restrict to the WordPress content directory to prevent.
 			// writing PHP files to arbitrary server paths.
 			$resolved = realpath( dirname( $output_path ) );
 			if ( false === $resolved ) {

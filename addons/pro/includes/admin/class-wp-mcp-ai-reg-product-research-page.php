@@ -946,6 +946,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 *
 	 * @param string $file_path Path to CSV file.
 	 * @return array Preview data with columns and rows.
+	 * @throws Exception If the file cannot be opened.
 	 */
 	protected static function parse_csv_file( $file_path ) {
 		$data = array(
@@ -1035,8 +1036,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			wp_send_json_error( array( 'message' => __( 'Could not parse any product data from the input.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$created  = array();
-		$errors   = array();
+		$created = array();
+		$errors  = array();
 
 		if ( $auto_create ) {
 			foreach ( $parsed as $product_data ) {
@@ -1110,9 +1111,9 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	private static function parse_bulk_product_data( $text ) {
 		$products = array();
 		// Normalise line endings first so the double-newline split below works across OS formats.
-		$text     = str_replace( array( "\r\n", "\r" ), "\n", $text );
-		$blocks   = preg_split( '/\n{2,}/', trim( $text ) );
-		$current  = array();
+		$text    = str_replace( array( "\r\n", "\r" ), "\n", $text );
+		$blocks  = preg_split( '/\n{2,}/', trim( $text ) );
+		$current = array();
 
 		foreach ( $blocks as $block ) {
 			$lines = explode( "\n", trim( $block ) );
@@ -1403,10 +1404,10 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 					<tbody>
 						<?php foreach ( $registrations as $reg ) : ?>
 							<tr>
-								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_country', true ) ?: '—' ); ?></td>
-								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_reg_number', true ) ?: '—' ); ?></td>
-								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_reg_status', true ) ?: '—' ); ?></td>
-								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_expiry_date', true ) ?: '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_country', true ) ? get_post_meta( $reg->ID, '_mcp_ai_country', true ) : '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_reg_number', true ) ? get_post_meta( $reg->ID, '_mcp_ai_reg_number', true ) : '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_reg_status', true ) ? get_post_meta( $reg->ID, '_mcp_ai_reg_status', true ) : '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_expiry_date', true ) ? get_post_meta( $reg->ID, '_mcp_ai_expiry_date', true ) : '—' ); ?></td>
 								<td>
 									<a href="<?php echo esc_url( get_edit_post_link( $reg->ID ) ); ?>" target="_blank">
 										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
@@ -1440,7 +1441,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 						<?php foreach ( $documents as $doc ) : ?>
 							<tr>
 								<td><?php echo esc_html( $doc->post_title ); ?></td>
-								<td><?php echo esc_html( get_post_meta( $doc->ID, '_mcp_ai_doc_type', true ) ?: '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $doc->ID, '_mcp_ai_doc_type', true ) ? get_post_meta( $doc->ID, '_mcp_ai_doc_type', true ) : '—' ); ?></td>
 								<td><?php echo esc_html( $doc->post_status ); ?></td>
 								<td>
 									<a href="<?php echo esc_url( get_edit_post_link( $doc->ID ) ); ?>" target="_blank">

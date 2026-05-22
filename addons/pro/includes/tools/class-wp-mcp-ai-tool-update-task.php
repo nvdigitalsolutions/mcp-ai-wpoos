@@ -119,6 +119,11 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -147,6 +152,14 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @param array $context   The context in which the tool is being executed.
 	 * @return array|WP_Error Array with success status and task details, or WP_Error on failure.
 	 */
+		/**
+		 * Execute the tool.
+		 *
+		 * @param array $arguments Tool arguments.
+		 *  * @param array $context   Execution context.
+		 *
+		 * @return array
+		 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 

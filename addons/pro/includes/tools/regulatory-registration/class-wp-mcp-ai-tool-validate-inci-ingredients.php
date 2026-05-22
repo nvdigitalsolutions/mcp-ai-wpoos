@@ -214,7 +214,7 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	 * @return bool True if valid INCI format.
 	 */
 	private function check_inci_format( $ingredient ) {
-		// Basic format checks:
+		// Basic format checks:.
 		// - Should start with capital letter.
 		// - May contain spaces, hyphens, parentheses.
 		// - Should not contain numbers (except in special cases).

@@ -9,13 +9,31 @@
  */
 
 /**
+ * Tests for Cloudflare mutating client operations.
+ *
  * @covers NVOOS_SaaS_Controller_Cloudflare_Mutating_Client
  */
 class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestCase {
 
+	/**
+	 * Captured HTTP requests.
+	 *
+	 * @var array
+	 */
 	private $captured = array();
+
+	/**
+	 * Canned HTTP responses keyed by URL needle.
+	 *
+	 * @var array
+	 */
 	private $canned   = array();
 
+	/**
+	 * Set up test.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->captured = array();
@@ -25,14 +43,30 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		NVOOS_SaaS_Controller_Audit_Log::reset_for_tests();
 	}
 
+	/**
+	 * Tear down test.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		remove_filter( 'pre_http_request', array( $this, 'intercept' ), 10 );
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
 		parent::tearDown();
 	}
 
+	/**
+	 * Intercept HTTP requests and return canned responses.
+	 *
+	 * @param mixed  $preempt Preempt filter value.
+	 * @param array  $args    Request arguments.
+	 * @param string $url     Request URL.
+	 * @return mixed Canned response or WP_Error.
+	 */
 	public function intercept( $preempt, $args, $url ) {
-		$this->captured[] = array( 'url' => $url, 'args' => $args );
+		$this->captured[] = array(
+			'url' => $url,
+			'args' => $args,
+		);
 		foreach ( $this->canned as $needle => $response ) {
 			if ( false !== strpos( $url, $needle ) ) {
 				return $response;
@@ -41,30 +75,70 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		return new WP_Error( 'no_canned', 'No canned response for ' . $url );
 	}
 
+	/**
+	 * Build a successful HTTP response.
+	 *
+	 * @param mixed $result The result payload.
+	 * @param int   $status HTTP status code.
+	 * @return array HTTP response array.
+	 */
 	private function ok( $result, $status = 200 ) {
 		return array(
-			'response' => array( 'code' => $status, 'message' => 'OK' ),
-			'body'     => wp_json_encode( array( 'success' => true, 'result' => $result ) ),
+			'response' => array(
+				'code' => $status,
+				'message' => 'OK',
+			),
+			'body'     => wp_json_encode(
+				array(
+					'success' => true,
+					'result' => $result,
+				)
+			),
 			'headers'  => array(),
 		);
 	}
 
+	/**
+	 * Build an error HTTP response.
+	 *
+	 * @param int    $status  HTTP status code.
+	 * @param int    $cf_code Cloudflare error code.
+	 * @param string $msg     Error message.
+	 * @return array HTTP response array.
+	 */
 	private function err( $status = 400, $cf_code = 7003, $msg = 'Could not route to /d1' ) {
 		return array(
-			'response' => array( 'code' => $status, 'message' => 'Bad' ),
-			'body'     => wp_json_encode( array(
-				'success' => false,
-				'errors'  => array( array( 'code' => $cf_code, 'message' => $msg ) ),
-			) ),
+			'response' => array(
+				'code' => $status,
+				'message' => 'Bad',
+			),
+			'body'     => wp_json_encode(
+				array(
+					'success' => false,
+					'errors'  => array(
+						array(
+							'code' => $cf_code,
+							'message' => $msg,
+						),
+					),
+				)
+			),
 			'headers'  => array(),
 		);
 	}
 
+	/**
+	 * Test that create_d1_database success records an audit entry.
+	 *
+	 * @return void
+	 */
 	public function test_create_d1_database_success_records_audit_entry() {
-		$this->canned['/d1/database'] = $this->ok( array(
-			'uuid' => 'cccc-1111',
-			'name' => 'mcp-oos',
-		) );
+		$this->canned['/d1/database'] = $this->ok(
+			array(
+				'uuid' => 'cccc-1111',
+				'name' => 'mcp-oos',
+			)
+		);
 
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->create_d1_database( 'mcp-oos' );
@@ -85,6 +159,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'ok', $entries[0]['status'] );
 	}
 
+	/**
+	 * Test that create_d1_database error records an error audit entry.
+	 *
+	 * @return void
+	 */
 	public function test_create_d1_database_error_records_error_audit_entry() {
 		$this->canned['/d1/database'] = $this->err( 401, 9109, 'Invalid access token' );
 
@@ -98,6 +177,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertStringContainsString( 'Invalid access token', $entries[0]['message'] );
 	}
 
+	/**
+	 * Test that create_d1 rejects empty name without HTTP call.
+	 *
+	 * @return void
+	 */
 	public function test_create_d1_rejects_empty_name_without_http_call() {
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->create_d1_database( '' );
@@ -106,11 +190,18 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertCount( 0, $this->captured, 'No HTTP request should be issued for empty input.' );
 	}
 
+	/**
+	 * Test that create_kv_namespace succeeds.
+	 *
+	 * @return void
+	 */
 	public function test_create_kv_namespace_success() {
-		$this->canned['/storage/kv/namespaces'] = $this->ok( array(
-			'id'    => 'ns_42',
-			'title' => 'cache',
-		) );
+		$this->canned['/storage/kv/namespaces'] = $this->ok(
+			array(
+				'id'    => 'ns_42',
+				'title' => 'cache',
+			)
+		);
 
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->create_kv_namespace( 'cache' );
@@ -120,11 +211,18 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'cache', $body['title'] );
 	}
 
+	/**
+	 * Test that create_ai_gateway succeeds.
+	 *
+	 * @return void
+	 */
 	public function test_create_ai_gateway_success() {
-		$this->canned['/ai-gateway/gateways'] = $this->ok( array(
-			'id'   => 'gw_1',
-			'slug' => 'mcp-router',
-		) );
+		$this->canned['/ai-gateway/gateways'] = $this->ok(
+			array(
+				'id'   => 'gw_1',
+				'slug' => 'mcp-router',
+			)
+		);
 
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->create_ai_gateway( 'mcp-router' );
@@ -134,13 +232,26 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'mcp-router', $body['id'] );
 	}
 
+	/**
+	 * Test that upload_worker_script success persists etag and audits.
+	 *
+	 * @return void
+	 */
 	public function test_upload_worker_script_success_persists_etag_and_audit() {
 		$this->canned['/workers/scripts/mcp-oos-worker'] = array(
-			'response' => array( 'code' => 200, 'message' => 'OK' ),
-			'body'     => wp_json_encode( array(
-				'success' => true,
-				'result'  => array( 'id' => 'mcp-oos-worker', 'modified_on' => '2026-05-05T00:00:00Z' ),
-			) ),
+			'response' => array(
+				'code' => 200,
+				'message' => 'OK',
+			),
+			'body'     => wp_json_encode(
+				array(
+					'success' => true,
+					'result'  => array(
+						'id' => 'mcp-oos-worker',
+						'modified_on' => '2026-05-05T00:00:00Z',
+					),
+				)
+			),
 			'headers'  => array( 'etag' => '"abc123def456"' ),
 		);
 
@@ -176,6 +287,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'ok', $entries[0]['status'] );
 	}
 
+	/**
+	 * Test that upload_worker_script rejects empty body without HTTP call.
+	 *
+	 * @return void
+	 */
 	public function test_upload_worker_script_rejects_empty_body_without_http_call() {
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->upload_worker_script( 'mcp-oos-worker', '', array( 'main_module' => 'index.js' ) );
@@ -184,6 +300,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertCount( 0, $this->captured );
 	}
 
+	/**
+	 * Test that upload_worker_script records error on 4xx.
+	 *
+	 * @return void
+	 */
 	public function test_upload_worker_script_records_error_on_4xx() {
 		$this->canned['/workers/scripts/mcp-oos-worker'] = $this->err( 403, 10000, 'Forbidden' );
 
@@ -201,6 +322,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'upload_worker_script', $entries[0]['action'] );
 	}
 
+	/**
+	 * Test that from_credential_store returns WP_Error when creds missing.
+	 *
+	 * @return void
+	 */
 	public function test_from_credential_store_missing_creds() {
 		// Fresh credential store has no values.
 		$result = NVOOS_SaaS_Controller_Cloudflare_Mutating_Client::from_credential_store();
@@ -208,6 +334,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'missing_credentials', $result->get_error_code() );
 	}
 
+	/**
+	 * Test that delete_d1_database records audit entry on success.
+	 *
+	 * @return void
+	 */
 	public function test_delete_d1_database_records_audit_entry_on_success() {
 		$this->canned['/d1/database/cccc-1111'] = $this->ok( null );
 
@@ -226,6 +357,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'ok', $entries[0]['status'] );
 	}
 
+	/**
+	 * Test that delete_d1_database rejects empty uuid.
+	 *
+	 * @return void
+	 */
 	public function test_delete_d1_database_rejects_empty_uuid() {
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->delete_d1_database( '', 'mcp-oos' );
@@ -234,6 +370,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertEmpty( $this->captured );
 	}
 
+	/**
+	 * Test that delete_d1_database records error audit on 4xx.
+	 *
+	 * @return void
+	 */
 	public function test_delete_d1_database_records_error_audit_on_4xx() {
 		$this->canned['/d1/database/cccc-1111'] = $this->err( 404, 7404, 'D1 not found' );
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
@@ -245,6 +386,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'delete_d1_database', $entries[0]['action'] );
 	}
 
+	/**
+	 * Test that delete_kv_namespace records audit entry on success.
+	 *
+	 * @return void
+	 */
 	public function test_delete_kv_namespace_records_audit_entry_on_success() {
 		$this->canned['/storage/kv/namespaces/ns-id'] = $this->ok( null );
 
@@ -258,6 +404,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'cache', $entries[0]['target'] );
 	}
 
+	/**
+	 * Test that delete_kv_namespace rejects empty id.
+	 *
+	 * @return void
+	 */
 	public function test_delete_kv_namespace_rejects_empty_id() {
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->delete_kv_namespace( '' );
@@ -265,6 +416,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'invalid_namespace_id', $result->get_error_code() );
 	}
 
+	/**
+	 * Test that delete_ai_gateway records audit entry on success.
+	 *
+	 * @return void
+	 */
 	public function test_delete_ai_gateway_records_audit_entry_on_success() {
 		$this->canned['/ai-gateway/gateways/mcp-router'] = $this->ok( null );
 
@@ -277,6 +433,11 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 		$this->assertSame( 'mcp-router', $entries[0]['target'] );
 	}
 
+	/**
+	 * Test that delete_ai_gateway rejects empty slug.
+	 *
+	 * @return void
+	 */
 	public function test_delete_ai_gateway_rejects_empty_slug() {
 		$client = new NVOOS_SaaS_Controller_Cloudflare_Mutating_Client( 'acct', 'tok' );
 		$result = $client->delete_ai_gateway( '' );

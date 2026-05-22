@@ -22,10 +22,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
-	/** @var string Option key prefix used for server-side storage. */
+	/**
+ * @var string Option key prefix used for server-side storage.
+ */
 	const OPTION_KEY_PREFIX = 'wp_mcp_ai_health_metrics_';
 
-	/** @var int Maximum number of daily entries stored per member. */
+	/**
+ * @var int Maximum number of daily entries stored per member.
+ */
 	const MAX_ENTRIES = 1000;
 
 	/**
@@ -141,6 +145,11 @@ class WP_MCP_AI_Tool_Log_Health_Metrics implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

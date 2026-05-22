@@ -173,7 +173,7 @@ class WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction implements WP_MCP_AI_Tool_
 			array(
 				'method'  => 'PUT',
 				'headers' => array(
-					'Authorization' => 'Bot ' . $token,
+					'Authorization'  => 'Bot ' . $token,
 					'Content-Length' => '0',
 				),
 				'timeout' => apply_filters( 'wp_mcp_ai_add_discord_message_reaction_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),

@@ -289,7 +289,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				continue;
 			}
 
-			// If assistant context is provided and connections are configured,
+			// If assistant context is provided and connections are configured,.
 			// only include connections enabled for this assistant.
 			if ( $assistant_id && ! empty( $enabled_connections ) && ! in_array( $connection['id'], $enabled_connections, true ) ) {
 				continue;

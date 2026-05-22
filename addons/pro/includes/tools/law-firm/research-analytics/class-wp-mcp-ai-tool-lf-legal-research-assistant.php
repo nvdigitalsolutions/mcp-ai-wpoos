@@ -35,32 +35,49 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_legal_research_assistant'; }
-	public function get_name() { return __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Assists with legal research by generating research outlines, suggesting primary and secondary sources, and providing search strategies for legal issues.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_legal_research_assistant'; }
+	public function get_name() {
+		return __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Assists with legal research by generating research outlines, suggesting primary and secondary sources, and providing search strategies for legal issues.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'research_query'             => array(
+				'research_query'            => array(
 					'type'        => 'string',
 					'description' => __( 'The legal research question or issue to investigate.', 'mcp-ai-wpoos-pro' ),
 				),
-				'jurisdiction'               => array(
+				'jurisdiction'              => array(
 					'type'        => 'string',
 					'description' => __( 'Jurisdiction for the research (e.g., "federal", "california", "new_york").', 'mcp-ai-wpoos-pro' ),
 				),
-				'practice_area'              => array(
+				'practice_area'             => array(
 					'type'        => 'string',
 					'description' => __( 'Practice area (e.g., "contract_law", "tort", "criminal", "family").', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_range'                 => array(
+				'date_range'                => array(
 					'type'        => 'string',
 					'enum'        => array( 'last_year', 'last_5_years', 'all' ),
 					'description' => __( 'Date range for sources to consider.', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_secondary_sources'  => array(
+				'include_secondary_sources' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include secondary sources like treatises and law reviews (default true).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -69,7 +86,13 @@ class WP_MCP_AI_Tool_LF_Legal_Research_Assistant implements WP_MCP_AI_Tool_Inter
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'external-api' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'external-api' ); }
 
 	/**
 	 * {@inheritdoc}

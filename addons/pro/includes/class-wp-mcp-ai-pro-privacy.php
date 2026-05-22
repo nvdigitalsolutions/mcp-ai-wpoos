@@ -317,9 +317,9 @@ class WP_MCP_AI_Pro_Privacy {
 			// Hard-delete — PHI must not sit in the trash.
 			$result = wp_delete_post( (int) $post_id, true );
 			if ( $result ) {
-				$removed++;
+				++$removed;
 			} else {
-				$retained++;
+				++$retained;
 				$messages[] = sprintf(
 					/* translators: %d: post ID */
 					__( 'Could not erase health record #%d.', 'mcp-ai-wpoos-pro' ),
@@ -387,9 +387,9 @@ class WP_MCP_AI_Pro_Privacy {
 			// Hard-delete the CPT record.
 			$result = wp_delete_post( $post->ID, true );
 			if ( $result ) {
-				$removed++;
+				++$removed;
 			} else {
-				$retained++;
+				++$retained;
 				$messages[] = sprintf(
 					/* translators: %d: post ID */
 					__( 'Could not erase imaging study #%d.', 'mcp-ai-wpoos-pro' ),
@@ -419,12 +419,12 @@ class WP_MCP_AI_Pro_Privacy {
 	 */
 	private static function get_health_cpt_map() {
 		return array(
-			'mcp_ai_member'      => __( 'Member', 'mcp-ai-wpoos-pro' ),
-			'mcp_ai_policy'      => __( 'Insurance Policy', 'mcp-ai-wpoos-pro' ),
-			'mcp_ai_med_record'  => __( 'Medical Record', 'mcp-ai-wpoos-pro' ),
-			'mcp_ai_checkup'     => __( 'Health Checkup', 'mcp-ai-wpoos-pro' ),
+			'mcp_ai_member'       => __( 'Member', 'mcp-ai-wpoos-pro' ),
+			'mcp_ai_policy'       => __( 'Insurance Policy', 'mcp-ai-wpoos-pro' ),
+			'mcp_ai_med_record'   => __( 'Medical Record', 'mcp-ai-wpoos-pro' ),
+			'mcp_ai_checkup'      => __( 'Health Checkup', 'mcp-ai-wpoos-pro' ),
 			'mcp_ai_prescription' => __( 'Prescription', 'mcp-ai-wpoos-pro' ),
-			'mcp_ai_allergy'     => __( 'Allergy Record', 'mcp-ai-wpoos-pro' ),
+			'mcp_ai_allergy'      => __( 'Allergy Record', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

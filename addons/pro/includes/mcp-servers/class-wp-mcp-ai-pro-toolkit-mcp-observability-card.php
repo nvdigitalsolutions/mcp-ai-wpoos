@@ -74,8 +74,8 @@ class WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card {
 		}
 
 		// Top consumers in the last 24 h.
-		$since        = time() - DAY_IN_SECONDS;
-		$recent       = array_filter(
+		$since         = time() - DAY_IN_SECONDS;
+		$recent        = array_filter(
 			$audit_entries,
 			static function ( $entry ) use ( $since ) {
 				return isset( $entry['ts'] ) && $entry['ts'] >= $since;
@@ -83,7 +83,7 @@ class WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card {
 		);
 		$consumer_hits = array();
 		foreach ( $recent as $entry ) {
-			$consumer = isset( $entry['consumer'] ) ? (string) $entry['consumer'] : 'unknown';
+			$consumer                   = isset( $entry['consumer'] ) ? (string) $entry['consumer'] : 'unknown';
 			$consumer_hits[ $consumer ] = ( $consumer_hits[ $consumer ] ?? 0 ) + 1;
 		}
 		arsort( $consumer_hits );
@@ -160,12 +160,12 @@ class WP_MCP_AI_Pro_Toolkit_MCP_Observability_Card {
 
 			<p style="margin-top:12px;">
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-toolkit-mcp-servers' ) ); ?>"
-				   class="button button-secondary">
+					class="button button-secondary">
 					<?php esc_html_e( 'Manage MCP Servers', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<a href="<?php echo esc_url( $audit_url ); ?>"
-				   target="_blank"
-				   style="margin-left:8px;font-size:12px;">
+					target="_blank"
+					style="margin-left:8px;font-size:12px;">
 					<?php esc_html_e( 'Audit Log (REST)', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 			</p>

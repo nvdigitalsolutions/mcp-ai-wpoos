@@ -237,14 +237,14 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 			$shop_data = isset( $result['data']['shop'] ) ? $result['data']['shop'] : array();
 
 			return array(
-				'success'            => true,
-				'connection_id'      => $connection_id,
-				'name'               => isset( $connection['name'] ) ? $connection['name'] : '',
-				'api_mode'           => $api_mode,
-				'shop_name'          => isset( $shop_data['name'] ) ? $shop_data['name'] : '',
-				'myshopify_domain'   => isset( $shop_data['myshopifyDomain'] ) ? $shop_data['myshopifyDomain'] : '',
-				'plan'               => isset( $shop_data['plan']['displayName'] ) ? $shop_data['plan']['displayName'] : '',
-				'message'            => __( 'Shopify Admin API connection successful.', 'mcp-ai-wpoos-pro' ),
+				'success'          => true,
+				'connection_id'    => $connection_id,
+				'name'             => isset( $connection['name'] ) ? $connection['name'] : '',
+				'api_mode'         => $api_mode,
+				'shop_name'        => isset( $shop_data['name'] ) ? $shop_data['name'] : '',
+				'myshopify_domain' => isset( $shop_data['myshopifyDomain'] ) ? $shop_data['myshopifyDomain'] : '',
+				'plan'             => isset( $shop_data['plan']['displayName'] ) ? $shop_data['plan']['displayName'] : '',
+				'message'          => __( 'Shopify Admin API connection successful.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

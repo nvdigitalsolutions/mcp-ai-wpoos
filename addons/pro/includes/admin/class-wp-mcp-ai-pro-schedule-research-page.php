@@ -114,21 +114,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				);
 
 				// Map legacy ?mode= query-arg → data-workflow card so old bookmarks land on the right card.
-				$legacy_mode    = isset( $_GET['mode'] ) ? sanitize_key( wp_unslash( $_GET['mode'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				$mode_to_card   = array(
+				$legacy_mode  = isset( $_GET['mode'] ) ? sanitize_key( wp_unslash( $_GET['mode'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$mode_to_card = array(
 					'chat'     => 'research',
 					'paste'    => 'import',
 					'review'   => 'review',
 					'calendar' => 'calendar',
 				);
-				$initial_card   = isset( $mode_to_card[ $legacy_mode ] ) ? $mode_to_card[ $legacy_mode ] : '';
+				$initial_card = isset( $mode_to_card[ $legacy_mode ] ) ? $mode_to_card[ $legacy_mode ] : '';
 				wp_localize_script(
 					'wp-mcp-ai-enhanced-research-page',
 					'wpMcpAiResearchPage',
 					array(
-						'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-						'nonce'          => wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' ),
-						'entityType'     => 'pro_schedule',
+						'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+						'nonce'           => wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' ),
+						'entityType'      => 'pro_schedule',
 						'initialWorkflow' => $initial_card,
 					)
 				);
@@ -150,28 +150,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp_mcp_ai_research_pro_schedule' ),
 					'i18n'    => array(
-						'previewing' => __( 'Generating preview…', 'mcp-ai-wpoos-pro' ),
-						'creating'   => __( 'Creating schedules…', 'mcp-ai-wpoos-pro' ),
-						'noItems'    => __( 'Please paste at least one workflow item.', 'mcp-ai-wpoos-pro' ),
-						'errorPrefix'=> __( 'Error: ', 'mcp-ai-wpoos-pro' ),
-						'dryRunning' => __( 'Running dry-run…', 'mcp-ai-wpoos-pro' ),
-						'noNextRuns' => __( 'No upcoming runs projected.', 'mcp-ai-wpoos-pro' ),
-						'warnings'   => __( 'Warnings:', 'mcp-ai-wpoos-pro' ),
-						'nextRuns'   => __( 'Next runs:', 'mcp-ai-wpoos-pro' ),
-						'pausing'    => __( 'Pausing…', 'mcp-ai-wpoos-pro' ),
-						'resuming'   => __( 'Resuming…', 'mcp-ai-wpoos-pro' ),
-						'running'    => __( 'Running…', 'mcp-ai-wpoos-pro' ),
-						'paused'     => __( 'Paused.', 'mcp-ai-wpoos-pro' ),
-						'resumed'    => __( 'Resumed.', 'mcp-ai-wpoos-pro' ),
-						'ranOk'      => __( 'Run completed successfully.', 'mcp-ai-wpoos-pro' ),
-						'pauseLabel' => __( 'Pause', 'mcp-ai-wpoos-pro' ),
-						'resumeLabel'=> __( 'Resume', 'mcp-ai-wpoos-pro' ),
-						'confirmRun' => __( 'Trigger this schedule to run immediately?', 'mcp-ai-wpoos-pro' ),
-						'loadingHistory' => __( 'Loading run history…', 'mcp-ai-wpoos-pro' ),
-						'noHistory'      => __( 'No run history recorded yet.', 'mcp-ai-wpoos-pro' ),
-						'runSuccess'     => __( '✓ Success', 'mcp-ai-wpoos-pro' ),
-						'runFailed'      => __( '✗ Failed', 'mcp-ai-wpoos-pro' ),
-						'historyDuration'=> __( 'Duration', 'mcp-ai-wpoos-pro' ),
+						'previewing'      => __( 'Generating preview…', 'mcp-ai-wpoos-pro' ),
+						'creating'        => __( 'Creating schedules…', 'mcp-ai-wpoos-pro' ),
+						'noItems'         => __( 'Please paste at least one workflow item.', 'mcp-ai-wpoos-pro' ),
+						'errorPrefix'     => __( 'Error: ', 'mcp-ai-wpoos-pro' ),
+						'dryRunning'      => __( 'Running dry-run…', 'mcp-ai-wpoos-pro' ),
+						'noNextRuns'      => __( 'No upcoming runs projected.', 'mcp-ai-wpoos-pro' ),
+						'warnings'        => __( 'Warnings:', 'mcp-ai-wpoos-pro' ),
+						'nextRuns'        => __( 'Next runs:', 'mcp-ai-wpoos-pro' ),
+						'pausing'         => __( 'Pausing…', 'mcp-ai-wpoos-pro' ),
+						'resuming'        => __( 'Resuming…', 'mcp-ai-wpoos-pro' ),
+						'running'         => __( 'Running…', 'mcp-ai-wpoos-pro' ),
+						'paused'          => __( 'Paused.', 'mcp-ai-wpoos-pro' ),
+						'resumed'         => __( 'Resumed.', 'mcp-ai-wpoos-pro' ),
+						'ranOk'           => __( 'Run completed successfully.', 'mcp-ai-wpoos-pro' ),
+						'pauseLabel'      => __( 'Pause', 'mcp-ai-wpoos-pro' ),
+						'resumeLabel'     => __( 'Resume', 'mcp-ai-wpoos-pro' ),
+						'confirmRun'      => __( 'Trigger this schedule to run immediately?', 'mcp-ai-wpoos-pro' ),
+						'loadingHistory'  => __( 'Loading run history…', 'mcp-ai-wpoos-pro' ),
+						'noHistory'       => __( 'No run history recorded yet.', 'mcp-ai-wpoos-pro' ),
+						'runSuccess'      => __( '✓ Success', 'mcp-ai-wpoos-pro' ),
+						'runFailed'       => __( '✗ Failed', 'mcp-ai-wpoos-pro' ),
+						'historyDuration' => __( 'Duration', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -194,7 +194,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			$assistant_id = isset( $settings['research_assistant_id'] ) ? absint( $settings['research_assistant_id'] ) : 0;
 
 			if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
-				$assistants = get_posts(
+				$assistants   = get_posts(
 					array(
 						'post_type'      => 'mcp_ai_assistant',
 						'post_status'    => 'publish',
@@ -857,300 +857,298 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 		 * @return string Script source.
 		 */
 		protected static function get_inline_script() {
-			return <<<'JS'
-(function($){
-	if (typeof window.wpMcpAiScheduleResearch === 'undefined') { return; }
+			return '(function($){
+	if (typeof window.wpMcpAiScheduleResearch === \'undefined\') { return; }
 	var cfg = window.wpMcpAiScheduleResearch;
 
 	function escapeHtml(text){
-		return String(text == null ? '' : text).replace(/[&<>"']/g, function(c){
-			var map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'};
+		return String(text == null ? \'\' : text).replace(/[&<>"\']/g, function(c){
+			var map = {\'&\':\'&amp;\',\'<\':\'&lt;\',\'>\':\'&gt;\',\'"\':\'&quot;\',\'\\\'\':\'&#39;\'};
 			return map[c];
 		});
 	}
 
 	function collectArgs(){
 		return {
-			workflow_text: $('#schedule-research-text').val() || '',
-			category: $('#schedule-research-category').val() || '',
-			default_cadence: $('#schedule-research-cadence').val() || 'daily',
-			default_time: $('#schedule-research-time').val() || '09:00',
-			default_assistant_id: parseInt($('#schedule-research-assistant').val(), 10) || 0
+			workflow_text: $(\'#schedule-research-text\').val() || \'\',
+			category: $(\'#schedule-research-category\').val() || \'\',
+			default_cadence: $(\'#schedule-research-cadence\').val() || \'daily\',
+			default_time: $(\'#schedule-research-time\').val() || \'09:00\',
+			default_assistant_id: parseInt($(\'#schedule-research-assistant\').val(), 10) || 0
 		};
 	}
 
 	function renderResult(data){
-		var $out = $('#schedule-research-results');
+		var $out = $(\'#schedule-research-results\');
 		$out.empty();
 		if (!data) return;
 		var summary = data.summary || {};
 		var rows = (data.plan && data.plan.length) ? data.plan : (data.created || []);
-		var html = '<h3>' + escapeHtml(data.message || '') + '</h3>';
-		html += '<p>' + escapeHtml('Total: ' + (summary.total || 0) + ' · Planned: ' + (summary.planned || 0) + ' · Created: ' + (summary.created || 0) + ' · Errors: ' + (summary.errors || 0)) + '</p>';
+		var html = \'<h3>\' + escapeHtml(data.message || \'\') + \'</h3>\';
+		html += \'<p>\' + escapeHtml(\'Total: \' + (summary.total || 0) + \' · Planned: \' + (summary.planned || 0) + \' · Created: \' + (summary.created || 0) + \' · Errors: \' + (summary.errors || 0)) + \'</p>\';
 		if (rows.length){
-			html += '<table class="widefat striped"><thead><tr><th>Name</th><th>Cadence</th><th>Type</th><th>Tags</th></tr></thead><tbody>';
+			html += \'<table class="widefat striped"><thead><tr><th>Name</th><th>Cadence</th><th>Type</th><th>Tags</th></tr></thead><tbody>\';
 			rows.forEach(function(r){
-				html += '<tr>';
-				html += '<td>' + escapeHtml(r.name || '') + '</td>';
-				html += '<td>' + escapeHtml(r.schedule || r.cadence || '') + '</td>';
-				html += '<td>' + escapeHtml(r.schedule_type || '') + '</td>';
-				html += '<td>' + escapeHtml((r.tags || []).join(', ')) + '</td>';
-				html += '</tr>';
+				html += \'<tr>\';
+				html += \'<td>\' + escapeHtml(r.name || \'\') + \'</td>\';
+				html += \'<td>\' + escapeHtml(r.schedule || r.cadence || \'\') + \'</td>\';
+				html += \'<td>\' + escapeHtml(r.schedule_type || \'\') + \'</td>\';
+				html += \'<td>\' + escapeHtml((r.tags || []).join(\', \')) + \'</td>\';
+				html += \'</tr>\';
 			});
-			html += '</tbody></table>';
+			html += \'</tbody></table>\';
 		}
 		if (data.errors && data.errors.length){
-			html += '<h4>' + escapeHtml('Errors') + '</h4><ul>';
+			html += \'<h4>\' + escapeHtml(\'Errors\') + \'</h4><ul>\';
 			data.errors.forEach(function(e){
-				html += '<li>' + escapeHtml(e.message || '') + '</li>';
+				html += \'<li>\' + escapeHtml(e.message || \'\') + \'</li>\';
 			});
-			html += '</ul>';
+			html += \'</ul>\';
 		}
 		$out.html(html);
 	}
 
-	$(document).on('click', '#schedule-research-preview', function(e){
+	$(document).on(\'click\', \'#schedule-research-preview\', function(e){
 		e.preventDefault();
 		var args = collectArgs();
 		if (!args.workflow_text.trim()){
 			alert(cfg.i18n.noItems);
 			return;
 		}
-		var $sp = $('#schedule-research-spinner').addClass('is-active');
-		$('#schedule-research-create').prop('disabled', true);
-		$('#schedule-research-results').html('<p>' + escapeHtml(cfg.i18n.previewing) + '</p>');
-		args.action = 'wp_mcp_ai_preview_schedule_from_research';
+		var $sp = $(\'#schedule-research-spinner\').addClass(\'is-active\');
+		$(\'#schedule-research-create\').prop(\'disabled\', true);
+		$(\'#schedule-research-results\').html(\'<p>\' + escapeHtml(cfg.i18n.previewing) + \'</p>\');
+		args.action = \'wp_mcp_ai_preview_schedule_from_research\';
 		args.nonce = cfg.nonce;
 		$.post(cfg.ajaxUrl, args).done(function(resp){
-			$sp.removeClass('is-active');
+			$sp.removeClass(\'is-active\');
 			if (resp && resp.success){
 				renderResult(resp.data);
-				$('#schedule-research-create').prop('disabled', false);
+				$(\'#schedule-research-create\').prop(\'disabled\', false);
 			} else {
-				$('#schedule-research-results').html('<div class="notice notice-error"><p>' + escapeHtml(cfg.i18n.errorPrefix + ((resp && resp.data && resp.data.message) || 'Unknown')) + '</p></div>');
+				$(\'#schedule-research-results\').html(\'<div class="notice notice-error"><p>\' + escapeHtml(cfg.i18n.errorPrefix + ((resp && resp.data && resp.data.message) || \'Unknown\')) + \'</p></div>\');
 			}
 		}).fail(function(){
-			$sp.removeClass('is-active');
-			$('#schedule-research-results').html('<div class="notice notice-error"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
+			$sp.removeClass(\'is-active\');
+			$(\'#schedule-research-results\').html(\'<div class="notice notice-error"><p>\' + escapeHtml(cfg.i18n.errorPrefix + \'Request failed\') + \'</p></div>\');
 		});
 	});
 
-	$(document).on('click', '#schedule-research-create', function(e){
+	$(document).on(\'click\', \'#schedule-research-create\', function(e){
 		e.preventDefault();
 		var args = collectArgs();
 		if (!args.workflow_text.trim()){
 			alert(cfg.i18n.noItems);
 			return;
 		}
-		var $sp = $('#schedule-research-spinner').addClass('is-active');
-		$('#schedule-research-results').append('<p>' + escapeHtml(cfg.i18n.creating) + '</p>');
-		args.action = 'wp_mcp_ai_create_schedule_from_research';
+		var $sp = $(\'#schedule-research-spinner\').addClass(\'is-active\');
+		$(\'#schedule-research-results\').append(\'<p>\' + escapeHtml(cfg.i18n.creating) + \'</p>\');
+		args.action = \'wp_mcp_ai_create_schedule_from_research\';
 		args.nonce = cfg.nonce;
 		$.post(cfg.ajaxUrl, args).done(function(resp){
-			$sp.removeClass('is-active');
+			$sp.removeClass(\'is-active\');
 			if (resp && resp.success){
 				renderResult(resp.data);
-				$('#schedule-research-create').prop('disabled', true);
+				$(\'#schedule-research-create\').prop(\'disabled\', true);
 			} else {
-				$('#schedule-research-results').append('<div class="notice notice-error"><p>' + escapeHtml(cfg.i18n.errorPrefix + ((resp && resp.data && resp.data.message) || 'Unknown')) + '</p></div>');
+				$(\'#schedule-research-results\').append(\'<div class="notice notice-error"><p>\' + escapeHtml(cfg.i18n.errorPrefix + ((resp && resp.data && resp.data.message) || \'Unknown\')) + \'</p></div>\');
 			}
 		}).fail(function(){
-			$sp.removeClass('is-active');
-			$('#schedule-research-results').append('<div class="notice notice-error"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
+			$sp.removeClass(\'is-active\');
+			$(\'#schedule-research-results\').append(\'<div class="notice notice-error"><p>\' + escapeHtml(cfg.i18n.errorPrefix + \'Request failed\') + \'</p></div>\');
 		});
 	});
-	$(document).on('click', '.wp-mcp-ai-dry-run-button', function(e){
+	$(document).on(\'click\', \'.wp-mcp-ai-dry-run-button\', function(e){
 		e.preventDefault();
 		var $btn = $(this);
-		var scheduleId = $btn.data('schedule-id');
+		var scheduleId = $btn.data(\'schedule-id\');
 		if (!scheduleId){ return; }
-		var $row = $('#wp-mcp-ai-dry-run-result-' + scheduleId.replace(/[^a-zA-Z0-9_-]/g, ''));
+		var $row = $(\'#wp-mcp-ai-dry-run-result-\' + scheduleId.replace(/[^a-zA-Z0-9_-]/g, \'\'));
 		// Fall back to attribute selector if data-schedule-id contains non-id-safe characters.
 		if ($row.length === 0){
-			$row = $('tr.wp-mcp-ai-dry-run-result').filter(function(){
-				return $(this).attr('id') === 'wp-mcp-ai-dry-run-result-' + scheduleId;
+			$row = $(\'tr.wp-mcp-ai-dry-run-result\').filter(function(){
+				return $(this).attr(\'id\') === \'wp-mcp-ai-dry-run-result-\' + scheduleId;
 			});
 		}
-		var $cell = $row.find('td').first();
+		var $cell = $row.find(\'td\').first();
 		$row.show();
-		$cell.html('<em>' + escapeHtml(cfg.i18n.dryRunning) + '</em>');
-		$btn.prop('disabled', true);
+		$cell.html(\'<em>\' + escapeHtml(cfg.i18n.dryRunning) + \'</em>\');
+		$btn.prop(\'disabled\', true);
 		$.post(cfg.ajaxUrl, {
-			action: 'wp_mcp_ai_dry_run_schedule_from_research',
+			action: \'wp_mcp_ai_dry_run_schedule_from_research\',
 			nonce: cfg.nonce,
 			schedule_id: scheduleId
 		}).done(function(resp){
-			$btn.prop('disabled', false);
+			$btn.prop(\'disabled\', false);
 			if (!resp || !resp.success){
-				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
-				$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + msg) + '</p></div>');
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : \'Unknown\';
+				$cell.html(\'<div class="notice notice-error inline"><p>\' + escapeHtml(cfg.i18n.errorPrefix + msg) + \'</p></div>\');
 				return;
 			}
 			var data = resp.data || {};
-			var html = '';
+			var html = \'\';
 			var nextRuns = Array.isArray(data.next_runs) ? data.next_runs : [];
-			html += '<p><strong>' + escapeHtml(cfg.i18n.nextRuns) + '</strong></p>';
+			html += \'<p><strong>\' + escapeHtml(cfg.i18n.nextRuns) + \'</strong></p>\';
 			if (nextRuns.length === 0){
-				html += '<p><em>' + escapeHtml(cfg.i18n.noNextRuns) + '</em></p>';
+				html += \'<p><em>\' + escapeHtml(cfg.i18n.noNextRuns) + \'</em></p>\';
 			} else {
-				html += '<ul style="margin:0 0 8px 18px;list-style:disc;">';
+				html += \'<ul style="margin:0 0 8px 18px;list-style:disc;">\';
 				nextRuns.forEach(function(r){
-					html += '<li><code>' + escapeHtml(r.iso8601 || '') + '</code></li>';
+					html += \'<li><code>\' + escapeHtml(r.iso8601 || \'\') + \'</code></li>\';
 				});
-				html += '</ul>';
+				html += \'</ul>\';
 			}
 			var warnings = Array.isArray(data.warnings) ? data.warnings : [];
 			if (warnings.length){
-				html += '<p><strong>' + escapeHtml(cfg.i18n.warnings) + '</strong></p><ul style="margin:0 0 8px 18px;list-style:disc;color:#996800;">';
-				warnings.forEach(function(w){ html += '<li>' + escapeHtml(w) + '</li>'; });
-				html += '</ul>';
+				html += \'<p><strong>\' + escapeHtml(cfg.i18n.warnings) + \'</strong></p><ul style="margin:0 0 8px 18px;list-style:disc;color:#996800;">\';
+				warnings.forEach(function(w){ html += \'<li>\' + escapeHtml(w) + \'</li>\'; });
+				html += \'</ul>\';
 			}
 			if (data.action){
-				html += '<details><summary>' + escapeHtml('Action preview (' + (data.action.type || '') + ')') + '</summary>';
-				html += '<pre style="margin:8px 0;padding:8px;background:#f6f7f7;border:1px solid #dcdcde;overflow:auto;">' + escapeHtml(JSON.stringify(data.action, null, 2)) + '</pre></details>';
+				html += \'<details><summary>\' + escapeHtml(\'Action preview (\' + (data.action.type || \'\') + \')\') + \'</summary>\';
+				html += \'<pre style="margin:8px 0;padding:8px;background:#f6f7f7;border:1px solid #dcdcde;overflow:auto;">\' + escapeHtml(JSON.stringify(data.action, null, 2)) + \'</pre></details>\';
 			}
 			$cell.html(html);
 		}).fail(function(){
-			$btn.prop('disabled', false);
-			$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
+			$btn.prop(\'disabled\', false);
+			$cell.html(\'<div class="notice notice-error inline"><p>\' + escapeHtml(cfg.i18n.errorPrefix + \'Request failed\') + \'</p></div>\');
 		});
 	});
 
-	$(document).on('click', '.wp-mcp-ai-toggle-button', function(e){
+	$(document).on(\'click\', \'.wp-mcp-ai-toggle-button\', function(e){
 		e.preventDefault();
 		var $btn = $(this);
-		var scheduleId = $btn.data('schedule-id');
+		var scheduleId = $btn.data(\'schedule-id\');
 		if (!scheduleId){ return; }
-		var enabled = String($btn.attr('data-enabled')) === '1';
+		var enabled = String($btn.attr(\'data-enabled\')) === \'1\';
 		var newEnabled = !enabled;
 		var originalText = $btn.text();
-		$btn.prop('disabled', true).text(enabled ? cfg.i18n.pausing : cfg.i18n.resuming);
+		$btn.prop(\'disabled\', true).text(enabled ? cfg.i18n.pausing : cfg.i18n.resuming);
 		$.post(cfg.ajaxUrl, {
-			action: 'wp_mcp_ai_toggle_schedule_from_research',
+			action: \'wp_mcp_ai_toggle_schedule_from_research\',
 			nonce: cfg.nonce,
 			schedule_id: scheduleId,
 			enabled: newEnabled ? 1 : 0
 		}).done(function(resp){
-			$btn.prop('disabled', false);
+			$btn.prop(\'disabled\', false);
 			if (!resp || !resp.success){
-				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : \'Unknown\';
 				$btn.text(originalText);
 				alert(cfg.i18n.errorPrefix + msg);
 				return;
 			}
-			$btn.attr('data-enabled', newEnabled ? '1' : '0');
+			$btn.attr(\'data-enabled\', newEnabled ? \'1\' : \'0\');
 			$btn.text(newEnabled ? cfg.i18n.pauseLabel : cfg.i18n.resumeLabel);
 			// Update the corresponding Status cell (5th column).
-			var $statusCell = $btn.closest('tr').find('td').eq(4);
-			$statusCell.text(newEnabled ? 'Enabled' : 'Disabled');
+			var $statusCell = $btn.closest(\'tr\').find(\'td\').eq(4);
+			$statusCell.text(newEnabled ? \'Enabled\' : \'Disabled\');
 		}).fail(function(){
-			$btn.prop('disabled', false).text(originalText);
-			alert(cfg.i18n.errorPrefix + 'Request failed');
+			$btn.prop(\'disabled\', false).text(originalText);
+			alert(cfg.i18n.errorPrefix + \'Request failed\');
 		});
 	});
 
-	$(document).on('click', '.wp-mcp-ai-run-now-button', function(e){
+	$(document).on(\'click\', \'.wp-mcp-ai-run-now-button\', function(e){
 		e.preventDefault();
 		var $btn = $(this);
-		var scheduleId = $btn.data('schedule-id');
+		var scheduleId = $btn.data(\'schedule-id\');
 		if (!scheduleId){ return; }
 		if (!window.confirm(cfg.i18n.confirmRun)){ return; }
 		var originalText = $btn.text();
-		$btn.prop('disabled', true).text(cfg.i18n.running);
+		$btn.prop(\'disabled\', true).text(cfg.i18n.running);
 		$.post(cfg.ajaxUrl, {
-			action: 'wp_mcp_ai_run_now_schedule_from_research',
+			action: \'wp_mcp_ai_run_now_schedule_from_research\',
 			nonce: cfg.nonce,
 			schedule_id: scheduleId
 		}).done(function(resp){
-			$btn.prop('disabled', false).text(originalText);
+			$btn.prop(\'disabled\', false).text(originalText);
 			if (!resp || !resp.success){
-				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : \'Unknown\';
 				alert(cfg.i18n.errorPrefix + msg);
 				return;
 			}
 			alert(cfg.i18n.ranOk);
 		}).fail(function(){
-			$btn.prop('disabled', false).text(originalText);
-			alert(cfg.i18n.errorPrefix + 'Request failed');
+			$btn.prop(\'disabled\', false).text(originalText);
+			alert(cfg.i18n.errorPrefix + \'Request failed\');
 		});
 	});
 
 	/* ------------------------------------------------------------------ *
 	 * Run-history toggle button                                            *
 	 * ------------------------------------------------------------------ */
-	$(document).on('click', '.wp-mcp-ai-history-button', function(e){
+	$(document).on(\'click\', \'.wp-mcp-ai-history-button\', function(e){
 		e.preventDefault();
 		var $btn = $(this);
-		var scheduleId = $btn.data('schedule-id');
+		var scheduleId = $btn.data(\'schedule-id\');
 		if (!scheduleId){ return; }
-		var safeId = scheduleId.replace(/[^a-zA-Z0-9_-]/g, '');
-		var $row = $('#wp-mcp-ai-run-history-row-' + safeId);
+		var safeId = scheduleId.replace(/[^a-zA-Z0-9_-]/g, \'\');
+		var $row = $(\'#wp-mcp-ai-run-history-row-\' + safeId);
 		if ($row.length === 0){
-			$row = $('tr.wp-mcp-ai-run-history-row').filter(function(){
-				return $(this).attr('id') === 'wp-mcp-ai-run-history-row-' + scheduleId;
+			$row = $(\'tr.wp-mcp-ai-run-history-row\').filter(function(){
+				return $(this).attr(\'id\') === \'wp-mcp-ai-run-history-row-\' + scheduleId;
 			});
 		}
-		var $cell = $row.find('td').first();
+		var $cell = $row.find(\'td\').first();
 
 		// If already loaded and visible, toggle (collapse).
-		if ($row.is(':visible') && $cell.data('loaded')){
+		if ($row.is(\':visible\') && $cell.data(\'loaded\')){
 			$row.hide();
 			return;
 		}
 
 		$row.show();
-		$cell.html('<em>' + escapeHtml(cfg.i18n.loadingHistory) + '</em>');
-		$btn.prop('disabled', true);
+		$cell.html(\'<em>\' + escapeHtml(cfg.i18n.loadingHistory) + \'</em>\');
+		$btn.prop(\'disabled\', true);
 
 		$.post(cfg.ajaxUrl, {
-			action: 'wp_mcp_ai_run_history_from_research',
+			action: \'wp_mcp_ai_run_history_from_research\',
 			nonce: cfg.nonce,
 			schedule_id: scheduleId
 		}).done(function(resp){
-			$btn.prop('disabled', false);
+			$btn.prop(\'disabled\', false);
 			if (!resp || !resp.success){
-				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown';
-				$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + msg) + '</p></div>');
+				var msg = (resp && resp.data && resp.data.message) ? resp.data.message : \'Unknown\';
+				$cell.html(\'<div class="notice notice-error inline"><p>\' + escapeHtml(cfg.i18n.errorPrefix + msg) + \'</p></div>\');
 				return;
 			}
 			var data = resp.data || {};
 			var history = Array.isArray(data.history) ? data.history : (Array.isArray(data.runs) ? data.runs : []);
 			if (history.length === 0){
-				$cell.html('<p><em>' + escapeHtml(cfg.i18n.noHistory) + '</em></p>');
-				$cell.data('loaded', true);
+				$cell.html(\'<p><em>\' + escapeHtml(cfg.i18n.noHistory) + \'</em></p>\');
+				$cell.data(\'loaded\', true);
 				return;
 			}
-			var html = '<table class="widefat striped" style="margin:8px 0;">';
-			html += '<thead><tr>';
-			html += '<th>' + escapeHtml('When') + '</th>';
-			html += '<th>' + escapeHtml(cfg.i18n.historyDuration) + '</th>';
-			html += '<th>' + escapeHtml('Result') + '</th>';
-			html += '<th>' + escapeHtml('Error') + '</th>';
-			html += '</tr></thead><tbody>';
+			var html = \'<table class="widefat striped" style="margin:8px 0;">\';
+			html += \'<thead><tr>\';
+			html += \'<th>\' + escapeHtml(\'When\') + \'</th>\';
+			html += \'<th>\' + escapeHtml(cfg.i18n.historyDuration) + \'</th>\';
+			html += \'<th>\' + escapeHtml(\'Result\') + \'</th>\';
+			html += \'<th>\' + escapeHtml(\'Error\') + \'</th>\';
+			html += \'</tr></thead><tbody>\';
 			history.forEach(function(run){
-				var when = run.time || run.run_time || run.timestamp || '';
-				var dur  = (run.duration != null) ? (parseFloat(run.duration) * 1000).toFixed(0) + ' ms' : (run.duration_ms != null ? run.duration_ms + ' ms' : '—');
-				var ok   = (run.success === true || run.success === 1 || run.success === '1');
-				var err  = run.error || '';
-				var errTrunc = err.length > 120 ? err.substring(0, 120) + '…' : err;
-				html += '<tr>';
-				html += '<td style="white-space:nowrap;">' + escapeHtml(when) + '</td>';
-				html += '<td style="white-space:nowrap;">' + escapeHtml(dur) + '</td>';
-				html += '<td style="white-space:nowrap;' + (ok ? 'color:#00a32a;' : 'color:#d63638;') + '">' + escapeHtml(ok ? cfg.i18n.runSuccess : cfg.i18n.runFailed) + '</td>';
-				html += '<td>' + escapeHtml(errTrunc) + '</td>';
-				html += '</tr>';
+				var when = run.time || run.run_time || run.timestamp || \'\';
+				var dur  = (run.duration != null) ? (parseFloat(run.duration) * 1000).toFixed(0) + \' ms\' : (run.duration_ms != null ? run.duration_ms + \' ms\' : \'—\');
+				var ok   = (run.success === true || run.success === 1 || run.success === \'1\');
+				var err  = run.error || \'\';
+				var errTrunc = err.length > 120 ? err.substring(0, 120) + \'…\' : err;
+				html += \'<tr>\';
+				html += \'<td style="white-space:nowrap;">\' + escapeHtml(when) + \'</td>\';
+				html += \'<td style="white-space:nowrap;">\' + escapeHtml(dur) + \'</td>\';
+				html += \'<td style="white-space:nowrap;\' + (ok ? \'color:#00a32a;\' : \'color:#d63638;\') + \'">\' + escapeHtml(ok ? cfg.i18n.runSuccess : cfg.i18n.runFailed) + \'</td>\';
+				html += \'<td>\' + escapeHtml(errTrunc) + \'</td>\';
+				html += \'</tr>\';
 			});
-			html += '</tbody></table>';
+			html += \'</tbody></table>\';
 			$cell.html(html);
-			$cell.data('loaded', true);
+			$cell.data(\'loaded\', true);
 		}).fail(function(){
-			$btn.prop('disabled', false);
-			$cell.html('<div class="notice notice-error inline"><p>' + escapeHtml(cfg.i18n.errorPrefix + 'Request failed') + '</p></div>');
+			$btn.prop(\'disabled\', false);
+			$cell.html(\'<div class="notice notice-error inline"><p>\' + escapeHtml(cfg.i18n.errorPrefix + \'Request failed\') + \'</p></div>\');
 		});
 	});
 
-})(jQuery);
-JS;
+})(jQuery);';
 		}
 	}
 }

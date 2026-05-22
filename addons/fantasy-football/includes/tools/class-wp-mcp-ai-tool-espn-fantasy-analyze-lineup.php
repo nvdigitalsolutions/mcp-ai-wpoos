@@ -273,7 +273,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 			'eligible_slots' => $eligible_positions,
 			'points'         => $points,
 			'lineup_slot'    => $this->get_lineup_slot_name( $lineup_slot ),
-			'was_starter'    => $lineup_slot !== 20 && $lineup_slot !== 21,
+			'was_starter'    => 20 !== $lineup_slot && 21 !== $lineup_slot,
 		);
 	}
 
@@ -348,7 +348,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 						continue;
 					}
 
-					if ( $player['position'] === 'RB' ) {
+					if ( 'RB' === $player['position'] ) {
 						$lineup[] = $player;
 						$used[]   = $idx;
 						break;
@@ -365,7 +365,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 						continue;
 					}
 
-					if ( $player['position'] === 'WR' ) {
+					if ( 'WR' === $player['position'] ) {
 						$lineup[] = $player;
 						$used[]   = $idx;
 						break;

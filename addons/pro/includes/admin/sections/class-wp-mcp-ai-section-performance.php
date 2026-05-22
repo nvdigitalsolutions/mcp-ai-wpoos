@@ -1397,7 +1397,7 @@ composer install</pre>
 			'message' => sprintf(
 				/* translators: %s: execution time */
 				__( 'Max execution time: %ss', 'mcp-ai-wpoos-pro' ),
-				$max_execution === '0' ? 'unlimited' : $max_execution
+				'0' === $max_execution ? 'unlimited' : $max_execution
 			),
 		);
 	}

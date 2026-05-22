@@ -253,11 +253,11 @@ class WP_MCP_AI_Tool_Manage_ECA_Waitlist implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return array(
-			'success'      => true,
-			'eca_id'       => $eca->ID,
-			'eca_name'     => $eca->post_title,
-			'total'        => count( $list ),
-			'waitlist'     => $list,
+			'success'  => true,
+			'eca_id'   => $eca->ID,
+			'eca_name' => $eca->post_title,
+			'total'    => count( $list ),
+			'waitlist' => $list,
 		);
 	}
 
@@ -357,8 +357,8 @@ class WP_MCP_AI_Tool_Manage_ECA_Waitlist implements WP_MCP_AI_Tool_Interface, WP
 		$base_time = current_time( 'timestamp' );
 		$order     = 0;
 		foreach ( $new_waitlist as $sid => $entry ) {
-			$entry['enrollment_date']     = gmdate( 'Y-m-d H:i:s', $base_time + $order );
-			$eca_enrollments[ $sid ]      = $entry;
+			$entry['enrollment_date'] = gmdate( 'Y-m-d H:i:s', $base_time + $order );
+			$eca_enrollments[ $sid ]  = $entry;
 
 			// Update student-side meta as well.
 			$student_enrollments = get_post_meta( $sid, '_student_eca_enrollments', true );

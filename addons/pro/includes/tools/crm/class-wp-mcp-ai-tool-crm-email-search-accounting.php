@@ -123,22 +123,30 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		return __( 'The CRM Email Search (Accounting) tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_slug() {
 		return 'crm_email_search_accounting';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_name() {
 		return __( 'CRM Email Search: Accounting & Service Tracking', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_description() {
 		return __( 'Search CRM contacts for accounting and service-tracking emails. Supports industry-standard transaction types (invoice, payment, quote, reminder, dispute), billing-status filtering, invoice-amount ranges, service categories, and compliance audit metadata. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -251,17 +259,23 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function requires_base_pro() {
 		return true;
 	}
 
-	/** {@inheritdoc} */
+	/**
+ * {@inheritdoc}
+ */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -331,7 +345,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Action handlers
+	// Action handlers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -446,6 +460,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		return array(
 			'success'    => true,
 			/* translators: %s: cron recurrence label */
+			 */
 			'message'    => sprintf( __( 'Accounting search scheduled to auto-refresh %s.', 'mcp-ai-wpoos-pro' ), $recurrence ),
 			'recurrence' => $recurrence,
 			'hook'       => self::CRON_HOOK,
@@ -473,7 +488,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Cron callback
+	// Cron callback.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -508,7 +523,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Core query
+	// Core query.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -707,7 +722,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Accounting helpers
+	// Accounting helpers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -791,6 +806,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			'data_retention_years'       => $retention_years,
 			'data_retention_flag'        => sprintf(
 				/* translators: %d: number of years for data retention */
+				 */
 				__( 'Retain for %d years per accounting regulations', 'mcp-ai-wpoos-pro' ),
 				$retention_years
 			),
@@ -860,7 +876,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	}
 
 	// -------------------------------------------------------------------------
-	// Helpers
+	// Helpers.
 	// -------------------------------------------------------------------------
 
 	/**

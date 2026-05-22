@@ -25,7 +25,9 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 	public static function init() {
 		// NOTE: Metabox registration is disabled - functionality consolidated into AI Assistant metabox.
 		// See WP_MCP_AI_Project_Management_AI_Assistant_Metabox for the unified metabox.
+		// phpcs:disable Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
 		// add_action( 'add_meta_boxes', array( __CLASS__, 'add_ai_metabox' ) );
+		// phpcs:enable Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
 
 		// Register AJAX handlers (still needed for the quick action buttons).
 		add_action( 'wp_ajax_wp_mcp_ai_pm_generate_description', array( __CLASS__, 'ajax_generate_description' ) );
@@ -33,7 +35,9 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		add_action( 'wp_ajax_wp_mcp_ai_pm_analyze_project', array( __CLASS__, 'ajax_analyze_project' ) );
 
 		// NOTE: Scripts are now enqueued by WP_MCP_AI_Project_Management_AI_Assistant_Metabox.
+		// phpcs:disable Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
 		// add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
+		// phpcs:enable Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
 	}
 
 	/**

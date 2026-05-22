@@ -34,23 +34,55 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_retainer_balance_monitor'; }
-	public function get_name() { return __( 'Retainer Balance Monitor', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Monitors retainer balances against original retainer amounts and alerts when balance falls below threshold.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_retainer_balance_monitor'; }
+	public function get_name() {
+		return __( 'Retainer Balance Monitor', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Monitors retainer balances against original retainer amounts and alerts when balance falls below threshold.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'matter_id'            => array( 'type' => 'integer', 'description' => __( 'Specific matter to check.', 'mcp-ai-wpoos-pro' ) ),
-				'threshold_percentage' => array( 'type' => 'number', 'description' => __( 'Alert threshold as decimal (default 0.25 = 25%).', 'mcp-ai-wpoos-pro' ) ),
-				'alert_below'          => array( 'type' => 'number', 'description' => __( 'Alert when balance below this dollar amount.', 'mcp-ai-wpoos-pro' ) ),
+				'matter_id'            => array(
+					'type'        => 'integer',
+					'description' => __( 'Specific matter to check.', 'mcp-ai-wpoos-pro' ),
+				),
+				'threshold_percentage' => array(
+					'type'        => 'number',
+					'description' => __( 'Alert threshold as decimal (default 0.25 = 25%).', 'mcp-ai-wpoos-pro' ),
+				),
+				'alert_below'          => array(
+					'type'        => 'number',
+					'description' => __( 'Alert when balance below this dollar amount.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array(),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -68,14 +100,19 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$matter_id  = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
-		$threshold  = isset( $arguments['threshold_percentage'] ) ? floatval( $arguments['threshold_percentage'] ) : 0.25;
+		$matter_id   = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
+		$threshold   = isset( $arguments['threshold_percentage'] ) ? floatval( $arguments['threshold_percentage'] ) : 0.25;
 		$alert_below = isset( $arguments['alert_below'] ) ? floatval( $arguments['alert_below'] ) : 0;
 
 		$query_args = array(
 			'post_type'      => 'mcp_ai_lf_matter',
 			'posts_per_page' => $matter_id ? 1 : 100,
-			'meta_query'     => array( array( 'key' => '_lf_retainer_amount', 'compare' => 'EXISTS' ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'meta_query'     => array(
+				array(
+					'key'     => '_lf_retainer_amount',
+					'compare' => 'EXISTS',
+				),
+			), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		);
 
 		if ( $matter_id ) {
@@ -87,27 +124,34 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 		$alerts  = 0;
 
 		foreach ( $matters as $m ) {
-			$original  = (float) get_post_meta( $m->ID, '_lf_retainer_amount', true );
+			$original = (float) get_post_meta( $m->ID, '_lf_retainer_amount', true );
 			if ( $original <= 0 ) {
 				continue;
 			}
 
 			// Calculate current trust balance for this matter.
-			$txns = get_posts( array(
-				'post_type'      => 'mcp_ai_lf_trust_txn',
-				'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_retainer_balance_monitor', 0, 1000 ) : 1000,
-				'meta_query'     => array( array( 'key' => '_lf_matter_id', 'value' => $m->ID ) ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-			) );
+			$txns = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_lf_trust_txn',
+					'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_retainer_balance_monitor', 0, 1000 ) : 1000,
+					'meta_query'     => array(
+						array(
+							'key'   => '_lf_matter_id',
+							'value' => $m->ID,
+						),
+					), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				)
+			);
 
 			$balance = 0;
 			foreach ( $txns as $txn ) {
-				$type = get_post_meta( $txn->ID, '_lf_txn_type', true );
-				$amt  = (float) get_post_meta( $txn->ID, '_lf_amount', true );
+				$type     = get_post_meta( $txn->ID, '_lf_txn_type', true );
+				$amt      = (float) get_post_meta( $txn->ID, '_lf_amount', true );
 				$balance += ( 'deposit' === $type ) ? $amt : -$amt;
 			}
 			$balance = round( $balance, 2 );
 
-			$pct_remaining     = $original > 0 ? round( $balance / $original, 4 ) : 0;
+			$pct_remaining       = $original > 0 ? round( $balance / $original, 4 ) : 0;
 			$needs_replenishment = $pct_remaining <= $threshold || ( $alert_below > 0 && $balance <= $alert_below );
 
 			if ( $needs_replenishment ) {
@@ -128,10 +172,10 @@ class WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor implements WP_MCP_AI_Tool_Inter
 			'success'    => true,
 			'message'    => sprintf( __( 'Monitored %1$d matters, %2$d need replenishment. ', 'mcp-ai-wpoos-pro' ), count( $results ), $alerts ) . self::DISCLAIMER,
 			'data'       => array(
-				'matters'        => $results,
+				'matters'         => $results,
 				'total_monitored' => count( $results ),
-				'alerts'         => $alerts,
-				'threshold'      => $threshold,
+				'alerts'          => $alerts,
+				'threshold'       => $threshold,
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);

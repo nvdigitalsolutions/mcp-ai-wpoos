@@ -57,19 +57,19 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'subject'      => array(
+				'subject'    => array(
 					'type'        => 'string',
 					'description' => __( 'Subject line for the outgoing message.', 'mcp-ai-wpoos-pro' ),
 				),
-				'text'         => array(
+				'text'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional plain-text body for the message.', 'mcp-ai-wpoos-pro' ),
 				),
-				'html'         => array(
+				'html'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional HTML body for the message.', 'mcp-ai-wpoos-pro' ),
 				),
-				'to'           => array(
+				'to'         => array(
 					'type'        => 'array',
 					'description' => __( 'List of primary recipients. Each entry may be an email string or an object with email and name fields.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -88,7 +88,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 					),
 					'minItems'    => 1,
 				),
-				'cc'           => array(
+				'cc'         => array(
 					'type'        => 'array',
 					'description' => __( 'Optional CC recipients formatted like the "to" field.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -106,7 +106,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 						),
 					),
 				),
-				'bcc'          => array(
+				'bcc'        => array(
 					'type'        => 'array',
 					'description' => __( 'Optional BCC recipients formatted like the "to" field.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -124,30 +124,30 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 						),
 					),
 				),
-				'from_email'   => array(
+				'from_email' => array(
 					'type'        => 'string',
 					'description' => __( 'Optional sender email override. Defaults to the Mailgun From Email in settings.', 'mcp-ai-wpoos-pro' ),
 				),
-				'from_name'    => array(
+				'from_name'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional sender name override.', 'mcp-ai-wpoos-pro' ),
 				),
-				'reply_to'     => array(
+				'reply_to'   => array(
 					'type'        => 'string',
 					'description' => __( 'Optional reply-to email address.', 'mcp-ai-wpoos-pro' ),
 				),
-				'tags'         => array(
+				'tags'       => array(
 					'type'        => 'array',
 					'description' => __( 'Optional tags for organising messages in Mailgun (max 3). Each tag must be 128 characters or fewer.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 					'maxItems'    => 3,
 				),
-				'tracking'     => array(
+				'tracking'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to enable click and open tracking. Defaults to true.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'domain'       => array(
+				'domain'     => array(
 					'type'        => 'string',
 					'description' => __( 'Optional Mailgun sending domain override. Uses the domain configured in settings when omitted.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -398,9 +398,9 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'sent'       => true,
-			'id'         => isset( $decoded['id'] ) ? $decoded['id'] : null,
-			'message'    => isset( $decoded['message'] ) ? $decoded['message'] : null,
+			'sent'    => true,
+			'id'      => isset( $decoded['id'] ) ? $decoded['id'] : null,
+			'message' => isset( $decoded['message'] ) ? $decoded['message'] : null,
 		);
 	}
 

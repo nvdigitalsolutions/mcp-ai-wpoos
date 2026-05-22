@@ -238,12 +238,12 @@ class WP_MCP_AI_Tool_LF_Client_Portal_Manager implements WP_MCP_AI_Tool_Interfac
 					'success'    => true,
 					'message'    => __( 'Document shared with client portal. ', 'mcp-ai-wpoos-pro' ) . self::DISCLAIMER,
 					'data'       => array(
-						'action'        => 'share_document',
-						'client_id'     => $client_id,
-						'client_name'   => $client_post->post_title,
-						'document_id'   => $document_id,
+						'action'         => 'share_document',
+						'client_id'      => $client_id,
+						'client_name'    => $client_post->post_title,
+						'document_id'    => $document_id,
 						'document_title' => $doc_post->post_title,
-						'shared_at'     => current_time( 'Y-m-d H:i:s' ),
+						'shared_at'      => current_time( 'Y-m-d H:i:s' ),
 					),
 					'disclaimer' => self::DISCLAIMER,
 				);

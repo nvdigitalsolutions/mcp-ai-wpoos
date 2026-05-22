@@ -113,7 +113,7 @@ class Test_Pro_Tool_Dry_Run_Pro_Schedule extends WP_UnitTestCase {
 		$schedule_id = (string) $created['id'];
 
 		// Snapshot run-count before dry-run so we can prove dry-run is side-effect free.
-		$before = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $schedule_id );
+		$before       = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $schedule_id );
 		$before_count = isset( $before['run_count'] ) ? (int) $before['run_count'] : 0;
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule();

@@ -34,23 +34,55 @@ class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Inte
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'lf_trust_reconciliation_tool'; }
-	public function get_name() { return __( 'Trust Reconciliation Tool', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Performs three-way reconciliation of trust accounts comparing bank balance, book balance, and client ledger totals.', 'mcp-ai-wpoos-pro' ); }
 
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'lf_trust_reconciliation_tool'; }
+	public function get_name() {
+		return __( 'Trust Reconciliation Tool', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Performs three-way reconciliation of trust accounts comparing bank balance, book balance, and client ledger totals.', 'mcp-ai-wpoos-pro' ); }
+
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'bank_balance' => array( 'type' => 'number', 'description' => __( 'Bank statement balance.', 'mcp-ai-wpoos-pro' ) ),
-				'as_of_date'   => array( 'type' => 'string', 'description' => __( 'Reconciliation date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-				'matter_id'    => array( 'type' => 'integer', 'description' => __( 'Optional: reconcile a single matter.', 'mcp-ai-wpoos-pro' ) ),
+				'bank_balance' => array(
+					'type'        => 'number',
+					'description' => __( 'Bank statement balance.', 'mcp-ai-wpoos-pro' ),
+				),
+				'as_of_date'   => array(
+					'type'        => 'string',
+					'description' => __( 'Reconciliation date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+				),
+				'matter_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional: reconcile a single matter.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'bank_balance' ),
 		);
 	}
 
-	public function get_capability_flags(): array { return array( 'pro', 'read-only', 'cacheable' ); }
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
+	public function get_capability_flags(): array {
+		return array( 'pro', 'read-only', 'cacheable' ); }
 
 	/**
 	 * {@inheritdoc}
@@ -78,23 +110,34 @@ class WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool implements WP_MCP_AI_Tool_Inte
 			'post_type'      => 'mcp_ai_lf_trust_txn',
 			'posts_per_page' => class_exists( 'WP_MCP_AI_Tool_Artifact_Helper' ) ? WP_MCP_AI_Tool_Artifact_Helper::resolve_max_items( 'lf_trust_reconciliation_tool', 0, 1000 ) : 1000,
 			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				array( 'key' => '_lf_date', 'value' => $as_of_date, 'compare' => '<=', 'type' => 'DATE' ),
+				array(
+		'key'     => '_lf_date',
+		'value'   => $as_of_date,
+		'compare' => '<=',
+		'type'    => 'DATE',
+			),
 			),
 		);
 
 		if ( $matter_id ) {
-			$query_args['meta_query'][] = array( 'key' => '_lf_matter_id', 'value' => $matter_id );
+			$query_args['meta_query'][] = array(
+				'key'   => '_lf_matter_id',
+				'value' => $matter_id,
+			);
 		}
 
 		$txns = get_posts( $query_args );
 
-		$transactions = array();
+		$transactions  = array();
 		$client_totals = array();
 		foreach ( $txns as $txn ) {
-			$type = get_post_meta( $txn->ID, '_lf_txn_type', true );
-			$amt  = (float) get_post_meta( $txn->ID, '_lf_amount', true );
-			$mid  = get_post_meta( $txn->ID, '_lf_matter_id', true );
-			$transactions[] = array( 'type' => $type, 'amount' => $amt );
+			$type           = get_post_meta( $txn->ID, '_lf_txn_type', true );
+			$amt            = (float) get_post_meta( $txn->ID, '_lf_amount', true );
+			$mid            = get_post_meta( $txn->ID, '_lf_matter_id', true );
+			$transactions[] = array(
+				'type'   => $type,
+				'amount' => $amt,
+			);
 
 			if ( ! isset( $client_totals[ $mid ] ) ) {
 				$client_totals[ $mid ] = 0;

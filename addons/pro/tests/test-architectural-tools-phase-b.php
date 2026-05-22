@@ -25,7 +25,7 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 
 		$pro_path = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH
-			: dirname( dirname( __FILE__ ) ) . '/';
+			: dirname( __DIR__ ) . '/';
 
 		$base = $pro_path . 'includes/tools/architectural-design/';
 		if ( ! file_exists( $base ) ) {
@@ -120,6 +120,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Wind loads.
 	// =================================================================
 
+	/** Test wind loads jamaica coastal.
+	 */
 	public function test_wind_loads_jamaica_coastal() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Wind_Loads();
 		$res  = $tool->execute(
@@ -138,20 +140,30 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertSame( 'JM', $res['country_code'] );
 	}
 
+	/** Test wind loads us inland.
+	 */
 	public function test_wind_loads_us_inland() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Wind_Loads();
 		$res  = $tool->execute(
-			array( 'country_code' => 'US', 'wind_zone' => 'standard' ),
+			array(
+				'country_code' => 'US',
+				'wind_zone'    => 'standard',
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 		$this->assertNotInstanceOf( 'WP_Error', $res );
 		$this->assertGreaterThan( 0, $res['design_pressure_pa'] );
 	}
 
+	/** Test wind loads unknown zone returns error.
+	 */
 	public function test_wind_loads_unknown_zone_returns_error() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Wind_Loads();
 		$res  = $tool->execute(
-			array( 'country_code' => 'LK', 'wind_zone' => 'bogus' ),
+			array(
+				'country_code' => 'LK',
+				'wind_zone'    => 'bogus',
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 		$this->assertInstanceOf( 'WP_Error', $res );
@@ -161,6 +173,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Seismic loads.
 	// =================================================================
 
+	/** Test seismic loads lk zone3.
+	 */
 	public function test_seismic_loads_lk_zone3() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Seismic_Loads();
 		$res  = $tool->execute(
@@ -192,15 +206,22 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertGreaterThan( $first, $last );
 	}
 
+	/** Test seismic loads validates inputs.
+	 */
 	public function test_seismic_loads_validates_inputs() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Seismic_Loads();
 		$res  = $tool->execute(
-			array( 'country_code' => 'US', 'building_weight_kn' => 0 ),
+			array(
+				'country_code'       => 'US',
+				'building_weight_kn' => 0,
+			),
 			array( 'user_id' => $this->editor_id )
 		);
 		$this->assertInstanceOf( 'WP_Error', $res );
 	}
 
+	/** Test seismic sds override bypasses registry.
+	 */
 	public function test_seismic_sds_override_bypasses_registry() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Seismic_Loads();
 		$res  = $tool->execute(
@@ -220,14 +241,16 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Validate setbacks & FAR.
 	// =================================================================
 
+	/** Test validate setbacks lk residential pass.
+	 */
 	public function test_validate_setbacks_lk_residential_pass() {
 		$tool = new WP_MCP_AI_Tool_Validate_Setbacks_And_Far();
 		$res  = $tool->execute(
 			array(
-				'country_code' => 'LK',
+				'country_code'  => 'LK',
 				'building_type' => 'residential',
-				'lot'          => array( 'lot_perches' => 10.0 ), // ≈ 253 m².
-				'building'     => array(
+				'lot'           => array( 'lot_perches' => 10.0 ), // ≈ 253 m².
+				'building'      => array(
 					'built_up_area_m2'  => 250.0,
 					'footprint_area_m2' => 130.0,
 					'setbacks_m'        => array(
@@ -244,6 +267,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertSame( 'pass', $res['overall_status'] );
 	}
 
+	/** Test validate setbacks lk far violation.
+	 */
 	public function test_validate_setbacks_lk_far_violation() {
 		$tool = new WP_MCP_AI_Tool_Validate_Setbacks_And_Far();
 		$res  = $tool->execute(
@@ -272,6 +297,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// UDA planning compliance.
 	// =================================================================
 
+	/** Test uda compliance full pass.
+	 */
 	public function test_uda_compliance_full_pass() {
 		$tool = new WP_MCP_AI_Tool_Check_UDA_Planning_Compliance();
 		$res  = $tool->execute(
@@ -284,7 +311,12 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 					'num_storeys'        => 2,
 					'building_type'      => 'residential',
 					'num_dwelling_units' => 1,
-					'setbacks_m'         => array( 'front' => 3.0, 'rear' => 2.0, 'left' => 1.5, 'right' => 1.5 ),
+					'setbacks_m'         => array(
+						'front' => 3.0,
+						'rear'  => 2.0,
+						'left'  => 1.5,
+						'right' => 1.5,
+					),
 				),
 				'site'            => array( 'nbro_landslide_zone' => 'none' ),
 				'professional'    => array( 'slia_registered_architect' => true ),
@@ -298,16 +330,23 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertContains( $res['overall_status'], array( 'pass', 'conditional' ) );
 	}
 
+	/** Test uda compliance eia triggered for large project.
+	 */
 	public function test_uda_compliance_eia_triggered_for_large_project() {
 		$tool = new WP_MCP_AI_Tool_Check_UDA_Planning_Compliance();
 		$res  = $tool->execute(
 			array(
-				'lot'      => array( 'lot_perches' => 200.0 ),
-				'building' => array(
+				'lot'          => array( 'lot_perches' => 200.0 ),
+				'building'     => array(
 					'built_up_area_m2'   => 5000.0,
 					'footprint_area_m2'  => 2500.0,
 					'num_dwelling_units' => 80, // > 40 threshold.
-					'setbacks_m'         => array( 'front' => 3.0, 'rear' => 3.0, 'left' => 2.0, 'right' => 2.0 ),
+					'setbacks_m'         => array(
+						'front' => 3.0,
+						'rear'  => 3.0,
+						'left'  => 2.0,
+						'right' => 2.0,
+					),
 				),
 				'professional' => array( 'slia_registered_architect' => true ),
 			),
@@ -324,17 +363,27 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertTrue( $found_eia, 'EIA threshold should trigger for > 40 housing units.' );
 	}
 
+	/** Test uda nbro landslide zone flag.
+	 */
 	public function test_uda_nbro_landslide_zone_flag() {
-		$tool = new WP_MCP_AI_Tool_Check_UDA_Planning_Compliance();
-		$res  = $tool->execute(
+		$tool       = new WP_MCP_AI_Tool_Check_UDA_Planning_Compliance();
+		$res        = $tool->execute(
 			array(
-				'lot'      => array( 'lot_perches' => 15.0 ),
-				'building' => array(
-					'built_up_area_m2'   => 200.0,
-					'footprint_area_m2'  => 100.0,
-					'setbacks_m'         => array( 'front' => 3.0, 'rear' => 2.0, 'left' => 1.5, 'right' => 1.5 ),
+				'lot'          => array( 'lot_perches' => 15.0 ),
+				'building'     => array(
+					'built_up_area_m2'  => 200.0,
+					'footprint_area_m2' => 100.0,
+					'setbacks_m'        => array(
+						'front' => 3.0,
+						'rear'  => 2.0,
+						'left'  => 1.5,
+						'right' => 1.5,
+					),
 				),
-				'site'         => array( 'nbro_landslide_zone' => 'high', 'slope_deg' => 25 ),
+				'site'         => array(
+					'nbro_landslide_zone' => 'high',
+					'slope_deg'           => 25,
+				),
 				'professional' => array( 'slia_registered_architect' => true ),
 			),
 			array( 'user_id' => $this->editor_id )
@@ -353,6 +402,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// JNBC hurricane.
 	// =================================================================
 
+	/** Test jnbc hurricane full resilience pass.
+	 */
 	public function test_jnbc_hurricane_full_resilience_pass() {
 		$tool = new WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance();
 		$res  = $tool->execute(
@@ -375,6 +426,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertSame( 'pass', $res['overall_status'] );
 	}
 
+	/** Test jnbc hurricane failure when unprotected.
+	 */
 	public function test_jnbc_hurricane_failure_when_unprotected() {
 		$tool = new WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance();
 		$res  = $tool->execute(
@@ -396,6 +449,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// US IBC / IRC.
 	// =================================================================
 
+	/** Test us ibc irc auto picks irc for single family.
+	 */
 	public function test_us_ibc_irc_auto_picks_irc_for_single_family() {
 		$tool = new WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance();
 		$res  = $tool->execute(
@@ -418,12 +473,14 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertContains( 'us_irc_2024', $res['code_packs'] );
 	}
 
+	/** Test us ibc irc auto picks ibc for commercial.
+	 */
 	public function test_us_ibc_irc_auto_picks_ibc_for_commercial() {
 		$tool = new WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance();
 		$res  = $tool->execute(
 			array(
-				'code_path'    => 'auto',
-				'building'     => array(
+				'code_path' => 'auto',
+				'building'  => array(
 					'occupancy_classification' => 'B',
 					'num_storeys'              => 4,
 					'corridor_width_m'         => 1.2,
@@ -445,14 +502,23 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Compliance dossier.
 	// =================================================================
 
+	/** Test compliance dossier us aggregates status.
+	 */
 	public function test_compliance_dossier_us_aggregates_status() {
 		$tool = new WP_MCP_AI_Tool_Generate_Compliance_Dossier();
 		$res  = $tool->execute(
 			array(
 				'country_code' => 'US',
-				'project'      => array( 'title' => 'Test residence', 'address' => '123 Main St', 'date' => '2026-04-29' ),
+				'project'      => array(
+					'title'   => 'Test residence',
+					'address' => '123 Main St',
+					'date'    => '2026-04-29',
+				),
 				'sections'     => array(
-					'building_code' => array( 'success' => true, 'overall_status' => 'pass' ),
+					'building_code' => array(
+						'success'        => true,
+						'overall_status' => 'pass',
+					),
 					'wind_loads'    => array( 'success' => true ),
 					'seismic_loads' => array( 'overall_status' => 'conditional' ),
 				),
@@ -468,6 +534,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 1, $res['totals']['sections_warning'] );
 	}
 
+	/** Test compliance dossier rejects invalid country.
+	 */
 	public function test_compliance_dossier_rejects_invalid_country() {
 		$tool = new WP_MCP_AI_Tool_Generate_Compliance_Dossier();
 		$res  = $tool->execute(
@@ -481,6 +549,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Natural ventilation.
 	// =================================================================
 
+	/** Test natural ventilation cross flow meets target.
+	 */
 	public function test_natural_ventilation_cross_flow_meets_target() {
 		$tool = new WP_MCP_AI_Tool_Analyze_Natural_Ventilation();
 		$res  = $tool->execute(
@@ -498,8 +568,14 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 					'stack_height_m'  => 1.0,
 					'strategy'        => 'cross_flow',
 				),
-				'wind'         => array( 'mean_speed_ms' => 2.5, 'pressure_coefficient_diff' => 0.6 ),
-				'temperatures' => array( 'indoor_c' => 28, 'outdoor_c' => 30 ),
+				'wind'         => array(
+					'mean_speed_ms'             => 2.5,
+					'pressure_coefficient_diff' => 0.6,
+				),
+				'temperatures' => array(
+					'indoor_c'  => 28,
+					'outdoor_c' => 30,
+				),
 			),
 			array( 'user_id' => $this->editor_id )
 		);
@@ -509,6 +585,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertSame( 'LK', $res['country_code'] );
 	}
 
+	/** Test natural ventilation invalid area.
+	 */
 	public function test_natural_ventilation_invalid_area() {
 		$tool = new WP_MCP_AI_Tool_Analyze_Natural_Ventilation();
 		$res  = $tool->execute(
@@ -522,15 +600,17 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Daylight & solar gain.
 	// =================================================================
 
+	/** Test daylight tropical west facade recommends overhang.
+	 */
 	public function test_daylight_tropical_west_facade_recommends_overhang() {
 		$tool = new WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain();
 		$res  = $tool->execute(
 			array(
-				'country_code'    => 'LK',
-				'orientation'     => 'W',
+				'country_code'     => 'LK',
+				'orientation'      => 'W',
 				'overhang_depth_m' => 0.0,
 				'window_height_m'  => 1.5,
-				'space'           => array(
+				'space'            => array(
 					'floor_area_sqm'        => 16.0,
 					'window_area_sqm'       => 4.0,
 					'visible_transmittance' => 0.6,
@@ -544,12 +624,17 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertNotEmpty( $res['recommendations'] );
 	}
 
+	/** Test daylight validates inputs.
+	 */
 	public function test_daylight_validates_inputs() {
 		$tool = new WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain();
 		$res  = $tool->execute(
 			array(
 				'orientation' => 'S',
-				'space'       => array( 'floor_area_sqm' => 0, 'window_area_sqm' => 0 ),
+				'space'       => array(
+					'floor_area_sqm'  => 0,
+					'window_area_sqm' => 0,
+				),
 			),
 			array( 'user_id' => $this->editor_id )
 		);
@@ -560,6 +645,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Thermal comfort.
 	// =================================================================
 
+	/** Test thermal comfort adaptive for tropical.
+	 */
 	public function test_thermal_comfort_adaptive_for_tropical() {
 		$tool = new WP_MCP_AI_Tool_Simulate_Thermal_Comfort();
 		$res  = $tool->execute(
@@ -578,17 +665,19 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'comfort_temperature_c', $res['adaptive'] );
 	}
 
+	/** Test thermal comfort pmv for us office.
+	 */
 	public function test_thermal_comfort_pmv_for_us_office() {
 		$tool = new WP_MCP_AI_Tool_Simulate_Thermal_Comfort();
 		$res  = $tool->execute(
 			array(
-				'country_code'           => 'US',
-				'air_temperature_c'      => 23.0,
+				'country_code'               => 'US',
+				'air_temperature_c'          => 23.0,
 				'mean_radiant_temperature_c' => 23.0,
-				'relative_humidity_pct'  => 50.0,
-				'air_speed_ms'           => 0.1,
-				'metabolic_rate_met'     => 1.1,
-				'clothing_insulation_clo' => 0.5,
+				'relative_humidity_pct'      => 50.0,
+				'air_speed_ms'               => 0.1,
+				'metabolic_rate_met'         => 1.1,
+				'clothing_insulation_clo'    => 0.5,
 			),
 			array( 'user_id' => $this->editor_id )
 		);
@@ -600,6 +689,8 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0, $res['pmv']['ppd_pct'] );
 	}
 
+	/** Test thermal comfort adaptive requires running mean.
+	 */
 	public function test_thermal_comfort_adaptive_requires_running_mean() {
 		$tool = new WP_MCP_AI_Tool_Simulate_Thermal_Comfort();
 		$res  = $tool->execute(
@@ -617,10 +708,15 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	// Capability enforcement.
 	// =================================================================
 
+	/** Test tools reject unauthenticated context.
+	 */
 	public function test_tools_reject_unauthenticated_context() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Wind_Loads();
 		$res  = $tool->execute(
-			array( 'country_code' => 'JM', 'wind_zone' => 'coastal' ),
+			array(
+				'country_code' => 'JM',
+				'wind_zone'    => 'coastal',
+			),
 			array() // no user_id.
 		);
 		$this->assertInstanceOf( 'WP_Error', $res );

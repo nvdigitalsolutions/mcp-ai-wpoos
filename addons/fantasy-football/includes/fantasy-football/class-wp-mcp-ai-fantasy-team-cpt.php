@@ -84,7 +84,7 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 		// Check if we're on a fantasy team post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
 		$post_type  = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_ff_page = ( $post_type === self::POST_TYPE );
+		$is_ff_page = ( self::POST_TYPE === $post_type );
 		if ( ! $is_ff_page ) {
 			return;
 		}

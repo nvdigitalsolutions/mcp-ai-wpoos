@@ -10,7 +10,8 @@
  */
 class Test_Pro_Slash_Command_Mcp_App extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Pro_Slash_Command_Mcp_App
 	 */
 	private $command;
@@ -98,7 +99,10 @@ class Test_Pro_Slash_Command_Mcp_App extends WP_UnitTestCase {
 		$result = $this->command->execute(
 			array(),
 			array( 'test' => 'nonexistent-app-label' ),
-			array( 'user_id' => $this->admin_id, 'assistant_id' => 0 )
+			array(
+				'user_id'      => $this->admin_id,
+				'assistant_id' => 0,
+			)
 		);
 
 		$this->assertWPError( $result );
@@ -118,7 +122,10 @@ class Test_Pro_Slash_Command_Mcp_App extends WP_UnitTestCase {
 		$result = $this->command->execute(
 			array(),
 			array(),
-			array( 'user_id' => $this->admin_id, 'assistant_id' => 0 )
+			array(
+				'user_id'      => $this->admin_id,
+				'assistant_id' => 0,
+			)
 		);
 
 		$this->assertFalse( is_wp_error( $result ) );

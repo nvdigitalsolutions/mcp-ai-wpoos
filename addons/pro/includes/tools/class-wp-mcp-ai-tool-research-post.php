@@ -110,24 +110,24 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'topic'       => array(
+				'topic'                     => array(
 					'type'        => 'string',
 					'description' => __( 'The topic to research (e.g., "AI technology trends", "Sustainable living tips", "Starting a podcast")', 'mcp-ai-wpoos-pro' ),
 				),
-				'depth'       => array(
+				'depth'                     => array(
 					'type'        => 'string',
 					'description' => __( 'Research depth level.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
 					'default'     => 'standard',
 				),
-				'focus_areas' => array(
+				'focus_areas'               => array(
 					'type'        => 'array',
 					'description' => __( 'Optional specific aspects to focus on (e.g., "SEO", "examples", "statistics", "case studies").', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'word_count'  => array(
+				'word_count'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Target word count for the content', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 100,
@@ -144,22 +144,22 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'type'        => 'string',
 					'description' => __( 'Description of the custom format when template is "custom" (e.g., "Telegram Mini App", "Headless CMS JSON", "React component"). Ignored unless template is "custom".', 'mcp-ai-wpoos-pro' ),
 				),
-				'template_data'            => array(
+				'template_data'             => array(
 					'type'        => 'string',
 					'description' => __( 'Reference template structure as a JSON string. Accepts Elementor template JSON, Block Editor (Gutenberg) block pattern JSON, or any structured JSON layout. The AI will use this as a structural guide when generating content. Template type is auto-detected from JSON structure. Maximum 10 000 characters.', 'mcp-ai-wpoos-pro' ),
 				),
-				'output_format'            => array(
+				'output_format'             => array(
 					'type'        => 'string',
 					'description' => __( 'Output format for the research results. "json" returns structured data (default). "pdf" generates a downloadable PDF document. "docx" generates a Word document.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'json', 'pdf', 'docx' ),
 					'default'     => 'json',
 				),
-				'include_seo'              => array(
+				'include_seo'               => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include SEO metadata (meta description, keywords)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'tone'                     => array(
+				'tone'                      => array(
 					'type'        => 'string',
 					'description' => __( 'Tone of voice for the content', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'professional', 'casual', 'friendly', 'authoritative', 'conversational' ),
@@ -234,18 +234,18 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$topic                    = sanitize_text_field( $arguments['topic'] );
-		$depth                    = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
-		$focus_areas              = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+		$topic                     = sanitize_text_field( $arguments['topic'] );
+		$depth                     = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas               = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
 			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
 			: array();
-		$word_count               = isset( $arguments['word_count'] ) ? absint( $arguments['word_count'] ) : 1000;
-		$template                 = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
+		$word_count                = isset( $arguments['word_count'] ) ? absint( $arguments['word_count'] ) : 1000;
+		$template                  = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
 		$custom_format_description = isset( $arguments['custom_format_description'] ) ? sanitize_text_field( $arguments['custom_format_description'] ) : '';
-		$template_data            = isset( $arguments['template_data'] ) ? $arguments['template_data'] : '';
-		$output_format            = isset( $arguments['output_format'] ) ? sanitize_key( $arguments['output_format'] ) : 'json';
-		$include_seo              = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
-		$tone                     = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
+		$template_data             = isset( $arguments['template_data'] ) ? $arguments['template_data'] : '';
+		$output_format             = isset( $arguments['output_format'] ) ? sanitize_key( $arguments['output_format'] ) : 'json';
+		$include_seo               = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
+		$tone                      = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
 
 		// Validate depth parameter.
 		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
@@ -304,16 +304,16 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'post_research_started',
 			'Starting post research',
 			array(
-				'topic'                    => $topic,
-				'depth'                    => $depth,
-				'focus_areas'              => $focus_areas,
-				'word_count'               => $word_count,
-				'template'                 => $template,
+				'topic'                     => $topic,
+				'depth'                     => $depth,
+				'focus_areas'               => $focus_areas,
+				'word_count'                => $word_count,
+				'template'                  => $template,
 				'custom_format_description' => $custom_format_description,
-				'has_template_data'        => ! empty( $template_data ),
-				'template_type_detected'   => ! empty( $template_analysis['detected_type'] ) ? $template_analysis['detected_type'] : '',
-				'output_format'            => $output_format,
-				'user_id'                  => $user_id,
+				'has_template_data'         => ! empty( $template_data ),
+				'template_type_detected'    => ! empty( $template_analysis['detected_type'] ) ? $template_analysis['detected_type'] : '',
+				'output_format'             => $output_format,
+				'user_id'                   => $user_id,
 			)
 		);
 
@@ -606,10 +606,10 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "**Available Research Sources:**\n";
+			$prompt      .= "**Available Research Sources:**\n";
 			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
-				$source = $search_results['sources'][ $i ];
+				$source  = $search_results['sources'][ $i ];
 				$prompt .= sprintf(
 					"[%d] %s - %s\n",
 					$i + 1,
@@ -631,7 +631,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Add focus areas if specified.
 		if ( ! empty( $focus_areas ) ) {
-			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+			$prompt .= '**Focus Areas:** ' . implode( ', ', $focus_areas ) . "\n\n";
 		}
 
 		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
@@ -683,7 +683,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$prompt .= "- Use structured data attributes where helpful (data-section, data-component)\n";
 				$prompt .= "- Content should work well when consumed via REST API or rendered in non-WordPress contexts\n";
 				if ( ! empty( $custom_format_description ) ) {
-					$prompt .= sprintf( "- **Target platform:** %s\n", $custom_format_description );
+					$prompt      .= sprintf( "- **Target platform:** %s\n", $custom_format_description );
 					$custom_lower = strtolower( $custom_format_description );
 					if ( false !== strpos( $custom_lower, 'telegram' ) ) {
 						$prompt .= "- Optimize for Telegram Mini App: mobile-viewport-friendly, concise sections, touch-friendly navigation\n";
@@ -1106,12 +1106,12 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Post title.
 		if ( ! empty( $post_data['title'] ) ) {
-			$report .= "**Title:** " . esc_html( $post_data['title'] ) . "\n\n";
+			$report .= '**Title:** ' . esc_html( $post_data['title'] ) . "\n\n";
 		}
 
 		// Target word count.
 		if ( ! empty( $word_count ) ) {
-			$report .= "**Target Word Count:** " . absint( $word_count ) . " words\n";
+			$report .= '**Target Word Count:** ' . absint( $word_count ) . " words\n";
 		}
 
 		// Template format.
@@ -1120,7 +1120,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			if ( 'custom' === $post_data['template'] && ! empty( $post_data['custom_format_description'] ) ) {
 				$template_name .= ' (' . $post_data['custom_format_description'] . ')';
 			}
-			$report       .= "**Template:** " . esc_html( $template_name ) . "\n";
+			$report .= '**Template:** ' . esc_html( $template_name ) . "\n";
 		}
 
 		// Reference template indicator.
@@ -1130,7 +1130,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			if ( ! empty( $detected ) ) {
 				$label .= ' (auto-detected: ' . ucwords( str_replace( '-', ' ', $detected ) ) . ')';
 			}
-			$report .= "**Reference Template:** " . esc_html( $label ) . "\n";
+			$report .= '**Reference Template:** ' . esc_html( $label ) . "\n";
 		}
 
 		$report .= "\n";
@@ -1148,7 +1148,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			preg_match_all( '/<h[2-3][^>]*>(.*?)<\/h[2-3]>/i', $content, $matches );
 			if ( ! empty( $matches[1] ) ) {
 				foreach ( $matches[1] as $heading ) {
-					$report .= "- " . wp_strip_all_tags( $heading ) . "\n";
+					$report .= '- ' . wp_strip_all_tags( $heading ) . "\n";
 				}
 			} else {
 				// If no headings found, provide a brief excerpt.
@@ -1170,16 +1170,16 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Meta description.
 		if ( ! empty( $post_data['meta_description'] ) ) {
-			$report .= "**Meta Description:** " . esc_html( $post_data['meta_description'] ) . "\n\n";
+			$report .= '**Meta Description:** ' . esc_html( $post_data['meta_description'] ) . "\n\n";
 		}
 
 		// Target audience (inferred from categories/tags).
 		if ( ! empty( $post_data['categories'] ) && is_array( $post_data['categories'] ) ) {
-			$report .= "**Categories:** " . implode( ', ', array_map( 'esc_html', $post_data['categories'] ) ) . "\n";
+			$report .= '**Categories:** ' . implode( ', ', array_map( 'esc_html', $post_data['categories'] ) ) . "\n";
 		}
 
 		if ( ! empty( $post_data['tags'] ) && is_array( $post_data['tags'] ) ) {
-			$report .= "**Tags:** " . implode( ', ', array_map( 'esc_html', $post_data['tags'] ) ) . "\n";
+			$report .= '**Tags:** ' . implode( ', ', array_map( 'esc_html', $post_data['tags'] ) ) . "\n";
 		}
 
 		$report .= "\n";
@@ -1188,24 +1188,23 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $post_data['content'] ) ) {
 			$plain_content = wp_strip_all_tags( $post_data['content'] );
 			$actual_count  = str_word_count( $plain_content );
-			$report       .= "**Actual Word Count:** " . absint( $actual_count ) . " words\n";
+			$report       .= '**Actual Word Count:** ' . absint( $actual_count ) . " words\n";
 		}
 
 		// Sources count.
 		if ( ! empty( $search_results['sources'] ) && is_array( $search_results['sources'] ) ) {
 			$source_count = count( $search_results['sources'] );
-			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+			$report      .= '**Research Sources:** ' . absint( $source_count ) . " source(s)\n";
 		}
 
 		// Research metadata.
 		if ( ! empty( $post_data['research_provider'] ) && ! empty( $post_data['research_model'] ) ) {
-			$report .= "**AI Model:** " . esc_html( $post_data['research_provider'] . ' / ' . $post_data['research_model'] ) . "\n";
+			$report .= '**AI Model:** ' . esc_html( $post_data['research_provider'] . ' / ' . $post_data['research_model'] ) . "\n";
 		}
 
 		$report .= "\n---\n\n";
-		$report .= "*Research completed successfully. Use the `create_post` tool to publish this content to your WordPress site.*";
+		$report .= '*Research completed successfully. Use the `create_post` tool to publish this content to your WordPress site.*';
 
 		return $report;
 	}
-
 }

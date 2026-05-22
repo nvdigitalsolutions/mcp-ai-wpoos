@@ -60,9 +60,9 @@ class WP_MCP_AI_QMS_Capabilities {
 	 * This allows multisite super admins and sites with custom roles to access
 	 * QMS without explicit role mapping. Filterable for stricter setups.
 	 *
-	 * @param array $allcaps All caps.
-	 * @param array $caps    Required caps.
-	 * @param array $args    Args.
+	 * @param array        $allcaps All caps.
+	 * @param array        $caps    Required caps.
+	 * @param array        $args    Args.
 	 * @param WP_User|null $user User.
 	 * @return array
 	 */

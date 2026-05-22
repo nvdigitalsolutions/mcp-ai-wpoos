@@ -85,18 +85,18 @@ class Test_Pro_Schedule_Webhook_Hmac extends WP_UnitTestCase {
 	 * @param bool   $success      Whether the run succeeded.
 	 */
 	private function invoke_fire_webhook( $callback_url, $schedule_id, array $schedule, $success = true ) {
-		$ref = new ReflectionClass( 'WP_MCP_AI_Pro_Schedule_Manager' );
+		$ref    = new ReflectionClass( 'WP_MCP_AI_Pro_Schedule_Manager' );
 		$method = $ref->getMethod( 'fire_webhook_callback' );
 		$method->setAccessible( true );
 		$method->invoke(
-			null, // static method
+			null, // static method.
 			$callback_url,
 			$schedule_id,
 			$schedule,
 			$success,
-			1.23,    // duration
-			'',      // error_msg
-			array()  // action_log
+			1.23,    // duration.
+			'',      // error_msg.
+			array()  // action_log.
 		);
 	}
 
@@ -111,7 +111,7 @@ class Test_Pro_Schedule_Webhook_Hmac extends WP_UnitTestCase {
 		$schedule = array(
 			'name'          => 'Test Schedule',
 			'schedule_type' => 'task',
-			// No callback_secret key.
+		// No callback_secret key.
 		);
 
 		$this->invoke_fire_webhook( 'https://example.com/hook', 'sched_abc', $schedule );
@@ -159,7 +159,7 @@ class Test_Pro_Schedule_Webhook_Hmac extends WP_UnitTestCase {
 		$sig       = $headers['X-WP-MCP-AI-Signature'];
 		$timestamp = $headers['X-WP-MCP-AI-Timestamp'];
 
-		// Format: "sha256=<hex>"
+		// Format: "sha256=<hex>".
 		$this->assertStringStartsWith( 'sha256=', $sig, 'Signature must start with "sha256=".' );
 
 		$expected_hex = hash_hmac( 'sha256', $timestamp . '.' . $body, $secret );

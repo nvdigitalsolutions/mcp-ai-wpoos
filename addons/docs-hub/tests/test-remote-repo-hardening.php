@@ -33,7 +33,7 @@ class Test_Docs_Hub_Force_Clears_Cache extends WP_UnitTestCase {
 	}
 
 	/**
-	 * clear_local_cache_for_files() must delete files whose key matches
+	 * Clear_local_cache_for_files() must delete files whose key matches
 	 * (owner, repo, ref, path) and leave unrelated files alone.
 	 */
 	public function test_clear_local_cache_for_files_deletes_matching_files_only() {
@@ -73,7 +73,7 @@ class Test_Docs_Hub_Force_Clears_Cache extends WP_UnitTestCase {
 	}
 
 	/**
-	 * clear_local_cache_for_files() must tolerate non-array input gracefully.
+	 * Clear_local_cache_for_files() must tolerate non-array input gracefully.
 	 */
 	public function test_clear_local_cache_for_files_tolerates_bad_input() {
 		$repo = new NV_oOS_Docs_Hub_Remote_Repo();
@@ -91,7 +91,7 @@ class Test_Docs_Hub_Force_Clears_Cache extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_public_ip() must reject IP literals in private/reserved ranges.
+	 * Resolve_public_ip() must reject IP literals in private/reserved ranges.
 	 *
 	 * Uses reflection because the helper is private — exercising it directly
 	 * is the cleanest way to assert IPv6 ULA rejection without making real

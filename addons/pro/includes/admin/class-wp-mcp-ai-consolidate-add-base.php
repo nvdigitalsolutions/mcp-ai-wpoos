@@ -593,8 +593,8 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 								<td><?php echo esc_html( $quality_score['status'] ); ?></td>
 								<td>
 									<a href="#"
-									   class="button button-small"
-									   title="<?php esc_attr_e( 'Review', 'mcp-ai-wpoos-pro' ); ?>">
+										class="button button-small"
+										title="<?php esc_attr_e( 'Review', 'mcp-ai-wpoos-pro' ); ?>">
 										<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
 										<span class="screen-reader-text"><?php esc_html_e( 'Review', 'mcp-ai-wpoos-pro' ); ?></span>
 									</a>

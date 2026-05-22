@@ -106,23 +106,26 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Execution result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
-if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
-return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
-}
-if ( ! current_user_can( 'manage_options' ) ) {
-return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
-}
-
+		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+			return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		// Get code to check.
 		$code      = '';

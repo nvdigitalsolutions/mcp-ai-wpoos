@@ -123,6 +123,11 @@ class WP_MCP_AI_Tool_Add_Task_Dependency implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

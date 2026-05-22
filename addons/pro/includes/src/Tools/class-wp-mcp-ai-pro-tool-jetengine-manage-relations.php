@@ -193,7 +193,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations implements WP_MCP_AI_Tool_In
 	 * Create a new relation.
 	 *
 	 * @param WP_MCP_AI_JetEngine_MCP_Client $client    MCP client instance.
-	 * @param array                           $arguments Tool arguments.
+	 * @param array                          $arguments Tool arguments.
 	 * @return array|WP_Error Result or error.
 	 */
 	private function create_relation( $client, $arguments ) {

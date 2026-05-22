@@ -19,7 +19,7 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 
 		$pro_path = defined( 'WP_MCP_AI_PRO_PATH' )
 			? WP_MCP_AI_PRO_PATH
-			: dirname( dirname( __FILE__ ) ) . '/';
+			: dirname( __DIR__ ) . '/';
 
 		$base = $pro_path . 'includes/tools/architectural-design/';
 		if ( ! file_exists( $base ) ) {
@@ -156,17 +156,17 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Tool_Check_Building_Code_Compliance();
 
-		$args = array(
+		$args   = array(
 			'floor_plan'       => array(
-				'lot_area_m2'      => 250.0,
-				'built_up_area_m2' => 350.0,
-				'footprint_area_m2' => 130.0,
-				'exits'            => 2,
-				'corridor_width_m' => 1.3,
-				'stair_width_m'    => 1.2,
-				'travel_distance_m' => 25.0,
+				'lot_area_m2'             => 250.0,
+				'built_up_area_m2'        => 350.0,
+				'footprint_area_m2'       => 130.0,
+				'exits'                   => 2,
+				'corridor_width_m'        => 1.3,
+				'stair_width_m'           => 1.2,
+				'travel_distance_m'       => 25.0,
 				'min_door_clear_width_mm' => 850.0,
-				'setbacks_m'       => array(
+				'setbacks_m'              => array(
 					'front' => 2.5,
 					'rear'  => 1.5,
 					'left'  => 1.2,
@@ -210,10 +210,15 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 		$user = $this->factory->user->create_and_get( array( 'role' => 'editor' ) );
 		wp_set_current_user( $user->ID );
 
-		$tool = new WP_MCP_AI_Tool_Check_Building_Code_Compliance();
+		$tool   = new WP_MCP_AI_Tool_Check_Building_Code_Compliance();
 		$result = $tool->execute(
 			array(
-				'floor_plan'       => array( 'exits' => 2, 'corridor_width_m' => 1.5, 'stair_width_m' => 1.2, 'travel_distance_m' => 10 ),
+				'floor_plan'       => array(
+					'exits'             => 2,
+					'corridor_width_m'  => 1.5,
+					'stair_width_m'     => 1.2,
+					'travel_distance_m' => 10,
+				),
 				'country_code'     => 'US',
 				'check_categories' => array( 'egress' ),
 			),
@@ -236,16 +241,16 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 		$user = $this->factory->user->create_and_get( array( 'role' => 'editor' ) );
 		wp_set_current_user( $user->ID );
 
-		$tool = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
+		$tool   = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
 		$result = $tool->execute(
 			array(
-				'floor_plan'        => array( 'rooms' => 3 ),
-				'total_area'        => 200.0,
-				'area_unit'         => 'sqm',
-				'country_code'      => 'LK',
-				'quality_level'     => 'standard',
-				'construction_type' => 'masonry',
-				'include_breakdown' => true,
+				'floor_plan'          => array( 'rooms' => 3 ),
+				'total_area'          => 200.0,
+				'area_unit'           => 'sqm',
+				'country_code'        => 'LK',
+				'quality_level'       => 'standard',
+				'construction_type'   => 'masonry',
+				'include_breakdown'   => true,
 				'contingency_percent' => 10,
 			),
 			array( 'user_id' => $user->ID )
@@ -268,14 +273,14 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 		$user = $this->factory->user->create_and_get( array( 'role' => 'editor' ) );
 		wp_set_current_user( $user->ID );
 
-		$tool = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
+		$tool   = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
 		$result = $tool->execute(
 			array(
-				'floor_plan'    => array(),
-				'total_area'    => 1000.0,
-				'area_unit'     => 'sqft',
-				'country_code'  => 'US',
-				'quality_level' => 'standard',
+				'floor_plan'        => array(),
+				'total_area'        => 1000.0,
+				'area_unit'         => 'sqft',
+				'country_code'      => 'US',
+				'quality_level'     => 'standard',
 				'construction_type' => 'wood_frame',
 			),
 			array( 'user_id' => $user->ID )
@@ -305,16 +310,16 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 			}
 		);
 
-		$tool = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
+		$tool   = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
 		$result = $tool->execute(
 			array(
-				'floor_plan'        => array(),
-				'total_area'        => 100.0,
-				'area_unit'         => 'sqm',
-				'country_code'      => 'LK',
-				'currency'          => 'USD',
-				'quality_level'     => 'standard',
-				'construction_type' => 'masonry',
+				'floor_plan'          => array(),
+				'total_area'          => 100.0,
+				'area_unit'           => 'sqm',
+				'country_code'        => 'LK',
+				'currency'            => 'USD',
+				'quality_level'       => 'standard',
+				'construction_type'   => 'masonry',
 				'contingency_percent' => 0,
 			),
 			array( 'user_id' => $user->ID )

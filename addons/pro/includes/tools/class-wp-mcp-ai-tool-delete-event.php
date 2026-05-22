@@ -28,6 +28,13 @@ class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return __( 'Deletes a calendar event permanently.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -60,6 +67,11 @@ class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

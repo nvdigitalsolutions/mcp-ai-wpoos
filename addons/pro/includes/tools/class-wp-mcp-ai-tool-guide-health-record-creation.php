@@ -88,6 +88,11 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
@@ -224,7 +229,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'vital_signs' === $focus ) {
 			$vitals_gaps = $this->analyze_vital_signs( $member_id );
 			if ( ! empty( $vitals_gaps ) ) {
-				$gaps                       = array_merge( $gaps, $vitals_gaps );
+				$gaps                        = array_merge( $gaps, $vitals_gaps );
 				$completeness['vital_signs'] = false;
 			} else {
 				$completeness['vital_signs'] = true;
@@ -684,10 +689,10 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 			return $gaps;
 		}
 
-		$missing_ndc         = 0;
-		$missing_route       = 0;
-		$missing_indication  = 0;
-		$missing_pharmacy    = 0;
+		$missing_ndc        = 0;
+		$missing_route      = 0;
+		$missing_indication = 0;
+		$missing_pharmacy   = 0;
 
 		foreach ( $prescriptions as $rx_id ) {
 			if ( empty( get_post_meta( $rx_id, '_prescription_ndc_code', true ) ) ) {

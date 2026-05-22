@@ -121,6 +121,7 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 			$new_order[] = $item;
 		}
 
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Intentional reordering of admin submenu.
 		$submenu[ $parent ] = $new_order;
 	}
 
@@ -228,11 +229,11 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_hw_dashboard' ),
 				'strings' => array(
-					'loading'       => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
-					'noData'        => __( 'No data available for this member yet.', 'mcp-ai-wpoos-pro' ),
-					'selectMember'  => __( 'Select a member above to view their dashboard.', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'Failed to load data. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'noMembers'     => __( 'No members found. Add a member first.', 'mcp-ai-wpoos-pro' ),
+					'loading'      => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
+					'noData'       => __( 'No data available for this member yet.', 'mcp-ai-wpoos-pro' ),
+					'selectMember' => __( 'Select a member above to view their dashboard.', 'mcp-ai-wpoos-pro' ),
+					'error'        => __( 'Failed to load data. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'noMembers'    => __( 'No members found. Add a member first.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -550,18 +551,17 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 	 * @return string
 	 */
 	private static function get_dashboard_js() {
-		return <<<'JS'
-(function($){
-'use strict';
+		return '(function($){
+\'use strict\';
 
 /* ── Colour palettes ─────────────────────────────────────────── */
 var HW_COLORS = {
-steps:    '#2e7d32',
-water:    '#0288d1',
-sleep:    '#7b1fa2',
-calories: '#e65100',
-sodium:   '#f9a825',
-mood:     '#00796b'
+steps:    \'#2e7d32\',
+water:    \'#0288d1\',
+sleep:    \'#7b1fa2\',
+calories: \'#e65100\',
+sodium:   \'#f9a825\',
+mood:     \'#00796b\'
 };
 
 /* ── Chart registry (so we can destroy before rebuilding) ────── */
@@ -577,14 +577,14 @@ function avg(arr){ return arr.length ? arr.reduce(function(a,b){return a+b;},0)/
 function round1(v){ return Math.round(v*10)/10; }
 
 function sodiumStatusClass(val){
-if(val===0||val==='') return '';
-if(val<=2300) return 'status-normal';
-if(val<=3000) return 'status-warning';
-return 'status-alert';
+if(val===0||val===\'\') return \'\';
+if(val<=2300) return \'status-normal\';
+if(val<=3000) return \'status-warning\';
+return \'status-alert\';
 }
 
-var MOOD_LABELS = ['','�� Very Poor','😞 Poor','😐 Neutral','😊 Good','😄 Excellent'];
-var MOOD_EMOJIS = ['','😢','😞','😐','😊','😄'];
+var MOOD_LABELS = [\'\',\'�� Very Poor\',\'😞 Poor\',\'😐 Neutral\',\'😊 Good\',\'😄 Excellent\'];
+var MOOD_EMOJIS = [\'\',\'😢\',\'😞\',\'😐\',\'😊\',\'😄\'];
 
 /* ── Sparkline helper (single metric line chart) ─────────────── */
 function buildLineChart(canvasId,labels,data,color,refLine,refLabel,maxY){
@@ -592,26 +592,26 @@ destroyChart(canvasId);
 var el = document.getElementById(canvasId);
 if(!el) return;
 var datasets = [{
-label: '',
+label: \'\',
 data: data,
 borderColor: color,
-backgroundColor: color+'22',
+backgroundColor: color+\'22\',
 tension: 0.3,
 pointRadius: data.length <= 30 ? 3 : 1,
 fill: true
 }];
 if(refLine!==undefined){
 datasets.push({
-label: refLabel||'Goal',
+label: refLabel||\'Goal\',
 data: labels.map(function(){return refLine;}),
-borderColor: '#bdbdbd',
+borderColor: \'#bdbdbd\',
 borderDash: [6,4],
 pointRadius: 0,
 fill: false
 });
 }
 chartInsts[canvasId] = new Chart(el,{
-type:'line',
+type:\'line\',
 data:{labels:labels,datasets:datasets},
 options:{
 responsive:true,
@@ -628,7 +628,7 @@ x:{ticks:{maxTicksLimit:8,maxRotation:45}}
 /* ── Health & Wellness rendering ─────────────────────────────── */
 function renderHWDashboard(history){
 /* Sort ascending by date */
-history.sort(function(a,b){return(a.date||'').localeCompare(b.date||'');});
+history.sort(function(a,b){return(a.date||\'\').localeCompare(b.date||\'\');});
 
 /* Latest day KPIs */
 var latest = history.length ? history[history.length-1] : {};
@@ -639,28 +639,28 @@ var todayCalories = latest.calories || 0;
 var todaySodium   = latest.sodium   || 0;
 var todayMood     = latest.mood     || 0;
 
-$('#hw-kpi-steps').text(todaySteps.toLocaleString());
-$('#hw-kpi-steps-pct').text(pct(todaySteps,10000)+'% of 10k goal');
-$('#hw-kpi-water').text(todayWater);
-$('#hw-kpi-water-pct').text(pct(todayWater,8)+'% of 8 glasses');
-$('#hw-kpi-sleep').text(round1(todaySleep)+' hrs');
-$('#hw-kpi-sleep-pct').text(pct(todaySleep,8)+'% of 8 hr goal');
-$('#hw-kpi-calories').text(todayCalories.toLocaleString()+' kcal');
-$('#hw-kpi-calories-pct').text(pct(todayCalories,2000)+'% of 2,000 goal');
-$('#hw-kpi-sodium').text(todaySodium.toLocaleString()+' mg');
+$(\'#hw-kpi-steps\').text(todaySteps.toLocaleString());
+$(\'#hw-kpi-steps-pct\').text(pct(todaySteps,10000)+\'% of 10k goal\');
+$(\'#hw-kpi-water\').text(todayWater);
+$(\'#hw-kpi-water-pct\').text(pct(todayWater,8)+\'% of 8 glasses\');
+$(\'#hw-kpi-sleep\').text(round1(todaySleep)+\' hrs\');
+$(\'#hw-kpi-sleep-pct\').text(pct(todaySleep,8)+\'% of 8 hr goal\');
+$(\'#hw-kpi-calories\').text(todayCalories.toLocaleString()+\' kcal\');
+$(\'#hw-kpi-calories-pct\').text(pct(todayCalories,2000)+\'% of 2,000 goal\');
+$(\'#hw-kpi-sodium\').text(todaySodium.toLocaleString()+\' mg\');
 var sodClass = sodiumStatusClass(todaySodium);
-var sodLabel = todaySodium<=2300 ? '✓ Under 2,300 mg goal' : '⚠ Over 2,300 mg goal';
-$('#hw-kpi-sodium-status').text(todaySodium>0?sodLabel:'—').removeClass().addClass('hw-dash-kpi-sub '+sodClass);
+var sodLabel = todaySodium<=2300 ? \'✓ Under 2,300 mg goal\' : \'⚠ Over 2,300 mg goal\';
+$(\'#hw-kpi-sodium-status\').text(todaySodium>0?sodLabel:\'—\').removeClass().addClass(\'hw-dash-kpi-sub \'+sodClass);
 if(todayMood>0){
-$('#hw-kpi-mood-emoji').text(MOOD_EMOJIS[todayMood]);
-$('#hw-kpi-mood').text(MOOD_LABELS[todayMood]);
+$(\'#hw-kpi-mood-emoji\').text(MOOD_EMOJIS[todayMood]);
+$(\'#hw-kpi-mood\').text(MOOD_LABELS[todayMood]);
 } else {
-$('#hw-kpi-mood-emoji').text('—');
-$('#hw-kpi-mood').text('—');
+$(\'#hw-kpi-mood-emoji\').text(\'—\');
+$(\'#hw-kpi-mood\').text(\'—\');
 }
 
 /* Build chart data arrays */
-var labels    = history.map(function(r){return r.date?r.date.slice(5):'';});
+var labels    = history.map(function(r){return r.date?r.date.slice(5):\'\';});
 var stepsArr  = history.map(function(r){return r.steps||0;});
 var waterArr  = history.map(function(r){return r.water||0;});
 var sleepArr  = history.map(function(r){return r.sleep||0;});
@@ -668,43 +668,43 @@ var calArr    = history.map(function(r){return r.calories||0;});
 var sodArr    = history.map(function(r){return r.sodium||0;});
 var moodArr   = history.map(function(r){return r.mood||0;});
 
-buildLineChart('hw-chart-steps',    labels, stepsArr,  HW_COLORS.steps,    10000, 'Goal 10k',   null);
-buildLineChart('hw-chart-water',    labels, waterArr,  HW_COLORS.water,    8,     'Goal 8',     null);
-buildLineChart('hw-chart-sleep',    labels, sleepArr,  HW_COLORS.sleep,    8,     'Goal 8 hrs', null);
-buildLineChart('hw-chart-calories', labels, calArr,    HW_COLORS.calories, 2000,  'Goal 2000',  null);
-buildLineChart('hw-chart-sodium',   labels, sodArr,    HW_COLORS.sodium,   2300,  'Limit 2300', null);
-buildLineChart('hw-chart-mood',     labels, moodArr,   HW_COLORS.mood,     null,  null,         5);
+buildLineChart(\'hw-chart-steps\',    labels, stepsArr,  HW_COLORS.steps,    10000, \'Goal 10k\',   null);
+buildLineChart(\'hw-chart-water\',    labels, waterArr,  HW_COLORS.water,    8,     \'Goal 8\',     null);
+buildLineChart(\'hw-chart-sleep\',    labels, sleepArr,  HW_COLORS.sleep,    8,     \'Goal 8 hrs\', null);
+buildLineChart(\'hw-chart-calories\', labels, calArr,    HW_COLORS.calories, 2000,  \'Goal 2000\',  null);
+buildLineChart(\'hw-chart-sodium\',   labels, sodArr,    HW_COLORS.sodium,   2300,  \'Limit 2300\', null);
+buildLineChart(\'hw-chart-mood\',     labels, moodArr,   HW_COLORS.mood,     null,  null,         5);
 
 /* Goals summary table */
 var nDays = history.length;
 var goals = [
-{icon:'🚶',label:'Steps',          total:stepsArr.reduce(function(a,b){return a+b;},0), goal:10000*nDays,  daily:10000,  unit:'steps', inverse:false},
-{icon:'💧',label:'Water',          total:waterArr.reduce(function(a,b){return a+b;},0), goal:8*nDays,      daily:8,      unit:'glasses',inverse:false},
-{icon:'😴',label:'Sleep',          total:round1(sleepArr.reduce(function(a,b){return a+b;},0)), goal:8*nDays, daily:8,   unit:'hrs',  inverse:false},
-{icon:'🔥',label:'Calories',       total:calArr.reduce(function(a,b){return a+b;},0), goal:2000*nDays,   daily:2000,   unit:'kcal', inverse:false},
-{icon:'⚡',label:'Sodium (kidney)',total:sodArr.reduce(function(a,b){return a+b;},0), goal:2300*nDays,   daily:2300,   unit:'mg',   inverse:true},
+{icon:\'🚶\',label:\'Steps\',          total:stepsArr.reduce(function(a,b){return a+b;},0), goal:10000*nDays,  daily:10000,  unit:\'steps\', inverse:false},
+{icon:\'💧\',label:\'Water\',          total:waterArr.reduce(function(a,b){return a+b;},0), goal:8*nDays,      daily:8,      unit:\'glasses\',inverse:false},
+{icon:\'😴\',label:\'Sleep\',          total:round1(sleepArr.reduce(function(a,b){return a+b;},0)), goal:8*nDays, daily:8,   unit:\'hrs\',  inverse:false},
+{icon:\'🔥\',label:\'Calories\',       total:calArr.reduce(function(a,b){return a+b;},0), goal:2000*nDays,   daily:2000,   unit:\'kcal\', inverse:false},
+{icon:\'⚡\',label:\'Sodium (kidney)\',total:sodArr.reduce(function(a,b){return a+b;},0), goal:2300*nDays,   daily:2300,   unit:\'mg\',   inverse:true},
 ];
-var tbody = $('#hw-dash-goals-tbody').empty();
+var tbody = $(\'#hw-dash-goals-tbody\').empty();
 $.each(goals,function(_,g){
 var pctVal = g.goal ? Math.min(200,Math.round((g.total/g.goal)*100)) : 0;
 var fillW  = Math.min(100,pctVal);
-var fillCls= g.inverse ? (pctVal<=100?'hw-dash-progress-fill inverse-good':'hw-dash-progress-fill inverse-bad')
-                        : (pctVal>100?'hw-dash-progress-fill over-goal':'hw-dash-progress-fill');
+var fillCls= g.inverse ? (pctVal<=100?\'hw-dash-progress-fill inverse-good\':\'hw-dash-progress-fill inverse-bad\')
+                        : (pctVal>100?\'hw-dash-progress-fill over-goal\':\'hw-dash-progress-fill\');
 var avgDay = nDays ? round1(g.total/nDays) : 0;
 var trend  = stepsArr.length>=2 ? (function(arr){
 var last5  = arr.slice(-5);
 var prev5  = arr.slice(-10,-5);
-if(!prev5.length) return '—';
-return avg(last5) > avg(prev5) ? '↑' : avg(last5)<avg(prev5) ? '↓' : '→';
-})(g.label==='Steps'?stepsArr:g.label==='Water'?waterArr:g.label==='Sleep'?sleepArr:g.label==='Calories'?calArr:sodArr) : '—';
+if(!prev5.length) return \'—\';
+return avg(last5) > avg(prev5) ? \'↑\' : avg(last5)<avg(prev5) ? \'↓\' : \'→\';
+})(g.label===\'Steps\'?stepsArr:g.label===\'Water\'?waterArr:g.label===\'Sleep\'?sleepArr:g.label===\'Calories\'?calArr:sodArr) : \'—\';
 tbody.append(
-'<tr>'+
-'<td data-label="Metric">'+g.icon+' '+g.label+'</td>'+
-'<td data-label="Period Total / Avg">'+g.total.toLocaleString()+' '+g.unit+'</td>'+
-'<td data-label="Daily Goal">'+g.daily+' '+g.unit+'/day</td>'+
-'<td data-label="Avg Achievement">'+avgDay+'/day &nbsp;<div class="hw-dash-progress-wrap"><div class="'+fillCls+'" style="width:'+fillW+'%"></div></div> <small>'+pctVal+'%</small></td>'+
-'<td data-label="Trend">'+trend+'</td>'+
-'</tr>'
+\'<tr>\'+
+\'<td data-label="Metric">\'+g.icon+\' \'+g.label+\'</td>\'+
+\'<td data-label="Period Total / Avg">\'+g.total.toLocaleString()+\' \'+g.unit+\'</td>\'+
+\'<td data-label="Daily Goal">\'+g.daily+\' \'+g.unit+\'/day</td>\'+
+\'<td data-label="Avg Achievement">\'+avgDay+\'/day &nbsp;<div class="hw-dash-progress-wrap"><div class="\'+fillCls+\'" style="width:\'+fillW+\'%"></div></div> <small>\'+pctVal+\'%</small></td>\'+
+\'<td data-label="Trend">\'+trend+\'</td>\'+
+\'</tr>\'
 );
 });
 
@@ -717,42 +717,42 @@ streak++;
 }
 var todayLog = latest;
 var badges=[
-{icon:'🔥',label:'3-Day Streak',        earned:streak>=3},
-{icon:'🎆',label:'7-Day Streak',        earned:streak>=7},
-{icon:'🚀',label:'10k Steps',           earned:todayLog.steps>=10000},
-{icon:'💧',label:'Hydration Hero',      earned:todayLog.water>=8},
-{icon:'😴',label:'Sleep Champion',      earned:todayLog.sleep>=8},
-{icon:'🫀',label:'Kidney Friendly',     earned:todayLog.sodium>0&&todayLog.sodium<=2300&&todayLog.water>=8},
-{icon:'⭐',label:'Perfect Day',         earned:todayLog.steps>=10000&&todayLog.water>=8&&todayLog.sleep>=8}
+{icon:\'🔥\',label:\'3-Day Streak\',        earned:streak>=3},
+{icon:\'🎆\',label:\'7-Day Streak\',        earned:streak>=7},
+{icon:\'🚀\',label:\'10k Steps\',           earned:todayLog.steps>=10000},
+{icon:\'💧\',label:\'Hydration Hero\',      earned:todayLog.water>=8},
+{icon:\'😴\',label:\'Sleep Champion\',      earned:todayLog.sleep>=8},
+{icon:\'🫀\',label:\'Kidney Friendly\',     earned:todayLog.sodium>0&&todayLog.sodium<=2300&&todayLog.water>=8},
+{icon:\'⭐\',label:\'Perfect Day\',         earned:todayLog.steps>=10000&&todayLog.water>=8&&todayLog.sleep>=8}
 ];
 if(history.length){
-var badgeHtml='';
+var badgeHtml=\'\';
 $.each(badges,function(_,b){
-badgeHtml+='<span class="hw-dash-badge'+(b.earned?' earned':'')+'">'+b.icon+' '+b.label+'</span>';
+badgeHtml+=\'<span class="hw-dash-badge\'+(b.earned?\' earned\':\'\')+\'">\'+b.icon+\' \'+b.label+\'</span>\';
 });
-$('#hw-dash-badges').html(badgeHtml);
-$('#hw-dash-badges-wrap').show();
+$(\'#hw-dash-badges\').html(badgeHtml);
+$(\'#hw-dash-badges-wrap\').show();
 }
 }
 
 /* ── Main load flow ──────────────────────────────────────────── */
 function loadDashboard(){
-var memberId = $('#hw-dash-member-select').val();
-var daysBack = $('#hw-dash-days-select').val();
+var memberId = $(\'#hw-dash-member-select\').val();
+var daysBack = $(\'#hw-dash-days-select\').val();
 
 if(!memberId){
 alert(wpMcpAiHwDashboard.strings.selectMember);
 return;
 }
 
-$('#hw-dash-loading').show();
-$('#hw-dash-content').hide();
+$(\'#hw-dash-loading\').show();
+$(\'#hw-dash-content\').hide();
 
 $.ajax({
 url:  wpMcpAiHwDashboard.ajaxUrl,
-type: 'POST',
+type: \'POST\',
 data: {
-action:    'wp_mcp_ai_hw_dashboard_get_health_metrics',
+action:    \'wp_mcp_ai_hw_dashboard_get_health_metrics\',
 nonce:     wpMcpAiHwDashboard.nonce,
 member_id: memberId,
 days_back: daysBack
@@ -764,26 +764,25 @@ renderHWDashboard(res.data.history);
 },
 error: function(){ /* silent — show empty state */ },
 complete: function(){
-$('#hw-dash-loading').hide();
-$('#hw-dash-content').show();
+$(\'#hw-dash-loading\').hide();
+$(\'#hw-dash-content\').show();
 }
 });
 }
 
 /* ── Wire up UI ──────────────────────────────────────────────── */
 $(document).ready(function(){
-$('#hw-dash-load-btn').on('click',function(){ loadDashboard(); });
+$(\'#hw-dash-load-btn\').on(\'click\',function(){ loadDashboard(); });
 
-/* Auto-load if there's only one member */
-if($('#hw-dash-member-select option').length===2){
-$('#hw-dash-member-select option:last').prop('selected',true);
+/* Auto-load if there\'s only one member */
+if($(\'#hw-dash-member-select option\').length===2){
+$(\'#hw-dash-member-select option:last\').prop(\'selected\',true);
 loadDashboard();
 }
 });
 
-})(jQuery);
-JS;
-}
+})(jQuery);';
+	}
 }
 
 WP_MCP_AI_Health_Wellness_Dashboard_Page::init();

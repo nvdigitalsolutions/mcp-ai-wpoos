@@ -183,9 +183,9 @@ class WP_MCP_AI_Tool_Withdraw_Student_ECA implements WP_MCP_AI_Tool_Interface, W
 		$enrollment_data = $eca_enrollments[ $student_id ];
 		$was_confirmed   = isset( $enrollment_data['enrollment_type'] ) && 'confirmed' === $enrollment_data['enrollment_type'];
 
-		$reason          = isset( $arguments['reason'] ) ? sanitize_textarea_field( $arguments['reason'] ) : '';
-		$effective_date  = isset( $arguments['effective_date'] ) ? sanitize_text_field( $arguments['effective_date'] ) : current_time( 'Y-m-d' );
-		$process_refund  = isset( $arguments['process_refund'] ) ? (bool) $arguments['process_refund'] : false;
+		$reason         = isset( $arguments['reason'] ) ? sanitize_textarea_field( $arguments['reason'] ) : '';
+		$effective_date = isset( $arguments['effective_date'] ) ? sanitize_text_field( $arguments['effective_date'] ) : current_time( 'Y-m-d' );
+		$process_refund = isset( $arguments['process_refund'] ) ? (bool) $arguments['process_refund'] : false;
 
 		// Remove from ECA enrollments.
 		unset( $eca_enrollments[ $student_id ] );
@@ -304,8 +304,8 @@ class WP_MCP_AI_Tool_Withdraw_Student_ECA implements WP_MCP_AI_Tool_Interface, W
 			}
 		);
 
-		$waitlist_ids  = array_keys( $waitlist );
-		$promote_id    = absint( reset( $waitlist_ids ) );
+		$waitlist_ids = array_keys( $waitlist );
+		$promote_id   = absint( reset( $waitlist_ids ) );
 
 		// Update ECA-side enrollment.
 		$eca_enrollments[ $promote_id ]['enrollment_type'] = 'confirmed';

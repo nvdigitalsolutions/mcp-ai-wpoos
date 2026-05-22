@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 /**
  * Tests for Layer H — Pro fine-tune curriculum exporter.
  *
@@ -23,7 +24,11 @@ if ( ! class_exists( 'WP_MCP_AI_Harness_Curriculum_Trivial_Verifier' ) ) {
 	 * Always-passes verifier used to satisfy eval-case verifier_slug.
 	 */
 	class WP_MCP_AI_Harness_Curriculum_Trivial_Verifier extends WP_MCP_AI_Verifier_Base {
-		/** @inheritdoc */
+		/**
+		 * Construct always-passes verifier.
+		 *
+		 * @inheritdoc
+		 */
 		public function __construct() {
 			$this->slug                 = 'harness_curriculum_trivial';
 			$this->kind                 = 'rule';
@@ -35,7 +40,13 @@ if ( ! class_exists( 'WP_MCP_AI_Harness_Curriculum_Trivial_Verifier' ) ) {
 				'allowed_domains'      => array(),
 			);
 		}
-		/** @inheritdoc */
+		/**
+		 * Verify always passes.
+		 *
+		 * @param array $subject Subject data.
+		 * @param array $context  Context data.
+		 * @return array
+		 */
 		public function verify( array $subject, array $context = array() ) {
 			return $this->result_pass( 1.0, 1.0, array() );
 		}
@@ -61,6 +72,8 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	 */
 	private $tmp_upload_dir;
 
+	/** Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -86,6 +99,8 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		wp_mkdir_p( $this->tmp_upload_dir );
 	}
 
+	/** Tear down test.
+	 */
 	public function tearDown(): void {
 		// Clean up temp files.
 		if ( is_dir( $this->tmp_upload_dir ) ) {
@@ -127,10 +142,10 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			$suite->add_case(
 				new WP_MCP_AI_Eval_Case(
 					array(
-						'slug'         => $c['slug'],
-						'label'        => $c['slug'],
-						'input'        => $c['input'],
-						'expected'     => $c['expected'],
+						'slug'          => $c['slug'],
+						'label'         => $c['slug'],
+						'input'         => $c['input'],
+						'expected'      => $c['expected'],
 						'verifier_slug' => 'harness_curriculum_trivial',
 					)
 				)
@@ -144,7 +159,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	 * Force `wp_upload_dir()` to return the temp dir so write tests
 	 * don't touch the real filesystem.
 	 *
-	 * @param string $dir
+	 * @param string $dir Temporary directory path.
 	 * @return void
 	 */
 	private function redirect_upload_dir( $dir ) {
@@ -158,7 +173,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────
-	// Registrations
+	// Registrations.
 	// ─────────────────────────────────────────────────────────
 
 	/**
@@ -215,7 +230,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────
-	// Capability gate
+	// Capability gate.
 	// ─────────────────────────────────────────────────────────
 
 	/**
@@ -234,7 +249,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────
-	// Validation guards
+	// Validation guards.
 	// ─────────────────────────────────────────────────────────
 
 	/**
@@ -268,7 +283,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────
-	// Dry-run
+	// Dry-run.
 	// ─────────────────────────────────────────────────────────
 
 	/**
@@ -282,8 +297,16 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->make_suite(
 			'drysuite',
 			array(
-				array( 'slug' => 'c1', 'input' => 'Q1', 'expected' => 'A1' ),
-				array( 'slug' => 'c2', 'input' => 'Q2', 'expected' => 'A2' ),
+				array(
+					'slug'     => 'c1',
+					'input'    => 'Q1',
+					'expected' => 'A1',
+				),
+				array(
+					'slug'     => 'c2',
+					'input'    => 'Q2',
+					'expected' => 'A2',
+				),
 			)
 		);
 
@@ -313,7 +336,13 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 
 		$this->make_suite(
 			'real_suite',
-			array( array( 'slug' => 'c1', 'input' => 'Q1', 'expected' => 'A1' ) )
+			array(
+				array(
+					'slug'     => 'c1',
+					'input'    => 'Q1',
+					'expected' => 'A1',
+				),
+			)
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum();
@@ -341,8 +370,16 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->make_suite(
 			'skip_input_suite',
 			array(
-				array( 'slug' => 'empty_input', 'input' => '', 'expected' => 'A1' ),
-				array( 'slug' => 'good_case',   'input' => 'Q2', 'expected' => 'A2' ),
+				array(
+					'slug'     => 'empty_input',
+					'input'    => '',
+					'expected' => 'A1',
+				),
+				array(
+					'slug'     => 'good_case',
+					'input'    => 'Q2',
+					'expected' => 'A2',
+				),
 			)
 		);
 
@@ -371,8 +408,16 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->make_suite(
 			'skip_expect_suite',
 			array(
-				array( 'slug' => 'no_expect', 'input' => 'Q1', 'expected' => '' ),
-				array( 'slug' => 'good_case', 'input' => 'Q2', 'expected' => 'A2' ),
+				array(
+					'slug'     => 'no_expect',
+					'input'    => 'Q1',
+					'expected' => '',
+				),
+				array(
+					'slug'     => 'good_case',
+					'input'    => 'Q2',
+					'expected' => 'A2',
+				),
 			)
 		);
 
@@ -399,14 +444,27 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		grant_super_admin( 1 );
 
 		// Cap to 256 chars then create a case larger than that.
-		add_filter( 'wp_mcp_ai_pro_curriculum_per_case_char_cap', static function () { return 256; } );
+		add_filter(
+			'wp_mcp_ai_pro_curriculum_per_case_char_cap',
+			static function () {
+				return 256;
+			}
+		);
 
 		$long = str_repeat( 'x', 200 );
 		$this->make_suite(
 			'overlong_suite',
 			array(
-				array( 'slug' => 'long_case', 'input' => $long, 'expected' => $long ),
-				array( 'slug' => 'ok_case',   'input' => 'Q',   'expected' => 'A' ),
+				array(
+					'slug'     => 'long_case',
+					'input'    => $long,
+					'expected' => $long,
+				),
+				array(
+					'slug'     => 'ok_case',
+					'input'    => 'Q',
+					'expected' => 'A',
+				),
 			)
 		);
 
@@ -425,7 +483,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	/**
-	 * max_cases cap is enforced.
+	 * Max_cases cap is enforced.
 	 */
 	public function test_max_cases_cap_honoured() {
 		$this->load_tool();
@@ -434,7 +492,11 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 
 		$cases = array();
 		for ( $i = 1; $i <= 10; $i++ ) {
-			$cases[] = array( 'slug' => "c{$i}", 'input' => "Q{$i}", 'expected' => "A{$i}" );
+			$cases[] = array(
+				'slug'     => "c{$i}",
+				'input'    => "Q{$i}",
+				'expected' => "A{$i}",
+			);
 		}
 		$this->make_suite( 'cap_suite', $cases );
 
@@ -490,7 +552,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────
-	// JSONL row shape
+	// JSONL row shape.
 	// ─────────────────────────────────────────────────────────
 
 	/**
@@ -504,7 +566,11 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->make_suite(
 			'shape_suite',
 			array(
-				array( 'slug' => 'c1', 'input' => 'What is 2+2?', 'expected' => '4' ),
+				array(
+					'slug'     => 'c1',
+					'input'    => 'What is 2+2?',
+					'expected' => '4',
+				),
 			)
 		);
 
@@ -545,28 +611,34 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 
 		$this->make_suite(
 			'nosys_suite',
-			array( array( 'slug' => 'c1', 'input' => 'Q', 'expected' => 'A' ) )
+			array(
+				array(
+					'slug'     => 'c1',
+					'input'    => 'Q',
+					'expected' => 'A',
+				),
+			)
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum();
 		$result = $tool->execute(
 			array(
-				'assistant_id' => $this->assistant_id,
-				'suite_slugs'  => array( 'nosys_suite' ),
+				'assistant_id'  => $this->assistant_id,
+				'suite_slugs'   => array( 'nosys_suite' ),
 				'system_prompt' => '',
-				'dry_run'      => true,
+				'dry_run'       => true,
 			)
 		);
 
 		$this->assertNotWPError( $result );
-		$row      = json_decode( $result['preview'], true );
+		$row = json_decode( $result['preview'], true );
 		$this->assertCount( 2, $row['messages'] );
 		$roles = array_column( $row['messages'], 'role' );
 		$this->assertSame( array( 'user', 'assistant' ), $roles );
 	}
 
 	// ─────────────────────────────────────────────────────────
-	// File write
+	// File write.
 	// ─────────────────────────────────────────────────────────
 
 	/**
@@ -580,8 +652,16 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->make_suite(
 			'write_suite',
 			array(
-				array( 'slug' => 'w1', 'input' => 'Hello', 'expected' => 'World' ),
-				array( 'slug' => 'w2', 'input' => 'Foo',   'expected' => 'Bar' ),
+				array(
+					'slug'     => 'w1',
+					'input'    => 'Hello',
+					'expected' => 'World',
+				),
+				array(
+					'slug'     => 'w2',
+					'input'    => 'Foo',
+					'expected' => 'Bar',
+				),
 			)
 		);
 
@@ -622,7 +702,13 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 
 		$this->make_suite(
 			'guard_suite',
-			array( array( 'slug' => 'g1', 'input' => 'Q', 'expected' => 'A' ) )
+			array(
+				array(
+					'slug'     => 'g1',
+					'input'    => 'Q',
+					'expected' => 'A',
+				),
+			)
 		);
 
 		$this->redirect_upload_dir( $this->tmp_upload_dir );
@@ -642,7 +728,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	/**
-	 * format key in response is 'openai_chat_jsonl'.
+	 * Format key in response is 'openai_chat_jsonl'.
 	 */
 	public function test_format_key_correct() {
 		$this->load_tool();
@@ -651,7 +737,13 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 
 		$this->make_suite(
 			'fmt_suite',
-			array( array( 'slug' => 'f1', 'input' => 'Q', 'expected' => 'A' ) )
+			array(
+				array(
+					'slug'     => 'f1',
+					'input'    => 'Q',
+					'expected' => 'A',
+				),
+			)
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum();
@@ -667,7 +759,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 	}
 
 	/**
-	 * evals_enabled from harness profile is used when no suite_slugs arg given.
+	 * Evals_enabled from harness profile is used when no suite_slugs arg given.
 	 */
 	public function test_profile_evals_enabled_used_as_default() {
 		$this->load_tool();
@@ -676,7 +768,13 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 
 		$this->make_suite(
 			'profile_suite',
-			array( array( 'slug' => 'p1', 'input' => 'Q', 'expected' => 'A' ) )
+			array(
+				array(
+					'slug'     => 'p1',
+					'input'    => 'Q',
+					'expected' => 'A',
+				),
+			)
 		);
 
 		// Write a harness profile with evals_enabled.

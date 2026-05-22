@@ -166,7 +166,7 @@ class WP_MCP_AI_Tool_LF_Referral_Source_Tracker implements WP_MCP_AI_Tool_Interf
 				if ( ! isset( $sources[ $source ] ) ) {
 					$sources[ $source ] = 0;
 				}
-				$sources[ $source ]++;
+				++$sources[ $source ];
 			}
 		}
 		wp_reset_postdata();
@@ -174,7 +174,7 @@ class WP_MCP_AI_Tool_LF_Referral_Source_Tracker implements WP_MCP_AI_Tool_Interf
 		// Sort by count descending.
 		arsort( $sources );
 
-		$total = array_sum( $sources );
+		$total            = array_sum( $sources );
 		$referral_sources = array();
 		foreach ( $sources as $source_name => $count ) {
 			$referral_sources[] = array(

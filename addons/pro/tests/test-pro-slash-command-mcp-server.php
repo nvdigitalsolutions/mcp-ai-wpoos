@@ -11,12 +11,14 @@
 require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 require_once dirname( __DIR__ ) . '/includes/slash-commands/commands/class-wp-mcp-ai-pro-slash-command-mcp-server.php';
 
-/**
+/** Summary.
+ *
  * @group toolkit-mcp-servers
  */
 class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Pro_Slash_Command_Mcp_Server
 	 */
 	private $command;
@@ -35,6 +37,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 	 */
 	private $editor_id;
 
+	/** Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -46,6 +50,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->editor_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 	}
 
+	/** Tear down test.
+	 */
 	public function tearDown(): void {
 		// Reset the toggle we may have applied so other tests aren't affected.
 		delete_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . 'crm' );
@@ -54,6 +60,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/** Test guest block.
+	 */
 	public function test_guest_block(): void {
 		$result = $this->command->execute( array(), array(), array( 'guest_request' => true ) );
 
@@ -61,6 +69,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertEquals( 'guest_forbidden', $result->get_error_code() );
 	}
 
+	/** Test capability gate blocks subscribers.
+	 */
 	public function test_capability_gate_blocks_subscribers(): void {
 		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
@@ -72,6 +82,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		wp_delete_user( $subscriber_id );
 	}
 
+	/** Test editor can list but cannot enable disable.
+	 */
 	public function test_editor_can_list_but_cannot_enable_disable(): void {
 		$list = $this->command->execute( array( 'list' ), array(), array( 'user_id' => $this->editor_id ) );
 		$this->assertIsArray( $list );
@@ -82,6 +94,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertEquals( 'forbidden', $enable->get_error_code() );
 	}
 
+	/** Test list default action.
+	 */
 	public function test_list_default_action(): void {
 		$result = $this->command->execute( array(), array(), array( 'user_id' => $this->admin_id ) );
 
@@ -95,6 +109,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertContains( 'crm', $slugs );
 	}
 
+	/** Test list json envelope.
+	 */
 	public function test_list_json_envelope(): void {
 		$result = $this->command->execute( array( 'list' ), array( 'json' => true ), array( 'user_id' => $this->admin_id ) );
 
@@ -104,6 +120,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'servers', $decoded );
 	}
 
+	/** Test show known server.
+	 */
 	public function test_show_known_server(): void {
 		$result = $this->command->execute( array( 'show', 'crm' ), array(), array( 'user_id' => $this->admin_id ) );
 
@@ -114,6 +132,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'endpoints', $result['data'] );
 	}
 
+	/** Test show missing slug errors.
+	 */
 	public function test_show_missing_slug_errors(): void {
 		$result = $this->command->execute( array( 'show' ), array(), array( 'user_id' => $this->admin_id ) );
 
@@ -121,6 +141,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertEquals( 'missing_slug', $result->get_error_code() );
 	}
 
+	/** Test show unknown slug errors.
+	 */
 	public function test_show_unknown_slug_errors(): void {
 		$result = $this->command->execute( array( 'show', 'nope' ), array(), array( 'user_id' => $this->admin_id ) );
 
@@ -128,6 +150,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertEquals( 'not_found', $result->get_error_code() );
 	}
 
+	/** Test enable then disable round trip.
+	 */
 	public function test_enable_then_disable_round_trip(): void {
 		$disable = $this->command->execute( array( 'disable', 'crm' ), array(), array( 'user_id' => $this->admin_id ) );
 		$this->assertIsArray( $disable );
@@ -138,6 +162,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertTrue( $enable['data']['enabled'] );
 	}
 
+	/** Test tools subaction.
+	 */
 	public function test_tools_subaction(): void {
 		$result = $this->command->execute( array( 'tools', 'crm' ), array(), array( 'user_id' => $this->admin_id ) );
 
@@ -148,6 +174,8 @@ class Test_Pro_Slash_Command_Mcp_Server extends WP_UnitTestCase {
 		$this->assertEquals( count( $result['data']['tools'] ), $result['data']['count'] );
 	}
 
+	/** Test unknown action errors.
+	 */
 	public function test_unknown_action_errors(): void {
 		$result = $this->command->execute( array( 'wat' ), array(), array( 'user_id' => $this->admin_id ) );
 

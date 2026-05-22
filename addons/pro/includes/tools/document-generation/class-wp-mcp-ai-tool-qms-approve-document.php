@@ -14,6 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WP_MCP_AI_Tool_QMS_Approve_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'qms_approve_document';
 	}
@@ -23,17 +30,33 @@ class WP_MCP_AI_Tool_QMS_Approve_Document implements WP_MCP_AI_Tool_Interface, W
 	public function get_description() {
 		return __( 'Mark a controlled document as approved. Document must be in in_review state and have at least one approver assigned.', 'mcp-ai-wpoos-pro' );
 	}
+		/**
+		 * Get the parameters schema.
+		 *
+		 * @return array
+		 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_id' => array( 'type' => 'integer', 'minimum' => 1 ),
-				'reason'  => array( 'type' => 'string', 'maxLength' => 500 ),
+				'post_id' => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+				),
+				'reason'  => array(
+					'type'      => 'string',
+					'maxLength' => 500,
+				),
 			),
 			'required'             => array( 'post_id' ),
 			'additionalProperties' => false,
 		);
 	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}

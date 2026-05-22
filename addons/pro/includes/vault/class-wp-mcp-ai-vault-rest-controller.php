@@ -329,7 +329,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( (int) $post->post_author !== get_current_user_id() ) {
+		if ( get_current_user_id() !== (int) $post->post_author ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to access this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -364,7 +364,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		if ( (int) $folder->post_author !== get_current_user_id() ) {
+		if ( get_current_user_id() !== (int) $folder->post_author ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to use this vault folder.', 'mcp-ai-wpoos-pro' ),
@@ -454,7 +454,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( (int) $post->post_author !== get_current_user_id() ) {
+		if ( get_current_user_id() !== (int) $post->post_author ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to update this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -520,7 +520,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( (int) $post->post_author !== get_current_user_id() ) {
+		if ( get_current_user_id() !== (int) $post->post_author ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to delete this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -732,7 +732,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function prepare_item_for_response( $item, $include_data = false ) {
-		$post      = $item; // For backward compatibility with existing code
+		$post      = $item; // For backward compatibility with existing code.
 		$item_type = get_post_meta( $post->ID, '_vault_item_type', true );
 		$folder_id = get_post_meta( $post->ID, '_vault_folder_id', true );
 		$favorite  = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
