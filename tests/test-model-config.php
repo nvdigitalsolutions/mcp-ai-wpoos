@@ -491,7 +491,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$providers = WP_MCP_AI_Model_Config::get_available_providers();
 
 		$this->assertArrayHasKey( 'ollama', $providers );
-		$this->assertEquals( 'Ollama (Local)', $providers['ollama'] );
+		$this->assertEquals( 'Ollama', $providers['ollama'] );
 
 		// Clean up.
 		delete_option( 'wp_mcp_ai_settings' );

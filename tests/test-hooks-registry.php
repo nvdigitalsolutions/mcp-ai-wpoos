@@ -81,6 +81,13 @@ if ( ! class_exists( 'Test_Registry_Hook_Stub_Tool' ) ) {
 class Test_Hooks_Registry extends WP_UnitTestCase {
 
 	/**
+	 * Original registry singleton preserved across setUp/tearDown.
+	 *
+	 * @var WP_MCP_AI_Tool_Registry|null
+	 */
+	private $original_instance;
+
+	/**
 	 * Registry singleton under test.
 	 *
 	 * @var WP_MCP_AI_Tool_Registry
@@ -92,7 +99,16 @@ class Test_Hooks_Registry extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Reset the singleton instance to get a clean registry per test.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );
+		$property   = $reflection->getProperty( 'instance' );
+		$property->setAccessible( true );
+		$this->original_instance = $property->getValue();
+		$property->setValue( null, null );
+
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$this->registry->clear_tools();
 	}
 
 	/**
@@ -100,6 +116,18 @@ class Test_Hooks_Registry extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		$this->registry->unregister_tool( 'test_registry_hook_stub' );
+
+		// Clear tools from the original instance to prevent leakage to other test files.
+		if ( $this->original_instance instanceof WP_MCP_AI_Tool_Registry ) {
+			$this->original_instance->clear_tools();
+		}
+
+		// Restore original instance.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );
+		$property   = $reflection->getProperty( 'instance' );
+		$property->setAccessible( true );
+		$property->setValue( null, $this->original_instance );
+
 		parent::tearDown();
 	}
 

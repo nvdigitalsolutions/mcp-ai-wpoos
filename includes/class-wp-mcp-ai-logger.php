@@ -926,6 +926,12 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'openai_external_action_request',
 					'openai_external_action_response',
 					'schedule_run',
+					'cloudflare_invalid_tool_call',
+					'cloudflare_tool_calls_detected',
+					'cloudflare_tool_calls_filtered',
+					'cloudflare_tool_call_normalized',
+					'cloudflare_xml_tool_calls_parsed',
+					'cloudflare_json_tool_calls_parsed',
 				)
 			);
 

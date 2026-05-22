@@ -225,6 +225,22 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Clear all registered tools and reset bootstrap state.
+		 *
+		 * Used primarily in test tear-down to prevent tool leakage between
+		 * tests that share the registry singleton. Also clears unavailable-tool
+		 * messages and resets the bootstrapped flag so init() can safely be
+		 * called again.
+		 *
+		 * @return void
+		 */
+		public function clear_tools() {
+			$this->tools                 = array();
+			$this->bootstrapped          = false;
+			$this->unavailable_tool_messages = array();
+		}
+
+		/**
 		 * Register a deprecated tool alias.
 		 *
 		 * When Phase P5 Part 2 decomposes a multi-action tool into focused

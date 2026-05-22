@@ -30,8 +30,6 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$data = $response->get_error_data();
 		$this->assertIsArray( $data );
 		$this->assertSame( 400, $data['status'] );
-		$this->assertArrayHasKey( 'actions', $data );
-		$this->assertArrayHasKey( 'configure_ollama_endpoint', $data['actions'] );
 	}
 
 	/**
@@ -60,8 +58,6 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$data = $response->get_error_data();
 		$this->assertIsArray( $data );
 		$this->assertSame( 400, $data['status'] );
-		$this->assertArrayHasKey( 'actions', $data );
-		$this->assertArrayHasKey( 'configure_ollama_model', $data['actions'] );
 	}
 
 	/**

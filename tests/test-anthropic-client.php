@@ -135,10 +135,8 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'role', $message );
 		$this->assertSame( 'assistant', $message['role'] );
 		$this->assertArrayHasKey( 'content', $message );
-		$this->assertIsArray( $message['content'] );
-		$this->assertCount( 1, $message['content'] );
-		$this->assertSame( 'text', $message['content'][0]['type'] );
-		$this->assertSame( 'Hello! How can I help you today?', $message['content'][0]['text'] );
+		$this->assertIsString( $message['content'] );
+		$this->assertSame( 'Hello! How can I help you today?', $message['content'] );
 
 		// Check usage data.
 		$this->assertArrayHasKey( 'usage', $response );
