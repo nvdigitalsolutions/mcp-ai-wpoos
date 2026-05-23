@@ -273,6 +273,12 @@ function wp_mcp_ai_load_optional_test_plugins() {
 		define( 'WP_MCP_AI_TEST_SIMPLE_JWT_LOGIN_ACTIVE', true );
 	}
 
+	// Detect JetEngine (premium — must be installed manually).
+	if ( file_exists( $plugins_dir . '/jet-engine/jet-engine.php' ) ) {
+		$loaded_plugins[] = 'jet-engine';
+		define( 'WP_MCP_AI_TEST_JETENGINE_ACTIVE', true );
+	}
+
 	if ( ! empty( $loaded_plugins ) ) {
 		fwrite( STDOUT, "\nDetected optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
 	}
