@@ -149,7 +149,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 - **Complete data privacy and control**
 - **Recommended for sensitive data**
 - **Website:** https://lmstudio.ai/
-- **Terms:** Self-hosted software — see https://github.com/lmstudio-ai
+- **Terms:** https://lmstudio.ai/terms
 
 **Related Files:**
 - `includes/class-wp-mcp-ai-language-model-router.php`

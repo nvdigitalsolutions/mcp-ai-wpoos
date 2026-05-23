@@ -1227,7 +1227,7 @@ Initial release. Welcome to Open Operator System!
 * **Data Sent:** None (runs entirely on your computer)
 * **When:** When configured as AI provider
 * **Service URL:** Your local computer only (default: http://localhost:1234)
-* **Terms of Service:** Self-hosted software — see https://github.com/lmstudio-ai
+* **Terms of Service:** https://lmstudio.ai/terms
 * **Privacy Policy:** N/A — self-hosted software; no data leaves your computer
 
 **6. Cloudflare Workers AI**
