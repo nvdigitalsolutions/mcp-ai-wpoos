@@ -106,6 +106,9 @@ class WP_MCP_AI_Tool_LF_Redline_Comparator implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

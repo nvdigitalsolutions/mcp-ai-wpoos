@@ -456,6 +456,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 		$js_text_color     = addslashes( $text_color );
 		$js_composition_id = addslashes( $composition_id );
 
+		// phpcs:ignore Squiz.PHP.Heredoc
 		return <<<JS
 'use strict';
 const { registerRoot, Composition, AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } = require('remotion');
@@ -517,7 +518,7 @@ JS;
 	 * @param string $project_dir    Path to the temporary Remotion project.
 	 * @param string $composition_id Composition ID to render.
 	 * @param string $output_file    Absolute output file path.
-	 * @param string $output_format  mp4 | webm | gif.
+	 * @param string $output_format  Mp4 | webm | gif.
 	 * @return array|WP_Error Result array or WP_Error.
 	 */
 	private function run_remotion_render( $project_dir, $composition_id, $output_file, $output_format ) {
@@ -662,7 +663,7 @@ JS;
 	 * Upload a rendered video file to the WordPress media library.
 	 *
 	 * @param string $file_path     Absolute path to the video file.
-	 * @param string $output_format mp4 | webm | gif.
+	 * @param string $output_format Mp4 | webm | gif.
 	 * @return int|false New attachment ID or false on failure.
 	 */
 	private function upload_video_to_media_library( $file_path, $output_format ) {

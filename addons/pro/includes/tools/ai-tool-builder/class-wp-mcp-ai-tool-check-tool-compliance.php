@@ -418,7 +418,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Check method names are snake_case.
-		preg_match_all( '/(?:private|protected|public)\s+function\s+(\w+)/', $code, $matches );
+		preg_match_all( '/( ? ( :private|protected|public)\s+function\s+(\w+)/', $code, $matches );
 		if ( ! empty( $matches[1] ) ) {
 			foreach ( $matches[1] as $method_name ) {
 				if ( strtolower( $method_name ) !== $method_name ) {

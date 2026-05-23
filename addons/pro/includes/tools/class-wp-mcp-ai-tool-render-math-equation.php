@@ -156,7 +156,7 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( $save_rendered ) {
 			$cache_key     = 'katex_' . md5( $latex . serialize( $arguments ) );
 			$cached_result = wp_cache_get( $cache_key, 'mcp_ai_katex' );
-			if ( $cached_result !== false ) {
+			if ( false !== $cached_result ) {
 				return array(
 					'success'     => true,
 					'latex'       => $latex,

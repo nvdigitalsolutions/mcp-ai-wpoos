@@ -122,10 +122,22 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
@@ -191,7 +203,7 @@ class WP_MCP_AI_Tool_CRE_Loan_Sizer implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$yr_principal += $row['principal'];
 			$yr_interest  += $row['interest'];
 			$yr_payments  += $row['payment'];
-			if ( $row['month'] % 12 === 0 || $row['month'] === $loan_term_months ) {
+			if ( 0 === $row['month'] % 12 || $loan_term_months === $row['month'] ) {
 				$yearly_summary[] = array(
 					'year'      => (int) ceil( $row['month'] / 12 ),
 					'principal' => round( $yr_principal, 2 ),

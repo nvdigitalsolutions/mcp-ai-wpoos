@@ -147,6 +147,9 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( $this->get_required_capability() ) ) {
@@ -327,7 +330,7 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				return $one;
 			case 'e':
 				// e = exp(1) = eml(1, 1) — verify: e^1 − ln 1 = e − 0 = e.
-				// (Odrzywołek 2026, Figure 2, K=3.)
+				// (Odrzywołek 2026, Figure 2, K=3.).
 				return array(
 					'type'  => 'EML',
 					'left'  => $one,
@@ -336,7 +339,7 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			case 'exp':
 				$x = isset( $args[0] ) ? $args[0] : 'x';
 				// exp(x) = eml(x, 1) — since ln 1 = 0.
-				// (Odrzywołek 2026, Figure 2, K=3.)
+				// (Odrzywołek 2026, Figure 2, K=3.).
 				return array(
 					'type'  => 'EML',
 					'left'  => array(
@@ -394,7 +397,7 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			case 'sub':
 				// x − y = eml(eml(1, eml(eml(1, x), 1)), eml(y, 1)).
 				// Chain: eml(ln(x), exp(y)) = (e^{ln x}) − ln(e^y) = x − y.
-				// (Odrzywołek 2026, Table 4, K=11. Domain: x > 0; y unrestricted in ℝ.)
+				// (Odrzywołek 2026, Table 4, K=11. Domain: x > 0; y unrestricted in ℝ.).
 				$x     = isset( $args[0] ) ? $args[0] : 'x';
 				$y     = isset( $args[1] ) ? $args[1] : 'y';
 				$xnode = array(
@@ -504,22 +507,22 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $xnode,
-				); // e − ln(x)
+				); // e − ln(x).
 				$e_lnx_b  = array(
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $e_lnx_a,
-				); // e − ln(e−ln x)
+				); // e − ln(e−ln x).
 				$e_lnx_c  = array(
 					'type'  => 'EML',
 					'left'  => $e_lnx_b,
 					'right' => $one,
-				); // exp(...)
+				); // exp(...).
 				$ln_e_lnx = array(
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $e_lnx_c,
-				); // ln(e − ln x)
+				); // ln(e − ln x).
 				$ee       = array(
 					'type'  => 'EML',
 					'left'  => $one,
@@ -539,13 +542,13 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'type'  => 'EML',
 					'left'  => $neg_lnx,
 					'right' => $one,
-				); // exp(−ln x) = 1/x
+				); // exp(−ln x) = 1/x.
 			case 'mul':
 				// x · y = eml(eml(1, eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), y), 1)), 1).
 				// Chain: shares the inv prefix to obtain ln(e − ln x), then.
 				// eml(ln(e − ln x), y) = (e − ln x) − ln y = e − ln(xy).
 				// and exp ∘ ln recovers x·y.
-				// (Odrzywołek 2026, Table 4. Domain: x, y > 0 and x < e^e.)
+				// (Odrzywołek 2026, Table 4. Domain: x, y > 0 and x < e^e.).
 				$x     = isset( $args[0] ) ? $args[0] : 'x';
 				$y     = isset( $args[1] ) ? $args[1] : 'y';
 				$xnode = array(
@@ -560,22 +563,22 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $xnode,
-				);      // e − ln x
+				);      // e − ln x.
 				$b     = array(
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $a,
-				);           // e − ln(e − ln x)
+				);           // e − ln(e − ln x).
 				$c     = array(
 					'type'  => 'EML',
 					'left'  => $b,
 					'right' => $one,
-				);           // exp(...)
+				);           // exp(...).
 				$d     = array(
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $c,
-				);           // ln(e − ln x)
+				);           // ln(e − ln x).
 				$e2    = array(
 					'type'  => 'EML',
 					'left'  => $d,
@@ -585,17 +588,17 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'type'  => 'EML',
 					'left'  => $e2,
 					'right' => $one,
-				);          // exp(e − ln(xy))
+				);          // exp(e − ln(xy)).
 				$g     = array(
 					'type'  => 'EML',
 					'left'  => $one,
 					'right' => $f,
-				);           // ln(xy)
+				);           // ln(xy).
 				return array(
 					'type'  => 'EML',
 					'left'  => $g,
 					'right' => $one,
-				);             // exp(ln(xy)) = xy
+				);             // exp(ln(xy)) = xy.
 		}
 		return new WP_Error(
 			'wp_mcp_ai_unsupported_decomposition',

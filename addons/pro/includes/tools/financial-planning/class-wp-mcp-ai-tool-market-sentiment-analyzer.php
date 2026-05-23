@@ -352,7 +352,7 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	private function detect_modifier( $text, $keyword, $modifiers ) {
 		foreach ( $modifiers as $mod_word => $multiplier ) {
 			// Check if modifier appears within 3 words before the keyword.
-			$pattern = '/' . preg_quote( $mod_word, '/' ) . '\s+(?:\w+\s+){0,2}' . preg_quote( $keyword, '/' ) . '/';
+			$pattern = '/' . preg_quote( $mod_word, '/' ) . '\s+( ? ( :\w+\s+){0,2}' . preg_quote( $keyword, '/' ) . '/';
 			if ( preg_match( $pattern, $text ) ) {
 				return $multiplier;
 			}

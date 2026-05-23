@@ -25,6 +25,12 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -33,6 +39,11 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -48,10 +59,20 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return 'export_to_gbxml';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Export to gbXML', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Generate a gbXML 6.01 XML document from a normalised floor plan. Output is a valid gbXML body for import into EnergyPlus / OpenStudio for whole-building energy modelling.', 'mcp-ai-wpoos-pro' );
 	}
@@ -95,6 +116,13 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
@@ -124,7 +152,7 @@ class WP_MCP_AI_Tool_Export_To_Gbxml implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'success'    => true,
 			'format'     => 'gbXML 6.01',
 			'media_type' => 'application/xml',
-			'filename'   => sanitize_file_name( ( $normalized['payload']['project']['name'] ?: 'project' ) . '.xml' ),
+			'filename'   => sanitize_file_name( ( $normalized['payload']['project']['name'] ? $normalized['payload']['project']['name'] : 'project' ) . '.xml' ),
 			'xml'        => $xml,
 			'byte_size'  => strlen( $xml ),
 			'note'       => __( 'Geometry summary only. Add surfaces / constructions in EnergyPlus / OpenStudio.', 'mcp-ai-wpoos-pro' ),

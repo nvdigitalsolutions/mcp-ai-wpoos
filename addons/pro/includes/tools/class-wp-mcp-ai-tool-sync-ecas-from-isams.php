@@ -249,7 +249,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Sync a single ECA by ID.
 	 *
-	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
+	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      ISAMS tool instance.
 	 * @param array                      $arguments       Tool arguments.
 	 * @param array                      $context         Execution context.
 	 * @param bool                       $update_existing Whether to update existing ECAs.
@@ -306,7 +306,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Sync all ECAs from iSAMS.
 	 *
-	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
+	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      ISAMS tool instance.
 	 * @param array                      $arguments       Tool arguments.
 	 * @param array                      $context         Execution context.
 	 * @param int                        $page            Page number.
@@ -389,6 +389,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 		// Extract iSAMS ID.
 		$isams_id = isset( $eca_data['id'] ) ? sanitize_text_field( $eca_data['id'] ) : '';
 		if ( empty( $isams_id ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new Exception( __( 'iSAMS ECA ID is missing.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -408,6 +409,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 		// Map iSAMS data to ECA fields.
 		$eca_name = isset( $eca_data['name'] ) ? sanitize_text_field( $eca_data['name'] ) : '';
 		if ( empty( $eca_name ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 			throw new Exception( __( 'ECA name is missing in iSAMS data.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -445,6 +447,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 			$result = wp_update_post( $post_data, true );
 
 			if ( is_wp_error( $result ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new Exception( $result->get_error_message() );
 			}
 
@@ -465,6 +468,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 			$post_id = wp_insert_post( $post_data, true );
 
 			if ( is_wp_error( $post_id ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new Exception( $post_id->get_error_message() );
 			}
 
@@ -511,7 +515,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Find ECA by iSAMS sync ID.
 	 *
-	 * @param string $isams_id iSAMS ID.
+	 * @param string $isams_id ISAMS ID.
 	 * @return int|null Post ID if found, null otherwise.
 	 */
 	private function find_eca_by_isams_id( $isams_id ) {

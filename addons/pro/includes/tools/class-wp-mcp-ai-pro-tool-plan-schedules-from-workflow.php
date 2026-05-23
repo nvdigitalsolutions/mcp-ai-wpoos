@@ -190,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 						continue;
 					}
 					// Strip common list bullets / numbering.
-					$line = preg_replace( '/^(?:[-*•]|\d+[\.\)])\s+/', '', $line );
+					$line = preg_replace( '/^( ? ( :[-*•]|\d+[\.\)])\s+/', '', $line );
 					$line = trim( (string) $line );
 					if ( '' === $line ) {
 						continue;

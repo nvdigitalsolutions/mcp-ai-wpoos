@@ -154,10 +154,22 @@ class WP_MCP_AI_Tool_CRE_Loan_Quote_Generator implements WP_MCP_AI_Tool_Interfac
 		return array( 'pro', 'read-only' );
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
@@ -252,7 +264,7 @@ class WP_MCP_AI_Tool_CRE_Loan_Quote_Generator implements WP_MCP_AI_Tool_Interfac
 			'message' => __( 'Loan quote generated. ANALYSIS ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
 				'term_sheet'      => array(
-					'lender'         => $lender_name ?: __( 'N/A', 'mcp-ai-wpoos-pro' ),
+					'lender'         => $lender_name ? $lender_name : __( 'N/A', 'mcp-ai-wpoos-pro' ),
 					'property_type'  => $property_type,
 					'loan_amount'    => $calc::format_currency( $loan_amount ),
 					'property_value' => $calc::format_currency( $property_value ),

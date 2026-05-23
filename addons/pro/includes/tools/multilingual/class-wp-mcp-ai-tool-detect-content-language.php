@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Detect_Content_Language tool.
+ */
 class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 		return ! empty( $settings['enable_multilingual_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_multilingual_toolkit'] ) ) {
@@ -45,10 +58,20 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 		return 'detect_content_language';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Detect Content Language', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Auto-detect content language using AI-powered language detection algorithms.', 'mcp-ai-wpoos-pro' );
 	}
@@ -100,6 +123,13 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$text    = isset( $arguments['text'] ) ? sanitize_textarea_field( $arguments['text'] ) : '';
 		$post_id = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;

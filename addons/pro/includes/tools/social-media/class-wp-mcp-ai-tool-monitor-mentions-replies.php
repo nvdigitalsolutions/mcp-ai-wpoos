@@ -346,8 +346,8 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 				'platforms'        => $platforms,
 				'keywords'         => $keywords,
 				'date_range'       => array(
-					'from' => $date_from ?: null,
-					'to'   => $date_to ?: null,
+					'from' => $date_from ? $date_from : null,
+					'to'   => $date_to ? $date_to : null,
 				),
 				'sentiment_filter' => $sentiment_filter,
 				'priority_filter'  => $priority_filter,

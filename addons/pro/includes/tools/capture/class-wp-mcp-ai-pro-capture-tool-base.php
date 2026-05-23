@@ -204,6 +204,13 @@ abstract class WP_MCP_AI_Pro_Capture_Tool_Base implements WP_MCP_AI_Tool_Interfa
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Memory_Capture_Service' ) ) {
 			return new WP_Error(

@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Extract_Video_Metadata tool.
+ */
 class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface,
 		return ! empty( $settings['enable_video_production_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_video_production_toolkit'] ) ) {
@@ -45,10 +58,20 @@ class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface,
 		return 'extract_video_metadata';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Extract Video Metadata', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Extract comprehensive video information including duration, resolution, codec, and bitrate.', 'mcp-ai-wpoos-pro' );
 	}
@@ -106,6 +129,13 @@ class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement extract_video_metadata logic.
 		// This requires FFmpeg or similar video processing library.

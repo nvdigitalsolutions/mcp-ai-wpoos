@@ -22,6 +22,11 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -30,6 +35,11 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -43,8 +53,18 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_slug() {
 		return 'lf_legal_citation_checker'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Legal Citation Checker', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Extracts and validates legal citations from text, checking Bluebook or ALWD format compliance with ABA Opinion 512 hallucination warnings.', 'mcp-ai-wpoos-pro' ); }
 
@@ -89,6 +109,13 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
@@ -109,7 +136,7 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 		$format_issues = array();
 
 		// US Reports: e.g., 347 U.S. 483 (1954).
-		if ( preg_match_all( '/\d{1,3}\s+U\.S\.\s+\d{1,4}(?:\s*\(\d{4}\))?/', $text, $matches ) ) {
+		if ( preg_match_all( '/\d{1,3}\s+U\.S\.\s+\d{1,4}( ? ( :\s*\(\d{4}\))?/', $text, $matches ) ) {
 			foreach ( $matches[0] as $m ) {
 				$citations[] = array(
 					'citation'     => trim( $m ),
@@ -120,7 +147,7 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Federal Reporter: e.g., 123 F.3d 456 (9th Cir. 2020).
-		if ( preg_match_all( '/\d{1,4}\s+F\.(?:2d|3d|4th)\s+\d{1,4}(?:\s*\([^)]+\))?/', $text, $matches ) ) {
+		if ( preg_match_all( '/\d{1,4}\s+F\.( ? ( :2d|3d|4th)\s+\d{1,4}( ? ( :\s*\([^)]+\))?/', $text, $matches ) ) {
 			foreach ( $matches[0] as $m ) {
 				$citations[] = array(
 					'citation'     => trim( $m ),
@@ -131,7 +158,7 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Federal Supplement: e.g., 123 F. Supp. 2d 456.
-		if ( preg_match_all( '/\d{1,4}\s+F\.\s*Supp\.?\s*(?:2d|3d)?\s+\d{1,4}/', $text, $matches ) ) {
+		if ( preg_match_all( '/\d{1,4}\s+F\.\s*Supp\.?\s*( ? ( :2d|3d)?\s+\d{1,4}/', $text, $matches ) ) {
 			foreach ( $matches[0] as $m ) {
 				$citations[] = array(
 					'citation'     => trim( $m ),
@@ -142,7 +169,7 @@ class WP_MCP_AI_Tool_LF_Legal_Citation_Checker implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// State reporters: generic pattern e.g., 123 Cal.App.4th 456.
-		if ( preg_match_all( '/\d{1,4}\s+[A-Z][a-z]+\.(?:\s*App\.)?(?:\s*\d+[a-z]{2})?\s+\d{1,4}/', $text, $matches ) ) {
+		if ( preg_match_all( '/\d{1,4}\s+[A-Z][a-z]+\.( ? ( :\s*App\.)?( ? ( :\s*\d+[a-z]{2})?\s+\d{1,4}/', $text, $matches ) ) {
 			foreach ( $matches[0] as $m ) {
 				$citations[] = array(
 					'citation'     => trim( $m ),

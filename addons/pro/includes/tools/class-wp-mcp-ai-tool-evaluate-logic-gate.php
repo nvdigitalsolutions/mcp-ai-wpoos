@@ -121,6 +121,9 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( $this->get_required_capability() ) ) {
@@ -387,6 +390,7 @@ class WP_MCP_AI_Tool_Evaluate_Logic_Gate implements WP_MCP_AI_Tool_Interface, WP
 		// Reduce to two-input form by left fold so the decomposition stays.
 		// syntactically simple and demonstrably correct.
 		$current = $labels[0];
+		// phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found
 		for ( $i = 1; $i < count( $labels ); $i++ ) {
 			$current = $this->two_input_nand_text( $gate, $current, $labels[ $i ] );
 		}

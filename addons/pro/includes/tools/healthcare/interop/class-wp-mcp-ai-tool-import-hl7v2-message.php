@@ -349,7 +349,7 @@ class WP_MCP_AI_Tool_Import_HL7v2_Message implements WP_MCP_AI_Tool_Interface, W
 		$post_id = wp_insert_post(
 			array(
 				'post_type'    => 'mcp_ai_med_record',
-				'post_title'   => $name !== '' ? $name : $value,
+				'post_title'   => '' !== $name ? $name : $value,
 				'post_content' => trim( $value . ' ' . $units ),
 				'post_status'  => 'publish',
 			),

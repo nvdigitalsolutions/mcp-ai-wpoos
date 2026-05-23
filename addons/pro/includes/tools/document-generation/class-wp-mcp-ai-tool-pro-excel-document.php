@@ -367,7 +367,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			'text'          => sprintf(
 				/* translators: %s: spreadsheet title */
 				__( 'Generated Excel spreadsheet: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -447,7 +447,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			'text'          => sprintf(
 				/* translators: %s: spreadsheet title */
 				__( 'Generated Excel table: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -519,7 +519,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			'text'          => sprintf(
 				/* translators: 1: spreadsheet title, 2: number of sheets */
 				__( 'Generated Excel workbook with %2$d sheets: %1$s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' ),
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' ),
 				count( $sheets )
 			),
 		);
@@ -721,6 +721,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string Node.js script content.
 	 */
 	protected function create_excel_generation_script() {
+		// phpcs:ignore Squiz.PHP.Heredoc
 		return <<<'JAVASCRIPT'
 const fs = require('fs');
 const ExcelJS = require('exceljs');
@@ -1064,9 +1065,10 @@ JAVASCRIPT;
 	 */
 	protected function try_parse_json_response( $content ) {
 		// Try to find JSON in the response (may be wrapped in markdown code blocks).
-		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
+		$json_pattern = '/```( ? ( :json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
+		// phpcs:ignore Universal.ControlStructures.DisallowLonelyIf
 		} else {
 			// Try to find JSON object directly.
 			if ( preg_match( '/\{.*\}/s', $content, $matches ) ) {

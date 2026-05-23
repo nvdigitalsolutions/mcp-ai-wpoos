@@ -312,7 +312,7 @@ class WP_MCP_AI_Tool_Check_UDA_Planning_Compliance implements WP_MCP_AI_Tool_Int
 	 *
 	 * @param string $category    Category.
 	 * @param string $requirement Requirement text.
-	 * @param string $status      pass|warning|fail.
+	 * @param string $status      Pass|warning|fail.
 	 * @param string $details     Detail text.
 	 * @return array
 	 */

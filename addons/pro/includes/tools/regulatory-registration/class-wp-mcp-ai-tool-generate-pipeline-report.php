@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 						$group_key = ! empty( $statuses ) && ! is_wp_error( $statuses ) ? $statuses[0]->name : 'Unknown';
 						break;
 					case 'country':
-						$group_key = get_post_meta( $post->ID, 'country', true ) ?: 'Unknown';
+						$group_key = get_post_meta( $post->ID, 'country', true ) ? get_post_meta( $post->ID, 'country', true ) : 'Unknown';
 						break;
 					case 'product':
 						$product_id = get_post_meta( $post->ID, 'product_id', true );

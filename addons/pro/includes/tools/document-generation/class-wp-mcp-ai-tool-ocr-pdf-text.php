@@ -103,10 +103,22 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'read' ) ) {
@@ -277,7 +289,7 @@ The server returned HTTP %d.
 					'error'   => 'download_failed',
 					'report'  => __(
 						'❌ **Download Failed**
-
+.
 The downloaded file is empty.
 
 ✅ The workflow will continue with other tasks.',

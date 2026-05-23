@@ -222,6 +222,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		// Create a temporary Python script to use rembg.
+		// phpcs:ignore Squiz.PHP.Heredoc
 		$script_content = <<<'PYTHON'
 import sys
 import os

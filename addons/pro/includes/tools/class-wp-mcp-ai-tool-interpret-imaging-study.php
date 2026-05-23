@@ -157,13 +157,17 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// execute()
+	// Execute().
 	// =========================================================================
 
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param array $arguments Parsed tool arguments.
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
@@ -171,6 +175,13 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'view_medical_imaging' ) ) {
 			return new WP_Error(

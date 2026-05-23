@@ -26,6 +26,12 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -34,6 +40,11 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -49,10 +60,20 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		return 'generate_bim_execution_plan';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Generate BIM Execution Plan', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Produce a BIM Execution Plan (BEP) outline aligned with AIA E202/E203 and ISO 19650-2 — section catalogue and seeded content from the supplied project metadata, plus a ready-to-edit markdown rendering.', 'mcp-ai-wpoos-pro' );
 	}
@@ -110,6 +131,13 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
@@ -189,7 +217,7 @@ class WP_MCP_AI_Tool_Generate_Bim_Execution_Plan implements WP_MCP_AI_Tool_Inter
 				return sprintf(
 					'Project: %s. Jurisdiction: %s. Document the client, lead designer, contractor, key consultants and their contact details. Reference applicable %s.',
 					$project_name,
-					$country_code !== '' ? $country_code : 'TBC',
+					'' !== $country_code ? $country_code : 'TBC',
 					implode( ' + ', $standards )
 				);
 			case 'project_goals':

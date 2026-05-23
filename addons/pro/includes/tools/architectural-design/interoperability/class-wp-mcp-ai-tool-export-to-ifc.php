@@ -24,6 +24,12 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -32,6 +38,11 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -47,10 +58,20 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return 'export_to_ifc';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Export to IFC', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Generate an IFC 4.3 STEP-format text body (HEADER + DATA) from a normalised floor plan. Output is a valid STEP file body — geometry is minimal but the entity graph (project → site → building → storeys → spaces / walls / openings) is structurally complete.', 'mcp-ai-wpoos-pro' );
 	}
@@ -100,6 +121,13 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
@@ -130,7 +158,7 @@ class WP_MCP_AI_Tool_Export_To_Ifc implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'success'       => true,
 			'format'        => 'IFC4X3',
 			'media_type'    => 'application/x-step',
-			'filename'      => sanitize_file_name( ( $normalized['payload']['project']['name'] ?: 'project' ) . '.ifc' ),
+			'filename'      => sanitize_file_name( ( $normalized['payload']['project']['name'] ? $normalized['payload']['project']['name'] : 'project' ) . '.ifc' ),
 			'ifc_text'      => $ifc,
 			'byte_size'     => strlen( $ifc ),
 			'entity_counts' => array(

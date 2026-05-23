@@ -132,7 +132,8 @@ class WP_MCP_AI_Healthcare_Vaccination_Schedules {
 	/*
 	---------------------------------------------------------------------
 	 * Built-in packs (abridged — milestones only).
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * CDC paediatric immunisation schedule (abridged, 0–18 years).

@@ -59,10 +59,20 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 	 */
 	const QUERIES_COMPREHENSIVE = 3;
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'generate_research_report';
 	}
 
+	/**
+	 * Get tool definition.
+	 *
+	 * @return array
+	 */
 	public function get_definition() {
 		return array(
 			'name'                => 'generate_research_report',

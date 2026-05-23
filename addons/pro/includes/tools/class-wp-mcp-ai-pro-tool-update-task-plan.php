@@ -140,7 +140,7 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 			foreach ( $arguments['new_tasks'] as $task ) {
 				$priority = ! empty( $task['priority'] ) ? ' (Priority: ' . ucfirst( $task['priority'] ) . ')' : '';
 				$markdown = preg_replace(
-					'/(## Tasks\n(?:- \[[ x]\] .+\n)+)/',
+					'/(## Tasks\n( ? ( :- \[[ x]\] .+\n)+)/',
 					'$1- [ ] ' . $task['text'] . $priority . "\n",
 					$markdown
 				);

@@ -22,6 +22,11 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -30,6 +35,11 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -43,8 +53,18 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_slug() {
 		return 'lf_fee_calculator'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Fee Calculator', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Calculates legal fees using hourly, contingency, flat fee, blended rate, or lodestar methods.', 'mcp-ai-wpoos-pro' ); }
 
@@ -109,6 +129,13 @@ class WP_MCP_AI_Tool_LF_Fee_Calculator implements WP_MCP_AI_Tool_Interface, WP_M
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {

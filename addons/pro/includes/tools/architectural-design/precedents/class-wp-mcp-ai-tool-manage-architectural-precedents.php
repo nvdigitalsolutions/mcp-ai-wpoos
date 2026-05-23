@@ -27,6 +27,12 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 
 	/* WP_MCP_AI_AVAILABILITY_BLOCK */
 
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -35,6 +41,11 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return ! empty( $settings['enable_architectural_design_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -50,10 +61,20 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return 'manage_architectural_precedents';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Manage Architectural Precedents', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'List / get / create / update / delete architectural precedents (built case studies). On create / update the tool regenerates the cached OpenAI embedding so search_architectural_precedents can perform cosine-similarity semantic search.', 'mcp-ai-wpoos-pro' );
 	}
@@ -115,6 +136,13 @@ class WP_MCP_AI_Tool_Manage_Architectural_Precedents implements WP_MCP_AI_Tool_I
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {

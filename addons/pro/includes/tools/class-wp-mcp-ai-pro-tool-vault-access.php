@@ -275,7 +275,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( get_current_user_id() != $post->post_author ) {
 			return array(
 				'success' => false,
 				'error'   => 'You do not have permission to access this vault item',

@@ -83,13 +83,24 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param array $arguments Tool arguments.
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
 	 * @param array $context   Execution context.
 	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['registration_id'] ) ) {

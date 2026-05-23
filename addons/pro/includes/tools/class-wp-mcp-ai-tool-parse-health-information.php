@@ -406,7 +406,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Extract provider/doctor names.
-		if ( preg_match( '/\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/', $line, $matches ) ) {
+		if ( preg_match( '/\bDr\.?\s+([A-Z][a-z]+( ? ( :\s+[A-Z][a-z]+)*)\b/', $line, $matches ) ) {
 			$current_record['provider'] = sanitize_text_field( $matches[0] );
 		}
 
@@ -419,7 +419,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		// --- Prescription-specific patterns (FHIR MedicationStatement) ---
 		if ( 'prescriptions' === $section ) {
 			// Dosage amount.
-			if ( preg_match( '/\b(\d+(?:\.\d+)?\s*(?:mg|ml|g|mcg|iu|units?))\b/i', $line, $matches ) ) {
+			if ( preg_match( '/\b(\d+( ? ( :\.\d+)?\s*( ? ( :mg|ml|g|mcg|iu|units?))\b/i', $line, $matches ) ) {
 				$current_record['dosage'] = $matches[0];
 			}
 			// Frequency/sig.
@@ -439,7 +439,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				$current_record['rx_number'] = sanitize_text_field( $matches[1] );
 			}
 			// Indication / reason (e.g. "for hypertension", "treats type 2 diabetes").
-			if ( preg_match( '/\b(?:for|treats?|prescribed\s+for|indication\s*:)\s+([^,.\n]{3,60})/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :for|treats?|prescribed\s+for|indication\s*:)\s+([^,.\n]{3,60})/i', $line, $matches ) ) {
 				$current_record['indication'] = sanitize_text_field( trim( $matches[1] ) );
 			}
 			// Pharmacy name (e.g. "CVS Pharmacy", "Walgreens").
@@ -505,23 +505,23 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		// --- Checkup-specific patterns (FHIR Encounter) ---
 		if ( 'checkups' === $section ) {
 			// Chief complaint / reason for visit.
-			if ( preg_match( '/\b(?:chief\s+complaint|reason\s+for\s+visit|presenting\s+(?:with|complaint)|cc\s*:)\s*(.{3,120})/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :chief\s+complaint|reason\s+for\s+visit|presenting\s+( ? ( :with|complaint)|cc\s*:)\s*(.{3,120})/i', $line, $matches ) ) {
 				$current_record['chief_complaint'] = sanitize_text_field( trim( $matches[1] ) );
 			}
 			// Diagnosis/assessment.
-			if ( preg_match( '/\b(?:diagnosis|assessment|impression|dx\s*:|a\/p\s*:)\s*(.{3,120})/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :diagnosis|assessment|impression|dx\s*:|a\/p\s*:)\s*(.{3,120})/i', $line, $matches ) ) {
 				$current_record['diagnosis'] = sanitize_text_field( trim( $matches[1] ) );
 			}
 			// Follow-up date / return visit.
-			if ( preg_match( '/\b(?:follow[\s-]?up\s+(?:in\s+)?|return\s+in\s+|next\s+visit\s+(?:in\s+)?)(\d+\s*(?:days?|weeks?|months?))/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :follow[\s-]?up\s+( ? ( :in\s+)?|return\s+in\s+|next\s+visit\s+( ? ( :in\s+)?)(\d+\s*( ? ( :days?|weeks?|months?))/i', $line, $matches ) ) {
 				$current_record['follow_up_note'] = sanitize_text_field( $matches[0] );
 			}
 			// Copay amount paid.
-			if ( preg_match( '/\$\s*(\d+(?:\.\d{2})?)\s*copay/i', $line, $matches ) ) {
+			if ( preg_match( '/\$\s*(\d+( ? ( :\.\d{2})?)\s*copay/i', $line, $matches ) ) {
 				$current_record['copay_amount'] = sanitize_text_field( '$' . $matches[1] );
 			}
 			// Duration in minutes.
-			if ( preg_match( '/\b(\d+)\s*(?:min(?:utes?)?|mins?)\b/i', $line, $matches ) ) {
+			if ( preg_match( '/\b(\d+)\s*( ? ( :min( ? ( :utes?)?|mins?)\b/i', $line, $matches ) ) {
 				$current_record['duration_minutes'] = absint( $matches[1] );
 			}
 		}
@@ -529,7 +529,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		// --- Policy-specific patterns (FHIR Coverage) ---
 		if ( 'policies' === $section ) {
 			// Group number.
-			if ( preg_match( '/\b(?:group\s*(?:number|#|id|no\.?)\s*:?\s*)([A-Z0-9-]{3,20})\b/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :group\s*( ? ( :number|#|id|no\.?)\s*:?\s*)([A-Z0-9-]{3,20})\b/i', $line, $matches ) ) {
 				$current_record['group_number'] = sanitize_text_field( $matches[1] );
 			}
 			// Plan type (HMO/PPO/EPO/HDHP/POS).
@@ -537,23 +537,23 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				$current_record['plan_type'] = strtoupper( $matches[1] );
 			}
 			// Copay amount.
-			if ( preg_match( '/\$\s*(\d+(?:\.\d{2})?)\s*(?:copay|co[\s-]?pay)/i', $line, $matches ) ) {
+			if ( preg_match( '/\$\s*(\d+( ? ( :\.\d{2})?)\s*( ? ( :copay|co[\s-]?pay)/i', $line, $matches ) ) {
 				$current_record['copay_primary'] = sanitize_text_field( '$' . $matches[1] );
 			}
 			// Deductible.
-			if ( preg_match( '/\b(?:deductible\s*:?\s*)\$?\s*([\d,]+(?:\.\d{2})?)/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :deductible\s*:?\s*)\$?\s*([\d,]+( ? ( :\.\d{2})?)/i', $line, $matches ) ) {
 				$current_record['deductible'] = sanitize_text_field( '$' . str_replace( ',', '', $matches[1] ) );
 			}
 			// Out-of-pocket maximum.
-			if ( preg_match( '/\b(?:out[\s-]?of[\s-]?pocket\s+(?:max(?:imum)?|limit)\s*:?\s*)\$?\s*([\d,]+(?:\.\d{2})?)/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :out[\s-]?of[\s-]?pocket\s+( ? ( :max( ? ( :imum)?|limit)\s*:?\s*)\$?\s*([\d,]+( ? ( :\.\d{2})?)/i', $line, $matches ) ) {
 				$current_record['out_of_pocket_max'] = sanitize_text_field( '$' . str_replace( ',', '', $matches[1] ) );
 			}
 			// Pharmacy BIN number.
-			if ( preg_match( '/\b(?:bin|rx\s+bin)\s*#?\s*:?\s*(\d{6})\b/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :bin|rx\s+bin)\s*#?\s*:?\s*(\d{6})\b/i', $line, $matches ) ) {
 				$current_record['rx_bin'] = $matches[1];
 			}
 			// Pharmacy PCN.
-			if ( preg_match( '/\b(?:pcn|rx\s+pcn)\s*#?\s*:?\s*([A-Z0-9]{1,10})\b/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :pcn|rx\s+pcn)\s*#?\s*:?\s*([A-Z0-9]{1,10})\b/i', $line, $matches ) ) {
 				$current_record['rx_pcn'] = strtoupper( $matches[1] );
 			}
 		}
@@ -561,16 +561,16 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		// --- Medical record-specific patterns (FHIR Condition) ---
 		if ( 'medical_records' === $section ) {
 			// Lab value with unit (LOINC-based: e.g. "glucose: 5.4 mmol/L").
-			if ( preg_match( '/\b(\d+(?:\.\d+)?)\s*(mg\/dL|mmol\/L|g\/dL|mEq\/L|U\/L|IU\/L|%|cells\/µL|K\/µL|M\/µL|pg|fL)\b/i', $line, $matches ) ) {
+			if ( preg_match( '/\b(\d+( ? ( :\.\d+)?)\s*(mg\/dL|mmol\/L|g\/dL|mEq\/L|U\/L|IU\/L|%|cells\/µL|K\/µL|M\/µL|pg|fL)\b/i', $line, $matches ) ) {
 				$current_record['lab_value'] = $matches[1];
 				$current_record['lab_unit']  = $matches[2];
 			}
 			// Lab reference range (e.g. "reference range: 3.5-5.0 mmol/L", "normal: 70-100").
-			if ( preg_match( '/\b(?:ref(?:erence)?\s*(?:range)?\s*:?|normal\s*:?)\s*([\d.]+-[\d.]+\s*\S*)/i', $line, $matches ) ) {
+			if ( preg_match( '/\b( ? ( :ref( ? ( :erence)?\s*( ? ( :range)?\s*:?|normal\s*:?)\s*([\d.]+-[\d.]+\s*\S*)/i', $line, $matches ) ) {
 				$current_record['lab_reference_range'] = sanitize_text_field( $matches[1] );
 			}
 			// Abnormal flag (H/L flags or "abnormal"/"high"/"low" keyword).
-			if ( preg_match( '/\b(abnormal|high\s+(?:value|result)|low\s+(?:value|result)|\bH\b|\bL\b|critical\s+value|panic\s+value)\b/i', $line ) ) {
+			if ( preg_match( '/\b(abnormal|high\s+( ? ( :value|result)|low\s+( ? ( :value|result)|\bH\b|\bL\b|critical\s+value|panic\s+value)\b/i', $line ) ) {
 				$current_record['lab_abnormal'] = true;
 			}
 		}

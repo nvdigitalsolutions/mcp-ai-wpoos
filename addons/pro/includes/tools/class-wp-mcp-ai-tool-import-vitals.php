@@ -24,6 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Performs the operation.
+ // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
  * import_vitals tool implementation.
  */
 class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
@@ -59,7 +61,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		'718-7'   => 'hemoglobin',                // Hemoglobin [Mass/volume] in Blood.
 		'59260-8' => 'hemoglobin',                // Hemoglobin [Moles/volume] in Blood.
 		'20509-6' => 'hemoglobin',                // Hemoglobin [Mass/volume] by calculation.
-		// ── CBC — main indices ────────────────────────────────────────────
+		// ── CBC — main indices ────────────────────────────────────────────.
 		'4544-3'  => 'hematocrit',                // Hematocrit [Volume Fraction] by Automated count.
 		'71829-6' => 'hematocrit',                // Hematocrit by Centrifugation.
 		'788-0'   => 'rbc',                       // Erythrocytes [#/volume] by Automated count.
@@ -69,24 +71,24 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		'785-6'   => 'mch',                       // MCH [Entitic mass] by Automated count.
 		'786-4'   => 'mchc',                      // MCHC [Mass/volume] by Automated count.
 		'21000-5' => 'rdw',                       // Erythrocyte distribution width [Ratio] by Automated count.
-		// ── CBC differential — percent ────────────────────────────────────
+		// ── CBC differential — percent ────────────────────────────────────.
 		'770-8'   => 'neutrophils_percent',       // Neutrophils/100 leukocytes by Automated count.
 		'736-9'   => 'lymphocytes_percent',       // Lymphocytes/100 leukocytes by Automated count.
 		'5905-5'  => 'monocytes_percent',         // Monocytes/100 leukocytes by Automated count.
 		'713-8'   => 'eosinophils_percent',       // Eosinophils/100 leukocytes by Automated count.
 		'706-2'   => 'basophils_percent',         // Basophils/100 leukocytes by Automated count.
-		// ── CBC differential — absolute counts ───────────────────────────
+		// ── CBC differential — absolute counts ───────────────────────────.
 		'751-8'   => 'neutrophils_absolute',      // Neutrophils [#/volume] by Automated count.
 		'731-0'   => 'lymphocytes_absolute',      // Lymphocytes [#/volume] by Automated count.
 		'742-7'   => 'monocytes_absolute',        // Monocytes [#/volume] by Automated count.
 		'711-2'   => 'eosinophils_absolute',      // Eosinophils [#/volume] by Automated count.
 		'704-7'   => 'basophils_absolute',        // Basophils [#/volume] by Automated count.
-		// ── Extended BMP / CMP electrolytes ──────────────────────────────
+		// ── Extended BMP / CMP electrolytes ──────────────────────────────.
 		'2075-0'  => 'chloride',                  // Chloride [Moles/volume] in Serum or Plasma.
 		'1963-8'  => 'co2',                       // Bicarbonate [Moles/volume] in Serum or Plasma (CO2).
 		'17861-6' => 'calcium',                   // Calcium [Mass/volume] in Serum or Plasma.
 		'19123-9' => 'magnesium',                 // Magnesium [Mass/volume] in Serum or Plasma.
-		// ── Liver function tests (LFT) ────────────────────────────────────
+		// ── Liver function tests (LFT) ────────────────────────────────────.
 		'1975-2'  => 'bilirubin',                 // Bilirubin.total [Mass/volume] in Serum or Plasma.
 		'1920-8'  => 'ast',                       // Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma.
 		'1742-6'  => 'alt',                       // Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma.
@@ -387,6 +389,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$member_id = absint( $arguments['member_id'] ?? 0 );
@@ -914,7 +919,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					}
 				}
 			}
-			return $row ?: false;
+			return $row ? $row : false;
 		}
 
 		// ── Single-value observations ─────────────────────────────────────
@@ -957,7 +962,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			}
 		}
 
-		return $row ?: false;
+		return $row ? $row : false;
 	}
 
 	/**

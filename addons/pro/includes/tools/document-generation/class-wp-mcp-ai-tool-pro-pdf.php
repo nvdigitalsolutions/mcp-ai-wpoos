@@ -769,6 +769,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return string Node.js script content.
 	 */
 	protected function create_pdf_generation_script() {
+		// phpcs:ignore Squiz.PHP.Heredoc
 		return <<<'JAVASCRIPT'
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
@@ -1083,7 +1084,7 @@ JAVASCRIPT;
 	 */
 	protected function try_parse_json_response( $content ) {
 		// Try to find JSON in the response (may be wrapped in markdown code blocks).
-		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
+		$json_pattern = '/```( ? ( :json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
 		} elseif ( preg_match( '/\{.*\}/s', $content, $matches ) ) {

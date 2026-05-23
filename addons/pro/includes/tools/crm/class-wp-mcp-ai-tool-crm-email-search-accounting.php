@@ -665,7 +665,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			 * @param string $default_currency Default ISO 4217 currency code.
 			 */
 			$default_currency = apply_filters( 'wp_mcp_ai_crm_default_currency', 'USD' );
-			$currency         = $raw_currency ?: strtoupper( sanitize_text_field( $default_currency ) );
+			$currency         = $raw_currency  ? $raw_currency : strtoupper( sanitize_text_field( $default_currency ) );
 
 			// Currency code filter (ISO 4217 – Xero/QuickBooks multi-currency standard).
 			if ( ! empty( $filters['currency_code'] ) && strtoupper( $filters['currency_code'] ) !== $currency ) {

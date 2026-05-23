@@ -105,6 +105,9 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( $this->get_required_capability() ) ) {

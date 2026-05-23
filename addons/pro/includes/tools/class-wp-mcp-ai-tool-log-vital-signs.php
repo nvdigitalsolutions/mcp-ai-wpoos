@@ -1477,7 +1477,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		// Similar analysis for other vitals...
-		// (Simplified for brevity)
+		// (Simplified for brevity).
 
 		return array(
 			'success'     => true,
