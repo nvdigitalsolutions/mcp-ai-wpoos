@@ -30,11 +30,6 @@
 
 ### Getting Started
 - [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
-- [🆕 Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026)
-- [🆕 Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026)
-- [🆕 Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026)
-- [🆕 Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026)
-- [🆕 Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
