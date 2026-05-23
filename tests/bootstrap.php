@@ -182,9 +182,11 @@ function wp_mcp_ai_manually_load_plugin() {
 
 	// Load the Pro addon if present so its tests (e.g. messaging-channels-ajax,
 	// CPT AI integration, quiz tools) can exercise their classes.
+	// Guard against double-loading: CI environments may have Pro activated as
+	// a regular plugin (loaded by WordPress before this mu-plugin callback).
 	$pro_addon = dirname( __DIR__ ) . '/addons/pro/mcp-ai-wpoos-pro.php';
-	if ( file_exists( $pro_addon ) ) {
-		require $pro_addon;
+	if ( file_exists( $pro_addon ) && ! function_exists( 'wp_mcp_ai_pro_activate' ) ) {
+		require_once $pro_addon;
 	}
 }
 
