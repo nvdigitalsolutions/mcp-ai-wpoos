@@ -200,8 +200,7 @@ trait WP_MCP_AI_Tool_Harmonization {
 	protected function harmonization_is_valid_http_url( $url ) {
 		return is_string( $url )
 			&& false !== filter_var( $url, FILTER_VALIDATE_URL )
-			// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
-			&& (bool) preg_match( '#^https ? && (bool) preg_match( '// ^https ://#i', $url );
+			&& (bool) preg_match( '#^https?://#i', $url );
 	}
 
 	/**

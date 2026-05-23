@@ -135,11 +135,8 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 			$base_path  = $upload_dir['basedir'];
 
 			// Normalize URLs to handle http/https differences.
-			// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
-			$normalized_url      = preg_replace( '#^https ? $normalized_url      = preg_replace( '// ^https ://#i', '', $path_or_url );
-			// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
-			// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments
-			$normalized_base_url = preg_replace( '#^https ? $normalized_base_url = preg_replace( '// ^https ://#i', '', $base_url );
+			$normalized_url      = preg_replace( '#^https?://#i', '', $path_or_url );
+			$normalized_base_url = preg_replace( '#^https?://#i', '', $base_url );
 
 			// If it's a WordPress upload URL, convert to local path.
 			if ( strpos( $normalized_url, $normalized_base_url ) === 0 ) {

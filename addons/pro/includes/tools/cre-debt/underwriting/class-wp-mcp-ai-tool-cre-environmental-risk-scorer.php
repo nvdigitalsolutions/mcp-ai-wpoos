@@ -131,7 +131,7 @@ class WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer implements WP_MCP_AI_Tool_Int
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
-		} .
+		}
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
