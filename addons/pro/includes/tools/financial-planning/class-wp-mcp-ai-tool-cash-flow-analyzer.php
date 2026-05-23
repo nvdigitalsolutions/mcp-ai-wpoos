@@ -191,7 +191,6 @@ public function get_capability_flags() {
 			'is_positive'               => $monthly_cash_flow > 0,
 			'projections'               => $projections,
 			/* translators: %s: formatted currency amount */
-			 */
 			'message'                   => sprintf( __( 'Current monthly cash flow: $%s', 'mcp-ai-wpoos-pro' ), number_format( $monthly_cash_flow, 2 ) ),
 		);
 	}

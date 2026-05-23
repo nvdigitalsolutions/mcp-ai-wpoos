@@ -197,7 +197,6 @@ public function get_capability_flags() {
 			'assets'            => $assets,
 			'liabilities'       => $liabilities,
 			/* translators: %s: formatted currency amount */
-			 */
 			'message'           => sprintf( __( 'Your net worth is $%s.', 'mcp-ai-wpoos-pro' ), number_format( $net_worth, 2 ) ),
 		);
 	}

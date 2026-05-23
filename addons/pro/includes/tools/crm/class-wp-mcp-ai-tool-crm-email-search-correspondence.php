@@ -427,7 +427,6 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 		return array(
 			'success'    => true,
 			/* translators: %s: cron recurrence label */
-			 */
 			'message'    => sprintf( __( 'Correspondence search scheduled to auto-refresh %s.', 'mcp-ai-wpoos-pro' ), $recurrence ),
 			'recurrence' => $recurrence,
 			'hook'       => self::CRON_HOOK,
