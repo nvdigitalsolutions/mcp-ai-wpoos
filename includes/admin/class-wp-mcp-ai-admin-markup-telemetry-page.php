@@ -145,7 +145,7 @@ class WP_MCP_AI_Admin_Markup_Telemetry_Page {
 
 		$completion_rate = $created > 0 ? ( $completed / $created ) * 100 : 0.0;
 
-		$reset_done = isset( $_GET['reset'] ) && '1' === wp_unslash( $_GET['reset'] );
+		$reset_done = isset( $_GET['reset'] ) && '1' === sanitize_key( wp_unslash( $_GET['reset'] ) );
 
 		echo '<div class="wrap wp-mcp-ai-markup-telemetry">';
 		printf( '<h1>%s</h1>', esc_html__( 'NV oOS Markup Telemetry', 'mcp-ai-wpoos' ) );
