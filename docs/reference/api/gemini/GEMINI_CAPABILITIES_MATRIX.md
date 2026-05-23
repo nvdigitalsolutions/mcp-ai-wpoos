@@ -1,8 +1,8 @@
 # Gemini Integration Capabilities Matrix
 
-**Last Updated:** December 21, 2025  
-**Version:** 1.1  
-**Status:** Updated with December 2025 implementations
+**Last Updated:** May 2026
+**Version:** 1.2
+**Status:** Updated with Google I/O 2026 announcements (Gemini 3.5 Flash, Gemini Omni)
 
 ## Quick Reference: What's Implemented vs. Available
 
@@ -53,8 +53,10 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 | Text generation | ✅ Available | ✅ Implemented | `create_chat_completion()` | Full support |
 | Image generation | ✅ Available | ✅ Implemented | `generate_image()` | Gemini 2.5 Flash Image |
 | Image editing | ✅ Available | ✅ Implemented | `edit_image()` | Nano Banana |
-| Video generation | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Video_Generation_Service` | Veo 3.1 |
+| Video generation | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Video_Generation_Service` | Veo 3.1 (legacy) / Omni Flash (GA May 2026) |
 | Music generation | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Music_Service` | Lyria |
+| Conversational video editing | ✅ Available | ⚠️ Planned | - | Gemini Omni — multi-turn editing |
+| AI Avatars | ✅ Available | ⚠️ Planned | - | Gemini Omni — avatar creation & usage |
 | Audio generation | ✅ Available | ❌ Not Implemented | - | Use OpenAI instead |
 | **Multimodal Input** |
 | Text input | ✅ Available | ✅ Implemented | `build_payload()` | Core functionality |
@@ -77,7 +79,8 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 | frequencyPenalty | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
 | **Advanced Features** |
 | Function calling (tools) | ✅ Available | ✅ Implemented | `translate_tools()` | OpenAI-compatible |
-| Thinking mode (2.0 Flash) | ✅ Available | ✅ Implemented | Both streaming and non-streaming | **FIXED Dec 2024** |
+| Thinking mode (3.5 Flash) | ✅ Available | ✅ Implemented | Dynamic thinking by default | 3.5 Flash auto-allocates compute |
+| Managed Agents | ✅ Available | ⚠️ Planned (Service Ready) | `class-wp-mcp-ai-gemini-managed-agent-service.php` | Container-based agent execution; gated behind API availability |
 | Code execution | ✅ Available | ❌ Not Implemented | - | Low priority |
 | Grounding (Google Search) | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
 | Context caching | ✅ Available | ❌ Not Implemented | - | **Gap identified** |

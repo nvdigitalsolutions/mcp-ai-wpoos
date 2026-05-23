@@ -385,6 +385,26 @@
       "notes": "Gemma 3 2B IT (WebLLM/MLC) - Browser-side inference."
     },
     {
+      "model_name": "gemini-3.5-flash",
+      "provider": "gemini",
+      "tpm_limit": 4000000,
+      "rpm_limit": 2000,
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "tier": "tier-1",
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0.0015,
+      "cost_per_1k_output_tokens": 0.009,
+      "fallback_model": "gemini-3.1-pro",
+      "status": "active",
+      "sunset_date": "",
+      "notes": "Gemini 3.5 Flash (May 2026 GA). Outperforms 3.1 Pro on coding & agentic benchmarks. 4x faster output. Dynamic thinking enabled. $1.50/$9.00 per 1M tokens. 1M context."
+    },
+    {
       "model_name": "gemini-3.1-flash",
       "provider": "gemini",
       "tpm_limit": 4000000,
@@ -399,10 +419,10 @@
       "supports_vision": true,
       "cost_per_1k_input_tokens": 7.5e-05,
       "cost_per_1k_output_tokens": 0.0003,
-      "fallback_model": "gemini-3-flash-preview",
+      "fallback_model": "gemini-3.5-flash",
       "status": "deprecated",
-      "sunset_date": "",
-      "notes": "[DEPRECATED] Migrate to gemini-3-flash-preview."
+      "sunset_date": "2026-09-01",
+      "notes": "[DEPRECATED] Gemini 3.1 Flash. Migrate to gemini-3.5-flash (4x faster, beats 3.1 Pro on benchmarks)."
     },
     {
       "model_name": "gemini-3.1-flash-lite",
@@ -463,6 +483,26 @@
       "status": "active",
       "sunset_date": "",
       "notes": "Imagen 4 - Google image generation model (April 2026). Replaces Imagen 3."
+    },
+    {
+      "model_name": "gemini-omni-flash",
+      "provider": "gemini",
+      "tpm_limit": 0,
+      "rpm_limit": 30,
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "context_window": 0,
+      "max_output_tokens": 0,
+      "tier": "paid",
+      "supports_streaming": false,
+      "supports_function_calling": false,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0,
+      "cost_per_1k_output_tokens": 0,
+      "fallback_model": "veo-3.1-generate-preview",
+      "status": "active",
+      "sunset_date": "",
+      "notes": "Gemini Omni Flash (May 2026 GA). Any-to-any multimodal video generation model. Replaces Veo in Gemini app. Text/images/audio/video → video. 10s videos, native audio, multi-turn conversational editing, AI avatars. SynthID watermarked."
     },
     {
       "model_name": "gemini-3-flash-preview",

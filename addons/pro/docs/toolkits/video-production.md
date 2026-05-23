@@ -1,15 +1,17 @@
 # Video Production Toolkit
 
 > Professional video editing and optimization powered by **FFmpeg** plus Remotion for
-> React-based programmatic video.
+> React-based programmatic video. AI video generation via **Gemini Omni Flash** (May 2026)
+> replaces Veo for multimodal text/image/audio/video → video creation.
 
 | | |
 |---|---|
 | **Activation setting** | `enable_video_production_toolkit` |
 | **Admin location** | NV oOS → Settings → Pro Features → Video Production |
-| **Tools** | 13 |
+| **Tools** | 13 (FFmpeg) + Omni generation (Planned) |
 | **NPM** | `fluent-ffmpeg`, `ffmpeg-static`, `ffprobe-static`, `subtitle` |
 | **System requirement** | FFmpeg installed on the host |
+| **AI Models** | Gemini Omni Flash (video gen), Veo 3.1/2.0 (legacy fallback) |
 
 ---
 
