@@ -682,7 +682,7 @@ class WP_MCP_AI_Agent_Audit_Trail {
 				'publish_posts'      => 'manage_options',
 				'read_private_posts' => 'manage_options',
 			),
-			'map_meta_cap'        => true,
+			'map_meta_cap'        => false, // false prevents WP 6.1+ delete_post _doing_it_wrong notice (same fix as PR #4822 workflow-cpt).
 			'has_archive'         => false,
 			'hierarchical'        => false,
 			'supports'            => array( 'title' ),
