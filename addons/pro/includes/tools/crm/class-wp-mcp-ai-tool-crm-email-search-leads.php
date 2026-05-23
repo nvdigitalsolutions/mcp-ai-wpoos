@@ -433,7 +433,6 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'success'    => true,
 			/* translators: %s: cron recurrence label (hourly / twicedaily / daily) */
-			 */
 			'message'    => sprintf( __( 'Lead search scheduled to auto-refresh %s.', 'mcp-ai-wpoos-pro' ), $recurrence ),
 			'recurrence' => $recurrence,
 			'hook'       => self::CRON_HOOK,
