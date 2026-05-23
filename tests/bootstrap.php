@@ -168,6 +168,40 @@ require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
  * Manually load the plugin being tested.
  */
 function wp_mcp_ai_manually_load_plugin() {
+	// ── Disable all AI providers by default in tests ────────────
+	// When the plugin bootstraps, it instantiates every provider client
+	// via the container (even if unused). Pre-populating the settings
+	// default means `get_available_providers()` returns nothing and
+	// the router won't attempt real API calls from unmocked tests.
+	// Individual tests re-enable the providers they need via
+	// `update_option( 'wp_mcp_ai_settings', $settings )`.
+	add_filter(
+		'default_option_wp_mcp_ai_settings',
+		function ( $default ) {
+			return array_merge(
+				$default,
+				array(
+					'enable_openai'       => false,
+					'enable_gemini'       => false,
+					'enable_anthropic'    => false,
+					'enable_ollama'       => false,
+					'enable_lm_studio'    => false,
+					'enable_cloudflare'   => false,
+					'enable_deepseek'     => false,
+					'enable_kimi'         => false,
+					'enable_baseten'      => false,
+					'enable_openrouter'   => false,
+					'enable_digitalocean' => false,
+					'enable_huggingface'  => false,
+					'enable_nvidia'       => false,
+					'enable_embedded'     => false,
+				)
+			);
+		},
+		10,
+		1
+	);
+
 	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
 
 	// Load the SaaS Controller addon if present so its tests can exercise
