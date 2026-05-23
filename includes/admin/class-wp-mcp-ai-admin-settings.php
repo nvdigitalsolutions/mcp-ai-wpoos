@@ -1137,16 +1137,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback: Return all providers if Model_Config is not available.
 			// This ensures backward compatibility and prevents breaking the UI.
 			return array(
-				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
-				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama', 'mcp-ai-wpoos' ),
-				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
-				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
-				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-				'baseten'     => __( 'Baseten', 'mcp-ai-wpoos' ),
-				'embedded'    => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+				'openai'       => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'       => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'nvidia'       => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
+				'deepseek'     => __( 'DeepSeek', 'mcp-ai-wpoos' ),
+				'openrouter'   => __( 'OpenRouter', 'mcp-ai-wpoos' ),
+				'digitalocean' => __( 'DigitalOcean', 'mcp-ai-wpoos' ),
+				'kimi'         => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
+				'ollama'       => __( 'Ollama', 'mcp-ai-wpoos' ),
+				'lm_studio'    => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+				'cloudflare'   => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'huggingface'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'baseten'      => __( 'Baseten', 'mcp-ai-wpoos' ),
+				'embedded'     => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -2510,10 +2514,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
