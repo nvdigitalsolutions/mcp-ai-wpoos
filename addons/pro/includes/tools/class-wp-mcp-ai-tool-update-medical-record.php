@@ -44,47 +44,47 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'record_id' => array(
+				'record_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Record ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'     => array(
+				'title'               => array(
 					'type'        => 'string',
 					'description' => __( 'Record title (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'date'      => array(
+				'date'                => array(
 					'type'        => 'string',
 					'description' => __( 'Date of record (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'provider'  => array(
+				'provider'            => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider or facility name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'details'   => array(
+				'details'             => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed information about the medical record (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10000,
 				),
-				'notes'     => array(
+				'notes'               => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'icd_code'  => array(
+				'icd_code'            => array(
 					'type'        => 'string',
 					'description' => __( 'ICD-10 / ICD-11 diagnosis code (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 20,
 				),
-				'lab_value' => array(
+				'lab_value'           => array(
 					'type'        => 'string',
 					'description' => __( 'Lab result value (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'lab_unit'  => array(
+				'lab_unit'            => array(
 					'type'        => 'string',
 					'description' => __( 'Lab result unit (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Normal reference range (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'lab_abnormal' => array(
+				'lab_abnormal'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the result is abnormal (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -128,6 +128,11 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -174,15 +179,15 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Sanitize optional fields.
-		$title    = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$date     = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : '';
-		$provider = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
-		$details  = isset( $arguments['details'] ) ? wp_kses_post( $arguments['details'] ) : '';
-		$notes    = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
-		$icd_code = isset( $arguments['icd_code'] ) ? sanitize_text_field( $arguments['icd_code'] ) : '';
-		$lab_value = isset( $arguments['lab_value'] ) ? sanitize_text_field( $arguments['lab_value'] ) : '';
-		$lab_unit  = isset( $arguments['lab_unit'] ) ? sanitize_text_field( $arguments['lab_unit'] ) : '';
-		$lab_ref   = isset( $arguments['lab_reference_range'] ) ? sanitize_text_field( $arguments['lab_reference_range'] ) : '';
+		$title        = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$date         = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : '';
+		$provider     = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
+		$details      = isset( $arguments['details'] ) ? wp_kses_post( $arguments['details'] ) : '';
+		$notes        = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$icd_code     = isset( $arguments['icd_code'] ) ? sanitize_text_field( $arguments['icd_code'] ) : '';
+		$lab_value    = isset( $arguments['lab_value'] ) ? sanitize_text_field( $arguments['lab_value'] ) : '';
+		$lab_unit     = isset( $arguments['lab_unit'] ) ? sanitize_text_field( $arguments['lab_unit'] ) : '';
+		$lab_ref      = isset( $arguments['lab_reference_range'] ) ? sanitize_text_field( $arguments['lab_reference_range'] ) : '';
 		$lab_abnormal = isset( $arguments['lab_abnormal'] ) ? ( $arguments['lab_abnormal'] ? 1 : 0 ) : null;
 
 		// Validate date if provided.
@@ -249,13 +254,13 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			'message' => __( 'Medical record updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'record'  => array(
 				'id'                  => $record_id,
-				'title'               => $title ?: get_post_field( 'post_title', $record_id ),
-				'date'                => $date ?: get_post_meta( $record_id, '_medical_record_date', true ),
-				'provider'            => $provider ?: get_post_meta( $record_id, '_medical_record_provider', true ),
-				'icd_code'            => $icd_code ?: get_post_meta( $record_id, '_medical_record_icd_code', true ),
-				'lab_value'           => $lab_value ?: get_post_meta( $record_id, '_medical_record_lab_value', true ),
-				'lab_unit'            => $lab_unit ?: get_post_meta( $record_id, '_medical_record_lab_unit', true ),
-				'lab_reference_range' => $lab_ref ?: get_post_meta( $record_id, '_medical_record_lab_reference_range', true ),
+				'title'               => $title ? $title : get_post_field( 'post_title', $record_id ),
+				'date'                => $date ? $date : get_post_meta( $record_id, '_medical_record_date', true ),
+				'provider'            => $provider ? $provider : get_post_meta( $record_id, '_medical_record_provider', true ),
+				'icd_code'            => $icd_code ? $icd_code : get_post_meta( $record_id, '_medical_record_icd_code', true ),
+				'lab_value'           => $lab_value ? $lab_value : get_post_meta( $record_id, '_medical_record_lab_value', true ),
+				'lab_unit'            => $lab_unit ? $lab_unit : get_post_meta( $record_id, '_medical_record_lab_unit', true ),
+				'lab_reference_range' => $lab_ref ? $lab_ref : get_post_meta( $record_id, '_medical_record_lab_reference_range', true ),
 				'lab_abnormal'        => (bool) get_post_meta( $record_id, '_medical_record_lab_abnormal', true ),
 				'updated_at'          => current_time( 'mysql' ),
 			),

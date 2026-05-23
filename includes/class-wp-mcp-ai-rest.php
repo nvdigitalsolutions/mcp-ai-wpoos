@@ -251,6 +251,40 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Get singleton instance.
+		 *
+		 * Resolves dependencies from the container and stores the instance globally
+		 * for backward compatibility with code that accesses it via the global.
+		 *
+		 * @return WP_MCP_AI_REST
+		 */
+		public static function get_instance() {
+			if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) && $GLOBALS['wp_mcp_ai_rest_controller'] instanceof self ) {
+				return $GLOBALS['wp_mcp_ai_rest_controller'];
+			}
+
+			if ( function_exists( 'wp_mcp_ai_container' ) ) {
+				$container = wp_mcp_ai_container();
+				if ( $container->has( 'rest_controller' ) ) {
+					$instance = $container->get( 'rest_controller' );
+					$GLOBALS['wp_mcp_ai_rest_controller'] = $instance;
+					return $instance;
+				}
+			}
+
+			// Fallback: construct with real dependencies when container unavailable.
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$client   = new WP_MCP_AI_Language_Model_Router(
+				new WP_MCP_AI_OpenAI_Client(),
+				new WP_MCP_AI_Gemini_Client(),
+				new WP_MCP_AI_Ollama_Client()
+			);
+			$instance = new self( $registry, $client );
+			$GLOBALS['wp_mcp_ai_rest_controller'] = $instance;
+			return $instance;
+		}
+
+		/**
 		 * Clean all output buffers.
 		 *
 		 * Helper method to reduce code duplication.
@@ -1893,6 +1927,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $validated;
 				}
 
+				// If the bearer token was validated but did not map to a WordPress user,
+				// reject the request if the assistant requires an authenticated user.
+				// This prevents privilege escalation where an unmapped bearer token
+				// could piggyback on an existing WordPress session cookie.
+				$auth_user_id = isset( $this->auth_context['authenticated_user_id'] )
+					? (int) $this->auth_context['authenticated_user_id']
+					: 0;
+				if ( $requires_authenticated_user && $auth_user_id <= 0 ) {
+					// Check if the mapped user ID is available from the authenticator context.
+					$mapped_id = isset( $this->auth_context['user_id'] )
+						? (int) $this->auth_context['user_id']
+						: 0;
+					if ( $mapped_id <= 0 ) {
+						return $this->insufficient_permissions_error( $capability );
+					}
+					// Use the mapped user for capability checks.
+					$mapped_user = get_userdata( $mapped_id );
+					if ( ! $mapped_user || ! user_can( $mapped_id, $capability ) ) {
+						return $this->insufficient_permissions_error( $capability );
+					}
+				}
+
 				// Check rate limiting for bearer token authenticated requests.
 				$user_id          = get_current_user_id();
 				$rate_limit_check = $this->check_rate_limit( $user_id );
@@ -1949,6 +2005,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$this->set_authenticated_user_id( get_current_user_id() );
+
+			// Enforce capability check for non-admin users authenticated via WP nonce.
+			// Admin users bypass this check; all others must have the required capability.
+			if ( $requires_authenticated_user && ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) {
+				return $this->insufficient_permissions_error( $capability );
+			}
 
 			// Check rate limiting if enabled.
 			$user_id          = get_current_user_id();
@@ -2398,6 +2460,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$this->set_authenticated_user_id( 0 );
 					return true;
 				}
+			}
+
+			// Fallback: If a WordPress user is already authenticated via session cookie,
+			// use their identity for cron-status access (e.g. browser-based SSE connections).
+			$current_user_id = get_current_user_id();
+			if ( $current_user_id > 0 ) {
+				$this->set_authenticated_user_id( $current_user_id );
+				return true;
 			}
 
 			// Check for WordPress nonce authentication.
@@ -3336,9 +3406,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Update response completion timestamp after agentic loop.
-			$transcript_context['response_completed_at'] = microtime( true );
+				$transcript_context['response_completed_at'] = microtime( true );
 
-			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+				/**
+				 * Fires after the full agentic loop has completed (all iterations
+				 * finished, whether by completion or by hitting max_iterations).
+				 *
+				 * Consumed by the Continual Harness evolver to trigger online
+				 * harness adaptation after a batch of tool executions.
+				 *
+				 * @since 1.2.0
+				 *
+				 * @param int   $iteration     Total iterations completed.
+				 * @param int   $assistant_id  Assistant post ID.
+				 * @param array $tool_results  Array of tool results from the final iteration.
+				 * @param bool  $limit_reached Whether the loop exited because max_iterations was reached.
+				 */
+				do_action( 'wp_mcp_ai_agentic_loop_completed', $iteration, $assistant_id, $tool_result_messages, $iteration >= $max_iterations );
+
+				WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
@@ -4218,10 +4304,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Update response completion timestamp after agentic loop.
-			$transcript_context['response_completed_at'] = microtime( true );
+				$transcript_context['response_completed_at'] = microtime( true );
 
-			// Log and record transcript.
-			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+				/**
+				 * Fires after the full SSE-streaming agentic loop has completed.
+				 *
+				 * @since 1.2.0
+				 *
+				 * @param int   $iteration     Total iterations completed.
+				 * @param int   $assistant_id  Assistant post ID.
+				 * @param array $tool_results  Array of tool results from the final iteration.
+				 * @param bool  $limit_reached Whether the loop exited because max_iterations was reached.
+				 */
+				do_action( 'wp_mcp_ai_agentic_loop_completed', $iteration, $assistant_id, $tool_result_messages, $iteration >= $max_iterations );
+
+				// Log and record transcript.
+				WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {

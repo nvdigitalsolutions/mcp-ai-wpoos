@@ -107,6 +107,9 @@ class WP_MCP_AI_Tool_LF_Case_Timeline_Generator implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -117,9 +120,9 @@ class WP_MCP_AI_Tool_LF_Case_Timeline_Generator implements WP_MCP_AI_Tool_Interf
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 
-		$matter_id          = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
-		$include_deadlines  = ! isset( $arguments['include_deadlines'] ) || ! empty( $arguments['include_deadlines'] );
-		$include_filings    = ! isset( $arguments['include_filings'] ) || ! empty( $arguments['include_filings'] );
+		$matter_id         = isset( $arguments['matter_id'] ) ? absint( $arguments['matter_id'] ) : 0;
+		$include_deadlines = ! isset( $arguments['include_deadlines'] ) || ! empty( $arguments['include_deadlines'] );
+		$include_filings   = ! isset( $arguments['include_filings'] ) || ! empty( $arguments['include_filings'] );
 
 		if ( ! $matter_id ) {
 			return new WP_Error( 'missing_required', __( 'Matter ID is required.', 'mcp-ai-wpoos-pro' ) );

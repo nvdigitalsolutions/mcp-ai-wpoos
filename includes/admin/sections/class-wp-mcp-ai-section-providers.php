@@ -59,7 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI, DeepSeek).', 'mcp-ai-wpoos' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, NVIDIA NIM, Hugging Face, Cloudflare, DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten, Ollama, LM Studio).', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -128,12 +128,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
-					'gemini-3.1-flash'      => 'Gemini 3.1 Flash (Recommended)',
-					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
-					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
-					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
-				);
+						'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
+						'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
+						'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
+						'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
+						'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
+					);
 			}
 
 			// Get Cloudflare models from Model Config.
@@ -240,8 +240,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get Baseten models from Model Config.
+			$baseten_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$baseten_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'baseten' );
+			}
+
+			// Fallback to a curated list of Baseten Model API offerings.
+			if ( empty( $baseten_models ) ) {
+				$baseten_models = array(
+					'deepseek-ai/DeepSeek-V3' => 'DeepSeek-V3 (Recommended)',
+					'deepseek-ai/DeepSeek-R1' => 'DeepSeek-R1 (Reasoning)',
+					'zai-org/GLM-4'           => 'GLM-4',
+					'moonshotai/Kimi-K2'      => 'Kimi K2',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'kimi', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -716,28 +732,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'9:16' => '9:16 (Vertical)',
 						'16:9' => '16:9 (Widescreen)',
 					),
-					'default'     => '4:3',
+				'default'     => '4:3',
 				),
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for video generation via Gemini Veo. veo-2.0-generate-001 is stable with fewer restrictions (supports 5-8 seconds, 720p max). veo-3.1-generate-preview is the latest with synchronized audio and 1080p support, but requires exactly 8 seconds for 1080p and has stricter quota limits.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for video generation via Gemini. gemini-omni-flash is the latest any-to-any multimodal model (May 2026) replacing Veo — supports text/images/audio/video → video, 10s duration, native audio, multi-turn conversational editing. Veo 3.1/2.0 remain available as fallback.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Stable, Fewer Restrictions)',
-						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Latest, Audio, 1080p)',
+						'gemini-omni-flash'        => 'Gemini Omni Flash (Recommended — 10s, Audio, Editing)',
+						'veo-3.1-generate-preview' => 'Veo 3.1 Generate Preview (Legacy — Audio, 1080p)',
+						'veo-2.0-generate-001'     => 'Veo 2.0 Generate (Legacy — Stable, 720p)',
 					),
-					'default'     => 'veo-2.0-generate-001',
+					'default'     => 'gemini-omni-flash',
 				),
 				'gemini_video_resolution'            => array(
-					'type'        => 'select',
-					'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all Veo models and works for all aspect ratios. 1080p is only available with Veo 3.1 for 16:9 aspect ratio and requires exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'720p'  => '720p (All models, all durations)',
-						'1080p' => '1080p (Veo 3.1 only, 16:9, 8s required)',
+						'type'        => 'select',
+						'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
+						'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all models and works for all aspect ratios. 1080p requires Omni Flash or Veo 3.1, 16:9 aspect ratio, and exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
+						'options'     => array(
+							'720p'  => '720p (All models, all durations)',
+							'1080p' => '1080p (Omni/Veo 3.1, 16:9, 8s required)',
+						),
+						'default'     => '720p',
 					),
-					'default'     => '720p',
-				),
 				'gemini_video_aspect_ratio'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Aspect Ratio', 'mcp-ai-wpoos' ),
@@ -749,18 +766,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '16:9',
 				),
 				'gemini_video_duration'              => array(
-					'type'        => 'select',
-					'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default duration for Gemini-generated videos in seconds. Veo 3.1 supports 4-8 seconds (with potential for extended clips via API), Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'4' => '4 seconds (Veo 3.1 only)',
-						'5' => '5 seconds',
-						'6' => '6 seconds',
-						'7' => '7 seconds',
-						'8' => '8 seconds (Required for 1080p)',
+						'type'        => 'select',
+						'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
+						'description' => __( 'Default duration for Gemini-generated videos in seconds. Gemini Omni Flash supports up to 10 seconds (native audio included). Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
+						'options'     => array(
+							'4'  => '4 seconds (Veo 3.1/Omni)',
+							'5'  => '5 seconds',
+							'6'  => '6 seconds',
+							'7'  => '7 seconds',
+							'8'  => '8 seconds (Required for 1080p)',
+							'10' => '10 seconds (Omni Flash only)',
+						),
+						'default'     => '5',
 					),
-					'default'     => '5',
-				),
 
 				// Gemini Caching Settings.
 				'enable_gemini_api_caching'          => array(
@@ -1330,6 +1348,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'https://api.moonshot.cn/v1',
 				),
 
+				// Baseten Provider Settings.
+				'enable_baseten'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Baseten Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Baseten as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Baseten Model APIs offer managed access to open-source LLMs (DeepSeek, GLM, Kimi) through an OpenAI-compatible endpoint with optimized serving. Tool calling and structured outputs supported.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'baseten_api_key'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'Baseten API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Baseten API keys URL */
+						__( 'Your Baseten API key. Create one from <a href="%s" target="_blank">Baseten API Keys</a>. The same key works for all models in the Model APIs catalog.', 'mcp-ai-wpoos' ),
+						'https://app.baseten.co/settings/api-keys'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'baseten_model'                      => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Baseten Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Baseten requests. DeepSeek-V3 is the recommended general-purpose option. DeepSeek-R1 offers chain-of-thought reasoning. GLM-4 and Kimi K2 are also available.', 'mcp-ai-wpoos' ),
+					'options'     => $baseten_models,
+					'default'     => 'deepseek-ai/DeepSeek-V3',
+				),
+				'baseten_base_url'                   => array(
+					'type'        => 'url',
+					'label'       => __( 'Baseten API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Baseten API requests. Leave empty to use the default (https://inference.baseten.co/v1). Useful when proxying through your own gateway.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://inference.baseten.co/v1',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1435,6 +1486,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Kimi (Moonshot AI)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'enable_kimi', 'kimi_api_key', 'kimi_model', 'kimi_base_url' ),
+				),
+				'baseten'              => array(
+					'id'     => 'baseten',
+					'label'  => __( 'Baseten', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_baseten', 'baseten_api_key', 'baseten_model', 'baseten_base_url' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',

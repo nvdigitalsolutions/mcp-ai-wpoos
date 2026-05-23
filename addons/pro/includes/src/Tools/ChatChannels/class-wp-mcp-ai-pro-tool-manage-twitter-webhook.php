@@ -436,13 +436,16 @@ class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interf
 			);
 		}
 
-		$http_code    = (int) wp_remote_retrieve_response_code( $response );
+		$http_code     = (int) wp_remote_retrieve_response_code( $response );
 		$response_body = wp_remote_retrieve_body( $response );
-		$decoded      = json_decode( $response_body, true );
+		$decoded       = json_decode( $response_body, true );
 
 		// 204 No Content is a successful response for delete/subscribe.
 		if ( 204 === $http_code ) {
-			return array( 'success' => true, 'http_code' => 204 );
+			return array(
+				'success'   => true,
+				'http_code' => 204,
+			);
 		}
 
 		if ( $http_code < 200 || $http_code >= 300 ) {
@@ -450,7 +453,10 @@ class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interf
 
 			WP_MCP_AI_Logger::log_error(
 				sprintf( 'Twitter %s returned an error.', $action ),
-				array( 'http_code' => $http_code, 'error_detail' => $error_detail )
+				array(
+					'http_code'    => $http_code,
+					'error_detail' => $error_detail,
+				)
 			);
 
 			return new WP_Error(
@@ -463,11 +469,17 @@ class WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook implements WP_MCP_AI_Tool_Interf
 						$error_detail
 					)
 				),
-				array( 'http_code' => $http_code, 'response' => $decoded )
+				array(
+					'http_code' => $http_code,
+					'response'  => $decoded,
+				)
 			);
 		}
 
-		return is_array( $decoded ) ? $decoded : array( 'raw' => $response_body, 'http_code' => $http_code );
+		return is_array( $decoded ) ? $decoded : array(
+			'raw'       => $response_body,
+			'http_code' => $http_code,
+		);
 	}
 
 	/**

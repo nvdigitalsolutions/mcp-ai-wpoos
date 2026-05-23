@@ -213,6 +213,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deepseek-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openrouter-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-digitalocean-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-kimi-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-baseten-client.php';
 // WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
 // Provider interface adapters (thin delegates over the concrete clients above).
@@ -225,6 +226,7 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-lm-studio-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openrouter-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-baseten-provider-client.php';
 
 // ---------------------------------------------------------------------------
 // Tool infrastructure and utilities

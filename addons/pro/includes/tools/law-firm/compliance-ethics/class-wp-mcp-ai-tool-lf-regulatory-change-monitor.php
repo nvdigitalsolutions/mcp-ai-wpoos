@@ -35,27 +35,27 @@ class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Inte
 	 * @var array
 	 */
 	private static $regulatory_sources = array(
-		'corporate'            => array(
+		'corporate'             => array(
 			'SEC Rulemaking and Guidance',
 			'FINRA Regulatory Notices',
 			'State Corporate Law Amendments',
 			'UCC Article Revisions',
 		),
-		'employment'           => array(
+		'employment'            => array(
 			'DOL Final Rules and Guidance',
 			'EEOC Policy Updates',
 			'NLRB Decisions and Rules',
 			'State Wage and Hour Law Changes',
 			'OSHA Standards Updates',
 		),
-		'healthcare'           => array(
+		'healthcare'            => array(
 			'CMS Final Rules',
 			'HHS OIG Advisory Opinions',
 			'FDA Guidance Documents',
 			'State Health Privacy Law Changes',
 			'HIPAA Enforcement Updates',
 		),
-		'real_estate'          => array(
+		'real_estate'           => array(
 			'CFPB Rulemaking',
 			'HUD Regulatory Changes',
 			'State Property Law Amendments',
@@ -67,25 +67,25 @@ class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Inte
 			'ITC Procedural Updates',
 			'International IP Treaty Developments',
 		),
-		'tax'                  => array(
+		'tax'                   => array(
 			'IRS Revenue Rulings and Procedures',
 			'Treasury Regulations',
 			'State Tax Law Changes',
 			'International Tax Treaty Updates',
 		),
-		'immigration'          => array(
+		'immigration'           => array(
 			'USCIS Policy Manual Updates',
 			'DOS Visa Bulletin Changes',
 			'DOL PERM Regulation Updates',
 			'Executive Orders Impacting Immigration',
 		),
-		'environmental'        => array(
+		'environmental'         => array(
 			'EPA Final Rules',
 			'State Environmental Regulation Changes',
 			'International Climate Agreements',
 			'Clean Water Act / Clean Air Act Updates',
 		),
-		'data_privacy'         => array(
+		'data_privacy'          => array(
 			'FTC Privacy Enforcement Actions',
 			'State Consumer Privacy Law Enactments',
 			'International Data Transfer Frameworks',
@@ -173,6 +173,9 @@ class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Inte
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -254,7 +257,7 @@ class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Inte
 				);
 			}
 
-			$updates_query = new WP_Query( $query_args );
+			$updates_query   = new WP_Query( $query_args );
 			$tracked_updates = array();
 
 			if ( $updates_query->have_posts() ) {
@@ -275,10 +278,10 @@ class WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor implements WP_MCP_AI_Tool_Inte
 			$total_sources += count( $sources );
 
 			$monitoring_framework[] = array(
-				'practice_area'    => $area,
+				'practice_area'      => $area,
 				'regulatory_sources' => $sources,
-				'tracked_updates'  => $tracked_updates,
-				'update_count'     => count( $tracked_updates ),
+				'tracked_updates'    => $tracked_updates,
+				'update_count'       => count( $tracked_updates ),
 			);
 		}
 

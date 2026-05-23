@@ -92,38 +92,38 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'access_token'      => array(
+				'access_token'    => array(
 					'type'        => 'string',
 					'description' => __( 'WhatsApp Cloud API access token used for authentication.', 'mcp-ai-wpoos-pro' ),
 				),
-				'phone_number_id'   => array(
+				'phone_number_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Phone number ID assigned to the WhatsApp Business account.', 'mcp-ai-wpoos-pro' ),
 				),
-				'to'                => array(
+				'to'              => array(
 					'type'        => 'string',
 					'description' => __( 'Recipient: E.164 phone number for individual messages (e.g. +1234567890) or a group ID for group messages (e.g. 120363…@g.us).', 'mcp-ai-wpoos-pro' ),
 				),
-				'recipient_type'    => array(
+				'recipient_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Recipient type: "individual" (default) to send to a phone number, or "group" to send to a WhatsApp group.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'individual', 'group' ),
 					'default'     => 'individual',
 				),
-				'type'              => array(
+				'type'            => array(
 					'type'        => 'string',
 					'description' => __( 'Interactive message type: "button" for reply buttons or "list" for list messages.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'button', 'list' ),
 				),
-				'header'            => array(
+				'header'          => array(
 					'type'        => 'object',
 					'description' => __( 'Optional header (text or image).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'type' => array(
+						'type'  => array(
 							'type' => 'string',
 							'enum' => array( 'text', 'image', 'video', 'document' ),
 						),
-						'text' => array(
+						'text'  => array(
 							'type'        => 'string',
 							'description' => __( 'Header text (max 60 characters).', 'mcp-ai-wpoos-pro' ),
 						),
@@ -133,15 +133,15 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 						),
 					),
 				),
-				'body'              => array(
+				'body'            => array(
 					'type'        => 'string',
 					'description' => __( 'Body text (required, max 1024 characters).', 'mcp-ai-wpoos-pro' ),
 				),
-				'footer'            => array(
+				'footer'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional footer text (max 60 characters).', 'mcp-ai-wpoos-pro' ),
 				),
-				'buttons'           => array(
+				'buttons'         => array(
 					'type'        => 'array',
 					'description' => __( 'Reply buttons (max 3 for button type). Each button requires id and title.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -167,11 +167,11 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 						),
 					),
 				),
-				'button_text'       => array(
+				'button_text'     => array(
 					'type'        => 'string',
 					'description' => __( 'Button text for list messages (required for list type).', 'mcp-ai-wpoos-pro' ),
 				),
-				'sections'          => array(
+				'sections'        => array(
 					'type'        => 'array',
 					'description' => __( 'List sections (required for list type, max 10 sections).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -497,7 +497,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 				continue;
 			}
 
-			$rows = array_slice( $section['rows'], 0, self::MAX_ROWS_PER_SECTION );
+			$rows           = array_slice( $section['rows'], 0, self::MAX_ROWS_PER_SECTION );
 			$sanitized_rows = array();
 
 			foreach ( $rows as $row ) {

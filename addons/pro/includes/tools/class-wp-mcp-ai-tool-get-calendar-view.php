@@ -108,6 +108,11 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -267,7 +272,7 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'       => 'project',
 					'id'         => $id,
 					'title'      => get_the_title(),
-					'date'       => $project_start ?: get_the_date( 'Y-m-d' ),
+					'date'       => $project_start ? $project_start : get_the_date( 'Y-m-d' ),
 					'status'     => get_post_meta( $id, '_project_status', true ),
 					'project_id' => $id,
 				);
@@ -335,7 +340,7 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 					'date'       => get_post_meta( $id, '_task_due_date', true ),
 					'status'     => get_post_meta( $id, '_task_status', true ),
 					'priority'   => get_post_meta( $id, '_task_priority', true ),
-					'project_id' => absint( get_post_meta( $id, '_task_project_id', true ) ) ?: null,
+					'project_id' => absint( get_post_meta( $id, '_task_project_id', true ) ) ? absint( get_post_meta( $id, '_task_project_id', true ) ) : null,
 				);
 			}
 			wp_reset_postdata();
@@ -399,11 +404,11 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 					'id'         => $id,
 					'title'      => get_the_title(),
 					'date'       => get_post_meta( $id, '_event_start_date', true ),
-					'time'       => get_post_meta( $id, '_event_start_time', true ) ?: null,
+					'time'       => get_post_meta( $id, '_event_start_time', true ) ? get_post_meta( $id, '_event_start_time', true ) : null,
 					'all_day'    => (bool) get_post_meta( $id, '_event_all_day', true ),
 					'event_type' => get_post_meta( $id, '_event_type', true ),
-					'location'   => get_post_meta( $id, '_event_location', true ) ?: null,
-					'project_id' => absint( get_post_meta( $id, '_event_project_id', true ) ) ?: null,
+					'location'   => get_post_meta( $id, '_event_location', true ) ? get_post_meta( $id, '_event_location', true ) : null,
+					'project_id' => absint( get_post_meta( $id, '_event_project_id', true ) ) ? absint( get_post_meta( $id, '_event_project_id', true ) ) : null,
 				);
 			}
 			wp_reset_postdata();

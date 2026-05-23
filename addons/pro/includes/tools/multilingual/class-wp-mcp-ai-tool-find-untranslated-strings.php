@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Find_Untranslated_Strings tool.
+ */
 class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interfa
 		return ! empty( $settings['enable_multilingual_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_multilingual_toolkit'] ) ) {
@@ -34,18 +47,42 @@ class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interfa
 		return __( 'Find Untranslated Strings tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'find_untranslated_strings';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Find Untranslated Strings', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Scan website for missing translations and untranslated strings across all languages.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -69,10 +106,22 @@ class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,
@@ -80,8 +129,15 @@ class WP_MCP_AI_Tool_Find_Untranslated_Strings implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement find_untranslated_strings logic
+		// TODO: Implement find_untranslated_strings logic.
 
 		return array(
 			'success' => true,

@@ -74,8 +74,8 @@ class WP_MCP_AI_Healthcare_Audit {
 
 		$safe_meta = array();
 		foreach ( $meta as $k => $v ) {
-			$key                 = sanitize_key( (string) $k );
-			$safe_meta[ $key ]   = is_scalar( $v ) ? sanitize_text_field( (string) $v ) : wp_json_encode( $v );
+			$key               = sanitize_key( (string) $k );
+			$safe_meta[ $key ] = is_scalar( $v ) ? sanitize_text_field( (string) $v ) : wp_json_encode( $v );
 		}
 
 		$entry = array(

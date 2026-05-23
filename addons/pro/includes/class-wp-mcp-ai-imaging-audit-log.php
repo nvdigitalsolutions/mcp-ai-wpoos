@@ -128,7 +128,7 @@ class WP_MCP_AI_Imaging_Audit_Log {
 		);
 		foreach ( $headers as $header ) {
 			if ( ! empty( $_SERVER[ $header ] ) ) {
-				$raw  = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				$raw = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
 				// X-Forwarded-For may be a comma-separated list; take the first.
 				$parts = explode( ',', $raw );
 				$ip    = trim( $parts[0] );

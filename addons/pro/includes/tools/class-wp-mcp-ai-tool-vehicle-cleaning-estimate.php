@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'image_attachment_ids'  => array(
+				'image_attachment_ids' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of WordPress attachment IDs for vehicle photos. At least one photo showing the full vehicle is recommended for size classification.', 'mcp-ai-wpoos' ),
 					'items'       => array(
@@ -323,15 +323,15 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		// Package line item.
 		$pkg_config = $menu['packages'][ $package ] ?? null;
 		if ( $pkg_config ) {
-			$pkg_price = $this->get_size_price( $pkg_config['prices'] ?? array(), $size_tier );
+			$pkg_price    = $this->get_size_price( $pkg_config['prices'] ?? array(), $size_tier );
 			$line_items[] = array(
-				'type'         => 'package',
-				'code'         => $package,
-				'description'  => $pkg_config['name'] ?? ucwords( str_replace( '_', ' ', $package ) ),
-				'size_tier'    => $size_tier,
-				'unit_price'   => $pkg_price,
-				'quantity'     => 1,
-				'extended'     => $pkg_price,
+				'type'              => 'package',
+				'code'              => $package,
+				'description'       => $pkg_config['name'] ?? ucwords( str_replace( '_', ' ', $package ) ),
+				'size_tier'         => $size_tier,
+				'unit_price'        => $pkg_price,
+				'quantity'          => 1,
+				'extended'          => $pkg_price,
 				'included_services' => $pkg_config['included_services'] ?? array(),
 			);
 		}
@@ -343,7 +343,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 				continue;
 			}
 
-			$addon_price = $this->calculate_addon_price( $addon_config, $size_tier, $add_on['severity'] ?? '' );
+			$addon_price  = $this->calculate_addon_price( $addon_config, $size_tier, $add_on['severity'] ?? '' );
 			$line_items[] = array(
 				'type'        => 'add_on',
 				'code'        => $add_on['code'],
@@ -366,24 +366,24 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		$estimate_id = wp_generate_uuid4();
 
 		$estimate = array(
-			'estimate_id'    => $estimate_id,
-			'vehicle_size'   => array(
+			'estimate_id'  => $estimate_id,
+			'vehicle_size' => array(
 				'tier'       => $size_tier,
 				'label'      => self::SIZE_TIER_LABELS[ $size_tier ] ?? $size_tier,
 				'confidence' => $size_confidence,
 				'source'     => $size_source,
 			),
-			'package'        => array(
+			'package'      => array(
 				'code' => $package,
 				'name' => $pkg_config['name'] ?? ucwords( str_replace( '_', ' ', $package ) ),
 			),
-			'line_items'     => $line_items,
-			'totals'         => array_merge( $totals, array( 'currency' => $currency ) ),
-			'metadata'       => array(
-				'generated_at'  => gmdate( 'Y-m-d\TH:i:s\Z' ),
-				'tool_version'  => '2.2.0',
-				'menu_source'   => $menu_config_id > 0 ? 'custom' : 'default',
-				'image_count'   => count( $arguments['image_attachment_ids'] ?? array() ),
+			'line_items'   => $line_items,
+			'totals'       => array_merge( $totals, array( 'currency' => $currency ) ),
+			'metadata'     => array(
+				'generated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+				'tool_version' => '2.2.0',
+				'menu_source'  => $menu_config_id > 0 ? 'custom' : 'default',
+				'image_count'  => count( $arguments['image_attachment_ids'] ?? array() ),
 			),
 		);
 
@@ -538,30 +538,30 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		$raw = strtolower( trim( $raw ) );
 
 		$map = array(
-			'car'                    => 'car',
-			'sedan'                  => 'car',
-			'coupe'                  => 'car',
-			'hatchback'              => 'car',
-			'compact'                => 'car',
-			'convertible'            => 'car',
-			'wagon'                  => 'car',
-			'small_truck_suv'        => 'small_truck_suv',
-			'small_suv'              => 'small_truck_suv',
-			'suv'                    => 'small_truck_suv',
-			'crossover'              => 'small_truck_suv',
-			'mid_size_suv'           => 'small_truck_suv',
-			'small_truck'            => 'small_truck_suv',
-			'oversize_truck_suv'     => 'oversize_truck_suv',
-			'oversize'               => 'oversize_truck_suv',
-			'full_size_suv'          => 'oversize_truck_suv',
-			'full_size_truck'        => 'oversize_truck_suv',
-			'truck'                  => 'oversize_truck_suv',
-			'large_suv'              => 'oversize_truck_suv',
-			'van'                    => 'oversize_truck_suv',
-			'large_van'              => 'oversize_truck_suv',
-			'minivan'                => 'oversize_truck_suv',
-			'pickup'                 => 'oversize_truck_suv',
-			'third_row_suv'          => 'oversize_truck_suv',
+			'car'                => 'car',
+			'sedan'              => 'car',
+			'coupe'              => 'car',
+			'hatchback'          => 'car',
+			'compact'            => 'car',
+			'convertible'        => 'car',
+			'wagon'              => 'car',
+			'small_truck_suv'    => 'small_truck_suv',
+			'small_suv'          => 'small_truck_suv',
+			'suv'                => 'small_truck_suv',
+			'crossover'          => 'small_truck_suv',
+			'mid_size_suv'       => 'small_truck_suv',
+			'small_truck'        => 'small_truck_suv',
+			'oversize_truck_suv' => 'oversize_truck_suv',
+			'oversize'           => 'oversize_truck_suv',
+			'full_size_suv'      => 'oversize_truck_suv',
+			'full_size_truck'    => 'oversize_truck_suv',
+			'truck'              => 'oversize_truck_suv',
+			'large_suv'          => 'oversize_truck_suv',
+			'van'                => 'oversize_truck_suv',
+			'large_van'          => 'oversize_truck_suv',
+			'minivan'            => 'oversize_truck_suv',
+			'pickup'             => 'oversize_truck_suv',
+			'third_row_suv'      => 'oversize_truck_suv',
 		);
 
 		return $map[ $raw ] ?? 'car';
@@ -581,9 +581,9 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 			return array();
 		}
 
-		$valid    = array();
-		$seen     = array();
-		$known    = array_keys( $menu['add_ons'] ?? array() );
+		$valid = array();
+		$seen  = array();
+		$known = array_keys( $menu['add_ons'] ?? array() );
 
 		foreach ( $raw_add_ons as $addon ) {
 			if ( ! is_array( $addon ) || empty( $addon['code'] ) ) {
@@ -704,12 +704,12 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		$total    = round( $subtotal + $tax, 2 );
 
 		return array(
-			'package_total'  => round( $package_total, 2 ),
-			'addons_total'   => round( $addons_total, 2 ),
-			'subtotal'       => $subtotal,
-			'tax_rate'       => $tax_rate,
-			'tax'            => $tax,
-			'total'          => $total,
+			'package_total'   => round( $package_total, 2 ),
+			'addons_total'    => round( $addons_total, 2 ),
+			'subtotal'        => $subtotal,
+			'tax_rate'        => $tax_rate,
+			'tax'             => $tax,
+			'total'           => $total,
 			'line_item_count' => count( $line_items ),
 		);
 	}
@@ -784,7 +784,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 	protected function get_default_menu() {
 		return array(
 			'packages' => array(
-				'premium_exterior_express'    => array(
+				'premium_exterior_express'   => array(
 					'name'              => __( 'Premium Exterior Express', 'mcp-ai-wpoos' ),
 					'prices'            => array(
 						'car'                => 29.99,
@@ -800,7 +800,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						__( 'Spray foam soap', 'mcp-ai-wpoos' ),
 					),
 				),
-				'practical_interior_express'  => array(
+				'practical_interior_express' => array(
 					'name'              => __( 'Practical Interior Express', 'mcp-ai-wpoos' ),
 					'prices'            => array(
 						'car'                => 59.99,
@@ -816,7 +816,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						__( 'Rubber mat washing', 'mcp-ai-wpoos' ),
 					),
 				),
-				'popular_interior_express'    => array(
+				'popular_interior_express'   => array(
 					'name'              => __( 'Popular Interior Express', 'mcp-ai-wpoos' ),
 					'prices'            => array(
 						'car'                => 79.99,
@@ -833,7 +833,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						__( 'Rust inhibitor', 'mcp-ai-wpoos' ),
 					),
 				),
-				'prestige_interior_express'   => array(
+				'prestige_interior_express'  => array(
 					'name'              => __( 'Prestige Interior Express', 'mcp-ai-wpoos' ),
 					'prices'            => array(
 						'car'                => 129.99,
@@ -850,7 +850,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 				),
 			),
 			'add_ons'  => array(
-				'soil_mud_sap_oil'           => array(
+				'soil_mud_sap_oil'          => array(
 					'name'            => __( 'Soil / Mud / Sap / Oil', 'mcp-ai-wpoos' ),
 					'size_based'      => false,
 					'severity_prices' => array(
@@ -859,7 +859,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						'severe'   => 75.00,
 					),
 				),
-				'pet_hair_removal'           => array(
+				'pet_hair_removal'          => array(
 					'name'            => __( 'Pet Hair Removal', 'mcp-ai-wpoos' ),
 					'size_based'      => false,
 					'severity_prices' => array(
@@ -868,7 +868,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						'severe'   => 100.00,
 					),
 				),
-				'additional_interior_clean'  => array(
+				'additional_interior_clean' => array(
 					'name'            => __( 'Additional Interior Clean', 'mcp-ai-wpoos' ),
 					'size_based'      => false,
 					'severity_prices' => array(
@@ -877,7 +877,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						'severe'   => 100.00,
 					),
 				),
-				'premium_hand_wash_upgrade'  => array(
+				'premium_hand_wash_upgrade' => array(
 					'name'       => __( 'Premium Hand Wash Upgrade', 'mcp-ai-wpoos' ),
 					'size_based' => true,
 					'prices'     => array(
@@ -886,17 +886,17 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 						'oversize_truck_suv' => 25.00,
 					),
 				),
-				'rims_tire_dressing'         => array(
+				'rims_tire_dressing'        => array(
 					'name'       => __( 'Rims / Tire Dressing', 'mcp-ai-wpoos' ),
 					'price'      => 20.00,
 					'size_based' => false,
 				),
-				'trunk_bed_shampoo'          => array(
+				'trunk_bed_shampoo'         => array(
 					'name'       => __( 'Trunk / Bed Shampoo', 'mcp-ai-wpoos' ),
 					'price'      => 15.00,
 					'size_based' => false,
 				),
-				'carpet_seat_deodorizer'     => array(
+				'carpet_seat_deodorizer'    => array(
 					'name'       => __( 'Carpet / Seat Deodorizer', 'mcp-ai-wpoos' ),
 					'price'      => 30.00,
 					'size_based' => false,
@@ -918,7 +918,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		$pkg    = $estimate['package'] ?? array();
 		$totals = $estimate['totals'] ?? array();
 
-		$parts = array();
+		$parts   = array();
 		$parts[] = sprintf(
 			/* translators: 1: package name, 2: vehicle size label */
 			__( 'Vehicle Cleaning Estimate: %1$s — %2$s', 'mcp-ai-wpoos' ),
@@ -982,7 +982,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Try extracting JSON from markdown code blocks.
-		if ( preg_match( '/```(?:json)?\s*\n?([\s\S]*?)\n?```/', $text, $matches ) ) {
+		if ( preg_match( '/```( ? ( :json)?\s*\n?([\s\S]*?)\n?```/', $text, $matches ) ) {
 			$decoded = json_decode( $matches[1], true );
 			if ( is_array( $decoded ) ) {
 				return $decoded;

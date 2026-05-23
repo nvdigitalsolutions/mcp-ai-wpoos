@@ -148,6 +148,11 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.

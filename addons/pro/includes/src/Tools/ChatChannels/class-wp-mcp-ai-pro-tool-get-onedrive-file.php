@@ -174,10 +174,10 @@ class WP_MCP_AI_Pro_Tool_Get_OneDrive_File implements WP_MCP_AI_Tool_Interface, 
 			WP_MCP_AI_Logger::log_error(
 				'OneDrive get file request was not successful.',
 				array(
-					'http_code'  => $code,
-					'item_id'    => $item_id,
-					'file_path'  => $file_path,
-					'error'      => $message,
+					'http_code' => $code,
+					'item_id'   => $item_id,
+					'file_path' => $file_path,
+					'error'     => $message,
 				)
 			);
 

@@ -224,10 +224,10 @@ class WP_MCP_AI_Tool_Verify_Prescription_Interactions implements WP_MCP_AI_Tool_
 		$considered = array();
 		foreach ( $meds as $name ) {
 			$considered[] = array(
-				'name'        => $name,
-				'rxcui'       => $this->lookup_rxcui( $name ),
-				'source'      => 'argument',
-				'related_id'  => 0,
+				'name'       => $name,
+				'rxcui'      => $this->lookup_rxcui( $name ),
+				'source'     => 'argument',
+				'related_id' => 0,
 			);
 		}
 

@@ -13,11 +13,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Pro_Tool_Verify_Information tool.
+ */
 class WP_MCP_AI_Pro_Tool_Verify_Information {
+		/**
+		 * Get the tool slug.
+		 *
+		 * @return string
+		 */
 	public function get_slug() {
 		return 'verify_information';
 	}
 
+	/**
+	 * Get tool definition.
+	 *
+	 * @return array
+	 */
 	public function get_definition() {
 		return array(
 			'name'                => 'verify_information',
@@ -52,6 +65,17 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		);
 	}
 
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$claim   = sanitize_text_field( $arguments['claim'] );
 		$sources = $arguments['sources'];
@@ -115,6 +139,16 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		);
 	}
 
+	/**
+	 * Get_recommendation.
+	 *
+	 * @param mixed $verdict Parameter.
+	 * @param mixed $confidence Parameter.
+	 * @return array|WP_Error Result.
+	 *
+	 * @param array $verdict Parameter.
+	 * @param array $confidence Parameter.
+	 */
 	private function get_recommendation( $verdict, $confidence ) {
 		if ( 'verified' === $verdict ) {
 			return 'Information is well-supported across sources';

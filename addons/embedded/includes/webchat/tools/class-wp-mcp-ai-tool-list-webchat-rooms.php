@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -199,6 +200,11 @@ class WP_MCP_AI_Tool_List_WebChat_Rooms implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array Capability flags.
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

@@ -92,53 +92,53 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'url'              => array(
+				'url'           => array(
 					'type'        => 'string',
 					'format'      => 'uri',
 					'description' => __( 'The public URL of the page to screenshot.', 'mcp-ai-wpoos-pro' ),
 				),
-				'viewport'         => array(
+				'viewport'      => array(
 					'type'        => 'string',
 					'enum'        => array( 'desktop', 'laptop', 'tablet', 'mobile_portrait', 'mobile_landscape', 'custom' ),
 					'default'     => 'desktop',
 					'description' => __( 'Viewport preset. Use "custom" together with width/height to set exact dimensions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'width'            => array(
+				'width'         => array(
 					'type'        => 'integer',
 					'minimum'     => 320,
 					'maximum'     => 3840,
 					'description' => __( 'Viewport width in pixels. Only used when viewport is "custom".', 'mcp-ai-wpoos-pro' ),
 				),
-				'height'           => array(
+				'height'        => array(
 					'type'        => 'integer',
 					'minimum'     => 240,
 					'maximum'     => 2160,
 					'description' => __( 'Viewport height in pixels. Only used when viewport is "custom".', 'mcp-ai-wpoos-pro' ),
 				),
-				'full_page'        => array(
+				'full_page'     => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Capture the full scrollable page. When false, captures only the visible viewport.', 'mcp-ai-wpoos-pro' ),
 				),
-				'format'           => array(
+				'format'        => array(
 					'type'        => 'string',
 					'enum'        => array( 'png', 'jpeg' ),
 					'default'     => 'png',
 					'description' => __( 'Image format for the screenshot.', 'mcp-ai-wpoos-pro' ),
 				),
-				'quality'          => array(
+				'quality'       => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 90,
 					'description' => __( 'JPEG quality (1–100). Ignored for PNG.', 'mcp-ai-wpoos-pro' ),
 				),
-				'save_to_media'    => array(
+				'save_to_media' => array(
 					'type'        => 'boolean',
 					'default'     => false,
 					'description' => __( 'Save the screenshot to the WordPress media library and return the attachment ID and URL.', 'mcp-ai-wpoos-pro' ),
 				),
-				'timeout'          => array(
+				'timeout'       => array(
 					'type'        => 'integer',
 					'minimum'     => 5,
 					'maximum'     => self::MAX_TIMEOUT,
@@ -281,7 +281,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	}
 
 	// -------------------------------------------------------------------------
-	// Viewport resolution
+	// Viewport resolution.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -310,7 +310,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	}
 
 	// -------------------------------------------------------------------------
-	// Playwright service
+	// Playwright service.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -343,21 +343,21 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	 */
 	protected function capture_via_playwright( $url, $service_url, $width, $height, $full_page, $format, $quality, $timeout ) {
 		$payload = array(
-			'url'    => $url,
-			'action' => 'screenshot',
+			'url'                => $url,
+			'action'             => 'screenshot',
 			'screenshot_options' => array(
 				'full_page' => $full_page,
 				'type'      => $format,
 				'quality'   => $quality,
 			),
-			'viewport' => array(
+			'viewport'           => array(
 				'width'  => $width,
 				'height' => $height,
 			),
-			'timeout' => $timeout * 1000, // Service expects milliseconds.
+			'timeout'            => $timeout * 1000, // Service expects milliseconds.
 		);
 
-		$endpoint    = trailingslashit( $service_url ) . 'api/browser';
+		$endpoint     = trailingslashit( $service_url ) . 'api/browser';
 		$http_timeout = $timeout + 10; // Add buffer for network overhead.
 
 		$response = wp_remote_post(
@@ -405,21 +405,21 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 			);
 		}
 
-		$data['mode']        = 'playwright_service';
-		$data['service_url'] = $service_url;
-		$data['viewport']    = array(
+		$data['mode']         = 'playwright_service';
+		$data['service_url']  = $service_url;
+		$data['viewport']     = array(
 			'width'  => $width,
 			'height' => $height,
 		);
-		$data['full_page']   = $full_page;
-		$data['format']      = $format;
+		$data['full_page']    = $full_page;
+		$data['format']       = $format;
 		$data['captured_url'] = $url;
 
 		return $data;
 	}
 
 	// -------------------------------------------------------------------------
-	// mshots fallback
+	// mshots fallback.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -460,8 +460,8 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 		$response = wp_remote_get(
 			$mshots_url,
 			array(
-				'timeout'  => $timeout,
-				'headers'  => array(
+				'timeout'     => $timeout,
+				'headers'     => array(
 					'Accept' => 'image/png,image/jpeg,image/*',
 				),
 				'redirection' => 5,
@@ -483,9 +483,9 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 		$content_type = wp_remote_retrieve_header( $response, 'content-type' );
 		$image_data   = wp_remote_retrieve_body( $response );
 
-		// mshots returns a placeholder on the first request while it queues the
-		// real screenshot. A very small response body (<10 KB) usually means a
-		// placeholder PNG was returned. We still return success; the caller can
+		// mshots returns a placeholder on the first request while it queues the.
+		// real screenshot. A very small response body (<10 KB) usually means a.
+		// placeholder PNG was returned. We still return success; the caller can.
 		// retry or use the mshots_url directly.
 		$is_placeholder = strlen( $image_data ) < 10240;
 
@@ -521,7 +521,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	}
 
 	// -------------------------------------------------------------------------
-	// Media library integration
+	// Media library integration.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -598,7 +598,13 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 		}
 
 		$mime      = 'jpeg' === $format ? 'image/jpeg' : 'image/png';
-		$file_type = wp_check_filetype( $filename, array( 'png' => 'image/png', 'jpg' => 'image/jpeg' ) );
+		$file_type = wp_check_filetype(
+			$filename,
+			array(
+				'png' => 'image/png',
+				'jpg' => 'image/jpeg',
+			)
+		);
 
 		$attachment = array(
 			'post_mime_type' => $file_type['type'] ? $file_type['type'] : $mime,
@@ -626,7 +632,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	}
 
 	// -------------------------------------------------------------------------
-	// Security helpers
+	// Security helpers.
 	// -------------------------------------------------------------------------
 
 	/**
@@ -651,7 +657,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 
 		$host = strtolower( $parsed['host'] );
 
-		// Block localhost and well-known internal addresses (including IPv6 loopback
+		// Block localhost and well-known internal addresses (including IPv6 loopback.
 		// and link-local prefix detected as a literal bracket-stripped string).
 		$blocked_literals = array(
 			'localhost',
@@ -687,7 +693,7 @@ class WP_MCP_AI_Tool_Capture_Webpage_Screenshot implements WP_MCP_AI_Tool_Interf
 	}
 
 	// -------------------------------------------------------------------------
-	// Rate limiting
+	// Rate limiting.
 	// -------------------------------------------------------------------------
 
 	/**

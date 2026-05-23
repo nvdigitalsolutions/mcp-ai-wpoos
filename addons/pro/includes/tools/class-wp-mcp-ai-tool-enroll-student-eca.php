@@ -108,6 +108,11 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -302,7 +307,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function check_capacity( $eca_id ) {
 		$max_students = absint( get_post_meta( $eca_id, '_eca_max_students', true ) );
-		if ( $max_students === 0 ) {
+		if ( 0 === $max_students ) {
 			return true; // No limit.
 		}
 

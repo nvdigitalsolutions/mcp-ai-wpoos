@@ -259,12 +259,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$action  = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list_connections';
 
-		// Telegram Mini App storefront contexts (e.g. the e-commerce template)
-		// create users with the subscriber role which lacks edit_posts.  Allow
-		// read-only WooCommerce and order-creation operations with just the
+		// Telegram Mini App storefront contexts (e.g. the e-commerce template).
+		// create users with the subscriber role which lacks edit_posts.  Allow.
+		// read-only WooCommerce and order-creation operations with just the.
 		// "read" capability so the storefront works for all TMA visitors.
-		$is_tma                  = isset( $context['source'] ) && 'telegram_mini_app' === $context['source'];
-		$tma_storefront_actions  = array(
+		$is_tma                 = isset( $context['source'] ) && 'telegram_mini_app' === $context['source'];
+		$tma_storefront_actions = array(
 			'list_connections',
 			'get_wc_products',
 			'get_wc_product',
@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'get_wc_order',
 			'create_wc_order',
 		);
-		$required_cap = ( $is_tma && in_array( $action, $tma_storefront_actions, true ) )
+		$required_cap           = ( $is_tma && in_array( $action, $tma_storefront_actions, true ) )
 			? 'read'
 			: 'edit_posts';
 
@@ -486,7 +486,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				continue;
 			}
 
-			// If assistant context is provided and connections are configured,
+			// If assistant context is provided and connections are configured,.
 			// only include connections enabled for this assistant.
 			if ( $assistant_id && ! empty( $enabled_connections ) && ! in_array( $connection['id'], $enabled_connections, true ) ) {
 				continue;
@@ -791,7 +791,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Truncate descriptions to save tokens while keeping essential info.
 		$products = $this->truncate_product_descriptions( $products );
 
-		// Sort products by stock status (in-stock first) since WooCommerce API doesn't support
+		// Sort products by stock status (in-stock first) since WooCommerce API doesn't support.
 		// orderby=stock_status. We sort client-side after fetching.
 		$products = $this->sort_products_by_stock_status( $products );
 
@@ -896,7 +896,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Generate rich product cards for chat display.
-		$source_label = ! empty( $connection['name'] ) ? $connection['name'] : 'WooCommerce';
+		$source_label  = ! empty( $connection['name'] ) ? $connection['name'] : 'WooCommerce';
 		$cards_message = $this->format_product_cards(
 			$all_products,
 			'woocommerce',
@@ -1099,7 +1099,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$results = array();
 
 		// Fetch variations for all products.
-		// The Remote Site Manager's make_request method will handle caching,
+		// The Remote Site Manager's make_request method will handle caching,.
 		// so subsequent requests for the same product will be fast.
 		foreach ( $product_ids as $product_id ) {
 			$product_id = absint( $product_id );
@@ -1307,15 +1307,15 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$text = wp_strip_all_tags( $text );
 
 		// Split by sentence endings with intelligent boundary detection.
-		// Regex explained:
+		// Regex explained:.
 		// - (?<=[.!?]) = Positive lookbehind: Must be preceded by sentence-ending punctuation
 		// - (?=\s+[A-Z]) = Positive lookahead: Must be followed by whitespace + capital letter
 		// - | = OR
 		// - (?<=[.!?])$ = Positive lookbehind + end of string anchor
 		//
-		// This pattern:
+		// This pattern:.
 		// ✓ Splits on: "sentence. Next" or "sentence! Next" or "sentence? Next"
-		// ✗ Does NOT split on: "Mr. Smith" or "$19.99" or "U.S.A." (no capital after space)
+		// ✗ Does NOT split on: "Mr. Smith" or "$19.99" or "U.S.A." (no capital after space).
 		$sentences = preg_split( '/(?<=[.!?])(?=\s+[A-Z])|(?<=[.!?])$/', $text, -1, PREG_SPLIT_NO_EMPTY );
 
 		if ( empty( $sentences ) || count( $sentences ) <= 1 ) {

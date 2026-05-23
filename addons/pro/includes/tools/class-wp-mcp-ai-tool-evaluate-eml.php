@@ -147,6 +147,9 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( $this->get_required_capability() ) ) {
@@ -317,14 +320,17 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array|WP_Error
 	 */
 	private function lookup_decomposition( $function, array $args ) {
-		$one = array( 'type' => 'NUM', 'value' => 1.0 );
+		$one = array(
+			'type'  => 'NUM',
+			'value' => 1.0,
+		);
 
 		switch ( $function ) {
 			case 'one':
 				return $one;
 			case 'e':
 				// e = exp(1) = eml(1, 1) — verify: e^1 − ln 1 = e − 0 = e.
-				// (Odrzywołek 2026, Figure 2, K=3.)
+				// (Odrzywołek 2026, Figure 2, K=3.).
 				return array(
 					'type'  => 'EML',
 					'left'  => $one,
@@ -333,102 +339,266 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			case 'exp':
 				$x = isset( $args[0] ) ? $args[0] : 'x';
 				// exp(x) = eml(x, 1) — since ln 1 = 0.
-				// (Odrzywołek 2026, Figure 2, K=3.)
+				// (Odrzywołek 2026, Figure 2, K=3.).
 				return array(
 					'type'  => 'EML',
-					'left'  => array( 'type' => 'VAR', 'name' => $x ),
+					'left'  => array(
+						'type' => 'VAR',
+						'name' => $x,
+					),
 					'right' => $one,
 				);
 			case 'ln':
 				$x = isset( $args[0] ) ? $args[0] : 'x';
 				// ln(x) = eml(1, eml(eml(1, x), 1)) — verified algebraically.
 				// (Odrzywołek 2026, Eq. (5), K=7. Domain: x > 0.)
-				// Using e := exp(1) and the definition eml(u, v) = exp(u) - ln(v):
-				//   inner_a = eml(1, x)        = e - ln(x)
-				//   inner_b = eml(inner_a, 1)  = exp(e - ln(x)) = exp(e) / x
-				//   outer   = eml(1, inner_b)  = e - (e - ln(x)) = ln(x).
-				$xnode = array( 'type' => 'VAR', 'name' => $x );
-				$a     = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );
-				$b     = array( 'type' => 'EML', 'left' => $a, 'right' => $one );
-				return array( 'type' => 'EML', 'left' => $one, 'right' => $b );
+				// Using e := exp(1) and the definition eml(u, v) = exp(u) - ln(v):.
+				// inner_a = eml(1, x)        = e - ln(x).
+				// inner_b = eml(inner_a, 1)  = exp(e - ln(x)) = exp(e) / x.
+				// outer   = eml(1, inner_b)  = e - (e - ln(x)) = ln(x).
+				$xnode = array(
+					'type' => 'VAR',
+					'name' => $x,
+				);
+				$a     = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $xnode,
+				);
+				$b     = array(
+					'type'  => 'EML',
+					'left'  => $a,
+					'right' => $one,
+				);
+				return array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $b,
+				);
 			case 'zero':
 				// 0 = ln(1) via Eq. (5) at z = 1, giving the pure EML tree
-				//   eml(1, eml(eml(1, 1), 1))
+				// eml(1, eml(eml(1, 1), 1)).
 				// (Odrzywołek 2026, Figure 2, K=7. Total domain.)
-				$ee = array( 'type' => 'EML', 'left' => $one, 'right' => $one );
-				$bb = array( 'type' => 'EML', 'left' => $ee, 'right' => $one );
-				return array( 'type' => 'EML', 'left' => $one, 'right' => $bb );
+				$ee = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $one,
+				);
+				$bb = array(
+					'type'  => 'EML',
+					'left'  => $ee,
+					'right' => $one,
+				);
+				return array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $bb,
+				);
 			case 'sub':
-				// x − y = eml(eml(1, eml(eml(1, x), 1)), eml(y, 1))
+				// x − y = eml(eml(1, eml(eml(1, x), 1)), eml(y, 1)).
 				// Chain: eml(ln(x), exp(y)) = (e^{ln x}) − ln(e^y) = x − y.
-				// (Odrzywołek 2026, Table 4, K=11. Domain: x > 0; y unrestricted in ℝ.)
+				// (Odrzywołek 2026, Table 4, K=11. Domain: x > 0; y unrestricted in ℝ.).
 				$x     = isset( $args[0] ) ? $args[0] : 'x';
 				$y     = isset( $args[1] ) ? $args[1] : 'y';
-				$xnode = array( 'type' => 'VAR', 'name' => $x );
-				$ynode = array( 'type' => 'VAR', 'name' => $y );
+				$xnode = array(
+					'type' => 'VAR',
+					'name' => $x,
+				);
+				$ynode = array(
+					'type' => 'VAR',
+					'name' => $y,
+				);
 				// Build ln(x) sub-tree: eml(1, eml(eml(1, x), 1)).
-				$ln_a    = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );
-				$ln_b    = array( 'type' => 'EML', 'left' => $ln_a, 'right' => $one );
-				$ln_x    = array( 'type' => 'EML', 'left' => $one, 'right' => $ln_b );
+				$ln_a = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $xnode,
+				);
+				$ln_b = array(
+					'type'  => 'EML',
+					'left'  => $ln_a,
+					'right' => $one,
+				);
+				$ln_x = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $ln_b,
+				);
 				// exp(y) = eml(y, 1).
-				$exp_y = array( 'type' => 'EML', 'left' => $ynode, 'right' => $one );
-				return array( 'type' => 'EML', 'left' => $ln_x, 'right' => $exp_y );
+				$exp_y = array(
+					'type'  => 'EML',
+					'left'  => $ynode,
+					'right' => $one,
+				);
+				return array(
+					'type'  => 'EML',
+					'left'  => $ln_x,
+					'right' => $exp_y,
+				);
 			case 'neg':
 				// −x = eml(eml(1, eml(eml(1, eml(1, eml(x, 1))), 1)), eml(eml(1, 1), 1))
-				// Chain (numbered as in the paper / Lean formalization):
-				//   X4 = eml(x, 1)        = exp(x)
-				//   X3 = eml(1, X4)       = e − x
-				//   X2 = eml(1, X3)       = e − ln(e − x)
-				//   X1 = eml(X2, 1)       = exp(X2)
-				//   LEFT  = eml(1, X1)    = e − exp(X2) = ln(e − x)
-				//   RIGHT = eml(eml(1,1), 1) = exp(e)
-				//   −x = eml(LEFT, RIGHT) = exp(ln(e − x)) − ln(exp(e))
-				//                         = (e − x) − e = −x.
+				// Chain (numbered as in the paper / Lean formalization):.
+				// X4 = eml(x, 1)        = exp(x).
+				// X3 = eml(1, X4)       = e − x.
+				// X2 = eml(1, X3)       = e − ln(e − x).
+				// X1 = eml(X2, 1)       = exp(X2).
+				// LEFT  = eml(1, X1)    = e − exp(X2) = ln(e − x).
+				// RIGHT = eml(eml(1,1), 1) = exp(e).
+				// −x = eml(LEFT, RIGHT) = exp(ln(e − x)) − ln(exp(e))
+				// = (e − x) − e = −x.
 				// (Odrzywołek 2026, Table 4. Domain: x < e ≈ 2.718, so that
-				//  e − x > 0 and the inner ln is real.)
-				$x      = isset( $args[0] ) ? $args[0] : 'x';
-				$xnode  = array( 'type' => 'VAR', 'name' => $x );
-				$exp_x  = array( 'type' => 'EML', 'left' => $xnode, 'right' => $one );
-				$x3     = array( 'type' => 'EML', 'left' => $one, 'right' => $exp_x );
-				$x2     = array( 'type' => 'EML', 'left' => $one, 'right' => $x3 );
-				$x1     = array( 'type' => 'EML', 'left' => $x2, 'right' => $one );
-				$left   = array( 'type' => 'EML', 'left' => $one, 'right' => $x1 );
-				$ee     = array( 'type' => 'EML', 'left' => $one, 'right' => $one );
-				$exp_e  = array( 'type' => 'EML', 'left' => $ee, 'right' => $one );
-				return array( 'type' => 'EML', 'left' => $left, 'right' => $exp_e );
+				// e − x > 0 and the inner ln is real.).
+				$x     = isset( $args[0] ) ? $args[0] : 'x';
+				$xnode = array(
+					'type' => 'VAR',
+					'name' => $x,
+				);
+				$exp_x = array(
+					'type'  => 'EML',
+					'left'  => $xnode,
+					'right' => $one,
+				);
+				$x3    = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $exp_x,
+				);
+				$x2    = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $x3,
+				);
+				$x1    = array(
+					'type'  => 'EML',
+					'left'  => $x2,
+					'right' => $one,
+				);
+				$left  = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $x1,
+				);
+				$ee    = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $one,
+				);
+				$exp_e = array(
+					'type'  => 'EML',
+					'left'  => $ee,
+					'right' => $one,
+				);
+				return array(
+					'type'  => 'EML',
+					'left'  => $left,
+					'right' => $exp_e,
+				);
 			case 'inv':
 				// 1/x = eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), eml(eml(1, 1), 1)), 1)
 				// Chain: exp(−ln(x)) = 1/x.
 				// (Odrzywołek 2026, Table 4. Domain: 0 < x < e^e ≈ 15.154,
-				//  so that ln(x) < e and the intermediate e − ln(x) is positive.)
-				$x       = isset( $args[0] ) ? $args[0] : 'x';
-				$xnode   = array( 'type' => 'VAR', 'name' => $x );
-				$e_lnx_a = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode ); // e − ln(x)
-				$e_lnx_b = array( 'type' => 'EML', 'left' => $one, 'right' => $e_lnx_a ); // e − ln(e−ln x)
-				$e_lnx_c = array( 'type' => 'EML', 'left' => $e_lnx_b, 'right' => $one ); // exp(...)
-				$ln_e_lnx = array( 'type' => 'EML', 'left' => $one, 'right' => $e_lnx_c ); // ln(e − ln x)
-				$ee      = array( 'type' => 'EML', 'left' => $one, 'right' => $one );
-				$exp_e   = array( 'type' => 'EML', 'left' => $ee, 'right' => $one );
-				$neg_lnx = array( 'type' => 'EML', 'left' => $ln_e_lnx, 'right' => $exp_e ); // −ln(x)
-				return array( 'type' => 'EML', 'left' => $neg_lnx, 'right' => $one ); // exp(−ln x) = 1/x
+				// so that ln(x) < e and the intermediate e − ln(x) is positive.).
+				$x        = isset( $args[0] ) ? $args[0] : 'x';
+				$xnode    = array(
+					'type' => 'VAR',
+					'name' => $x,
+				);
+				$e_lnx_a  = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $xnode,
+				); // e − ln(x).
+				$e_lnx_b  = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $e_lnx_a,
+				); // e − ln(e−ln x).
+				$e_lnx_c  = array(
+					'type'  => 'EML',
+					'left'  => $e_lnx_b,
+					'right' => $one,
+				); // exp(...).
+				$ln_e_lnx = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $e_lnx_c,
+				); // ln(e − ln x).
+				$ee       = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $one,
+				);
+				$exp_e    = array(
+					'type'  => 'EML',
+					'left'  => $ee,
+					'right' => $one,
+				);
+				$neg_lnx  = array(
+					'type'  => 'EML',
+					'left'  => $ln_e_lnx,
+					'right' => $exp_e,
+				); // −ln(x)
+				return array(
+					'type'  => 'EML',
+					'left'  => $neg_lnx,
+					'right' => $one,
+				); // exp(−ln x) = 1/x.
 			case 'mul':
-				// x · y = eml(eml(1, eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), y), 1)), 1)
-				// Chain: shares the inv prefix to obtain ln(e − ln x), then
-				//   eml(ln(e − ln x), y) = (e − ln x) − ln y = e − ln(xy)
+				// x · y = eml(eml(1, eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), y), 1)), 1).
+				// Chain: shares the inv prefix to obtain ln(e − ln x), then.
+				// eml(ln(e − ln x), y) = (e − ln x) − ln y = e − ln(xy).
 				// and exp ∘ ln recovers x·y.
-				// (Odrzywołek 2026, Table 4. Domain: x, y > 0 and x < e^e.)
+				// (Odrzywołek 2026, Table 4. Domain: x, y > 0 and x < e^e.).
 				$x     = isset( $args[0] ) ? $args[0] : 'x';
 				$y     = isset( $args[1] ) ? $args[1] : 'y';
-				$xnode = array( 'type' => 'VAR', 'name' => $x );
-				$ynode = array( 'type' => 'VAR', 'name' => $y );
-				$a     = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );      // e − ln x
-				$b     = array( 'type' => 'EML', 'left' => $one, 'right' => $a );           // e − ln(e − ln x)
-				$c     = array( 'type' => 'EML', 'left' => $b, 'right' => $one );           // exp(...)
-				$d     = array( 'type' => 'EML', 'left' => $one, 'right' => $c );           // ln(e − ln x)
-				$e2    = array( 'type' => 'EML', 'left' => $d, 'right' => $ynode );         // (e − ln x) − ln y
-				$f     = array( 'type' => 'EML', 'left' => $e2, 'right' => $one );          // exp(e − ln(xy))
-				$g     = array( 'type' => 'EML', 'left' => $one, 'right' => $f );           // ln(xy)
-				return array( 'type' => 'EML', 'left' => $g, 'right' => $one );             // exp(ln(xy)) = xy
+				$xnode = array(
+					'type' => 'VAR',
+					'name' => $x,
+				);
+				$ynode = array(
+					'type' => 'VAR',
+					'name' => $y,
+				);
+				$a     = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $xnode,
+				);      // e − ln x.
+				$b     = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $a,
+				);           // e − ln(e − ln x).
+				$c     = array(
+					'type'  => 'EML',
+					'left'  => $b,
+					'right' => $one,
+				);           // exp(...).
+				$d     = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $c,
+				);           // ln(e − ln x).
+				$e2    = array(
+					'type'  => 'EML',
+					'left'  => $d,
+					'right' => $ynode,
+				);         // (e − ln x) − ln y
+				$f     = array(
+					'type'  => 'EML',
+					'left'  => $e2,
+					'right' => $one,
+				);          // exp(e − ln(xy)).
+				$g     = array(
+					'type'  => 'EML',
+					'left'  => $one,
+					'right' => $f,
+				);           // ln(xy).
+				return array(
+					'type'  => 'EML',
+					'left'  => $g,
+					'right' => $one,
+				);             // exp(ln(xy)) = xy.
 		}
 		return new WP_Error(
 			'wp_mcp_ai_unsupported_decomposition',
@@ -457,17 +627,26 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				continue;
 			}
 			if ( '(' === $ch ) {
-				$tokens[] = array( 'type' => 'LPAREN', 'value' => '(' );
+				$tokens[] = array(
+					'type'  => 'LPAREN',
+					'value' => '(',
+				);
 				++$i;
 				continue;
 			}
 			if ( ')' === $ch ) {
-				$tokens[] = array( 'type' => 'RPAREN', 'value' => ')' );
+				$tokens[] = array(
+					'type'  => 'RPAREN',
+					'value' => ')',
+				);
 				++$i;
 				continue;
 			}
 			if ( ',' === $ch ) {
-				$tokens[] = array( 'type' => 'COMMA', 'value' => ',' );
+				$tokens[] = array(
+					'type'  => 'COMMA',
+					'value' => ',',
+				);
 				++$i;
 				continue;
 			}
@@ -498,7 +677,10 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				if ( ! $has_digit || ! is_numeric( $lex ) ) {
 					return new WP_Error( 'wp_mcp_ai_invalid_number', __( 'Invalid numeric literal in EML expression.', 'mcp-ai-wpoos-pro' ) );
 				}
-				$tokens[] = array( 'type' => 'NUM', 'value' => $lex );
+				$tokens[] = array(
+					'type'  => 'NUM',
+					'value' => $lex,
+				);
 				continue;
 			}
 			if ( ctype_alpha( $ch ) || '_' === $ch ) {
@@ -508,9 +690,15 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				}
 				$word = substr( $expression, $start, $i - $start );
 				if ( 0 === strcasecmp( $word, 'eml' ) ) {
-					$tokens[] = array( 'type' => 'EML', 'value' => 'eml' );
+					$tokens[] = array(
+						'type'  => 'EML',
+						'value' => 'eml',
+					);
 				} else {
-					$tokens[] = array( 'type' => 'IDENT', 'value' => $word );
+					$tokens[] = array(
+						'type'  => 'IDENT',
+						'value' => $word,
+					);
 				}
 				continue;
 			}
@@ -550,12 +738,18 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( 'NUM' === $tok['type'] ) {
 			++$state->pos;
 			--$state->depth;
-			return array( 'type' => 'NUM', 'value' => (float) $tok['value'] );
+			return array(
+				'type'  => 'NUM',
+				'value' => (float) $tok['value'],
+			);
 		}
 		if ( 'IDENT' === $tok['type'] ) {
 			++$state->pos;
 			--$state->depth;
-			return array( 'type' => 'VAR', 'name' => $tok['value'] );
+			return array(
+				'type' => 'VAR',
+				'name' => $tok['value'],
+			);
 		}
 		if ( 'EML' === $tok['type'] ) {
 			++$state->pos;
@@ -580,7 +774,11 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 			++$state->pos;
 			--$state->depth;
-			return array( 'type' => 'EML', 'left' => $left, 'right' => $right );
+			return array(
+				'type'  => 'EML',
+				'left'  => $left,
+				'right' => $right,
+			);
 		}
 		return new WP_Error(
 			'wp_mcp_ai_unexpected_token',
@@ -691,8 +889,8 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return string
 	 */
 	private function canonical_to_latex( $canonical ) {
-		// Replace `eml(` with `\mathrm{eml}(` for LaTeX rendering. The argument
-		// list is otherwise already valid LaTeX (numbers, identifiers, commas,
+		// Replace `eml(` with `\mathrm{eml}(` for LaTeX rendering. The argument.
+		// list is otherwise already valid LaTeX (numbers, identifiers, commas,.
 		// parentheses).
 		return preg_replace( '/\beml\(/', '\\mathrm{eml}(', $canonical );
 	}

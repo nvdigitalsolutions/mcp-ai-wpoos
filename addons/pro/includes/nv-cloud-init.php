@@ -73,12 +73,14 @@ if ( ! function_exists( 'wp_mcp_ai_nv_cloud_default_provider' ) ) {
 			: array();
 
 		// Drop any existing nv_hosted entry then put it at the front.
-		$priority = array_values( array_filter(
-			$priority,
-			static function ( $item ) {
-				return WP_MCP_AI_NV_Cloud_Client::PROVIDER_SLUG !== $item;
-			}
-		) );
+		$priority = array_values(
+			array_filter(
+				$priority,
+				static function ( $item ) {
+					return WP_MCP_AI_NV_Cloud_Client::PROVIDER_SLUG !== $item;
+				}
+			)
+		);
 		array_unshift( $priority, WP_MCP_AI_NV_Cloud_Client::PROVIDER_SLUG );
 
 		$settings['provider_priority_list'] = $priority;

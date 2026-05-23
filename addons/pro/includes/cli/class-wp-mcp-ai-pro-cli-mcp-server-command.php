@@ -126,7 +126,7 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 			$tool_count = ( $server instanceof WP_MCP_AI_Toolkit_Server_Base )
 				? count( $server->effective_tool_slugs() )
 				: 0;
-			$items[] = array(
+			$items[]    = array(
 				'slug'       => $server->get_slug(),
 				'name'       => $server->get_name(),
 				'status'     => $status,
@@ -188,20 +188,57 @@ class WP_MCP_AI_Pro_CLI_Mcp_Server_Command extends WP_MCP_AI_Pro_CLI_Base_Comman
 		$descriptor = $server->get_descriptor();
 		$limits     = isset( $descriptor['limits'] ) && is_array( $descriptor['limits'] )
 			? $descriptor['limits']
-			: array( 'requests_per_minute' => 0, 'max_payload_bytes' => 0, 'max_iterations' => 0 );
+			: array(
+				'requests_per_minute' => 0,
+				'max_payload_bytes'   => 0,
+				'max_iterations'      => 0,
+			);
 
 		$row = array(
-			array( 'key' => 'slug', 'value' => $descriptor['slug'] ),
-			array( 'key' => 'name', 'value' => $descriptor['name'] ),
-			array( 'key' => 'version', 'value' => $descriptor['version'] ),
-			array( 'key' => 'enabled', 'value' => $descriptor['enabled'] ? 'yes' : 'no' ),
-			array( 'key' => 'tool_count', 'value' => $descriptor['tool_count'] ),
-			array( 'key' => 'native_surfaces', 'value' => count( (array) $descriptor['native_surfaces'] ) ),
-			array( 'key' => 'mounted_surfaces', 'value' => count( (array) $descriptor['mounted_surfaces'] ) ),
-			array( 'key' => 'requests_per_minute', 'value' => (int) $limits['requests_per_minute'] ),
-			array( 'key' => 'max_payload_bytes', 'value' => (int) $limits['max_payload_bytes'] ),
-			array( 'key' => 'max_iterations', 'value' => (int) $limits['max_iterations'] ),
-			array( 'key' => 'jsonrpc_endpoint', 'value' => $descriptor['endpoints']['jsonrpc'] ?? '' ),
+			array(
+				'key'   => 'slug',
+				'value' => $descriptor['slug'],
+			),
+			array(
+				'key'   => 'name',
+				'value' => $descriptor['name'],
+			),
+			array(
+				'key'   => 'version',
+				'value' => $descriptor['version'],
+			),
+			array(
+				'key'   => 'enabled',
+				'value' => $descriptor['enabled'] ? 'yes' : 'no',
+			),
+			array(
+				'key'   => 'tool_count',
+				'value' => $descriptor['tool_count'],
+			),
+			array(
+				'key'   => 'native_surfaces',
+				'value' => count( (array) $descriptor['native_surfaces'] ),
+			),
+			array(
+				'key'   => 'mounted_surfaces',
+				'value' => count( (array) $descriptor['mounted_surfaces'] ),
+			),
+			array(
+				'key'   => 'requests_per_minute',
+				'value' => (int) $limits['requests_per_minute'],
+			),
+			array(
+				'key'   => 'max_payload_bytes',
+				'value' => (int) $limits['max_payload_bytes'],
+			),
+			array(
+				'key'   => 'max_iterations',
+				'value' => (int) $limits['max_iterations'],
+			),
+			array(
+				'key'   => 'jsonrpc_endpoint',
+				'value' => $descriptor['endpoints']['jsonrpc'] ?? '',
+			),
 		);
 
 		if ( 'json' === $format ) {

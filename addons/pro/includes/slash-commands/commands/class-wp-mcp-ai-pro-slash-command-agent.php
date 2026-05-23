@@ -153,7 +153,7 @@ class WP_MCP_AI_Pro_Slash_Command_Agent {
 			return __( 'No active A2A tasks found.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$output  = "## " . __( 'A2A Tasks', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output  = '## ' . __( 'A2A Tasks', 'mcp-ai-wpoos-pro' ) . "\n\n";
 		$output .= "| ID | Status | Created |\n";
 		$output .= "|----|--------|---------|\n";
 
@@ -263,8 +263,8 @@ class WP_MCP_AI_Pro_Slash_Command_Agent {
 			);
 		}
 
-		$output = "## " . __( 'Agent Capabilities', 'mcp-ai-wpoos-pro' ) . "\n\n";
-		$output .= "- **URL:** " . esc_html( $agent_url ) . "\n";
+		$output  = '## ' . __( 'Agent Capabilities', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output .= '- **URL:** ' . esc_html( $agent_url ) . "\n";
 
 		if ( is_array( $result ) ) {
 			foreach ( $result as $key => $value ) {
@@ -299,12 +299,12 @@ class WP_MCP_AI_Pro_Slash_Command_Agent {
 			);
 		}
 
-		$output  = "## " . __( 'Message Sent', 'mcp-ai-wpoos-pro' ) . "\n\n";
-		$output .= "- **Agent:** " . esc_html( $agent_url ) . "\n";
-		$output .= "- **Message:** " . esc_html( $message ) . "\n";
+		$output  = '## ' . __( 'Message Sent', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$output .= '- **Agent:** ' . esc_html( $agent_url ) . "\n";
+		$output .= '- **Message:** ' . esc_html( $message ) . "\n";
 
 		if ( is_array( $result ) && isset( $result['task_id'] ) ) {
-			$output .= "- **Task ID:** " . esc_html( $result['task_id'] ) . "\n";
+			$output .= '- **Task ID:** ' . esc_html( $result['task_id'] ) . "\n";
 		}
 
 		return $output;

@@ -85,12 +85,12 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'assistant_id' => array(
+				'assistant_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Assistant CPT post ID to export curriculum for.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'suite_slugs'  => array(
+				'suite_slugs'   => array(
 					'type'        => 'array',
 					'description' => __( 'Optional explicit list of eval suite slugs. Defaults to the assistant\'s harness_profile.evals_enabled.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -99,19 +99,19 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 					'type'        => 'string',
 					'description' => __( 'Optional system message used for every row. Defaults to the assistant\'s system prompt.', 'mcp-ai-wpoos-pro' ),
 				),
-				'format'       => array(
+				'format'        => array(
 					'type'        => 'string',
 					'enum'        => array( 'openai_chat_jsonl' ),
 					'description' => __( 'Output format. Currently only OpenAI chat-format JSONL is supported.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'openai_chat_jsonl',
 				),
-				'max_cases'    => array(
+				'max_cases'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Cap on emitted rows. Hard ceiling 5000.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => self::HARD_MAX_CASES,
 				),
-				'dry_run'      => array(
+				'dry_run'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true, returns counts and a preview of the first row without writing any file.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -148,7 +148,11 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the fine-tune curriculum export.
+	 *
+	 * @param array $arguments Execution arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Canonical envelope or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( $this->get_required_capability() ) ) {
@@ -213,14 +217,14 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 		$dry_run = ! empty( $arguments['dry_run'] );
 
 		// Walk suites and build JSONL rows.
-		$registry           = WP_MCP_AI_Eval_Suite_Registry::get_instance();
-		$rows               = array();
-		$skipped_no_input   = 0;
-		$skipped_no_expect  = 0;
-		$skipped_too_large  = 0;
-		$missing_suites     = array();
-		$per_suite_counts   = array();
-		$preview_row        = '';
+		$registry          = WP_MCP_AI_Eval_Suite_Registry::get_instance();
+		$rows              = array();
+		$skipped_no_input  = 0;
+		$skipped_no_expect = 0;
+		$skipped_too_large = 0;
+		$missing_suites    = array();
+		$per_suite_counts  = array();
+		$preview_row       = '';
 
 		$per_case_cap = (int) apply_filters(
 			'wp_mcp_ai_pro_curriculum_per_case_char_cap',
@@ -319,12 +323,12 @@ class WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum implements WP_MCP_AI_Tool_Inter
 			return $write;
 		}
 
-		$result['file_path']   = $write['path'];
-		$result['file_url']    = $write['url'];
-		$result['file_bytes']  = $write['bytes'];
-		$result['filename']    = $write['filename'];
-		$result['dry_run']     = false;
-		$result['message']     = sprintf(
+		$result['file_path']  = $write['path'];
+		$result['file_url']   = $write['url'];
+		$result['file_bytes'] = $write['bytes'];
+		$result['filename']   = $write['filename'];
+		$result['dry_run']    = false;
+		$result['message']    = sprintf(
 			/* translators: 1: row count, 2: file path */
 			__( 'Wrote %1$d curriculum rows to %2$s.', 'mcp-ai-wpoos-pro' ),
 			count( $rows ),

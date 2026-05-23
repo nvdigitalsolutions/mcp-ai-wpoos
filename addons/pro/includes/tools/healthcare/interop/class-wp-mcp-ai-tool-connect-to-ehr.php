@@ -187,7 +187,10 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'configure',
 				'ehr_connection',
 				0,
-				array( 'user_id' => $current_user_id, 'vendor' => $vendor )
+				array(
+					'user_id' => $current_user_id,
+					'vendor'  => $vendor,
+				)
 			);
 		}
 		return array(
@@ -215,7 +218,10 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'disconnect',
 				'ehr_connection',
 				0,
-				array( 'user_id' => $current_user_id, 'vendor' => $vendor )
+				array(
+					'user_id' => $current_user_id,
+					'vendor'  => $vendor,
+				)
 			);
 		}
 		return array(
@@ -313,7 +319,10 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	private function get_redacted( $vendor ) {
 		$conn = $this->get_connection( $vendor );
 		if ( ! $conn ) {
-			return array( 'vendor' => $vendor, 'configured' => false );
+			return array(
+				'vendor'     => $vendor,
+				'configured' => false,
+			);
 		}
 		$conn['client_secret'] = '' !== (string) $conn['client_secret'] ? '[redacted]' : '';
 		$conn['configured']    = true;

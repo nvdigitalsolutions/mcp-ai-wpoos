@@ -149,15 +149,17 @@ class WP_MCP_AI_Cache_Helper {
 	 */
 	public static function delete( $key ) {
 		$cache_key = self::build_cache_key( $key );
-		$success   = true;
 
 		// Delete from object cache if available.
 		if ( self::has_object_cache() ) {
-			$success = wp_cache_delete( $cache_key, self::CACHE_GROUP );
+			wp_cache_delete( $cache_key, self::CACHE_GROUP );
 		}
 
-		// Delete from transients.
-		return delete_transient( $cache_key ) || $success;
+		// Delete from transients. delete_transient() may return false for
+		// already-expired keys; treat “key no longer exists” as success.
+		delete_transient( $cache_key );
+
+		return true;
 	}
 
 	/**
@@ -169,14 +171,18 @@ class WP_MCP_AI_Cache_Helper {
 	public static function delete_pattern( $pattern ) {
 		global $wpdb;
 
-		$cache_pattern  = self::CACHE_PREFIX . $pattern;
-		$option_pattern = '_transient_' . $wpdb->esc_like( $cache_pattern ) . '%';
+		// Escape only the safe prefix — the caller-supplied $pattern may
+		// contain SQL LIKE wildcards that must NOT be escaped.
+		$escaped_prefix  = $wpdb->esc_like( self::CACHE_PREFIX );
+		$option_pattern  = '_transient_' . $escaped_prefix . $pattern;
+		$timeout_pattern = '_transient_timeout_' . $escaped_prefix . $pattern;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$option_pattern
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+				$option_pattern,
+				$timeout_pattern
 			)
 		);
 
@@ -359,12 +365,14 @@ class WP_MCP_AI_Cache_Helper {
 	 * @return int Number of cache entries cleared.
 	 */
 	public static function clear_all_caches() {
-		// Clear object cache group if available.
+		$count = self::delete_pattern( '%' );
+
+		// Clear object cache group if available (does not return a count).
 		if ( self::has_object_cache() && function_exists( 'wp_cache_flush_group' ) ) {
 			wp_cache_flush_group( self::CACHE_GROUP );
 		}
 
-		return self::delete_pattern( '%' );
+		return $count;
 	}
 
 	/**

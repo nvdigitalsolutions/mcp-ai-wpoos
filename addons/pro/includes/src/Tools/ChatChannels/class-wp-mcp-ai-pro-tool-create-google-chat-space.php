@@ -73,15 +73,15 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space implements WP_MCP_AI_Tool_Inte
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token' => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'display_name' => array(
+				'display_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Display name for the new space.', 'mcp-ai-wpoos-pro' ),
 				),
-				'space_type'   => array(
+				'space_type'          => array(
 					'type'        => 'string',
 					'description' => __( 'Type of space to create (default: SPACE).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'SPACE', 'GROUP_CHAT', 'DIRECT_MESSAGE' ),
@@ -137,7 +137,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space implements WP_MCP_AI_Tool_Inte
 			return new WP_Error( 'wp_mcp_ai_missing_display_name', __( 'A display name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$space_type = isset( $arguments['space_type'] ) ? sanitize_text_field( $arguments['space_type'] ) : 'SPACE';
+		$space_type    = isset( $arguments['space_type'] ) ? sanitize_text_field( $arguments['space_type'] ) : 'SPACE';
 		$allowed_types = array( 'SPACE', 'GROUP_CHAT', 'DIRECT_MESSAGE' );
 
 		if ( ! in_array( $space_type, $allowed_types, true ) ) {

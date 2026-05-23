@@ -1014,6 +1014,8 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $result Parameter.
 	 */
 	public function sanitize_for_llm( $result ) {
 		if ( ! is_array( $result ) ) {

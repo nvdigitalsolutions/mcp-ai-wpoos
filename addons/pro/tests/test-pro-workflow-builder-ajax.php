@@ -87,20 +87,49 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 			'name'        => 'Test Workflow',
 			'description' => 'A test workflow',
 			'nodes'       => array(
-				array( 'id' => 'trigger-1', 'type' => 'trigger', 'position' => array( 'x' => 100, 'y' => 100 ), 'data' => array( 'label' => 'Start', 'config' => array() ) ),
-				array( 'id' => 'action-1', 'type' => 'action', 'position' => array( 'x' => 100, 'y' => 250 ), 'data' => array( 'label' => 'Do Something', 'config' => array( 'command' => '/test' ) ) ),
+				array(
+					'id'       => 'trigger-1',
+					'type'     => 'trigger',
+					'position' => array(
+						'x' => 100,
+						'y' => 100,
+					),
+					'data'     => array(
+						'label'  => 'Start',
+						'config' => array(),
+					),
+				),
+				array(
+					'id'       => 'action-1',
+					'type'     => 'action',
+					'position' => array(
+						'x' => 100,
+						'y' => 250,
+					),
+					'data'     => array(
+						'label'  => 'Do Something',
+						'config' => array( 'command' => '/test' ),
+					),
+				),
 			),
 			'edges'       => array(
-				array( 'id' => 'edge-1', 'source' => 'trigger-1', 'target' => 'action-1' ),
+				array(
+					'id'     => 'edge-1',
+					'source' => 'trigger-1',
+					'target' => 'action-1',
+				),
 			),
 		);
 
-		$_POST['nonce']    = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow'] = wp_json_encode( $workflow );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -110,11 +139,12 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		// Now list workflows.
 		$this->_last_response = '';
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_list_pro_workflows' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -145,12 +175,15 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		);
 		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'my-workflow';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_export_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -178,12 +211,15 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 			'failedNodes'    => 0,
 		);
 
-		$_POST['nonce']     = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['execution'] = wp_json_encode( $execution );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_workflow_execution' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -208,13 +244,17 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		$subscriber = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $subscriber );
 
-		$_POST['nonce']     = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['node_type'] = 'action';
-		$_POST['command']   = '/test';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['command'] = '/test';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_execute_workflow_node' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -230,14 +270,19 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 			$this->markTestSkipped( 'Builder class not available' );
 		}
 
-		$_POST['nonce']     = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['node_type'] = 'action';
-		$_POST['command']   = '';
-		$_POST['context']   = '{}';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['command'] = '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['context'] = '{}';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_execute_workflow_node' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -253,13 +298,17 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 			$this->markTestSkipped( 'Builder class not available' );
 		}
 
-		$_POST['nonce']     = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['node_type'] = 'unsupported_node_type_xyz';
-		$_POST['context']   = '{}';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['context'] = '{}';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_execute_workflow_node' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -282,7 +331,15 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 				'name'        => 'My Workflow',
 				'description' => 'Duplication test',
 				'nodes'       => array(
-					array( 'id' => 'trigger-1', 'type' => 'trigger', 'position' => array( 'x' => 100, 'y' => 100 ), 'data' => array( 'label' => 'Start' ) ),
+					array(
+						'id'       => 'trigger-1',
+						'type'     => 'trigger',
+						'position' => array(
+							'x' => 100,
+							'y' => 100,
+						),
+						'data'     => array( 'label' => 'Start' ),
+					),
 				),
 				'edges'       => array(),
 				'created_at'  => time() - 3600,
@@ -291,12 +348,15 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		);
 		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'my-workflow';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -318,12 +378,15 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 			$this->markTestSkipped( 'Builder class not available' );
 		}
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'nonexistent-workflow';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -353,13 +416,17 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		);
 		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'old-name';
-		$_POST['new_name']    = 'New Name';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['new_name'] = 'New Name';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -404,13 +471,17 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		);
 		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'workflow-a';
-		$_POST['new_name']    = 'Workflow B';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['new_name'] = 'Workflow B';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -439,13 +510,17 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		);
 		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'my-wf';
-		$_POST['new_name']    = '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['new_name'] = '';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -465,12 +540,15 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		$subscriber = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $subscriber );
 
-		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$_POST['nonce'] = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'some-workflow';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) {
+		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

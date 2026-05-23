@@ -191,9 +191,9 @@ class WP_MCP_AI_Pro_Tool_Get_Outlook_Messages implements WP_MCP_AI_Tool_Interfac
 			WP_MCP_AI_Logger::log_error(
 				'Outlook get messages request was not successful.',
 				array(
-					'http_code'  => $code,
-					'folder_id'  => $folder_id,
-					'error'      => $message,
+					'http_code' => $code,
+					'folder_id' => $folder_id,
+					'error'     => $message,
 				)
 			);
 

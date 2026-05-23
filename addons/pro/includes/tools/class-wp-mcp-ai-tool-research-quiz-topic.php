@@ -159,6 +159,11 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -505,7 +510,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "\n**Available Research Sources:**\n";
+			$prompt      .= "\n**Available Research Sources:**\n";
 			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
 				$source  = $search_results['sources'][ $i ];
@@ -530,7 +535,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 
 		// Add focus areas if specified.
 		if ( ! empty( $focus_areas ) ) {
-			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+			$prompt .= '**Focus Areas:** ' . implode( ', ', $focus_areas ) . "\n\n";
 		}
 
 		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
@@ -888,7 +893,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		$report = "# 📝 Quiz Research Complete\n\n";
 
 		// Quiz title and basic info.
-		$report .= "## **" . esc_html( $quiz_data['title'] ) . "**\n\n";
+		$report .= '## **' . esc_html( $quiz_data['title'] ) . "**\n\n";
 
 		if ( ! empty( $quiz_data['description'] ) ) {
 			$report .= esc_html( $quiz_data['description'] ) . "\n\n";
@@ -899,35 +904,35 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		$report .= "### 📊 Quiz Details\n\n";
 
 		if ( ! empty( $quiz_data['subject'] ) ) {
-			$report .= "**Subject Area:** " . esc_html( $quiz_data['subject'] ) . "\n\n";
+			$report .= '**Subject Area:** ' . esc_html( $quiz_data['subject'] ) . "\n\n";
 		}
 
-		$report .= "**Difficulty Level:** " . ucfirst( esc_html( $quiz_data['difficulty'] ) ) . "\n\n";
+		$report .= '**Difficulty Level:** ' . ucfirst( esc_html( $quiz_data['difficulty'] ) ) . "\n\n";
 
 		if ( ! empty( $quiz_data['topic'] ) ) {
-			$report .= "**Topic:** " . esc_html( $quiz_data['topic'] ) . "\n\n";
+			$report .= '**Topic:** ' . esc_html( $quiz_data['topic'] ) . "\n\n";
 		}
 
 		$question_count = count( $quiz_data['questions'] );
 		$report        .= "**Number of Questions:** {$question_count}\n\n";
 
 		if ( ! empty( $quiz_data['time_limit'] ) ) {
-			$report .= "**Estimated Time:** " . absint( $quiz_data['time_limit'] ) . " minutes\n\n";
+			$report .= '**Estimated Time:** ' . absint( $quiz_data['time_limit'] ) . " minutes\n\n";
 		}
 
 		if ( ! empty( $quiz_data['pass_score'] ) ) {
-			$report .= "**Passing Score:** " . absint( $quiz_data['pass_score'] ) . "%\n\n";
+			$report .= '**Passing Score:** ' . absint( $quiz_data['pass_score'] ) . "%\n\n";
 		}
 
 		// Sample questions section - show up to 5 questions.
 		if ( ! empty( $quiz_data['questions'] ) ) {
-			$report       .= "---\n\n";
-			$report       .= "### 📚 Sample Questions\n\n";
-			$sample_count  = min( 5, count( $quiz_data['questions'] ) );
+			$report      .= "---\n\n";
+			$report      .= "### 📚 Sample Questions\n\n";
+			$sample_count = min( 5, count( $quiz_data['questions'] ) );
 
 			for ( $i = 0; $i < $sample_count; $i++ ) {
 				$question = $quiz_data['questions'][ $i ];
-				$report  .= "**Question " . ( $i + 1 ) . ":** " . esc_html( $question['question'] ) . "\n\n";
+				$report  .= '**Question ' . ( $i + 1 ) . ':** ' . esc_html( $question['question'] ) . "\n\n";
 
 				if ( ! empty( $question['options'] ) && is_array( $question['options'] ) ) {
 					foreach ( $question['options'] as $key => $value ) {
@@ -939,7 +944,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 				}
 
 				if ( ! empty( $question['explanation'] ) ) {
-					$report .= "_Explanation:_ " . esc_html( $question['explanation'] ) . "\n\n";
+					$report .= '_Explanation:_ ' . esc_html( $question['explanation'] ) . "\n\n";
 				}
 			}
 
@@ -953,13 +958,13 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! empty( $quiz_data['questions'] ) ) {
 			$report .= "---\n\n";
 			$report .= "### 🎯 Learning Objectives\n\n";
-			$report .= "This quiz covers the following aspects of **" . esc_html( $quiz_data['topic'] ) . "**:\n\n";
+			$report .= 'This quiz covers the following aspects of **' . esc_html( $quiz_data['topic'] ) . "**:\n\n";
 
 			// Extract unique topics from questions (first 10 questions for analysis).
 			$topics_limit = min( 10, count( $quiz_data['questions'] ) );
 			for ( $i = 0; $i < $topics_limit; $i++ ) {
 				$question = $quiz_data['questions'][ $i ];
-				$report  .= "- " . esc_html( $question['question'] ) . "\n";
+				$report  .= '- ' . esc_html( $question['question'] ) . "\n";
 			}
 			$report .= "\n";
 		}
@@ -969,26 +974,26 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		$report .= "### 👥 Target Audience\n\n";
 		switch ( $quiz_data['difficulty'] ) {
 			case 'beginner':
-				$report .= "This quiz is designed for **beginners** who are new to " . esc_html( $quiz_data['topic'] ) . " and want to learn the fundamentals.\n\n";
+				$report .= 'This quiz is designed for **beginners** who are new to ' . esc_html( $quiz_data['topic'] ) . " and want to learn the fundamentals.\n\n";
 				break;
 			case 'advanced':
-				$report .= "This quiz is designed for **advanced learners** with deep knowledge of " . esc_html( $quiz_data['topic'] ) . " seeking to test expert-level understanding.\n\n";
+				$report .= 'This quiz is designed for **advanced learners** with deep knowledge of ' . esc_html( $quiz_data['topic'] ) . " seeking to test expert-level understanding.\n\n";
 				break;
 			default:
-				$report .= "This quiz is designed for **intermediate learners** with basic knowledge of " . esc_html( $quiz_data['topic'] ) . " who want to deepen their understanding.\n\n";
+				$report .= 'This quiz is designed for **intermediate learners** with basic knowledge of ' . esc_html( $quiz_data['topic'] ) . " who want to deepen their understanding.\n\n";
 		}
 
 		// Sources section.
 		if ( ! empty( $quiz_data['sources'] ) ) {
-			$report        .= "---\n\n";
-			$report        .= "### 🔗 Research Sources\n\n";
-			$sources_count  = count( $quiz_data['sources'] );
-			$report        .= "This quiz was researched using **{$sources_count}** authoritative source" . ( $sources_count > 1 ? 's' : '' ) . ":\n\n";
+			$report       .= "---\n\n";
+			$report       .= "### 🔗 Research Sources\n\n";
+			$sources_count = count( $quiz_data['sources'] );
+			$report       .= "This quiz was researched using **{$sources_count}** authoritative source" . ( $sources_count > 1 ? 's' : '' ) . ":\n\n";
 
 			$display_limit = min( 5, count( $quiz_data['sources'] ) );
 			for ( $i = 0; $i < $display_limit; $i++ ) {
 				$source  = $quiz_data['sources'][ $i ];
-				$report .= ( $i + 1 ) . ". [" . esc_url( $source ) . "](" . esc_url( $source ) . ")\n";
+				$report .= ( $i + 1 ) . '. [' . esc_url( $source ) . '](' . esc_url( $source ) . ")\n";
 			}
 
 			if ( $sources_count > $display_limit ) {
@@ -1004,15 +1009,15 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			$report .= "### 🤖 Research Details\n\n";
 
 			if ( ! empty( $quiz_data['research_provider'] ) ) {
-				$report .= "**AI Provider:** " . ucfirst( esc_html( $quiz_data['research_provider'] ) ) . "\n\n";
+				$report .= '**AI Provider:** ' . ucfirst( esc_html( $quiz_data['research_provider'] ) ) . "\n\n";
 			}
 
 			if ( ! empty( $quiz_data['research_model'] ) ) {
-				$report .= "**Model:** " . esc_html( $quiz_data['research_model'] ) . "\n\n";
+				$report .= '**Model:** ' . esc_html( $quiz_data['research_model'] ) . "\n\n";
 			}
 
 			if ( ! empty( $quiz_data['researched_at'] ) ) {
-				$report .= "**Researched:** " . esc_html( $quiz_data['researched_at'] ) . "\n\n";
+				$report .= '**Researched:** ' . esc_html( $quiz_data['researched_at'] ) . "\n\n";
 			}
 		}
 

@@ -30,47 +30,110 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 
 $wordpress_path = getenv( 'WP_CORE_DIR' );
 if ( ! $wordpress_path ) {
-	$codex_path     = $plugin_root . '/.codex-wordpress/wordpress';
-	$startup_script = $plugin_root . '/bin/codex-startup.sh';
-
-	if ( ! file_exists( $codex_path . '/wp-load.php' ) && is_file( $startup_script ) ) {
-		fwrite( STDERR, "WordPress core not found. Running codex-startup provisioning script...\n" );
-
-		$startup_output = array();
-		$startup_result = 0;
-
-		// Check if exec() is available before attempting to run the script.
-		if ( function_exists( 'exec' ) ) {
-			exec( escapeshellcmd( $startup_script ) . ' 2>&1', $startup_output, $startup_result );
-
-			if ( ! empty( $startup_output ) ) {
-				fwrite( STDERR, implode( "\n", $startup_output ) . "\n" );
-			}
-
-			if ( 0 !== $startup_result ) {
-				fwrite( STDERR, "codex-startup.sh exited with a non-zero status ({$startup_result}).\n" );
-			}
+	// ── WordPress Studio detection ──────────────────────────────
+	// Studio stores sites in platform-specific directories.
+	// On Windows: %LOCALAPPDATA%\WordPress Studio\sites\{slug}
+	// On macOS:   ~/Library/Application Support/WordPress Studio/sites/{slug}
+	$studio_site_slug = getenv( 'WP_STUDIO_SITE_SLUG' );
+	if ( $studio_site_slug ) {
+		if ( 'WIN' === strtoupper( substr( PHP_OS, 0, 3 ) ) ) {
+			$studio_base = getenv( 'LOCALAPPDATA' ) . '/WordPress Studio/sites';
 		} else {
-			fwrite( STDERR, "Warning: exec() function is disabled. Cannot run automatic WordPress setup.\n" );
-			fwrite( STDERR, "Please set WP_CORE_DIR environment variable or manually run: {$startup_script}\n" );
+			$studio_base = getenv( 'HOME' ) . '/Library/Application Support/WordPress Studio/sites';
+		}
+		$studio_path = $studio_base . '/' . $studio_site_slug . '/app/public';
+		if ( file_exists( $studio_path . '/wp-load.php' ) ) {
+			$wordpress_path = $studio_path;
+			fwrite( STDOUT, "\n✓ Using WordPress Studio site: {$studio_site_slug}\n" );
+			fwrite( STDOUT, "  Path: {$wordpress_path}\n\n" );
 		}
 	}
 
-	if ( file_exists( $codex_path . '/wp-load.php' ) ) {
-		$wordpress_path = $codex_path;
+	// ── Auto-detect Studio sites (when no slug specified) ──────
+	if ( ! $wordpress_path ) {
+		$studio_candidates = array();
+		if ( 'WIN' === strtoupper( substr( PHP_OS, 0, 3 ) ) ) {
+			$studio_base = getenv( 'LOCALAPPDATA' ) . '/WordPress Studio/sites';
+		} else {
+			$studio_base = getenv( 'HOME' ) . '/Library/Application Support/WordPress Studio/sites';
+		}
+		if ( is_dir( $studio_base ) ) {
+			$sites = scandir( $studio_base );
+			if ( $sites ) {
+				foreach ( $sites as $site ) {
+					if ( '.' === $site || '..' === $site ) {
+						continue;
+					}
+					$candidate = $studio_base . '/' . $site . '/app/public/wp-load.php';
+					if ( file_exists( $candidate ) ) {
+						$studio_candidates[] = $studio_base . '/' . $site . '/app/public';
+					}
+				}
+			}
+		}
+		if ( 1 === count( $studio_candidates ) ) {
+			$wordpress_path = $studio_candidates[0];
+			fwrite( STDOUT, "\n✓ Auto-detected WordPress Studio site: {$wordpress_path}\n\n" );
+		} elseif ( count( $studio_candidates ) > 1 ) {
+			fwrite( STDOUT, "\nMultiple WordPress Studio sites found:\n" );
+			foreach ( $studio_candidates as $i => $candidate ) {
+				fwrite( STDOUT, "  [{$i}] {$candidate}\n" );
+			}
+			fwrite( STDOUT, "\nSet WP_STUDIO_SITE_SLUG environment variable to choose one.\n" );
+			fwrite( STDOUT, "Example: WP_STUDIO_SITE_SLUG=mysite vendor/bin/phpunit\n\n" );
+		}
+	}
+
+	// ── Codex environment ──────────────────────────────────────
+	if ( ! $wordpress_path ) {
+		$codex_path = $plugin_root . '/.codex-wordpress/wordpress';
+		if ( file_exists( $codex_path . '/wp-load.php' ) ) {
+			$wordpress_path = $codex_path;
+		}
+	}
+
+	// ── Docker / wp-env ────────────────────────────────────────
+	if ( ! $wordpress_path ) {
+		$wp_env_path = $plugin_root . '/.wp-env/wordpress';
+		if ( file_exists( $wp_env_path . '/wp-load.php' ) ) {
+			$wordpress_path = $wp_env_path;
+		}
 	}
 }
 
 if ( ! $wordpress_path ) {
-	fwrite( STDERR, "Could not locate a WordPress installation.\n" );
-	fwrite( STDERR, "Run 'bin/codex-startup.sh' or define the WP_CORE_DIR environment variable before executing the tests.\n" );
+	fwrite( STDERR, "\nCould not locate a WordPress installation.\n\n" );
+	fwrite( STDERR, "Options:\n" );
+	fwrite( STDERR, "  1. WordPress Studio:  Set WP_STUDIO_SITE_SLUG=your-site-slug\n" );
+	fwrite( STDERR, "  2. Codex environment: Run 'bin/codex-startup.sh'\n" );
+	fwrite( STDERR, "  3. Any WP install:    Set WP_CORE_DIR=/path/to/wordpress\n" );
+	fwrite( STDERR, "  4. wp-env:            Run 'npx wp-env start'\n\n" );
 	exit( 1 );
 }
 
-$tests_db_dir = $plugin_root . '/.codex-wordpress/tests-database';
+// Determine the test database directory.
+// For Studio environments, use a temp-dir based path to avoid
+// polluting the Studio site's own database directory.
+$studio_slug = getenv( 'WP_STUDIO_SITE_SLUG' );
+if ( $studio_slug ) {
+	$tests_db_dir = sys_get_temp_dir() . '/wp-mcp-ai-tests-database/' . $studio_slug;
+} else {
+	$tests_db_dir = $plugin_root . '/.codex-wordpress/tests-database';
+}
 if ( ! is_dir( $tests_db_dir ) && ! mkdir( $tests_db_dir, 0775, true ) && ! is_dir( $tests_db_dir ) ) {
 	fwrite( STDERR, "Unable to create the SQLite directory at {$tests_db_dir}.\n" );
 	exit( 1 );
+}
+
+// Wire up SQLite Database Integration drop-in when using SQLite.
+// The fixture provides a db.php drop-in that the WP test bootstrap loads.
+$_sqlite_fixture = $plugin_root . '/tests/fixtures/sqlite-database-integration';
+if ( is_dir( $_sqlite_fixture ) && ! getenv( 'WP_DB_HOST' ) ) {
+	// The drop-in is activated in wp-tests-config.php via DB_TYPE=sqlite.
+	// We just ensure the directory exists for the test environment to find it.
+	if ( ! defined( 'WP_TESTS_SQLITE_DROPIN_DIR' ) ) {
+		define( 'WP_TESTS_SQLITE_DROPIN_DIR', $_sqlite_fixture );
+	}
 }
 
 $polyfills_root = $plugin_root . '/vendor/yoast/phpunit-polyfills';

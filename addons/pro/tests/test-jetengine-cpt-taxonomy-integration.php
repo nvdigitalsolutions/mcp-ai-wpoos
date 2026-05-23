@@ -225,7 +225,7 @@ class Test_JetEngine_CPT_Taxonomy_Integration extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_jetengine_cpt_ai'          => true,
+				'enable_jetengine_cpt_ai'           => true,
 				'enable_jetengine_cpt_research_add' => true,
 			)
 		);

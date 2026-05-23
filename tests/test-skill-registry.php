@@ -140,8 +140,8 @@ class WP_MCP_AI_Skill_Registry_Test extends WP_UnitTestCase {
 		$content = "---\nname: evil-skill\ndescription: Attempts PHP injection.\n---\n\nInstructions.";
 
 		$extra_files = array(
-			'shell.php'         => '<?php system($_GET["cmd"]); ?>',
-			'shell.phtml'       => '<?php phpinfo(); ?>',
+			'shell.php'         => '<?php echo "This is a PHP file that should be blocked";',
+			'shell.phtml'       => '<?php echo "This is a PHTML file that should be blocked";',
 			'safe.md'           => '# Safe file',
 		);
 
@@ -213,7 +213,7 @@ class WP_MCP_AI_Skill_Registry_Test extends WP_UnitTestCase {
 	 */
 	public function test_uninstall_directory_traversal() {
 		$registry = WP_MCP_AI_Skill_Registry::instance();
-		$result   = $registry->uninstall_skill( '../../../etc' );
+		$result   = $registry->uninstall_skill( '../outside-skills-dir' );
 
 		$this->assertWPError( $result );
 	}

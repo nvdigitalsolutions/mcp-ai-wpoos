@@ -411,7 +411,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	protected function get_available_providers() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' )
 		);
 
 		$labels = array(

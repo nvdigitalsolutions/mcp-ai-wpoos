@@ -16,18 +16,40 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Deletes a project.
  */
 class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'delete_project';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Delete Project', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Deletes a project. Note: This does not delete associated tasks or events.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -60,6 +82,11 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -68,6 +95,11 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		// Project management is a Pro feature.
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
@@ -84,6 +116,13 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 

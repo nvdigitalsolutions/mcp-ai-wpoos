@@ -24,6 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Performs the operation.
+ // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
  * import_vitals tool implementation.
  */
 class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
@@ -59,7 +61,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		'718-7'   => 'hemoglobin',                // Hemoglobin [Mass/volume] in Blood.
 		'59260-8' => 'hemoglobin',                // Hemoglobin [Moles/volume] in Blood.
 		'20509-6' => 'hemoglobin',                // Hemoglobin [Mass/volume] by calculation.
-		// ── CBC — main indices ────────────────────────────────────────────
+		// ── CBC — main indices ────────────────────────────────────────────.
 		'4544-3'  => 'hematocrit',                // Hematocrit [Volume Fraction] by Automated count.
 		'71829-6' => 'hematocrit',                // Hematocrit by Centrifugation.
 		'788-0'   => 'rbc',                       // Erythrocytes [#/volume] by Automated count.
@@ -69,24 +71,24 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		'785-6'   => 'mch',                       // MCH [Entitic mass] by Automated count.
 		'786-4'   => 'mchc',                      // MCHC [Mass/volume] by Automated count.
 		'21000-5' => 'rdw',                       // Erythrocyte distribution width [Ratio] by Automated count.
-		// ── CBC differential — percent ────────────────────────────────────
+		// ── CBC differential — percent ────────────────────────────────────.
 		'770-8'   => 'neutrophils_percent',       // Neutrophils/100 leukocytes by Automated count.
 		'736-9'   => 'lymphocytes_percent',       // Lymphocytes/100 leukocytes by Automated count.
 		'5905-5'  => 'monocytes_percent',         // Monocytes/100 leukocytes by Automated count.
 		'713-8'   => 'eosinophils_percent',       // Eosinophils/100 leukocytes by Automated count.
 		'706-2'   => 'basophils_percent',         // Basophils/100 leukocytes by Automated count.
-		// ── CBC differential — absolute counts ───────────────────────────
+		// ── CBC differential — absolute counts ───────────────────────────.
 		'751-8'   => 'neutrophils_absolute',      // Neutrophils [#/volume] by Automated count.
 		'731-0'   => 'lymphocytes_absolute',      // Lymphocytes [#/volume] by Automated count.
 		'742-7'   => 'monocytes_absolute',        // Monocytes [#/volume] by Automated count.
 		'711-2'   => 'eosinophils_absolute',      // Eosinophils [#/volume] by Automated count.
 		'704-7'   => 'basophils_absolute',        // Basophils [#/volume] by Automated count.
-		// ── Extended BMP / CMP electrolytes ──────────────────────────────
+		// ── Extended BMP / CMP electrolytes ──────────────────────────────.
 		'2075-0'  => 'chloride',                  // Chloride [Moles/volume] in Serum or Plasma.
 		'1963-8'  => 'co2',                       // Bicarbonate [Moles/volume] in Serum or Plasma (CO2).
 		'17861-6' => 'calcium',                   // Calcium [Mass/volume] in Serum or Plasma.
 		'19123-9' => 'magnesium',                 // Magnesium [Mass/volume] in Serum or Plasma.
-		// ── Liver function tests (LFT) ────────────────────────────────────
+		// ── Liver function tests (LFT) ────────────────────────────────────.
 		'1975-2'  => 'bilirubin',                 // Bilirubin.total [Mass/volume] in Serum or Plasma.
 		'1920-8'  => 'ast',                       // Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma.
 		'1742-6'  => 'alt',                       // Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma.
@@ -100,188 +102,188 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * for each group wins.
 	 */
 	const CSV_COLUMN_MAP = array(
-		'date'                           => 'measurement_date',
-		'measurement_date'               => 'measurement_date',
-		'measurement date'               => 'measurement_date',
-		'time'                           => 'measurement_time',
-		'measurement_time'               => 'measurement_time',
-		'measurement time'               => 'measurement_time',
-		'bp_systolic'                    => 'blood_pressure_systolic',
-		'systolic'                       => 'blood_pressure_systolic',
-		'systolic blood pressure'        => 'blood_pressure_systolic',
-		'systolic bp'                    => 'blood_pressure_systolic',
-		'bp systolic'                    => 'blood_pressure_systolic',
-		'bp_diastolic'                   => 'blood_pressure_diastolic',
-		'diastolic'                      => 'blood_pressure_diastolic',
-		'diastolic blood pressure'       => 'blood_pressure_diastolic',
-		'diastolic bp'                   => 'blood_pressure_diastolic',
-		'bp diastolic'                   => 'blood_pressure_diastolic',
-		'heart_rate'                     => 'heart_rate',
-		'heart rate'                     => 'heart_rate',
-		'hr'                             => 'heart_rate',
-		'pulse'                          => 'heart_rate',
-		'pulse rate'                     => 'heart_rate',
-		'bpm'                            => 'heart_rate',
-		'temperature'                    => 'temperature',
-		'temp'                           => 'temperature',
-		'body temperature'               => 'temperature',
-		'temperature_unit'               => 'temperature_unit',
-		'temp_unit'                      => 'temperature_unit',
-		'temp unit'                      => 'temperature_unit',
-		'weight'                         => 'weight',
-		'body weight'                    => 'weight',
-		'weight_unit'                    => 'weight_unit',
-		'weight unit'                    => 'weight_unit',
-		'bmi'                            => 'bmi',
-		'body mass index'                => 'bmi',
-		'blood_glucose'                  => 'blood_glucose',
-		'blood glucose'                  => 'blood_glucose',
-		'glucose'                        => 'blood_glucose',
-		'blood sugar'                    => 'blood_glucose',
-		'glucose (mg/dl)'                => 'blood_glucose',
-		'oxygen_saturation'              => 'oxygen_saturation',
-		'oxygen saturation'              => 'oxygen_saturation',
-		'spo2'                           => 'oxygen_saturation',
-		'o2 saturation'                  => 'oxygen_saturation',
-		'respiratory_rate'               => 'respiratory_rate',
-		'respiratory rate'               => 'respiratory_rate',
-		'respiration rate'               => 'respiratory_rate',
-		'breaths per minute'             => 'respiratory_rate',
-		'egfr'                           => 'egfr',
-		'egfr (ml/min/1.73m2)'           => 'egfr',
-		'estimated gfr'                  => 'egfr',
-		'creatinine'                     => 'creatinine',
-		'creatinine (mg/dl)'             => 'creatinine',
-		'serum creatinine'               => 'creatinine',
-		'bun'                            => 'bun',
-		'blood urea nitrogen'            => 'bun',
-		'bun (mg/dl)'                    => 'bun',
-		'potassium'                      => 'potassium',
-		'k+'                             => 'potassium',
-		'potassium (meq/l)'              => 'potassium',
-		'sodium'                         => 'sodium',
-		'na+'                            => 'sodium',
-		'sodium (meq/l)'                 => 'sodium',
-		'sodium (mg/day)'                => 'sodium',
-		'phosphorus'                     => 'phosphorus',
-		'phosphate'                      => 'phosphorus',
-		'phosphorus (mg/dl)'             => 'phosphorus',
-		'albumin'                        => 'albumin',
-		'albumin (g/dl)'                 => 'albumin',
-		'serum albumin'                  => 'albumin',
-		'notes'                          => 'notes',
-		'note'                           => 'notes',
-		'comments'                       => 'notes',
-		'comment'                        => 'notes',
-		'source'                         => 'source',
+		'date'                        => 'measurement_date',
+		'measurement_date'            => 'measurement_date',
+		'measurement date'            => 'measurement_date',
+		'time'                        => 'measurement_time',
+		'measurement_time'            => 'measurement_time',
+		'measurement time'            => 'measurement_time',
+		'bp_systolic'                 => 'blood_pressure_systolic',
+		'systolic'                    => 'blood_pressure_systolic',
+		'systolic blood pressure'     => 'blood_pressure_systolic',
+		'systolic bp'                 => 'blood_pressure_systolic',
+		'bp systolic'                 => 'blood_pressure_systolic',
+		'bp_diastolic'                => 'blood_pressure_diastolic',
+		'diastolic'                   => 'blood_pressure_diastolic',
+		'diastolic blood pressure'    => 'blood_pressure_diastolic',
+		'diastolic bp'                => 'blood_pressure_diastolic',
+		'bp diastolic'                => 'blood_pressure_diastolic',
+		'heart_rate'                  => 'heart_rate',
+		'heart rate'                  => 'heart_rate',
+		'hr'                          => 'heart_rate',
+		'pulse'                       => 'heart_rate',
+		'pulse rate'                  => 'heart_rate',
+		'bpm'                         => 'heart_rate',
+		'temperature'                 => 'temperature',
+		'temp'                        => 'temperature',
+		'body temperature'            => 'temperature',
+		'temperature_unit'            => 'temperature_unit',
+		'temp_unit'                   => 'temperature_unit',
+		'temp unit'                   => 'temperature_unit',
+		'weight'                      => 'weight',
+		'body weight'                 => 'weight',
+		'weight_unit'                 => 'weight_unit',
+		'weight unit'                 => 'weight_unit',
+		'bmi'                         => 'bmi',
+		'body mass index'             => 'bmi',
+		'blood_glucose'               => 'blood_glucose',
+		'blood glucose'               => 'blood_glucose',
+		'glucose'                     => 'blood_glucose',
+		'blood sugar'                 => 'blood_glucose',
+		'glucose (mg/dl)'             => 'blood_glucose',
+		'oxygen_saturation'           => 'oxygen_saturation',
+		'oxygen saturation'           => 'oxygen_saturation',
+		'spo2'                        => 'oxygen_saturation',
+		'o2 saturation'               => 'oxygen_saturation',
+		'respiratory_rate'            => 'respiratory_rate',
+		'respiratory rate'            => 'respiratory_rate',
+		'respiration rate'            => 'respiratory_rate',
+		'breaths per minute'          => 'respiratory_rate',
+		'egfr'                        => 'egfr',
+		'egfr (ml/min/1.73m2)'        => 'egfr',
+		'estimated gfr'               => 'egfr',
+		'creatinine'                  => 'creatinine',
+		'creatinine (mg/dl)'          => 'creatinine',
+		'serum creatinine'            => 'creatinine',
+		'bun'                         => 'bun',
+		'blood urea nitrogen'         => 'bun',
+		'bun (mg/dl)'                 => 'bun',
+		'potassium'                   => 'potassium',
+		'k+'                          => 'potassium',
+		'potassium (meq/l)'           => 'potassium',
+		'sodium'                      => 'sodium',
+		'na+'                         => 'sodium',
+		'sodium (meq/l)'              => 'sodium',
+		'sodium (mg/day)'             => 'sodium',
+		'phosphorus'                  => 'phosphorus',
+		'phosphate'                   => 'phosphorus',
+		'phosphorus (mg/dl)'          => 'phosphorus',
+		'albumin'                     => 'albumin',
+		'albumin (g/dl)'              => 'albumin',
+		'serum albumin'               => 'albumin',
+		'notes'                       => 'notes',
+		'note'                        => 'notes',
+		'comments'                    => 'notes',
+		'comment'                     => 'notes',
+		'source'                      => 'source',
 		// ── CBC — hemoglobin ──────────────────────────────────────────────
-		'hemoglobin'                     => 'hemoglobin',
-		'hgb'                            => 'hemoglobin',
-		'haemoglobin'                    => 'hemoglobin',
-		'hemoglobin (g/dl)'              => 'hemoglobin',
-		'hgb (g/dl)'                     => 'hemoglobin',
+		'hemoglobin'                  => 'hemoglobin',
+		'hgb'                         => 'hemoglobin',
+		'haemoglobin'                 => 'hemoglobin',
+		'hemoglobin (g/dl)'           => 'hemoglobin',
+		'hgb (g/dl)'                  => 'hemoglobin',
 		// ── CBC — main indices ────────────────────────────────────────────
-		'hematocrit'                     => 'hematocrit',
-		'hct'                            => 'hematocrit',
-		'haematocrit'                    => 'hematocrit',
-		'hematocrit (%)'                 => 'hematocrit',
-		'rbc'                            => 'rbc',
-		'red blood cells'                => 'rbc',
-		'red blood cell count'           => 'rbc',
-		'rbc (x10^6/ul)'                 => 'rbc',
-		'wbc'                            => 'wbc',
-		'white blood cells'              => 'wbc',
-		'white blood cell count'         => 'wbc',
-		'leukocytes'                     => 'wbc',
-		'wbc (x10^3/ul)'                 => 'wbc',
-		'platelets'                      => 'platelets',
-		'plt'                            => 'platelets',
-		'platelet count'                 => 'platelets',
-		'platelets (x10^3/ul)'           => 'platelets',
-		'mcv'                            => 'mcv',
-		'mean corpuscular volume'        => 'mcv',
-		'mcv (fl)'                       => 'mcv',
-		'mch'                            => 'mch',
-		'mean corpuscular hemoglobin'    => 'mch',
-		'mch (pg)'                       => 'mch',
-		'mchc'                           => 'mchc',
-		'mchc (g/dl)'                    => 'mchc',
-		'rdw'                            => 'rdw',
-		'red cell distribution width'    => 'rdw',
-		'rdw (%)'                        => 'rdw',
+		'hematocrit'                  => 'hematocrit',
+		'hct'                         => 'hematocrit',
+		'haematocrit'                 => 'hematocrit',
+		'hematocrit (%)'              => 'hematocrit',
+		'rbc'                         => 'rbc',
+		'red blood cells'             => 'rbc',
+		'red blood cell count'        => 'rbc',
+		'rbc (x10^6/ul)'              => 'rbc',
+		'wbc'                         => 'wbc',
+		'white blood cells'           => 'wbc',
+		'white blood cell count'      => 'wbc',
+		'leukocytes'                  => 'wbc',
+		'wbc (x10^3/ul)'              => 'wbc',
+		'platelets'                   => 'platelets',
+		'plt'                         => 'platelets',
+		'platelet count'              => 'platelets',
+		'platelets (x10^3/ul)'        => 'platelets',
+		'mcv'                         => 'mcv',
+		'mean corpuscular volume'     => 'mcv',
+		'mcv (fl)'                    => 'mcv',
+		'mch'                         => 'mch',
+		'mean corpuscular hemoglobin' => 'mch',
+		'mch (pg)'                    => 'mch',
+		'mchc'                        => 'mchc',
+		'mchc (g/dl)'                 => 'mchc',
+		'rdw'                         => 'rdw',
+		'red cell distribution width' => 'rdw',
+		'rdw (%)'                     => 'rdw',
 		// ── CBC differential — percent ────────────────────────────────────
-		'neutrophils_percent'            => 'neutrophils_percent',
-		'neutrophils %'                  => 'neutrophils_percent',
-		'neut %'                         => 'neutrophils_percent',
-		'neutrophils (%)'                => 'neutrophils_percent',
-		'lymphocytes_percent'            => 'lymphocytes_percent',
-		'lymphocytes %'                  => 'lymphocytes_percent',
-		'lymph %'                        => 'lymphocytes_percent',
-		'lymphocytes (%)'                => 'lymphocytes_percent',
-		'monocytes_percent'              => 'monocytes_percent',
-		'monocytes %'                    => 'monocytes_percent',
-		'mono %'                         => 'monocytes_percent',
-		'monocytes (%)'                  => 'monocytes_percent',
-		'eosinophils_percent'            => 'eosinophils_percent',
-		'eosinophils %'                  => 'eosinophils_percent',
-		'eos %'                          => 'eosinophils_percent',
-		'eosinophils (%)'                => 'eosinophils_percent',
-		'basophils_percent'              => 'basophils_percent',
-		'basophils %'                    => 'basophils_percent',
-		'baso %'                         => 'basophils_percent',
-		'basophils (%)'                  => 'basophils_percent',
+		'neutrophils_percent'         => 'neutrophils_percent',
+		'neutrophils %'               => 'neutrophils_percent',
+		'neut %'                      => 'neutrophils_percent',
+		'neutrophils (%)'             => 'neutrophils_percent',
+		'lymphocytes_percent'         => 'lymphocytes_percent',
+		'lymphocytes %'               => 'lymphocytes_percent',
+		'lymph %'                     => 'lymphocytes_percent',
+		'lymphocytes (%)'             => 'lymphocytes_percent',
+		'monocytes_percent'           => 'monocytes_percent',
+		'monocytes %'                 => 'monocytes_percent',
+		'mono %'                      => 'monocytes_percent',
+		'monocytes (%)'               => 'monocytes_percent',
+		'eosinophils_percent'         => 'eosinophils_percent',
+		'eosinophils %'               => 'eosinophils_percent',
+		'eos %'                       => 'eosinophils_percent',
+		'eosinophils (%)'             => 'eosinophils_percent',
+		'basophils_percent'           => 'basophils_percent',
+		'basophils %'                 => 'basophils_percent',
+		'baso %'                      => 'basophils_percent',
+		'basophils (%)'               => 'basophils_percent',
 		// ── CBC differential — absolute counts ───────────────────────────
-		'neutrophils_absolute'           => 'neutrophils_absolute',
-		'neutrophils absolute'           => 'neutrophils_absolute',
-		'neut abs'                       => 'neutrophils_absolute',
-		'neutrophils (x10^3/ul)'         => 'neutrophils_absolute',
-		'lymphocytes_absolute'           => 'lymphocytes_absolute',
-		'lymphocytes absolute'           => 'lymphocytes_absolute',
-		'lymph abs'                      => 'lymphocytes_absolute',
-		'lymphocytes (x10^3/ul)'         => 'lymphocytes_absolute',
-		'monocytes_absolute'             => 'monocytes_absolute',
-		'monocytes absolute'             => 'monocytes_absolute',
-		'mono abs'                       => 'monocytes_absolute',
-		'monocytes (x10^3/ul)'           => 'monocytes_absolute',
-		'eosinophils_absolute'           => 'eosinophils_absolute',
-		'eosinophils absolute'           => 'eosinophils_absolute',
-		'eos abs'                        => 'eosinophils_absolute',
-		'eosinophils (x10^3/ul)'         => 'eosinophils_absolute',
-		'basophils_absolute'             => 'basophils_absolute',
-		'basophils absolute'             => 'basophils_absolute',
-		'baso abs'                       => 'basophils_absolute',
-		'basophils (x10^3/ul)'           => 'basophils_absolute',
+		'neutrophils_absolute'        => 'neutrophils_absolute',
+		'neutrophils absolute'        => 'neutrophils_absolute',
+		'neut abs'                    => 'neutrophils_absolute',
+		'neutrophils (x10^3/ul)'      => 'neutrophils_absolute',
+		'lymphocytes_absolute'        => 'lymphocytes_absolute',
+		'lymphocytes absolute'        => 'lymphocytes_absolute',
+		'lymph abs'                   => 'lymphocytes_absolute',
+		'lymphocytes (x10^3/ul)'      => 'lymphocytes_absolute',
+		'monocytes_absolute'          => 'monocytes_absolute',
+		'monocytes absolute'          => 'monocytes_absolute',
+		'mono abs'                    => 'monocytes_absolute',
+		'monocytes (x10^3/ul)'        => 'monocytes_absolute',
+		'eosinophils_absolute'        => 'eosinophils_absolute',
+		'eosinophils absolute'        => 'eosinophils_absolute',
+		'eos abs'                     => 'eosinophils_absolute',
+		'eosinophils (x10^3/ul)'      => 'eosinophils_absolute',
+		'basophils_absolute'          => 'basophils_absolute',
+		'basophils absolute'          => 'basophils_absolute',
+		'baso abs'                    => 'basophils_absolute',
+		'basophils (x10^3/ul)'        => 'basophils_absolute',
 		// ── Extended BMP / CMP electrolytes ──────────────────────────────
-		'chloride'                       => 'chloride',
-		'cl-'                            => 'chloride',
-		'chloride (meq/l)'               => 'chloride',
-		'co2'                            => 'co2',
-		'bicarbonate'                    => 'co2',
-		'hco3'                           => 'co2',
-		'co2 (meq/l)'                    => 'co2',
-		'calcium'                        => 'calcium',
-		'ca'                             => 'calcium',
-		'calcium (mg/dl)'                => 'calcium',
-		'magnesium'                      => 'magnesium',
-		'mg'                             => 'magnesium',
-		'magnesium (mg/dl)'              => 'magnesium',
+		'chloride'                    => 'chloride',
+		'cl-'                         => 'chloride',
+		'chloride (meq/l)'            => 'chloride',
+		'co2'                         => 'co2',
+		'bicarbonate'                 => 'co2',
+		'hco3'                        => 'co2',
+		'co2 (meq/l)'                 => 'co2',
+		'calcium'                     => 'calcium',
+		'ca'                          => 'calcium',
+		'calcium (mg/dl)'             => 'calcium',
+		'magnesium'                   => 'magnesium',
+		'mg'                          => 'magnesium',
+		'magnesium (mg/dl)'           => 'magnesium',
 		// ── Liver function tests (LFT) ────────────────────────────────────
-		'bilirubin'                      => 'bilirubin',
-		'total bilirubin'                => 'bilirubin',
-		'tbili'                          => 'bilirubin',
-		'bilirubin (mg/dl)'              => 'bilirubin',
-		'ast'                            => 'ast',
-		'aspartate aminotransferase'     => 'ast',
-		'sgot'                           => 'ast',
-		'ast (u/l)'                      => 'ast',
-		'alt'                            => 'alt',
-		'alanine aminotransferase'       => 'alt',
-		'sgpt'                           => 'alt',
-		'alt (u/l)'                      => 'alt',
-		'total_protein'                  => 'total_protein',
-		'total protein'                  => 'total_protein',
-		'protein'                        => 'total_protein',
-		'total protein (g/dl)'           => 'total_protein',
+		'bilirubin'                   => 'bilirubin',
+		'total bilirubin'             => 'bilirubin',
+		'tbili'                       => 'bilirubin',
+		'bilirubin (mg/dl)'           => 'bilirubin',
+		'ast'                         => 'ast',
+		'aspartate aminotransferase'  => 'ast',
+		'sgot'                        => 'ast',
+		'ast (u/l)'                   => 'ast',
+		'alt'                         => 'alt',
+		'alanine aminotransferase'    => 'alt',
+		'sgpt'                        => 'alt',
+		'alt (u/l)'                   => 'alt',
+		'total_protein'               => 'total_protein',
+		'total protein'               => 'total_protein',
+		'protein'                     => 'total_protein',
+		'total protein (g/dl)'        => 'total_protein',
 	);
 
 	/**
@@ -376,23 +378,37 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'pii-data', 'hipaa-relevant', 'requires-capability' );
 	}
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$member_id = absint( $arguments['member_id'] ?? 0 );
 		if ( ! $member_id ) {
-			return array( 'success' => false, 'error' => __( 'member_id is required and must be a positive integer.', 'mcp-ai-wpoos-pro' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'member_id is required and must be a positive integer.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		// Verify the member post exists.
 		$member_post = get_post( $member_id );
 		if ( ! $member_post || 'mcp_ai_member' !== $member_post->post_type ) {
-			return array( 'success' => false, 'error' => sprintf( __( 'No mcp_ai_member found with ID %d.', 'mcp-ai-wpoos-pro' ), $member_id ) );
+			return array(
+				'success' => false,
+				'error'   => sprintf( __( 'No mcp_ai_member found with ID %d.', 'mcp-ai-wpoos-pro' ), $member_id ),
+			);
 		}
 
 		$data    = trim( $arguments['data'] ?? '' );
@@ -401,7 +417,10 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$dry_run = ! empty( $arguments['dry_run'] );
 
 		if ( '' === $data ) {
-			return array( 'success' => false, 'error' => __( 'data is required and cannot be empty.', 'mcp-ai-wpoos-pro' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'data is required and cannot be empty.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		// Parse rows according to format.
@@ -427,12 +446,12 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( empty( $rows ) ) {
 			return array(
-				'success'       => true,
-				'imported'      => 0,
-				'skipped'       => 0,
-				'dry_run'       => $dry_run,
-				'parse_errors'  => $errors,
-				'message'       => __( 'No valid vital-sign rows found in the supplied data.', 'mcp-ai-wpoos-pro' ),
+				'success'      => true,
+				'imported'     => 0,
+				'skipped'      => 0,
+				'dry_run'      => $dry_run,
+				'parse_errors' => $errors,
+				'message'      => __( 'No valid vital-sign rows found in the supplied data.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -466,7 +485,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			try {
 				$cct_data = array(
 					'measurement_date' => $row['measurement_date'] ?? gmdate( 'Y-m-d' ),
-					// Empty string (not '00:00') so the upsert can distinguish
+					// Empty string (not '00:00') so the upsert can distinguish.
 					// timed from untimed records and store them as separate rows.
 					'measurement_time' => isset( $row['measurement_time'] ) ? trim( (string) $row['measurement_time'] ) : '',
 					'source'           => ! empty( $row['source'] ) ? sanitize_text_field( $row['source'] ) : $source,
@@ -476,23 +495,54 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				);
 
 				if ( 'json' === $format ) {
-					// JSON rows already carry CCT field names directly — copy
+					// JSON rows already carry CCT field names directly — copy.
 					// numeric fields without going through the intermediate map.
 					$direct_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
 						? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
 						: array(
-							'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
-							'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
-							'respiratory_rate', 'egfr', 'creatinine', 'bun',
-							'potassium', 'sodium', 'phosphorus', 'albumin',
-							'hemoglobin', 'hematocrit', 'rbc', 'wbc', 'platelets',
-							'mcv', 'mch', 'mchc', 'rdw',
-							'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent',
-							'eosinophils_percent', 'basophils_percent',
-							'neutrophils_absolute', 'lymphocytes_absolute', 'monocytes_absolute',
-							'eosinophils_absolute', 'basophils_absolute',
-							'chloride', 'co2', 'calcium', 'magnesium',
-							'bilirubin', 'ast', 'alt', 'total_protein',
+							'bp_systolic',
+							'bp_diastolic',
+							'heart_rate',
+							'temperature',
+							'weight',
+							'bmi',
+							'blood_glucose',
+							'oxygen_saturation',
+							'respiratory_rate',
+							'egfr',
+							'creatinine',
+							'bun',
+							'potassium',
+							'sodium',
+							'phosphorus',
+							'albumin',
+							'hemoglobin',
+							'hematocrit',
+							'rbc',
+							'wbc',
+							'platelets',
+							'mcv',
+							'mch',
+							'mchc',
+							'rdw',
+							'neutrophils_percent',
+							'lymphocytes_percent',
+							'monocytes_percent',
+							'eosinophils_percent',
+							'basophils_percent',
+							'neutrophils_absolute',
+							'lymphocytes_absolute',
+							'monocytes_absolute',
+							'eosinophils_absolute',
+							'basophils_absolute',
+							'chloride',
+							'co2',
+							'calcium',
+							'magnesium',
+							'bilirubin',
+							'ast',
+							'alt',
+							'total_protein',
 						);
 
 					foreach ( $direct_fields as $field ) {
@@ -667,18 +717,49 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$numeric_cct_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
 			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
 			: array(
-				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
-				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
-				'respiratory_rate', 'egfr', 'creatinine', 'bun',
-				'potassium', 'sodium', 'phosphorus', 'albumin',
-				'hemoglobin', 'hematocrit', 'rbc', 'wbc', 'platelets',
-				'mcv', 'mch', 'mchc', 'rdw',
-				'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent',
-				'eosinophils_percent', 'basophils_percent',
-				'neutrophils_absolute', 'lymphocytes_absolute', 'monocytes_absolute',
-				'eosinophils_absolute', 'basophils_absolute',
-				'chloride', 'co2', 'calcium', 'magnesium',
-				'bilirubin', 'ast', 'alt', 'total_protein',
+				'bp_systolic',
+				'bp_diastolic',
+				'heart_rate',
+				'temperature',
+				'weight',
+				'bmi',
+				'blood_glucose',
+				'oxygen_saturation',
+				'respiratory_rate',
+				'egfr',
+				'creatinine',
+				'bun',
+				'potassium',
+				'sodium',
+				'phosphorus',
+				'albumin',
+				'hemoglobin',
+				'hematocrit',
+				'rbc',
+				'wbc',
+				'platelets',
+				'mcv',
+				'mch',
+				'mchc',
+				'rdw',
+				'neutrophils_percent',
+				'lymphocytes_percent',
+				'monocytes_percent',
+				'eosinophils_percent',
+				'basophils_percent',
+				'neutrophils_absolute',
+				'lymphocytes_absolute',
+				'monocytes_absolute',
+				'eosinophils_absolute',
+				'basophils_absolute',
+				'chloride',
+				'co2',
+				'calcium',
+				'magnesium',
+				'bilirubin',
+				'ast',
+				'alt',
+				'total_protein',
 			);
 
 		$allowed_text_fields = array( 'measurement_date', 'measurement_time', 'source', 'notes', 'temperature_unit', 'weight_unit' );
@@ -798,8 +879,8 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Map a single FHIR Observation to a row array.
 	 *
-	 * @param array  $obs       Decoded Observation resource.
-	 * @param int    $obs_index Zero-based index (for error messages).
+	 * @param array $obs       Decoded Observation resource.
+	 * @param int   $obs_index Zero-based index (for error messages).
 	 * @param array &$errors    Accumulator for non-fatal parse warnings.
 	 * @return array|false Row array or false if the observation could not be mapped.
 	 */
@@ -838,7 +919,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					}
 				}
 			}
-			return $row ?: false;
+			return $row ? $row : false;
 		}
 
 		// ── Single-value observations ─────────────────────────────────────
@@ -881,7 +962,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			}
 		}
 
-		return $row ?: false;
+		return $row ? $row : false;
 	}
 
 	/**
@@ -896,7 +977,10 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$lines = explode( "\n", $csv );
 
 		if ( empty( $lines ) ) {
-			return array( 'success' => false, 'error' => __( 'CSV data is empty.', 'mcp-ai-wpoos-pro' ) );
+			return array(
+				'success' => false,
+				'error'   => __( 'CSV data is empty.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		// Parse header row.

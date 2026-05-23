@@ -128,14 +128,14 @@ class WP_MCP_AI_Jukebox_Service {
 	 *
 	 * @param string $prompt  Text description including optional artist, genre, and lyrics.
 	 * @param array  $options Optional configuration.
-	 *                        - model: string (1b_lyrics, 5b, 5b_lyrics, default: 5b_lyrics)
+	 *                        - model: string (1b_lyrics, 5b, 5b_lyrics, default: 5b_lyrics).
 	 *                        - sample_length: int (seconds, default 20, max 60)
 	 *                        - temperature: float (0.0-1.0, default 0.98)
 	 *                        - artist: string (optional artist style to emulate)
 	 *                        - genre: string (optional genre specification)
 	 *                        - lyrics: string (optional lyrics to sing)
 	 *                        - total_sample_length_in_seconds: int (override for sample length)
-	 *                        - output_path: string (custom output directory)
+	 *                        - output_path: string (custom output directory).
 	 *
 	 * @return array|WP_Error Array with audio data or WP_Error on failure.
 	 *                        Success array contains:

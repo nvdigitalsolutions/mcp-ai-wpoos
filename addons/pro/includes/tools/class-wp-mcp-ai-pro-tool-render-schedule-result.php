@@ -52,22 +52,22 @@ class WP_MCP_AI_Pro_Tool_Render_Schedule_Result implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'schedule_id'   => array(
+				'schedule_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'ID of the schedule to render.', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 				),
-				'render_mode'   => array(
+				'render_mode'    => array(
 					'type'        => 'string',
 					'enum'        => array( 'summary-card', 'list', 'table', 'metric', 'timeline', 'raw' ),
 					'default'     => 'summary-card',
 					'description' => __( 'Render mode.', 'mcp-ai-wpoos-pro' ),
 				),
-				'title'         => array(
+				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional override for the tile title.', 'mcp-ai-wpoos-pro' ),
 				),
-				'show_last_run' => array(
+				'show_last_run'  => array(
 					'type'        => 'boolean',
 					'default'     => true,
 					'description' => __( 'Whether to show the last-run timestamp.', 'mcp-ai-wpoos-pro' ),
@@ -85,10 +85,28 @@ class WP_MCP_AI_Pro_Tool_Render_Schedule_Result implements WP_MCP_AI_Tool_Interf
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id     = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
 		$schedule_id = isset( $arguments['schedule_id'] ) ? sanitize_text_field( $arguments['schedule_id'] ) : '';

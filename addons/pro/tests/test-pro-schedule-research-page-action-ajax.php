@@ -33,10 +33,10 @@ class Test_Pro_Schedule_Research_Page_Action_Ajax extends WP_Ajax_UnitTestCase {
 	protected function dispatch( $action ) {
 		try {
 			$this->_handleAjax( $action );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// fall through
-		} catch ( WPAjaxDieStopException $e ) {
-			// fall through
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// fall through. -- phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch.
 		}
 		return json_decode( $this->_last_response, true );
 	}

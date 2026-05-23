@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 			$event_date = get_post_meta( $booking_id, '_event_date', true );
 			$start_time = get_post_meta( $booking_id, '_start_time', true );
 			$end_time   = get_post_meta( $booking_id, '_end_time', true );
-			if ( ! $event_type || $event_type === 'other' ) {
+			if ( ! $event_type || 'other' === $event_type ) {
 				$event_type = get_post_meta( $booking_id, '_event_type', true );
 			}
 		} else {
@@ -140,6 +140,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 		$timeline = array();
 
 		// Calculate setup time.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$setup_time = date( 'H:i', strtotime( $start_time ) - ( $setup_duration * 60 ) );
 		$timeline[] = array(
 			'time'     => $setup_time,
@@ -167,6 +168,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 			'type'     => 'breakdown',
 		);
 
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$departure_time = date( 'H:i', strtotime( $end_time ) + ( $breakdown_duration * 60 ) );
 		$timeline[]     = array(
 			'time'     => $departure_time,
@@ -215,14 +217,17 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 					'type'     => 'performance',
 				);
 				$timeline[] = array(
+					// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 					'time'     => date( 'H:i', strtotime( $start_time ) + 3600 ),
 					'activity' => __( 'Grand entrance and first dance', 'mcp-ai-wpoos-pro' ),
 					'duration' => 30,
 					'type'     => 'performance',
 				);
 				$timeline[] = array(
+					// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 					'time'     => date( 'H:i', strtotime( $start_time ) + 5400 ),
 					'activity' => __( 'Open dancing', 'mcp-ai-wpoos-pro' ),
+					// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 					'duration' => $this->calculate_duration( date( 'H:i', strtotime( $start_time ) + 5400 ), $end_time ),
 					'type'     => 'performance',
 				);
@@ -236,8 +241,10 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 					'type'     => 'performance',
 				);
 				$timeline[] = array(
+					// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 					'time'     => date( 'H:i', strtotime( $start_time ) + 5400 ),
 					'activity' => __( 'Upbeat music and dancing', 'mcp-ai-wpoos-pro' ),
+					// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 					'duration' => $this->calculate_duration( date( 'H:i', strtotime( $start_time ) + 5400 ), $end_time ),
 					'type'     => 'performance',
 				);

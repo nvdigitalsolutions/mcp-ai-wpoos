@@ -389,7 +389,7 @@ class Test_Shopify_Connection_Resolver extends WP_UnitTestCase {
 			'api_key'          => 'shpat_disabled_token_test',
 			'enabled'          => false,
 		);
-		$disabled_id     = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $disabled_data );
+		$disabled_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $disabled_data );
 
 		// Enable it for assistant.
 		update_post_meta(

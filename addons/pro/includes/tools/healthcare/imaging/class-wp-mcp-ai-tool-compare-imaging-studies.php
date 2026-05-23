@@ -64,9 +64,9 @@ class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'prior_study_id'   => array( 'type' => 'integer' ),
-				'current_study_id' => array( 'type' => 'integer' ),
-				'prior_study_uid'  => array( 'type' => 'string' ),
+				'prior_study_id'    => array( 'type' => 'integer' ),
+				'current_study_id'  => array( 'type' => 'integer' ),
+				'prior_study_uid'   => array( 'type' => 'string' ),
 				'current_study_uid' => array( 'type' => 'string' ),
 			),
 		);
@@ -112,11 +112,11 @@ class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface
 		$current_summary = $this->summarize_study( $current );
 
 		$diff = array(
-			'modality_changed'    => $prior_summary['modality'] !== $current_summary['modality'],
-			'study_date_changed'  => $prior_summary['study_date'] !== $current_summary['study_date'],
-			'series_count_delta'  => $current_summary['series_count'] - $prior_summary['series_count'],
+			'modality_changed'     => $prior_summary['modality'] !== $current_summary['modality'],
+			'study_date_changed'   => $prior_summary['study_date'] !== $current_summary['study_date'],
+			'series_count_delta'   => $current_summary['series_count'] - $prior_summary['series_count'],
 			'instance_count_delta' => $current_summary['instance_count'] - $prior_summary['instance_count'],
-			'description_changed' => $prior_summary['description'] !== $current_summary['description'],
+			'description_changed'  => $prior_summary['description'] !== $current_summary['description'],
 		);
 
 		// Compute days between studies, when both dates parse.
@@ -208,14 +208,14 @@ class WP_MCP_AI_Tool_Compare_Imaging_Studies implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'study_id'        => (int) $study->ID,
-			'study_uid'       => (string) get_post_meta( $study->ID, '_imaging_study_instance_uid', true ),
-			'modality'        => (string) get_post_meta( $study->ID, '_imaging_modality', true ),
-			'study_date'      => (string) get_post_meta( $study->ID, '_imaging_study_date', true ),
-			'description'     => (string) get_post_meta( $study->ID, '_imaging_study_description', true ),
-			'series_count'    => count( $series ),
-			'instance_count'  => $instance_count,
-			'report_count'    => count( $report_ids ),
+			'study_id'         => (int) $study->ID,
+			'study_uid'        => (string) get_post_meta( $study->ID, '_imaging_study_instance_uid', true ),
+			'modality'         => (string) get_post_meta( $study->ID, '_imaging_modality', true ),
+			'study_date'       => (string) get_post_meta( $study->ID, '_imaging_study_date', true ),
+			'description'      => (string) get_post_meta( $study->ID, '_imaging_study_description', true ),
+			'series_count'     => count( $series ),
+			'instance_count'   => $instance_count,
+			'report_count'     => count( $report_ids ),
 			'first_impression' => $impression,
 		);
 	}

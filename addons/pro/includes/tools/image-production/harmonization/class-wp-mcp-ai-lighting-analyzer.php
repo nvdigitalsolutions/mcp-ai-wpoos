@@ -46,7 +46,7 @@ class WP_MCP_AI_Lighting_Analyzer {
 	 * Analyze the lighting of an image file.
 	 *
 	 * @param string $image_path Absolute path to the image.
-	 * @param array  $opts       Optional analysis settings. Supports
+	 * @param array  $opts       Optional analysis settings. Supports.
 	 *                           'allow_ai_escalation' (bool) to escalate to AI
 	 *                           vision when heuristic confidence is low.
 	 *
@@ -70,7 +70,7 @@ class WP_MCP_AI_Lighting_Analyzer {
 			return $result;
 		}
 
-		// Optional AI escalation hook (kept lightweight - just a filter,
+		// Optional AI escalation hook (kept lightweight - just a filter,.
 		// callers can wire in a Gemini/OpenAI vision call if they want it).
 		$allow = ! empty( $opts['allow_ai_escalation'] );
 		if ( $allow && $result['confidence'] < $this->low_confidence_threshold ) {

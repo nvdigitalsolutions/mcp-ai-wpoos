@@ -61,15 +61,15 @@ class WP_MCP_AI_JetEngine_CPT_Research_Add extends WP_MCP_AI_Research_Add_Base {
 		}
 
 		// Set properties from CPT data.
-		$this->post_type   = $cpt_slug;
-		$this->page_title  = sprintf(
+		$this->post_type  = $cpt_slug;
+		$this->page_title = sprintf(
 			/* translators: %s: CPT name */
 			__( '%s - Research & Add', 'mcp-ai-wpoos-pro' ),
 			$this->get_cpt_name()
 		);
-		$this->menu_title  = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
-		$this->page_slug   = 'wp-mcp-ai-jetengine-research-' . $cpt_slug;
-		$this->capability  = 'edit_posts';
+		$this->menu_title = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
+		$this->page_slug  = 'wp-mcp-ai-jetengine-research-' . $cpt_slug;
+		$this->capability = 'edit_posts';
 
 		// Initialize parent with dynamic toolkit slug.
 		parent::__construct( 'jetengine_cpt_' . $cpt_slug );
@@ -242,23 +242,23 @@ class WP_MCP_AI_JetEngine_CPT_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	 */
 	private function map_jetengine_field_type( $jetengine_type ) {
 		$type_map = array(
-			'text'         => 'text',
-			'textarea'     => 'textarea',
-			'wysiwyg'      => 'wysiwyg',
-			'number'       => 'number',
-			'date'         => 'date',
-			'time'         => 'time',
-			'datetime'     => 'datetime-local',
-			'checkbox'     => 'checkbox',
-			'radio'        => 'radio',
-			'select'       => 'select',
-			'media'        => 'media',
-			'gallery'      => 'gallery',
-			'repeater'     => 'repeater',
-			'iconpicker'   => 'text',
-			'colorpicker'  => 'colorpicker',
-			'posts'        => 'select',
-			'html'         => 'wysiwyg',
+			'text'        => 'text',
+			'textarea'    => 'textarea',
+			'wysiwyg'     => 'wysiwyg',
+			'number'      => 'number',
+			'date'        => 'date',
+			'time'        => 'time',
+			'datetime'    => 'datetime-local',
+			'checkbox'    => 'checkbox',
+			'radio'       => 'radio',
+			'select'      => 'select',
+			'media'       => 'media',
+			'gallery'     => 'gallery',
+			'repeater'    => 'repeater',
+			'iconpicker'  => 'text',
+			'colorpicker' => 'colorpicker',
+			'posts'       => 'select',
+			'html'        => 'wysiwyg',
 		);
 
 		return isset( $type_map[ $jetengine_type ] ) ? $type_map[ $jetengine_type ] : 'text';

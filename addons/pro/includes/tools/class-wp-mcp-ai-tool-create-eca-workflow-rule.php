@@ -230,8 +230,8 @@ class WP_MCP_AI_Tool_Create_ECA_Workflow_Rule implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Sanitize optional conditions.
-		$conditions           = array();
-		$conditions_raw       = isset( $arguments['conditions'] ) && is_array( $arguments['conditions'] ) ? $arguments['conditions'] : array();
+		$conditions     = array();
+		$conditions_raw = isset( $arguments['conditions'] ) && is_array( $arguments['conditions'] ) ? $arguments['conditions'] : array();
 		if ( ! empty( $conditions_raw ) ) {
 			if ( isset( $conditions_raw['eca_type'] ) ) {
 				$conditions['eca_type'] = sanitize_key( $conditions_raw['eca_type'] );

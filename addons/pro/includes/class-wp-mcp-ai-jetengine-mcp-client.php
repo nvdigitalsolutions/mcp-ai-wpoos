@@ -97,14 +97,17 @@ class WP_MCP_AI_JetEngine_MCP_Client {
 			}
 		}
 
-		$result = $this->send_request( 'initialize', array(
-			'protocolVersion' => '2024-11-05',
-			'capabilities'    => new \stdClass(),
-			'clientInfo'      => array(
-				'name'    => 'NV oOS MCP AI',
-				'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '2.1.0',
-			),
-		) );
+		$result = $this->send_request(
+			'initialize',
+			array(
+				'protocolVersion' => '2024-11-05',
+				'capabilities'    => new \stdClass(),
+				'clientInfo'      => array(
+					'name'    => 'NV oOS MCP AI',
+					'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '2.1.0',
+				),
+			)
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -159,10 +162,13 @@ class WP_MCP_AI_JetEngine_MCP_Client {
 			);
 		}
 
-		return $this->send_request( 'tools/call', array(
-			'name'      => sanitize_text_field( $name ),
-			'arguments' => ! empty( $arguments ) ? $arguments : new \stdClass(),
-		) );
+		return $this->send_request(
+			'tools/call',
+			array(
+				'name'      => sanitize_text_field( $name ),
+				'arguments' => ! empty( $arguments ) ? $arguments : new \stdClass(),
+			)
+		);
 	}
 
 	/**
@@ -236,10 +242,13 @@ class WP_MCP_AI_JetEngine_MCP_Client {
 			);
 		}
 
-		return $this->send_request( 'prompts/get', array(
-			'name'      => sanitize_text_field( $name ),
-			'arguments' => ! empty( $arguments ) ? $arguments : new \stdClass(),
-		) );
+		return $this->send_request(
+			'prompts/get',
+			array(
+				'name'      => sanitize_text_field( $name ),
+				'arguments' => ! empty( $arguments ) ? $arguments : new \stdClass(),
+			)
+		);
 	}
 
 	/**

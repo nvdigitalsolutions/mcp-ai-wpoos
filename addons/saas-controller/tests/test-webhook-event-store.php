@@ -6,10 +6,17 @@
  */
 
 /**
+ * Tests for webhook event storage and retrieval.
+ *
  * @covers NVOOS_SaaS_Controller_Webhook_Event_Store
  */
 class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 
+	/**
+	 * Set up test.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( NVOOS_SaaS_Controller_Webhook_Event_Store::OPTION );
@@ -17,6 +24,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		remove_all_filters( 'nvoos_saas_controller_webhook_events_max_entries' );
 	}
 
+	/**
+	 * Tear down test.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		delete_option( NVOOS_SaaS_Controller_Webhook_Event_Store::OPTION );
 		NVOOS_SaaS_Controller_Webhook_Event_Store::reset_for_tests();
@@ -24,6 +36,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * Test that record persists a sanitised entry.
+	 *
+	 * @return void
+	 */
 	public function test_record_persists_sanitised_entry() {
 		$store = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		$entry = $store->record(
@@ -45,6 +62,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0, $entry['ts'] );
 	}
 
+	/**
+	 * Test that record rejects an unknown provider.
+	 *
+	 * @return void
+	 */
 	public function test_record_rejects_unknown_provider() {
 		$store  = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		$result = $store->record(
@@ -57,6 +79,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertSame( 0, $store->count() );
 	}
 
+	/**
+	 * Test that record rejects a missing event ID.
+	 *
+	 * @return void
+	 */
 	public function test_record_rejects_missing_event_id() {
 		$store  = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		$result = $store->record(
@@ -69,6 +96,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertSame( 0, $store->count() );
 	}
 
+	/**
+	 * Test that record is idempotent by event ID.
+	 *
+	 * @return void
+	 */
 	public function test_record_is_idempotent_by_event_id() {
 		$store = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		$store->record(
@@ -95,6 +127,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertSame( 1, $store->count() );
 	}
 
+	/**
+	 * Test that find_by_event_id returns an existing entry.
+	 *
+	 * @return void
+	 */
 	public function test_find_by_event_id_returns_existing_entry() {
 		$store = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		$store->record(
@@ -110,6 +147,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertNull( $store->find_by_event_id( 'stripe', 'evt_missing' ) );
 	}
 
+	/**
+	 * Test that get_recent returns newest entries first.
+	 *
+	 * @return void
+	 */
 	public function test_get_recent_returns_newest_first() {
 		$store = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		for ( $i = 1; $i <= 3; $i++ ) {
@@ -128,6 +170,11 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertSame( 'evt_1', $recent[2]['event_id'] );
 	}
 
+	/**
+	 * Test that the ring buffer caps at the filtered max.
+	 *
+	 * @return void
+	 */
 	public function test_ring_buffer_caps_at_filtered_max() {
 		add_filter(
 			'nvoos_saas_controller_webhook_events_max_entries',
@@ -151,14 +198,29 @@ class Test_NVOOS_SaaS_Controller_Webhook_Event_Store extends WP_UnitTestCase {
 		$this->assertNotNull( $store->find_by_event_id( 'stripe', 'evt_5' ) );
 	}
 
+	/**
+	 * Test that clear empties the store.
+	 *
+	 * @return void
+	 */
 	public function test_clear_empties_the_store() {
 		$store = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
-		$store->record( array( 'provider' => 'stripe', 'event_id' => 'evt_x' ) );
+		$store->record(
+			array(
+				'provider' => 'stripe',
+				'event_id' => 'evt_x',
+			)
+		);
 		$this->assertSame( 1, $store->count() );
 		$store->clear();
 		$this->assertSame( 0, $store->count() );
 	}
 
+	/**
+	 * Test that the message field is capped at 512 chars.
+	 *
+	 * @return void
+	 */
 	public function test_message_field_is_capped_at_512_chars() {
 		$store = NVOOS_SaaS_Controller_Webhook_Event_Store::instance();
 		$entry = $store->record(

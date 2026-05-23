@@ -128,6 +128,9 @@ class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -217,9 +220,9 @@ class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Inter
 				$exhibit_number
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'evidence_id'  => $evidence_id,
-				'entry'        => $entry,
-				'total_items'  => count( $catalog ),
+				'evidence_id' => $evidence_id,
+				'entry'       => $entry,
+				'total_items' => count( $catalog ),
 			),
 			'disclaimer' => self::DISCLAIMER,
 		);
@@ -235,7 +238,7 @@ class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Inter
 	private function handle_list( int $matter_id, array $catalog ) {
 		$type_counts = array();
 		foreach ( $catalog as $item ) {
-			$t = $item['evidence_type'] ?? 'unknown';
+			$t                 = $item['evidence_type'] ?? 'unknown';
 			$type_counts[ $t ] = ( $type_counts[ $t ] ?? 0 ) + 1;
 		}
 
@@ -282,8 +285,8 @@ class WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager implements WP_MCP_AI_Tool_Inter
 					}
 				}
 				$item['date_modified'] = current_time( 'Y-m-d H:i:s' );
-				$found        = true;
-				$updated_item = $item;
+				$found                 = true;
+				$updated_item          = $item;
 				break;
 			}
 		}

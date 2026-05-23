@@ -191,10 +191,12 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	// ------------------------------------------------------------------ //
-	// Private operation handlers                                           //
+	// Private operation handlers                                           //.
 	// ------------------------------------------------------------------ //
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git status — working-tree summary.
 	 *
 	 * @param array $options Extra flags.
@@ -205,7 +207,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$result = $this->exec_git( 'git --no-pager status ' . $opts );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_status_failed', $result['output'] ?: __( 'git status failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_status_failed', $result['output'] ? $result['output'] : __( 'git status failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -218,6 +220,8 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git diff — show changes for a file or commit.
 	 *
 	 * @param string $file_path   Optional file path.
@@ -240,7 +244,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$result = $this->exec_git( $cmd );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_diff_failed', $result['output'] ?: __( 'git diff failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_diff_failed', $result['output'] ? $result['output'] : __( 'git diff failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -255,6 +259,8 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git log — commit history.
 	 *
 	 * @param int    $limit     Maximum commits.
@@ -274,7 +280,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$result = $this->exec_git( $cmd );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_log_failed', $result['output'] ?: __( 'git log failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_log_failed', $result['output'] ? $result['output'] : __( 'git log failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -289,6 +295,8 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git show — inspect a commit (defaults to HEAD).
 	 *
 	 * @param string $commit_hash Commit hash or empty for HEAD.
@@ -308,7 +316,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$result = $this->exec_git( $cmd );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_show_failed', $result['output'] ?: __( 'git show failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_show_failed', $result['output'] ? $result['output'] : __( 'git show failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -323,6 +331,8 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git blame — line-level history for a file.
 	 *
 	 * @param string $file_path File path (required).
@@ -338,7 +348,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$result = $this->exec_git( 'git --no-pager blame ' . $opts . ' ' . escapeshellarg( $file_path ) );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_blame_failed', $result['output'] ?: __( 'git blame failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_blame_failed', $result['output'] ? $result['output'] : __( 'git blame failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -352,6 +362,8 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git branch — list or create branches.
 	 *
 	 * @param string $branch_name Optional branch name to create.
@@ -369,7 +381,7 @@ class WP_MCP_AI_Tool_Git_Inspect implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$result = $this->exec_git( $cmd );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_branch_failed', $result['output'] ?: __( 'git branch failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_branch_failed', $result['output'] ? $result['output'] : __( 'git branch failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(

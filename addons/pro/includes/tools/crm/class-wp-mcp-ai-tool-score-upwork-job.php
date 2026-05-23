@@ -143,10 +143,22 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'object',
 					'description' => __( 'Weights for scoring dimensions (each 0-1, should sum to 1).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'budget_weight'         => array( 'type' => 'number', 'default' => 0.3 ),
-						'skill_match_weight'    => array( 'type' => 'number', 'default' => 0.3 ),
-						'client_quality_weight' => array( 'type' => 'number', 'default' => 0.2 ),
-						'competition_weight'    => array( 'type' => 'number', 'default' => 0.2 ),
+						'budget_weight'         => array(
+							'type'    => 'number',
+							'default' => 0.3,
+						),
+						'skill_match_weight'    => array(
+							'type'    => 'number',
+							'default' => 0.3,
+						),
+						'client_quality_weight' => array(
+							'type'    => 'number',
+							'default' => 0.2,
+						),
+						'competition_weight'    => array(
+							'type'    => 'number',
+							'default' => 0.2,
+						),
 					),
 				),
 			),
@@ -221,7 +233,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'marketPlaceJobFilter' => array(
 				'jobIds' => array( $job_id ),
 			),
-			'paging' => array( 'first' => 1 ),
+			'paging'               => array( 'first' => 1 ),
 		);
 
 		$result = $client->graphql( self::JOB_QUERY, $variables );
@@ -260,10 +272,10 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			? $arguments['scoring_criteria']
 			: array();
 
-		$w_budget      = isset( $criteria['budget_weight'] )         ? (float) $criteria['budget_weight']         : 0.3;
-		$w_skill       = isset( $criteria['skill_match_weight'] )    ? (float) $criteria['skill_match_weight']    : 0.3;
+		$w_budget      = isset( $criteria['budget_weight'] ) ? (float) $criteria['budget_weight'] : 0.3;
+		$w_skill       = isset( $criteria['skill_match_weight'] ) ? (float) $criteria['skill_match_weight'] : 0.3;
 		$w_client      = isset( $criteria['client_quality_weight'] ) ? (float) $criteria['client_quality_weight'] : 0.2;
-		$w_competition = isset( $criteria['competition_weight'] )    ? (float) $criteria['competition_weight']    : 0.2;
+		$w_competition = isset( $criteria['competition_weight'] ) ? (float) $criteria['competition_weight'] : 0.2;
 
 		// Clamp weights to [0, 1].
 		$w_budget      = max( 0.0, min( 1.0, $w_budget ) );
@@ -426,7 +438,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// ---------- Weighted overall score ----------
-		$total_weight  = $w_budget + $w_skill + $w_client + $w_competition;
+		$total_weight = $w_budget + $w_skill + $w_client + $w_competition;
 		if ( $total_weight <= 0 ) {
 			$total_weight = 1.0;
 		}
@@ -471,10 +483,26 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'overall_score'  => $overall_score,
 			'recommendation' => $recommendation,
 			'breakdown'      => array(
-				'budget'      => array( 'score' => $budget_score,      'weight' => $w_budget,      'detail' => $budget_detail ),
-				'skill_match' => array( 'score' => $skill_score,       'weight' => $w_skill,       'detail' => $skill_detail ),
-				'client'      => array( 'score' => $client_score,      'weight' => $w_client,      'detail' => $client_detail ),
-				'competition' => array( 'score' => $competition_score, 'weight' => $w_competition, 'detail' => $competition_detail ),
+				'budget'      => array(
+					'score'  => $budget_score,
+					'weight' => $w_budget,
+					'detail' => $budget_detail,
+				),
+				'skill_match' => array(
+					'score'  => $skill_score,
+					'weight' => $w_skill,
+					'detail' => $skill_detail,
+				),
+				'client'      => array(
+					'score'  => $client_score,
+					'weight' => $w_client,
+					'detail' => $client_detail,
+				),
+				'competition' => array(
+					'score'  => $competition_score,
+					'weight' => $w_competition,
+					'detail' => $competition_detail,
+				),
 			),
 			'reasoning'      => implode( ' ', $reasons ),
 			'job_skills'     => $job_skills,
@@ -543,10 +571,10 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			? $arguments['scoring_criteria']
 			: array();
 
-		$w_budget      = isset( $criteria['budget_weight'] )         ? max( 0.0, min( 1.0, (float) $criteria['budget_weight'] ) )         : 0.3;
-		$w_skill       = isset( $criteria['skill_match_weight'] )    ? max( 0.0, min( 1.0, (float) $criteria['skill_match_weight'] ) )    : 0.3;
+		$w_budget      = isset( $criteria['budget_weight'] ) ? max( 0.0, min( 1.0, (float) $criteria['budget_weight'] ) ) : 0.3;
+		$w_skill       = isset( $criteria['skill_match_weight'] ) ? max( 0.0, min( 1.0, (float) $criteria['skill_match_weight'] ) ) : 0.3;
 		$w_client      = isset( $criteria['client_quality_weight'] ) ? max( 0.0, min( 1.0, (float) $criteria['client_quality_weight'] ) ) : 0.2;
-		$w_competition = isset( $criteria['competition_weight'] )    ? max( 0.0, min( 1.0, (float) $criteria['competition_weight'] ) )    : 0.2;
+		$w_competition = isset( $criteria['competition_weight'] ) ? max( 0.0, min( 1.0, (float) $criteria['competition_weight'] ) ) : 0.2;
 
 		// ---------- Budget score (from provided amount) ----------
 		$budget_score  = 0;
@@ -584,8 +612,8 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( ! empty( $job_skills ) && ! empty( $freelancer_skills ) ) {
-			$matched   = array_intersect( $freelancer_skills, $job_skills );
-			$match_pct = count( $matched ) / count( $job_skills );
+			$matched      = array_intersect( $freelancer_skills, $job_skills );
+			$match_pct    = count( $matched ) / count( $job_skills );
 			$skill_score  = (int) round( min( 1.0, $match_pct * 1.5 ) * 100 );
 			$skill_detail = sprintf(
 				/* translators: 1: matched count, 2: total required */
@@ -648,10 +676,26 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'overall_score'  => $overall_score,
 			'recommendation' => $recommendation,
 			'breakdown'      => array(
-				'budget'      => array( 'score' => $budget_score,      'weight' => $w_budget,      'detail' => $budget_detail ),
-				'skill_match' => array( 'score' => $skill_score,       'weight' => $w_skill,       'detail' => $skill_detail ),
-				'client'      => array( 'score' => $client_score,      'weight' => $w_client,      'detail' => $client_detail ),
-				'competition' => array( 'score' => $competition_score, 'weight' => $w_competition, 'detail' => $competition_detail ),
+				'budget'      => array(
+					'score'  => $budget_score,
+					'weight' => $w_budget,
+					'detail' => $budget_detail,
+				),
+				'skill_match' => array(
+					'score'  => $skill_score,
+					'weight' => $w_skill,
+					'detail' => $skill_detail,
+				),
+				'client'      => array(
+					'score'  => $client_score,
+					'weight' => $w_client,
+					'detail' => $client_detail,
+				),
+				'competition' => array(
+					'score'  => $competition_score,
+					'weight' => $w_competition,
+					'detail' => $competition_detail,
+				),
 			),
 			'reasoning'      => implode( ' ', $reasons ),
 			'job_skills'     => $job_skills,

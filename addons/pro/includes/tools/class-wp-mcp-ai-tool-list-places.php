@@ -135,6 +135,11 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -319,18 +324,18 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'description'        => get_the_content(),
 			'type'               => ! empty( $types ) ? $types[0] : '',
 			'tags'               => $tags,
-			'address'            => get_post_meta( $place_id, '_place_address', true ) ?: '',
+			'address'            => get_post_meta( $place_id, '_place_address', true ) ? get_post_meta( $place_id, '_place_address', true ) : '',
 			'latitude'           => (float) get_post_meta( $place_id, '_place_latitude', true ),
 			'longitude'          => (float) get_post_meta( $place_id, '_place_longitude', true ),
-			'phone'              => get_post_meta( $place_id, '_place_phone', true ) ?: '',
-			'email'              => get_post_meta( $place_id, '_place_email', true ) ?: '',
-			'website'            => get_post_meta( $place_id, '_place_website', true ) ?: '',
+			'phone'              => get_post_meta( $place_id, '_place_phone', true ) ? get_post_meta( $place_id, '_place_phone', true ) : '',
+			'email'              => get_post_meta( $place_id, '_place_email', true ) ? get_post_meta( $place_id, '_place_email', true ) : '',
+			'website'            => get_post_meta( $place_id, '_place_website', true ) ? get_post_meta( $place_id, '_place_website', true ) : '',
 			'rating'             => (float) get_post_meta( $place_id, '_place_rating', true ),
 			'price_level'        => (int) get_post_meta( $place_id, '_place_price_level', true ),
-			'business_hours'     => get_post_meta( $place_id, '_place_business_hours', true ) ?: array(),
-			'amenities'          => get_post_meta( $place_id, '_place_amenities', true ) ?: array(),
-			'google_place_id'    => get_post_meta( $place_id, '_place_google_place_id', true ) ?: '',
-			'address_components' => get_post_meta( $place_id, '_place_address_components', true ) ?: array(),
+			'business_hours'     => get_post_meta( $place_id, '_place_business_hours', true ) ? get_post_meta( $place_id, '_place_business_hours', true ) : array(),
+			'amenities'          => get_post_meta( $place_id, '_place_amenities', true ) ? get_post_meta( $place_id, '_place_amenities', true ) : array(),
+			'google_place_id'    => get_post_meta( $place_id, '_place_google_place_id', true ) ? get_post_meta( $place_id, '_place_google_place_id', true ) : '',
+			'address_components' => get_post_meta( $place_id, '_place_address_components', true ) ? get_post_meta( $place_id, '_place_address_components', true ) : array(),
 			'created_at'         => get_the_date( 'c' ),
 			'updated_at'         => get_the_modified_date( 'c' ),
 		);

@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 /**
  * Tests for Shopify Smart Search progressive query relaxation.
  *
@@ -7,6 +8,8 @@
 
 /**
  * Concrete class that uses the trait so we can unit-test its methods directly.
+ *
+ * @phpcs:ignore Universal.Files.OneObjectStructurePerFile.MultipleFound
  */
 class Smart_Search_Test_Helper {
 	use WP_MCP_AI_Shopify_Smart_Search;
@@ -256,16 +259,34 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	 */
 	public function test_merge_ranks_by_frequency() {
 		$set1 = array(
-			array( 'id' => 'A', 'title' => 'Product A' ),
-			array( 'id' => 'B', 'title' => 'Product B' ),
+			array(
+				'id'    => 'A',
+				'title' => 'Product A',
+			),
+			array(
+				'id'    => 'B',
+				'title' => 'Product B',
+			),
 		);
 		$set2 = array(
-			array( 'id' => 'B', 'title' => 'Product B' ),
-			array( 'id' => 'C', 'title' => 'Product C' ),
+			array(
+				'id'    => 'B',
+				'title' => 'Product B',
+			),
+			array(
+				'id'    => 'C',
+				'title' => 'Product C',
+			),
 		);
 		$set3 = array(
-			array( 'id' => 'B', 'title' => 'Product B' ),
-			array( 'id' => 'A', 'title' => 'Product A' ),
+			array(
+				'id'    => 'B',
+				'title' => 'Product B',
+			),
+			array(
+				'id'    => 'A',
+				'title' => 'Product A',
+			),
 		);
 
 		$merged = $this->helper->test_merge_and_rank(
@@ -288,9 +309,18 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	 */
 	public function test_merge_respects_limit() {
 		$set1 = array(
-			array( 'id' => 'A', 'title' => 'Product A' ),
-			array( 'id' => 'B', 'title' => 'Product B' ),
-			array( 'id' => 'C', 'title' => 'Product C' ),
+			array(
+				'id'    => 'A',
+				'title' => 'Product A',
+			),
+			array(
+				'id'    => 'B',
+				'title' => 'Product B',
+			),
+			array(
+				'id'    => 'C',
+				'title' => 'Product C',
+			),
 		);
 
 		$merged = $this->helper->test_merge_and_rank(
@@ -309,8 +339,14 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	 */
 	public function test_merge_skips_empty_ids() {
 		$set1 = array(
-			array( 'id' => '', 'title' => 'No ID' ),
-			array( 'id' => 'A', 'title' => 'Product A' ),
+			array(
+				'id'    => '',
+				'title' => 'No ID',
+			),
+			array(
+				'id'    => 'A',
+				'title' => 'Product A',
+			),
 		);
 
 		$merged = $this->helper->test_merge_and_rank(
@@ -343,9 +379,18 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	 */
 	public function test_merge_preserves_order_for_ties() {
 		$set1 = array(
-			array( 'id' => 'A', 'title' => 'Product A' ),
-			array( 'id' => 'B', 'title' => 'Product B' ),
-			array( 'id' => 'C', 'title' => 'Product C' ),
+			array(
+				'id'    => 'A',
+				'title' => 'Product A',
+			),
+			array(
+				'id'    => 'B',
+				'title' => 'Product B',
+			),
+			array(
+				'id'    => 'C',
+				'title' => 'Product C',
+			),
 		);
 
 		$merged = $this->helper->test_merge_and_rank(

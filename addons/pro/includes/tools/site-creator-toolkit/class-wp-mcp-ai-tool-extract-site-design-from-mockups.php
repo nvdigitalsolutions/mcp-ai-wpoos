@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 			'type'                 => 'object',
 			'additionalProperties' => false,
 			'properties'           => array(
-				'inputs'        => array(
+				'inputs'       => array(
 					'type'        => 'object',
 					'description' => __( 'Input bag — at least one of images, html_files, urls or brief should be supplied.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -83,7 +83,10 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 								'type'                 => 'object',
 								'additionalProperties' => false,
 								'properties'           => array(
-									'media_id' => array( 'type' => 'integer', 'minimum' => 1 ),
+									'media_id' => array(
+										'type'    => 'integer',
+										'minimum' => 1,
+									),
 									'url'      => array( 'type' => 'string' ),
 									'base64'   => array( 'type' => 'string' ),
 									'role'     => array(
@@ -100,7 +103,10 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 								'type'                 => 'object',
 								'additionalProperties' => false,
 								'properties'           => array(
-									'media_id' => array( 'type' => 'integer', 'minimum' => 1 ),
+									'media_id' => array(
+										'type'    => 'integer',
+										'minimum' => 1,
+									),
 									'url'      => array( 'type' => 'string' ),
 									'content'  => array( 'type' => 'string' ),
 								),
@@ -117,7 +123,7 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 						),
 					),
 				),
-				'targets'       => array(
+				'targets'      => array(
 					'type'        => 'array',
 					'description' => __( 'Target stacks; defaults to all three.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -125,13 +131,13 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 						'enum' => array( 'wordpress', 'elementor', 'jet-form-builder' ),
 					),
 				),
-				'skin_variant'  => array(
+				'skin_variant' => array(
 					'type'        => 'string',
 					'description' => __( 'JFB skin variant. "auto" picks based on extracted radius/saturation.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'luxury', 'panel', 'minimal', 'auto' ),
 					'default'     => 'auto',
 				),
-				'features'      => array(
+				'features'     => array(
 					'type'        => 'array',
 					'description' => __( 'Opt-in interaction list.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -139,21 +145,30 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 						'enum' => array( 'custom_cursor', 'scroll_reveal', 'header_scroll_state', 'mobile_drawer', 'rotating_steps', 'hover_link_underline' ),
 					),
 				),
-				'output'        => array(
+				'output'       => array(
 					'type'                 => 'object',
 					'additionalProperties' => false,
 					'properties'           => array(
-						'format'                    => array(
+						'format'                   => array(
 							'type'    => 'string',
 							'enum'    => array( 'php_snippet', 'package' ),
 							'default' => 'php_snippet',
 						),
-						'persist_as_wpcode'         => array( 'type' => 'boolean', 'default' => false ),
-						'persist_as_site_template'  => array( 'type' => 'boolean', 'default' => false ),
-						'write_theme_json_partial'  => array( 'type' => 'boolean', 'default' => false ),
+						'persist_as_wpcode'        => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
+						'persist_as_site_template' => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
+						'write_theme_json_partial' => array(
+							'type'    => 'boolean',
+							'default' => false,
+						),
 					),
 				),
-				'dry_run'       => array(
+				'dry_run'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true, persistence flags are honored but no rows are written.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -202,10 +217,10 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 		}
 
 		// 3. Sanitize inputs.
-		$inputs   = isset( $arguments['inputs'] ) && is_array( $arguments['inputs'] ) ? $arguments['inputs'] : array();
-		$inputs   = $this->sanitize_inputs( $inputs );
+		$inputs = isset( $arguments['inputs'] ) && is_array( $arguments['inputs'] ) ? $arguments['inputs'] : array();
+		$inputs = $this->sanitize_inputs( $inputs );
 
-		$targets  = isset( $arguments['targets'] ) && is_array( $arguments['targets'] )
+		$targets = isset( $arguments['targets'] ) && is_array( $arguments['targets'] )
 			? array_values( array_intersect( WP_MCP_AI_Design_Snippet_Renderer::TARGETS, array_map( 'sanitize_text_field', $arguments['targets'] ) ) )
 			: WP_MCP_AI_Design_Snippet_Renderer::TARGETS;
 
@@ -235,7 +250,19 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 		// 5. Render snippet.
 		$picked_variant = WP_MCP_AI_Design_Snippet_Renderer::pick_skin_variant( $design_system, $skin_variant );
 
-		$fingerprint = substr( md5( wp_json_encode( array( 'ds' => $design_system, 'features' => $features, 'variant' => $picked_variant ) ) ), 0, 12 );
+		$fingerprint = substr(
+			md5(
+				wp_json_encode(
+					array(
+						'ds'       => $design_system,
+						'features' => $features,
+						'variant'  => $picked_variant,
+					)
+				)
+			),
+			0,
+			12
+		);
 		$snippet     = WP_MCP_AI_Design_Snippet_Renderer::render(
 			$design_system,
 			array(
@@ -250,17 +277,17 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 		);
 
 		$result = array(
-			'success'         => true,
-			'design_system'   => $design_system,
-			'contrast_report' => $contrast_report,
-			'is_draft'        => $is_draft,
-			'warnings'        => $warnings,
-			'snippet'         => $snippet,
-			'fingerprint'     => $fingerprint,
-			'skin_variant'    => $picked_variant,
-			'features'        => $features,
-			'targets'         => $targets,
-			'persisted'       => array(),
+			'success'            => true,
+			'design_system'      => $design_system,
+			'contrast_report'    => $contrast_report,
+			'is_draft'           => $is_draft,
+			'warnings'           => $warnings,
+			'snippet'            => $snippet,
+			'fingerprint'        => $fingerprint,
+			'skin_variant'       => $picked_variant,
+			'features'           => $features,
+			'targets'            => $targets,
+			'persisted'          => array(),
 			'apply_to_elementor' => $this->build_elementor_classes_hint( $features ),
 		);
 
@@ -517,9 +544,9 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 				'post_title'   => 'NV Site Design — ' . $fingerprint,
 				'post_content' => $snippet,
 				'meta_input'   => array(
-					'_nv_design_system'   => wp_json_encode( $design_system ),
-					'_nv_design_variant'  => $variant,
-					'_nv_design_finger'   => $fingerprint,
+					'_nv_design_system'  => wp_json_encode( $design_system ),
+					'_nv_design_variant' => $variant,
+					'_nv_design_finger'  => $fingerprint,
 				),
 			),
 			true
@@ -539,7 +566,7 @@ class WP_MCP_AI_Tool_Extract_Site_Design_From_Mockups implements WP_MCP_AI_Tool_
 	 * @return string Markdown.
 	 */
 	private function build_elementor_classes_hint( array $features ) {
-		$rows = array( '## How to apply in Elementor' );
+		$rows   = array( '## How to apply in Elementor' );
 		$rows[] = '';
 		$rows[] = 'Paste these utility classes into the Elementor widget "CSS Classes" field:';
 		$rows[] = '';

@@ -73,26 +73,26 @@ class WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members implements WP_MCP_AI_Too
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token' => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'space'        => array(
+				'space'               => array(
 					'type'        => 'string',
 					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx).', 'mcp-ai-wpoos-pro' ),
 				),
-				'page_size'    => array(
+				'page_size'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of members to return per page (1–1000, default 100).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
 					'minimum'     => 1,
 					'maximum'     => 1000,
 				),
-				'page_token'   => array(
+				'page_token'          => array(
 					'type'        => 'string',
 					'description' => __( 'Page token from a previous response to retrieve the next page of members.', 'mcp-ai-wpoos-pro' ),
 				),
-				'filter'       => array(
+				'filter'              => array(
 					'type'        => 'string',
 					'description' => __( 'Optional filter for members (e.g., role = "ROLE_MANAGER" or member.type = "HUMAN").', 'mcp-ai-wpoos-pro' ),
 				),

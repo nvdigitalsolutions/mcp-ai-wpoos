@@ -36,7 +36,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	use WP_MCP_AI_NodeJS_Subprocess;
 
 	// ---------------------------------------------------------------------------
-	// Availability helpers
+	// Availability helpers.
 	// ---------------------------------------------------------------------------
 
 	/**
@@ -104,39 +104,47 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	// ---------------------------------------------------------------------------
-	// Tool interface
+	// Tool interface.
 	// ---------------------------------------------------------------------------
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
 		return 'create_remotion_video';
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
 		return __( 'Create Remotion Video', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
 		return __( 'Render programmatic videos from React/Remotion compositions. Provide composition source code or a named template, set dimensions, frame rate and duration, then download or upload the rendered MP4, WebM or GIF to the media library.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'composition_id'    => array(
+				'composition_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'Remotion composition ID to render (must match the id prop in <Composition>). Defaults to "MyVideo".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'MyVideo',
 				),
-				'script'            => array(
+				'script'             => array(
 					'type'        => 'string',
 					'description' => __( 'Full source code of a valid Remotion index file (TSX/JSX/JS). Must export a RemotionRoot component that registers at least one <Composition>. When omitted, a built-in animated title card composition is used.', 'mcp-ai-wpoos-pro' ),
 				),
-				'props'             => array(
+				'props'              => array(
 					'type'        => 'object',
 					'description' => __( 'JSON props object passed to the composition as inputProps. Keys and values depend on the composition\'s own prop schema. When using the built-in title-card composition (no custom script provided), the following keys are supported: "title" (string, main heading text), "subtitle" (string, secondary line below the title), "background_color" (hex colour string, e.g. "#0a0a0a"), "text_color" (hex colour string, e.g. "#ffffff").', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -158,19 +166,19 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 						),
 					),
 				),
-				'width'             => array(
+				'width'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Output video width in pixels. Overrides the composition default.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 16,
 					'maximum'     => 7680,
 				),
-				'height'            => array(
+				'height'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Output video height in pixels. Overrides the composition default.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 16,
 					'maximum'     => 4320,
 				),
-				'fps'               => array(
+				'fps'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Frames per second. Common values: 24, 30 (default), 60.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 1, 15, 24, 25, 30, 48, 50, 60 ),
@@ -182,13 +190,13 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 					'minimum'     => 1,
 					'default'     => 150,
 				),
-				'output_format'     => array(
+				'output_format'      => array(
 					'type'        => 'string',
 					'description' => __( 'Output container / codec. mp4 uses H.264, webm uses VP8/VP9, gif produces an animated GIF.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mp4', 'webm', 'gif' ),
 					'default'     => 'mp4',
 				),
-				'upload_result'     => array(
+				'upload_result'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true (default), upload the rendered video to the WordPress media library and return the attachment ID and URL.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -198,17 +206,23 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'upload_files';
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
 		return true;
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro-tier tool.
@@ -221,7 +235,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	// ---------------------------------------------------------------------------
-	// Execution
+	// Execution.
 	// ---------------------------------------------------------------------------
 
 	/**
@@ -334,7 +348,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	// ---------------------------------------------------------------------------
-	// Private helpers
+	// Private helpers.
 	// ---------------------------------------------------------------------------
 
 	/**
@@ -442,6 +456,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 		$js_text_color     = addslashes( $text_color );
 		$js_composition_id = addslashes( $composition_id );
 
+		// phpcs:ignore Squiz.PHP.Heredoc
 		return <<<JS
 'use strict';
 const { registerRoot, Composition, AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } = require('remotion');
@@ -503,7 +518,7 @@ JS;
 	 * @param string $project_dir    Path to the temporary Remotion project.
 	 * @param string $composition_id Composition ID to render.
 	 * @param string $output_file    Absolute output file path.
-	 * @param string $output_format  mp4 | webm | gif.
+	 * @param string $output_format  Mp4 | webm | gif.
 	 * @return array|WP_Error Result array or WP_Error.
 	 */
 	private function run_remotion_render( $project_dir, $composition_id, $output_file, $output_format ) {
@@ -512,7 +527,7 @@ JS;
 			'webm' => 'vp8',
 			'gif'  => 'gif',
 		);
-		$codec = isset( $codec_map[ $output_format ] ) ? $codec_map[ $output_format ] : 'h264';
+		$codec     = isset( $codec_map[ $output_format ] ) ? $codec_map[ $output_format ] : 'h264';
 
 		/**
 		 * Filter to allow a custom Remotion render implementation.
@@ -540,7 +555,7 @@ JS;
 		$bundle     = $pro_path . 'bin/remotion-render.bundle.js';
 
 		// ------------------------------------------------------------------
-		// Path A: pre-built bundle (ships with the plugin, no install needed)
+		// Path A: pre-built bundle (ships with the plugin, no install needed).
 		// ------------------------------------------------------------------
 		if ( file_exists( $bundle ) ) {
 			$node_modules = is_dir( $pro_path . 'node_modules' )
@@ -549,11 +564,11 @@ JS;
 
 			$json_arg = wp_json_encode(
 				array(
-					'indexFile'        => $index_file,
-					'nodeModulesPath'  => $node_modules,
-					'compositionId'    => $composition_id,
-					'outputFile'       => $output_file,
-					'codec'            => $codec,
+					'indexFile'       => $index_file,
+					'nodeModulesPath' => $node_modules,
+					'compositionId'   => $composition_id,
+					'outputFile'      => $output_file,
+					'codec'           => $codec,
 				)
 			);
 
@@ -568,7 +583,7 @@ JS;
 		}
 
 		// ------------------------------------------------------------------
-		// Path B: fall back to locally installed Remotion CLI
+		// Path B: fall back to locally installed Remotion CLI.
 		// ------------------------------------------------------------------
 		$local_bin = $pro_path . 'node_modules/.bin/remotion';
 		if ( file_exists( $local_bin ) ) {
@@ -648,7 +663,7 @@ JS;
 	 * Upload a rendered video file to the WordPress media library.
 	 *
 	 * @param string $file_path     Absolute path to the video file.
-	 * @param string $output_format mp4 | webm | gif.
+	 * @param string $output_format Mp4 | webm | gif.
 	 * @return int|false New attachment ID or false on failure.
 	 */
 	private function upload_video_to_media_library( $file_path, $output_format ) {
@@ -656,7 +671,7 @@ JS;
 			return false;
 		}
 
-		$mime_map = array(
+		$mime_map  = array(
 			'mp4'  => 'video/mp4',
 			'webm' => 'video/webm',
 			'gif'  => 'image/gif',

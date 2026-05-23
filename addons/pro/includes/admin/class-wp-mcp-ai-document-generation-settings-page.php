@@ -147,9 +147,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 			</table>
 			<p style="margin-top: 10px;">
 				<strong><?php esc_html_e( 'Ready to Use:', 'mcp-ai-wpoos-pro' ); ?></strong> 
-				<?php if ( $this->check_all_dependencies() ): ?>
+				<?php if ( $this->check_all_dependencies() ) : ?>
 					<span style="color: green;">✓ All dependencies are bundled and ready. No installation required!</span>
-				<?php else: ?>
+				<?php else : ?>
 					<span style="color: orange;">⚠ Some dependencies may be missing. The plugin will use available fallbacks.</span>
 				<?php endif; ?>
 			</p>
@@ -303,23 +303,23 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	 */
 	private function check_npm_packages_installed() {
 		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
-		
+
 		// Use the centralized helper function for CDN-aware package checking.
 		$has_pdfkit = (
 			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
 			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
 		);
-		
+
 		$has_docx = (
 			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
 			file_exists( $bin_dir . '/generate-word.bundle.js' )
 		);
-		
+
 		$has_exceljs = (
 			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
 			file_exists( $bin_dir . '/generate-excel.bundle.js' )
 		);
-		
+
 		return $has_pdfkit && $has_docx && $has_exceljs;
 	}
 
@@ -348,8 +348,8 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	 */
 	private function check_all_dependencies() {
 		return $this->check_pdf_parse_bundled() &&
-		       $this->check_smalot_pdfparser() &&
-		       $this->check_npm_packages_installed();
+				$this->check_smalot_pdfparser() &&
+				$this->check_npm_packages_installed();
 	}
 }
 

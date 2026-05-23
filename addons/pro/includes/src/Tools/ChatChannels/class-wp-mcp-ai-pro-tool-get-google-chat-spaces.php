@@ -73,22 +73,22 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token' => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'filter'       => array(
+				'filter'              => array(
 					'type'        => 'string',
 					'description' => __( 'Optional filter for spaces (e.g., spaceType = "SPACE").', 'mcp-ai-wpoos-pro' ),
 				),
-				'page_size'    => array(
+				'page_size'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of spaces to return per page (1–1000, default 100).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
 					'minimum'     => 1,
 					'maximum'     => 1000,
 				),
-				'page_token'   => array(
+				'page_token'          => array(
 					'type'        => 'string',
 					'description' => __( 'Page token from a previous response to retrieve the next page of spaces.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -144,8 +144,8 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 			$query_args['filter'] = sanitize_text_field( $arguments['filter'] );
 		}
 
-		$page_size = isset( $arguments['page_size'] ) ? absint( $arguments['page_size'] ) : 100;
-		$page_size = max( 1, min( 1000, $page_size ) );
+		$page_size              = isset( $arguments['page_size'] ) ? absint( $arguments['page_size'] ) : 100;
+		$page_size              = max( 1, min( 1000, $page_size ) );
 		$query_args['pageSize'] = $page_size;
 
 		if ( ! empty( $arguments['page_token'] ) ) {

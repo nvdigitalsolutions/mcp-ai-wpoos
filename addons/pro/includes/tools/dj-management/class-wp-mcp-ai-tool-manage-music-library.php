@@ -318,7 +318,7 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 
 		foreach ( $fields as $field ) {
 			if ( isset( $data[ $field ] ) ) {
-				$value = $field === 'bpm' || $field === 'duration' || $field === 'year' ? absint( $data[ $field ] ) : sanitize_text_field( $data[ $field ] );
+				$value = 'bpm' === $field || 'duration' === $field || 'year' === $field ? absint( $data[ $field ] ) : sanitize_text_field( $data[ $field ] );
 				update_post_meta( $track_id, '_' . $field, $value );
 			}
 		}

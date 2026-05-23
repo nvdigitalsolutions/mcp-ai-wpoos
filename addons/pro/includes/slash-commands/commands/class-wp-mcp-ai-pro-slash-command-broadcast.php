@@ -122,9 +122,9 @@ class WP_MCP_AI_Pro_Slash_Command_Broadcast {
 				);
 			}
 
-			$output  = "## " . __( 'Broadcast Preview (Dry Run)', 'mcp-ai-wpoos-pro' ) . "\n\n";
-			$output .= "- **Channel:** " . esc_html( $channel ) . "\n";
-			$output .= "- **Message:** " . esc_html( $message ) . "\n\n";
+			$output  = '## ' . __( 'Broadcast Preview (Dry Run)', 'mcp-ai-wpoos-pro' ) . "\n\n";
+			$output .= '- **Channel:** ' . esc_html( $channel ) . "\n";
+			$output .= '- **Message:** ' . esc_html( $message ) . "\n\n";
 			$output .= "_Run without `--dry-run` to send._\n";
 
 			return $output;

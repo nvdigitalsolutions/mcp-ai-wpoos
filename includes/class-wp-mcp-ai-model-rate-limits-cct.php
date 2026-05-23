@@ -501,8 +501,40 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'Anthropic',
 						),
 						array(
-							'key'   => 'google',
-							'value' => 'Google',
+							'key'   => 'gemini',
+							'value' => 'Google Gemini',
+						),
+						array(
+							'key'   => 'deepseek',
+							'value' => 'DeepSeek',
+						),
+						array(
+							'key'   => 'openrouter',
+							'value' => 'OpenRouter',
+						),
+						array(
+							'key'   => 'baseten',
+							'value' => 'Baseten',
+						),
+						array(
+							'key'   => 'kimi',
+							'value' => 'Kimi (Moonshot AI)',
+						),
+						array(
+							'key'   => 'digitalocean',
+							'value' => 'DigitalOcean',
+						),
+						array(
+							'key'   => 'cloudflare',
+							'value' => 'Cloudflare',
+						),
+						array(
+							'key'   => 'nvidia',
+							'value' => 'NVIDIA NIM',
+						),
+						array(
+							'key'   => 'huggingface',
+							'value' => 'Hugging Face',
 						),
 						array(
 							'key'   => 'azure',
@@ -517,8 +549,16 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'LM Studio',
 						),
 						array(
-							'key'   => 'huggingface',
-							'value' => 'Hugging Face',
+							'key'   => 'embedded',
+							'value' => 'Embedded LLM',
+						),
+						array(
+							'key'   => 'webllm',
+							'value' => 'WebLLM',
+						),
+						array(
+							'key'   => 'google',
+							'value' => 'Google',
 						),
 						array(
 							'key'   => 'other',

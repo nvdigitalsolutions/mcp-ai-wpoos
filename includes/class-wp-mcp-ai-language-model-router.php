@@ -103,6 +103,14 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $kimi_client;
 
 		/**
+		 * Baseten client instance.
+		 *
+		 * @var WP_MCP_AI_Baseten_Client
+		 */
+		protected $baseten_client;
+
+		/**
+		 * Embedded LLM client instance
 		 * Embedded LLM client instance (server-side GGUF inference, Pro-only).
 		 *
 		 * Null when the Pro addon is not present.
@@ -127,8 +135,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @param WP_MCP_AI_OpenRouter_Client  $openrouter_client    OpenRouter client instance (optional).
 		 * @param WP_MCP_AI_DigitalOcean_Client $digitalocean_client DigitalOcean client instance (optional).
 		 * @param WP_MCP_AI_Kimi_Client        $kimi_client         Kimi client instance (optional).
+		 * @param WP_MCP_AI_Baseten_Client     $baseten_client      Baseten client instance (optional).
 		 */
-		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null, WP_MCP_AI_DeepSeek_Client $deepseek_client = null, WP_MCP_AI_OpenRouter_Client $openrouter_client = null, WP_MCP_AI_DigitalOcean_Client $digitalocean_client = null, WP_MCP_AI_Kimi_Client $kimi_client = null ) {
+		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, $embedded_client = null, WP_MCP_AI_Nvidia_Client $nvidia_client = null, WP_MCP_AI_DeepSeek_Client $deepseek_client = null, WP_MCP_AI_OpenRouter_Client $openrouter_client = null, WP_MCP_AI_DigitalOcean_Client $digitalocean_client = null, WP_MCP_AI_Kimi_Client $kimi_client = null, WP_MCP_AI_Baseten_Client $baseten_client = null ) {
 			$this->openai_client      = $openai_client;
 			$this->gemini_client      = $gemini_client;
 			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
@@ -141,6 +150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->openrouter_client  = $openrouter_client ? $openrouter_client : new WP_MCP_AI_OpenRouter_Client();
 			$this->digitalocean_client = $digitalocean_client ? $digitalocean_client : new WP_MCP_AI_DigitalOcean_Client();
 			$this->kimi_client        = $kimi_client ? $kimi_client : ( class_exists( 'WP_MCP_AI_Kimi_Client' ) ? new WP_MCP_AI_Kimi_Client() : null );
+			$this->baseten_client     = $baseten_client ? $baseten_client : new WP_MCP_AI_Baseten_Client();
 			// Embedded client is Pro-only; only instantiate when the class is available.
 			$this->embedded_client    = $embedded_client ?? ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null );
 		}
@@ -188,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'deepseek', 'openrouter', 'baseten', 'digitalocean', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			$last_error = null;
 
@@ -360,6 +370,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 						);
 					}
 					return $this->kimi_client->create_chat_completion( $messages, $options );
+
+				case 'baseten':
+					return $this->baseten_client->create_chat_completion( $messages, $options );
 
 				case 'openai':
 				default:

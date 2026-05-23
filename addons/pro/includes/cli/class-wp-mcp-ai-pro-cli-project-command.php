@@ -315,9 +315,9 @@ class WP_MCP_AI_Pro_CLI_Project_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		if ( ! $yes ) {
 			$action = $force
 				? /* translators: 1: project title, 2: project ID */
-				  sprintf( __( 'Permanently delete project "%1$s" (ID %2$d)?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id )
+					sprintf( __( 'Permanently delete project "%1$s" (ID %2$d)?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id )
 				: /* translators: 1: project title, 2: project ID */
-				  sprintf( __( 'Move project "%1$s" (ID %2$d) to trash?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id );
+					sprintf( __( 'Move project "%1$s" (ID %2$d) to trash?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id );
 			WP_CLI::confirm( $action );
 		}
 

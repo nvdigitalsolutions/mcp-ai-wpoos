@@ -644,7 +644,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 	 * @return true|WP_Error
 	 */
 	protected function validate_time_range( array $start, array $end ) {
-		if ( $start['type'] === 'date' && $end['type'] === 'date' ) {
+		if ( 'date' === $start['type'] && 'date' === $end['type'] ) {
 			$start_date = $start['value']['date'];
 			$end_date   = $end['value']['date'];
 
@@ -655,7 +655,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			return true;
 		}
 
-		if ( $start['type'] !== 'dateTime' || $end['type'] !== 'dateTime' ) {
+		if ( 'dateTime' !== $start['type'] || 'dateTime' !== $end['type'] ) {
 			return new WP_Error( 'wp_mcp_ai_invalid_time_range', __( 'Start and end times must both be full date/time values or all-day dates.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 

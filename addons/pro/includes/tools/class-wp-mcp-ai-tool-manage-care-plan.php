@@ -159,6 +159,11 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'database-write', 'care-coordination' );
 	}
@@ -260,25 +265,25 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$care_plan_id = 'cp_' . time() . '_' . wp_rand( 1000, 9999 );
-		$care_plan = array(
-			'id'               => $care_plan_id,
-			'member_id'        => $member_id,
-			'title'            => $plan_title,
-			'description'      => isset( $arguments['plan_description'] ) ? wp_kses_post( $arguments['plan_description'] ) : '',
-			'type'             => isset( $arguments['plan_type'] ) ? sanitize_text_field( $arguments['plan_type'] ) : 'custom',
-			'start_date'       => isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : current_time( 'Y-m-d' ),
-			'target_end_date'  => isset( $arguments['target_end_date'] ) ? sanitize_text_field( $arguments['target_end_date'] ) : '',
-			'status'           => 'active',
-			'goals'            => array(),
-			'tasks'            => array(),
-			'created_at'       => current_time( 'mysql' ),
-			'created_by'       => $current_user_id,
-			'last_updated'     => current_time( 'mysql' ),
+		$care_plan    = array(
+			'id'              => $care_plan_id,
+			'member_id'       => $member_id,
+			'title'           => $plan_title,
+			'description'     => isset( $arguments['plan_description'] ) ? wp_kses_post( $arguments['plan_description'] ) : '',
+			'type'            => isset( $arguments['plan_type'] ) ? sanitize_text_field( $arguments['plan_type'] ) : 'custom',
+			'start_date'      => isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : current_time( 'Y-m-d' ),
+			'target_end_date' => isset( $arguments['target_end_date'] ) ? sanitize_text_field( $arguments['target_end_date'] ) : '',
+			'status'          => 'active',
+			'goals'           => array(),
+			'tasks'           => array(),
+			'created_at'      => current_time( 'mysql' ),
+			'created_by'      => $current_user_id,
+			'last_updated'    => current_time( 'mysql' ),
 		);
 
 		// Store care plan.
-		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans_key              = 'wp_mcp_ai_care_plans_' . $member_id;
+		$plans                  = get_option( $plans_key, array() );
 		$plans[ $care_plan_id ] = $care_plan;
 		update_option( $plans_key, $plans );
 
@@ -310,7 +315,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		if ( ! isset( $plans[ $care_plan_id ] ) ) {
 			return new WP_Error( 'wp_mcp_ai_care_plan_not_found', __( 'Care plan not found.', 'mcp-ai-wpoos-pro' ) );
@@ -352,7 +357,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		if ( ! isset( $plans[ $care_plan_id ] ) ) {
 			return new WP_Error( 'wp_mcp_ai_care_plan_not_found', __( 'Care plan not found.', 'mcp-ai-wpoos-pro' ) );
@@ -374,7 +379,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function list_care_plans( $member_id ) {
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		return array(
 			'success'    => true,
@@ -398,21 +403,21 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$care_plan_id = isset( $arguments['care_plan_id'] ) ? sanitize_text_field( $arguments['care_plan_id'] ) : '';
-		$goal_title = isset( $arguments['goal_title'] ) ? sanitize_text_field( $arguments['goal_title'] ) : '';
+		$goal_title   = isset( $arguments['goal_title'] ) ? sanitize_text_field( $arguments['goal_title'] ) : '';
 
 		if ( ! $care_plan_id || ! $goal_title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Care plan ID and goal title are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		if ( ! isset( $plans[ $care_plan_id ] ) ) {
 			return new WP_Error( 'wp_mcp_ai_care_plan_not_found', __( 'Care plan not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$goal_id = 'goal_' . time() . '_' . wp_rand( 100, 999 );
-		$goal = array(
+		$goal    = array(
 			'id'          => $goal_id,
 			'title'       => $goal_title,
 			'description' => isset( $arguments['goal_description'] ) ? wp_kses_post( $arguments['goal_description'] ) : '',
@@ -421,7 +426,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 			'created_at'  => current_time( 'mysql' ),
 		);
 
-		$plans[ $care_plan_id ]['goals'][] = $goal;
+		$plans[ $care_plan_id ]['goals'][]      = $goal;
 		$plans[ $care_plan_id ]['last_updated'] = current_time( 'mysql' );
 		update_option( $plans_key, $plans );
 
@@ -448,14 +453,14 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$care_plan_id = isset( $arguments['care_plan_id'] ) ? sanitize_text_field( $arguments['care_plan_id'] ) : '';
-		$goal_id = isset( $arguments['goal_id'] ) ? sanitize_text_field( $arguments['goal_id'] ) : '';
+		$goal_id      = isset( $arguments['goal_id'] ) ? sanitize_text_field( $arguments['goal_id'] ) : '';
 
 		if ( ! $care_plan_id || ! $goal_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Care plan ID and goal ID are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		if ( ! isset( $plans[ $care_plan_id ] ) ) {
 			return new WP_Error( 'wp_mcp_ai_care_plan_not_found', __( 'Care plan not found.', 'mcp-ai-wpoos-pro' ) );
@@ -472,7 +477,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 					$goal['title'] = sanitize_text_field( $arguments['goal_title'] );
 				}
 				$goal['updated_at'] = current_time( 'mysql' );
-				$found = true;
+				$found              = true;
 				break;
 			}
 		}
@@ -505,21 +510,21 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$care_plan_id = isset( $arguments['care_plan_id'] ) ? sanitize_text_field( $arguments['care_plan_id'] ) : '';
-		$task_title = isset( $arguments['task_title'] ) ? sanitize_text_field( $arguments['task_title'] ) : '';
+		$task_title   = isset( $arguments['task_title'] ) ? sanitize_text_field( $arguments['task_title'] ) : '';
 
 		if ( ! $care_plan_id || ! $task_title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Care plan ID and task title are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		if ( ! isset( $plans[ $care_plan_id ] ) ) {
 			return new WP_Error( 'wp_mcp_ai_care_plan_not_found', __( 'Care plan not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$task_id = 'task_' . time() . '_' . wp_rand( 100, 999 );
-		$task = array(
+		$task    = array(
 			'id'          => $task_id,
 			'title'       => $task_title,
 			'description' => isset( $arguments['task_description'] ) ? wp_kses_post( $arguments['task_description'] ) : '',
@@ -528,7 +533,7 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 			'created_at'  => current_time( 'mysql' ),
 		);
 
-		$plans[ $care_plan_id ]['tasks'][] = $task;
+		$plans[ $care_plan_id ]['tasks'][]      = $task;
 		$plans[ $care_plan_id ]['last_updated'] = current_time( 'mysql' );
 		update_option( $plans_key, $plans );
 
@@ -555,14 +560,14 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$care_plan_id = isset( $arguments['care_plan_id'] ) ? sanitize_text_field( $arguments['care_plan_id'] ) : '';
-		$task_id = isset( $arguments['task_id'] ) ? sanitize_text_field( $arguments['task_id'] ) : '';
+		$task_id      = isset( $arguments['task_id'] ) ? sanitize_text_field( $arguments['task_id'] ) : '';
 
 		if ( ! $care_plan_id || ! $task_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Care plan ID and task ID are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$plans_key = 'wp_mcp_ai_care_plans_' . $member_id;
-		$plans = get_option( $plans_key, array() );
+		$plans     = get_option( $plans_key, array() );
 
 		if ( ! isset( $plans[ $care_plan_id ] ) ) {
 			return new WP_Error( 'wp_mcp_ai_care_plan_not_found', __( 'Care plan not found.', 'mcp-ai-wpoos-pro' ) );
@@ -572,10 +577,10 @@ class WP_MCP_AI_Tool_Manage_Care_Plan implements WP_MCP_AI_Tool_Interface, WP_MC
 		$found = false;
 		foreach ( $plans[ $care_plan_id ]['tasks'] as &$task ) {
 			if ( $task['id'] === $task_id ) {
-				$task['status'] = 'completed';
+				$task['status']       = 'completed';
 				$task['completed_at'] = current_time( 'mysql' );
 				$task['completed_by'] = $current_user_id;
-				$found = true;
+				$found                = true;
 				break;
 			}
 		}

@@ -92,7 +92,7 @@ class WP_MCP_AI_Imaging_Study_CPT {
 	/**
 	 * Create a new imaging study record.
 	 *
-	 * @param array $data {
+	 * @param array $data { // phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Inline array specification.
 	 *     @type string $study_instance_uid  DICOM StudyInstanceUID (required).
 	 *     @type string $patient_id          De-identified patient reference.
 	 *     @type string $modality            DICOM modality (CT, PT, MR, …).

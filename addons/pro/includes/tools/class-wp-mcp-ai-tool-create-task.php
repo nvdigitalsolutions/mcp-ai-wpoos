@@ -136,6 +136,11 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -309,13 +314,13 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'id'               => $task_id,
 					'title'            => $title,
 					'description'      => $description,
-					'project_id'       => $project_id ?: null,
+					'project_id'       => $project_id ? $project_id : null,
 					'status'           => $status,
 					'priority'         => $priority,
 					'category'         => $category,
 					'tags'             => $tags,
 					'due_date'         => $due_date,
-					'assigned_to'      => $assigned_to ?: null,
+					'assigned_to'      => $assigned_to ? $assigned_to : null,
 					'estimated_effort' => $estimated_effort > 0 ? $estimated_effort : null,
 					'actual_effort'    => $actual_effort > 0 ? $actual_effort : null,
 					'updated_at'       => $task->post_modified,
@@ -375,13 +380,13 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'id'               => $task_id,
 					'title'            => $title,
 					'description'      => $description,
-					'project_id'       => $project_id ?: null,
+					'project_id'       => $project_id ? $project_id : null,
 					'status'           => $status,
 					'priority'         => $priority,
 					'category'         => $category,
 					'tags'             => $tags,
 					'due_date'         => $due_date,
-					'assigned_to'      => $assigned_to ?: null,
+					'assigned_to'      => $assigned_to ? $assigned_to : null,
 					'estimated_effort' => $estimated_effort > 0 ? $estimated_effort : null,
 					'actual_effort'    => $actual_effort > 0 ? $actual_effort : null,
 					'created_at'       => current_time( 'mysql' ),

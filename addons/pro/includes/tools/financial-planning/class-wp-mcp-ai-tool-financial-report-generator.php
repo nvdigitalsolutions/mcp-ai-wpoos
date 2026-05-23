@@ -458,8 +458,8 @@ class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interf
 		}
 
 		if ( in_array( 'risks', $sections, true ) ) {
-			$lines[] = '## ' . __( 'Key Risks', 'mcp-ai-wpoos-pro' );
-			$lines[] = '';
+			$lines[]      = '## ' . __( 'Key Risks', 'mcp-ai-wpoos-pro' );
+			$lines[]      = '';
 			$risk_factors = isset( $data['risk_factors'] ) && is_array( $data['risk_factors'] ) ? $data['risk_factors'] : array();
 			if ( ! empty( $risk_factors ) ) {
 				foreach ( $risk_factors as $risk ) {
@@ -599,8 +599,8 @@ class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interf
 		}
 
 		if ( in_array( 'recommendations', $sections, true ) ) {
-			$lines[] = '## ' . __( 'Risk Mitigation Recommendations', 'mcp-ai-wpoos-pro' );
-			$lines[] = '';
+			$lines[]     = '## ' . __( 'Risk Mitigation Recommendations', 'mcp-ai-wpoos-pro' );
+			$lines[]     = '';
 			$mitigations = isset( $data['mitigations'] ) && is_array( $data['mitigations'] ) ? $data['mitigations'] : array();
 			if ( ! empty( $mitigations ) ) {
 				foreach ( $mitigations as $idx => $mitigation ) {
@@ -758,12 +758,12 @@ class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interf
 	 */
 	private function format_report_type( $type ) {
 		$types = array(
-			'portfolio_summary'  => __( 'Portfolio Summary', 'mcp-ai-wpoos-pro' ),
-			'market_analysis'    => __( 'Market Analysis', 'mcp-ai-wpoos-pro' ),
-			'investment_thesis'  => __( 'Investment Thesis', 'mcp-ai-wpoos-pro' ),
-			'risk_assessment'    => __( 'Risk Assessment', 'mcp-ai-wpoos-pro' ),
-			'earnings_summary'   => __( 'Earnings Summary', 'mcp-ai-wpoos-pro' ),
-			'sector_comparison'  => __( 'Sector Comparison', 'mcp-ai-wpoos-pro' ),
+			'portfolio_summary' => __( 'Portfolio Summary', 'mcp-ai-wpoos-pro' ),
+			'market_analysis'   => __( 'Market Analysis', 'mcp-ai-wpoos-pro' ),
+			'investment_thesis' => __( 'Investment Thesis', 'mcp-ai-wpoos-pro' ),
+			'risk_assessment'   => __( 'Risk Assessment', 'mcp-ai-wpoos-pro' ),
+			'earnings_summary'  => __( 'Earnings Summary', 'mcp-ai-wpoos-pro' ),
+			'sector_comparison' => __( 'Sector Comparison', 'mcp-ai-wpoos-pro' ),
 		);
 		return isset( $types[ $type ] ) ? $types[ $type ] : $type;
 	}

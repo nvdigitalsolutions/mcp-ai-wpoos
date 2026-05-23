@@ -291,7 +291,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				continue;
 			}
 
-			// If assistant context is provided and connections are configured,
+			// If assistant context is provided and connections are configured,.
 			// only include connections enabled for this assistant.
 			if ( $assistant_id && ! empty( $enabled_connections ) && ! in_array( $connection['id'], $enabled_connections, true ) ) {
 				continue;

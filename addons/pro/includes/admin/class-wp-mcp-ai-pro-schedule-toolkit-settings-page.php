@@ -285,7 +285,7 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 								<?php endif; ?>
 							</td>
 							<td><?php echo esc_html( sprintf( '%.2fs', $row['duration'] ) ); ?></td>
-							<td><?php echo esc_html( $row['error'] !== '' ? wp_trim_words( $row['error'], 12, '…' ) : '' ); ?></td>
+							<td><?php echo esc_html( '' !== $row['error'] ? wp_trim_words( $row['error'], 12, '…' ) : '' ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -298,10 +298,10 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	 * Render the Configuration tab — site-wide scheduler defaults.
 	 */
 	protected function render_configuration_tab() {
-		$options       = get_option( $this->option_name, array() );
-		$timezone      = wp_timezone_string();
-		$cadence_opts  = array_merge( array( 'single' ), array_keys( wp_get_schedules() ) );
-		$cadence_opts  = array_unique( $cadence_opts );
+		$options      = get_option( $this->option_name, array() );
+		$timezone     = wp_timezone_string();
+		$cadence_opts = array_merge( array( 'single' ), array_keys( wp_get_schedules() ) );
+		$cadence_opts = array_unique( $cadence_opts );
 		sort( $cadence_opts );
 
 		$default_cadence = isset( $options['default_cadence'] ) ? (string) $options['default_cadence'] : 'daily';
@@ -420,13 +420,13 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_pro_schedule'           => __( 'Create Pro Schedule', 'mcp-ai-wpoos-pro' ),
-			'update_pro_schedule'           => __( 'Update Pro Schedule', 'mcp-ai-wpoos-pro' ),
-			'delete_pro_schedule'           => __( 'Delete Pro Schedule', 'mcp-ai-wpoos-pro' ),
-			'list_pro_schedules'            => __( 'List Pro Schedules', 'mcp-ai-wpoos-pro' ),
-			'get_schedule_run_history'      => __( 'Get Schedule Run History', 'mcp-ai-wpoos-pro' ),
-			'dry_run_pro_schedule'          => __( 'Dry-run Pro Schedule', 'mcp-ai-wpoos-pro' ),
-			'plan_schedules_from_workflow'  => __( 'Plan Schedules From Workflow', 'mcp-ai-wpoos-pro' ),
+			'create_pro_schedule'          => __( 'Create Pro Schedule', 'mcp-ai-wpoos-pro' ),
+			'update_pro_schedule'          => __( 'Update Pro Schedule', 'mcp-ai-wpoos-pro' ),
+			'delete_pro_schedule'          => __( 'Delete Pro Schedule', 'mcp-ai-wpoos-pro' ),
+			'list_pro_schedules'           => __( 'List Pro Schedules', 'mcp-ai-wpoos-pro' ),
+			'get_schedule_run_history'     => __( 'Get Schedule Run History', 'mcp-ai-wpoos-pro' ),
+			'dry_run_pro_schedule'         => __( 'Dry-run Pro Schedule', 'mcp-ai-wpoos-pro' ),
+			'plan_schedules_from_workflow' => __( 'Plan Schedules From Workflow', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -457,11 +457,11 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 			$sanitized['retry_count'] = max( 0, min( 10, absint( $sanitized['retry_count'] ) ) );
 		}
 		if ( isset( $sanitized['retry_backoff'] ) ) {
-			$allowed = array( 'linear', 'exponential', 'constant' );
+			$allowed                    = array( 'linear', 'exponential', 'constant' );
 			$sanitized['retry_backoff'] = in_array( $sanitized['retry_backoff'], $allowed, true ) ? $sanitized['retry_backoff'] : 'linear';
 		}
 		if ( isset( $sanitized['notification_email'] ) ) {
-			$email = sanitize_email( $sanitized['notification_email'] );
+			$email                           = sanitize_email( $sanitized['notification_email'] );
 			$sanitized['notification_email'] = is_email( $email ) ? $email : '';
 		}
 		$sanitized['kill_switch']     = ! empty( $sanitized['kill_switch'] );

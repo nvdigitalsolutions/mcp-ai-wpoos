@@ -127,7 +127,12 @@ class WP_MCP_AI_Law_Firm_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base 
 			name="<?php echo esc_attr( $this->option_name ); ?>[default_jurisdiction]"
 			id="default_jurisdiction"
 		>
-			<?php foreach ( array( 'federal' => 'Federal', 'state' => 'State' ) as $key => $label ) : ?>
+			<?php
+			foreach ( array(
+				'federal' => 'Federal',
+				'state'   => 'State',
+			) as $key => $label ) :
+				?>
 				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $value, $key ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
@@ -193,7 +198,12 @@ class WP_MCP_AI_Law_Firm_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base 
 			name="<?php echo esc_attr( $this->option_name ); ?>[billing_increment]"
 			id="billing_increment"
 		>
-			<?php foreach ( array( '0.1' => '6-minute (0.1)', '0.25' => '15-minute (0.25)' ) as $key => $label ) : ?>
+			<?php
+			foreach ( array(
+				'0.1'  => '6-minute (0.1)',
+				'0.25' => '15-minute (0.25)',
+			) as $key => $label ) :
+				?>
 				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $value, $key ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
@@ -360,74 +370,74 @@ class WP_MCP_AI_Law_Firm_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base 
 	protected function get_tools_list() {
 		return array(
 			// Client Intake & Management.
-			'lf_client_intake_processor'       => __( 'Client Intake Processor', 'mcp-ai-wpoos-pro' ),
-			'lf_conflict_of_interest_checker'  => __( 'Conflict of Interest Checker', 'mcp-ai-wpoos-pro' ),
-			'lf_client_profile_analyzer'       => __( 'Client Profile Analyzer', 'mcp-ai-wpoos-pro' ),
-			'lf_lead_scoring_calculator'       => __( 'Lead Scoring Calculator', 'mcp-ai-wpoos-pro' ),
-			'lf_engagement_letter_generator'   => __( 'Engagement Letter Generator', 'mcp-ai-wpoos-pro' ),
-			'lf_client_communication_logger'   => __( 'Client Communication Logger', 'mcp-ai-wpoos-pro' ),
-			'lf_referral_source_tracker'       => __( 'Referral Source Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_client_portal_manager'         => __( 'Client Portal Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_client_intake_processor'           => __( 'Client Intake Processor', 'mcp-ai-wpoos-pro' ),
+			'lf_conflict_of_interest_checker'      => __( 'Conflict of Interest Checker', 'mcp-ai-wpoos-pro' ),
+			'lf_client_profile_analyzer'           => __( 'Client Profile Analyzer', 'mcp-ai-wpoos-pro' ),
+			'lf_lead_scoring_calculator'           => __( 'Lead Scoring Calculator', 'mcp-ai-wpoos-pro' ),
+			'lf_engagement_letter_generator'       => __( 'Engagement Letter Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_client_communication_logger'       => __( 'Client Communication Logger', 'mcp-ai-wpoos-pro' ),
+			'lf_referral_source_tracker'           => __( 'Referral Source Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_client_portal_manager'             => __( 'Client Portal Manager', 'mcp-ai-wpoos-pro' ),
 			// Matter & Case Management.
-			'lf_matter_pipeline_manager'       => __( 'Matter Pipeline Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_matter_pipeline_manager'           => __( 'Matter Pipeline Manager', 'mcp-ai-wpoos-pro' ),
 			'lf_statute_of_limitations_calculator' => __( 'Statute of Limitations Calculator', 'mcp-ai-wpoos-pro' ),
-			'lf_court_deadline_tracker'        => __( 'Court Filing Deadline Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_case_timeline_generator'       => __( 'Case Timeline Generator', 'mcp-ai-wpoos-pro' ),
-			'lf_task_assignment_manager'       => __( 'Task Assignment Manager', 'mcp-ai-wpoos-pro' ),
-			'lf_calendar_rule_calculator'      => __( 'Calendar Rule Calculator', 'mcp-ai-wpoos-pro' ),
-			'lf_opposing_counsel_tracker'      => __( 'Opposing Counsel Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_case_outcome_predictor'        => __( 'Case Outcome Predictor', 'mcp-ai-wpoos-pro' ),
-			'lf_matter_budget_manager'         => __( 'Matter Budget Manager', 'mcp-ai-wpoos-pro' ),
-			'lf_case_status_dashboard'         => __( 'Case Status Dashboard', 'mcp-ai-wpoos-pro' ),
+			'lf_court_deadline_tracker'            => __( 'Court Filing Deadline Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_case_timeline_generator'           => __( 'Case Timeline Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_task_assignment_manager'           => __( 'Task Assignment Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_calendar_rule_calculator'          => __( 'Calendar Rule Calculator', 'mcp-ai-wpoos-pro' ),
+			'lf_opposing_counsel_tracker'          => __( 'Opposing Counsel Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_case_outcome_predictor'            => __( 'Case Outcome Predictor', 'mcp-ai-wpoos-pro' ),
+			'lf_matter_budget_manager'             => __( 'Matter Budget Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_case_status_dashboard'             => __( 'Case Status Dashboard', 'mcp-ai-wpoos-pro' ),
 			// Document Automation.
-			'lf_document_drafter'              => __( 'Legal Document Drafter', 'mcp-ai-wpoos-pro' ),
-			'lf_contract_reviewer'             => __( 'Contract Review Analyzer', 'mcp-ai-wpoos-pro' ),
-			'lf_clause_library_manager'        => __( 'Clause Library Manager', 'mcp-ai-wpoos-pro' ),
-			'lf_redline_comparator'            => __( 'Document Redline Comparator', 'mcp-ai-wpoos-pro' ),
-			'lf_pleading_generator'            => __( 'Pleading & Motion Generator', 'mcp-ai-wpoos-pro' ),
-			'lf_discovery_request_builder'     => __( 'Discovery Request Builder', 'mcp-ai-wpoos-pro' ),
-			'lf_document_version_tracker'      => __( 'Document Version Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_legal_citation_checker'        => __( 'Legal Citation Checker', 'mcp-ai-wpoos-pro' ),
-			'lf_brief_outline_generator'       => __( 'Brief Outline Generator', 'mcp-ai-wpoos-pro' ),
-			'lf_document_template_manager'     => __( 'Document Template Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_document_drafter'                  => __( 'Legal Document Drafter', 'mcp-ai-wpoos-pro' ),
+			'lf_contract_reviewer'                 => __( 'Contract Review Analyzer', 'mcp-ai-wpoos-pro' ),
+			'lf_clause_library_manager'            => __( 'Clause Library Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_redline_comparator'                => __( 'Document Redline Comparator', 'mcp-ai-wpoos-pro' ),
+			'lf_pleading_generator'                => __( 'Pleading & Motion Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_discovery_request_builder'         => __( 'Discovery Request Builder', 'mcp-ai-wpoos-pro' ),
+			'lf_document_version_tracker'          => __( 'Document Version Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_legal_citation_checker'            => __( 'Legal Citation Checker', 'mcp-ai-wpoos-pro' ),
+			'lf_brief_outline_generator'           => __( 'Brief Outline Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_document_template_manager'         => __( 'Document Template Manager', 'mcp-ai-wpoos-pro' ),
 			// Billing & Trust Accounting.
-			'lf_time_entry_recorder'           => __( 'Time Entry Recorder', 'mcp-ai-wpoos-pro' ),
-			'lf_invoice_generator'             => __( 'Invoice Generator (LEDES)', 'mcp-ai-wpoos-pro' ),
-			'lf_trust_account_manager'         => __( 'Trust (IOLTA) Account Manager', 'mcp-ai-wpoos-pro' ),
-			'lf_trust_reconciliation_tool'     => __( 'Trust Account Reconciliation', 'mcp-ai-wpoos-pro' ),
-			'lf_fee_calculator'                => __( 'Legal Fee Calculator', 'mcp-ai-wpoos-pro' ),
-			'lf_billing_compliance_checker'    => __( 'Billing Compliance Checker', 'mcp-ai-wpoos-pro' ),
-			'lf_accounts_receivable_tracker'   => __( 'Accounts Receivable Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_retainer_balance_monitor'      => __( 'Retainer Balance Monitor', 'mcp-ai-wpoos-pro' ),
-			'lf_expense_reimbursement_tracker' => __( 'Expense Reimbursement Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_profitability_analyzer'        => __( 'Matter Profitability Analyzer', 'mcp-ai-wpoos-pro' ),
+			'lf_time_entry_recorder'               => __( 'Time Entry Recorder', 'mcp-ai-wpoos-pro' ),
+			'lf_invoice_generator'                 => __( 'Invoice Generator (LEDES)', 'mcp-ai-wpoos-pro' ),
+			'lf_trust_account_manager'             => __( 'Trust (IOLTA) Account Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_trust_reconciliation_tool'         => __( 'Trust Account Reconciliation', 'mcp-ai-wpoos-pro' ),
+			'lf_fee_calculator'                    => __( 'Legal Fee Calculator', 'mcp-ai-wpoos-pro' ),
+			'lf_billing_compliance_checker'        => __( 'Billing Compliance Checker', 'mcp-ai-wpoos-pro' ),
+			'lf_accounts_receivable_tracker'       => __( 'Accounts Receivable Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_retainer_balance_monitor'          => __( 'Retainer Balance Monitor', 'mcp-ai-wpoos-pro' ),
+			'lf_expense_reimbursement_tracker'     => __( 'Expense Reimbursement Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_profitability_analyzer'            => __( 'Matter Profitability Analyzer', 'mcp-ai-wpoos-pro' ),
 			// Compliance & Ethics.
-			'lf_ethics_rule_checker'           => __( 'Ethics Rule Checker', 'mcp-ai-wpoos-pro' ),
-			'lf_bar_deadline_monitor'          => __( 'Bar Reporting Deadline Monitor', 'mcp-ai-wpoos-pro' ),
-			'lf_cle_credit_tracker'            => __( 'CLE Credit Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_malpractice_risk_scorer'       => __( 'Malpractice Risk Scorer', 'mcp-ai-wpoos-pro' ),
-			'lf_data_privacy_compliance_checker' => __( 'Data Privacy Compliance Checker', 'mcp-ai-wpoos-pro' ),
-			'lf_client_confidentiality_auditor' => __( 'Client Confidentiality Auditor', 'mcp-ai-wpoos-pro' ),
-			'lf_regulatory_change_monitor'     => __( 'Regulatory Change Monitor', 'mcp-ai-wpoos-pro' ),
-			'lf_ai_usage_disclosure_generator' => __( 'AI Usage Disclosure Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_ethics_rule_checker'               => __( 'Ethics Rule Checker', 'mcp-ai-wpoos-pro' ),
+			'lf_bar_deadline_monitor'              => __( 'Bar Reporting Deadline Monitor', 'mcp-ai-wpoos-pro' ),
+			'lf_cle_credit_tracker'                => __( 'CLE Credit Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_malpractice_risk_scorer'           => __( 'Malpractice Risk Scorer', 'mcp-ai-wpoos-pro' ),
+			'lf_data_privacy_compliance_checker'   => __( 'Data Privacy Compliance Checker', 'mcp-ai-wpoos-pro' ),
+			'lf_client_confidentiality_auditor'    => __( 'Client Confidentiality Auditor', 'mcp-ai-wpoos-pro' ),
+			'lf_regulatory_change_monitor'         => __( 'Regulatory Change Monitor', 'mcp-ai-wpoos-pro' ),
+			'lf_ai_usage_disclosure_generator'     => __( 'AI Usage Disclosure Generator', 'mcp-ai-wpoos-pro' ),
 			// Litigation Support.
-			'lf_ediscovery_document_analyzer'  => __( 'eDiscovery Document Analyzer', 'mcp-ai-wpoos-pro' ),
-			'lf_deposition_summary_generator'  => __( 'Deposition Summary Generator', 'mcp-ai-wpoos-pro' ),
-			'lf_evidence_catalog_manager'      => __( 'Evidence Catalog Manager', 'mcp-ai-wpoos-pro' ),
-			'lf_jury_instruction_drafter'      => __( 'Jury Instruction Drafter', 'mcp-ai-wpoos-pro' ),
-			'lf_settlement_value_calculator'   => __( 'Settlement Value Calculator', 'mcp-ai-wpoos-pro' ),
-			'lf_damages_calculator'            => __( 'Damages Calculator', 'mcp-ai-wpoos-pro' ),
-			'lf_expert_witness_tracker'        => __( 'Expert Witness Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_trial_preparation_checklist'   => __( 'Trial Preparation Checklist', 'mcp-ai-wpoos-pro' ),
+			'lf_ediscovery_document_analyzer'      => __( 'eDiscovery Document Analyzer', 'mcp-ai-wpoos-pro' ),
+			'lf_deposition_summary_generator'      => __( 'Deposition Summary Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_evidence_catalog_manager'          => __( 'Evidence Catalog Manager', 'mcp-ai-wpoos-pro' ),
+			'lf_jury_instruction_drafter'          => __( 'Jury Instruction Drafter', 'mcp-ai-wpoos-pro' ),
+			'lf_settlement_value_calculator'       => __( 'Settlement Value Calculator', 'mcp-ai-wpoos-pro' ),
+			'lf_damages_calculator'                => __( 'Damages Calculator', 'mcp-ai-wpoos-pro' ),
+			'lf_expert_witness_tracker'            => __( 'Expert Witness Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_trial_preparation_checklist'       => __( 'Trial Preparation Checklist', 'mcp-ai-wpoos-pro' ),
 			// Legal Research & Analytics.
-			'lf_legal_research_assistant'      => __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ),
-			'lf_case_law_analyzer'             => __( 'Case Law Analyzer', 'mcp-ai-wpoos-pro' ),
-			'lf_firm_performance_dashboard'    => __( 'Firm Performance Dashboard', 'mcp-ai-wpoos-pro' ),
-			'lf_matter_analytics_generator'    => __( 'Matter Analytics Generator', 'mcp-ai-wpoos-pro' ),
-			'lf_revenue_forecaster'            => __( 'Revenue Forecaster', 'mcp-ai-wpoos-pro' ),
-			'lf_attorney_utilization_tracker'  => __( 'Attorney Utilization Tracker', 'mcp-ai-wpoos-pro' ),
-			'lf_client_satisfaction_analyzer'  => __( 'Client Satisfaction Analyzer', 'mcp-ai-wpoos-pro' ),
-			'lf_competitive_benchmarker'       => __( 'Competitive Benchmarker', 'mcp-ai-wpoos-pro' ),
+			'lf_legal_research_assistant'          => __( 'Legal Research Assistant', 'mcp-ai-wpoos-pro' ),
+			'lf_case_law_analyzer'                 => __( 'Case Law Analyzer', 'mcp-ai-wpoos-pro' ),
+			'lf_firm_performance_dashboard'        => __( 'Firm Performance Dashboard', 'mcp-ai-wpoos-pro' ),
+			'lf_matter_analytics_generator'        => __( 'Matter Analytics Generator', 'mcp-ai-wpoos-pro' ),
+			'lf_revenue_forecaster'                => __( 'Revenue Forecaster', 'mcp-ai-wpoos-pro' ),
+			'lf_attorney_utilization_tracker'      => __( 'Attorney Utilization Tracker', 'mcp-ai-wpoos-pro' ),
+			'lf_client_satisfaction_analyzer'      => __( 'Client Satisfaction Analyzer', 'mcp-ai-wpoos-pro' ),
+			'lf_competitive_benchmarker'           => __( 'Competitive Benchmarker', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

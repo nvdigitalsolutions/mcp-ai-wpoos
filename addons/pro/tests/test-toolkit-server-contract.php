@@ -10,7 +10,8 @@
 
 require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 
-/**
+/** Summary.
+ *
  * @group toolkit-mcp-servers
  */
 class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
@@ -54,12 +55,16 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		);
 	}
 
+	/** Test classes exist.
+	 */
 	public function test_classes_exist() {
 		foreach ( $this->pilot_servers() as $row ) {
 			$this->assertTrue( class_exists( $row[0] ), $row[0] . ' must exist.' );
 		}
 	}
 
+	/** Test each server implements interface.
+	 */
 	public function test_each_server_implements_interface() {
 		foreach ( $this->pilot_servers() as $row ) {
 			$server = new $row[0]();
@@ -67,6 +72,8 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test slug matches expected.
+	 */
 	public function test_slug_matches_expected() {
 		foreach ( $this->pilot_servers() as $row ) {
 			$server = new $row[0]();
@@ -74,6 +81,8 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test descriptor is well formed.
+	 */
 	public function test_descriptor_is_well_formed() {
 		foreach ( $this->pilot_servers() as $row ) {
 			$server     = new $row[0]();
@@ -91,6 +100,8 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test each native surface has required keys.
+	 */
 	public function test_each_native_surface_has_required_keys() {
 		foreach ( $this->pilot_servers() as $row ) {
 			$server = new $row[0]();
@@ -104,6 +115,8 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test default enabled state is true.
+	 */
 	public function test_default_enabled_state_is_true() {
 		foreach ( $this->pilot_servers() as $row ) {
 			$server = new $row[0]();
@@ -111,6 +124,8 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test disabling propagates to descriptor.
+	 */
 	public function test_disabling_propagates_to_descriptor() {
 		$server = new WP_MCP_AI_CRM_MCP_Server();
 		$server->update_configuration( array( 'enabled' => false ) );
@@ -123,6 +138,8 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		$server->update_configuration( array( 'enabled' => true ) );
 	}
 
+	/** Test tools allowlist filters effective tools.
+	 */
 	public function test_tools_allowlist_filters_effective_tools() {
 		$server     = new WP_MCP_AI_CRM_MCP_Server();
 		$candidates = $server->candidate_tool_slugs();
@@ -140,14 +157,21 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		$this->assertSame( array( $candidates[0] ), $effective );
 
 		// Reset.
-		$server->update_configuration( array( 'enabled' => true, 'tools_allowlist' => array() ) );
+		$server->update_configuration(
+			array(
+				'enabled'         => true,
+				'tools_allowlist' => array(),
+			)
+		);
 		$this->assertSame( $candidates, $server->effective_tool_slugs() );
 	}
 
+	/** Test registry holds pilot servers after bootstrap.
+	 */
 	public function test_registry_holds_pilot_servers_after_bootstrap() {
 		WP_MCP_AI_Toolkit_Server_Registry::reset_instance();
 		$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
-		// Manually register all Tier-1 servers, since `init` may have already
+		// Manually register all Tier-1 servers, since `init` may have already.
 		// fired in this test process.
 		foreach ( $this->pilot_servers() as $row ) {
 			$registry->register( new $row[0]() );
@@ -158,12 +182,14 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 		}
 	}
 
+	/** Test every server has at least one candidate tool or surface.
+	 */
 	public function test_every_server_has_at_least_one_candidate_tool_or_surface() {
-		// A Tier-1 server must justify its existence — either by exposing a tool
+		// A Tier-1 server must justify its existence — either by exposing a tool.
 		// candidate or by owning at least one ingestion surface.
 		foreach ( $this->pilot_servers() as $row ) {
-			$server     = new $row[0]();
-			$has_tool   = ! empty( $server->candidate_tool_slugs() );
+			$server      = new $row[0]();
+			$has_tool    = ! empty( $server->candidate_tool_slugs() );
 			$has_surface = ! empty( $server->ingestion_surfaces() );
 			$this->assertTrue(
 				$has_tool || $has_surface,

@@ -124,7 +124,7 @@ class Test_NVOOS_SaaS_Controller_Credential_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * clear_all() removes the option entirely.
+	 * Clear all removes the option entirely.
 	 *
 	 * @return void
 	 */
@@ -137,7 +137,7 @@ class Test_NVOOS_SaaS_Controller_Credential_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * clear_key() only removes the requested key.
+	 * Clear key only removes the requested key.
 	 *
 	 * @return void
 	 */
@@ -156,7 +156,7 @@ class Test_NVOOS_SaaS_Controller_Credential_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * clear_key rejects non-allowlisted keys.
+	 * Clear key rejects non-allowlisted keys.
 	 *
 	 * @return void
 	 */

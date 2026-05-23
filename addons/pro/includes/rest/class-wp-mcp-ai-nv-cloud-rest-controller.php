@@ -295,11 +295,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST_NV_Cloud_Controller' ) ) {
 				'POST',
 				'/account/topup',
 				array(
-					'amount_usd'      => $amount,
-					'processor_fee'   => $processor_fee,
-					'return_url'      => function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=wp-mcp-ai-nv-cloud&topup=success' ) : '',
-					'cancel_url'      => function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=wp-mcp-ai-nv-cloud&topup=cancel' ) : '',
-					'site_url'        => function_exists( 'home_url' ) ? esc_url_raw( home_url( '/' ) ) : '',
+					'amount_usd'    => $amount,
+					'processor_fee' => $processor_fee,
+					'return_url'    => function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=wp-mcp-ai-nv-cloud&topup=success' ) : '',
+					'cancel_url'    => function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=wp-mcp-ai-nv-cloud&topup=cancel' ) : '',
+					'site_url'      => function_exists( 'home_url' ) ? esc_url_raw( home_url( '/' ) ) : '',
 				)
 			);
 
@@ -366,10 +366,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST_NV_Cloud_Controller' ) ) {
 			$args = array(
 				'method'  => $method,
 				'headers' => array(
-					'Authorization'      => 'Bearer ' . $token,
-					'Content-Type'       => 'application/json',
-					'Accept'             => 'application/json',
-					'X-NV-Site-Url'      => function_exists( 'home_url' ) ? esc_url_raw( home_url( '/' ) ) : '',
+					'Authorization' => 'Bearer ' . $token,
+					'Content-Type'  => 'application/json',
+					'Accept'        => 'application/json',
+					'X-NV-Site-Url' => function_exists( 'home_url' ) ? esc_url_raw( home_url( '/' ) ) : '',
 				),
 				'timeout' => 30,
 			);

@@ -32,6 +32,7 @@ class NV_oOS_Graphify_Builder {
 	 *
 	 * @since 0.5.0
 	 *
+	// phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop -- Nested parameter documentation uses { syntax.
 	 * @param array $args {
 	 *     @type bool   $incremental    Only process content changed since last build.
 	 *     @type bool   $semantic       Whether to run semantic extraction.

@@ -1,5 +1,12 @@
 <?php
 /**
+ * Architectural design interoperability module.
+ *
+ * @package NV_oOS_Pro
+ */
+
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- Utility functions co-located with class.
+/**
  * Architectural Interoperability Engine.
  *
  * Phase D extension to the Architectural Design toolkit. Provides static
@@ -123,9 +130,9 @@ class WP_MCP_AI_Architectural_Interop {
 					continue;
 				}
 				$levels[] = array(
-					'id'             => isset( $raw['id'] ) ? (string) $raw['id'] : ( 'L' . ( $idx + 1 ) ),
-					'name'           => isset( $raw['name'] ) ? (string) $raw['name'] : ( 'Level ' . ( $idx + 1 ) ),
-					'elevation_m'    => isset( $raw['elevation_m'] ) ? (float) $raw['elevation_m'] : (float) $idx * 3.0,
+					'id'               => isset( $raw['id'] ) ? (string) $raw['id'] : ( 'L' . ( $idx + 1 ) ),
+					'name'             => isset( $raw['name'] ) ? (string) $raw['name'] : ( 'Level ' . ( $idx + 1 ) ),
+					'elevation_m'      => isset( $raw['elevation_m'] ) ? (float) $raw['elevation_m'] : (float) $idx * 3.0,
 					'floor_to_floor_m' => isset( $raw['floor_to_floor_m'] ) ? (float) $raw['floor_to_floor_m'] : 3.0,
 				);
 			}
@@ -171,12 +178,12 @@ class WP_MCP_AI_Architectural_Interop {
 					continue;
 				}
 				$walls[] = array(
-					'id'        => isset( $raw['id'] ) ? (string) $raw['id'] : ( 'W' . ( $idx + 1 ) ),
-					'level_id'  => isset( $raw['level_id'] ) ? (string) $raw['level_id'] : $levels[0]['id'],
-					'length_m'  => isset( $raw['length_m'] ) ? max( 0.0, (float) $raw['length_m'] ) : 0.0,
-					'height_m'  => isset( $raw['height_m'] ) ? max( 0.0, (float) $raw['height_m'] ) : 3.0,
+					'id'           => isset( $raw['id'] ) ? (string) $raw['id'] : ( 'W' . ( $idx + 1 ) ),
+					'level_id'     => isset( $raw['level_id'] ) ? (string) $raw['level_id'] : $levels[0]['id'],
+					'length_m'     => isset( $raw['length_m'] ) ? max( 0.0, (float) $raw['length_m'] ) : 0.0,
+					'height_m'     => isset( $raw['height_m'] ) ? max( 0.0, (float) $raw['height_m'] ) : 3.0,
 					'thickness_mm' => isset( $raw['thickness_mm'] ) ? max( 0, (int) $raw['thickness_mm'] ) : 200,
-					'is_exterior' => ! empty( $raw['is_exterior'] ),
+					'is_exterior'  => ! empty( $raw['is_exterior'] ),
 				);
 			}
 		}
@@ -237,14 +244,14 @@ class WP_MCP_AI_Architectural_Interop {
 	private static function normalize_opening( $raw, $idx, $kind ) {
 		$raw = is_array( $raw ) ? $raw : array();
 		return array(
-			'id'        => isset( $raw['id'] ) ? (string) $raw['id'] : ( 'O' . ( $idx + 1 ) ),
-			'kind'      => '' !== $kind
+			'id'       => isset( $raw['id'] ) ? (string) $raw['id'] : ( 'O' . ( $idx + 1 ) ),
+			'kind'     => '' !== $kind
 				? $kind
 				: ( isset( $raw['kind'] ) ? (string) $raw['kind'] : 'door' ),
-			'wall_id'   => isset( $raw['wall_id'] ) ? (string) $raw['wall_id'] : '',
-			'width_m'   => isset( $raw['width_m'] ) ? max( 0.0, (float) $raw['width_m'] ) : 0.9,
-			'height_m'  => isset( $raw['height_m'] ) ? max( 0.0, (float) $raw['height_m'] ) : 2.1,
-			'sill_m'    => isset( $raw['sill_m'] ) ? max( 0.0, (float) $raw['sill_m'] ) : 0.0,
+			'wall_id'  => isset( $raw['wall_id'] ) ? (string) $raw['wall_id'] : '',
+			'width_m'  => isset( $raw['width_m'] ) ? max( 0.0, (float) $raw['width_m'] ) : 0.9,
+			'height_m' => isset( $raw['height_m'] ) ? max( 0.0, (float) $raw['height_m'] ) : 2.1,
+			'sill_m'   => isset( $raw['sill_m'] ) ? max( 0.0, (float) $raw['sill_m'] ) : 0.0,
 		);
 	}
 
@@ -282,22 +289,22 @@ class WP_MCP_AI_Architectural_Interop {
 		$lines[] = 'ENDSEC;';
 		$lines[] = 'DATA;';
 
-		$id    = 1;
-		$ref   = function () use ( &$id ) {
+		$id  = 1;
+		$ref = function () use ( &$id ) {
 			return '#' . ( $id++ );
 		};
 
-		$person_id          = $ref();
-		$lines[]            = sprintf( "%s= IFCPERSON($,$,'%s',$,$,$,$,$);", $person_id, $author );
-		$org_id             = $ref();
-		$lines[]            = sprintf( "%s= IFCORGANIZATION($,'%s',$,$,$);", $org_id, $organization );
-		$person_org_id      = $ref();
-		$lines[]            = sprintf( '%s= IFCPERSONANDORGANIZATION(%s,%s,$);', $person_org_id, $person_id, $org_id );
-		$app_id             = $ref();
-		$lines[]            = sprintf( "%s= IFCAPPLICATION(%s,'1.5.0','NV oOS Arch Toolkit','NV-OOS-ARCH');", $app_id, $org_id );
-		$owner_history_id   = $ref();
-		$ts_unix            = (int) gmdate( 'U' );
-		$lines[]            = sprintf( '%s= IFCOWNERHISTORY(%s,%s,$,.ADDED.,$,$,$,%d);', $owner_history_id, $person_org_id, $app_id, $ts_unix );
+		$person_id        = $ref();
+		$lines[]          = sprintf( "%s= IFCPERSON($,$,'%s',$,$,$,$,$);", $person_id, $author );
+		$org_id           = $ref();
+		$lines[]          = sprintf( "%s= IFCORGANIZATION($,'%s',$,$,$);", $org_id, $organization );
+		$person_org_id    = $ref();
+		$lines[]          = sprintf( '%s= IFCPERSONANDORGANIZATION(%s,%s,$);', $person_org_id, $person_id, $org_id );
+		$app_id           = $ref();
+		$lines[]          = sprintf( "%s= IFCAPPLICATION(%s,'1.5.0','NV oOS Arch Toolkit','NV-OOS-ARCH');", $app_id, $org_id );
+		$owner_history_id = $ref();
+		$ts_unix          = (int) gmdate( 'U' );
+		$lines[]          = sprintf( '%s= IFCOWNERHISTORY(%s,%s,$,.ADDED.,$,$,$,%d);', $owner_history_id, $person_org_id, $app_id, $ts_unix );
 
 		$origin_id  = $ref();
 		$lines[]    = sprintf( '%s= IFCCARTESIANPOINT((0.,0.,0.));', $origin_id );
@@ -354,10 +361,10 @@ class WP_MCP_AI_Architectural_Interop {
 		$storey_ids = array();
 		$levels     = isset( $plan['levels'] ) ? (array) $plan['levels'] : array();
 		foreach ( $levels as $level ) {
-			$storey_placement_id = $ref();
-			$lines[]             = sprintf( '%s= IFCLOCALPLACEMENT(%s,%s);', $storey_placement_id, $building_placement_id, $axis3d_id );
-			$storey_id           = $ref();
-			$lines[]             = sprintf(
+			$storey_placement_id        = $ref();
+			$lines[]                    = sprintf( '%s= IFCLOCALPLACEMENT(%s,%s);', $storey_placement_id, $building_placement_id, $axis3d_id );
+			$storey_id                  = $ref();
+			$lines[]                    = sprintf(
 				"%s= IFCBUILDINGSTOREY('%s',%s,'%s',$,$,%s,$,$,.ELEMENT.,%g);",
 				$storey_id,
 				self::ifc_guid(),
@@ -369,12 +376,12 @@ class WP_MCP_AI_Architectural_Interop {
 			$storey_ids[ $level['id'] ] = $storey_id;
 		}
 
-		// Spaces / walls / openings — summarised so the DATA section stays
+		// Spaces / walls / openings — summarised so the DATA section stays.
 		// compact but countable. Each entity has a unique GUID.
 		$space_ids = array();
 		foreach ( (array) ( isset( $plan['spaces'] ) ? $plan['spaces'] : array() ) as $space ) {
-			$space_id  = $ref();
-			$lines[]   = sprintf(
+			$space_id    = $ref();
+			$lines[]     = sprintf(
 				"%s= IFCSPACE('%s',%s,'%s',$,$,$,$,$,.ELEMENT.,.INTERNAL.,%g);",
 				$space_id,
 				self::ifc_guid(),
@@ -423,11 +430,11 @@ class WP_MCP_AI_Architectural_Interop {
 	 * @return string XML.
 	 */
 	public static function build_gbxml( array $plan, $author = 'NV oOS', $organization = 'NV Digital Solutions' ) {
-		$ts            = gmdate( 'Y-m-d\TH:i:s' );
-		$project_name  = isset( $plan['project']['name'] ) ? (string) $plan['project']['name'] : 'Untitled';
-		$units         = isset( $plan['units'] ) ? (string) $plan['units'] : 'metric';
-		$length_unit   = ( 'metric' === $units ) ? 'Meters' : 'Feet';
-		$area_unit     = ( 'metric' === $units ) ? 'SquareMeters' : 'SquareFeet';
+		$ts           = gmdate( 'Y-m-d\TH:i:s' );
+		$project_name = isset( $plan['project']['name'] ) ? (string) $plan['project']['name'] : 'Untitled';
+		$units        = isset( $plan['units'] ) ? (string) $plan['units'] : 'metric';
+		$length_unit  = ( 'metric' === $units ) ? 'Meters' : 'Feet';
+		$area_unit    = ( 'metric' === $units ) ? 'SquareMeters' : 'SquareFeet';
 
 		$lines   = array();
 		$lines[] = '<?xml version="1.0" encoding="UTF-8"?>';
@@ -494,9 +501,11 @@ class WP_MCP_AI_Architectural_Interop {
 		);
 	}
 
-	/* ----------------------------------------------------------------
+	/*
+	----------------------------------------------------------------
 	 * RFI / Submittal log helpers — operate on a project post.
-	 * ------------------------------------------------------------- */
+	 * -------------------------------------------------------------
+	 */
 
 	/**
 	 * Read a log array from a project post.
@@ -568,8 +577,8 @@ class WP_MCP_AI_Architectural_Interop {
 	 * @return string
 	 */
 	private static function ifc_guid() {
-		// IFC uses a custom 22-char base64 encoding; we approximate with a
-		// random 22-char alphanumeric string. Tools that strictly validate the
+		// IFC uses a custom 22-char base64 encoding; we approximate with a.
+		// random 22-char alphanumeric string. Tools that strictly validate the.
 		// IFC GUID alphabet should regenerate.
 		$alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_$abcdefghijklmnopqrstuvwxyz';
 		$out      = '';

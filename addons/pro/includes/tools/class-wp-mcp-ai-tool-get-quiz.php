@@ -169,6 +169,11 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

@@ -98,6 +98,9 @@ class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -119,16 +122,16 @@ class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interf
 		}
 
 		$profile = array(
-			'client_id'      => $client_id,
-			'name'           => $client_post->post_title,
-			'description'    => $client_post->post_content,
-			'email'          => get_post_meta( $client_id, '_lf_email', true ),
-			'phone'          => get_post_meta( $client_id, '_lf_phone', true ),
-			'practice_area'  => get_post_meta( $client_id, '_lf_practice_area', true ),
-			'urgency'        => get_post_meta( $client_id, '_lf_urgency', true ),
+			'client_id'       => $client_id,
+			'name'            => $client_post->post_title,
+			'description'     => $client_post->post_content,
+			'email'           => get_post_meta( $client_id, '_lf_email', true ),
+			'phone'           => get_post_meta( $client_id, '_lf_phone', true ),
+			'practice_area'   => get_post_meta( $client_id, '_lf_practice_area', true ),
+			'urgency'         => get_post_meta( $client_id, '_lf_urgency', true ),
 			'referral_source' => get_post_meta( $client_id, '_lf_referral_source', true ),
-			'intake_date'    => get_post_meta( $client_id, '_lf_intake_date', true ),
-			'status'         => get_post_meta( $client_id, '_lf_status', true ),
+			'intake_date'     => get_post_meta( $client_id, '_lf_intake_date', true ),
+			'status'          => get_post_meta( $client_id, '_lf_status', true ),
 		);
 
 		// Count associated matters.
@@ -142,8 +145,8 @@ class WP_MCP_AI_Tool_LF_Client_Profile_Analyzer implements WP_MCP_AI_Tool_Interf
 				'fields'         => 'ids',
 			)
 		);
-		$matter_ids     = $matters_query->posts;
-		$matter_count   = count( $matter_ids );
+		$matter_ids    = $matters_query->posts;
+		$matter_count  = count( $matter_ids );
 		wp_reset_postdata();
 
 		// Gather matter summaries.

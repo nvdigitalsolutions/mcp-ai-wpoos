@@ -101,6 +101,11 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -205,10 +210,10 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'id'          => $project_id,
 					'name'        => get_the_title(),
 					'description' => get_the_content(),
-					'status'      => get_post_meta( $project_id, '_project_status', true ) ?: 'planning',
-					'start_date'  => get_post_meta( $project_id, '_project_start_date', true ) ?: '',
-					'end_date'    => get_post_meta( $project_id, '_project_end_date', true ) ?: '',
-					'assigned_to' => get_post_meta( $project_id, '_project_assigned_to', true ) ?: array(),
+					'status'      => get_post_meta( $project_id, '_project_status', true ) ? get_post_meta( $project_id, '_project_status', true ) : 'planning',
+					'start_date'  => get_post_meta( $project_id, '_project_start_date', true ) ? get_post_meta( $project_id, '_project_start_date', true ) : '',
+					'end_date'    => get_post_meta( $project_id, '_project_end_date', true ) ? get_post_meta( $project_id, '_project_end_date', true ) : '',
+					'assigned_to' => get_post_meta( $project_id, '_project_assigned_to', true ) ? get_post_meta( $project_id, '_project_assigned_to', true ) : array(),
 					'created_at'  => get_the_date( 'c' ),
 					'updated_at'  => get_the_modified_date( 'c' ),
 				);

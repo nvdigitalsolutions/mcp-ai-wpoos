@@ -592,7 +592,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 			if ( $is_group ) {
-				$tg_contact_name = isset( $message['chat']['title'] ) ? sanitize_text_field( $message['chat']['title'] ) : $chat_id;
+				$tg_contact_name  = isset( $message['chat']['title'] ) ? sanitize_text_field( $message['chat']['title'] ) : $chat_id;
 				$tg_contact_extra = array(
 					'display_name'      => $tg_contact_name,
 					'metadata'          => array( 'contact_type' => $chat_type ),
@@ -828,16 +828,16 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$assistant_id  = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
-		$message_text  = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
-		$chat_id              = isset( $args['chat_id'] ) ? (string) $args['chat_id'] : '';
-		$from_id              = isset( $args['from_id'] ) ? (string) $args['from_id'] : $chat_id;
-		$connection_id        = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
-		$chat_type            = isset( $args['chat_type'] ) ? (string) $args['chat_type'] : 'private';
-		$reply_to_message_id  = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
+		$assistant_id        = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+		$message_text        = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$chat_id             = isset( $args['chat_id'] ) ? (string) $args['chat_id'] : '';
+		$from_id             = isset( $args['from_id'] ) ? (string) $args['from_id'] : $chat_id;
+		$connection_id       = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$chat_type           = isset( $args['chat_type'] ) ? (string) $args['chat_type'] : 'private';
+		$reply_to_message_id = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
 		// retry_count incremented each time the job is rescheduled due to a 429.
-		$retry_count          = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
-		$tg_conv_type         = in_array( $chat_type, array( 'group', 'supergroup' ), true ) ? 'group' : 'dm';
+		$retry_count  = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
+		$tg_conv_type = in_array( $chat_type, array( 'group', 'supergroup' ), true ) ? 'group' : 'dm';
 		// WordPress attachment sideloaded from a Telegram media message (photo,
 		// document, video, etc.). When set, the message content array will include
 		// the actual file so vision models can see images and the AI can reference
@@ -1051,21 +1051,21 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$response_data = $response->get_data();
-		$content            = $this->extract_content_from_chat_response( $response_data );
-		$agentic_messages   = $this->extract_agentic_tool_messages_from_chat_response( $response_data );
+		$response_data    = $response->get_data();
+		$content          = $this->extract_content_from_chat_response( $response_data );
+		$agentic_messages = $this->extract_agentic_tool_messages_from_chat_response( $response_data );
 
 		if ( '' === $content ) {
 			WP_MCP_AI_Logger::log_error(
 				'Telegram AI reply: empty content from assistant.',
 				array(
-					'assistant_id'            => $assistant_id,
-					'has_data'                => isset( $response_data['data'] ),
-					'has_choices'             => isset( $response_data['data']['choices'] ),
-					'choices_count'           => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
-					'finish_reason'           => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
-					'agentic_messages_count'  => isset( $response_data['data']['agentic_tool_messages'] ) ? count( $response_data['data']['agentic_tool_messages'] ) : 0,
-					'likely_tool_call_loop'   => isset( $response_data['data']['choices'][0]['finish_reason'] ) && 'tool_calls' === $response_data['data']['choices'][0]['finish_reason'],
+					'assistant_id'           => $assistant_id,
+					'has_data'               => isset( $response_data['data'] ),
+					'has_choices'            => isset( $response_data['data']['choices'] ),
+					'choices_count'          => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
+					'finish_reason'          => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+					'agentic_messages_count' => isset( $response_data['data']['agentic_tool_messages'] ) ? count( $response_data['data']['agentic_tool_messages'] ) : 0,
+					'likely_tool_call_loop'  => isset( $response_data['data']['choices'][0]['finish_reason'] ) && 'tool_calls' === $response_data['data']['choices'][0]['finish_reason'],
 				)
 			);
 
@@ -1104,7 +1104,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// allow_sending_without_reply prevents failures when the original message
 		// is unavailable (e.g. deleted, or migrated in supergroups).
 		if ( '' !== $reply_to_message_id && in_array( $chat_type, array( 'group', 'supergroup' ), true ) ) {
-			$payload['reply_to_message_id']        = (int) $reply_to_message_id;
+			$payload['reply_to_message_id']         = (int) $reply_to_message_id;
 			$payload['allow_sending_without_reply'] = true;
 		}
 
@@ -1279,7 +1279,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Persist updated conversation history.
-		$history[] = array(
+		$history[]               = array(
 			'role'    => 'user',
 			'content' => $message_text,
 		);
@@ -1355,7 +1355,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $tg_outbound_contact_id, array( 'connection_id' => $connection_id, 'conversation_type' => $tg_conv_type ) );
+			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'telegram',
+				$tg_outbound_contact_id,
+				array(
+					'connection_id'     => $connection_id,
+					'conversation_type' => $tg_conv_type,
+				)
+			);
 			if ( $tg_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tg_contact_row_id );
 			}
@@ -2259,10 +2266,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			// Handle built-in deep links: tool_SLUG, content_TYPE, shop, balance.
 			if ( 0 === strpos( $args, 'tool_' ) ) {
 				$tool_slug = sanitize_text_field( substr( $args, 5 ) );
-				$text = "🔧 Opening tool: `$tool_slug`\n\nUse the Mini App to execute this tool with a full parameter form.\n\n/app – Open Mini App";
+				$text      = "🔧 Opening tool: `$tool_slug`\n\nUse the Mini App to execute this tool with a full parameter form.\n\n/app – Open Mini App";
 			} elseif ( 0 === strpos( $args, 'content_' ) ) {
 				$content_type = sanitize_text_field( substr( $args, 8 ) );
-				$text = "📝 Content type: `$content_type`\n\nOpen the Mini App to browse and edit your content.\n\n/app – Open Mini App";
+				$text         = "📝 Content type: `$content_type`\n\nOpen the Mini App to browse and edit your content.\n\n/app – Open Mini App";
 			} elseif ( 'shop' === $args ) {
 				$text = "🛒 Open the Mini App to visit the Shop and purchase credits.\n\n/app – Open Mini App";
 			} elseif ( 'balance' === $args ) {
@@ -2322,7 +2329,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @param array  $message Telegram message.
 	 */
 	protected function cmd_settings( $chat_id, array $message ) {
-		$connection = $this->get_active_telegram_connection();
+		$connection   = $this->get_active_telegram_connection();
 		$bot_username = '';
 		if ( $connection && ! empty( $connection['bot_username'] ) ) {
 			$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
@@ -2351,12 +2358,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$lines      = array( '📊 *Bot Status*' );
 
 		if ( $connection ) {
-			$lines[] = '✅ Connection: Active';
-			$automation_rules      = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+			$lines[]                = '✅ Connection: Active';
+			$automation_rules       = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
 			$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
-			$lines[] = sprintf( '🤖 Assistants: %d configured', count( $assigned_assistant_ids ) );
-			$lines[] = sprintf( '👥 Groups: %s', ! empty( $connection['enable_groups'] ) ? 'Enabled' : 'Disabled' );
-			$lines[] = sprintf( '📢 Channels: %s', ! empty( $connection['enable_channels'] ) ? 'Enabled' : 'Disabled' );
+			$lines[]                = sprintf( '🤖 Assistants: %d configured', count( $assigned_assistant_ids ) );
+			$lines[]                = sprintf( '👥 Groups: %s', ! empty( $connection['enable_groups'] ) ? 'Enabled' : 'Disabled' );
+			$lines[]                = sprintf( '📢 Channels: %s', ! empty( $connection['enable_channels'] ) ? 'Enabled' : 'Disabled' );
 		} else {
 			$lines[] = '❌ Connection: Not configured';
 		}
@@ -2374,7 +2381,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @param array  $message Telegram message.
 	 */
 	protected function cmd_cancel( $chat_id, $from_id, array $message ) {
-		$connection = $this->get_active_telegram_connection();
+		$connection    = $this->get_active_telegram_connection();
 		$connection_id = ( $connection && isset( $connection['id'] ) ) ? sanitize_key( $connection['id'] ) : '';
 
 		$sender = '' !== $from_id ? $from_id : $chat_id;
@@ -2485,7 +2492,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$i = 0;
 		foreach ( $display_tools as $slug => $tool ) {
 			if ( $i >= 20 ) {
-				$text .= "\n_… and " . ( $count - 20 ) . " more. Open the Mini App to see all._";
+				$text .= "\n_… and " . ( $count - 20 ) . ' more. Open the Mini App to see all._';
 				break;
 			}
 			$raw_name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug;
@@ -2511,7 +2518,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
 
 		if ( ! $user_id ) {
-			$this->send_command_reply( $chat_id, "💰 Please link your WordPress account first using /settings.", $message );
+			$this->send_command_reply( $chat_id, '💰 Please link your WordPress account first using /settings.', $message );
 			return;
 		}
 
@@ -2519,7 +2526,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		$text  = "💰 *Your Balance*\n\n";
 		$text .= "⭐ Stars: $balance\n\n";
-		$text .= "_Use the Mini App Shop tab to purchase more credits._";
+		$text .= '_Use the Mini App Shop tab to purchase more credits._';
 
 		$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
 	}
@@ -2897,22 +2904,22 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$chat_id = isset( $message['chat']['id'] ) ? (string) $message['chat']['id'] : '';
 		$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
 
-		$currency       = isset( $payment['currency'] ) ? sanitize_text_field( $payment['currency'] ) : '';
-		$total_amount   = isset( $payment['total_amount'] ) ? absint( $payment['total_amount'] ) : 0;
+		$currency        = isset( $payment['currency'] ) ? sanitize_text_field( $payment['currency'] ) : '';
+		$total_amount    = isset( $payment['total_amount'] ) ? absint( $payment['total_amount'] ) : 0;
 		$invoice_payload = isset( $payment['invoice_payload'] ) ? sanitize_text_field( $payment['invoice_payload'] ) : '';
-		$charge_id      = isset( $payment['telegram_payment_charge_id'] ) ? sanitize_text_field( $payment['telegram_payment_charge_id'] ) : '';
-		$provider_id    = isset( $payment['provider_payment_charge_id'] ) ? sanitize_text_field( $payment['provider_payment_charge_id'] ) : '';
+		$charge_id       = isset( $payment['telegram_payment_charge_id'] ) ? sanitize_text_field( $payment['telegram_payment_charge_id'] ) : '';
+		$provider_id     = isset( $payment['provider_payment_charge_id'] ) ? sanitize_text_field( $payment['provider_payment_charge_id'] ) : '';
 
 		WP_MCP_AI_Logger::log_event(
 			'telegram_payment_received',
 			'Telegram Stars payment received.',
 			array(
-				'telegram_id'    => $tg_id,
-				'currency'       => $currency,
-				'amount'         => $total_amount,
-				'payload'        => $invoice_payload,
-				'charge_id'      => $charge_id,
-				'provider_id'    => $provider_id,
+				'telegram_id' => $tg_id,
+				'currency'    => $currency,
+				'amount'      => $total_amount,
+				'payload'     => $invoice_payload,
+				'charge_id'   => $charge_id,
+				'provider_id' => $provider_id,
 			)
 		);
 
@@ -2930,11 +2937,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				$history = array();
 			}
 			$history[] = array(
-				'date'       => gmdate( 'Y-m-d H:i:s' ),
-				'currency'   => $currency,
-				'amount'     => $total_amount,
-				'payload'    => $invoice_payload,
-				'charge_id'  => $charge_id,
+				'date'      => gmdate( 'Y-m-d H:i:s' ),
+				'currency'  => $currency,
+				'amount'    => $total_amount,
+				'payload'   => $invoice_payload,
+				'charge_id' => $charge_id,
 			);
 			// Keep last 100 entries.
 			if ( count( $history ) > 100 ) {
@@ -2956,11 +2963,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// Send confirmation to the user.
 		if ( ! empty( $chat_id ) ) {
-			$text = "✅ *Payment Received!*\n\n";
+			$text  = "✅ *Payment Received!*\n\n";
 			$text .= "⭐ Amount: $total_amount $currency\n";
 			if ( $user_id ) {
 				$new_balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
-				$text .= "💰 New Balance: $new_balance Stars\n";
+				$text       .= "💰 New Balance: $new_balance Stars\n";
 			}
 			$text .= "\nThank you for your purchase!";
 
@@ -3239,9 +3246,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					continue;
 				}
 
-				$offset        = isset( $entity['offset'] ) ? (int) $entity['offset'] : 0;
-				$length        = isset( $entity['length'] ) ? (int) $entity['length'] : 0;
-				$mention_text  = mb_substr( $text, $offset, $length );
+				$offset         = isset( $entity['offset'] ) ? (int) $entity['offset'] : 0;
+				$length         = isset( $entity['length'] ) ? (int) $entity['length'] : 0;
+				$mention_text   = mb_substr( $text, $offset, $length );
 				$mentioned_name = strtolower( ltrim( $mention_text, '@' ) );
 
 				// If we know the bot_username, match exactly.
@@ -3334,7 +3341,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @param bool  $edited Whether this is an edited channel post.
 	 */
 	protected function process_channel_post( array $post, $edited = false ) {
-		$chat_id   = isset( $post['chat']['id'] ) ? (string) $post['chat']['id'] : '';
+		$chat_id    = isset( $post['chat']['id'] ) ? (string) $post['chat']['id'] : '';
 		$chat_title = isset( $post['chat']['title'] ) ? sanitize_text_field( $post['chat']['title'] ) : '';
 
 		if ( '' === $chat_id ) {
@@ -3442,9 +3449,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @param array $update The my_chat_member update object from Telegram.
 	 */
 	protected function process_membership_update( array $update ) {
-		$chat      = isset( $update['chat'] ) ? $update['chat'] : array();
-		$chat_id   = isset( $chat['id'] ) ? (string) $chat['id'] : '';
-		$chat_type = isset( $chat['type'] ) ? (string) $chat['type'] : '';
+		$chat       = isset( $update['chat'] ) ? $update['chat'] : array();
+		$chat_id    = isset( $chat['id'] ) ? (string) $chat['id'] : '';
+		$chat_type  = isset( $chat['type'] ) ? (string) $chat['type'] : '';
 		$chat_title = isset( $chat['title'] ) ? sanitize_text_field( $chat['title'] ) : '';
 
 		$old_status = isset( $update['old_chat_member']['status'] ) ? (string) $update['old_chat_member']['status'] : '';
@@ -3463,7 +3470,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		// Determine if the bot was added or removed.
-		$left_statuses  = array( 'left', 'kicked' );
+		$left_statuses   = array( 'left', 'kicked' );
 		$joined_statuses = array( 'member', 'administrator', 'creator' );
 
 		$was_added   = in_array( $old_status, $left_statuses, true ) && in_array( $new_status, $joined_statuses, true );
@@ -3652,24 +3659,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// 1. Extract fenced code blocks and replace with placeholders so that
-		//    content inside them is not processed by other regex rules.
-		$code_blocks  = array();
-		$placeholder  = "\x07TGCB:";  // BEL-based placeholder safe from Markdown pattern matching.
-		$block_index  = 0;
+		// content inside them is not processed by other regex rules.
+		$code_blocks = array();
+		$placeholder = "\x07TGCB:";  // BEL-based placeholder safe from Markdown pattern matching.
+		$block_index = 0;
 
 		$text = preg_replace_callback(
 			'/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/',
 			function ( $m ) use ( &$code_blocks, &$block_index, $placeholder ) {
-				$lang    = trim( $m[1] );
-				$code    = $m[2];
+				$lang = trim( $m[1] );
+				$code = $m[2];
 				// Remove one trailing newline if present (aesthetic).
-				$code    = rtrim( $code, "\n" );
+				$code = rtrim( $code, "\n" );
 				// Escape HTML entities inside the code block.
-				$code    = htmlspecialchars( $code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-				$tag     = '' !== $lang
+				$code                = htmlspecialchars( $code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				$tag                 = '' !== $lang
 					? '<pre><code class="language-' . htmlspecialchars( $lang, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $code . '</code></pre>'
 					: '<pre>' . $code . '</pre>';
-				$key     = $placeholder . $block_index . "\x07";
+				$key                 = $placeholder . $block_index . "\x07";
 				$code_blocks[ $key ] = $tag;
 				++$block_index;
 				return $key;
@@ -3685,8 +3692,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$text = preg_replace_callback(
 			'/`([^`\n]+?)`/',
 			function ( $m ) use ( &$inline_codes, &$ic_index, $ic_ph ) {
-				$code = htmlspecialchars( $m[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-				$key  = $ic_ph . $ic_index . "\x07";
+				$code                 = htmlspecialchars( $m[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				$key                  = $ic_ph . $ic_index . "\x07";
 				$inline_codes[ $key ] = '<code>' . $code . '</code>';
 				++$ic_index;
 				return $key;
@@ -3695,8 +3702,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		// 2b. Extract existing HTML anchor tags so they survive the HTML-escaping
-		//     pass in step 3. AI responses sometimes emit raw <a href="…">…</a>
-		//     links (e.g. from tool output) instead of Markdown [text](url) syntax.
+		// pass in step 3. AI responses sometimes emit raw <a href="…">…</a>
+		// links (e.g. from tool output) instead of Markdown [text](url) syntax.
 		$html_links = array();
 		$hl_index   = 0;
 		$hl_ph      = "\x07TGHL:";
@@ -3709,8 +3716,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				if ( '' === $url ) {
 					return $link_text;
 				}
-				$tag = '<a href="' . htmlspecialchars( $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $link_text . '</a>';
-				$key = $hl_ph . $hl_index . "\x07";
+				$tag                = '<a href="' . htmlspecialchars( $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $link_text . '</a>';
+				$key                = $hl_ph . $hl_index . "\x07";
 				$html_links[ $key ] = $tag;
 				++$hl_index;
 				return $key;
@@ -3719,7 +3726,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		// 3. Escape HTML special characters in the remaining text so that raw
-		//    `<`, `>`, and `&` do not break Telegram's HTML parser.
+		// `<`, `>`, and `&` do not break Telegram's HTML parser.
 		$text = htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
 
 		// 4. Headings (# … through ######) → bold text on its own line.
@@ -3730,7 +3737,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$text = preg_replace( '/__(.+?)__/', '<b>$1</b>', $text );
 
 		// 6. Italic: *text* or _text_ → <i>text</i>.
-		//    Use a negative lookbehind / lookahead to avoid matching mid-word underscores.
+		// Use a negative lookbehind / lookahead to avoid matching mid-word underscores.
 		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/', '<i>$1</i>', $text );
 		$text = preg_replace( '/(?<![a-zA-Z0-9])_(?!_)(.+?)(?<!_)_(?![a-zA-Z0-9])/', '<i>$1</i>', $text );
 
@@ -3738,8 +3745,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$text = preg_replace( '/~~(.+?)~~/', '<s>$1</s>', $text );
 
 		// 8. Links: [text](url) → <a href="url">text</a>.
-		//    The URL was HTML-escaped in step 3; restore `&amp;` → `&` inside href
-		//    and apply esc_url for security.
+		// The URL was HTML-escaped in step 3; restore `&amp;` → `&` inside href
+		// and apply esc_url for security.
 		$text = preg_replace_callback(
 			'/\[([^\]]+)\]\(([^)]+)\)/',
 			function ( $m ) {
@@ -3755,7 +3762,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		// 9. Blockquotes: lines starting with > → <blockquote>…</blockquote>.
-		//    Collapse consecutive blockquote lines into a single element.
+		// Collapse consecutive blockquote lines into a single element.
 		$text = preg_replace_callback(
 			'/(?:^&gt;\s?(.*)$\n?)+/m',
 			function ( $m ) {
@@ -3842,16 +3849,16 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( ! empty( $message['photo'] ) && is_array( $message['photo'] ) ) {
 			$photo = end( $message['photo'] );
 			return array(
-				'media_type'       => 'photo',
-				'file_id'          => isset( $photo['file_id'] ) ? (string) $photo['file_id'] : '',
+				'media_type'        => 'photo',
+				'file_id'           => isset( $photo['file_id'] ) ? (string) $photo['file_id'] : '',
 				'original_filename' => 'photo.jpg',
-				'mime_type'        => 'image/jpeg',
-				'file_size'        => isset( $photo['file_size'] ) ? absint( $photo['file_size'] ) : 0,
-				'width'            => isset( $photo['width'] ) ? absint( $photo['width'] ) : 0,
-				'height'           => isset( $photo['height'] ) ? absint( $photo['height'] ) : 0,
-				'duration'         => 0,
-				'caption'          => isset( $message['caption'] ) ? (string) $message['caption'] : '',
-				'caption_entities' => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
+				'mime_type'         => 'image/jpeg',
+				'file_size'         => isset( $photo['file_size'] ) ? absint( $photo['file_size'] ) : 0,
+				'width'             => isset( $photo['width'] ) ? absint( $photo['width'] ) : 0,
+				'height'            => isset( $photo['height'] ) ? absint( $photo['height'] ) : 0,
+				'duration'          => 0,
+				'caption'           => isset( $message['caption'] ) ? (string) $message['caption'] : '',
+				'caption_entities'  => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
 			);
 		}
 
@@ -4150,7 +4157,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'animation'  => '🎞️ Animation',
 			'video_note' => '📹 Video note',
 		);
-		$type_label = isset( $type_labels[ $media_type ] ) ? $type_labels[ $media_type ] : '📎 File';
+		$type_label  = isset( $type_labels[ $media_type ] ) ? $type_labels[ $media_type ] : '📎 File';
 
 		/**
 		 * Filter the metadata auto-reply lines sent when a Telegram user uploads a file.
@@ -4419,7 +4426,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				$ext_map     = array_flip( $mime_map );
 				$type_string = isset( $ext_map[ $mime_type ] ) ? $ext_map[ $mime_type ] : '';
 				if ( '' !== $type_string ) {
-					$ext_parts = explode( '|', $type_string );
+					$ext_parts          = explode( '|', $type_string );
 					$original_filename .= '.' . $ext_parts[0];
 				}
 			}

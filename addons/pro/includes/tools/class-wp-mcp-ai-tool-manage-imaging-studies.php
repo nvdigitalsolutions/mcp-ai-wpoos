@@ -57,24 +57,24 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'     => array(
+				'action'      => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: "list", "get", "summarize", or "audit".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list', 'get', 'summarize', 'audit' ),
 					'default'     => 'list',
 				),
-				'study_uid'  => array(
+				'study_uid'   => array(
 					'type'        => 'string',
 					'description' => __( 'DICOM StudyInstanceUID. Required for actions "get" and "summarize".', 'mcp-ai-wpoos-pro' ),
 				),
-				'per_page'   => array(
+				'per_page'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of studies per page (for action "list"). Default 20, max 100.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
-				'page'       => array(
+				'page'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number (for action "list"). Default 1.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 					'default'     => 50,
 				),
 			),
-			'required' => array( 'action' ),
+			'required'   => array( 'action' ),
 		);
 	}
 
@@ -109,7 +109,11 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param array $arguments Parsed tool arguments.
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
@@ -117,6 +121,13 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'view_medical_imaging' ) ) {
 			return new WP_Error(
@@ -142,7 +153,7 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// =========================================================================
-	// Action handlers
+	// Action handlers.
 	// =========================================================================
 
 	/**
@@ -162,7 +173,13 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 			$studies[] = $this->format_study_summary( $post );
 		}
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'study_list_viewed', array( 'source' => 'ai_tool', 'count' => count( $studies ) ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_list_viewed',
+			array(
+				'source' => 'ai_tool',
+				'count'  => count( $studies ),
+			)
+		);
 
 		return array(
 			'studies'  => $studies,
@@ -189,7 +206,14 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'imaging_not_found', __( 'Study not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'study_viewed', array( 'source' => 'ai_tool', 'study_id' => $study_uid, 'user_id' => get_current_user_id() ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_viewed',
+			array(
+				'source'   => 'ai_tool',
+				'study_id' => $study_uid,
+				'user_id'  => get_current_user_id(),
+			)
+		);
 
 		return $this->format_study_full( $post );
 	}
@@ -214,10 +238,17 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'imaging_not_found', __( 'Study not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'study_summarized', array( 'source' => 'ai_tool', 'study_id' => $study_uid, 'user_id' => get_current_user_id() ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_summarized',
+			array(
+				'source'   => 'ai_tool',
+				'study_id' => $study_uid,
+				'user_id'  => get_current_user_id(),
+			)
+		);
 
-		$full       = $this->format_study_full( $post );
-		$summary    = $this->generate_plain_summary( $full );
+		$full    = $this->format_study_full( $post );
+		$summary = $this->generate_plain_summary( $full );
 
 		return array(
 			'study_uid' => $study_uid,
@@ -236,10 +267,16 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'imaging_forbidden', __( 'You do not have permission to view imaging audit logs.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$limit    = isset( $args['audit_limit'] ) ? min( absint( $args['audit_limit'] ), 500 ) : 50;
+		$limit     = isset( $args['audit_limit'] ) ? min( absint( $args['audit_limit'] ), 500 ) : 50;
 		$study_uid = isset( $args['study_uid'] ) ? sanitize_text_field( $args['study_uid'] ) : '';
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'audit_log_viewed', array( 'source' => 'ai_tool', 'user_id' => get_current_user_id() ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'audit_log_viewed',
+			array(
+				'source'  => 'ai_tool',
+				'user_id' => get_current_user_id(),
+			)
+		);
 
 		$entries = WP_MCP_AI_Imaging_Audit_Log::get_recent( $limit, $study_uid );
 
@@ -250,7 +287,7 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// =========================================================================
-	// Formatting helpers
+	// Formatting helpers.
 	// =========================================================================
 
 	/**
@@ -335,19 +372,19 @@ class WP_MCP_AI_Tool_Manage_Imaging_Studies implements WP_MCP_AI_Tool_Interface,
 	 * @return string Plain-English summary.
 	 */
 	private function generate_plain_summary( array $study ) {
-		$modality     = $study['modality'] ? $study['modality'] : __( 'Unknown modality', 'mcp-ai-wpoos-pro' );
-		$study_date   = $study['study_date'] ? $study['study_date'] : __( 'Unknown date', 'mcp-ai-wpoos-pro' );
-		$series_count = count( $study['series'] );
+		$modality       = $study['modality'] ? $study['modality'] : __( 'Unknown modality', 'mcp-ai-wpoos-pro' );
+		$study_date     = $study['study_date'] ? $study['study_date'] : __( 'Unknown date', 'mcp-ai-wpoos-pro' );
+		$series_count   = count( $study['series'] );
 		$instance_count = 0;
 
-		$pet_series   = 0;
-		$ct_series    = 0;
-		$mr_series    = 0;
-		$other_series = 0;
+		$pet_series             = 0;
+		$ct_series              = 0;
+		$mr_series              = 0;
+		$other_series           = 0;
 		$missing_slices_warning = '';
 
 		foreach ( $study['series'] as $s ) {
-			$count = $s['instance_count'];
+			$count           = $s['instance_count'];
 			$instance_count += $count;
 
 			$mod = strtoupper( $s['modality'] );

@@ -289,10 +289,10 @@ class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_I
 			}
 
 			$downloaded[] = array(
-				'image_body'  => $image_data['body'],
+				'image_body'   => $image_data['body'],
 				'content_type' => $image_data['content_type'],
-				'attribution' => $attribution,
-				'index'       => $index,
+				'attribution'  => $attribution,
+				'index'        => $index,
 			);
 		}
 
@@ -354,9 +354,9 @@ class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_I
 			array(
 				'timeout' => self::DEFAULT_API_TIMEOUT,
 				'headers' => array(
-					'Content-Type'      => 'application/json',
-					'X-Goog-Api-Key'    => $api_key,
-					'X-Goog-FieldMask'  => 'places.id,places.displayName',
+					'Content-Type'     => 'application/json',
+					'X-Goog-Api-Key'   => $api_key,
+					'X-Goog-FieldMask' => 'places.id,places.displayName',
 				),
 				'body'    => wp_json_encode(
 					array(
@@ -689,8 +689,8 @@ class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_I
 		}
 
 		foreach ( $downloaded as $item ) {
-			$extension   = $this->get_extension_from_content_type( $item['content_type'] );
-			$entry_name  = sanitize_file_name(
+			$extension  = $this->get_extension_from_content_type( $item['content_type'] );
+			$entry_name = sanitize_file_name(
 				sanitize_title( $place_name ) . '-' . ( $item['index'] + 1 ) . '.' . $extension
 			);
 

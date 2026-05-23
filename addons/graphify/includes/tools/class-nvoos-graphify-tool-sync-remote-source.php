@@ -57,23 +57,17 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'write', 'state-changing', 'external-api' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'manage_options';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return array(

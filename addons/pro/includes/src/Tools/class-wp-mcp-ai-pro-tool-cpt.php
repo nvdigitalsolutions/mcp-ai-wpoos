@@ -252,6 +252,13 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list_types';
 
@@ -313,13 +320,13 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			$taxonomies = get_object_taxonomies( $post_type );
 
 			$result[] = array(
-				'post_type'    => $post_type,
-				'label'        => $pto->label,
-				'description'  => $pto->description,
-				'public'       => $pto->public,
-				'show_in_rest' => $pto->show_in_rest,
+				'post_type'     => $post_type,
+				'label'         => $pto->label,
+				'description'   => $pto->description,
+				'public'        => $pto->public,
+				'show_in_rest'  => $pto->show_in_rest,
 				'schema_fields' => count( $schema ),
-				'taxonomies'   => $taxonomies,
+				'taxonomies'    => $taxonomies,
 			);
 		}
 
@@ -341,10 +348,10 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			return $post_type;
 		}
 
-		$pto        = get_post_type_object( $post_type );
+		$pto         = get_post_type_object( $post_type );
 		$meta_schema = apply_filters( 'wp_mcp_ai_post_type_meta_schema', array(), $post_type );
-		$taxonomies = get_object_taxonomies( $post_type, 'objects' );
-		$supports   = array();
+		$taxonomies  = get_object_taxonomies( $post_type, 'objects' );
+		$supports    = array();
 		foreach ( array( 'title', 'editor', 'excerpt', 'thumbnail', 'comments', 'revisions', 'author', 'page-attributes', 'custom-fields' ) as $feature ) {
 			if ( post_type_supports( $post_type, $feature ) ) {
 				$supports[] = $feature;
@@ -408,21 +415,21 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		$tax_fields = array();
 		foreach ( $taxonomies as $tax_slug => $tax ) {
 			$tax_fields[] = array(
-				'taxonomy'    => $tax_slug,
-				'label'       => $tax->label,
+				'taxonomy'     => $tax_slug,
+				'label'        => $tax->label,
 				'hierarchical' => $tax->hierarchical,
-				'description' => $tax->description,
+				'description'  => $tax->description,
 			);
 		}
 
 		return array(
-			'post_type'    => $post_type,
-			'label'        => $pto->label,
-			'supports'     => $supports,
-			'field_count'  => count( $fields ),
-			'fields'       => $fields,
-			'taxonomies'   => $tax_fields,
-			'usage_note'   => __( 'Use the exact "key" values in the "fields" parameter when calling create_item or update_item. Meta fields (is_meta=true) are saved as post meta. Standard fields (is_meta=false) are saved to the post record directly.', 'mcp-ai-wpoos-pro' ),
+			'post_type'   => $post_type,
+			'label'       => $pto->label,
+			'supports'    => $supports,
+			'field_count' => count( $fields ),
+			'fields'      => $fields,
+			'taxonomies'  => $tax_fields,
+			'usage_note'  => __( 'Use the exact "key" values in the "fields" parameter when calling create_item or update_item. Meta fields (is_meta=true) are saved as post meta. Standard fields (is_meta=false) are saved to the post record directly.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -478,8 +485,8 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		$query = new WP_Query( $query_args );
 
 		// Determine which meta keys to include in the compact list view.
-		$schema_keys  = $this->get_schema_meta_keys( $post_type );
-		$has_schema   = ! empty( $schema_keys );
+		$schema_keys = $this->get_schema_meta_keys( $post_type );
+		$has_schema  = ! empty( $schema_keys );
 
 		$items = array();
 		if ( $query->have_posts() ) {
@@ -564,9 +571,9 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 
 		// Build wp_insert_post arguments.
 		$post_arr = array(
-			'post_type'    => $post_type,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
+			'post_type'   => $post_type,
+			'post_status' => 'publish',
+			'post_author' => $current_user_id,
 		);
 
 		if ( isset( $fields['title'] ) ) {
@@ -738,37 +745,37 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 
 		if ( isset( $fields['title'] ) ) {
 			$post_arr['post_title'] = sanitize_text_field( $fields['title'] );
-			$updated = true;
+			$updated                = true;
 			unset( $fields['title'] );
 		}
 
 		if ( isset( $fields['content'] ) ) {
 			$post_arr['post_content'] = wp_kses_post( $fields['content'] );
-			$updated = true;
+			$updated                  = true;
 			unset( $fields['content'] );
 		}
 
 		if ( isset( $fields['excerpt'] ) ) {
 			$post_arr['post_excerpt'] = sanitize_text_field( $fields['excerpt'] );
-			$updated = true;
+			$updated                  = true;
 			unset( $fields['excerpt'] );
 		}
 
 		if ( isset( $fields['status'] ) ) {
 			$post_arr['post_status'] = sanitize_key( $fields['status'] );
-			$updated = true;
+			$updated                 = true;
 			unset( $fields['status'] );
 		}
 
 		if ( isset( $fields['date'] ) ) {
 			$post_arr['post_date'] = sanitize_text_field( $fields['date'] );
-			$updated = true;
+			$updated               = true;
 			unset( $fields['date'] );
 		}
 
 		if ( isset( $fields['author_id'] ) ) {
 			$post_arr['post_author'] = absint( $fields['author_id'] );
-			$updated = true;
+			$updated                 = true;
 			unset( $fields['author_id'] );
 		}
 

@@ -412,13 +412,13 @@ class WP_MCP_AI_Tool_Stock_Data_Fetcher implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'       => true,
-			'action'        => 'batch_quotes',
-			'tickers'       => $tickers,
-			'ticker_count'  => count( $tickers ),
-			'period'        => $period,
-			'data'          => $result,
-			'disclaimer'    => __( 'EDUCATIONAL ONLY. Price data may be delayed 15 minutes or more. Not investment advice. Consult a licensed financial advisor before making investment decisions.', 'mcp-ai-wpoos-pro' ),
+			'success'      => true,
+			'action'       => 'batch_quotes',
+			'tickers'      => $tickers,
+			'ticker_count' => count( $tickers ),
+			'period'       => $period,
+			'data'         => $result,
+			'disclaimer'   => __( 'EDUCATIONAL ONLY. Price data may be delayed 15 minutes or more. Not investment advice. Consult a licensed financial advisor before making investment decisions.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

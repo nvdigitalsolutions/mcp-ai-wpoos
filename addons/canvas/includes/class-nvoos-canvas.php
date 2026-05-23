@@ -80,7 +80,7 @@ class NV_oOS_Canvas {
 	/**
 	 * Detect and cache the platform label from the installed binary filename.
 	 *
-	 * canvas uses `node-pre-gyp` which names the binary:
+	 * Canvas uses `node-pre-gyp` which names the binary:
 	 *   canvas-v{ver}-{node_abi}-{platform}-{libc}-{arch}.tar.gz
 	 * After extraction the binary is always `canvas.node`.
 	 *

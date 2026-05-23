@@ -58,7 +58,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'workflow_items'        => array(
+				'workflow_items'       => array(
 					'type'        => 'array',
 					'description' => __( 'List of workflow items. Each entry may be a plain string (one responsibility per line) or an object with title, description, suggested_cadence, suggested_time, priority, tags.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -95,36 +95,36 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 						),
 					),
 				),
-				'workflow_text'         => array(
+				'workflow_text'        => array(
 					'type'        => 'string',
 					'description' => __( 'Alternative input: a single multi-line string. Each non-empty line becomes one workflow item. Lines starting with "## " set the current category for following lines.', 'mcp-ai-wpoos-pro' ),
 				),
-				'category'              => array(
+				'category'             => array(
 					'type'        => 'string',
 					'description' => __( 'Optional category (e.g. "marketing", "mass-market"). Used as a tag and as a fallback name prefix.', 'mcp-ai-wpoos-pro' ),
 				),
-				'default_assistant_id'  => array(
+				'default_assistant_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional NV oOS assistant post ID. When provided, scheduled events fire as assistant_run; when omitted they fall back to a wp_mcp_ai_workflow_reminder task hook.', 'mcp-ai-wpoos-pro' ),
 				),
-				'default_cadence'       => array(
+				'default_cadence'      => array(
 					'type'        => 'string',
 					'enum'        => $valid_schedules,
 					'description' => __( 'Default cadence applied when an item gives no hint. Defaults to "daily".', 'mcp-ai-wpoos-pro' ),
 				),
-				'default_time'          => array(
+				'default_time'         => array(
 					'type'        => 'string',
 					'description' => __( 'Default time-of-day in HH:MM (24h, site timezone). Defaults to "09:00".', 'mcp-ai-wpoos-pro' ),
 				),
-				'notify_on_failure'     => array(
+				'notify_on_failure'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Notify the admin email on failure. Defaults to true.', 'mcp-ai-wpoos-pro' ),
 				),
-				'notify_email'          => array(
+				'notify_email'         => array(
 					'type'        => 'string',
 					'description' => __( 'Email address for failure notifications. Defaults to admin email.', 'mcp-ai-wpoos-pro' ),
 				),
-				'dry_run'               => array(
+				'dry_run'              => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true, return the parsed plan without persisting any schedules.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -134,10 +134,28 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+
+	/**
+
+	 * Execute the tool.
+
+	 * @param array $arguments Tool arguments.
+
+	 *  * @param array $context   Execution context.
+	 *
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : 0;
 
@@ -172,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 						continue;
 					}
 					// Strip common list bullets / numbering.
-					$line = preg_replace( '/^(?:[-*•]|\d+[\.\)])\s+/', '', $line );
+					$line = preg_replace( '/^( ? ( :[-*•]|\d+[\.\)])\s+/', '', $line );
 					$line = trim( (string) $line );
 					if ( '' === $line ) {
 						continue;
@@ -247,7 +265,7 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 				continue;
 			}
 
-			// Spread schedules across distinct first-run timestamps so single-type
+			// Spread schedules across distinct first-run timestamps so single-type.
 			// schedules don't collide on the same MD5 id key.
 			$base_offset += 60;
 
@@ -286,12 +304,12 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 			'skipped' => $skipped,
 			'errors'  => $errors,
 			'summary' => array(
-				'total'     => count( $items ),
-				'planned'   => count( $plan ),
-				'created'   => count( $created ),
-				'errors'    => count( $errors ),
-				'dry_run'   => $dry_run,
-				'category'  => $category,
+				'total'    => count( $items ),
+				'planned'  => count( $plan ),
+				'created'  => count( $created ),
+				'errors'   => count( $errors ),
+				'dry_run'  => $dry_run,
+				'category' => $category,
 			),
 			'message' => $dry_run
 				? __( 'Preview plan generated. No schedules were persisted.', 'mcp-ai-wpoos-pro' )
@@ -315,7 +333,10 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 	protected function normalize_item( $raw, array $defaults ) {
 		// Coerce to array.
 		if ( is_string( $raw ) ) {
-			$item = array( 'title' => $raw, 'description' => $raw );
+			$item = array(
+				'title'       => $raw,
+				'description' => $raw,
+			);
 		} elseif ( is_array( $raw ) ) {
 			$item = $raw;
 		} else {
@@ -408,11 +429,15 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 			$payload       = array(
 				'schedule_type' => 'task',
 				'hook'          => 'wp_mcp_ai_workflow_reminder',
-				'args'          => array( wp_json_encode( array(
-					'title'       => $title,
-					'description' => $description,
-					'tags'        => $tags,
-				) ) ),
+				'args'          => array(
+					wp_json_encode(
+						array(
+							'title'       => $title,
+							'description' => $description,
+							'tags'        => $tags,
+						)
+					),
+				),
 			);
 		}
 
@@ -440,11 +465,11 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 		$text = strtolower( (string) $text );
 
 		$rules = array(
-			'hourly'      => array( 'hourly', 'every hour' ),
-			'twicedaily'  => array( 'twice a day', 'twice daily' ),
-			'daily'       => array( 'daily', 'each day', 'every day', 'morning routine' ),
-			'weekly'      => array( 'weekly', 'each week', 'every week', 'monday', 'friday' ),
-			'monthly'     => array( 'monthly', 'each month', 'every month' ),
+			'hourly'     => array( 'hourly', 'every hour' ),
+			'twicedaily' => array( 'twice a day', 'twice daily' ),
+			'daily'      => array( 'daily', 'each day', 'every day', 'morning routine' ),
+			'weekly'     => array( 'weekly', 'each week', 'every week', 'monday', 'friday' ),
+			'monthly'    => array( 'monthly', 'each month', 'every month' ),
 		);
 
 		// Match in order of specificity (more specific first).

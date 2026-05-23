@@ -254,8 +254,8 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 		}
 
 		$factories = array(
-			WP_MCP_AI_Pro_Rubric_Presets::SLUG_PROMPT_ADHERENCE  => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'prompt_adherence' ),
-			WP_MCP_AI_Pro_Rubric_Presets::SLUG_JSON_SCHEMA       => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'json_schema' ),
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_PROMPT_ADHERENCE => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'prompt_adherence' ),
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_JSON_SCHEMA => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'json_schema' ),
 			WP_MCP_AI_Pro_Rubric_Presets::SLUG_CITATION_PRESENCE => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'citation_presence' ),
 		);
 

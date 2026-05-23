@@ -158,8 +158,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge implements WP_MCP_AI_Tool_Interfac
 				return $this->discover_tools( $client );
 
 			case 'call_tool':
-				$tool_name  = isset( $arguments['tool_name'] ) ? sanitize_text_field( $arguments['tool_name'] ) : '';
-				$tool_args  = isset( $arguments['arguments'] ) ? $arguments['arguments'] : array();
+				$tool_name = isset( $arguments['tool_name'] ) ? sanitize_text_field( $arguments['tool_name'] ) : '';
+				$tool_args = isset( $arguments['arguments'] ) ? $arguments['arguments'] : array();
 				return $this->call_tool( $client, $tool_name, $tool_args );
 
 			case 'get_site_context':
@@ -196,8 +196,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge implements WP_MCP_AI_Tool_Interfac
 	 * Call a specific MCP tool.
 	 *
 	 * @param WP_MCP_AI_JetEngine_MCP_Client $client    MCP client instance.
-	 * @param string                          $tool_name Tool name.
-	 * @param array                           $tool_args Tool arguments.
+	 * @param string                         $tool_name Tool name.
+	 * @param array                          $tool_args Tool arguments.
 	 * @return array|WP_Error Tool result or error.
 	 */
 	private function call_tool( $client, $tool_name, $tool_args ) {

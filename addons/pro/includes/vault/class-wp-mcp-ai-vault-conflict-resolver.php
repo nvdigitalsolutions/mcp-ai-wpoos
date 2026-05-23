@@ -290,7 +290,7 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 		return array_filter(
 			$conflicts,
 			function ( $conflict ) {
-				return $conflict['status'] === 'pending';
+				return 'pending' === $conflict['status'];
 			}
 		);
 	}
@@ -344,7 +344,7 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 		$pending   = array_filter(
 			$conflicts,
 			function ( $conflict ) {
-				return $conflict['status'] === 'pending';
+				return 'pending' === $conflict['status'];
 			}
 		);
 		update_option( 'wp_mcp_ai_vault_conflicts', $pending );

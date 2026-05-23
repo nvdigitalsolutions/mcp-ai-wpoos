@@ -44,42 +44,42 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'checkup_id' => array(
+				'checkup_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Checkup ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'      => array(
+				'title'            => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup title (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'datetime'   => array(
+				'datetime'         => array(
 					'type'        => 'string',
 					'description' => __( 'Date and time (YYYY-MM-DD HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$',
 				),
-				'provider'   => array(
+				'provider'         => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'location'   => array(
+				'location'         => array(
 					'type'        => 'string',
 					'description' => __( 'Location or facility name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'type'       => array(
+				'type'             => array(
 					'type'        => 'string',
 					'description' => __( 'Type of checkup (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wellness', 'follow-up', 'consultation', 'procedure', 'vaccination', 'dental', 'vision' ),
 				),
-				'status'     => array(
+				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'Appointment status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'scheduled', 'completed', 'cancelled', 'no-show' ),
 				),
-				'notes'      => array(
+				'notes'            => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -139,6 +139,11 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -270,17 +275,17 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'message' => __( 'Checkup updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'checkup' => array(
 				'id'               => $checkup_id,
-				'title'            => $title ?: get_post_field( 'post_title', $checkup_id ),
-				'datetime'         => $datetime ?: get_post_meta( $checkup_id, '_checkup_datetime', true ),
-				'provider'         => $provider ?: get_post_meta( $checkup_id, '_checkup_provider', true ),
-				'location'         => $location ?: get_post_meta( $checkup_id, '_checkup_location', true ),
-				'type'             => $type ?: get_post_meta( $checkup_id, '_checkup_type', true ),
-				'status'           => $status ?: get_post_meta( $checkup_id, '_checkup_status', true ),
-				'chief_complaint'  => $chief_complaint ?: get_post_meta( $checkup_id, '_checkup_chief_complaint', true ),
-				'diagnosis'        => $diagnosis ?: get_post_meta( $checkup_id, '_checkup_diagnosis', true ),
-				'duration_minutes' => $duration ?: get_post_meta( $checkup_id, '_checkup_duration_minutes', true ),
-				'follow_up_date'   => $follow_up_date ?: get_post_meta( $checkup_id, '_checkup_follow_up_date', true ),
-				'copay_amount'     => $copay_amount ?: get_post_meta( $checkup_id, '_checkup_copay_amount', true ),
+				'title'            => $title ? $title : get_post_field( 'post_title', $checkup_id ),
+				'datetime'         => $datetime ? $datetime : get_post_meta( $checkup_id, '_checkup_datetime', true ),
+				'provider'         => $provider ? $provider : get_post_meta( $checkup_id, '_checkup_provider', true ),
+				'location'         => $location ? $location : get_post_meta( $checkup_id, '_checkup_location', true ),
+				'type'             => $type ? $type : get_post_meta( $checkup_id, '_checkup_type', true ),
+				'status'           => $status ? $status : get_post_meta( $checkup_id, '_checkup_status', true ),
+				'chief_complaint'  => $chief_complaint ? $chief_complaint : get_post_meta( $checkup_id, '_checkup_chief_complaint', true ),
+				'diagnosis'        => $diagnosis ? $diagnosis : get_post_meta( $checkup_id, '_checkup_diagnosis', true ),
+				'duration_minutes' => $duration ? $duration : get_post_meta( $checkup_id, '_checkup_duration_minutes', true ),
+				'follow_up_date'   => $follow_up_date ? $follow_up_date : get_post_meta( $checkup_id, '_checkup_follow_up_date', true ),
+				'copay_amount'     => $copay_amount ? $copay_amount : get_post_meta( $checkup_id, '_checkup_copay_amount', true ),
 				'updated_at'       => current_time( 'mysql' ),
 			),
 		);

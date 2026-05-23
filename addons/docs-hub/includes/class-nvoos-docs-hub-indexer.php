@@ -119,11 +119,14 @@ class NV_oOS_Docs_Hub_Indexer {
 				$this->slug_map[ $slug ]['remote_url'] = (string) $entry['remote_url'];
 			}
 
-			$indexed[] = array_merge( $entry, array(
-				'slug'  => $slug,
-				'title' => $title,
-				'order' => $order,
-			) );
+			$indexed[] = array_merge(
+				$entry,
+				array(
+					'slug'  => $slug,
+					'title' => $title,
+					'order' => $order,
+				)
+			);
 		}
 
 		// Second pass: assign prev/next, build tree.
@@ -314,19 +317,19 @@ class NV_oOS_Docs_Hub_Indexer {
 	 * @return string Plain text.
 	 */
 	private function strip_inline_markdown( $text ) {
-		// Links and images: [text](url) → text  |  ![alt](url) → alt
+		// Links and images: [text](url) → text  |  ![alt](url) → alt.
 		$text = preg_replace( '/!?\[([^\]]*)\]\([^)]*\)/', '$1', $text );
-		// Reference-style links: [text][ref] → text
+		// Reference-style links: [text][ref] → text.
 		$text = preg_replace( '/\[([^\]]*)\]\[[^\]]*\]/', '$1', $text );
-		// Bold+italic: ***text*** / ___text___ → text
+		// Bold+italic: ***text*** / ___text___ → text.
 		$text = preg_replace( '/\*{3}(.+?)\*{3}/s', '$1', $text );
 		$text = preg_replace( '/_{3}(.+?)_{3}/s', '$1', $text );
-		// Bold: **text** / __text__ → text
+		// Bold: **text** / __text__ → text.
 		$text = preg_replace( '/\*{2}(.+?)\*{2}/s', '$1', $text );
 		$text = preg_replace( '/_{2}(.+?)_{2}/s', '$1', $text );
-		// Italic: *text* / _text_ → text (avoid mangling snake_case by requiring spaces)
+		// Italic: *text* / _text_ → text (avoid mangling snake_case by requiring spaces).
 		$text = preg_replace( '/(?<!\w)\*([^*\n]+?)\*(?!\w)/', '$1', $text );
-		// Inline code: `text` → text
+		// Inline code: `text` → text.
 		$text = preg_replace( '/`([^`]+)`/', '$1', $text );
 		// Strip any remaining raw HTML tags.
 		$text = wp_strip_all_tags( $text );
@@ -571,16 +574,25 @@ class NV_oOS_Docs_Hub_Indexer {
 	 */
 	private function build_breadcrumbs( $data ) {
 		$crumbs = array(
-			array( 'label' => $data['plugin_name'], 'slug' => null ),
+			array(
+				'label' => $data['plugin_name'],
+				'slug' => null,
+			),
 		);
 
 		// Add section if meaningful.
 		$section = $this->derive_section( $data['relative_path'] );
 		if ( 'General' !== $section ) {
-			$crumbs[] = array( 'label' => $section, 'slug' => null );
+			$crumbs[] = array(
+				'label' => $section,
+				'slug' => null,
+			);
 		}
 
-		$crumbs[] = array( 'label' => $data['title'], 'slug' => null );
+		$crumbs[] = array(
+			'label' => $data['title'],
+			'slug' => null,
+		);
 
 		return $crumbs;
 	}

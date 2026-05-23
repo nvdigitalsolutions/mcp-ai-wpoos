@@ -163,19 +163,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_slash_commands' ) ) {
 				'capability'  => 'edit_posts',
 				'aliases'     => array( 'run-workflow' ),
 				'parameters'  => array(
-					'workflow'   => array(
+					'workflow'  => array(
 						'description' => __( 'Workflow ID or name', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
-					'--list'     => array(
+					'--list'    => array(
 						'description' => __( 'List available saved workflows', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
-					'--dry-run'  => array(
+					'--dry-run' => array(
 						'description' => __( 'Preview workflow without executing', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
-					'--json'     => array(
+					'--json'    => array(
 						'description' => __( 'Return JSON envelope', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
@@ -271,19 +271,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_slash_commands' ) ) {
 				'capability'  => 'edit_posts',
 				'aliases'     => array( 'profile', 'assistant' ),
 				'parameters'  => array(
-					'slug'      => array(
+					'slug'   => array(
 						'description' => __( 'Profession slug to load', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
-					'--list'    => array(
+					'--list' => array(
 						'description' => __( 'List all available professions', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
-					'--show'    => array(
+					'--show' => array(
 						'description' => __( 'Show full details for a profession', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),
-					'--json'    => array(
+					'--json' => array(
 						'description' => __( 'Return JSON envelope', 'mcp-ai-wpoos-pro' ),
 						'required'    => false,
 					),

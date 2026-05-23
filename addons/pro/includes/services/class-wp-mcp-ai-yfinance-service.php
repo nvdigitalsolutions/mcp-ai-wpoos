@@ -1,6 +1,6 @@
 <?php
 /**
- * yfinance Service Helper
+ * YFinance Service Helper
  *
  * Helper class for interacting with the yfinance microservice via Node.js client.
  * Provides WordPress transient caching, batch requests, and error handling.
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * yfinance Service Helper Class
+ * YFinance Service Helper Class
  */
 class WP_MCP_AI_YFinance_Service {
 
@@ -265,9 +265,12 @@ class WP_MCP_AI_YFinance_Service {
 		}
 
 		// Sanitize tickers.
-		$tickers = array_map( function( $ticker ) {
-			return strtoupper( sanitize_text_field( $ticker ) );
-		}, $tickers );
+		$tickers = array_map(
+			function ( $ticker ) {
+				return strtoupper( sanitize_text_field( $ticker ) );
+			},
+			$tickers
+		);
 
 		// Limit to 50 tickers.
 		if ( count( $tickers ) > 50 ) {

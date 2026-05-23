@@ -110,6 +110,11 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -227,15 +232,15 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'id'               => $task_id,
 					'title'            => get_the_title(),
 					'description'      => get_the_content(),
-					'project_id'       => absint( get_post_meta( $task_id, '_task_project_id', true ) ) ?: null,
-					'status'           => get_post_meta( $task_id, '_task_status', true ) ?: 'todo',
-					'priority'         => get_post_meta( $task_id, '_task_priority', true ) ?: 'medium',
-					'category'         => get_post_meta( $task_id, '_task_category', true ) ?: 'general',
-					'tags'             => get_post_meta( $task_id, '_task_tags', true ) ?: '',
-					'due_date'         => get_post_meta( $task_id, '_task_due_date', true ) ?: '',
-					'assigned_to'      => absint( get_post_meta( $task_id, '_task_assigned_to', true ) ) ?: null,
-					'estimated_effort' => floatval( get_post_meta( $task_id, '_task_estimated_effort', true ) ) ?: null,
-					'actual_effort'    => floatval( get_post_meta( $task_id, '_task_actual_effort', true ) ) ?: null,
+					'project_id'       => absint( get_post_meta( $task_id, '_task_project_id', true ) ) ? absint( get_post_meta( $task_id, '_task_project_id', true ) ) : null,
+					'status'           => get_post_meta( $task_id, '_task_status', true ) ? get_post_meta( $task_id, '_task_status', true ) : 'todo',
+					'priority'         => get_post_meta( $task_id, '_task_priority', true ) ? get_post_meta( $task_id, '_task_priority', true ) : 'medium',
+					'category'         => get_post_meta( $task_id, '_task_category', true ) ? get_post_meta( $task_id, '_task_category', true ) : 'general',
+					'tags'             => get_post_meta( $task_id, '_task_tags', true ) ? get_post_meta( $task_id, '_task_tags', true ) : '',
+					'due_date'         => get_post_meta( $task_id, '_task_due_date', true ) ? get_post_meta( $task_id, '_task_due_date', true ) : '',
+					'assigned_to'      => absint( get_post_meta( $task_id, '_task_assigned_to', true ) ) ? absint( get_post_meta( $task_id, '_task_assigned_to', true ) ) : null,
+					'estimated_effort' => floatval( get_post_meta( $task_id, '_task_estimated_effort', true ) ) ? floatval( get_post_meta( $task_id, '_task_estimated_effort', true ) ) : null,
+					'actual_effort'    => floatval( get_post_meta( $task_id, '_task_actual_effort', true ) ) ? floatval( get_post_meta( $task_id, '_task_actual_effort', true ) ) : null,
 					'created_at'       => get_the_date( 'c' ),
 					'updated_at'       => get_the_modified_date( 'c' ),
 				);

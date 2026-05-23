@@ -89,8 +89,8 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 
 		// Ensure chat script localization is available in admin context.
-		// The shortcode's register_assets() may have been called during init hook,
-		// but we need to ensure wpMcpAiChat global is available for the modal.
+		// The shortcode's register_assets() may have been called during init hook.
+		// We need to ensure wpMcpAiChat global is available for the modal.
 		$this->ensure_chat_localization();
 
 		// Enqueue modal styles (required for popup overlay).
@@ -481,7 +481,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		if ( isset( $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ] ) ) {
 			$script_data = $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
 			// Check if localization is already attached by looking for the JavaScript variable declaration.
-			// WordPress outputs localization as: var wpMcpAiChat = {...};
+			// WordPress outputs localization as: var wpMcpAiChat = {...}.
 			if ( isset( $script_data->extra['data'] ) && false !== strpos( $script_data->extra['data'], 'var wpMcpAiChat' ) ) {
 				// Localization already exists, no need to add it again.
 				return;

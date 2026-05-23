@@ -57,23 +57,17 @@ class NV_oOS_Graphify_Tool_Suggest_Links implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'read_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$limit   = isset( $arguments['limit'] ) ? max( 1, min( 50, absint( $arguments['limit'] ) ) ) : 10;
 		$post_id = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;

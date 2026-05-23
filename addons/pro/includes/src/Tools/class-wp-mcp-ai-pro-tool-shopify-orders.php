@@ -50,8 +50,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'properties'           => array(
 				'connection_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Remote Sites connection ID for the Shopify store. If omitted, automatically uses the Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
@@ -147,8 +147,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			$available   = $this->get_available_shopify_connections( $context );
-			$conn_list   = $this->format_available_connections_message( $available );
+			$available = $this->get_available_shopify_connections( $context );
+			$conn_list = $this->format_available_connections_message( $available );
 			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {
@@ -279,22 +279,22 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'id'                  => isset( $node['id'] ) ? $node['id'] : '',
-			'name'                => isset( $node['name'] ) ? $node['name'] : '',
-			'created_at'          => isset( $node['createdAt'] ) ? $node['createdAt'] : '',
-			'updated_at'          => isset( $node['updatedAt'] ) ? $node['updatedAt'] : '',
-			'financial_status'    => isset( $node['displayFinancialStatus'] ) ? $node['displayFinancialStatus'] : '',
-			'fulfillment_status'  => isset( $node['displayFulfillmentStatus'] ) ? $node['displayFulfillmentStatus'] : '',
-			'total_price'         => isset( $node['totalPriceSet']['shopMoney'] ) ? $node['totalPriceSet']['shopMoney'] : array(),
-			'subtotal_price'      => isset( $node['subtotalPriceSet']['shopMoney'] ) ? $node['subtotalPriceSet']['shopMoney'] : array(),
-			'total_shipping'      => isset( $node['totalShippingPriceSet']['shopMoney'] ) ? $node['totalShippingPriceSet']['shopMoney'] : array(),
-			'total_tax'           => isset( $node['totalTaxSet']['shopMoney'] ) ? $node['totalTaxSet']['shopMoney'] : array(),
-			'customer'            => isset( $node['customer'] ) ? $node['customer'] : null,
-			'shipping_address'    => isset( $node['shippingAddress'] ) ? $node['shippingAddress'] : null,
-			'line_items'          => $line_items,
-			'fulfillments'        => isset( $node['fulfillments'] ) ? $node['fulfillments'] : array(),
-			'tags'                => isset( $node['tags'] ) ? $node['tags'] : array(),
-			'note'                => isset( $node['note'] ) ? $node['note'] : '',
+			'id'                 => isset( $node['id'] ) ? $node['id'] : '',
+			'name'               => isset( $node['name'] ) ? $node['name'] : '',
+			'created_at'         => isset( $node['createdAt'] ) ? $node['createdAt'] : '',
+			'updated_at'         => isset( $node['updatedAt'] ) ? $node['updatedAt'] : '',
+			'financial_status'   => isset( $node['displayFinancialStatus'] ) ? $node['displayFinancialStatus'] : '',
+			'fulfillment_status' => isset( $node['displayFulfillmentStatus'] ) ? $node['displayFulfillmentStatus'] : '',
+			'total_price'        => isset( $node['totalPriceSet']['shopMoney'] ) ? $node['totalPriceSet']['shopMoney'] : array(),
+			'subtotal_price'     => isset( $node['subtotalPriceSet']['shopMoney'] ) ? $node['subtotalPriceSet']['shopMoney'] : array(),
+			'total_shipping'     => isset( $node['totalShippingPriceSet']['shopMoney'] ) ? $node['totalShippingPriceSet']['shopMoney'] : array(),
+			'total_tax'          => isset( $node['totalTaxSet']['shopMoney'] ) ? $node['totalTaxSet']['shopMoney'] : array(),
+			'customer'           => isset( $node['customer'] ) ? $node['customer'] : null,
+			'shipping_address'   => isset( $node['shippingAddress'] ) ? $node['shippingAddress'] : null,
+			'line_items'         => $line_items,
+			'fulfillments'       => isset( $node['fulfillments'] ) ? $node['fulfillments'] : array(),
+			'tags'               => isset( $node['tags'] ) ? $node['tags'] : array(),
+			'note'               => isset( $node['note'] ) ? $node['note'] : '',
 		);
 	}
 }

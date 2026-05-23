@@ -149,7 +149,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 - **Complete data privacy and control**
 - **Recommended for sensitive data**
 - **Website:** https://lmstudio.ai/
-- **Terms:** https://lmstudio.ai/terms
+- **Terms:** Self-hosted software — see https://github.com/lmstudio-ai
 
 **Related Files:**
 - `includes/class-wp-mcp-ai-language-model-router.php`
@@ -309,6 +309,36 @@ These are the core AI services that power the plugin's assistant functionality. 
 - `includes/class-wp-mcp-ai-digitalocean-client.php`
 - `includes/infrastructure/providers/class-wp-mcp-ai-digitalocean-provider-client.php`
 - `includes/services/embedding/class-wp-mcp-ai-embedding-provider-digitalocean.php`
+
+---
+
+### 6f. Baseten API
+
+**Service URL:** `https://api.baseten.co/v1` (default; supports custom base URL override)  
+**Purpose:** Cloud AI inference via Baseten's OpenAI-compatible API platform. Supports chat completions, tool/function calling, JSON mode, SSE streaming, and reasoning content passthrough.  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and instructions
+- Tool definitions and tool execution results
+- Reasoning content (when using reasoning-capable models)
+
+**When Used:**
+- Every time an AI assistant is used with Baseten as the provider
+
+**Legal & Privacy:**
+- **Terms of Service:** https://www.baseten.co/terms-of-service
+- **Privacy Policy:** https://www.baseten.co/privacy
+- **API Documentation:** https://docs.baseten.co/api-reference
+- **Data Usage:** See Baseten's privacy policy for data handling details
+
+**Supported Models (seeded catalogue):**
+- `deepseek-chat-v4` — DeepSeek V4 (default chat model)
+- `deepseek-reasoner-v4` — DeepSeek V4 with reasoning
+- Model discovery available via Settings → Providers → Baseten → Model Discovery
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-baseten-client.php`
+- `includes/infrastructure/providers/class-wp-mcp-ai-baseten-provider-client.php`
 
 ---
 
@@ -1103,6 +1133,7 @@ When adding a new external service integration:
 | OpenRouter API | Active | 2026-05 | Multi-model gateway |
 | Kimi (Moonshot AI) | Active | 2026-05 | Cloud AI inference |
 | DigitalOcean Serverless Inference | Active | 2026-05 | Cloud AI inference + embeddings |
+| Baseten API | Active | 2026-05 | Cloud AI inference |
 | Brave Search | Active | 2026-02 | Requires API key |
 | Open-Meteo | Active | 2026-02 | Free tier available |
 | ReliefWeb | Active | 2026-02 | Public API |

@@ -47,20 +47,20 @@ class WP_MCP_AI_Tool_Get_ECA_Timetable implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'view_type'          => array(
+				'view_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Type of timetable view to generate (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'student', 'teacher', 'venue', 'year_group' ),
 				),
-				'view_id'            => array(
+				'view_id'           => array(
 					'type'        => 'string',
 					'description' => __( 'Identifier for the view: student post ID, teacher name, venue name, or year group (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'week_of'            => array(
+				'week_of'           => array(
 					'type'        => 'string',
 					'description' => __( 'Date in YYYY-MM-DD format to determine the week. Defaults to current week.', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_conflicts'  => array(
+				'include_conflicts' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include conflict detection for overlapping sessions', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,

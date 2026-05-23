@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 
 	/**
+	 * Get the server slug.
+	 *
 	 * @return string
 	 */
 	public function get_slug() {
@@ -25,6 +27,8 @@ class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Bas
 	}
 
 	/**
+	 * Get the server name.
+	 *
 	 * @return string
 	 */
 	public function get_name() {
@@ -32,6 +36,8 @@ class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Bas
 	}
 
 	/**
+	 * Get the server description.
+	 *
 	 * @return string
 	 */
 	public function get_description() {
@@ -42,6 +48,8 @@ class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Bas
 	}
 
 	/**
+	 * Get the ingestion surfaces for this server.
+	 *
 	 * @return array<int,array<string,mixed>>
 	 */
 	public function ingestion_surfaces() {
@@ -49,6 +57,8 @@ class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Bas
 	}
 
 	/**
+	 * Get the candidate tool slugs for this server.
+	 *
 	 * @return string[]
 	 */
 	public function candidate_tool_slugs() {
@@ -74,10 +84,13 @@ class WP_MCP_AI_Video_Production_MCP_Server extends WP_MCP_AI_Toolkit_Server_Bas
 				'add_watermark_to_video',
 				'generate_video_thumbnails',
 				'generate_video_captions',
-				'extract_video_frames',
-				'extract_video_metadata',
-				'get_video_metadata',
-				'optimize_for_platform',
+					'extract_video_frames',
+					'extract_video_metadata',
+					'get_video_metadata',
+					'optimize_for_platform',
+					// Omni Flash video generation (May 2026).
+					'generate_omni_video',
+					'edit_omni_video',
 			)
 		);
 	}

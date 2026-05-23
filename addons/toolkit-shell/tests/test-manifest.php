@@ -43,8 +43,14 @@ class Test_Toolkit_Shell_Manifest extends WP_UnitTestCase {
 					'name'     => 'contacts',
 					'endpoint' => '/crm/contacts',
 					'fields'   => array(
-						array( 'name' => 'id', 'type' => 'integer' ),
-						array( 'name' => 'full_name', 'type' => 'string' ),
+						array(
+							'name' => 'id',
+							'type' => 'integer',
+						),
+						array(
+							'name' => 'full_name',
+							'type' => 'string',
+						),
 					),
 				),
 			),
@@ -80,7 +86,10 @@ class Test_Toolkit_Shell_Manifest extends WP_UnitTestCase {
 		$raw = array(
 			'version'   => '1.0',
 			'resources' => array(
-				array( 'name' => 'x', 'fields' => array( array( 'name' => 'id' ) ) ),
+				array(
+					'name' => 'x',
+					'fields' => array( array( 'name' => 'id' ) ),
+				),
 			),
 		);
 		$this->assertNull( NV_oOS_Toolkit_Shell_Manifest_Registry::sanitize_manifest( $raw ) );
@@ -96,7 +105,10 @@ class Test_Toolkit_Shell_Manifest extends WP_UnitTestCase {
 			'toolkit'        => 'crm',
 			'rest_namespace' => 'http://evil.example.com/path',
 			'resources'      => array(
-				array( 'name' => 'r', 'fields' => array( array( 'name' => 'id' ) ) ),
+				array(
+					'name' => 'r',
+					'fields' => array( array( 'name' => 'id' ) ),
+				),
 			),
 		);
 		$out = NV_oOS_Toolkit_Shell_Manifest_Registry::sanitize_manifest( $raw );
@@ -115,7 +127,10 @@ class Test_Toolkit_Shell_Manifest extends WP_UnitTestCase {
 				array(
 					'name'   => 'r',
 					'fields' => array(
-						array( 'name' => 'x', 'type' => 'arbitrary-evil-type' ),
+						array(
+							'name' => 'x',
+							'type' => 'arbitrary-evil-type',
+						),
 					),
 				),
 			),
@@ -133,10 +148,17 @@ class Test_Toolkit_Shell_Manifest extends WP_UnitTestCase {
 		$raw = array(
 			'toolkit'   => 'crm',
 			'resources' => array(
-				array( 'name' => 'r', 'fields' => array( array( 'name' => 'id' ) ) ),
+				array(
+					'name' => 'r',
+					'fields' => array( array( 'name' => 'id' ) ),
+				),
 			),
 			'views'     => array(
-				array( 'name' => 'v', 'type' => 'rocket', 'resource' => 'r' ),
+				array(
+					'name' => 'v',
+					'type' => 'rocket',
+					'resource' => 'r',
+				),
 			),
 		);
 		$out = NV_oOS_Toolkit_Shell_Manifest_Registry::sanitize_manifest( $raw );

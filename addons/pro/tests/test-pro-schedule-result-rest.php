@@ -61,7 +61,10 @@ class Test_Pro_Schedule_Result_REST extends WP_UnitTestCase {
 				$schedule_id => array(
 					array(
 						'summary'      => 'Hello world',
-						'data'         => array( 'items' => array( 'a', 'b' ), 'secret' => 'x' ),
+						'data'         => array(
+							'items'  => array( 'a', 'b' ),
+							'secret' => 'x',
+						),
 						'render'       => 'list',
 						'status'       => 'success',
 						'error'        => '',
@@ -146,7 +149,7 @@ class Test_Pro_Schedule_Result_REST extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/schedules' );
+		$request = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/schedules' );
 		$request->set_param( 'selectable', '1' );
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );

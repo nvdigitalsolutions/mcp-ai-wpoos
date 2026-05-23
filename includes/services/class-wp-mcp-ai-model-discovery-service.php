@@ -236,6 +236,7 @@ class WP_MCP_AI_Model_Discovery_Service {
 			'deepseek'    => 'deepseek_api_key',
 			'openrouter'   => 'openrouter_api_key',
 			'digitalocean' => 'digitalocean_api_key',
+			'baseten'      => 'baseten_api_key',
 		);
 		foreach ( $keys as $provider => $key ) {
 			if ( ! empty( $settings[ $key ] ) ) {

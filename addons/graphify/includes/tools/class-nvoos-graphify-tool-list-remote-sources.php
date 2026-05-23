@@ -51,23 +51,17 @@ class NV_oOS_Graphify_Tool_List_Remote_Sources implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'read_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only', 'cacheable' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$enabled_only = ! empty( $arguments['enabled_only'] );
 		$rows         = NV_oOS_Graphify_DB::list_remote_sources( $enabled_only ? array( 'enabled' => 1 ) : array() );

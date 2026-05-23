@@ -115,14 +115,14 @@ class WP_MCP_AI_PARA_Area_CPT {
 			return null;
 		}
 		return array(
-			'id'              => (int) $post->ID,
-			'title'           => $post->post_title,
-			'description'     => $post->post_content,
-			'standard'        => (string) get_post_meta( $post->ID, '_para_standard', true ),
-			'owner_id'        => (int) get_post_meta( $post->ID, '_para_owner', true ),
-			'review_cadence'  => (string) get_post_meta( $post->ID, '_para_review_cadence', true ),
-			'last_reviewed'   => (string) get_post_meta( $post->ID, '_para_last_reviewed', true ),
-			'status'          => $post->post_status,
+			'id'             => (int) $post->ID,
+			'title'          => $post->post_title,
+			'description'    => $post->post_content,
+			'standard'       => (string) get_post_meta( $post->ID, '_para_standard', true ),
+			'owner_id'       => (int) get_post_meta( $post->ID, '_para_owner', true ),
+			'review_cadence' => (string) get_post_meta( $post->ID, '_para_review_cadence', true ),
+			'last_reviewed'  => (string) get_post_meta( $post->ID, '_para_last_reviewed', true ),
+			'status'         => $post->post_status,
 		);
 	}
 }

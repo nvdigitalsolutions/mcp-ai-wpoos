@@ -125,6 +125,9 @@ class WP_MCP_AI_Tool_LF_Engagement_Letter_Generator implements WP_MCP_AI_Tool_In
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -172,7 +175,7 @@ class WP_MCP_AI_Tool_LF_Engagement_Letter_Generator implements WP_MCP_AI_Tool_In
 		// Fee arrangement section.
 		switch ( $fee_type ) {
 			case 'hourly':
-				$rate_text = $billing_rate > 0
+				$rate_text        = $billing_rate > 0
 					? sprintf( '$%s per hour', number_format( $billing_rate, 2 ) )
 					: '[RATE TO BE DETERMINED]';
 				$sections['fees'] = sprintf(
@@ -190,7 +193,7 @@ class WP_MCP_AI_Tool_LF_Engagement_Letter_Generator implements WP_MCP_AI_Tool_In
 				break;
 
 			case 'retainer':
-				$retainer_text = $retainer > 0
+				$retainer_text    = $retainer > 0
 					? sprintf( '$%s', number_format( $retainer, 2 ) )
 					: '[RETAINER AMOUNT]';
 				$sections['fees'] = sprintf(

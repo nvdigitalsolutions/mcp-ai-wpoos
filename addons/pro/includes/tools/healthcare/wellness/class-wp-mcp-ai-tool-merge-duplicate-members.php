@@ -128,7 +128,7 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 		 *
 		 * @since 1.4.0
 		 *
-		 * @param array $map post_type => meta_key.
+		 * @param array $map Post_type => meta_key.
 		 */
 		return (array) apply_filters( 'wp_mcp_ai_healthcare_member_child_meta_map', $map );
 	}
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 					'no_found_rows'  => true,
 				)
 			);
-			$ids = $query->posts;
+			$ids   = $query->posts;
 			if ( ! is_array( $ids ) ) {
 				$ids = array();
 			}
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 				'count'    => count( $ids ),
 				'ids'      => array_map( 'intval', $ids ),
 			);
-			$total += count( $ids );
+			$total             += count( $ids );
 		}
 
 		if ( $dry_run ) {
@@ -246,11 +246,11 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 				'member',
 				$destination,
 				array(
-					'user_id'       => $current_user_id,
-					'tool'          => $this->get_slug(),
-					'source'        => $source,
-					'children'      => $applied,
-					'source_state'  => $source_state,
+					'user_id'      => $current_user_id,
+					'tool'         => $this->get_slug(),
+					'source'       => $source,
+					'children'     => $applied,
+					'source_state' => $source_state,
 				)
 			);
 		}
@@ -262,7 +262,7 @@ class WP_MCP_AI_Tool_Merge_Duplicate_Members implements WP_MCP_AI_Tool_Interface
 		 *
 		 * @param int   $destination Destination member ID (survivor).
 		 * @param int   $source      Source member ID (trashed/deleted).
-		 * @param array $applied     post_type => count of re-parented children.
+		 * @param array $applied     Post_type => count of re-parented children.
 		 */
 		do_action( 'wp_mcp_ai_healthcare_after_merge_members', $destination, $source, $applied );
 

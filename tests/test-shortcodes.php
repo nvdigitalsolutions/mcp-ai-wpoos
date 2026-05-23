@@ -428,7 +428,10 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
 			$this->assertArrayHasKey( 'restUrl', $config, 'Instance config should have restUrl key.' );
 			$this->assertNotEmpty( $config['restUrl'], 'restUrl should not be empty.' );
-			$this->assertStringContainsString( '/wp-json/mcp-ai/v1', $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
+			// Use rest_url() for comparison so the test works with both pretty permalinks
+			// (/wp-json/mcp-ai/v1/) and plain permalink (?rest_route=/mcp-ai/v1/) formats.
+			$expected = rest_url( WP_MCP_AI_REST::REST_NAMESPACE );
+			$this->assertStringContainsString( $expected, $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
 		}
 	}
 

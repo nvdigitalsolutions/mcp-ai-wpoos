@@ -22,8 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_QMS_Retention {
 
-	const CRON_HOOK     = 'wp_mcp_ai_qms_retention_sweep';
-	const REVIEW_HOOK   = 'wp_mcp_ai_qms_review_due';
+	const CRON_HOOK   = 'wp_mcp_ai_qms_retention_sweep';
+	const REVIEW_HOOK = 'wp_mcp_ai_qms_review_due';
 
 	/**
 	 * Initialize.

@@ -68,9 +68,9 @@ class WP_MCP_AI_Tool_Link_Prescription_To_Record implements WP_MCP_AI_Tool_Inter
 			'type'       => 'object',
 			'properties' => array(
 				'action'          => array(
-					'type'        => 'string',
-					'enum'        => array( 'link', 'unlink', 'list' ),
-					'default'     => 'link',
+					'type'    => 'string',
+					'enum'    => array( 'link', 'unlink', 'list' ),
+					'default' => 'link',
 				),
 				'prescription_id' => array(
 					'type'        => 'integer',

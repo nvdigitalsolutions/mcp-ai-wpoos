@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Localize_Dates_Currencies tool.
+ */
 class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		return ! empty( $settings['enable_multilingual_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_multilingual_toolkit'] ) ) {
@@ -34,18 +47,42 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		return __( 'Localize Dates and Currencies tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'localize_dates_currencies';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Localize Dates and Currencies', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Format dates, times, numbers, and currencies according to locale standards.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -81,10 +118,22 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,
@@ -92,6 +141,13 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$locale   = ! empty( $arguments['locale'] ) ? sanitize_text_field( $arguments['locale'] ) : get_locale();
 		$date     = ! empty( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : '';
@@ -108,7 +164,7 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		// Format currency amount using PHP Intl NumberFormatter when available.
 		if ( null !== $amount ) {
 			if ( class_exists( 'NumberFormatter' ) ) {
-				$fmt                       = new NumberFormatter( $locale, NumberFormatter::CURRENCY );
+				$fmt                        = new NumberFormatter( $locale, NumberFormatter::CURRENCY );
 				$output['formatted_amount'] = $fmt->formatCurrency( $amount, $currency );
 			} else {
 				// Basic fallback.
@@ -122,7 +178,7 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 			$timestamp = strtotime( $date );
 			if ( false !== $timestamp ) {
 				if ( class_exists( 'IntlDateFormatter' ) ) {
-					$fmt                    = new IntlDateFormatter(
+					$fmt                      = new IntlDateFormatter(
 						$locale,
 						IntlDateFormatter::LONG,
 						IntlDateFormatter::NONE,
@@ -140,8 +196,8 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		// Format phone via libphonenumber-js service.
 		if ( '' !== $phone ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-language-detection-service.php';
-			$svc                      = new WP_MCP_AI_Language_Detection_Service();
-			$phone_result             = $svc->format_phone( $phone, $country );
+			$svc                       = new WP_MCP_AI_Language_Detection_Service();
+			$phone_result              = $svc->format_phone( $phone, $country );
 			$output['formatted_phone'] = $phone_result['formatted'];
 			$output['phone_valid']     = $phone_result['valid'];
 		}

@@ -50,34 +50,34 @@ class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'connection_id'  => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'connection_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Remote Sites connection ID for the Shopify store. If omitted, automatically uses the Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
-				'action'         => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: list, get, search.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list', 'get', 'search' ),
 					'default'     => 'list',
 				),
-				'customer_id'    => array(
+				'customer_id'   => array(
 					'type'        => 'string',
 					'description' => __( 'Shopify customer GID (e.g. gid://shopify/Customer/123456789) for the get action.', 'mcp-ai-wpoos-pro' ),
 				),
-				'first'          => array(
+				'first'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of customers to return (1–250). Default: 10.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 250,
 				),
-				'after'          => array(
+				'after'         => array(
 					'type'        => 'string',
 					'description' => __( 'Pagination cursor (endCursor from a previous response).', 'mcp-ai-wpoos-pro' ),
 				),
-				'query'          => array(
+				'query'         => array(
 					'type'        => 'string',
 					'description' => __( 'Shopify customer search/filter query. Supports Shopify filter syntax, e.g. "email:john@example.com", "tag:vip", "total_spent:>100".', 'mcp-ai-wpoos-pro' ),
 				),
@@ -136,8 +136,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Customers implements WP_MCP_AI_Tool_Interface, 
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			$available   = $this->get_available_shopify_connections( $context );
-			$conn_list   = $this->format_available_connections_message( $available );
+			$available = $this->get_available_shopify_connections( $context );
+			$conn_list = $this->format_available_connections_message( $available );
 			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {

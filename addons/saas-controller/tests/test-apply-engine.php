@@ -10,6 +10,8 @@
  * @package NV_oOS_SaaS_Controller
  */
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+
 /**
  * Stub mutating client.
  *
@@ -18,53 +20,157 @@
  * touching HTTP.
  */
 class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_Mutating_Client {
+
+	/**
+	 * Recorded calls.
+	 *
+	 * @var array
+	 */
 	public $calls       = array();
+
+	/**
+	 * Canned next D1 response.
+	 *
+	 * @var array|WP_Error|null
+	 */
 	public $next_d1     = null;
+
+	/**
+	 * Canned next KV response.
+	 *
+	 * @var array|WP_Error|null
+	 */
 	public $next_kv     = null;
+
+	/**
+	 * Canned next gateway response.
+	 *
+	 * @var array|WP_Error|null
+	 */
 	public $next_gw     = null;
+
+	/**
+	 * Canned next worker response.
+	 *
+	 * @var array|WP_Error|null
+	 */
 	public $next_worker = null;
 
-	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		/* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
 
+	/**
+	 * Create a D1 database (records call and returns canned result).
+	 *
+	 * @param string $name The database name.
+	 * @return array|WP_Error
+	 */
 	public function create_d1_database( $name ) {
 		$this->calls[] = array( 'd1', $name );
 		return null === $this->next_d1
-			? array( 'uuid' => 'uuid-' . $name, 'name' => $name )
+			? array(
+				'uuid' => 'uuid-' . $name,
+				'name' => $name,
+			)
 			: $this->next_d1;
 	}
 
+	/**
+	 * Create a KV namespace (records call and returns canned result).
+	 *
+	 * @param string $title The namespace title.
+	 * @return array|WP_Error
+	 */
 	public function create_kv_namespace( $title ) {
 		$this->calls[] = array( 'kv', $title );
 		return null === $this->next_kv
-			? array( 'id' => 'id-' . $title, 'title' => $title )
+			? array(
+				'id' => 'id-' . $title,
+				'title' => $title,
+			)
 			: $this->next_kv;
 	}
 
+	/**
+	 * Create an AI gateway (records call and returns canned result).
+	 *
+	 * @param string $slug The gateway slug.
+	 * @return array|WP_Error
+	 */
 	public function create_ai_gateway( $slug ) {
 		$this->calls[] = array( 'gw', $slug );
 		return null === $this->next_gw
-			? array( 'id' => 'gw-' . $slug, 'slug' => $slug )
+			? array(
+				'id' => 'gw-' . $slug,
+				'slug' => $slug,
+			)
 			: $this->next_gw;
 	}
 
+	/**
+	 * Canned next delete D1 error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_delete_d1 = null;
+
+	/**
+	 * Canned next delete KV error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_delete_kv = null;
+
+	/**
+	 * Canned next delete gateway error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_delete_gw = null;
 
+	/**
+	 * Delete a D1 database.
+	 *
+	 * @param string $uuid The database UUID.
+	 * @param string $name The database name.
+	 * @return array|WP_Error
+	 */
 	public function delete_d1_database( $uuid, $name = '' ) {
 		$this->calls[] = array( 'delete_d1', $uuid, $name );
 		return null === $this->next_delete_d1
-			? array( 'uuid' => $uuid, 'name' => $name )
+			? array(
+				'uuid' => $uuid,
+				'name' => $name,
+			)
 			: $this->next_delete_d1;
 	}
 
+	/**
+	 * Delete a KV namespace.
+	 *
+	 * @param string $namespace_id The namespace ID.
+	 * @param string $title        The namespace title.
+	 * @return array|WP_Error
+	 */
 	public function delete_kv_namespace( $namespace_id, $title = '' ) {
 		$this->calls[] = array( 'delete_kv', $namespace_id, $title );
 		return null === $this->next_delete_kv
-			? array( 'id' => $namespace_id, 'title' => $title )
+			? array(
+				'id' => $namespace_id,
+				'title' => $title,
+			)
 			: $this->next_delete_kv;
 	}
 
+	/**
+	 * Delete an AI gateway.
+	 *
+	 * @param string $slug The gateway slug.
+	 * @return array|WP_Error
+	 */
 	public function delete_ai_gateway( $slug ) {
 		$this->calls[] = array( 'delete_gw', $slug );
 		return null === $this->next_delete_gw
@@ -72,6 +178,14 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 			: $this->next_delete_gw;
 	}
 
+	/**
+	 * Upload a worker script (records call and returns canned result).
+	 *
+	 * @param string $name        The worker name.
+	 * @param string $script_body The script content.
+	 * @param array  $metadata    Worker metadata.
+	 * @return array|WP_Error
+	 */
 	public function upload_worker_script( $name, $script_body, array $metadata ) {
 		$this->calls[] = array( 'worker', $name, strlen( $script_body ), $metadata );
 		return null === $this->next_worker
@@ -86,10 +200,17 @@ class NVOOS_SaaS_Stub_Mutating_Client extends NVOOS_SaaS_Controller_Cloudflare_M
 }
 
 /**
+ * Tests for the apply engine.
+ *
  * @covers NVOOS_SaaS_Controller_Apply_Engine
  */
 class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 
+	/**
+	 * Set up test.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
@@ -98,6 +219,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->ensure_worker_dist();
 	}
 
+	/**
+	 * Tear down test.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
 		delete_option( NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION );
@@ -114,10 +240,20 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 	 */
 	private $created_dist = false;
 
+	/**
+	 * Get the path to the worker dist file.
+	 *
+	 * @return string
+	 */
 	private function worker_dist_path() {
 		return NVOOS_SAAS_CONTROLLER_PATH . 'worker/dist/index.js';
 	}
 
+	/**
+	 * Ensure the worker dist file exists for testing.
+	 *
+	 * @return void
+	 */
 	private function ensure_worker_dist() {
 		$path = $this->worker_dist_path();
 		if ( file_exists( $path ) ) {
@@ -129,6 +265,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->created_dist = true;
 	}
 
+	/**
+	 * Remove the worker dist file if this test created it.
+	 *
+	 * @return void
+	 */
 	private function cleanup_worker_dist() {
 		if ( $this->created_dist ) {
 			$path = $this->worker_dist_path();
@@ -143,22 +284,52 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Build a plan fixture with creates.
+	 *
+	 * @return array
+	 */
 	private function plan_with_creates() {
 		return array(
 			'creates' => array(
-				array( 'kind' => 'd1', 'name' => 'mcp-oos', 'binding' => 'DB' ),
-				array( 'kind' => 'kv', 'title' => 'cache', 'binding' => 'KV' ),
-				array( 'kind' => 'ai_gateway', 'slug' => 'mcp-router' ),
-				array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ),
+				array(
+					'kind' => 'd1',
+					'name' => 'mcp-oos',
+					'binding' => 'DB',
+				),
+				array(
+					'kind' => 'kv',
+					'title' => 'cache',
+					'binding' => 'KV',
+				),
+				array(
+					'kind' => 'ai_gateway',
+					'slug' => 'mcp-router',
+				),
+				array(
+					'kind' => 'worker',
+					'name' => 'mcp-oos-worker',
+				),
 			),
 			'updates' => array(),
 			'noops'   => array(),
 			'orphans' => array(),
 			'errors'  => array(),
-			'summary' => array( 'creates' => 4, 'updates' => 0, 'noops' => 0, 'orphans' => 0, 'errors' => 0 ),
+			'summary' => array(
+				'creates' => 4,
+				'updates' => 0,
+				'noops' => 0,
+				'orphans' => 0,
+				'errors' => 0,
+			),
 		);
 	}
 
+	/**
+	 * Test that issue_token returns plaintext token and caches the plan.
+	 *
+	 * @return void
+	 */
 	public function test_issue_token_returns_plaintext_token_and_caches_plan() {
 		$plan   = $this->plan_with_creates();
 		$issued = NVOOS_SaaS_Controller_Apply_Engine::issue_token( $plan );
@@ -173,6 +344,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 4, $consumed['summary']['creates'] );
 	}
 
+	/**
+	 * Test that consume_token is single-use.
+	 *
+	 * @return void
+	 */
 	public function test_consume_token_is_single_use() {
 		$plan     = $this->plan_with_creates();
 		$issued   = NVOOS_SaaS_Controller_Apply_Engine::issue_token( $plan );
@@ -184,18 +360,33 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'consumed_apply_token', $second->get_error_code() );
 	}
 
+	/**
+	 * Test that consume_token rejects an unknown token.
+	 *
+	 * @return void
+	 */
 	public function test_consume_token_rejects_unknown_token() {
 		$result = NVOOS_SaaS_Controller_Apply_Engine::consume_token( str_repeat( 'a', 43 ) );
 		$this->assertWPError( $result );
 		$this->assertSame( 'expired_apply_token', $result->get_error_code() );
 	}
 
+	/**
+	 * Test that consume_token rejects a short token.
+	 *
+	 * @return void
+	 */
 	public function test_consume_token_rejects_short_token() {
 		$result = NVOOS_SaaS_Controller_Apply_Engine::consume_token( 'tooshort' );
 		$this->assertWPError( $result );
 		$this->assertSame( 'invalid_apply_token', $result->get_error_code() );
 	}
 
+	/**
+	 * Test that apply dispatches D1, KV, AI Gateway, and uploads worker.
+	 *
+	 * @return void
+	 */
 	public function test_apply_dispatches_d1_kv_ai_gateway_and_uploads_worker() {
 		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
@@ -223,6 +414,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertNotEmpty( $deployed['etag'] );
 	}
 
+	/**
+	 * Test that apply records partial failure when one call errors.
+	 *
+	 * @return void
+	 */
 	public function test_apply_records_partial_failure_when_one_call_errors() {
 		$stub          = new NVOOS_SaaS_Stub_Mutating_Client();
 		$stub->next_kv = new WP_Error( 'cloudflare_http_403', 'Forbidden' );
@@ -239,14 +435,30 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Forbidden', $kv_row['message'] );
 	}
 
+	/**
+	 * Test that apply uploads worker on an update row.
+	 *
+	 * @return void
+	 */
 	public function test_apply_uploads_worker_on_update_row() {
 		$plan = array(
 			'creates' => array(),
-			'updates' => array( array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ) ),
+			'updates' => array(
+				array(
+					'kind' => 'worker',
+					'name' => 'mcp-oos-worker',
+				),
+			),
 			'noops'   => array(),
 			'orphans' => array(),
 			'errors'  => array(),
-			'summary' => array( 'creates' => 0, 'updates' => 1, 'noops' => 0, 'orphans' => 0, 'errors' => 0 ),
+			'summary' => array(
+				'creates' => 0,
+				'updates' => 1,
+				'noops' => 0,
+				'orphans' => 0,
+				'errors' => 0,
+			),
 		);
 
 		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
@@ -261,6 +473,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'worker', $stub->calls[0][0] );
 	}
 
+	/**
+	 * Test that apply records error when worker dist is missing.
+	 *
+	 * @return void
+	 */
 	public function test_apply_records_error_when_worker_dist_missing() {
 		// Wipe the placeholder dist created in setUp to simulate a fresh
 		// install that has not yet run `npm run build:worker`.
@@ -272,16 +489,29 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		// Override the dist-path filter to a guaranteed-missing path so we
 		// don't depend on the addon already shipping (or not shipping) a
 		// real `worker/dist/index.js`.
-		$override = function () { return 'worker/dist/__missing-on-purpose__.js'; };
+		$override = function () {
+			return 'worker/dist/__missing-on-purpose__.js';
+		};
 		add_filter( 'nvoos_saas_controller_worker_dist_path', $override );
 
 		$plan = array(
-			'creates' => array( array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ) ),
+			'creates' => array(
+				array(
+					'kind' => 'worker',
+					'name' => 'mcp-oos-worker',
+				),
+			),
 			'updates' => array(),
 			'noops'   => array(),
 			'orphans' => array(),
 			'errors'  => array(),
-			'summary' => array( 'creates' => 1, 'updates' => 0, 'noops' => 0, 'orphans' => 0, 'errors' => 0 ),
+			'summary' => array(
+				'creates' => 1,
+				'updates' => 0,
+				'noops' => 0,
+				'orphans' => 0,
+				'errors' => 0,
+			),
 		);
 
 		$stub   = new NVOOS_SaaS_Stub_Mutating_Client();
@@ -295,14 +525,29 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertCount( 0, $stub->calls ); // Never reached the client.
 	}
 
+	/**
+	 * Test that apply worker metadata carries D1 and KV bindings.
+	 *
+	 * @return void
+	 */
 	public function test_apply_worker_metadata_carries_d1_and_kv_bindings() {
 		// Stash the deployment config so the metadata builder picks it up.
 		$cfg = NVOOS_SaaS_Controller_Deployment_Config::instance();
 		$cfg->save(
 			array(
 				'worker_name'     => 'mcp-oos-worker',
-				'd1_databases'    => array( array( 'name' => 'mcp-oos', 'binding' => 'DB' ) ),
-				'kv_namespaces'   => array( array( 'title' => 'cache', 'binding' => 'CACHE' ) ),
+				'd1_databases'    => array(
+					array(
+						'name' => 'mcp-oos',
+						'binding' => 'DB',
+					),
+				),
+				'kv_namespaces'   => array(
+					array(
+						'title' => 'cache',
+						'binding' => 'CACHE',
+					),
+				),
 				'ai_gateway_slug' => 'mcp-router',
 			)
 		);
@@ -311,12 +556,23 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $stub );
 		$engine->apply(
 			array(
-				'creates' => array( array( 'kind' => 'worker', 'name' => 'mcp-oos-worker' ) ),
+				'creates' => array(
+					array(
+						'kind' => 'worker',
+						'name' => 'mcp-oos-worker',
+					),
+				),
 				'updates' => array(),
 				'noops'   => array(),
 				'orphans' => array(),
 				'errors'  => array(),
-				'summary' => array( 'creates' => 1, 'updates' => 0, 'noops' => 0, 'orphans' => 0, 'errors' => 0 ),
+				'summary' => array(
+					'creates' => 1,
+					'updates' => 0,
+					'noops' => 0,
+					'orphans' => 0,
+					'errors' => 0,
+				),
 			)
 		);
 
@@ -332,6 +588,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertContains( 'plain_text', $types );
 	}
 
+	/**
+	 * Test that issue_token records an internal audit entry.
+	 *
+	 * @return void
+	 */
 	public function test_issue_token_records_internal_audit_entry() {
 		NVOOS_SaaS_Controller_Apply_Engine::issue_token( $this->plan_with_creates() );
 		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 5 );
@@ -340,13 +601,24 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'apply_token_issued', $entries[0]['action'] );
 	}
 
+	/**
+	 * Test that Stripe product row dispatches to Stripe client.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_product_row_dispatches_to_stripe_client() {
 		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
 		$stripe = new NVOOS_SaaS_Stub_Engine_Stripe_Client();
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, $stripe, null );
 		$out    = $engine->apply(
 			array(
-				'creates' => array( array( 'kind' => 'stripe_product', 'id' => 'prod_x', 'name' => 'X' ) ),
+				'creates' => array(
+					array(
+						'kind' => 'stripe_product',
+						'id' => 'prod_x',
+						'name' => 'X',
+					),
+				),
 				'updates' => array(),
 				'noops'   => array(),
 				'orphans' => array(),
@@ -358,12 +630,23 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'prod_x', $stripe->product_calls[0]['id'] );
 	}
 
+	/**
+	 * Test that Stripe product row is skipped when no Stripe client.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_product_row_skipped_when_no_stripe_client() {
 		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, null, null );
 		$out    = $engine->apply(
 			array(
-				'creates' => array( array( 'kind' => 'stripe_product', 'id' => 'prod_x', 'name' => 'X' ) ),
+				'creates' => array(
+					array(
+						'kind' => 'stripe_product',
+						'id' => 'prod_x',
+						'name' => 'X',
+					),
+				),
 				'updates' => array(),
 				'noops'   => array(),
 				'orphans' => array(),
@@ -374,6 +657,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'skipped', $out['results'][0]['status'] );
 	}
 
+	/**
+	 * Test that Stripe price row dispatches to Stripe client.
+	 *
+	 * @return void
+	 */
 	public function test_stripe_price_row_dispatches_to_stripe_client() {
 		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
 		$stripe = new NVOOS_SaaS_Stub_Engine_Stripe_Client();
@@ -400,6 +688,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'pro_monthly', $stripe->price_calls[0]['lookup_key'] );
 	}
 
+	/**
+	 * Test that OpenRouter key row dispatches to OpenRouter client.
+	 *
+	 * @return void
+	 */
 	public function test_openrouter_key_row_dispatches_to_openrouter_client() {
 		$cf         = new NVOOS_SaaS_Stub_Mutating_Client();
 		$openrouter = new NVOOS_SaaS_Stub_Engine_OpenRouter_Client();
@@ -407,7 +700,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$out        = $engine->apply(
 			array(
 				'creates' => array(
-					array( 'kind' => 'openrouter_key', 'label' => 'production', 'limit_usd' => 250.0 ),
+					array(
+						'kind' => 'openrouter_key',
+						'label' => 'production',
+						'limit_usd' => 250.0,
+					),
 				),
 				'updates' => array(),
 				'noops'   => array(),
@@ -423,6 +720,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertNotEmpty( $out['results'][0]['detail']['key'] );
 	}
 
+	/**
+	 * Test that OpenRouter key row records error status on upstream failure.
+	 *
+	 * @return void
+	 */
 	public function test_openrouter_key_row_records_error_status_on_upstream_failure() {
 		$cf         = new NVOOS_SaaS_Stub_Mutating_Client();
 		$openrouter = new NVOOS_SaaS_Stub_Engine_OpenRouter_Client();
@@ -430,7 +732,12 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$engine     = new NVOOS_SaaS_Controller_Apply_Engine( $cf, null, $openrouter );
 		$out        = $engine->apply(
 			array(
-				'creates' => array( array( 'kind' => 'openrouter_key', 'label' => 'foo' ) ),
+				'creates' => array(
+					array(
+						'kind' => 'openrouter_key',
+						'label' => 'foo',
+					),
+				),
 				'updates' => array(),
 				'noops'   => array(),
 				'orphans' => array(),
@@ -446,9 +753,18 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 	// Phase 10 — orphan cleanup (HITL-gated delete) coverage.
 	// ============================================================
 
+	/**
+	 * Test that orphan token round-trip is single-use.
+	 *
+	 * @return void
+	 */
 	public function test_orphan_token_round_trip_is_single_use() {
 		$orphans = array(
-			array( 'kind' => 'd1', 'name' => 'old', 'uuid' => 'uuid-old' ),
+			array(
+				'kind' => 'd1',
+				'name' => 'old',
+				'uuid' => 'uuid-old',
+			),
 		);
 		$issued = NVOOS_SaaS_Controller_Apply_Engine::issue_orphan_token( $orphans );
 		$this->assertNotEmpty( $issued['token'] );
@@ -464,6 +780,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'consumed_orphan_token', $second->get_error_code() );
 	}
 
+	/**
+	 * Test that consume_orphan_token rejects malformed and unknown tokens.
+	 *
+	 * @return void
+	 */
 	public function test_consume_orphan_token_rejects_malformed_and_unknown() {
 		$err = NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( 'short' );
 		$this->assertWPError( $err );
@@ -474,20 +795,39 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'expired_orphan_token', $err->get_error_code() );
 	}
 
+	/**
+	 * Test that orphan and apply token namespaces are isolated.
+	 *
+	 * @return void
+	 */
 	public function test_orphan_and_apply_token_namespaces_are_isolated() {
 		// A token issued for orphans must not be accepted by consume_token(),
 		// and an apply token must not be accepted by consume_orphan_token().
 		$orphan_token = NVOOS_SaaS_Controller_Apply_Engine::issue_orphan_token(
-			array( array( 'kind' => 'd1', 'uuid' => 'u1', 'name' => 'old' ) )
+			array(
+				array(
+					'kind' => 'd1',
+					'uuid' => 'u1',
+					'name' => 'old',
+				),
+			)
 		)['token'];
 		$apply_token  = NVOOS_SaaS_Controller_Apply_Engine::issue_token(
-			array( 'creates' => array(), 'updates' => array() )
+			array(
+				'creates' => array(),
+				'updates' => array(),
+			)
 		)['token'];
 
 		$this->assertWPError( NVOOS_SaaS_Controller_Apply_Engine::consume_token( $orphan_token ) );
 		$this->assertWPError( NVOOS_SaaS_Controller_Apply_Engine::consume_orphan_token( $apply_token ) );
 	}
 
+	/**
+	 * Test that apply_orphans dispatches per kind to clients.
+	 *
+	 * @return void
+	 */
 	public function test_apply_orphans_dispatches_per_kind_to_clients() {
 		$cf  = new NVOOS_SaaS_Stub_Mutating_Client();
 		$str = new NVOOS_SaaS_Stub_Engine_Stripe_Client();
@@ -495,12 +835,33 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf, $str, $or );
 
 		$cached = array(
-			array( 'kind' => 'd1', 'name' => 'gone-d1', 'uuid' => 'uuid-d1' ),
-			array( 'kind' => 'kv', 'title' => 'gone-kv', 'id' => 'id-kv' ),
-			array( 'kind' => 'ai_gateway', 'slug' => 'gone-gw' ),
-			array( 'kind' => 'stripe_product', 'id' => 'prod_gone' ),
-			array( 'kind' => 'stripe_price', 'id' => 'price_gone' ),
-			array( 'kind' => 'openrouter_key', 'label' => 'gone-key', 'hash' => 'h-gone' ),
+			array(
+				'kind' => 'd1',
+				'name' => 'gone-d1',
+				'uuid' => 'uuid-d1',
+			),
+			array(
+				'kind' => 'kv',
+				'title' => 'gone-kv',
+				'id' => 'id-kv',
+			),
+			array(
+				'kind' => 'ai_gateway',
+				'slug' => 'gone-gw',
+			),
+			array(
+				'kind' => 'stripe_product',
+				'id' => 'prod_gone',
+			),
+			array(
+				'kind' => 'stripe_price',
+				'id' => 'price_gone',
+			),
+			array(
+				'kind' => 'openrouter_key',
+				'label' => 'gone-key',
+				'hash' => 'h-gone',
+			),
 		);
 
 		// Operator selects every row.
@@ -527,18 +888,31 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 'h-gone', $or->delete_calls[0]['hash'] );
 	}
 
+	/**
+	 * Test that apply_orphans rejects selections not in the cached set.
+	 *
+	 * @return void
+	 */
 	public function test_apply_orphans_rejects_selections_not_in_cached_set() {
 		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf );
 
 		$cached = array(
-			array( 'kind' => 'd1', 'name' => 'reviewed', 'uuid' => 'uuid-reviewed' ),
+			array(
+				'kind' => 'd1',
+				'name' => 'reviewed',
+				'uuid' => 'uuid-reviewed',
+			),
 		);
 
 		// Forged: the operator's browser submitted a row that was not in
 		// the previewed list. Apply_orphans must refuse to dispatch it.
 		$selected = array(
-			array( 'kind' => 'd1', 'name' => 'evil', 'uuid' => 'uuid-evil' ),
+			array(
+				'kind' => 'd1',
+				'name' => 'evil',
+				'uuid' => 'uuid-evil',
+			),
 		);
 
 		$out = $engine->apply_orphans( $selected, $cached );
@@ -551,13 +925,25 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Test that apply_orphans skips Stripe when credential is missing.
+	 *
+	 * @return void
+	 */
 	public function test_apply_orphans_skips_stripe_when_credential_missing() {
 		$cf     = new NVOOS_SaaS_Stub_Mutating_Client();
-		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf ); // no stripe / openrouter
+		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf ); // No Stripe or OpenRouter client.
 
 		$cached = array(
-			array( 'kind' => 'stripe_product', 'id' => 'prod_x' ),
-			array( 'kind' => 'openrouter_key', 'label' => 'k', 'hash' => 'h' ),
+			array(
+				'kind' => 'stripe_product',
+				'id' => 'prod_x',
+			),
+			array(
+				'kind' => 'openrouter_key',
+				'label' => 'k',
+				'hash' => 'h',
+			),
 		);
 		$out = $engine->apply_orphans( $cached, $cached );
 
@@ -566,12 +952,23 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
 		$this->assertSame( 0, $out['summary']['error'] );
 	}
 
+	/**
+	 * Test that apply_orphans records error on client failure.
+	 *
+	 * @return void
+	 */
 	public function test_apply_orphans_records_error_on_client_failure() {
 		$cf = new NVOOS_SaaS_Stub_Mutating_Client();
 		$cf->next_delete_d1 = new WP_Error( 'cloudflare_http_403', 'Forbidden' );
 		$engine = new NVOOS_SaaS_Controller_Apply_Engine( $cf );
 
-		$cached = array( array( 'kind' => 'd1', 'name' => 'gone', 'uuid' => 'u1' ) );
+		$cached = array(
+			array(
+				'kind' => 'd1',
+				'name' => 'gone',
+				'uuid' => 'u1',
+			),
+		);
 		$out    = $engine->apply_orphans( $cached, $cached );
 
 		$this->assertSame( 1, $out['summary']['error'] );
@@ -585,13 +982,47 @@ class Test_NVOOS_SaaS_Controller_Apply_Engine extends WP_UnitTestCase {
  * so the engine's `instanceof` check accepts it without HTTP I/O.
  */
 class NVOOS_SaaS_Stub_Engine_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_Client {
+
+	/**
+	 * Recorded product calls.
+	 *
+	 * @var array
+	 */
 	public $product_calls = array();
+
+	/**
+	 * Recorded price calls.
+	 *
+	 * @var array
+	 */
 	public $price_calls   = array();
+
+	/**
+	 * Canned next product error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_product_error = null;
+
+	/**
+	 * Canned next price error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_price_error   = null;
 
-	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		/* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
 
+	/**
+	 * Create a product (records call and returns canned result).
+	 *
+	 * @param array $product The product data.
+	 * @return array|WP_Error
+	 */
 	public function create_product( array $product ) {
 		$this->product_calls[] = $product;
 		if ( null !== $this->next_product_error ) {
@@ -603,6 +1034,12 @@ class NVOOS_SaaS_Stub_Engine_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_
 		);
 	}
 
+	/**
+	 * Create a price (records call and returns canned result).
+	 *
+	 * @param array $price The price data.
+	 * @return array|WP_Error
+	 */
 	public function create_price( array $price ) {
 		$this->price_calls[] = $price;
 		if ( null !== $this->next_price_error ) {
@@ -615,25 +1052,66 @@ class NVOOS_SaaS_Stub_Engine_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_
 		);
 	}
 
+	/**
+	 * Recorded archive product calls.
+	 *
+	 * @var array
+	 */
 	public $archive_product_calls   = array();
+
+	/**
+	 * Recorded archive price calls.
+	 *
+	 * @var array
+	 */
 	public $archive_price_calls     = array();
+
+	/**
+	 * Canned next archive product error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_archive_prod_error = null;
+
+	/**
+	 * Canned next archive price error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_archive_price_error = null;
 
+	/**
+	 * Archive a product.
+	 *
+	 * @param string $id The product ID.
+	 * @return array|WP_Error
+	 */
 	public function archive_product( $id ) {
 		$this->archive_product_calls[] = $id;
 		if ( null !== $this->next_archive_prod_error ) {
 			return $this->next_archive_prod_error;
 		}
-		return array( 'id' => (string) $id, 'active' => false );
+		return array(
+			'id' => (string) $id,
+			'active' => false,
+		);
 	}
 
+	/**
+	 * Archive a price.
+	 *
+	 * @param string $id The price ID.
+	 * @return array|WP_Error
+	 */
 	public function archive_price( $id ) {
 		$this->archive_price_calls[] = $id;
 		if ( null !== $this->next_archive_price_error ) {
 			return $this->next_archive_price_error;
 		}
-		return array( 'id' => (string) $id, 'active' => false );
+		return array(
+			'id' => (string) $id,
+			'active' => false,
+		);
 	}
 }
 
@@ -641,13 +1119,39 @@ class NVOOS_SaaS_Stub_Engine_Stripe_Client extends NVOOS_SaaS_Controller_Stripe_
  * Stub OpenRouter client for the apply-engine tests.
  */
 class NVOOS_SaaS_Stub_Engine_OpenRouter_Client extends NVOOS_SaaS_Controller_OpenRouter_Client {
+
+	/**
+	 * Recorded calls.
+	 *
+	 * @var array
+	 */
 	public $calls      = array();
+
+	/**
+	 * Canned next error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_error = null;
 
-	public function __construct() { /* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		/* no super */ } // phpcs:ignore Generic.Classes.OpeningBraceSameLine
 
+	/**
+	 * Create a key (records call and returns canned result).
+	 *
+	 * @param string     $label     The key label.
+	 * @param float|null $limit_usd Optional spend limit.
+	 * @return array|WP_Error
+	 */
 	public function create_key( $label, $limit_usd = null ) {
-		$this->calls[] = array( 'label' => (string) $label, 'limit' => $limit_usd );
+		$this->calls[] = array(
+			'label' => (string) $label,
+			'limit' => $limit_usd,
+		);
 		if ( null !== $this->next_error ) {
 			return $this->next_error;
 		}
@@ -658,14 +1162,38 @@ class NVOOS_SaaS_Stub_Engine_OpenRouter_Client extends NVOOS_SaaS_Controller_Ope
 		);
 	}
 
+	/**
+	 * Recorded delete calls.
+	 *
+	 * @var array
+	 */
 	public $delete_calls       = array();
+
+	/**
+	 * Canned next delete error.
+	 *
+	 * @var WP_Error|null
+	 */
 	public $next_delete_error  = null;
 
+	/**
+	 * Delete a key.
+	 *
+	 * @param string $hash  The key hash.
+	 * @param string $label The key label.
+	 * @return array|WP_Error
+	 */
 	public function delete_key( $hash, $label = '' ) {
-		$this->delete_calls[] = array( 'hash' => (string) $hash, 'label' => (string) $label );
+		$this->delete_calls[] = array(
+			'hash' => (string) $hash,
+			'label' => (string) $label,
+		);
 		if ( null !== $this->next_delete_error ) {
 			return $this->next_delete_error;
 		}
-		return array( 'hash' => (string) $hash, 'label' => (string) $label );
+		return array(
+			'hash' => (string) $hash,
+			'label' => (string) $label,
+		);
 	}
 }

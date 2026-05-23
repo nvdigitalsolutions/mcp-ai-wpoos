@@ -73,19 +73,19 @@ class WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member implements WP_MCP_AI_Tool_
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
 				),
-				'access_token' => array(
+				'access_token'        => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
-				'space'        => array(
+				'space'               => array(
 					'type'        => 'string',
 					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx).', 'mcp-ai-wpoos-pro' ),
 				),
-				'member_name'  => array(
+				'member_name'         => array(
 					'type'        => 'string',
 					'description' => __( 'Resource name of the user to add (e.g., users/123456789 or users/user@example.com).', 'mcp-ai-wpoos-pro' ),
 				),
-				'role'         => array(
+				'role'                => array(
 					'type'        => 'string',
 					'description' => __( 'Role of the member in the space. ROLE_MEMBER (default) or ROLE_MANAGER.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'ROLE_MEMBER', 'ROLE_MANAGER' ),

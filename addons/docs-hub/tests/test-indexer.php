@@ -177,8 +177,18 @@ class Test_Docs_Hub_Indexer extends WP_UnitTestCase {
 		file_put_contents( $file_b, "# Installation\n\nSteps." );
 
 		$entries = array(
-			array( 'path' => $file_a, 'source' => 'base', 'plugin_name' => 'Test Plugin', 'relative_path' => 'docs/readme.md' ),
-			array( 'path' => $file_b, 'source' => 'base', 'plugin_name' => 'Test Plugin', 'relative_path' => 'docs/install.md' ),
+			array(
+				'path' => $file_a,
+				'source' => 'base',
+				'plugin_name' => 'Test Plugin',
+				'relative_path' => 'docs/readme.md',
+			),
+			array(
+				'path' => $file_b,
+				'source' => 'base',
+				'plugin_name' => 'Test Plugin',
+				'relative_path' => 'docs/install.md',
+			),
 		);
 
 		$indexer  = new NV_oOS_Docs_Hub_Indexer();

@@ -109,6 +109,9 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$expression = sanitize_text_field( $arguments['expression'] );

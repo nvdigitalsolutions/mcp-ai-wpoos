@@ -116,6 +116,11 @@ class WP_MCP_AI_Tool_List_Media_Templates implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.
@@ -129,6 +134,9 @@ class WP_MCP_AI_Tool_List_Media_Templates implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.

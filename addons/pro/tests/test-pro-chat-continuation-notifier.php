@@ -29,10 +29,18 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 
 	// ── Fixtures ───────────────────────────────────────────────────────────────
 
-	/** @var string Test webhook URL */
+	/**
+	 * Test webhook URL.
+	 *
+	 * @var string
+	 */
 	private static $test_url = 'https://hooks.example.com/continuation';
 
-	/** @var array Minimal continuation snapshot */
+	/**
+	 * Minimal continuation snapshot.
+	 *
+	 * @var array
+	 */
 	private static $snapshot = array(
 		'job_id'          => 'notify_job_001',
 		'chat_session_id' => 'sess_notify_abc',
@@ -44,6 +52,9 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 
 	// ── Setup ──────────────────────────────────────────────────────────────────
 
+	/**
+	 * Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -56,6 +67,9 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		WP_MCP_AI_Pro_Chat_Continuation_Notifier::init();
 	}
 
+	/**
+	 * Tear down test.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL );
 		delete_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_SECRET );
@@ -68,7 +82,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 
 	// ── Tests ──────────────────────────────────────────────────────────────────
 
-	/** @test */
+	/**
+	 * Test dispatched hook is registered after init.
+	 *
+	 * @test
+	 */
 	public function test_dispatched_hook_is_registered_after_init() {
 		$this->assertGreaterThan(
 			0,
@@ -79,7 +97,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		);
 	}
 
-	/** @test */
+	/**
+	 * Test no request when URL not configured.
+	 *
+	 * @test
+	 */
 	public function test_no_request_when_url_not_configured() {
 		// No URL in option — no HTTP request must be fired.
 		$requests = array();
@@ -103,7 +125,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertEmpty( $requests );
 	}
 
-	/** @test */
+	/**
+	 * Test no request when kill switch returns false.
+	 *
+	 * @test
+	 */
 	public function test_no_request_when_kill_switch_returns_false() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 		add_filter( 'wp_mcp_ai_pro_continuation_notify_enabled', '__return_false', 10, 2 );
@@ -129,7 +155,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertEmpty( $requests );
 	}
 
-	/** @test */
+	/**
+	 * Test payload contains required fields.
+	 *
+	 * @test
+	 */
 	public function test_payload_contains_required_fields() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 
@@ -141,7 +171,10 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => '',
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'cookies'  => array(),
 					'filename' => '',
 				);
@@ -167,7 +200,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'site_url', $captured_body );
 	}
 
-	/** @test */
+	/**
+	 * Test HMAC signature header present when secret configured.
+	 *
+	 * @test
+	 */
 	public function test_hmac_signature_header_present_when_secret_configured() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_SECRET, 'super_secret_key' );
@@ -182,7 +219,10 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => '',
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'cookies'  => array(),
 					'filename' => '',
 				);
@@ -204,7 +244,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertSame( $expected, $captured_headers['X-WP-MCP-AI-Signature'] );
 	}
 
-	/** @test */
+	/**
+	 * Test no signature header when no secret.
+	 *
+	 * @test
+	 */
 	public function test_no_signature_header_when_no_secret() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 
@@ -216,7 +260,10 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => '',
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'cookies'  => array(),
 					'filename' => '',
 				);
@@ -235,7 +282,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'X-WP-MCP-AI-Signature', $captured_headers );
 	}
 
-	/** @test */
+	/**
+	 * Test notified action fires on success.
+	 *
+	 * @test
+	 */
 	public function test_notified_action_fires_on_success() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 
@@ -245,7 +296,10 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => '',
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'cookies'  => array(),
 					'filename' => '',
 				);
@@ -270,7 +324,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertTrue( $fired );
 	}
 
-	/** @test */
+	/**
+	 * Test notify failed action fires on HTTP 500.
+	 *
+	 * @test
+	 */
 	public function test_notify_failed_action_fires_on_http_500() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 
@@ -280,7 +338,10 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => 'Server Error',
-					'response' => array( 'code' => 500, 'message' => 'Internal Server Error' ),
+					'response' => array(
+						'code'    => 500,
+						'message' => 'Internal Server Error',
+					),
 					'cookies'  => array(),
 					'filename' => '',
 				);
@@ -305,7 +366,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertTrue( $failed );
 	}
 
-	/** @test */
+	/**
+	 * Test notify failed action fires on WP_Error.
+	 *
+	 * @test
+	 */
 	public function test_notify_failed_action_fires_on_wp_error() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 
@@ -334,7 +399,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertTrue( $failed );
 	}
 
-	/** @test */
+	/**
+	 * Test payload filter can modify payload.
+	 *
+	 * @test
+	 */
 	public function test_payload_filter_can_modify_payload() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 
@@ -354,7 +423,10 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 				return array(
 					'headers'  => array(),
 					'body'     => '',
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'cookies'  => array(),
 					'filename' => '',
 				);
@@ -373,7 +445,11 @@ class Test_Pro_Chat_Continuation_Notifier extends WP_UnitTestCase {
 		$this->assertSame( 'added_by_filter', $captured['custom_field'] );
 	}
 
-	/** @test */
+	/**
+	 * Test empty payload after filter suppresses request.
+	 *
+	 * @test
+	 */
 	public function test_empty_payload_after_filter_suppresses_request() {
 		update_option( WP_MCP_AI_Pro_Chat_Continuation_Notifier::OPTION_URL, self::$test_url );
 

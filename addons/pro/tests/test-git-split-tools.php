@@ -35,7 +35,8 @@
  */
 class Test_Git_Split_Tools extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var WP_MCP_AI_Tool_Registry
 	 */
 	private $registry;
@@ -46,7 +47,7 @@ class Test_Git_Split_Tools extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Ensure shell-tools constant is defined so precondition checks reach
+		// Ensure shell-tools constant is defined so precondition checks reach.
 		// the capability gate (which we can control via wp_set_current_user).
 		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) ) {
 			define( 'WP_MCP_AI_ALLOW_SHELL_TOOLS', true );
@@ -54,7 +55,7 @@ class Test_Git_Split_Tools extends WP_UnitTestCase {
 
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Load trait + classes if not already loaded (unit-test bootstrap may
+		// Load trait + classes if not already loaded (unit-test bootstrap may.
 		// not trigger architect-agent-toolkit-init.php).
 		$dir = WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/';
 		foreach (
@@ -197,9 +198,12 @@ class Test_Git_Split_Tools extends WP_UnitTestCase {
 	 * Test the deprecation action fires on alias resolution.
 	 */
 	public function test_deprecated_alias_action_fires() {
-		$fired      = array();
-		$listener   = static function ( $old, $new, $entry ) use ( &$fired ) {
-			$fired[] = array( 'old' => $old, 'new' => $new );
+		$fired    = array();
+		$listener = static function ( $old, $new, $entry ) use ( &$fired ) {
+			$fired[] = array(
+				'old' => $old,
+				'new' => $new,
+			);
 		};
 		add_action( 'wp_mcp_ai_tool_deprecated_alias_invoked', $listener, 10, 3 );
 
@@ -275,7 +279,12 @@ class Test_Git_Split_Tools extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$tool   = new WP_MCP_AI_Tool_Git_Inspect();
-		$result = $tool->execute( array( 'operation' => 'commit', 'message' => 'test' ) );
+		$result = $tool->execute(
+			array(
+				'operation' => 'commit',
+				'message'   => 'test',
+			)
+		);
 
 		// May return WP_Error from precondition (git not found) or unsupported_operation.
 		$this->assertWPError( $result );
@@ -498,7 +507,7 @@ class Test_Git_Split_Tools extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Git_Inspect();
 
 		// Use reflection to call the protected method.
-		$ref    = new ReflectionMethod( $tool, 'format_success_response' );
+		$ref = new ReflectionMethod( $tool, 'format_success_response' );
 		$ref->setAccessible( true );
 		$result = $ref->invoke( $tool, 'All good.', array( 'foo' => 'bar' ) );
 

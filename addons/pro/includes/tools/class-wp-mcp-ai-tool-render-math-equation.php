@@ -156,7 +156,7 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( $save_rendered ) {
 			$cache_key     = 'katex_' . md5( $latex . serialize( $arguments ) );
 			$cached_result = wp_cache_get( $cache_key, 'mcp_ai_katex' );
-			if ( $cached_result !== false ) {
+			if ( false !== $cached_result ) {
 				return array(
 					'success'     => true,
 					'latex'       => $latex,
@@ -253,13 +253,13 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|false Rendering result or false on failure.
 	 */
 	private function render_with_katex( $params ) {
-		// In a production implementation, this would:
+		// In a production implementation, this would:.
 		// 1. Call a Node.js script that uses KaTeX.
 		// 2. Pass parameters as JSON.
 		// 3. Return the rendered HTML/MathML.
 		//
-		// For this implementation, we'll create a placeholder that demonstrates
-		// the pattern. In production, you would set up a Node.js service or
+		// For this implementation, we'll create a placeholder that demonstrates.
+		// the pattern. In production, you would set up a Node.js service or.
 		// use exec() to call a Node.js script.
 
 		/**

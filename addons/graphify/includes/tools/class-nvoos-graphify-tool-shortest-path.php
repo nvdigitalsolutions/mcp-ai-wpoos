@@ -65,23 +65,17 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'read_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only', 'cacheable' );
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_label = sanitize_text_field( $arguments['start'] ?? '' );
 		$end_label   = sanitize_text_field( $arguments['end'] ?? '' );

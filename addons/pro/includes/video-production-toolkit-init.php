@@ -34,7 +34,7 @@ if ( $is_enabled && ! $is_base ) {
 	new WP_MCP_AI_Video_Production_Research_Add();
 
 	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/tools/video-production/
+	// Tools are located in: addons/pro/includes/tools/video-production/.
 }
 
 /**

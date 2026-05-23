@@ -154,7 +154,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Prompts implements WP_MCP_AI_Tool_Interface, 
 				return $this->list_prompts( $client );
 
 			case 'get':
-				$name       = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
+				$name        = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
 				$prompt_args = isset( $arguments['arguments'] ) ? $arguments['arguments'] : array();
 				return $this->get_prompt( $client, $name, $prompt_args );
 
@@ -189,8 +189,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Prompts implements WP_MCP_AI_Tool_Interface, 
 	 * Get a specific prompt.
 	 *
 	 * @param WP_MCP_AI_JetEngine_MCP_Client $client      MCP client instance.
-	 * @param string                          $name        Prompt name.
-	 * @param array                           $prompt_args Prompt arguments.
+	 * @param string                         $name        Prompt name.
+	 * @param array                          $prompt_args Prompt arguments.
 	 * @return array|WP_Error Prompt content or error.
 	 */
 	private function get_prompt( $client, $name, $prompt_args ) {

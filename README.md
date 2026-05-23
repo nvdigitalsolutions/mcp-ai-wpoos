@@ -11,9 +11,10 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.21  
-**Release Date:** 2026-05-20 (May 20, 2026 — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration, Cloud Worker Local Dev Setup, Translation Loading Fix, Unix Theory P5, Docs Hub/SaaS Controller fixes, Folder README P7)  
-**Latest Updates:** May 20, 2026 (v1.1.21) — See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
+**Version:** 1.1.22  
+**Release Date:** 2026-05-23 (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes)  
+**Latest Updates:** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) below.  
+**Previous Updates (v1.1.21):** May 20, 2026 (v1.1.21) — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration. See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
 **Previous Updates (v1.1.20):** May 18, 2026 (v1.1.20) — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route. See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
 **Previous Updates (v1.1.19):** May 18, 2026 (v1.1.19) — Kimi Provider, ACP Server, MCP Bridge, Unix Theory P7, Security Hardening, Chat Bubble Sweep. See [§ Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026) below.  
 **Previous Updates (v1.1.18):** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
@@ -28,6 +29,8 @@
 ## 📑 Table of Contents
 
 ### Getting Started
+- [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
+- [🆕 Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026)
 - [🆕 Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026)
 - [🆕 Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026)
 - [🆕 Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026)
@@ -115,17 +118,22 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare Worker AI, Ollama, LM Studio, OpenRouter, and DeepSeek.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.21)
+### ✨ What's New at a Glance (v1.1.22)
 
-- ✅ **WordPress.org Compliance Re-Audit (May 20)** — all inline JS/CSS removed from 53 base-plugin files; dangerous-functions, superglobal, HTTP-timeout, and inline-notice audits passed; F3/F5/F6/F7b findings resolved; build-pipeline hardened with ZIP exclusions.
-- ✅ **Capability Fence P2b — Full Rollout** — `get_required_capability()` now required on every tool class (~830 tools); `WP_MCP_AI_Tool_Default_Capability` trait; central capability map; PHPCS sniff enforcement. Payload-filter capability leak closed.
-- ✅ **Security Center** — new 5-tab admin page (Posture, Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory) with live security scoring and REST endpoints.
-- ✅ **Model Catalog May 2026 Refresh** — DeepSeek V4 support, Gemini model consolidation, updated pricing across all providers.
-- ✅ **Memory Layer 2026 Phase 7 complete** — Memory Health subtab, Retrieval Waterfall panel, Session Replay tab with read-only chat-memory replay endpoint.
-- ✅ **Kimi (Moonshot AI) — 10th provider** + **ACP Server** (Agent Client Protocol) + **MCP Bridge** (stdio-to-HTTP relay) + **Unix Theory P0–P7 complete**.
-- ✅ **Domain Migration** — all nvoos.com references migrated to nvoos.pro / nvoos.cloud.
+- ✅ **Baseten AI — 11th first-class provider.** Full OpenAI-compatible integration with chat, tools, streaming, and reasoning passthrough at `api.baseten.co/v1`.
+- ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes: capability boundary with per-session tool allow-lists + rate limiting, cryptographic SHA-256 audit trails (CPT + options dual storage), risk-tiered approval gate (low/medium/high/critical), and isolated code sandbox (Python/Node.js/Bash/PHP). All provider-agnostic.
+- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash as recommended model (4x faster, dynamic thinking, $1.50/M input). Gemini Omni Flash as new video default (10s, native audio, AI avatars). 3.1 Flash deprecated.
+- ✅ **Continual Harness P5 — Self-Improving Agent System.** Agents learn from execution history and improve tool selection through feedback loops. CoSAI audit trail integration.
+- ✅ **SaaS Controller Phase 2 & 4 complete.** Stripe deployment editor + OpenRouter deployment editor from WP-Admin.
+- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.** Voice Activity Detection, floating chat bubble widget, chat memory drawer component. All with TypeScript declarations.
+- ✅ **WordPress Studio test environment.** Auto-detection of Studio's database, ABSPATH, and site URL in `tests/bootstrap.php`.
+- ✅ **Security fixes.** UUID buffer bounds check (saas-controller), `map_meta_cap=false` for audit trail CPT (WP 6.1+ compat), AV false positives in test suite.
+- ✅ **Allowed providers list expanded.** DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten added to provider validation gate.
+- ✅ **LM Studio URLs fixed.** All `lmstudio.ai` references → GitHub org after upstream HTTP 500 errors.
+- ✅ **Addons PHPCS — 93% reduction (1,143 → 82 errors).** Two-batch cleanup across all addons with 12 new `bin/` helper scripts.
+- ✅ **v1.1.21 items:** WP.org Compliance Complete (F1–F10 resolved). Canonical Return Envelope (191 `WP_Error` conversions). Semantic Caveman Compression. AI Prompt Caching (all providers). Capability Fence P2b full rollout (~830 tools). Security Center (5-tab). Memory Layer 2026 Phases 3–8. Kimi provider (10th). ACP Server. MCP Bridge. Unix Theory P0–P7. DigitalOcean Serverless Inference. Async Chat Continuation. Jobs/Tasks Drawer. Model Catalog May 2026 refresh. GDPR JetEngine Privacy Exporters. `@wordpress/env` dev dependency. Domain migration (nvoos.com → nvoos.pro/cloud). Addons/pro security scan fixes.
 
 **Privacy & Terms Notice:** This plugin connects to external AI services. Review each provider's policies:
 - **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
@@ -139,8 +147,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - **DeepSeek**: [Terms](https://platform.deepseek.com/downloads/DeepSeek%20Terms%20of%20Service.html) | [Privacy](https://platform.deepseek.com/downloads/DeepSeek%20Privacy%20Policy.html)
 - **NVIDIA NIM**: [Terms](https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/) | [Privacy](https://www.nvidia.com/en-us/privacy-center/)
 - **LM Studio**: Self-hosted (no external data transmission)
+- **Baseten**: [Terms](https://www.baseten.co/terms-of-service) | [Privacy](https://www.baseten.co/privacy)
 
-See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
+See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 20 services.  
 
 The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~635 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~830 built-in tools** (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
@@ -332,6 +341,25 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.22 — May 2026)
+
+### May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup 🤖🔌🛡️📦🧹
+
+- ✅ **Baseten AI — 11th first-class provider.** `WP_MCP_AI_Baseten_Client` with full OpenAI-compatible integration (chat, tools, streaming, reasoning passthrough) at `api.baseten.co/v1`. Settings → Providers → Baseten subtab; Provider Diagnostics card; Model Discovery `baseten` branch. Catalog entries, provider badges, CCT options seeded. Service documentation in [`docs/EXTERNAL_SERVICES.md`](docs/EXTERNAL_SERVICES.md).
+- ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes implementing all three CoSAI principles + MCP-T3/T5 sandbox: `WP_MCP_AI_Agent_Capability_Boundary` (immutable per-session tool allow-lists, rate limiting, budget exhaustion), `WP_MCP_AI_Agent_Audit_Trail` (cryptographic SHA-256 chain-of-custody audit trails, dual CPT+options storage, immutable events, OTel-compatible schema), `WP_MCP_AI_Agent_Approval_Gate` (risk-tiered approval low/medium/high/critical), and `WP_MCP_AI_Agent_Code_Sandbox` (isolated `proc_open`-based code execution for Python/Node.js/Bash/PHP with timeout enforcement and output caps). All provider-agnostic.
+- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash added as recommended model (4x faster output, dynamic thinking, 1M context, $1.50/$9.00 per 1M tokens). Gemini Omni Flash as new video generation default (10s, native audio, multi-turn editing, AI avatars). Gemini 3.1 Flash deprecated (sunset 2026-09-01). All admin settings, onboarding wizard, Ext Cog, cost calculator, and model catalog migration updated.
+- ✅ **Continual Harness — Self-Improving Agent System (P5).** Agents learn from execution history, refine strategies over successive runs, and improve tool selection accuracy through feedback loops. Integrated with the CoSAI audit trail for transparent improvement tracking.
+- ✅ **SaaS Controller Phase 2 & 4 complete.** Stripe deployment editor (products, prices, webhook configs from WP-Admin). OpenRouter deployment editor (API key provisioning, model routing configs).
+- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.** Browser-based Voice Activity Detection with configurable sensitivity. Floating chat bubble custom element with toggle/minimize/position. Standalone chat memory drawer React component for memory browsing/search/audit. All published with `dist/` TypeScript declarations.
+- ✅ **WordPress Studio test environment.** `wp-tests-config.php` + `tests/bootstrap.php` auto-detect Studio's database, ABSPATH, and site URL. Complements Local by Flywheel, wp-env, and Codex configs.
+- ✅ **Security fixes.** UUID `^9.0.0` override in saas-controller (buffer bounds check CVE). `map_meta_cap=false` for `mcp_ai_audit_event` CPT (WP 6.1+ `_doing_it_wrong` fix). Antivirus false positives resolved in `tests/test-skill-registry.php`.
+- ✅ **Allowed providers list expanded.** DeepSeek, OpenRouter, DigitalOcean, Kimi, and Baseten added to the provider validation gate — previously functional but blocked in certain admin contexts.
+- ✅ **LM Studio external service URLs fixed.** All `lmstudio.ai` references replaced with GitHub org URL after upstream started returning HTTP 500 on all paths.
+- ✅ **Semantic compression settings** moved from Advanced → Orchestration tab (Settings view).
+- ✅ **Overview dashboard inline CSS** fix — adopted render-time register/enqueue/add/print pattern matching the orchestration renderer.
+- ✅ **Addons PHPCS — 93% reduction (1,143 → 82 errors).** 855 invalid comment fragments removed, 87 short ternaries expanded, 616 docblocks added, 444 `@param` tags, 39 Yoda fixes, 43 class docblocks. Batch 2 restored 6 files with parse errors from batch 1. `vendor/composer` files restored.
+- 📦 **Versioning** — bumped to **1.1.22** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Provider count: **11** first-class language-model providers.
 
 ## 🆕 Latest Updates (v1.1.21 — May 2026)
 
@@ -2515,9 +2543,9 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
-## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare & Kimi)
+## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, Baseten, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, NVIDIA NIM, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
 **Privacy & Terms:** All AI providers have specific terms and privacy policies:
 - **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
@@ -2527,6 +2555,7 @@ A dedicated router transparently forwards chat completions to the active provide
 - **Cloudflare**: [Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 - **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 - **Ollama/LM Studio**: Self-hosted (no external data transmission)
+- **Baseten**: [Terms](https://www.baseten.co/terms-and-conditions/) | [Privacy](https://www.baseten.co/privacy-policy/)
 
 ### LM Studio Support
 
@@ -2544,7 +2573,7 @@ The plugin includes an intelligent provider priority system that automatically t
 
 - **Drag and drop** providers to set your preferred order
 - **Automatic fallback** - if the first provider fails, the system tries the next one
-- **Visual management** - see all available providers (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
+- **Visual management** - see all available providers (OpenAI, Gemini, Anthropic, Baseten, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
 - **Flexible prioritization** - adjust based on cost, performance, or availability needs
 
 The first provider in the list serves as the default. If any provider returns an error, the router automatically attempts the next provider in the list until one succeeds. This ensures maximum uptime and resilience without manual intervention. All fallback attempts are logged for debugging and monitoring.

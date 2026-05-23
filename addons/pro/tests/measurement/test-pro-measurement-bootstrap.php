@@ -88,7 +88,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 	 * Test budget limit filter honored.
 	 */
 	public function test_budget_limit_filter_honored() {
-		$filter = static function () { return 1.5; };
+		$filter = static function () {
+			return 1.5;
+		};
 		add_filter( 'wp_mcp_ai_pro_request_cost_budget_limit', $filter );
 
 		$registry = WP_MCP_AI_Budget_Registry::get_instance();
@@ -103,7 +105,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 	 * Test budget limit filter zero skips registration.
 	 */
 	public function test_budget_limit_filter_zero_skips_registration() {
-		$filter = static function () { return 0; };
+		$filter = static function () {
+			return 0;
+		};
 		add_filter( 'wp_mcp_ai_pro_request_cost_budget_limit', $filter );
 
 		$registry = WP_MCP_AI_Budget_Registry::get_instance();

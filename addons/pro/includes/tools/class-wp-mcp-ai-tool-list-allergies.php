@@ -16,18 +16,40 @@ if ( ! defined( 'ABSPATH' ) ) {
  * List allergies.
  */
 class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'list_allergies';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'List Allergies', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Lists allergies with optional filtering by member and severity.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -78,10 +100,20 @@ class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -97,6 +129,13 @@ class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 

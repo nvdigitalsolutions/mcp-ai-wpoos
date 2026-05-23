@@ -110,6 +110,11 @@ class WP_MCP_AI_Tool_Remove_Task_Dependency implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',

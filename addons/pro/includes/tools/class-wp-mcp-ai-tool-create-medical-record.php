@@ -44,57 +44,57 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'medical_record_id' => array(
+				'medical_record_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional medical record ID. If provided, updates the existing record instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'member_id'         => array(
+				'member_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this record belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'record_type'       => array(
+				'record_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Type of medical record (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'lab-result', 'diagnosis', 'treatment', 'vaccination', 'imaging', 'procedure', 'hospitalization' ),
 				),
-				'title'             => array(
+				'title'               => array(
 					'type'        => 'string',
 					'description' => __( 'Record title (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'date'              => array(
+				'date'                => array(
 					'type'        => 'string',
 					'description' => __( 'Date of record (YYYY-MM-DD) (optional, defaults to today)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'provider'          => array(
+				'provider'            => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider or facility name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'details'           => array(
+				'details'             => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed information about the medical record (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10000,
 				),
-				'notes'             => array(
+				'notes'               => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'icd_code'          => array(
+				'icd_code'            => array(
 					'type'        => 'string',
 					'description' => __( 'ICD-10 / ICD-11 diagnosis code (optional, e.g. "J06.9")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 20,
 				),
-				'lab_value'         => array(
+				'lab_value'           => array(
 					'type'        => 'string',
 					'description' => __( 'Lab result value (optional, for lab-result records, e.g. "5.4")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'lab_unit'          => array(
+				'lab_unit'            => array(
 					'type'        => 'string',
 					'description' => __( 'Unit for lab result value (optional, e.g. "mmol/L", "mg/dL")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
@@ -104,7 +104,7 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Normal reference range for lab result (optional, e.g. "3.5–5.0 mmol/L")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'lab_abnormal'      => array(
+				'lab_abnormal'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the lab result is outside the normal range (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -138,6 +138,11 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

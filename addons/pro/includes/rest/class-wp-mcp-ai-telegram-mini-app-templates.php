@@ -20,6 +20,11 @@
  * @license   Proprietary
  */
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -112,13 +117,13 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 
 	/**
 	 * WordPress option key that stores the selected template slug.
-	 */
+ */
 	const OPTION_KEY = 'wp_mcp_ai_telegram_mini_app_template';
 
 	/**
 	 * Prefix for per-template customization option keys.
 	 * Full key: wp_mcp_ai_tma_custom_{slug}
-	 */
+ */
 	const CUSTOM_OPTION_PREFIX = 'wp_mcp_ai_tma_custom_';
 
 	/**
@@ -236,19 +241,19 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		foreach ( self::instance()->all() as $tpl ) {
 			$custom = self::get_customizations( $tpl->get_slug() );
 			$meta[] = array(
-				'slug'                 => $tpl->get_slug(),
-				'name'                 => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
-				'description'          => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
-				'icon'                 => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
-				'accent_color'         => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
-				'toolkit'              => $tpl->get_toolkit(),
-				'has_customizations'   => ! empty( $custom ),
-				'custom_css'           => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+				'slug'               => $tpl->get_slug(),
+				'name'               => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+				'description'        => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+				'icon'               => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+				'accent_color'       => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+				'toolkit'            => $tpl->get_toolkit(),
+				'has_customizations' => ! empty( $custom ),
+				'custom_css'         => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
 				// Base (original) values always available for the editor to show defaults.
-				'base_name'            => $tpl->get_name(),
-				'base_description'     => $tpl->get_description(),
-				'base_icon'            => $tpl->get_icon(),
-				'base_accent_color'    => $tpl->get_accent_color(),
+				'base_name'          => $tpl->get_name(),
+				'base_description'   => $tpl->get_description(),
+				'base_icon'          => $tpl->get_icon(),
+				'base_accent_color'  => $tpl->get_accent_color(),
 			);
 		}
 		return $meta;
@@ -359,7 +364,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 					// stylesheets via the Mini App page (admins-only feature, but defence-in-depth).
 					$css = wp_strip_all_tags( (string) $data[ $key ] );
 					// Remove @import rules (case-insensitive, with optional whitespace).
-					$css = preg_replace( '/@import\s[^;]+;?/i', '', $css );
+					$css            = preg_replace( '/@import\s[^;]+;?/i', '', $css );
 					$merged[ $key ] = $css;
 					break;
 			}
@@ -368,7 +373,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		// Remove empty strings to keep the stored value compact.
 		$merged = array_filter(
 			$merged,
-			function( $v ) {
+			function ( $v ) {
 				return '' !== $v;
 			}
 		);
@@ -457,14 +462,17 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		 * @since 1.1.3
 		 *
 		 * @param WP_MCP_AI_Telegram_Mini_App_Template_Registry $registry Registry instance.
-		 */
+	 */
 		do_action( 'wp_mcp_ai_tma_templates_registered', $this );
 	}
 }
 
-/* ==========================================================================
-   Shared helpers used by non-default templates
-   ========================================================================== */
+/*
+==========================================================================
+	Shared helpers used by non-default templates
+	==========================================================================
+
+ */
 
 /**
  * Return the shared CSS reset and Telegram CSS-variable scaffold.
@@ -553,15 +561,21 @@ function wp_mcp_ai_tma_base_js() {
 		'var h=twa?twa.viewportStableHeight:window.innerHeight;' .
 		'document.documentElement.style.setProperty("--tma-vh",h+"px");' .
 	'}' .
+
 	/*
 	 * Haptic feedback helper – routes to the correct Telegram WebApp API method:
 	 *   - "selectionChanged"       → HapticFeedback.selectionChanged()
 	 *   - "success"/"error"/"warning" → HapticFeedback.notificationOccurred(type)
 	 *   - "notification*" prefix   → legacy compat, e.g. "notificationSuccess" → notificationOccurred("success")
 	 *   - anything else            → HapticFeedback.impactOccurred(style), default "light"
-	 */
+
+	*/
 	'function tmaHaptic(t){if(!twa||!twa.HapticFeedback)return;var h=twa.HapticFeedback;if(t==="selectionChanged"){h.selectionChanged();}else if(t==="success"||t==="error"||t==="warning"){h.notificationOccurred(t);}else if(t&&t.indexOf("notification")===0){h.notificationOccurred(t.slice(12).toLowerCase()||"success");}else{h.impactOccurred(t||"light");}}' .
-	/* Build tool-execution request headers, including TMA token when available */
+
+	/*
+	 * Build tool-execution request headers, including TMA token when available
+
+	*/
 	'function tmaToolHeaders(){' .
 		'var h={"Content-Type":"application/json"};' .
 		'if(typeof NONCE!=="undefined"&&NONCE){h["X-WP-Nonce"]=NONCE;}' .
@@ -573,36 +587,59 @@ function wp_mcp_ai_tma_base_js() {
 	'window.addEventListener("resize",tmaUpdateVH);';
 }
 
-/* ==========================================================================
-   Built-in Template Classes
-   ========================================================================== */
+/*
+==========================================================================
+	Built-in Template Classes
+	==========================================================================
+
+ */
 
 /**
  * Default template – delegates to the controller's existing built-in render.
  */
 class WP_MCP_AI_TMA_Template_Default extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'default';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Content Manager (Default)', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Full-featured CMS template with analytics dashboard, content editor, tools executor, media library, shop, and settings.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '📋';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#2481cc';
 	}
@@ -623,60 +660,98 @@ class WP_MCP_AI_TMA_Template_Default extends WP_MCP_AI_Telegram_Mini_App_Templat
  */
 class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'ai_chat';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'AI Chat', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Clean conversational interface powered by the AI assistant. Perfect for customer-facing chatbots.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'chat_channels';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '💬';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#4CAF50';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
-		$site_name     = esc_html( $ctx['site_name'] );
-		$chat_url      = $ctx['chat_url'];
-		$tools_exec    = $ctx['tools_url'] . '/execute';
-		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
-		$assistant_id  = $ctx['assistant_id'];
+		$site_name    = esc_html( $ctx['site_name'] );
+		$chat_url     = $ctx['chat_url'];
+		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$validate_url = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id = $ctx['assistant_id'];
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- standalone HTML document; all values escaped inline.
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ai-chat-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables ── */
+		/*
+		 * ── Theme variables ──
+
+		*/
 		':root{--tma-btn:#4CAF50;--tma-accent:#4CAF50;--tma-secondary-bg:#e8f5e9;' .
 			'--chat-base:14px;--chat-label:12px;--chat-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.chat-font-small{--chat-base:12px;--chat-label:10px;--chat-heading:14px}' .
 		'.chat-font-large{--chat-base:16px;--chat-label:14px;--chat-heading:18px}' .
 		'.chat-compact .tma-msg{padding:6px 10px}' .
 		'.chat-compact .chat-tool-card{padding:8px 10px;margin:0 8px 6px}' .
 		'.chat-compact .chat-settings-section{margin:0 8px 8px;padding:10px}' .
 
-		/* ── Chat messages ── */
+		/*
+		 * ── Chat messages ──
+
+		*/
 		'.tma-chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.tma-chat-welcome{text-align:center;padding:40px 20px;color:var(--tma-hint)}' .
 		'.tma-welcome-icon{font-size:48px;margin-bottom:12px}' .
@@ -689,23 +764,35 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.tma-msg.typing::after{content:"\u2026";animation:tma-dots 1s steps(3,end) infinite}' .
 		'@keyframes tma-dots{0%,33%{content:"."}33%,66%{content:".."}66%,100%{content:"\u2026"}}' .
 
-		/* ── Chat input ── */
+		/*
+		 * ── Chat input ──
+
+		*/
 		'.tma-chat-input-wrap{display:flex;align-items:flex-end;gap:8px;padding:8px 12px;background:var(--tma-secondary-bg);border-top:1px solid var(--tma-border);flex-shrink:0}' .
 		'.tma-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 16px;font-size:var(--chat-base);background:var(--tma-bg);color:var(--tma-text);resize:none;outline:none;max-height:120px;overflow-y:auto;font-family:inherit;line-height:1.4}' .
 		'.tma-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}' .
 		'.tma-send-btn:active{opacity:.7}' .
 
-		/* ── Quick actions ── */
+		/*
+		 * ── Quick actions ──
+
+		*/
 		'.chat-quick-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}' .
 		'.chat-quick-btn{padding:6px 12px;border:1px solid var(--tma-border);border-radius:16px;background:var(--tma-bg);color:var(--tma-btn);font-size:var(--chat-label);cursor:pointer;white-space:nowrap}' .
 		'.chat-quick-btn:active{background:var(--tma-secondary-bg)}' .
 
-		/* ── Rich content card ── */
+		/*
+		 * ── Rich content card ──
+
+		*/
 		'.chat-rich-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px 12px;margin-top:6px}' .
 		'.chat-rich-card-title{font-size:var(--chat-base);font-weight:600;margin-bottom:2px}' .
 		'.chat-rich-card-meta{font-size:var(--chat-label);color:var(--tma-hint)}' .
 
-		/* ── Tools tab ── */
+		/*
+		 * ── Tools tab ──
+
+		*/
 		'.chat-tools-header{padding:14px 12px;text-align:center;color:var(--tma-hint);font-size:var(--chat-label)}' .
 		'.chat-tools-header h3{font-size:var(--chat-heading);color:var(--tma-text);margin:0 0 4px}' .
 		'.chat-tool-categories{display:flex;gap:6px;padding:0 12px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch}' .
@@ -720,7 +807,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.chat-tool-name{font-size:var(--chat-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
 		'.chat-tool-desc{font-size:var(--chat-label);color:var(--tma-hint);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' .
 
-		/* ── Settings tab ── */
+		/*
+		 * ── Settings tab ──
+
+		*/
 		'.chat-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.chat-settings-title{font-size:var(--chat-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.chat-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -740,10 +830,16 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">💬</div></div>' .
 				'<div class="tma-header-info">' .
@@ -757,10 +853,16 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 				'</div>' .
 			'</header>' .
 
-			/* ── Content panes ── */
+			/*
+			 * ── Content panes ──
+
+		 */
 			'<div class="tma-content">' .
 
-				/* Tab 1: Chat (default) */
+				/*
+				 * Tab 1: Chat (default)
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-chat">' .
 					'<div class="chat-quick-actions" id="chat-quick-actions">' .
 						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Search content', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Search content', 'mcp-ai-wpoos-pro' ) . '</button>' .
@@ -781,7 +883,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'</div>' .
 				'</div>' .
 
-				/* Tab 2: Tools */
+				/*
+				 * Tab 2: Tools
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-tools">' .
 					'<div class="chat-tools-header"><h3>' . esc_html__( 'Tools', 'mcp-ai-wpoos-pro' ) . '</h3>' .
 						'<p>' . esc_html__( 'Discover available tools and capabilities', 'mcp-ai-wpoos-pro' ) . '</p>' .
@@ -799,11 +904,17 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'<div id="chat-tools-list"><div class="tma-empty">' . esc_html__( 'Loading tools…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 3: Settings */
+				/*
+				 * Tab 3: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div style="padding-top:12px">' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="chat-settings-section">' .
 						'<div class="chat-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="chat-settings-row">' .
@@ -824,7 +935,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 						'</div>' .
 					'</div>' .
 
-					/* Assistant section */
+					/*
+					 * Assistant section
+
+				 */
 					'<div class="chat-settings-section">' .
 						'<div class="chat-settings-title">' . esc_html__( 'Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="chat-settings-row">' .
@@ -833,7 +947,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="chat-settings-section">' .
 						'<div class="chat-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="chat-settings-row">' .
@@ -850,9 +967,12 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (3 tabs) ── */
+			/*
+			 * ── Bottom navigation (3 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-chat" onclick="chatSwitch(\'chat\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
@@ -867,13 +987,19 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -881,7 +1007,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="chat";' .
 		'var hist=[];' .
 		'var busy=false;' .
@@ -889,12 +1018,18 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'var activeCat="all";' .
 		'var SK="wp_mcp_ai_tma_ai_chat";' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* ── Markdown renderer for bot messages ── */
+		/*
+		 * ── Markdown renderer for bot messages ──
+
+		*/
 		'function chatRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -908,7 +1043,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'return out;' .
 		'}' .
 
-		/* ── Extract reply from API response ── */
+		/*
+		 * ── Extract reply from API response ──
+
+		*/
 		'function chatExtractReply(d){' .
 			'if(!d||!d.data)return"";' .
 			'var data=d.data;' .
@@ -917,7 +1055,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'if(data.response)return data.response;' .
 			'return"";}' .
 
-		/* ── Session init (Telegram WebApp auth) ── */
+		/*
+		 * ── Session init (Telegram WebApp auth) ──
+
+		*/
 		'function chatInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -928,7 +1069,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function chatApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -952,7 +1096,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'window.chatToggleCompact=function(){var c=!lsGet("chat_compact",false);lsSet("chat_compact",c);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
 		'window.chatToggleAutoScroll=function(){var c=!lsGet("chat_auto_scroll",true);lsSet("chat_auto_scroll",c);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.chatSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -964,9 +1111,12 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'if(tab==="settings")chatRenderSettings();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Chat
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Chat
+			══════════════════════════════════════════════════════════
+
+		*/
 
 		'function chatScrollBottom(){' .
 			'var autoScroll=lsGet("chat_auto_scroll",true);if(!autoScroll)return;' .
@@ -984,7 +1134,10 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'return el;' .
 		'}' .
 
-		/* Check if reply contains rich post references */
+		/*
+		 * Check if reply contains rich post references
+
+		*/
 		'function chatMaybeRichCards(text,container){' .
 			'var postPattern=/\\[post:(.+?)\\|(.+?)\\|(.+?)\\]/g;var match;' .
 			'while((match=postPattern.exec(text))!==null){' .
@@ -1035,9 +1188,12 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'window.chatKeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();chatSendMessage();}};' .
 		'window.chatAutoResize=function(el){el.style.height="";el.style.height=Math.min(el.scrollHeight,120)+"px";};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – Tools
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – Tools
+			══════════════════════════════════════════════════════════
+
+		*/
 
 		'var TOOL_CATS={' .
 			'content:["search","post","page","content","media","menu","taxonomy","term","category","tag"],' .
@@ -1112,15 +1268,21 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'chatRenderTools(toolsCache);' .
 		'};' .
 
-		/* Debounced search */
+		/*
+		 * Debounced search
+
+		*/
 		'var toolSearchTimer=null;' .
 		'document.getElementById("chat-tools-search").addEventListener("input",function(){' .
 			'clearTimeout(toolSearchTimer);toolSearchTimer=setTimeout(function(){chatRenderTools(toolsCache);},300);' .
 		'});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function chatRenderSettings(){' .
 			'chatApplyDisplaySettings();' .
 			'var aid=document.getElementById("chat-assistant-id-val");' .
@@ -1156,10 +1318,17 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'chatClearHistory();' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
-		/* Restore chat history from localStorage */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
+
+		/*
+		 * Restore chat history from localStorage
+
+		*/
 		'try{var s=localStorage.getItem(SK);if(s){hist=JSON.parse(s)||[];' .
 			'hist=hist.filter(function(h){return h&&(h.role==="user"||h.role==="assistant")&&typeof h.content==="string";});' .
 		'}}catch(e){hist=[];}' .
@@ -1170,11 +1339,14 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 		'chatApplyDisplaySettings();' .
 
-		/* Session init for Telegram WebApp */
+		/*
+		 * Session init for Telegram WebApp
+
+		*/
 		'chatInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
@@ -1183,37 +1355,66 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
  */
 class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'E-Commerce Store', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Shop assistant with product search, order tracking, and AI-powered recommendations. Designed for WooCommerce stores.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🛒';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#9c27b0';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
 		$site_name      = esc_html( $ctx['site_name'] );
 		$tools_exec     = $ctx['tools_url'] . '/execute';
@@ -1228,11 +1429,17 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ecommerce-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables ── */
+		/*
+		 * ── Theme variables ──
+
+		*/
 		':root{--tma-btn:#9c27b0;--tma-accent:#9c27b0;--tma-secondary-bg:#f8f4fb;' .
 			'--ec-base:14px;--ec-label:12px;--ec-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.ec-font-small{--ec-base:12px;--ec-label:10px;--ec-heading:14px}' .
 		'.ec-font-large{--ec-base:16px;--ec-label:14px;--ec-heading:18px}' .
 		'.ec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
@@ -1240,12 +1447,18 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.ec-compact .ec-cart-item{padding:8px 10px}' .
 		'.ec-compact .tma-order-item{padding:8px 10px;margin:0 8px 6px}' .
 
-		/* ── Search bar ── */
+		/*
+		 * ── Search bar ──
+
+		*/
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
 		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--ec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
 
-		/* ── Product grid ── */
+		/*
+		 * ── Product grid ──
+
+		*/
 		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
 		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
 		'.tma-product-card:active{opacity:.8}' .
@@ -1262,7 +1475,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'background:var(--tma-btn);color:var(--tma-btn-text);font-size:var(--ec-label);font-weight:600;cursor:pointer}' .
 		'.ec-add-cart-btn:active{opacity:.8}' .
 
-		/* ── Cart ── */
+		/*
+		 * ── Cart ──
+
+		*/
 		'.ec-cart-item{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
 		'.ec-cart-item-info{flex:1;min-width:0}' .
@@ -1280,11 +1496,17 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'background:var(--tma-btn);color:var(--tma-btn-text);font-size:var(--ec-base);font-weight:700;width:calc(100% - 24px);cursor:pointer;text-align:center}' .
 		'.ec-checkout-btn:active{opacity:.8}' .
 
-		/* ── Badge on nav ── */
+		/*
+		 * ── Badge on nav ──
+
+		*/
 		'.ec-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;' .
 			'background:#c62828;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}' .
 
-		/* ── Orders ── */
+		/*
+		 * ── Orders ──
+
+		*/
 		'.tma-order-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:14px}' .
 		'.tma-order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' .
 		'.tma-order-id{font-weight:700;font-size:var(--ec-base)}' .
@@ -1297,11 +1519,17 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.ec-status-failed,.ec-status-cancelled,.ec-status-refunded{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
 		'.ec-pull-hint{text-align:center;font-size:var(--ec-label);color:var(--tma-hint);padding:8px 0}' .
 
-		/* ── Spending chart ── */
+		/*
+		 * ── Spending chart ──
+
+		*/
 		'.ec-chart-wrap{margin:12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px}' .
 		'.ec-chart-title{font-size:var(--ec-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
 
-		/* ── AI Chat ── */
+		/*
+		 * ── AI Chat ──
+
+		*/
 		'.ec-chat-container{display:flex;flex-direction:column;height:100%}' .
 		'.ec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.ec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--ec-base);line-height:1.5;word-wrap:break-word}' .
@@ -1318,7 +1546,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
 		'.ec-send-btn:active{opacity:.8}' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'.ec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.ec-settings-title{font-size:var(--ec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.ec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -1343,10 +1574,16 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🛒</div></div>' .
 				'<div class="tma-header-info">' .
@@ -1355,7 +1592,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'</div>' .
 			'</header>' .
 
-			/* ── Search bar (visible on Products tab) ── */
+			/*
+			 * ── Search bar (visible on Products tab) ──
+
+		 */
 			'<div class="tma-search-bar" id="ec-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
@@ -1363,10 +1603,16 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'</div>' .
 			'</div>' .
 
-			/* ── Content panes ── */
+			/*
+			 * ── Content panes ──
+
+		 */
 			'<div class="tma-content">' .
 
-				/* Tab 1: Products */
+				/*
+				 * Tab 1: Products
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
 					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div class="tma-product-grid" id="ec-product-grid">' .
@@ -1374,7 +1620,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</div>' .
 				'</div>' .
 
-				/* Tab 2: Cart */
+				/*
+				 * Tab 2: Cart
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-cart">' .
 					'<div class="tma-section-title">' . esc_html__( 'Shopping Cart', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div id="ec-cart-list"><div class="tma-empty">' . esc_html__( 'Your cart is empty.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
@@ -1386,7 +1635,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</button>' .
 				'</div>' .
 
-				/* Tab 3: Orders */
+				/*
+				 * Tab 3: Orders
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-orders">' .
 					'<div class="tma-section-title" style="display:flex;justify-content:space-between;align-items:center">' .
 						'<span>' . esc_html__( 'My Orders', 'mcp-ai-wpoos-pro' ) . '</span>' .
@@ -1401,7 +1653,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</div>' .
 				'</div>' .
 
-				/* Tab 4: AI Assistant */
+				/*
+				 * Tab 4: AI Assistant
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
 					'<div class="ec-chat-container">' .
 						'<div class="ec-chat-messages" id="ec-chat-messages"></div>' .
@@ -1415,11 +1670,17 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</div>' .
 				'</div>' .
 
-				/* Tab 5: Settings */
+				/*
+				 * Tab 5: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="ec-settings-section">' .
 						'<div class="ec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="ec-settings-row">' .
@@ -1436,7 +1697,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 						'</div>' .
 					'</div>' .
 
-					/* Store section */
+					/*
+					 * Store section
+
+				 */
 					'<div class="ec-settings-section">' .
 						'<div class="ec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="ec-settings-row">' .
@@ -1449,7 +1713,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="ec-settings-section">' .
 						'<div class="ec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="ec-settings-row">' .
@@ -1464,9 +1731,12 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (5 tabs) ── */
+			/*
+			 * ── Bottom navigation (5 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="ecSwitch(\'products\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
@@ -1490,13 +1760,19 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -1508,7 +1784,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'var WOO_CONNECTION_ID=' . wp_json_encode( $woo_connection ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="products";' .
 		'var cart=[];' .
 		'var orders=[];' .
@@ -1516,10 +1795,16 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'var productsCache=[];' .
 		'var spendChartInst=null;' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 
-		/* Simple markdown-like renderer for bot messages */
+		/*
+		 * Simple markdown-like renderer for bot messages
+
+		*/
 		'function ecRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -1533,27 +1818,49 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'return out;' .
 		'}' .
 
-		/* ── localStorage helpers ── */
+		/*
+		 * ── localStorage helpers ──
+
+		*/
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* ── Tool call helper (supports local/remote WooCommerce) ── */
-		/* Remote actions map to remote_wp_connection action parameter values (uses per_page natively) */
+		/*
+		── Tool call helper (supports local/remote WooCommerce) ──
+
+		*/
+
+		/*
+		 * Remote actions map to remote_wp_connection action parameter values (uses per_page natively)
+
+		*/
 		'var EC_REMOTE_MAP={"search_woocommerce_products":"get_wc_products","get_woocommerce_orders":"get_wc_orders","create_woocommerce_order":"create_wc_order"};' .
-		/* Local tool slugs; create_woocommerce_order has no local equivalent – the checkout callback already has a fallback alert */
+
+		/*
+		 * Local tool slugs; create_woocommerce_order has no local equivalent – the checkout callback already has a fallback alert
+
+		*/
 		'var EC_LOCAL_MAP={"search_woocommerce_products":"get_woo_products","get_woocommerce_orders":"get_woo_recent_orders"};' .
 		'function ecToolCall(slug,args,cb){' .
 			'var body;' .
 			'if(WOO_SOURCE==="remote"&&WOO_CONNECTION_ID){' .
-				/* Remote: route through remote_wp_connection with action + flat args */
+
+				/*
+				 * Remote: route through remote_wp_connection with action + flat args
+
+			 */
 				'var remoteAction=EC_REMOTE_MAP[slug]||slug;' .
 				'var remoteArgs={action:remoteAction,connection_id:WOO_CONNECTION_ID};' .
 				'for(var k in args){if(args.hasOwnProperty(k)){remoteArgs[k]=args[k];}}' .
 				'body={slug:"remote_wp_connection",arguments:remoteArgs};' .
 			'}else{' .
-				/* Local: map to actual registered tool slugs and adapt args.
-				   Local WooCommerce tools use "limit" instead of "per_page";
-				   remote tools accept "per_page" natively via the WC REST API. */
+
+				/*
+				Local: map to actual registered tool slugs and adapt args.
+					Local WooCommerce tools use "limit" instead of "per_page";
+					remote tools accept "per_page" natively via the WC REST API.
+
+				 */
 				'var localSlug=EC_LOCAL_MAP[slug]||slug;' .
 				'var localArgs={};for(var k in args){if(args.hasOwnProperty(k)){localArgs[k]=args[k];}}' .
 				'if(localArgs.per_page&&!localArgs.limit){localArgs.limit=localArgs.per_page;delete localArgs.per_page;}' .
@@ -1562,14 +1869,21 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				/* Normalise: controller returns {success,result} but callbacks expect {data} */
+
+				/*
+				 * Normalise: controller returns {success,result} but callbacks expect {data}
+
+			 */
 				'if(d&&d.result&&!d.data){d.data=d.result;}' .
 				'cb(null,d);' .
 			'})' .
 			'.catch(function(e){cb(e,null);});' .
 		'}' .
 
-		/* ── Session init (matches medical_vitals pattern) ── */
+		/*
+		 * ── Session init (matches medical_vitals pattern) ──
+
+		*/
 		'function ecInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp){ecLoadProducts();return;}' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -1580,7 +1894,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'.catch(function(){ecLoadProducts();});' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function ecApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -1591,7 +1908,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'var compact=lsGet("ec_compact",false);' .
 				'if(compact)shell.classList.add("ec-compact");' .
 				'else shell.classList.remove("ec-compact");' .
-				/* Update settings UI */
+
+				/*
+				 * Update settings UI
+
+			 */
 				'var btns=document.querySelectorAll("#ec-font-btns button");' .
 				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
 				'var tog=document.getElementById("ec-compact-toggle");' .
@@ -1601,7 +1922,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'window.ecSetFontSize=function(s){lsSet("ec_font_size",s);tmaHaptic("selectionChanged");ecApplyDisplaySettings();};' .
 		'window.ecToggleCompact=function(){var c=!lsGet("ec_compact",false);lsSet("ec_compact",c);tmaHaptic("selectionChanged");ecApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.ecSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -1616,13 +1940,20 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'if(tab==="settings")ecRenderSettings();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Products
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Products
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function ecLoadProducts(q){' .
 			'var g=document.getElementById("ec-product-grid");if(!g)return;' .
-			/* Show cached products immediately while fetching */
-			'if(!q&&productsCache.length){ecRenderProducts(productsCache);}'  .
+
+			/*
+			 * Show cached products immediately while fetching
+
+		 */
+			'if(!q&&productsCache.length){ecRenderProducts(productsCache);}' .
 			'if(!q&&!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'ecToolCall("search_woocommerce_products",{search:q||"",per_page:20},function(err,d){' .
 				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
@@ -1640,7 +1971,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'var stock=(p.stock_status==="instock"||p.in_stock===true);' .
 				'var stockCls=stock?"ec-stock-instock":"ec-stock-outofstock";' .
 				'var stockTxt=stock?"' . esc_js( __( 'In Stock', 'mcp-ai-wpoos-pro' ) ) . '":"' . esc_js( __( 'Out of Stock', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				/* Price display with sale support */
+
+				/*
+				 * Price display with sale support
+
+			 */
 				'var priceHtml="";' .
 				'if(p.sale_price&&p.regular_price&&p.sale_price!==p.regular_price){' .
 					'priceHtml=escH(p.price_html||p.sale_price)+"<span class=\\"ec-sale-price\\">"+escH(p.regular_price)+"</span>";' .
@@ -1659,14 +1994,20 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'}).join("");' .
 		'}' .
 
-		/* Debounced search */
+		/*
+		 * Debounced search
+
+		*/
 		'var searchTimer=null;' .
 		'document.getElementById("ec-search-input").addEventListener("input",function(e){' .
 			'clearTimeout(searchTimer);var q=e.target.value;' .
 			'searchTimer=setTimeout(function(){ecLoadProducts(q);},400);' .
 		'});' .
 
-		/* Add to cart from product grid */
+		/*
+		 * Add to cart from product grid
+
+		*/
 		'window.ecAddToCart=function(idx){' .
 			'var p=productsCache[idx];if(!p)return;tmaHaptic("light");' .
 			'var existing=cart.find(function(c){return c.id===p.id;});' .
@@ -1678,9 +2019,12 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'lsSet("ec_cart",cart);ecUpdateCartBadge();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – Cart
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – Cart
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function ecRenderCart(){' .
 			'var l=document.getElementById("ec-cart-list");if(!l)return;' .
 			'var totEl=document.getElementById("ec-cart-total");' .
@@ -1729,7 +2073,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'tmaHaptic("medium");' .
 			'var total=cart.reduce(function(s,c){return s+c.price*c.qty;},0);' .
 			'var items=cart.map(function(c){return c.name+" x"+c.qty;}).join(", ");' .
-			/* Attempt WooCommerce create order via tool, fallback to summary */
+
+			/*
+			 * Attempt WooCommerce create order via tool, fallback to summary
+
+		 */
 			'ecToolCall("create_woocommerce_order",{line_items:cart.map(function(c){return{product_id:c.id,quantity:c.qty};})},function(err,d){' .
 				'if(!err&&d&&d.data&&d.data.order){' .
 					'var orderId=d.data.order.id||"";' .
@@ -1744,12 +2092,19 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'});' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – Orders
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – Orders
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function ecLoadOrders(force){' .
 			'var l=document.getElementById("ec-orders-list");if(!l)return;' .
-			/* Show cached orders immediately */
+
+			/*
+			 * Show cached orders immediately
+
+		 */
 			'if(!force&&!orders.length){orders=lsGet("ec_orders_cache",[]);}' .
 			'if(orders.length&&!force){ecRenderOrders(orders);return;}' .
 			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading orders…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
@@ -1791,7 +2146,10 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		'function ecHideChart(){var w=document.getElementById("ec-chart-wrap");if(w)w.style.display="none";}' .
 
-		/* ── Spending Chart (Chart.js) ── */
+		/*
+		 * ── Spending Chart (Chart.js) ──
+
+		*/
 		'function ecLoadChartJs(cb){' .
 			'if(window.Chart){cb();return;}' .
 			'if(!CHART_JS_URL){cb();return;}' .
@@ -1804,7 +2162,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'var monthly={};' .
 				'os.forEach(function(o){' .
 					'var d=o.date_created||o.date||"";if(!d)return;' .
-					/* Parse ISO or common date formats to YYYY-MM */
+
+					/*
+					 * Parse ISO or common date formats to YYYY-MM
+
+				 */
 					'var dt=new Date(d);var m;' .
 					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+("0"+(dt.getMonth()+1)).slice(-2);}' .
 					'else if(/^\\d{4}-\\d{2}/.test(d)){m=d.substring(0,7);}' .
@@ -1826,17 +2188,28 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'});' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 4 – AI Assistant
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 4 – AI Assistant
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function ecChatInit(){' .
-			/* Load chat history from localStorage */
+
+			/*
+			 * Load chat history from localStorage
+
+		 */
 			'chatHist=lsGet("ec_chat_hist",[]);' .
 			'var m=document.getElementById("ec-chat-messages");if(!m)return;m.innerHTML="";' .
 			'if(chatHist.length){' .
 				'chatHist.forEach(function(msg){ecAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
 			'}else{' .
-				/* Pre-seed with store context */
+
+				/*
+				 * Pre-seed with store context
+
+			 */
 				'var ctx="[' . esc_js( __( 'Store context', 'mcp-ai-wpoos-pro' ) ) . '] ' . esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+", ' .
 					esc_js( __( 'Cart items', 'mcp-ai-wpoos-pro' ) ) . ': "+cart.length+", ' .
 					esc_js( __( 'Recent orders', 'mcp-ai-wpoos-pro' ) ) . ': "+orders.length;' .
@@ -1862,7 +2235,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'var el=ecAppendMsg("bot","\u2026",false);' .
 			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
 			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
-			/* Include system context */
+
+			/*
+			 * Include system context
+
+		 */
 			'var sys=chatHist.find(function(m){return m.role==="system";});' .
 			'if(sys)body.messages.unshift(sys);' .
 			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
@@ -1877,14 +2254,24 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
 
-		/* Enter to send */
+		/*
+		 * Enter to send
+
+		*/
 		'document.getElementById("ec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")ecChatSend();});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 5 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 5 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function ecRenderSettings(){' .
-			/* Connection indicator */
+
+			/*
+			 * Connection indicator
+
+		 */
 			'var ci=document.getElementById("ec-connection-info");' .
 			'if(ci){' .
 				'if(WOO_SOURCE==="remote"){' .
@@ -1893,13 +2280,21 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'ci.innerHTML=\'<span class="ec-connection-dot local"></span>' . esc_js( __( 'Local Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
 				'}' .
 			'}' .
-			/* Data summary */
+
+			/*
+			 * Data summary
+
+		 */
 			'var ds=document.getElementById("ec-data-summary");' .
 			'if(ds)ds.textContent="' . esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length+", ' .
 				esc_js( __( 'Orders', 'mcp-ai-wpoos-pro' ) ) . ': "+orders.length+", ' .
 				esc_js( __( 'Cart', 'mcp-ai-wpoos-pro' ) ) . ': "+cart.length+", ' .
 				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
-			/* Currency display */
+
+			/*
+			 * Currency display
+
+		 */
 			'var cd=document.getElementById("ec-currency-display");' .
 			'if(cd){' .
 				'if(orders.length&&orders[0].currency){cd.textContent=orders[0].currency;}' .
@@ -1932,24 +2327,37 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'ecUpdateCartBadge();ecRenderSettings();tmaHaptic("notificationSuccess");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
-		/* Restore state from localStorage */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
+
+		/*
+		 * Restore state from localStorage
+
+		*/
 		'cart=lsGet("ec_cart",[]);' .
 		'productsCache=lsGet("ec_products_cache",[]);' .
 		'orders=lsGet("ec_orders_cache",[]);' .
 		'ecUpdateCartBadge();' .
 		'ecApplyDisplaySettings();' .
 
-		/* Render cached products immediately, then refresh */
+		/*
+		 * Render cached products immediately, then refresh
+
+		*/
 		'if(productsCache.length)ecRenderProducts(productsCache);' .
 
-		/* Session init for Telegram WebApp (authenticates, then loads fresh data) */
+		/*
+		 * Session init for Telegram WebApp (authenticates, then loads fresh data)
+
+		*/
 		'ecInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
@@ -1958,66 +2366,107 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
  */
 class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'crm';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'CRM Assistant', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Customer management interface with contact lookup, lead pipeline, and AI-powered follow-up drafts.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'crm';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '👥';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#e65100';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
-		$site_name     = esc_html( $ctx['site_name'] );
-		$tools_exec    = $ctx['tools_url'] . '/execute';
-		$chat_url      = $ctx['chat_url'];
-		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
-		$assistant_id  = $ctx['assistant_id'];
-		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+		$site_name    = esc_html( $ctx['site_name'] );
+		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$validate_url = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id = $ctx['assistant_id'];
+		$chart_js_url = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-crm-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables ── */
+		/*
+		 * ── Theme variables ──
+
+		*/
 		':root{--tma-btn:#e65100;--tma-accent:#e65100;--tma-secondary-bg:#fff3ee;' .
 			'--crm-base:14px;--crm-label:12px;--crm-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.crm-font-small{--crm-base:12px;--crm-label:10px;--crm-heading:14px}' .
 		'.crm-font-large{--crm-base:16px;--crm-label:14px;--crm-heading:18px}' .
 		'.crm-compact .tma-contact-row{padding:8px 12px}' .
 		'.crm-compact .tma-pipeline-card{padding:6px 8px;margin-bottom:4px}' .
 		'.crm-compact .crm-deal-card{padding:8px 10px;margin:0 8px 6px}' .
 
-		/* ── Search bar ── */
+		/*
+		 * ── Search bar ──
+
+		*/
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
 		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--crm-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
 
-		/* ── Contacts ── */
+		/*
+		 * ── Contacts ──
+
+		*/
 		'.tma-contact-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--tma-border);cursor:pointer}' .
 		'.tma-contact-row:active{background:var(--tma-secondary-bg)}' .
 		'.tma-contact-avatar{width:40px;height:40px;border-radius:50%;background:var(--tma-btn);color:var(--tma-btn-text);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}' .
@@ -2031,7 +2480,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'.crm-status-new{background:#2196f3}' .
 		'.crm-pull-hint{text-align:center;font-size:var(--crm-label);color:var(--tma-hint);padding:8px 0}' .
 
-		/* ── Pipeline ── */
+		/*
+		 * ── Pipeline ──
+
+		*/
 		'.tma-pipeline{display:flex;gap:10px;padding:10px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}' .
 		'.tma-pipeline-col{min-width:170px;background:var(--tma-secondary-bg);border-radius:var(--tma-radius);padding:10px;flex-shrink:0}' .
 		'.tma-pipeline-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}' .
@@ -2045,7 +2497,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'.tma-pipeline-card-detail{display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--tma-border);font-size:var(--crm-label);color:var(--tma-hint)}' .
 		'.tma-pipeline-card.expanded .tma-pipeline-card-detail{display:block}' .
 
-		/* ── Deals ── */
+		/*
+		 * ── Deals ──
+
+		*/
 		'.crm-kpi-row{display:flex;gap:8px;padding:10px 12px;overflow-x:auto}' .
 		'.crm-kpi-card{flex:1;min-width:90px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
 		'.crm-kpi-value{font-size:var(--crm-heading);font-weight:700;color:var(--tma-btn)}' .
@@ -2068,7 +2523,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'.crm-deal-status-stale{border-left:3px solid #ff9800}' .
 		'.crm-deal-status-active{border-left:3px solid #2196f3}' .
 
-		/* ── AI Coach chat ── */
+		/*
+		 * ── AI Coach chat ──
+
+		*/
 		'.crm-chat-container{display:flex;flex-direction:column;height:100%}' .
 		'.crm-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.crm-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--crm-base);line-height:1.5;word-wrap:break-word}' .
@@ -2082,7 +2540,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'.crm-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
 		'.crm-send-btn:active{opacity:.8}' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'.crm-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.crm-settings-title{font-size:var(--crm-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.crm-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -2102,10 +2563,16 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">👥</div></div>' .
 				'<div class="tma-header-info">' .
@@ -2114,7 +2581,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 				'</div>' .
 			'</header>' .
 
-			/* ── Search bar (visible on Contacts tab) ── */
+			/*
+			 * ── Search bar (visible on Contacts tab) ──
+
+		 */
 			'<div class="tma-search-bar" id="crm-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
@@ -2122,21 +2592,33 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 				'</div>' .
 			'</div>' .
 
-			/* ── Content panes ── */
+			/*
+			 * ── Content panes ──
+
+		 */
 			'<div class="tma-content">' .
 
-				/* Tab 1: Contacts */
+				/*
+				 * Tab 1: Contacts
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-contacts">' .
 					'<div id="crm-contact-list"><div class="tma-empty">' . esc_html__( 'Loading contacts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 					'<div class="crm-pull-hint" id="crm-pull-hint" style="display:none">' . esc_html__( '↑ Pull to refresh', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 
-				/* Tab 2: Pipeline */
+				/*
+				 * Tab 2: Pipeline
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-pipeline">' .
 					'<div class="tma-pipeline" id="crm-pipeline"><div class="tma-empty">' . esc_html__( 'Loading pipeline…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 3: Deals */
+				/*
+				 * Tab 3: Deals
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-deals">' .
 					'<div class="crm-kpi-row" id="crm-kpi-row"></div>' .
 					'<div class="crm-donut-wrap" id="crm-donut-wrap" style="display:none">' .
@@ -2147,7 +2629,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 					'<div id="crm-deals-list"><div class="tma-empty">' . esc_html__( 'Loading deals…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 4: AI Coach */
+				/*
+				 * Tab 4: AI Coach
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-coach">' .
 					'<div class="crm-chat-container">' .
 						'<div class="crm-chat-messages" id="crm-chat-messages"></div>' .
@@ -2160,11 +2645,17 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 					'</div>' .
 				'</div>' .
 
-				/* Tab 5: Settings */
+				/*
+				 * Tab 5: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div style="padding-top:12px">' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="crm-settings-section">' .
 						'<div class="crm-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="crm-settings-row">' .
@@ -2185,7 +2676,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="crm-settings-section">' .
 						'<div class="crm-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="crm-settings-row">' .
@@ -2202,9 +2696,12 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (5 tabs) ── */
+			/*
+			 * ── Bottom navigation (5 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-contacts" onclick="crmSwitch(\'contacts\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' .
@@ -2227,13 +2724,19 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -2243,7 +2746,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="contacts";' .
 		'var contactsCache=[];' .
 		'var pipelineCache=[];' .
@@ -2251,12 +2757,18 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'var chatHist=[];' .
 		'var donutChartInst=null;' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* Simple markdown-like renderer for bot messages */
+		/*
+		 * Simple markdown-like renderer for bot messages
+
+		*/
 		'function crmRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -2270,7 +2782,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'return out;' .
 		'}' .
 
-		/* ── Session init (matches ecommerce / medical_vitals pattern) ── */
+		/*
+		 * ── Session init (matches ecommerce / medical_vitals pattern) ──
+
+		*/
 		'function crmInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -2281,7 +2796,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function crmApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -2301,7 +2819,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'window.crmSetFontSize=function(s){lsSet("crm_font_size",s);tmaHaptic("selectionChanged");crmApplyDisplaySettings();};' .
 		'window.crmToggleCompact=function(){var c=!lsGet("crm_compact",false);lsSet("crm_compact",c);tmaHaptic("selectionChanged");crmApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.crmSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -2317,9 +2838,12 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'if(tab==="settings")crmRenderSettings();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Contacts
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Contacts
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function crmStatusDot(s){' .
 			'var cls="crm-status-inactive";' .
 			'if(s==="active")cls="crm-status-active";' .
@@ -2329,7 +2853,11 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 
 		'function loadContacts(q){' .
 			'var l=document.getElementById("crm-contact-list");if(!l)return;' .
-			/* Show cached contacts while fetching */
+
+			/*
+			 * Show cached contacts while fetching
+
+		 */
 			'if(!q&&contactsCache.length){crmRenderContacts(contactsCache);}' .
 			'if(!q&&!contactsCache.length)l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
@@ -2365,7 +2893,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'if(hint)hint.style.display="block";' .
 		'}' .
 
-		/* Pull-to-refresh for contacts */
+		/*
+		 * Pull-to-refresh for contacts
+
+		*/
 		'(function(){' .
 			'var startY=0;var el=document.getElementById("tma-tab-contacts");if(!el)return;' .
 			'el.addEventListener("touchstart",function(e){startY=e.touches[0].clientY;},{passive:true});' .
@@ -2374,16 +2905,22 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'},{passive:true});' .
 		'})();' .
 
-		/* Debounced search */
+		/*
+		 * Debounced search
+
+		*/
 		'var searchTimer=null;' .
 		'document.getElementById("crm-search-input").addEventListener("input",function(e){' .
 			'clearTimeout(searchTimer);var q=e.target.value;' .
 			'searchTimer=setTimeout(function(){loadContacts(q);},400);' .
 		'});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – Pipeline
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – Pipeline
+			══════════════════════════════════════════════════════════
+
+		*/
 		'var STAGE_COLORS={lead:"#2196f3",qualified:"#ff9800",proposal:"#9c27b0",won:"#4caf50",lost:"#e53935"};' .
 
 		'function crmStageKey(label){' .
@@ -2440,9 +2977,12 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'}).join("");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – Deals
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – Deals
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function crmBuildDealsFromPipeline(stages){' .
 			'var deals=[];' .
 			'stages.forEach(function(s){' .
@@ -2479,12 +3019,20 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'var totalVal=dealsCache.reduce(function(s,d){return s+d.value;},0);' .
 			'var wonVal=dealsCache.filter(function(d){return d.stageKey==="won";}).reduce(function(s,d){return s+d.value;},0);' .
 			'var activeCount=dealsCache.filter(function(d){return d.stageKey!=="won"&&d.stageKey!=="lost";}).length;' .
-			/* KPI cards */
+
+			/*
+			 * KPI cards
+
+		 */
 			'if(kpi)kpi.innerHTML=' .
 				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">$\'+Math.round(totalVal).toLocaleString()+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Pipeline', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">$\'+Math.round(wonVal).toLocaleString()+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">\'+activeCount+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Active', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
-			/* Deal list */
+
+			/*
+			 * Deal list
+
+		 */
 			'if(dl){' .
 				'if(!dealsCache.length){dl.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No deals found. Load pipeline first.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';crmHideDonut();return;}' .
 				'dl.innerHTML=dealsCache.map(function(d){' .
@@ -2500,11 +3048,18 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 					'</div>\';' .
 				'}).join("");' .
 			'}' .
-			/* Donut chart */
+
+			/*
+			 * Donut chart
+
+		 */
 			'crmRenderDonut();' .
 		'}' .
 
-		/* ── Chart.js donut ── */
+		/*
+		 * ── Chart.js donut ──
+
+		*/
 		'function crmLoadChartJs(cb){' .
 			'if(window.Chart){cb();return;}' .
 			'if(!CHART_JS_URL){cb();return;}' .
@@ -2533,16 +3088,23 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'});' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 4 – AI Coach
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 4 – AI Coach
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function crmChatInit(){' .
 			'chatHist=lsGet("crm_chat_hist",[]);' .
 			'var m=document.getElementById("crm-chat-messages");if(!m)return;m.innerHTML="";' .
 			'if(chatHist.length){' .
 				'chatHist.forEach(function(msg){crmAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
 			'}else{' .
-				/* Pre-seed with CRM context */
+
+				/*
+				 * Pre-seed with CRM context
+
+			 */
 				'var totalContacts=contactsCache.length;' .
 				'var stageCounts=pipelineCache.map(function(s){return escH(s.label)+"("+((s.contacts||[]).length)+")";}).join(", ");' .
 				'var totalPipeline=dealsCache.reduce(function(s,d){return s+d.value;},0);' .
@@ -2586,17 +3148,31 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
 
-		/* Enter to send */
+		/*
+		 * Enter to send
+
+		*/
 		'document.getElementById("crm-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")crmChatSend();});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 5 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 5 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function crmRenderSettings(){' .
-			/* Default pipeline view label */
+
+			/*
+			 * Default pipeline view label
+
+		 */
 			'var dvl=document.getElementById("crm-default-view-label");' .
 			'if(dvl){var dv=lsGet("crm_default_view","kanban");dvl.textContent=dv==="kanban"?"' . esc_js( __( 'Kanban', 'mcp-ai-wpoos-pro' ) ) . '":"' . esc_js( __( 'List', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-			/* Data summary */
+
+			/*
+			 * Data summary
+
+		 */
 			'var ds=document.getElementById("crm-data-summary");' .
 			'if(ds)ds.textContent="' . esc_js( __( 'Contacts', 'mcp-ai-wpoos-pro' ) ) . ': "+contactsCache.length+", ' .
 				esc_js( __( 'Deals', 'mcp-ai-wpoos-pro' ) ) . ': "+dealsCache.length+", ' .
@@ -2628,25 +3204,38 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'crmRenderSettings();tmaHaptic("notificationSuccess");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
-		/* Restore state from localStorage */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
+
+		/*
+		 * Restore state from localStorage
+
+		*/
 		'contactsCache=lsGet("crm_contacts_cache",[]);' .
 		'pipelineCache=lsGet("crm_pipeline_cache",[]);' .
 		'dealsCache=lsGet("crm_deals_cache",[]);' .
 		'crmApplyDisplaySettings();' .
 
-		/* Render cached contacts immediately, then refresh */
+		/*
+		 * Render cached contacts immediately, then refresh
+
+		*/
 		'if(contactsCache.length)crmRenderContacts(contactsCache);' .
 		'loadContacts();' .
 		'loadPipeline();' .
 
-		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		/*
+		 * Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data)
+
+		*/
 		'crmInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
@@ -2655,37 +3244,66 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
  */
 class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'analytics';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Analytics Dashboard', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Real-time site analytics with Chart.js visualisations, KPI cards, and AI-powered insights.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'analytics';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '📊';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#00796b';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
 		$site_name     = esc_html( $ctx['site_name'] );
 		$tools_exec    = $ctx['tools_url'] . '/execute';
@@ -2699,11 +3317,17 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-analytics-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables ── */
+		/*
+		 * ── Theme variables ──
+
+		*/
 		':root{--tma-btn:#00796b;--tma-accent:#00796b;--tma-secondary-bg:#e0f2f1;' .
 			'--an-base:14px;--an-label:12px;--an-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.an-font-small{--an-base:12px;--an-label:10px;--an-heading:14px}' .
 		'.an-font-large{--an-base:16px;--an-label:14px;--an-heading:18px}' .
 		'.an-compact .an-kpi-grid{gap:6px}' .
@@ -2711,13 +3335,19 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.an-compact .an-chart-card{padding:8px}' .
 		'.an-compact .an-content-row{padding:8px 10px}' .
 
-		/* ── Period bar ── */
+		/*
+		 * ── Period bar ──
+
+		*/
 		'.an-period-bar{display:flex;gap:8px;margin-bottom:14px;padding:0 12px}' .
 		'.an-period-btn{flex:1;padding:7px;border:1px solid var(--tma-border);border-radius:8px;background:var(--tma-secondary-bg);' .
 			'color:var(--tma-hint);font-size:var(--an-label);font-weight:600;cursor:pointer}' .
 		'.an-period-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
 
-		/* ── KPI grid ── */
+		/*
+		 * ── KPI grid ──
+
+		*/
 		'.an-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;padding:0 12px}' .
 		'.an-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;text-align:center}' .
 		'.an-kpi-value{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn);line-height:1.1;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:4px}' .
@@ -2726,11 +3356,17 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.an-trend-down{color:#c62828;font-size:var(--an-label)}' .
 		'.an-trend-flat{color:var(--tma-hint);font-size:var(--an-label)}' .
 
-		/* ── Chart card ── */
+		/*
+		 * ── Chart card ──
+
+		*/
 		'.an-chart-card{margin:0 12px 14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px}' .
 		'.an-chart-title{font-size:var(--an-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-align:center}' .
 
-		/* ── Content tab ── */
+		/*
+		 * ── Content tab ──
+
+		*/
 		'.an-content-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--tma-border)}' .
 		'.an-content-info{flex:1;min-width:0}' .
 		'.an-content-title{font-size:var(--an-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
@@ -2744,7 +3380,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.an-summary-val{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn)}' .
 		'.an-summary-lbl{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
 
-		/* ── Traffic tab ── */
+		/*
+		 * ── Traffic tab ──
+
+		*/
 		'.an-traffic-kpis{display:flex;gap:8px;padding:10px 12px;overflow-x:auto}' .
 		'.an-traffic-kpi{flex:1;min-width:80px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
 		'.an-traffic-val{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn)}' .
@@ -2755,7 +3394,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.an-page-title{font-size:var(--an-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
 		'.an-page-views{font-size:var(--an-label);color:var(--tma-hint)}' .
 
-		/* ── AI Chat ── */
+		/*
+		 * ── AI Chat ──
+
+		*/
 		'.an-chat-container{display:flex;flex-direction:column;height:100%}' .
 		'.an-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.an-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--an-base);line-height:1.5;word-wrap:break-word}' .
@@ -2769,7 +3411,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'.an-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
 		'.an-send-btn:active{opacity:.8}' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'.an-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.an-settings-title{font-size:var(--an-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.an-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -2790,10 +3435,16 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">📊</div></div>' .
 				'<div class="tma-header-info">' .
@@ -2802,25 +3453,40 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'</div>' .
 			'</header>' .
 
-			/* ── Content panes ── */
+			/*
+			 * ── Content panes ──
+
+		 */
 			'<div class="tma-content">' .
 
-				/* Tab 1: Overview */
+				/*
+				 * Tab 1: Overview
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-overview">' .
 					'<div id="an-overview-wrap"><div class="tma-empty">' . esc_html__( 'Loading analytics…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 2: Content */
+				/*
+				 * Tab 2: Content
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-content">' .
 					'<div id="an-content-wrap"><div class="tma-empty">' . esc_html__( 'Loading content…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 3: Traffic */
+				/*
+				 * Tab 3: Traffic
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-traffic">' .
 					'<div id="an-traffic-wrap"><div class="tma-empty">' . esc_html__( 'Loading traffic…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 4: AI Insights */
+				/*
+				 * Tab 4: AI Insights
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-insights">' .
 					'<div class="an-chat-container">' .
 						'<div class="an-chat-messages" id="an-chat-messages"></div>' .
@@ -2833,11 +3499,17 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</div>' .
 				'</div>' .
 
-				/* Tab 5: Settings */
+				/*
+				 * Tab 5: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div style="padding-top:12px">' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="an-settings-section">' .
 						'<div class="an-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="an-settings-row">' .
@@ -2858,7 +3530,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="an-settings-section">' .
 						'<div class="an-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="an-settings-row">' .
@@ -2876,9 +3551,12 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (5 tabs) ── */
+			/*
+			 * ── Bottom navigation (5 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-overview" onclick="anSwitch(\'overview\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' .
@@ -2901,13 +3579,19 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -2918,7 +3602,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="overview";' .
 		'var days=7;' .
 		'var overviewCache=null;' .
@@ -2930,12 +3617,18 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'var trafficChartInst=null;' .
 		'var lastUpdated=null;' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* Simple markdown-like renderer for bot messages */
+		/*
+		 * Simple markdown-like renderer for bot messages
+
+		*/
 		'function renderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -2949,7 +3642,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'return out;' .
 		'}' .
 
-		/* ── Session init (matches ecInitSession / crmInitSession pattern) ── */
+		/*
+		 * ── Session init (matches ecInitSession / crmInitSession pattern) ──
+
+		*/
 		'function anInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -2960,7 +3656,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function anApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -2980,7 +3679,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'window.anSetFontSize=function(s){lsSet("an_font_size",s);tmaHaptic("selectionChanged");anApplyDisplaySettings();};' .
 		'window.anToggleCompact=function(){var c=!lsGet("an_compact",false);lsSet("an_compact",c);tmaHaptic("selectionChanged");anApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.anSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -2995,7 +3697,10 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'if(tab==="settings")anRenderSettings();' .
 		'};' .
 
-		/* ── Trend indicator helper ── */
+		/*
+		 * ── Trend indicator helper ──
+
+		*/
 		'function anTrend(cur,prev){' .
 			'if(typeof prev==="undefined"||prev===null)return \'<span class="an-trend-flat">—</span>\';' .
 			'if(cur>prev)return \'<span class="an-trend-up">▲</span>\';' .
@@ -3003,16 +3708,22 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'return \'<span class="an-trend-flat">●</span>\';' .
 		'}' .
 
-		/* ── Chart.js lazy loader ── */
+		/*
+		 * ── Chart.js lazy loader ──
+
+		*/
 		'function anLoadChartJs(cb){' .
 			'if(window.Chart){cb();return;}' .
 			'if(!CHART_JS_URL){cb();return;}' .
 			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Overview
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Overview
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function anLoadOverview(){' .
 			'var w=document.getElementById("an-overview-wrap");if(!w)return;' .
 			'if(overviewCache){anRenderOverview(overviewCache,w);}' .
@@ -3056,9 +3767,12 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		'window.anSetDays=function(n){days=n;lsSet("an_default_period",n);tmaHaptic("light");anLoadOverview();};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – Content
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – Content
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function anLoadContent(){' .
 			'var w=document.getElementById("an-content-wrap");if(!w)return;' .
 			'if(contentCache){anRenderContent(contentCache,w);}' .
@@ -3077,7 +3791,11 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		'function anRenderContent(posts,w){' .
 			'if(!posts.length){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No content found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-			/* Count by type */
+
+			/*
+			 * Count by type
+
+		 */
 			'var byType={};var published=0;var drafts=0;' .
 			'posts.forEach(function(p){' .
 				'var t=p.post_type||p.type||"post";' .
@@ -3085,15 +3803,27 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'var s=p.status||p.post_status||"publish";' .
 				'if(s==="publish")published++;else if(s==="draft")drafts++;' .
 			'});' .
-			/* Summary */
+
+			/*
+			 * Summary
+
+		 */
 			'var sumHtml=\'<div class="an-summary-grid">\'+' .
 				'\'<div class="an-summary-card"><div class="an-summary-val">\'+posts.length+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Total', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 				'\'<div class="an-summary-card"><div class="an-summary-val">\'+published+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Published', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 				'\'<div class="an-summary-card"><div class="an-summary-val">\'+drafts+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Drafts', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 			'\'</div>\';' .
-			/* Chart */
+
+			/*
+			 * Chart
+
+		 */
 			'var chartHtml=\'<div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Content by Type', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-content-chart" height="160"></canvas></div>\';' .
-			/* Top 5 recent posts */
+
+			/*
+			 * Top 5 recent posts
+
+		 */
 			'var top5=posts.slice(0,5);' .
 			'var listHtml=\'<div style="padding:4px 12px 0"><div class="an-chart-title" style="font-weight:600;color:var(--tma-text)">' . esc_js( __( 'Recent Posts', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
 			'listHtml+=top5.map(function(p){' .
@@ -3105,7 +3835,11 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'return \'<div class="an-content-row"><div class="an-content-info"><div class="an-content-title">\'+escH(p.title||p.post_title||"' . esc_js( __( 'Untitled', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div><div class="an-content-meta">\'+escH(dt)+\'</div></div><span class="an-status-badge \'+badgeCls+\'">\'+escH(s)+\'</span></div>\';' .
 			'}).join("");' .
 			'w.innerHTML=sumHtml+chartHtml+listHtml;' .
-			/* Render horizontal bar chart */
+
+			/*
+			 * Render horizontal bar chart
+
+		 */
 			'anLoadChartJs(function(){' .
 				'if(!window.Chart)return;' .
 				'var cv=document.getElementById("an-content-chart");if(!cv)return;' .
@@ -3116,9 +3850,12 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'});' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – Traffic
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – Traffic
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function anLoadTraffic(){' .
 			'var w=document.getElementById("an-traffic-wrap");if(!w)return;' .
 			'if(trafficCache){anRenderTraffic(trafficCache,w);return;}' .
@@ -3138,15 +3875,27 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'var totalViews=d.total_views||0;' .
 			'var avgViews=daily.length?Math.round(totalViews/daily.length):0;' .
 			'var peakDay=daily.reduce(function(best,r){return(r.views||0)>(best.views||0)?r:best;},{date:"—",views:0});' .
-			/* KPI row */
+
+			/*
+			 * KPI row
+
+		 */
 			'var kpiHtml=\'<div class="an-traffic-kpis">\'+' .
 				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(totalViews)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Total Views', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(avgViews)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Avg/Day', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(peakDay.views||0)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Peak', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
 			'\'</div>\';' .
-			/* Chart */
+
+			/*
+			 * Chart
+
+		 */
 			'var chartHtml=\'<div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Daily Views', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-traffic-chart" height="180"></canvas></div>\';' .
-			/* Top pages */
+
+			/*
+			 * Top pages
+
+		 */
 			'var pages=d.top_pages||d.pages||[];' .
 			'var pagesHtml="";' .
 			'if(pages.length){' .
@@ -3156,7 +3905,11 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'}).join("");' .
 			'}' .
 			'w.innerHTML=kpiHtml+chartHtml+pagesHtml;' .
-			/* Render line chart */
+
+			/*
+			 * Render line chart
+
+		 */
 			'anLoadChartJs(function(){' .
 				'if(!window.Chart)return;' .
 				'var cv=document.getElementById("an-traffic-chart");if(!cv)return;' .
@@ -3168,16 +3921,23 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'});' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 4 – AI Insights
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 4 – AI Insights
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function anChatInit(){' .
 			'chatHist=lsGet("an_chat_hist",[]);' .
 			'var m=document.getElementById("an-chat-messages");if(!m)return;m.innerHTML="";' .
 			'if(chatHist.length){' .
 				'chatHist.forEach(function(msg){anAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
 			'}else{' .
-				/* Pre-seed with analytics context */
+
+				/*
+				 * Pre-seed with analytics context
+
+			 */
 				'var views=overviewCache?overviewCache.total_views||0:0;' .
 				'var posts=overviewCache?overviewCache.total_posts||0:0;' .
 				'var comments=overviewCache?overviewCache.total_comments||0:0;' .
@@ -3225,22 +3985,40 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
 
-		/* Enter to send */
+		/*
+		 * Enter to send
+
+		*/
 		'document.getElementById("an-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")anChatSend();});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 5 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 5 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function anRenderSettings(){' .
-			/* Default period label */
+
+			/*
+			 * Default period label
+
+		 */
 			'var dpl=document.getElementById("an-default-period-label");' .
 			'if(dpl)dpl.textContent=days+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '";' .
-			/* Data summary */
+
+			/*
+			 * Data summary
+
+		 */
 			'var ds=document.getElementById("an-data-summary");' .
 			'if(ds)ds.textContent="' . esc_js( __( 'Overview cache', 'mcp-ai-wpoos-pro' ) ) . ': "+(overviewCache?"✓":"✗")+", ' .
 				esc_js( __( 'Content', 'mcp-ai-wpoos-pro' ) ) . ': "+(contentCache?contentCache.length:0)+", ' .
 				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
-			/* Freshness */
+
+			/*
+			 * Freshness
+
+		 */
 			'var fr=document.getElementById("an-freshness");' .
 			'if(fr){' .
 				'if(lastUpdated)fr.textContent="' . esc_js( __( 'Last refreshed:', 'mcp-ai-wpoos-pro' ) ) . ' "+lastUpdated.toLocaleString();' .
@@ -3274,10 +4052,17 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'anRenderSettings();tmaHaptic("notificationSuccess");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
-		/* Restore state from localStorage */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
+
+		/*
+		 * Restore state from localStorage
+
+		*/
 		'overviewCache=lsGet("an_overview_cache",null);' .
 		'contentCache=lsGet("an_content_cache",null);' .
 		'trafficCache=lsGet("an_traffic_cache",null);' .
@@ -3286,16 +4071,22 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'if(savedTs)lastUpdated=new Date(savedTs);' .
 		'anApplyDisplaySettings();' .
 
-		/* Render cached overview immediately, then refresh */
+		/*
+		 * Render cached overview immediately, then refresh
+
+		*/
 		'if(overviewCache){var ow=document.getElementById("an-overview-wrap");if(ow)anRenderOverview(overviewCache,ow);}' .
 		'anLoadOverview();' .
 		'anLoadContent();' .
 
-		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		/*
+		 * Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data)
+
+		*/
 		'anInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
@@ -3304,61 +4095,99 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
  */
 class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'booking';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Calendar Booking', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Appointment scheduling interface with availability calendar, booking form, and confirmation flow.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'calendar_booking';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '📅';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#1565c0';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
-		$site_name     = esc_html( $ctx['site_name'] );
-		$tools_exec    = $ctx['tools_url'] . '/execute';
-		$chat_url      = $ctx['chat_url'];
-		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
-		$assistant_id  = $ctx['assistant_id'];
-		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+		$site_name    = esc_html( $ctx['site_name'] );
+		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$validate_url = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id = $ctx['assistant_id'];
+		$chart_js_url = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-booking-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables ── */
+		/*
+		 * ── Theme variables ──
+
+		*/
 		':root{--tma-btn:#1565c0;--tma-accent:#1565c0;--tma-secondary-bg:#e8eaf6;' .
 			'--bk-base:14px;--bk-label:12px;--bk-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.bk-font-small{--bk-base:12px;--bk-label:10px;--bk-heading:14px}' .
 		'.bk-font-large{--bk-base:16px;--bk-label:14px;--bk-heading:18px}' .
 		'.bk-compact .bk-apt-card{padding:8px 10px;margin:0 8px 6px}' .
 		'.bk-compact .tma-booking-form{padding:10px}' .
 		'.bk-compact .tma-calendar{padding:8px}' .
 
-		/* ── Calendar ── */
+		/*
+		 * ── Calendar ──
+
+		*/
 		'.tma-calendar{padding:12px}' .
 		'.tma-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}' .
 		'.tma-cal-month{font-size:var(--bk-heading);font-weight:700}' .
@@ -3382,14 +4211,20 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.tma-confirm-wrap{text-align:center;padding:40px 20px}' .
 		'.tma-confirm-icon{font-size:64px;margin-bottom:16px}' .
 
-		/* ── Appointment cards ── */
+		/*
+		 * ── Appointment cards ──
+
+		*/
 		'.bk-apt-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
 		'.bk-apt-info{flex:1;min-width:0}' .
 		'.bk-apt-name{font-size:var(--bk-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
 		'.bk-apt-meta{font-size:var(--bk-label);color:var(--tma-hint);margin-top:2px}' .
 		'.bk-apt-time{font-size:var(--bk-base);font-weight:700;color:var(--tma-btn);flex-shrink:0}' .
 
-		/* ── Status badges ── */
+		/*
+		 * ── Status badges ──
+
+		*/
 		'.bk-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap;display:inline-block}' .
 		'.bk-status-confirmed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
 		'.bk-status-pending{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
@@ -3397,11 +4232,17 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.bk-status-completed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
 		'.bk-status-no-show{background:#f5f5f5;color:#616161;border-color:#e0e0e0}' .
 
-		/* ── History chart ── */
+		/*
+		 * ── History chart ──
+
+		*/
 		'.bk-chart-wrap{margin:0 12px 12px;padding:12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.bk-chart-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
 
-		/* ── AI chat ── */
+		/*
+		 * ── AI chat ──
+
+		*/
 		'.bk-chat-container{display:flex;flex-direction:column;height:100%}' .
 		'.bk-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.bk-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--bk-base);line-height:1.5;word-wrap:break-word}' .
@@ -3418,7 +4259,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.bk-suggest-btn{padding:6px 12px;border:1px solid var(--tma-btn);border-radius:16px;background:var(--tma-bg);color:var(--tma-btn);font-size:var(--bk-label);cursor:pointer;white-space:nowrap}' .
 		'.bk-suggest-btn:active{opacity:.7}' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'.bk-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.bk-settings-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.bk-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -3438,10 +4282,16 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">📅</div></div>' .
 				'<div class="tma-header-info">' .
@@ -3451,7 +4301,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'</header>' .
 			'<div class="tma-content">' .
 
-				/* Tab 1: Book (calendar flow) */
+				/*
+				 * Tab 1: Book (calendar flow)
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-book">' .
 					'<div id="bk-step-calendar">' .
 						'<div class="tma-calendar">' .
@@ -3494,13 +4347,19 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'</div>' .
 				'</div>' .
 
-				/* Tab 2: Upcoming */
+				/*
+				 * Tab 2: Upcoming
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-upcoming">' .
 					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'Upcoming Appointments', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div id="bk-upcoming-list"><div class="tma-empty">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 3: History */
+				/*
+				 * Tab 3: History
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-history">' .
 					'<div class="bk-chart-wrap" id="bk-chart-wrap" style="display:none">' .
 						'<div class="bk-chart-title">' . esc_html__( 'Bookings per Month', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -3510,7 +4369,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'<div id="bk-history-list"><div class="tma-empty">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
 
-				/* Tab 4: AI Assistant */
+				/*
+				 * Tab 4: AI Assistant
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
 					'<div class="bk-chat-container">' .
 						'<div class="bk-chat-messages" id="bk-chat-messages"></div>' .
@@ -3528,11 +4390,17 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'</div>' .
 				'</div>' .
 
-				/* Tab 5: Settings */
+				/*
+				 * Tab 5: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div style="padding-top:12px">' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="bk-settings-section">' .
 						'<div class="bk-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="bk-settings-row">' .
@@ -3549,7 +4417,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 						'</div>' .
 					'</div>' .
 
-					/* Defaults section */
+					/*
+					 * Defaults section
+
+				 */
 					'<div class="bk-settings-section">' .
 						'<div class="bk-settings-title">' . esc_html__( 'Booking Defaults', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="bk-settings-row" style="flex-direction:column;align-items:stretch;gap:4px">' .
@@ -3562,7 +4433,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="bk-settings-section">' .
 						'<div class="bk-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="bk-settings-row">' .
@@ -3579,9 +4453,12 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (5 tabs) ── */
+			/*
+			 * ── Bottom navigation (5 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-book" onclick="bkSwitch(\'book\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' .
@@ -3604,13 +4481,19 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -3620,7 +4503,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="book";' .
 		'var upcomingCache=[];' .
 		'var historyCache=[];' .
@@ -3630,12 +4516,18 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'var today=new Date();var vy=today.getFullYear();var vm=today.getMonth();' .
 		'var selDate=null;var selSlot=null;' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* Simple markdown-like renderer for bot messages */
+		/*
+		 * Simple markdown-like renderer for bot messages
+
+		*/
 		'function bkRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -3649,7 +4541,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'return out;' .
 		'}' .
 
-		/* ── Session init (matches ecommerce / crm pattern) ── */
+		/*
+		 * ── Session init (matches ecommerce / crm pattern) ──
+
+		*/
 		'function bkInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -3660,7 +4555,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function bkApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -3680,7 +4578,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'window.bkSetFontSize=function(s){lsSet("bk_font_size",s);tmaHaptic("selectionChanged");bkApplyDisplaySettings();};' .
 		'window.bkToggleCompact=function(){var c=!lsGet("bk_compact",false);lsSet("bk_compact",c);tmaHaptic("selectionChanged");bkApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.bkSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -3694,9 +4595,12 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'if(tab==="settings")bkRenderSettings();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Book (Calendar flow)
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Book (Calendar flow)
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function showStep(id){' .
 			'["bk-step-calendar","bk-step-form","bk-step-confirm"].forEach(function(s){' .
 				'var el=document.getElementById(s);if(el)el.style.display=s===id?"":"none";' .
@@ -3782,9 +4686,12 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'showStep("bk-step-calendar");renderCal();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – Upcoming Appointments
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – Upcoming Appointments
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function bkStatusCls(s){' .
 			'var k=String(s||"").toLowerCase().replace(/[\\s_]+/g,"-");' .
 			'if(k==="confirmed")return "bk-status-confirmed";' .
@@ -3836,9 +4743,12 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'}).join("");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – History
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – History
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function bkLoadHistory(force){' .
 			'var list=document.getElementById("bk-history-list");if(!list)return;' .
 			'if(!force&&historyCache.length){bkRenderHistory(historyCache);return;}' .
@@ -3878,7 +4788,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'}).join("");' .
 		'}' .
 
-		/* ── Chart.js loader ── */
+		/*
+		 * ── Chart.js loader ──
+
+		*/
 		'function bkLoadChartJs(cb){' .
 			'if(window.Chart){cb();return;}' .
 			'if(!CHART_JS_URL){cb();return;}' .
@@ -3913,9 +4826,12 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'});' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 4 – AI Assistant
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 4 – AI Assistant
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function bkChatInit(){' .
 			'chatHist=lsGet("bk_chat_hist",[]);' .
 			'var m=document.getElementById("bk-chat-messages");if(!m)return;m.innerHTML="";' .
@@ -3967,17 +4883,31 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'if(inp){inp.value=btn.textContent;bkChatSend();}' .
 		'};' .
 
-		/* Enter to send */
+		/*
+		 * Enter to send
+
+		*/
 		'document.getElementById("bk-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")bkChatSend();});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 5 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 5 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function bkRenderSettings(){' .
-			/* Default name/email */
+
+			/*
+			 * Default name/email
+
+		 */
 			'var dni=document.getElementById("bk-default-name");if(dni)dni.value=lsGet("bk_default_name","");' .
 			'var dei=document.getElementById("bk-default-email");if(dei)dei.value=lsGet("bk_default_email","");' .
-			/* Data summary */
+
+			/*
+			 * Data summary
+
+		 */
 			'var ds=document.getElementById("bk-data-summary");' .
 			'if(ds)ds.textContent="' . esc_js( __( 'Total bookings cached', 'mcp-ai-wpoos-pro' ) ) . ': "+bookingsLocal.length+", ' .
 				esc_js( __( 'Upcoming', 'mcp-ai-wpoos-pro' ) ) . ': "+upcomingCache.length+", ' .
@@ -4010,23 +4940,36 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'bkRenderSettings();tmaHaptic("notificationSuccess");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
-		/* Restore state from localStorage */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
+
+		/*
+		 * Restore state from localStorage
+
+		*/
 		'bookingsLocal=lsGet("bk_bookings",[]);' .
 		'upcomingCache=lsGet("bk_upcoming_cache",[]);' .
 		'historyCache=lsGet("bk_history_cache",[]);' .
 		'bkApplyDisplaySettings();' .
 
-		/* Render calendar immediately */
+		/*
+		 * Render calendar immediately
+
+		*/
 		'renderCal();' .
 
-		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN) */
+		/*
+		 * Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN)
+
+		*/
 		'bkInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
@@ -4045,37 +4988,66 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
  */
 class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'health_wellness';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Health & Wellness', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Personal wellness dashboard with daily metric tracking (steps, sleep, hydration, sodium/kidney health), Chart.js activity charts, streak gamification, weekly goal progress with kidney-friendly targets, and an AI coaching tab.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'health_wellness';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🏃';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#2e7d32';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
 		$site_name       = esc_html( $ctx['site_name'] );
 		$tools_exec      = $ctx['tools_url'] . '/execute';
@@ -4101,13 +5073,22 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-health-wellness-template">' .
 
-		/* ── Styles ─────────────────────────────────────────────────────────── */
+		/*
+		 * ── Styles ───────────────────────────────────────────────────────────
+
+		*/
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* Theme overrides */
+		/*
+		 * Theme overrides
+
+		*/
 		':root{--tma-btn:#2e7d32;--tma-accent:#2e7d32;--tma-secondary-bg:#e8f5e9;}' .
 
-		/* Streak banner */
+		/*
+		 * Streak banner
+
+		*/
 		'.tma-hw-streak{display:flex;align-items:center;justify-content:center;gap:8px;' .
 			'background:linear-gradient(135deg,#2e7d32,#66bb6a);color:#fff;' .
 			'padding:10px 16px;margin:8px 12px;border-radius:var(--tma-radius);font-weight:700}' .
@@ -4115,10 +5096,16 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-hw-streak-count{font-size:22px;line-height:1}' .
 		'.tma-hw-streak-label{font-size:12px;opacity:.9}' .
 
-		/* Dashboard scroll wrapper */
+		/*
+		 * Dashboard scroll wrapper
+
+		*/
 		'.tma-hw-wrap{padding:8px 12px;overflow-y:auto;height:calc(100% - 8px)}' .
 
-		/* KPI grid */
+		/*
+		 * KPI grid
+
+		*/
 		'.tma-hw-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}' .
 		'.tma-hw-kpi{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:12px;display:flex;flex-direction:column;' .
@@ -4129,7 +5116,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-hw-kpi-label{font-size:11px;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px}' .
 		'.tma-hw-kpi-pct{font-size:10px;color:var(--tma-hint);margin-top:2px}' .
 
-		/* Chart cards */
+		/*
+		 * Chart cards
+
+		*/
 		'.tma-hw-chart-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:14px;margin:10px 0}' .
 		'.tma-hw-chart-title{font-size:13px;font-weight:600;color:var(--tma-text);margin-bottom:10px;' .
@@ -4140,7 +5130,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-hw-donut-legend{display:flex;flex-direction:column;gap:5px;font-size:12px;flex:1}' .
 		'.tma-hw-legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px}' .
 
-		/* Log form */
+		/*
+		 * Log form
+
+		*/
 		'.tma-hw-log-wrap{padding:12px}' .
 		'.tma-hw-log-section{margin-bottom:16px}' .
 		'.tma-hw-log-label{font-size:12px;font-weight:600;color:var(--tma-hint);text-transform:uppercase;' .
@@ -4159,7 +5152,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'color:var(--tma-btn);border-radius:8px;padding:10px;text-align:center;font-size:13px;' .
 			'font-weight:600;display:none;margin-bottom:10px}' .
 
-		/* Goals */
+		/*
+		 * Goals
+
+		*/
 		'.tma-hw-goals-wrap{padding:12px}' .
 		'.tma-hw-goal-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:12px;margin-bottom:10px}' .
@@ -4170,7 +5166,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-hw-progress-fill{height:100%;border-radius:4px;background:var(--tma-btn);transition:width .4s}' .
 		'.tma-hw-goal-detail{font-size:11px;color:var(--tma-hint);margin-top:4px}' .
 
-		/* Badges */
+		/*
+		 * Badges
+
+		*/
 		'.tma-hw-badges-title{font-size:13px;font-weight:600;color:var(--tma-section-header);' .
 			'text-transform:uppercase;letter-spacing:.5px;padding:4px 0 8px}' .
 		'.tma-hw-badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}' .
@@ -4180,7 +5179,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-hw-badge.earned{border-color:var(--tma-btn);background:var(--tma-secondary-bg);color:var(--tma-btn)}' .
 		'.tma-hw-badge-icon{font-size:26px;line-height:1}' .
 
-		/* AI Coach */
+		/*
+		 * AI Coach
+
+		*/
 		'.tma-hw-coach-wrap{display:flex;flex-direction:column;height:100%}' .
 		'.tma-hw-coach-msgs{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch;' .
 			'display:flex;flex-direction:column}' .
@@ -4199,7 +5201,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'background:var(--tma-btn);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;' .
 			'display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}' .
 
-		/* Member picker overlay */
+		/*
+		 * Member picker overlay
+
+		*/
 		'.tma-member-picker{position:fixed;inset:0;background:var(--tma-bg);z-index:900;' .
 			'display:none;flex-direction:column;align-items:center;padding:28px 16px 16px;overflow-y:auto}' .
 		'.tma-member-picker-icon{font-size:48px;line-height:1;margin-bottom:12px}' .
@@ -4218,7 +5223,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-header-member{font-size:11px;color:var(--tma-btn);font-weight:600;' .
 			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}' .
 
-		/* New-member creation form inside the member picker */
+		/*
+		 * New-member creation form inside the member picker
+
+		*/
 		'.hw-new-member-form{width:100%;max-width:420px;background:var(--tma-section-bg);' .
 			'border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;display:none}' .
 		'.hw-new-member-form-title{font-size:15px;font-weight:700;color:var(--tma-text);margin-bottom:12px}' .
@@ -4231,7 +5239,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.hw-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
 		'</style>' .
 
-		/* ── Member picker overlay ─────────────────────────────────────────── */
+		/*
+		 * ── Member picker overlay ───────────────────────────────────────────
+
+		*/
 		'<div class="tma-member-picker" id="tma-member-picker">' .
 			'<div class="tma-member-picker-icon">&#128101;</div>' .
 			'<div class="tma-member-picker-title">' . esc_html__( 'Select Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -4239,7 +5250,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'<div class="tma-member-list" id="tma-hw-member-list">' .
 				'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
 			'</div>' .
-			/* New member creation form (hidden by default, shown on "+ New Member" tap) */
+
+			/*
+			 * New member creation form (hidden by default, shown on "+ New Member" tap)
+
+		 */
 			'<div class="hw-new-member-form" id="hw-new-member-form">' .
 				'<div class="hw-new-member-form-title">&#128100; ' . esc_html__( 'Add New Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'<div class="hw-new-member-type-row">' .
@@ -4263,10 +5278,16 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'</div>' .
 		'</div>' .
 
-		/* ── Shell ─────────────────────────────────────────────────────────── */
+		/*
+		 * ── Shell ───────────────────────────────────────────────────────────
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-		/* Header */
+		/*
+		 * Header
+
+		*/
 		'<header class="tma-header">' .
 			'<div class="tma-avatar-wrap"><div class="tma-avatar-initials" style="background:var(--tma-btn)">🏃</div></div>' .
 			'<div class="tma-header-info">' .
@@ -4284,10 +5305,16 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'</div>' .
 		'</header>' .
 
-		/* Tab panes */
+		/*
+		 * Tab panes
+
+		*/
 		'<div class="tma-content">' .
 
-		/* ── Dashboard ── */
+		/*
+		 * ── Dashboard ──
+
+		*/
 		'<div class="tma-tab-pane tma-active" id="tma-hw-tab-dashboard">' .
 			'<div class="tma-hw-wrap">' .
 				'<div class="tma-hw-streak" id="tma-hw-streak">' .
@@ -4302,13 +5329,19 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'</div>' .
 		'</div>' .
 
-		/* ── Log ── */
+		/*
+		 * ── Log ──
+
+		*/
 		'<div class="tma-tab-pane" id="tma-hw-tab-log">' .
 			'<div class="tma-hw-log-wrap">' .
 				'<div class="tma-section-title" style="padding:0 0 8px">' . esc_html__( 'Log Today\'s Activity', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'<div class="tma-hw-log-saved" id="tma-hw-log-saved">&#10003; ' . esc_html__( 'Logged successfully!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-				/* Steps */
+				/*
+				 * Steps
+
+			 */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#128099; ' . esc_html__( 'Steps', 'mcp-ai-wpoos-pro' ) . '</label>' .
 					'<div class="tma-hw-counter">' .
@@ -4319,7 +5352,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'</div>' .
 				'</div>' .
 
-				/* Water */
+				/*
+				 * Water
+
+			 */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#128167; ' . esc_html__( 'Water (glasses)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 					'<div class="tma-hw-counter">' .
@@ -4329,7 +5365,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'</div>' .
 				'</div>' .
 
-				/* Sleep */
+				/*
+				 * Sleep
+
+			 */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#128164; ' . esc_html__( 'Sleep (hours)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 					'<div class="tma-hw-counter">' .
@@ -4339,7 +5378,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'</div>' .
 				'</div>' .
 
-				/* Calories */
+				/*
+				 * Calories
+
+			 */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#128293; ' . esc_html__( 'Calories (kcal)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 					'<div class="tma-hw-counter">' .
@@ -4350,7 +5392,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'</div>' .
 				'</div>' .
 
-				/* Sodium – kidney health indicator */
+				/*
+				 * Sodium – kidney health indicator
+
+			 */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#9889; ' . esc_html__( 'Sodium (mg) — kidney health', 'mcp-ai-wpoos-pro' ) . '</label>' .
 					'<div class="tma-hw-counter">' .
@@ -4361,7 +5406,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'</div>' .
 				'</div>' .
 
-				/* Mood */
+				/*
+				 * Mood
+
+			 */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#128578; ' . esc_html__( 'Mood', 'mcp-ai-wpoos-pro' ) . '</label>' .
 					'<div class="tma-hw-mood-row">' .
@@ -4377,7 +5425,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'</div>' .
 		'</div>' .
 
-		/* ── Goals ── */
+		/*
+		 * ── Goals ──
+
+		*/
 		'<div class="tma-tab-pane" id="tma-hw-tab-goals">' .
 			'<div class="tma-hw-goals-wrap">' .
 				'<div class="tma-section-title" style="padding:0 0 8px">' . esc_html__( 'Weekly Goals', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -4387,7 +5438,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'</div>' .
 		'</div>' .
 
-		/* ── Coach ── */
+		/*
+		 * ── Coach ──
+
+		*/
 		'<div class="tma-tab-pane" id="tma-hw-tab-coach">' .
 			'<div class="tma-hw-coach-wrap">' .
 				'<div class="tma-hw-coach-msgs" id="tma-hw-coach-msgs">' .
@@ -4402,7 +5456,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		'</div>' . /* .tma-content */
 
-		/* Bottom navigation */
+		/*
+		 * Bottom navigation
+
+		*/
 		'<nav class="tma-nav">' .
 			'<button class="tma-nav-btn tma-active" id="tma-hw-nav-dashboard" onclick="hwTab(\'dashboard\',this)">' .
 				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' .
@@ -4424,11 +5481,17 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		'</div>' . /* .tma-shell */
 
-		/* ── JavaScript ─────────────────────────────────────────────────────── */
+		/*
+		 * ── JavaScript ───────────────────────────────────────────────────────
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* Config injected from PHP */
+		/*
+		 * Config injected from PHP
+
+		*/
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
@@ -4440,13 +5503,28 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'var MEMBER_NAME="";' .
 		'var TMA_TOKEN="";' .
 		'var coachHist=[];' .
-		/* Server-resolved member for the current WordPress user (0 when unknown) */
+
+		/*
+		 * Server-resolved member for the current WordPress user (0 when unknown)
+
+		*/
 		'var SERVER_MEMBER_ID=' . wp_json_encode( $server_member_id ) . ';' .
 		'var SERVER_MEMBER_NAME=' . wp_json_encode( $server_member_name ) . ';' .
 
-		/* ── Markdown renderer loader ── */
-		/* Load the lightweight TMA markdown renderer on demand so coach     */
-		/* replies are displayed as formatted HTML instead of raw markdown.  */
+		/*
+		── Markdown renderer loader ──
+
+		*/
+
+		/*
+		Load the lightweight TMA markdown renderer on demand so coach
+
+		*/
+
+		/*
+		 * Replies are displayed as formatted HTML instead of raw markdown.
+
+		*/
 		'function hwLoadMarkdown(cb){' .
 			'if(window.wpMcpAiChatMarkdown){cb();return;}' .
 			'if(!MARKDOWN_JS_URL){cb();return;}' .
@@ -4455,7 +5533,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'document.head.appendChild(s);' .
 		'}' .
 
-		/* ── Render reply using the preferred markdown method ── */
+		/*
+		 * ── Render reply using the preferred markdown method ──
+
+		*/
 		'function hwRenderReply(el,text){' .
 			'if(el&&window.wpMcpAiChatMarkdown&&window.wpMcpAiChatMarkdown.renderMarkdown){' .
 				'el.innerHTML=window.wpMcpAiChatMarkdown.renderMarkdown(text);' .
@@ -4464,9 +5545,20 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'}' .
 		'}' .
 
-		/* ── Session init: authenticate via Telegram initData ── */
-		/* Calls /validate so the coach tab chat requests are authenticated  */
-		/* even when Telegram's WebView does not persist the auth cookie.    */
+		/*
+		── Session init: authenticate via Telegram initData ──
+
+		*/
+
+		/*
+		 * Calls /validate so the coach tab chat requests are authenticated
+
+		*/
+
+		/*
+		 * Even when Telegram's WebView does not persist the auth cookie.
+
+		*/
 		'function hwInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -4480,23 +5572,37 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'if(!d)return;' .
 				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
 				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
-				/* Re-fetch members with fresh auth if the picker is still open */
+
+				/*
+				 * Re-fetch members with fresh auth if the picker is still open
+
+			 */
 				'var picker=document.getElementById("tma-member-picker");' .
 				'if(picker&&picker.style.display==="flex"){hwFetchMembers();}' .
-				/* Re-sync server health metrics now that auth is established.
+
+				/*
+				Re-sync server health metrics now that auth is established.
 				 * hwSyncFromServer() is called at page-init before this async
 				 * /validate response arrives, so Telegram users whose WP auth
 				 * cookie did not persist get a silent auth failure on the first
-				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				 * attempt.  Retry here with the fresh nonce / TMA token.
+				 */
 				'if(MEMBER_ID)hwSyncFromServer();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Storage helpers ── */
+		/*
+		 * ── Storage helpers ──
+
+		*/
 		'var SK_PREFIX="hw_";' .
 		'function hwTodayKey(){return new Date().toISOString().slice(0,10);}' .
-		/* Central factory for the daily log object — add new fields here only */
+
+		/*
+		 * Central factory for the daily log object — add new fields here only
+
+		*/
 		'function hwDefaultLog(){return{steps:0,water:0,sleep:0,calories:0,sodium:0,mood:0};}' .
 		'function hwLoadLog(){try{var v=localStorage.getItem(SK_PREFIX+hwTodayKey());return v?JSON.parse(v):hwDefaultLog();}catch(e){return hwDefaultLog();}}' .
 		'function hwStoreLog(l){try{localStorage.setItem(SK_PREFIX+hwTodayKey(),JSON.stringify(l));}catch(e){}}' .
@@ -4523,14 +5629,23 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'}return streak;' .
 		'}' .
 
-		/* State */
+		/*
+		 * State
+
+		*/
 		'var LOG=hwLoadLog();' .
 		'var lineChartInst=null;var donutChartInst=null;' .
 
-		/* HTML-escape helper */
+		/*
+		 * HTML-escape helper
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 
-		/* ── Member picker ── */
+		/*
+		 * ── Member picker ──
+
+		*/
 		'function hwLoadSavedMember(){' .
 			'try{' .
 				'var d=JSON.parse(localStorage.getItem("hw_member_id")||"null");' .
@@ -4541,14 +5656,17 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'function hwShowMemberPicker(){' .
 			'var p=document.getElementById("tma-member-picker");' .
 			'if(p)p.style.display="flex";' .
-			/* In Telegram WebView the TMA token is obtained asynchronously by
+
+			/*
+			In Telegram WebView the TMA token is obtained asynchronously by
 			 * hwInitSession().  Calling hwFetchMembers() before the token is
 			 * available sends an unauthenticated request that returns 403.
 			 * Skip the immediate fetch when we are inside a Telegram WebApp and
 			 * TMA_TOKEN has not yet been set; hwInitSession() will call
 			 * hwFetchMembers() once auth is established.  When the token is
 			 * already present (e.g. member-switch after first load) or we are
-			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			 * in a regular browser (no Telegram WebApp API), fetch immediately.
+			 */
 			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
 				'hwFetchMembers();' .
 			'}' .
@@ -4562,7 +5680,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'window.hwFetchMembers=function(){' .
 			'var list=document.getElementById("tma-hw-member-list");' .
 			'if(!list)return;' .
-			/* Shared error markup — used in both the failed-response and catch paths */
+
+			/*
+			 * Shared error markup — used in both the failed-response and catch paths
+
+		 */
 			'var hwErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="hwFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
@@ -4571,14 +5693,25 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
-				/* If the request failed (auth not yet established), keep the Loading… placeholder
+
+				/*
+				If the request failed (auth not yet established), keep the Loading… placeholder
 				 * so hwInitSession() can re-call hwFetchMembers() once auth succeeds.
-				 * Outside Telegram we also add a manual retry button so users are not stuck. */
+				 * Outside Telegram we also add a manual retry button so users are not stuck.
+				 */
 				'if(!d){if(list)list.innerHTML=hwErrHtml;return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
-				/* Auto-select when exactly one member exists — skip picker entirely */
+
+				/*
+				 * Auto-select when exactly one member exists — skip picker entirely
+
+			 */
 				'if(members.length===1){hwSelectMember(members[0].id,members[0].name);return;}' .
-				/* Build member cards (may be empty) then always append "+ New Member" */
+
+				/*
+				 * Build member cards (may be empty) then always append "+ New Member"
+
+			 */
 				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
 					'return\'<div class="tma-member-card" onclick="hwSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
@@ -4587,7 +5720,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
 						'+\'</div>\';' .
 				'}).join("");' .
-				/* Always show the New Member card at the bottom */
+
+				/*
+				 * Always show the New Member card at the bottom
+
+			 */
 				'var newCard=\'<div class="tma-member-card" onclick="hwShowNewMemberForm()" style="border-style:dashed;opacity:.85">\'' .
 					'+\'<div class="tma-member-card-icon" style="background:#78909c">+</div>\'' .
 					'+\'<div><div class="tma-member-card-name">' . esc_js( __( '+ New Member', 'mcp-ai-wpoos-pro' ) ) . '</div>\'' .
@@ -4610,12 +5747,27 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		'window.hwSwitchMember=function(){hwHideNewMemberForm();hwShowMemberPicker();};' .
 
-		/* ── Server sync: pull stored health metrics into localStorage ── */
-		/* Calls log_health_metrics get_history and merges server entries   */
-		/* into localStorage so historical data survives device changes.    */
+		/*
+		── Server sync: pull stored health metrics into localStorage ──
+
+		*/
+
+		/*
+		Calls log_health_metrics get_history and merges server entries
+
+		*/
+
+		/*
+		 * Into localStorage so historical data survives device changes.
+
+		*/
 		'function hwSyncFromServer(){' .
 			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
-			/* 90 days gives 3 months of history for streak/goal calculations */
+
+			/*
+			 * 90 days gives 3 months of history for streak/goal calculations
+
+		 */
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_health_metrics",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
@@ -4625,7 +5777,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
 				'd.result.history.forEach(function(row){' .
 					'var k=row.date;if(!k)return;' .
-					/* Only fill dates that have no local data yet */
+
+					/*
+					 * Only fill dates that have no local data yet
+
+				 */
 					'var existing=null;try{existing=localStorage.getItem(SK_PREFIX+k);}catch(e){}' .
 					'if(!existing){' .
 						'try{localStorage.setItem(SK_PREFIX+k,JSON.stringify({' .
@@ -4639,7 +5795,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── New member form ── */
+		/*
+		 * ── New member form ──
+
+		*/
 		'var hwNewMemberType="person";' .
 
 		'window.hwSetMemberType=function(type,btn){' .
@@ -4654,7 +5813,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'var form=document.getElementById("hw-new-member-form");' .
 			'if(list)list.style.display="none";' .
 			'if(form)form.style.display="block";' .
-			/* Reset form state */
+
+			/*
+			 * Reset form state
+
+		 */
 			'hwNewMemberType="person";' .
 			'var btnPerson=document.getElementById("hw-type-btn-person");' .
 			'var btnPet=document.getElementById("hw-type-btn-pet");' .
@@ -4699,7 +5862,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'if(errEl){errEl.textContent="' . esc_js( __( 'Could not create member. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
 					'return;' .
 				'}' .
-				/* Auto-select the newly created member */
+
+				/*
+				 * Auto-select the newly created member
+
+			 */
 				'hwSelectMember(memberId,name);' .
 			'})' .
 			'.catch(function(){' .
@@ -4708,7 +5875,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'});' .
 		'};' .
 
-		/* ── Tab switcher ── */
+		/*
+		 * ── Tab switcher ──
+
+		*/
 		'window.hwTab=function(tab,btn){' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(p){p.classList.remove("tma-active");});' .
 			'document.querySelectorAll(".tma-nav-btn").forEach(function(b){b.classList.remove("tma-active");});' .
@@ -4719,7 +5889,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(tab==="goals")hwRenderGoals();' .
 		'};' .
 
-		/* ── Dashboard ── */
+		/*
+		 * ── Dashboard ──
+
+		*/
 		'window.hwRefresh=function(){hwRenderStreak();hwRenderKPIs();hwLoadCharts();};' .
 
 		'function hwRenderStreak(){' .
@@ -4729,7 +5902,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'function hwRenderKPIs(){' .
 			'var log=hwLoadLog();' .
 			'var sodium=log.sodium||0;' .
-			/* Sodium status: kidney-safe goal <2300mg/day; alert >3000mg */
+
+			/*
+			 * Sodium status: kidney-safe goal <2300mg/day; alert >3000mg
+
+		 */
 			'var sodiumColor=sodium>3000?"#c62828":sodium>2300?"#e65100":"#0277bd";' .
 			'var kpis=[' .
 				'{icon:"&#128099;",label:"' . esc_js( __( 'Steps', 'mcp-ai-wpoos-pro' ) ) . '",val:log.steps,goal:10000,unit:"",color:"#2e7d32"},' .
@@ -4750,7 +5927,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'}).join("");' .
 		'}' .
 
-		/* Chart.js loader */
+		/*
+		 * Chart.js loader
+
+		*/
 		'function hwLoadCharts(){' .
 			'if(window.Chart){hwRenderCharts();return;}' .
 			'if(!CHART_JS_URL){hwRenderCharts();return;}' .
@@ -4765,7 +5945,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'var labels=hist.map(function(h){return h.date.slice(5);});' .
 			'var stepData=hist.map(function(h){return h.steps||0;});' .
 			'var accent=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#2e7d32";' .
-			/* Calorie macro split (demo: 40 % carbs, 30 % protein, 30 % fat) */
+
+			/*
+			 * Calorie macro split (demo: 40 % carbs, 30 % protein, 30 % fat)
+
+		 */
 			'var carbs=Math.round((log.calories||0)*0.40);' .
 			'var protein=Math.round((log.calories||0)*0.30);' .
 			'var fat=(log.calories||0)-carbs-protein;' .
@@ -4785,12 +5969,20 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'var leg=document.getElementById("tma-hw-donut-leg");' .
 			'if(leg)leg.innerHTML=legItem("#4caf50","' . esc_js( __( 'Carbs', 'mcp-ai-wpoos-pro' ) ) . '",carbs)+legItem("#ff9800","' . esc_js( __( 'Protein', 'mcp-ai-wpoos-pro' ) ) . '",protein)+legItem("#ef5350","' . esc_js( __( 'Fat', 'mcp-ai-wpoos-pro' ) ) . '",fat);' .
 			'if(!window.Chart)return;' .
-			/* Doughnut */
+
+			/*
+			 * Doughnut
+
+		 */
 			'var dc=document.getElementById("tma-hw-donut");' .
 			'if(dc){if(donutChartInst)donutChartInst.destroy();' .
 				'donutChartInst=new Chart(dc,{type:"doughnut",data:{labels:["' . esc_js( __( 'Carbs', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Protein', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Fat', 'mcp-ai-wpoos-pro' ) ) . '"],datasets:[{data:[carbs,protein,fat],backgroundColor:["#4caf50","#ff9800","#ef5350"],borderWidth:0}]},options:{cutout:"72%",plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+": "+c.raw+"kcal";}}}},animation:{animateScale:true}}});' .
 			'}' .
-			/* Line */
+
+			/*
+			 * Line
+
+		 */
 			'var lc=document.getElementById("tma-hw-line");' .
 			'if(lc){if(lineChartInst)lineChartInst.destroy();' .
 				'lineChartInst=new Chart(lc,{type:"line",data:{labels:labels,datasets:[{label:"' . esc_js( __( 'Steps', 'mcp-ai-wpoos-pro' ) ) . '",data:stepData,borderColor:accent,backgroundColor:accent+"22",tension:.4,fill:true,pointRadius:4,pointBackgroundColor:accent}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+" ' . esc_js( __( 'steps', 'mcp-ai-wpoos-pro' ) ) . '";}}}},' .
@@ -4799,7 +5991,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'}' .
 		'}' .
 
-		/* ── Log tab ── */
+		/*
+		 * ── Log tab ──
+
+		*/
 		'function hwSyncUI(){' .
 			'var sv=document.getElementById("hw-steps-val");if(sv)sv.textContent=LOG.steps;' .
 			'var wv=document.getElementById("hw-water-val");if(wv)wv.textContent=LOG.water;' .
@@ -4826,7 +6021,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		'window.hwSaveLog=function(){' .
 			'hwStoreLog(LOG);tmaHaptic("success");' .
-			/* Optional server-side persistence when a member is resolved — silent on error */
+
+			/*
+			 * Optional server-side persistence when a member is resolved — silent on error
+
+		 */
 			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
 				'fetch(TOOLS_EXEC,{method:"POST",' .
 					'headers:tmaToolHeaders(),' .
@@ -4839,7 +6038,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
 		'};' .
 
-		/* ── Goals tab ── */
+		/*
+		 * ── Goals tab ──
+
+		*/
 		'window.hwRenderGoals=function(){' .
 			'var hist=hwLoadHistory();' .
 			'var tot={steps:0,water:0,sleep:0,calories:0,sodium:0};' .
@@ -4849,14 +6051,22 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'{icon:"&#128167;",label:"' . esc_js( __( 'Water (glasses)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.water,goal:56},' .
 				'{icon:"&#128164;",label:"' . esc_js( __( 'Sleep total (hrs)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.sleep,goal:56},' .
 				'{icon:"&#128293;",label:"' . esc_js( __( 'Calories (kcal)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.calories,goal:14000},' .
-				/* Sodium goal: ≤2300 mg/day × 7 = 16100 mg/week — inverse goal (lower is better) */
+
+				/*
+				 * Sodium goal: ≤2300 mg/day × 7 = 16100 mg/week — inverse goal (lower is better)
+
+			 */
 				'{icon:"&#9889;",label:"' . esc_js( __( 'Sodium (mg) — kidney goal <2300/day', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.sodium,goal:16100,inverse:true}' .
 			'];' .
 			'var streak=hwCalcStreak();' .
 			'var gl=document.getElementById("tma-hw-goals-list");' .
 			'if(gl)gl.innerHTML=goals.map(function(g){' .
 				'var pct=g.goal?Math.min(100,Math.round((g.val/g.goal)*100)):0;' .
-				/* For inverse goals (lower = better), green means low usage */
+
+				/*
+				 * For inverse goals (lower = better), green means low usage
+
+			 */
 				'var fillColor=g.inverse?(pct<=100?"#2e7d32":"#c62828"):"var(--tma-btn)";' .
 				'return \'<div class="tma-hw-goal-item">\'+' .
 					'\'<div class="tma-hw-goal-header">\'+' .
@@ -4883,7 +6093,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'}).join("");' .
 		'};' .
 
-		/* ── AI Coach ── */
+		/*
+		 * ── AI Coach ──
+
+		*/
 		'window.hwCoachSend=function(){' .
 			'var inp=document.getElementById("tma-hw-coach-input");if(!inp)return;' .
 			'var msg=inp.value.trim();if(!msg)return;inp.value="";tmaHaptic("medium");' .
@@ -4891,7 +6104,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(msgs){var um=document.createElement("div");um.className="tma-hw-coach-msg user";um.textContent=msg;msgs.appendChild(um);msgs.scrollTop=msgs.scrollHeight;}' .
 			'var loadEl=null;' .
 			'if(msgs){loadEl=document.createElement("div");loadEl.className="tma-hw-coach-msg bot";loadEl.textContent="' . esc_js( __( '…', 'mcp-ai-wpoos-pro' ) ) . '";msgs.appendChild(loadEl);msgs.scrollTop=msgs.scrollHeight;}' .
-			/* Prepend today's wellness data as context on the first message. */
+
+			/*
+			 * Prepend today's wellness data as context on the first message.
+
+		 */
 			'var log=hwLoadLog();' .
 			'if(!coachHist.length){' .
 				'var moodLabels=["","' . esc_js( __( 'Very Poor', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Poor', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Neutral', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Good', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Excellent', 'mcp-ai-wpoos-pro' ) ) . '"];' .
@@ -4929,25 +6146,54 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'});' .
 		'};' .
 
-		/* ── Init ── */
-		/* Helper: hide the member picker overlay and update the header label.    */
-		/* Called from both the localStorage branch and the server-ID branch.    */
+		/*
+		── Init ──
+
+		*/
+
+		/*
+		Helper: hide the member picker overlay and update the header label.
+
+		*/
+
+		/*
+		 * Called from both the localStorage branch and the server-ID branch.
+
+		*/
 		'function hwActivateMember(){' .
 			'hwHideMemberPicker();' .
 			'var lbl=document.getElementById("tma-hw-member-label");' .
 			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
 		'}' .
 
-		/* Priority order for member selection:                                  */
-		/*  1. localStorage (fastest – avoids any flicker)                       */
-		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
-		/*  3. Show member picker (user must choose or create)                   */
+		/*
+		Priority order for member selection:
+
+		*/
+
+		/*
+			1. localStorage (fastest – avoids any flicker)
+
+		 */
+
+		/*
+			2. SERVER_MEMBER_ID (server resolved the WP user's linked member)
+
+		 */
+
+		/*
+		 *  3. Show member picker (user must choose or create)
+
+		*/
 		'hwLoadSavedMember();' .
 		'if(MEMBER_ID){' .
 			'hwActivateMember();' .
 		'}else if(SERVER_MEMBER_ID){' .
-			/* Server already knows which member belongs to this user – auto-select
-			 * without showing the picker so data loads immediately. */
+
+			/*
+			Server already knows which member belongs to this user – auto-select
+			 * without showing the picker so data loads immediately.
+			 */
 			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
 			'try{localStorage.setItem("hw_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
 			'hwActivateMember();' .
@@ -4955,11 +6201,15 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'hwShowMemberPicker();' .
 		'}' .
 		'hwInitSession();LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
-		/* Restore saved mood selection */
+
+		/*
+		 * Restore saved mood selection
+
+		*/
 		'if(LOG.mood){var mb=document.querySelector(".tma-hw-mood-btn[data-mood=\'"+LOG.mood+"\']");if(mb)mb.classList.add("selected");}' .
 		'if(MEMBER_ID)hwSyncFromServer();' .
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
@@ -4980,37 +6230,66 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
  */
 class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'medical_vitals';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Medical Vitals Tracking', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Treatment plan monitoring with vital-sign tracking (BP, HR, SpO2, temperature, glucose), kidney health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus), 7-day trend charts, medication dosage scheduling, and an AI doctor assistant.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'health_wellness';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🩺';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#1565c0';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
 		$site_name       = esc_html( $ctx['site_name'] );
 		$tools_exec      = $ctx['tools_url'] . '/execute';
@@ -5036,17 +6315,26 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-medical-vitals-template">' .
 
-		/* ── Styles ─────────────────────────────────────────────────────────── */
+		/*
+		 * ── Styles ───────────────────────────────────────────────────────────
+
+		*/
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* Theme overrides */
+		/*
+		 * Theme overrides
+
+		*/
 		':root{--tma-btn:#1565c0;--tma-accent:#1565c0;--tma-secondary-bg:#e3f2fd;}' .
 		'.mv-normal{color:#2e7d32}.mv-warning{color:#e65100}.mv-alert{color:#c62828}' .
 		'.mv-badge-normal{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
 		'.mv-badge-warning{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
 		'.mv-badge-alert{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
 
-		/* Vitals KPI grid */
+		/*
+		 * Vitals KPI grid
+
+		*/
 		'.mv-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
 		'.mv-kpi{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:12px;position:relative;overflow:hidden}' .
@@ -5058,7 +6346,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-kpi-status{font-size:10px;font-weight:600;margin-top:4px;padding:2px 6px;border-radius:20px;border:1px solid;display:inline-block}' .
 		'.mv-kpi-time{font-size:10px;color:var(--tma-hint);margin-top:3px}' .
 
-		/* Kidney section */
+		/*
+		 * Kidney section
+
+		*/
 		'.mv-lab-divider{display:flex;align-items:center;gap:8px;margin:12px 0 10px;' .
 			'font-size:11px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.6px}' .
 		'.mv-lab-divider::before,.mv-lab-divider::after{content:"";flex:1;height:1px;background:var(--tma-border)}' .
@@ -5073,16 +6364,25 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-banner-sub{font-size:11px;opacity:.85;margin-top:2px}' .
 		'.mv-banner-icon{font-size:28px}' .
 
-		/* Scroll wrapper */
+		/*
+		 * Scroll wrapper
+
+		*/
 		'.mv-scroll{overflow-y:auto;height:100%;-webkit-overflow-scrolling:touch}' .
 
-		/* Chart cards */
+		/*
+		 * Chart cards
+
+		*/
 		'.mv-chart-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:14px;margin:0 12px 10px}' .
 		'.mv-chart-title{font-size:13px;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}' .
 		'.mv-chart-range{font-size:10px;color:var(--tma-hint);font-weight:400}' .
 
-		/* Log form */
+		/*
+		 * Log form
+
+		*/
 		'.mv-log-wrap{padding:12px}' .
 		'.mv-log-section{margin-bottom:14px}' .
 		'.mv-log-label{font-size:12px;font-weight:600;color:var(--tma-hint);text-transform:uppercase;' .
@@ -5093,7 +6393,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'color:var(--tma-btn);border-radius:8px;padding:10px;text-align:center;font-size:13px;' .
 			'font-weight:600;display:none;margin-bottom:10px}' .
 
-		/* Dosage list */
+		/*
+		 * Dosage list
+
+		*/
 		'.mv-dosage-wrap{padding:12px}' .
 		'.mv-med-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:12px;margin-bottom:10px}' .
@@ -5109,7 +6412,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-add-med-form{background:var(--tma-secondary-bg);border-radius:var(--tma-radius);padding:12px;margin-top:4px;display:none}' .
 		'.mv-empty{text-align:center;color:var(--tma-hint);font-size:13px;padding:24px 0}' .
 
-		/* Doctor (AI) chat */
+		/*
+		 * Doctor (AI) chat
+
+		*/
 		'.mv-doctor-wrap{display:flex;flex-direction:column;height:100%}' .
 		'.mv-doctor-msgs{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}' .
 		'.mv-doctor-msg{max-width:84%;margin-bottom:10px;padding:10px 12px;border-radius:12px;' .
@@ -5126,7 +6432,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'background:var(--tma-btn);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;' .
 			'display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}' .
 
-		/* Member picker overlay — shared styles (duplicated from hw template so each template is self-contained) */
+		/*
+		 * Member picker overlay — shared styles (duplicated from hw template so each template is self-contained)
+
+		*/
 		'.tma-member-picker{position:fixed;inset:0;background:var(--tma-bg);z-index:900;' .
 			'display:none;flex-direction:column;align-items:center;padding:28px 16px 16px;overflow-y:auto}' .
 		'.tma-member-picker-icon{font-size:48px;line-height:1;margin-bottom:12px}' .
@@ -5145,7 +6454,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.tma-header-member{font-size:11px;color:var(--tma-btn);font-weight:600;' .
 			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}' .
 
-		/* New-member creation form inside the member picker */
+		/*
+		 * New-member creation form inside the member picker
+
+		*/
 		'.mv-new-member-form{width:100%;max-width:420px;background:var(--tma-section-bg);' .
 			'border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;display:none}' .
 		'.mv-new-member-form-title{font-size:15px;font-weight:700;color:var(--tma-text);margin-bottom:12px}' .
@@ -5157,13 +6469,19 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-new-member-err{color:#c62828;font-size:12px;margin-bottom:8px;display:none}' .
 		'.mv-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
 
-		/* Date range segmented control (trends tab) */
+		/*
+		 * Date range segmented control (trends tab)
+
+		*/
 		'.mv-range-bar{display:flex;gap:0;border:1px solid var(--tma-border);border-radius:20px;overflow:hidden;margin:10px 12px 6px}' .
 		'.mv-range-btn{flex:1;padding:6px 0;border:none;background:transparent;color:var(--tma-hint);' .
 			'font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center}' .
 		'.mv-range-btn.active{background:var(--tma-btn);color:#fff}' .
 
-		/* Settings tab */
+		/*
+		 * Settings tab
+
+		*/
 		'.mv-settings-wrap{padding:12px}' .
 		'.mv-settings-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:14px;margin-bottom:12px}' .
@@ -5178,7 +6496,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'background:none;color:var(--tma-btn);cursor:pointer;-webkit-tap-highlight-color:transparent}' .
 		'.mv-settings-btn.danger{border-color:#c62828;color:#c62828}' .
 
-		/* Inline member row inside settings — compact version of the picker cards */
+		/*
+		 * Inline member row inside settings — compact version of the picker cards
+
+		*/
 		'.mv-settings-member-row{display:flex;align-items:center;gap:10px;padding:10px 0;' .
 			'border-bottom:1px solid var(--tma-border);cursor:pointer;-webkit-tap-highlight-color:transparent}' .
 		'.mv-settings-member-row:last-child{border-bottom:none}' .
@@ -5186,7 +6507,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-settings-member-check{margin-left:auto;font-size:16px;color:var(--tma-btn);opacity:0}' .
 		'.mv-settings-member-row.selected .mv-settings-member-check{opacity:1}' .
 
-		/* Prescription cards */
+		/*
+		 * Prescription cards
+
+		*/
 		'.mv-rx-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:12px;margin-bottom:10px;position:relative;overflow:hidden}' .
 		'.mv-rx-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--mv-rx-color,#1565c0)}' .
@@ -5200,7 +6524,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-rx-badge.expired{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
 		'.mv-rx-detail{font-size:12px;color:var(--tma-hint);margin-bottom:2px}' .
 
-		/* History log cards */
+		/*
+		 * History log cards
+
+		*/
 		'.mv-hist-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
 			'border-radius:var(--tma-radius);padding:12px;margin-bottom:8px;cursor:pointer;' .
 			'-webkit-tap-highlight-color:transparent}' .
@@ -5216,15 +6543,24 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-hist-detail-label{color:var(--tma-hint)}' .
 		'.mv-hist-detail-val{font-weight:600;color:var(--tma-text)}' .
 
-		/* Font size setting buttons */
+		/*
+		 * Font size setting buttons
+
+		*/
 		'.mv-font-btn{min-width:36px;text-align:center;font-weight:600}' .
 		'.mv-font-btn.active{background:var(--tma-btn);color:#fff;border-color:var(--tma-btn)}' .
 
-		/* Toggle switch knob */
+		/*
+		 * Toggle switch knob
+
+		*/
 		'input:checked+span{background:var(--tma-btn) !important}' .
 		'input:checked+span+.mv-toggle-knob{transform:translateX(18px)}' .
 
-		/* Font size CSS custom properties (medium is default) */
+		/*
+		 * Font size CSS custom properties (medium is default)
+
+		*/
 		'.mv-font-small{--mv-base:12px;--mv-label:10px;--mv-kpi:17px;--mv-section:12px;--mv-hint:9px}' .
 		'.mv-font-large{--mv-base:16px;--mv-label:14px;--mv-kpi:24px;--mv-section:16px;--mv-hint:12px}' .
 		'.mv-font-small .mv-kpi-val{font-size:var(--mv-kpi)}' .
@@ -5244,7 +6580,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-font-small .mv-settings-label,.mv-font-small .mv-settings-value{font-size:11px}' .
 		'.mv-font-small .tma-input{font-size:11px}' .
 
-		/* Compact mode */
+		/*
+		 * Compact mode
+
+		*/
 		'.mv-compact .mv-kpi{padding:8px}' .
 		'.mv-compact .mv-kpi-grid{gap:6px;padding:6px 8px}' .
 		'.mv-compact .mv-med-card,.mv-compact .mv-rx-card,.mv-compact .mv-hist-card{padding:8px;margin-bottom:6px}' .
@@ -5252,7 +6591,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-compact .mv-banner{padding:8px 10px;margin:6px 8px}' .
 		'</style>' .
 
-		/* ── Member picker overlay ─────────────────────────────────────────── */
+		/*
+		 * ── Member picker overlay ───────────────────────────────────────────
+
+		*/
 		'<div class="tma-member-picker" id="tma-member-picker">' .
 			'<div class="tma-member-picker-icon">&#128101;</div>' .
 			'<div class="tma-member-picker-title">' . esc_html__( 'Select Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -5260,7 +6602,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'<div class="tma-member-list" id="tma-mv-member-list">' .
 				'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
 			'</div>' .
-			/* New member creation form (hidden by default, shown on "+ New Member" tap) */
+
+			/*
+			 * New member creation form (hidden by default, shown on "+ New Member" tap)
+
+		 */
 			'<div class="mv-new-member-form" id="mv-new-member-form">' .
 				'<div class="mv-new-member-form-title">&#128100; ' . esc_html__( 'Add New Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'<div class="mv-new-member-type-row">' .
@@ -5294,10 +6640,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
-		/* ── Shell ─────────────────────────────────────────────────────────── */
+		/*
+		 * ── Shell ───────────────────────────────────────────────────────────
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-		/* Header */
+		/*
+		 * Header
+
+		*/
 		'<header class="tma-header">' .
 			'<div class="tma-avatar-wrap"><div class="tma-avatar-initials" style="background:#1565c0;font-size:18px">🩺</div></div>' .
 			'<div class="tma-header-info">' .
@@ -5317,7 +6669,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'<div class="tma-content">' .
 
-		/* ── Dashboard ── */
+		/*
+		 * ── Dashboard ──
+
+		*/
 		'<div class="tma-tab-pane tma-active" id="mv-tab-dashboard">' .
 			'<div class="mv-scroll" id="mv-dash-scroll">' .
 				'<div class="mv-banner">' .
@@ -5330,7 +6685,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'<div class="mv-kpi-grid" id="mv-kpi-grid">' .
 					'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
-				/* Kidney health section */
+
+				/*
+				 * Kidney health section
+
+			 */
 				'<div class="mv-kidney-section-title">&#129506; ' . esc_html__( 'Kidney Health', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'<div class="mv-kpi-grid" id="mv-kidney-kpi-grid" style="padding-top:6px">' .
 					'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_html__( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -5345,12 +6704,18 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
-		/* ── Log ── */
+		/*
+		 * ── Log ──
+
+		*/
 		'<div class="tma-tab-pane" id="mv-tab-log">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-log-wrap">' .
 
-					/* History list (default view) */
+					/*
+					 * History list (default view)
+
+				 */
 					'<div id="mv-log-history-view">' .
 						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 							'<div class="tma-section-title" style="padding:0">&#128197; ' . esc_html__( 'Vitals History', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -5359,7 +6724,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'<div id="mv-log-history-list"><div class="mv-empty">' . esc_html__( 'No vitals recorded yet.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 					'</div>' .
 
-					/* Record form (hidden by default) */
+					/*
+					 * Record form (hidden by default)
+
+				 */
 					'<div id="mv-log-form-view" style="display:none">' .
 						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 							'<div class="tma-section-title" style="padding:0">' . esc_html__( 'Record Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -5367,7 +6735,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'</div>' .
 						'<div class="mv-log-saved" id="mv-log-saved">&#10003; ' . esc_html__( 'Reading saved!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-						/* Blood Pressure */
+						/*
+						 * Blood Pressure
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#129728; ' . esc_html__( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<div class="mv-bp-row">' .
@@ -5377,52 +6748,79 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 							'</div>' .
 						'</div>' .
 
-						/* Heart Rate */
+						/*
+						 * Heart Rate
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#10084; ' . esc_html__( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-hr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="30" max="250" />' .
 						'</div>' .
 
-						/* SpO2 */
+						/*
+						 * SpO2
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#128164; ' . esc_html__( 'Blood Oxygen SpO₂ (%)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-spo2" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98', 'mcp-ai-wpoos-pro' ) . '" min="70" max="100" step="1" />' .
 						'</div>' .
 
-						/* Temperature */
+						/*
+						 * Temperature
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#127777; ' . esc_html__( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-temp" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98.6', 'mcp-ai-wpoos-pro' ) . '" min="90" max="110" step="0.1" />' .
 						'</div>' .
 
-						/* Glucose */
+						/*
+						 * Glucose
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#128137; ' . esc_html__( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-glucose" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 95', 'mcp-ai-wpoos-pro' ) . '" min="20" max="600" />' .
 						'</div>' .
 
-						/* ── Kidney Lab Values ── */
+						/*
+						 * ── Kidney Lab Values ──
+
+					 */
 						'<div class="mv-lab-divider">&#129506; ' . esc_html__( 'Kidney Lab Values', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-						/* eGFR */
+						/*
+						 * EGFR
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">eGFR (mL/min/1.73m²)</label>' .
 							'<input type="number" id="mv-egfr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" step="1" />' .
 						'</div>' .
 
-						/* Creatinine */
+						/*
+						 * Creatinine
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-creatinine" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 0.9', 'mcp-ai-wpoos-pro' ) . '" min="0.1" max="20" step="0.1" />' .
 						'</div>' .
 
-						/* BUN */
+						/*
+						 * BUN
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#129514; ' . esc_html__( 'BUN – Blood Urea Nitrogen (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-bun" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 14', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" />' .
 						'</div>' .
 
-						/* Two-column row: Potassium + Sodium */
+						/*
+						 * Two-column row: Potassium + Sodium
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#9889; ' . esc_html__( 'Electrolytes (mEq/L)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<div style="display:flex;gap:8px">' .
@@ -5431,25 +6829,37 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 							'</div>' .
 						'</div>' .
 
-						/* Phosphorus */
+						/*
+						 * Phosphorus
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-phosphorus" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 3.5', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="15" step="0.1" />' .
 						'</div>' .
 
-						/* Albumin */
+						/*
+						 * Albumin
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
 						'</div>' .
 
-						/* Hemoglobin */
+						/*
+						 * Hemoglobin
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#129978; ' . esc_html__( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<input type="number" id="mv-hemoglobin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 13.5', 'mcp-ai-wpoos-pro' ) . '" min="1" max="25" step="0.1" />' .
 						'</div>' .
 
-						/* Notes */
+						/*
+						 * Notes
+
+					 */
 						'<div class="mv-log-section">' .
 							'<label class="mv-log-label">&#128221; ' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
 							'<textarea id="mv-notes" class="tma-input" rows="3" style="resize:none;width:100%" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
@@ -5461,7 +6871,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
-		/* ── Trends ── */
+		/*
+		 * ── Trends ──
+
+		*/
 		'<div class="tma-tab-pane" id="mv-tab-trends">' .
 			'<div class="mv-scroll" id="mv-trends-scroll">' .
 				'<div style="padding:10px 12px 0">' .
@@ -5478,12 +6891,18 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
-		/* ── Dosage ── */
+		/*
+		 * ── Dosage ──
+
+		*/
 		'<div class="tma-tab-pane" id="mv-tab-dosage">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-dosage-wrap">' .
 
-					/* Server prescriptions section */
+					/*
+					 * Server prescriptions section
+
+				 */
 					'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 						'<div class="tma-section-title" style="padding:0">&#128203; ' . esc_html__( 'Prescriptions', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 12px" onclick="mvFetchPrescriptions()">' . esc_html__( '↻ Refresh', 'mcp-ai-wpoos-pro' ) . '</button>' .
@@ -5497,7 +6916,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 12px" onclick="mvToggleAddMed()">' . esc_html__( '+ Add', 'mcp-ai-wpoos-pro' ) . '</button>' .
 					'</div>' .
 
-					/* Add medication form (hidden by default) */
+					/*
+					 * Add medication form (hidden by default)
+
+				 */
 					'<div class="mv-add-med-form" id="mv-add-med-form">' .
 						'<div style="font-size:13px;font-weight:600;margin-bottom:10px">&#128138; ' . esc_html__( 'Add Medication', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div style="margin-bottom:8px"><label class="mv-log-label">' . esc_html__( 'Medication Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
@@ -5521,7 +6943,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
-		/* ── Doctor ── */
+		/*
+		 * ── Doctor ──
+
+		*/
 		'<div class="tma-tab-pane" id="mv-tab-doctor">' .
 			'<div class="mv-doctor-wrap">' .
 				'<div class="mv-doctor-msgs" id="mv-doctor-msgs">' .
@@ -5534,12 +6959,18 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'<div class="tma-tab-pane" id="mv-tab-settings">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-settings-wrap">' .
 
-					/* Default member selector card */
+					/*
+					 * Default member selector card
+
+				 */
 					'<div class="mv-settings-card">' .
 						'<div class="mv-settings-card-title">&#128101; ' . esc_html__( 'Default Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div style="font-size:12px;color:var(--tma-hint);margin-bottom:10px">' . esc_html__( 'Select the member whose data is loaded by default when the app opens.', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -5551,7 +6982,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'</div>' .
 					'</div>' .
 
-					/* Data management card */
+					/*
+					 * Data management card
+
+				 */
 					'<div class="mv-settings-card">' .
 						'<div class="mv-settings-card-title">&#128266; ' . esc_html__( 'Local Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="mv-settings-row">' .
@@ -5568,7 +7002,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'</div>' .
 					'</div>' .
 
-					/* Display / font size card */
+					/*
+					 * Display / font size card
+
+				 */
 					'<div class="mv-settings-card">' .
 						'<div class="mv-settings-card-title">&#127912; ' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div style="font-size:12px;color:var(--tma-hint);margin-bottom:10px">' . esc_html__( 'Adjust the font size and styling of the app.', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -5590,7 +7027,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'</div>' .
 					'</div>' .
 
-					/* About card */
+					/*
+					 * About card
+
+				 */
 					'<div class="mv-settings-card">' .
 						'<div class="mv-settings-card-title">&#8505; ' . esc_html__( 'About', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="mv-settings-row">' .
@@ -5609,7 +7049,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'</div>' . /* .tma-content */
 
-		/* Bottom navigation */
+		/*
+		 * Bottom navigation
+
+		*/
 		'<nav class="tma-nav">' .
 			'<button class="tma-nav-btn tma-active" id="mv-nav-dashboard" onclick="mvTab(\'dashboard\',this)">' .
 				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' .
@@ -5639,11 +7082,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'</div>' . /* .tma-shell */
 
-		/* ── JavaScript ─────────────────────────────────────────────────────── */
+		/*
+		 * ── JavaScript ───────────────────────────────────────────────────────
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* Config */
+		/*
+		 * Config
+
+		*/
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
@@ -5655,13 +7104,28 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'var MEMBER_NAME="";' .
 		'var TMA_TOKEN="";' .
 		'var doctorHist=[];' .
-		/* Server-resolved member for the current WordPress user (0 when unknown) */
+
+		/*
+		 * Server-resolved member for the current WordPress user (0 when unknown)
+
+		*/
 		'var SERVER_MEMBER_ID=' . wp_json_encode( $server_member_id ) . ';' .
 		'var SERVER_MEMBER_NAME=' . wp_json_encode( $server_member_name ) . ';' .
 
-		/* ── Markdown renderer loader ── */
-		/* Load the lightweight TMA markdown renderer on demand so doctor    */
-		/* replies are displayed as formatted HTML instead of raw markdown.  */
+		/*
+		── Markdown renderer loader ──
+
+		*/
+
+		/*
+		Load the lightweight TMA markdown renderer on demand so doctor
+
+		*/
+
+		/*
+		 * Replies are displayed as formatted HTML instead of raw markdown.
+
+		*/
 		'function mvLoadMarkdown(cb){' .
 			'if(window.wpMcpAiChatMarkdown){cb();return;}' .
 			'if(!MARKDOWN_JS_URL){cb();return;}' .
@@ -5670,7 +7134,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'document.head.appendChild(s);' .
 		'}' .
 
-		/* ── Render reply using the preferred markdown method ── */
+		/*
+		 * ── Render reply using the preferred markdown method ──
+
+		*/
 		'function mvRenderReply(el,text){' .
 			'if(el&&window.wpMcpAiChatMarkdown&&window.wpMcpAiChatMarkdown.renderMarkdown){' .
 				'el.innerHTML=window.wpMcpAiChatMarkdown.renderMarkdown(text);' .
@@ -5679,10 +7146,25 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'}' .
 		'}' .
 
-		/* ── Session init: authenticate via Telegram initData ── */
-		/* Calls /validate on page load so the doctor tab chat requests are  */
-		/* authenticated even when Telegram's WebView does not persist the   */
-		/* WordPress auth cookie between page loads.                          */
+		/*
+		── Session init: authenticate via Telegram initData ──
+
+		*/
+
+		/*
+		 * Calls /validate on page load so the doctor tab chat requests are
+
+		 */
+
+		/*
+		Authenticated even when Telegram's WebView does not persist the
+
+		 */
+
+		/*
+		 * WordPress auth cookie between page loads.
+
+		*/
 		'function mvInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -5694,40 +7176,67 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				'if(!d)return;' .
-				/* Update the REST nonce so authenticated requests succeed. */
+
+				/*
+				 * Update the REST nonce so authenticated requests succeed.
+
+			 */
 				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
-				/* Store the TMA session token for authenticated headers. */
+
+				/*
+				 * Store the TMA session token for authenticated headers.
+
+			 */
 				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
-				/* Re-fetch members with fresh auth if the picker is still open */
+
+				/*
+				 * Re-fetch members with fresh auth if the picker is still open
+
+			 */
 				'var picker=document.getElementById("tma-member-picker");' .
 				'if(picker&&picker.style.display==="flex"){mvFetchMembers();}' .
-				/* Re-sync server vitals now that auth is established.
+
+				/*
+				Re-sync server vitals now that auth is established.
 				 * mvSyncFromServer() is called at page-init before this async
 				 * /validate response arrives, so Telegram users whose WP auth
 				 * cookie did not persist get a silent auth failure on the first
-				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				 * attempt.  Retry here with the fresh nonce / TMA token.
+				 */
 				'if(MEMBER_ID)mvSyncFromServer();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Storage helpers ── */
+		/*
+		 * ── Storage helpers ──
+
+		*/
 		'var SK_READINGS="mv_readings";' .
 		'var SK_MEDS="mv_meds";' .
 		'function mvTodayKey(){return new Date().toISOString().slice(0,10);}' .
 
-		/* Load all stored readings (array, newest first) */
+		/*
+		 * Load all stored readings (array, newest first)
+
+		*/
 		'function mvLoadReadings(){' .
 			'try{var v=localStorage.getItem(SK_READINGS);return v?JSON.parse(v):[];}' .
 			'catch(e){return [];}' .
 		'}' .
 
-		/* Save readings list */
+		/*
+		 * Save readings list
+
+		*/
 		'function mvStoreReadings(arr){' .
 			'try{localStorage.setItem(SK_READINGS,JSON.stringify(arr));}catch(e){}' .
 		'}' .
 
-		/* Load last N days of readings (one per day, last reading of that day) */
+		/*
+		 * Load last N days of readings (one per day, last reading of that day)
+
+		*/
 		'function mvLoadHistory(days){' .
 			'if(!days)days=7;' .
 			'var all=mvLoadReadings();' .
@@ -5742,7 +7251,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'return hist;' .
 		'}' .
 
-		/* Load medications list */
+		/*
+		 * Load medications list
+
+		*/
 		'function mvLoadMeds(){' .
 			'try{var v=localStorage.getItem(SK_MEDS);return v?JSON.parse(v):[];}' .
 			'catch(e){return [];}' .
@@ -5752,10 +7264,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'try{localStorage.setItem(SK_MEDS,JSON.stringify(arr));}catch(e){}' .
 		'}' .
 
-		/* HTML-escape helper */
+		/*
+		 * HTML-escape helper
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 
-		/* ── Member picker ── */
+		/*
+		 * ── Member picker ──
+
+		*/
 		'function mvLoadSavedMember(){' .
 			'try{' .
 				'var d=JSON.parse(localStorage.getItem("mv_member_id")||"null");' .
@@ -5766,14 +7284,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'function mvShowMemberPicker(){' .
 			'var p=document.getElementById("tma-member-picker");' .
 			'if(p)p.style.display="flex";' .
-			/* In Telegram WebView the TMA token is obtained asynchronously by
+
+			/*
+			In Telegram WebView the TMA token is obtained asynchronously by
 			 * mvInitSession().  Calling mvFetchMembers() before the token is
 			 * available sends an unauthenticated request that returns 403.
 			 * Skip the immediate fetch when we are inside a Telegram WebApp and
 			 * TMA_TOKEN has not yet been set; mvInitSession() will call
 			 * mvFetchMembers() once auth is established.  When the token is
 			 * already present (e.g. member-switch after first load) or we are
-			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			 * in a regular browser (no Telegram WebApp API), fetch immediately.
+			 */
 			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
 				'mvFetchMembers();' .
 			'}' .
@@ -5787,7 +7308,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'window.mvFetchMembers=function(){' .
 			'var list=document.getElementById("tma-mv-member-list");' .
 			'if(!list)return;' .
-			/* Shared error markup — used in both the failed-response and catch paths */
+
+			/*
+			 * Shared error markup — used in both the failed-response and catch paths
+
+		 */
 			'var mvErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="mvFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
@@ -5796,14 +7321,25 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
-				/* If the request failed (auth not yet established), keep the Loading… placeholder
+
+				/*
+				If the request failed (auth not yet established), keep the Loading… placeholder
 				 * so mvInitSession() can re-call mvFetchMembers() once auth succeeds.
-				 * Outside Telegram we also add a manual retry button so users are not stuck. */
+				 * Outside Telegram we also add a manual retry button so users are not stuck.
+				 */
 				'if(!d){if(list)list.innerHTML=mvErrHtml;return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
-				/* Auto-select when exactly one member exists — skip picker entirely */
+
+				/*
+				 * Auto-select when exactly one member exists — skip picker entirely
+
+			 */
 				'if(members.length===1){mvSelectMember(members[0].id,members[0].name);return;}' .
-				/* Build member cards (may be empty) then always append "+ New Member" */
+
+				/*
+				 * Build member cards (may be empty) then always append "+ New Member"
+
+			 */
 				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
 					'return\'<div class="tma-member-card" onclick="mvSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
@@ -5812,7 +7348,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
 						'+\'</div>\';' .
 				'}).join("");' .
-				/* Always show the New Member card at the bottom */
+
+				/*
+				 * Always show the New Member card at the bottom
+
+			 */
 				'var newCard=\'<div class="tma-member-card" onclick="mvShowNewMemberForm()" style="border-style:dashed;opacity:.85">\'' .
 					'+\'<div class="tma-member-card-icon" style="background:#78909c">+</div>\'' .
 					'+\'<div><div class="tma-member-card-name">' . esc_js( __( '+ New Member', 'mcp-ai-wpoos-pro' ) ) . '</div>\'' .
@@ -5829,7 +7369,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvHideMemberPicker();' .
 			'var lbl=document.getElementById("tma-mv-member-label");' .
 			'if(lbl)lbl.textContent=name;' .
-			/* Clear cached readings and pull fresh data from server for this member */
+
+			/*
+			 * Clear cached readings and pull fresh data from server for this member
+
+		 */
 			'try{localStorage.removeItem(SK_READINGS);}catch(e){}' .
 			'mvRefresh();mvRenderMeds();mvSyncFromServer();mvFetchPrescriptions();' .
 		'};' .
@@ -5839,7 +7383,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvShowMemberPicker();' .
 		'};' .
 
-		/* ── New member form ── */
+		/*
+		 * ── New member form ──
+
+		*/
 		'var mvNewMemberType="person";' .
 		'var mvNewMemberFromSettings=false;' .
 
@@ -5855,7 +7402,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var form=document.getElementById("mv-new-member-form");' .
 			'if(list)list.style.display="none";' .
 			'if(form)form.style.display="block";' .
-			/* Reset form state */
+
+			/*
+			 * Reset form state
+
+		 */
 			'mvNewMemberType="person";' .
 			'var btnPerson=document.getElementById("mv-type-btn-person");' .
 			'var btnPet=document.getElementById("mv-type-btn-pet");' .
@@ -5903,11 +7454,19 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'if(errEl){errEl.textContent="' . esc_js( __( 'Could not create member. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
 					'return;' .
 				'}' .
-				/* Auto-select the newly created member */
+
+				/*
+				 * Auto-select the newly created member
+
+			 */
 				'var fromSettings=mvNewMemberFromSettings;' .
 				'mvNewMemberFromSettings=false;' .
 				'mvSelectMember(memberId,name);' .
-				/* If triggered from Settings, navigate back to the settings tab */
+
+				/*
+				 * If triggered from Settings, navigate back to the settings tab
+
+			 */
 				'if(fromSettings){' .
 					'var settingsBtn=document.getElementById("mv-nav-settings");' .
 					'mvTab("settings",settingsBtn);' .
@@ -5918,7 +7477,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'if(errEl){errEl.textContent="' . esc_js( __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
 			'});' .
 		'};' .
-		/* Returns "normal" | "warning" | "alert" */
+
+		/*
+		 * Returns "normal" | "warning" | "alert"
+
+		*/
 		'function mvBpStatus(sys,dia){' .
 			'if(!sys||!dia)return"";' .
 			'if(sys>=180||dia>=120)return"alert";' .
@@ -5955,15 +7518,22 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'return"normal";' .
 		'}' .
 
-		/* ── Kidney status helpers ── */
-		/* eGFR → CKD stage label and severity */
+		/*
+		── Kidney status helpers ──
+
+		*/
+
+		/*
+		 * EGFR → CKD stage label and severity
+
+		*/
 		'function mvEgfrStatus(v){' .
 			'if(!v)return"";' .
-			'if(v<15)return"alert";' .  /* CKD Stage 5 */
-			'if(v<30)return"alert";' .  /* CKD Stage 4 */
+			'if(v<15)return"alert";' . /* CKD Stage 5 */
+			'if(v<30)return"alert";' . /* CKD Stage 4 */
 			'if(v<45)return"warning";' . /* CKD Stage 3b */
 			'if(v<60)return"warning";' . /* CKD Stage 3a */
-			'return"normal";' .         /* Stage 1-2 */
+			'return"normal";' . /* Stage 1-2 */
 		'}' .
 		'function mvEgfrStageLabel(v){' .
 			'if(!v)return"";' .
@@ -5988,7 +7558,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'}' .
 		'function mvPotassiumStatus(v){' .
 			'if(!v)return"";' .
-			/* Hyperkalemia or severe hypokalemia */
+
+			/*
+			 * Hyperkalemia or severe hypokalemia
+
+		 */
 			'if(v>=6.0||v<3.0)return"alert";' .
 			'if(v>=5.0||v<3.5)return"warning";' .
 			'return"normal";' .
@@ -6019,7 +7593,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'return"";' .
 		'}' .
 
-		/* ── Tab switcher ── */
+		/*
+		 * ── Tab switcher ──
+
+		*/
 		'window.mvTab=function(tab,btn){' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(p){p.classList.remove("tma-active");});' .
 			'document.querySelectorAll(".tma-nav-btn").forEach(function(b){b.classList.remove("tma-active");});' .
@@ -6033,16 +7610,31 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(tab==="settings")mvRenderSettings();' .
 		'};' .
 
-		/* ── Settings tab ── */
+		/*
+		 * ── Settings tab ──
+
+		*/
 		'window.mvRenderSettings=function(){' .
-			/* Update data counts */
+
+			/*
+			 * Update data counts
+
+		 */
 			'var readingCountEl=document.getElementById("mv-settings-reading-count");' .
 			'if(readingCountEl)readingCountEl.textContent=mvLoadReadings().length;' .
 			'var medCountEl=document.getElementById("mv-settings-med-count");' .
 			'if(medCountEl)medCountEl.textContent=mvLoadMeds().length;' .
-			/* Restore display settings UI */
+
+			/*
+			 * Restore display settings UI
+
+		 */
 			'mvRestoreDisplayUI();' .
-			/* Fetch members and render inline member selector */
+
+			/*
+			 * Fetch members and render inline member selector
+
+		 */
 			'var list=document.getElementById("mv-settings-member-list");' .
 			'if(!list)return;' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
@@ -6052,8 +7644,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
-				/* Auth failure – keep the Loading… placeholder rather than showing
-				 * 'No members yet' when the list may actually be non-empty. */
+
+				/*
+				Auth failure – keep the Loading… placeholder rather than showing
+				 * 'No members yet' when the list may actually be non-empty.
+				 */
 				'if(!d){return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
 				'if(!members.length){' .
@@ -6076,23 +7671,41 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'});' .
 		'};' .
 
-		/* Select a member as default directly from the Settings tab */
+		/*
+		 * Select a member as default directly from the Settings tab
+
+		*/
 		'window.mvSettingsSelectMember=function(id,name){' .
 			'MEMBER_ID=id;MEMBER_NAME=name;' .
 			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:id,name:name}));}catch(e){}' .
-			/* Update header label */
+
+			/*
+			 * Update header label
+
+		 */
 			'var lbl=document.getElementById("tma-mv-member-label");' .
 			'if(lbl)lbl.textContent=name;' .
-			/* Clear cached readings so fresh data is loaded for the new default member */
+
+			/*
+			 * Clear cached readings so fresh data is loaded for the new default member
+
+		 */
 			'try{localStorage.removeItem(SK_READINGS);}catch(e){}' .
 			'tmaHaptic("success");' .
-			/* Re-render the settings list to show the new selection, then sync */
+
+			/*
+			 * Re-render the settings list to show the new selection, then sync
+
+		 */
 			'mvRenderSettings();' .
 			'mvSyncFromServer();' .
 			'mvFetchPrescriptions();' .
 		'};' .
 
-		/* Open new-member form from the Settings tab */
+		/*
+		 * Open new-member form from the Settings tab
+
+		*/
 		'window.mvSettingsAddMember=function(){' .
 			'mvNewMemberFromSettings=true;' .
 			'mvHideNewMemberForm();' .
@@ -6113,7 +7726,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvRenderSettings();' .
 		'};' .
 
-		/* ── Display / font size settings ── */
+		/*
+		 * ── Display / font size settings ──
+
+		*/
 		'function mvApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -6141,7 +7757,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'tmaHaptic("light");' .
 		'};' .
 
-		/* Restore display settings on render */
+		/*
+		 * Restore display settings on render
+
+		*/
 		'function mvRestoreDisplayUI(){' .
 			'try{' .
 				'var size=localStorage.getItem("mv_font_size")||"medium";' .
@@ -6154,7 +7773,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'}catch(e){}' .
 		'}' .
 
-		/* ── Prescription fetching (Dosage tab) ── */
+		/*
+		 * ── Prescription fetching (Dosage tab) ──
+
+		*/
 		'window.mvFetchPrescriptions=function(){' .
 			'var list=document.getElementById("mv-rx-list");if(!list)return;' .
 			'if(!MEMBER_ID){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Select a member to view prescriptions.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
@@ -6190,7 +7812,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'});' .
 		'};' .
 
-		/* ── Log tab: history view ── */
+		/*
+		 * ── Log tab: history view ──
+
+		*/
 		'window.mvShowLogForm=function(){' .
 			'var hist=document.getElementById("mv-log-history-view");' .
 			'var form=document.getElementById("mv-log-form-view");' .
@@ -6208,11 +7833,19 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'window.mvRenderLogHistory=function(){' .
 			'var list=document.getElementById("mv-log-history-list");if(!list)return;' .
 			'var readings=mvLoadReadings();' .
-			/* Group readings by date, only include dates that have real vital data */
+
+			/*
+			 * Group readings by date, only include dates that have real vital data
+
+		 */
 			'var byDay={};' .
 			'readings.forEach(function(r){' .
 				'var k=r.ts?r.ts.slice(0,10):"";if(!k)return;' .
-				/* Check if this reading has at least one non-zero vital value */
+
+				/*
+				 * Check if this reading has at least one non-zero vital value
+
+			 */
 				'var hasData=r.bp_sys||r.bp_dia||r.hr||r.spo2||r.temp||r.glucose||' .
 					'r.egfr||r.creatinine||r.bun||r.potassium||r.sodium||r.phosphorus||r.albumin||r.hemoglobin;' .
 				'if(!hasData)return;' .
@@ -6227,7 +7860,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'list.innerHTML=dates.map(function(dk){' .
 				'var entries=byDay[dk];' .
 				'var r=entries[0];' . /* Use first entry for summary chips */
-				/* Collect non-zero vital labels for chips */
+
+				/*
+				 * Collect non-zero vital labels for chips
+
+			 */
 				'var chips=[];' .
 				'entries.forEach(function(e){' .
 					'if(e.bp_sys&&e.bp_dia)chips.push("BP "+e.bp_sys+"/"+e.bp_dia);' .
@@ -6239,12 +7876,24 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'if(e.creatinine)chips.push("Cr "+e.creatinine);' .
 					'if(e.hemoglobin)chips.push("Hgb "+e.hemoglobin);' .
 				'});' .
-				/* Deduplicate chips */
+
+				/*
+				 * Deduplicate chips
+
+			 */
 				'var seen={};chips=chips.filter(function(c){if(seen[c])return false;seen[c]=true;return true;});' .
-				/* Format date for display */
+
+				/*
+				 * Format date for display
+
+			 */
 				'var dd=new Date(dk+"T12:00:00");' .
 				'var dayStr=dd.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});' .
-				/* Build detail section from all entries for that day */
+
+				/*
+				 * Build detail section from all entries for that day
+
+			 */
 				'var detailRows=[];' .
 				'entries.forEach(function(e){' .
 					'if(e.bp_sys&&e.bp_dia)detailRows.push(["' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . '",e.bp_sys+"/"+e.bp_dia+" mmHg"]);' .
@@ -6262,7 +7911,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'if(e.hemoglobin)detailRows.push(["' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",e.hemoglobin+" g/dL"]);' .
 					'if(e.notes)detailRows.push(["' . esc_js( __( 'Notes', 'mcp-ai-wpoos-pro' ) ) . '",e.notes]);' .
 				'});' .
-				/* Deduplicate detail rows */
+
+				/*
+				 * Deduplicate detail rows
+
+			 */
 				'var dSeen={};detailRows=detailRows.filter(function(dr){var key=dr[0]+":"+dr[1];if(dSeen[key])return false;dSeen[key]=true;return true;});' .
 				'var detailHtml=detailRows.map(function(dr){' .
 					'return\'<div class="mv-hist-detail-row"><span class="mv-hist-detail-label">\'+escH(dr[0])+\'</span><span class="mv-hist-detail-val">\'+escH(dr[1])+\'</span></div>\';' .
@@ -6282,19 +7935,28 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'tmaHaptic("light");' .
 		'};' .
 
-		/* ── Dashboard ── */
+		/*
+		 * ── Dashboard ──
+
+		*/
 		'window.mvRefresh=function(){' .
 			'var readings=mvLoadReadings();' .
 			'var latest=readings.length?readings[0]:null;' .
-			/* Update last-read time */
+
+			/*
+			 * Update last-read time
+
+		 */
 			'var lt=document.getElementById("mv-last-time");' .
 			'if(lt){if(latest&&latest.ts){var d=new Date(latest.ts);lt.textContent="' . esc_js( __( 'Last reading: ', 'mcp-ai-wpoos-pro' ) ) . '"+d.toLocaleString();}else{lt.textContent="' . esc_js( __( 'No readings yet', 'mcp-ai-wpoos-pro' ) ) . '";}}' .
 
-			/* Scan all readings to find the most recent non-zero value for each
+			/*
+			Scan all readings to find the most recent non-zero value for each
 			 * metric.  Records are often stored as separate rows per measurement
 			 * type (e.g. one row for BP/HR/SpO2 and another for renal labs), so
 			 * the chronologically last entry cannot reliably represent all KPIs
-			 * on its own — matching the admin dashboard latestFor() pattern. */
+			 * on its own — matching the admin dashboard latestFor() pattern.
+			 */
 			'function mvLatestFor(field){' .
 				'for(var i=0;i<readings.length;i++){' .
 					'var v=parseFloat(readings[i][field]);' .
@@ -6303,7 +7965,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'return 0;' .
 			'}' .
 
-			/* KPI cards */
+			/*
+			 * KPI cards
+
+		 */
 			'var g=document.getElementById("mv-kpi-grid");if(!g)return;' .
 			'if(!readings.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 			'var bpSys=mvLatestFor("bp_sys");var bpDia=mvLatestFor("bp_dia");' .
@@ -6336,7 +8001,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'kpiCard(tempColor,"&#127777;","' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",temp||"--","\u00b0F",tempSt)+' .
 				'kpiCard(glucoseColor,"&#128137;","' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",glucose||"--","mg/dL",glucoseSt);' .
 
-			/* Kidney KPI section */
+			/*
+			 * Kidney KPI section
+
+		 */
 			'var kg=document.getElementById("mv-kidney-kpi-grid");' .
 			'if(kg){' .
 				'var egfr=mvLatestFor("egfr");var creat=mvLatestFor("creatinine");var bun=mvLatestFor("bun");' .
@@ -6370,11 +8038,18 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'(hgb?kpiCard(hgbColor,"&#129978;","' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",hgb,"g/dL",hgbSt):"")  ;' .
 				'}' .
 			'}' .
-			/* Mini sparkline chart */
+
+			/*
+			 * Mini sparkline chart
+
+		 */
 			'mvLoadDashChart();' .
 		'};' .
 
-		/* Dash chart – systolic BP sparkline */
+		/*
+		 * Dash chart – systolic BP sparkline
+
+		*/
 		'var dashChartInst=null;' .
 		'var mvDashChartDays=7;' .
 		'function mvLoadDashChart(){' .
@@ -6402,7 +8077,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'}});' .
 		'}' .
 
-		/* Dashboard chart range selector */
+		/*
+		 * Dashboard chart range selector
+
+		*/
 		'window.mvSetDashChartRange=function(days,btn){' .
 			'mvDashChartDays=days;' .
 			'document.querySelectorAll("#mv-dash-range-bar .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
@@ -6411,7 +8089,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvRenderDashChart();' .
 		'};' .
 
-		/* ── Log tab ── */
+		/*
+		 * ── Log tab ──
+
+		*/
 		'window.mvSaveReading=function(){' .
 			'var sys=parseInt((document.getElementById("mv-bp-sys")||{}).value||"",10)||0;' .
 			'var dia=parseInt((document.getElementById("mv-bp-dia")||{}).value||"",10)||0;' .
@@ -6419,7 +8100,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var spo2=parseInt((document.getElementById("mv-spo2")||{}).value||"",10)||0;' .
 			'var temp=parseFloat((document.getElementById("mv-temp")||{}).value||"")||0;' .
 			'var glucose=parseInt((document.getElementById("mv-glucose")||{}).value||"",10)||0;' .
-			/* Kidney fields */
+
+			/*
+			 * Kidney fields
+
+		 */
 			'var egfr=parseFloat((document.getElementById("mv-egfr")||{}).value||"")||0;' .
 			'var creatinine=parseFloat((document.getElementById("mv-creatinine")||{}).value||"")||0;' .
 			'var bun=parseFloat((document.getElementById("mv-bun")||{}).value||"")||0;' .
@@ -6429,18 +8114,34 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var albumin=parseFloat((document.getElementById("mv-albumin")||{}).value||"")||0;' .
 			'var hemoglobin=parseFloat((document.getElementById("mv-hemoglobin")||{}).value||"")||0;' .
 			'var notes=((document.getElementById("mv-notes")||{}).value||"").trim();' .
-			/* Require at least one field */
+
+			/*
+			 * Require at least one field
+
+		 */
 			'if(!sys&&!hr&&!spo2&&!temp&&!glucose&&!egfr&&!creatinine&&!bun&&!potassium&&!sodium&&!phosphorus&&!albumin&&!hemoglobin)return;' .
 			'var reading={ts:new Date().toISOString(),bp_sys:sys,bp_dia:dia,hr:hr,spo2:spo2,temp:temp,glucose:glucose,' .
 				'egfr:egfr,creatinine:creatinine,bun:bun,potassium:potassium,sodium:sodium,phosphorus:phosphorus,albumin:albumin,' .
 				'hemoglobin:hemoglobin,notes:notes};' .
 			'var arr=mvLoadReadings();arr.unshift(reading);if(arr.length>200)arr=arr.slice(0,200);' .
 			'mvStoreReadings(arr);tmaHaptic("success");' .
-			/* Clear fields */
+
+			/*
+			 * Clear fields
+
+		 */
 			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-hemoglobin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
-			/* Show saved message, then switch back to history view */
+
+			/*
+			 * Show saved message, then switch back to history view
+
+		 */
 			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";mvShowLogHistory();},3000);}' .
-			/* Server sync via log_vital_signs tool when a member is resolved */
+
+			/*
+			 * Server sync via log_vital_signs tool when a member is resolved
+
+		 */
 			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
 				'var sArgs={action:"log",member_id:MEMBER_ID,source:"tma",' .
 					'measurement_date:reading.ts?reading.ts.slice(0,10):"",' .
@@ -6466,10 +8167,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'}' .
 		'};' .
 
-		/* ── Pull server history into localStorage on first load ── */
-		/* Normalise a server row to the local schema.
+		/*
+		── Pull server history into localStorage on first load ──
+
+		*/
+
+		/*
+		Normalise a server row to the local schema.
 		 * Handles both flat CCT format (measurement_date, bp_systolic …)
-		 * and nested options format (date, measurements.blood_pressure.systolic …). */
+		 * and nested options format (date, measurements.blood_pressure.systolic …).
+		 */
 		'function mvNormaliseRow(row){' .
 			'function pf(v){var n=parseFloat(v);return isNaN(n)?0:n;}' .
 			'var m=row.measurements||{};var bp=m.blood_pressure||{};' .
@@ -6493,7 +8200,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'function mvSyncFromServer(){' .
 			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
-			/* Fetch 90-day history for trends/charts */
+
+			/*
+			 * Fetch 90-day history for trends/charts
+
+		 */
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
@@ -6502,7 +8213,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(d){' .
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
 				'var serverRows=d.result.history.map(mvNormaliseRow);' .
-				/* Merge: server rows keyed by day, local-only days preserved */
+
+				/*
+				 * Merge: server rows keyed by day, local-only days preserved
+
+			 */
 				'var local=mvLoadReadings();' .
 				'var byDay={};' .
 				'serverRows.forEach(function(r){var k=r.ts?r.ts.slice(0,10):"";if(k)byDay[k]=r;});' .
@@ -6512,9 +8227,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'mvRefresh();' .
 			'})' .
 			'.catch(function(){});' .
-			/* Fetch the single most-recent reading with NO time restriction
+
+			/*
+			Fetch the single most-recent reading with NO time restriction
 			 * so the dashboard always shows the last record even if it is
-			 * older than 90 days. */
+			 * older than 90 days.
+			 */
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_latest",member_id:MEMBER_ID}})' .
@@ -6525,7 +8243,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'var entry=mvNormaliseRow(d.result.latest);' .
 				'var k=entry.ts?entry.ts.slice(0,10):"";' .
 				'if(!k)return;' .
-				/* Merge into localStorage only if that day is not already present */
+
+				/*
+				 * Merge into localStorage only if that day is not already present
+
+			 */
 				'var local=mvLoadReadings();' .
 				'var exists=local.some(function(r){return r.ts&&r.ts.slice(0,10)===k;});' .
 				'if(!exists){' .
@@ -6538,7 +8260,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.catch(function(){});' .
 		'}' .
 
-		/* ── Trends tab ── */
+		/*
+		 * ── Trends tab ──
+
+		*/
 		'var trendsChartInsts=[];' .
 		'var mvTrendsDays=7;' .
 
@@ -6579,7 +8304,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'datasets:[{label:"\u00b0F",data:hist.map(function(h){return h.temp||null;}),color:"#00796b"}]},' .
 				'{id:"mv-tc-glucose",icon:"&#128137;",title:"' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Fasting 70–99 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
 					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.glucose||null;}),color:"#6a1b9a"}]},' .
-				/* ── Kidney charts ── */
+
+				/*
+				 * ── Kidney charts ──
+
+			 */
 				'{id:"mv-tc-egfr",icon:"&#129506;",title:"eGFR",range:"' . esc_js( __( 'Normal ≥60 mL/min', 'mcp-ai-wpoos-pro' ) ) . '",' .
 					'datasets:[{label:"mL/min",data:hist.map(function(h){return h.egfr||null;}),color:"#1565c0"}]},' .
 				'{id:"mv-tc-creat",icon:"&#129514;",title:"' . esc_js( __( 'Creatinine', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 0.6–1.2 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
@@ -6620,7 +8349,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'});' .
 		'}' .
 
-		/* ── Dosage tab ── */
+		/*
+		 * ── Dosage tab ──
+
+		*/
 		'window.mvToggleAddMed=function(){' .
 			'var f=document.getElementById("mv-add-med-form");' .
 			'if(f){f.style.display=f.style.display==="block"?"none":"block";}' .
@@ -6651,7 +8383,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'}return m;' .
 			'});' .
 			'mvStoreMeds(meds);tmaHaptic("light");' .
-			/* Optional server sync */
+
+			/*
+			 * Optional server sync
+
+		 */
 			'var med=meds.find(function(m){return m.id===id;});' .
 			'if(med){fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({tool:"log_medication_taken",arguments:{medication:med.name,dose:med.dose,taken:med.taken_today,ts:med.taken_ts}})' .
@@ -6685,7 +8421,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'}).join("");' .
 		'};' .
 
-		/* ── Doctor tab ── */
+		/*
+		 * ── Doctor tab ──
+
+		*/
 		'window.mvDoctorSend=function(){' .
 			'var inp=document.getElementById("mv-doctor-input");if(!inp)return;' .
 			'var msg=inp.value.trim();if(!msg)return;inp.value="";tmaHaptic("medium");' .
@@ -6693,7 +8432,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(msgs){var um=document.createElement("div");um.className="mv-doctor-msg user";um.textContent=msg;msgs.appendChild(um);msgs.scrollTop=msgs.scrollHeight;}' .
 			'var loadEl=null;' .
 			'if(msgs){loadEl=document.createElement("div");loadEl.className="mv-doctor-msg bot";loadEl.textContent="' . esc_js( __( '…', 'mcp-ai-wpoos-pro' ) ) . '";msgs.appendChild(loadEl);msgs.scrollTop=msgs.scrollHeight;}' .
-			/* Prepend patient vitals context as first turn when history is empty. */
+
+			/*
+			 * Prepend patient vitals context as first turn when history is empty.
+
+		 */
 			'var readings=mvLoadReadings();var latest=readings.length?readings[0]:{};' .
 			'if(!doctorHist.length&&latest&&Object.keys(latest).length){' .
 				'var vitCtx="[Patient vitals context]"' .
@@ -6738,25 +8481,54 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'});' .
 		'};' .
 
-		/* ── Init ── */
-		/* Helper: hide the member picker overlay and update the header label.    */
-		/* Called from both the localStorage branch and the server-ID branch.    */
+		/*
+		── Init ──
+
+		*/
+
+		/*
+		Helper: hide the member picker overlay and update the header label.
+
+		*/
+
+		/*
+		 * Called from both the localStorage branch and the server-ID branch.
+
+		*/
 		'function mvActivateMember(){' .
 			'mvHideMemberPicker();' .
 			'var lbl=document.getElementById("tma-mv-member-label");' .
 			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
 		'}' .
 
-		/* Priority order for member selection:                                  */
-		/*  1. localStorage (fastest – avoids any flicker)                       */
-		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
-		/*  3. Show member picker (user must choose or create)                   */
+		/*
+		Priority order for member selection:
+
+		*/
+
+		/*
+			1. localStorage (fastest – avoids any flicker)
+
+		 */
+
+		/*
+			2. SERVER_MEMBER_ID (server resolved the WP user's linked member)
+
+		 */
+
+		/*
+		 *  3. Show member picker (user must choose or create)
+
+		*/
 		'mvLoadSavedMember();' .
 		'if(MEMBER_ID){' .
 			'mvActivateMember();' .
 		'}else if(SERVER_MEMBER_ID){' .
-			/* Server already knows which member belongs to this user – auto-select
-			 * without showing the picker so vitals data loads immediately. */
+
+			/*
+			Server already knows which member belongs to this user – auto-select
+			 * without showing the picker so vitals data loads immediately.
+			 */
 			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
 			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
 			'mvActivateMember();' .
@@ -6767,13 +8539,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'mvInitSession();mvRefresh();mvRenderMeds();' .
 		'if(MEMBER_ID){mvSyncFromServer();mvFetchPrescriptions();}' .
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
-/* ==========================================================================
-   WooCommerce Shop React SPA Template
-   ========================================================================== */
+/*
+==========================================================================
+	WooCommerce Shop React SPA Template
+	==========================================================================
+
+ */
 
 /**
  * WooCommerce Shop Mini App template – React SPA.
@@ -6797,32 +8572,56 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
  */
 class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'woo_shop';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'WooCommerce Shop (React)', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Full-featured React SPA with product catalog, filters, product pages, cart, checkout and AI shopping assistant. Connect to local WooCommerce or any configured remote store.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🛍️';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#7c3aed';
 	}
@@ -6873,16 +8672,23 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-woo-shop-template">' .
 			'<div id="tma-woo-shop-root"></div>' .
 			'<script>window.wpTmaWooConfig=' . $config . ';</script>' .
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
-/* ==========================================================================
-   TEMPLATE: Shopify Jewelry Shop
-   ========================================================================== */
+/*
+==========================================================================
+	TEMPLATE: Shopify Jewelry Shop
+	==========================================================================
+
+ */
 
 /**
  * Jewelry Shop Telegram Mini App template (Shopify-powered).
@@ -6907,32 +8713,56 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
  */
 class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'jewelry_shop';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Jewelry Shop (Shopify)', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Gold-themed React SPA for jewelry retailers. Connects to any Shopify store via Remote Sites. Includes product catalog, cart, checkout and an AI jewelry concierge.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '💍';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#c9a227';
 	}
@@ -6976,18 +8806,18 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 		// ensuring the output is safe for inline <script> embedding.
 		$config = wp_json_encode(
 			array(
-				'validateUrl'  => $ctx['validate_url']  ?? '',
-				'toolsUrl'     => $ctx['tools_url']     ?? '',
-				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'validateUrl'  => $ctx['validate_url'] ?? '',
+				'toolsUrl'     => $ctx['tools_url'] ?? '',
+				'chatUrl'      => $ctx['chat_url'] ?? '',
 				'analyticsUrl' => $ctx['analytics_url'] ?? '',
-				'nonce'        => $ctx['nonce']         ?? '',
-				'assistantId'  => $ctx['assistant_id']  ?? '',
-				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'nonce'        => $ctx['nonce'] ?? '',
+				'assistantId'  => $ctx['assistant_id'] ?? '',
+				'siteName'     => $ctx['site_name'] ?? get_bloginfo( 'name' ),
 				'siteUrl'      => home_url(),
 				'connectionId' => $connection_id,
-				'chartJsUrl'   => $ctx['chart_js_url']  ?? '',
-				'memberId'     => $ctx['member_id']     ?? '',
-				'memberName'   => $ctx['member_name']   ?? '',
+				'chartJsUrl'   => $ctx['chart_js_url'] ?? '',
+				'memberId'     => $ctx['member_id'] ?? '',
+				'memberName'   => $ctx['member_name'] ?? '',
 			)
 		);
 
@@ -6995,16 +8825,23 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-jw-template">' .
 			'<div id="tma-shopify-jewelry-root"></div>' .
 			'<script>window.wpTmaJewelryConfig=' . $config . ';</script>' .
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
-			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
+			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
-/* ==========================================================================
-   TEMPLATE: Shopify Shop (General Purpose)
-   ========================================================================== */
+/*
+==========================================================================
+	TEMPLATE: Shopify Shop (General Purpose)
+	==========================================================================
+
+ */
 
 /**
  * General-purpose Shopify Store Telegram Mini App template.
@@ -7031,32 +8868,56 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
  */
 class WP_MCP_AI_TMA_Template_Shopify_Shop extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'shopify_shop';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Shopify Shop (React)', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Full-featured React SPA for Shopify stores. Product catalog with collection filters, variant selector, cart, checkout, order history, and AI shopping assistant. Connect to any Shopify store via Remote Sites.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🛒';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#5c6ac4';
 	}
@@ -7100,18 +8961,18 @@ class WP_MCP_AI_TMA_Template_Shopify_Shop extends WP_MCP_AI_Telegram_Mini_App_Te
 		// ensuring the output is safe for inline <script> embedding.
 		$config = wp_json_encode(
 			array(
-				'validateUrl'  => $ctx['validate_url']  ?? '',
-				'toolsUrl'     => $ctx['tools_url']     ?? '',
-				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'validateUrl'  => $ctx['validate_url'] ?? '',
+				'toolsUrl'     => $ctx['tools_url'] ?? '',
+				'chatUrl'      => $ctx['chat_url'] ?? '',
 				'analyticsUrl' => $ctx['analytics_url'] ?? '',
-				'nonce'        => $ctx['nonce']         ?? '',
-				'assistantId'  => $ctx['assistant_id']  ?? '',
-				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'nonce'        => $ctx['nonce'] ?? '',
+				'assistantId'  => $ctx['assistant_id'] ?? '',
+				'siteName'     => $ctx['site_name'] ?? get_bloginfo( 'name' ),
 				'siteUrl'      => home_url(),
 				'connectionId' => $connection_id,
-				'chartJsUrl'   => $ctx['chart_js_url']  ?? '',
-				'memberId'     => $ctx['member_id']     ?? '',
-				'memberName'   => $ctx['member_name']   ?? '',
+				'chartJsUrl'   => $ctx['chart_js_url'] ?? '',
+				'memberId'     => $ctx['member_id'] ?? '',
+				'memberName'   => $ctx['member_name'] ?? '',
 			)
 		);
 
@@ -7119,16 +8980,23 @@ class WP_MCP_AI_TMA_Template_Shopify_Shop extends WP_MCP_AI_Telegram_Mini_App_Te
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-shopify-shop-template">' .
 			'<div id="tma-shopify-shop-root"></div>' .
 			'<script>window.wpTmaShopifyConfig=' . $config . ';</script>' .
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
-			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
+			// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
+			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
-/* ==========================================================================
-   TEMPLATE: Flowhub E-Commerce Store (Inline)
-   ========================================================================== */
+/*
+==========================================================================
+	TEMPLATE: Flowhub E-Commerce Store (Inline)
+	==========================================================================
+
+ */
 
 /**
  * Flowhub E-Commerce Store Telegram Mini App template (inline HTML/CSS/JS).
@@ -7149,37 +9017,66 @@ class WP_MCP_AI_TMA_Template_Shopify_Shop extends WP_MCP_AI_Telegram_Mini_App_Te
  */
 class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'flowhub_ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'E-Commerce Store (Flowhub)', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Shop assistant with product search, category filters, and AI-powered recommendations. Designed for Flowhub stores connected via Remote Sites.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🌿';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#00a32a';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
 		$site_name    = esc_html( $ctx['site_name'] );
 		$tools_exec   = $ctx['tools_url'] . '/execute';
@@ -7199,22 +9096,34 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-flowhub-ec-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables (Flowhub green) ── */
+		/*
+		 * ── Theme variables (Flowhub green) ──
+
+		*/
 		':root{--tma-btn:#00a32a;--tma-accent:#00a32a;--tma-secondary-bg:#f2faf4;' .
 			'--fec-base:14px;--fec-label:12px;--fec-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.fec-font-small{--fec-base:12px;--fec-label:10px;--fec-heading:14px}' .
 		'.fec-font-large{--fec-base:16px;--fec-label:14px;--fec-heading:18px}' .
 		'.fec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
 		'.fec-compact .tma-product-body{padding:4px 6px}' .
 
-		/* ── Search bar ── */
+		/*
+		 * ── Search bar ──
+
+		*/
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
 		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--fec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
 
-		/* ── Category filter chips ── */
+		/*
+		 * ── Category filter chips ──
+
+		*/
 		'.fec-category-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--tma-bg)}' .
 		'.fec-category-bar::-webkit-scrollbar{display:none}' .
 		'.fec-chip{flex:0 0 auto;padding:6px 14px;border:1px solid var(--tma-border);border-radius:20px;' .
@@ -7222,7 +9131,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'.fec-chip.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
 		'.fec-chip:active{opacity:.7}' .
 
-		/* ── Product grid ── */
+		/*
+		 * ── Product grid ──
+
+		*/
 		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
 		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
 		'.tma-product-card:active{opacity:.8}' .
@@ -7239,7 +9151,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'.fec-strain-cbd{background:#e3f2fd;color:#1565c0}' .
 		'.fec-strain-default{background:#f5f5f5;color:#616161}' .
 
-		/* ── AI Chat ── */
+		/*
+		 * ── AI Chat ──
+
+		*/
 		'.fec-chat-container{display:flex;flex-direction:column;height:100%}' .
 		'.fec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.fec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--fec-base);line-height:1.5;word-wrap:break-word}' .
@@ -7256,7 +9171,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
 		'.fec-send-btn:active{opacity:.8}' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'.fec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.fec-settings-title{font-size:var(--fec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.fec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -7281,10 +9199,16 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🌿</div></div>' .
 				'<div class="tma-header-info">' .
@@ -7293,7 +9217,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'</div>' .
 			'</header>' .
 
-			/* ── Search bar (visible on Products tab) ── */
+			/*
+			 * ── Search bar (visible on Products tab) ──
+
+		 */
 			'<div class="tma-search-bar" id="fec-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
@@ -7301,7 +9228,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'</div>' .
 			'</div>' .
 
-			/* ── Category filter chips ── */
+			/*
+			 * ── Category filter chips ──
+
+		 */
 			'<div class="fec-category-bar" id="fec-category-bar">' .
 				'<button class="fec-chip active" onclick="fecFilterCategory(\'\')">' . esc_html__( 'All', 'mcp-ai-wpoos-pro' ) . '</button>' .
 				'<button class="fec-chip" onclick="fecFilterCategory(\'flower\')">' . esc_html__( 'Flower', 'mcp-ai-wpoos-pro' ) . '</button>' .
@@ -7310,10 +9240,16 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'<button class="fec-chip" onclick="fecFilterCategory(\'accessories\')">' . esc_html__( 'Accessories', 'mcp-ai-wpoos-pro' ) . '</button>' .
 			'</div>' .
 
-			/* ── Content panes ── */
+			/*
+			 * ── Content panes ──
+
+		 */
 			'<div class="tma-content">' .
 
-				/* Tab 1: Products */
+				/*
+				 * Tab 1: Products
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
 					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div class="tma-product-grid" id="fec-product-grid">' .
@@ -7321,7 +9257,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'</div>' .
 				'</div>' .
 
-				/* Tab 2: AI Assistant */
+				/*
+				 * Tab 2: AI Assistant
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
 					'<div class="fec-chat-container">' .
 						'<div class="fec-chat-messages" id="fec-chat-messages"></div>' .
@@ -7335,11 +9274,17 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'</div>' .
 				'</div>' .
 
-				/* Tab 3: Settings */
+				/*
+				 * Tab 3: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="fec-settings-section">' .
 						'<div class="fec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="fec-settings-row">' .
@@ -7356,7 +9301,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 						'</div>' .
 					'</div>' .
 
-					/* Store section */
+					/*
+					 * Store section
+
+				 */
 					'<div class="fec-settings-section">' .
 						'<div class="fec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="fec-settings-row">' .
@@ -7365,7 +9313,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="fec-settings-section">' .
 						'<div class="fec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="fec-settings-row">' .
@@ -7380,9 +9331,12 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (3 tabs) ── */
+			/*
+			 * ── Bottom navigation (3 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="fecSwitch(\'products\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
@@ -7397,13 +9351,19 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -7413,16 +9373,25 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'var FLOWHUB_CONNECTION_ID=' . wp_json_encode( $connection_id ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="products";' .
 		'var chatHist=[];' .
 		'var productsCache=[];' .
 		'var activeCategory="";' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 
-		/* Simple markdown-like renderer for bot messages */
+		/*
+		 * Simple markdown-like renderer for bot messages
+
+		*/
 		'function fecRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -7436,21 +9405,33 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'return out;' .
 		'}' .
 
-		/* ── localStorage helpers ── */
+		/*
+		 * ── localStorage helpers ──
+
+		*/
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Flowhub data extraction helpers
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Flowhub data extraction helpers
+			══════════════════════════════════════════════════════════
 
-		/* Normalize tool response: controller returns {success,result} or {data} */
+		*/
+
+		/*
+		 * Normalize tool response: controller returns {success,result} or {data}
+
+		*/
 		'function fhExtract(raw,key){' .
 			'return (raw&&raw.result&&raw.result[key])||(raw&&raw.data&&raw.data[key])||(raw&&raw[key])||' .
 				'(raw&&raw.result)||(raw&&raw.data)||null;' .
 		'}' .
 
-		/* ── Flowhub tool call wrapper ── */
+		/*
+		 * ── Flowhub tool call wrapper ──
+
+		*/
 		'function fecToolCall(slug,args,cb){' .
 			'if(FLOWHUB_CONNECTION_ID)args.connection_id=FLOWHUB_CONNECTION_ID;' .
 			'var body={slug:slug,arguments:args};' .
@@ -7472,7 +9453,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'.catch(function(e){console.error("[FEC] Tool "+slug+" error:",e);cb(e,null);});' .
 		'}' .
 
-		/* ── Session init ── */
+		/*
+		 * ── Session init ──
+
+		*/
 		'function fecInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp){fecBootstrap();return;}' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -7487,7 +9471,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'fecLoadProducts();' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function fecApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -7507,7 +9494,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'window.fecSetFontSize=function(s){lsSet("fec_font_size",s);tmaHaptic("selectionChanged");fecApplyDisplaySettings();};' .
 		'window.fecToggleCompact=function(){var c=!lsGet("fec_compact",false);lsSet("fec_compact",c);tmaHaptic("selectionChanged");fecApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.fecSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -7521,9 +9511,12 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'if(tab==="settings")fecRenderSettings();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Category filtering
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Category filtering
+			══════════════════════════════════════════════════════════
+
+		*/
 		'window.fecFilterCategory=function(cat){' .
 			'activeCategory=cat;tmaHaptic("selectionChanged");' .
 			'var btns=document.querySelectorAll("#fec-category-bar .fec-chip");' .
@@ -7536,9 +9529,12 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'fecLoadProducts(cat);' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Products
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Products
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function fecLoadProducts(cat){' .
 			'var g=document.getElementById("fec-product-grid");if(!g)return;' .
 			'if(!cat&&productsCache.length){fecRenderProducts(productsCache);}' .
@@ -7568,7 +9564,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'var thc=p.thc_percent||p.thcPercent||"";' .
 				'var cbd=p.cbd_percent||p.cbdPercent||"";' .
 
-				/* Strain badge */
+				/*
+				 * Strain badge
+
+			 */
 				'var strainCls="fec-strain-default";' .
 				'if(strain==="sativa")strainCls="fec-strain-sativa";' .
 				'else if(strain==="indica")strainCls="fec-strain-indica";' .
@@ -7576,14 +9575,20 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'else if(strain==="cbd")strainCls="fec-strain-cbd";' .
 				'var strainBadge=strain?"<span class=\\"fec-strain-badge "+strainCls+"\\">"+escH(strain)+"</span>":"";' .
 
-				/* Product image */
+				/*
+				 * Product image
+
+			 */
 				'var imgUrl="";' .
 				'if(p.images&&Array.isArray(p.images)&&p.images[0])imgUrl=p.images[0].url||p.images[0].src||p.images[0];' .
 				'else if(p.image)imgUrl=p.image.url||p.image.src||p.image;' .
 				'else if(p.image_url)imgUrl=p.image_url;' .
 				'var img=imgUrl?"<img src=\\""+escH(imgUrl)+"\\" alt=\\"\\"/>":"🌿";' .
 
-				/* Meta line: THC / CBD / Brand */
+				/*
+				 * Meta line: THC / CBD / Brand
+
+			 */
 				'var metaParts=[];' .
 				'if(thc)metaParts.push("THC "+escH(thc)+"%");' .
 				'if(cbd)metaParts.push("CBD "+escH(cbd)+"%");' .
@@ -7601,7 +9606,10 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'}).join("");' .
 		'}' .
 
-		/* Debounced search */
+		/*
+		 * Debounced search
+
+		*/
 		'var searchTimer=null;' .
 		'document.getElementById("fec-search-input").addEventListener("input",function(e){' .
 			'clearTimeout(searchTimer);var q=e.target.value.trim();' .
@@ -7610,7 +9618,11 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'var btns=document.querySelectorAll("#fec-category-bar .fec-chip");' .
 				'btns.forEach(function(b,i){b.classList.toggle("active",i===0);});' .
 				'if(q){' .
-					/* Filter cached products locally by name match. */
+
+					/*
+					 * Filter cached products locally by name match.
+
+				 */
 					'var filtered=productsCache.filter(function(p){' .
 						'return (p.name||p.title||"").toLowerCase().indexOf(q.toLowerCase())!==-1;' .
 					'});' .
@@ -7619,9 +9631,12 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'},400);' .
 		'});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – AI Assistant
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – AI Assistant
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function fecChatInit(){' .
 			'chatHist=lsGet("fec_chat_hist",[]);' .
 			'var m=document.getElementById("fec-chat-messages");if(!m)return;m.innerHTML="";' .
@@ -7666,12 +9681,18 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
 
-		/* Enter to send */
+		/*
+		 * Enter to send
+
+		*/
 		'document.getElementById("fec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")fecChatSend();});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function fecRenderSettings(){' .
 			'var ci=document.getElementById("fec-connection-info");' .
 			'if(ci){' .
@@ -7708,9 +9729,12 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'fecRenderSettings();tmaHaptic("notificationSuccess");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
 		'productsCache=lsGet("fec_products_cache",[]);' .
 		'fecApplyDisplaySettings();' .
 
@@ -7719,13 +9743,16 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'fecInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
 
-/* ==========================================================================
-   TEMPLATE: Shopify E-Commerce Store (Inline)
-   ========================================================================== */
+/*
+==========================================================================
+	TEMPLATE: Shopify E-Commerce Store (Inline)
+	==========================================================================
+
+ */
 
 /**
  * Shopify E-Commerce Store Telegram Mini App template (inline HTML/CSS/JS).
@@ -7747,37 +9774,66 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
  */
 class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
 
-	/** @inheritdoc */
+	/**
+	 * Get the template slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'shopify_ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'E-Commerce Store (Shopify)', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Shop assistant with product search, collection filters, and AI-powered recommendations. Designed for Shopify stores connected via Remote Sites. Supports both Admin API and Catalog API.', 'mcp-ai-wpoos-pro' );
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the target toolkit slug.
+	 *
+	 * @return string
+	 */
 	public function get_toolkit() {
 		return 'ecommerce';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template icon.
+	 *
+	 * @return string
+	 */
 	public function get_icon() {
 		return '🛍️';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Get the template accent color.
+	 *
+	 * @return string
+	 */
 	public function get_accent_color() {
 		return '#96bf48';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the template HTML output.
+	 *
+	 * @param array $ctx Context array.
+	 * @return string
+	 */
 	public function render_html( array $ctx ) {
 		$site_name    = esc_html( $ctx['site_name'] );
 		$tools_exec   = $ctx['tools_url'] . '/execute';
@@ -7808,22 +9864,34 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-shopify-ec-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
 
-		/* ── Theme variables (Shopify green) ── */
+		/*
+		 * ── Theme variables (Shopify green) ──
+
+		*/
 		':root{--tma-btn:#96bf48;--tma-accent:#96bf48;--tma-secondary-bg:#f4f9ed;' .
 			'--sec-base:14px;--sec-label:12px;--sec-heading:16px;}' .
 
-		/* ── Font-size & compact mode ── */
+		/*
+		 * ── Font-size & compact mode ──
+
+		*/
 		'.sec-font-small{--sec-base:12px;--sec-label:10px;--sec-heading:14px}' .
 		'.sec-font-large{--sec-base:16px;--sec-label:14px;--sec-heading:18px}' .
 		'.sec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
 		'.sec-compact .tma-product-body{padding:4px 6px}' .
 
-		/* ── Search bar ── */
+		/*
+		 * ── Search bar ──
+
+		*/
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
 		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--sec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
 
-		/* ── Collection filter chips ── */
+		/*
+		 * ── Collection filter chips ──
+
+		*/
 		'.sec-collection-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--tma-bg)}' .
 		'.sec-collection-bar::-webkit-scrollbar{display:none}' .
 		'.sec-chip{flex:0 0 auto;padding:6px 14px;border:1px solid var(--tma-border);border-radius:20px;' .
@@ -7831,7 +9899,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'.sec-chip.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
 		'.sec-chip:active{opacity:.7}' .
 
-		/* ── Product grid ── */
+		/*
+		 * ── Product grid ──
+
+		*/
 		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
 		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
 		'.tma-product-card:active{opacity:.8}' .
@@ -7843,7 +9914,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'.sec-product-meta{font-size:var(--sec-label);color:var(--tma-hint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
 		'.sec-vendor-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;background:#e8f5e9;color:#2e7d32}' .
 
-		/* ── AI Chat ── */
+		/*
+		 * ── AI Chat ──
+
+		*/
 		'.sec-chat-container{display:flex;flex-direction:column;height:100%}' .
 		'.sec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.sec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--sec-base);line-height:1.5;word-wrap:break-word}' .
@@ -7860,7 +9934,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
 		'.sec-send-btn:active{opacity:.8}' .
 
-		/* ── Settings ── */
+		/*
+		 * ── Settings ──
+
+		*/
 		'.sec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
 		'.sec-settings-title{font-size:var(--sec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
 		'.sec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
@@ -7885,10 +9962,16 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 
 		'</style>' .
 
-		/* ═══ HTML Shell ═══ */
+		/*
+		 * ═══ HTML Shell ═══
+
+		*/
 		'<div class="tma-shell" id="tma-shell">' .
 
-			/* ── Header ── */
+			/*
+			 * ── Header ──
+
+		 */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🛍️</div></div>' .
 				'<div class="tma-header-info">' .
@@ -7897,7 +9980,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'</div>' .
 			'</header>' .
 
-			/* ── Search bar (visible on Products tab) ── */
+			/*
+			 * ── Search bar (visible on Products tab) ──
+
+		 */
 			'<div class="tma-search-bar" id="sec-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
@@ -7905,15 +9991,24 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'</div>' .
 			'</div>' .
 
-			/* ── Collection filter chips ── */
+			/*
+			 * ── Collection filter chips ──
+
+		 */
 			'<div class="sec-collection-bar" id="sec-collection-bar">' .
 				'<button class="sec-chip active" data-collection="" onclick="secFilterCollection(\'\')">' . esc_html__( 'All', 'mcp-ai-wpoos-pro' ) . '</button>' .
 			'</div>' .
 
-			/* ── Content panes ── */
+			/*
+			 * ── Content panes ──
+
+		 */
 			'<div class="tma-content">' .
 
-				/* Tab 1: Products */
+				/*
+				 * Tab 1: Products
+
+			 */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
 					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div class="tma-product-grid" id="sec-product-grid">' .
@@ -7921,7 +10016,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'</div>' .
 				'</div>' .
 
-				/* Tab 2: AI Assistant */
+				/*
+				 * Tab 2: AI Assistant
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
 					'<div class="sec-chat-container">' .
 						'<div class="sec-chat-messages" id="sec-chat-messages"></div>' .
@@ -7935,11 +10033,17 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'</div>' .
 				'</div>' .
 
-				/* Tab 3: Settings */
+				/*
+				 * Tab 3: Settings
+
+			 */
 				'<div class="tma-tab-pane" id="tma-tab-settings">' .
 					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Display section */
+					/*
+					 * Display section
+
+				 */
 					'<div class="sec-settings-section">' .
 						'<div class="sec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="sec-settings-row">' .
@@ -7956,7 +10060,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 						'</div>' .
 					'</div>' .
 
-					/* Store section */
+					/*
+					 * Store section
+
+				 */
 					'<div class="sec-settings-section">' .
 						'<div class="sec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="sec-settings-row">' .
@@ -7969,7 +10076,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 						'</div>' .
 					'</div>' .
 
-					/* Data section */
+					/*
+					 * Data section
+
+				 */
 					'<div class="sec-settings-section">' .
 						'<div class="sec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<div class="sec-settings-row">' .
@@ -7984,9 +10094,12 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'</div>' .
 				'</div>' .
 
-			'</div>' . /* end .tma-content */
+			'</div>' . /* End .tma-content */
 
-			/* ── Bottom navigation (3 tabs) ── */
+			/*
+			 * ── Bottom navigation (3 tabs) ──
+
+		 */
 			'<nav class="tma-nav">' .
 				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="secSwitch(\'products\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
@@ -8001,13 +10114,19 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' . /* end .tma-shell */
+		'</div>' . /* End .tma-shell */
 
-		/* ═══ JavaScript ═══ */
+		/*
+		 * ═══ JavaScript ═══
+
+		*/
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 
-		/* ── Config variables ── */
+		/*
+		 * ── Config variables ──
+
+		*/
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var TMA_TOKEN="";' .
 		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
@@ -8018,16 +10137,25 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'var SHOPIFY_API_MODE=' . wp_json_encode( $shopify_api_mode ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
-		/* ── State ── */
+		/*
+		 * ── State ──
+
+		*/
 		'var activeTab="products";' .
 		'var chatHist=[];' .
 		'var productsCache=[];' .
 		'var activeCollection="";' .
 
-		/* ── Helpers ── */
+		/*
+		 * ── Helpers ──
+
+		*/
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 
-		/* Simple markdown-like renderer for bot messages */
+		/*
+		 * Simple markdown-like renderer for bot messages
+
+		*/
 		'function secRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
@@ -8041,30 +10169,50 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'return out;' .
 		'}' .
 
-		/* ── localStorage helpers ── */
+		/*
+		 * ── localStorage helpers ──
+
+		*/
 		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Shopify data extraction helpers
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Shopify data extraction helpers
+			══════════════════════════════════════════════════════════
 
-		/* Normalize tool response: controller returns {success,result} or {data} */
+		*/
+
+		/*
+		 * Normalize tool response: controller returns {success,result} or {data}
+
+		*/
 		'function spExtract(raw,key){' .
 			'return (raw&&raw.result&&raw.result[key])||(raw&&raw.data&&raw.data[key])||(raw&&raw[key])||' .
 				'(raw&&raw.result)||(raw&&raw.data)||null;' .
 		'}' .
 
-		/* Currency formatting helper */
+		/*
+		 * Currency formatting helper
+
+		*/
 		'function spCurrency(p){' .
 			'if(!p)return "$0.00";' .
-			/* Admin API normalized format */
+
+			/*
+			 * Admin API normalized format
+
+		 */
 			'if(p.price_range&&p.price_range.minVariantPrice){' .
 				'var amt=parseFloat(p.price_range.minVariantPrice.amount||0);' .
 				'var cur=p.price_range.minVariantPrice.currencyCode||"USD";' .
 				'try{return new Intl.NumberFormat("en-US",{style:"currency",currency:cur}).format(amt);}catch(e){return "$"+amt.toFixed(2);}' .
 			'}' .
-			/* Catalog API normalized format (lowercase) */
+
+			/*
+			 * Catalog API normalized format (lowercase)
+
+		 */
 			'if(p.pricerange&&p.pricerange.minvariantprice){' .
 				'var raw=p.pricerange.minvariantprice;' .
 				'var cAmt=parseFloat(raw.amount||0);' .
@@ -8072,12 +10220,19 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'var cCur=raw.currencycode||raw.currencyCode||"USD";' .
 				'try{return new Intl.NumberFormat("en-US",{style:"currency",currency:cCur}).format(cAmt);}catch(e){return "$"+cAmt.toFixed(2);}' .
 			'}' .
-			/* Simple price field fallback */
+
+			/*
+			 * Simple price field fallback
+
+		 */
 			'if(typeof p.price==="number"||typeof p.price==="string"){return "$"+parseFloat(p.price||0).toFixed(2);}' .
 			'return "$0.00";' .
 		'}' .
 
-		/* ── Shopify tool call wrapper ── */
+		/*
+		 * ── Shopify tool call wrapper ──
+
+		*/
 		'function secToolCall(slug,args,cb){' .
 			'if(SHOPIFY_CONNECTION_ID)args.connection_id=SHOPIFY_CONNECTION_ID;' .
 			'var body={slug:slug,arguments:args};' .
@@ -8099,7 +10254,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'.catch(function(e){console.error("[SEC] Tool "+slug+" error:",e);cb(e,null);});' .
 		'}' .
 
-		/* ── Session init ── */
+		/*
+		 * ── Session init ──
+
+		*/
 		'function secInitSession(){' .
 			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp){secBootstrap();return;}' .
 			'var initData=window.Telegram.WebApp.initData;' .
@@ -8114,7 +10272,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'secLoadProducts();' .
 		'}' .
 
-		/* ── Display settings ── */
+		/*
+		 * ── Display settings ──
+
+		*/
 		'function secApplyDisplaySettings(){' .
 			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
 			'try{' .
@@ -8134,7 +10295,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'window.secSetFontSize=function(s){lsSet("sec_font_size",s);tmaHaptic("selectionChanged");secApplyDisplaySettings();};' .
 		'window.secToggleCompact=function(){var c=!lsGet("sec_compact",false);lsSet("sec_compact",c);tmaHaptic("selectionChanged");secApplyDisplaySettings();};' .
 
-		/* ── Tab switching ── */
+		/*
+		 * ── Tab switching ──
+
+		*/
 		'window.secSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
@@ -8148,9 +10312,12 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'if(tab==="settings")secRenderSettings();' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Collection filtering
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Collection filtering
+			══════════════════════════════════════════════════════════
+
+		*/
 		'window.secFilterCollection=function(col){' .
 			'activeCollection=col;tmaHaptic("selectionChanged");' .
 			'var btns=document.querySelectorAll("#sec-collection-bar .sec-chip");' .
@@ -8159,7 +10326,11 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'b.classList.toggle("active",bCol===col);' .
 			'});' .
 			'if(col){' .
-				/* Filter locally from cache */
+
+				/*
+				 * Filter locally from cache
+
+			 */
 				'var filtered=productsCache.filter(function(p){' .
 					'var pType=(p.product_type||p.productType||p.producttype||"").toLowerCase();' .
 					'var pVendor=(p.vendor||"").toLowerCase();' .
@@ -8171,9 +10342,12 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'}else{secRenderProducts(productsCache);}' .
 		'};' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 1 – Products
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 1 – Products
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function secLoadProducts(){' .
 			'var g=document.getElementById("sec-product-grid");if(!g)return;' .
 			'if(!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
@@ -8183,7 +10357,11 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 				'var ps=spExtract(d,"products");' .
 				'if(!ps||!Array.isArray(ps)){' .
-					/* Catalog API wraps in raw key */
+
+					/*
+					 * Catalog API wraps in raw key
+
+				 */
 					'if(d&&d.result&&d.result.raw&&Array.isArray(d.result.raw))ps=d.result.raw;' .
 					'else if(d&&d.data&&d.data.raw&&Array.isArray(d.data.raw))ps=d.data.raw;' .
 					'else if(d&&d.raw&&Array.isArray(d.raw))ps=d.raw;' .
@@ -8195,7 +10373,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'});' .
 		'}' .
 
-		/* Build collection chips from product types */
+		/*
+		 * Build collection chips from product types
+
+		*/
 		'function secBuildCollectionChips(ps){' .
 			'var bar=document.getElementById("sec-collection-bar");if(!bar)return;' .
 			'var types={};' .
@@ -8214,24 +10395,41 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'var g=document.getElementById("sec-product-grid");if(!g)return;' .
 			'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 			'g.innerHTML=ps.map(function(p){' .
-				/* Title: Admin API uses title, Catalog API uses displayname */
+
+				/*
+				 * Title: Admin API uses title, Catalog API uses displayname
+
+			 */
 				'var name=p.title||p.displayname||p.name||"' . esc_js( __( 'Product', 'mcp-ai-wpoos-pro' ) ) . '";' .
 				'var priceStr=spCurrency(p);' .
 				'var vendor=p.vendor||"";' .
 
-				/* Vendor badge */
+				/*
+				 * Vendor badge
+
+			 */
 				'var vendorBadge=vendor?"<span class=\\"sec-vendor-badge\\">"+escH(vendor)+"</span>":"";' .
 
-				/* Product image */
+				/*
+				 * Product image
+
+			 */
 				'var imgUrl="";' .
 				'if(p.images&&Array.isArray(p.images)&&p.images[0])imgUrl=p.images[0].url||p.images[0].src||p.images[0];' .
 				'else if(p.image)imgUrl=p.image.url||p.image.src||p.image;' .
 				'else if(p.image_url)imgUrl=p.image_url;' .
-				/* Catalog API uses media array */
+
+				/*
+				 * Catalog API uses media array
+
+			 */
 				'else if(p.media&&Array.isArray(p.media)&&p.media[0])imgUrl=p.media[0].url||p.media[0].src||p.media[0];' .
 				'var img=imgUrl?"<img src=\\""+escH(imgUrl)+"\\" alt=\\"\\"/>":"🛍️";' .
 
-				/* Meta line: product type and variant count */
+				/*
+				 * Meta line: product type and variant count
+
+			 */
 				'var metaParts=[];' .
 				'var pType=p.product_type||p.productType||p.producttype||"";' .
 				'if(pType)metaParts.push(escH(pType));' .
@@ -8250,7 +10448,10 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'}).join("");' .
 		'}' .
 
-		/* Debounced search */
+		/*
+		 * Debounced search
+
+		*/
 		'var searchTimer=null;' .
 		'document.getElementById("sec-search-input").addEventListener("input",function(e){' .
 			'clearTimeout(searchTimer);var q=e.target.value.trim();' .
@@ -8259,7 +10460,11 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'var btns=document.querySelectorAll("#sec-collection-bar .sec-chip");' .
 				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-collection")==="");});' .
 				'if(q){' .
-					/* Filter cached products locally by name match. */
+
+					/*
+					 * Filter cached products locally by name match.
+
+				 */
 					'var filtered=productsCache.filter(function(p){' .
 						'var name=(p.title||p.displayname||p.name||"").toLowerCase();' .
 						'return name.indexOf(q.toLowerCase())!==-1;' .
@@ -8269,9 +10474,12 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'},400);' .
 		'});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 2 – AI Assistant
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 2 – AI Assistant
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function secChatInit(){' .
 			'chatHist=lsGet("sec_chat_hist",[]);' .
 			'var m=document.getElementById("sec-chat-messages");if(!m)return;m.innerHTML="";' .
@@ -8316,12 +10524,18 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
 
-		/* Enter to send */
+		/*
+		 * Enter to send
+
+		*/
 		'document.getElementById("sec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")secChatSend();});' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Tab 3 – Settings
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Tab 3 – Settings
+			══════════════════════════════════════════════════════════
+
+		*/
 		'function secRenderSettings(){' .
 			'var ci=document.getElementById("sec-connection-info");' .
 			'if(ci){' .
@@ -8360,9 +10574,12 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'secRenderSettings();tmaHaptic("notificationSuccess");' .
 		'}' .
 
-		/* ══════════════════════════════════════════════════════════
-		   Init
-		   ══════════════════════════════════════════════════════════ */
+		/*
+		══════════════════════════════════════════════════════════
+			Init
+			══════════════════════════════════════════════════════════
+
+		*/
 		'productsCache=lsGet("sec_products_cache",[]);' .
 		'secApplyDisplaySettings();' .
 
@@ -8371,6 +10588,6 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'secInitSession();' .
 
 		'})();</script></body>';
-		// phpcs:enable
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }

@@ -159,7 +159,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 		}
 
 		// Return single password if count is 1, otherwise return array.
-		if ( $count === 1 ) {
+		if ( 1 === $count ) {
 			return array_merge(
 				array( 'success' => true ),
 				$passwords[0],

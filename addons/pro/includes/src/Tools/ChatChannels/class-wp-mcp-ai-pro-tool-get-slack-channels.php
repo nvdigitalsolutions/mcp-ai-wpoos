@@ -232,11 +232,11 @@ class WP_MCP_AI_Pro_Tool_Get_Slack_Channels implements WP_MCP_AI_Tool_Interface,
 	 */
 	protected function get_friendly_slack_error( $error_code ) {
 		$known = array(
-			'account_inactive'   => __( 'Slack API error: account_inactive — The bot account associated with this token has been deactivated. Please check that your Slack app is still installed in the workspace and that the bot user has not been removed. Generate a new Bot Token from your Slack app configuration (api.slack.com/apps) and update it in the connection settings.', 'mcp-ai-wpoos-pro' ),
-			'invalid_auth'       => __( 'Slack API error: invalid_auth — The bot token is invalid or has been revoked. Please generate a new token from your Slack app.', 'mcp-ai-wpoos-pro' ),
-			'token_revoked'      => __( 'Slack API error: token_revoked — This token has been revoked. Please reinstall your Slack app to the workspace.', 'mcp-ai-wpoos-pro' ),
-			'not_authed'         => __( 'Slack API error: not_authed — No bot token was provided. Please configure a valid Bot Token (xoxb-) in the connection settings.', 'mcp-ai-wpoos-pro' ),
-			'missing_scope'      => __( 'Slack API error: missing_scope — The bot token does not have the required OAuth scopes. Please update your Slack app permissions and reinstall it.', 'mcp-ai-wpoos-pro' ),
+			'account_inactive' => __( 'Slack API error: account_inactive — The bot account associated with this token has been deactivated. Please check that your Slack app is still installed in the workspace and that the bot user has not been removed. Generate a new Bot Token from your Slack app configuration (api.slack.com/apps) and update it in the connection settings.', 'mcp-ai-wpoos-pro' ),
+			'invalid_auth'     => __( 'Slack API error: invalid_auth — The bot token is invalid or has been revoked. Please generate a new token from your Slack app.', 'mcp-ai-wpoos-pro' ),
+			'token_revoked'    => __( 'Slack API error: token_revoked — This token has been revoked. Please reinstall your Slack app to the workspace.', 'mcp-ai-wpoos-pro' ),
+			'not_authed'       => __( 'Slack API error: not_authed — No bot token was provided. Please configure a valid Bot Token (xoxb-) in the connection settings.', 'mcp-ai-wpoos-pro' ),
+			'missing_scope'    => __( 'Slack API error: missing_scope — The bot token does not have the required OAuth scopes. Please update your Slack app permissions and reinstall it.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return isset( $known[ $error_code ] ) ? $known[ $error_code ] : $error_code;

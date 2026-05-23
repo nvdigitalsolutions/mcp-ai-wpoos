@@ -279,14 +279,14 @@ class WP_MCP_AI_Tool_Check_ECA_Conflicts implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return array(
-			'success'       => true,
-			'check_type'    => $check_type,
-			'day'           => $day,
-			'start_time'    => $start_time,
-			'end_time'      => $end_time,
-			'has_conflicts' => ! empty( $conflicts ),
+			'success'        => true,
+			'check_type'     => $check_type,
+			'day'            => $day,
+			'start_time'     => $start_time,
+			'end_time'       => $end_time,
+			'has_conflicts'  => ! empty( $conflicts ),
 			'conflict_count' => count( $conflicts ),
-			'conflicts'     => $conflicts,
+			'conflicts'      => $conflicts,
 		);
 	}
 }

@@ -62,20 +62,20 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'operation'   => array(
+				'operation'         => array(
 					'type'        => 'string',
 					'enum'        => array( 'status', 'diff', 'log', 'branch', 'show', 'blame', 'commit', 'add', 'checkout', 'stash' ),
 					'description' => __( 'Git operation to perform: "status" (working tree status), "diff" (show changes), "log" (commit history), "branch" (list/create branches), "show" (show commit), "blame" (file line history), "commit" (create commit), "add" (stage changes), "checkout" (switch branch/restore), "stash" (stash changes - use stash_subcommand for specific operations).', 'mcp-ai-wpoos' ),
 				),
-				'file_path'   => array(
+				'file_path'         => array(
 					'type'        => 'string',
 					'description' => __( 'Optional file path for file-specific operations (diff, blame, add, checkout). Relative to plugin root.', 'mcp-ai-wpoos' ),
 				),
-				'commit_hash' => array(
+				'commit_hash'       => array(
 					'type'        => 'string',
 					'description' => __( 'Commit hash for operations like "show" or "diff". Use "HEAD" for latest commit.', 'mcp-ai-wpoos' ),
 				),
-				'branch_name' => array(
+				'branch_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Branch name for branch operations (create, checkout, etc.).', 'mcp-ai-wpoos' ),
 				),
@@ -147,16 +147,18 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
-if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
-return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
-}
-if ( ! current_user_can( 'manage_options' ) ) {
-return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
-}
-
+		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+			return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		// Extract arguments.
 		$operation         = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';

@@ -33,7 +33,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
-		$bridge_file = dirname( __FILE__ ) . '/../includes/class-nvoos-graphify-nvoos-bridge.php';
+		$bridge_file = __DIR__ . '/../includes/class-nvoos-graphify-nvoos-bridge.php';
 		if ( ! class_exists( 'NV_oOS_Graphify_NV_oOS_Bridge' ) && file_exists( $bridge_file ) ) {
 			require_once $bridge_file;
 		}
@@ -57,7 +57,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 		$label = NV_oOS_Graphify_NV_oOS_Bridge::resolve_transcript_label( '', 'ai_chat_transcripts', $item );
 
 		$this->assertStringContainsString( 'Assistant 7', $label );
-		$this->assertStringContainsString( '…23def456', $label ); // last 8 chars of 'abc123def456'
+		$this->assertStringContainsString( '…23def456', $label ); // Last 8 chars of 'abc123def456'.
 		$this->assertStringContainsString( '2025-01-15', $label );
 	}
 
@@ -65,7 +65,10 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 * A non-transcript slug should return the $label param unchanged.
 	 */
 	public function test_transcript_label_passthrough_for_other_slugs() {
-		$item = array( '_ID' => 1, 'title' => 'My Memory' );
+		$item = array(
+			'_ID' => 1,
+			'title' => 'My Memory',
+		);
 
 		$result = NV_oOS_Graphify_NV_oOS_Bridge::resolve_transcript_label( 'unchanged', 'ai_chat_agent_memories', $item );
 
@@ -90,8 +93,14 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_transcript_content_messages_array() {
 		$messages = array(
-			array( 'role' => 'user',      'content' => 'Hello world' ),
-			array( 'role' => 'assistant', 'content' => 'Hi there'    ),
+			array(
+				'role' => 'user',
+				'content' => 'Hello world',
+			),
+			array(
+				'role' => 'assistant',
+				'content' => 'Hi there',
+			),
 		);
 
 		$item = array(
@@ -110,7 +119,12 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	public function test_transcript_content_completion_response() {
 		$response = array(
 			'choices' => array(
-				array( 'message' => array( 'role' => 'assistant', 'content' => 'I can help with that.' ) ),
+				array(
+					'message' => array(
+						'role' => 'assistant',
+						'content' => 'I can help with that.',
+					),
+				),
 			),
 		);
 
@@ -128,7 +142,10 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 * Non-transcript slug passes content through unchanged.
 	 */
 	public function test_transcript_content_passthrough() {
-		$item = array( '_ID' => 1, 'body' => 'Hello' );
+		$item = array(
+			'_ID' => 1,
+			'body' => 'Hello',
+		);
 
 		$result = NV_oOS_Graphify_NV_oOS_Bridge::resolve_transcript_content( 'original', 'channel_messages', $item );
 
@@ -181,7 +198,10 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 * Memory without wing/room/agent columns should produce no edges.
 	 */
 	public function test_memory_palace_edges_empty_item() {
-		$item  = array( '_ID' => 11, 'title' => 'Bare memory' );
+		$item  = array(
+			'_ID' => 11,
+			'title' => 'Bare memory',
+		);
 		$edges = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( array(), 'ai_chat_agent_memories', $item, 'cct_ai_chat_agent_memories_11' );
 		$this->assertEmpty( $edges );
 	}
@@ -190,8 +210,17 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 * Non-memory-palace slug should return the accumulator unchanged.
 	 */
 	public function test_memory_palace_edges_other_slug() {
-		$item       = array( '_ID' => 1, 'wing' => 'TestWing' );
-		$seed_edges = array( array( 'relation' => 'AUTHORED_BY', 'source_node_id' => 'a', 'target_node_id' => 'b' ) );
+		$item       = array(
+			'_ID' => 1,
+			'wing' => 'TestWing',
+		);
+		$seed_edges = array(
+			array(
+				'relation' => 'AUTHORED_BY',
+				'source_node_id' => 'a',
+				'target_node_id' => 'b',
+			),
+		);
 		$result     = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( $seed_edges, 'ai_chat_transcripts', $item, 'node_1' );
 		$this->assertCount( 1, $result );
 	}
@@ -201,7 +230,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * filter_cct_label_fields should return slug-specific columns for known slugs.
+	 * Should return slug-specific columns for known slugs.
 	 */
 	public function test_cct_label_fields_known_slug() {
 		$result = NV_oOS_Graphify_NV_oOS_Bridge::filter_cct_label_fields( array( 'title' ), 'vitals_log', array() );
@@ -209,7 +238,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	}
 
 	/**
-	 * filter_cct_label_fields should pass through unchanged for unknown slugs.
+	 * Should pass through unchanged for unknown slugs.
 	 */
 	public function test_cct_label_fields_unknown_slug() {
 		$defaults = array( 'title', 'name' );
@@ -222,7 +251,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * external_node_id should combine node_type and primary key.
+	 * Should combine node_type and primary key.
 	 */
 	public function test_external_node_id() {
 		$id = NV_oOS_Graphify_Detector::external_node_id( 'ext_slash_cmd_audit', 42 );
@@ -230,7 +259,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	}
 
 	/**
-	 * external_node_id should sanitize the type string.
+	 * Should sanitize the type string.
 	 */
 	public function test_external_node_id_sanitises_type() {
 		$id = NV_oOS_Graphify_Detector::external_node_id( 'Ext Slash Audit!', 1 );

@@ -49,7 +49,7 @@ class WP_MCP_AI_Architectural_Precedents_Engine {
 		if ( ! $post instanceof WP_Post ) {
 			return '';
 		}
-		$pieces = array();
+		$pieces   = array();
 		$pieces[] = (string) $post->post_title;
 
 		$excerpt = (string) $post->post_excerpt;
@@ -198,7 +198,7 @@ class WP_MCP_AI_Architectural_Precedents_Engine {
 		$hits = 0;
 		foreach ( $tokens as $t ) {
 			if ( false !== strpos( $corpus, $t ) ) {
-				$hits++;
+				++$hits;
 			}
 		}
 		return (float) $hits / (float) count( $tokens );
@@ -224,7 +224,7 @@ class WP_MCP_AI_Architectural_Precedents_Engine {
 		}
 		$embedding = self::embed_text( $corpus );
 		if ( null === $embedding ) {
-			// Leave any existing embedding in place — caller decided to
+			// Leave any existing embedding in place — caller decided to.
 			// degrade rather than corrupt.
 			return null;
 		}

@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Auto_Translate_Content tool.
+ */
 class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		return ! empty( $settings['enable_multilingual_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_multilingual_toolkit'] ) ) {
@@ -34,18 +47,42 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		return __( 'Auto translate tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'auto_translate_content';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Auto Translate Content', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'AI-powered translation of posts and pages. Supports multiple languages with context-aware translation.', 'mcp-ai-wpoos-pro' );
 	}
 
+
+	/**
+
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -78,10 +115,22 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+
+	/**
+
+	 * Get the required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'content'     => true,
@@ -90,6 +139,13 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$post_id          = absint( $arguments['post_id'] );
 		$target_language  = sanitize_text_field( $arguments['target_language'] );
@@ -163,6 +219,18 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+	/**
+	 * Translate_text.
+	 *
+	 * @param mixed $text Parameter.
+	 * @param mixed $source_lang Parameter.
+	 * @param mixed $target_lang Parameter.
+	 * @return array|WP_Error Result.
+	 *
+	 * @param array $text Parameter.
+	 * @param array $source_lang Parameter.
+	 * @param array $target_lang Parameter.
+	 */
 	private function translate_text( $text, $source_lang, $target_lang ) {
 		if ( empty( $text ) ) {
 			return $text;
@@ -179,6 +247,14 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		return "[{$target_lang}] " . $text;
 	}
 
+	/**
+	 * Translate_with_openai.
+	 *
+	 * @param mixed $text Parameter.
+	 * @param mixed $source_lang Parameter.
+	 * @param mixed $target_lang Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	private function translate_with_openai( $text, $source_lang, $target_lang ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = $settings['openai_api_key'];
@@ -222,6 +298,15 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		return new WP_Error( 'translation_failed', __( 'Translation failed.', 'mcp-ai-wpoos-pro' ) );
 	}
 
+	/**
+	 * Translate_post_meta.
+	 *
+	 * @param mixed $source_post_id Parameter.
+	 * @param mixed $target_post_id Parameter.
+	 * @param mixed $source_lang Parameter.
+	 * @param mixed $target_lang Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	private function translate_post_meta( $source_post_id, $target_post_id, $source_lang, $target_lang ) {
 		$translatable_keys = array( 'description', 'excerpt', 'summary', 'subtitle' );
 		$translated        = array();

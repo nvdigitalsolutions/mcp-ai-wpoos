@@ -121,6 +121,9 @@ class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interfa
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -247,7 +250,7 @@ class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interfa
 				count( $results )
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'results'      => $results,
+				'results'       => $results,
 				'total_results' => count( $results ),
 			),
 			'disclaimer' => self::DISCLAIMER,
@@ -284,7 +287,7 @@ class WP_MCP_AI_Tool_LF_Clause_Library_Manager implements WP_MCP_AI_Tool_Interfa
 				count( $clauses )
 			) . self::DISCLAIMER,
 			'data'       => array(
-				'clauses'      => $clauses,
+				'clauses'       => $clauses,
 				'total_clauses' => count( $clauses ),
 			),
 			'disclaimer' => self::DISCLAIMER,

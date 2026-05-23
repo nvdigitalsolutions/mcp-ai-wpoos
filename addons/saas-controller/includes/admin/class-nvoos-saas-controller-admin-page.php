@@ -231,9 +231,9 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			</p>
 			<ul style="list-style:disc;padding-left:1.5em;">
 				<li>✅ <strong><?php esc_html_e( 'Phase 1 — Scaffolding', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'package layout, attribution, build hooks.', 'nvoos-saas-controller' ); ?></li>
-				<li>🚧 <strong><?php esc_html_e( 'Phase 2 — WP-Admin & REST plumbing', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'this menu, the Packages tab, the credential store, and the /nvoos-saas/v1 REST namespace.', 'nvoos-saas-controller' ); ?></li>
+				<li>✅ <strong><?php esc_html_e( 'Phase 2 — WP-Admin & REST plumbing', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'this menu, the Packages tab, the credential store, and the /nvoos-saas/v1 REST namespace.', 'nvoos-saas-controller' ); ?></li>
 				<li>✅ <strong><?php esc_html_e( 'Phase 3 — One-Click Wizard', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'collect credentials, validate, provision D1 + KV + Worker bindings.', 'nvoos-saas-controller' ); ?></li>
-				<li>🚧 <strong><?php esc_html_e( 'Phase 4 — Plan / Apply', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'terraform-style preview of every reconcile action — read-only plan generator on the Deployment tab.', 'nvoos-saas-controller' ); ?></li>
+				<li>✅ <strong><?php esc_html_e( 'Phase 4 — Plan / Apply', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( 'terraform-style preview of every reconcile action — read-only plan generator on the Deployment tab.', 'nvoos-saas-controller' ); ?></li>
 				<li>✅ <strong><?php esc_html_e( 'Phase 5 — Apply, Drift, Audit Log, Smoke Tests', 'nvoos-saas-controller' ); ?></strong>: <?php esc_html_e( '5a (audit log + smoke tests), 5b (HITL-gated Apply), 5c (drift detector) and 5d (Worker upload) all shipped.', 'nvoos-saas-controller' ); ?></li>
 			</ul>
 		</div>
@@ -262,11 +262,14 @@ class NVOOS_SaaS_Controller_Admin_Page {
 			)
 		) {
 			$incoming = array(
-				'worker_name'     => isset( $_POST['worker_name'] ) ? wp_unslash( $_POST['worker_name'] ) : '',
-				'account_id'      => isset( $_POST['account_id'] ) ? wp_unslash( $_POST['account_id'] ) : '',
-				'ai_gateway_slug' => isset( $_POST['ai_gateway_slug'] ) ? wp_unslash( $_POST['ai_gateway_slug'] ) : '',
+				'worker_name'     => isset( $_POST['worker_name'] ) ? sanitize_text_field( wp_unslash( $_POST['worker_name'] ) ) : '',
+				'account_id'      => isset( $_POST['account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['account_id'] ) ) : '',
+				'ai_gateway_slug' => isset( $_POST['ai_gateway_slug'] ) ? sanitize_text_field( wp_unslash( $_POST['ai_gateway_slug'] ) ) : '',
 				'd1_databases'    => self::parse_pairs_from_post( 'd1', 'name', 'binding' ),
 				'kv_namespaces'   => self::parse_pairs_from_post( 'kv', 'title', 'binding' ),
+				'stripe_products' => self::parse_rows_from_post( 'saas_stripe_products', array( 'id', 'name', 'description' ) ),
+				'stripe_prices'   => self::parse_rows_from_post( 'saas_stripe_prices', array( 'lookup_key', 'product_id', 'currency', 'unit_amount', 'recurring_interval', 'nickname' ) ),
+				'openrouter_keys' => self::parse_rows_from_post( 'saas_openrouter_keys', array( 'label', 'limit_usd' ) ),
 			);
 			$config_store->set( $incoming );
 			echo '<div class="notice notice-success is-dismissible inline"><p>'
@@ -277,9 +280,14 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		$config = $config_store->get();
 		?>
 		<div class="card" style="max-width:1080px;padding:1em 1.5em;">
-			<h2><?php esc_html_e( 'Desired Cloudflare Topology', 'nvoos-saas-controller' ); ?></h2>
+			<h2><?php esc_html_e( 'Desired Topology', 'nvoos-saas-controller' ); ?></h2>
 			<p class="description">
-				<?php esc_html_e( 'The plan generator will diff this config against your live Cloudflare account and tell you exactly what would change. No mutation happens on this tab — Apply is a separate Phase 5 surface gated on HITL approval.', 'nvoos-saas-controller' ); ?>
+				<?php esc_html_e( 'The plan generator will diff this config against your live Cloudflare / Stripe / OpenRouter account and tell you exactly what would change. No mutation happens on this tab — Apply is a separate Phase 5 surface gated on HITL approval.', 'nvoos-saas-controller' ); ?>
+			</p>
+			<p class="description" style="margin-bottom:1em;">
+				<strong><?php esc_html_e( 'Stripe Webhook URL:', 'nvoos-saas-controller' ); ?></strong>
+				<code style="user-select:all;"><?php echo esc_url( rest_url( 'nvoos-saas/v1/webhooks/stripe' ) ); ?></code>
+				<?php esc_html_e( '— point Stripe at this URL after configuring the stripe_webhook_secret credential. The receiver verifies every request with HMAC-SHA256 before recording it.', 'nvoos-saas-controller' ); ?>
 			</p>
 
 			<form method="post" action="">
@@ -307,6 +315,32 @@ class NVOOS_SaaS_Controller_Admin_Page {
 
 				<h3><?php esc_html_e( 'KV Namespaces', 'nvoos-saas-controller' ); ?></h3>
 				<?php self::render_pairs_editor( 'kv', $config['kv_namespaces'], 'title', __( 'Namespace title', 'nvoos-saas-controller' ), 'binding', __( 'Binding', 'nvoos-saas-controller' ) ); ?>
+
+				<h3><?php esc_html_e( 'Stripe Products (Phase 6)', 'nvoos-saas-controller' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Desired products to provision in Stripe. The id is operator-supplied so create-or-update is idempotent across replays.', 'nvoos-saas-controller' ); ?></p>
+				<?php self::render_rows_editor( 'saas_stripe_products', $config['stripe_products'], array(
+					'id'          => __( 'Product ID', 'nvoos-saas-controller' ),
+					'name'        => __( 'Name', 'nvoos-saas-controller' ),
+					'description' => __( 'Description', 'nvoos-saas-controller' ),
+				) ); ?>
+
+				<h3><?php esc_html_e( 'Stripe Prices (Phase 6)', 'nvoos-saas-controller' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Desired prices. lookup_key is the matching key; product_id references a product above or already provisioned in Stripe. currency is lowercase ISO 3-letter (e.g. usd). unit_amount is in the currency\'s smallest unit (e.g. cents). Leave recurring_interval blank for one-shot prices.', 'nvoos-saas-controller' ); ?></p>
+				<?php self::render_rows_editor( 'saas_stripe_prices', $config['stripe_prices'], array(
+					'lookup_key'         => __( 'Lookup Key', 'nvoos-saas-controller' ),
+					'product_id'         => __( 'Product ID', 'nvoos-saas-controller' ),
+					'currency'           => __( 'Currency', 'nvoos-saas-controller' ),
+					'unit_amount'        => __( 'Unit Amount', 'nvoos-saas-controller' ),
+					'recurring_interval' => __( 'Recurring (day/week/month/year)', 'nvoos-saas-controller' ),
+					'nickname'           => __( 'Nickname', 'nvoos-saas-controller' ),
+				) ); ?>
+
+				<h3><?php esc_html_e( 'OpenRouter Keys (Phase 6)', 'nvoos-saas-controller' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Desired runtime API keys. label is the matching key. limit_usd is the per-key dollar budget cap (optional, leave blank for no limit). The actual key value is returned only at apply time — copy it from the apply result.', 'nvoos-saas-controller' ); ?></p>
+				<?php self::render_rows_editor( 'saas_openrouter_keys', $config['openrouter_keys'], array(
+					'label'     => __( 'Label', 'nvoos-saas-controller' ),
+					'limit_usd' => __( 'Limit (USD)', 'nvoos-saas-controller' ),
+				) ); ?>
 
 				<p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Save Desired Config', 'nvoos-saas-controller' ); ?></button></p>
 			</form>
@@ -457,7 +491,7 @@ class NVOOS_SaaS_Controller_Admin_Page {
 		if ( empty( $_POST[ $prefix ] ) || ! is_array( $_POST[ $prefix ] ) ) {
 			return array();
 		}
-		$raw = wp_unslash( $_POST[ $prefix ] );
+		$raw = array_map( 'sanitize_text_field', wp_unslash( $_POST[ $prefix ] ) );
 		// phpcs:enable
 		$out = array();
 		foreach ( $raw as $row ) {
@@ -473,6 +507,95 @@ class NVOOS_SaaS_Controller_Admin_Page {
 				$key_a => $a,
 				$key_b => $b,
 			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Helper: render a multi-column table editor for arbitrary field sets.
+	 *
+	 * Similar to {@see render_pairs_editor()} but supports any number of
+	 * columns. Used for Stripe products/prices and OpenRouter keys.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string               $prefix  Form prefix.
+	 * @param array                $rows    Existing rows.
+	 * @param array<string,string> $columns Map of field_key => label.
+	 * @return void
+	 */
+	protected static function render_rows_editor( $prefix, array $rows, array $columns ) {
+		if ( empty( $rows ) ) {
+			$blank = array();
+			foreach ( $columns as $key => $label ) {
+				$blank[ $key ] = '';
+			}
+			$rows[] = $blank;
+		}
+		// Add an extra blank row at the end.
+		$blank = array();
+		foreach ( $columns as $key => $label ) {
+			$blank[ $key ] = '';
+		}
+		$rows[] = $blank;
+		?>
+		<table class="widefat striped" style="max-width:1080px;">
+			<thead>
+				<tr>
+					<?php foreach ( $columns as $key => $label ) : ?>
+						<th><?php echo esc_html( $label ); ?></th>
+					<?php endforeach; ?>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $rows as $i => $row ) : ?>
+					<tr>
+						<?php foreach ( $columns as $key => $label ) : ?>
+							<td><input type="text" class="regular-text" name="<?php echo esc_attr( $prefix . '[' . $i . '][' . $key . ']' ); ?>" value="<?php echo esc_attr( isset( $row[ $key ] ) ? $row[ $key ] : '' ); ?>" /></td>
+						<?php endforeach; ?>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Parse a `$_POST['<prefix>']` array of arbitrary-field rows.
+	 *
+	 * Empty rows (where every field is trimmed-blank) are dropped.
+	 * The per-field sanitiser in
+	 * {@see NVOOS_SaaS_Controller_Deployment_Config::sanitize()} runs after.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string   $prefix POST array key.
+	 * @param string[] $fields Ordered list of field names in each row.
+	 * @return array
+	 */
+	protected static function parse_rows_from_post( $prefix, array $fields ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified by caller.
+		if ( empty( $_POST[ $prefix ] ) || ! is_array( $_POST[ $prefix ] ) ) {
+			return array();
+		}
+		$raw = wp_unslash( $_POST[ $prefix ] );
+		// phpcs:enable
+		$out = array();
+		foreach ( $raw as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			// Only include rows where at least one field is non-empty.
+			$has_value = false;
+			$entry     = array();
+			foreach ( $fields as $f ) {
+				$val          = isset( $row[ $f ] ) ? trim( (string) $row[ $f ] ) : '';
+				$entry[ $f ]  = $val;
+				$has_value    = $has_value || '' !== $val;
+			}
+			if ( $has_value ) {
+				$out[] = $entry;
+			}
 		}
 		return $out;
 	}

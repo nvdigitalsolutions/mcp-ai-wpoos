@@ -18,13 +18,16 @@ if ( ! class_exists( 'NVOOS_SaaS_Stub_Mutating_Client' ) ) {
 }
 
 /**
+ * Tests for the apply job background worker.
+ *
  * @covers NVOOS_SaaS_Controller_Apply_Job
  */
 class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 
 	/**
-	 * Stub mutating client shared across all ticks in a single test, so a
-	 * test can inspect every Cloudflare call the worker made across the
+	 * Stub mutating client shared across all ticks in a single test.
+	 *
+	 * A test can inspect every Cloudflare call the worker made across the
 	 * whole job.
 	 *
 	 * @var NVOOS_SaaS_Stub_Mutating_Client
@@ -32,6 +35,8 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 	private $stub;
 
 	/**
+	 * The apply engine instance under test.
+	 *
 	 * @var NVOOS_SaaS_Controller_Apply_Engine
 	 */
 	private $engine;
@@ -44,6 +49,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 	 */
 	private $created_dist = false;
 
+	/**
+	 * Set up test.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
@@ -57,6 +67,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		add_filter( 'nvoos_saas_controller_apply_job_engine', array( $this, 'inject_engine' ) );
 	}
 
+	/**
+	 * Tear down test.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		remove_filter( 'nvoos_saas_controller_apply_job_engine', array( $this, 'inject_engine' ) );
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
@@ -74,10 +89,20 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		return $this->engine;
 	}
 
+	/**
+	 * Get the path to the worker dist file.
+	 *
+	 * @return string
+	 */
 	private function worker_dist_path() {
 		return NVOOS_SAAS_CONTROLLER_PATH . 'worker/dist/index.js';
 	}
 
+	/**
+	 * Ensure the worker dist file exists for testing.
+	 *
+	 * @return void
+	 */
 	private function ensure_worker_dist() {
 		$path = $this->worker_dist_path();
 		if ( file_exists( $path ) ) {
@@ -89,6 +114,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->created_dist = true;
 	}
 
+	/**
+	 * Remove the worker dist file if this test created it.
+	 *
+	 * @return void
+	 */
 	private function cleanup_worker_dist() {
 		if ( $this->created_dist ) {
 			$path = $this->worker_dist_path();
@@ -103,6 +133,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Build a plan fixture with two creates and one update.
+	 *
+	 * @return array
+	 */
 	private function plan_with_two_creates_and_one_update() {
 		return array(
 			'creates' => array(
@@ -136,6 +171,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test that enqueue_plan returns queued state and projection omits queue.
+	 *
+	 * @return void
+	 */
 	public function test_enqueue_plan_returns_queued_state_and_projection_omits_queue() {
 		$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
 
@@ -154,6 +194,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertCount( 3, $raw['queue'] );
 	}
 
+	/**
+	 * Test that enqueue_plan rejects an empty plan.
+	 *
+	 * @return void
+	 */
 	public function test_enqueue_plan_rejects_empty_plan() {
 		$result = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan(
 			array(
@@ -165,6 +210,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertSame( 'empty_apply_plan', $result->get_error_code() );
 	}
 
+	/**
+	 * Test that handle_tick processes one row and updates progress.
+	 *
+	 * @return void
+	 */
 	public function test_handle_tick_processes_one_row_and_updates_progress() {
 		$state  = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
 		$job_id = $state['id'];
@@ -202,6 +252,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertSame( 'worker', $this->stub->calls[2][0] );
 	}
 
+	/**
+	 * Test that handle_tick records partial failure without aborting queue.
+	 *
+	 * @return void
+	 */
 	public function test_handle_tick_records_partial_failure_without_aborting_queue() {
 		// Make D1 fail; KV + Worker should still proceed.
 		$this->stub->next_d1 = new WP_Error( 'cf_boom', 'Cloudflare 500' );
@@ -221,6 +276,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Cloudflare 500', $progress['errors'][0] );
 	}
 
+	/**
+	 * Test that cancel drains queue and short-circuits future ticks.
+	 *
+	 * @return void
+	 */
 	public function test_cancel_drains_queue_and_short_circuits_future_ticks() {
 		$state  = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
 		$job_id = $state['id'];
@@ -239,16 +299,31 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->stub->calls, 'Cancellation must stop further Cloudflare calls.' );
 	}
 
+	/**
+	 * Test that cancel of an unknown job returns WP_Error.
+	 *
+	 * @return void
+	 */
 	public function test_cancel_unknown_job_returns_wp_error() {
 		$result = NVOOS_SaaS_Controller_Apply_Job::cancel( 'no-such-job' );
 		$this->assertWPError( $result );
 		$this->assertSame( 'apply_job_not_found', $result->get_error_code() );
 	}
 
+	/**
+	 * Test that get_progress of an unknown job returns null.
+	 *
+	 * @return void
+	 */
 	public function test_get_progress_unknown_job_returns_null() {
 		$this->assertNull( NVOOS_SaaS_Controller_Apply_Job::get_progress( 'never-existed' ) );
 	}
 
+	/**
+	 * Test that enqueue_from_token consumes token and creates a job.
+	 *
+	 * @return void
+	 */
 	public function test_enqueue_from_token_consumes_token_and_creates_job() {
 		$plan   = $this->plan_with_two_creates_and_one_update();
 		$issued = NVOOS_SaaS_Controller_Apply_Engine::issue_token( $plan );
@@ -263,6 +338,11 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->assertSame( 'consumed_apply_token', $second->get_error_code() );
 	}
 
+	/**
+	 * Test that enqueue and cancel both record audit entries.
+	 *
+	 * @return void
+	 */
 	public function test_enqueue_audits_and_cancel_audits() {
 		$state = NVOOS_SaaS_Controller_Apply_Job::enqueue_plan( $this->plan_with_two_creates_and_one_update() );
 		NVOOS_SaaS_Controller_Apply_Job::cancel( $state['id'] );

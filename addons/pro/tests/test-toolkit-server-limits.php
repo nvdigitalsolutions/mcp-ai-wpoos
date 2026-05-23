@@ -9,16 +9,19 @@
 
 require_once dirname( __DIR__ ) . '/includes/mcp-servers/mcp-servers-init.php';
 
-/**
+/** Summary.
+ *
  * @group toolkit-mcp-servers
  */
 class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 
-	/**
+	/** Summary.
+	 *
 	 * @var int
 	 */
 	private $admin_user_id = 0;
 
+	/** Set up test. */
 	public function set_up() {
 		parent::set_up();
 
@@ -35,6 +38,7 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_user_id );
 	}
 
+	/** Tear down test. */
 	public function tear_down() {
 		delete_option( WP_MCP_AI_Toolkit_Server_Base::OPTION_PREFIX . 'crm' );
 		// Drop any rate-limit transients we may have set.
@@ -46,6 +50,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		parent::tear_down();
 	}
 
+	/** Test defaults have zero limits.
+	 */
 	public function test_defaults_have_zero_limits() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$limits = $server->effective_limits();
@@ -54,6 +60,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$this->assertSame( 0, $limits['max_iterations'] );
 	}
 
+	/** Test update configuration persists limits.
+	 */
 	public function test_update_configuration_persists_limits() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$server->update_configuration(
@@ -70,6 +78,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$this->assertSame( 3, $limits['max_iterations'] );
 	}
 
+	/** Test filter can override effective limits.
+	 */
 	public function test_filter_can_override_effective_limits() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		add_filter(
@@ -87,6 +97,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$this->assertSame( 99, $limits['requests_per_minute'] );
 	}
 
+	/** Test negative input is clamped to zero.
+	 */
 	public function test_negative_input_is_clamped_to_zero() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$server->update_configuration(
@@ -103,6 +115,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$this->assertSame( 0, $limits['max_iterations'] );
 	}
 
+	/** Test payload size limit rejects oversized requests.
+	 */
 	public function test_payload_size_limit_rejects_oversized_requests() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$server->update_configuration(
@@ -132,6 +146,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$this->assertSame( 50, $data['error']['data']['max_payload_bytes'] );
 	}
 
+	/** Test rate limit blocks after threshold.
+	 */
 	public function test_rate_limit_blocks_after_threshold() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$server->update_configuration(
@@ -144,7 +160,15 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$dispatch = static function () {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai-pro/v1/mcp/crm' );
 			$request->set_header( 'Content-Type', 'application/json' );
-			$request->set_body( wp_json_encode( array( 'jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list' ) ) );
+			$request->set_body(
+				wp_json_encode(
+					array(
+						'jsonrpc' => '2.0',
+						'id'      => 1,
+						'method'  => 'tools/list',
+					)
+				)
+			);
 			return rest_get_server()->dispatch( $request )->get_data();
 		};
 
@@ -158,6 +182,8 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 		$this->assertSame( -32099, $third['error']['code'] );
 	}
 
+	/** Test initialize and ping bypass limits.
+	 */
 	public function test_initialize_and_ping_bypass_limits() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		// Set a tiny payload limit so any real method would fail.
@@ -170,12 +196,22 @@ class Test_Toolkit_Server_Limits extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai-pro/v1/mcp/crm' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array( 'jsonrpc' => '2.0', 'id' => 1, 'method' => 'ping' ) ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'jsonrpc' => '2.0',
+					'id'      => 1,
+					'method'  => 'ping',
+				)
+			)
+		);
 
 		$data = rest_get_server()->dispatch( $request )->get_data();
 		$this->assertArrayHasKey( 'result', $data, 'ping should bypass payload-size guard.' );
 	}
 
+	/** Test descriptor exposes effective limits.
+	 */
 	public function test_descriptor_exposes_effective_limits() {
 		$server = WP_MCP_AI_Toolkit_Server_Registry::get_instance()->get( 'crm' );
 		$server->update_configuration(

@@ -122,13 +122,17 @@ class WP_MCP_AI_Pro_CLI_Task_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $posts as $post ) {
-			$items[] = array(
+			$task_status = get_post_meta( $post->ID, '_task_status', true );
+			$priority    = get_post_meta( $post->ID, '_task_priority', true );
+			$project_id  = get_post_meta( $post->ID, '_task_project_id', true );
+			$due_date    = get_post_meta( $post->ID, '_task_due_date', true );
+			$items[]     = array(
 				'ID'         => $post->ID,
 				'title'      => $post->post_title,
-				'status'     => get_post_meta( $post->ID, '_task_status', true ) ?: 'pending',
-				'priority'   => get_post_meta( $post->ID, '_task_priority', true ) ?: '',
-				'project_id' => get_post_meta( $post->ID, '_task_project_id', true ) ?: '',
-				'due_date'   => get_post_meta( $post->ID, '_task_due_date', true ) ?: '',
+				'status'     => ! empty( $task_status ) ? $task_status : 'pending',
+				'priority'   => ! empty( $priority ) ? $priority : '',
+				'project_id' => ! empty( $project_id ) ? $project_id : '',
+				'due_date'   => ! empty( $due_date ) ? $due_date : '',
 			);
 		}
 
@@ -412,9 +416,9 @@ class WP_MCP_AI_Pro_CLI_Task_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		if ( ! $yes ) {
 			$action = $force
 				? /* translators: 1: task title, 2: task ID */
-				  sprintf( __( 'Permanently delete task "%1$s" (ID %2$d)?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id )
+					sprintf( __( 'Permanently delete task "%1$s" (ID %2$d)?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id )
 				: /* translators: 1: task title, 2: task ID */
-				  sprintf( __( 'Move task "%1$s" (ID %2$d) to trash?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id );
+					sprintf( __( 'Move task "%1$s" (ID %2$d) to trash?', 'mcp-ai-wpoos-pro' ), $post->post_title, $id );
 			WP_CLI::confirm( $action );
 		}
 

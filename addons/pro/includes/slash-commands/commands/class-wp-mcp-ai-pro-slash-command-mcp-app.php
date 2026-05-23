@@ -133,7 +133,7 @@ class WP_MCP_AI_Pro_Slash_Command_Mcp_App {
 			}
 			$output = sprintf(
 				/* translators: %s: app label */
-				"## " . __( 'Tools for MCP App "%s"', 'mcp-ai-wpoos-pro' ) . "\n\n",
+				'## ' . __( 'Tools for MCP App "%s"', 'mcp-ai-wpoos-pro' ) . "\n\n",
 				esc_html( $label )
 			);
 			foreach ( (array) $tools as $tool ) {
@@ -165,7 +165,7 @@ class WP_MCP_AI_Pro_Slash_Command_Mcp_App {
 				: __( 'No MCP apps found. Specify --assistant-id=<n>.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$output  = "## " . __( 'MCP Apps', 'mcp-ai-wpoos-pro' );
+		$output = '## ' . __( 'MCP Apps', 'mcp-ai-wpoos-pro' );
 		if ( $assistant_id ) {
 			$output .= sprintf(
 				/* translators: %d: assistant ID */

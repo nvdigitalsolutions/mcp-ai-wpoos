@@ -75,7 +75,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	const MAX_TOKENS = 1200;
 
 	// =========================================================================
-	// WP_MCP_AI_Tool_Interface
+	// WP_MCP_AI_Tool_Interface.
 	// =========================================================================
 
 	/**
@@ -137,7 +137,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// WP_MCP_AI_Tool_Capability_Flags_Interface
+	// WP_MCP_AI_Tool_Capability_Flags_Interface.
 	// =========================================================================
 
 	/**
@@ -157,13 +157,17 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// execute()
+	// Execute().
 	// =========================================================================
 
 	/**
 	 * {@inheritdoc}
 	 *
-	 * @param array $arguments Parsed tool arguments.
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
+	 *
+	 // phpcs:ignore Squiz.Commenting.FunctionComment.ExtraParamComment
+	 *
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
@@ -171,6 +175,13 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'view_medical_imaging' ) ) {
 			return new WP_Error(
@@ -208,7 +219,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// Action handler
+	// Action handler.
 	// =========================================================================
 
 	/**
@@ -221,10 +232,10 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	 * @return array|WP_Error
 	 */
 	private function action_interpret( WP_Post $post, $focus, $include_pixel_preview, $requested_iuid ) {
-		$study_data    = $this->build_study_context( $post );
-		$prompt        = $this->build_interpretation_prompt( $study_data, $focus );
-		$settings      = get_option( 'wp_mcp_ai_settings', array() );
-		$provider      = $this->get_provider( $settings, $include_pixel_preview );
+		$study_data = $this->build_study_context( $post );
+		$prompt     = $this->build_interpretation_prompt( $study_data, $focus );
+		$settings   = get_option( 'wp_mcp_ai_settings', array() );
+		$provider   = $this->get_provider( $settings, $include_pixel_preview );
 
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
@@ -328,7 +339,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// AI provider helpers
+	// AI provider helpers.
 	// =========================================================================
 
 	/**
@@ -450,7 +461,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// Prompt builders
+	// Prompt builders.
 	// =========================================================================
 
 	/**
@@ -560,8 +571,8 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 		}
 
 		$prompt .= "\nRespond in clear, professional English suitable for a radiographer or clinician reviewing the study metadata. ";
-		$prompt .= "Do NOT invent clinical findings or diagnoses from metadata alone. ";
-		$prompt .= "Keep your response concise (under 600 words).";
+		$prompt .= 'Do NOT invent clinical findings or diagnoses from metadata alone. ';
+		$prompt .= 'Keep your response concise (under 600 words).';
 
 		return $prompt;
 	}
@@ -591,7 +602,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	}
 
 	// =========================================================================
-	// Pixel preview helpers
+	// Pixel preview helpers.
 	// =========================================================================
 
 	/**
@@ -684,9 +695,9 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 			return $pixel_info;
 		}
 
-		$rows        = $pixel_info['rows'];
-		$columns     = $pixel_info['columns'];
-		$bits_alloc  = $pixel_info['bits_allocated'];
+		$rows         = $pixel_info['rows'];
+		$columns      = $pixel_info['columns'];
+		$bits_alloc   = $pixel_info['bits_allocated'];
 		$pixel_offset = $pixel_info['pixel_data_offset'];
 		$pixel_length = $pixel_info['pixel_data_length'];
 
@@ -833,8 +844,8 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 			if ( '00280010' === $tag ) {
 				// Rows.
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
-				$val  = fread( $fh, $length );
-				$rows = ( $val && strlen( $val ) >= 2 ) ? unpack( 'v', substr( $val, 0, 2 ) )[1] : 0;
+				$val      = fread( $fh, $length );
+				$rows     = ( $val && strlen( $val ) >= 2 ) ? unpack( 'v', substr( $val, 0, 2 ) )[1] : 0;
 				$scanned += $length;
 				continue;
 			}
@@ -842,8 +853,8 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 			if ( '00280011' === $tag ) {
 				// Columns.
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
-				$val     = fread( $fh, $length );
-				$columns = ( $val && strlen( $val ) >= 2 ) ? unpack( 'v', substr( $val, 0, 2 ) )[1] : 0;
+				$val      = fread( $fh, $length );
+				$columns  = ( $val && strlen( $val ) >= 2 ) ? unpack( 'v', substr( $val, 0, 2 ) )[1] : 0;
 				$scanned += $length;
 				continue;
 			}
@@ -880,11 +891,11 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'rows'               => $rows,
-			'columns'            => $columns,
-			'bits_allocated'     => $bits_alloc,
-			'pixel_data_offset'  => $pixel_offset,
-			'pixel_data_length'  => $pixel_length,
+			'rows'              => $rows,
+			'columns'           => $columns,
+			'bits_allocated'    => $bits_alloc,
+			'pixel_data_offset' => $pixel_offset,
+			'pixel_data_length' => $pixel_length,
 		);
 	}
 
@@ -911,8 +922,8 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 			$values   = array_values( $unpacked );
 
 			// Find min / max for window stretch.
-			$min = min( $values );
-			$max = max( $values );
+			$min   = min( $values );
+			$max   = max( $values );
 			$range = $max - $min;
 
 			if ( 0 === $range ) {

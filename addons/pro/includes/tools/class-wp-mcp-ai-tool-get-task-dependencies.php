@@ -107,6 +107,11 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -161,14 +166,14 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 		$can_start = empty( $depends_on_ids ) || $this->all_completed( $depends_on );
 
 		return array(
-			'success'      => true,
-			'task_id'      => $task_id,
-			'task_title'   => $task->post_title,
-			'task_status'  => get_post_meta( $task_id, '_task_status', true ) ?: 'todo',
-			'can_start'    => $can_start,
-			'depends_on'   => $depends_on,
-			'blocks'       => $blocks,
-			'summary'      => sprintf(
+			'success'     => true,
+			'task_id'     => $task_id,
+			'task_title'  => $task->post_title,
+			'task_status' => get_post_meta( $task_id, '_task_status', true ) ? get_post_meta( $task_id, '_task_status', true ) : 'todo',
+			'can_start'   => $can_start,
+			'depends_on'  => $depends_on,
+			'blocks'      => $blocks,
+			'summary'     => sprintf(
 				/* translators: 1: count of tasks this task depends on, 2: count of tasks this task blocks */
 				__( 'This task depends on %1$d task(s) and blocks %2$d task(s).', 'mcp-ai-wpoos-pro' ),
 				count( $depends_on ),
@@ -203,11 +208,11 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 				continue;
 			}
 			$result[] = array(
-				'task_id'    => $id,
-				'title'      => $post->post_title,
-				'status'     => get_post_meta( $id, '_task_status', true ) ?: 'todo',
-				'due_date'   => get_post_meta( $id, '_task_due_date', true ) ?: null,
-				'priority'   => get_post_meta( $id, '_task_priority', true ) ?: 'medium',
+				'task_id'  => $id,
+				'title'    => $post->post_title,
+				'status'   => get_post_meta( $id, '_task_status', true ) ? get_post_meta( $id, '_task_status', true ) : 'todo',
+				'due_date' => get_post_meta( $id, '_task_due_date', true ) ? get_post_meta( $id, '_task_due_date', true ) : null,
+				'priority' => get_post_meta( $id, '_task_priority', true ) ? get_post_meta( $id, '_task_priority', true ) : 'medium',
 			);
 		}
 		return $result;

@@ -112,6 +112,11 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array
+		 */
 	public function get_capability_flags() {
 		return array( 'pro', 'external-api', 'database-write' );
 	}
@@ -251,7 +256,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Sync a single student by ID.
 	 *
-	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
+	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      ISAMS tool instance.
 	 * @param array                      $arguments       Tool arguments.
 	 * @param array                      $context         Execution context.
 	 * @param bool                       $update_existing Whether to update existing students.
@@ -307,7 +312,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Sync students by year group.
 	 *
-	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
+	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      ISAMS tool instance.
 	 * @param array                      $arguments       Tool arguments.
 	 * @param array                      $context         Execution context.
 	 * @param int                        $page            Page number.
@@ -362,7 +367,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Sync all students.
 	 *
-	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
+	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      ISAMS tool instance.
 	 * @param array                      $arguments       Tool arguments.
 	 * @param array                      $context         Execution context.
 	 * @param int                        $page            Page number.
@@ -422,13 +427,13 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 					'student_id' => isset( $student_data['id'] ) ? $student_data['id'] : 'unknown',
 					'error'      => $result->get_error_message(),
 				);
-			} elseif ( $result['action'] === 'created' ) {
+			} elseif ( 'created' === $result['action'] ) {
 				++$created_count;
 				++$synced_count;
-			} elseif ( $result['action'] === 'updated' ) {
+			} elseif ( 'updated' === $result['action'] ) {
 				++$updated_count;
 				++$synced_count;
-			} elseif ( $result['action'] === 'skipped' ) {
+			} elseif ( 'skipped' === $result['action'] ) {
 				++$skipped_count;
 			}
 		}

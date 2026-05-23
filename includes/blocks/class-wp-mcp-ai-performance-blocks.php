@@ -35,6 +35,12 @@ class WP_MCP_AI_Performance_Blocks {
 			return;
 		}
 
+		// Prevent double-registration during tests or repeated init calls.
+		$block_registry = WP_Block_Type_Registry::get_instance();
+		if ( $block_registry->is_registered( 'mcp-ai-wpoos/performance-test-runner' ) ) {
+			return;
+		}
+
 		// Performance Test Runner Block.
 		register_block_type(
 			'mcp-ai-wpoos/performance-test-runner',

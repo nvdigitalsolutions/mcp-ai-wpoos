@@ -215,19 +215,19 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	 */
 	private function get_companies_schema() {
 		return array(
-			'company_name'   => array(
+			'company_name'  => array(
 				'title'       => __( 'Company Name', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'text',
 				'width'       => '100%',
 				'is_required' => true,
 			),
-			'industry'       => array(
+			'industry'      => array(
 				'title'       => __( 'Industry', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'text',
 				'width'       => '50%',
 				'is_required' => true,
 			),
-			'company_size'   => array(
+			'company_size'  => array(
 				'title'   => __( 'Company Size', 'mcp-ai-wpoos-pro' ),
 				'type'    => 'select',
 				'width'   => '50%',
@@ -262,47 +262,47 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 					),
 				),
 			),
-			'website'        => array(
+			'website'       => array(
 				'title' => __( 'Website', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '100%',
 			),
-			'address'        => array(
+			'address'       => array(
 				'title' => __( 'Address', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'textarea',
 				'width' => '100%',
 			),
-			'city'           => array(
+			'city'          => array(
 				'title' => __( 'City', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '33%',
 			),
-			'state'          => array(
+			'state'         => array(
 				'title' => __( 'State/Province', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '33%',
 			),
-			'zip'            => array(
+			'zip'           => array(
 				'title' => __( 'ZIP/Postal Code', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '34%',
 			),
-			'country'        => array(
+			'country'       => array(
 				'title' => __( 'Country', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '50%',
 			),
-			'phone'          => array(
+			'phone'         => array(
 				'title' => __( 'Phone Number', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '50%',
 			),
-			'revenue'        => array(
+			'revenue'       => array(
 				'title' => __( 'Annual Revenue', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'number',
 				'width' => '50%',
 			),
-			'target_status'  => array(
+			'target_status' => array(
 				'title'   => __( 'Target Status', 'mcp-ai-wpoos-pro' ),
 				'type'    => 'select',
 				'width'   => '50%',
@@ -329,27 +329,27 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 					),
 				),
 			),
-			'linkedin'       => array(
+			'linkedin'      => array(
 				'title' => __( 'LinkedIn URL', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '50%',
 			),
-			'twitter'        => array(
+			'twitter'       => array(
 				'title' => __( 'Twitter/X Handle', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '50%',
 			),
-			'description'    => array(
+			'description'   => array(
 				'title' => __( 'Company Description', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'textarea',
 				'width' => '100%',
 			),
-			'tags'           => array(
+			'tags'          => array(
 				'title' => __( 'Tags', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '100%',
 			),
-			'notes'          => array(
+			'notes'         => array(
 				'title' => __( 'Research Notes', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'textarea',
 				'width' => '100%',

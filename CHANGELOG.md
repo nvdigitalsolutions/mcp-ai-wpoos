@@ -1,8 +1,108 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.22] - 2026-05-23
 
-_No changes yet._
+Bumped to 1.1.22 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.
+
+### Added — Baseten AI Provider (11th First-Class Provider)
+
+- **`WP_MCP_AI_Baseten_Client`** — full provider integration with OpenAI-compatible API at `https://api.baseten.co/v1` (PR #5067). Chat completions, tool/function calling, JSON mode, SSE streaming, reasoning content passthrough. Settings → Providers → Baseten subtab; Provider Diagnostics card; Model Discovery `baseten` branch.
+- **Catalog entries + provider badges** — Baseten model entries seeded in `model-catalog.json`; provider logo badges registered; CCT options updated.
+- **External service documentation** — terms/privacy URLs corrected to working paths; added to `docs/EXTERNAL_SERVICES.md` and `readme.txt` service disclosures. Provider now listed as 11th first-class AI provider alongside OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, and Ollama.
+
+### Added — CoSAI Secure-by-Design Agentic System (May 2026)
+
+Industry-standard secure agent infrastructure aligned with the [CoSAI Principles for Secure-by-Design Agentic Systems](https://www.coalitionforsecureai.org/announcing-the-cosai-principles-for-secure-by-design-agentic-systems/) (July 2025) and the [MCP Security paper](https://github.com/cosai-oasis/ws4-secure-design-agentic-systems) (January 2026). Part of the Gemini I/O 2026 feature drop:
+
+- **Principle 2 — Bounded & Resilient**: `WP_MCP_AI_Agent_Capability_Boundary` (`includes/agents/class-wp-mcp-ai-agent-capability-boundary.php`). Immutable per-session tool allow-lists with rate limiting (sliding window), iteration caps via existing `wp_mcp_ai_max_agentic_iterations` filter, budget exhaustion detection, and transient-backed execution tracking. Filters: `wp_mcp_ai_capability_boundary_allow_tool`, `wp_mcp_ai_capability_boundary_rate_limit`.
+- **Principle 3 — Transparent & Verifiable**: `WP_MCP_AI_Agent_Audit_Trail` (`includes/agents/class-wp-mcp-ai-agent-audit-trail.php`). Cryptographic chain-of-custody audit trails (SHA-256 linked events), dual storage (CPT `mcp_ai_audit_event` + options fallback), immutable events (closed trails reject writes), auto-pruning (configurable retention), OpenTelemetry-compatible schema (`trail_id` ↔ trace_id), session/assistant indexing for Agent Command Center feeds. Hooks: `wp_mcp_ai_audit_trail_store_event` (external forwarding), `wp_mcp_ai_audit_trail_event_stored`.
+- **Principle 1 — Human-Governed**: `WP_MCP_AI_Agent_Approval_Gate` (`includes/agents/class-wp-mcp-ai-agent-approval-gate.php`). Risk-tiered approval gate (low/medium/high/critical) with auto-approval for low-risk, pre-approved pattern matching for medium, pending-approval queue for high, and explicit override for critical. Integrates with existing `WP_MCP_AI_Pro_Agent_Command_Center` via `wp_mcp_ai_approval_decided` action. Filters: `wp_mcp_ai_agent_approval_auto_approve_risk`, `wp_mcp_ai_agent_approval_critical_override`.
+- **MCP-T3/T5 Sandbox**: `WP_MCP_AI_Agent_Code_Sandbox` (`includes/agents/class-wp-mcp-ai-agent-code-sandbox.php`). Isolated code execution for Python, Node.js, Bash, and PHP (restricted). `proc_open`-based with non-blocking I/O, timeout enforcement (`SIGKILL`), output size caps (1MB stdout / 256KB stderr), `open_basedir`-aware temp directories, marker-gated cleanup, stripped environment (no network access by default). Filters: `wp_mcp_ai_sandbox_allowed_languages`, `wp_mcp_ai_sandbox_max_timeout`, `wp_mcp_ai_sandbox_execution_env`.
+
+All four CoSAI components are **provider-agnostic** — they work with OpenAI, Anthropic, Gemini, Ollama, or any future provider. The existing Gemini-only `WP_MCP_AI_Gemini_Managed_Agent_Service` remains for Gemini-native Managed Agents API access. The agent roles system (`planner`/`executor`/`critic`/`base`) already exists in `includes/agents/` — the new classes extend this architecture without duplicating it.
+
+### Added — Continual Harness — Self-Improving Agent System (P5)
+
+New self-improving agent infrastructure as part of the Gemini I/O 2026 feature drop. Enables agents to learn from execution history, refine strategies over successive runs, and improve tool selection accuracy through feedback loops. Integrated with the CoSAI audit trail for transparent improvement tracking.
+
+### Added — SaaS Controller Phase 2 & 4 (PR #5068)
+
+- **Phase 2 — Stripe deployment editor.** Operator-side UI for managing Stripe products, prices, and webhook configurations from WP-Admin.
+- **Phase 4 — OpenRouter deployment editor.** Operator-side UI for managing OpenRouter API key provisioning and model routing configurations.
+- Completed the SaaS Controller Phase 2–4 roadmap alongside the existing Phase 1 (Credentials Wizard) and Phase 3 (Cloudflare topology editor).
+
+### Added — npm Packages: nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui (PR #5063)
+
+- **nvoos-vad** — Voice Activity Detection package. Browser-based VAD with configurable sensitivity, silence detection, and speech-segment callbacks. `dist/nvoos-vad.js` + TypeScript declaration.
+- **nvoos-chat-bubble** — Floating chat bubble widget for standalone embedding. Self-contained CSS/JS with `nvoos-chat-bubble` custom element. Includes toggle, minimize, and position controls.
+- **nvoos-chat-memory-ui** — Chat memory drawer UI component. Standalone React component for memory browsing, search, and audit views. Published alongside `nvoos-audio` peer dependency update.
+- All packages published to npm under the `@nvdigitalsolutions` scope with adapt-for-npm.js build scripts, `dist/` TypeScript declarations, and separate `package.json` manifests.
+
+### Added — WordPress Studio Test Environment Support (PR #5072)
+
+- New `wp-tests-config.php` with WordPress Studio detection and configuration.
+- Updated `tests/bootstrap.php` to auto-detect Studio's database credentials, ABSPATH, and site URL from environment.
+- Complements the existing Local by Flywheel, wp-env, and Codex environment configurations.
+
+### Added — Optional Components Banner + Release Build Pipeline (PR #5065)
+
+- Fixed the optional components admin banner to correctly display available addon components.
+- Created release build pipeline for generating distribution-ready plugin artifacts.
+
+### Added — Gemini I/O 2026 Model Refresh
+
+- **Gemini 3.5 Flash** added to `model-catalog.json` as the new recommended Gemini model (May 2026 GA). Outperforms Gemini 3.1 Pro on coding and agentic benchmarks, 4x faster output, dynamic thinking enabled by default. 1M context, 65K output tokens. Pricing: $1.50/$9.00 per 1M tokens.
+- **Gemini Omni Flash** added as the new video generation model (May 2026 GA), replacing Veo in the Gemini app. Any-to-any multimodal: text/images/audio/video → video with 10s duration, native audio, multi-turn conversational editing, and AI avatars.
+- **Gemini 3.1 Flash** marked as deprecated with sunset date 2026-09-01; fallback updated to `gemini-3.5-flash`.
+
+### Changed — Provider & Admin Settings
+
+- Provider section fallback model list updated — `gemini-3.5-flash` now recommended; `gemini-3.1-flash` removed from dropdown.
+- Video model settings: `gemini-omni-flash` added as default; Veo options marked as Legacy. Duration extended to 10s for Omni.
+- Onboarding wizard default Gemini model changed from `gemini-3.1-flash` to `gemini-3.5-flash`.
+- Ext Cog settings vision model options updated to `gemini-3.5-flash`/`gemini-3.1-pro`.
+- Model config renderer: Added `gemini-omni-*` capability flag detection (vision + multimodal + video-generation).
+- Cost calculator: `gemini-3.5-flash` pricing added — $1.50/M input, $9.00/M output, $0.15/M cached input.
+
+### Fixed — Security: UUID Buffer Bounds Check (PR #5074)
+
+- Overrode `uuid` dependency to `^9.0.0` in saas-controller to resolve a buffer bounds check vulnerability.
+
+### Fixed — Security: map_meta_cap=false for Audit Trail CPT (PR #5076)
+
+- Set `map_meta_cap=false` for the `mcp_ai_audit_event` custom post type to prevent a `delete_post` `_doing_it_wrong` notice in WordPress 6.1+. Follows the same pattern as the workflow CPT fix in PR #4822.
+
+### Fixed — Security: Antivirus False Positives in Test Suite (PR #5069)
+
+- Replaced mock malware payloads in `tests/test-skill-registry.php` with benign test data to avoid triggering antivirus false positives during development and CI runs.
+
+### Fixed — Allowed Providers List Expansion (PR #5077)
+
+- Added DeepSeek, OpenRouter, DigitalOcean, Kimi, and Baseten to the allowed providers list. These providers were previously functional but not listed in the provider validation gate, causing them to be blocked in certain admin contexts.
+
+### Fixed — LM Studio External Service URLs
+
+- Replaced all `lmstudio.ai` URLs with the GitHub organization URL (`github.com/lmstudio-ai`) after all `lmstudio.ai` paths began returning HTTP 500 errors.
+- Updated Terms URL in `readme.txt` (500 → homepage), `docs/EXTERNAL_SERVICES.md`, and the provider configuration.
+
+### Fixed — Semantic Compression Settings Location (PRs #5056, #5057)
+
+- Moved semantic compression settings from the Advanced tab to the Orchestration tab (Settings view) alongside other prompt-optimization controls. Applied across two PRs for complete coverage of the admin UI and settings persistence layer.
+
+### Fixed — Overview Dashboard Inline CSS Render-Time Output (PR #5079)
+
+- Overview dashboard inline CSS was not being output after the inline-script conversion. Fixed by adopting the render-time register/enqueue/add/print pattern (matching the orchestration renderer) instead of relying on the `wp_enqueue_scripts` hook which fires before the dashboard renders.
+
+### Fixed — Addons PHPCS Cleanup — 93% Reduction (PRs #5070, #5078)
+
+- **Batch 1 (PR #5070):** Enabled and fixed PHPCS across all addons. Removed 855 invalid `* /` comment-closer fragments across 330 files. Expanded 87 short ternaries to full ternary syntax. Added 616 auto-generated docblocks for standard/custom tool methods. Fixed 39 Yoda conditions. Added `@param` tags for 444 `execute()` method parameters. Fixed 43 missing class docblocks. Added 12 batch-fix helper scripts in `bin/`. Reduced errors from 1,143 → 82.
+- **Batch 2 (PR #5078):** Restored 6 files from `alpha-working` to fix parse errors introduced by batch 1 (ternary expansion broke regex patterns, inline comment period fix added `.` to code lines, multi-line expression ternary expansion broke complex logic). Restored `vendor/composer` files. Remaining errors: 82 (extra params 29, missing params 18, SQL 8, syntax 7, inline 6, Yoda 5, misc 9).
+
+### Changed — Documentation
+
+- Gemini Capabilities Matrix updated to May 2026 — Omni Flash, conversational video editing, AI avatars.
+- Video Production Toolkit README and docs updated with Omni Flash integration roadmap.
+- Design Professional Tools token multipliers updated for Omni.
 
 ## [1.1.21] - 2026-05-21
 

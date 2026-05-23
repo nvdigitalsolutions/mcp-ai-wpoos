@@ -329,8 +329,8 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 	 * Push a single ECA to iSAMS.
 	 *
 	 * @param int    $eca_post_id WordPress ECA post ID.
-	 * @param string $isams_url   iSAMS API base URL.
-	 * @param string $isams_key   iSAMS API key.
+	 * @param string $isams_url   ISAMS API base URL.
+	 * @param string $isams_key   ISAMS API key.
 	 * @param bool   $dry_run     Whether this is a dry run.
 	 * @return array|WP_Error Push result or error.
 	 */
@@ -344,16 +344,16 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Gather all ECA meta data.
-		$eca_name     = get_the_title( $eca_post_id );
-		$eca_code     = get_post_meta( $eca_post_id, '_eca_code', true );
-		$eca_type     = get_post_meta( $eca_post_id, '_eca_type', true );
-		$eca_day      = get_post_meta( $eca_post_id, '_eca_day', true );
-		$start_time   = get_post_meta( $eca_post_id, '_eca_start_time', true );
-		$end_time     = get_post_meta( $eca_post_id, '_eca_end_time', true );
-		$venue        = get_post_meta( $eca_post_id, '_eca_venue', true );
-		$capacity     = get_post_meta( $eca_post_id, '_eca_max_students', true );
-		$teachers     = get_post_meta( $eca_post_id, '_eca_teachers', true );
-		$status       = get_post_meta( $eca_post_id, '_eca_status', true );
+		$eca_name      = get_the_title( $eca_post_id );
+		$eca_code      = get_post_meta( $eca_post_id, '_eca_code', true );
+		$eca_type      = get_post_meta( $eca_post_id, '_eca_type', true );
+		$eca_day       = get_post_meta( $eca_post_id, '_eca_day', true );
+		$start_time    = get_post_meta( $eca_post_id, '_eca_start_time', true );
+		$end_time      = get_post_meta( $eca_post_id, '_eca_end_time', true );
+		$venue         = get_post_meta( $eca_post_id, '_eca_venue', true );
+		$capacity      = get_post_meta( $eca_post_id, '_eca_max_students', true );
+		$teachers      = get_post_meta( $eca_post_id, '_eca_teachers', true );
+		$status        = get_post_meta( $eca_post_id, '_eca_status', true );
 		$isams_sync_id = get_post_meta( $eca_post_id, '_eca_isams_sync_id', true );
 
 		// Build the iSAMS API payload.

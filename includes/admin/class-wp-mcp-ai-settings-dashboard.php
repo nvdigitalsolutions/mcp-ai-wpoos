@@ -1078,7 +1078,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			$inline_style_handles = array(
 				'wp-mcp-ai-orchestration-renderer',
-				'wp-mcp-ai-section-overview',
 				'wp-mcp-ai-section-providers',
 				'wp-mcp-ai-section-security',
 			);
