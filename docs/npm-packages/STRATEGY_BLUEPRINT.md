@@ -2,9 +2,19 @@
 
 ## Question: Can Parts of This Plugin Be Distributed as NPM Packages?
 
-**Short Answer**: YES - Multiple JavaScript components can be extracted and distributed as standalone NPM packages.
+**Short Answer**: YES — Multiple components have already been published, with more ready for extraction.
 
-**Long Answer**: This document provides a comprehensive strategy for identifying, extracting, and distributing reusable components from the NV oOS WordPress plugin ecosystem.
+**Long Answer**: This document provides a comprehensive strategy for identifying, extracting, and distributing reusable components from the NV oOS WordPress plugin ecosystem. As of May 2026, three packages are published: `nvoos-vad` (Voice Activity Detection), `nvoos-chat-bubble` (floating chat widget), and `nvoos-chat-memory-ui` (chat memory drawer).
+
+---
+
+## Already Published (May 2026)
+
+| Package | Description | Location |
+|---------|-------------|----------|
+| `nvoos-vad` | Browser-based Voice Activity Detection with configurable sensitivity, silence detection, and speech-segment callbacks | `packages/nvoos-vad/` |
+| `nvoos-chat-bubble` | Floating chat bubble custom element with toggle, minimize, and position controls | `packages/nvoos-chat-bubble/` |
+| `nvoos-chat-memory-ui` | Standalone React chat memory drawer component for memory browsing, search, and audit views | `packages/nvoos-chat-memory-ui/` |
 
 ---
 

@@ -1,10 +1,10 @@
-# WordPress.org Compliance — May 19–21, 2026 (Final Pass)
+# WordPress.org Compliance — May 19–23, 2026 (Final Pass + v1.1.22 Update)
 
 **Plugin:** NV Digital Open Operator System (oOS) — slug `mcp-ai-wpoos`
 **Prior audit:** [`WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](WORDPRESS_ORG_COMPLIANCE_2026_05_09.md)
 **Review ID:** R nvdigital-open-operator-system-oos/vsamtani/25Dec25/T19 9May26/4.0.1B1
-**Audit window:** May 19–21, 2026
-**Plugin version:** v1.1.21
+**Audit window:** May 19–23, 2026
+**Plugin version:** v1.1.22
 **Outcome:** ✅ ALL 10 FINDINGS RESOLVED — READY FOR RE-SUBMISSION
 
 ---
@@ -236,6 +236,76 @@ Comprehensive prompt caching across all five AI providers. New `WP_MCP_AI_Chat_R
 | Build pipeline | ✅ `addons/` excluded, ZIP verified |
 
 **Zero findings remain. The base plugin is fully compliant with all 18 WordPress.org Plugin Directory Guidelines.**
+
+---
+
+## 12. Post-May-21 Security & Compliance Updates (May 22–23, 2026, v1.1.22)
+
+The following changes occurred after the May 21 final-audit cutoff. None introduce new WordPress.org compliance findings; this section documents them for audit-trail continuity.
+
+### 12a. Allowed Providers List Expansion
+
+Five providers were previously functional but missing from the provider validation gate (`includes/admin/class-wp-mcp-ai-settings-providers.php`), causing them to be blocked in certain admin contexts. Now added (PR #5077):
+
+| Provider | Prior Status | New Status |
+|----------|:-----------:|:----------:|
+| DeepSeek | Missing from gate | ✅ Allowed |
+| OpenRouter | Missing from gate | ✅ Allowed |
+| DigitalOcean | Missing from gate | ✅ Allowed |
+| Kimi | Missing from gate | ✅ Allowed |
+| Baseten | Missing from gate | ✅ Allowed |
+
+### 12b. New External Service: Baseten API (11th Provider)
+
+Baseten (`api.baseten.co/v1`) is now a first-class provider with full OpenAI-compatible integration (chat, tools, streaming, reasoning passthrough). Service documented in:
+- `docs/EXTERNAL_SERVICES.md` §6f — Terms of Service, Privacy Policy, data transmission details
+- `readme.txt` — added to language-model providers list
+- `README.md` — privacy/terms notice updated
+
+**Compliance impact:** Baseten was already present in `model-catalog.json` and `WP_MCP_AI_Baseten_Client`. Adding it to the allowed-providers gate and documenting it as an external service brings it into full WordPress.org compliance. No new findings required.
+
+### 12c. CoSAI Secure-by-Design Agentic System — New `includes/agents/` Classes
+
+Four new agent-safety classes added as part of the Gemini I/O 2026 feature drop:
+
+| Class | File | CoSAI Principle |
+|-------|------|----------------|
+| `WP_MCP_AI_Agent_Capability_Boundary` | `includes/agents/class-wp-mcp-ai-agent-capability-boundary.php` | P2 — Bounded & Resilient |
+| `WP_MCP_AI_Agent_Audit_Trail` | `includes/agents/class-wp-mcp-ai-agent-audit-trail.php` | P3 — Transparent & Verifiable |
+| `WP_MCP_AI_Agent_Approval_Gate` | `includes/agents/class-wp-mcp-ai-agent-approval-gate.php` | P1 — Human-Governed |
+| `WP_MCP_AI_Agent_Code_Sandbox` | `includes/agents/class-wp-mcp-ai-agent-code-sandbox.php` | MCP-T3/T5 — Sandbox |
+
+**Compliance impact:** All classes are provider-agnostic. The sandbox uses `proc_open` with timeout enforcement, output caps, `open_basedir`-aware temp directories, and stripped environment (no network access by default). No new superglobal access, no new HTTP calls without timeouts, no inline scripts/styles — all follow existing compliance patterns. The audit trail CPT (`mcp_ai_audit_event`) uses `map_meta_cap=false` (see §12e below).
+
+### 12d. UUID Buffer Bounds Check (PR #5074)
+
+Overrode `uuid` dependency to `^9.0.0` in saas-controller's `composer.json` to resolve a buffer bounds check vulnerability. No impact on base plugin — `addons/saas-controller/` is excluded from the WordPress.org submission ZIP.
+
+### 12e. Audit Trail CPT — `map_meta_cap=false` (PR #5076)
+
+Set `map_meta_cap=false` for the `mcp_ai_audit_event` custom post type to prevent a `delete_post` `_doing_it_wrong` notice in WordPress 6.1+. Follows the same pattern as the workflow CPT fix in PR #4822 (already reviewed and approved in the May 9 audit).
+
+### 12f. Antivirus False Positives in Test Suite (PR #5069)
+
+Replaced mock malware payloads in `tests/test-skill-registry.php` with benign test data. Test files are excluded from the WordPress.org submission ZIP, so this has no compliance impact.
+
+### 12g. LM Studio External Service URLs
+
+All `lmstudio.ai` URLs replaced with GitHub organization URL (`github.com/lmstudio-ai`) after upstream began returning HTTP 500 errors. Updated in `readme.txt`, `docs/EXTERNAL_SERVICES.md`, and provider configuration. The self-hosted nature of LM Studio is unchanged — no data is transmitted externally when using LM Studio.
+
+### 12h. Addons PHPCS Cleanup (PRs #5070, #5078)
+
+93% reduction in PHPCS errors across all addons (1,143 → 82). Two-batch cleanup with 12 new `bin/` helper scripts. **No base-plugin files were modified** — all changes are in `addons/`, which is excluded from the WordPress.org submission ZIP.
+
+### 12i. Summary
+
+All post-May-21 changes are either:
+- **Addon-only** (SaaS Controller P2/P4, PHPCS, npm packages) — excluded from WP.org submission
+- **Security hardening** (UUID bounds, map_meta_cap, AV false positives, allowed-providers gate) — no new findings
+- **External service documentation** (Baseten) — now fully documented per Guidelines §10/§17
+- **New agent infrastructure** (CoSAI) — follows all existing compliance patterns, no inline scripts/styles, no unsafe file access
+
+**v1.1.22 remains fully compliant with all 18 WordPress.org Plugin Directory Guidelines.**
 
 ---
 
