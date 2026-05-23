@@ -194,7 +194,8 @@ function wp_mcp_ai_manually_load_plugin() {
 					'enable_digitalocean' => false,
 					'enable_huggingface'  => false,
 					'enable_nvidia'       => false,
-					'enable_embedded'     => false,
+					// enable_embedded intentionally omitted — it is a local/
+					// in-browser provider with no API key, always available.
 				)
 			);
 		},
