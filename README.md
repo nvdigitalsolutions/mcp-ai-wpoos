@@ -13,12 +13,11 @@
 
 **Version:** 1.1.22  
 **Release Date:** 2026-05-23 (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes)  
+
 **Latest Updates:** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) below.  
 **Previous Updates (v1.1.21):** May 20, 2026 (v1.1.21) — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration. See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
 **Previous Updates (v1.1.20):** May 18, 2026 (v1.1.20) — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route. See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
-**Previous Updates (v1.1.19):** May 18, 2026 (v1.1.19) — Kimi Provider, ACP Server, MCP Bridge, Unix Theory P7, Security Hardening, Chat Bubble Sweep. See [§ Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026) below.  
-**Previous Updates (v1.1.18):** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
-**Previous Updates (v1.1.17):** May 10, 2026 (v1.1.17) — See [§ Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026) below.  
+
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -30,11 +29,6 @@
 
 ### Getting Started
 - [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
-- [🆕 Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026)
-- [🆕 Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026)
-- [🆕 Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026)
-- [🆕 Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026)
-- [🆕 Latest Updates (v1.1.17 — May 2026)](#-latest-updates-v1117--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
