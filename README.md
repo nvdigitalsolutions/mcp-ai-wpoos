@@ -11,9 +11,10 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.21  
-**Release Date:** 2026-05-20 (May 20, 2026 — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration, Cloud Worker Local Dev Setup, Translation Loading Fix, Unix Theory P5, Docs Hub/SaaS Controller fixes, Folder README P7)  
-**Latest Updates:** May 20, 2026 (v1.1.21) — See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
+**Version:** 1.1.22  
+**Release Date:** 2026-05-23 (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes)  
+**Latest Updates:** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) below.  
+**Previous Updates (v1.1.21):** May 20, 2026 (v1.1.21) — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration. See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
 **Previous Updates (v1.1.20):** May 18, 2026 (v1.1.20) — Memory Layer 2026 Phase 7 UI/UX completion: Memory Health subtab, Retrieval Waterfall, and Session Replay tab + route. See [§ Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026) below.  
 **Previous Updates (v1.1.19):** May 18, 2026 (v1.1.19) — Kimi Provider, ACP Server, MCP Bridge, Unix Theory P7, Security Hardening, Chat Bubble Sweep. See [§ Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026) below.  
 **Previous Updates (v1.1.18):** May 14, 2026 (v1.1.18) — See [§ Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026) below.  
@@ -28,6 +29,8 @@
 ## 📑 Table of Contents
 
 ### Getting Started
+- [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
+- [🆕 Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026)
 - [🆕 Latest Updates (v1.1.20 — May 2026)](#-latest-updates-v1120--may-2026)
 - [🆕 Latest Updates (v1.1.19 — May 2026)](#-latest-updates-v1119--may-2026)
 - [🆕 Latest Updates (v1.1.18 — May 2026)](#-latest-updates-v1118--may-2026)
