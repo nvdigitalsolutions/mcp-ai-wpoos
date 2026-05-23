@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Create_Video_From_Images tool.
+ */
 class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interfac
 		return ! empty( $settings['enable_video_production_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_video_production_toolkit'] ) ) {
@@ -45,10 +58,20 @@ class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interfac
 		return 'create_video_from_images';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Create Video from Images', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Create slideshow videos from image collections with transitions, music, and text overlays.', 'mcp-ai-wpoos-pro' );
 	}
@@ -117,6 +140,13 @@ class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement create_video_from_images logic.
 		// This requires FFmpeg or similar video processing library.

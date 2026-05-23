@@ -159,7 +159,7 @@ class WP_MCP_AI_Architectural_Engine {
 		 *
 		 * @since 1.2.0
 		 *
-		 * @param array $rates Rates keyed by ISO-4217 code, expressed as
+		 * @param array $rates Rates keyed by ISO-4217 code, expressed as.
 		 *                     units-per-1-USD.
 		 */
 		return apply_filters( 'wp_mcp_ai_arch_currency_rates', $defaults );

@@ -117,6 +117,9 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$operation = sanitize_text_field( $arguments['operation'] );

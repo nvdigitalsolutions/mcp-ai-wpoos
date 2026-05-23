@@ -206,8 +206,8 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 		// Include history if requested.
 		if ( ! empty( $arguments['include_history'] ) ) {
 			$details['history'] = array(
-				'activity_log'   => get_post_meta( $appointment_id, '_activity_log', true ) ?: array(),
-				'change_history' => get_post_meta( $appointment_id, '_change_history', true ) ?: array(),
+				'activity_log'   => get_post_meta( $appointment_id, '_activity_log', true ) ? get_post_meta( $appointment_id, '_activity_log', true ) : array(),
+				'change_history' => get_post_meta( $appointment_id, '_change_history', true ) ? get_post_meta( $appointment_id, '_change_history', true ) : array(),
 			);
 
 			// Add reschedule information if applicable.

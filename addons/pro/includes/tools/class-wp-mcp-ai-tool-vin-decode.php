@@ -427,6 +427,6 @@ class WP_MCP_AI_Tool_VIN_Decode implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				$vehicle['trim'] ?? '',
 			)
 		);
-		return implode( ' ', $parts ) ?: __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
+		return implode( ' ', $parts ) ? implode( ' ', $parts ) : __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
 	}
 }

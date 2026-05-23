@@ -1315,7 +1315,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		//
 		// This pattern:.
 		// ✓ Splits on: "sentence. Next" or "sentence! Next" or "sentence? Next"
-		// ✗ Does NOT split on: "Mr. Smith" or "$19.99" or "U.S.A." (no capital after space)
+		// ✗ Does NOT split on: "Mr. Smith" or "$19.99" or "U.S.A." (no capital after space).
 		$sentences = preg_split( '/(?<=[.!?])(?=\s+[A-Z])|(?<=[.!?])$/', $text, -1, PREG_SPLIT_NO_EMPTY );
 
 		if ( empty( $sentences ) || count( $sentences ) <= 1 ) {

@@ -664,7 +664,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 				'category'       => $category,
 				// Default to 'email' when no channel is stored — email is the primary.
 			// correspondence channel in CRM systems that don't yet track omnichannel.
-			'channel'        => $channel_value ?: 'email',
+			'channel'        => $channel_value  ? $channel_value : 'email',
 				'last_contacted' => sanitize_text_field( $last_contacted ),
 				'follow_up_date' => sanitize_text_field( $follow_up_date ),
 				'contact_count'  => $contact_count,

@@ -57,7 +57,8 @@ class WP_MCP_AI_Healthcare_Engine {
 	/*
 	---------------------------------------------------------------------
 	 * Unit conversions
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Convert kilograms to pounds.
@@ -220,7 +221,8 @@ class WP_MCP_AI_Healthcare_Engine {
 	/*
 	---------------------------------------------------------------------
 	 * Reference ranges
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Get vitals reference ranges for a member context.
@@ -231,7 +233,7 @@ class WP_MCP_AI_Healthcare_Engine {
 	 *
 	 * Each metric is an associative array of { min, max, unit }.
 	 *
-	 * @param array $context Member context.  Recognised keys:
+	 * @param array $context Member context.  Recognised keys:.
 	 *                       - species: 'human' (default) | 'canine' | 'feline' | …
 	 *                       - sex:     'male' | 'female' | 'unknown'
 	 *                       - age_years: float|null
@@ -361,7 +363,8 @@ class WP_MCP_AI_Healthcare_Engine {
 	/*
 	---------------------------------------------------------------------
 	 * Member identity
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Resolve a canonical member identifier from a flexible reference.
@@ -428,7 +431,8 @@ class WP_MCP_AI_Healthcare_Engine {
 	/*
 	---------------------------------------------------------------------
 	 * Settings
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Default healthcare-toolkit settings.

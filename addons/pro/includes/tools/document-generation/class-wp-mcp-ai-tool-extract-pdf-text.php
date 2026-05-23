@@ -101,10 +101,22 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'read' ) ) {
@@ -285,6 +297,7 @@ The server returned HTTP %d.',
 					'success' => false,
 					'error'   => 'download_failed',
 					'report'  => __(
+						.
 						'❌ **Download Failed**
 
 The downloaded file is empty.',
@@ -501,7 +514,7 @@ Failed to extract text from PDF: %s',
 	 * @param string $file_path Path to PDF file.
 	 * @param int    $max_pages Maximum pages to extract (0 = all).
 	 * @return string|WP_Error Extracted text or error.
-	 */
+	 */ .
 	protected function extract_text_from_pdf( $file_path, $max_pages = 0 ) {
 		// Primary method: Try Node.js pdf-parse service (fast, reliable, pre-bundled).
 		$node_result = $this->extract_with_node_service( $file_path, $max_pages );

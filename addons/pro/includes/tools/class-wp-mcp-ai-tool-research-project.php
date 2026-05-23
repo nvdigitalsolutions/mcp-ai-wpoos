@@ -769,12 +769,12 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		$content = $research_result['content'];
 
 		// Try to extract JSON from the response.
-		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
+		$json_pattern = '/```( ? ( :json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
 		} else {
 			// Try to find JSON without code blocks.
-			$json_pattern = '/(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})/s';
+			$json_pattern = '/(\{[^{}]*( ? ( :\{[^{}]*\}[^{}]*)*\})/s';
 			if ( preg_match( $json_pattern, $content, $matches ) ) {
 				$json_str = $matches[1];
 			} else {

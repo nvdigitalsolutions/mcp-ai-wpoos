@@ -119,6 +119,9 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -182,7 +185,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 		$caption = array(
 			'section' => 'caption',
 			'content' => array(
-				'court'     => $court ?: __( '[COURT NAME]', 'mcp-ai-wpoos-pro' ),
+				'court'     => $court ? $court : __( '[COURT NAME]', 'mcp-ai-wpoos-pro' ),
 				'plaintiff' => $parties[0] ?? __( '[PLAINTIFF]', 'mcp-ai-wpoos-pro' ),
 				'defendant' => $parties[1] ?? __( '[DEFENDANT]', 'mcp-ai-wpoos-pro' ),
 				'case_no'   => __( '[CASE NUMBER]', 'mcp-ai-wpoos-pro' ),
@@ -207,7 +210,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'parties',
-					'content' => $parties ?: array( __( '[List all parties]', 'mcp-ai-wpoos-pro' ) ),
+					'content' => $parties ? $parties : array( __( '[List all parties]', 'mcp-ai-wpoos-pro' ) ),
 				),
 				array(
 					'section' => 'factual_allegations',
@@ -215,7 +218,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'causes_of_action',
-					'content' => $grounds ?: __( '[Enumerate each cause of action]', 'mcp-ai-wpoos-pro' ),
+					'content' => $grounds ? $grounds : __( '[Enumerate each cause of action]', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
 					'section' => 'prayer_for_relief',
@@ -235,7 +238,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'affirmative_defenses',
-					'content' => $grounds ?: __( '[List affirmative defenses]', 'mcp-ai-wpoos-pro' ),
+					'content' => $grounds ? $grounds : __( '[List affirmative defenses]', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
 					'section' => 'prayer_for_relief',
@@ -259,7 +262,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'argument',
-					'content' => $grounds ?: __( '[Legal arguments for dismissal]', 'mcp-ai-wpoos-pro' ),
+					'content' => $grounds ? $grounds : __( '[Legal arguments for dismissal]', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
 					'section' => 'conclusion',
@@ -283,7 +286,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'argument',
-					'content' => $grounds ?: __( '[Arguments why no genuine dispute exists]', 'mcp-ai-wpoos-pro' ),
+					'content' => $grounds ? $grounds : __( '[Arguments why no genuine dispute exists]', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
 					'section' => 'conclusion',
@@ -307,7 +310,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'argument',
-					'content' => $grounds ?: __( '[Arguments why responses are deficient]', 'mcp-ai-wpoos-pro' ),
+					'content' => $grounds ? $grounds : __( '[Arguments why responses are deficient]', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
 					'section' => 'conclusion',
@@ -331,7 +334,7 @@ class WP_MCP_AI_Tool_LF_Pleading_Generator implements WP_MCP_AI_Tool_Interface, 
 				),
 				array(
 					'section' => 'argument',
-					'content' => $grounds ?: __( '[Arguments for exclusion]', 'mcp-ai-wpoos-pro' ),
+					'content' => $grounds ? $grounds : __( '[Arguments for exclusion]', 'mcp-ai-wpoos-pro' ),
 				),
 				array(
 					'section' => 'conclusion',

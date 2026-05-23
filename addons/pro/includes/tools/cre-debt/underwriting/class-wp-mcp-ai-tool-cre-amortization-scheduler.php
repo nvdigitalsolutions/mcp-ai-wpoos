@@ -118,10 +118,22 @@ class WP_MCP_AI_Tool_CRE_Amortization_Scheduler implements WP_MCP_AI_Tool_Interf
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
@@ -163,7 +175,7 @@ class WP_MCP_AI_Tool_CRE_Amortization_Scheduler implements WP_MCP_AI_Tool_Interf
 			$yr_p   += $row['principal'];
 			$yr_i   += $row['interest'];
 			$yr_pmt += $row['payment'];
-			if ( $row['month'] % 12 === 0 || $row['month'] === $term_months ) {
+			if ( 0 === $row['month'] % 12 || $term_months === $row['month'] ) {
 				$yearly[] = array(
 					'year'        => (int) ceil( $row['month'] / 12 ),
 					'principal'   => round( $yr_p, 2 ),

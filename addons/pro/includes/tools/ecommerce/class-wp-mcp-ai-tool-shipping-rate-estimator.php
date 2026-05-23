@@ -631,7 +631,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	 * @since 1.2.0
 	 *
 	 * @param string $url     Request URL.
-	 * @param array  $args    wp_remote_request() arguments (must include 'method').
+	 * @param array  $args    Wp_remote_request() arguments (must include 'method').
 	 * @param int    $retries Maximum number of retries (default 2).
 	 * @return array|WP_Error
 	 */

@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 			'success'     => true,
 			'task_id'     => $task_id,
 			'task_title'  => $task->post_title,
-			'task_status' => get_post_meta( $task_id, '_task_status', true ) ?: 'todo',
+			'task_status' => get_post_meta( $task_id, '_task_status', true ) ? get_post_meta( $task_id, '_task_status', true ) : 'todo',
 			'can_start'   => $can_start,
 			'depends_on'  => $depends_on,
 			'blocks'      => $blocks,
@@ -210,9 +210,9 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 			$result[] = array(
 				'task_id'  => $id,
 				'title'    => $post->post_title,
-				'status'   => get_post_meta( $id, '_task_status', true ) ?: 'todo',
-				'due_date' => get_post_meta( $id, '_task_due_date', true ) ?: null,
-				'priority' => get_post_meta( $id, '_task_priority', true ) ?: 'medium',
+				'status'   => get_post_meta( $id, '_task_status', true ) ? get_post_meta( $id, '_task_status', true ) : 'todo',
+				'due_date' => get_post_meta( $id, '_task_due_date', true ) ? get_post_meta( $id, '_task_due_date', true ) : null,
+				'priority' => get_post_meta( $id, '_task_priority', true ) ? get_post_meta( $id, '_task_priority', true ) : 'medium',
 			);
 		}
 		return $result;

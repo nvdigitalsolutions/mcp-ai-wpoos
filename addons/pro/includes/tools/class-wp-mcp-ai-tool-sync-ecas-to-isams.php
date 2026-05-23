@@ -329,8 +329,8 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 	 * Push a single ECA to iSAMS.
 	 *
 	 * @param int    $eca_post_id WordPress ECA post ID.
-	 * @param string $isams_url   iSAMS API base URL.
-	 * @param string $isams_key   iSAMS API key.
+	 * @param string $isams_url   ISAMS API base URL.
+	 * @param string $isams_key   ISAMS API key.
 	 * @param bool   $dry_run     Whether this is a dry run.
 	 * @return array|WP_Error Push result or error.
 	 */

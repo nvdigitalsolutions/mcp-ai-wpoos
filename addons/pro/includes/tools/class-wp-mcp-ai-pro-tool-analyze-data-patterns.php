@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns tool.
+ */
 class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		/**
 		 * Get the tool slug.
@@ -23,6 +26,11 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		return 'analyze_data_patterns';
 	}
 
+	/**
+	 * Get tool definition.
+	 *
+	 * @return array
+	 */
 	public function get_definition() {
 		return array(
 			'name'                => 'analyze_data_patterns',
@@ -91,13 +99,27 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		);
 	}
 
+	/**
+	 * Calculate_median.
+	 *
+	 * @param mixed $data Parameter.
+	 * @return array|WP_Error Result.
+	 *
+	 * @param array $data Parameter.
+	 */
 	private function calculate_median( $data ) {
 		sort( $data );
 		$count = count( $data );
 		$mid   = floor( $count / 2 );
-		return $count % 2 === 0 ? ( $data[ $mid - 1 ] + $data[ $mid ] ) / 2 : $data[ $mid ];
+		return 0 === $count % 2 ? ( $data[ $mid - 1 ] + $data[ $mid ] ) / 2 : $data[ $mid ];
 	}
 
+	/**
+	 * Detect_trend.
+	 *
+	 * @param mixed $data Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	private function detect_trend( $data ) {
 		$first_half  = array_slice( $data, 0, ceil( count( $data ) / 2 ) );
 		$second_half = array_slice( $data, ceil( count( $data ) / 2 ) );
@@ -112,6 +134,12 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		return 'stable';
 	}
 
+	/**
+	 * Generate_insights.
+	 *
+	 * @param mixed $analysis Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	private function generate_insights( $analysis ) {
 		$insights = array();
 		if ( isset( $analysis['trend'] ) ) {

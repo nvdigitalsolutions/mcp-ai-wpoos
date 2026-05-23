@@ -504,7 +504,8 @@ class WP_MCP_AI_Architectural_Interop {
 	/*
 	----------------------------------------------------------------
 	 * RFI / Submittal log helpers — operate on a project post.
-	 * ------------------------------------------------------------- */
+	 * -------------------------------------------------------------
+	 */
 
 	/**
 	 * Read a log array from a project post.

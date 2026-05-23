@@ -82,7 +82,7 @@ trait WP_MCP_AI_Tool_Research_Template_Analysis {
 		// Generic JSON — extract top-level keys as sections.
 		$analysis['sections'] = array_keys( $decoded );
 		$section_list         = implode( ', ', array_slice( $analysis['sections'], 0, 10 ) );
-		$analysis['summary']  = sprintf( "Generic JSON structure with %d top-level keys: %s", count( $analysis['sections'] ), $section_list );
+		$analysis['summary']  = sprintf( 'Generic JSON structure with %d top-level keys: %s', count( $analysis['sections'] ), $section_list );
 
 		return $analysis;
 	}

@@ -752,7 +752,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 			. '"confidence" (float 0-1), '
 			. '"description" (string: brief description of the specific damage)), '
 			. '"has_damage" (boolean). Do not include any other text.',
-			$vehicle_desc ?: 'unknown'
+			$vehicle_desc  ? $vehicle_desc : 'unknown'
 		);
 
 		$findings = array();
@@ -1601,7 +1601,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 				$vehicle['make'] ?? '',
 				$vehicle['model'] ?? ''
 			)
-		) ?: __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
+		)  ? ) : __( 'Unknown Vehicle', 'mcp-ai-wpoos' );
 
 		$parts   = array();
 		$parts[] = sprintf(
@@ -1858,7 +1858,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Try extracting JSON from markdown code blocks.
-		if ( preg_match( '/```(?:json)?\s*\n?([\s\S]*?)\n?```/', $text, $matches ) ) {
+		if ( preg_match( '/```( ? ( :json)?\s*\n?([\s\S]*?)\n?```/', $text, $matches ) ) {
 			$decoded = json_decode( $matches[1], true );
 			if ( is_array( $decoded ) ) {
 				return $decoded;

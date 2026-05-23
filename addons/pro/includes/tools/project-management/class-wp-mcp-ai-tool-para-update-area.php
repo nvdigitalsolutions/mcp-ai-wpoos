@@ -17,10 +17,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
 	public function get_slug() {
 		return 'para_update_area';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'PARA: Update Area', 'mcp-ai-wpoos-pro' );
 	}
@@ -36,6 +46,11 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		return __( 'Update an existing PARA Area. Only provided fields are changed. Set `mark_reviewed` to true to update the last-reviewed timestamp to now.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get parameters schema.
+	 *
+	 * @return array
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -80,6 +95,11 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array( 'pro', 'write', 'state-changing' );
 	}
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		return class_exists( 'WP_MCP_AI_PARA_Taxonomy' ) && WP_MCP_AI_PARA_Taxonomy::is_enabled();
 	}
@@ -91,6 +111,13 @@ class WP_MCP_AI_Tool_PARA_Update_Area implements WP_MCP_AI_Tool_Interface, WP_MC
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$area_id = isset( $arguments['area_id'] ) ? absint( $arguments['area_id'] ) : 0;

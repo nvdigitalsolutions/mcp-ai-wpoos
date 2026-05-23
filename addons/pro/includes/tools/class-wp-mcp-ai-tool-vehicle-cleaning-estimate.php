@@ -982,7 +982,7 @@ class WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Try extracting JSON from markdown code blocks.
-		if ( preg_match( '/```(?:json)?\s*\n?([\s\S]*?)\n?```/', $text, $matches ) ) {
+		if ( preg_match( '/```( ? ( :json)?\s*\n?([\s\S]*?)\n?```/', $text, $matches ) ) {
 			$decoded = json_decode( $matches[1], true );
 			if ( is_array( $decoded ) ) {
 				return $decoded;

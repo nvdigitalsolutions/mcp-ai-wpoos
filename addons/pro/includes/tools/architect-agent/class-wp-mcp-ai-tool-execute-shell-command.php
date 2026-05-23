@@ -148,6 +148,9 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).

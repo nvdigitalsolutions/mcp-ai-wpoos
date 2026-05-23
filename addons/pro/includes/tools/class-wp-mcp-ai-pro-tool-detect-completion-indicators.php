@@ -27,15 +27,15 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	 */
 	private $completion_patterns = array(
 		'/\b(done|finished|completed?|accomplished)\b/i',
-		'/\b(all tasks? (?:are )?(?:complete|done|finished))\b/i',
-		'/\b(successfully (?:completed|finished))\b/i',
-		'/\b(nothing (?:more|else) to (?:do|add|fix))\b/i',
-		'/\b(ready (?:for|to) (?:review|deploy|merge|release))\b/i',
-		'/\b((?:fully?|completely) (?:implemented|working))\b/i',
-		'/\b(no (?:more|further|additional) (?:changes|work|tasks?))\b/i',
-		'/\b(objective achieved|goal (?:reached|met|accomplished))\b/i',
+		'/\b(all tasks? ( ? ( :are )?( ? ( :complete|done|finished))\b/i',
+		'/\b(successfully ( ? ( :completed|finished))\b/i',
+		'/\b(nothing ( ? ( :more|else) to ( ? ( :do|add|fix))\b/i',
+		'/\b(ready ( ? ( :for|to) ( ? ( :review|deploy|merge|release))\b/i',
+		'/\b(( ? ( :fully?|completely) ( ? ( :implemented|working))\b/i',
+		'/\b(no ( ? ( :more|further|additional) ( ? ( :changes|work|tasks?))\b/i',
+		'/\b(objective achieved|goal ( ? ( :reached|met|accomplished))\b/i',
 		'/\b(implementation complete)\b/i',
-		'/\b(all requirements? (?:met|satisfied|fulfilled))\b/i',
+		'/\b(all requirements? ( ? ( :met|satisfied|fulfilled))\b/i',
 	);
 
 	/**

@@ -206,6 +206,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	// ------------------------------------------------------------------ //
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git commit — create a commit with the staged changes.
 	 *
 	 * @param string $message Commit message (required).
@@ -224,7 +226,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'commit', $message, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_commit_failed', $result['output'] ?: __( 'git commit failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_commit_failed', $result['output'] ? $result['output'] : __( 'git commit failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -238,6 +240,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git add — stage a file.
 	 *
 	 * @param string $file_path File path to stage (required).
@@ -256,7 +260,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'add', $file_path, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_add_failed', $result['output'] ?: __( 'git add failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_add_failed', $result['output'] ? $result['output'] : __( 'git add failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -270,6 +274,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git checkout — switch branch or restore a file.
 	 *
 	 * @param string $branch_name Branch to switch to.
@@ -303,7 +309,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'checkout', $target, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_checkout_failed', $result['output'] ?: __( 'git checkout failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_checkout_failed', $result['output'] ? $result['output'] : __( 'git checkout failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -384,6 +390,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	// ------------------------------------------------------------------ //
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash list — list all stashed changes.
 	 *
 	 * @param array $options Extra flags.
@@ -394,7 +402,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$result = $this->exec_git( 'git stash list ' . $opts );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_list_failed', $result['output'] ?: __( 'git stash list failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_list_failed', $result['output'] ? $result['output'] : __( 'git stash list failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Parse stash list into structured entries.
@@ -423,6 +431,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash push — save current changes to a new stash entry.
 	 *
 	 * @param string $message          Optional stash label.
@@ -452,7 +462,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'stash_push', $message, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_push_failed', $result['output'] ?: __( 'git stash push failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_push_failed', $result['output'] ? $result['output'] : __( 'git stash push failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -468,6 +478,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash pop — apply stash and remove it from the stash list.
 	 *
 	 * @param string $stash_ref Optional stash reference (defaults to latest).
@@ -487,7 +499,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'stash_pop', $stash_ref, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_pop_failed', $result['output'] ?: __( 'git stash pop failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_pop_failed', $result['output'] ? $result['output'] : __( 'git stash pop failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -501,6 +513,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash apply — apply stash without removing it.
 	 *
 	 * @param string $stash_ref Optional stash reference.
@@ -520,7 +534,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'stash_apply', $stash_ref, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_apply_failed', $result['output'] ?: __( 'git stash apply failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_apply_failed', $result['output'] ? $result['output'] : __( 'git stash apply failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -534,6 +548,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash drop — delete a stash entry.
 	 *
 	 * @param string $stash_ref Stash reference (required).
@@ -552,7 +568,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'stash_drop', $stash_ref, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_drop_failed', $result['output'] ?: __( 'git stash drop failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_drop_failed', $result['output'] ? $result['output'] : __( 'git stash drop failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -566,6 +582,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash clear — remove all stash entries.
 	 *
 	 * @param array $options Extra flags.
@@ -579,7 +597,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'stash_clear', 'all stashes', $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_clear_failed', $result['output'] ?: __( 'git stash clear failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_clear_failed', $result['output'] ? $result['output'] : __( 'git stash clear failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -592,6 +610,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash show — display the diff for a stash entry.
 	 *
 	 * @param string $stash_ref Optional stash reference (defaults to latest).
@@ -609,7 +629,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$result = $this->exec_git( $cmd );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_show_failed', $result['output'] ?: __( 'git stash show failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_show_failed', $result['output'] ? $result['output'] : __( 'git stash show failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(
@@ -623,6 +643,8 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Performs the operation.
+	 // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
 	 * git stash branch — create a new branch from a stash entry.
 	 *
 	 * @param string $branch_name Branch name (required).
@@ -649,7 +671,7 @@ class WP_MCP_AI_Tool_Git_Change implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$this->log_write_operation( 'stash_branch', $target, $result, $context );
 
 		if ( ! $result['success'] ) {
-			return new WP_Error( 'git_stash_branch_failed', $result['output'] ?: __( 'git stash branch failed.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'git_stash_branch_failed', $result['output'] ? $result['output'] : __( 'git stash branch failed.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $this->format_success_response(

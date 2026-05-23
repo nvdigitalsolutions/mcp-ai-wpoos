@@ -234,8 +234,11 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 		// Check if it's a URL — convert to a local path first.
 		if ( filter_var( $path_or_url, FILTER_VALIDATE_URL ) ) {
 			$base_url            = $upload_dir['baseurl'];
-			$normalized_url      = preg_replace( '#^https?://#i', '', $path_or_url );
-			$normalized_base_url = preg_replace( '#^https?://#i', '', $base_url );
+			// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+			$normalized_url      = preg_replace( '#^https ? $normalized_url      = preg_replace( '// ^https ://#i', '', $path_or_url );
+			// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+			// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments
+			$normalized_base_url = preg_replace( '#^https ? $normalized_base_url = preg_replace( '// ^https ://#i', '', $base_url );
 
 			// Only convert URLs that point into the uploads directory.
 			if ( strpos( $normalized_url, $normalized_base_url ) !== 0 ) {

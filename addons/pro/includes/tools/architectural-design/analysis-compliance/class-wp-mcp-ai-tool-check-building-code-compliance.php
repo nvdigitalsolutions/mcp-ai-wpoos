@@ -511,7 +511,7 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 	 *
 	 * @param string $category    Category.
 	 * @param string $requirement Human description.
-	 * @param string $status      pass|warning|fail.
+	 * @param string $status      Pass|warning|fail.
 	 * @param string $details     Free-text details.
 	 * @return array
 	 */

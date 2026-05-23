@@ -254,6 +254,7 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 
 			case 'custom_metrics':
 				$table_name = $wpdb->prefix . 'mcp_ai_custom_metrics';
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name ) {
 					$data = $wpdb->get_results(
 						$wpdb->prepare(

@@ -373,6 +373,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		foreach ( $strategies as $strategy => $ratio ) {
 			$strategy_count = ceil( $ideas_count * $ratio );
 
+			// phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found
 			for ( $i = 0; $i < $strategy_count && count( $ideas ) < $ideas_count; $i++ ) {
 				$idea = $this->generate_single_idea(
 					$strategy,
@@ -644,7 +645,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Add points for trending strategy.
-		if ( $idea['strategy'] === 'trending' ) {
+		if ( 'trending' === $idea['strategy'] ) {
 			$score += 25;
 		}
 

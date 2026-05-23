@@ -101,6 +101,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check capability.

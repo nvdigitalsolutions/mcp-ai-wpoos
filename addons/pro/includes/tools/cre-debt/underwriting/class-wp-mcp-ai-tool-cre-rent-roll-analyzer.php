@@ -114,16 +114,29 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 		return array( 'pro', 'read-only', 'cacheable' );
 	}
 
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ): array|WP_Error {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
-		}
+		} .
 		if ( ! self::is_available() ) {
+			.
 			return new WP_Error( 'tool_not_available', self::get_unavailable_reason() );
 		}
 

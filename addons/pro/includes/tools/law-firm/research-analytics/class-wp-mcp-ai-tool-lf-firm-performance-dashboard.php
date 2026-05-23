@@ -23,6 +23,11 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 
 	const DISCLAIMER = 'This is not legal advice. Consult a licensed attorney for specific legal matters.';
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available(): bool {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -31,6 +36,11 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		return ! empty( $settings['enable_law_firm_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason(): string {
 		return __( 'Law Firm toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
 	}
@@ -44,8 +54,18 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_slug() {
 		return 'lf_firm_performance_dashboard'; }
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Firm Performance Dashboard', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Generates firm-wide KPIs including realization rate, collection rate, utilization rate, revenue per lawyer, and matters per attorney for a given period.', 'mcp-ai-wpoos-pro' ); }
 
@@ -89,6 +109,13 @@ class WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard implements WP_MCP_AI_Tool_Int
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {

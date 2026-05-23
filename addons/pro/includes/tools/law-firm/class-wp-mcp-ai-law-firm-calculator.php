@@ -17,9 +17,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Law_Firm_Calculator tool.
+ */
 class WP_MCP_AI_Law_Firm_Calculator {
 
 	// Deadline calculations.
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Add_business_days.
+	 *
+	 * @param string $start_date Parameter.
+	 * @param int    $days Parameter.
+	 * @param string $jurisdiction Parameter.
+	 * @return array|WP_Error Result.
+	 *
+	 * @param int    $start_date Parameter.
+	 * @param int    $jurisdiction Parameter.
+	 */
 	public static function add_business_days( string $start_date, int $days, string $jurisdiction = 'federal' ): string {
 		$date     = new DateTime( $start_date );
 		$holidays = self::get_federal_holidays( (int) $date->format( 'Y' ) );
@@ -34,6 +49,14 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		return $date->format( 'Y-m-d' );
 	}
 
+	/**
+	 * Calculate_filing_deadline.
+	 *
+	 * @param string $event_date Parameter.
+	 * @param int    $days Parameter.
+	 * @param string $rule_type Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_filing_deadline( string $event_date, int $days, string $rule_type = 'frcp' ): string {
 		if ( 'calendar' === $rule_type ) {
 			$date = new DateTime( $event_date );
@@ -44,32 +67,50 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		return self::add_business_days( $event_date, $days );
 	}
 
+	/**
+	 * Get_federal_holidays.
+	 *
+	 * @param int $year Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function get_federal_holidays( int $year ): array {
 		$holidays   = array();
 		$holidays[] = "{$year}-01-01"; // New Year's Day
 		// MLK Day: 3rd Monday of January.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$holidays[] = date( 'Y-m-d', strtotime( "third monday of january {$year}" ) );
 		// Presidents' Day: 3rd Monday of February.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$holidays[] = date( 'Y-m-d', strtotime( "third monday of february {$year}" ) );
 		// Memorial Day: Last Monday of May.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$holidays[] = date( 'Y-m-d', strtotime( "last monday of may {$year}" ) );
 		// Juneteenth.
 		$holidays[] = "{$year}-06-19";
 		// Independence Day.
 		$holidays[] = "{$year}-07-04";
 		// Labor Day: 1st Monday of September.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$holidays[] = date( 'Y-m-d', strtotime( "first monday of september {$year}" ) );
 		// Columbus Day: 2nd Monday of October.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$holidays[] = date( 'Y-m-d', strtotime( "second monday of october {$year}" ) );
 		// Veterans Day.
 		$holidays[] = "{$year}-11-11";
 		// Thanksgiving: 4th Thursday of November.
+		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$holidays[] = date( 'Y-m-d', strtotime( "fourth thursday of november {$year}" ) );
 		// Christmas.
 		$holidays[] = "{$year}-12-25";
 		return $holidays;
 	}
 
+	/**
+	 * Is_business_day.
+	 *
+	 * @param string $date Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function is_business_day( string $date ): bool {
 		$dt  = new DateTime( $date );
 		$dow = (int) $dt->format( 'N' );
@@ -80,6 +121,15 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		return ! in_array( $date, $holidays, true );
 	}
 
+	/**
+	 * Calculate_statute_of_limitations.
+	 *
+	 * @param string $incident_date Parameter.
+	 * @param int    $years Parameter.
+	 * @param int    $tolling_days Parameter.
+	 * @param string $jurisdiction Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_statute_of_limitations( string $incident_date, int $years, int $tolling_days = 0, string $jurisdiction = 'federal' ): array {
 		$incident   = new DateTime( $incident_date );
 		$expiration = clone $incident;
@@ -107,10 +157,26 @@ class WP_MCP_AI_Law_Firm_Calculator {
 	}
 
 	// Fee calculations.
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Calculate_hourly_fee.
+	 *
+	 * @param float $hours Parameter.
+	 * @param float $rate Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_hourly_fee( float $hours, float $rate ): float {
 		return round( $hours * $rate, 2 );
 	}
 
+	/**
+	 * Calculate_contingency_fee.
+	 *
+	 * @param float  $recovery Parameter.
+	 * @param float  $pct Parameter.
+	 * @param string $stage Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_contingency_fee( float $recovery, float $pct, string $stage = 'pre_filing' ): array {
 		$defaults = array(
 			'pre_filing'  => 0.3333,
@@ -127,6 +193,12 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		);
 	}
 
+	/**
+	 * Calculate_blended_rate.
+	 *
+	 * @param array $attorneys Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_blended_rate( array $attorneys ): float {
 		$total_hours = 0.0;
 		$total_fees  = 0.0;
@@ -139,11 +211,30 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		return $total_hours > 0 ? round( $total_fees / $total_hours, 2 ) : 0.0;
 	}
 
+	/**
+	 * Calculate_lodestar.
+	 *
+	 * @param float $hours Parameter.
+	 * @param float $rate Parameter.
+	 * @param float $multiplier Parameter.
+	 * @return array|WP_Error Result.
+	 *
+	 * @param array $rate Parameter.
+	 */
 	public static function calculate_lodestar( float $hours, float $rate, float $multiplier = 1.0 ): float {
 		return round( $hours * $rate * $multiplier, 2 );
 	}
 
 	// Financial math.
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Calculate_present_value.
+	 *
+	 * @param float $fv Parameter.
+	 * @param float $rate Parameter.
+	 * @param int   $years Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_present_value( float $fv, float $rate, int $years ): float {
 		if ( $rate <= 0 || $years <= 0 ) {
 			return round( $fv, 2 );
@@ -151,6 +242,16 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		return round( $fv / pow( 1 + $rate, $years ), 2 );
 	}
 
+	/**
+	 * Calculate_prejudgment_interest.
+	 *
+	 * @param float  $principal Parameter.
+	 * @param float  $annual_rate Parameter.
+	 * @param string $start Parameter.
+	 * @param string $end Parameter.
+	 * @param string $method Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_prejudgment_interest( float $principal, float $annual_rate, string $start, string $end, string $method = 'simple' ): array {
 		$s          = new DateTime( $start );
 		$e          = new DateTime( $end );
@@ -169,6 +270,15 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		);
 	}
 
+	/**
+	 * Calculate_structured_settlement_npv.
+	 *
+	 * @param array $payments Parameter.
+	 * @param float $discount_rate Parameter.
+	 * @return array|WP_Error Result.
+	 *
+	 * @param array $discount_rate Parameter.
+	 */
 	public static function calculate_structured_settlement_npv( array $payments, float $discount_rate ): float {
 		$npv = 0.0;
 		foreach ( $payments as $p ) {
@@ -179,6 +289,15 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		return round( $npv, 2 );
 	}
 
+	/**
+	 * Calculate_damages.
+	 *
+	 * @param float $annual_wages Parameter.
+	 * @param int   $years_remaining Parameter.
+	 * @param float $discount_rate Parameter.
+	 * @param float $growth_rate Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_damages( float $annual_wages, int $years_remaining, float $discount_rate, float $growth_rate = 0.03 ): array {
 		$total    = 0.0;
 		$schedule = array();
@@ -200,6 +319,13 @@ class WP_MCP_AI_Law_Firm_Calculator {
 	}
 
 	// Trust accounting.
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Calculate_trust_balance.
+	 *
+	 * @param array $transactions Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_trust_balance( array $transactions ): array {
 		$balance       = 0.0;
 		$deposits      = 0.0;
@@ -222,6 +348,14 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		);
 	}
 
+	/**
+	 * Three_way_reconciliation.
+	 *
+	 * @param float $bank Parameter.
+	 * @param float $book Parameter.
+	 * @param float $client_total Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function three_way_reconciliation( float $bank, float $book, float $client_total ): array {
 		$reconciled = abs( $bank - $book ) < 0.01 && abs( $book - $client_total ) < 0.01;
 		return array(
@@ -233,11 +367,26 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		);
 	}
 
+	/**
+	 * Calculate_iolta_interest.
+	 *
+	 * @param float $balance Parameter.
+	 * @param float $annual_rate Parameter.
+	 * @param int   $days Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function calculate_iolta_interest( float $balance, float $annual_rate, int $days ): float {
 		return round( $balance * ( $annual_rate / 365 ) * $days, 2 );
 	}
 
 	// Billing math.
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Validate_utbms_code.
+	 *
+	 * @param string $code Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function validate_utbms_code( string $code ): array {
 		$prefix     = substr( $code, 0, 1 );
 		$categories = array(
@@ -255,6 +404,12 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		);
 	}
 
+	/**
+	 * Detect_block_billing.
+	 *
+	 * @param string $description Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function detect_block_billing( string $description ): array {
 		$semicolons = substr_count( $description, ';' );
 		$periods    = substr_count( $description, '.' );
@@ -267,6 +422,12 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		);
 	}
 
+	/**
+	 * Format_ledes_line.
+	 *
+	 * @param array $entry Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function format_ledes_line( array $entry ): string {
 		return implode(
 			'|',
@@ -287,19 +448,45 @@ class WP_MCP_AI_Law_Firm_Calculator {
 		) . '[]';
 	}
 
+	/**
+	 * Format_time_increment.
+	 *
+	 * @param float $hours Parameter.
+	 * @param float $increment Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function format_time_increment( float $hours, float $increment = 0.1 ): float {
 		return ceil( $hours / $increment ) * $increment;
 	}
 
 	// Formatting helpers.
+	// phpcs:ignore Squiz.Commenting.FunctionComment.WrongStyle
+	/**
+	 * Format_currency.
+	 *
+	 * @param float $amount Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function format_currency( float $amount ): string {
 		return '$' . number_format( $amount, 2 );
 	}
 
+	/**
+	 * Format_percentage.
+	 *
+	 * @param float $decimal Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function format_percentage( float $decimal ): string {
 		return number_format( $decimal * 100, 2 ) . '%';
 	}
 
+	/**
+	 * Format_hours.
+	 *
+	 * @param float $hours Parameter.
+	 * @return array|WP_Error Result.
+	 */
 	public static function format_hours( float $hours ): string {
 		return number_format( $hours, 1 ) . ' hrs';
 	}

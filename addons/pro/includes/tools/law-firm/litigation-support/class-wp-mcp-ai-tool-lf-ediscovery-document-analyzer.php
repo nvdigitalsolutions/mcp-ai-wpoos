@@ -1,5 +1,7 @@
 <?php
 /**
+ * Performs the operation.
+ // phpcs:ignore Generic.Commenting.DocComment.ShortNotCapital
  * eDiscovery Document Analyzer Tool
  *
  * Analyzes documents for relevance scoring, privilege flags, and key term
@@ -111,6 +113,9 @@ class WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer implements WP_MCP_AI_Tool_I
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

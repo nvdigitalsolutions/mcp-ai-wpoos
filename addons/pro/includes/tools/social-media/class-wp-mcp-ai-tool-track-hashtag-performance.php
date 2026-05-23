@@ -574,7 +574,7 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 			$tracked                           = $response['tracked_hashtags'];
 			$summary['total_hashtags_tracked'] = count( $tracked );
 			$summary['best_performing']        = $tracked[0] ?? null;
-			$summary['worst_performing']       = end( $tracked ) ?: null;
+			$summary['worst_performing']       = end( $tracked ) ? end( $tracked ) : null;
 
 			$total_engagement = array_sum( array_column( $tracked, 'total_engagement' ) );
 			$total_reach      = array_sum( array_column( $tracked, 'total_reach' ) );

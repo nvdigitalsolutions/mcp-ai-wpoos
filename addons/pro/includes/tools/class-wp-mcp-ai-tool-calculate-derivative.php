@@ -117,6 +117,9 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$function = sanitize_text_field( $arguments['function'] );
@@ -159,7 +162,7 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 		$derivative = isset( $math_result['derivative'] ) ? $math_result['derivative'] : '';
 
 		// Format notation.
-		$notation = $order === 1 ? "\\frac{d}{d{$variable}}" : "\\frac{d^{$order}}{d{$variable}^{$order}}";
+		$notation = 1 === $order ? "\\frac{d}{d{$variable}}" : "\\frac{d^{$order}}{d{$variable}^{$order}}";
 		$latex    = "{$notation} ({$function}) = {$derivative}";
 
 		$result = array(

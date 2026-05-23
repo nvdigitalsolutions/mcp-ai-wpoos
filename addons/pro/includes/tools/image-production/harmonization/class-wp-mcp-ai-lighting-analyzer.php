@@ -46,7 +46,7 @@ class WP_MCP_AI_Lighting_Analyzer {
 	 * Analyze the lighting of an image file.
 	 *
 	 * @param string $image_path Absolute path to the image.
-	 * @param array  $opts       Optional analysis settings. Supports
+	 * @param array  $opts       Optional analysis settings. Supports.
 	 *                           'allow_ai_escalation' (bool) to escalate to AI
 	 *                           vision when heuristic confidence is low.
 	 *

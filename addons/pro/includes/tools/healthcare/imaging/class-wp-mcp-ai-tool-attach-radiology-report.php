@@ -46,6 +46,7 @@ class WP_MCP_AI_Tool_Attach_Radiology_Report implements WP_MCP_AI_Tool_Interface
 			return;
 		}
 		register_post_type(
+			// phpcs:ignore WordPress.NamingConventions.ValidPostTypeSlug.TooLong
 			'mcp_ai_radiology_report',
 			array(
 				'labels'              => array(

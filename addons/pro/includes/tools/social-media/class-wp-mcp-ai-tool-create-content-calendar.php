@@ -335,7 +335,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 				}
 
 				// Move to next day in the week.
-				if ( $day_of_week === 7 || ( ! $include_weekends && $day_of_week === 5 ) ) {
+				if ( 7 === $day_of_week || ( ! $include_weekends && 5 === $day_of_week ) ) {
 					++$week_count;
 					$post_count = 0;
 				}

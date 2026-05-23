@@ -283,7 +283,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( get_current_user_id() != $post->post_author ) {
 			return array(
 				'success' => false,
 				'error'   => 'You do not have permission to update this vault item',
@@ -356,7 +356,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( get_current_user_id() != $post->post_author ) {
 			return array(
 				'success' => false,
 				'error'   => 'You do not have permission to delete this vault item',

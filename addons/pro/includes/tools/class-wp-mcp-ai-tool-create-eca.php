@@ -564,7 +564,7 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * Sync ECA with iSAMS system.
 	 *
 	 * @param int    $post_id       ECA post ID.
-	 * @param string $isams_sync_id iSAMS ID to sync with.
+	 * @param string $isams_sync_id ISAMS ID to sync with.
 	 * @return true|WP_Error True on success, WP_Error on failure.
 	 */
 	private function sync_with_isams( $post_id, $isams_sync_id ) {

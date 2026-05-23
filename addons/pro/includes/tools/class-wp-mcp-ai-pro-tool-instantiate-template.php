@@ -129,7 +129,7 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 
 			$template_name     = $template->post_title;
 			$markdown_template = $template->post_content;
-			$default_config    = get_post_meta( $template_id, 'default_config', true ) ?: array();
+			$default_config    = get_post_meta( $template_id, 'default_config', true ) ? get_post_meta( $template_id, 'default_config', true ) : array();
 		}
 
 		// Replace placeholders.
@@ -211,7 +211,7 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 				'post_content' => $markdown_content,
 				'post_status'  => 'publish',
 				'post_type'    => 'mcp_task_plan',
-				'post_author'  => get_current_user_id() ?: 1,
+				'post_author'  => get_current_user_id() ? get_current_user_id() : 1,
 			);
 
 			$plan_id = wp_insert_post( $post_data );
@@ -239,7 +239,7 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 			$usage_count = intval( $template['usage_count'] ?? 0 ) + 1;
 			$handler->update_item( $template_id, array( 'usage_count' => $usage_count ) );
 		} else {
-			$usage_count = intval( get_post_meta( $template_id, 'usage_count', true ) ?: 0 ) + 1;
+			$usage_count = intval( get_post_meta( $template_id, 'usage_count', true ) ? get_post_meta( $template_id, 'usage_count', true ) : 0 ) + 1;
 			update_post_meta( $template_id, 'usage_count', $usage_count );
 		}
 

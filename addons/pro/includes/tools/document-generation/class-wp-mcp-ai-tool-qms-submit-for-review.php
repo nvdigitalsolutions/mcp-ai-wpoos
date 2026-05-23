@@ -12,6 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_QMS_Submit_For_Review tool.
+ */
 class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 
@@ -24,9 +27,19 @@ class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, 
 	public function get_slug() {
 		return 'qms_submit_for_review';
 	}
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'QMS: Submit for Review', 'mcp-ai-wpoos-pro' );
 	}
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'Transition a controlled document from draft to in_review state. At least one reviewer must be assigned.', 'mcp-ai-wpoos-pro' );
 	}
@@ -60,6 +73,11 @@ class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, 
 	public function get_capability_flags() {
 		return array( 'pro', 'write', 'state-changing' );
 	}
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		return class_exists( 'WP_MCP_AI_QMS_Capabilities' ) && WP_MCP_AI_QMS_Capabilities::is_enabled();
 	}
@@ -70,6 +88,13 @@ class WP_MCP_AI_Tool_QMS_Submit_For_Review implements WP_MCP_AI_Tool_Interface, 
 		return 'edit_posts';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, WP_MCP_AI_QMS_Capabilities::CAP ) ) {

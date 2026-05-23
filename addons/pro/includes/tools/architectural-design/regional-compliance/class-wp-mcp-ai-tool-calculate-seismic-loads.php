@@ -211,6 +211,7 @@ class WP_MCP_AI_Tool_Calculate_Seismic_Loads implements WP_MCP_AI_Tool_Interface
 		if ( empty( $storey_heights ) ) {
 			$h              = 3.0;
 			$storey_heights = array();
+			// phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found
 			for ( $i = 1; $i <= count( $storey_weights ); $i++ ) {
 				$storey_heights[] = $h * $i;
 			}

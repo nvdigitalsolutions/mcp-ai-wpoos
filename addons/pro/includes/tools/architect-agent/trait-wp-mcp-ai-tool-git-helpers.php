@@ -146,7 +146,7 @@ trait WP_MCP_AI_Tool_Git_Helpers {
 	 *
 	 * @param string $operation Short operation name (e.g. 'commit', 'stash_push').
 	 * @param string $target    Human-readable target (file, message, branch, etc.).
-	 * @param array  $result    exec_git() result array.
+	 * @param array  $result    Exec_git() result array.
 	 * @param array  $context   Tool execution context.
 	 */
 	protected function log_write_operation( $operation, $target, $result, $context ) {
@@ -171,7 +171,7 @@ trait WP_MCP_AI_Tool_Git_Helpers {
 		 *
 		 * @param string $operation Operation name.
 		 * @param string $target    Operation target.
-		 * @param array  $result    exec_git() result array.
+		 * @param array  $result    Exec_git() result array.
 		 * @param array  $context   Tool execution context.
 		 */
 		do_action( 'wp_mcp_ai_git_write_operation', $operation, $target, $result, $context );

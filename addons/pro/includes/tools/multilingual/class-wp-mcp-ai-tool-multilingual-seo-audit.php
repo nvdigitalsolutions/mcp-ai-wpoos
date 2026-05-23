@@ -15,8 +15,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP_MCP_AI_Tool_Multilingual_SEO_Audit tool.
+ */
 class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -26,6 +34,11 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 		return ! empty( $settings['enable_multilingual_toolkit'] );
 	}
 
+	/**
+	 * Get unavailable reason.
+	 *
+	 * @return string
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_multilingual_toolkit'] ) ) {
@@ -45,10 +58,20 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 		return 'multilingual_seo_audit';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name() {
 		return __( 'Multilingual SEO Audit', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
 	public function get_description() {
 		return __( 'SEO optimization audit for translated content including hreflang tags and meta descriptions.', 'mcp-ai-wpoos-pro' );
 	}
@@ -110,6 +133,13 @@ class WP_MCP_AI_Tool_Multilingual_SEO_Audit implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement multilingual_seo_audit logic.
 
