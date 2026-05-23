@@ -2,62 +2,7 @@
 
 ## [Unreleased]
 
-### Added — CoSAI Secure-by-Design Agentic System (Priority 4, May 2026)
-
-Industry-standard secure agent infrastructure aligned with the [CoSAI Principles for Secure-by-Design Agentic Systems](https://www.coalitionforsecureai.org/announcing-the-cosai-principles-for-secure-by-design-agentic-systems/) (July 2025) and the [MCP Security paper](https://github.com/cosai-oasis/ws4-secure-design-agentic-systems) (January 2026):
-
-- **Principle 2 — Bounded & Resilient**: `WP_MCP_AI_Agent_Capability_Boundary` (`includes/agents/class-wp-mcp-ai-agent-capability-boundary.php`). Immutable per-session tool allow-lists with rate limiting (sliding window), iteration caps via existing `wp_mcp_ai_max_agentic_iterations` filter, budget exhaustion detection, and transient-backed execution tracking. Filters: `wp_mcp_ai_capability_boundary_allow_tool`, `wp_mcp_ai_capability_boundary_rate_limit`.
-- **Principle 3 — Transparent & Verifiable**: `WP_MCP_AI_Agent_Audit_Trail` (`includes/agents/class-wp-mcp-ai-agent-audit-trail.php`). Cryptographic chain-of-custody audit trails (SHA-256 linked events), dual storage (CPT `mcp_ai_audit_event` + options fallback), immutable events (closed trails reject writes), auto-pruning (configurable retention), OpenTelemetry-compatible schema (`trail_id` ↔ trace_id), session/assistant indexing for Agent Command Center feeds. Hooks: `wp_mcp_ai_audit_trail_store_event` (external forwarding), `wp_mcp_ai_audit_trail_event_stored`.
-- **Principle 1 — Human-Governed**: `WP_MCP_AI_Agent_Approval_Gate` (`includes/agents/class-wp-mcp-ai-agent-approval-gate.php`). Risk-tiered approval gate (low/medium/high/critical) with auto-approval for low-risk, pre-approved pattern matching for medium, pending-approval queue for high, and explicit override for critical. Integrates with existing `WP_MCP_AI_Pro_Agent_Command_Center` via `wp_mcp_ai_approval_decided` action. Filters: `wp_mcp_ai_agent_approval_auto_approve_risk`, `wp_mcp_ai_agent_approval_critical_override`.
-- **MCP-T3/T5 Sandbox**: `WP_MCP_AI_Agent_Code_Sandbox` (`includes/agents/class-wp-mcp-ai-agent-code-sandbox.php`). Isolated code execution for Python, Node.js, Bash, and PHP (restricted). `proc_open`-based with non-blocking I/O, timeout enforcement (`SIGKILL`), output size caps (1MB stdout / 256KB stderr), `open_basedir`-aware temp directories, marker-gated cleanup, stripped environment (no network access by default). Filters: `wp_mcp_ai_sandbox_allowed_languages`, `wp_mcp_ai_sandbox_max_timeout`, `wp_mcp_ai_sandbox_execution_env`.
-
-### Notes
-
-- All four CoSAI components are **provider-agnostic** — they work with OpenAI, Anthropic, Gemini, Ollama, or any future provider.
-- The existing Gemini-only `WP_MCP_AI_Gemini_Managed_Agent_Service` remains for Gemini-native Managed Agents API access but should be replaced by the provider-agnostic boundary + audit trail in the chat execution path.
-- Agent roles system (`planner`/`executor`/`critic`/`base`) already exists in `includes/agents/` — the new classes extend this architecture without duplicating it.
-
-### Added — Managed Agents API Integration (Priority 3, May 2026)
-
-- **`WP_MCP_AI_Gemini_Managed_Agent_Service`** (`includes/services/class-wp-mcp-ai-gemini-managed-agent-service.php`): New service for creating and managing persistent agent sessions via Gemini's Managed Agents API. Each agent runs in an isolated Linux container with persistent filesystem, code execution (Python/JavaScript/Shell), and access to all registered NV oOS tools. Sessions persist for 24 hours via WordPress transients. Feature-gated behind `is_managed_agents_available()` check with `enable_managed_agents` setting and `wp_mcp_ai_managed_agents_available` filter. Supports: create, run task, status check, list sessions, terminate.
-- **`run_gemini_managed_agent` tool** (`includes/tools/class-wp-mcp-ai-tool-run-gemini-managed-agent.php`): Unified tool with 5 operations — "create" (new agent session + optional immediate task), "run" (execute task in existing session), "status" (check session state), "list" (all active sessions), "terminate" (cleanup). Designed for Gemini 3.5 Flash (defaults to it). Supports system prompts, tool allow-listing, configurable iterations (1-100) and timeout (30s-1h).
-
-### Added — Gemini Omni Video Generation Service (Priority 2, May 2026)
-
-- **`WP_MCP_AI_Gemini_Omni_Service`** (`includes/services/class-wp-mcp-ai-gemini-omni-service.php`): New service for Omni Flash video generation and conversational editing. Supports any-to-any multimodal input (text/images/audio/video → video), 10-second videos with native audio, multi-turn editing with preserved context, and AI avatars. Includes automatic Veo 3.1/2.0 fallback when Omni API is unavailable (`is_omni_api_available()` gate with `wp_mcp_ai_omni_api_available` filter and `enable_omni_api` setting). Async polling via WP-Cron with the same cooperative tick-lock pattern as Veo.
-- **`generate_omni_video` tool** (`includes/tools/class-wp-mcp-ai-tool-generate-omni-video.php`): New tool replacing Veo as the recommended video generation path. Accepts text prompts + up to 5 reference images + reference video + reference audio. Produces videos up to 10s with native audio. Supports style presets, negative prompts, AI avatars, and async mode. Automatically saves to Media Library with SynthID provenance metadata.
-- **`edit_omni_video` tool** (`includes/tools/class-wp-mcp-ai-tool-edit-omni-video.php`): New tool for conversational video editing via Omni. Natural-language editing (swap backgrounds, change wardrobe, adjust lighting, stabilize, remove objects, transfer styles). Multi-turn editing with preserved context via `previous_video_id`. Saves edited videos to Media Library.
-
-### Changed — Video Production Toolkit
-
-- Video Production Toolkit README updated with Omni Phase 7 roadmap and tool inventory.
-- Video Production MCP server candidate tool slugs updated to include `generate_omni_video` and `edit_omni_video`.
-
-### Added — Gemini 3.5 Flash & Omni Model Catalog Refresh (May 2026)
-
-- **Gemini 3.5 Flash** added to `model-catalog.json` as the new recommended Gemini model (May 2026 GA). Outperforms Gemini 3.1 Pro on coding and agentic benchmarks, 4x faster output, dynamic thinking enabled by default. 1M context, 65K output tokens. Pricing: $1.50/$9.00 per 1M tokens.
-- **Gemini Omni Flash** added to `model-catalog.json` as the new video generation model (May 2026 GA), replacing Veo in the Gemini app. Any-to-any multimodal: text/images/audio/video → video with 10s duration, native audio, multi-turn conversational editing, and AI avatars.
-- **Gemini 3.1 Flash** marked as deprecated with sunset date 2026-09-01; fallback updated to `gemini-3.5-flash`.
-
-### Changed — Provider & Admin Settings
-
-- **Provider section** (`class-wp-mcp-ai-section-providers.php`): Fallback model list updated — `gemini-3.5-flash` now recommended; `gemini-3.1-flash` removed from dropdown.
-- **Video model settings**: `gemini-omni-flash` added as default; Veo options marked as Legacy. Duration extended to 10s for Omni.
-- **Onboarding wizard**: Default Gemini model changed from `gemini-3.1-flash` to `gemini-3.5-flash`.
-- **Ext Cog settings**: Vision model options updated from `gemini-pro-vision`/`gemini-1.5-pro` to `gemini-3.5-flash`/`gemini-3.1-pro`.
-- **Model service**: `gemini-3.5-flash` added as recommended; `gemini-3.1-flash` label updated.
-- **Model catalog migration**: `gemini-3-flash-preview` now migrates to `gemini-3.5-flash` (was `gemini-3.1-flash`).
-- **Model config renderer**: Added `gemini-omni-*` capability flag detection (vision + multimodal + video-generation).
-
-### Changed — Cost Calculator & Pricing
-
-- **Cost calculator**: `gemini-3.5-flash` pricing added — $1.50/M input, $9.00/M output, $0.15/M cached input.
-
-### Changed — Documentation
-
-- **Gemini Capabilities Matrix** updated to May 2026 — Omni Flash, conversational video editing, AI avatars, Managed Agents noted as planned.
-- **Video Production Toolkit** README and docs updated with Omni Flash integration roadmap.
-- **Design Professional Tools** token multipliers updated for Omni.
+_No changes yet._
 
 ## [1.1.21] - 2026-05-21
 

@@ -642,14 +642,6 @@ class WP_MCP_AI_Model_Config_Renderer {
 				return $capability_flags;
 			}
 
-			// Gemini Omni (any-to-any multimodal video generation).
-			if ( strpos( $model_id, 'gemini-omni' ) !== false ) {
-				$capability_flags[] = 'vision';
-				$capability_flags[] = 'multimodal';
-				$capability_flags[] = 'video-generation';
-				return $capability_flags;
-			}
-
 			// Gemini Pro Vision.
 			if ( strpos( $model_id, 'gemini-pro-vision' ) !== false ) {
 				$capability_flags[] = 'vision';
