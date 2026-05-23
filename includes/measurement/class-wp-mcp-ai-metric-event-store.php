@@ -138,33 +138,33 @@ class WP_MCP_AI_Metric_Event_Store {
 
 		update_option( self::SCHEMA_OPTION, self::SCHEMA_VERSION, false );
 		return $this->table_exists();
-	}
+		}
 
-	/**
-	 * Drop the table. Used by uninstall and test teardown only.
-	 *
-	 * @return void
-	 */
-	public function drop() {
-		global $wpdb;
-		$table_name = $this->table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table; table name from class constant, not user input. WP_Query does not support custom table DDL.
-		$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
-		delete_option( self::SCHEMA_OPTION );
-	}
+		/**
+		 * Drop the table. Used by uninstall and test teardown only.
+		 *
+		 * @return void
+		 */
+		public function drop() {
+			global $wpdb;
+			$table_name = esc_sql( $this->table_name() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table; table name from class constant, not user input. WP_Query does not support custom table DDL.
+			$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
+			delete_option( self::SCHEMA_OPTION );
+		}
 
-	/**
-	 * Whether the backing table exists in the database.
-	 *
-	 * @return bool
-	 */
-	public function table_exists() {
-		global $wpdb;
-		$table_name = $this->table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table; table name from class constant, not user input. WP_Query does not support SHOW TABLES.
-		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
-		return $found === $table_name;
-	}
+		/**
+		 * Whether the backing table exists in the database.
+		 *
+		 * @return bool
+		 */
+		public function table_exists() {
+			global $wpdb;
+			$table_name = $this->table_name();
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table; table name from class constant, not user input. WP_Query does not support SHOW TABLES.
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+			return $found === $table_name;
+		}
 
 	/**
 	 * Insert a batch of metric events.
@@ -429,7 +429,7 @@ class WP_MCP_AI_Metric_Event_Store {
 		if ( ! $this->table_exists() ) {
 			return 0;
 		}
-		$table_name = $this->table_name();
+		$table_name = esc_sql( $this->table_name() );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct COUNT on custom plugin table; table name from class constant. WP_Query does not support custom table queries.
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
 	}

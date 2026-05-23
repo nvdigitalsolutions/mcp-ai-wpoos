@@ -1305,8 +1305,21 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
 			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
-			// Direct cURL is required here: wp_remote_post() buffers the full body before
-			// returning and cannot forward individual tokens to the browser in real time.
+			/*
+			 * Direct cURL is required here for real-time LM Studio streaming.
+			 *
+			 * wp_remote_post() buffers the entire response body in memory and
+			 * only returns it after the connection closes. It cannot forward
+			 * individual tokens to the browser as they arrive from the model.
+			 *
+			 * CURLOPT_WRITEFUNCTION with a streaming callback is the only way
+			 * to deliver Server-Sent Events token-by-token in real time. For
+			 * non-streaming requests, the standard wp_remote_post() fallback
+			 * is used instead (see the is_streaming guard above).
+			 *
+			 * This path is also gated behind function_exists('curl_init') and
+			 * is_callable($stream_callback) checks.
+			 */
 			$ch = curl_init();
 
 			curl_setopt_array(

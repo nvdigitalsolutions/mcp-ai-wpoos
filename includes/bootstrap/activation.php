@@ -360,6 +360,39 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 			WP_MCP_AI_Metric_Retention::unschedule();
 		}
 
+		/*
+		 * Unschedule cron hooks registered by individual service classes.
+		 *
+		 * The following hooks are scheduled by their respective class init
+		 * methods but do not register their own deactivation callbacks.
+		 * We clear them here so scheduled events do not persist after
+		 * deactivation on hosts that keep the plugin files but disable it.
+		 *
+		 * When a class provides its own unschedule() / on_deactivation()
+		 * method, we prefer that — the hooks below are only for classes
+		 * that lack a dedicated cleanup path.
+		 */
+		$cleanup_hooks = array(
+			'wp_mcp_ai_check_license',
+			'wp_mcp_ai_audit_trail_prune',
+			'wp_mcp_ai_approval_queue_cleanup',
+			'wp_mcp_ai_asset_discovery',
+			'wp_mcp_ai_async_job_queue',
+			'wp_mcp_ai_async_job_queue_cleanup',
+			'wp_mcp_ai_dlq_cleanup',
+			'wp_mcp_ai_cleanup_token_tracking',
+			'wp_mcp_ai_annual_training_reminder',
+			'wp_mcp_ai_dependency_scan',
+			'wp_mcp_ai_cleanup_job_cache',
+		);
+
+		foreach ( $cleanup_hooks as $hook ) {
+			$timestamp = wp_next_scheduled( $hook );
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, $hook );
+			}
+		}
+
 		flush_rewrite_rules();
 	}
 }
