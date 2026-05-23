@@ -66,6 +66,9 @@ This directory contains comprehensive documentation for extracting and distribut
 ### What Can Be Extracted?
 
 **High Priority (Ready Now)**:
+- Voice Activity Detection (`nvoos-vad`) — published May 2026
+- Floating Chat Bubble (`nvoos-chat-bubble`) — published May 2026
+- Chat Memory UI (`nvoos-chat-memory-ui`) — published May 2026
 - Storage utilities with Web Worker optimization
 - Security-hardened markdown renderer
 - Event coordination system (SSE + event bus)

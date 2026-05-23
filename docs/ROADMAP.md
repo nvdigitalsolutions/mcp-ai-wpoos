@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** May 21, 2026  
-**Version:** 1.1.21
+**Last Updated:** May 23, 2026  
+**Version:** 1.1.22
 
 ---
 
@@ -19,13 +19,24 @@
 
 ---
 
-## Released: v1.1.21 / v1.1.20 / v1.1.19 / v1.1.18 — May 2026 ✅
+## Released: v1.1.22 / v1.1.21 / v1.1.20 / v1.1.19 / v1.1.18 — May 2026 ✅
 
-**Release Dates:** May 14–21, 2026
+**Release Dates:** May 14–23, 2026
 
-### What was delivered across these four releases
+### What was delivered across these five releases
 
-- ✅ **WordPress.org Compliance — Complete (F1–F10 Resolved).** All inline `<script>`/`<style>` echoes removed from 53 files and converted to WP enqueue APIs. 11 PHP parse errors fixed. All 10 reviewer findings resolved with re-audit verification (dangerous-functions, superglobal-access, HTTP-timeout, inline-notice audits). Build pipeline hardened. Zero bare `phpcs:ignore` comments remain. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md). ⭐ **READY FOR RE-SUBMISSION**
+- ✅ **Baseten AI — 11th first-class provider.** OpenAI-compatible chat/tools/streaming/reasoning at `api.baseten.co/v1`. Settings → Providers → Baseten subtab. Service doc in `docs/EXTERNAL_SERVICES.md`.
+- ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes: capability boundary + per-session tool allow-lists, cryptographic audit trail (CPT + options, immutable events), risk-tiered approval gate (low/medium/high/critical), isolated code sandbox (Python/Node.js/Bash/PHP). All provider-agnostic.
+- ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash as recommended model (4x faster, dynamic thinking, $1.50/M input). Gemini Omni Flash as video default (10s, native audio, AI avatars). 3.1 Flash deprecated.
+- ✅ **Continual Harness P5.** Self-improving agent system with execution history learning and tool selection feedback loops.
+- ✅ **SaaS Controller Phase 2 & 4.** Stripe + OpenRouter deployment editors from WP-Admin.
+- ✅ **npm packages — nvoos-vad, nvoos-chat-bubble, nvoos-chat-memory-ui.** VAD, chat bubble widget, memory drawer component with TypeScript declarations.
+- ✅ **WordPress Studio Test Environment.** Auto-detect Studio DB/ABSPATH/site URL in test bootstrap.
+- ✅ **Security fixes.** UUID buffer bounds (saas-controller). `map_meta_cap=false` for audit trail CPT (WP 6.1+). AV false positives in test suite.
+- ✅ **Allowed providers expanded.** DeepSeek, OpenRouter, DigitalOcean, Kimi, Baseten added to validation gate.
+- ✅ **LM Studio URLs fixed.** All `lmstudio.ai` → GitHub org after upstream 500 errors.
+- ✅ **Addons PHPCS — 93% reduction (1,143 → 82).** Two-batch cleanup with 12 new `bin/` helper scripts.
+- ✅ **v1.1.21/v1.1.20/v1.1.19/v1.1.18 — WordPress.org Compliance Complete (F1–F10).** All inline JS/CSS removed from 53 files and converted to WP enqueue APIs. 11 PHP parse errors fixed. All 10 reviewer findings resolved + re-audit verified. Build pipeline hardened. Zero bare `phpcs:ignore` comments. ⭐ **READY FOR RE-SUBMISSION**
 - ✅ **Canonical Return Envelope — Unix Theory P0/P1 Complete.** 191 non-canonical `array('success' => false, ...)` returns converted to `new WP_Error()` across 105 files. `WPMCPAI.Tools.CanonicalReturnEnvelope` + `SanitizeAtEntry` PHPCS sniffs clean. Caller sites hardened.
 - ✅ **Capability Fence P2b — Full Rollout.** `get_required_capability()` deployed to all ~830 tool classes (base + Pro + all addons) via `WP_MCP_AI_Tool_Interface`. Central `WP_MCP_AI_Tool_Capability_Map`. New `WPMCPAI.Tools.RequiredCapabilityDeclared` sniff.
 - ✅ **Security Center.** 5-tab admin page: Posture (live security scoring), Compliance Report, OTel Telemetry, Deprecated-Alias Tracking, MCP Token Inventory.
