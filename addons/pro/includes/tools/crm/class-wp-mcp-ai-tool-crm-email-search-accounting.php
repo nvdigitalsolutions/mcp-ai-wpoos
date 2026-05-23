@@ -460,7 +460,6 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 		return array(
 			'success'    => true,
 			/* translators: %s: cron recurrence label */
-			 */
 			'message'    => sprintf( __( 'Accounting search scheduled to auto-refresh %s.', 'mcp-ai-wpoos-pro' ), $recurrence ),
 			'recurrence' => $recurrence,
 			'hook'       => self::CRON_HOOK,
@@ -806,7 +805,6 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			'data_retention_years'       => $retention_years,
 			'data_retention_flag'        => sprintf(
 				/* translators: %d: number of years for data retention */
-				 */
 				__( 'Retain for %d years per accounting regulations', 'mcp-ai-wpoos-pro' ),
 				$retention_years
 			),
