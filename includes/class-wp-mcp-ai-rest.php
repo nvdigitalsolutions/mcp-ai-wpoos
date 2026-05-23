@@ -3406,9 +3406,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Update response completion timestamp after agentic loop.
-			$transcript_context['response_completed_at'] = microtime( true );
+				$transcript_context['response_completed_at'] = microtime( true );
 
-			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+				/**
+				 * Fires after the full agentic loop has completed (all iterations
+				 * finished, whether by completion or by hitting max_iterations).
+				 *
+				 * Consumed by the Continual Harness evolver to trigger online
+				 * harness adaptation after a batch of tool executions.
+				 *
+				 * @since 1.2.0
+				 *
+				 * @param int   $iteration     Total iterations completed.
+				 * @param int   $assistant_id  Assistant post ID.
+				 * @param array $tool_results  Array of tool results from the final iteration.
+				 * @param bool  $limit_reached Whether the loop exited because max_iterations was reached.
+				 */
+				do_action( 'wp_mcp_ai_agentic_loop_completed', $iteration, $assistant_id, $tool_result_messages, $iteration >= $max_iterations );
+
+				WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
@@ -4288,10 +4304,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Update response completion timestamp after agentic loop.
-			$transcript_context['response_completed_at'] = microtime( true );
+				$transcript_context['response_completed_at'] = microtime( true );
 
-			// Log and record transcript.
-			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+				/**
+				 * Fires after the full SSE-streaming agentic loop has completed.
+				 *
+				 * @since 1.2.0
+				 *
+				 * @param int   $iteration     Total iterations completed.
+				 * @param int   $assistant_id  Assistant post ID.
+				 * @param array $tool_results  Array of tool results from the final iteration.
+				 * @param bool  $limit_reached Whether the loop exited because max_iterations was reached.
+				 */
+				do_action( 'wp_mcp_ai_agentic_loop_completed', $iteration, $assistant_id, $tool_result_messages, $iteration >= $max_iterations );
+
+				// Log and record transcript.
+				WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
 			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
