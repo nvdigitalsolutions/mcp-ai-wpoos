@@ -26,6 +26,8 @@ Provides the catalogue of pluggable **agent roles** (planner, executor, critic) 
 | `WP_MCP_AI_Agent_Approval_Gate` (static) | `class-wp-mcp-ai-agent-approval-gate.php` | CoSAI Principle 1 — risk-tiered human approval gate (low→auto, medium→pre-approved, high→pending, critical→override) |
 | `WP_MCP_AI_Agent_Code_Sandbox` | `class-wp-mcp-ai-agent-code-sandbox.php` | MCP-T3/T5 — sandboxed code execution (Python/Node/Bash/PHP), `proc_open` isolation, output caps, timeout enforcement |
 | `WP_MCP_AI_Agent_Capability_Boundary_Hooks` | (same file as Capability Boundary) | Integration bridge — hooks into `wp_mcp_ai_before_tool_execution` at priority 1 to enforce all CoSAI gates before any tool executes |
+| `WP_MCP_AI_Agent_Harness_Evolver` | `class-wp-mcp-ai-agent-harness-evolver.php` | Continual Harness (Karten et al., 2026) — reads audit trail trajectories, detects failure signatures, applies CRUD to prompt/roles/skills/memory mid-session. Includes `WP_MCP_AI_Agent_Harness_Evolver_Role_Adapter` for evolved role registration. |
+| `WP_MCP_AI_Agent_Harness_Bootstrap` (static) | `class-wp-mcp-ai-agent-harness-bootstrap.php` | Save/load evolved harness state across sessions — bundles, lists, prunes (max 10 per assistant) |
 
 The procedural entry points `wp_mcp_ai_get_agent_roles()`, `wp_mcp_ai_get_agent_role( $type )`, `wp_mcp_ai_get_assistant_role( $assistant_id )`, and `wp_mcp_ai_set_assistant_role( $assistant_id, $type )` live in [`agents-init.php`](../agents-init.php) and are the canonical entry points for callers — do not instantiate role classes directly.
 
@@ -42,7 +44,8 @@ The role contract itself is defined by `WP_MCP_AI_Agent_Role_Interface` in [`inc
 - **Capability boundary events:** `wp_mcp_ai_capability_boundary_allow_tool`, `wp_mcp_ai_capability_boundary_rate_limit`. Hooks bridge at `wp_mcp_ai_before_tool_execution` priority 1.
 - **Approval gate events:** `wp_mcp_ai_agent_approval_auto_approve_risk`, `wp_mcp_ai_agent_approval_required`, `wp_mcp_ai_agent_approval_critical_override`, `wp_mcp_ai_approval_decided` (feeds Agent Command Center).
 - **Sandbox events:** `wp_mcp_ai_sandbox_allowed_languages`, `wp_mcp_ai_sandbox_max_timeout`, `wp_mcp_ai_sandbox_execution_env`.
-- **Events listened to:** `init` (CPT + cron), `wp_mcp_ai_audit_trail_prune`, `wp_mcp_ai_before_tool_execution` (CoSAI gates at priority 1).
+- **Harness Evolver events:** `wp_mcp_ai_harness_evolution_enabled`, `wp_mcp_ai_harness_evolution_frequency`, `wp_mcp_ai_harness_evolution_warmup`, `wp_mcp_ai_harness_evolution_max_window` (filters — configure evolution behaviour), `wp_mcp_ai_harness_evolution_completed`, `wp_mcp_ai_harness_evolution_failed` (actions — fire after evolution passes), `wp_mcp_ai_agent_roles` (filter at priority 20 — registers evolved roles).
+- **Events listened to:** `init` (CPT + cron), `wp_mcp_ai_audit_trail_prune`, `wp_mcp_ai_before_tool_execution` (CoSAI gates at priority 1), `wp_mcp_ai_agent_roles` (Harness Evolver at priority 20).
 
 ## Audit Trail (CoSAI Principle 3)
 

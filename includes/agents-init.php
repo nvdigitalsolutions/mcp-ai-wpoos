@@ -32,6 +32,10 @@ require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-capability-boundary.php';
 require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-approval-gate.php';
 require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-code-sandbox.php';
 
+// Continual Harness — Self-Improving Agent System (Karten et al., 2026).
+require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-harness-evolver.php';
+require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-harness-bootstrap.php';
+
 // Initialise the audit trail system (CPT registration, cron).
 WP_MCP_AI_Agent_Audit_Trail::init();
 
