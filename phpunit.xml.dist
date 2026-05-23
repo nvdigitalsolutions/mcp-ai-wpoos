@@ -9,8 +9,16 @@
             <directory suffix=".php">tests</directory>
             <directory suffix=".php">addons/pro/tests</directory>
             <directory suffix=".php">addons/canvas-toolkit/tests</directory>
+            <directory suffix=".php">addons/chat-spa/tests</directory>
+            <directory suffix=".php">addons/document-editor/tests</directory>
             <directory suffix=".php">addons/media-studio/tests</directory>
+            <directory suffix=".php">addons/toolkit-shell/tests</directory>
+            <directory suffix=".php">addons/docs-hub/tests</directory>
             <directory suffix=".php">addons/saas-controller/tests</directory>
+            <directory suffix=".php">addons/embedded/tests</directory>
+            <directory suffix=".php">addons/algorave/tests</directory>
+            <directory suffix=".php">addons/fantasy-football/tests</directory>
+            <directory suffix=".php">addons/graphify/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>

@@ -17,6 +17,25 @@
 class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 	/**
+	 * Set up block editor context before each test.
+	 *
+	 * Block render files may call functions that depend on the block editor
+	 * runtime (get_block_wrapper_attributes, wp_register_script, etc.).
+	 * Without proper context, these can trigger wp_die() or fatal errors.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure the block editor is initialized.
+		if ( ! did_action( 'init' ) ) {
+			do_action( 'init' );
+		}
+
+		// Create an admin user for permission-dependent render checks.
+		$this->admin_user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+	}
+
+	/**
 	 * Test tools-grid render.php works in non-block context.
 	 */
 	public function test_tools_grid_render_non_block_context() {

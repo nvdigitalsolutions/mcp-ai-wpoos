@@ -23,6 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
+
 /**
  * 2FA Setup Assistant Tool Class
  *
