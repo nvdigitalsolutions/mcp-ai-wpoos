@@ -168,6 +168,41 @@ require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
  * Manually load the plugin being tested.
  */
 function wp_mcp_ai_manually_load_plugin() {
+	// ── Disable all AI providers by default in tests ────────────
+	// When the plugin bootstraps, it instantiates every provider client
+	// via the container (even if unused). Pre-populating the settings
+	// default means `get_available_providers()` returns nothing and
+	// the router won't attempt real API calls from unmocked tests.
+	// Individual tests re-enable the providers they need via
+	// `update_option( 'wp_mcp_ai_settings', $settings )`.
+	add_filter(
+		'default_option_wp_mcp_ai_settings',
+		function ( $default ) {
+			return array_merge(
+				$default,
+				array(
+					'enable_openai'       => false,
+					'enable_gemini'       => false,
+					'enable_anthropic'    => false,
+					'enable_ollama'       => false,
+					'enable_lm_studio'    => false,
+					'enable_cloudflare'   => false,
+					'enable_deepseek'     => false,
+					'enable_kimi'         => false,
+					'enable_baseten'      => false,
+					'enable_openrouter'   => false,
+					'enable_digitalocean' => false,
+					'enable_huggingface'  => false,
+					'enable_nvidia'       => false,
+					// enable_embedded intentionally omitted — it is a local/
+					// in-browser provider with no API key, always available.
+				)
+			);
+		},
+		10,
+		1
+	);
+
 	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
 
 	// Load the SaaS Controller addon if present so its tests can exercise
@@ -179,59 +214,67 @@ function wp_mcp_ai_manually_load_plugin() {
 	if ( file_exists( $saas_controller ) ) {
 		require $saas_controller;
 	}
+
+	// Load the Pro addon if present so its tests (e.g. messaging-channels-ajax,
+	// CPT AI integration, quiz tools) can exercise their classes.
+	// Guard against double-loading: CI environments may have Pro activated as
+	// a regular plugin (loaded by WordPress before this mu-plugin callback).
+	$pro_addon = dirname( __DIR__ ) . '/addons/pro/mcp-ai-wpoos-pro.php';
+	if ( file_exists( $pro_addon ) && ! function_exists( 'wp_mcp_ai_pro_activate' ) ) {
+		require_once $pro_addon;
+	}
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
 
 /**
- * Load optional test plugins if available.
- * This allows integration tests to run when plugins are installed.
+ * Detect optional test plugins and set flags for integration tests.
+ *
+ * Do NOT manually `require_once` plugin files here — WordPress loads
+ * them during normal activation (plugins_loaded), and double-loading
+ * causes "Cannot declare class" fatal errors when running against a
+ * live WordPress site where plugins are already activated.
  */
 function wp_mcp_ai_load_optional_test_plugins() {
 	$wp_core_dir    = getenv( 'WP_CORE_DIR' );
 	$wordpress_path = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
 	$plugins_dir    = $wordpress_path . '/wp-content/plugins';
 
-	// Track which plugins are loaded for test skipping.
+	// Track which plugins are detected for diagnostic output.
 	$loaded_plugins = array();
 
-	// Load WooCommerce if available.
+	// Detect WooCommerce.
 	if ( file_exists( $plugins_dir . '/woocommerce/woocommerce.php' ) ) {
-		require_once $plugins_dir . '/woocommerce/woocommerce.php';
 		$loaded_plugins[] = 'woocommerce';
 		define( 'WP_MCP_AI_TEST_WOOCOMMERCE_ACTIVE', true );
 	}
 
-	// Load Elementor if available.
+	// Detect Elementor.
 	if ( file_exists( $plugins_dir . '/elementor/elementor.php' ) ) {
-		require_once $plugins_dir . '/elementor/elementor.php';
 		$loaded_plugins[] = 'elementor';
 		define( 'WP_MCP_AI_TEST_ELEMENTOR_ACTIVE', true );
 	}
 
-	// Load Rank Math if available.
+	// Detect Rank Math.
 	if ( file_exists( $plugins_dir . '/seo-by-rank-math/rank-math.php' ) ) {
-		require_once $plugins_dir . '/seo-by-rank-math/rank-math.php';
 		$loaded_plugins[] = 'rank-math';
 		define( 'WP_MCP_AI_TEST_RANKMATH_ACTIVE', true );
 	}
 
-	// Load WPCode if available.
-	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php' ) ) {
-		require_once $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php';
+	// Detect WPCode (main plugin file is ihaf.php, not insert-headers-and-footers.php).
+	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/ihaf.php' ) ) {
 		$loaded_plugins[] = 'wpcode';
 		define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
 	}
 
-	// Load Simple JWT Login if available.
+	// Detect Simple JWT Login.
 	if ( file_exists( $plugins_dir . '/simple-jwt-login/simple-jwt-login.php' ) ) {
-		require_once $plugins_dir . '/simple-jwt-login/simple-jwt-login.php';
 		$loaded_plugins[] = 'simple-jwt-login';
 		define( 'WP_MCP_AI_TEST_SIMPLE_JWT_LOGIN_ACTIVE', true );
 	}
 
 	if ( ! empty( $loaded_plugins ) ) {
-		fwrite( STDOUT, "\nLoaded optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
+		fwrite( STDOUT, "\nDetected optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
 	}
 }
 
@@ -285,6 +328,23 @@ function wp_mcp_ai_init_test_database_tables() {
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+// ---------------------------------------------------------------------------
+// Global wp_die exception handler.
+//
+// Without this, wp_die("Security check failed.") in AJAX handlers calls PHP's
+// die(), killing the entire PHPUnit process. The wp_die_ajax_handler filter
+// is critical — WordPress uses _ajax_wp_die_handler() (which calls die()
+// directly) when DOING_AJAX is defined, bypassing the standard wp_die_handler
+// filter.
+// ---------------------------------------------------------------------------
+$throw_die_handler = function () {
+	return function ( $message, $title = '', $args = array() ) {
+		throw new WPDieException( $message, $title, $args );
+	};
+};
+add_filter( 'wp_die_handler', $throw_die_handler, PHP_INT_MAX );
+add_filter( 'wp_die_ajax_handler', $throw_die_handler, PHP_INT_MAX );
 
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.
 // `WP_Ajax_UnitTestCase`) must be loaded after it.

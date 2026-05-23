@@ -33,6 +33,12 @@ if ( ! defined( 'DB_ENGINE' ) ) {
 	define( 'DB_ENGINE', 'sqlite' );
 }
 
+// Required by WordPress Studio's internal playground mu-plugin.
+// Without this, the site fatals on wp_loaded.
+if ( ! defined( 'SQLITE_MAIN_FILE' ) ) {
+	define( 'SQLITE_MAIN_FILE', __FILE__ );
+}
+
 // Require the implementation from the plugin.
 require_once $sqlite_plugin_implementation_folder_path . '/wp-includes/sqlite/db.php';
 
