@@ -390,7 +390,9 @@ $throw_die_handler = function () {
 // The test framework's handler wins when expectException() is active, our
 // handler acts as a global safety net for code paths without a test handler.
 add_filter( 'wp_die_handler', $throw_die_handler, 0 );
-add_filter( 'wp_die_ajax_handler', $throw_die_handler, 0 );
+// PHP_INT_MAX for AJAX — WordPress's _ajax_wp_die_handler_filter also runs at
+// priority 10, so we must run AFTER it to override the default '-1' output.
+add_filter( 'wp_die_ajax_handler', $throw_die_handler, PHP_INT_MAX );
 
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.
 // `WP_Ajax_UnitTestCase`) must be loaded after it.
