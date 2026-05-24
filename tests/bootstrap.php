@@ -378,8 +378,19 @@ $throw_die_handler = function () {
 		throw new WPDieException( $message );
 	};
 };
-add_filter( 'wp_die_handler', $throw_die_handler, PHP_INT_MAX );
-add_filter( 'wp_die_ajax_handler', $throw_die_handler, PHP_INT_MAX );
+$throw_die_handler = function () {
+	return function ( $message, $title = '', $args = array() ) {
+		// WPDieException extends Exception — only $message is accepted.
+		// Passing $args (array) as $previous (expects Throwable) causes
+		// a TypeError in PHP 8.1+ that silently kills PHPUnit with "-1".
+		throw new WPDieException( $message );
+	};
+};
+// Priority 0 = runs BEFORE the test framework's per-test handler (priority 10).
+// The test framework's handler wins when expectException() is active, our
+// handler acts as a global safety net for code paths without a test handler.
+add_filter( 'wp_die_handler', $throw_die_handler, 0 );
+add_filter( 'wp_die_ajax_handler', $throw_die_handler, 0 );
 
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.
 // `WP_Ajax_UnitTestCase`) must be loaded after it.
