@@ -277,7 +277,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$client   = new WP_MCP_AI_Language_Model_Router(
 				new WP_MCP_AI_OpenAI_Client(),
 				new WP_MCP_AI_Gemini_Client(),
-				new WP_MCP_AI_Ollama_Client()
+				new WP_MCP_AI_Ollama_Client(),
+				null, // lm_studio
+				null, // anthropic
+				null, // huggingface
+				null, // cloudflare
+				null, // embedded
+				null, // nvidia
+				null, // deepseek — instantiated by router constructor default
+				null, // openrouter
+				null, // digitalocean
+				null  // kimi
 			);
 			$instance = new self( $registry, $client );
 			$GLOBALS['wp_mcp_ai_rest_controller'] = $instance;
@@ -1701,7 +1711,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$provider = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : '';
 			if ( '' === $provider ) {
-				$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+				if ( isset( $settings['default_provider'] ) && ! empty( $settings['default_provider'] ) ) {
+					$provider = sanitize_key( $settings['default_provider'] );
+				} else {
+					$provider = WP_MCP_AI_REST_Validator::detect_first_enabled_provider( $settings );
+				}
 			}
 
 			$model = isset( $config['model'] ) ? (string) $config['model'] : '';

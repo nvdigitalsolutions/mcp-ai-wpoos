@@ -601,7 +601,11 @@ class WP_MCP_AI_REST_Validator {
 
 		if ( empty( $provider ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+			if ( isset( $settings['default_provider'] ) && ! empty( $settings['default_provider'] ) ) {
+				$provider = sanitize_key( $settings['default_provider'] );
+			} else {
+				$provider = self::detect_first_enabled_provider( $settings );
+			}
 		}
 
 		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
@@ -610,7 +614,7 @@ class WP_MCP_AI_REST_Validator {
 		}
 
 		if ( ! in_array( $provider, $allowed_providers, true ) ) {
-			$provider = 'openai';
+			$provider = self::detect_first_enabled_provider( WP_MCP_AI_Admin_Settings::get_settings() );
 		}
 
 		$options['provider'] = $provider;
@@ -1201,5 +1205,63 @@ class WP_MCP_AI_REST_Validator {
 		);
 
 		return $content;
+	}
+
+	/**
+	 * Detect the first enabled AI provider from settings.
+	 *
+	 * When no explicit provider is configured (neither on the assistant
+	 * nor in the default_provider setting), this method scans the known
+	 * provider enable/API-key flags and returns the first one that is
+	 * both enabled and has its credentials configured.
+	 *
+	 * Falls back to 'openai' only as an absolute last resort when no
+	 * provider is enabled at all.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param array $settings Plugin settings array.
+	 * @return string Provider slug.
+	 */
+	public static function detect_first_enabled_provider( array $settings ) {
+		// Ordered list of provider → enable-flag + api-key pairs.
+		// Providers are checked in this order; the first enabled one wins.
+		$provider_checks = array(
+			'openai'       => array( 'enable_openai', 'openai_api_key' ),
+			'anthropic'    => array( 'enable_anthropic', 'anthropic_api_key' ),
+			'gemini'       => array( 'enable_gemini', 'gemini_api_key' ),
+			'deepseek'     => array( 'enable_deepseek', 'deepseek_api_key' ),
+			'openrouter'   => array( 'enable_openrouter', 'openrouter_api_key' ),
+			'kimi'         => array( 'enable_kimi', 'kimi_api_key' ),
+			'digitalocean' => array( 'enable_digitalocean', 'digitalocean_api_key' ),
+			'nvidia'       => array( 'enable_nvidia', 'nvidia_api_key' ),
+			'ollama'       => array( 'enable_ollama', null ), // Ollama checks endpoint, not API key.
+			'lm_studio'    => array( 'enable_lm_studio', null ),
+			'cloudflare'   => array( 'enable_cloudflare', 'cloudflare_api_token' ),
+			'huggingface'  => array( 'enable_huggingface', 'huggingface_api_key' ),
+			'baseten'      => array( 'enable_baseten', 'baseten_api_key' ),
+			'embedded'     => array( 'enable_embedded', null ),
+		);
+
+		foreach ( $provider_checks as $slug => $flags ) {
+			list( $enable_key, $api_key_key ) = $flags;
+
+			// Provider must be explicitly enabled.
+			if ( empty( $settings[ $enable_key ] ) ) {
+				continue;
+			}
+
+			// If this provider requires an API key, it must be configured.
+			if ( null !== $api_key_key && empty( $settings[ $api_key_key ] ) ) {
+				continue;
+			}
+
+			return $slug;
+		}
+
+		// Absolute last resort: return 'openai' so the router has a
+		// provider to dispatch to. The OpenAI client will return its own
+		// "no API key" error, which is more actionable than a silent failure.
+		return 'openai';
 	}
 }
