@@ -42,6 +42,13 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Generate Chart', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool description.
 	 *
 	 * @return string Tool description.

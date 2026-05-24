@@ -45,6 +45,13 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Media Library Optimizer', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

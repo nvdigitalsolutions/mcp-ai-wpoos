@@ -50,6 +50,13 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Define DOING_AJAX so check_ajax_referer() calls wp_die()
+		// instead of PHP's die() directly. Without this, failed
+		// nonce checks output '-1' and kill the PHPUnit process.
+		if ( ! defined( 'DOING_AJAX' ) ) {
+			define( 'DOING_AJAX', true );
+		}
+
 		// Initialize slash commands system.
 		if ( ! function_exists( 'wp_mcp_ai_init_slash_commands' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';

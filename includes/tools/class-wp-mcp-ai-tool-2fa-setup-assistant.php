@@ -51,6 +51,13 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Two-Factor Authentication Setup Assistant', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

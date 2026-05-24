@@ -44,6 +44,13 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Login Security Monitor', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

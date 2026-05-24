@@ -315,4 +315,33 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'timeout'         => 300,
 		);
 	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+		// Strip base64-encoded video data URLs to avoid sending
+		// multi-MB payloads to the LLM.
+		if ( isset( $result['video_url'] ) && is_string( $result['video_url'] ) ) {
+			if ( strpos( $result['video_url'], 'data:video/' ) === 0 ) {
+				unset( $result['video_url'] );
+				$result['video_data_stripped'] = true;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
+		return array(
+			'status'  => 'pending',
+			'job_id'  => $job_id,
+			'message' => __( 'Omni video editing in progress…', 'mcp-ai-wpoos' ),
+		);
+	}
 }

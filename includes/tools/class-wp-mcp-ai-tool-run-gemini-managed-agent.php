@@ -115,7 +115,7 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$operation     = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
 		$session_id    = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
 		$task          = isset( $arguments['task'] ) ? sanitize_textarea_field( $arguments['task'] ) : '';

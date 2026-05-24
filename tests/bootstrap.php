@@ -125,6 +125,20 @@ if ( ! is_dir( $tests_db_dir ) && ! mkdir( $tests_db_dir, 0775, true ) && ! is_d
 	exit( 1 );
 }
 
+// Clean up the test database from the previous run to avoid corruption.
+// SQLite databases can accumulate journal/WAL files that cause silent
+// crashes when PHPUnit aggregates results after large test batches.
+$db_file = $tests_db_dir . '/wptests.sqlite';
+if ( file_exists( $db_file ) ) {
+	unlink( $db_file );
+}
+// Also remove SQLite journal / WAL files.
+foreach ( array( "{$db_file}-wal", "{$db_file}-shm", "{$db_file}-journal" ) as $aux ) {
+	if ( file_exists( $aux ) ) {
+		unlink( $aux );
+	}
+}
+
 // Wire up SQLite Database Integration drop-in when using SQLite.
 // The fixture provides a db.php drop-in that the WP test bootstrap loads.
 $_sqlite_fixture = $plugin_root . '/tests/fixtures/sqlite-database-integration';
@@ -329,6 +343,18 @@ function wp_mcp_ai_init_test_database_tables() {
 	if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 	}
+
+	// Ensure slash command audit table exists for tests.
+	// Created during plugin activation but tests skip activation.
+	if ( class_exists( 'WP_MCP_AI_Slash_Command_Audit' ) ) {
+		$audit = new WP_MCP_AI_Slash_Command_Audit();
+		$audit->create_table();
+	}
+
+	// Ensure metric event store table exists for tests.
+	if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
+		WP_MCP_AI_Metric_Event_Store::get_instance()->install();
+	}
 }
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
@@ -346,10 +372,26 @@ require $_tests_dir . '/includes/bootstrap.php';
 // ---------------------------------------------------------------------------
 $throw_die_handler = function () {
 	return function ( $message, $title = '', $args = array() ) {
-		throw new WPDieException( $message, $title, $args );
+		// WPDieException extends Exception — only $message is accepted.
+		// Passing $args (array) as $previous (expects Throwable) causes
+		// a TypeError in PHP 8.1+ that silently kills PHPUnit with "-1".
+		throw new WPDieException( $message );
 	};
 };
-add_filter( 'wp_die_handler', $throw_die_handler, PHP_INT_MAX );
+$throw_die_handler = function () {
+	return function ( $message, $title = '', $args = array() ) {
+		// WPDieException extends Exception — only $message is accepted.
+		// Passing $args (array) as $previous (expects Throwable) causes
+		// a TypeError in PHP 8.1+ that silently kills PHPUnit with "-1".
+		throw new WPDieException( $message );
+	};
+};
+// Priority 0 = runs BEFORE the test framework's per-test handler (priority 10).
+// The test framework's handler wins when expectException() is active, our
+// handler acts as a global safety net for code paths without a test handler.
+add_filter( 'wp_die_handler', $throw_die_handler, 0 );
+// PHP_INT_MAX for AJAX — WordPress's _ajax_wp_die_handler_filter also runs at
+// priority 10, so we must run AFTER it to override the default '-1' output.
 add_filter( 'wp_die_ajax_handler', $throw_die_handler, PHP_INT_MAX );
 
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.

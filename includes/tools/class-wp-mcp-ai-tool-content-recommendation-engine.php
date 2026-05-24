@@ -45,6 +45,13 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Content Recommendation Engine', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

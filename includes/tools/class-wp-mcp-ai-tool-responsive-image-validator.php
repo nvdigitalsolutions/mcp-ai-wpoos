@@ -45,6 +45,13 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Responsive Image Validator', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

@@ -149,7 +149,7 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Sanitize inputs (two-gate rule: sanitize at entry).
 		$prompt           = isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '';
 		$duration         = isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : 5;
@@ -393,6 +393,33 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'background-only' => true,
 			'timeout'         => 360,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+		if ( isset( $result['video_url'] ) && is_string( $result['video_url'] ) ) {
+			if ( strpos( $result['video_url'], 'data:video/' ) === 0 ) {
+				unset( $result['video_url'] );
+				$result['video_data_stripped'] = true;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
+		return array(
+			'status'  => 'pending',
+			'job_id'  => $job_id,
+			'message' => __( 'Omni video generation in progress…', 'mcp-ai-wpoos' ),
 		);
 	}
 }

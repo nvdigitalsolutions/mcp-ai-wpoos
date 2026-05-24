@@ -55,6 +55,13 @@ class WP_MCP_AI_Tool_Detect_Completion_Indicators {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Detect Completion Indicators', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @return array
