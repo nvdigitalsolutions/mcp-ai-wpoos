@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Sanitize inputs (two-gate rule).
 		$edit_prompt      = isset( $arguments['edit_prompt'] ) ? sanitize_textarea_field( $arguments['edit_prompt'] ) : '';
 		$source_video_id  = isset( $arguments['source_video_id'] ) ? absint( $arguments['source_video_id'] ) : 0;

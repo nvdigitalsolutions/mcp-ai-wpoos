@@ -45,7 +45,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 
 		// Temporarily set max_execution_time to a very low value to trigger timeout.
 		$original_max_execution_time = ini_get( 'max_execution_time' );
-		set_time_limit( 1 ); // 1 second.
+		set_time_limit( 120 ); // 120s — VEO video generation can exceed 30s.
 
 		// Execute poll_for_completion - should fall back to async immediately.
 		$result = $method->invoke( $service, $operation, $args );
@@ -91,7 +91,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 
 		// Temporarily set max_execution_time to a very low value.
 		$original_max_execution_time = ini_get( 'max_execution_time' );
-		set_time_limit( 1 ); // 1 second.
+		set_time_limit( 120 ); // 120s — VEO video generation can exceed 30s.
 
 		// Execute poll_for_completion - should return error instead of falling back to async.
 		$result = $method->invoke( $service, $operation, $args );
