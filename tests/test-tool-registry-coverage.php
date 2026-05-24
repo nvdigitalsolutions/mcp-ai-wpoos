@@ -299,7 +299,7 @@ class Test_Tool_Registry_Coverage extends WP_UnitTestCase {
 	 *
 	 * @return array<string,array{0:string,1:string,2:string}>
 	 */
-	public function provide_manifest_paths() {
+	public static function provide_manifest_paths() {
 		return array(
 			'base tools' => array(
 				'includes/tools',

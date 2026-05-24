@@ -20,6 +20,18 @@
 class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure the seeder class is loaded (normally on-demand by AJAX/CLI).
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Orchestration_Seeder' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/professions/class-wp-mcp-ai-profession-orchestration-seeder.php';
+		}
+	}
+
+	/**
 	 * Test that the orchestration seeder class exists and can be instantiated.
 	 */
 	public function test_orchestration_seeder_class_exists() {
