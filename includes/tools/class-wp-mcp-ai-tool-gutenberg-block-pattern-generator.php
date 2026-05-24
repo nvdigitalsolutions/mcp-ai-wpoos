@@ -45,6 +45,13 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Gutenberg Block Pattern Generator', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

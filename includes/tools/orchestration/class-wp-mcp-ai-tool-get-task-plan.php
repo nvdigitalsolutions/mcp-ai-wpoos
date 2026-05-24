@@ -37,6 +37,13 @@ class WP_MCP_AI_Tool_Get_Task_Plan {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Get Task Plan', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @return array

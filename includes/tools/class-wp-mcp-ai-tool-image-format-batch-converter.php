@@ -45,6 +45,13 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Image Format Batch Converter', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0

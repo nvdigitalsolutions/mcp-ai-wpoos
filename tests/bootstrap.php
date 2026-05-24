@@ -329,6 +329,18 @@ function wp_mcp_ai_init_test_database_tables() {
 	if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 	}
+
+	// Ensure slash command audit table exists for tests.
+	// Created during plugin activation but tests skip activation.
+	if ( class_exists( 'WP_MCP_AI_Slash_Command_Audit' ) ) {
+		$audit = new WP_MCP_AI_Slash_Command_Audit();
+		$audit->create_table();
+	}
+
+	// Ensure metric event store table exists for tests.
+	if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
+		WP_MCP_AI_Metric_Event_Store::get_instance()->install();
+	}
 }
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );

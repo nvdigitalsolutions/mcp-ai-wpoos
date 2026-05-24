@@ -45,6 +45,13 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Performance Optimizer Assistant', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @since 1.0.0
