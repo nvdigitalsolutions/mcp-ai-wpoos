@@ -125,6 +125,20 @@ if ( ! is_dir( $tests_db_dir ) && ! mkdir( $tests_db_dir, 0775, true ) && ! is_d
 	exit( 1 );
 }
 
+// Clean up the test database from the previous run to avoid corruption.
+// SQLite databases can accumulate journal/WAL files that cause silent
+// crashes when PHPUnit aggregates results after large test batches.
+$db_file = $tests_db_dir . '/wptests.sqlite';
+if ( file_exists( $db_file ) ) {
+	unlink( $db_file );
+}
+// Also remove SQLite journal / WAL files.
+foreach ( array( "{$db_file}-wal", "{$db_file}-shm", "{$db_file}-journal" ) as $aux ) {
+	if ( file_exists( $aux ) ) {
+		unlink( $aux );
+	}
+}
+
 // Wire up SQLite Database Integration drop-in when using SQLite.
 // The fixture provides a db.php drop-in that the WP test bootstrap loads.
 $_sqlite_fixture = $plugin_root . '/tests/fixtures/sqlite-database-integration';
@@ -358,7 +372,10 @@ require $_tests_dir . '/includes/bootstrap.php';
 // ---------------------------------------------------------------------------
 $throw_die_handler = function () {
 	return function ( $message, $title = '', $args = array() ) {
-		throw new WPDieException( $message, $title, $args );
+		// WPDieException extends Exception — only $message is accepted.
+		// Passing $args (array) as $previous (expects Throwable) causes
+		// a TypeError in PHP 8.1+ that silently kills PHPUnit with "-1".
+		throw new WPDieException( $message );
 	};
 };
 add_filter( 'wp_die_handler', $throw_die_handler, PHP_INT_MAX );
