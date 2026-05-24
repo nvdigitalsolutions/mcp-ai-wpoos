@@ -191,9 +191,10 @@ function wp_mcp_ai_manually_load_plugin() {
 	// `update_option( 'wp_mcp_ai_settings', $settings )`.
 	add_filter(
 		'default_option_wp_mcp_ai_settings',
-		function ( $default ) {
+		static function ( $default ) {
+			$safe_default = is_array( $default ) ? $default : array();
 			return array_merge(
-				$default,
+				$safe_default,
 				array(
 					'enable_openai'       => false,
 					'enable_gemini'       => false,
@@ -227,6 +228,12 @@ function wp_mcp_ai_manually_load_plugin() {
 	$saas_controller = dirname( __DIR__ ) . '/addons/saas-controller/nvoos-saas-controller.php';
 	if ( file_exists( $saas_controller ) ) {
 		require $saas_controller;
+	}
+
+	// Load the Docs Hub addon if present so its tests can exercise its classes.
+	$docs_hub = dirname( __DIR__ ) . '/addons/docs-hub/nvoos-docs-hub.php';
+	if ( file_exists( $docs_hub ) ) {
+		require_once $docs_hub;
 	}
 
 	// Load the Pro addon if present so its tests (e.g. messaging-channels-ajax,

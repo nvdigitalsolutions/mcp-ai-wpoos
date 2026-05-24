@@ -45,7 +45,7 @@ class Test_Classify_Memory_Tool_Action extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function provide_retrieve_tools() {
+	public static function provide_retrieve_tools() {
 		return array(
 			array( 'recall_memory' ),
 			array( 'wake_up_context' ),
@@ -68,7 +68,7 @@ class Test_Classify_Memory_Tool_Action extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function provide_store_tools() {
+	public static function provide_store_tools() {
 		return array(
 			array( 'store_agent_context' ),
 			array( 'update_agent_memory' ),
@@ -93,7 +93,7 @@ class Test_Classify_Memory_Tool_Action extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function provide_non_memory_inputs() {
+	public static function provide_non_memory_inputs() {
 		return array(
 			'unrelated tool' => array( 'create_post' ),
 			'empty string'   => array( '' ),

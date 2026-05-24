@@ -1193,7 +1193,15 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return self::truncate_string( $response, 400 );
 			}
 
-			if ( is_array( $response ) || is_object( $response ) ) {
+			if ( is_array( $response ) ) {
+				$limited = array();
+				foreach ( $response as $key => $value ) {
+					$limited[ $key ] = self::limit_response_payload( $value );
+				}
+				return $limited;
+			}
+
+			if ( is_object( $response ) ) {
 				$encoded = wp_json_encode( $response );
 
 				if ( false === $encoded ) {

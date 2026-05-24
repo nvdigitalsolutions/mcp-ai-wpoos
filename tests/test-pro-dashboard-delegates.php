@@ -53,9 +53,8 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 			}
 		}
 
-		// Get singleton instance and trigger lazy initialization.
+		// Get singleton instance. Delegate pages are initialized in the constructor.
 		$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
-		$this->dashboard->lazy_init_delegates();
 	}
 
 	/**
