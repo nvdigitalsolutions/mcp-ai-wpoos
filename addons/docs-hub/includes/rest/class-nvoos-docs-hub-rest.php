@@ -561,31 +561,31 @@ class NV_oOS_Docs_Hub_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function remote_tree( $request ) {
-		$owner = (string) $request->get_param( 'owner' );
-		$repo  = (string) $request->get_param( 'repo' );
-		$ref   = (string) $request->get_param( 'ref' );
-		$path  = (string) $request->get_param( 'path' );
-		$index = (int) $request->get_param( 'index' );
-		$force = (bool) $request->get_param( 'force' );
-
-		// Reuse the persisted token (if any) instead of asking the browser to send it.
-		$token    = '';
-		$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
-		$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] )
-			? $settings['remote_repos']
-			: array();
-		// Bounds-check the index against the saved repo list so a tampered request
-		// can't reach into other array keys.
-		if ( $index >= 0
-			&& $index < count( $repos )
-			&& isset( $repos[ $index ] )
-			&& is_array( $repos[ $index ] )
-			&& isset( $repos[ $index ]['token'] )
-		) {
-			$token = (string) $repos[ $index ]['token'];
-		}
-
 		try {
+			$owner = (string) $request->get_param( 'owner' );
+			$repo  = (string) $request->get_param( 'repo' );
+			$ref   = (string) $request->get_param( 'ref' );
+			$path  = (string) $request->get_param( 'path' );
+			$index = (int) $request->get_param( 'index' );
+			$force = (bool) $request->get_param( 'force' );
+
+			// Reuse the persisted token (if any) instead of asking the browser to send it.
+			$token    = '';
+			$settings = NV_oOS_Docs_Hub_Plugin::get_settings();
+			$repos    = isset( $settings['remote_repos'] ) && is_array( $settings['remote_repos'] )
+				? $settings['remote_repos']
+				: array();
+			// Bounds-check the index against the saved repo list so a tampered request
+			// can't reach into other array keys.
+			if ( $index >= 0
+				&& $index < count( $repos )
+				&& isset( $repos[ $index ] )
+				&& is_array( $repos[ $index ] )
+				&& isset( $repos[ $index ]['token'] )
+			) {
+				$token = (string) $repos[ $index ]['token'];
+			}
+
 			$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
 			$result  = $fetcher->fetch_tree_for_admin(
 				array(
@@ -597,20 +597,28 @@ class NV_oOS_Docs_Hub_REST {
 					'force' => $force,
 				)
 			);
+
+			if ( is_wp_error( $result ) ) {
+				$result->add_data( array( 'status' => 502 ) );
+				return $result;
+			}
+
+			return rest_ensure_response( $result );
 		} catch ( \Throwable $e ) {
+			error_log(
+				sprintf(
+					'[NV oOS Docs Hub] remote_tree fatal: %s in %s:%d',
+					$e->getMessage(),
+					$e->getFile(),
+					$e->getLine()
+				)
+			);
 			return new WP_Error(
 				'nvoos_docs_hub_fetch_error',
 				$e->getMessage(),
 				array( 'status' => 500 )
 			);
 		}
-
-		if ( is_wp_error( $result ) ) {
-			$result->add_data( array( 'status' => 502 ) );
-			return $result;
-		}
-
-		return rest_ensure_response( $result );
 	}
 
 	/**
