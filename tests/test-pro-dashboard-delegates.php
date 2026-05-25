@@ -178,6 +178,12 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 	 * Test that delegate action fires.
 	 */
 	public function test_delegate_initialization_action() {
+		// Reset singleton to allow re-initialization (constructor is private).
+		$reflection = new \ReflectionClass( WP_MCP_AI_Pro_Dashboard::class );
+		$instance_prop = $reflection->getProperty( 'instance' );
+		$instance_prop->setAccessible( true );
+		$instance_prop->setValue( null );
+
 		$action_fired = false;
 
 		add_action(
@@ -188,8 +194,8 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 			}
 		);
 
-		// Reinitialize to trigger action.
-		new WP_MCP_AI_Pro_Dashboard();
+		// Reinitialize via singleton to trigger action.
+		WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		$this->assertTrue( $action_fired, 'Delegate initialization action should fire' );
 	}

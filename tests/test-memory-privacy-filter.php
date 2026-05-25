@@ -424,6 +424,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * defaults (never zero out the protection).
 	 */
 	public function test_invalid_patterns_filter_falls_back_to_defaults() {
+		$this->setExpectedIncorrectUsage( 'wp_mcp_ai_memory_privacy_patterns' );
+
 		add_filter(
 			'wp_mcp_ai_memory_privacy_patterns',
 			static function () {

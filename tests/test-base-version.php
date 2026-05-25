@@ -148,8 +148,7 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 			'create_woo_product',
 			'get_woo_products',
 			'get_jetengine_items',
-			'search_gmail',
-		);
+					);
 
 		$tool_slugs = array();
 		foreach ( $tools as $tool ) {

@@ -62,8 +62,10 @@ wp-mcp-ai-tool-detect-completion-indicators
 wp-mcp-ai-tool-discover-new-models
 wp-mcp-ai-tool-edit-gemini-image
 wp-mcp-ai-tool-edit-gemini-image-validated
+wp-mcp-ai-tool-edit-omni-video
 wp-mcp-ai-tool-edit-openai-image
 wp-mcp-ai-tool-enable-reasoning-mode
+wp-mcp-ai-tool-evolve-harness
 wp-mcp-ai-tool-erlang-c-concurrency-advisor
 wp-mcp-ai-tool-erlang-c-queue-health
 wp-mcp-ai-tool-erlang-c-staffing-advisor
@@ -89,6 +91,7 @@ wp-mcp-ai-tool-generate-image-caption-validated
 wp-mcp-ai-tool-generate-mermaid
 wp-mcp-ai-tool-generate-music
 wp-mcp-ai-tool-generate-music-validated
+wp-mcp-ai-tool-generate-omni-video
 wp-mcp-ai-tool-generate-openai-image
 wp-mcp-ai-tool-generate-openai-image-validated
 wp-mcp-ai-tool-generate-openai-speech
@@ -203,6 +206,7 @@ wp-mcp-ai-tool-retrieve-with-provenance
 wp-mcp-ai-tool-rotate-image
 wp-mcp-ai-tool-run-crawl4ai-job
 wp-mcp-ai-tool-run-crawl4ai-job-validated
+wp-mcp-ai-tool-run-gemini-managed-agent
 wp-mcp-ai-tool-run-openai-external-action
 wp-mcp-ai-tool-save-post
 wp-mcp-ai-tool-save-post-validated
@@ -231,6 +235,7 @@ wp-mcp-ai-tool-store-agent-context
 wp-mcp-ai-tool-submit-document-prompt
 wp-mcp-ai-tool-suggest-best-model
 wp-mcp-ai-tool-suggest-internal-links
+wp-mcp-ai-tool-trace-memory-provenance
 wp-mcp-ai-tool-transcribe-openai-audio
 wp-mcp-ai-tool-transcribe-openai-audio-validated
 wp-mcp-ai-tool-trigger-all-export

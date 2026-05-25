@@ -148,7 +148,7 @@ class WP_MCP_AI_Memory_Privacy_Filter {
 			// GitHub OAuth user tokens.
 			'github_oauth_token'   => '/\bgho_[A-Za-z0-9]{36}\b/',
 			// Google API keys (`AIza...`).
-			'google_api_key'       => '/\bAIza[0-9A-Za-z_\-]{35}\b/',
+			'google_api_key'       => '/\bAIza[0-9A-Za-z_\-]{35,}\b/',
 			// Slack bot/user/legacy tokens.
 			'slack_token'          => '/\bxox[abprs]-[A-Za-z0-9\-]{10,}\b/',
 			// Stripe live + test secret keys.
