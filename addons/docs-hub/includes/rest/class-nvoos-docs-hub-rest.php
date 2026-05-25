@@ -585,9 +585,9 @@ class NV_oOS_Docs_Hub_REST {
 			$token = (string) $repos[ $index ]['token'];
 		}
 
-		$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
 		try {
-			$result = $fetcher->fetch_tree_for_admin(
+			$fetcher = new NV_oOS_Docs_Hub_Remote_Repo();
+			$result  = $fetcher->fetch_tree_for_admin(
 				array(
 					'owner' => $owner,
 					'repo'  => $repo,
