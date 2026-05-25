@@ -1,5 +1,5 @@
-// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 <?php
+// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Test file manipulates $_POST; nonce/slashing/sanitization checks do not apply.
 /**
  * Tests for Remote Sites Admin UI
  *
