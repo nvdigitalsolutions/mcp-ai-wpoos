@@ -111,7 +111,12 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 			)
 		);
 
-		// Public inbound webhook receiver — no auth, HMAC verified.
+		// `__return_true` is correct here: inbound webhook receiver for
+		// user-configured workflow triggers. Each trigger stores an optional
+		// shared secret; receive_webhook() verifies the X-WP-MCP-AI-Signature-256
+		// HMAC header via WP_MCP_AI_Outbound_Webhook::verify_signature() before
+		// firing the trigger. Triggers without a secret are intentionally
+		// public (same pattern as CRON / OPTIONS preflight).
 		register_rest_route(
 			self::NAMESPACE,
 			'/' . self::BASE . '/webhook/(?P<id>\d+)',
