@@ -12,6 +12,21 @@
 class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
+		}
+	}
+
+	/**
 	 * Test that malformed JSON in tool arguments returns proper error.
 	 */
 	public function test_malformed_json_tool_arguments_returns_error() {
@@ -106,7 +121,9 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $data['tool_results'] );
 
 		$tool_result = $data['tool_results'][0];
-		$this->assertStringContainsString( 'invalid JSON arguments', $tool_result['content'] );
+		$this->assertIsArray( $tool_result['content'], 'Tool result content should be an array (normalized from WP_Error).' );
+		$this->assertTrue( $tool_result['content']['error'], 'Tool result should indicate an error.' );
+		$this->assertStringContainsString( 'invalid JSON arguments', $tool_result['content']['message'] );
 	}
 
 	/**
@@ -292,7 +309,9 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $data['tool_results'] );
 
 		$tool_result = $data['tool_results'][0];
-		$this->assertStringContainsString( 'expected JSON object', $tool_result['content'] );
+		$this->assertIsArray( $tool_result['content'], 'Tool result content should be an array (normalized from WP_Error).' );
+		$this->assertTrue( $tool_result['content']['error'], 'Tool result should indicate an error.' );
+		$this->assertStringContainsString( 'expected JSON object', $tool_result['content']['message'] );
 	}
 
 	/**

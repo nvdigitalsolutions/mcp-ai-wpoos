@@ -255,20 +255,31 @@ class WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
 		// Set null defaults for all client properties so the router
 		// doesn't produce undefined-property warnings when internal helpers
 		// (e.g. permission checks) inspect these references.
-		$client->openai_client      = null;
-		$client->gemini_client      = null;
-		$client->ollama_client      = null;
-		$client->lm_studio_client   = null;
-		$client->anthropic_client   = null;
-		$client->huggingface_client = null;
-		$client->cloudflare_client  = null;
-		$client->embedded_client    = null;
-		$client->nvidia_client      = null;
-		$client->deepseek_client    = null;
-		$client->openrouter_client  = null;
-		$client->digitalocean_client = null;
-		$client->kimi_client        = null;
-		$client->baseten_client     = null;
+		// Use reflection because these are protected properties on the mock.
+		$reflection = new ReflectionClass( $client );
+		$props      = array(
+			'openai_client',
+			'gemini_client',
+			'ollama_client',
+			'lm_studio_client',
+			'anthropic_client',
+			'huggingface_client',
+			'cloudflare_client',
+			'embedded_client',
+			'nvidia_client',
+			'deepseek_client',
+			'openrouter_client',
+			'digitalocean_client',
+			'kimi_client',
+			'baseten_client',
+		);
+		foreach ( $props as $prop ) {
+			if ( $reflection->hasProperty( $prop ) ) {
+				$rp = $reflection->getProperty( $prop );
+				$rp->setAccessible( true );
+				$rp->setValue( $client, null );
+			}
+		}
 
 		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
 			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
