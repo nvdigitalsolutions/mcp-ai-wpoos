@@ -3342,50 +3342,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 		}
 
-		/**
-			 * Render the description for the high token tool handling section.
-			 *
-			 * Placeholder — high token tool handling UI is not yet implemented.
-			 */
-			public function render_high_token_section_description() {
-				?>
-				<p><?php esc_html_e( 'Configure how high-token tools are handled when they exceed model context limits.', 'mcp-ai-wpoos' ); ?></p>
-				<?php
-			}
-
-			/**
-			 * Render the enable high token model switch field.
-			 */
-			public function render_enable_high_token_model_switch_field() {
-				$settings = WP_MCP_AI_Admin_Settings::get_settings();
-				?>
-				<input type="checkbox" name="wp_mcp_ai_settings[enable_high_token_model_switch]" value="1" <?php checked( ! empty( $settings['enable_high_token_model_switch'] ) ); ?> />
-				<label><?php esc_html_e( 'Automatically switch to a high-capacity model for tools that exceed context limits.', 'mcp-ai-wpoos' ); ?></label>
-				<?php
-			}
-
-			/**
-			 * Render the high token fallback model field.
-			 */
-			public function render_high_token_fallback_model_field() {
-				$settings = WP_MCP_AI_Admin_Settings::get_settings();
-				?>
-				<input type="text" name="wp_mcp_ai_settings[high_token_fallback_model]" value="<?php echo esc_attr( $settings['high_token_fallback_model'] ?? '' ); ?>" class="regular-text" />
-				<p class="description"><?php esc_html_e( 'Model to use when a high-token tool exceeds the current model context limit.', 'mcp-ai-wpoos' ); ?></p>
-				<?php
-			}
-
-			/**
-			 * Render the per-model fallbacks field.
-			 */
-			public function render_per_model_fallbacks_field() {
-					$settings = WP_MCP_AI_Admin_Settings::get_settings();
-					?>
-					<p class="description"><?php esc_html_e( 'Configure per-model fallback models for high-token tool handling.', 'mcp-ai-wpoos' ); ?></p>
-					<?php
-				}
-
-				// ── Security Monitor section stubs ──────────────────────
+			// ── Security Monitor section stubs ──────────────────────
 
 				/**
 				 * Render the security monitor section description.
@@ -6171,22 +6128,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			return $max_bytes;
-		}
-
-		/**
-			 * Render the tool-level token limits section.
-			 *
-			 * Placeholder — tool-level token limits are not yet implemented.
-			 */
-			public function render_tool_token_limits_section() {
-				// Tool-level token limits UI is not yet implemented.
 			}
 
 			/**
-			 * Render the token usage section.
-			 */
-			public function render_token_usage_section() {
-			if ( ! current_user_can( 'manage_options' ) ) {
+						 * Render the token usage section.
+						 */
+						public function render_token_usage_section() {
+						if ( ! current_user_can( 'manage_options' ) ) {
 				return;
 			}
 			$usage_data = get_option( 'wp_mcp_ai_token_usage', array() );
