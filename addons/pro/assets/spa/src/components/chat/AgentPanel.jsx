@@ -17,6 +17,7 @@ import CheckpointBar from '../checkpoints/CheckpointBar';
 import DiffReviewPanel from '../checkpoints/DiffReviewPanel';
 import ContextMention from '../context/ContextMention';
 import MentionChip from '../context/MentionChip';
+import ModelComparisonView from '../models/ModelComparisonView';
 
 export default function AgentPanel() {
 	const { threadId } = useParams();
@@ -29,6 +30,8 @@ export default function AgentPanel() {
 	const [sending, setSending] = useState(false);
 	const [mentions, setMentions] = useState([]);
 	const [showDiff, setShowDiff] = useState(false);
+	const [showCompare, setShowCompare] = useState(false);
+	const [compareMessage, setCompareMessage] = useState('');
 	const messagesEndRef = useRef(null);
 	const textareaRef = useRef(null);
 
@@ -152,6 +155,19 @@ export default function AgentPanel() {
 		setMentions((prev) => prev.filter((m) => m.id !== mention.id || m.type !== mention.type));
 	}, []);
 
+	// Compare models for the current input.
+	const handleCompare = useCallback(() => {
+		const content = input.trim();
+		if (!content) return;
+		setCompareMessage(content);
+		setShowCompare(true);
+	}, [input]);
+
+	// Handle model comparison selection — insert response into input.
+	const handleCompareSelect = useCallback((result) => {
+		setInput(result.content);
+	}, []);
+
 	// Welcome screen when no thread selected.
 	if (!threadId) {
 		return (
@@ -239,6 +255,14 @@ export default function AgentPanel() {
 				>
 					{sending ? 'Sending…' : 'Send'}
 				</button>
+				<button
+					onClick={handleCompare}
+					disabled={!input.trim()}
+					className="nvoos-btn nvoos-btn--compare"
+					title="Compare response from multiple models"
+				>
+					Compare
+				</button>
 			</div>
 
 			{/* Diff review modal */}
@@ -248,6 +272,20 @@ export default function AgentPanel() {
 						<DiffReviewPanel
 							diff={diff}
 							onClose={() => { setShowDiff(false); clearDiff(); }}
+						/>
+					</div>
+				</div>
+			)}
+
+			{/* Model comparison modal */}
+			{showCompare && (
+				<div className="nvoos-diff-overlay">
+					<div className="nvoos-diff-overlay__content nvoos-diff-overlay__content--wide">
+						<ModelComparisonView
+							threadId={threadId}
+							message={compareMessage}
+							onClose={() => setShowCompare(false)}
+							onSelect={handleCompareSelect}
 						/>
 					</div>
 				</div>

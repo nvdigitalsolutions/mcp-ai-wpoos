@@ -459,6 +459,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			WP_MCP_AI_Pro_Inline_Assistant::init();
 		}
 
+		// Load Pro Parallel Model Dispatcher (v1.7.0) — multi-model comparison.
+		$parallel_dispatcher = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
+		$comparison_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-model-comparison-controller.php';
+		if ( file_exists( $parallel_dispatcher ) ) {
+			require_once $parallel_dispatcher;
+		}
+		if ( file_exists( $comparison_controller ) ) {
+			require_once $comparison_controller;
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_Model_Comparison_Controller', 'register_routes' ) );
+		}
+
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 

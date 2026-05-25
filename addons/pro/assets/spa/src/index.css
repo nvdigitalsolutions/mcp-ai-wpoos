@@ -626,3 +626,137 @@
 	line-height: 1.6;
 	white-space: pre-wrap;
 }
+
+/* Model Comparison */
+.nvoos-diff-overlay__content--wide {
+	width: 800px;
+}
+
+.nvoos-btn--compare {
+	background: #f0f0f1;
+	color: #2271b1;
+	border-color: #2271b1;
+	font-size: 13px;
+}
+
+.nvoos-btn--compare:hover {
+	background: #e5e5ff;
+}
+
+.nvoos-model-compare {
+	padding: 0;
+}
+
+.nvoos-model-compare--loading {
+	padding: 48px;
+	text-align: center;
+}
+
+.nvoos-model-compare__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-model-compare__header h3 {
+	margin: 0;
+	font-size: 16px;
+}
+
+.nvoos-model-compare__tabs {
+	display: flex;
+	gap: 4px;
+	padding: 8px 16px;
+	background: #f0f0f1;
+	border-bottom: 1px solid #dcdcde;
+	overflow-x: auto;
+}
+
+.nvoos-model-compare__tab {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.nvoos-model-compare__tab:hover {
+	background: #f0f6fc;
+}
+
+.nvoos-model-compare__tab--active {
+	background: #e5e5ff;
+	border-color: #2271b1;
+}
+
+.nvoos-model-compare__tab-badge {
+	font-size: 10px;
+	color: #787c82;
+	background: #f0f0f1;
+	padding: 1px 4px;
+	border-radius: 3px;
+}
+
+.nvoos-model-compare__tab-badge--error {
+	background: #fef2f2;
+	color: #cc1818;
+}
+
+.nvoos-model-compare__content {
+	padding: 16px 20px;
+}
+
+.nvoos-model-compare__meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+	font-size: 13px;
+}
+
+.nvoos-model-compare__time {
+	color: #787c82;
+	font-size: 12px;
+}
+
+.nvoos-model-compare__text {
+	line-height: 1.7;
+	font-size: 14px;
+	max-height: 300px;
+	overflow-y: auto;
+	margin-bottom: 16px;
+	padding: 12px;
+	background: #f9f9f9;
+	border-radius: 6px;
+	white-space: pre-wrap;
+}
+
+.nvoos-model-compare__error {
+	padding: 24px;
+	text-align: center;
+}
+
+.nvoos-model-compare__error-text {
+	padding: 12px;
+	background: #fef2f2;
+	color: #cc1818;
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+.nvoos-model-compare__spinner {
+	width: 32px;
+	height: 32px;
+	border: 3px solid #dcdcde;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	margin: 0 auto 12px;
+}
