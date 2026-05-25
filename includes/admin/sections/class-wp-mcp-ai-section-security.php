@@ -917,9 +917,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		<div class="wp-mcp-ai-score-circle" style="width:90px;height:90px;border-radius:50%;background:<?php echo esc_attr( $color ); ?>;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
 			<span style="color:#fff;font-size:26px;font-weight:700;line-height:1;"><?php echo esc_html( $grade ); ?></span>
 		</div>
-		/* translators: %d is the security score. */
 		<div>
-			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3> // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
+			<h3 style="margin:0 0 4px;"><?php
+				/* translators: %d is the security score. */
+				echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) );
+			?></h3>
 			<p style="margin:0;color:#646970;"><?php esc_html_e( 'Computed from 17 weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ); ?></p>
 			<button type="button" class="button button-small wp-mcp-ai-refresh-posture" style="margin-top:8px;">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;"></span>
