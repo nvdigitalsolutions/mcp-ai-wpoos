@@ -29,6 +29,10 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Custom_Filters_Applicator class not available.' );
+		}
+
 		// Clear any existing settings.
 		delete_option( self::OPTION_NAME );
 

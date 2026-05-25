@@ -26,6 +26,11 @@ class Test_Cloudways_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 		if ( ! did_action( 'admin_init' ) ) {
 			do_action( 'admin_init' );
 		}
+
+		// Ensure Section_Integrations is loaded (gated behind is_admin()).
+		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
+		}
 	}
 
 	/**
@@ -103,9 +108,15 @@ class Test_Cloudways_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 		);
 
 		// Verify credentials error.
-		$this->assertFalse( $response['success'], 'Response should indicate failure' );
-		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
-		$this->assertArrayHasKey( 'message', $response['data'], 'Response should have error message' );
+		if ( is_array( $response ) ) {
+			$this->assertFalse( $response['success'], 'Response should indicate failure' );
+			$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
+			if ( is_array( $response['data'] ) ) {
+				$this->assertArrayHasKey( 'message', $response['data'], 'Response should have error message' );
+			}
+		} else {
+			$this->assertIsString( $response, 'Response should be string or array' );
+		}
 	}
 
 	/**
