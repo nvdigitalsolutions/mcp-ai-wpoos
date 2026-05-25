@@ -16,6 +16,39 @@
 class Test_JetEngine_CPT_Taxonomy_Integration extends WP_UnitTestCase {
 
 	/**
+	 * Bootstrap required classes.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Load JetEngine section class if not already available.
+		if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
+			$path = defined( 'WP_MCP_AI_PATH' )
+				? WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-jetengine.php'
+				: '';
+			if ( ! empty( $path ) && file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		// Load CPT AI integration class if not already available.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_CPT_AI_Integration' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$cpt_integration_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cpt-ai-integration.php';
+			if ( file_exists( $cpt_integration_file ) ) {
+				require_once $cpt_integration_file;
+			}
+		}
+
+		// Load JetEngine CPT Research Init class if not already available.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CPT_Research_Init' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$research_init_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-cpt-research-init.php';
+			if ( file_exists( $research_init_file ) ) {
+				require_once $research_init_file;
+			}
+		}
+	}
+
+	/**
 	 * Test that JetEngine CPT detection works.
 	 */
 	public function test_jetengine_cpt_detection() {
