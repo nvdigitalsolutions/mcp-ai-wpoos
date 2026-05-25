@@ -22,6 +22,11 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// WP_MCP_AI_Document_Template_CPT lives in the Pro addon.
+		if ( ! class_exists( 'WP_MCP_AI_Document_Template_CPT' ) ) {
+			$this->markTestSkipped( 'Pro addon not available — Document_Template_CPT class missing.' );
+		}
+
 		// Set up an admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );

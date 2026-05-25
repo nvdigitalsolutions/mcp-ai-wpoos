@@ -193,9 +193,11 @@ class WP_MCP_AI_Elementor_Widget_Sensitive_Tools_Setting_Test extends WP_UnitTes
 		$settings_property->setAccessible( true );
 		$settings_property->setValue( $this->widget, $mock_settings );
 
-		// Start output buffering to capture render output.
+		// Start output buffering to capture render output (render is protected).
+		$render_method = $reflection->getMethod( 'render' );
+		$render_method->setAccessible( true );
 		ob_start();
-		$this->widget->render();
+		$render_method->invoke( $this->widget );
 		$output = ob_get_clean();
 
 		// Verify the output contains allow_sensitive_tools in the shortcode.
