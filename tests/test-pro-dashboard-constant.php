@@ -24,7 +24,9 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
 		// Verify the method exists and is callable.
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
+		$dashboard  = $reflection->newInstanceWithoutConstructor();
 		$this->assertTrue( method_exists( $dashboard, 'is_pro_active' ), 'is_pro_active method should exist' );
 
 		// Without constant or filter, should be false.
@@ -68,7 +70,9 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 	public function test_filter_backward_compatibility() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
+		$dashboard  = $reflection->newInstanceWithoutConstructor();
 
 		// Initially disabled.
 		$this->assertFalse( $dashboard->is_pro_active() );

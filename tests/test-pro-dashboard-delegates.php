@@ -189,7 +189,11 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 		);
 
 		// Reinitialize to trigger action.
-		new WP_MCP_AI_Pro_Dashboard();
+		// Use Reflection to access private constructor (PHPUnit 11 strict visibility).
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
+		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$constructor = $reflection->getConstructor();
+		$constructor->invoke( $dashboard );
 
 		$this->assertTrue( $action_fired, 'Delegate initialization action should fire' );
 	}

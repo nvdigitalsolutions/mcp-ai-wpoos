@@ -14,6 +14,21 @@
 class Test_Orchestration_Token_Budget_Display extends WP_UnitTestCase {
 
 	/**
+	 * Set up test fixtures.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-renderer.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php';
+		}
+	}
+
+	/**
 	 * Test that token budget explanation renderer returns valid HTML.
 	 */
 	public function test_token_budget_explanation_renders_successfully() {

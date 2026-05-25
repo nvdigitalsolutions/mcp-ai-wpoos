@@ -9,6 +9,17 @@
 class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test fixtures.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-plugins-integration.php';
+		}
+	}
+
+	/**
 	 * Test that the Plugins Integration class is properly instantiated.
 	 */
 	public function test_plugins_integration_class_exists() {
