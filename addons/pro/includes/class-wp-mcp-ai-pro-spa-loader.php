@@ -87,12 +87,15 @@ class WP_MCP_AI_Pro_SPA_Loader {
 
 		if ( ! file_exists( $asset_file ) || ! file_exists( $js_file ) ) {
 			// Show a notice if built assets are missing (development mode).
-			add_action( 'admin_notices', function () {
-				printf(
-					'<div class="notice notice-warning"><p>%s</p></div>',
-					esc_html__( 'NV oOS Pro SPA assets not found. Run `npm run build` in addons/pro/assets/spa/.', 'mcp-ai-wpoos' )
-				);
-			} );
+			add_action(
+				'admin_notices',
+				function () {
+					printf(
+						'<div class="notice notice-warning"><p>%s</p></div>',
+						esc_html__( 'NV oOS Pro SPA assets not found. Run `npm run build` in addons/pro/assets/spa/.', 'mcp-ai-wpoos' )
+					);
+				}
+			);
 			return;
 		}
 
@@ -116,44 +119,53 @@ class WP_MCP_AI_Pro_SPA_Loader {
 		}
 
 		// Pass data to the SPA.
-		wp_localize_script( 'wp-mcp-ai-spa', 'wpMcpAiPro', array(
-			'nonce'        => wp_create_nonce( 'wp_rest' ),
-			'restUrl'      => rest_url(),
-			'sseUrl'       => rest_url( 'mcp-ai/v1/sse' ),
-			'bootstrapUrl' => rest_url( 'mcp-ai-pro/v1/spa/bootstrap' ),
-			'userId'       => get_current_user_id(),
-			'isAdmin'      => current_user_can( 'manage_options' ),
-			'i18n'         => array(
-				'send'              => __( 'Send', 'mcp-ai-wpoos' ),
-				'sending'           => __( 'Sending…', 'mcp-ai-wpoos' ),
-				'stop'              => __( 'Stop', 'mcp-ai-wpoos' ),
-				'newThread'         => __( 'New Thread', 'mcp-ai-wpoos' ),
-				'archiveThread'     => __( 'Archive', 'mcp-ai-wpoos' ),
-				'restoreThread'     => __( 'Restore', 'mcp-ai-wpoos' ),
-				'compactThread'     => __( 'Compact', 'mcp-ai-wpoos' ),
-				'reviewChanges'     => __( 'Review Changes', 'mcp-ai-wpoos' ),
-				'restoreCheckpoint' => __( 'Restore Checkpoint', 'mcp-ai-wpoos' ),
-				'switchModel'       => __( 'Switch Model', 'mcp-ai-wpoos' ),
-				'switchProfile'     => __( 'Switch Profile', 'mcp-ai-wpoos' ),
-				'manageProfiles'    => __( 'Manage Profiles', 'mcp-ai-wpoos' ),
-				'threadHistory'     => __( 'Thread History', 'mcp-ai-wpoos' ),
-				'error'             => __( 'An error occurred.', 'mcp-ai-wpoos' ),
-				'typeMessage'       => __( 'Type a message…', 'mcp-ai-wpoos' ),
-				'typeCommand'       => __( 'Type a command…', 'mcp-ai-wpoos' ),
-				'noResults'         => __( 'No results found.', 'mcp-ai-wpoos' ),
-				'agentWriting'      => __( 'Agent is writing…', 'mcp-ai-wpoos' ),
-				'agentDone'         => __( 'Agent finished', 'mcp-ai-wpoos' ),
-				'tokenCount'        => __( 'Tokens', 'mcp-ai-wpoos' ),
-				'contextWarning'    => __( 'Approaching context limit. Consider compacting.', 'mcp-ai-wpoos' ),
-			),
-		) );
+		wp_localize_script(
+			'wp-mcp-ai-spa',
+			'wpMcpAiPro',
+			array(
+				'nonce'        => wp_create_nonce( 'wp_rest' ),
+				'restUrl'      => rest_url(),
+				'sseUrl'       => rest_url( 'mcp-ai/v1/sse' ),
+				'bootstrapUrl' => rest_url( 'mcp-ai-pro/v1/spa/bootstrap' ),
+				'userId'       => get_current_user_id(),
+				'isAdmin'      => current_user_can( 'manage_options' ),
+				'i18n'         => array(
+					'send'              => __( 'Send', 'mcp-ai-wpoos' ),
+					'sending'           => __( 'Sending…', 'mcp-ai-wpoos' ),
+					'stop'              => __( 'Stop', 'mcp-ai-wpoos' ),
+					'newThread'         => __( 'New Thread', 'mcp-ai-wpoos' ),
+					'archiveThread'     => __( 'Archive', 'mcp-ai-wpoos' ),
+					'restoreThread'     => __( 'Restore', 'mcp-ai-wpoos' ),
+					'compactThread'     => __( 'Compact', 'mcp-ai-wpoos' ),
+					'reviewChanges'     => __( 'Review Changes', 'mcp-ai-wpoos' ),
+					'restoreCheckpoint' => __( 'Restore Checkpoint', 'mcp-ai-wpoos' ),
+					'switchModel'       => __( 'Switch Model', 'mcp-ai-wpoos' ),
+					'switchProfile'     => __( 'Switch Profile', 'mcp-ai-wpoos' ),
+					'manageProfiles'    => __( 'Manage Profiles', 'mcp-ai-wpoos' ),
+					'threadHistory'     => __( 'Thread History', 'mcp-ai-wpoos' ),
+					'error'             => __( 'An error occurred.', 'mcp-ai-wpoos' ),
+					'typeMessage'       => __( 'Type a message…', 'mcp-ai-wpoos' ),
+					'typeCommand'       => __( 'Type a command…', 'mcp-ai-wpoos' ),
+					'noResults'         => __( 'No results found.', 'mcp-ai-wpoos' ),
+					'agentWriting'      => __( 'Agent is writing…', 'mcp-ai-wpoos' ),
+					'agentDone'         => __( 'Agent finished', 'mcp-ai-wpoos' ),
+					'tokenCount'        => __( 'Tokens', 'mcp-ai-wpoos' ),
+					'contextWarning'    => __( 'Approaching context limit. Consider compacting.', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
 
 		// Set script type to module for ES module support.
-		add_filter( 'script_loader_tag', function ( $tag, $handle ) {
-			if ( 'wp-mcp-ai-spa' === $handle ) {
-				return str_replace( '<script ', '<script type="module" ', $tag );
-			}
-			return $tag;
-		}, 10, 2 );
+		add_filter(
+			'script_loader_tag',
+			function ( $tag, $handle ) {
+				if ( 'wp-mcp-ai-spa' === $handle ) {
+					return str_replace( '<script ', '<script type="module" ', $tag );
+				}
+				return $tag;
+			},
+			10,
+			2
+		);
 	}
 }

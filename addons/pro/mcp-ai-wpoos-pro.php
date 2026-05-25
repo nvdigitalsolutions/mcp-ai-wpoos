@@ -437,7 +437,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro SPA (v1.7.0) — React Single Page Application admin interface.
 		// Registers admin page, enqueues assets, and exposes bootstrap REST endpoint.
 		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
-			$spa_loader = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
+			$spa_loader    = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
 			$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
 
 			if ( file_exists( $spa_loader ) ) {
@@ -460,7 +460,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Load Pro Parallel Model Dispatcher (v1.7.0) — multi-model comparison.
-		$parallel_dispatcher = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
+		$parallel_dispatcher   = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
 		$comparison_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-model-comparison-controller.php';
 		if ( file_exists( $parallel_dispatcher ) ) {
 			require_once $parallel_dispatcher;

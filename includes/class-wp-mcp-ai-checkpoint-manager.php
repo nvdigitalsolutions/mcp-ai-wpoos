@@ -90,9 +90,9 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 *
 	 * @since 1.7.0
 	 *
-	 * @param int   $thread_id     Thread ID.
-	 * @param int   $message_id    Message ID before which checkpoint is taken (0 = manual).
-	 * @param array $affected_ids  Array of {type, id} entities to snapshot.
+	 * @param int    $thread_id     Thread ID.
+	 * @param int    $message_id    Message ID before which checkpoint is taken (0 = manual).
+	 * @param array  $affected_ids  Array of {type, id} entities to snapshot.
 	 * @param string $label        Optional human-readable label.
 	 * @return array|WP_Error
 	 */
@@ -161,11 +161,11 @@ class WP_MCP_AI_Checkpoint_Manager {
 			'success' => true,
 			'message' => __( 'Checkpoint created.', 'mcp-ai-wpoos' ),
 			'data'    => array(
-				'id'               => $checkpoint_id,
-				'thread_id'        => $thread_id,
-				'label'            => $label,
+				'id'                => $checkpoint_id,
+				'thread_id'         => $thread_id,
+				'label'             => $label,
 				'affected_entities' => $affected_ids,
-				'created_at'       => $data['created_at'],
+				'created_at'        => $data['created_at'],
 			),
 		);
 	}
@@ -179,6 +179,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return array|WP_Error
 	 */
 	public function get_checkpoint( $checkpoint_id ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$checkpoint_id = absint( $checkpoint_id );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -191,6 +192,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 			return new WP_Error( 'not_found', __( 'Checkpoint not found.', 'mcp-ai-wpoos' ) );
 		}
 
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return array(
 			'success' => true,
 			'message' => '',
@@ -207,6 +209,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return array
 	 */
 	public function list_checkpoints( $thread_id ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$thread_id = absint( $thread_id );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -226,6 +229,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 			}
 		}
 
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return array(
 			'success' => true,
 			'message' => '',
@@ -361,7 +365,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 
 			// Only include if state actually changed.
 			if ( $entity['state'] !== $current_state ) {
-				$name = $this->get_entity_display_name( $entity['type'], $entity['id'] );
+				$name    = $this->get_entity_display_name( $entity['type'], $entity['id'] );
 				$diffs[] = array(
 					'type'   => $entity['type'],
 					'id'     => $entity['id'],
@@ -406,7 +410,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return array       { type, id, state } or empty array if not found.
 	 */
 	private function capture_entity_state( $type, $id ) {
-		$type = sanitize_key( $type );
+		$type  = sanitize_key( $type );
 		$state = $this->get_current_entity_state( $type, $id );
 
 		return array(
@@ -521,7 +525,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 		switch ( $type ) {
 			case 'post':
 				$post_data = array_merge( array( 'ID' => absint( $id ) ), $state );
-				$result = wp_update_post( $post_data, true );
+				$result    = wp_update_post( $post_data, true );
 				return ! is_wp_error( $result );
 
 			case 'option':
@@ -536,12 +540,12 @@ class WP_MCP_AI_Checkpoint_Manager {
 
 			case 'user':
 				$state['ID'] = absint( $id );
-				$result = wp_update_user( $state );
+				$result      = wp_update_user( $state );
 				return ! is_wp_error( $result );
 
 			case 'comment':
 				$comment_data = array_merge( array( 'comment_ID' => absint( $id ) ), $state );
-				$result = wp_update_comment( $comment_data );
+				$result       = wp_update_comment( $comment_data );
 				return ! is_wp_error( $result ) && 1 === $result;
 
 			default:
@@ -627,10 +631,12 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return int
 	 */
 	private function count_checkpoints( $thread_id ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $this->wpdb->get_var(
 			$this->wpdb->prepare( "SELECT COUNT(*) FROM `{$this->table}` WHERE thread_id = %d", absint( $thread_id ) )
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -642,12 +648,14 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return void
 	 */
 	private function prune_oldest( $thread_id ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$this->wpdb->query(
 			$this->wpdb->prepare(
 				"DELETE FROM `{$this->table}` WHERE thread_id = %d ORDER BY created_at ASC LIMIT 1",
 				absint( $thread_id )
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -662,6 +670,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return void
 	 */
 	private function prune_checkpoints_after( $thread_id, $checkpoint_id ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// Get the timestamp of the checkpoint we're restoring to.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$created_at = $this->wpdb->get_var(
@@ -682,6 +691,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 				$created_at
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -691,6 +701,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 	 * @return int Number of pruned checkpoints.
 	 */
 	public function prune_expired() {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$expiry = gmdate( 'Y-m-d H:i:s', time() - $this->ttl );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -700,6 +711,7 @@ class WP_MCP_AI_Checkpoint_Manager {
 				$expiry
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	// ──────────────────────────────────────────────

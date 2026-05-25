@@ -14,13 +14,24 @@ if ( ! defined( 'WPINC' ) ) {
  * Class WP_MCP_AI_REST_Threads_Controller
  *
  * @since 1.7.0
+ * @package NV_oOS
  */
 class WP_MCP_AI_REST_Threads_Controller {
 
-	/** @var WP_MCP_AI_REST */
+	/**
+	 * The main REST controller instance.
+	 *
+	 * @since 1.7.0
+	 * @var WP_MCP_AI_REST
+	 */
 	private $rest;
 
-	/** @var WP_MCP_AI_Thread_Manager */
+	/**
+	 * The thread manager instance.
+	 *
+	 * @since 1.7.0
+	 * @var WP_MCP_AI_Thread_Manager
+	 */
 	private $thread_manager;
 
 	/**
@@ -44,79 +55,118 @@ class WP_MCP_AI_REST_Threads_Controller {
 		$namespace = 'mcp-ai/v1';
 
 		// List / Create threads.
-		register_rest_route( $namespace, '/threads', array(
+		register_rest_route(
+			$namespace,
+			'/threads',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'list_threads' ),
-				'permission_callback' => array( $this, 'check_read_permission' ),
-				'args'                => $this->get_list_args(),
-			),
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_thread' ),
-				'permission_callback' => array( $this, 'check_read_permission' ),
-				'args'                => $this->get_create_args(),
-			),
-		) );
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'list_threads' ),
+					'permission_callback' => array( $this, 'check_read_permission' ),
+					'args'                => $this->get_list_args(),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_thread' ),
+					'permission_callback' => array( $this, 'check_read_permission' ),
+					'args'                => $this->get_create_args(),
+				),
+			)
+		);
 
 		// Single thread operations.
-		register_rest_route( $namespace, '/threads/(?P<id>\d+)', array(
+		register_rest_route(
+			$namespace,
+			'/threads/(?P<id>\d+)',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_thread' ),
-				'permission_callback' => array( $this, 'check_read_permission' ),
-			),
-			array(
-				'methods'             => WP_REST_Server::EDITABLE,
-				'callback'            => array( $this, 'update_thread' ),
-				'permission_callback' => array( $this, 'check_edit_permission' ),
-			),
-			array(
-				'methods'             => WP_REST_Server::DELETABLE,
-				'callback'            => array( $this, 'archive_thread' ),
-				'permission_callback' => array( $this, 'check_edit_permission' ),
-			),
-		) );
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_thread' ),
+					'permission_callback' => array( $this, 'check_read_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_thread' ),
+					'permission_callback' => array( $this, 'check_edit_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'archive_thread' ),
+					'permission_callback' => array( $this, 'check_edit_permission' ),
+				),
+			)
+		);
 
 		// Thread lifecycle actions.
-		register_rest_route( $namespace, '/threads/(?P<id>\d+)/restore', array(
+		register_rest_route(
+			$namespace,
+			'/threads/(?P<id>\d+)/restore',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'restore_thread' ),
-				'permission_callback' => array( $this, 'check_edit_permission' ),
-			),
-		) );
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'restore_thread' ),
+					'permission_callback' => array( $this, 'check_edit_permission' ),
+				),
+			)
+		);
 
-		register_rest_route( $namespace, '/threads/(?P<id>\d+)/summarize', array(
+		register_rest_route(
+			$namespace,
+			'/threads/(?P<id>\d+)/summarize',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'summarize_thread' ),
-				'permission_callback' => array( $this, 'check_edit_permission' ),
-			),
-		) );
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'summarize_thread' ),
+					'permission_callback' => array( $this, 'check_edit_permission' ),
+				),
+			)
+		);
 
 		// Messages.
-		register_rest_route( $namespace, '/threads/(?P<id>\d+)/messages', array(
+		register_rest_route(
+			$namespace,
+			'/threads/(?P<id>\d+)/messages',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_messages' ),
-				'permission_callback' => array( $this, 'check_read_permission' ),
-				'args'                => array(
-					'page'     => array( 'type' => 'integer', 'default' => 1, 'minimum' => 1 ),
-					'per_page' => array( 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 200 ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_messages' ),
+					'permission_callback' => array( $this, 'check_read_permission' ),
+					'args'                => array(
+						'page'     => array(
+							'type'    => 'integer',
+							'default' => 1,
+							'minimum' => 1,
+						),
+						'per_page' => array(
+							'type'    => 'integer',
+							'default' => 50,
+							'minimum' => 1,
+							'maximum' => 200,
+						),
+					),
 				),
-			),
-		) );
+			)
+		);
 	}
 
 	// ── Permission Callbacks ──
 
-	/** @return bool|WP_Error */
+	/**
+	 * Check read permission for thread endpoints.
+	 *
+	 * @since 1.7.0
+	 * @return bool|WP_Error
+	 */
 	public function check_read_permission() {
 		return current_user_can( 'read' );
 	}
 
-	/** @return bool|WP_Error */
+	/**
+	 * Check edit permission for thread endpoints.
+	 *
+	 * @since 1.7.0
+	 * @return bool|WP_Error
+	 */
 	public function check_edit_permission() {
 		return current_user_can( 'edit_posts' );
 	}
@@ -125,6 +175,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * GET /threads
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function list_threads( $request ) {
 		$user_id  = get_current_user_id();
@@ -137,6 +191,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * POST /threads
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function create_thread( $request ) {
 		$user_id      = get_current_user_id();
@@ -157,6 +215,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * GET /threads/{id}
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function get_thread( $request ) {
 		$thread_id = absint( $request->get_param( 'id' ) );
@@ -167,6 +229,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * PUT /threads/{id}
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function update_thread( $request ) {
 		$thread_id = absint( $request->get_param( 'id' ) );
@@ -181,6 +247,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * DELETE /threads/{id}
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function archive_thread( $request ) {
 		$thread_id = absint( $request->get_param( 'id' ) );
@@ -191,6 +261,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * POST /threads/{id}/restore
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function restore_thread( $request ) {
 		$thread_id = absint( $request->get_param( 'id' ) );
@@ -201,6 +275,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * POST /threads/{id}/summarize
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function summarize_thread( $request ) {
 		$thread_id = absint( $request->get_param( 'id' ) );
@@ -211,6 +289,10 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	/**
 	 * GET /threads/{id}/messages
+	 *
+	 * @since 1.7.0
+	 * @param WP_REST_Request $request The request object.
+	 * @return array|WP_Error
 	 */
 	public function get_messages( $request ) {
 		$thread_id = absint( $request->get_param( 'id' ) );
@@ -222,20 +304,57 @@ class WP_MCP_AI_REST_Threads_Controller {
 
 	// ── Args Schemas ──
 
+	/**
+	 * Get the args schema for listing threads.
+	 *
+	 * @since 1.7.0
+	 * @return array
+	 */
 	private function get_list_args() {
 		return array(
-			'status'   => array( 'type' => 'string', 'default' => 'active', 'enum' => array( 'active', 'archived', '' ) ),
-			'page'     => array( 'type' => 'integer', 'default' => 1, 'minimum' => 1 ),
-			'per_page' => array( 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100 ),
+			'status'   => array(
+				'type'    => 'string',
+				'default' => 'active',
+				'enum'    => array( 'active', 'archived', '' ),
+			),
+			'page'     => array(
+				'type'    => 'integer',
+				'default' => 1,
+				'minimum' => 1,
+			),
+			'per_page' => array(
+				'type'    => 'integer',
+				'default' => 20,
+				'minimum' => 1,
+				'maximum' => 100,
+			),
 		);
 	}
 
+	/**
+	 * Get the args schema for creating a thread.
+	 *
+	 * @since 1.7.0
+	 * @return array
+	 */
 	private function get_create_args() {
 		return array(
-			'assistant_id' => array( 'type' => 'integer', 'default' => 0 ),
-			'model'        => array( 'type' => 'object', 'default' => array() ),
-			'profile'      => array( 'type' => 'string', 'default' => 'write' ),
-			'scope'        => array( 'type' => 'object', 'default' => array() ),
+			'assistant_id' => array(
+				'type'    => 'integer',
+				'default' => 0,
+			),
+			'model'        => array(
+				'type'    => 'object',
+				'default' => array(),
+			),
+			'profile'      => array(
+				'type'    => 'string',
+				'default' => 'write',
+			),
+			'scope'        => array(
+				'type'    => 'object',
+				'default' => array(),
+			),
 		);
 	}
 }

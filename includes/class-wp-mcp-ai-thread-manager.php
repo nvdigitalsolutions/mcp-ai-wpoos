@@ -73,7 +73,7 @@ class WP_MCP_AI_Thread_Manager {
 		$this->threads_table  = $wpdb->prefix . 'mcp_ai_threads';
 		$this->messages_table = $wpdb->prefix . 'mcp_ai_thread_messages';
 
-		$this->max_threads_per_user  = apply_filters( 'wp_mcp_ai_max_threads_per_user', 50 );
+		$this->max_threads_per_user    = apply_filters( 'wp_mcp_ai_max_threads_per_user', 50 );
 		$this->max_messages_per_thread = apply_filters( 'wp_mcp_ai_max_messages_per_thread', 500 );
 	}
 
@@ -115,7 +115,7 @@ class WP_MCP_AI_Thread_Manager {
 			);
 		}
 
-		$provider = isset( $model['provider'] ) ? sanitize_key( $model['provider'] ) : '';
+		$provider   = isset( $model['provider'] ) ? sanitize_key( $model['provider'] ) : '';
 		$model_name = isset( $model['model'] ) ? sanitize_text_field( $model['model'] ) : '';
 
 		$data = array(
@@ -166,6 +166,7 @@ class WP_MCP_AI_Thread_Manager {
 	 * @return array|WP_Error
 	 */
 	public function get_thread( $thread_id, $user_id = 0 ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$thread_id = absint( $thread_id );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -181,15 +182,16 @@ class WP_MCP_AI_Thread_Manager {
 			return new WP_Error( 'not_found', __( 'Thread not found.', 'mcp-ai-wpoos' ) );
 		}
 
-		if ( $user_id > 0 && (int) $thread['user_id'] !== absint( $user_id ) ) {
+		if ( 0 < $user_id && absint( $user_id ) !== (int) $thread['user_id'] ) {
 			return new WP_Error( 'forbidden', __( 'You do not own this thread.', 'mcp-ai-wpoos' ) );
 		}
 
-		$thread['id']           = (int) $thread['id'];
-		$thread['assistant_id'] = (int) $thread['assistant_id'];
-		$thread['user_id']      = (int) $thread['user_id'];
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$thread['id']            = (int) $thread['id'];
+		$thread['assistant_id']  = (int) $thread['assistant_id'];
+		$thread['user_id']       = (int) $thread['user_id'];
 		$thread['message_count'] = (int) $thread['message_count'];
-		$thread['token_count']  = (int) $thread['token_count'];
+		$thread['token_count']   = (int) $thread['token_count'];
 
 		return array(
 			'success' => true,
@@ -222,7 +224,7 @@ class WP_MCP_AI_Thread_Manager {
 			$where .= $this->wpdb->prepare( ' AND status = %s', $status );
 		}
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$total = (int) $this->wpdb->get_var(
 			"SELECT COUNT(*) FROM `{$this->threads_table}` WHERE {$where}"
 		);
@@ -484,10 +486,10 @@ class WP_MCP_AI_Thread_Manager {
 			);
 		}
 
-		$tool_calls   = isset( $meta['tool_calls'] ) ? wp_json_encode( $meta['tool_calls'] ) : null;
-		$tool_results = isset( $meta['tool_results'] ) ? wp_json_encode( $meta['tool_results'] ) : null;
+		$tool_calls    = isset( $meta['tool_calls'] ) ? wp_json_encode( $meta['tool_calls'] ) : null;
+		$tool_results  = isset( $meta['tool_results'] ) ? wp_json_encode( $meta['tool_results'] ) : null;
 		$checkpoint_id = isset( $meta['checkpoint_id'] ) ? absint( $meta['checkpoint_id'] ) : null;
-		$token_usage  = isset( $meta['token_usage'] ) ? absint( $meta['token_usage'] ) : 0;
+		$token_usage   = isset( $meta['token_usage'] ) ? absint( $meta['token_usage'] ) : 0;
 
 		$data = array(
 			'thread_id'     => $thread_id,
@@ -553,7 +555,7 @@ class WP_MCP_AI_Thread_Manager {
 		$per_page  = min( 200, max( 1, absint( $per_page ) ) );
 		$offset    = ( $page - 1 ) * $per_page;
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 		$total = (int) $this->wpdb->get_var(
 			$this->wpdb->prepare(
 				"SELECT COUNT(*) FROM `{$this->messages_table}` WHERE thread_id = %d",
@@ -599,6 +601,7 @@ class WP_MCP_AI_Thread_Manager {
 	 * @return array         Array of { role, content } pairs.
 	 */
 	public function get_thread_context( $thread_id, $limit = 50 ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$thread_id = absint( $thread_id );
 		$limit     = absint( $limit );
 
@@ -612,6 +615,7 @@ class WP_MCP_AI_Thread_Manager {
 			ARRAY_A
 		);
 
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( ! $rows ) {
 			return array();
 		}
@@ -682,7 +686,7 @@ class WP_MCP_AI_Thread_Manager {
 
 		$summary = sprintf(
 			/* translators: 1: old thread title, 2: number of messages */
-			__( "This conversation continues from the thread \"%1\$s\" which contained %2\$d messages. Below is a summary of the prior conversation:", 'mcp-ai-wpoos' ),
+			__( 'This conversation continues from the thread "%1$s" which contained %2$d messages. Below is a summary of the prior conversation:', 'mcp-ai-wpoos' ),
 			$thread_data['title'],
 			$message_count
 		);
@@ -732,6 +736,7 @@ class WP_MCP_AI_Thread_Manager {
 	 * @return int
 	 */
 	public function count_user_threads( $user_id, $status = '' ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$user_id = absint( $user_id );
 		$sql     = $this->wpdb->prepare( "SELECT COUNT(*) FROM `{$this->threads_table}` WHERE user_id = %d", $user_id );
 
@@ -741,6 +746,7 @@ class WP_MCP_AI_Thread_Manager {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $this->wpdb->get_var( $sql );
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -752,6 +758,7 @@ class WP_MCP_AI_Thread_Manager {
 	 * @return int
 	 */
 	public function count_messages( $thread_id ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$thread_id = absint( $thread_id );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (int) $this->wpdb->get_var(
@@ -760,6 +767,7 @@ class WP_MCP_AI_Thread_Manager {
 				$thread_id
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	// ──────────────────────────────────────────────
@@ -776,6 +784,7 @@ class WP_MCP_AI_Thread_Manager {
 	 * @return void
 	 */
 	private function increment_thread_counters( $thread_id, $token_usage ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$this->wpdb->query(
 			$this->wpdb->prepare(
 				"UPDATE `{$this->threads_table}` SET message_count = message_count + 1, token_count = token_count + %d, updated_at = %s WHERE id = %d",
@@ -784,6 +793,7 @@ class WP_MCP_AI_Thread_Manager {
 				absint( $thread_id )
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -832,8 +842,8 @@ class WP_MCP_AI_Thread_Manager {
 	 * @return array
 	 */
 	private function cast_message_row( $row ) {
-		$row['id']        = (int) $row['id'];
-		$row['thread_id'] = (int) $row['thread_id'];
+		$row['id']          = (int) $row['id'];
+		$row['thread_id']   = (int) $row['thread_id'];
 		$row['token_usage'] = (int) $row['token_usage'];
 		return $row;
 	}

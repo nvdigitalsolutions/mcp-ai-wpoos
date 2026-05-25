@@ -39,7 +39,7 @@ class WP_MCP_AI_Command_Registry {
 	 * @return array Array of command objects.
 	 */
 	public function get_commands() {
-		$user_id = get_current_user_id();
+		$user_id  = get_current_user_id();
 		$commands = array();
 
 		// ── Thread Commands ──
@@ -118,7 +118,7 @@ class WP_MCP_AI_Command_Registry {
 
 		// ── Tool Commands (auto-registered from tool registry) ──
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 			$all_tools = $registry->get_tools();
 
 			foreach ( $all_tools as $slug => $tool ) {
@@ -248,8 +248,11 @@ class WP_MCP_AI_Command_Registry {
 	public function get_commands_for_current_user() {
 		$commands = $this->get_commands();
 
-		return array_filter( $commands, function ( $command ) {
-			return current_user_can( $command['capability'] );
-		} );
+		return array_filter(
+			$commands,
+			function ( $command ) {
+				return current_user_can( $command['capability'] );
+			}
+		);
 	}
 }

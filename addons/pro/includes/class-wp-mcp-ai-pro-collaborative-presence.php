@@ -61,34 +61,42 @@ class WP_MCP_AI_Pro_Collaborative_Presence {
 	 * @return void
 	 */
 	public static function register_rest_routes() {
-		register_rest_route( 'mcp-ai-pro/v1', '/collaboration/presence', array(
-			'methods'             => WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'get_presence' ),
-			'permission_callback' => array( __CLASS__, 'check_permission' ),
-		) );
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/collaboration/presence',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_presence' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
 
-		register_rest_route( 'mcp-ai-pro/v1', '/collaboration/presence', array(
-			'methods'             => WP_REST_Server::CREATABLE,
-			'callback'            => array( __CLASS__, 'update_presence' ),
-			'permission_callback' => array( __CLASS__, 'check_permission' ),
-			'args'                => array(
-				'post_id'    => array(
-					'type'              => 'integer',
-					'required'          => false,
-					'sanitize_callback' => 'absint',
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/collaboration/presence',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'update_presence' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'post_id'   => array(
+						'type'              => 'integer',
+						'required'          => false,
+						'sanitize_callback' => 'absint',
+					),
+					'thread_id' => array(
+						'type'              => 'integer',
+						'required'          => false,
+						'sanitize_callback' => 'absint',
+					),
+					'activity'  => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
-				'thread_id'  => array(
-					'type'              => 'integer',
-					'required'          => false,
-					'sanitize_callback' => 'absint',
-				),
-				'activity'   => array(
-					'type'              => 'string',
-					'required'          => false,
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-			),
-		) );
+			)
+		);
 	}
 
 	/**
@@ -112,12 +120,12 @@ class WP_MCP_AI_Pro_Collaborative_Presence {
 	 *
 	 * @since 1.7.0
 	 *
-	 * @param array $response  Heartbeat response data.
-	 * @param array $data      Data received from the client.
+	 * @param array  $response  Heartbeat response data.
+	 * @param array  $data      Data received from the client.
 	 * @param string $screen_id The current admin screen ID.
 	 * @return array
 	 */
-	public static function handle_heartbeat( $response, $data, $screen_id ) {
+	public static function handle_heartbeat( $response, $data, $screen_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $screen_id is required by the WordPress heartbeat filter signature.
 		$user_id = get_current_user_id();
 		if ( ! $user_id ) {
 			return $response;
@@ -152,12 +160,14 @@ class WP_MCP_AI_Pro_Collaborative_Presence {
 	public static function get_presence( $request ) {
 		$post_id = absint( $request->get_param( 'post_id' ) );
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'data'    => array(
-				'presence' => self::get_post_presence( $post_id ),
-			),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'presence' => self::get_post_presence( $post_id ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -180,12 +190,14 @@ class WP_MCP_AI_Pro_Collaborative_Presence {
 			self::set_user_presence( $user_id, $post_id, $thread_id, $activity );
 		}
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'data'    => array(
-				'presence' => self::get_post_presence( $post_id ),
-			),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'presence' => self::get_post_presence( $post_id ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -220,9 +232,12 @@ class WP_MCP_AI_Pro_Collaborative_Presence {
 		);
 
 		// Clean up expired entries.
-		$presence[ $post_id ] = array_filter( $presence[ $post_id ], function ( $entry ) use ( $now ) {
-			return ( $now - $entry['last_seen'] ) <= self::PRESENCE_TTL;
-		} );
+		$presence[ $post_id ] = array_filter(
+			$presence[ $post_id ],
+			function ( $entry ) use ( $now ) {
+				return ( $now - $entry['last_seen'] ) <= self::PRESENCE_TTL;
+			}
+		);
 
 		// Remove empty post entries.
 		if ( empty( $presence[ $post_id ] ) ) {
@@ -258,7 +273,7 @@ class WP_MCP_AI_Pro_Collaborative_Presence {
 				foreach ( $entries as $user_id => $entry ) {
 					if ( ( $now - $entry['last_seen'] ) <= self::PRESENCE_TTL ) {
 						$entry['post_id'] = $pid;
-						$result[] = $entry;
+						$result[]         = $entry;
 					}
 				}
 			}

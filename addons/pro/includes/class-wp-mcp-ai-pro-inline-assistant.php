@@ -52,8 +52,8 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 			return;
 		}
 
-		$dist_dir = WP_MCP_AI_PRO_PATH . 'assets/spa/dist/';
-		$dist_url = WP_MCP_AI_PRO_URL . 'assets/spa/dist/';
+		$dist_dir   = WP_MCP_AI_PRO_PATH . 'assets/spa/dist/';
+		$dist_url   = WP_MCP_AI_PRO_URL . 'assets/spa/dist/';
 		$asset_file = $dist_dir . 'inline-assistant.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
@@ -70,20 +70,24 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 			true
 		);
 
-		wp_localize_script( 'wp-mcp-ai-inline-assistant', 'wpMcpAiInline', array(
-			'nonce'    => wp_create_nonce( 'wp_rest' ),
-			'restUrl'  => rest_url(),
-			'i18n'     => array(
-				'title'       => __( 'AI Inline Assistant', 'mcp-ai-wpoos' ),
-				'placeholder' => __( 'Describe the transformation…', 'mcp-ai-wpoos' ),
-				'transform'   => __( 'Transform', 'mcp-ai-wpoos' ),
-				'transforming' => __( 'Transforming…', 'mcp-ai-wpoos' ),
-				'replace'     => __( 'Replace Selection', 'mcp-ai-wpoos' ),
-				'insertAfter' => __( 'Insert After', 'mcp-ai-wpoos' ),
-				'noSelection' => __( 'Select text in the editor, then describe how you want to transform it.', 'mcp-ai-wpoos' ),
-				'error'       => __( 'Transformation failed. Please try again.', 'mcp-ai-wpoos' ),
-			),
-		) );
+		wp_localize_script(
+			'wp-mcp-ai-inline-assistant',
+			'wpMcpAiInline',
+			array(
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'restUrl' => rest_url(),
+				'i18n'    => array(
+					'title'        => __( 'AI Inline Assistant', 'mcp-ai-wpoos' ),
+					'placeholder'  => __( 'Describe the transformation…', 'mcp-ai-wpoos' ),
+					'transform'    => __( 'Transform', 'mcp-ai-wpoos' ),
+					'transforming' => __( 'Transforming…', 'mcp-ai-wpoos' ),
+					'replace'      => __( 'Replace Selection', 'mcp-ai-wpoos' ),
+					'insertAfter'  => __( 'Insert After', 'mcp-ai-wpoos' ),
+					'noSelection'  => __( 'Select text in the editor, then describe how you want to transform it.', 'mcp-ai-wpoos' ),
+					'error'        => __( 'Transformation failed. Please try again.', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -96,33 +100,37 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 	 * @return void
 	 */
 	public static function register_rest_routes() {
-		register_rest_route( 'mcp-ai-pro/v1', '/inline/transform', array(
-			'methods'             => WP_REST_Server::CREATABLE,
-			'callback'            => array( __CLASS__, 'handle_transform' ),
-			'permission_callback' => array( __CLASS__, 'check_permission' ),
-			'args'                => array(
-				'text'     => array(
-					'required'          => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_textarea_field',
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/inline/transform',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'handle_transform' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'text'     => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_textarea_field',
+					),
+					'prompt'   => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_textarea_field',
+					),
+					'model'    => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+						'default'           => 'gpt-4o',
+					),
+					'provider' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'default'           => 'openai',
+					),
 				),
-				'prompt'   => array(
-					'required'          => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_textarea_field',
-				),
-				'model'    => array(
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-					'default'           => 'gpt-4o',
-				),
-				'provider' => array(
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_key',
-					'default'           => 'openai',
-				),
-			),
-		) );
+			)
+		);
 	}
 
 	/**
@@ -165,7 +173,7 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 			"3. If the instruction is unclear, make your best guess and transform the text.\n" .
 			"4. Do NOT add any text that wasn't requested.\n\n" .
 			"SELECTED TEXT:\n%s\n\n" .
-			"TRANSFORMATION INSTRUCTION: %s",
+			'TRANSFORMATION INSTRUCTION: %s',
 			$text,
 			$prompt
 		);
@@ -184,11 +192,14 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 		}
 
 		// Make the API call.
-		$response = $client->chat_completion( $messages, array(
-			'model'       => $model,
-			'temperature' => 0.3,
-			'max_tokens'  => min( 4096, self::estimate_max_tokens( $text ) ),
-		) );
+		$response = $client->chat_completion(
+			$messages,
+			array(
+				'model'       => $model,
+				'temperature' => 0.3,
+				'max_tokens'  => min( 4096, self::estimate_max_tokens( $text ) ),
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -203,13 +214,15 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 		$transformed = preg_replace( '/\n?```$/', '', $transformed );
 		$transformed = trim( $transformed );
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'data'    => array(
-				'transformed_text' => $transformed,
-				'model'            => $model,
-			),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'transformed_text' => $transformed,
+					'model'            => $model,
+				),
+			)
+		);
 	}
 
 	/**
@@ -227,8 +240,9 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 			if ( $container ) {
 				try {
 					return $container->get( 'client.' . $provider );
+				// phpcs:ignore Generic.CodeAnalysis.EmptyStatement -- Intentional: fall through to direct instantiation.
 				} catch ( \Exception $e ) {
-					// Fall through to direct instantiation.
+					// Fall through.
 				}
 			}
 		}

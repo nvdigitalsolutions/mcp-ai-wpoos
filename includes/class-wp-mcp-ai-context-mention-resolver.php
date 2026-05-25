@@ -56,60 +56,84 @@ class WP_MCP_AI_Context_Mention_Resolver {
 	 */
 	private function register_default_types() {
 		// Posts and custom post types.
-		$this->register_type( 'post', array(
-			'label'    => __( 'Posts', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_posts' ),
-			'provider' => array( $this, 'get_post_context' ),
-		) );
+		$this->register_type(
+			'post',
+			array(
+				'label'    => __( 'Posts', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_posts' ),
+				'provider' => array( $this, 'get_post_context' ),
+			)
+		);
 
 		// Tools.
-		$this->register_type( 'tool', array(
-			'label'    => __( 'Tools', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_tools' ),
-			'provider' => array( $this, 'get_tool_context' ),
-		) );
+		$this->register_type(
+			'tool',
+			array(
+				'label'    => __( 'Tools', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_tools' ),
+				'provider' => array( $this, 'get_tool_context' ),
+			)
+		);
 
 		// Skills.
-		$this->register_type( 'skill', array(
-			'label'    => __( 'Skills', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_skills' ),
-			'provider' => array( $this, 'get_skill_context' ),
-		) );
+		$this->register_type(
+			'skill',
+			array(
+				'label'    => __( 'Skills', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_skills' ),
+				'provider' => array( $this, 'get_skill_context' ),
+			)
+		);
 
 		// Threads.
-		$this->register_type( 'thread', array(
-			'label'    => __( 'Threads', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_threads' ),
-			'provider' => array( $this, 'get_thread_context' ),
-		) );
+		$this->register_type(
+			'thread',
+			array(
+				'label'    => __( 'Threads', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_threads' ),
+				'provider' => array( $this, 'get_thread_context' ),
+			)
+		);
 
 		// Media files.
-		$this->register_type( 'file', array(
-			'label'    => __( 'Files', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_files' ),
-			'provider' => array( $this, 'get_file_context' ),
-		) );
+		$this->register_type(
+			'file',
+			array(
+				'label'    => __( 'Files', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_files' ),
+				'provider' => array( $this, 'get_file_context' ),
+			)
+		);
 
 		// Users.
-		$this->register_type( 'user', array(
-			'label'    => __( 'Users', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_users' ),
-			'provider' => array( $this, 'get_user_context' ),
-		) );
+		$this->register_type(
+			'user',
+			array(
+				'label'    => __( 'Users', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_users' ),
+				'provider' => array( $this, 'get_user_context' ),
+			)
+		);
 
 		// Taxonomy terms.
-		$this->register_type( 'term', array(
-			'label'    => __( 'Terms', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_terms' ),
-			'provider' => array( $this, 'get_term_context' ),
-		) );
+		$this->register_type(
+			'term',
+			array(
+				'label'    => __( 'Terms', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_terms' ),
+				'provider' => array( $this, 'get_term_context' ),
+			)
+		);
 
 		// Plugin/WordPress settings.
-		$this->register_type( 'setting', array(
-			'label'    => __( 'Settings', 'mcp-ai-wpoos' ),
-			'resolver' => array( $this, 'resolve_settings' ),
-			'provider' => array( $this, 'get_setting_context' ),
-		) );
+		$this->register_type(
+			'setting',
+			array(
+				'label'    => __( 'Settings', 'mcp-ai-wpoos' ),
+				'resolver' => array( $this, 'resolve_settings' ),
+				'provider' => array( $this, 'get_setting_context' ),
+			)
+		);
 
 		/**
 		 * Fires after default mention types are registered.
@@ -167,8 +191,8 @@ class WP_MCP_AI_Context_Mention_Resolver {
 	 * @return array             Grouped results by type: { type: { label, items: [...] } }
 	 */
 	public function suggest( $query, $type_filter = array(), $limit = 10 ) {
-		$query  = sanitize_text_field( $query );
-		$limit  = min( 50, max( 1, absint( $limit ) ) );
+		$query   = sanitize_text_field( $query );
+		$limit   = min( 50, max( 1, absint( $limit ) ) );
 		$results = array();
 
 		// If query contains a prefix (e.g., "post:hello"), extract it.
@@ -258,14 +282,17 @@ class WP_MCP_AI_Context_Mention_Resolver {
 
 		$posts = get_posts( $args );
 
-		return array_map( function ( $post ) {
-			return array(
-				'id'      => $post->ID,
-				'title'   => $post->post_title,
-				'type'    => $post->post_type,
-				'excerpt' => wp_trim_words( wp_strip_all_tags( $post->post_content ), 20 ),
-			);
-		}, $posts );
+		return array_map(
+			function ( $post ) {
+				return array(
+					'id'      => $post->ID,
+					'title'   => $post->post_title,
+					'type'    => $post->post_type,
+					'excerpt' => wp_trim_words( wp_strip_all_tags( $post->post_content ), 20 ),
+				);
+			},
+			$posts
+		);
 	}
 
 	/**
@@ -309,7 +336,7 @@ class WP_MCP_AI_Context_Mention_Resolver {
 			return array();
 		}
 
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 		$all_tools = $registry->get_tools();
 		$results   = array();
 
@@ -384,9 +411,9 @@ class WP_MCP_AI_Context_Mention_Resolver {
 			return array();
 		}
 
-		$registry = WP_MCP_AI_Skill_Registry::get_instance();
+		$registry   = WP_MCP_AI_Skill_Registry::get_instance();
 		$all_skills = $registry->get_all_skills();
-		$results  = array();
+		$results    = array();
 
 		foreach ( $all_skills as $slug => $skill ) {
 			$name = isset( $skill['name'] ) ? $skill['name'] : $slug;
@@ -464,6 +491,7 @@ class WP_MCP_AI_Context_Mention_Resolver {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 				"SELECT id, title, status FROM `{$table}` WHERE user_id = %d AND title LIKE %s AND status = 'active' ORDER BY updated_at DESC LIMIT %d",
 				$user_id,
 				'%' . $wpdb->esc_like( $query ) . '%',
@@ -476,14 +504,17 @@ class WP_MCP_AI_Context_Mention_Resolver {
 			return array();
 		}
 
-		return array_map( function ( $row ) {
-			return array(
-				'id'      => (int) $row['id'],
-				'title'   => $row['title'],
-				'type'    => 'thread',
-				'excerpt' => '',
-			);
-		}, $rows );
+		return array_map(
+			function ( $row ) {
+				return array(
+					'id'      => (int) $row['id'],
+					'title'   => $row['title'],
+					'type'    => 'thread',
+					'excerpt' => '',
+				);
+			},
+			$rows
+		);
 	}
 
 	/**
@@ -511,7 +542,7 @@ class WP_MCP_AI_Context_Mention_Resolver {
 		foreach ( $context as $msg ) {
 			$output .= sprintf( "[%s]: %s\n", esc_html( $msg['role'] ), esc_html( $msg['content'] ) );
 		}
-		$output .= "--- END THREAD CONTEXT ---";
+		$output .= '--- END THREAD CONTEXT ---';
 
 		return $output;
 	}
@@ -536,14 +567,17 @@ class WP_MCP_AI_Context_Mention_Resolver {
 
 		$attachments = get_posts( $args );
 
-		return array_map( function ( $attachment ) {
-			return array(
-				'id'      => $attachment->ID,
-				'title'   => $attachment->post_title ? $attachment->post_title : basename( get_attached_file( $attachment->ID ) ),
-				'type'    => $attachment->post_mime_type,
-				'excerpt' => $attachment->post_excerpt,
-			);
-		}, $attachments );
+		return array_map(
+			function ( $attachment ) {
+				return array(
+					'id'      => $attachment->ID,
+					'title'   => $attachment->post_title ? $attachment->post_title : basename( get_attached_file( $attachment->ID ) ),
+					'type'    => $attachment->post_mime_type,
+					'excerpt' => $attachment->post_excerpt,
+				);
+			},
+			$attachments
+		);
 	}
 
 	/**
@@ -591,14 +625,17 @@ class WP_MCP_AI_Context_Mention_Resolver {
 
 		$users = get_users( $args );
 
-		return array_map( function ( $user ) {
-			return array(
-				'id'      => $user->ID,
-				'title'   => $user->display_name,
-				'type'    => 'user',
-				'excerpt' => $user->user_email,
-			);
-		}, $users );
+		return array_map(
+			function ( $user ) {
+				return array(
+					'id'      => $user->ID,
+					'title'   => $user->display_name,
+					'type'    => 'user',
+					'excerpt' => $user->user_email,
+				);
+			},
+			$users
+		);
 	}
 
 	/**
@@ -648,14 +685,17 @@ class WP_MCP_AI_Context_Mention_Resolver {
 			return array();
 		}
 
-		return array_map( function ( $term ) {
-			return array(
-				'id'      => sprintf( '%s:%d', $term->taxonomy, $term->term_id ),
-				'title'   => $term->name,
-				'type'    => 'term:' . $term->taxonomy,
-				'excerpt' => $term->description,
-			);
-		}, $terms );
+		return array_map(
+			function ( $term ) {
+				return array(
+					'id'      => sprintf( '%s:%d', $term->taxonomy, $term->term_id ),
+					'title'   => $term->name,
+					'type'    => 'term:' . $term->taxonomy,
+					'excerpt' => $term->description,
+				);
+			},
+			$terms
+		);
 	}
 
 	/**
@@ -718,14 +758,17 @@ class WP_MCP_AI_Context_Mention_Resolver {
 			return array();
 		}
 
-		return array_map( function ( $row ) {
-			return array(
-				'id'      => $row['option_name'],
-				'title'   => $row['option_name'],
-				'type'    => 'setting',
-				'excerpt' => '',
-			);
-		}, $rows );
+		return array_map(
+			function ( $row ) {
+				return array(
+					'id'      => $row['option_name'],
+					'title'   => $row['option_name'],
+					'type'    => 'setting',
+					'excerpt' => '',
+				);
+			},
+			$rows
+		);
 	}
 
 	/**

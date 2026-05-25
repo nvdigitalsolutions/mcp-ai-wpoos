@@ -105,7 +105,8 @@ class WP_MCP_AI_Profile_Manager {
 	 * @return array
 	 */
 	public function list_profiles( $user_id = 0 ) {
-		$user_id = absint( $user_id );
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$user_id  = absint( $user_id );
 		$profiles = self::BUILTIN_PROFILES;
 
 		// Load custom profiles from database.
@@ -120,7 +121,7 @@ class WP_MCP_AI_Profile_Manager {
 
 		if ( $rows ) {
 			foreach ( $rows as $row ) {
-				$name = $row['name'];
+				$name              = $row['name'];
 				$profiles[ $name ] = array(
 					'id'               => (int) $row['id'],
 					'name'             => $name,
@@ -136,11 +137,12 @@ class WP_MCP_AI_Profile_Manager {
 			}
 		}
 
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// Return as indexed array suitable for API response.
 		$list = array();
 		foreach ( $profiles as $name => $data ) {
 			$data['name'] = $name;
-			$list[] = $data;
+			$list[]       = $data;
 		}
 
 		return $list;
@@ -156,12 +158,13 @@ class WP_MCP_AI_Profile_Manager {
 	 * @return array|null     Profile data or null if not found.
 	 */
 	public function get_profile( $name, $user_id = 0 ) {
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$name    = sanitize_key( $name );
 		$user_id = absint( $user_id );
 
 		// Check built-in first.
 		if ( isset( self::BUILTIN_PROFILES[ $name ] ) ) {
-			$data = self::BUILTIN_PROFILES[ $name ];
+			$data               = self::BUILTIN_PROFILES[ $name ];
 			$data['name']       = $name;
 			$data['is_builtin'] = true;
 			$data['id']         = 0;
@@ -179,6 +182,7 @@ class WP_MCP_AI_Profile_Manager {
 			ARRAY_A
 		);
 
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( ! $row ) {
 			return null;
 		}
@@ -275,7 +279,13 @@ class WP_MCP_AI_Profile_Manager {
 		return array(
 			'success' => true,
 			'message' => __( 'Profile created.', 'mcp-ai-wpoos' ),
-			'data'    => array_merge( array( 'id' => $profile_id, 'name' => $name ), $data ),
+			'data'    => array_merge(
+				array(
+					'id'   => $profile_id,
+					'name' => $name,
+				),
+				$data
+			),
 		);
 	}
 
@@ -363,15 +373,15 @@ class WP_MCP_AI_Profile_Manager {
 
 		if ( null === $profile ) {
 			// Unknown profile — fall back to 'write' (most permissive).
-			$profile = self::BUILTIN_PROFILES['write'];
+			$profile         = self::BUILTIN_PROFILES['write'];
 			$profile['name'] = 'write';
 		}
 
-		$always_deny = isset( $profile['always_deny'] ) ? (array) $profile['always_deny'] : array();
+		$always_deny  = isset( $profile['always_deny'] ) ? (array) $profile['always_deny'] : array();
 		$always_allow = isset( $profile['always_allow'] ) ? (array) $profile['always_allow'] : array();
-		$denylist = isset( $profile['tool_denylist'] ) ? (array) $profile['tool_denylist'] : array();
-		$allowlist = isset( $profile['tool_allowlist'] ) ? $profile['tool_allowlist'] : null;
-		$default = isset( $profile['default_approval'] ) ? $profile['default_approval'] : 'confirm';
+		$denylist     = isset( $profile['tool_denylist'] ) ? (array) $profile['tool_denylist'] : array();
+		$allowlist    = isset( $profile['tool_allowlist'] ) ? $profile['tool_allowlist'] : null;
+		$default      = isset( $profile['default_approval'] ) ? $profile['default_approval'] : 'confirm';
 
 		// Special handling for 'ask' profile — filter to read-only tools.
 		if ( 'ask' === $profile_name && null === $allowlist ) {

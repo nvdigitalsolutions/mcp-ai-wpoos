@@ -25,36 +25,44 @@ class WP_MCP_AI_Pro_Model_Comparison_Controller {
 	 * @return void
 	 */
 	public static function register_routes() {
-		register_rest_route( 'mcp-ai-pro/v1', '/threads/(?P<thread_id>\d+)/compare-models', array(
-			'methods'             => WP_REST_Server::CREATABLE,
-			'callback'            => array( __CLASS__, 'compare_models' ),
-			'permission_callback' => array( __CLASS__, 'check_permission' ),
-			'args'                => array(
-				'message' => array(
-					'required'          => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_textarea_field',
-				),
-				'models'  => array(
-					'type'     => 'array',
-					'required' => false,
-					'items'    => array(
-						'type'       => 'object',
-						'properties' => array(
-							'provider' => array( 'type' => 'string' ),
-							'model'    => array( 'type' => 'string' ),
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/threads/(?P<thread_id>\d+)/compare-models',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'compare_models' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+				'args'                => array(
+					'message' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_textarea_field',
+					),
+					'models'  => array(
+						'type'     => 'array',
+						'required' => false,
+						'items'    => array(
+							'type'       => 'object',
+							'properties' => array(
+								'provider' => array( 'type' => 'string' ),
+								'model'    => array( 'type' => 'string' ),
+							),
 						),
 					),
 				),
-			),
-		) );
+			)
+		);
 
 		// Endpoint to get available alternative models.
-		register_rest_route( 'mcp-ai-pro/v1', '/model-alternatives', array(
-			'methods'             => WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'get_alternatives' ),
-			'permission_callback' => array( __CLASS__, 'check_permission' ),
-		) );
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/model-alternatives',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_alternatives' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -83,15 +91,17 @@ class WP_MCP_AI_Pro_Model_Comparison_Controller {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
 		}
 
-		$dispatcher    = new WP_MCP_AI_Pro_Parallel_Model_Dispatcher();
-		$alternatives  = $dispatcher->get_available_alternatives();
+		$dispatcher   = new WP_MCP_AI_Pro_Parallel_Model_Dispatcher();
+		$alternatives = $dispatcher->get_available_alternatives();
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'data'    => array(
-				'alternatives' => $alternatives,
-			),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => array(
+					'alternatives' => $alternatives,
+				),
+			)
+		);
 	}
 
 	/**
@@ -143,10 +153,14 @@ class WP_MCP_AI_Pro_Model_Comparison_Controller {
 			}
 		}
 
-		$result = $dispatcher->dispatch( $messages, $models, array(
-			'temperature' => 0.7,
-			'max_tokens'  => 2048,
-		) );
+		$result = $dispatcher->dispatch(
+			$messages,
+			$models,
+			array(
+				'temperature' => 0.7,
+				'max_tokens'  => 2048,
+			)
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;

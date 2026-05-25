@@ -45,9 +45,9 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 	 *
 	 * @since 1.7.0
 	 *
-	 * @param array  $messages    Chat messages array.
-	 * @param array  $models      Array of { provider, model } pairs.
-	 * @param array  $options     Additional options (temperature, max_tokens).
+	 * @param array $messages    Chat messages array.
+	 * @param array $models      Array of { provider, model } pairs.
+	 * @param array $options     Additional options (temperature, max_tokens).
 	 * @return array|WP_Error     { results: [{ provider, model, content, time_ms, error? }] }
 	 */
 	public function dispatch( $messages, $models, $options = array() ) {
@@ -84,16 +84,19 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 			if ( is_wp_error( $client ) ) {
 				$result['error']   = $client->get_error_message();
 				$result['time_ms'] = (int) ( ( microtime( true ) - $start_time ) * 1000 );
-				$results[] = $result;
+				$results[]         = $result;
 				continue;
 			}
 
-			$response = $client->chat_completion( $messages, array(
-				'model'       => $model,
-				'temperature' => $temperature,
-				'max_tokens'  => $max_tokens,
-				'stream'      => false,
-			) );
+			$response = $client->chat_completion(
+				$messages,
+				array(
+					'model'       => $model,
+					'temperature' => $temperature,
+					'max_tokens'  => $max_tokens,
+					'stream'      => false,
+				)
+			);
 
 			$result['time_ms'] = (int) ( ( microtime( true ) - $start_time ) * 1000 );
 
@@ -166,6 +169,7 @@ class WP_MCP_AI_Pro_Parallel_Model_Dispatcher {
 			if ( $container ) {
 				try {
 					return $container->get( 'client.' . $provider );
+				// phpcs:ignore Generic.CodeAnalysis.EmptyStatement -- Intentional: fall through to direct instantiation.
 				} catch ( \Exception $e ) {
 					// Fall through.
 				}

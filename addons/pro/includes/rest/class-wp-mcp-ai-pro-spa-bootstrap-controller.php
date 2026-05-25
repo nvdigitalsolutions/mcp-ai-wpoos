@@ -27,11 +27,15 @@ class WP_MCP_AI_Pro_SPA_Bootstrap_Controller {
 	 * @return void
 	 */
 	public static function register_routes() {
-		register_rest_route( 'mcp-ai-pro/v1', '/spa/bootstrap', array(
-			'methods'             => WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'bootstrap' ),
-			'permission_callback' => array( __CLASS__, 'check_permission' ),
-		) );
+		register_rest_route(
+			'mcp-ai-pro/v1',
+			'/spa/bootstrap',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'bootstrap' ),
+				'permission_callback' => array( __CLASS__, 'check_permission' ),
+			)
+		);
 	}
 
 	/**
@@ -50,27 +54,37 @@ class WP_MCP_AI_Pro_SPA_Bootstrap_Controller {
 	/**
 	 * Bootstrap endpoint — returns all data needed for SPA initial render.
 	 *
+	 * Note: $request is unused but required by WP_REST_Server::READABLE callback signature.
+	 *
 	 * @since 1.7.0
 	 *
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function bootstrap( $request ) {
+		// $request is unused but required by WP_REST_Server::READABLE callback signature.
+		unset( $request );
 		$user_id = get_current_user_id();
 		$data    = array();
 
 		// 1. Active threads.
 		if ( class_exists( 'WP_MCP_AI_Thread_Manager' ) ) {
-			$thread_manager = new WP_MCP_AI_Thread_Manager();
-			$threads_result = $thread_manager->list_threads( $user_id, 'active', 1, 50 );
-			$data['threads'] = isset( $threads_result['data'] ) ? $threads_result['data'] : array( 'threads' => array(), 'total' => 0 );
+			$thread_manager  = new WP_MCP_AI_Thread_Manager();
+			$threads_result  = $thread_manager->list_threads( $user_id, 'active', 1, 50 );
+			$data['threads'] = isset( $threads_result['data'] ) ? $threads_result['data'] : array(
+				'threads' => array(),
+				'total'   => 0,
+			);
 		} else {
-			$data['threads'] = array( 'threads' => array(), 'total' => 0 );
+			$data['threads'] = array(
+				'threads' => array(),
+				'total'   => 0,
+			);
 		}
 
 		// 2. Profiles.
 		if ( class_exists( 'WP_MCP_AI_Profile_Manager' ) ) {
-			$profile_manager = new WP_MCP_AI_Profile_Manager();
+			$profile_manager  = new WP_MCP_AI_Profile_Manager();
 			$data['profiles'] = $profile_manager->list_profiles( $user_id );
 		} else {
 			$data['profiles'] = array();
@@ -98,22 +112,22 @@ class WP_MCP_AI_Pro_SPA_Bootstrap_Controller {
 
 		// 4. Commands.
 		if ( class_exists( 'WP_MCP_AI_Command_Registry' ) ) {
-			$registry = new WP_MCP_AI_Command_Registry();
+			$registry         = new WP_MCP_AI_Command_Registry();
 			$data['commands'] = $registry->get_commands_for_current_user();
 		} else {
 			$data['commands'] = array();
 		}
 
 		// 5. Plugin settings (non-sensitive).
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings         = get_option( 'wp_mcp_ai_settings', array() );
 		$data['settings'] = array(
-			'enable_logging'     => ! empty( $settings['enable_logging'] ),
+			'enable_logging'       => ! empty( $settings['enable_logging'] ),
 			'enable_cost_tracking' => ! empty( $settings['enable_cost_tracking'] ),
 		);
 
 		// 6. Mention types.
 		if ( class_exists( 'WP_MCP_AI_Context_Mention_Resolver' ) ) {
-			$resolver = new WP_MCP_AI_Context_Mention_Resolver();
+			$resolver              = new WP_MCP_AI_Context_Mention_Resolver();
 			$data['mention_types'] = $resolver->get_registered_types();
 		} else {
 			$data['mention_types'] = array();
@@ -127,9 +141,11 @@ class WP_MCP_AI_Pro_SPA_Bootstrap_Controller {
 			'can_edit'     => current_user_can( 'edit_posts' ),
 		);
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'data'    => $data,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'data'    => $data,
+			)
+		);
 	}
 }
