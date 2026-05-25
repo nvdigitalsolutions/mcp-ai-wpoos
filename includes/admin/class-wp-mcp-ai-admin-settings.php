@@ -3342,10 +3342,53 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 		}
 
-		/**
-		 * Render the description for the chat colors section.
-		 */
-		public function render_chat_colors_section_description() {
+			// ── Security Monitor section stubs ──────────────────────
+
+				/**
+				 * Render the security monitor section description.
+				 */
+				public function render_security_monitor_section_description() {
+					?>
+					<p><?php esc_html_e( 'Monitor and respond to security threats automatically.', 'mcp-ai-wpoos' ); ?></p>
+					<?php
+				}
+
+				/**
+				 * Render the security monitor enabled field.
+				 */
+				public function render_security_monitor_enabled_field() {
+					$settings = WP_MCP_AI_Admin_Settings::get_settings();
+					?>
+					<input type="checkbox" name="wp_mcp_ai_settings[security_monitor_enabled]" value="1" <?php checked( ! empty( $settings['security_monitor_enabled'] ) ); ?> />
+					<label><?php esc_html_e( 'Enable automatic security monitoring.', 'mcp-ai-wpoos' ); ?></label>
+					<?php
+				}
+
+				/**
+				 * Render the security monitor auto-shutdown field.
+				 */
+				public function render_security_monitor_auto_shutdown_field() {
+					$settings = WP_MCP_AI_Admin_Settings::get_settings();
+					?>
+					<input type="checkbox" name="wp_mcp_ai_settings[security_monitor_auto_shutdown]" value="1" <?php checked( ! empty( $settings['security_monitor_auto_shutdown'] ) ); ?> />
+					<label><?php esc_html_e( 'Automatically shut down when security thresholds are exceeded.', 'mcp-ai-wpoos' ); ?></label>
+					<?php
+				}
+
+				/**
+				 * Render the security monitor violations field.
+				 */
+				public function render_security_monitor_violations_field() {
+					$settings = WP_MCP_AI_Admin_Settings::get_settings();
+					?>
+					<p class="description"><?php esc_html_e( 'Violations will be listed here when detected.', 'mcp-ai-wpoos' ); ?></p>
+					<?php
+				}
+
+			/**
+			 * Render the description for the chat colors section.
+			 */
+			public function render_chat_colors_section_description() {
 			?>
 		<details class="wp-mcp-ai-collapsible-section">
 			<summary style="cursor: pointer; font-weight: 600; padding: 10px 0; list-style: none;"><?php esc_html_e( '▸ Click to expand/collapse chat appearance settings', 'mcp-ai-wpoos' ); ?></summary>
@@ -6085,13 +6128,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			return $max_bytes;
-		}
+			}
 
-		/**
-		 * Render the token usage section.
-		 */
-		public function render_token_usage_section() {
-			if ( ! current_user_can( 'manage_options' ) ) {
+			/**
+						 * Render the token usage section.
+						 */
+						public function render_token_usage_section() {
+						if ( ! current_user_can( 'manage_options' ) ) {
 				return;
 			}
 			$usage_data = get_option( 'wp_mcp_ai_token_usage', array() );

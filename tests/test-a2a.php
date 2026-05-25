@@ -20,6 +20,10 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Guard: Ensure A2A section class is loaded (may be gated behind is_admin()).
+		// Ensure the A2A section class and its parent are loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
+		}
 		if ( ! class_exists( 'WP_MCP_AI_Section_A2A' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-a2a.php';
 		}
@@ -795,6 +799,7 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertWPError( $result );
 		$this->assertStringContainsString( 'Agent URL', $result->get_error_message() );
 	}
 
@@ -810,6 +815,7 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertWPError( $result );
 		$this->assertStringContainsString( 'Task description', $result->get_error_message() );
 	}
 

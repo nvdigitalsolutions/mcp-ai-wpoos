@@ -15,6 +15,7 @@ class Test_Advanced_Section_Logging extends WP_UnitTestCase {
 
 	/**
 	 * Set up test environment.
+	 * Set up test fixtures.
 	 */
 	public function setUp(): void {
 		parent::setUp();
@@ -30,6 +31,8 @@ class Test_Advanced_Section_Logging extends WP_UnitTestCase {
 
 	/**
 	 * Test that the General section has extended logging fields.
+	 *
+	 * Test that the advanced section exists and has logging fields.
 	 *
 	 * Note: enable_extended_logging and related granular logging fields
 	 * are registered in the General section, not the Advanced section.

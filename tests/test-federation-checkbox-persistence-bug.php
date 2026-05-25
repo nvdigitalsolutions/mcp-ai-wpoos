@@ -23,6 +23,7 @@ class WP_MCP_AI_Federation_Checkbox_Persistence_Bug_Test extends WP_UnitTestCase
 		parent::setUp();
 
 		// Admin classes are gated behind is_admin() in the loader.
+		// Load required classes.
 		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
 		}

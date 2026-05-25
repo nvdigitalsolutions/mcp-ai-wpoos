@@ -31,6 +31,10 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 		}
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
+		}
 	}
 
 	/**
