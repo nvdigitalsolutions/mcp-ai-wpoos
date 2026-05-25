@@ -20,6 +20,10 @@ import { execSync } from 'node:child_process';
 import { applyMountAdapter } from './adapters/mount-adapter.mjs';
 import { applyAuthAdapter } from './adapters/auth-adapter.mjs';
 import { applyBuildAdapter } from './adapters/build-adapter.mjs';
+import { applyApiAdapter } from './adapters/api-adapter.mjs';
+import { applyI18nAdapter } from './adapters/i18n-adapter.mjs';
+import { applyCssScopeAdapter } from './adapters/css-scope-adapter.mjs';
+import { applyBundleOptimizer } from './adapters/bundle-optimizer.mjs';
 import { runVetting, formatVettingReport } from './adapters/vetting-runner.mjs';
 import { generateManifest } from './manifest-generator.mjs';
 
@@ -42,6 +46,7 @@ import { generateManifest } from './manifest-generator.mjs';
  * @property {string[]} steps
  * @property {string[]} warnings
  * @property {string[]} errors
+ * @property {string[]} todos       Items flagged for manual review by semi-automated adapters.
  * @property {object}   analysis
  * @property {object}   vetting
  */
@@ -73,6 +78,7 @@ export async function integrateTemplate( analysis, options ) {
 		steps:    [],
 		warnings: [],
 		errors:   [],
+		todos:    [],
 		analysis,
 		vetting:  null,
 	};
@@ -188,6 +194,64 @@ export async function integrateTemplate( analysis, options ) {
 	result.warnings.push( ...buildResult.warnings );
 
 	// -----------------------------------------------------------------------
+	// Step 5b: Apply API adapter (rewrites API service files)
+	// -----------------------------------------------------------------------
+	log( 'Step 5b: Applying API adapter…' );
+	const apiResult = applyApiAdapter( {
+		slug,
+		srcDir: srcDest,
+		restNamespace: `nvoos-${ slug }/v1`,
+		analysis,
+		dryRun,
+		generateClient: true,
+	} );
+	result.steps.push( 'api-adapter' );
+	result.warnings.push( ...apiResult.warnings );
+	if ( apiResult.manualReview?.length > 0 ) {
+		result.todos = result.todos || [];
+		result.todos.push( ...apiResult.manualReview.map( m => `[API] ${ m }` ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// Step 5c: Apply i18n adapter (auto-wrap strings + generate POT)
+	// -----------------------------------------------------------------------
+	log( 'Step 5c: Applying i18n adapter…' );
+	const i18nResult = applyI18nAdapter( {
+		slug,
+		srcDir: srcDest,
+		addonDir,
+		analysis,
+		dryRun,
+		generatePot: true,
+	} );
+	result.steps.push( 'i18n-adapter' );
+	result.warnings.push( ...i18nResult.warnings );
+	if ( i18nResult.manualReview?.length > 0 ) {
+		result.todos = result.todos || [];
+		result.todos.push( ...i18nResult.manualReview.map( m => `[i18n] ${ m }` ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// Step 5d: Apply CSS scope adapter
+	// -----------------------------------------------------------------------
+	log( 'Step 5d: Applying CSS scope adapter…' );
+	const cssResult = applyCssScopeAdapter( {
+		slug,
+		srcDir: srcDest,
+		addonDir,
+		cssFramework: analysis.tech_stack?.css,
+		uiLibrary: analysis.tech_stack?.ui_library,
+		analysis,
+		dryRun,
+	} );
+	result.steps.push( 'css-scope-adapter' );
+	result.warnings.push( ...cssResult.warnings );
+	if ( cssResult.manualReview?.length > 0 ) {
+		result.todos = result.todos || [];
+		result.todos.push( ...cssResult.manualReview.map( m => `[CSS] ${ m }` ) );
+	}
+
+	// -----------------------------------------------------------------------
 	// Step 6: Generate package.json (merged)
 	// -----------------------------------------------------------------------
 	log( 'Step 6: Generating package.json…' );
@@ -230,9 +294,28 @@ export async function integrateTemplate( analysis, options ) {
 	}
 
 	// -----------------------------------------------------------------------
-	// Step 9: Final vetting re-run
+	// Step 9: Bundle optimization report
 	// -----------------------------------------------------------------------
-	log( 'Step 9: Re-running vetting on adapted addon…' );
+	log( 'Step 9: Running bundle optimizer…' );
+	const optResult = applyBundleOptimizer( {
+		slug,
+		srcDir: srcDest,
+		addonDir,
+		analysis,
+		dryRun,
+		autoLazy: false, // Don't auto-inject React.lazy() — provide suggestions only.
+	} );
+	result.steps.push( 'bundle-optimizer' );
+	result.warnings.push( ...optResult.warnings );
+	if ( optResult.suggestions?.length > 0 ) {
+		result.todos = result.todos || [];
+		result.todos.push( ...optResult.suggestions.map( s => `[Bundle] ${ s }` ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// Step 10: Final vetting re-run
+	// -----------------------------------------------------------------------
+	log( 'Step 10: Re-running vetting on adapted addon…' );
 	if ( ! skipVetting ) {
 		const finalVetting = runVetting( analysis, addonDir );
 		result.steps.push( 'final-vetting' );

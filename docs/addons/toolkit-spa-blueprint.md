@@ -852,10 +852,13 @@ that follows every blueprint convention.
 
 ### What still requires human review
 
-- **i18n**: Hardcoded strings are catalogued but wrapping them with `__()` requires context judgment
-- **CSS scoping**: Global CSS resets need manual namespace scoping (Tailwind prefix, MUI ThemeProvider, etc.)
-- **API endpoint mapping**: The adapter rewrites API service files, but the correctness of the REST namespace mapping must be verified
-- **A11y audit**: Run axe-core post-integration; the adapter doesn't fix a11y violations
+All 8 adapters now run automatically in the pipeline. The following items are
+flagged in the `todos` output for human verification:
+
+- **API endpoint mapping**: Ambiguous REST namespace mappings (e.g., TanStack Query hooks) are flagged for review; verify endpoint correctness.
+- **i18n**: Strings that look like both code identifiers and UI text (camelCase, URLs) are flagged as ambiguous — confirm each is meant for translation.
+- **CSS scoping**: Complex CSS-in-JS patterns (styled-components `createGlobalStyle`, Emotion `Global`) and `:root` custom property scoping are flagged for manual verification.
+- **A11y audit**: Run axe-core post-integration; the adapter doesn't fix a11y violations.
 
 ---
 
@@ -938,14 +941,14 @@ ones your template needs.
 
 | Adapter ID | Category | Automated | Description |
 |-----------|----------|-----------|-------------|
-| `mount-adapter` | mount | ✅ Automatic | Wraps entry point to mount inside `.nvoos-{slug}-root` |
-| `auth-adapter` | auth | ✅ Automatic | Replaces JWT/session tokens with `X-WP-Nonce` header injection |
-| `build-adapter` | build | ✅ Automatic | Generates `esbuild.config.cjs` from webpack/vite/cra originals |
-| `api-adapter` | data_plane | 👤 Semi-auto | Rewrites API service files to target `/wp-json/mcp-ai-pro/v1/*` |
-| `i18n-adapter` | i18n | 👤 Manual | Catalogues hardcoded strings; provides wp.i18n conversion steps |
-| `css-scope-adapter` | css | 👤 Manual | Provides framework-specific CSS scoping guidance (Tailwind/MUI/etc.) |
-| `vetting-runner` | quality | ✅ Automatic | 13-gate checklist; blocks import on critical failures |
-| `bundle-optimizer` | build | 👤 Manual | Suggests lazy-loaded routes and tree-shaking opportunities |
+| `mount-adapter` | mount | ✅ Auto | Wraps entry point to mount inside `.nvoos-{slug}-root` |
+| `auth-adapter` | auth | ✅ Auto | Replaces JWT/session tokens with `X-WP-Nonce` header injection |
+| `build-adapter` | build | ✅ Auto | Generates `esbuild.config.cjs` from webpack/vite/cra originals |
+| `api-adapter` | data_plane | ✅ Auto | Rewrites API service files to target WP REST; generates typed client + REST types; flags ambiguous mappings |
+| `i18n-adapter` | i18n | ✅ Auto | Auto-wraps hardcoded UI strings with `__()`; injects `@wordpress/i18n` imports; generates full POT; flags ambiguous strings |
+| `css-scope-adapter` | css | ✅ Auto | Framework-aware CSS scoping: Tailwind prefix, MUI ThemeProvider, styled-components, global selector rewriting |
+| `vetting-runner` | quality | ✅ Auto | 13-gate checklist; blocks import on critical failures |
+| `bundle-optimizer` | build | ✅ Auto | Analyzes esbuild metafile/source tree; detects lazy-load candidates; produces optimization report |
 
 Adapter execution order is determined by `planAdapters()` in the adapter catalog:
 `mount → auth → build → api → i18n → css-scope → bundle-optimizer`

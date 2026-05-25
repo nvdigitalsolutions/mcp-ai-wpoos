@@ -34,10 +34,10 @@ const CATALOG = [
 	{
 		id:          'api-adapter',
 		label:       'API Service Adapter',
-		description: 'Rewrites API service files — replaces mock-data / axios / fetch calls targeting /api/* with WordPress REST calls to /wp-json/mcp-ai-pro/v1/*. Updates TypeScript interfaces to match WP REST response shapes.',
+		description: 'Rewrites API service files — replaces mock-data / axios / fetch calls targeting /api/* with WordPress REST calls to /wp-json/mcp-ai-pro/v1/*. Auto-generates typed API client (nvoos-api.ts) and WP REST type definitions (nvoos-types.ts). Flags ambiguous mappings for review.',
 		category:    'data_plane',
 		severity:    'high',
-		automated:   false,
+		automated:   true,
 		reversible:  true,
 	},
 	{
@@ -61,19 +61,19 @@ const CATALOG = [
 	{
 		id:          'i18n-adapter',
 		label:       'i18n Adapter',
-		description: 'Extracts hardcoded strings to a POT template, injects @wordpress/i18n (__(), _n(), sprintf()), and configures wp_set_script_translations() in the shortcode.',
+		description: 'Auto-wraps hardcoded UI strings in JavaScript/TypeScript with __(), _n(), sprintf() from @wordpress/i18n. Injects imports, generates a complete POT file from all discovered strings, and ensures @wordpress/i18n is in devDependencies. Flags ambiguous strings for human review.',
 		category:    'i18n',
 		severity:    'medium',
-		automated:   false,
+		automated:   true,
 		reversible:  true,
 	},
 	{
 		id:          'css-scope-adapter',
 		label:       'CSS Scoping Adapter',
-		description: 'Scopes global CSS rules (body, html, *) to .nvoos-{slug}-root namespace. Handles Tailwind prefix configuration and MUI ThemeProvider scoping.',
+		description: 'Auto-applies framework-specific CSS scoping: Tailwind prefix injection in config, MUI ThemeProvider wrapping with scoped container, styled-components StyleSheetManager injection, and global CSS selector rewriting (body→.root, html→.root, * scoping). Flags complex cases for manual review.',
 		category:    'css',
 		severity:    'medium',
-		automated:   false,
+		automated:   true,
 		reversible:  true,
 	},
 	{
@@ -88,10 +88,10 @@ const CATALOG = [
 	{
 		id:          'bundle-optimizer',
 		label:       'Bundle Weight Optimizer',
-		description: 'Analyzes the esbuild bundle, identifies heavy chunks, suggests lazy-loaded routes and tree-shaking opportunities to stay under the tier threshold.',
+		description: 'Analyzes esbuild metafile or source tree to identify heavy chunks, detects lazy-load candidates at route boundaries, and produces a structured optimization report with React.lazy() injection guidance and tree-shaking recommendations.',
 		category:    'build',
 		severity:    'low',
-		automated:   false,
+		automated:   true,
 		reversible:  true,
 	},
 ];
