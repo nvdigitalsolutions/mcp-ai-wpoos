@@ -296,6 +296,44 @@
 	bottom: 0;
 	left: 260px;
 	right: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/* Collaborative Presence */
+.nvoos-collab-presence {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-collab-presence__avatars {
+	display: flex;
+	align-items: center;
+}
+
+.nvoos-collab-presence__avatar {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	border: 2px solid #fff;
+	margin-left: -6px;
+}
+
+.nvoos-collab-presence__avatar:first-child {
+	margin-left: 0;
+}
+
+.nvoos-collab-presence__more {
+	font-size: 10px;
+	color: #787c82;
+	margin-left: 4px;
+}
+
+.nvoos-collab-presence__label {
+	font-size: 11px;
+	color: #787c82;
 }
 
 /* Loading */

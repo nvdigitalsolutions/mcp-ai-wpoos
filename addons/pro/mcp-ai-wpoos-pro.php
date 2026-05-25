@@ -470,6 +470,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_Model_Comparison_Controller', 'register_routes' ) );
 		}
 
+		// Load Pro Collaborative Presence (v1.7.0) — real-time user presence for collaborative editing.
+		$collaborative_presence = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-collaborative-presence.php';
+		if ( file_exists( $collaborative_presence ) ) {
+			require_once $collaborative_presence;
+			WP_MCP_AI_Pro_Collaborative_Presence::init();
+		}
+
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
