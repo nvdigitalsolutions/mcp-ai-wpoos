@@ -491,9 +491,9 @@ class WP_MCP_AI_Transcript_Mining_Job {
 				);
 			}
 		} elseif ( is_array( $result ) ) {
-			$mined_this_tick        = isset( $result['count'] ) ? (int) $result['count'] : 0;
-			$skipped_this_tick      = isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
-			$failed_this_tick       = isset( $result['failed'] ) ? (int) $result['failed'] : 0;
+			$mined_this_tick         = isset( $result['count'] ) ? (int) $result['count'] : 0;
+			$skipped_this_tick       = isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
+			$failed_this_tick        = isset( $result['failed'] ) ? (int) $result['failed'] : 0;
 			$state['mined_count']   += $mined_this_tick;
 			$state['skipped_count'] += $skipped_this_tick;
 			$state['failed_count']  += $failed_this_tick;

@@ -132,19 +132,19 @@ class WP_MCP_AI_Approval_Queue {
 		register_post_type(
 			self::CPT,
 			array(
-				'label'               => __( 'Approval Requests', 'mcp-ai-wpoos' ),
-				'labels'              => array(
+				'label'            => __( 'Approval Requests', 'mcp-ai-wpoos' ),
+				'labels'           => array(
 					'name'          => __( 'Approval Requests', 'mcp-ai-wpoos' ),
 					'singular_name' => __( 'Approval Request', 'mcp-ai-wpoos' ),
 				),
-				'public'              => false,
-				'show_ui'             => false,
-				'show_in_menu'        => false,
-				'show_in_rest'        => false,
-				'supports'            => array( 'title', 'custom-fields' ),
-				'delete_with_user'    => false,
-				'rewrite'             => false,
-				'query_var'           => false,
+				'public'           => false,
+				'show_ui'          => false,
+				'show_in_menu'     => false,
+				'show_in_rest'     => false,
+				'supports'         => array( 'title', 'custom-fields' ),
+				'delete_with_user' => false,
+				'rewrite'          => false,
+				'query_var'        => false,
 			)
 		);
 	}
@@ -154,7 +154,7 @@ class WP_MCP_AI_Approval_Queue {
 	/**
 	 * Insert a new pending approval request.
 	 *
-	 * @param array $data {
+	 * @param array $data {.
 	 *   @type string $tool         Tool slug awaiting approval.
 	 *   @type array  $arguments    Tool arguments.
 	 *   @type int    $assistant_id Assistant post ID.
@@ -185,12 +185,15 @@ class WP_MCP_AI_Approval_Queue {
 			wp_date( 'Y-m-d H:i' )
 		);
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => self::CPT,
-			'post_title'  => $title,
-			'post_status' => 'pending',
-			'post_author' => $requester_id,
-		), true );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => self::CPT,
+				'post_title'  => $title,
+				'post_status' => 'pending',
+				'post_author' => $requester_id,
+			),
+			true
+		);
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
@@ -202,10 +205,16 @@ class WP_MCP_AI_Approval_Queue {
 		update_post_meta( $post_id, self::META_REQUESTER, $requester_id );
 		update_post_meta( $post_id, self::META_SESSION, $session_id );
 		update_post_meta( $post_id, self::META_EXPIRES, time() + $ttl );
-		update_post_meta( $post_id, self::META_CONTEXT, wp_json_encode( array(
-			'reason'        => $reason,
-			'created_at'    => time(),
-		) ) );
+		update_post_meta(
+			$post_id,
+			self::META_CONTEXT,
+			wp_json_encode(
+				array(
+					'reason'     => $reason,
+					'created_at' => time(),
+				)
+			)
+		);
 
 		/**
 		 * Fires after a new approval request is queued.
@@ -270,10 +279,13 @@ class WP_MCP_AI_Approval_Queue {
 			return new WP_Error( 'approval_forbidden', __( 'You do not have permission to resolve this approval.', 'mcp-ai-wpoos' ) );
 		}
 
-		$result = wp_update_post( array(
-			'ID'          => $approval_id,
-			'post_status' => $new_status,
-		), true );
+		$result = wp_update_post(
+			array(
+				'ID'          => $approval_id,
+				'post_status' => $new_status,
+			),
+			true
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -318,7 +330,7 @@ class WP_MCP_AI_Approval_Queue {
 	/**
 	 * Get pending approvals, optionally filtered.
 	 *
-	 * @param array $args {
+	 * @param array $args {.
 	 *   @type int    $assistant_id  Filter by assistant.
 	 *   @type int    $requester_id  Filter by requesting user.
 	 *   @type string $session_id    Filter by chat session.
@@ -337,13 +349,22 @@ class WP_MCP_AI_Approval_Queue {
 
 		$meta_query = array();
 		if ( ! empty( $args['assistant_id'] ) ) {
-			$meta_query[] = array( 'key' => self::META_ASSISTANT, 'value' => (int) $args['assistant_id'] );
+			$meta_query[] = array(
+				'key'   => self::META_ASSISTANT,
+				'value' => (int) $args['assistant_id'],
+			);
 		}
 		if ( ! empty( $args['requester_id'] ) ) {
-			$meta_query[] = array( 'key' => self::META_REQUESTER, 'value' => (int) $args['requester_id'] );
+			$meta_query[] = array(
+				'key'   => self::META_REQUESTER,
+				'value' => (int) $args['requester_id'],
+			);
 		}
 		if ( ! empty( $args['session_id'] ) ) {
-			$meta_query[] = array( 'key' => self::META_SESSION, 'value' => sanitize_text_field( (string) $args['session_id'] ) );
+			$meta_query[] = array(
+				'key'   => self::META_SESSION,
+				'value' => sanitize_text_field( (string) $args['session_id'] ),
+			);
 		}
 
 		if ( ! empty( $meta_query ) ) {
@@ -357,12 +378,12 @@ class WP_MCP_AI_Approval_Queue {
 	/**
 	 * Map a WP_Post to a public approval record array.
 	 *
-	 * @param WP_Post $post
+	 * @param WP_Post $post Parameter description.
 	 * @return array
 	 */
 	private function post_to_array( $post ) {
-		$context   = json_decode( get_post_meta( $post->ID, self::META_CONTEXT, true ), true );
-		$arguments = json_decode( get_post_meta( $post->ID, self::META_ARGUMENTS, true ), true );
+		$context    = json_decode( get_post_meta( $post->ID, self::META_CONTEXT, true ), true );
+		$arguments  = json_decode( get_post_meta( $post->ID, self::META_ARGUMENTS, true ), true );
 		$status_map = array(
 			'pending' => 'pending',
 			'publish' => 'approved',
@@ -406,14 +427,16 @@ class WP_MCP_AI_Approval_Queue {
 		global $wpdb;
 
 		// Find post IDs with expired timestamp in meta.
-		$ids = $wpdb->get_col( $wpdb->prepare(
-			"SELECT post_id FROM {$wpdb->postmeta}
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT post_id FROM {$wpdb->postmeta}
 			 WHERE meta_key = %s
 			   AND CAST(meta_value AS UNSIGNED) < %d
 			 LIMIT 200",
-			self::META_EXPIRES,
-			time()
-		) );
+				self::META_EXPIRES,
+				time()
+			)
+		);
 
 		foreach ( $ids as $id ) {
 			$post = get_post( (int) $id );

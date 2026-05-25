@@ -450,7 +450,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 *
 	 * @return WP_MCP_AI_Tool_Load_Monitor|null
 	 */
-	protected function get_load_monitor() {
+	public function get_load_monitor() {
 		if ( null === $this->load_monitor && class_exists( 'WP_MCP_AI_Tool_Load_Monitor' ) ) {
 			$this->load_monitor = new WP_MCP_AI_Tool_Load_Monitor();
 		}
@@ -481,16 +481,5 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Get load monitor instance
-	 *
-	 * Provides access to the load monitor for testing and external monitoring.
-	 *
-	 * @return WP_MCP_AI_Tool_Load_Monitor|null
-	 */
-	public function get_load_monitor() {
-		return $this->load_monitor;
 	}
 }

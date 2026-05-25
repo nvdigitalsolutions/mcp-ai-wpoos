@@ -601,7 +601,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Enhanced logging for federation/mesh checkboxes to help debug display issues.
 			if ( 'checkbox' === $type && in_array( $key, self::FEDERATION_CHECKBOXES, true ) ) {
-				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 				if ( ! is_array( $settings ) ) {
 					$settings = array();
 				}

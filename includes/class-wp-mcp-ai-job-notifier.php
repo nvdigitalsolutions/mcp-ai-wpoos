@@ -235,10 +235,10 @@ class WP_MCP_AI_Job_Notifier {
 		$steps = isset( $existing['steps'] ) && is_array( $existing['steps'] ) ? $existing['steps'] : array();
 
 		$step_record = array(
-			'label'      => $label,
-			'status'     => $status,
+			'label'       => $label,
+			'status'      => $status,
 			'recorded_at' => current_time( 'mysql', true ),
-			'metadata'   => $metadata,
+			'metadata'    => $metadata,
 		);
 
 		$steps[] = $step_record;

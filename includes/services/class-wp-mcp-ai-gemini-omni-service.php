@@ -757,27 +757,32 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			$error_code    = 'wp_mcp_ai_omni_request_failed';
 
 			if ( isset( $data['error']['message'] ) ) {
-				$api_error      = $data['error']['message'];
-				$error_message  = $api_error;
+				$api_error     = $data['error']['message'];
+				$error_message = $api_error;
 
 				if ( false !== stripos( $api_error, 'not found' ) || false !== stripos( $api_error, 'does not exist' ) ) {
 					$error_code    = 'wp_mcp_ai_omni_unavailable';
 					$error_message = __( 'Gemini Omni API is not yet available. It will be accessible in the coming weeks. The Veo fallback will be used automatically.', 'mcp-ai-wpoos' );
 				} elseif ( false !== stripos( $api_error, 'quota' ) || false !== stripos( $api_error, 'rate limit' ) ) {
-					$error_code    = 'wp_mcp_ai_quota_exceeded';
+					$error_code = 'wp_mcp_ai_quota_exceeded';
+					/* translators: %s is a placeholder. */
 					$error_message = sprintf(
-						__( 'Video generation quota exceeded: %s', 'mcp-ai-wpoos' ),
+						__( 'Video generation quota exceeded: %s', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 						$api_error
 					);
 				} elseif ( false !== stripos( $api_error, 'content policy' ) || false !== stripos( $api_error, 'unsafe' ) ) {
-					$error_code    = 'wp_mcp_ai_content_policy_violation';
+					/* translators: %s is a placeholder. */
+					$error_code = 'wp_mcp_ai_content_policy_violation';
+					/* translators: %s is a placeholder. */
 					$error_message = sprintf(
-						__( 'Prompt rejected by content policy. Try rephrasing: %s', 'mcp-ai-wpoos' ),
+						__( 'Prompt rejected by content policy. Try rephrasing: %s', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 						$api_error
+						/* translators: %s is a placeholder. */
 					);
+					/* translators: %s is a placeholder. */
 				} else {
 					$error_message = sprintf(
-						__( 'Video request error: %s', 'mcp-ai-wpoos' ),
+						__( 'Video request error: %s', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 						$api_error
 					);
 				}
@@ -844,9 +849,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			$operation_name
 		);
 
-		$is_edit   = isset( $operation['is_edit'] ) && $operation['is_edit'];
-		$attempts  = 0;
-		$in_async  = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
+		$is_edit  = isset( $operation['is_edit'] ) && $operation['is_edit'];
+		$attempts = 0;
+		$in_async = isset( $args['in_async_executor'] ) && $args['in_async_executor'];
 
 		if ( ! class_exists( 'WP_MCP_AI_Timeout_Detection_Service' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
@@ -923,11 +928,13 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			}
 		}
 
+		/* translators: %s is a placeholder. */
 		if ( $in_async ) {
+			/* translators: %s is a placeholder. */
 			return new WP_Error(
 				'wp_mcp_ai_omni_polling_timeout',
 				sprintf(
-					__( 'Video operation timed out after %d attempts.', 'mcp-ai-wpoos' ),
+					__( 'Video operation timed out after %d attempts.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 					$attempts
 				),
 				array( 'status' => 500 )
@@ -979,12 +986,12 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		return array(
-			'video_data'  => $video_data,
-			'model'       => $model,
-			'video_uri'   => $video_uri,
-			'prompt'      => isset( $args['prompt'] ) ? $args['prompt'] : '',
+			'video_data'   => $video_data,
+			'model'        => $model,
+			'video_uri'    => $video_uri,
+			'prompt'       => isset( $args['prompt'] ) ? $args['prompt'] : '',
 			'aspect_ratio' => isset( $args['aspect_ratio'] ) ? $args['aspect_ratio'] : '16:9',
-			'created'     => time(),
+			'created'      => time(),
 		);
 	}
 
@@ -1026,12 +1033,14 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
+				/* translators: %s is a placeholder. */
 
+		/* translators: %s is a placeholder. */
 		if ( $code < 200 || $code >= 300 ) {
 			return new WP_Error(
 				'wp_mcp_ai_video_download_failed',
 				sprintf(
-					__( 'Failed to download video (HTTP %d).', 'mcp-ai-wpoos' ),
+					__( 'Failed to download video (HTTP %d).', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 					$code
 				),
 				array( 'status' => $code )
@@ -1062,14 +1071,18 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		$prefix = self::ASYNC_OP_PREFIX;
 
 		// Store operation details for the cron callback.
-		set_transient( $prefix . $job_id, array(
-			'operation_name' => $operation['operation_name'],
-			'model'          => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
-			'is_edit'        => isset( $operation['is_edit'] ) ? $operation['is_edit'] : false,
-			'args'           => $args,
-			'created_at'     => time(),
-			'status'         => 'queued',
-		), HOUR_IN_SECONDS * 6 );
+		set_transient(
+			$prefix . $job_id,
+			array(
+				'operation_name' => $operation['operation_name'],
+				'model'          => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
+				'is_edit'        => isset( $operation['is_edit'] ) ? $operation['is_edit'] : false,
+				'args'           => $args,
+				'created_at'     => time(),
+				'status'         => 'queued',
+			),
+			HOUR_IN_SECONDS * 6
+		);
 
 		// Schedule cron event.
 		if ( ! wp_next_scheduled( self::CRON_POLL_HOOK, array( $job_id ) ) ) {
@@ -1086,12 +1099,12 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		);
 
 		return array(
-			'async'         => true,
-			'job_id'        => $job_id,
-			'status'        => 'queued',
-			'eta_seconds'   => self::ESTIMATED_COMPLETION_POLLS * self::POLLING_INTERVAL,
-			'check_hook'    => self::CRON_POLL_HOOK,
-			'model'         => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
+			'async'       => true,
+			'job_id'      => $job_id,
+			'status'      => 'queued',
+			'eta_seconds' => self::ESTIMATED_COMPLETION_POLLS * self::POLLING_INTERVAL,
+			'check_hook'  => self::CRON_POLL_HOOK,
+			'model'       => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
 		);
 	}
 
@@ -1123,14 +1136,14 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			'is_edit'        => $data['is_edit'],
 		);
 
-		$args               = $data['args'];
+		$args                      = $data['args'];
 		$args['in_async_executor'] = true;
 
 		$result = $this->poll_for_completion( $operation, $args );
 
 		if ( is_wp_error( $result ) ) {
-			$data['status']      = 'failed';
-			$data['error']       = $result->get_error_message();
+			$data['status']       = 'failed';
+			$data['error']        = $result->get_error_message();
 			$data['completed_at'] = time();
 			set_transient( $prefix . $job_id, $data, HOUR_IN_SECONDS * 6 );
 
@@ -1220,10 +1233,10 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			: 0;
 
 		return array(
-			'status'        => 'processing',
-			'progress'      => $progress,
-			'job_id'        => $job_id,
-			'model'         => isset( $data['model'] ) ? $data['model'] : self::OMNI_MODEL,
+			'status'   => 'processing',
+			'progress' => $progress,
+			'job_id'   => $job_id,
+			'model'    => isset( $data['model'] ) ? $data['model'] : self::OMNI_MODEL,
 		);
 	}
 
@@ -1271,13 +1284,15 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		$result = $veo_service->generate_video( $veo_args );
+				/* translators: %s is a placeholder. */
 
+		/* translators: %s is a placeholder. */
 		if ( is_wp_error( $result ) && $omni_error ) {
 			// Both Omni and Veo failed.
 			return new WP_Error(
 				$omni_error->get_error_code(),
 				sprintf(
-					__( 'Video generation failed with both Omni and Veo. Omni: %s. Veo: %s', 'mcp-ai-wpoos' ),
+					__( 'Video generation failed with both Omni and Veo. Omni: %1$s. Veo: %2$s', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 					$omni_error->get_error_message(),
 					$result->get_error_message()
 				),

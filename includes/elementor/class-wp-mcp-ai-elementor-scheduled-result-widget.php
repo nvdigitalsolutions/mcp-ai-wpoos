@@ -73,8 +73,8 @@ class WP_MCP_AI_Elementor_Scheduled_Result_Widget extends \Elementor\Widget_Base
 		}
 		$schedules = WP_MCP_AI_Pro_Schedule_Manager::get_schedules();
 		foreach ( $schedules as $id => $schedule ) {
-			$name             = isset( $schedule['name'] ) ? $schedule['name'] : $id;
-			$type             = isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : '';
+			$name                    = isset( $schedule['name'] ) ? $schedule['name'] : $id;
+			$type                    = isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : '';
 			$options[ (string) $id ] = $name . ( $type ? ' (' . $type . ')' : '' );
 		}
 		return $options;

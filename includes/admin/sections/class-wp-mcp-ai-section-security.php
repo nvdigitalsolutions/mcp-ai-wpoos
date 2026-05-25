@@ -245,7 +245,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			$roles  = wp_roles()->get_names();
+			$roles = wp_roles()->get_names();
 
 			$fields = array(
 				// ========================================
@@ -717,10 +717,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'type'    => 'select',
 					'label'   => __( 'Approval Threshold', 'mcp-ai-wpoos' ),
 					'options' => array(
-						'none'          => __( 'None — no automatic HITL (per-tool overrides still apply)', 'mcp-ai-wpoos' ),
-						'any_write'     => __( 'Any write-flag tool', 'mcp-ai-wpoos' ),
+						'none'           => __( 'None — no automatic HITL (per-tool overrides still apply)', 'mcp-ai-wpoos' ),
+						'any_write'      => __( 'Any write-flag tool', 'mcp-ai-wpoos' ),
 						'state_changing' => __( 'State-changing tools only', 'mcp-ai-wpoos' ),
-						'destructive'   => __( 'Destructive tools only (highest risk)', 'mcp-ai-wpoos' ),
+						'destructive'    => __( 'Destructive tools only (highest risk)', 'mcp-ai-wpoos' ),
 					),
 					'default' => 'state_changing',
 				),
@@ -876,7 +876,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'D' => '#d63638',
 				'F' => '#8c1c1c',
 			);
-			$color = $grade_color[ $grade ] ?? '#d63638';
+			$color       = $grade_color[ $grade ] ?? '#d63638';
 
 			// Recent security events.
 			$recent_events = array_slice( array_reverse( get_option( 'wp_mcp_ai_security_audit_log', array() ) ), 0, 10 );
@@ -917,8 +917,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		<div class="wp-mcp-ai-score-circle" style="width:90px;height:90px;border-radius:50%;background:<?php echo esc_attr( $color ); ?>;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
 			<span style="color:#fff;font-size:26px;font-weight:700;line-height:1;"><?php echo esc_html( $grade ); ?></span>
 		</div>
+		/* translators: %d is the security score. */
 		<div>
-			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3>
+			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3> // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
 			<p style="margin:0;color:#646970;"><?php esc_html_e( 'Computed from 17 weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ); ?></p>
 			<button type="button" class="button button-small wp-mcp-ai-refresh-posture" style="margin-top:8px;">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;"></span>
@@ -944,8 +945,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						echo esc_url(
 							add_query_arg(
 								array(
-									'page' => 'wp-mcp-ai-dashboard',
-									'tab' => 'security',
+									'page'   => 'wp-mcp-ai-dashboard',
+									'tab'    => 'security',
 									'subtab' => $win['subtab'],
 								),
 								admin_url( 'admin.php' )
@@ -1033,7 +1034,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 </div><!-- /.wp-mcp-ai-security-overview -->
 
 			<?php
-			$refresh_text    = wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) );
+			$refresh_text     = wp_json_encode( __( 'Refreshing…', 'mcp-ai-wpoos' ) );
 			$refresh_now_text = wp_json_encode( __( 'Refresh Now', 'mcp-ai-wpoos' ) );
 			ob_start();
 			?>
@@ -1392,7 +1393,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				<?php
 				$registry = WP_MCP_AI_Tool_Registry::get_instance();
 				// Use get_all_tools() so the array is keyed by slug rather than numerically.
-				$tools    = $registry->get_all_tools();
+				$tools = $registry->get_all_tools();
 				if ( empty( $tools ) ) {
 					echo '<p style="color:#646970;">' . esc_html__( 'No tools registered.', 'mcp-ai-wpoos' ) . '</p>';
 				} else {
@@ -1501,9 +1502,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 <tr>
 <td><code><?php echo esc_html( $old_slug ); ?></code></td>
 <td><code><?php echo esc_html( $entry['new_slug'] ); ?></code></td>
-<td><?php echo esc_html( $entry['since'] ?: '—' ); ?></td>
-<td><?php echo esc_html( $entry['remove'] ?: '—' ); ?></td>
-<td style="color:#646970;"><?php echo esc_html( $entry['message'] ?: '—' ); ?></td>
+<td><?php echo esc_html( $entry['since'] ?: '—' ); ?></td> // phpcs:ignore Universal.Operators.DisallowShortTernary.Found -- Short ternary is safe here. // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
+<td><?php echo esc_html( $entry['remove'] ?: '—' ); ?></td> // phpcs:ignore Universal.Operators.DisallowShortTernary.Found -- Short ternary is safe here. // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
+<td style="color:#646970;"><?php echo esc_html( $entry['message'] ?: '—' ); ?></td> // phpcs:ignore Universal.Operators.DisallowShortTernary.Found -- Short ternary is safe here. // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
 </tr>
 <?php endforeach; ?>
 </tbody>
@@ -1559,16 +1560,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 <tbody>
 	<?php foreach ( $mcp_servers as $server ) : ?>
 		<?php
-		$name          = esc_html( $server['name'] ?? $server['url'] ?? __( '(unnamed)', 'mcp-ai-wpoos' ) );
-		$url           = esc_url( $server['url'] ?? '' );
-		$rotated_raw   = $server['token_rotated_at'] ?? '';
-		$rotated_ts    = $rotated_raw ? strtotime( $rotated_raw ) : 0;
-		$days_since    = $rotated_ts ? (int) ( ( time() - $rotated_ts ) / DAY_IN_SECONDS ) : PHP_INT_MAX;
+		$name           = esc_html( $server['name'] ?? $server['url'] ?? __( '(unnamed)', 'mcp-ai-wpoos' ) );
+		$url            = esc_url( $server['url'] ?? '' );
+		$rotated_raw    = $server['token_rotated_at'] ?? '';
+		$rotated_ts     = $rotated_raw ? strtotime( $rotated_raw ) : 0;
+		$days_since     = $rotated_ts ? (int) ( ( time() - $rotated_ts ) / DAY_IN_SECONDS ) : PHP_INT_MAX;
 		$needs_rotation = $days_since > 90;
-		$rotated_label = $rotated_ts
+		$rotated_label  = $rotated_ts
 		? wp_date( get_option( 'date_format' ), $rotated_ts )
 		: __( 'Unknown', 'mcp-ai-wpoos' );
-		$status_html   = $needs_rotation
+		$status_html    = $needs_rotation
 		? '<span style="color:#d63638;">⚠️ ' . esc_html__( 'Rotation overdue', 'mcp-ai-wpoos' ) . '</span>'
 		: '<span style="color:#46b450;">✅ ' . esc_html__( 'OK', 'mcp-ai-wpoos' ) . '</span>';
 		?>

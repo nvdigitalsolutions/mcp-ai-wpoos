@@ -50,7 +50,7 @@ class WP_MCP_AI_Schema_Verifier extends WP_MCP_AI_Verifier_Base {
 			'disallowed_tools'     => array(),
 			'allowed_domains'      => array(),
 		);
-		$this->schema = $schema;
+		$this->schema               = $schema;
 	}
 
 	/**

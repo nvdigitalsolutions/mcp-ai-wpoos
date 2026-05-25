@@ -156,14 +156,14 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param array $options      Options.
 	 */
 	public static function on_before_chat( $assistant_id, $messages, $options ) {
-		$span_id = self::generate_span_id();
+		$span_id                                     = self::generate_span_id();
 		self::$open_spans[ 'chat:' . $assistant_id ] = array(
 			'span_id'      => $span_id,
 			'start_micros' => self::now_micros(),
 			'attributes'   => array(
-				'nvoos.assistant_id'   => (int) $assistant_id,
-				'nvoos.message_count'  => is_array( $messages ) ? count( $messages ) : 0,
-				'nvoos.model'          => isset( $options['model'] ) ? (string) $options['model'] : '',
+				'nvoos.assistant_id'  => (int) $assistant_id,
+				'nvoos.message_count' => is_array( $messages ) ? count( $messages ) : 0,
+				'nvoos.model'         => isset( $options['model'] ) ? (string) $options['model'] : '',
 			),
 		);
 	}
@@ -205,15 +205,15 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param array  $context    Execution context.
 	 */
 	public static function on_before_tool( $tool_slug, $arguments, $context ) {
-		$tool_slug = sanitize_key( (string) $tool_slug );
-		$span_id   = self::generate_span_id();
+		$tool_slug                                = sanitize_key( (string) $tool_slug );
+		$span_id                                  = self::generate_span_id();
 		self::$open_spans[ 'tool:' . $tool_slug ] = array(
 			'span_id'      => $span_id,
 			'start_micros' => self::now_micros(),
 			'attributes'   => array(
-				'nvoos.tool.slug'         => $tool_slug,
-				'nvoos.assistant_id'      => isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0,
-				'nvoos.guest_request'     => ! empty( $context['guest_request'] ),
+				'nvoos.tool.slug'     => $tool_slug,
+				'nvoos.assistant_id'  => isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0,
+				'nvoos.guest_request' => ! empty( $context['guest_request'] ),
 			),
 		);
 	}
@@ -236,8 +236,8 @@ class WP_MCP_AI_Otel_Span_Exporter {
 			return;
 		}
 
-		$open  = self::$open_spans[ $key ];
-		$attrs = $open['attributes'];
+		$open                        = self::$open_spans[ $key ];
+		$attrs                       = $open['attributes'];
 		$attrs['nvoos.tool.success'] = ! is_wp_error( $result );
 		if ( is_wp_error( $result ) ) {
 			$attrs['error.type']    = $result->get_error_code();
@@ -305,7 +305,7 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param int|null $assistant_id Optional assistant filter.
 	 */
 	public static function on_before_chat_jobs_stream( $user_id, $assistant_id ) {
-		$span_id = self::generate_span_id();
+		$span_id                              = self::generate_span_id();
 		self::$open_spans['chat_jobs_stream'] = array(
 			'span_id'      => $span_id,
 			'start_micros' => self::now_micros(),
@@ -330,8 +330,8 @@ class WP_MCP_AI_Otel_Span_Exporter {
 			return;
 		}
 
-		$open           = self::$open_spans[ $key ];
-		$attrs          = $open['attributes'];
+		$open                                 = self::$open_spans[ $key ];
+		$attrs                                = $open['attributes'];
 		$attrs['nvoos.chat_jobs.poll_count']  = (int) $poll_count;
 		$attrs['nvoos.chat_jobs.duration_ms'] = (int) $duration_ms;
 
@@ -400,8 +400,8 @@ class WP_MCP_AI_Otel_Span_Exporter {
 	 * @param array  $terminal_result Job result.
 	 */
 	public static function on_chat_continuation_ready( $snapshot, $terminal_status, $terminal_result ) {
-		$job_id  = isset( $snapshot['job_id'] ) ? (string) $snapshot['job_id'] : '';
-		$span_id = self::generate_span_id();
+		$job_id                                        = isset( $snapshot['job_id'] ) ? (string) $snapshot['job_id'] : '';
+		$span_id                                       = self::generate_span_id();
 		self::$open_spans[ 'continuation_' . $job_id ] = array(
 			'span_id'      => $span_id,
 			'start_micros' => self::now_micros(),
@@ -426,16 +426,16 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		if ( ! isset( self::$open_spans[ $key ] ) ) {
 			// Span may have been opened by on_chat_continuation_ready; fire a point span if not.
 			$attrs = array(
-				'nvoos.continuation.job_id'   => (string) $job_id,
-				'nvoos.continuation.status'   => (string) $terminal_status,
-				'nvoos.continuation.success'  => true,
+				'nvoos.continuation.job_id'  => (string) $job_id,
+				'nvoos.continuation.status'  => (string) $terminal_status,
+				'nvoos.continuation.success' => true,
 			);
 			self::buffer_span( 'nvoos.chat.continuation.dispatched', self::generate_span_id(), self::now_micros(), $attrs );
 			return;
 		}
 
-		$open                           = self::$open_spans[ $key ];
-		$attrs                          = $open['attributes'];
+		$open                                = self::$open_spans[ $key ];
+		$attrs                               = $open['attributes'];
 		$attrs['nvoos.continuation.success'] = true;
 		self::buffer_span( 'nvoos.chat.continuation.dispatched', $open['span_id'], $open['start_micros'], $attrs );
 		unset( self::$open_spans[ $key ] );
@@ -477,10 +477,10 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		$key        = 'continuation_' . $job_id;
 		$open       = isset( self::$open_spans[ $key ] ) ? self::$open_spans[ $key ] : null;
 		$attrs      = array(
-			'nvoos.continuation.job_id'      => (string) $job_id,
-			'nvoos.continuation.session_id'  => $session_id,
-			'nvoos.continuation.error'       => (string) $error_msg,
-			'nvoos.continuation.success'     => false,
+			'nvoos.continuation.job_id'     => (string) $job_id,
+			'nvoos.continuation.session_id' => $session_id,
+			'nvoos.continuation.error'      => (string) $error_msg,
+			'nvoos.continuation.success'    => false,
 		);
 
 		if ( $open ) {
@@ -514,14 +514,14 @@ class WP_MCP_AI_Otel_Span_Exporter {
 		$extra = apply_filters( 'wp_mcp_ai_otel_extra_attributes', array() );
 
 		$span = array(
-			'traceId'          => self::get_trace_id(),
-			'spanId'           => $span_id,
-			'name'             => (string) $name,
-			'kind'             => 3, // SPAN_KIND_CLIENT.
+			'traceId'           => self::get_trace_id(),
+			'spanId'            => $span_id,
+			'name'              => (string) $name,
+			'kind'              => 3, // SPAN_KIND_CLIENT.
 			'startTimeUnixNano' => (string) $start_ns,
-			'endTimeUnixNano'  => (string) $end_ns,
-			'attributes'       => self::encode_attributes( array_merge( $attributes, is_array( $extra ) ? $extra : array() ) ),
-			'status'           => array( 'code' => 1 ), // STATUS_CODE_OK.
+			'endTimeUnixNano'   => (string) $end_ns,
+			'attributes'        => self::encode_attributes( array_merge( $attributes, is_array( $extra ) ? $extra : array() ) ),
+			'status'            => array( 'code' => 1 ), // STATUS_CODE_OK.
 		);
 
 		/**

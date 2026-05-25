@@ -76,8 +76,8 @@ class WP_MCP_AI_A2A_Webhook_Handler {
 			$task_id = isset( $task['id'] ) ? $task['id'] : 'unknown';
 			$state   = isset( $task['status']['state'] ) ? $task['status']['state'] : 'unknown';
 			WP_MCP_AI_Logger::log_info(
-					sprintf( 'A2A webhook: task %s updated to state %s', $task_id, $state )
-				);
+				sprintf( 'A2A webhook: task %s updated to state %s', $task_id, $state )
+			);
 		}
 
 		return true;

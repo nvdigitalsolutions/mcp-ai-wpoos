@@ -238,18 +238,18 @@ class WP_MCP_AI_Measurement_Registry {
 		}
 
 		return array(
-			'id'              => $id,
-			'label'           => sanitize_text_field( $label ),
-			'description'     => isset( $definition['description'] ) ? wp_kses_post( (string) $definition['description'] ) : '',
-			'type'            => $type,
-			'unit'            => sanitize_text_field( $unit ),
-			'direction'       => $direction,
-			'privacy_tier'    => $privacy,
-			'counter_metric'  => isset( $definition['counter_metric'] ) ? sanitize_text_field( (string) $definition['counter_metric'] ) : '',
-			'goodhart_note'   => isset( $definition['goodhart_note'] ) ? wp_kses_post( (string) $definition['goodhart_note'] ) : '',
-			'regulated'       => ! empty( $definition['regulated'] ),
-			'owasp_llm_risk'  => isset( $definition['owasp_llm_risk'] ) ? sanitize_text_field( (string) $definition['owasp_llm_risk'] ) : '',
-			'otel_attribute'  => isset( $definition['otel_attribute'] ) ? sanitize_text_field( (string) $definition['otel_attribute'] ) : '',
+			'id'             => $id,
+			'label'          => sanitize_text_field( $label ),
+			'description'    => isset( $definition['description'] ) ? wp_kses_post( (string) $definition['description'] ) : '',
+			'type'           => $type,
+			'unit'           => sanitize_text_field( $unit ),
+			'direction'      => $direction,
+			'privacy_tier'   => $privacy,
+			'counter_metric' => isset( $definition['counter_metric'] ) ? sanitize_text_field( (string) $definition['counter_metric'] ) : '',
+			'goodhart_note'  => isset( $definition['goodhart_note'] ) ? wp_kses_post( (string) $definition['goodhart_note'] ) : '',
+			'regulated'      => ! empty( $definition['regulated'] ),
+			'owasp_llm_risk' => isset( $definition['owasp_llm_risk'] ) ? sanitize_text_field( (string) $definition['owasp_llm_risk'] ) : '',
+			'otel_attribute' => isset( $definition['otel_attribute'] ) ? sanitize_text_field( (string) $definition['otel_attribute'] ) : '',
 		);
 	}
 

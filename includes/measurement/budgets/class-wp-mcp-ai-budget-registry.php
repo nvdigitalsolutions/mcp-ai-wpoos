@@ -294,10 +294,10 @@ class WP_MCP_AI_Budget_Registry {
 			$limit    = $envelope->get_limit();
 			$ratio    = $limit > 0.0 ? $consumed / $limit : 0.0;
 			$out[]    = array(
-				'envelope'    => $envelope->to_array(),
-				'consumed'    => $consumed,
-				'ratio'       => $ratio,
-				'state'       => $this->state_for( $envelope, $consumed ),
+				'envelope' => $envelope->to_array(),
+				'consumed' => $consumed,
+				'ratio'    => $ratio,
+				'state'    => $this->state_for( $envelope, $consumed ),
 			);
 		}
 		return $out;
@@ -355,19 +355,19 @@ class WP_MCP_AI_Budget_Registry {
 			$this->maybe_roll_window( $envelope );
 			if ( ! isset( $this->persistent_accumulators[ $slug ] ) ) {
 				$this->persistent_accumulators[ $slug ] = array(
-					'value' => 0.0,
+					'value'             => 0.0,
 					'window_started_at' => time(),
 				);
 			}
 			$this->persistent_accumulators[ $slug ]['value'] += $value;
-			$new_value = (float) $this->persistent_accumulators[ $slug ]['value'];
+			$new_value                                        = (float) $this->persistent_accumulators[ $slug ]['value'];
 			$this->save_persistent();
 		} else {
 			if ( ! isset( $this->request_accumulators[ $slug ] ) ) {
 				$this->request_accumulators[ $slug ] = 0.0;
 			}
 			$this->request_accumulators[ $slug ] += $value;
-			$new_value = $this->request_accumulators[ $slug ];
+			$new_value                            = $this->request_accumulators[ $slug ];
 		}
 
 		$this->maybe_fire_signals( $envelope, $new_value );

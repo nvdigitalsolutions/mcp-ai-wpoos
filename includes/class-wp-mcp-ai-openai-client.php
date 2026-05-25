@@ -3385,9 +3385,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
-		WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
+			WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
 
-		return $decoded;
+			return $decoded;
 		}
 
 		/**
@@ -5191,7 +5191,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5286,7 +5286,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5353,7 +5353,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id );
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5420,7 +5420,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id );
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5506,7 +5506,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5596,7 +5596,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5666,7 +5666,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id );
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
@@ -5768,7 +5768,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/search' );
 
-			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers                = $this->build_request_headers( $api_key );
 			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(

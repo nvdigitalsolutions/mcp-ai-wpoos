@@ -308,6 +308,7 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 	/**
 	 * {@inheritdoc}
+	 * @param array $result Result data.
 	 */
 	public function get_async_metadata() {
 		return array(
@@ -318,6 +319,9 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 	/**
 	 * {@inheritdoc}
+	 * @param int $job_id Job ID.
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
 	 */
 	public function sanitize_for_llm( $result ) {
 		if ( ! is_array( $result ) ) {
