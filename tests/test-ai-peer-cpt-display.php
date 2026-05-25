@@ -16,6 +16,21 @@
 class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+		}
+	}
+
+	/**
 	 * Test that AI Peer links are NOT shown when directory service is disabled.
 	 */
 	public function test_ai_peer_links_hidden_when_directory_disabled() {
@@ -64,7 +79,7 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
 		}
-		$registry = new WP_MCP_AI_Tool_Registry();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 		if ( ! class_exists( 'WP_MCP_AI_Federation' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
@@ -141,7 +156,7 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
 		}
-		$registry = new WP_MCP_AI_Tool_Registry();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 		if ( ! class_exists( 'WP_MCP_AI_Federation' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';

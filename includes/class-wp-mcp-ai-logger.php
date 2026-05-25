@@ -486,6 +486,18 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		}
 
 		/**
+		 * Convenience alias for log_info().
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message Info message.
+		 * @param array  $context Optional context.
+		 */
+		public static function info( $message, $context = array() ) {
+			self::log_info( $message, $context );
+		}
+
+		/**
 		 * Log a debug message.
 		 *
 		 * Debug messages provide detailed information for troubleshooting.

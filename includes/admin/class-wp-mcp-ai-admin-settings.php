@@ -6117,6 +6117,70 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render the tool token limits section.
+		 *
+		 * Displays per-tool token usage limits and configuration.
+		 */
+		public function render_tool_token_limits_section() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+			?>
+			<div class="wp-mcp-ai-token-limits-section">
+				<h2><?php esc_html_e( 'Tool Token Limits', 'mcp-ai-wpoos' ); ?></h2>
+				<p><?php esc_html_e( 'Token consumption by tool (this session).', 'mcp-ai-wpoos' ); ?></p>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render the high token section description.
+		 */
+		public function render_high_token_section_description() {
+			?>
+			<p><?php esc_html_e( 'Configure how the system handles high token usage scenarios.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the enable high token model switch field.
+		 */
+		public function render_enable_high_token_model_switch_field() {
+			$settings = self::get_settings();
+			$value    = isset( $settings['enable_high_token_model_switch'] ) ? $settings['enable_high_token_model_switch'] : false;
+			?>
+			<label>
+				<input type="checkbox" name="wp_mcp_ai_settings[enable_high_token_model_switch]" value="1" <?php checked( $value, true ); ?> />
+				<?php esc_html_e( 'Automatically switch to a higher-capacity model when token limits approach', 'mcp-ai-wpoos' ); ?>
+			</label>
+			<?php
+		}
+
+		/**
+		 * Render the high token fallback model field.
+		 */
+		public function render_high_token_fallback_model_field() {
+			$settings = self::get_settings();
+			$value    = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : '';
+			?>
+			<input type="text" name="wp_mcp_ai_settings[high_token_fallback_model]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" />
+			<p class="description"><?php esc_html_e( 'The model to use when auto-switching due to high token usage.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the per-model fallbacks field.
+		 */
+		public function render_per_model_fallbacks_field() {
+			$settings = self::get_settings();
+			$value    = isset( $settings['per_model_fallbacks'] ) ? $settings['per_model_fallbacks'] : '';
+			?>
+			<textarea name="wp_mcp_ai_settings[per_model_fallbacks]" rows="5" class="large-text"><?php echo esc_textarea( $value ); ?></textarea>
+			<p class="description"><?php esc_html_e( 'JSON mapping of model IDs to fallback model IDs.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
 		 * Calculate aggregate usage totals across all providers and models.
 		 *
 		 * @param array $usage Usage data keyed by provider then model.
