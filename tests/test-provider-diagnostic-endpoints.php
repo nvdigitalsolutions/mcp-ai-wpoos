@@ -10,7 +10,7 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  */
-class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_MCP_AI_Ajax_TestCase {
 
 	/**
 	 * Administrator user ID.
