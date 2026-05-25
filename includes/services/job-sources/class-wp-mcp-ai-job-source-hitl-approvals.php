@@ -118,7 +118,7 @@ class WP_MCP_AI_Job_Source_Hitl_Approvals implements Interface_WP_MCP_AI_Cron_St
 			$context      = $context_raw ? json_decode( $context_raw, true ) : array();
 			$created_at   = is_array( $context ) && isset( $context['created_at'] ) ? (int) $context['created_at'] : (int) get_post_timestamp( $post_id );
 
-			$job_id           = 'approval_' . $post_id;
+			$job_id             = 'approval_' . $post_id;
 			$records[ $job_id ] = array(
 				'job_id'       => $job_id,
 				'kind'         => 'hitl_approval',

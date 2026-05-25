@@ -788,8 +788,8 @@ class WP_MCP_AI_Cron_Status_Service {
 			return null;
 		}
 
-		$status = isset( $raw['status'] ) ? (string) $raw['status'] : '';
-		$status = sanitize_key( $status );
+		$status           = isset( $raw['status'] ) ? (string) $raw['status'] : '';
+		$status           = sanitize_key( $status );
 		$allowed_statuses = array( 'queued', 'pending', 'running', 'polling', 'completed', 'failed', 'cancelled' );
 		if ( ! in_array( $status, $allowed_statuses, true ) ) {
 			// Map unknown legacy values defensively rather than dropping the record.

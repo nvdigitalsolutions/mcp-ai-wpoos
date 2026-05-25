@@ -166,6 +166,8 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	 * @param int                                     $max_iter      Max iterations.
 	 * @param int                                     $timeout       Timeout seconds.
 	 * @param string                                  $model         Model ID.
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
 	 * @return array|WP_Error
 	 */
 	protected function handle_create( $service, $task, $system_prompt, $tool_slugs, $max_iter, $timeout, $model ) {

@@ -160,26 +160,26 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/analytics/tools/compare',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'compare_tools' ),
-				'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
-				'args'                => array(
-					'tool_slugs' => array(
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-						'validate_callback' => array( __CLASS__, 'validate_tool_slugs' ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'compare_tools' ),
+					'permission_callback' => array( __CLASS__, 'check_analytics_permission' ),
+					'args'                => array(
+						'tool_slugs' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'validate_callback' => array( __CLASS__, 'validate_tool_slugs' ),
+						),
+						'days'       => array(
+							'required'          => false,
+							'type'              => 'integer',
+							'default'           => 30,
+							'sanitize_callback' => 'absint',
+						),
 					),
-					'days'       => array(
-						'required'          => false,
-						'type'              => 'integer',
-						'default'           => 30,
-						'sanitize_callback' => 'absint',
-					),
-				),
-			)
-		);
+				)
+			);
 	}
 
 	/**

@@ -382,7 +382,7 @@ class WP_MCP_AI_Retrieval_Harness {
 			return false;
 		}
 		$keys = array_keys( $arr );
-		return $keys === range( 0, count( $keys ) - 1 );
+		return $keys === range( 0, count( $keys ) - 1 ); // phpcs:ignore WordPress.PHP.YodaConditions.NotYoda
 	}
 
 	/**

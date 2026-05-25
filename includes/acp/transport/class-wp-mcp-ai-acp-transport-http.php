@@ -41,7 +41,7 @@ class WP_MCP_AI_ACP_Transport_HTTP extends WP_MCP_AI_REST_Controller_Base {
 	 * Register the routes for the objects of the controller.
 	 */
 	public function register_routes() {
-		// POST /mcp-ai/v1/acp (JSON-RPC methods)
+		// POST /mcp-ai/v1/acp (JSON-RPC methods).
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -54,7 +54,7 @@ class WP_MCP_AI_ACP_Transport_HTTP extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
-		// GET /mcp-ai/v1/acp/sse (Server-Sent Events)
+		// GET /mcp-ai/v1/acp/sse (Server-Sent Events).
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base . '/sse',
@@ -87,7 +87,7 @@ class WP_MCP_AI_ACP_Transport_HTTP extends WP_MCP_AI_REST_Controller_Base {
 	 */
 	public function handle_request( $request ) {
 		$body = $request->get_json_params();
-		
+
 		if ( empty( $body ) ) {
 			return new WP_REST_Response( array( 'error' => 'Invalid JSON' ), 400 );
 		}
@@ -117,22 +117,22 @@ class WP_MCP_AI_ACP_Transport_HTTP extends WP_MCP_AI_REST_Controller_Base {
 		header( 'Connection: keep-alive' );
 		header( 'X-Accel-Buffering: no' );
 
-		// Establish connection message
+		// Establish connection message.
 		echo "event: endpoint\n";
 		echo 'data: ' . wp_json_encode( rest_url( $this->namespace . '/' . $this->rest_base ) ) . "\n\n";
 		flush();
 
 		// Keep connection alive, listen for ACP update payloads
 		// In a true SSE implementation for WP, we would rely on a job queue, Redis PubSub, or sleep-loop polling
-		// to grab pending updates for this session_id from `WP_MCP_AI_ACP_Session_Manager`
-		
+		// to grab pending updates for this session_id from `WP_MCP_AI_ACP_Session_Manager`.
+
 		$max_execution_time = 300; // 5 minutes max
-		$start_time = time();
+		$start_time         = time();
 
 		while ( ( time() - $start_time ) < $max_execution_time && ! connection_aborted() ) {
-			// Pull pending updates from Transient/DB for this $session_id
+			// Pull pending updates from Transient/DB for this $session_id.
 			$updates = get_transient( 'acp_updates_' . $session_id );
-			
+
 			if ( ! empty( $updates ) ) {
 				foreach ( $updates as $update ) {
 					echo "event: message\n";
@@ -142,7 +142,7 @@ class WP_MCP_AI_ACP_Transport_HTTP extends WP_MCP_AI_REST_Controller_Base {
 				delete_transient( 'acp_updates_' . $session_id );
 			}
 
-			// Keep-alive heartbeat
+			// Keep-alive heartbeat.
 			if ( time() % 15 === 0 ) {
 				echo ": keep-alive\n\n";
 				flush();

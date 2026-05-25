@@ -107,14 +107,14 @@ class WP_MCP_AI_Token_Budget_Manager {
 	protected static $default_tpm_limits = array(
 		// Anthropic Claude models — Tier 1 defaults.
 		'claude-mythos-preview' => 40000,
-		'claude-opus-4-6'   => 40000,
-		'claude-sonnet-4-6' => 80000,
-		'claude-opus-4-5'   => 40000,
-		'claude-sonnet-4-5' => 80000,
-		'claude-haiku-4-5'  => 50000,
-		'claude-3-5-sonnet' => 80000,
-		'claude-3-opus'     => 40000,
-		'claude-3-haiku'    => 50000,
+		'claude-opus-4-6'       => 40000,
+		'claude-sonnet-4-6'     => 80000,
+		'claude-opus-4-5'       => 40000,
+		'claude-sonnet-4-5'     => 80000,
+		'claude-haiku-4-5'      => 50000,
+		'claude-3-5-sonnet'     => 80000,
+		'claude-3-opus'         => 40000,
+		'claude-3-haiku'        => 50000,
 	);
 
 	/**
@@ -127,14 +127,14 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	protected static $model_max_output_tokens = array(
 		'claude-mythos-preview' => 128000,
-		'claude-opus-4-6'   => 128000,
-		'claude-sonnet-4-6' => 64000,
-		'claude-opus-4-5'   => 128000,
-		'claude-sonnet-4-5' => 64000,
-		'claude-haiku-4-5'  => 64000,
-		'claude-3-5-sonnet' => 8192,
-		'claude-3-opus'     => 4096,
-		'claude-3-haiku'    => 4096,
+		'claude-opus-4-6'       => 128000,
+		'claude-sonnet-4-6'     => 64000,
+		'claude-opus-4-5'       => 128000,
+		'claude-sonnet-4-5'     => 64000,
+		'claude-haiku-4-5'      => 64000,
+		'claude-3-5-sonnet'     => 8192,
+		'claude-3-opus'         => 4096,
+		'claude-3-haiku'        => 4096,
 	);
 
 	/**

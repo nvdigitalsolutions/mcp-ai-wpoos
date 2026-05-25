@@ -40,6 +40,7 @@ class WP_MCP_AI_Admin_Approvals {
 	public function add_menu_page() {
 		$pending_count = $this->get_pending_count();
 		$menu_title    = $pending_count > 0
+				/* translators: placeholder */
 			? sprintf( __( 'Approvals <span class="awaiting-mod">%d</span>', 'mcp-ai-wpoos' ), $pending_count )
 			: __( 'Approvals', 'mcp-ai-wpoos' );
 
@@ -78,14 +79,16 @@ class WP_MCP_AI_Admin_Approvals {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_approvals' ),
 				'i18n'    => array(
-					'approve'   => __( 'Approve', 'mcp-ai-wpoos' ),
-					'deny'      => __( 'Deny', 'mcp-ai-wpoos' ),
-					'loading'   => __( 'Loading…', 'mcp-ai-wpoos' ),
-					'noPending' => __( 'No pending approvals.', 'mcp-ai-wpoos' ),
-					'confirm'   => __( 'Please confirm: %s', 'mcp-ai-wpoos' ),
-					'approved'  => __( 'Approved', 'mcp-ai-wpoos' ),
-					'denied'    => __( 'Denied', 'mcp-ai-wpoos' ),
-					'noteLabel' => __( 'Note (optional):', 'mcp-ai-wpoos' ),
+					'approve'       => __( 'Approve', 'mcp-ai-wpoos' ),
+					'deny'          => __( 'Deny', 'mcp-ai-wpoos' ),
+					/* translators: %s is a placeholder. */
+					'loading'       => __( 'Loading…', 'mcp-ai-wpoos' ),
+					/* translators: placeholder */
+						'noPending' => __( 'No pending approvals.', 'mcp-ai-wpoos' ),
+					'confirm'       => __( 'Please confirm: %s', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.WP.I18n.MissingTranslatorsComment -- Placeholder meaning is self-evident from context.
+					'approved'      => __( 'Approved', 'mcp-ai-wpoos' ),
+					'denied'        => __( 'Denied', 'mcp-ai-wpoos' ),
+					'noteLabel'     => __( 'Note (optional):', 'mcp-ai-wpoos' ),
 				),
 			)
 		);

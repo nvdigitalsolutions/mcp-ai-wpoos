@@ -2349,7 +2349,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// mark the last tool definition with cache_control so Gemini can cache the
 			// tool definitions across turns (mirrors what Anthropic does).
 			if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
-				$last_tool_idx = count( $payload['tools'] ) - 1;
+				$last_tool_idx                                       = count( $payload['tools'] ) - 1;
 				$payload['tools'][ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 			}
 

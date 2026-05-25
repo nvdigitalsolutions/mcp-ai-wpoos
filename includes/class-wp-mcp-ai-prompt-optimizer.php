@@ -87,7 +87,7 @@ class WP_MCP_AI_Prompt_Optimizer {
 						'role'    => 'system',
 						'content' => sprintf(
 							/* translators: %s: document title */
-							__( '[Reference: %s] %s', 'mcp-ai-wpoos' ),
+							__( '[Reference: %1$s] %2$s', 'mcp-ai-wpoos' ),
 							isset( $doc['title'] ) ? $doc['title'] : __( 'Document', 'mcp-ai-wpoos' ),
 							$doc['content']
 						),

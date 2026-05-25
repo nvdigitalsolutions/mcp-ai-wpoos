@@ -127,9 +127,18 @@ class WP_MCP_AI_Workflow_Trigger_Registry {
 				'label'       => __( 'Post Status Change', 'mcp-ai-wpoos' ),
 				'description' => __( 'Fires when a post transitions between statuses.', 'mcp-ai-wpoos' ),
 				'schema'      => array(
-					'post_type'   => array( 'type' => 'string', 'description' => __( 'Post type slug.', 'mcp-ai-wpoos' ) ),
-					'from_status' => array( 'type' => 'string', 'description' => __( 'Previous post status (or * for any).', 'mcp-ai-wpoos' ) ),
-					'to_status'   => array( 'type' => 'string', 'description' => __( 'New post status (or * for any).', 'mcp-ai-wpoos' ) ),
+					'post_type'   => array(
+						'type'        => 'string',
+						'description' => __( 'Post type slug.', 'mcp-ai-wpoos' ),
+					),
+					'from_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Previous post status (or * for any).', 'mcp-ai-wpoos' ),
+					),
+					'to_status'   => array(
+						'type'        => 'string',
+						'description' => __( 'New post status (or * for any).', 'mcp-ai-wpoos' ),
+					),
 				),
 			)
 		);

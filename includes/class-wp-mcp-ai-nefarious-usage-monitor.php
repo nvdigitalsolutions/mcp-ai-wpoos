@@ -503,8 +503,8 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			if ( ! is_array( $violations ) ) {
 				$violations = array();
 			}
-			$cutoff     = time() - $seconds;
-			$count      = 0;
+			$cutoff = time() - $seconds;
+			$count  = 0;
 
 			foreach ( $violations as $violation ) {
 				$timestamp = strtotime( $violation['timestamp'] );

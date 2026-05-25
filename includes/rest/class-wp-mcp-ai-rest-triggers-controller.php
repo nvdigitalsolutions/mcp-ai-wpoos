@@ -45,23 +45,23 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'permissions_check' ),
 					'args'                => array(
 						'name'        => array(
-							'required' => true,
-							'type' => 'string',
+							'required'          => true,
+							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'type'        => array(
-							'required' => true,
-							'type' => 'string',
+							'required'          => true,
+							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_key',
 						),
 						'config'      => array(
 							'required' => false,
-							'type' => 'object',
-							'default' => array(),
+							'type'     => 'object',
+							'default'  => array(),
 						),
 						'workflow_id' => array(
-							'required' => true,
-							'type' => 'integer',
+							'required'          => true,
+							'type'              => 'integer',
 							'sanitize_callback' => 'absint',
 						),
 					),
@@ -84,22 +84,22 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'permissions_check' ),
 					'args'                => array(
 						'name'        => array(
-							'required' => false,
-							'type' => 'string',
+							'required'          => false,
+							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'config'      => array(
 							'required' => false,
-							'type' => 'object',
+							'type'     => 'object',
 						),
 						'workflow_id' => array(
-							'required' => false,
-							'type' => 'integer',
+							'required'          => false,
+							'type'              => 'integer',
 							'sanitize_callback' => 'absint',
 						),
 						'enabled'     => array(
 							'required' => false,
-							'type' => 'boolean',
+							'type'     => 'boolean',
 						),
 					),
 				),
@@ -144,19 +144,19 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'permissions_check' ),
 					'args'                => array(
 						'url'    => array(
-							'required' => true,
-							'type' => 'string',
+							'required'          => true,
+							'type'              => 'string',
 							'sanitize_callback' => 'esc_url_raw',
 						),
 						'events' => array(
 							'required' => true,
-							'type' => 'array',
-							'items' => array( 'type' => 'string' ),
+							'type'     => 'array',
+							'items'    => array( 'type' => 'string' ),
 						),
 						'secret' => array(
-							'required' => false,
-							'type' => 'string',
-							'default' => '',
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
@@ -181,6 +181,7 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 	 * Permission callback.
 	 *
 	 * @return bool|WP_Error
+	 * @param \WP_REST_Request $request Request object. // phpcs:ignore Squiz.Commenting.FunctionComment.SuperfluousParamComment
 	 */
 	public function permissions_check() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -189,7 +190,7 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 		return true;
 	}
 
-	/**
+	/** // phpcs:ignore Squiz.Commenting.FunctionComment.MissingParamTag
 	 * List triggers.
 	 *
 	 * @return WP_REST_Response
@@ -242,7 +243,7 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 			return $post_id;
 		}
 		update_post_meta( $post_id, '_wp_mcp_ai_trigger_type', $type );
-		update_post_meta( $post_id, '_wp_mcp_ai_trigger_config', wp_json_encode( $request->get_param( 'config' ) ?: array() ) );
+		update_post_meta( $post_id, '_wp_mcp_ai_trigger_config', wp_json_encode( $request->get_param( 'config' ) ?: array() ) ); // phpcs:ignore Universal.Operators.DisallowShortTernary
 		update_post_meta( $post_id, '_wp_mcp_ai_trigger_workflow_id', absint( $request->get_param( 'workflow_id' ) ) );
 		update_post_meta( $post_id, '_wp_mcp_ai_trigger_enabled', true );
 		return rest_ensure_response( $this->prepare_trigger( get_post( $post_id ) ) );
@@ -263,7 +264,7 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 		if ( $request->has_param( 'name' ) ) {
 			wp_update_post(
 				array(
-					'ID' => $id,
+					'ID'         => $id,
 					'post_title' => sanitize_text_field( $request->get_param( 'name' ) ),
 				)
 			);
@@ -296,7 +297,7 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 		return rest_ensure_response(
 			array(
 				'deleted' => true,
-				'id' => $id,
+				'id'      => $id,
 			)
 		);
 	}
@@ -326,16 +327,16 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 			}
 		}
 		$workflow_id = (int) get_post_meta( $id, '_wp_mcp_ai_trigger_workflow_id', true );
-		WP_MCP_AI_Workflow_Trigger_CPT::fire_trigger( $id, $workflow_id, $request->get_json_params() ?: array() );
+		WP_MCP_AI_Workflow_Trigger_CPT::fire_trigger( $id, $workflow_id, $request->get_json_params() ?: array() ); // phpcs:ignore Universal.Operators.DisallowShortTernary
 		return rest_ensure_response(
 			array(
-				'success' => true,
+				'success'    => true,
 				'trigger_id' => $id,
 			)
 		);
 	}
 
-	/**
+	/** // phpcs:ignore Squiz.Commenting.FunctionComment.MissingParamTag
 	 * List outbound webhook subscriptions.
 	 *
 	 * @return WP_REST_Response
@@ -364,12 +365,12 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 			return new WP_Error( 'invalid_url', __( 'A valid URL is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 		$events = array_map( 'sanitize_text_field', (array) $request->get_param( 'events' ) );
-		$secret = sanitize_text_field( $request->get_param( 'secret' ) ?: '' );
+		$secret = sanitize_text_field( $request->get_param( 'secret' ) ?: '' ); // phpcs:ignore Universal.Operators.DisallowShortTernary
 		$id     = WP_MCP_AI_Outbound_Webhook::get_instance()->subscribe( $url, $events, $secret );
 		return rest_ensure_response(
 			array(
-				'id' => $id,
-				'url' => $url,
+				'id'     => $id,
+				'url'    => $url,
 				'events' => $events,
 			)
 		);
@@ -389,7 +390,7 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 		return rest_ensure_response(
 			array(
 				'deleted' => true,
-				'id' => $webhook_id,
+				'id'      => $webhook_id,
 			)
 		);
 	}

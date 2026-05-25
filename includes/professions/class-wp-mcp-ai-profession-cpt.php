@@ -794,13 +794,13 @@ class WP_MCP_AI_Profession_CPT {
 		<?php
 		$js = ob_get_clean();
 		wp_print_inline_script_tag( $js );
-		}
+	}
 
 		/**
 		 * Render expertise metabox.
-	 *
-	 * @param WP_Post $post Post object.
-	 */
+		 *
+		 * @param WP_Post $post Post object.
+		 */
 	public function render_expertise_metabox( $post ) {
 		$expertise      = get_post_meta( $post->ID, self::META_EXPERTISE, true );
 		$default_tools  = get_post_meta( $post->ID, self::META_DEFAULT_TOOLS, true );

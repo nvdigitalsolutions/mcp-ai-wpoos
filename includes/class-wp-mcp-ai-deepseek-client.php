@@ -652,17 +652,17 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$raw_usage = isset( $decoded['usage'] ) ? $decoded['usage'] : array();
 			// Extract DeepSeek disk cache metrics.
 			if ( isset( $raw_usage['prompt_cache_hit_tokens'] ) ) {
-			$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_cache_hit_tokens'];
 			} elseif ( isset( $raw_usage['prompt_tokens_details']['cached_tokens'] ) ) {
-			$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
+				$raw_usage['cached_tokens'] = (int) $raw_usage['prompt_tokens_details']['cached_tokens'];
 			}
 
 			$normalized = array(
-			'content'       => $content,
-			'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
-			'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
-			'usage'         => $raw_usage,
-			'raw'           => $decoded,
+				'content'       => $content,
+				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
+				'usage'         => $raw_usage,
+				'raw'           => $decoded,
 			);
 
 			// Pass through tool_calls when present (function calling).
