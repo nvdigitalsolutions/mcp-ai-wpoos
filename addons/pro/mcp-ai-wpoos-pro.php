@@ -452,6 +452,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
+		// Load Pro Inline Assistant (v1.7.0) — Gutenberg sidebar for AI text transformation.
+		$inline_assistant = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-inline-assistant.php';
+		if ( file_exists( $inline_assistant ) ) {
+			require_once $inline_assistant;
+			WP_MCP_AI_Pro_Inline_Assistant::init();
+		}
+
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 

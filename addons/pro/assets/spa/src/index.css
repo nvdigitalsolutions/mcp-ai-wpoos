@@ -590,3 +590,39 @@
 	text-align: center;
 	color: #787c82;
 }
+
+/* Inline Assistant (Gutenberg sidebar) */
+.nvoos-inline__selection-preview {
+	margin-bottom: 12px;
+}
+
+.nvoos-inline__selection-text {
+	background: #f0f0f1;
+	padding: 8px;
+	border-radius: 4px;
+	font-size: 13px;
+	max-height: 100px;
+	overflow-y: auto;
+	color: #555;
+}
+
+.nvoos-inline__actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.nvoos-inline__result {
+	margin-top: 16px;
+	padding: 12px;
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 6px;
+}
+
+.nvoos-inline__result-text {
+	margin-top: 4px;
+	font-size: 14px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+}
