@@ -1,0 +1,329 @@
+/**
+ * NV oOS Pro SPA — Base Styles
+ */
+
+/* Layout */
+.nvoos-layout {
+	display: flex;
+	height: calc(100vh - 32px);
+	background: #f0f0f1;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.nvoos-layout__main {
+	flex: 1;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Threads Sidebar */
+.nvoos-threads-sidebar {
+	width: 260px;
+	min-width: 260px;
+	background: #fff;
+	border-right: 1px solid #dcdcde;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.nvoos-threads-sidebar__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-threads-sidebar__header h2 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.nvoos-threads-sidebar__list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px;
+}
+
+.nvoos-threads-sidebar__group-title {
+	font-size: 11px;
+	text-transform: uppercase;
+	color: #787c82;
+	padding: 8px 8px 4px;
+	margin: 0;
+}
+
+.nvoos-threads-sidebar__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px;
+}
+
+.nvoos-threads-sidebar__item:hover {
+	background: #f0f0f1;
+}
+
+.nvoos-threads-sidebar__item--active {
+	background: #e5e5ff;
+}
+
+.nvoos-threads-sidebar__item-status {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #46b450;
+	flex-shrink: 0;
+}
+
+.nvoos-threads-sidebar__item-status[data-status="archived"] {
+	background: #ccc;
+}
+
+.nvoos-threads-sidebar__item-title {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-threads-sidebar__item-model {
+	font-size: 10px;
+	color: #787c82;
+}
+
+.nvoos-threads-sidebar__empty {
+	padding: 24px 16px;
+	text-align: center;
+	color: #787c82;
+}
+
+/* Agent Panel */
+.nvoos-agent-panel {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	background: #fff;
+	border-radius: 8px;
+	margin: 12px;
+	overflow: hidden;
+}
+
+.nvoos-agent-panel--empty {
+	justify-content: center;
+	align-items: center;
+}
+
+.nvoos-agent-panel__welcome {
+	text-align: center;
+}
+
+.nvoos-agent-panel__welcome h1 {
+	font-size: 32px;
+	margin-bottom: 8px;
+}
+
+.nvoos-agent-panel__header {
+	padding: 12px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.nvoos-agent-panel__header h1 {
+	margin: 0;
+	font-size: 16px;
+}
+
+.nvoos-agent-panel__messages {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 20px;
+}
+
+.nvoos-message {
+	margin-bottom: 16px;
+}
+
+.nvoos-message__content {
+	line-height: 1.6;
+	font-size: 14px;
+	white-space: pre-wrap;
+}
+
+.nvoos-message--user .nvoos-message__content {
+	background: #f0f6fc;
+	padding: 10px 14px;
+	border-radius: 8px;
+	max-width: 80%;
+	margin-left: auto;
+}
+
+.nvoos-message--assistant .nvoos-message__content {
+	color: #1e1e1e;
+}
+
+.nvoos-agent-panel__editor {
+	display: flex;
+	gap: 8px;
+	padding: 12px 20px;
+	border-top: 1px solid #dcdcde;
+}
+
+.nvoos-agent-panel__input {
+	flex: 1;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 14px;
+	resize: none;
+	font-family: inherit;
+}
+
+/* Buttons */
+.nvoos-btn {
+	padding: 8px 16px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	font-size: 13px;
+}
+
+.nvoos-btn:hover {
+	background: #f0f0f1;
+}
+
+.nvoos-btn--primary {
+	background: #2271b1;
+	color: #fff;
+	border-color: #2271b1;
+}
+
+.nvoos-btn--primary:hover {
+	background: #135e96;
+}
+
+.nvoos-btn--icon {
+	padding: 4px 10px;
+	font-size: 18px;
+	line-height: 1;
+}
+
+/* Command Palette */
+.nvoos-command-palette-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.4);
+	z-index: 100000;
+	display: flex;
+	justify-content: center;
+	padding-top: 80px;
+}
+
+.nvoos-command-palette {
+	width: 560px;
+	max-height: 400px;
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.nvoos-command-palette__input {
+	width: 100%;
+	padding: 16px 20px;
+	border: none;
+	border-bottom: 1px solid #dcdcde;
+	font-size: 16px;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.nvoos-command-palette__results {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px;
+}
+
+.nvoos-command-palette__group-label {
+	font-size: 11px;
+	text-transform: uppercase;
+	color: #787c82;
+	padding: 6px 8px 2px;
+}
+
+.nvoos-command-palette__item {
+	padding: 8px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.nvoos-command-palette__item:hover,
+.nvoos-command-palette__item--selected {
+	background: #e5e5ff;
+}
+
+.nvoos-command-palette__empty {
+	padding: 24px;
+	text-align: center;
+	color: #787c82;
+}
+
+/* Pages */
+.nvoos-page {
+	padding: 24px;
+	background: #fff;
+	border-radius: 8px;
+	margin: 12px;
+}
+
+/* Status Bar */
+.nvoos-statusbar {
+	padding: 4px 16px;
+	background: #fff;
+	border-top: 1px solid #dcdcde;
+	font-size: 12px;
+	color: #787c82;
+	position: fixed;
+	bottom: 0;
+	left: 260px;
+	right: 0;
+}
+
+/* Loading */
+.nvoos-spa-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100vh;
+	color: #787c82;
+}
+
+.nvoos-spa-loading__spinner {
+	width: 32px;
+	height: 32px;
+	border: 3px solid #dcdcde;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	margin-bottom: 12px;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.nvoos-spa-error {
+	padding: 48px;
+	text-align: center;
+	color: #cc1818;
+}

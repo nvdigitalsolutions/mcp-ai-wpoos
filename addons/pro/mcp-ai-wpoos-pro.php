@@ -434,6 +434,24 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
+		// Load Pro SPA (v1.7.0) — React Single Page Application admin interface.
+		// Registers admin page, enqueues assets, and exposes bootstrap REST endpoint.
+		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			$spa_loader = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
+			$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
+
+			if ( file_exists( $spa_loader ) ) {
+				require_once $spa_loader;
+				$loader = new WP_MCP_AI_Pro_SPA_Loader();
+				$loader->register();
+			}
+
+			if ( file_exists( $spa_bootstrap ) ) {
+				require_once $spa_bootstrap;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
+			}
+		}
+
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
