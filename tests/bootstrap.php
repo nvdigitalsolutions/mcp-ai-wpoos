@@ -236,6 +236,12 @@ function wp_mcp_ai_manually_load_plugin() {
 		require_once $docs_hub;
 	}
 
+	// Load the Graphify addon if present so its tests can exercise its classes.
+	$graphify = dirname( __DIR__ ) . '/addons/graphify/nvoos-graphify.php';
+	if ( file_exists( $graphify ) ) {
+		require_once $graphify;
+	}
+
 	// Load the Pro addon if present so its tests (e.g. messaging-channels-ajax,
 	// CPT AI integration, quiz tools) can exercise their classes.
 	// Guard against double-loading: CI environments may have Pro activated as
