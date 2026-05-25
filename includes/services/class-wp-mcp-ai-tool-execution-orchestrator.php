@@ -482,4 +482,15 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 
 		return false;
 	}
+
+	/**
+	 * Get load monitor instance
+	 *
+	 * Provides access to the load monitor for testing and external monitoring.
+	 *
+	 * @return WP_MCP_AI_Tool_Load_Monitor|null
+	 */
+	public function get_load_monitor() {
+		return $this->load_monitor;
+	}
 }

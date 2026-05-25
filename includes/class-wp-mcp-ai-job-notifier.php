@@ -534,7 +534,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param array  $status Status data.
 	 * @return bool True on success.
 	 */
-	protected static function cache_job_status( $job_id, array $status ) {
+	public static function cache_job_status( $job_id, array $status ) {
 		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
 		return set_transient( $cache_key, $status, self::CACHE_DURATION );
 	}

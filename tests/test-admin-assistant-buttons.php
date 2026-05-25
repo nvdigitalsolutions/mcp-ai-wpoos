@@ -23,6 +23,7 @@ class Test_Admin_Assistant_Buttons extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Guard: Ensure admin button classes are loaded (may be gated behind is_admin()).
+		// Ensure the admin button classes are loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Create_Assistant_Button' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php';
 		}
@@ -32,7 +33,7 @@ class Test_Admin_Assistant_Buttons extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Create Assistant button method returns views array.
+	 * Test that Create Assistant button doesn't output phpcs comments.
 	 */
 	public function test_create_assistant_button_no_phpcs_comments() {
 		$views  = WP_MCP_AI_Admin_Create_Assistant_Button::add_create_button( array() );

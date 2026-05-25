@@ -38,6 +38,7 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Guard: Ensure admin key rotation class is loaded (may be gated behind is_admin()).
+		// Ensure the admin key rotation class is loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 		}

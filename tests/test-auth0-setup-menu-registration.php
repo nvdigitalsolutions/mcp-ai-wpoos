@@ -14,6 +14,18 @@
 class Test_Auth0_Setup_Menu_Registration extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure the Auth0 setup class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
+		}
+	}
+
+	/**
 	 * Test that Auth0 Setup class exists.
 	 */
 	public function test_auth0_setup_class_exists() {

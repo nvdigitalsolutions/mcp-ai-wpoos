@@ -23,6 +23,7 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Guard: Ensure admin page classes are loaded (may be gated behind is_admin()).
+		// Ensure the admin page classes are loaded.
 		if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 		}
