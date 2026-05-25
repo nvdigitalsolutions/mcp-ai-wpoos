@@ -143,9 +143,10 @@ class WP_MCP_AI_Token_Tracking_Database {
 	 * @param float  $cost_usd      Cost in USD (optional, will calculate if not provided).
 	 * @param bool   $is_estimated  Whether cost is estimated.
 	 * @param string $timestamp     Timestamp (defaults to current time).
+	 * @param int    $cached_tokens Cached input tokens for accurate cache-discounted cost.
 	 * @return int|false Insert ID on success, false on failure.
 	 */
-	public static function record_usage( $user_id, $tool, $provider, $model, $input_tokens, $output_tokens, $cost_usd = null, $is_estimated = true, $timestamp = null ) {
+	public static function record_usage( $user_id, $tool, $provider, $model, $input_tokens, $output_tokens, $cost_usd = null, $is_estimated = true, $timestamp = null, $cached_tokens = 0 ) {
 		global $wpdb;
 
 		// Validate inputs.
@@ -155,19 +156,21 @@ class WP_MCP_AI_Token_Tracking_Database {
 		$model         = sanitize_text_field( $model );
 		$input_tokens  = absint( $input_tokens );
 		$output_tokens = absint( $output_tokens );
+		$cached_tokens = absint( $cached_tokens );
 		$total_tokens  = $input_tokens + $output_tokens;
 
 		if ( ! $user_id || ! $provider || ! $model || 0 === $total_tokens ) {
 			return false;
 		}
 
-		// Calculate cost if not provided.
+		// Calculate cost if not provided (with cache discount when applicable).
 		if ( null === $cost_usd && class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
 			$cost_usd = WP_MCP_AI_Cost_Calculator::calculate_cost(
 				$provider,
 				$model,
 				$input_tokens,
-				$output_tokens
+				$output_tokens,
+				$cached_tokens
 			);
 		}
 

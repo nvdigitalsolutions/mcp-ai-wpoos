@@ -352,13 +352,15 @@ class WP_MCP_AI_Usage_Tracker {
 	 * @param string $model            Model identifier.
 	 * @param int    $prompt_tokens    Number of input/prompt tokens.
 	 * @param int    $completion_tokens Number of output/completion tokens.
+	 * @param int    $cached_tokens    Number of cache-hit input tokens (0 = none).
 	 * @return float Cost in USD. Returns 0 if pricing data unavailable.
 	 */
-	public static function calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens ) {
+	public static function calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens, $cached_tokens = 0 ) {
 		$provider          = sanitize_key( $provider );
 		$model             = sanitize_text_field( $model );
 		$prompt_tokens     = max( 0, (int) $prompt_tokens );
 		$completion_tokens = max( 0, (int) $completion_tokens );
+		$cached_tokens     = max( 0, (int) $cached_tokens );
 
 		// Get pricing from Model Rate Limits CCT if available.
 		$pricing = self::get_model_pricing( $model );
@@ -367,7 +369,16 @@ class WP_MCP_AI_Usage_Tracker {
 			return 0.0;
 		}
 
-		$input_cost  = ( $prompt_tokens / 1000 ) * $pricing['input_cost_per_1k'];
+		// Apply cache discount when cached_input pricing is available.
+		if ( $cached_tokens > 0 && isset( $pricing['cached_input_cost_per_1k'] ) ) {
+			$fresh_tokens   = max( 0, $prompt_tokens - $cached_tokens );
+			$cached_cost    = ( $cached_tokens / 1000 ) * $pricing['cached_input_cost_per_1k'];
+			$fresh_cost     = ( $fresh_tokens / 1000 ) * $pricing['input_cost_per_1k'];
+			$input_cost     = $cached_cost + $fresh_cost;
+		} else {
+			$input_cost = ( $prompt_tokens / 1000 ) * $pricing['input_cost_per_1k'];
+		}
+
 		$output_cost = ( $completion_tokens / 1000 ) * $pricing['output_cost_per_1k'];
 
 		return (float) ( $input_cost + $output_cost );

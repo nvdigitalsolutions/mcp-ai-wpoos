@@ -61,6 +61,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		// Extract token counts.
 		$input_tokens  = isset( $usage['prompt_tokens'] ) ? absint( $usage['prompt_tokens'] ) : 0;
 		$output_tokens = isset( $usage['completion_tokens'] ) ? absint( $usage['completion_tokens'] ) : 0;
+		$cached_tokens = isset( $usage['cached_tokens'] ) ? absint( $usage['cached_tokens'] ) : 0;
 
 		// If we don't have separate input/output, use total_tokens.
 		if ( 0 === $input_tokens && 0 === $output_tokens ) {
@@ -73,14 +74,15 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		// Get tool name from assistant if available.
 		$tool = 'chat'; // Default to 'chat' for chat completions.
 
-		// Calculate cost using the Cost Calculator.
+		// Calculate cost using the Cost Calculator (with cache discount).
 		$cost_usd = 0.0;
 		if ( class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
 			$cost_usd = WP_MCP_AI_Cost_Calculator::calculate_cost(
 				$provider,
 				$model,
 				$input_tokens,
-				$output_tokens
+				$output_tokens,
+				$cached_tokens
 			);
 		}
 
