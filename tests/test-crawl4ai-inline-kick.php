@@ -122,7 +122,9 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 		$task_id = 'test_missing_job_' . wp_generate_uuid4();
 
 		// No stored job — do_poll_event should silently return.
-		$this->assertNull( WP_MCP_AI_Crawler::do_poll_event( $task_id ) );
+		$reflection = new ReflectionMethod( 'WP_MCP_AI_Crawler', 'do_poll_event' );
+		$reflection->setAccessible( true );
+		$this->assertNull( $reflection->invoke( null, $task_id ) );
 	}
 
 	/**
@@ -147,6 +149,8 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertNull( WP_MCP_AI_Crawler::do_poll_event( $task_id ) );
+		$reflection_poll = new ReflectionMethod( 'WP_MCP_AI_Crawler', 'do_poll_event' );
+		$reflection_poll->setAccessible( true );
+		$this->assertNull( $reflection_poll->invoke( null, $task_id ) );
 	}
 }

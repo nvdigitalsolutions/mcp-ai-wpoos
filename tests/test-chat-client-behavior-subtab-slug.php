@@ -17,6 +17,21 @@
 class WP_MCP_AI_Chat_Client_Behavior_Subtab_Slug_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure section classes are loaded (gated behind is_admin()).
+		if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-chat-client.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-general.php';
+		}
+	}
+
+	/**
 	 * Test that Chat Client section has behavior-chat-client subtab.
 	 */
 	public function test_chat_client_has_unique_behavior_subtab_slug() {
