@@ -25,6 +25,12 @@ class Test_Chat_Client_Tool_Choice_Default extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Ensure section classes are loaded (gated behind is_admin()).
+		if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-chat-client.php';
+		}
+
 		$this->controller = new WP_MCP_AI_REST_Chat_Controller();
 	}
 

@@ -35,7 +35,8 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		}
 
 		// Create a fresh registry for each test.
-		$this->registry = new WP_MCP_AI_Tool_Registry();
+		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$this->registry->init();
 	}
 
 	/**
@@ -113,10 +114,14 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		// Register the mock tool.
 		$this->registry->register_tool( $mock_tool );
 
-		// Use reflection to access private method for testing.
-		$service    = new WP_MCP_AI_Chat_Service( $this->registry );
-		$reflection = new ReflectionClass( $service );
-		$method     = $reflection->getMethod( 'execute_tool_calls' );
+		// Use reflection to create service (constructor requires Language_Model_Router).
+		$service_reflection = new ReflectionClass( 'WP_MCP_AI_Chat_Service' );
+		$service            = $service_reflection->newInstanceWithoutConstructor();
+		$tool_registry_prop = $service_reflection->getProperty( 'tool_registry' );
+		$tool_registry_prop->setAccessible( true );
+		$tool_registry_prop->setValue( $service, $this->registry );
+
+		$method = $service_reflection->getMethod( 'execute_tool_calls' );
 		$method->setAccessible( true );
 
 		// Prepare tool calls array.
@@ -241,10 +246,14 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		// Register the mock tool.
 		$this->registry->register_tool( $mock_tool );
 
-		// Use reflection to access private method for testing.
-		$service    = new WP_MCP_AI_Chat_Service( $this->registry );
-		$reflection = new ReflectionClass( $service );
-		$method     = $reflection->getMethod( 'execute_tool_calls' );
+		// Use reflection to create service (constructor requires Language_Model_Router).
+		$service_reflection = new ReflectionClass( 'WP_MCP_AI_Chat_Service' );
+		$service            = $service_reflection->newInstanceWithoutConstructor();
+		$tool_registry_prop = $service_reflection->getProperty( 'tool_registry' );
+		$tool_registry_prop->setAccessible( true );
+		$tool_registry_prop->setValue( $service, $this->registry );
+
+		$method = $service_reflection->getMethod( 'execute_tool_calls' );
 		$method->setAccessible( true );
 
 		// Prepare tool calls array.

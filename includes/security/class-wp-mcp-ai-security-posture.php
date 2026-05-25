@@ -99,6 +99,7 @@ class WP_MCP_AI_Security_Posture {
 	 */
 	public function invalidate_cache() {
 		delete_transient( self::CACHE_KEY );
+		$this->settings = null;
 	}
 
 	// ------------------------------------------------------------------ //

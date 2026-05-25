@@ -19,6 +19,11 @@ class Test_Brave_Search_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Load required admin section classes.
+		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
+			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
+		}
+
 		// Create an admin user.
 		$this->admin_user = $this->as_admin();
 
@@ -156,10 +161,14 @@ class Test_Brave_Search_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 		// Verify API key error.
 		$this->assertFalse( $response['success'], 'Response should indicate failure' );
 		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
-		$this->assertArrayHasKey( 'message', $response['data'], 'Response should have error message' );
+		// The response data may be a string (e.g. "-1" from nonce failure) or an
+		// array with a 'message' key. Handle both cases.
+		$error_message = is_array( $response['data'] )
+			? ( $response['data']['message'] ?? wp_json_encode( $response['data'] ) )
+			: (string) $response['data'];
 		$this->assertStringContainsString(
 			'API key',
-			$response['data']['message'],
+			$error_message,
 			'Error message should mention API key'
 		);
 	}

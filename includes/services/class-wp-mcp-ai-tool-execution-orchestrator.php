@@ -446,6 +446,19 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	}
 
 	/**
+	 * Get load monitor instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Load_Monitor|null
+	 */
+	protected function get_load_monitor() {
+		if ( null === $this->load_monitor && class_exists( 'WP_MCP_AI_Tool_Load_Monitor' ) ) {
+			$this->load_monitor = new WP_MCP_AI_Tool_Load_Monitor();
+		}
+
+		return $this->load_monitor;
+	}
+
+	/**
 	 * Check if a tool is long-running
 	 *
 	 * Helper method to check if a tool has async capability flags.

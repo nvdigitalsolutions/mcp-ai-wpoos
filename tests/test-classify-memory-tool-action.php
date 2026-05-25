@@ -21,11 +21,14 @@ class Test_Classify_Memory_Tool_Action extends WP_UnitTestCase {
 	/**
 	 * Reflection-friendly invoker for the protected helper.
 	 *
-	 * @param string $tool_name Tool function name.
+	 * @param mixed $tool_name Tool function name.
 	 * @return string|null
 	 */
 	private function classify( $tool_name ) {
-		$rest   = new WP_MCP_AI_REST();
+		$rest   = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$method = new ReflectionMethod( $rest, 'classify_memory_tool_action' );
 		$method->setAccessible( true );
 		return $method->invoke( $rest, $tool_name );

@@ -190,7 +190,8 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		$mock_tool = $this->create_mock_executable_tool();
 
 		// Register tool.
-		$registry = new WP_MCP_AI_Tool_Registry();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
 		add_filter(
 			'wp_mcp_ai_register_tools',
 			function ( $tools ) use ( $mock_tool ) {

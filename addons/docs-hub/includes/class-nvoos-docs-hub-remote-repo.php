@@ -543,6 +543,138 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 	}
 
 	/**
+	 * Build a hierarchical tree structure from flat Git tree items.
+	 *
+	 * Converts the GitHub API's flat list of `{ path, type, sha, size }`
+	 * into a nested folder/file tree suitable for the admin picker UI.
+	 * Non-markdown files are excluded; directories are always included
+	 * when they contain at least one markdown descendant.
+	 *
+	 * @since 0.4.0
+	 *
+	 * @param array  $items       Flat array of Git tree items (blob + tree).
+	 * @param string $prefix_path Optional repo-relative prefix to prepend.
+	 * @return array Hierarchical tree nodes with `name`, `type`, `path`, `size`, `children`.
+	 */
+	public static function build_tree_from_flat( $items, $prefix_path = '' ) {
+		$prefix_path = trim( (string) $prefix_path, '/' );
+
+		// --- Step 1: collect all blobs that are .md/.txt; map their paths ---
+		$md_paths = array();
+		foreach ( $items as $item ) {
+			if ( 'blob' !== ( $item['type'] ?? '' ) ) {
+				continue;
+			}
+			$item_path = $item['path'] ?? '';
+			$ext       = strtolower( pathinfo( $item_path, PATHINFO_EXTENSION ) );
+			if ( ! in_array( $ext, array( 'md', 'txt' ), true ) ) {
+				continue;
+			}
+			$md_paths[ $item_path ] = $item;
+		}
+
+		if ( empty( $md_paths ) ) {
+			return array();
+		}
+
+		// --- Step 2: collect directories that are ancestors of md files ---
+		$dir_paths = array();
+		foreach ( $md_paths as $path_str => $_item ) {
+			$segments  = explode( '/', $path_str );
+			$seg_count = count( $segments );
+			// Build all parent directories (skip the filename itself).
+			for ( $i = 0; $i < $seg_count - 1; $i++ ) {
+				$dir               = implode( '/', array_slice( $segments, 0, $i + 1 ) );
+				$dir_paths[ $dir ] = true;
+			}
+		}
+
+		// --- Step 3: build nested tree recursively ---
+		$build_level = function ( $parent_path ) use ( $md_paths, $dir_paths, &$build_level ) {
+			$nodes    = array();
+			$seen     = array();
+			$base_len = '' === $parent_path ? 0 : strlen( $parent_path ) + 1;
+
+			// Collect children of this parent_path.
+			foreach ( $dir_paths as $dir => $_v ) {
+				if ( '' === $parent_path ) {
+					// Top level — collect first-segment directories.
+					$slash = strpos( $dir, '/' );
+					if ( false === $slash ) {
+						$name = $dir;
+					} else {
+						$name = substr( $dir, 0, $slash );
+					}
+				} else {
+					if ( 0 !== strpos( $dir, $parent_path . '/' ) ) {
+						continue;
+					}
+					$rel   = substr( $dir, $base_len );
+					$slash = strpos( $rel, '/' );
+					$name  = false === $slash ? $rel : substr( $rel, 0, $slash );
+				}
+
+				if ( isset( $seen[ $name ] ) ) {
+					continue;
+				}
+				$seen[ $name ] = true;
+
+				$child_path = '' === $parent_path ? $name : $parent_path . '/' . $name;
+				$nodes[]    = array(
+					'name'     => $name,
+					'type'     => 'tree',
+					'path'     => $child_path,
+					'size'     => 0,
+					'children' => $build_level( $child_path ),
+				);
+			}
+
+			// Collect files at this level.
+			foreach ( $md_paths as $path_str => $item ) {
+				if ( '' === $parent_path ) {
+					if ( false !== strpos( $path_str, '/' ) ) {
+						continue;
+					}
+					$name = $path_str;
+				} else {
+					if ( 0 !== strpos( $path_str, $parent_path . '/' ) ) {
+						continue;
+					}
+					$rel = substr( $path_str, $base_len );
+					if ( false !== strpos( $rel, '/' ) ) {
+						continue;
+					}
+					$name = $rel;
+				}
+
+				$full_path = '' !== $prefix_path ? $prefix_path . '/' . $path_str : $path_str;
+				$nodes[]   = array(
+					'name'     => $name,
+					'type'     => 'blob',
+					'path'     => $full_path,
+					'size'     => isset( $item['size'] ) ? (int) $item['size'] : 0,
+					'children' => null,
+				);
+			}
+
+			// Sort: directories first (alphabetically), then files.
+			usort(
+				$nodes,
+				static function ( $a, $b ) {
+					if ( $a['type'] !== $b['type'] ) {
+						return 'tree' === $a['type'] ? -1 : 1;
+					}
+					return strnatcasecmp( $a['name'], $b['name'] );
+				}
+			);
+
+			return $nodes;
+		};
+
+		return $build_level( '' );
+	}
+
+	/**
 	 * Public admin helper: list Markdown/txt files in a repo for the picker UI.
 	 *
 	 * Resolves the repo + ref, fetches the (recursive) Git tree, filters to
@@ -664,10 +796,14 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			}
 		);
 
+		// Build a hierarchical tree view for the folder picker.
+		$tree_nodes = self::build_tree_from_flat( $tree, $path );
+
 		$payload = array(
 			'resolved_ref' => $resolved_ref,
 			'path'         => $path,
 			'files'        => $files,
+			'tree'         => $tree_nodes,
 		);
 
 		set_transient( $transient_key, $payload, 10 * MINUTE_IN_SECONDS );
@@ -780,14 +916,25 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 		// Resolve via dns_get_record so we honour both A (IPv4) and AAAA (IPv6) records.
 		// Every returned address must pass the public-range filter, and we then pin
 		// the first valid candidate via CURLOPT_RESOLVE to defeat DNS rebinding.
-		$resolved_ip = $this->resolve_public_ip( $host );
+		try {
+			$resolved_ip = $this->resolve_public_ip( $host );
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'nvoos_docs_hub_dns_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'DNS resolution error for %s.', 'nvoos-docs-hub' ),
+					esc_html( $host )
+				)
+			);
+		}
 		if ( is_wp_error( $resolved_ip ) ) {
 			return $resolved_ip;
 		}
 
 		// --- DNS-rebind defence: pin the resolved IP at the cURL level ---
-		$port          = wp_parse_url( $url, PHP_URL_PORT );
-		$port          = $port ? (int) $port : 443;
+		$port = wp_parse_url( $url, PHP_URL_PORT );
+		$port = $port ? (int) $port : 443;
 		// CURLOPT_RESOLVE syntax differs for IPv6: hostname:port:[ipv6] (the IP must be bracketed).
 		$is_ipv6       = false !== strpos( $resolved_ip, ':' );
 		$resolve_entry = $host . ':' . $port . ':' . ( $is_ipv6 ? '[' . $resolved_ip . ']' : $resolved_ip );

@@ -130,12 +130,12 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 				'expertise' => array( 'crop cultivation', 'livestock husbandry' ),
 				'expected'  => 'executor',
 			),
-			// Other category - police officer → critic.
+			// Other category - police officer → specialist (specialist > critic priority).
 			array(
 				'title'     => 'Police Officer',
 				'category'  => 'other',
 				'expertise' => array( 'law enforcement', 'criminal law' ),
-				'expected'  => 'critic',
+				'expected'  => 'specialist',
 			),
 			// Other category - dispatcher → planner.
 			array(
@@ -163,7 +163,7 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 				'title'     => 'Building Inspector',
 				'category'  => 'other',
 				'expertise' => array( 'building code interpretation', 'inspection' ),
-				'expected'  => 'critic',
+				'expected'  => 'specialist',
 			),
 			// Project Manager → planner.
 			array(

@@ -316,11 +316,12 @@ class Test_Dead_Letter_Queue extends WP_UnitTestCase {
 		}
 
 		// Enqueue a job that will fail.
+		// Use a static method reference instead of a Closure because
+		// the job queue serializes callables to options — Closures
+		// cannot be serialized.
 		$job_id   = 'test_failing_job';
 		$job_data = array(
-			'callable' => function () {
-				return new WP_Error( 'test_error', 'Intentional failure for testing' );
-			},
+			'callable' => array( __CLASS__, 'failing_job_callback' ),
 			'args'     => array(),
 			'priority' => 5,
 		);
@@ -337,5 +338,17 @@ class Test_Dead_Letter_Queue extends WP_UnitTestCase {
 
 		// The job should have been moved to DLQ after 3 failed retries.
 		$this->assertGreaterThanOrEqual( 1, count( $dlq_items ) );
+	}
+
+	/**
+	 * Static callback that always returns an error — used by
+	 * test_job_queue_integration to simulate a persistently-failing job
+	 * without relying on a Closure (which cannot be serialized by the
+	 * option-based job queue).
+	 *
+	 * @return WP_Error
+	 */
+	public static function failing_job_callback() {
+		return new WP_Error( 'test_error', 'Intentional failure for testing' );
 	}
 }
