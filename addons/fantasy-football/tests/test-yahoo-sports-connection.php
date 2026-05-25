@@ -11,6 +11,7 @@
 /**
  * Test Yahoo Sports connection settings.
  */
+if ( ! class_exists( 'WP_MCP_AI_Yahoo_Sports_Connection_Test' ) ) :
 class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 
 	/**
@@ -348,3 +349,4 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 }
+endif;
