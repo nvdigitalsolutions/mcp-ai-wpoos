@@ -24,8 +24,10 @@ class Test_Federation_REST_Rate_Limiting extends WP_UnitTestCase {
 		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_mcp_ai_fed_rate_limit_%'" );
 		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_wp_mcp_ai_fed_rate_limit_%'" );
 
-		// Register REST routes.
-		rest_get_server()->register_routes();
+		// Register REST routes — use rest_api_init action (Spy_REST_Server no longer
+		// exposes a register_routes() method in newer WordPress versions).
+		do_action( 'rest_api_init' );
+		rest_get_server();
 	}
 
 	/**
