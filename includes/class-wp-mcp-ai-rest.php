@@ -2938,21 +2938,34 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
 
-			// Reorder messages for optimal prompt caching when enabled.
-			if ( ! empty( $options['cache_system_prompt'] ) && class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
-				$messages = WP_MCP_AI_Prompt_Optimizer::order_for_cache_hit( $messages, $options );
-
-				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_event(
-						'prompt_cache_reordered',
-						'Messages reordered for prefix cache optimization',
-						array(
-							'message_count' => count( $messages ),
-							'first_role'    => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'none',
-						)
-					);
+				// Apply provider-specific prompt strategy for cost and cache optimisation.
+				// Claude gets aggressive trimming; DeepSeek gets everything; OpenAI/Gemini balanced.
+				$resolved_provider = isset( $options['provider'] ) ? $options['provider'] : ( isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'openai' );
+				if ( class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+					$options = WP_MCP_AI_Prompt_Optimizer::apply_provider_strategy( $options, $resolved_provider );
 				}
-			}
+
+				// Reorder messages for optimal prompt caching when enabled.
+				if ( ! empty( $options['cache_system_prompt'] ) && class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+					$messages = WP_MCP_AI_Prompt_Optimizer::order_for_cache_hit( $messages, $options );
+
+					// Memory documents and dynamic date context are now embedded in
+					// $messages at the trailing position by order_for_cache_hit().
+					// Clear them from options so provider clients don't re-inject
+					// them (which would cause duplication and break cache ordering).
+					unset( $options['memory_documents'], $options['dynamic_date_context'] );
+
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'prompt_cache_reordered',
+							'Messages reordered for prefix cache optimization',
+							array(
+								'message_count' => count( $messages ),
+								'first_role'    => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'none',
+							)
+						);
+					}
+				}
 
 			// Check if streaming is requested for agentic loop support.
 			$wants_streaming = $this->request_wants_event_stream( $request );
@@ -3320,8 +3333,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 
-				// Call LLM again with tool results.
-				$response = $this->client->create_chat_completion( $messages, $options );
+				// --- Loop model optimisation: use cheaper model for intermediate iterations ---
+					// The first iteration used the assistant's primary model. Intermediate iterations
+					// are mechanical tool-calling turns that don't need expensive reasoning.
+					// The final iteration switches back to the primary model for quality synthesis.
+					$loop_model = $options['model'];
+					if ( class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+						$resolved_provider = isset( $options['provider'] ) ? $options['provider'] : ( isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'openai' );
+						$loop_model = WP_MCP_AI_Prompt_Optimizer::resolve_loop_model(
+							$options['model'],
+							$resolved_provider,
+							$iteration,
+							$max_iterations,
+							$options
+						);
+					}
+
+					// Temporarily swap model for this loop iteration if a cheaper alternative is available.
+					$original_loop_model = $options['model'];
+					$options['model']    = $loop_model;
+
+					// Call LLM again with tool results.
+					$response = $this->client->create_chat_completion( $messages, $options );
+
+					// Restore the original model for the next iteration's resolution.
+					$options['model'] = $original_loop_model;
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
@@ -4256,16 +4292,35 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Call LLM again with tool results.
-				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
-				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
-				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
-					$options['stream']          = true;
-					$options['stream_callback'] = function ( $chunk ) {
-						$this->send_sse_event( 'message', $chunk );
-					};
-				}
-				$response = $this->client->create_chat_completion( $messages, $options );
-				unset( $options['stream'], $options['stream_callback'] );
+					// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
+					$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+					if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
+						$options['stream']          = true;
+						$options['stream_callback'] = function ( $chunk ) {
+							$this->send_sse_event( 'message', $chunk );
+						};
+					}
+
+					// --- Loop model optimisation (SSE): cheaper model for intermediate turns ---
+					$loop_model = $options['model'];
+					if ( class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+						$resolved_provider = isset( $options['provider'] ) ? $options['provider'] : ( isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'openai' );
+						$loop_model = WP_MCP_AI_Prompt_Optimizer::resolve_loop_model(
+							$options['model'],
+							$resolved_provider,
+							$iteration,
+							$max_iterations,
+							$options
+						);
+					}
+
+					$original_loop_model = $options['model'];
+					$options['model']    = $loop_model;
+
+					$response = $this->client->create_chat_completion( $messages, $options );
+
+					$options['model'] = $original_loop_model;
+					unset( $options['stream'], $options['stream_callback'] );
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
@@ -11144,6 +11199,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$prompt_tokens     = isset( $response['usage']['prompt_tokens'] ) ? absint( $response['usage']['prompt_tokens'] ) : 0;
 			$completion_tokens = isset( $response['usage']['completion_tokens'] ) ? absint( $response['usage']['completion_tokens'] ) : 0;
+			$cached_tokens     = isset( $response['usage']['cached_tokens'] ) ? absint( $response['usage']['cached_tokens'] ) : 0;
 
 			if ( $prompt_tokens <= 0 && $completion_tokens <= 0 ) {
 				return null;
@@ -11153,7 +11209,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$provider_key,
 				$model_name,
 				$prompt_tokens,
-				$completion_tokens
+				$completion_tokens,
+				$cached_tokens
 			);
 
 			if ( $calculated_cost <= 0 ) {
@@ -11168,23 +11225,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			// Log cost calculation when logging is enabled (integrates with logging layer).
-			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'cost_calculation',
-					'Real-time cost calculated for ' . $context,
-					array(
-						'assistant_id'      => $assistant_id,
-						'user_id'           => $user_id,
-						'provider'          => $provider_key,
-						'model'             => $model_name,
-						'prompt_tokens'     => $prompt_tokens,
-						'completion_tokens' => $completion_tokens,
-						'total_tokens'      => $prompt_tokens + $completion_tokens,
-						'cost_usd'          => $calculated_cost,
-						'is_estimated'      => false,
-					)
-				);
-			}
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'cost_calculation',
+						'Real-time cost calculated for ' . $context,
+						array(
+							'assistant_id'      => $assistant_id,
+							'user_id'           => $user_id,
+							'provider'          => $provider_key,
+							'model'             => $model_name,
+							'prompt_tokens'     => $prompt_tokens,
+							'completion_tokens' => $completion_tokens,
+							'cached_tokens'     => $cached_tokens,
+							'total_tokens'      => $prompt_tokens + $completion_tokens,
+							'cost_usd'          => $calculated_cost,
+							'is_estimated'      => false,
+						)
+					);
+				}
 
 			return $cost_data;
 		}

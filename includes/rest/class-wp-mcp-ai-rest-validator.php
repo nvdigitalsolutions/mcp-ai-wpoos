@@ -665,14 +665,26 @@ class WP_MCP_AI_REST_Validator {
 			$system_prompt_source     = 'assistant_config';
 		}
 
-		// Inject current date/time context to help AI models understand temporal context.
+		// Prepare current date/time context to help AI models understand temporal context.
 		// AI models have training cutoffs and need explicit current date information for accurate responses.
+		//
+		// CACHE OPTIMISATION (v1.5.1): When prompt caching is enabled, the date context is
+		// stored in a separate key (dynamic_date_context) instead of being appended to the
+		// system prompt. This preserves byte-identical system prompt prefixes across requests,
+		// allowing provider-side prefix caching to work (DeepSeek disk KV, Anthropic ephemeral,
+		// OpenAI prompt_cache_key, Gemini cache_control). The Prompt_Optimizer places it as
+		// the last message in the array so the cacheable prefix remains stable.
+		//
+		// When prompt caching is disabled (or the assistant hasn't enabled it), the legacy
+		// behaviour of appending to the system prompt is preserved.
 		if ( ! empty( $options['system_prompt'] ) ) {
+			// Use date-only granularity instead of seconds to maximise cache reuse.
+			// The time component changes too frequently for effective caching;
+			// models reliably infer approximate time from the date itself.
 			$current_date_context = sprintf(
-				"\n\n---\n\n**Current Context Information:**\n- Current Date: %s\n- Current Year: %s\n- Current Time: %s UTC",
+				"\n\n---\n\n**Current Context Information:**\n- Current Date: %s\n- Current Year: %s",
 				gmdate( 'l, F j, Y' ),  // e.g., "Monday, February 3, 2026".
-				gmdate( 'Y' ),           // e.g., "2026".
-				gmdate( 'H:i:s' )       // e.g., "14:30:45".
+				gmdate( 'Y' )            // e.g., "2026".
 			);
 
 			/**
@@ -688,7 +700,10 @@ class WP_MCP_AI_REST_Validator {
 
 			// Only inject if not empty after filtering.
 			if ( ! empty( $current_date_context ) ) {
-				$options['system_prompt'] .= $current_date_context;
+				// Defer the injection decision to after cache_system_prompt is resolved
+				// (which happens later in this method from assistant_config['prompt_caching']).
+				// We store the prepared context now and decide placement below.
+				$options['_prepared_date_context'] = $current_date_context;
 			}
 		}
 
@@ -788,12 +803,35 @@ class WP_MCP_AI_REST_Validator {
 			$options['cache_system_prompt'] = true;
 		}
 
+		// --- Deferred date context placement (cache-aware) ---
+		// The date context was prepared earlier and stored in _prepared_date_context.
+		// Now that cache_system_prompt is resolved, decide where to place it:
+		//
+		//   cache ON  → store in dynamic_date_context (placed last by Prompt_Optimizer)
+		//   cache OFF → append to system prompt (legacy behaviour, no cache to protect)
+		//
+		// This ensures the system prompt prefix stays byte-identical across requests
+		// when caching is enabled, while still providing temporal context to models.
+		if ( ! empty( $options['_prepared_date_context'] ) ) {
+			if ( ! empty( $options['cache_system_prompt'] ) ) {
+				// Cache-safe: store separately so the Prompt_Optimizer can place
+				// it as the last message, preserving the static prefix.
+				$options['dynamic_date_context'] = $options['_prepared_date_context'];
+			} else {
+				// Legacy: append directly to system prompt (no cache to protect).
+				$options['system_prompt'] .= $options['_prepared_date_context'];
+			}
+			unset( $options['_prepared_date_context'] );
+		}
+
 		// Generate a stable prompt_cache_key from assistant_id + system_prompt hash.
 		// This routes requests with the same prefix to the same server for higher
 		// cache hit rates on OpenAI, DeepSeek, and OpenRouter.
+		// IMPORTANT: The cache key is generated from the STATIC system prompt only
+		// (before any dynamic context is appended), ensuring it remains stable.
 		if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $options['system_prompt'] ) ) {
 			$assistant_id = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
-			// Use the first 256 chars of system prompt as the stable prefix identifier.
+			// Use the first 256 chars of the static system prompt as the stable prefix identifier.
 			$prompt_prefix               = substr( $options['system_prompt'], 0, 256 );
 			$options['prompt_cache_key'] = 'wp_mcp_ai_' . $assistant_id . '_' . md5( $prompt_prefix );
 		}
