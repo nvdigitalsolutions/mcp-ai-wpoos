@@ -1,6 +1,6 @@
 {
   "name": "nvoos-media-studio",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "NV oOS Media Studio — React SPA addon",
   "private": true,
   "scripts": {
