@@ -70,6 +70,29 @@ if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) ) {
 }
 
 /**
+ * Use TypeScript-compiled assets instead of legacy JS.
+ *
+ * When enabled, the plugin loads esbuild-compiled assets from
+ * assets/js/dist/ (TypeScript source) instead of the traditional
+ * assets/js/*.min.js files. Defaults to false for backward
+ * compatibility.
+ *
+ * Enable in wp-config.php:
+ *   define( 'WP_MCP_AI_USE_TS_BUILD', true );
+ *
+ * Alternatively, enable via the admin UI at:
+ *   NV oOS → Orchestration → Settings → "Use TypeScript-Compiled Assets"
+ *
+ * Requires running `npm run build:js:ts` first to produce the dist/ files.
+ *
+ * @since 1.2.0
+ * @var bool
+ */
+if ( ! defined( 'WP_MCP_AI_USE_TS_BUILD' ) ) {
+	define( 'WP_MCP_AI_USE_TS_BUILD', false );
+}
+
+/**
  * Legacy chat.js frontend active.
  *
  * Defaults to true (legacy mode). When set to false in wp-config.php the

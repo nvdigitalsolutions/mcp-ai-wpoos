@@ -268,6 +268,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					),
 					'default'     => '24',
 				),
+				'use_ts_build'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Use TypeScript-Compiled Assets', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Load TypeScript-compiled JavaScript bundles instead of legacy JS', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the chat interface loads TypeScript-compiled assets from assets/js/dist/ instead of legacy assets/js/*.min.js files. This provides type-safe, modern ESM-based JavaScript. Requires running <code>npm run build:js:ts</code> first to produce the dist/ files. Disable if you encounter issues with the TypeScript build.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				'slider_section_health'           => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'mcp-ai-wpoos' ) . '</h3>',
@@ -1689,6 +1696,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_auto_async_execution',
 				'async_tool_timeout',
 				'cron_job_retention_period',
+				'use_ts_build',
 				'section_multi_agent', // Section header.
 				'enable_agent_roles',
 				'enable_professions',
@@ -1899,6 +1907,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'enable_auto_async_execution',
 						'async_tool_timeout',
 						'cron_job_retention_period',
+						'use_ts_build',
 						// Multi-agent orchestration toggles.
 						'enable_agent_roles',
 						'enable_professions',

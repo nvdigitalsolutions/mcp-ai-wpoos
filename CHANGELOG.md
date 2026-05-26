@@ -1,5 +1,85 @@
 # oOS – Changelog
 
+## [1.1.23] - 2026-05-26
+
+### Added — Zed-Inspired SPA Architecture (Pro)
+
+Comprehensive React Single Page Application admin interface inspired by the [Zed code editor](https://zed.dev/)'s design patterns. All new features are additive — the existing jQuery chat UI and all existing REST endpoints are untouched.
+
+- **Threads Sidebar (Zed-equivalent: Threads Sidebar)** — Left-docked panel showing agent conversations grouped by scope. Create, select, archive, restore, and compact (summarize) threads. Multiple parallel agent threads supported.
+- **Agent Panel (Zed-equivalent: Agent Panel)** — Full-height conversation view with SSE streaming chat responses, tool call cards, message editing, and follow-agent auto-scroll.
+- **Command Palette (Zed-equivalent: Cmd+Shift+P)** — Universal action launcher (`Cmd+K` / `Ctrl+K`) with fuzzy search across 830+ tools, threads, navigation, and actions.
+- **Agent Profiles (Zed-equivalent: Write/Ask/Minimal profiles)** — Built-in Write/Ask/Minimal tool permission profiles plus custom profiles with per-tool allow/deny/confirm patterns and glob-style pattern matching.
+- **@-mention Context (Zed-equivalent: @-mention autocomplete)** — Type `@` in the message editor to mention posts, tools, skills, threads, files, users, terms, and settings. Autocomplete with debounced search and keyboard navigation.
+- **Checkpoints & Diff Review (Zed-equivalent: Restore Checkpoint)** — Automatic state snapshots on every agentic turn. One-click restore to any checkpoint. Accept/reject individual change hunks with before/after diff visualization.
+- **Inline Assistant (Zed-equivalent: Ctrl+Enter)** — Gutenberg sidebar plugin for inline AI text transformation. Select text in the block editor → describe transformation → model rewrites in place or inserts after.
+- **Multi-Model Comparison (Zed-equivalent: inline_alternatives)** — Send the same prompt to multiple AI models simultaneously (GPT-4o, Claude, Gemini, etc.) and compare responses side-by-side with timing badges. Select the best response to populate the editor.
+- **Collaborative Presence (Zed-equivalent: multiplayer indicators)** — Real-time user presence tracking via WordPress Heartbeat API and REST polling. Avatar stack showing other active editors with activity descriptions.
+
+### Added — Base Plugin Thread Management Infrastructure (Base)
+
+PHP infrastructure shared by both the existing jQuery chat UI and the new Pro React SPA:
+
+- **Thread Manager** (`WP_MCP_AI_Thread_Manager`) — Full CRUD for agent conversation threads with ownership, scoping, archival, summarization, and message history. Both UIs consume the same REST API.
+- **Profile Manager** (`WP_MCP_AI_Profile_Manager`) — Tool permission profiles with resolution algorithm (always_deny → always_allow → denylist → allowlist → default). Filter tools sent to LLM by profile.
+- **Checkpoint Manager** (`WP_MCP_AI_Checkpoint_Manager`) — WordPress entity state snapshots (posts, options, terms, users, comments) with restore and diff computation.
+- **Context Mention Resolver** (`WP_MCP_AI_Context_Mention_Resolver`) — @-mention type resolution and autocomplete for 8 entity types (post, tool, skill, thread, file, user, term, setting). Extensible via `register_type()`.
+- **Command Registry** (`WP_MCP_AI_Command_Registry`) — Universal action palette with 830+ auto-registered tool commands. Extensible via `wp_mcp_ai_commands` filter.
+- **Database Schema** (`WP_MCP_AI_Threads_Schema`) — 4 new tables: `wp_mcp_ai_threads`, `wp_mcp_ai_thread_messages`, `wp_mcp_ai_checkpoints`, `wp_mcp_ai_profiles`. Created via `dbDelta()` on plugin update.
+- **5 REST Controllers** — Threads (9 routes), Profiles (9 routes), Checkpoints (4 routes), Context Mentions (2 routes), Commands (1 route).
+
+### Added — Pro REST Endpoints
+
+- `GET /mcp-ai-pro/v1/spa/bootstrap` — Single-request SPA initial data (threads, profiles, tools, commands, settings, user).
+- `POST /mcp-ai-pro/v1/inline/transform` — Single-turn text transformation for Gutenberg Inline Assistant.
+- `POST /mcp-ai-pro/v1/threads/{id}/compare-models` — Multi-model parallel dispatch with timing and error capture.
+- `GET/POST /mcp-ai-pro/v1/collaboration/presence` — Real-time user presence tracking.
+- `GET /mcp-ai-pro/v1/model-alternatives` — Available alternative models for comparison.
+
+### Technical
+
+- **~75 files, ~10,800 lines** across Base (PHP 7.4) and Pro (PHP 8.1 + React SPA).
+- React SPA built with `@wordpress/scripts`, Zustand state management, hash-based routing.
+- All existing functionality preserved — new admin page at `wp-mcp-ai-spa` coexists with original `wp-mcp-ai` page.
+- PHPCS: 0 errors, 0 warnings across all 18 new PHP files.
+
+### Changed — Antigravity Managed Agents API Rewrite
+
+Rewrote the Gemini Managed Agent integration to use the actual Antigravity Interactions API (`POST /v1beta/interactions`) instead of the speculative pre-release agents API assumed at Google I/O 2026.
+
+- **`WP_MCP_AI_Gemini_Managed_Agent_Service` (rewrite)** — Replaced speculative `/v1beta/agents` endpoints with the real Interactions API. New `send_interaction()` replaces the two-step create/run pattern. Added `continue_interaction()`, `download_environment_files()`, `list_environments()` / `forget_environment()`, and `create_managed_agent()` / `build_agent_environment()` with inline, GitHub, and GCS source support. Added `Api-Revision: 2026-05-20` header. Added SSE streaming via cURL-based SSE parser with callback support. Removed deprecated `resolve_tool_definitions()` — Antigravity uses its own built-in tools (`code_execution`, `google_search`, `url_context`).
+- **`WP_MCP_AI_Gemini_Client`** — New endpoint constants: `API_INTERACTIONS_ENDPOINT`, `API_MANAGED_AGENTS_ENDPOINT`, `API_ENV_DOWNLOAD_ENDPOINT`.
+- **`WP_MCP_AI_Tool_Run_Gemini_Managed_Agent` (rewrite)** — Operations changed to send/continue/stream/download/envs. Parameters: `input`, `interaction_id`, `environment_id`, `system_instruction`, `agent_tools`, `agent_id`, `save_path`. Token multiplier increased to 15x.
+- **Admin UI** — `enable_managed_agents` toggle added to Settings → Providers → Gemini and Settings → Orchestration.
+- **Documentation** — Updated `GEMINI_CAPABILITIES_MATRIX.md`: Managed Agents, Code Execution, and Grounding marked as ✅ Implemented via Antigravity.
+
+### Added — TypeScript Upgrade & Orchestration Toggles
+
+- **TypeScript Upgrade** — Shared types, services, admin screens, chat drawer, and React SPA builds compiled via TypeScript. Pre-built TS outputs under `assets/js/dist/`.
+- **Orchestration Toggle** — "Use TypeScript-Compiled Assets" checkbox in Settings → Orchestration. Reads from `WP_MCP_AI_Settings_Registry` with `WP_MCP_AI_USE_TS_BUILD` constant fallback.
+- **Antigravity Orchestration Toggle** — `enable_managed_agents` now accessible from both Settings → Providers → Gemini and Settings → Orchestration → Settings.
+
+### Added — New Addons
+
+- **Comic Reader (`addons/comic-reader/`)** — React-based comic book reader. Supports CBR, CBZ, CB7, CBT formats with dual reading modes, zoom controls, keyboard navigation, touch support, fullscreen, progress persistence, and drag-and-drop upload. Shortcode `[nvoos_comic_reader]` + Gutenberg block.
+- **Media Studio v0.3.0 (`addons/media-studio/`)** — Zoom/pan controls, drawing tools (Konva canvas with brush, eraser, shapes, text, undo/redo), and save-to-WP-Media-Library integration. Image editor mode now feature-complete.
+
+### Fixed — Reliability & Compliance
+
+- **Cron Status Diagnostics** — REST fetch errors now include HTTP status code and up to 500 chars of response body (e.g. `HTTP 403: rest_cookie_invalid_nonce`).
+- **PHP 8.2+ Compatibility** — Declared `$namespace` and `$rest_base` properties in `WP_MCP_AI_REST_Controller_Base` to prevent dynamic property deprecation warnings.
+- **PHP Comments Leaking** — Moved `phpcs:ignore` and `translators` comments inside `<?php` tags to prevent leaking into HTML output.
+- **WordPress.org Re-submission Compliance** — All May 26 re-audit findings resolved (section 14 added to compliance doc).
+- **May 2026 Audit Findings** — Resolved F-AUTHZ-05, F-AUTHZ-06, F-AGENT-01.
+- **PHPCS** — 353 errors resolved to 0 across 18 files.
+- **PHPUnit 11 Compatibility** — 6 comprehensive fix batches across base, pro, and addon test suites. Resolved class-not-found errors, dynamic property warnings, and WPDieException constructor errors.
+- **Docs Hub** — Fixed browse-repo critical error, added hierarchical folder tree picker, hardened DNS resolution, added `autocomplete="off"` to settings inputs.
+- **Net Worth Calculator** — Removed stray `*/` causing parse errors in financial & CRM tools.
+- **qs DoS Vulnerability** — Resolved CVE-2026-8723 by forcing `qs >=6.15.2` via npm overrides.
+- **DeepSeek Provider Fallback** — Detects first enabled provider instead of hardcoding 'openai'.
+- **Test Suite Stability** — wp_die handler at `PHP_INT_MAX`, `DOING_AJAX` defined in 9 test files, SQLite DB cleanup, trait/class collision resolution.
+- **Dev Dependencies** — `wp-phpunit/wp-phpunit` 6.9.4→7.0.0, `php-stubs/wordpress-stubs` 6.9.1→7.0.0.
+
 ## [1.1.22] - 2026-05-23
 
 Bumped to 1.1.22 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts remain reconciled at ~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative.

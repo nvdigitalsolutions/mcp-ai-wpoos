@@ -655,6 +655,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'high_tier_max_tokens'                  => 32000,
 				'prediction_confidence_threshold'       => 40,
 				'prediction_safety_buffer'              => 15,
+				'use_ts_build'                          => false,
 			);
 		}
 

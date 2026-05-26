@@ -27,6 +27,7 @@ class WP_MCP_AI_Preset_Persistence_Test extends WP_UnitTestCase {
 			'enable_capability_gating',
 			'enable_cron_orchestration',
 			'cron_job_retention_period',
+			'use_ts_build',
 			'memory_warning_threshold',
 			'memory_critical_threshold',
 			'error_rate_warning_threshold',

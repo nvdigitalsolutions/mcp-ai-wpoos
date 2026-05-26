@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-docs/v1.1.23-readme-changelog-update',
+        'version' => 'dev-docs/v1.1.23-readme-changelog-update',
+        'reference' => '1ec41dbcdba272c8b17ed21349991d2b7e914aeb',
         'pretty_version' => 'dev-copilot/rebuild-all-zips-f2d9cbcb-8e17-440b-b4d6-2b5f969f34e7',
         'version' => 'dev-copilot/rebuild-all-zips-f2d9cbcb-8e17-440b-b4d6-2b5f969f34e7',
         'reference' => '97a821f567a4c181ab6df77079a064e1598a9705',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-docs/v1.1.23-readme-changelog-update',
+            'version' => 'dev-docs/v1.1.23-readme-changelog-update',
+            'reference' => '1ec41dbcdba272c8b17ed21349991d2b7e914aeb',
             'pretty_version' => 'dev-copilot/rebuild-all-zips-f2d9cbcb-8e17-440b-b4d6-2b5f969f34e7',
             'version' => 'dev-copilot/rebuild-all-zips-f2d9cbcb-8e17-440b-b4d6-2b5f969f34e7',
             'reference' => '97a821f567a4c181ab6df77079a064e1598a9705',

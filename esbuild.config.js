@@ -195,24 +195,88 @@ const builds = [
 		outfile: 'assets/js/offline-chat-manager.min.js',
 		...commonOptions,
 	},
-	// Modern bundles with code splitting (Phase 6)
-	// Note: Commented out until source files are created
-	// {
-	// 	entryPoints: ['assets/js/src/chat-modern.ts'],
-	// 	outfile: 'assets/js/dist/chat-modern.min.js',
-	// 	...modernOptions,
-	// },
-	// {
-	// 	entryPoints: ['assets/js/src/webllm-modern.ts'],
-	// 	outfile: 'assets/js/dist/webllm.min.js',
-	// 	...modernOptions,
-	// 	external: ['@mlc-ai/web-llm'], // Load from CDN
-	// },
-	// {
-	// 	entryPoints: ['assets/js/src/transformers-client.ts'],
-	// 	outfile: 'assets/js/dist/transformers.min.js',
-	// 	...modernOptions,
-	// },
+	// ── TypeScript service builds (WP_MCP_AI_USE_TS_BUILD) ──────────
+	// Compiles from assets/js/src/ → assets/js/dist/
+	// Activated by: define('WP_MCP_AI_USE_TS_BUILD', true);
+	{
+		entryPoints: ['assets/js/src/shared/index.ts'],
+		outfile: 'assets/js/dist/shared.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/storage.ts'],
+		outfile: 'assets/js/dist/storage.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/clipboard.ts'],
+		outfile: 'assets/js/dist/clipboard.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/markdown.ts'],
+		outfile: 'assets/js/dist/markdown.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/http-client.ts'],
+		outfile: 'assets/js/dist/http-client.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/sse.ts'],
+		outfile: 'assets/js/dist/sse.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/ui-utilities.ts'],
+		outfile: 'assets/js/dist/ui-utilities.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/audio.ts'],
+		outfile: 'assets/js/dist/audio.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/transcription.ts'],
+		outfile: 'assets/js/dist/transcription.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/attachments.ts'],
+		outfile: 'assets/js/dist/attachments.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/memory-service.ts'],
+		outfile: 'assets/js/dist/memory-service.js',
+		...modernOptions,
+		splitting: false,
+	},
+	{
+		entryPoints: ['assets/js/src/services/storage-util.ts'],
+		outfile: 'assets/js/dist/storage-util.js',
+		...modernOptions,
+		splitting: false,
+	},
+	// Chat bundle (TS version)
+	{
+		entryPoints: ['assets/js/chat-bundle.js'],
+		outfile: 'assets/js/dist/chat-bundle.js',
+		...bundledOptions,
+	},
+	// ── End TypeScript builds ─────────────────────────────────────
 
 	// Admin page scripts (new)
 	{
