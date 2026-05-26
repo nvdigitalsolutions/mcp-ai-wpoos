@@ -1,0 +1,55 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-api",
+  "version": "0.1.0-alpha.1",
+  "description": "Typed REST API client for NV Open Operator System (oOS) — endpoint builders, request helpers, and payload constructors with full TypeScript definitions",
+  "main": "dist/nvoos-api.js",
+  "module": "dist/nvoos-api.js",
+  "types": "dist/nvoos-api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/nvoos-api.d.ts",
+      "import": "./dist/nvoos-api.js",
+      "default": "./dist/nvoos-api.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-api",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-api"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "rest",
+    "api-client",
+    "wordpress",
+    "ai",
+    "chat",
+    "sse",
+    "tools",
+    "endpoints",
+    "typescript",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

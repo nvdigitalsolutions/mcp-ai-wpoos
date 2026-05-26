@@ -48,6 +48,14 @@ All packages are **ES modules** with full TypeScript definitions. See each packa
 |---------|-------------|--------------|
 | [`nvoos-client-tools`](./nvoos-client-tools/) | Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) | @huggingface/transformers (optional peer) |
 | [`nvoos-chat-memory`](./nvoos-chat-memory/) | Promise-based REST client for an AI chat memory bridge (wake-up, recall, store, audit, preferences) | Zero |
+
+### Tier 6 — TypeScript-Native SDK (New)
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-types`](./nvoos-types/) | Canonical TypeScript type definitions (AI providers, chat, tools, SSE, attachments, history, memory, agents) | Zero (pure types) |
+| [`nvoos-api`](./nvoos-api/) | Typed REST API client — endpoint builders, payload constructors, auth headers, typed fetch helpers | Zero |
+| [`nvoos-sse-client`](./nvoos-sse-client/) | TypeScript-native SSE connection manager with lifecycle tracking, per-connection status, and auto-cleanup | @microsoft/fetch-event-source (peer) |
 | [`nvoos-attachments`](./nvoos-attachments/) | File attachment helpers: type detection, validation, normalisation, segment builders | Zero |
 | [`nvoos-cron-status`](./nvoos-cron-status/) | SSE-first cron/job status monitor with REST polling fallback | nvoos-events (optional peer) |
 | [`nvoos-transcription`](./nvoos-transcription/) | MediaRecorder-based audio recording + tool-call transcription pipeline | Zero |
