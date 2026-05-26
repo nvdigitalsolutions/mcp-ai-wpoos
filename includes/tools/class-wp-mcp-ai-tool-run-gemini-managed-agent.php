@@ -418,4 +418,70 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 			'required'     => true,
 		);
 	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * Strips large stream event arrays and raw environment data from the result
+	 * to keep LLM context size manageable. Keeps output_text, interaction IDs,
+	 * environment IDs, step/tool call summaries, and usage data.
+	 *
+	 * @param mixed $result Raw tool execution result.
+	 * @return mixed Sanitized result safe for LLM context.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip raw stream events — they can be enormous.
+		if ( isset( $result['stream_events'] ) ) {
+			unset( $result['stream_events'] );
+		}
+
+		// Strip raw binary tar data from downloads.
+		if ( isset( $result['tar_data'] ) ) {
+			unset( $result['tar_data'] );
+		}
+
+		// Strip raw steps array (keep only summary counts).
+		if ( isset( $result['steps'] ) ) {
+			unset( $result['steps'] );
+		}
+
+		// Strip raw tool calls array (keep only count).
+		if ( isset( $result['tool_calls'] ) ) {
+			unset( $result['tool_calls'] );
+		}
+
+		// Strip any base64-encoded image data.
+		if ( isset( $result['data'] ) ) {
+			unset( $result['data'] );
+		}
+
+		// Keep only essential metadata for LLM reasoning.
+		$keep_fields = array(
+			'interaction_id',
+			'environment_id',
+			'output_text',
+			'finish_reason',
+			'step_count',
+			'tool_call_count',
+			'event_count',
+			'size',
+			'save_path',
+			'save_url',
+			'usage',
+		);
+
+		$sanitized = array();
+
+		foreach ( $keep_fields as $field ) {
+			if ( isset( $result[ $field ] ) ) {
+				$sanitized[ $field ] = $result[ $field ];
+			}
+		}
+
+		return $sanitized;
+	}
 }
