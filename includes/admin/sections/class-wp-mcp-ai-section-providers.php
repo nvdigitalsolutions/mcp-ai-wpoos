@@ -1433,11 +1433,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'fields' => array( 'enable_anthropic', 'anthropic_api_key_type', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'anthropic_fallback_model', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl', 'anthropic_base_url' ),
 				),
 				'gemini'               => array(
-						'id'     => 'gemini',
-						'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
-						'icon'   => 'dashicons-admin-generic',
-						'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url', 'enable_managed_agents' ),
-					),
+					'id'     => 'gemini',
+					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-generic',
+					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url', 'enable_managed_agents' ),
+				),
 				'ollama'               => array(
 					'id'     => 'ollama',
 					'label'  => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),

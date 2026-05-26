@@ -213,7 +213,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 		}
 
 		// Resolve input.
-		$input = isset( $args['input'] ) ? $args['input'] : '';
+		$input                = isset( $args['input'] ) ? $args['input'] : '';
 		$has_multimodal_input = ! empty( $args['input_parts'] ) && is_array( $args['input_parts'] );
 
 		if ( ! $has_multimodal_input && empty( $input ) ) {
@@ -317,8 +317,8 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			WP_MCP_AI_Logger::log_error(
 				'Managed agent interaction failed',
 				array(
-					'input'  => $input_preview,
-					'error'  => $result->get_error_message(),
+					'input' => $input_preview,
+					'error' => $result->get_error_message(),
 				)
 			);
 			return $result;
@@ -333,8 +333,8 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			'managed_agent_interaction_complete',
 			'Antigravity agent interaction completed',
 			array(
-				'interaction_id'  => isset( $result['id'] ) ? $result['id'] : '',
-				'environment_id'  => isset( $result['environment_id'] ) ? $result['environment_id'] : '',
+				'interaction_id' => isset( $result['id'] ) ? $result['id'] : '',
+				'environment_id' => isset( $result['environment_id'] ) ? $result['environment_id'] : '',
 			)
 		);
 
@@ -402,8 +402,8 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 		$response = wp_remote_get(
 			$full_url,
 			array(
-				'headers'   => $this->build_headers( $api_key ),
-				'timeout'   => 120,
+				'headers'     => $this->build_headers( $api_key ),
+				'timeout'     => 120,
 				'redirection' => 5,
 			)
 		);
@@ -469,7 +469,8 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	public function list_environments() {
 		global $wpdb;
 
-		$prefix     = self::SESSION_PREFIX . 'env_';
+		$prefix = self::SESSION_PREFIX . 'env_';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
@@ -488,10 +489,10 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			}
 
 			$environments[] = array(
-				'environment_id'  => $data['environment_id'] ?? '',
-				'interaction_id'  => $data['last_interaction_id'] ?? '',
-				'created_at'      => isset( $data['created_at'] ) ? gmdate( 'c', $data['created_at'] ) : null,
-				'last_used_at'    => isset( $data['last_used_at'] ) ? gmdate( 'c', $data['last_used_at'] ) : null,
+				'environment_id'    => $data['environment_id'] ?? '',
+				'interaction_id'    => $data['last_interaction_id'] ?? '',
+				'created_at'        => isset( $data['created_at'] ) ? gmdate( 'c', $data['created_at'] ) : null,
+				'last_used_at'      => isset( $data['last_used_at'] ) ? gmdate( 'c', $data['last_used_at'] ) : null,
 				'interaction_count' => $data['interaction_count'] ?? 0,
 			);
 		}
@@ -717,8 +718,8 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 * Build multimodal input from parts.
 	 *
 	 * @param array $parts Array of part arrays.
-	 *                     Text:  { type: "text", text: "..." }
-	 *                     Image: { type: "image", data: "<base64>", mime_type: "image/png" }
+	 *                     Text:  { type: "text", text: "..." }.
+	 *                     Image: { type: "image", data: "<base64>", mime_type: "image/png" }.
 	 * @return array Formatted input array.
 	 */
 	protected function build_multimodal_input( array $parts ) {
@@ -813,12 +814,16 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 * Reads the response body line by line, parsing SSE events.
 	 * Calls the optional callback for each parsed event.
 	 *
-	 * @param array    $payload   Request payload.
-	 * @param int      $timeout   Request timeout in seconds.
-	 * @param callable $on_event  Optional callback( array $event ).
+	 * Note: Uses cURL directly because WordPress HTTP API does not
+	 * natively support SSE streaming with incremental reads.
+	 *
+	 * @param array    $payload  Request payload.
+	 * @param int      $timeout  Request timeout in seconds.
+	 * @param callable $on_event Optional callback( array $event ).
 	 * @return array|WP_Error Aggregated result or error.
 	 */
 	protected function api_request_stream( $payload, $timeout = 300, $on_event = null ) {
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init,WordPress.WP.AlternativeFunctions.curl_curl_setopt_array,WordPress.WP.AlternativeFunctions.curl_curl_exec,WordPress.WP.AlternativeFunctions.curl_curl_getinfo,WordPress.WP.AlternativeFunctions.curl_curl_error,WordPress.WP.AlternativeFunctions.curl_curl_close
 		$api_key = $this->get_api_key();
 
 		$payload['stream'] = true;
@@ -890,7 +895,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 		$aggregated = array();
 
 		curl_exec( $ch );
-		$http_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		$http_code  = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
 		$curl_error = curl_error( $ch );
 		curl_close( $ch );
 
@@ -917,6 +922,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 		// Build a result from the aggregated events.
 		return $this->aggregate_stream_events( $aggregated );
 	}
+	// phpcs:enable
 
 	// -------------------------------------------------------------------------
 	// API Response Parsing
@@ -925,12 +931,14 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	/**
 	 * Parse an API error response.
 	 *
-	 * @param int         $code HTTP status code.
-	 * @param array|null  $data Decoded JSON body.
-	 * @param string      $body Raw response body.
+	 * @param int        $code HTTP status code.
+	 * @param array|null $data Decoded JSON body.
+	 * @param string     $body Raw response body (reserved for future use).
 	 * @return WP_Error
 	 */
 	protected function parse_api_error( $code, $data, $body ) {
+		// $body is reserved for future error-body diagnostics.
+		unset( $body );
 		$error_message = __( 'Antigravity agent request failed.', 'mcp-ai-wpoos' );
 		$error_code    = 'wp_mcp_ai_agent_request_failed';
 
@@ -961,12 +969,12 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 */
 	protected function normalise_interaction_result( $result ) {
 		$output = array(
-			'interaction_id'  => isset( $result['id'] ) ? sanitize_text_field( $result['id'] ) : '',
-			'environment_id'  => isset( $result['environment_id'] ) ? sanitize_text_field( $result['environment_id'] ) : '',
-			'output_text'     => isset( $result['output_text'] ) ? wp_kses_post( $result['output_text'] ) : '',
-			'steps'           => isset( $result['steps'] ) ? $result['steps'] : array(),
-			'finish_reason'   => isset( $result['finish_reason'] ) ? sanitize_text_field( $result['finish_reason'] ) : '',
-			'usage'           => isset( $result['usage'] ) ? $result['usage'] : null,
+			'interaction_id' => isset( $result['id'] ) ? sanitize_text_field( $result['id'] ) : '',
+			'environment_id' => isset( $result['environment_id'] ) ? sanitize_text_field( $result['environment_id'] ) : '',
+			'output_text'    => isset( $result['output_text'] ) ? wp_kses_post( $result['output_text'] ) : '',
+			'steps'          => isset( $result['steps'] ) ? $result['steps'] : array(),
+			'finish_reason'  => isset( $result['finish_reason'] ) ? sanitize_text_field( $result['finish_reason'] ) : '',
+			'usage'          => isset( $result['usage'] ) ? $result['usage'] : null,
 		);
 
 		// Count tool calls if steps are present.
@@ -982,9 +990,9 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 					}
 				}
 			}
-			$output['tool_calls']       = $tool_calls;
-			$output['tool_call_count']  = count( $tool_calls );
-			$output['step_count']       = count( $output['steps'] );
+			$output['tool_calls']      = $tool_calls;
+			$output['tool_call_count'] = count( $tool_calls );
+			$output['step_count']      = count( $output['steps'] );
 		}
 
 		return $output;
@@ -998,14 +1006,14 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	 */
 	protected function aggregate_stream_events( array $events ) {
 		$result = array(
-			'interaction_id'  => '',
-			'environment_id'  => '',
-			'output_text'     => '',
-			'steps'           => array(),
-			'finish_reason'   => '',
-			'usage'           => null,
-			'stream_events'   => $events,
-			'event_count'     => count( $events ),
+			'interaction_id' => '',
+			'environment_id' => '',
+			'output_text'    => '',
+			'steps'          => array(),
+			'finish_reason'  => '',
+			'usage'          => null,
+			'stream_events'  => $events,
+			'event_count'    => count( $events ),
 		);
 
 		foreach ( $events as $event ) {
@@ -1065,11 +1073,11 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			set_transient(
 				self::SESSION_PREFIX . 'env_' . $environment_id,
 				array(
-					'environment_id'     => $environment_id,
+					'environment_id'      => $environment_id,
 					'last_interaction_id' => $interaction_id,
-					'created_at'         => time(),
-					'last_used_at'       => time(),
-					'interaction_count'  => 1,
+					'created_at'          => time(),
+					'last_used_at'        => time(),
+					'interaction_count'   => 1,
 				),
 				self::MAX_SESSION_AGE
 			);

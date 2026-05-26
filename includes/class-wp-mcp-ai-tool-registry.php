@@ -1168,8 +1168,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_gemini_image'              => 'external-tools',
 				'cloudflareai_text_to_image'         => 'external-tools',
 				'edit_gemini_image'                  => 'external-tools',
-					'run_gemini_managed_agent'           => 'external-tools',
-					'generate_veo_video'                 => 'external-tools',
+				'run_gemini_managed_agent'           => 'external-tools',
+				'generate_veo_video'                 => 'external-tools',
 				'check_video_status'                 => 'external-tools',
 				'generate_music'                     => 'external-tools',
 				'generate_openai_speech'             => 'external-tools',
@@ -2008,7 +2008,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param array                           $contexts Execution contexts (e.g., 'client', 'server', 'worker').
 		 * @return bool Whether the tool was registered.
 		 */
-		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware registration.
+		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter reserved for future context-aware registration.
 			// For now, use legacy registration.
 			return $this->register_tool( $tool );
 		}
