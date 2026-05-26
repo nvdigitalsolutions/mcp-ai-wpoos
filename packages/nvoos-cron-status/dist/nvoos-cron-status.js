@@ -165,7 +165,7 @@ export function configure(options) {
 					if (!response.ok) {
 						// Read the response body for diagnostic info.
 						return response.text().then(function (body) {
-							var detail = 'HTTP ' + response.status;
+							let detail = 'HTTP ' + response.status;
 							if (body && body.length < 500) {
 								detail += ': ' + body;
 							}
