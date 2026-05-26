@@ -80,7 +80,10 @@ if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) ) {
  * Enable in wp-config.php:
  *   define( 'WP_MCP_AI_USE_TS_BUILD', true );
  *
- * Requires running `npm run build:ts` first to produce the dist/ files.
+ * Alternatively, enable via the admin UI at:
+ *   NV oOS → Orchestration → Settings → "Use TypeScript-Compiled Assets"
+ *
+ * Requires running `npm run build:js:ts` first to produce the dist/ files.
  *
  * @since 1.2.0
  * @var bool

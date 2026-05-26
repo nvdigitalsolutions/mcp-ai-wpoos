@@ -109,8 +109,11 @@ class WP_MCP_AI_Shortcode {
 	public function register_assets() {
 		$is_elementor_editor = $this->is_elementor_editor_init();
 
-		// Use TypeScript-compiled bundle when WP_MCP_AI_USE_TS_BUILD is enabled.
-		$ts_build = defined( 'WP_MCP_AI_USE_TS_BUILD' ) && WP_MCP_AI_USE_TS_BUILD;
+		// Use TypeScript-compiled bundle when WP_MCP_AI_USE_TS_BUILD constant
+		// or the orchestration settings option is enabled.
+		$ts_build = ( defined( 'WP_MCP_AI_USE_TS_BUILD' ) && WP_MCP_AI_USE_TS_BUILD )
+			|| ( class_exists( 'WP_MCP_AI_Settings_Registry' )
+				&& WP_MCP_AI_Settings_Registry::get_setting( 'use_ts_build', false ) );
 		$js_dir   = $ts_build ? 'assets/js/dist/' : 'assets/js/';
 		$js_ext   = $ts_build ? '.js' : '.min.js';
 
