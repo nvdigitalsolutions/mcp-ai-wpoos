@@ -24,6 +24,11 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-memory-co
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-transcript-mining-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-threads-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-profiles-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-checkpoints-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-context-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-commands-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -516,6 +521,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$a2a_controller = new WP_MCP_AI_REST_A2A_Controller( $this, $this->authenticator, $this->validator );
 				$a2a_controller->register_routes();
 			}
+
+			// Delegate thread management routes to Threads Controller (v1.7.0).
+			$threads_controller = new WP_MCP_AI_REST_Threads_Controller( $this );
+			$threads_controller->register_routes();
+
+			// Delegate profile management routes to Profiles Controller (v1.7.0).
+			$profiles_controller = new WP_MCP_AI_REST_Profiles_Controller();
+			$profiles_controller->register_routes();
+
+			// Delegate checkpoint routes to Checkpoints Controller (v1.7.0).
+			$checkpoints_controller = new WP_MCP_AI_REST_Checkpoints_Controller();
+			$checkpoints_controller->register_routes();
+
+			// Delegate @-mention context routes to Context Controller (v1.7.0).
+			$context_controller = new WP_MCP_AI_REST_Context_Controller();
+			$context_controller->register_routes();
+
+			// Delegate command palette routes to Commands Controller (v1.7.0).
+			$commands_controller = new WP_MCP_AI_REST_Commands_Controller();
+			$commands_controller->register_routes();
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 

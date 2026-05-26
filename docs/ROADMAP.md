@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** May 23, 2026  
-**Version:** 1.1.22
+**Last Updated:** May 25, 2026  
+**Version:** 1.1.23
 
 ---
 
