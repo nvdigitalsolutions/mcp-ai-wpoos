@@ -128,12 +128,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-						'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
-						'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
-						'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
-						'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
-						'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
-					);
+					'gemini-3.5-flash'      => 'Gemini 3.5 Flash (Recommended)',
+					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
+					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
+					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
+					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
+				);
 			}
 
 			// Get Cloudflare models from Model Config.
@@ -732,7 +732,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'9:16' => '9:16 (Vertical)',
 						'16:9' => '16:9 (Widescreen)',
 					),
-				'default'     => '4:3',
+					'default'     => '4:3',
 				),
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
@@ -746,15 +746,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'gemini-omni-flash',
 				),
 				'gemini_video_resolution'            => array(
-						'type'        => 'select',
-						'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
-						'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all models and works for all aspect ratios. 1080p requires Omni Flash or Veo 3.1, 16:9 aspect ratio, and exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
-						'options'     => array(
-							'720p'  => '720p (All models, all durations)',
-							'1080p' => '1080p (Omni/Veo 3.1, 16:9, 8s required)',
-						),
-						'default'     => '720p',
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Resolution', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all models and works for all aspect ratios. 1080p requires Omni Flash or Veo 3.1, 16:9 aspect ratio, and exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'720p'  => '720p (All models, all durations)',
+						'1080p' => '1080p (Omni/Veo 3.1, 16:9, 8s required)',
 					),
+					'default'     => '720p',
+				),
 				'gemini_video_aspect_ratio'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Aspect Ratio', 'mcp-ai-wpoos' ),
@@ -766,19 +766,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '16:9',
 				),
 				'gemini_video_duration'              => array(
-						'type'        => 'select',
-						'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
-						'description' => __( 'Default duration for Gemini-generated videos in seconds. Gemini Omni Flash supports up to 10 seconds (native audio included). Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-						'options'     => array(
-							'4'  => '4 seconds (Veo 3.1/Omni)',
-							'5'  => '5 seconds',
-							'6'  => '6 seconds',
-							'7'  => '7 seconds',
-							'8'  => '8 seconds (Required for 1080p)',
-							'10' => '10 seconds (Omni Flash only)',
-						),
-						'default'     => '5',
+					'type'        => 'select',
+					'label'       => __( 'Gemini Video Duration', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default duration for Gemini-generated videos in seconds. Gemini Omni Flash supports up to 10 seconds (native audio included). Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'4'  => '4 seconds (Veo 3.1/Omni)',
+						'5'  => '5 seconds',
+						'6'  => '6 seconds',
+						'7'  => '7 seconds',
+						'8'  => '8 seconds (Required for 1080p)',
+						'10' => '10 seconds (Omni Flash only)',
 					),
+					'default'     => '5',
+				),
 
 				// Gemini Caching Settings.
 				'enable_gemini_api_caching'          => array(
@@ -846,6 +846,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Gemini API Base URL (Optional)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Custom base URL for Gemini API requests. Leave empty to use the default Google AI Studio endpoint. Useful for Vertex AI Enterprise deployments with custom regional endpoints or proxy services. Must include the version path (e.g. /v1beta).', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://generativelanguage.googleapis.com/v1beta',
+				),
+				'enable_managed_agents'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Gemini Managed Agents (Antigravity)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable the Antigravity managed agent via the Interactions API', 'mcp-ai-wpoos' ),
+					'description'    => sprintf(
+						/* translators: %s: link to Antigravity docs */
+						__( 'Enables the <a href="%s" target="_blank">Antigravity agent</a> — a managed AI agent that runs in an isolated Google cloud sandbox with code execution, web browsing, and file management. Each interaction provisions a Linux environment where the agent reasons, plans, and executes tasks autonomously. Note: the Antigravity agent has its own built-in tools and does not support WordPress function calling. Costs are per-interaction based on token usage (typically $0.25–$5 per task).', 'mcp-ai-wpoos' ),
+						'https://ai.google.dev/gemini-api/docs/antigravity-agent'
+					),
+					'default'        => false,
 				),
 
 				// Ollama Settings.
@@ -1425,7 +1436,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url', 'enable_managed_agents' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',

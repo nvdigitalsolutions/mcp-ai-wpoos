@@ -3,22 +3,33 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
          bootstrap="tests/bootstrap.php"
          colors="true"
-         backupGlobals="false">
+         backupGlobals="false"
+         cacheResult="false">
     <testsuites>
         <testsuite name="WP MCP AI Plugin Test Suite">
             <directory suffix=".php">tests</directory>
             <directory suffix=".php">addons/pro/tests</directory>
             <directory suffix=".php">addons/canvas-toolkit/tests</directory>
+            <directory suffix=".php">addons/chat-spa/tests</directory>
+            <directory suffix=".php">addons/document-editor/tests</directory>
             <directory suffix=".php">addons/media-studio/tests</directory>
+            <directory suffix=".php">addons/toolkit-shell/tests</directory>
+            <directory suffix=".php">addons/docs-hub/tests</directory>
             <directory suffix=".php">addons/saas-controller/tests</directory>
+            <directory suffix=".php">addons/embedded/tests</directory>
+            <directory suffix=".php">addons/algorave/tests</directory>
+            <directory suffix=".php">addons/graphify/tests</directory>
+            <directory suffix=".php">addons/comic-reader/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
+            <exclude>tests/test-checkbox-sanitization-fix.php</exclude>
             <exclude>tests/manual</exclude>
             <exclude>tests/bootstrap.php</exclude>
             <exclude>tests/fixtures</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
+            <exclude>addons/docs-hub/tests/test-fnmatch-polyfill.php</exclude>
         </testsuite>
     </testsuites>
     <groups>
@@ -41,6 +52,7 @@
             <directory suffix=".php">addons/algorave/includes</directory>
             <directory suffix=".php">addons/fantasy-football/includes</directory>
             <directory suffix=".php">addons/graphify/includes</directory>
+            <directory suffix=".php">addons/comic-reader/includes</directory>
         </include>
         <exclude>
             <directory>vendor</directory>

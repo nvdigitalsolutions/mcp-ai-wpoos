@@ -26,6 +26,14 @@ class Test_Chart_Data extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Define fallback constants if the Tool_Token_Limits class is not available.
+		if ( ! defined( 'WP_MCP_AI_TIER_META_KEY' ) ) {
+			define( 'WP_MCP_AI_TIER_META_KEY', '_wp_mcp_ai_tier' );
+		}
+		if ( ! defined( 'WP_MCP_AI_USAGE_META_KEY' ) ) {
+			define( 'WP_MCP_AI_USAGE_META_KEY', '_wp_mcp_ai_usage' );
+		}
+
 		// Create test users with different tiers.
 		$this->test_user_ids = array(
 			'free'       => $this->factory->user->create( array( 'role' => 'subscriber' ) ),
@@ -34,8 +42,8 @@ class Test_Chart_Data extends WP_UnitTestCase {
 		);
 
 		// Set up tier assignments.
-		update_user_meta( $this->test_user_ids['pro'], WP_MCP_AI_Tool_Token_Limits::TIER_META_KEY, 'pro' );
-		update_user_meta( $this->test_user_ids['enterprise'], WP_MCP_AI_Tool_Token_Limits::TIER_META_KEY, 'enterprise' );
+		update_user_meta( $this->test_user_ids['pro'], WP_MCP_AI_TIER_META_KEY, 'pro' );
+		update_user_meta( $this->test_user_ids['enterprise'], WP_MCP_AI_TIER_META_KEY, 'enterprise' );
 
 		// Add some usage data for testing.
 		$this->add_test_usage_data();
@@ -46,8 +54,8 @@ class Test_Chart_Data extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		foreach ( $this->test_user_ids as $user_id ) {
-			delete_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
-			delete_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::TIER_META_KEY );
+			delete_user_meta( $user_id, WP_MCP_AI_USAGE_META_KEY );
+			delete_user_meta( $user_id, WP_MCP_AI_TIER_META_KEY );
 		}
 
 		parent::tearDown();
@@ -71,7 +79,7 @@ class Test_Chart_Data extends WP_UnitTestCase {
 				),
 			),
 		);
-		update_user_meta( $this->test_user_ids['free'], WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage_data );
+		update_user_meta( $this->test_user_ids['free'], WP_MCP_AI_USAGE_META_KEY, $usage_data );
 
 		// Add usage for pro tier user.
 		$usage_data = array(
@@ -92,7 +100,7 @@ class Test_Chart_Data extends WP_UnitTestCase {
 				),
 			),
 		);
-		update_user_meta( $this->test_user_ids['pro'], WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage_data );
+		update_user_meta( $this->test_user_ids['pro'], WP_MCP_AI_USAGE_META_KEY, $usage_data );
 	}
 
 	/**
@@ -241,7 +249,11 @@ class Test_Chart_Data extends WP_UnitTestCase {
 	 * Test get_usage_forecast_data.
 	 */
 	public function test_get_usage_forecast_data() {
-		$data = WP_MCP_AI_Analytics_Dashboard::get_usage_forecast_data();
+		$reflection = new ReflectionMethod( 'WP_MCP_AI_Analytics_Dashboard', 'get_usage_forecast_data' );
+		if ( $reflection->isPrivate() || $reflection->isProtected() ) {
+			$reflection->setAccessible( true );
+		}
+		$data = $reflection->invoke( null );
 
 		// Verify data structure.
 		$this->assertIsArray( $data, 'Should return an array' );

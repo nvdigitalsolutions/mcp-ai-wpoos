@@ -53,9 +53,8 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 			}
 		}
 
-		// Get singleton instance and trigger lazy initialization.
+		// Get singleton instance. Delegate pages are initialized in the constructor.
 		$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
-		$this->dashboard->lazy_init_delegates();
 	}
 
 	/**
@@ -179,6 +178,12 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 	 * Test that delegate action fires.
 	 */
 	public function test_delegate_initialization_action() {
+		// Reset singleton to allow re-initialization (constructor is private).
+		$reflection = new \ReflectionClass( WP_MCP_AI_Pro_Dashboard::class );
+		$instance_prop = $reflection->getProperty( 'instance' );
+		$instance_prop->setAccessible( true );
+		$instance_prop->setValue( null );
+
 		$action_fired = false;
 
 		add_action(
@@ -190,7 +195,11 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 		);
 
 		// Reinitialize to trigger action.
-		new WP_MCP_AI_Pro_Dashboard();
+		// Use Reflection to access private constructor (PHPUnit 11 strict visibility).
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
+		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$constructor = $reflection->getConstructor();
+		$constructor->invoke( $dashboard );
 
 		$this->assertTrue( $action_fired, 'Delegate initialization action should fire' );
 	}

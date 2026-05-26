@@ -196,13 +196,13 @@ class WP_MCP_AI_Metric_Collector {
 		}
 
 		$event = array(
-			'id'         => $metric_id,
-			'value'      => $value,
-			'type'       => $definition['type'],
-			'unit'       => $definition['unit'],
-			'privacy'    => $definition['privacy_tier'],
-			'timestamp'  => time(),
-			'context'    => $this->sanitize_context( $context ),
+			'id'        => $metric_id,
+			'value'     => $value,
+			'type'      => $definition['type'],
+			'unit'      => $definition['unit'],
+			'privacy'   => $definition['privacy_tier'],
+			'timestamp' => time(),
+			'context'   => $this->sanitize_context( $context ),
 		);
 
 		$this->push_buffer( $event );

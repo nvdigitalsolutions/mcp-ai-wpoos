@@ -141,6 +141,9 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			);
 
 			$saved_settings = get_option( self::SETTINGS_OPTION, array() );
+			if ( ! is_array( $saved_settings ) ) {
+				$saved_settings = array();
+			}
 			$this->settings = wp_parse_args( $saved_settings, $defaults );
 		}
 
@@ -449,6 +452,9 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 */
 		private function record_violation( $type, $message, $details = array() ) {
 			$violations = get_option( self::VIOLATIONS_OPTION, array() );
+			if ( ! is_array( $violations ) ) {
+				$violations = array();
+			}
 
 			$violation = array(
 				'type'      => sanitize_key( $type ),
@@ -494,8 +500,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 */
 		private function count_recent_violations( $seconds ) {
 			$violations = get_option( self::VIOLATIONS_OPTION, array() );
-			$cutoff     = time() - $seconds;
-			$count      = 0;
+			if ( ! is_array( $violations ) ) {
+				$violations = array();
+			}
+			$cutoff = time() - $seconds;
+			$count  = 0;
 
 			foreach ( $violations as $violation ) {
 				$timestamp = strtotime( $violation['timestamp'] );
@@ -513,6 +522,13 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 * @param array $triggering_violation The violation that triggered shutdown.
 		 */
 		private function trigger_emergency_shutdown( $triggering_violation ) {
+			// Coerce string input to a violation array for backward compatibility.
+			if ( ! is_array( $triggering_violation ) ) {
+				$triggering_violation = array(
+					'type'    => 'manual',
+					'message' => (string) $triggering_violation,
+				);
+			}
 			update_option(
 				self::SHUTDOWN_OPTION,
 				array(
@@ -548,6 +564,9 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 */
 		public function is_emergency_shutdown_active() {
 			$shutdown = get_option( self::SHUTDOWN_OPTION, array() );
+			if ( ! is_array( $shutdown ) ) {
+				$shutdown = array();
+			}
 			return ! empty( $shutdown['active'] );
 		}
 
@@ -621,6 +640,9 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 
 			if ( $this->is_emergency_shutdown_active() ) {
 				$shutdown = get_option( self::SHUTDOWN_OPTION, array() );
+				if ( ! is_array( $shutdown ) ) {
+					$shutdown = array();
+				}
 				?>
 				<div class="notice notice-error is-dismissible">
 					<p>
@@ -679,7 +701,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 * @return array
 		 */
 		public function get_violations() {
-			return get_option( self::VIOLATIONS_OPTION, array() );
+			$violations = get_option( self::VIOLATIONS_OPTION, array() );
+			if ( ! is_array( $violations ) ) {
+				$violations = array();
+			}
+			return $violations;
 		}
 
 		/**

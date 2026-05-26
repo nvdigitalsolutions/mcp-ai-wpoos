@@ -138,6 +138,10 @@ class Test_Cron_Status_Unified_Team_ID extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
+		if ( is_wp_error( $data ) ) {
+			$this->fail( 'REST response returned error: ' . $data->get_error_message() );
+		}
+		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'jobs', $data );
 		$this->assertArrayHasKey( 'counts', $data );
 	}
@@ -148,11 +152,19 @@ class Test_Cron_Status_Unified_Team_ID extends WP_UnitTestCase {
 	public function test_sanitize_assistant_id_blocks_malicious_input() {
 		// Test path traversal attempt.
 		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '../../../etc/passwd' );
-		$this->assertNotContains( '/', $result );
+		if ( is_wp_error( $result ) ) {
+			$this->assertInstanceOf( 'WP_Error', $result, 'Malicious path should be rejected' );
+		} else {
+			$this->assertStringNotContainsString( '/', $result );
+		}
 
 		// Test script tag.
 		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '<script>alert("xss")</script>' );
-		$this->assertNotContains( '<', $result );
-		$this->assertNotContains( '>', $result );
+		if ( is_wp_error( $result ) ) {
+			$this->assertInstanceOf( 'WP_Error', $result, 'Malicious script should be rejected' );
+		} else {
+			$this->assertStringNotContainsString( '<', $result );
+			$this->assertStringNotContainsString( '>', $result );
+		}
 	}
 }

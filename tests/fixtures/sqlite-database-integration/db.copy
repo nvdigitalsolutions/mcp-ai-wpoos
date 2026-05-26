@@ -1,26 +1,62 @@
 <?php
 /**
- * Plugin Name: SQLite integration (Drop-in)
- * Version: 1.0.0
- * Author: WordPress Performance Team
- * Author URI: https://make.wordpress.org/performance/
+ * Drop-in to activate SQLite as the WordPress database layer.
  *
- * This file is auto-generated and copied from the sqlite plugin.
- * Please don't edit this file directly.
+ * Copy this file to wp-content/db.php. No manual editing required.
+ *
+ * Resolution order for the SQLite implementation:
+ *   1. Bundled fixture     – tests/fixtures/sqlite-database-integration/
+ *   2. Studio mu-plugin     – wp-content/mu-plugins/sqlite-database-integration/
+ *   3. Performance Lab plugin – wp-content/plugins/sqlite-database-integration/
+ *
+ * WordPress Studio sites use SQLite via an internal playground mu-plugin.
+ * This drop-in defines SQLITE_MAIN_FILE to satisfy that plugin. For CLI
+ * test runs, the drop-in activates the bundled fixture's driver so tests
+ * get their own SQLite database without touching the production site's DB.
  *
  * @package wp-sqlite-integration
  */
 
 define( 'SQLITE_DB_DROPIN_VERSION', '1.8.0' );
 
-// Tweak to allow copy-pasting the file without having to run string-replacements.
-$sqlite_plugin_implementation_folder_path = '{SQLITE_IMPLEMENTATION_FOLDER_PATH}';
-if ( ! file_exists( $sqlite_plugin_implementation_folder_path ) ) { // Check that the folder exists.
-	$sqlite_plugin_implementation_folder_path = realpath( __DIR__ . '/plugins/sqlite-database-integration' );
+// Required by WordPress Studio's internal playground mu-plugin.
+// Without this, the site fatals on wp_loaded.
+if ( ! defined( 'SQLITE_MAIN_FILE' ) ) {
+	define( 'SQLITE_MAIN_FILE', __FILE__ );
 }
 
-// Bail early if the SQLite implementation was not located in the plugin.
-if ( ! $sqlite_plugin_implementation_folder_path || ! file_exists( $sqlite_plugin_implementation_folder_path . '/wp-includes/sqlite/db.php' ) ) {
+/**
+ * Resolve the SQLite implementation path.
+ *
+ * Tries the bundled fixture first (best for test isolation), then falls
+ * back to the Studio mu-plugin path, then the standard plugin directory.
+ */
+$sqlite_plugin_implementation_folder_path = '';
+
+// 1. Bundled fixture (always available for test runs).
+$fixture = __DIR__ . '/plugins/mcp-ai-wpoos/tests/fixtures/sqlite-database-integration';
+if ( file_exists( $fixture . '/wp-includes/sqlite/db.php' ) ) {
+	$sqlite_plugin_implementation_folder_path = $fixture;
+}
+
+// 2. WordPress Studio mu-plugin.
+if ( ! $sqlite_plugin_implementation_folder_path ) {
+	$studio = realpath( __DIR__ . '/mu-plugins/sqlite-database-integration' );
+	if ( $studio && file_exists( $studio . '/wp-includes/sqlite/db.php' ) ) {
+		$sqlite_plugin_implementation_folder_path = $studio;
+	}
+}
+
+// 3. Standard Performance Lab plugin.
+if ( ! $sqlite_plugin_implementation_folder_path ) {
+	$plugin = realpath( __DIR__ . '/plugins/sqlite-database-integration' );
+	if ( $plugin && file_exists( $plugin . '/wp-includes/sqlite/db.php' ) ) {
+		$sqlite_plugin_implementation_folder_path = $plugin;
+	}
+}
+
+// Bail early if no SQLite implementation was found.
+if ( ! $sqlite_plugin_implementation_folder_path ) {
 	return;
 }
 
@@ -28,31 +64,9 @@ if ( ! $sqlite_plugin_implementation_folder_path || ! file_exists( $sqlite_plugi
 if ( ! defined( 'DATABASE_TYPE' ) ) {
 	define( 'DATABASE_TYPE', 'sqlite' );
 }
-// Define SQLite constant.
 if ( ! defined( 'DB_ENGINE' ) ) {
 	define( 'DB_ENGINE', 'sqlite' );
 }
 
-// Require the implementation from the plugin.
+// Load the SQLite database driver.
 require_once $sqlite_plugin_implementation_folder_path . '/wp-includes/sqlite/db.php';
-
-// Activate the performance-lab plugin if it is not already activated.
-add_action(
-	'admin_footer',
-	function() {
-		if ( defined( 'SQLITE_MAIN_FILE' ) ) {
-			return;
-		}
-		if ( ! function_exists( 'activate_plugin' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-		if ( is_plugin_inactive( '{SQLITE_PLUGIN}' ) ) {
-			// If `activate_plugin()` returns a value other than null (like WP_Error),
-			// the plugin could not be found. Try with a hardcoded string,
-			// because that probably means the file was directly copy-pasted.
-			if ( null !== activate_plugin( '{SQLITE_PLUGIN}', '', false, true ) ) {
-				activate_plugin( 'sqlite-database-integration/load.php', '', false, true );
-			}
-		}
-	}
-);

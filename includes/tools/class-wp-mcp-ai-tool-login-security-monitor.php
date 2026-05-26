@@ -23,6 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
+
 /**
  * Login Security Monitor Tool Class
  *
@@ -39,6 +41,13 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 */
 	public function get_slug() {
 		return 'login_security_monitor';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Login Security Monitor', 'mcp-ai-wpoos' );
 	}
 
 	/**

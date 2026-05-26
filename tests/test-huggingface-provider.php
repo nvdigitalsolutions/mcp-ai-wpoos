@@ -11,7 +11,7 @@
 /**
  * Test class for Hugging Face provider integration.
  */
-class WP_MCP_AI_Huggingface_Provider_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Huggingface_Provider_Test extends WP_MCP_AI_Ajax_TestCase {
 
 	/**
 	 * Administrator user ID.

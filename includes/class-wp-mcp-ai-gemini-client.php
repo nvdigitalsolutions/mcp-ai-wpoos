@@ -28,6 +28,41 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const DEFAULT_BASE_URL        = 'https://generativelanguage.googleapis.com/v1beta';
 
 		/**
+		 * Managed Agents / Antigravity Interactions API endpoint.
+		 *
+		 * @var string
+		 */
+		const API_INTERACTIONS_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+
+		/**
+		 * Managed Agents creation endpoint (custom agents).
+		 *
+		 * @var string
+		 */
+		const API_MANAGED_AGENTS_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/agents';
+
+		/**
+		 * Environment file download endpoint template.
+		 *
+		 * @var string
+		 */
+		const API_ENV_DOWNLOAD_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/files/environment-%s:download';
+
+		/**
+		 * Required Api-Revision header for the Interactions API.
+		 *
+		 * @var string
+		 */
+		const INTERACTIONS_API_REVISION = '2026-05-20';
+
+		/**
+		 * Current Antigravity managed agent ID.
+		 *
+		 * @var string
+		 */
+		const ANTIGRAVITY_AGENT_ID = 'antigravity-preview-05-2026';
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -2349,7 +2384,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// mark the last tool definition with cache_control so Gemini can cache the
 			// tool definitions across turns (mirrors what Anthropic does).
 			if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
-				$last_tool_idx = count( $payload['tools'] ) - 1;
+				$last_tool_idx                                       = count( $payload['tools'] ) - 1;
 				$payload['tools'][ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 			}
 

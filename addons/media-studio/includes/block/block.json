@@ -4,13 +4,14 @@
   "title": "NV oOS Media Studio",
   "category": "widgets",
   "icon": "admin-generic",
-  "description": "Embeds the NV oOS Media Studio SPA.",
+  "description": "Embeds the NV oOS Media Studio SPA — image editor, media player, or audio waveform.",
   "textdomain": "nvoos-media-studio",
   "attributes": {
     "toolkit": { "type": "string", "default": "" },
     "theme":   { "type": "string", "default": "auto" },
-    "view":    { "type": "string", "default": "" },
-    "height":  { "type": "string", "default": "" }
+    "mode":    { "type": "string", "default": "image-editor", "enum": ["image-editor", "media-player", "audio-waveform"] },
+    "height":  { "type": "string", "default": "" },
+    "src":     { "type": "string", "default": "" }
   },
   "supports": { "html": false }
 }

@@ -94,7 +94,7 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $posts as $post ) {
-			$model = get_post_meta( $post->ID, 'mcp_ai_model', true );
+			$model   = get_post_meta( $post->ID, 'mcp_ai_model', true );
 			$items[] = array(
 				'ID'     => $post->ID,
 				'title'  => $post->post_title,
@@ -156,7 +156,7 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$meta     = array();
 		foreach ( $all_meta as $key => $values ) {
 			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$clean_key        = substr( $key, strlen( 'mcp_ai_' ) );
+				$clean_key          = substr( $key, strlen( 'mcp_ai_' ) );
 				$meta[ $clean_key ] = $values[0] ?? '';
 			}
 		}
@@ -327,9 +327,9 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		if ( ! $yes ) {
 			$action = $force
 				? /* translators: 1: assistant title, 2: assistant post ID */
-				  sprintf( __( 'Permanently delete "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id )
+					sprintf( __( 'Permanently delete "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id )
 				: /* translators: 1: assistant title, 2: assistant post ID */
-				  sprintf( __( 'Trash assistant "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id );
+					sprintf( __( 'Trash assistant "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id );
 
 			WP_CLI::confirm( $action );
 		}
@@ -394,7 +394,7 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$meta     = array();
 		foreach ( $all_meta as $key => $values ) {
 			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$clean_key        = substr( $key, strlen( 'mcp_ai_' ) );
+				$clean_key          = substr( $key, strlen( 'mcp_ai_' ) );
 				$meta[ $clean_key ] = $values[0] ?? '';
 			}
 		}

@@ -24,6 +24,11 @@ class Test_DeepSeek_V4_Orchestration_Validation extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// The seeder is loaded on-demand by AJAX/CLI, not in the main bootstrap.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Orchestration_Seeder' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-orchestration-seeder.php';
+		}
 	}
 
 	/**

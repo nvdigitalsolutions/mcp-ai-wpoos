@@ -188,11 +188,7 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 * to bubble up. We assert the bridge's own static handler is exception-safe.
 	 */
 	public function test_bridge_handler_swallows_exceptions() {
-		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
-		if ( file_exists( $bridge_path ) ) {
-			require_once $bridge_path;
-		}
-		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+		if ( ! $this->maybe_load_bridge() ) {
 			$this->markTestSkipped( 'Graphify addon not loaded in this test run.' );
 		}
 
@@ -318,6 +314,28 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	// ------------------------------------------------------------------------
 
 	/**
+	 * Load the Graphify memory bridge class if available.
+	 *
+	 * Guards against double-loading when other test files (e.g.
+	 * test-memory-provenance-tracer) have already loaded or stubbed the
+	 * class via `eval()`.
+	 *
+	 * @return bool True if the bridge class is now available.
+	 */
+	private function maybe_load_bridge(): bool {
+		if ( class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+			return true;
+		}
+
+		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
+		if ( file_exists( $bridge_path ) ) {
+			require_once $bridge_path;
+		}
+
+		return class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
+	}
+
+	/**
 	 * Verify the graph-mode happy path:
 	 *  - the wake_up tool calls into the bridge
 	 *  - the returned ordered context_ids drive memory selection
@@ -329,11 +347,7 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 * the addon being loaded inside the test runner.
 	 */
 	public function test_wake_up_graph_mode_orders_memories_by_graph() {
-		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
-		if ( file_exists( $bridge_path ) ) {
-			require_once $bridge_path;
-		}
-		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+		if ( ! $this->maybe_load_bridge() ) {
 			$this->markTestSkipped( 'Graph happy-path requires the bridge class to be loadable.' );
 		}
 
@@ -397,11 +411,7 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 * transient path so the operator still sees recent memories.
 	 */
 	public function test_wake_up_graph_falls_back_when_graph_empty() {
-		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
-		if ( file_exists( $bridge_path ) ) {
-			require_once $bridge_path;
-		}
-		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+		if ( ! $this->maybe_load_bridge() ) {
 			$this->markTestSkipped( 'Requires the bridge class.' );
 		}
 
@@ -448,11 +458,9 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 * each entry should carry a non-empty `via` array.
 	 */
 	public function test_wake_up_graph_surfaces_via_provenance() {
-		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
-		if ( ! file_exists( $bridge_path ) ) {
+		if ( ! $this->maybe_load_bridge() ) {
 			$this->markTestSkipped( 'Graphify addon not present.' );
 		}
-		require_once $bridge_path;
 
 		$store = $this->registry->get_tool( 'store_agent_context' );
 		$one   = $store->execute(
@@ -497,14 +505,12 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 * filter is invoked with the expected default keys.
 	 */
 	public function test_graph_score_weights_filter_invoked() {
-		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
-		if ( ! file_exists( $bridge_path ) ) {
+		if ( ! $this->maybe_load_bridge() ) {
 			$this->markTestSkipped( 'Graphify addon not present.' );
 		}
 		if ( ! class_exists( 'NV_oOS_Graphify_DB' ) ) {
 			$this->markTestSkipped( 'Graphify DB class not loadable in test env.' );
 		}
-		require_once $bridge_path;
 
 		$captured = array();
 		add_filter(

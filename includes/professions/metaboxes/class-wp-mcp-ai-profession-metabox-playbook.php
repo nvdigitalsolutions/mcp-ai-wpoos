@@ -196,10 +196,10 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 			. '@keyframes rotation{from{transform:rotate(0deg)}to{transform:rotate(359deg)}}'
 		);
 
-		$playbook_nonce          = wp_create_nonce( 'wp_mcp_ai_regenerate_playbook' );
-		$success_message         = __( 'Playbook regenerated successfully!', 'mcp-ai-wpoos' );
-		$failure_message         = __( 'Failed to regenerate playbook.', 'mcp-ai-wpoos' );
-		$ajax_error_prefix       = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+		$playbook_nonce    = wp_create_nonce( 'wp_mcp_ai_regenerate_playbook' );
+		$success_message   = __( 'Playbook regenerated successfully!', 'mcp-ai-wpoos' );
+		$failure_message   = __( 'Failed to regenerate playbook.', 'mcp-ai-wpoos' );
+		$ajax_error_prefix = __( 'AJAX error: ', 'mcp-ai-wpoos' );
 
 		ob_start();
 		?>

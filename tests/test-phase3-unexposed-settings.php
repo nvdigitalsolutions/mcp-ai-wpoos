@@ -14,6 +14,18 @@
 class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 
 	/**
+	 * Set up test fixtures.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
+		}
+	}
+
+	/**
 	 * Test that chat_colors field is defined in Chat Client section.
 	 */
 	public function test_chat_colors_field_defined() {

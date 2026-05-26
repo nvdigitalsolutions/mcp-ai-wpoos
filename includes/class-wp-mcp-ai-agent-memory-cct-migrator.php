@@ -259,7 +259,7 @@ class WP_MCP_AI_Agent_Memory_CCT_Migrator {
 
 		// Rebuild the registration request from the current source-of-truth
 		// (so schema v3+ in future ships without a new migrator class).
-		$request = self::build_registration_request();
+		$request        = self::build_registration_request();
 		$request['_ID'] = $existing_id;
 
 		try {

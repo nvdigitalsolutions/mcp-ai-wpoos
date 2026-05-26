@@ -96,7 +96,7 @@ class Test_Tool_Evaluate_Logic_Gate extends WP_UnitTestCase {
 	/**
 	 * Two input rows.
 	 */
-	public function two_input_rows() {
+	public static function two_input_rows() {
 		return array(
 			array( 'AND', false, false, false ),
 			array( 'AND', false, true, false ),

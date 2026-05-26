@@ -260,6 +260,13 @@ class WP_MCP_AI_Tool_Load_Balancer {
 		$task_lower      = strtolower( $task_description );
 
 		foreach ( $tools as $tool_slug => $tool ) {
+			// Not every tool exposes a get_definition() method (e.g.
+			// WP_MCP_AI_Tool_Load_Skill — it follows the Tool_Interface
+			// which doesn't require get_definition()).
+			if ( ! method_exists( $tool, 'get_definition' ) ) {
+				continue;
+			}
+
 			$definition = $tool->get_definition();
 			if ( empty( $definition ) ) {
 				continue;

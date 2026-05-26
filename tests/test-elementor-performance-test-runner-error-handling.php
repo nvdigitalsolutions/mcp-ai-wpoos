@@ -50,6 +50,23 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 	}
 
 	/**
+	 * Invoke the protected render() method via reflection.
+	 *
+	 * @return string Rendered output.
+	 */
+	private function invoke_render() {
+		$reflection = new ReflectionMethod(
+			'WP_MCP_AI_Elementor_Performance_Test_Runner_Widget',
+			'render'
+		);
+		$reflection->setAccessible( true );
+
+		ob_start();
+		$reflection->invoke( $this->widget );
+		return ob_get_clean();
+	}
+
+	/**
 	 * Test that widget JavaScript contains proper error handling for object responses
 	 */
 	public function test_widget_contains_error_object_handling() {
@@ -63,12 +80,9 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			)
 		);
 
-		// Capture the output.
-		ob_start();
-		$this->widget->render();
-		$output = ob_get_clean();
+		$output = $this->invoke_render();
 
-		// Verify the output contains error handling for object responses.
+		// Verify the widget contains error handling for object responses.
 		$this->assertStringContainsString(
 			'typeof response.data === \'object\'',
 			$output,
@@ -150,10 +164,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			)
 		);
 
-		// Capture the output.
-		ob_start();
-		$this->widget->render();
-		$output = ob_get_clean();
+		$output = $this->invoke_render();
 
 		// Verify the output contains handling for string errors (else case).
 		$this->assertStringContainsString(
@@ -186,10 +197,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			)
 		);
 
-		// Capture the output.
-		ob_start();
-		$this->widget->render();
-		$output = ob_get_clean();
+		$output = $this->invoke_render();
 
 		// Verify the output shows permission denied message.
 		$this->assertStringContainsString(
@@ -219,10 +227,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			)
 		);
 
-		// Capture the output.
-		ob_start();
-		$this->widget->render();
-		$output = ob_get_clean();
+		$output = $this->invoke_render();
 
 		// Verify all test types are rendered.
 		$this->assertStringContainsString(
@@ -270,10 +275,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			)
 		);
 
-		// Capture the output.
-		ob_start();
-		$this->widget->render();
-		$output = ob_get_clean();
+		$output = $this->invoke_render();
 
 		// Verify the output field is checked in error responses.
 		$this->assertStringContainsString(
@@ -338,10 +340,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 			)
 		);
 
-		// Capture the output.
-		ob_start();
-		$this->widget->render();
-		$output = ob_get_clean();
+		$output = $this->invoke_render();
 
 		// Verify all 4 test type buttons are rendered.
 		$test_types = array( 'stress', 'security', 'speed', 'optimization' );

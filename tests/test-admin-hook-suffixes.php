@@ -22,6 +22,21 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Guard: Ensure admin page classes are loaded (may be gated behind is_admin()).
+		// Ensure the admin page classes are loaded.
+		if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Cron_Manager' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
+		}
+
 		// Set up an admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
@@ -198,6 +213,10 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 	public function test_mcp_diagnostic_localizes_script_data() {
 		global $wp_scripts;
 
+		// Ensure init() has registered the admin_menu hook (may not have fired if
+		// the file was loaded after WordPress bootstrapped).
+		WP_MCP_AI_MCP_Server_Diagnostic::init();
+
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
@@ -215,20 +234,20 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 
 		// Verify the script is enqueued.
 		$this->assertTrue(
-			isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline'] ),
-			'MCP Diagnostic inline script should be enqueued'
+			isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic'] ),
+			'MCP Diagnostic script should be enqueued'
 		);
 
 		// Verify localized data is present.
 		$this->assertNotEmpty(
-			$wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra,
+			$wp_scripts->registered['wp-mcp-ai-mcp-diagnostic']->extra,
 			'Localized script data should be present'
 		);
 
 		// Get the localized data.
 		$localized_data = null;
-		if ( isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra['data'] ) ) {
-			$localized_data = $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra['data'];
+		if ( isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic']->extra['data'] ) ) {
+			$localized_data = $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic']->extra['data'];
 		}
 
 		$this->assertNotNull( $localized_data, 'Localized data should exist' );
@@ -238,9 +257,14 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Pro Dashboard enqueues assets on correct hook.
+	 * Test that Pro Dashboard enqueues assets only on the correct hook.
 	 */
 	public function test_pro_dashboard_enqueues_assets_on_correct_hook() {
+		// Skip if Pro Dashboard class is not available (base mode).
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Dashboard class not available in base mode.' );
+		}
+
 		global $wp_scripts, $wp_styles;
 
 		// Trigger the admin_menu action to register menus.

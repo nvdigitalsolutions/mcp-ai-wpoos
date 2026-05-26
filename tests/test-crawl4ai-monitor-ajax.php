@@ -36,6 +36,10 @@ class Test_Crawl4AI_Monitor_Ajax extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Crawl4AI_Monitor' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Admin_Crawl4AI_Monitor class not available.' );
+		}
+
 		// Create admin user.
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );

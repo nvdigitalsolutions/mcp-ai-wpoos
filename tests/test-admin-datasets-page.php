@@ -29,6 +29,12 @@ class Test_Admin_Datasets_Page extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Guard: Ensure admin page classes are loaded (may be gated behind is_admin()).
+		// Ensure the datasets admin page class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-datasets-admin-page.php';
+		}
+
 		// Set up an admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );

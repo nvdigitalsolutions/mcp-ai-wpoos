@@ -12,6 +12,19 @@
  */
 
 class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
+
+	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure required classes are loaded (not always loaded in test bootstrap).
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
+		}
+	}
+
 	/**
 	 * Test that scripts are registered on main dashboard page.
 	 */
@@ -133,7 +146,9 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		global $wp_scripts;
 
 		// Check Pro Dashboard script has correct dependencies.
+		$this->assertArrayHasKey( 'wp-mcp-ai-pro-dashboard', $wp_scripts->registered, 'Pro Dashboard script should be registered' );
 		$pro_dashboard = $wp_scripts->registered['wp-mcp-ai-pro-dashboard'];
+		$this->assertIsArray( $pro_dashboard->deps, 'Pro Dashboard script deps should be an array' );
 		$this->assertContains( 'jquery', $pro_dashboard->deps, 'Pro Dashboard script should depend on jQuery' );
 		$this->assertContains( 'wp-mcp-ai-chartjs', $pro_dashboard->deps, 'Pro Dashboard script should depend on Chart.js' );
 	}

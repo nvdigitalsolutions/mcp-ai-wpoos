@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
 				'data'  => $data,
 				'ts'    => time(),
 			);
-			$buffer['next_id'] = $next_id;
+			$buffer['next_id']  = $next_id;
 
 			// Enforce ring-buffer cap — drop oldest frames first.
 			if ( count( $buffer['frames'] ) > $cap ) {

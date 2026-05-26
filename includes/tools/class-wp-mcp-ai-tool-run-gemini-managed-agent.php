@@ -1,13 +1,19 @@
 <?php
 /**
- * Tool for running tasks with Gemini Managed Agents.
+ * Tool for running tasks with Gemini Managed Agents (Antigravity).
  *
- * Creates and manages agent sessions with isolated Linux containers,
- * persistent filesystems, code execution, and multi-turn state.
- * Agents reason, plan, call tools, and iterate toward complex goals.
+ * Sends prompts to the Antigravity agent via the Gemini Interactions API.
+ * The agent operates in an isolated Linux sandbox with code execution,
+ * web browsing, and file management capabilities.
+ *
+ * Unlike NV oOS function-calling tools, the Antigravity agent is a
+ * self-contained agent with its own tool loop (plan → act → observe).
+ * It uses built-in tools (code_execution, google_search, url_context)
+ * and does NOT support external function calling or MCP.
  *
  * @package WP_MCP_AI
- * @since 1.2.0
+ * @since 1.2.0 — original managed agent tool (speculative pre-release)
+ * @since 2.x   — updated for the actual Antigravity Interactions API (May 2026)
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -24,7 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
- * Run Gemini Managed Agent Tool.
+ * Run Gemini Managed Agent (Antigravity) Tool.
  */
 class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -40,14 +46,14 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Run Gemini Managed Agent', 'mcp-ai-wpoos' );
+		return __( 'Run Gemini Managed Agent (Antigravity)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates and runs tasks with a managed AI agent powered by Gemini 3.5 Flash. The agent operates in an isolated Linux container with persistent files, code execution (Python, JavaScript, and shell), and access to all NV oOS tools. It can plan, iterate, write code, call tools, and complete complex multi-step workflows. Sessions persist for 24 hours — continue work by passing the session_id. Use the "create" operation first to set up a session, then "run" to execute tasks, "status" to check, or "terminate" to clean up.', 'mcp-ai-wpoos' );
+		return __( 'Sends tasks to the Antigravity managed agent via the Gemini Interactions API. The agent runs in a secure cloud sandbox with code execution (Python, JavaScript, Bash), web browsing (Google Search + URL fetching), and file management. Use "send" to start a new task, "continue" to follow up on a previous interaction, "stream" for real-time SSE streaming, "download" to retrieve sandbox files, and "envs" to list tracked environments. The agent does NOT have access to WordPress tools — it is self-contained with its own built-in toolset.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,48 +70,50 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'operation'      => array(
+				'operation'          => array(
 					'type'        => 'string',
-					'description' => __( 'Operation to perform: "create" a new agent session, "run" a task in an existing session, "status" to check session state, "list" active sessions, or "terminate" a session.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'create', 'run', 'status', 'list', 'terminate' ),
+					'description' => __( 'Operation to perform: "send" a prompt to the Antigravity agent, "continue" a previous interaction, "stream" for real-time response streaming, "download" files from a sandbox environment, or "envs" to list tracked environments.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'send', 'continue', 'stream', 'download', 'envs' ),
 				),
-				'session_id'     => array(
+				'input'              => array(
 					'type'        => 'string',
-					'description' => __( 'Session ID from a previous create operation. Required for "run", "status", and "terminate" operations.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The task for the agent. Be specific about goals, constraints, and expected outputs. Examples: "Analyze this CSV data and create a summary report", "Research the top 5 competitors and compare their pricing", "Write a Python script to process image files and generate thumbnails". Required for "send", "continue", and "stream" operations.', 'mcp-ai-wpoos' ),
 				),
-				'task'           => array(
+				'interaction_id'     => array(
 					'type'        => 'string',
-					'description' => __( 'The task to execute. Be specific about goals, constraints, and expected outputs. Required for "create" and "run" operations. Examples: "Analyze the sales data and create a summary report", "Refactor the Python code to use async/await", "Research the top 5 competitors and compare their pricing".', 'mcp-ai-wpoos' ),
+					'description' => __( 'A previous interaction ID to continue. Required for "continue" operation. The agent picks up the conversation where it left off, with access to the same sandbox files.', 'mcp-ai-wpoos' ),
 				),
-				'system_prompt'  => array(
+				'environment_id'     => array(
 					'type'        => 'string',
-					'description' => __( 'System instructions defining the agent\'s role, personality, and constraints. Optional for "create" operation. Example: "You are a data analyst. Always cite sources and show your reasoning."', 'mcp-ai-wpoos' ),
+					'description' => __( 'An environment ID to reuse a sandbox from a previous interaction. Files and installed packages persist. Required for "download" operation. Optional for "send" and "continue".', 'mcp-ai-wpoos' ),
 				),
-				'tool_slugs'     => array(
+				'system_instruction' => array(
+					'type'        => 'string',
+					'description' => __( 'System instructions defining the agent\'s role and constraints. Example: "You are a data analyst. Always cite sources and show your reasoning step by step."', 'mcp-ai-wpoos' ),
+				),
+				'agent_tools'        => array(
 					'type'        => 'array',
-					'description' => __( 'List of tool slugs the agent can use. If empty, all available tools are accessible. Example: ["get_post", "create_post", "search_posts"].', 'mcp-ai-wpoos' ),
+					'description' => __( 'Which built-in tools the agent can use. Options: "code_execution" (run Python/JS/Bash), "google_search" (web search), "url_context" (fetch web pages). If empty, all are enabled by default. Filesystem access is always enabled with the environment.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
+						'enum' => array( 'code_execution', 'google_search', 'url_context' ),
 					),
 				),
-				'max_iterations' => array(
-					'type'        => 'integer',
-					'description' => __( 'Maximum agent loop iterations (1-100). Default: 10. Higher values allow more complex multi-step workflows but take longer.', 'mcp-ai-wpoos' ),
-					'minimum'     => 1,
-					'maximum'     => 100,
-					'default'     => 10,
+				'agent_id'           => array(
+					'type'        => 'string',
+					'description' => __( 'Agent ID to use (e.g., a custom saved managed agent). Defaults to the Antigravity preview agent.', 'mcp-ai-wpoos' ),
+					'default'     => 'antigravity-preview-05-2026',
 				),
-				'timeout'        => array(
+				'timeout'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Timeout in seconds (30-3600). Default: 300 (5 minutes). Increase for complex tasks that may take longer.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Timeout in seconds (30-3600). Default: 300 (5 minutes). Complex tasks may need longer timeouts. Note: the Antigravity agent can accumulate many tokens per interaction.', 'mcp-ai-wpoos' ),
 					'minimum'     => 30,
 					'maximum'     => 3600,
 					'default'     => 300,
 				),
-				'model'          => array(
+				'save_path'          => array(
 					'type'        => 'string',
-					'description' => __( 'Model to use. Defaults to gemini-3.5-flash which is optimized for agentic workflows.', 'mcp-ai-wpoos' ),
-					'default'     => 'gemini-3.5-flash',
+					'description' => __( 'For "download" operation: optional relative path within wp-content/uploads to save the environment archive. Example: "antigravity-snapshots/project1.tar".', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'   => array( 'operation' ),
@@ -113,42 +121,47 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
 	 */
-	public function execute( $arguments, $context ) {
-		$operation     = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
-		$session_id    = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
-		$task          = isset( $arguments['task'] ) ? sanitize_textarea_field( $arguments['task'] ) : '';
-		$system_prompt = isset( $arguments['system_prompt'] ) ? sanitize_textarea_field( $arguments['system_prompt'] ) : '';
-		$tool_slugs    = isset( $arguments['tool_slugs'] ) ? array_map( 'sanitize_key', (array) $arguments['tool_slugs'] ) : array();
-		$max_iter      = isset( $arguments['max_iterations'] ) ? absint( $arguments['max_iterations'] ) : 10;
-		$timeout       = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 300;
-		$model         = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gemini-3.5-flash';
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$operation          = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
+		$input              = isset( $arguments['input'] ) ? $arguments['input'] : '';
+		$interaction_id     = isset( $arguments['interaction_id'] ) ? sanitize_text_field( $arguments['interaction_id'] ) : '';
+		$environment_id     = isset( $arguments['environment_id'] ) ? sanitize_text_field( $arguments['environment_id'] ) : '';
+		$system_instruction = isset( $arguments['system_instruction'] ) ? sanitize_textarea_field( $arguments['system_instruction'] ) : '';
+		$agent_tools        = isset( $arguments['agent_tools'] ) ? array_map( 'sanitize_key', (array) $arguments['agent_tools'] ) : array();
+		$agent_id           = isset( $arguments['agent_id'] ) ? sanitize_text_field( $arguments['agent_id'] ) : '';
+		$timeout            = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 300;
+		$save_path          = isset( $arguments['save_path'] ) ? sanitize_text_field( $arguments['save_path'] ) : '';
 
 		$service = new WP_MCP_AI_Gemini_Managed_Agent_Service();
 
 		switch ( $operation ) {
-			case 'create':
-				return $this->handle_create( $service, $task, $system_prompt, $tool_slugs, $max_iter, $timeout, $model );
+			case 'send':
+				return $this->handle_send( $service, $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout );
 
-			case 'run':
-				return $this->handle_run( $service, $session_id, $task, $timeout );
+			case 'continue':
+				return $this->handle_continue( $service, $input, $interaction_id, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout );
 
-			case 'status':
-				return $this->handle_status( $service, $session_id );
+			case 'stream':
+				return $this->handle_stream( $service, $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout );
 
-			case 'list':
-				return $this->handle_list( $service );
+			case 'download':
+				return $this->handle_download( $service, $environment_id, $save_path );
 
-			case 'terminate':
-				return $this->handle_terminate( $service, $session_id );
+			case 'envs':
+				return $this->handle_envs( $service );
 
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_invalid_operation',
 					sprintf(
 						/* translators: %s: operation name */
-						__( 'Invalid operation: %s. Valid operations: create, run, status, list, terminate.', 'mcp-ai-wpoos' ),
+						__( 'Invalid operation: %s. Valid: send, continue, stream, download, envs.', 'mcp-ai-wpoos' ),
 						esc_html( $operation )
 					),
 					array( 'status' => 400 )
@@ -157,147 +170,96 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * Handle "create" operation — new agent session.
+	 * Handle "send" — new interaction.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service       Service instance.
-	 * @param string                                  $task          Task description.
-	 * @param string                                  $system_prompt System instructions.
-	 * @param array                                   $tool_slugs    Allowed tool slugs.
-	 * @param int                                     $max_iter      Max iterations.
-	 * @param int                                     $timeout       Timeout seconds.
-	 * @param string                                  $model         Model ID.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service            Service instance.
+	 * @param string                                 $input              Task input.
+	 * @param string                                 $environment_id     Environment ID.
+	 * @param string                                 $system_instruction System instruction.
+	 * @param array                                  $agent_tools        Agent tool slugs.
+	 * @param string                                 $agent_id           Agent ID.
+	 * @param int                                    $timeout            Timeout in seconds.
 	 * @return array|WP_Error
 	 */
-	protected function handle_create( $service, $task, $system_prompt, $tool_slugs, $max_iter, $timeout, $model ) {
-		$create_args = array(
-			'system_prompt'  => $system_prompt,
-			'tool_slugs'     => $tool_slugs,
-			'model'          => $model,
-			'max_iterations' => $max_iter,
-			'timeout'        => $timeout,
-		);
-
-		$result = $service->create_session( $create_args );
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		// If a task was provided, run it immediately.
-		if ( ! empty( $task ) ) {
-			$task_result = $service->run_task(
-				array(
-					'session_id' => $result['session_id'],
-					'task'       => $task,
-					'timeout'    => $timeout,
-				)
-			);
-
-			if ( is_wp_error( $task_result ) ) {
-				// Session was created but task failed — return both.
-				return $this->build_chat_response(
-					sprintf(
-						/* translators: 1: session ID, 2: error message */
-						__( 'Session created (ID: %1$s) but task failed: %2$s. The session is still active.', 'mcp-ai-wpoos' ),
-						esc_html( $result['session_id'] ),
-						esc_html( $task_result->get_error_message() )
-					),
-					array_merge(
-						$result,
-						array( 'task_error' => $task_result->get_error_message() )
-					)
-				);
-			}
-
-			return $this->build_chat_response(
-				isset( $task_result['message'] ) ? $task_result['message'] : __( 'Task completed.', 'mcp-ai-wpoos' ),
-				array_merge( $result, $task_result )
-			);
-		}
-
-		return $this->build_chat_response(
-			sprintf(
-				/* translators: %s: session ID */
-				__( 'Agent session created. Session ID: %s. Use this ID with the "run" operation to execute tasks.', 'mcp-ai-wpoos' ),
-				esc_html( $result['session_id'] )
-			),
-			$result
-		);
+	protected function handle_send( $service, $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout ) {
+		return $this->handle_stream( $service, $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout );
 	}
 
 	/**
-	 * Handle "run" operation — execute task in existing session.
+	 * Handle "continue" — continue a previous interaction.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service    Service instance.
-	 * @param string                                  $session_id Session ID.
-	 * @param string                                  $task       Task description.
-	 * @param int                                     $timeout    Timeout seconds.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service            Service instance.
+	 * @param string                                 $input              Task input.
+	 * @param string                                 $interaction_id     Previous interaction ID.
+	 * @param string                                 $environment_id     Environment ID.
+	 * @param string                                 $system_instruction System instruction.
+	 * @param array                                  $agent_tools        Agent tool slugs.
+	 * @param string                                 $agent_id           Agent ID.
+	 * @param int                                    $timeout            Timeout in seconds.
 	 * @return array|WP_Error
 	 */
-	protected function handle_run( $service, $session_id, $task, $timeout ) {
-		if ( empty( $session_id ) ) {
+	protected function handle_continue( $service, $input, $interaction_id, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout ) {
+		if ( empty( $interaction_id ) ) {
 			return new WP_Error(
-				'wp_mcp_ai_missing_session',
-				__( 'Session ID is required for the "run" operation.', 'mcp-ai-wpoos' ),
+				'wp_mcp_ai_missing_interaction_id',
+				__( 'An interaction ID is required for the "continue" operation. Use the ID returned by a previous "send" or "stream" call.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
 
-		if ( empty( $task ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_task',
-				__( 'A task description is required for the "run" operation.', 'mcp-ai-wpoos' ),
-				array( 'status' => 400 )
-			);
-		}
+		$args   = $this->build_interaction_args( $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout );
+		$result = $service->continue_interaction( $interaction_id, $input, $args );
 
-		$result = $service->run_task(
-			array(
-				'session_id' => $session_id,
-				'task'       => $task,
-				'timeout'    => $timeout,
-			)
-		);
-
-		if ( is_wp_error( $result ) ) {
-			// Check if it's an availability error and offer fallback.
-			if ( 'wp_mcp_ai_managed_agents_unavailable' === $result->get_error_code() ) {
-				return $this->build_chat_response(
-					$result->get_error_message(),
-					array(
-						'session_id' => $session_id,
-						'status'     => 'unavailable',
-						'suggestion' => __( 'The Managed Agents API will be available in the coming weeks per Google I/O 2026. In the meantime, use individual tools directly.', 'mcp-ai-wpoos' ),
-					)
-				);
-			}
-
-			return $result;
-		}
-
-		return $this->build_chat_response(
-			isset( $result['message'] ) ? $result['message'] : __( 'Task completed.', 'mcp-ai-wpoos' ),
-			$result
-		);
+		return $this->format_response( $result );
 	}
 
 	/**
-	 * Handle "status" operation.
+	 * Handle "stream" — send with streaming (SSE).
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service    Service instance.
-	 * @param string                                  $session_id Session ID.
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service            Service instance.
+	 * @param string                                 $input              Task input.
+	 * @param string                                 $environment_id     Environment ID.
+	 * @param string                                 $system_instruction System instruction.
+	 * @param array                                  $agent_tools        Agent tool slugs.
+	 * @param string                                 $agent_id           Agent ID.
+	 * @param int                                    $timeout            Timeout in seconds.
 	 * @return array|WP_Error
 	 */
-	protected function handle_status( $service, $session_id ) {
-		if ( empty( $session_id ) ) {
+	protected function handle_stream( $service, $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout ) {
+		if ( empty( $input ) ) {
 			return new WP_Error(
-				'wp_mcp_ai_missing_session',
-				__( 'Session ID is required for the "status" operation.', 'mcp-ai-wpoos' ),
+				'wp_mcp_ai_missing_input',
+				__( 'An input prompt is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
 
-		$result = $service->get_session( $session_id );
+		$args           = $this->build_interaction_args( $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout );
+		$args['stream'] = true;
+
+		$result = $service->send_interaction( $args );
+
+		return $this->format_response( $result );
+	}
+
+	/**
+	 * Handle "download" — download sandbox files.
+	 *
+	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service        Service instance.
+	 * @param string                                 $environment_id Environment ID.
+	 * @param string                                 $save_path      Optional save path.
+	 * @return array|WP_Error
+	 */
+	protected function handle_download( $service, $environment_id, $save_path ) {
+		if ( empty( $environment_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_environment_id',
+				__( 'An environment ID is required for the "download" operation.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$result = $service->download_environment_files( $environment_id, $save_path );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -305,71 +267,169 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 
 		return $this->build_chat_response(
 			sprintf(
-				/* translators: %s: session status */
-				__( 'Session status: %s', 'mcp-ai-wpoos' ),
-				esc_html( $result['status'] )
+				/* translators: 1: file size in KB, 2: environment ID */
+				__( 'Environment snapshot downloaded (size: %1$s KB) for environment %2$s.', 'mcp-ai-wpoos' ),
+				round( $result['size'] / 1024, 1 ),
+				esc_html( $environment_id )
 			),
 			$result
 		);
 	}
 
 	/**
-	 * Handle "list" operation.
+	 * Handle "envs" — list tracked environments.
 	 *
 	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service Service instance.
 	 * @return array
 	 */
-	protected function handle_list( $service ) {
-		$sessions = $service->list_sessions();
+	protected function handle_envs( $service ) {
+		$environments = $service->list_environments();
 
-		if ( empty( $sessions ) ) {
+		if ( empty( $environments ) ) {
 			return $this->build_chat_response(
-				__( 'No active agent sessions.', 'mcp-ai-wpoos' ),
-				array( 'sessions' => array() )
+				__( 'No tracked agent environments. Run a "send" operation to create one.', 'mcp-ai-wpoos' ),
+				array( 'environments' => array() )
 			);
 		}
 
 		return $this->build_chat_response(
 			sprintf(
-				/* translators: %d: number of sessions */
+				/* translators: %d: number of environments */
 				_n(
-					'%d active agent session.',
-					'%d active agent sessions.',
-					count( $sessions ),
+					'%d tracked agent environment.',
+					'%d tracked agent environments.',
+					count( $environments ),
 					'mcp-ai-wpoos'
 				),
-				count( $sessions )
+				count( $environments )
 			),
-			array( 'sessions' => $sessions )
+			array( 'environments' => $environments )
 		);
 	}
 
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
+
 	/**
-	 * Handle "terminate" operation.
+	 * Build interaction arguments from tool parameters.
 	 *
-	 * @param WP_MCP_AI_Gemini_Managed_Agent_Service $service    Service instance.
-	 * @param string                                  $session_id Session ID.
-	 * @return array|WP_Error
+	 * @param string $input              Task input.
+	 * @param string $environment_id     Environment ID.
+	 * @param string $system_instruction System instruction.
+	 * @param array  $agent_tools        Agent tool restrictions.
+	 * @param string $agent_id           Agent ID.
+	 * @param int    $timeout            Timeout in seconds.
+	 * @return array
 	 */
-	protected function handle_terminate( $service, $session_id ) {
-		if ( empty( $session_id ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_session',
-				__( 'Session ID is required for the "terminate" operation.', 'mcp-ai-wpoos' ),
-				array( 'status' => 400 )
-			);
+	protected function build_interaction_args( $input, $environment_id, $system_instruction, $agent_tools, $agent_id, $timeout ) {
+		$args = array(
+			'input'   => $input,
+			'timeout' => $timeout,
+		);
+
+		if ( ! empty( $environment_id ) ) {
+			$args['environment'] = $environment_id;
 		}
 
-		$result = $service->terminate_session( $session_id );
+		if ( ! empty( $system_instruction ) ) {
+			$args['system_instruction'] = $system_instruction;
+		}
 
+		if ( ! empty( $agent_tools ) ) {
+			$args['tools'] = $agent_tools;
+		}
+
+		if ( ! empty( $agent_id ) ) {
+			$args['agent'] = $agent_id;
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Format an interaction result into a chat response.
+	 *
+	 * @param array|WP_Error $result The interaction result.
+	 * @return array|WP_Error
+	 */
+	protected function format_response( $result ) {
 		if ( is_wp_error( $result ) ) {
+			// If unavailable, offer guidance.
+			if ( 'wp_mcp_ai_managed_agents_unavailable' === $result->get_error_code() ) {
+				return $this->build_chat_response(
+					$result->get_error_message(),
+					array(
+						'status'     => 'unavailable',
+						'suggestion' => __( 'Enable Managed Agents in Settings → NV oOS → Providers → Gemini to use the Antigravity agent.', 'mcp-ai-wpoos' ),
+					)
+				);
+			}
+
 			return $result;
 		}
 
-		return $this->build_chat_response(
-			__( 'Agent session terminated.', 'mcp-ai-wpoos' ),
-			$result
+		// Build the response message.
+		$output_text = isset( $result['output_text'] ) ? $result['output_text'] : __( 'Task completed.', 'mcp-ai-wpoos' );
+
+		// Highlight the interaction/environment IDs for reuse.
+		$meta = array();
+		if ( ! empty( $result['interaction_id'] ) ) {
+			$meta[] = sprintf(
+				/* translators: %s: interaction ID */
+				__( 'Interaction: %s', 'mcp-ai-wpoos' ),
+				$result['interaction_id']
+			);
+		}
+		if ( ! empty( $result['environment_id'] ) ) {
+			$meta[] = sprintf(
+				/* translators: %s: environment ID */
+				__( 'Environment: %s', 'mcp-ai-wpoos' ),
+				$result['environment_id']
+			);
+		}
+
+		if ( ! empty( $meta ) ) {
+			$output_text .= "\n\n---\n" . implode( "\n", $meta );
+		}
+
+		// Append token usage if available.
+		if ( ! empty( $result['usage'] ) ) {
+			$usage       = $result['usage'];
+			$usage_parts = array();
+			if ( isset( $usage['input_tokens'] ) ) {
+				$usage_parts[] = sprintf(
+					/* translators: %d: token count */
+					__( 'Input: %d tokens', 'mcp-ai-wpoos' ),
+					absint( $usage['input_tokens'] )
+				);
+			}
+			if ( isset( $usage['output_tokens'] ) ) {
+				$usage_parts[] = sprintf(
+					/* translators: %d: token count */
+					__( 'Output: %d tokens', 'mcp-ai-wpoos' ),
+					absint( $usage['output_tokens'] )
+				);
+			}
+			if ( ! empty( $usage_parts ) ) {
+				$output_text .= "\n" . implode( ' | ', $usage_parts );
+			}
+		}
+
+		// Merge relevant result data into the response.
+		$response_data = array_merge(
+			$result,
+			array(
+				'interaction_id'  => $result['interaction_id'] ?? '',
+				'environment_id'  => $result['environment_id'] ?? '',
+				'step_count'      => $result['step_count'] ?? 0,
+				'tool_call_count' => $result['tool_call_count'] ?? 0,
+				'finish_reason'   => $result['finish_reason'] ?? '',
+				'event_count'     => $result['event_count'] ?? 0,
+			)
 		);
+
+		return $this->build_chat_response( $output_text, $response_data );
 	}
 
 	/**
@@ -378,7 +438,7 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	public function get_capability_flags() {
 		return array(
 			'background-only'  => true,
-			'token_multiplier' => 10.0,
+			'token_multiplier' => 15.0, // Antigravity can accumulate 3-5M tokens per interaction.
 		);
 	}
 
@@ -388,8 +448,76 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	public function get_model_requirements() {
 		return array(
 			'providers'    => array( 'gemini' ),
-			'capabilities' => array( 'function-calling' ),
+			// Note: Antigravity does NOT require function-calling capability.
+			// It uses its own built-in tools (code_execution, google_search, url_context).
+			'capabilities' => array(),
 			'required'     => true,
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * Strips large stream event arrays and raw environment data from the result
+	 * to keep LLM context size manageable. Keeps output_text, interaction IDs,
+	 * environment IDs, step/tool call summaries, and usage data.
+	 *
+	 * @param mixed $result Raw tool execution result.
+	 * @return mixed Sanitized result safe for LLM context.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip raw stream events — they can be enormous.
+		if ( isset( $result['stream_events'] ) ) {
+			unset( $result['stream_events'] );
+		}
+
+		// Strip raw binary tar data from downloads.
+		if ( isset( $result['tar_data'] ) ) {
+			unset( $result['tar_data'] );
+		}
+
+		// Strip raw steps array (keep only summary counts).
+		if ( isset( $result['steps'] ) ) {
+			unset( $result['steps'] );
+		}
+
+		// Strip raw tool calls array (keep only count).
+		if ( isset( $result['tool_calls'] ) ) {
+			unset( $result['tool_calls'] );
+		}
+
+		// Strip any base64-encoded image data.
+		if ( isset( $result['data'] ) ) {
+			unset( $result['data'] );
+		}
+
+		// Keep only essential metadata for LLM reasoning.
+		$keep_fields = array(
+			'interaction_id',
+			'environment_id',
+			'output_text',
+			'finish_reason',
+			'step_count',
+			'tool_call_count',
+			'event_count',
+			'size',
+			'save_path',
+			'save_url',
+			'usage',
+		);
+
+		$sanitized = array();
+
+		foreach ( $keep_fields as $field ) {
+			if ( isset( $result[ $field ] ) ) {
+				$sanitized[ $field ] = $result[ $field ];
+			}
+		}
+
+		return $sanitized;
 	}
 }

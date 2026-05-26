@@ -24,6 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
+
 /**
  * Performance Optimizer Assistant Tool Class
  *
@@ -40,6 +42,13 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	public function get_slug() {
 		return 'performance_optimizer_assistant';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Performance Optimizer Assistant', 'mcp-ai-wpoos' );
 	}
 
 	/**

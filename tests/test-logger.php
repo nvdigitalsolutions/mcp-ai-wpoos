@@ -132,13 +132,15 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'response', $context );
 		$this->assertIsArray( $context['response'] );
-		$this->assertArrayHasKey( 'preview', $context['response'] );
-		$preview_length = function_exists( 'mb_strlen' )
-			? mb_strlen( $context['response']['preview'], 'UTF-8' )
-			: strlen( $context['response']['preview'] );
+		$this->assertArrayHasKey( 'choices', $context['response'] );
 
-		$this->assertLessThanOrEqual( 401, $preview_length );
-		$this->assertTrue( $context['response']['truncated'] );
+		// The deeply nested content string (800 chars) should be truncated to ≤400 chars.
+		$nested_content = $context['response']['choices'][0]['message']['content'];
+		$content_length = function_exists( 'mb_strlen' )
+			? mb_strlen( $nested_content, 'UTF-8' )
+			: strlen( $nested_content );
+		$this->assertLessThanOrEqual( 401, $content_length );
+		$this->assertStringEndsWith( '…', $nested_content );
 
 		$this->assertIsArray( $response['choices'] );
 		$this->assertArrayHasKey( 'message', $response['choices'][0] );

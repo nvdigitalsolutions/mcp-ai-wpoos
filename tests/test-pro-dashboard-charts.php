@@ -12,6 +12,19 @@
  */
 
 class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
+
+	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure required classes are loaded (not always loaded in test bootstrap).
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+		}
+	}
+
 	/**
 	 * Test that get_chart_data returns proper structure.
 	 */

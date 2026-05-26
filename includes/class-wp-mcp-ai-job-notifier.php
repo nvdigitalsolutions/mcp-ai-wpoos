@@ -235,10 +235,10 @@ class WP_MCP_AI_Job_Notifier {
 		$steps = isset( $existing['steps'] ) && is_array( $existing['steps'] ) ? $existing['steps'] : array();
 
 		$step_record = array(
-			'label'      => $label,
-			'status'     => $status,
+			'label'       => $label,
+			'status'      => $status,
 			'recorded_at' => current_time( 'mysql', true ),
-			'metadata'   => $metadata,
+			'metadata'    => $metadata,
 		);
 
 		$steps[] = $step_record;
@@ -534,7 +534,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param array  $status Status data.
 	 * @return bool True on success.
 	 */
-	protected static function cache_job_status( $job_id, array $status ) {
+	public static function cache_job_status( $job_id, array $status ) {
 		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
 		return set_transient( $cache_key, $status, self::CACHE_DURATION );
 	}

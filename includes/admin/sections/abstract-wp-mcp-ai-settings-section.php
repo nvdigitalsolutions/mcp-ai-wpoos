@@ -601,7 +601,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Enhanced logging for federation/mesh checkboxes to help debug display issues.
 			if ( 'checkbox' === $type && in_array( $key, self::FEDERATION_CHECKBOXES, true ) ) {
-				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				if ( ! is_array( $settings ) ) {
+					$settings = array();
+				}
 				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.

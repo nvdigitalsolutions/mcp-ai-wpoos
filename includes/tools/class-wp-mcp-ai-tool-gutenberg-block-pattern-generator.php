@@ -24,6 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
+
 /**
  * Gutenberg Block Pattern Generator Tool Class
  *
@@ -40,6 +42,13 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	public function get_slug() {
 		return 'gutenberg_block_pattern_generator';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Gutenberg Block Pattern Generator', 'mcp-ai-wpoos' );
 	}
 
 	/**

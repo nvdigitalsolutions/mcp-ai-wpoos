@@ -37,6 +37,13 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Analyze Loop Health', 'mcp-ai-wpoos' );
+	}
+
+	/**
 	 * Get tool definition
 	 *
 	 * @return array

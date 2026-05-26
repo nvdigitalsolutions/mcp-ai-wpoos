@@ -153,9 +153,9 @@ class WP_MCP_AI_Tool_Artifact_Helper {
 			)
 		);
 
-		$encoded    = wp_json_encode( $payload );
-		$byte_size  = is_string( $encoded ) ? strlen( $encoded ) : 0;
-		$row_count  = null !== $args['count']
+		$encoded   = wp_json_encode( $payload );
+		$byte_size = is_string( $encoded ) ? strlen( $encoded ) : 0;
+		$row_count = null !== $args['count']
 			? (int) $args['count']
 			: ( is_array( $payload ) || $payload instanceof Countable ? count( $payload ) : 1 );
 

@@ -25,6 +25,11 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
+		}
+
 		$this->admin_user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_user_id );
 

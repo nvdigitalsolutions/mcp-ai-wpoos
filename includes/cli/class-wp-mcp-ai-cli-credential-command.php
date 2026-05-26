@@ -193,10 +193,10 @@ class WP_MCP_AI_CLI_Credential_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * @when after_wp_load
 	 */
 	public function revoke( $args, $assoc_args ) {
-		$assistant_id   = isset( $args[0] ) ? absint( $args[0] ) : 0;
-		$credential_id  = isset( $args[1] ) ? sanitize_key( $args[1] ) : '';
-		$user_id        = absint( \WP_CLI\Utils\get_flag_value( $assoc_args, 'user', 1 ) );
-		$yes            = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		$assistant_id  = isset( $args[0] ) ? absint( $args[0] ) : 0;
+		$credential_id = isset( $args[1] ) ? sanitize_key( $args[1] ) : '';
+		$user_id       = absint( \WP_CLI\Utils\get_flag_value( $assoc_args, 'user', 1 ) );
+		$yes           = \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
 
 		if ( ! $assistant_id ) {
 			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );

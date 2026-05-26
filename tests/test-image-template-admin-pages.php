@@ -26,6 +26,11 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
 
+		// Pro-only class — loaded by the Pro addon bootstrap but may not be auto-loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Image_Template_CPT' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-image-template-cpt.php';
+		}
+
 		// Store original settings.
 		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
 

@@ -11,7 +11,7 @@ class Test_Media_Studio_REST extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! defined( 'NVOOS_MEDIA_STUDIO_VERSION' ) ) {
-			define( 'NVOOS_MEDIA_STUDIO_VERSION', '0.1.0' );
+			define( 'NVOOS_MEDIA_STUDIO_VERSION', '0.3.0' );
 		}
 		require_once dirname( __DIR__ ) . '/includes/rest/class-nvoos-media-studio-rest.php';
 	}

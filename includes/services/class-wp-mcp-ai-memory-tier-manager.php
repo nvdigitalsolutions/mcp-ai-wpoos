@@ -307,13 +307,13 @@ class WP_MCP_AI_Memory_Tier_Manager {
 	 */
 	protected function apply_transition( array $record, array $transition ) {
 		$payload = array(
-			'context_id'   => isset( $record['context_id'] ) ? (string) $record['context_id'] : '',
-			'agent_id'     => isset( $record['agent_id'] ) ? (string) $record['agent_id'] : '',
-			'wing'         => isset( $record['wing'] ) ? (string) $record['wing'] : '',
-			'room'         => isset( $record['room'] ) ? (string) $record['room'] : '',
-			'from_tier'    => isset( $transition['from'] ) ? (string) $transition['from'] : '',
-			'to_tier'      => isset( $transition['to'] ) ? (string) $transition['to'] : '',
-			'kind'         => isset( $transition['kind'] ) ? (string) $transition['kind'] : '',
+			'context_id'      => isset( $record['context_id'] ) ? (string) $record['context_id'] : '',
+			'agent_id'        => isset( $record['agent_id'] ) ? (string) $record['agent_id'] : '',
+			'wing'            => isset( $record['wing'] ) ? (string) $record['wing'] : '',
+			'room'            => isset( $record['room'] ) ? (string) $record['room'] : '',
+			'from_tier'       => isset( $transition['from'] ) ? (string) $transition['from'] : '',
+			'to_tier'         => isset( $transition['to'] ) ? (string) $transition['to'] : '',
+			'kind'            => isset( $transition['kind'] ) ? (string) $transition['kind'] : '',
 			'transitioned_at' => current_time( 'mysql' ),
 		);
 
@@ -352,10 +352,10 @@ class WP_MCP_AI_Memory_Tier_Manager {
 						array_merge(
 							isset( $record['metadata_decoded'] ) && is_array( $record['metadata_decoded'] ) ? $record['metadata_decoded'] : array(),
 							array(
-								'tier'           => $payload['to_tier'],
-								'tier_changed'   => $payload['transitioned_at'],
-								'tier_kind'      => $payload['kind'],
-								'tier_previous'  => $payload['from_tier'],
+								'tier'          => $payload['to_tier'],
+								'tier_changed'  => $payload['transitioned_at'],
+								'tier_kind'     => $payload['kind'],
+								'tier_previous' => $payload['from_tier'],
 							)
 						)
 					),
@@ -443,7 +443,7 @@ class WP_MCP_AI_Memory_Tier_Manager {
 	}
 
 	/*
-	 ==================================================================
+	==================================================================
 	 * Memory Layer 2026 Phase 5 — Confidence decay
 	 * ==================================================================
 	 *
@@ -461,7 +461,8 @@ class WP_MCP_AI_Memory_Tier_Manager {
 	 * Legacy rows (no `confidence_score`, no `last_accessed_at`) use the
 	 * documented Phase 2 fallbacks: confidence defaults to 1.0, last access
 	 * defaults to `stored_at` / `transaction_time`.
-	 * ----------------------------------------------------------------- */
+	 * -----------------------------------------------------------------
+	 */
 
 	/**
 	 * Run a single decay sweep.

@@ -48,16 +48,26 @@ class WP_MCP_AI_Prompt_Optimizer {
 	 * Industry standard: place static/repeated content at the beginning
 	 * and dynamic/user-specific content at the end of the messages array.
 	 *
+	 * CACHE LAYOUT (v1.5.1):
+	 *   [1] static system prompt     ← byte-identical across requests → CACHED
+	 *   [2] conversation history     ← changes per turn, but same prefix → PARTIAL CACHE
+	 *   [3] memory/RAG documents     ← changes per query, but at tail → doesn't break prefix
+	 *   [4] dynamic date context     ← changes daily, at tail → doesn't break prefix
+	 *
+	 * Previous layout placed memory documents between system prompt and
+	 * conversation, which caused any change in retrieved documents to
+	 * invalidate the cache for the entire conversation history.
+	 *
 	 * @param array $messages Chat messages array (role/content pairs).
 	 * @param array $options  Request options including system_prompt.
 	 * @return array Reordered messages.
 	 */
 	public static function order_for_cache_hit( array $messages, array $options ) {
-		$system_messages  = array();
-		$static_messages  = array();
-		$dynamic_messages = array();
+		$system_messages    = array();
+		$conversation       = array();
+		$trailing_messages  = array();
 
-		// Extract system prompt from options and place it first.
+		// --- Layer 1: Static system prompt (MUST be first for prefix caching) ---
 		if ( ! empty( $options['system_prompt'] ) ) {
 			$system_messages[] = array(
 				'role'    => 'system',
@@ -65,7 +75,7 @@ class WP_MCP_AI_Prompt_Optimizer {
 			);
 		}
 
-		// Separate existing messages: system first, then others.
+		// --- Layer 2: Conversation history (the main body, changes per-turn) ---
 		foreach ( $messages as $message ) {
 			if ( ! is_array( $message ) || ! isset( $message['role'] ) ) {
 				continue;
@@ -76,18 +86,20 @@ class WP_MCP_AI_Prompt_Optimizer {
 				continue;
 			}
 
-			$dynamic_messages[] = $message;
+			$conversation[] = $message;
 		}
 
-		// Insert memory documents as static context after system prompt.
+		// --- Layer 3: Memory/RAG documents (placed after conversation to protect prefix) ---
+		// When these change between requests (different retrieval results), only the
+		// tail of the array changes, leaving the system+conversation prefix cache intact.
 		if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
 			foreach ( $options['memory_documents'] as $doc ) {
 				if ( ! empty( $doc['content'] ) ) {
-					$static_messages[] = array(
+					$trailing_messages[] = array(
 						'role'    => 'system',
 						'content' => sprintf(
-							/* translators: %s: document title */
-							__( '[Reference: %s] %s', 'mcp-ai-wpoos' ),
+							/* translators: %1$s: document title, %2$s: document content */
+							__( '[Reference: %1$s] %2$s', 'mcp-ai-wpoos' ),
 							isset( $doc['title'] ) ? $doc['title'] : __( 'Document', 'mcp-ai-wpoos' ),
 							$doc['content']
 						),
@@ -96,8 +108,18 @@ class WP_MCP_AI_Prompt_Optimizer {
 			}
 		}
 
-		// Assemble: system → static context → conversation history.
-		return array_merge( $system_messages, $static_messages, $dynamic_messages );
+		// --- Layer 4: Dynamic date context (changes daily, at very end) ---
+		// Placed last so the entire prefix remains stable across same-day requests.
+		// The validator stores this in dynamic_date_context when prompt caching is on.
+		if ( ! empty( $options['dynamic_date_context'] ) ) {
+			$trailing_messages[] = array(
+				'role'    => 'system',
+				'content' => wp_kses_post( $options['dynamic_date_context'] ),
+			);
+		}
+
+		// Assemble: static system → conversation → trailing (memory + date).
+		return array_merge( $system_messages, $conversation, $trailing_messages );
 	}
 
 	/**
@@ -191,5 +213,127 @@ class WP_MCP_AI_Prompt_Optimizer {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Apply provider-specific prompt strategy to optimise cost and cache hit rates.
+	 *
+	 * Each provider has different cost structures and caching behaviour:
+	 *
+	 *   DeepSeek  — absurdly cheap cache hits, tolerates large repeated context.
+	 *               Strategy: include everything, no trimming, full tool set.
+	 *
+	 *   Claude    — strict cache matching, expensive output, punishes verbosity.
+	 *               Strategy: aggressive tool trimming, minimise memory docs,
+	 *               use cache_control, compact output instructions.
+	 *
+	 *   OpenAI    — balanced, moderate cache support.
+	 *               Strategy: standard tool set, moderate memory, prompt_cache_key.
+	 *
+	 *   Gemini    — gigantic context, excels at retrieval.
+	 *               Strategy: lean into semantic search hints, full tools.
+	 *
+	 *   OpenRouter — passthrough; strategy inherited from upstream provider.
+	 *
+	 * @since 1.5.1
+	 *
+	 * @param array  $options Request options (modified in place).
+	 * @param string $provider AI provider key.
+	 * @return array Modified options.
+	 */
+	public static function apply_provider_strategy( array $options, $provider ) {
+		switch ( $provider ) {
+			case 'anthropic':
+				// Claude: aggressive trimming to minimise fresh input tokens.
+				// Default auto_trim_tools keeps top-5 tools (vs default 10).
+				$options['autoTrimTools'] = true;
+				if ( ! isset( $options['maxTools'] ) ) {
+					$options['maxTools'] = 5;
+				}
+
+				// Cap memory documents to top-3 to protect prefix cache.
+				if ( ! empty( $options['memory_documents'] ) && count( $options['memory_documents'] ) > 3 ) {
+					$options['memory_documents'] = array_slice( $options['memory_documents'], 0, 3 );
+				}
+
+				// Prefer ephemeral cache_control (already handled by client).
+				$options['cache_system_prompt'] = ! empty( $options['cache_system_prompt'] );
+				break;
+
+			case 'deepseek':
+				// DeepSeek: include everything — it's cheap and handles large context well.
+				// Don't trim tools, keep all memory documents, use disk KV cache.
+				$options['autoTrimTools'] = false;
+				// Keep cache_system_prompt for prompt_cache_key routing.
+				break;
+
+			case 'gemini':
+				// Gemini: full tool set, unlimited context, retrieval-oriented.
+				$options['autoTrimTools'] = false;
+				// Gemini handles large context natively — no need to cap memory.
+				break;
+
+			case 'openai':
+			default:
+				// OpenAI: balanced — auto-trim if many tools, keep moderate memory.
+				$options['autoTrimTools'] = ! empty( $options['tools'] ) && count( $options['tools'] ) > 10;
+				if ( $options['autoTrimTools'] && ! isset( $options['maxTools'] ) ) {
+					$options['maxTools'] = 10;
+				}
+				break;
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Resolve the best model for agentic loop iterations vs final synthesis.
+	 *
+	 * Intermediate tool-calling turns don't need the most expensive model —
+	 * they're mechanical ("call tool X with args Y"). The final synthesis turn
+	 * is where reasoning quality matters most.
+	 *
+	 * Strategy: if the assistant's primary model is expensive (Claude Opus, GPT-4.1,
+	 * Gemini Pro) and a cheaper alternative is available, use the cheap model for
+	 * loop iterations 2+ and the primary model for the first and final turns.
+	 *
+	 * @since 1.5.1
+	 *
+	 * @param string $primary_model   The assistant's configured model.
+	 * @param string $provider         AI provider key.
+	 * @param int    $iteration         Current iteration (0-indexed).
+	 * @param int    $max_iterations    Total max iterations.
+	 * @param array  $options           Request options.
+	 * @return string Model to use for this iteration.
+	 */
+	public static function resolve_loop_model( $primary_model, $provider, $iteration, $max_iterations, array $options = array() ) {
+		// Only intervene on iterations 2+ (0 = first call, 1+ = loop iterations).
+		if ( $iteration < 1 ) {
+			return $primary_model;
+		}
+
+		// If this is the final iteration, use the primary model for quality synthesis.
+		if ( $iteration >= $max_iterations - 1 ) {
+			return $primary_model;
+		}
+
+		// Check for explicit agentic_loop_model in options (per-request override).
+		if ( ! empty( $options['agentic_loop_model'] ) ) {
+			return sanitize_text_field( $options['agentic_loop_model'] );
+		}
+
+		// Provider-specific cheap loop models (hardcoded fallbacks).
+		$cheap_models = array(
+			'openai'    => 'gpt-4.1-mini',
+			'anthropic' => 'claude-haiku-4-5',
+			'deepseek'  => 'deepseek-chat',  // DeepSeek V4 is already cheap.
+			'gemini'    => 'gemini-2.5-flash',
+		);
+
+		if ( isset( $cheap_models[ $provider ] ) && $cheap_models[ $provider ] !== $primary_model ) {
+			return $cheap_models[ $provider ];
+		}
+
+		return $primary_model;
 	}
 }

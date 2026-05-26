@@ -28,7 +28,8 @@ class WP_MCP_AI_Security_Audit_Admin {
 	 * Constructor
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_admin_page' ) );
+		// Priority 26: parent nvoos-pro-dashboard menu registers at priority 25.
+		add_action( 'admin_menu', array( $this, 'add_admin_page' ), 26 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 

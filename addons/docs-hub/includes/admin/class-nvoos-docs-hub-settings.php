@@ -547,7 +547,10 @@ class NV_oOS_Docs_Hub_Settings {
 			if ( preg_match( '#(^|/)\.\.(/|$)#', $line ) ) {
 				continue;
 			}
-			if ( ! preg_match( '#^[A-Za-z0-9_./\-]+/?$#', $line ) ) {
+			// Allow common filename characters. The '..' check above prevents
+			// path traversal independently of this character class, so we can
+			// be permissive for legitimate repo filenames.
+			if ( ! preg_match( '#^[A-Za-z0-9_./\- @(){}\[\]\'"!,;+]+/?$#', $line ) ) {
 				continue;
 			}
 			$out[] = $line;
@@ -740,7 +743,27 @@ class NV_oOS_Docs_Hub_Settings {
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( 'nvoos_docs_hub_settings_group' );
-				do_settings_sections( 'nvoos-docs-hub' );
+				try {
+					do_settings_sections( 'nvoos-docs-hub' );
+				} catch ( \Throwable $e ) {
+					echo '<div class="notice notice-error"><p>';
+					echo esc_html(
+						sprintf(
+							/* translators: %s: error message */
+							__( 'Error rendering settings sections: %s', 'nvoos-docs-hub' ),
+							$e->getMessage()
+						)
+					);
+					echo '</p></div>';
+					error_log(
+						sprintf(
+							'[NV oOS Docs Hub] do_settings_sections fatal: %s in %s:%d',
+							$e->getMessage(),
+							$e->getFile(),
+							$e->getLine()
+						)
+					);
+				}
 				submit_button();
 				?>
 			</form>
@@ -785,7 +808,8 @@ class NV_oOS_Docs_Hub_Settings {
 		<input type="text"
 			name="<?php echo esc_attr( NV_oOS_Docs_Hub_Plugin::OPTION_KEY . '[' . $args['id'] . ']' ); ?>"
 			value="<?php echo esc_attr( $value ); ?>"
-			class="regular-text" />
+			class="regular-text"
+			autocomplete="off" />
 		<?php if ( ! empty( $args['description'] ) ) : ?>
 			<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
 		<?php endif; ?>
@@ -937,36 +961,37 @@ class NV_oOS_Docs_Hub_Settings {
 
 		echo '<div id="nvoos-dh-remote-repos-wrap">';
 
-		foreach ( $repos as $i => $r ) :
-			// Defensive: a malformed (string/null/scalar) row from a partial migration must
-			// not fatal the settings page. Coerce to an array and surface an inline notice.
-			if ( ! is_array( $r ) ) {
-				$r = array();
-				echo '<div class="notice notice-warning inline" style="margin:0 0 10px 0;"><p>';
-				printf(
+		try {
+			foreach ( $repos as $i => $r ) :
+				// Defensive: a malformed (string/null/scalar) row from a partial migration must
+				// not fatal the settings page. Coerce to an array and surface an inline notice.
+				if ( ! is_array( $r ) ) {
+					$r = array();
+					echo '<div class="notice notice-warning inline" style="margin:0 0 10px 0;"><p>';
+					printf(
 					/* translators: %d: 1-based row index */
-					esc_html__( 'NV oOS Docs Hub: remote repository row #%d was stored in an unexpected shape and has been reset to defaults. Please re-enter the values and save.', 'nvoos-docs-hub' ),
-					(int) ( $i + 1 )
-				);
-				echo '</p></div>';
-			}
-			$owner = esc_attr( is_string( $r['owner'] ?? '' ) ? $r['owner'] : '' );
-			$repo  = esc_attr( is_string( $r['repo'] ?? '' ) ? $r['repo'] : '' );
-			$ref   = esc_attr( is_string( $r['ref'] ?? 'HEAD' ) ? $r['ref'] : 'HEAD' );
-			$label = esc_attr( is_string( $r['label'] ?? '' ) ? $r['label'] : '' );
-			$path  = esc_attr( is_string( $r['path'] ?? '' ) ? $r['path'] : '' );
-			// Token: never echo saved token back for security — show placeholder.
-			$has_token      = ! empty( $r['token'] );
-			$selection_mode = isset( $r['selection_mode'] ) && in_array( $r['selection_mode'], array( 'all', 'prefix', 'selected' ), true )
+						esc_html__( 'NV oOS Docs Hub: remote repository row #%d was stored in an unexpected shape and has been reset to defaults. Please re-enter the values and save.', 'nvoos-docs-hub' ),
+						(int) ( $i + 1 )
+					);
+					echo '</p></div>';
+				}
+				$owner = esc_attr( is_string( $r['owner'] ?? '' ) ? $r['owner'] : '' );
+				$repo  = esc_attr( is_string( $r['repo'] ?? '' ) ? $r['repo'] : '' );
+				$ref   = esc_attr( is_string( $r['ref'] ?? 'HEAD' ) ? $r['ref'] : 'HEAD' );
+				$label = esc_attr( is_string( $r['label'] ?? '' ) ? $r['label'] : '' );
+				$path  = esc_attr( is_string( $r['path'] ?? '' ) ? $r['path'] : '' );
+				// Token: never echo saved token back for security — show placeholder.
+				$has_token      = ! empty( $r['token'] );
+				$selection_mode = isset( $r['selection_mode'] ) && in_array( $r['selection_mode'], array( 'all', 'prefix', 'selected' ), true )
 				? $r['selection_mode']
 				: 'all';
-			// Coerce path lists defensively. A flat string (from older migrations) is
-			// split on newlines so the textarea round-trips correctly.
-			$selected_paths = self::coerce_path_list( $r['selected_paths'] ?? array() );
-			$excluded_paths = self::coerce_path_list( $r['excluded_paths'] ?? array() );
-			$selected_text  = esc_textarea( implode( "\n", $selected_paths ) );
-			$excluded_text  = esc_textarea( implode( "\n", $excluded_paths ) );
-			?>
+				// Coerce path lists defensively. A flat string (from older migrations) is
+				// split on newlines so the textarea round-trips correctly.
+				$selected_paths = self::coerce_path_list( $r['selected_paths'] ?? array() );
+				$excluded_paths = self::coerce_path_list( $r['excluded_paths'] ?? array() );
+				$selected_text  = esc_textarea( implode( "\n", $selected_paths ) );
+				$excluded_text  = esc_textarea( implode( "\n", $excluded_paths ) );
+				?>
 			<div class="nvoos-dh-remote-repo-row" style="border:1px solid #ccd0d4; border-radius:4px; padding:12px; margin-bottom:10px; background:#fafafa;">
 				<table class="widefat" style="background:transparent; border:none;">
 					<tr>
@@ -976,7 +1001,8 @@ class NV_oOS_Docs_Hub_Settings {
 								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][owner]" ); ?>"
 								value="<?php echo $owner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
 								placeholder="e.g. nvdigitalsolutions"
-								class="regular-text" required />
+								class="regular-text"
+								autocomplete="off" required />
 						</td>
 					</tr>
 					<tr>
@@ -986,7 +1012,8 @@ class NV_oOS_Docs_Hub_Settings {
 								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][repo]" ); ?>"
 								value="<?php echo $repo; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
 								placeholder="e.g. mcp-ai-wpoos"
-								class="regular-text" required />
+								class="regular-text"
+								autocomplete="off" required />
 						</td>
 					</tr>
 					<tr>
@@ -996,7 +1023,8 @@ class NV_oOS_Docs_Hub_Settings {
 								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][ref]" ); ?>"
 								value="<?php echo $ref; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
 								placeholder="HEAD"
-								class="regular-text" />
+								class="regular-text"
+								autocomplete="off" />
 							<p class="description"><?php esc_html_e( 'Branch name, tag, or commit SHA. Default: HEAD (latest commit on default branch).', 'nvoos-docs-hub' ); ?></p>
 						</td>
 					</tr>
@@ -1007,7 +1035,8 @@ class NV_oOS_Docs_Hub_Settings {
 								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][label]" ); ?>"
 								value="<?php echo $label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
 								placeholder="<?php esc_attr_e( 'e.g. My Plugin Docs', 'nvoos-docs-hub' ); ?>"
-								class="regular-text" />
+								class="regular-text"
+								autocomplete="off" />
 							<p class="description"><?php esc_html_e( 'Human-readable name shown in the sidebar.', 'nvoos-docs-hub' ); ?></p>
 						</td>
 					</tr>
@@ -1018,7 +1047,8 @@ class NV_oOS_Docs_Hub_Settings {
 								name="<?php echo esc_attr( "{$option_key}[remote_repos][{$i}][path]" ); ?>"
 								value="<?php echo $path; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd ?>"
 								placeholder="e.g. docs"
-								class="regular-text" />
+								class="regular-text"
+								autocomplete="off" />
 							<p class="description"><?php esc_html_e( 'Optional: restrict to a subdirectory (e.g. "docs"). Leave blank to index the whole repo.', 'nvoos-docs-hub' ); ?></p>
 						</td>
 					</tr>
@@ -1125,8 +1155,27 @@ class NV_oOS_Docs_Hub_Settings {
 					</tr>
 				</table>
 			</div>
-			<?php
+				<?php
 		endforeach;
+		} catch ( \Throwable $e ) {
+			echo '<div class="notice notice-error inline" style="margin:10px 0;"><p>';
+			echo esc_html(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Error rendering remote repository settings: %s', 'nvoos-docs-hub' ),
+					$e->getMessage()
+				)
+			);
+			echo '</p></div>';
+			error_log(
+				sprintf(
+					'[NV oOS Docs Hub] render_remote_repos fatal: %s in %s:%d',
+					$e->getMessage(),
+					$e->getFile(),
+					$e->getLine()
+				)
+			);
+		}
 
 		echo '</div><!-- #nvoos-dh-remote-repos-wrap -->';
 		echo '<p>';
