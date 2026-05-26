@@ -847,6 +847,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Custom base URL for Gemini API requests. Leave empty to use the default Google AI Studio endpoint. Useful for Vertex AI Enterprise deployments with custom regional endpoints or proxy services. Must include the version path (e.g. /v1beta).', 'mcp-ai-wpoos' ),
 					'placeholder' => 'https://generativelanguage.googleapis.com/v1beta',
 				),
+				'enable_managed_agents'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Gemini Managed Agents (Antigravity)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable the Antigravity managed agent via the Interactions API', 'mcp-ai-wpoos' ),
+					'description'    => sprintf(
+						/* translators: %s: link to Antigravity docs */
+						__( 'Enables the <a href="%s" target="_blank">Antigravity agent</a> — a managed AI agent that runs in an isolated Google cloud sandbox with code execution, web browsing, and file management. Each interaction provisions a Linux environment where the agent reasons, plans, and executes tasks autonomously. Note: the Antigravity agent has its own built-in tools and does not support WordPress function calling. Costs are per-interaction based on token usage (typically $0.25–$5 per task).', 'mcp-ai-wpoos' ),
+						'https://ai.google.dev/gemini-api/docs/antigravity-agent'
+					),
+					'default'        => false,
+				),
 
 				// Ollama Settings.
 				'enable_ollama'                      => array(
@@ -1425,7 +1436,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url', 'enable_managed_agents' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',

@@ -80,9 +80,10 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 | **Advanced Features** |
 | Function calling (tools) | ✅ Available | ✅ Implemented | `translate_tools()` | OpenAI-compatible |
 | Thinking mode (3.5 Flash) | ✅ Available | ✅ Implemented | Dynamic thinking by default | 3.5 Flash auto-allocates compute |
-| Managed Agents | ✅ Available | ⚠️ Planned (Service Ready) | `class-wp-mcp-ai-gemini-managed-agent-service.php` | Container-based agent execution; gated behind API availability |
-| Code execution | ✅ Available | ❌ Not Implemented | - | Low priority |
-| Grounding (Google Search) | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
+| Managed Agents (Antigravity) | ✅ Available | ✅ Implemented | `class-wp-mcp-ai-gemini-managed-agent-service.php` | Container-based agent execution via Interactions API; Antigravity agent with code_execution, google_search, url_context, filesystem |
+| Interactions API | ✅ Available | ✅ Implemented | `POST /v1beta/interactions` | Managed Agents API — single-call agent loop with sandbox environment |
+| Code execution | ✅ Available | ✅ Implemented (via Antigravity) | Antigravity agent `code_execution` tool | Run Python, JavaScript, Bash in sandbox |
+| Grounding (Google Search) | ✅ Available | ✅ Implemented (via Antigravity) | Antigravity agent `google_search` tool | Web search capability |
 | Context caching | ✅ Available | ❌ Not Implemented | - | **Gap identified** |
 | **Safety & Moderation** |
 | Safety settings | ✅ Available | ✅ Implemented | `build_payload()` lines 1605-1645 | **NEW Dec 2024** |
