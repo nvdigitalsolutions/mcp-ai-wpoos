@@ -163,7 +163,14 @@ export function configure(options) {
 			})
 				.then(function (response) {
 					if (!response.ok) {
-						throw new Error('Failed to fetch cron status');
+						// Read the response body for diagnostic info.
+						return response.text().then(function (body) {
+							let detail = 'HTTP ' + response.status;
+							if (body && body.length < 500) {
+								detail += ': ' + body;
+							}
+							throw new Error('Failed to fetch cron status (' + detail + ')');
+						});
 					}
 					return response.json();
 				})
