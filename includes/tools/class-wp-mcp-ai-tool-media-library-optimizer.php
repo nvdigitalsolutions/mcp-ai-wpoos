@@ -24,8 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
-
 /**
  * Media Library Optimizer Tool Class
  *
@@ -42,13 +40,6 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	 */
 	public function get_slug() {
 		return 'media_library_optimizer';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Media Library Optimizer', 'mcp-ai-wpoos' );
 	}
 
 	/**

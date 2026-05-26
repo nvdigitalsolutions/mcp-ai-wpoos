@@ -16,18 +16,6 @@
 class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Load required classes.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-		}
-	}
-
-	/**
 	 * Helper method to test checkbox normalization logic.
 	 *
 	 * This replicates the normalization logic from abstract-wp-mcp-ai-settings-section.php

@@ -14,7 +14,7 @@
 /**
  * Test agent memory stats cache functionality.
  */
-class Test_Orchestration_Memory_Stats_Cache extends WP_MCP_AI_Ajax_TestCase {
+class Test_Orchestration_Memory_Stats_Cache extends WP_UnitTestCase {
 
 	/**
 	 * Instance of the dashboard class

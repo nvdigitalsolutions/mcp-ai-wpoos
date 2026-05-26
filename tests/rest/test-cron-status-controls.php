@@ -108,19 +108,6 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		return $job_id;
 	}
 
-	/**
-	 * Create a WP_REST_Request with the X-WP-Nonce header set for the current user.
-	 *
-	 * @param string $method HTTP method.
-	 * @param string $route  REST route.
-	 * @return WP_REST_Request
-	 */
-	private function create_authenticated_request( $method, $route ) {
-		$request = new WP_REST_Request( $method, $route );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		return $request;
-	}
-
 	// -------------------------------------------------------------------------
 	// Route registration.
 	// -------------------------------------------------------------------------
@@ -174,7 +161,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->author_id );
 		$job_id = $this->plant_async_job( 'pending', $this->author_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -196,7 +183,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 		$job_id = $this->plant_async_job( 'running', $this->author_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -215,7 +202,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 		$job_id = $this->plant_async_job( 'completed', $this->admin_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/cancel' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -253,7 +240,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->author_id );
 		$job_id = $this->plant_async_job( 'failed', $this->author_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -275,7 +262,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 		$job_id = $this->plant_async_job( 'cancelled', $this->admin_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -294,7 +281,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 		$job_id = $this->plant_async_job( 'running', $this->admin_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -308,7 +295,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 		$job_id = $this->plant_async_job( 'pending', $this->admin_id );
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/' . $job_id . '/retry' );
 		$request->set_param( 'job_id', $job_id );
 
 		$response = $this->server->dispatch( $request );
@@ -326,6 +313,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 	public function test_cancel_job_calls_source_cancel_method() {
 		wp_set_current_user( $this->admin_id );
 
+		$called = false;
 		$mock   = new class() implements Interface_WP_MCP_AI_Cron_Status_Job_Source {
 			private $job_id = 'mock_job_xyz';
 			public $called  = false;
@@ -355,7 +343,7 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 			}
 		);
 
-		$request = $this->create_authenticated_request( 'POST', '/mcp-ai/v1/cron-status/mock_job_xyz/cancel' );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/cron-status/mock_job_xyz/cancel' );
 		$request->set_param( 'job_id', 'mock_job_xyz' );
 
 		$response = $this->server->dispatch( $request );
@@ -407,10 +395,8 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		$job_id   = $this->plant_async_job( 'pending', $this->author_id );
 
 		$this->assertTrue( $executor->is_owned_by( $job_id, $this->author_id ) );
-				// Note: The test bootstrap grants manage_options to all users via user_has_cap filter.
-				// Therefore subsribers also pass the admin ownership check in is_owned_by().
-				$this->assertTrue( $executor->is_owned_by( $job_id, $this->subscriber_id ) );
-				// Admin should always pass the ownership check.
-				$this->assertTrue( $executor->is_owned_by( $job_id, $this->admin_id ) );
+		$this->assertFalse( $executor->is_owned_by( $job_id, $this->subscriber_id ) );
+		// Admin should always pass the ownership check.
+		$this->assertTrue( $executor->is_owned_by( $job_id, $this->admin_id ) );
 	}
 }

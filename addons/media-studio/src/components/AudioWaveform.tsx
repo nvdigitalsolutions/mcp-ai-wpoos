@@ -3,25 +3,19 @@
  *
  * Waveform visualization powered by wavesurfer.js 7.
  * Renders the audio waveform into a container div, then exposes
- * Play/Pause, Seek-by-click, Zoom, Playback speed, and time display.
+ * Play/Pause, Seek-by-click, Zoom, and time display.
  *
- * @since 0.1.0  (initial)
- * @since 0.2.0  (playback speed)
+ * @since 0.1.0
  */
 
 import { __ } from '@wordpress/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
 interface AudioWaveformProps {
 	src?: string;
 	toolkit?: string;
 }
-
-const PLAYBACK_SPEEDS = [ 0.5, 0.75, 1, 1.25, 1.5, 2 ];
-
-const formatTime = ( s: number ) =>
-	`${ Math.floor( s / 60 ) }:${ String( Math.floor( s % 60 ) ).padStart( 2, '0' ) }`;
 
 export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 	const containerRef = useRef<HTMLDivElement>( null );
@@ -30,7 +24,6 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 	const [ currentTime, setCurrentTime ] = useState( 0 );
 	const [ totalDuration, setTotalDuration ] = useState( 0 );
 	const [ zoom, setZoom ] = useState( 20 );
-	const [ playbackRate, setPlaybackRate ] = useState( 1 );
 	const [ loading, setLoading ] = useState( false );
 	const [ loadError, setLoadError ] = useState( false );
 
@@ -43,7 +36,6 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 		setPlaying( false );
 		setCurrentTime( 0 );
 		setTotalDuration( 0 );
-		setPlaybackRate( 1 );
 
 		const ws = WaveSurfer.create( {
 			container: containerRef.current,
@@ -83,25 +75,15 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 		}
 	}, [ zoom ] );
 
-	// Apply playback rate.
-	useEffect( () => {
-		if ( wsRef.current ) {
-			wsRef.current.setPlaybackRate( playbackRate );
-		}
-	}, [ playbackRate ] );
-
-	const cyclePlaybackSpeed = useCallback( () => {
-		setPlaybackRate( ( prev ) => {
-			const idx = PLAYBACK_SPEEDS.indexOf( prev );
-			return PLAYBACK_SPEEDS[ ( idx + 1 ) % PLAYBACK_SPEEDS.length ];
-		} );
-	}, [] );
+	const formatTime = ( s: number ) =>
+		`${ Math.floor( s / 60 ) }:${ String( Math.floor( s % 60 ) ).padStart( 2, '0' ) }`;
 
 	if ( ! src ) {
 		return (
 			<div className="nvoos-ms-empty-state">
 				<p>
-					{ __( 'Pass an audio `src` URL via the shortcode to render the waveform.', 'nvoos-media-studio' ) }
+					Pass an audio <code>src</code> URL via the shortcode to render the
+					waveform.
 				</p>
 				{ toolkit && <p className="nvoos-ms-toolkit-label">{ __( 'Toolkit: ', 'nvoos-media-studio' ) }{ toolkit }</p> }
 			</div>
@@ -115,15 +97,15 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 				ref={ containerRef }
 				className={ 'nvoos-ms-waveform-canvas' + ( loading ? ' nvoos-ms-waveform-canvas--loading' : '' ) }
 				role="img"
-				aria-label={ __( 'Audio waveform', 'nvoos-media-studio' ) }
+				aria-label="Audio waveform"
 			/>
 			{ loadError && (
 				<p className="nvoos-ms-error" role="alert">
-					{ __( 'Failed to load audio. Check the URL or file format.', 'nvoos-media-studio' ) }
+					Failed to load audio. Check the URL or file format.
 				</p>
 			) }
 			{ /* Controls */ }
-			<div className="nvoos-ms-player-controls" role="group" aria-label={ __( 'Waveform player controls', 'nvoos-media-studio' ) }>
+			<div className="nvoos-ms-player-controls" role="group" aria-label="Waveform player controls">
 				<button
 					type="button"
 					className="nvoos-ms-toolbar-btn"
@@ -136,21 +118,8 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 				<span className="nvoos-ms-time" aria-live="off">
 					{ formatTime( currentTime ) } / { formatTime( totalDuration ) }
 				</span>
-
-				{ /* Speed */ }
-				<button
-					type="button"
-					className="nvoos-ms-toolbar-btn nvoos-ms-speed-btn"
-					onClick={ cyclePlaybackSpeed }
-					disabled={ loading || loadError }
-					aria-label={ __( 'Playback speed', 'nvoos-media-studio' ) }
-					title={ `Speed: ${ playbackRate }×` }
-				>
-					{ playbackRate }×
-				</button>
-
 				<label className="nvoos-ms-slider-label" aria-label={ __( 'Zoom', 'nvoos-media-studio' ) }>
-					{ __( 'Zoom', 'nvoos-media-studio' ) }
+					🔍
 					<input
 						type="range"
 						min={ 1 }
@@ -159,7 +128,7 @@ export function AudioWaveform( { src, toolkit }: AudioWaveformProps ) {
 						value={ zoom }
 						onChange={ ( e ) => setZoom( Number( e.target.value ) ) }
 						className="nvoos-ms-slider"
-						aria-label={ __( 'Waveform zoom', 'nvoos-media-studio' ) }
+						aria-label="Waveform zoom"
 					/>
 				</label>
 			</div>

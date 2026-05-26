@@ -154,7 +154,7 @@ class WP_MCP_AI_Federation_WellKnown {
 					'version'      => 1,
 					'endpoint'     => rest_url( 'mcp-ai/v1/acp' ),
 					'sse_endpoint' => rest_url( 'mcp-ai/v1/acp/sse' ),
-					'transports'   => array( 'http+sse' ), // WebSocket can be added here if implemented.
+					'transports'   => array( 'http+sse' ), // WebSocket can be added here if implemented
 					'auth_methods' => array( 'wp_nonce', 'bearer_credential', 'bearer_auth0', 'guest' ),
 					'capabilities' => array(
 						'loadSession'        => true,
@@ -170,7 +170,7 @@ class WP_MCP_AI_Federation_WellKnown {
 				),
 			),
 			'mcp'          => array(
-				'url' => rest_url( 'mcp-ai/v1' ), // Kept for backwards compatibility.
+				'url' => rest_url( 'mcp-ai/v1' ), // Kept for backwards compatibility
 			),
 			'openapi'      => array(
 				'url' => rest_url( 'mcp-ai/v1/openapi.json' ),

@@ -97,16 +97,12 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 
 		$result = $tool->execute( $arguments, array() );
 
-		if ( is_wp_error( $result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		} else {
-			$this->assertTrue( $result['success'], 'Execution should succeed' );
-			$this->assertArrayHasKey( 'context_id', $result, 'Result should contain context_id' );
-			$this->assertNotEmpty( $result['context_id'], 'Context ID should not be empty' );
-			$this->assertEquals( 123, $result['agent_id'], 'Agent ID should match' );
-			$this->assertArrayHasKey( 'stored_at', $result, 'Result should contain stored_at timestamp' );
-			$this->assertArrayHasKey( 'expires_at', $result, 'Result should contain expires_at timestamp' );
-		}
+		$this->assertTrue( $result['success'], 'Execution should succeed' );
+		$this->assertArrayHasKey( 'context_id', $result, 'Result should contain context_id' );
+		$this->assertNotEmpty( $result['context_id'], 'Context ID should not be empty' );
+		$this->assertEquals( 123, $result['agent_id'], 'Agent ID should match' );
+		$this->assertArrayHasKey( 'stored_at', $result, 'Result should contain stored_at timestamp' );
+		$this->assertArrayHasKey( 'expires_at', $result, 'Result should contain expires_at timestamp' );
 	}
 
 	/**
@@ -126,11 +122,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		if ( is_wp_error( $result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		} else {
-			$this->assertFalse( $result['success'], 'Should fail without agent_id' );
-		}
+		$this->assertFalse( $result['success'], 'Should fail without agent_id' );
 
 		// Missing context_type.
 		$result = $tool->execute(
@@ -143,11 +135,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		if ( is_wp_error( $result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		} else {
-			$this->assertFalse( $result['success'], 'Should fail without context_type' );
-		}
+		$this->assertFalse( $result['success'], 'Should fail without context_type' );
 
 		// Missing context_data title.
 		$result = $tool->execute(
@@ -160,11 +148,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		if ( is_wp_error( $result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		} else {
-			$this->assertFalse( $result['success'], 'Should fail without context title' );
-		}
+		$this->assertFalse( $result['success'], 'Should fail without context title' );
 	}
 
 	/**
@@ -187,10 +171,6 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			array()
 		);
 
-		if ( is_wp_error( $store_result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $store_result );
-			return;
-		}
 		$this->assertTrue( $store_result['success'], 'Store should succeed' );
 		$context_id = $store_result['context_id'];
 
@@ -204,15 +184,11 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			array()
 		);
 
-		if ( is_wp_error( $retrieve_result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $retrieve_result );
-		} else {
-			$this->assertTrue( $retrieve_result['success'], 'Retrieval should succeed' );
-			$this->assertEquals( 1, $retrieve_result['count'], 'Should find 1 context' );
-			$this->assertArrayHasKey( 'contexts', $retrieve_result, 'Result should contain contexts array' );
-			$this->assertEquals( $context_id, $retrieve_result['contexts'][0]['context_id'], 'Context ID should match' );
-			$this->assertEquals( 'Test Fact', $retrieve_result['contexts'][0]['title'], 'Title should match' );
-		}
+		$this->assertTrue( $retrieve_result['success'], 'Retrieval should succeed' );
+		$this->assertEquals( 1, $retrieve_result['count'], 'Should find 1 context' );
+		$this->assertArrayHasKey( 'contexts', $retrieve_result, 'Result should contain contexts array' );
+		$this->assertEquals( $context_id, $retrieve_result['contexts'][0]['context_id'], 'Context ID should match' );
+		$this->assertEquals( 'Test Fact', $retrieve_result['contexts'][0]['title'], 'Title should match' );
 	}
 
 	/**
@@ -340,10 +316,6 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			array()
 		);
 
-		if ( is_wp_error( $store_result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $store_result );
-			return;
-		}
 		$this->assertTrue( $store_result['success'], 'Store should succeed' );
 		$context_id = $store_result['context_id'];
 
@@ -360,11 +332,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 			array()
 		);
 
-		if ( is_wp_error( $result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		} else {
-			$this->assertFalse( $result['success'], 'Should not retrieve expired context' );
-		}
+		$this->assertFalse( $result['success'], 'Should not retrieve expired context' );
 	}
 
 	/**

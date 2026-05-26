@@ -153,10 +153,6 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				return;
 			}
 
-			// Run thread management schema migration (v1.7.0).
-			// Creates tables: threads, thread_messages, checkpoints, profiles.
-			WP_MCP_AI_Threads_Schema::migrate();
-
 			// Initialize nefarious usage monitor first to protect all operations.
 			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 			$monitor->init();

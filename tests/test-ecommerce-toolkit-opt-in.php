@@ -17,27 +17,6 @@
 class WP_MCP_AI_Ecommerce_Toolkit_Opt_In_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// The helper function lives in the Pro addon.
-		if ( ! function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) ) {
-			$pro_init = WP_MCP_AI_PRO_PATH . 'includes/ecommerce-toolkit-init.php';
-			if ( file_exists( $pro_init ) ) {
-				require_once $pro_init;
-			}
-		}
-
-		if ( ! function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) ) {
-			$this->markTestSkipped(
-				'Pro addon not available — ecommerce toolkit helper function missing.'
-			);
-		}
-	}
-
-	/**
 	 * Test that helper function exists.
 	 */
 	public function test_helper_function_exists() {

@@ -19,25 +19,6 @@
 class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Admin classes are gated behind is_admin() in the loader.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-		}
-		if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
-		}
-		// Load required classes.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-		}
-	}
-
-	/**
 	 * Test that enable_federation checkbox saves correctly when checked.
 	 */
 	public function test_enable_federation_checkbox_saves_when_checked() {

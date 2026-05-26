@@ -37,13 +37,6 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Manage Autonomous Session', 'mcp-ai-wpoos' );
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @return array

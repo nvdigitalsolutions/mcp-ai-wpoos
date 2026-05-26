@@ -11,12 +11,10 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.23  
-**Release Date:** 2026-05-25
+**Version:** 1.1.22  
+**Release Date:** 2026-05-23
 
-**Latest Updates:** May 25, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: Threads Sidebar, Agent Panel, Command Palette, Agent Profiles, @-mention Context, Checkpoints & Diff Review, Inline Assistant, Multi-Model Comparison, Collaborative Presence — Pro React SPA + Base Thread Management Infrastructure).
-
-**Previous Updates (v1.1.22):** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
+**Latest Updates:** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
 
 **Previous Updates (v1.1.21):** May 20, 2026 (v1.1.21) — WP.org Compliance Re-Audit, Capability Fence P2b Full Rollout, Security Center, Model Catalog May 2026 Refresh, Domain Migration. See [§ Latest Updates (v1.1.21 — May 2026)](#-latest-updates-v1121--may-2026) below.  
 
@@ -32,12 +30,11 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026)
 - [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#%EF%B8%8F-warranty--safe-use)
+- [⚠️ Warranty & Safe Use](#-#%EF%B8%8F-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
@@ -118,17 +115,6 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
-
-### ✨ What's New at a Glance (v1.1.23)
-
-- 🖥️ **Pro React SPA — Zed-Inspired Admin Interface.** Threads Sidebar with scope-grouped agent conversations. Agent Panel with SSE streaming chat and tool call cards. Cmd+K Command Palette with fuzzy search across 830+ tools. Hash-based routing with 7 pages (Chat, Settings, Tools, Assistants, Workflows, Analytics).
-- 🔒 **Agent Profiles — Write/Ask/Minimal/Custom.** Built-in tool permission profiles with per-tool allow/deny/confirm patterns and glob-style matching. Filter tools sent to LLM by profile.
-- 💬 **@-mention Context System.** Type `@` to mention posts, tools, skills, threads, files, users, terms, and settings. Debounced autocomplete with keyboard navigation.
-- 📸 **Checkpoints & Diff Review.** Automatic state snapshots on every agentic turn. One-click restore to any checkpoint. Accept/reject individual change hunks with before/after diff visualization.
-- ✏️ **Inline Assistant — Gutenberg AI Text Transform.** Select text in block editor → describe transformation → model rewrites in place or inserts after. Supports GPT-4o, Claude, Gemini.
-- 🔄 **Multi-Model Comparison.** Send same prompt to multiple AI models simultaneously and compare responses side-by-side with timing badges and "Use This Response" selection.
-- 👥 **Collaborative Presence.** Real-time user presence tracking via WordPress Heartbeat API. Avatar stack showing other editors with activity descriptions.
-- 🏗️ **Base Thread Management Infrastructure.** 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4 compatible). Shared by jQuery chat UI and Pro React SPA.
 
 ### ✨ What's New at a Glance (v1.1.22)
 

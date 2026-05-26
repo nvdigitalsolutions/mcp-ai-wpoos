@@ -11,25 +11,6 @@
 class Test_Git_Stash_Operations extends WP_UnitTestCase {
 
 	/**
-	 * Bootstrap required classes.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			define( 'WP_MCP_AI_PRO_PATH', dirname( __DIR__ ) . '/' );
-		}
-
-		$architect_agent_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/';
-		if ( file_exists( $architect_agent_dir . 'trait-wp-mcp-ai-tool-git-helpers.php' ) ) {
-			require_once $architect_agent_dir . 'trait-wp-mcp-ai-tool-git-helpers.php';
-		}
-		if ( file_exists( $architect_agent_dir . 'class-wp-mcp-ai-tool-git-operations.php' ) ) {
-			require_once $architect_agent_dir . 'class-wp-mcp-ai-tool-git-operations.php';
-		}
-	}
-
-	/**
 	 * Test tool registration and availability.
 	 */
 	public function test_tool_registered() {

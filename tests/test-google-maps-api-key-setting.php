@@ -16,18 +16,6 @@
 class WP_MCP_AI_Google_Maps_API_Key_Setting_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Admin classes are gated behind is_admin() in the loader.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
-		}
-	}
-
-	/**
 	 * Test that google_maps_api_key is in default settings.
 	 */
 	public function test_google_maps_api_key_in_default_settings() {

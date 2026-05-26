@@ -266,11 +266,6 @@ class WP_MCP_AI_Federation_Settings {
 	public static function get_settings() {
 		$all_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
-		// Guard against corrupted option values (e.g., string instead of array).
-		if ( ! is_array( $all_settings ) ) {
-			$all_settings = array();
-		}
-
 		$defaults = array(
 			'enable_federation'           => false,
 			'enable_federation_directory' => false,

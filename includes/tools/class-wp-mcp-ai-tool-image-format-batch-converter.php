@@ -24,8 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
-
 /**
  * Image Format Batch Converter Tool Class
  *
@@ -42,13 +40,6 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 */
 	public function get_slug() {
 		return 'image_format_batch_converter';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Image Format Batch Converter', 'mcp-ai-wpoos' );
 	}
 
 	/**

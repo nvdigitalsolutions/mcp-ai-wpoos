@@ -28,15 +28,6 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
-		// The suppress_debug_in_elementor_ajax / disable_auth_check_in_elementor
-		// / clean_elementor_output_buffer methods were removed from the container.
-		$container = wp_mcp_ai();
-		if ( ! method_exists( $container, 'suppress_debug_in_elementor_ajax' ) ) {
-			$this->markTestSkipped(
-				'Elementor debug-mode helper methods have been removed from the container.'
-			);
-		}
-
 		// Backup original display_errors setting.
 		$this->original_display_errors = ini_get( 'display_errors' );
 

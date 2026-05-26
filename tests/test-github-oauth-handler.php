@@ -41,9 +41,6 @@ class Test_Github_OAuth_Handler extends WP_UnitTestCase {
 
 	/**
 	 * Test that OAuth start requires manage_options capability.
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test_oauth_start_requires_capability() {
 		// Create a user without manage_options capability.
@@ -61,9 +58,6 @@ class Test_Github_OAuth_Handler extends WP_UnitTestCase {
 
 	/**
 	 * Test OAuth callback state validation.
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test_oauth_callback_validates_state() {
 		// Create an admin user.

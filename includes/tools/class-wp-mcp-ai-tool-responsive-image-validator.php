@@ -24,8 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
-
 /**
  * Responsive Image Validator Tool Class
  *
@@ -42,13 +40,6 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 */
 	public function get_slug() {
 		return 'responsive_image_validator';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Responsive Image Validator', 'mcp-ai-wpoos' );
 	}
 
 	/**

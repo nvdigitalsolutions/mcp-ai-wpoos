@@ -27,13 +27,12 @@
 .nvoos-ms-toolbar-btn {
 	padding: 3px 10px;
 	font: inherit;
-	font-size: 0.82em;
+	font-size: 0.8em;
 	border: 1px solid transparent;
 	border-radius: 3px;
 	background: transparent;
 	color: inherit;
 	cursor: pointer;
-	white-space: nowrap;
 }
 .nvoos-ms-toolbar-btn:hover:not(:disabled) {
 	background: rgba(0, 0, 0, 0.08);
@@ -70,27 +69,6 @@
 .nvoos-ms-slider {
 	width: 80px;
 }
-.nvoos-ms-slider-icon {
-	font-size: 0.9em;
-	width: 16px;
-	text-align: center;
-}
-
-/* ---- Speed button ---- */
-.nvoos-ms-speed-btn {
-	min-width: 38px;
-	font-weight: 600;
-	font-variant-numeric: tabular-nums;
-}
-
-/* ---- Toggle buttons ---- */
-.nvoos-ms-toggle-btn {
-	min-width: 24px;
-	font-weight: 600;
-	text-transform: uppercase;
-	font-size: 0.75em;
-	padding: 2px 6px;
-}
 
 /* ---- Upload label ---- */
 .nvoos-ms-upload-label {
@@ -99,60 +77,6 @@
 }
 .nvoos-ms-hidden-input {
 	display: none;
-}
-
-/* ---- Filter controls row ---- */
-.nvoos-ms-filter-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 6px;
-	padding: 5px 8px;
-	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-	background: rgba(0, 0, 0, 0.01);
-}
-.nvoos-media-studio-app[data-theme="dark"] .nvoos-ms-filter-row {
-	background: rgba(255, 255, 255, 0.02);
-	border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-/* ---- Text annotation input bar ---- */
-.nvoos-ms-text-input-bar {
-	display: flex;
-	gap: 6px;
-	padding: 5px 8px;
-	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-	background: rgba(0, 100, 210, 0.03);
-}
-.nvoos-ms-text-input {
-	flex: 1 1 auto;
-	padding: 4px 8px;
-	font: inherit;
-	font-size: 0.85em;
-	border: 1px solid rgba(0, 0, 0, 0.2);
-	border-radius: 3px;
-	background: #fff;
-	color: inherit;
-}
-.nvoos-media-studio-app[data-theme="dark"] .nvoos-ms-text-input {
-	background: #2a2a2a;
-	border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* ---- Text tool floating hint ---- */
-.nvoos-ms-text-tool-hint {
-	position: absolute;
-	bottom: 12px;
-	left: 50%;
-	transform: translateX(-50%);
-	padding: 6px 16px;
-	background: rgba(0, 0, 0, 0.75);
-	color: #fff;
-	border-radius: 4px;
-	font-size: 0.8em;
-	pointer-events: none;
-	z-index: 10;
-	white-space: nowrap;
 }
 
 /* ---- Image editor ---- */
@@ -169,12 +93,6 @@
 	flex: 1 1 auto;
 	overflow: auto;
 	background: repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 20px 20px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-.nvoos-media-studio-app[data-theme="dark"] .nvoos-ms-stage-wrapper {
-	background: repeating-conic-gradient(#333 0% 25%, #1a1a1a 0% 50%) 0 0 / 20px 20px;
 }
 .nvoos-ms-crop-overlay {
 	padding: 1em;
@@ -258,54 +176,3 @@
 	padding: 0.5em 1em;
 }
 
-/* ---- Drawing toolbar ---- */
-.nvoos-ms-drawing-toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 3px;
-	padding: 4px 8px;
-	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-	background: rgba(0, 0, 0, 0.02);
-}
-.nvoos-media-studio-app[data-theme="dark"] .nvoos-ms-drawing-toolbar {
-	background: rgba(255, 255, 255, 0.03);
-	border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-/* ---- Color buttons ---- */
-.nvoos-ms-color-btn {
-	width: 20px;
-	height: 20px;
-	border: 2px solid rgba(0, 0, 0, 0.25);
-	border-radius: 50%;
-	cursor: pointer;
-	padding: 0;
-	box-sizing: border-box;
-}
-.nvoos-ms-color-btn:hover {
-	transform: scale(1.2);
-}
-.nvoos-ms-color-btn--selected {
-	border-color: #0064d2;
-	box-shadow: 0 0 0 2px #0064d2;
-}
-
-/* ---- Zoom label ---- */
-.nvoos-ms-zoom-label {
-	font-size: 0.78em;
-	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-	opacity: 0.7;
-	min-width: 40px;
-	text-align: center;
-}
-
-/* ---- Save message ---- */
-.nvoos-ms-save-msg {
-	font-size: 0.78em;
-	color: #006400;
-	margin-left: 6px;
-}
-.nvoos-media-studio-app[data-theme="dark"] .nvoos-ms-save-msg {
-	color: #7ec87e;
-}

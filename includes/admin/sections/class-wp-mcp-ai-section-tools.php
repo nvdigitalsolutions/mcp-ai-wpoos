@@ -2157,43 +2157,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 					(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
-					const $button = $(this);
+					 const $button = $(this);
 
-					// Add loading state
-						$button.addClass('is-loading').prop('disabled', true);
+					 // Add loading state
+					  $button.addClass('is-loading').prop('disabled', true);
 
-					const search = $('#tool_search').val();
-						const group = $('#tool_group').val();
-						const url = new URL(window.location.href);
+					 const search = $('#tool_search').val();
+					  const group = $('#tool_group').val();
+					  const url = new URL(window.location.href);
 
-					// Update URL parameters.
-						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
-						url.searchParams.set('tab', 'tools');
-						url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
+					 // Update URL parameters.
+					  url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+					  url.searchParams.set('tab', 'tools');
+					  url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
 
-					if (search) {
-					url.searchParams.set('tool_search', search);
-						} else {
-					url.searchParams.delete('tool_search');
-						}
+					 if (search) {
+					 url.searchParams.set('tool_search', search);
+					  } else {
+					 url.searchParams.delete('tool_search');
+					  }
 
-					if (group) {
-					url.searchParams.set('tool_group', group);
-						} else {
-					url.searchParams.delete('tool_group');
-						}
+					 if (group) {
+					 url.searchParams.set('tool_group', group);
+					  } else {
+					 url.searchParams.delete('tool_group');
+					  }
 
-					// Navigate to filtered URL.
-						window.location.href = url.toString();
-					});
+					 // Navigate to filtered URL.
+					  window.location.href = url.toString();
+					 });
 
-					// Allow Enter key to trigger filter.
-					$('#tool_search, #tool_group').on('keypress', function(e) {
+					 // Allow Enter key to trigger filter.
+					 $('#tool_search, #tool_group').on('keypress', function(e) {
 					if (e.which === 13) {
-					e.preventDefault();
-						$('#wp-mcp-ai-filter-tools').click();
-						}
-					});
+					 e.preventDefault();
+					   $('#wp-mcp-ai-filter-tools').click();
+					  }
+					 });
 					})(jQuery);
 					<?php
 					$js = ob_get_clean();

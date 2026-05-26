@@ -235,8 +235,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return void
 		 */
 		public function clear_tools() {
-			$this->tools                     = array();
-			$this->bootstrapped              = false;
+			$this->tools                 = array();
+			$this->bootstrapped          = false;
 			$this->unavailable_tool_messages = array();
 		}
 
@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 *
 		 * @param string $old_slug Slug of the deprecated tool.
 		 * @param string $new_slug Slug of the replacement tool.
-		 * @param array  $args     Optional metadata: {.
+		 * @param array  $args     Optional metadata: {
 		 *     @type string $since   Version where the alias was introduced (e.g. '1.3.0').
 		 *     @type string $remove  Version where the alias will be removed (e.g. '1.4.0').
 		 *     @type string $message Human-readable migration note.
@@ -1168,7 +1168,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_gemini_image'              => 'external-tools',
 				'cloudflareai_text_to_image'         => 'external-tools',
 				'edit_gemini_image'                  => 'external-tools',
-				'run_gemini_managed_agent'           => 'external-tools',
 				'generate_veo_video'                 => 'external-tools',
 				'check_video_status'                 => 'external-tools',
 				'generate_music'                     => 'external-tools',
@@ -1720,8 +1719,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Gemini_Geospatial_Query'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-gemini-geospatial-query.php',
 				// Gemini image editing tool.
 				'WP_MCP_AI_Tool_Edit_Gemini_Image'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
-				// Gemini Managed Agent (Antigravity) — sandboxed agentic execution.
-				'WP_MCP_AI_Tool_Run_Gemini_Managed_Agent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-gemini-managed-agent.php',
 				// Product scraping tool.
 				'WP_MCP_AI_Tool_Scrape_Product'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scrape-product.php',
 				// Image manipulation tools (Graphic Editor Suite).
@@ -2008,7 +2005,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param array                           $contexts Execution contexts (e.g., 'client', 'server', 'worker').
 		 * @return bool Whether the tool was registered.
 		 */
-		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter reserved for future context-aware registration.
+		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware registration.
 			// For now, use legacy registration.
 			return $this->register_tool( $tool );
 		}

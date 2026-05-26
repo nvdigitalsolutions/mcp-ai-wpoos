@@ -76,7 +76,7 @@ class WP_MCP_AI_Prompt_Cue_Library {
 	 * Register a single cue. A second call with the same slug overwrites the
 	 * existing entry, allowing addons to ship newer cue versions.
 	 *
-	 * @param array $cue { // phpcs:ignore Squiz.Commenting.FunctionComment.ParamCommentFullStop
+	 * @param array $cue {
 	 *   @type string $slug        Required. Lowercase identifier.
 	 *   @type string $label       Required. Human-readable label.
 	 *   @type string $description Required. One-line description for admin UIs.
