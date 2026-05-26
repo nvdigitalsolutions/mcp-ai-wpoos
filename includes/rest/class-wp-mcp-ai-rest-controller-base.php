@@ -29,6 +29,20 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	const REST_NAMESPACE = 'mcp-ai/v1';
 
 	/**
+	 * REST API namespace (instance-level override).
+	 *
+	 * @var string
+	 */
+	protected $namespace = 'mcp-ai/v1';
+
+	/**
+	 * REST API base route.
+	 *
+	 * @var string
+	 */
+	protected $rest_base = '';
+
+	/**
 	 * Authentication handler.
 	 *
 	 * @var WP_MCP_AI_REST_Authenticator
