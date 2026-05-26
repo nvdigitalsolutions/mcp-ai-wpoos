@@ -46,10 +46,6 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
-		}
-
 		// Create test assistant.
 		$this->assistant_id = $this->factory->post->create(
 			array(
@@ -82,21 +78,79 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 	 * Test that file upload config is properly set.
 	 */
 	public function test_file_upload_config_is_set() {
-		$this->markTestSkipped( 'Method get_file_upload_config() does not exist on WP_MCP_AI_Admin_Test_Assistant.' );
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'get_file_upload_config' );
+		$method->setAccessible( true );
+
+		$config = $method->invoke( $this->test_assistant );
+
+		// Should return array.
+		$this->assertIsArray( $config );
+
+		// Should have file accept configuration if user can upload.
+		if ( current_user_can( 'upload_files' ) && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+			$this->assertArrayHasKey( 'fileAccept', $config );
+			$this->assertArrayHasKey( 'allowedImageMimes', $config );
+			$this->assertArrayHasKey( 'allowedFileMimes', $config );
+			$this->assertArrayHasKey( 'allowedExtensions', $config );
+
+			$this->assertIsString( $config['fileAccept'] );
+			$this->assertIsArray( $config['allowedImageMimes'] );
+			$this->assertIsArray( $config['allowedFileMimes'] );
+			$this->assertIsArray( $config['allowedExtensions'] );
+		}
 	}
 
 	/**
 	 * Test that allowed extensions are properly extracted from MIME types.
 	 */
 	public function test_get_allowed_extensions_for_mimes() {
-		$this->markTestSkipped( 'Method get_allowed_extensions_for_mimes() does not exist on WP_MCP_AI_Admin_Test_Assistant.' );
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'get_allowed_extensions_for_mimes' );
+		$method->setAccessible( true );
+
+		// Test with common MIME types.
+		$mimes      = array( 'image/jpeg', 'image/png', 'application/pdf' );
+		$extensions = $method->invoke( $this->test_assistant, $mimes );
+
+		$this->assertIsArray( $extensions );
+		$this->assertNotEmpty( $extensions );
+
+		// Should include common extensions.
+		$this->assertContains( 'jpg', $extensions );
+		$this->assertContains( 'png', $extensions );
+		$this->assertContains( 'pdf', $extensions );
 	}
 
 	/**
 	 * Test that file accept tokens are properly built.
 	 */
 	public function test_build_file_accept_tokens() {
-		$this->markTestSkipped( 'Method build_file_accept_tokens() does not exist on WP_MCP_AI_Admin_Test_Assistant.' );
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'build_file_accept_tokens' );
+		$method->setAccessible( true );
+
+		$image_mimes = array( 'image/jpeg', 'image/png' );
+		$file_mimes  = array( 'application/pdf' );
+		$extensions  = array( 'jpg', 'jpeg', 'png', 'pdf' );
+
+		$tokens = $method->invoke( $this->test_assistant, $image_mimes, $file_mimes, $extensions );
+
+		$this->assertIsArray( $tokens );
+		$this->assertNotEmpty( $tokens );
+
+		// Should include MIME types.
+		$this->assertContains( 'image/jpeg', $tokens );
+		$this->assertContains( 'image/png', $tokens );
+		$this->assertContains( 'application/pdf', $tokens );
+
+		// Should include extensions with dots.
+		$this->assertContains( '.jpg', $tokens );
+		$this->assertContains( '.png', $tokens );
+		$this->assertContains( '.pdf', $tokens );
 	}
 
 	/**

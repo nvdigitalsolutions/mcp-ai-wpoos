@@ -11,7 +11,7 @@
 /**
  * Test Flowhub Connection Test.
  */
-class Test_Flowhub_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
+class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 
 	/**
 	 * Set up the test.
@@ -20,12 +20,12 @@ class Test_Flowhub_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 		parent::setUp();
 
 		// Create an admin user.
-		$this->admin_user = $this->as_admin();
-
-		// Admin classes are gated behind is_admin() in the loader.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
-		}
+		$this->admin_user = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
+			)
+		);
+		wp_set_current_user( $this->admin_user );
 
 		// Ensure admin classes are loaded.
 		if ( ! did_action( 'admin_init' ) ) {
@@ -98,28 +98,28 @@ class Test_Flowhub_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 	 * Test AJAX handler with missing credentials.
 	 */
 	public function test_flowhub_ajax_handler_requires_credentials() {
-		$this->as_admin();
+		// Set up valid nonce but missing credentials.
+		$_POST['nonce']         = wp_create_nonce( 'wp-mcp-ai-settings' );
+		$_POST['api_key']       = '';
+		$_POST['client_id']     = '';
+		$_POST['client_secret'] = '';
+		$_POST['location_id']   = '';
 
-		$response = $this->dispatch(
-			'wp_mcp_ai_test_flowhub_connection',
-			array(
-				'nonce'         => wp_create_nonce( 'wp-mcp-ai-settings' ),
-				'api_key'       => '',
-				'client_id'     => '',
-				'client_secret' => '',
-				'location_id'   => '',
-			)
-		);
+		// Create instance and call handler.
+		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+
+		// Capture output.
+		ob_start();
+		$ajax_handlers->handle_test_flowhub_connection();
+		$response = ob_get_clean();
+
+		// Parse JSON response.
+		$data = json_decode( $response, true );
 
 		// Verify credentials error.
-		$this->assertFalse( $response['success'], 'Response should indicate failure' );
-		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
-		// The 'data' key may be a string or array depending on the AJAX response format.
-		if ( is_array( $response['data'] ) ) {
-			$this->assertArrayHasKey( 'message', $response['data'], 'Response should have error message' );
-		} else {
-			$this->assertIsString( $response['data'], 'Response data should be a string on non-JSON output' );
-		}
+		$this->assertFalse( $data['success'], 'Response should indicate failure' );
+		$this->assertArrayHasKey( 'data', $data, 'Response should have data' );
+		$this->assertArrayHasKey( 'message', $data['data'], 'Response should have error message' );
 	}
 
 	/**
@@ -144,6 +144,12 @@ class Test_Flowhub_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 	public function tearDown(): void {
 		// Clean up.
 		unset( $_GET['connection'] );
+		unset( $_POST['nonce'] );
+		unset( $_POST['api_key'] );
+		unset( $_POST['client_id'] );
+		unset( $_POST['client_secret'] );
+		unset( $_POST['location_id'] );
+
 		parent::tearDown();
 	}
 }

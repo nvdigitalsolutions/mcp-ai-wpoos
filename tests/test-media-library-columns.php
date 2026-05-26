@@ -26,11 +26,6 @@ class Test_WP_MCP_AI_Admin_Media_Library_Columns extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Ensure the class file is loaded (normally loaded by plugin on admin_init).
-		if ( ! class_exists( 'WP_MCP_AI_Admin_Media_Library_Columns' ) ) {
-			require_once dirname( __DIR__ ) . '/includes/admin/class-wp-mcp-ai-admin-media-library-columns.php';
-		}
-
 		// Mock is_admin for tests.
 		set_current_screen( 'upload.php' );
 

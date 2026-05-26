@@ -144,11 +144,6 @@ class WP_MCP_AI_Privacy {
 			'callback'               => array( $this, 'export_usage_analytics' ),
 		);
 
-		$exporters['wp-mcp-ai-audit-trail'] = array(
-			'exporter_friendly_name' => __( 'NV oOS Agent Audit Trail', 'mcp-ai-wpoos' ),
-			'callback'               => array( $this, 'export_audit_trail' ),
-		);
-
 		return $exporters;
 	}
 
@@ -177,11 +172,6 @@ class WP_MCP_AI_Privacy {
 		$erasers['wp-mcp-ai-usage-analytics'] = array(
 			'eraser_friendly_name' => __( 'NV oOS Usage Analytics', 'mcp-ai-wpoos' ),
 			'callback'             => array( $this, 'erase_usage_analytics' ),
-		);
-
-		$erasers['wp-mcp-ai-audit-trail'] = array(
-			'eraser_friendly_name' => __( 'NV oOS Agent Audit Trail', 'mcp-ai-wpoos' ),
-			'callback'             => array( $this, 'erase_audit_trail' ),
 		);
 
 		return $erasers;
@@ -579,168 +569,6 @@ class WP_MCP_AI_Privacy {
 			'items_retained' => false,
 			'messages'       => $messages,
 			'done'           => true,
-		);
-	}
-
-	/**
-	 * Export agent audit trail events for user.
-	 *
-	 * Exports mcp_ai_audit_event CPT entries authored by or referencing
-	 * the requesting user. Covers the CoSAI P3 (Transparent & Verifiable)
-	 * audit trail introduced in v1.1.22.
-	 *
-	 * @since 1.1.22
-	 *
-	 * @param string $email_address User email address.
-	 * @param int    $page Page number for pagination.
-	 * @return array Export data response
-	 */
-	public function export_audit_trail( $email_address, $page = 1 ) {
-		$user = get_user_by( 'email', $email_address );
-		if ( ! $user ) {
-			return array(
-				'data' => array(),
-				'done' => true,
-			);
-		}
-
-		$data_to_export = array();
-
-		if ( ! post_type_exists( 'mcp_ai_audit_event' ) ) {
-			return array(
-				'data' => array(),
-				'done' => true,
-			);
-		}
-
-		$args = array(
-			'post_type'      => 'mcp_ai_audit_event',
-			'author'         => $user->ID,
-			'posts_per_page' => 50,
-			'paged'          => $page,
-			'post_status'    => array( 'publish', 'private' ),
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-		);
-
-		$events = get_posts( $args );
-
-		foreach ( $events as $event ) {
-			$event_type = get_post_meta( $event->ID, '_wp_mcp_ai_audit_event_type', true );
-			$agent_role = get_post_meta( $event->ID, '_wp_mcp_ai_audit_agent_role', true );
-			$action     = get_post_meta( $event->ID, '_wp_mcp_ai_audit_action', true );
-			$outcome    = get_post_meta( $event->ID, '_wp_mcp_ai_audit_outcome', true );
-
-			$data_to_export[] = array(
-				'group_id'    => 'wp-mcp-ai-audit-trail',
-				'group_label' => __( 'Agent Audit Trail', 'mcp-ai-wpoos' ),
-				'item_id'     => 'audit-event-' . $event->ID,
-				'data'        => array(
-					array(
-						'name'  => __( 'Event ID', 'mcp-ai-wpoos' ),
-						'value' => $event->ID,
-					),
-					array(
-						'name'  => __( 'Date', 'mcp-ai-wpoos' ),
-						'value' => $event->post_date,
-					),
-					array(
-						'name'  => __( 'Event Type', 'mcp-ai-wpoos' ),
-						'value' => ! empty( $event_type ) ? esc_html( $event_type ) : $event->post_title,
-					),
-					array(
-						'name'  => __( 'Agent Role', 'mcp-ai-wpoos' ),
-						'value' => ! empty( $agent_role ) ? esc_html( $agent_role ) : __( 'N/A', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'name'  => __( 'Action', 'mcp-ai-wpoos' ),
-						'value' => ! empty( $action ) ? esc_html( $action ) : __( 'N/A', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'name'  => __( 'Outcome', 'mcp-ai-wpoos' ),
-						'value' => ! empty( $outcome ) ? esc_html( $outcome ) : __( 'N/A', 'mcp-ai-wpoos' ),
-					),
-				),
-			);
-		}
-
-		return array(
-			'data' => $data_to_export,
-			'done' => count( $events ) < 50,
-		);
-	}
-
-	/**
-	 * Erase agent audit trail events for user.
-	 *
-	 * Hard-deletes mcp_ai_audit_event CPT entries authored by the
-	 * requesting user. Covers the CoSAI P3 audit trail introduced
-	 * in v1.1.22.
-	 *
-	 * @since 1.1.22
-	 *
-	 * @param string $email_address User email address.
-	 * @param int    $page Page number for pagination.
-	 * @return array Erasure response
-	 */
-	public function erase_audit_trail( $email_address, $page = 1 ) {
-		$user = get_user_by( 'email', $email_address );
-		if ( ! $user ) {
-			return array(
-				'items_removed'  => false,
-				'items_retained' => false,
-				'messages'       => array(),
-				'done'           => true,
-			);
-		}
-
-		if ( ! post_type_exists( 'mcp_ai_audit_event' ) ) {
-			return array(
-				'items_removed'  => false,
-				'items_retained' => false,
-				'messages'       => array(),
-				'done'           => true,
-			);
-		}
-
-		$args = array(
-			'post_type'      => 'mcp_ai_audit_event',
-			'author'         => $user->ID,
-			'posts_per_page' => 50,
-			'paged'          => $page,
-			'post_status'    => array( 'publish', 'private' ),
-			'fields'         => 'ids',
-		);
-
-		$event_ids = get_posts( $args );
-
-		if ( empty( $event_ids ) ) {
-			return array(
-				'items_removed'  => false,
-				'items_retained' => false,
-				'messages'       => array(),
-				'done'           => true,
-			);
-		}
-
-		$deleted_count = 0;
-		foreach ( $event_ids as $event_id ) {
-			if ( wp_delete_post( $event_id, true ) ) {
-				++$deleted_count;
-			}
-		}
-
-		return array(
-			'items_removed'  => $deleted_count > 0,
-			'items_retained' => false,
-			'messages'       => array(
-				sprintf(
-					/* translators: %d: number of audit trail events deleted */
-					__( 'Deleted %d agent audit trail events.', 'mcp-ai-wpoos' ),
-					$deleted_count
-				),
-			),
-			'done'           => count( $event_ids ) < 50,
 		);
 	}
 

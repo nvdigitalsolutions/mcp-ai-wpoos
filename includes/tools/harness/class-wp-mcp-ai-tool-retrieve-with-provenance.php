@@ -85,20 +85,10 @@ class WP_MCP_AI_Tool_Retrieve_With_Provenance implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
-	/**
-	 * Get required capability.
-	 *
-	 * @return string
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
-	/**
-	 * Execute the tool.
-	 *
-	 * @return array|WP_Error Canonical envelope.
-	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$query = isset( $arguments['query'] ) ? trim( (string) $arguments['query'] ) : '';
 		if ( '' === $query ) {

@@ -32,12 +32,11 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026)
 - [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#%EF%B8%8F-warranty--safe-use)
+- [⚠️ Warranty & Safe Use](#-#%EF%B8%8F-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)

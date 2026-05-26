@@ -9,10 +9,3 @@
 # going forward.
 #
 # Lines beginning with # are comments. Blank lines are ignored.
-wp_mcp_ai_dry_run_schedule_from_research
-wp_mcp_ai_fetch_kimi_models
-wp_mcp_ai_run_history_from_research
-wp_mcp_ai_run_now_schedule_from_research
-wp_mcp_ai_test_kimi_connection
-wp_mcp_ai_toggle_schedule_from_research
-wp_mcp_ai_test_yahoo_connection

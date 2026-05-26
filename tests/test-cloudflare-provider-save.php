@@ -176,10 +176,6 @@ class WP_MCP_AI_Cloudflare_Provider_Save_Test extends WP_UnitTestCase {
 
 		$validator = new WP_MCP_AI_Rest_Validator();
 
-		if ( ! method_exists( $validator, 'validate_provider' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Rest_Validator::validate_provider() method not available.' );
-		}
-
 		// Test with valid cloudflare provider.
 		$result = $validator->validate_provider( 'cloudflare' );
 		$this->assertNotInstanceOf( 'WP_Error', $result, 'Cloudflare should be accepted by REST validator.' );

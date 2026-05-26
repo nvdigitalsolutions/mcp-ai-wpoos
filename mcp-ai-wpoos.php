@@ -3,7 +3,7 @@
  * Plugin Name: NV Digital Open Operator System (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with 10+ AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare & Ollama). Includes 230+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top.
- * Version: 1.1.23
+ * Version: 1.1.22
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -93,12 +93,10 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 // When real .mo files are loaded later on 'init' by WordPress's automatic
 // locale machinery, load_textdomain() merges them into the existing object.
 // ---------------------------------------------------------------------------
-// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Pre-populating l10n with NOOP_Translations prevents WP 6.7+ _load_textdomain_just_in_time warnings on English sites. When real .mo files are loaded later on 'init', load_textdomain() merges them into the existing object.
 global $l10n;
 if ( ! isset( $l10n['mcp-ai-wpoos'] ) && class_exists( 'NOOP_Translations' ) ) {
 	$l10n['mcp-ai-wpoos'] = new NOOP_Translations();
 }
-// phpcs:enable
 
 // Load bootstrap files in dependency order.
 require_once __DIR__ . '/includes/bootstrap/constants.php';

@@ -210,7 +210,7 @@ class WP_MCP_AI_Shortcode {
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
-			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$chat_debug_mode = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 			wp_localize_script(
 				self::SCRIPT_HANDLE,

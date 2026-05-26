@@ -40,11 +40,6 @@ class WP_MCP_AI_Enhanced_Profession_Tool_Recommender_Test extends WP_UnitTestCas
 	public function setUp(): void {
 		parent::setUp();
 
-		// The recommender service is not auto-loaded by the bootstrap.
-		if ( ! class_exists( 'WP_MCP_AI_Profession_Tool_Recommender' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-tool-recommender.php';
-		}
-
 		// Initialize registries.
 		$this->tool_registry    = WP_MCP_AI_Tool_Registry::get_instance();
 		$this->toolkit_registry = WP_MCP_AI_Toolkit_Registry::get_instance();

@@ -73,7 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Default chat model when none is configured.
 		 *
-		 * Kimi-k2.6 is the latest agentic model with 256K context and tool calling.         *
+		 * kimi-k2.6 is the latest agentic model with 256K context and tool calling.
 		 *
 		 * @var string
 		 */
@@ -93,7 +93,8 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Models that do not support tool/function calling.
 		 *
-		 * Kimi-k2-thinking is a chain-of-thought model that rejects the `tools`         * parameter. kimi-k1.5-* are long-context reasoning models without tool
+		 * kimi-k2-thinking is a chain-of-thought model that rejects the `tools`
+		 * parameter. kimi-k1.5-* are long-context reasoning models without tool
 		 * support. Tools are stripped automatically when these models are selected.
 		 *
 		 * @var array
@@ -716,7 +717,8 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 					if ( isset( $options['tool_choice'] ) ) {
 						$payload['tool_choice'] = $options['tool_choice'];
 					}
-				} elseif ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				} else {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 						WP_MCP_AI_Logger::log_event(
 							'kimi_tools_skipped',
 							sprintf(
@@ -726,6 +728,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 							),
 							array( 'model' => $model )
 						);
+					}
 				}
 			}
 

@@ -197,11 +197,11 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							),
 						),
 						'per_page' => array(
-							'description' => __( 'Maximum number of assistants to return. Use -1 (default) to return all.', 'mcp-ai-wpoos' ),
-							'type'        => 'integer',
-							'required'    => false,
-							'minimum'     => -1,
-							'maximum'     => 100,
+							'description'       => __( 'Maximum number of assistants to return. Use -1 (default) to return all.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'minimum'           => -1,
+							'maximum'           => 100,
 						),
 						'page'     => array(
 							'description'       => __( 'Page of results to return when per_page is a positive integer. Defaults to 1.', 'mcp-ai-wpoos' ),

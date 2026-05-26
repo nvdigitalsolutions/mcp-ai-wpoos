@@ -19,8 +19,8 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 	public function test_registry_registers_sections() {
 		// Create a mock section.
 		$section = $this->getMockBuilder( 'WP_MCP_AI_Settings_Section' )
-			->onlyMethods( array( 'get_id', 'get_title', 'get_tab', 'get_fields', 'render' ) )
-						->getMockForAbstractClass();
+			->setMethods( array( 'get_id', 'get_title', 'get_tab', 'get_fields', 'render' ) )
+			->getMockForAbstractClass();
 
 		$section->method( 'get_id' )->willReturn( 'test_section' );
 		$section->method( 'get_tab' )->willReturn( 'test_tab' );

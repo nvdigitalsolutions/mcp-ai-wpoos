@@ -146,12 +146,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		 */
 		public static function get_setting( $key, $default = null ) {
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-
-			// Guard against corrupted option values (e.g., string instead of array).
-			if ( ! is_array( $settings ) ) {
-				$settings = array();
-			}
-
 			return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
 		}
 

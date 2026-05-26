@@ -37,13 +37,6 @@ class WP_MCP_AI_Tool_Get_Session_Status {
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Get Session Status', 'mcp-ai-wpoos' );
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @return array

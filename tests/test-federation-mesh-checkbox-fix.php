@@ -27,13 +27,6 @@ class WP_MCP_AI_Federation_Mesh_Checkbox_Fix_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-
-		// Admin classes are gated behind is_admin() in the loader.
-		// Load required classes.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-		}
-
 		$this->section = new WP_MCP_AI_Section_Advanced();
 	}
 

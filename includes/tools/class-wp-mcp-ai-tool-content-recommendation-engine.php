@@ -24,8 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
-
 /**
  * Content Recommendation Engine Tool Class
  *
@@ -42,13 +40,6 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 */
 	public function get_slug() {
 		return 'content_recommendation_engine';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Content Recommendation Engine', 'mcp-ai-wpoos' );
 	}
 
 	/**

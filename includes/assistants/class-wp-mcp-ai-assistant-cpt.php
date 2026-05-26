@@ -4845,7 +4845,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Load MCP Apps configuration if available.
-			$mcp_apps           = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
+			$mcp_apps          = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
 			$config['mcp_apps'] = is_array( $mcp_apps ) ? $mcp_apps : array();
 
 			return $config;

@@ -27,18 +27,6 @@ namespace Elementor {
 		}
 	}
 
-	if ( ! class_exists( '\\Elementor\\Controls_Manager', false ) ) {
-		/**
-		 * Minimal Controls_Manager stub for testing.
-		 */
-		class Controls_Manager {
-			const SELECT    = 'select';
-			const SWITCHER  = 'switcher';
-			const TEXT      = 'text';
-			const TAB_STYLE = 'tab_style';
-		}
-	}
-
 	if ( ! class_exists( '\\Elementor\\Widget_Base', false ) ) {
 		/**
 		 * Minimal Widget_Base stub for testing.
@@ -50,13 +38,6 @@ namespace Elementor {
 			 * @var array
 			 */
 			protected $settings = array();
-
-			/**
-			 * Registered controls store.
-			 *
-			 * @var array
-			 */
-			protected $controls = array();
 
 			/**
 			 * Set widget settings.
@@ -88,51 +69,6 @@ namespace Elementor {
 			 */
 			public function get_settings_for_display( $setting_key = null ) {
 				return $this->get_settings( $setting_key );
-			}
-
-			/**
-			 * Start a controls section (Elementor API stub).
-			 *
-			 * @param string $section_id Section ID.
-			 * @param array  $args       Section arguments.
-			 */
-			protected function start_controls_section( $section_id, $args = array() ) {
-				// Stub — real Elementor would register a section.
-			}
-
-			/**
-			 * End a controls section (Elementor API stub).
-			 */
-			protected function end_controls_section() {
-				// Stub — real Elementor would close a section.
-			}
-
-			/**
-			 * Add a control to the current section (Elementor API stub).
-			 *
-			 * @param string $control_id Control ID.
-			 * @param array  $args       Control arguments.
-			 */
-			protected function add_control( $control_id, $args = array() ) {
-				$this->controls[ $control_id ] = $args;
-			}
-
-			/**
-			 * Get registered controls.
-			 *
-			 * @return array
-			 */
-			public function get_controls() {
-				return $this->controls;
-			}
-
-			/**
-			 * Get the widget unique ID (Elementor API stub).
-			 *
-			 * @return string
-			 */
-			public function get_id() {
-				return isset( $this->settings['id'] ) ? $this->settings['id'] : '';
 			}
 
 			/**

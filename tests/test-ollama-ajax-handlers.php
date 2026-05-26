@@ -16,19 +16,6 @@
 class Test_Ollama_AJAX_Handlers extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Define DOING_AJAX so check_ajax_referer() calls wp_die()
-		// instead of PHP's die() directly.
-		if ( ! defined( 'DOING_AJAX' ) ) {
-			define( 'DOING_AJAX', true );
-		}
-	}
-
-	/**
 	 * Test that fetch_ollama_models returns model objects with correct structure.
 	 *
 	 * This test verifies that the AJAX handler returns an array of model objects

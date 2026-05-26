@@ -162,18 +162,13 @@
 				return { ok: r.ok, body: body };
 			} );
 		} ).then( function ( res ) {
-			if ( ! res.ok || ! res.body ) {
+			if ( ! res.ok || ! res.body || ! Array.isArray( res.body.files ) ) {
 				var msg = ( res.body && res.body.message ) ? res.body.message : 'Request failed';
 				status.textContent = msg;
 				return;
 			}
-			// Pass both the hierarchical tree and flat file list.
-			// renderTree prefers tree when present, falls back to files.
-			var treeNodes = res.body.tree || null;
-			var flatFiles = res.body.files || [];
-			var totalFiles = flatFiles.length;
-			renderTree( row, tree, treeNodes, flatFiles );
-			status.textContent = totalFiles + ' ' + ( i18n.filesFound || 'files found.' );
+			renderTree( row, tree, res.body.files );
+			status.textContent = res.body.files.length + ' ' + ( i18n.filesFound || 'files found.' );
 		} ).catch( function ( err ) {
 			status.textContent = ( err && err.message ) ? err.message : 'Request failed';
 		} );
@@ -211,315 +206,9 @@
 		return false;
 	}
 
-	/**
-	 * Collect all file paths under a tree node (recursive).
-	 *
-	 * @param {Object} node  Tree node.
-	 * @return {string[]} Flat array of file paths.
-	 */
-	function collectFilePaths( node ) {
-		if ( node.type === 'blob' ) {
-			return [ node.path ];
-		}
-		if ( ! node.children || ! node.children.length ) {
-			return [];
-		}
-		var paths = [];
-		node.children.forEach( function ( child ) {
-			paths = paths.concat( collectFilePaths( child ) );
-		} );
-		return paths;
-	}
-
-	/**
-	 * Update a folder checkbox's indeterminate state based on children.
-	 *
-	 * @param {HTMLInputElement} cb       Folder checkbox element.
-	 * @param {Object}           node     Folder tree node.
-	 * @param {string[]}         selected Current selected paths.
-	 */
-	function updateFolderCheck( cb, node, selected ) {
-		var allFiles = collectFilePaths( node );
-		if ( allFiles.length === 0 ) {
-			cb.checked = false;
-			cb.indeterminate = false;
-			return;
-		}
-		// Check if the folder itself is selected (trailing-slash entry).
-		var folderEntry = node.path + '/';
-		if ( selected.indexOf( folderEntry ) !== -1 ) {
-			cb.checked = true;
-			cb.indeterminate = false;
-			return;
-		}
-		var selectedCount = 0;
-		allFiles.forEach( function ( p ) {
-			if ( selected.indexOf( p ) !== -1 ) {
-				selectedCount++;
-			}
-		} );
-		cb.checked = selectedCount === allFiles.length;
-		cb.indeterminate = selectedCount > 0 && selectedCount < allFiles.length;
-	}
-
-	/**
-	 * Build a DOM tree element from hierarchical tree data.
-	 *
-	 * @param {Object[]} nodes     Tree nodes (output of build_tree_from_flat).
-	 * @param {Element}  row       The .nvoos-dh-remote-repo-row DOM element.
-	 * @param {string[]} selected  Current selected paths.
-	 * @param {number}   depth     Nesting depth for indentation.
-	 * @return {HTMLUListElement}
-	 */
-	function buildTreeDOM( nodes, row, selected, depth ) {
-		depth = depth || 0;
-		var ul = document.createElement( 'ul' );
-		ul.style.listStyle = 'none';
-		ul.style.paddingLeft = ( depth === 0 ? '0' : '16px' );
-		ul.style.margin = '0';
-
-		nodes.forEach( function ( node ) {
-			var li = document.createElement( 'li' );
-			li.style.padding = '2px 0';
-			li.style.fontFamily = 'Menlo, Consolas, monospace';
-			li.style.fontSize = '12px';
-			li.style.lineHeight = '1.6';
-
-			if ( node.type === 'tree' ) {
-				// --- Folder node ---
-				var toggle = document.createElement( 'span' );
-				toggle.textContent = '\u25B6';  // ▶ right-pointing triangle (collapsed)
-				toggle.style.cursor = 'pointer';
-				toggle.style.display = 'inline-block';
-				toggle.style.width = '14px';
-				toggle.style.fontSize = '10px';
-				toggle.style.marginRight = '2px';
-				toggle.style.textAlign = 'center';
-				toggle.style.transition = 'transform 0.15s';
-				toggle.setAttribute( 'aria-expanded', 'false' );
-				toggle.setAttribute( 'aria-label', 'Expand folder' );
-
-				var cb = document.createElement( 'input' );
-				cb.type = 'checkbox';
-				cb.value = node.path;
-				cb.style.marginRight = '4px';
-				cb.style.verticalAlign = 'middle';
-				updateFolderCheck( cb, node, selected );
-
-				var icon = document.createElement( 'span' );
-				icon.textContent = '\uD83D\uDCC1';  // 📁 folder icon
-				icon.style.marginRight = '4px';
-
-				var nameEl = document.createElement( 'span' );
-				nameEl.textContent = node.name + '/';
-				nameEl.style.cursor = 'pointer';
-				nameEl.style.fontWeight = '500';
-
-				var childContainer = document.createElement( 'div' );
-				childContainer.style.display = 'none';
-				childContainer.style.marginLeft = '0';
-
-				if ( node.children && node.children.length ) {
-					childContainer.appendChild( buildTreeDOM( node.children, row, selected, depth + 1 ) );
-				}
-
-				// Toggle expand/collapse.
-				var isExpanded = false;
-				toggle.addEventListener( 'click', function ( e ) {
-					e.stopPropagation();
-					isExpanded = ! isExpanded;
-					toggle.textContent = isExpanded ? '\u25BC' : '\u25B6';  // ▼ or ▶
-					toggle.setAttribute( 'aria-expanded', String( isExpanded ) );
-					toggle.setAttribute( 'aria-label', isExpanded ? 'Collapse folder' : 'Expand folder' );
-					childContainer.style.display = isExpanded ? 'block' : 'none';
-				} );
-				nameEl.addEventListener( 'click', function () {
-					isExpanded = ! isExpanded;
-					toggle.textContent = isExpanded ? '\u25BC' : '\u25B6';
-					toggle.setAttribute( 'aria-expanded', String( isExpanded ) );
-					toggle.setAttribute( 'aria-label', isExpanded ? 'Collapse folder' : 'Expand folder' );
-					childContainer.style.display = isExpanded ? 'block' : 'none';
-				} );
-
-				// Folder checkbox cascade: check/uncheck all descendant files.
-				cb.addEventListener( 'change', function () {
-					var current = getSelectedPaths( row );
-					// When a folder is checked, we store the folder path with
-					// trailing slash (e.g. "docs/guides/"). The PHP side's
-					// matches_path_list() already handles directory matching.
-					// We also remove any individual child file entries.
-					var folderEntry = node.path + '/';
-					var filesInFolder = collectFilePaths( node );
-					if ( cb.checked ) {
-						// Remove any individual descendant paths, add the folder.
-						current = current.filter( function ( p ) {
-							return filesInFolder.indexOf( p ) === -1;
-						} );
-						if ( current.indexOf( folderEntry ) === -1 ) {
-							current.push( folderEntry );
-						}
-					} else {
-						// Remove the folder entry.
-						current = current.filter( function ( p ) {
-							return p !== folderEntry && filesInFolder.indexOf( p ) === -1;
-						} );
-					}
-					setSelectedPaths( row, current );
-
-					// Refresh all visible checkboxes in the tree.
-					refreshTreeChecks( row );
-				} );
-
-				li.appendChild( toggle );
-				li.appendChild( cb );
-				li.appendChild( icon );
-				li.appendChild( nameEl );
-				li.appendChild( childContainer );
-			} else {
-				// --- File node ---
-				var indent = document.createElement( 'span' );
-				indent.style.display = 'inline-block';
-				indent.style.width = '16px';  // align with folder toggle
-
-				var cbFile = document.createElement( 'input' );
-				cbFile.type = 'checkbox';
-				cbFile.value = node.path;
-				// A file is selected if its path is explicitly listed, OR if
-				// a parent folder path (with trailing slash) is in the selection.
-				cbFile.checked = pathIsSelected( node.path, selected );
-				cbFile.disabled = selected.some( function ( s ) {
-					return s.charAt( s.length - 1 ) === '/' && pathIsSelected( node.path, [ s ] );
-				} );
-				cbFile.style.marginRight = '4px';
-				cbFile.style.verticalAlign = 'middle';
-
-				var fileIcon = document.createElement( 'span' );
-				fileIcon.textContent = '\uD83D\uDCC4';  // 📄 page icon
-				fileIcon.style.marginRight = '4px';
-
-				var fileName = document.createElement( 'span' );
-				fileName.textContent = node.name;
-
-				cbFile.addEventListener( 'change', function () {
-					var current = getSelectedPaths( row );
-					if ( cbFile.checked ) {
-						if ( current.indexOf( node.path ) === -1 ) {
-							current.push( node.path );
-						}
-					} else {
-						current = current.filter( function ( p ) { return p !== node.path; } );
-					}
-					setSelectedPaths( row, current );
-
-					// Refresh folder checkboxes so parents update their state.
-					refreshTreeChecks( row );
-				} );
-
-				li.appendChild( indent );
-				li.appendChild( cbFile );
-				li.appendChild( fileIcon );
-				li.appendChild( fileName );
-
-				// Show file size.
-				if ( typeof node.size === 'number' && node.size > 0 ) {
-					var sizeEl = document.createElement( 'span' );
-					sizeEl.style.color = '#646970';
-					sizeEl.style.marginLeft = '6px';
-					sizeEl.style.fontSize = '11px';
-					sizeEl.textContent = '(' + Math.round( node.size / 1024 * 10 ) / 10 + ' KB)';
-					li.appendChild( sizeEl );
-				}
-			}
-
-			ul.appendChild( li );
-		} );
-
-		return ul;
-	}
-
-	/**
-	 * Refresh the checked/indeterminate state of every folder checkbox in the tree.
-	 *
-	 * Call this after individual file checkboxes change so parent folders
-	 * correctly reflect the selection state of their descendants.
-	 *
-	 * @param {Element} row The repo row element.
-	 */
-	function refreshTreeChecks( row ) {
-		var treeDiv = row.querySelector( '.nvoos-dh-picker-tree' );
-		if ( ! treeDiv ) {
-			return;
-		}
-		var selected = getSelectedPaths( row );
-
-		// Walk all folder <li> elements and update their checkboxes.
-		treeDiv.querySelectorAll( 'ul > li' ).forEach( function ( li ) {
-			// Only target folder nodes — they contain a toggle span.
-			var toggle = li.querySelector( 'span[aria-expanded]' );
-			if ( ! toggle ) {
-				return; // This is a file node.
-			}
-			var cb = li.querySelector( 'input[type="checkbox"]' );
-			if ( ! cb ) {
-				return;
-			}
-
-			// Collect all file checkbox values inside this folder's subtree.
-			var allFiles = [];
-			var childDiv = li.querySelector( 'div' );
-			if ( childDiv ) {
-				childDiv.querySelectorAll( 'input[type="checkbox"]' ).forEach( function ( childCb ) {
-					if ( childCb.value ) {
-						allFiles.push( childCb.value );
-					}
-				} );
-			}
-			if ( allFiles.length === 0 ) {
-				cb.checked = false;
-				cb.indeterminate = false;
-				return;
-			}
-
-			// Check if the folder itself is selected.
-			// The folder path stored in selected_paths has trailing slash.
-			var folderPath = cb.value ? cb.value + '/' : '';
-			if ( folderPath && selected.indexOf( folderPath ) !== -1 ) {
-				cb.checked = true;
-				cb.indeterminate = false;
-				return;
-			}
-
-			var selCount = 0;
-			allFiles.forEach( function ( p ) {
-				if ( selected.indexOf( p ) !== -1 ) {
-					selCount++;
-				}
-			} );
-			cb.checked = selCount === allFiles.length;
-			cb.indeterminate = selCount > 0 && selCount < allFiles.length;
-		} );
-	}
-
-	function renderTree( row, container, treeNodes, flatFiles ) {
+	function renderTree( row, container, files ) {
 		container.innerHTML = '';
 		var selected = getSelectedPaths( row );
-
-		// If hierarchical tree data is available, render the folder tree.
-		if ( treeNodes && Array.isArray( treeNodes ) && treeNodes.length > 0 ) {
-			container._treeData = treeNodes;
-			container.appendChild( buildTreeDOM( treeNodes, row, selected, 0 ) );
-			return;
-		}
-
-		// Fallback: render flat file list (back-compat with older API responses).
-		var files = flatFiles || [];
-		if ( files.length === 0 ) {
-			var empty = document.createElement( 'p' );
-			empty.style.color = '#646970';
-			empty.textContent = i18n.noFilesFound || 'No Markdown files found in this ref / path.';
-			container.appendChild( empty );
-			return;
-		}
 
 		var listEl = document.createElement( 'ul' );
 		listEl.style.listStyle = 'none';
@@ -535,7 +224,7 @@
 			var cb = document.createElement( 'input' );
 			cb.type = 'checkbox';
 			cb.value = f.path;
-			cb.checked = selected.indexOf( f.path ) !== -1;
+			cb.checked = pathIsSelected( f.path, selected );
 			cb.style.marginRight = '6px';
 
 			cb.addEventListener( 'change', function () {
@@ -556,15 +245,23 @@
 			label.appendChild( document.createTextNode( f.path + '  ' ) );
 
 			if ( typeof f.size === 'number' && f.size > 0 ) {
-				var sizeEl = document.createElement( 'span' );
-				sizeEl.style.color = '#646970';
-				sizeEl.textContent = '(' + Math.round( f.size / 1024 * 10 ) / 10 + ' KB)';
-				label.appendChild( sizeEl );
+				var size = document.createElement( 'span' );
+				size.style.color = '#646970';
+				size.textContent = '(' + Math.round( f.size / 1024 * 10 ) / 10 + ' KB)';
+				label.appendChild( size );
 			}
 
 			li.appendChild( label );
 			listEl.appendChild( li );
 		} );
+
+		if ( files.length === 0 ) {
+			var empty = document.createElement( 'p' );
+			empty.style.color = '#646970';
+			empty.textContent = i18n.noFilesFound || 'No Markdown files found in this ref / path.';
+			container.appendChild( empty );
+			return;
+		}
 
 		container.appendChild( listEl );
 	}

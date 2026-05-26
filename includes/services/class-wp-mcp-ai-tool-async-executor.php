@@ -500,15 +500,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$this->save_metadata( $job_id, $metadata );
 
 		if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
-			WP_MCP_AI_Job_Notifier::cache_job_status(
-				$job_id,
-				array(
-					'job_id'       => $job_id,
-					'status'       => 'cancelled',
-					'completed_at' => time(),
-					'metadata'     => $metadata,
-				)
-			);
+			WP_MCP_AI_Job_Notifier::update_status( $job_id, 'cancelled' );
 		}
 
 		/**
@@ -568,15 +560,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		}
 
 		if ( class_exists( 'WP_MCP_AI_Job_Notifier' ) ) {
-			WP_MCP_AI_Job_Notifier::cache_job_status(
-				$job_id,
-				array(
-					'job_id'    => $job_id,
-					'status'    => 'pending',
-					'queued_at' => time(),
-					'metadata'  => $metadata,
-				)
-			);
+			WP_MCP_AI_Job_Notifier::update_status( $job_id, 'pending' );
 		}
 
 		/**

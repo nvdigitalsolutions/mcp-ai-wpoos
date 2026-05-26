@@ -63,20 +63,10 @@ class WP_MCP_AI_Tool_Record_Reflection implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 	}
 
-	/**
-	 * Get required capability.
-	 *
-	 * @return string
-	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
-	/**
-	 * Execute the tool.
-	 *
-	 * @return array|WP_Error Canonical envelope.
-	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_record_reflection_forbidden', __( 'Permission denied.', 'mcp-ai-wpoos' ) );

@@ -244,43 +244,9 @@ class WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
 	/**
 	 * Bootstrap the REST controller with a mocked client.
 	 *
-	 * Uses `disableOriginalConstructor()` because the real constructor requires
-	 * multiple typed client instances whose constructors in turn require API keys.
-	 * We manually set essential properties so the mock behaves predictably when
-	 * other methods access internal state.
-	 *
 	 * @param WP_MCP_AI_Language_Model_Router $client Client mock instance.
 	 */
 	protected function bootstrap_rest_controller( $client ) {
-		// Set null defaults for all client properties so the router
-		// doesn't produce undefined-property warnings when internal helpers
-		// (e.g. permission checks) inspect these references.
-		// Use reflection because these are protected properties on the mock.
-		$reflection = new ReflectionClass( $client );
-		$props      = array(
-			'openai_client',
-			'gemini_client',
-			'ollama_client',
-			'lm_studio_client',
-			'anthropic_client',
-			'huggingface_client',
-			'cloudflare_client',
-			'embedded_client',
-			'nvidia_client',
-			'deepseek_client',
-			'openrouter_client',
-			'digitalocean_client',
-			'kimi_client',
-			'baseten_client',
-		);
-		foreach ( $props as $prop ) {
-			if ( $reflection->hasProperty( $prop ) ) {
-				$rp = $reflection->getProperty( $prop );
-				$rp->setAccessible( true );
-				$rp->setValue( $client, null );
-			}
-		}
-
 		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
 			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
 		}

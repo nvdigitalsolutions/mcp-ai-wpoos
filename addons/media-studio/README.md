@@ -16,20 +16,6 @@ toolkits with three production-ready modes.
 
 Unknown values fall back to `image-editor`.
 
-### Keyboard shortcuts
-
-| Mode | Key | Action |
-|------|-----|--------|
-| image-editor | Ctrl+Z | Undo |
-| image-editor | Ctrl+Shift+Z | Redo |
-| image-editor | Ctrl+S | Download PNG |
-| image-editor | R | Rotate CW 90° |
-| image-editor | Delete | Remove selected annotation |
-| image-editor | Esc | Exit crop/text mode |
-| media-player | Space | Play/Pause |
-| media-player | F | Fullscreen |
-| media-player | M | Mute/Unmute |
-
 ## Quick start
 
 ```bash
@@ -47,6 +33,21 @@ Add the shortcode:
 ```
 
 Or use the matching Gutenberg block (`nvoos/media-studio`).
+
+## Bundle size note
+
+Tier D specialist addons have no hard gzip budget — they are separate addons
+that are never loaded unless the matching shortcode/block is on the page.
+
+| Mode bundle | Approx. gzip contribution |
+|------------|--------------------------|
+| wavesurfer.js | ~350 KB |
+| react-player (all providers) | ~290 KB |
+| react-konva + konva | ~120 KB |
+| react-image-crop | ~15 KB |
+
+Total: **~826 KB gzip**. If only specific modes are needed in production,
+consider building a mode-scoped bundle via dynamic `import()` in a future PR.
 
 ## REST namespace
 
@@ -78,3 +79,4 @@ When adding upstream packages, update:
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 - The root [`CREDITS.md`](../../CREDITS.md)
 - This Credits section
+
