@@ -46,11 +46,8 @@ composer.phar
 # Allow tma-woo-shop compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/tma-woo-shop/
 
-# Ignore ZIP files everywhere except the final build output in build/
+# Ignore ZIP files everywhere (build artifacts should not be committed)
 *.zip
-!/build/*.zip
-!/build/toolkit-addons/
-!/build/toolkit-addons/*.zip
 
 # Ignore all vendor by default
 /vendor/*
