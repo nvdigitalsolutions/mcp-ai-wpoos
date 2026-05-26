@@ -107,15 +107,14 @@ class WP_MCP_AI_Shortcode {
 	 * - chat.js (main chat application)
 	 */
 	public function register_assets() {
-		// Skip script localization in Elementor editor to prevent JavaScript conflicts.
-		// Styles and script registration will proceed, but localization (which can cause conflicts) is skipped.
 		$is_elementor_editor = $this->is_elementor_editor_init();
 
-		// Use bundled JavaScript file that combines all chat services.
-		// The chat-bundle.js is an entry point for esbuild with ES6 imports,.
+		// Use TypeScript-compiled bundle when WP_MCP_AI_USE_TS_BUILD is enabled.
+		$ts_build = defined( 'WP_MCP_AI_USE_TS_BUILD' ) && WP_MCP_AI_USE_TS_BUILD;
+		$js_dir   = $ts_build ? 'assets/js/dist/' : 'assets/js/';
+		$js_ext   = $ts_build ? '.js' : '.min.js';
 
-		// so we must load the bundled output (chat-bundle.min.js) which is browser-compatible.
-		$script_relative            = 'assets/js/chat-bundle.min.js';
+		$script_relative            = $js_dir . 'chat-bundle' . $js_ext;
 		$style_relative             = 'assets/css/chat.css';
 		$cron_status_style_relative = 'assets/css/cron-status.css';
 

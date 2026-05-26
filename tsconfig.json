@@ -6,12 +6,8 @@
     "moduleResolution": "bundler",
     "allowJs": true,
     "checkJs": false,
-    "jsx": "preserve",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "./assets/js/dist",
-    "rootDir": "./assets/js/src",
+    "jsx": "react-jsx",
+    "noEmit": true,
     "removeComments": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -28,11 +24,21 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["assets/js/src/shared/*"],
+      "@services/*": ["assets/js/src/services/*"],
+      "@chat/*": ["assets/js/src/chat/*"],
+      "@admin/*": ["assets/js/src/admin/*"]
+    },
     "types": ["node"]
   },
   "include": [
     "assets/js/src/**/*.ts",
-    "assets/js/src/**/*.d.ts"
+    "assets/js/src/**/*.tsx",
+    "assets/js/src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
