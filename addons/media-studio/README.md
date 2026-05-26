@@ -9,10 +9,10 @@ toolkits with three production-ready modes.
 
 | Mode | Shortcode attr | Status | Features |
 |------|---------------|--------|----------|
-| `image-editor` (default) | `mode="image-editor"` | ✅ shipped | react-konva canvas, undo/redo, filters (brightness, contrast, saturation, blur, hue, grayscale, sepia, invert), crop overlay, text annotations, keyboard shortcuts, responsive canvas, PNG export |
+| `image-editor` (default) | `mode="image-editor"` | ✅ shipped (v0.3.0) | react-konva canvas, zoom/pan, drawing tools (brush, eraser, shapes, text, undo/redo), undo/redo via history stack, filters (brightness, contrast, saturation, blur, hue, grayscale, sepia, invert), crop overlay, text annotations, keyboard shortcuts, responsive canvas, PNG/JPEG export, save to WP Media Library |
 | `media-player` | `mode="media-player"` | ✅ shipped | react-player (YouTube, Vimeo, MP4, MP3, HLS…), playback speed, fullscreen, keyboard shortcuts |
 | `audio-waveform` | `mode="audio-waveform"` | ✅ shipped | wavesurfer.js 7 waveform + zoom + playback speed |
-| `drawing` | `mode="drawing"` | 🚧 deferred | tldraw (large bundle — separate follow-up PR) |
+| `drawing` | `mode="drawing"` | ✅ shipped (v0.3.0) | Integrated into image-editor mode — Konva canvas drawing tools with brush, eraser, shapes, text, undo/redo |
 
 Unknown values fall back to `image-editor`.
 

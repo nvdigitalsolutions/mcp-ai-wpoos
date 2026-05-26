@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-        'version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-        'reference' => '54c45cbde18832ea0eb8cff987b2854d8f9c0bcb',
+        'pretty_version' => 'dev-docs/v1.1.23-readme-changelog-update',
+        'version' => 'dev-docs/v1.1.23-readme-changelog-update',
+        'reference' => '1ec41dbcdba272c8b17ed21349991d2b7e914aeb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-            'version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-            'reference' => '54c45cbde18832ea0eb8cff987b2854d8f9c0bcb',
+            'pretty_version' => 'dev-docs/v1.1.23-readme-changelog-update',
+            'version' => 'dev-docs/v1.1.23-readme-changelog-update',
+            'reference' => '1ec41dbcdba272c8b17ed21349991d2b7e914aeb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -31,6 +31,11 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Approval_Controller` | `class-wp-mcp-ai-rest-approval-controller.php` | Approval queue routes |
 | `WP_MCP_AI_REST_Teams_Controller` | `class-wp-mcp-ai-rest-teams-controller.php` | Teams CRUD + invocation |
 | `WP_MCP_AI_REST_Slash_Command_Controller` | `class-wp-mcp-ai-rest-slash-command-controller.php` | Slash-command surface |
+| `WP_MCP_AI_REST_Threads_Controller` | `class-wp-mcp-ai-rest-threads-controller.php` | Thread CRUD + messages (9 routes) |
+| `WP_MCP_AI_REST_Profiles_Controller` | `class-wp-mcp-ai-rest-profiles-controller.php` | Tool permission profiles (9 routes) |
+| `WP_MCP_AI_REST_Checkpoints_Controller` | `class-wp-mcp-ai-rest-checkpoints-controller.php` | State snapshots + diff (4 routes) |
+| `WP_MCP_AI_REST_Context_Controller` | `class-wp-mcp-ai-rest-context-controller.php` | @-mention autocomplete (2 routes) |
+| `WP_MCP_AI_REST_Commands_Controller` | `class-wp-mcp-ai-rest-commands-controller.php` | Command palette (1 route) |
 | `WP_MCP_AI_REST_Workflow_CPT_Controller`, `WP_MCP_AI_REST_Workflow_Run_Controller`, `WP_MCP_AI_REST_Triggers_Controller` | `class-wp-mcp-ai-rest-workflow-*.php`, `class-wp-mcp-ai-rest-triggers-controller.php` | Workflow CRUD + runs + triggers |
 | `WP_MCP_AI_REST_Transcript_Mining_Controller` | `class-wp-mcp-ai-rest-transcript-mining-controller.php` | Background transcript-mining jobs |
 | `WP_MCP_AI_REST_Analytics_Manager`, `WP_MCP_AI_REST_Cost_Manager`, `WP_MCP_AI_REST_Token_Manager` | `class-wp-mcp-ai-rest-{analytics,cost,token}-manager.php` | Admin analytics dashboards |
