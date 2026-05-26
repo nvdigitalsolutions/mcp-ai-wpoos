@@ -1,6 +1,6 @@
 {
   "name": "nvoos-comic-reader",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "NV oOS Comic Reader — React-based comic book reader for CBR, CBZ, CB7, CBT formats with library management and AI-powered analysis",
   "private": true,
   "type": "module",
