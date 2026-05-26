@@ -94,6 +94,7 @@
 		"@babel/core": "^7.28.5",
 		"@babel/preset-env": "^7.28.5",
 		"@babel/preset-react": "^7.28.5",
+		"@babel/preset-typescript": "^7.28.5",
 		"@testing-library/dom": "^10.4.1",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@types/jest": "^30.0.0",
