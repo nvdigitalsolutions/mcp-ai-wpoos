@@ -382,10 +382,12 @@ class WP_MCP_AI_Optional_Components {
 										if (notice) {
 											var errorP = document.createElement('p');
 											errorP.style.color = '#d63638';
-											errorP.innerHTML = <?php
+											errorP.innerHTML =
+											<?php
 											/* translators: %s is a URL to the Data Management admin page. */
 											echo wp_json_encode( sprintf( __( 'Download failed. Please try again or manage your data on the <a href="%s">Data Management</a> page.', 'mcp-ai-wpoos' ), esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ) ) );
-											?>;
+											?>
+											;
 											notice.appendChild(errorP);
 										}
 									});
