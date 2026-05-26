@@ -17,14 +17,14 @@ class WP_MCP_AI_ESPN_Fantasy_Client_Class_Exists_Test extends WP_UnitTestCase {
 	 * Test that ESPN Fantasy Client doesn't fatal error when WP_MCP_AI_Admin_Settings is not loaded.
 	 */
 	public function test_espn_client_handles_missing_admin_settings_class() {
-		// Check if the Pro addon is available.
-		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$this->markTestSkipped( 'ESPN Fantasy Client is a Pro feature, skipping test.' );
+		// Check if the Fantasy Football addon is available.
+		if ( ! defined( 'NVOOS_FANTASY_FOOTBALL_PATH' ) ) {
+			$this->markTestSkipped( 'Fantasy Football addon not available, skipping test.' );
 			return;
 		}
 
 		// Check if the client class file exists.
-		$client_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
+		$client_file = NVOOS_FANTASY_FOOTBALL_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
 		if ( ! file_exists( $client_file ) ) {
 			$this->markTestSkipped( 'ESPN Fantasy Client file not found.' );
 			return;
@@ -63,14 +63,14 @@ class WP_MCP_AI_ESPN_Fantasy_Client_Class_Exists_Test extends WP_UnitTestCase {
 	 * Test that ESPN Fantasy Client loads credentials from settings when class exists.
 	 */
 	public function test_espn_client_loads_credentials_when_admin_settings_exists() {
-		// Check if the Pro addon is available.
-		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$this->markTestSkipped( 'ESPN Fantasy Client is a Pro feature, skipping test.' );
+		// Check if the Fantasy Football addon is available.
+		if ( ! defined( 'NVOOS_FANTASY_FOOTBALL_PATH' ) ) {
+			$this->markTestSkipped( 'Fantasy Football addon not available, skipping test.' );
 			return;
 		}
 
 		// Check if the client class file exists.
-		$client_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
+		$client_file = NVOOS_FANTASY_FOOTBALL_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
 		if ( ! file_exists( $client_file ) ) {
 			$this->markTestSkipped( 'ESPN Fantasy Client file not found.' );
 			return;
