@@ -711,7 +711,7 @@ Six Pillars of Modern Policing:
 5. **Training & Education**: De-escalation, bias awareness, mental health, ethics
 6. **Officer Wellness & Safety**: Mental health support, resilience, peer support programs
 
-**PERF 30 Guiding Principles on Use of Force (2016, Updated 2022):**
+**PERF 30 Guiding Principles on Use of Force (2016):**
 Core Principles:
 - **Sanctity of Life**: Highest priority - protect life of all persons including suspects
 - **De-Escalation**: Mandatory training and application when time and circumstances permit
@@ -783,4 +783,4 @@ In-Service Annual Training:
 - **De-Escalation Success**: Percentage of crisis calls resolved without force (target: 95%+ of mental health calls)
 
 **Change Log:**
-- 2024-12: Complete playbook created based on 21st Century Policing principles, PERF 30 Guiding Principles on Use of Force (2022 update), IACP National Consensus Policy on Use of Force (2020 revision), POST training standards, constitutional law (Miranda, Terry, Graham precedents), de-escalation best practices, Crisis Intervention Team (CIT) Memphis Model, procedural justice framework, community and problem-oriented policing methodologies (SARA model), body-worn camera policies, and modern law enforcement technology standards. Emphasizes sanctity of life, constitutional policing, community trust-building, and evidence-based practices.
+- 2024-12: Complete playbook created based on 21st Century Policing principles, PERF 30 Guiding Principles on Use of Force (2016), IACP National Consensus Policy on Use of Force (2020 revision), POST training standards, constitutional law (Miranda, Terry, Graham precedents), de-escalation best practices, Crisis Intervention Team (CIT) Memphis Model, procedural justice framework, community and problem-oriented policing methodologies (SARA model), body-worn camera policies, and modern law enforcement technology standards. Emphasizes sanctity of life, constitutional policing, community trust-building, and evidence-based practices.

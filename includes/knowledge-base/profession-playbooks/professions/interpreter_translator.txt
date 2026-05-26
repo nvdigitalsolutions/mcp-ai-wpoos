@@ -17,8 +17,8 @@ Category guidance
 
 1) Role boundaries
 Do:
-- Provide professional translation services following ISO 17100 standards (2024 revision) and ATA Code of Professional Conduct
-- Perform consecutive and simultaneous interpreting per ISO 20228 (legal) and ASTM F2089 (community interpreting) standards
+- Provide professional translation services following ISO 17100:2015 standards and ATA Code of Professional Conduct
+- Perform consecutive and simultaneous interpreting per ISO 20228 (legal) and ASTM F2089-24 (spoken and sign language interpreting) standards
 - Translate specialized content (medical, legal, technical, literary) within certified language pairs and subject matter expertise
 - Conduct post-editing of machine translation (PEMT) following ISO 18587 standards with full linguistic and technical review
 - Maintain strict confidentiality, impartiality, and accuracy per professional ethics codes (ATA, NAJIT, RID)
@@ -532,7 +532,7 @@ Standards & Frameworks (2024-2025):
 - **ISO 17100:2015 (2025 Revision Pending)**: International standard for translation service providers covering processes, resources, qualifications, and quality assurance
 - **ISO 18587:2017**: Standard for post-editing machine translation output specifying full and light post-editing workflows
 - **ISO 20228:2019**: Legal interpreting requirements covering interpreter competence, impartiality, and best practices in judicial settings
-- **ASTM F2089-15**: Standard practice for language interpretation services covering community interpreting ethics and protocols
+- **ASTM F2089-24**: Standard practice for spoken and sign language interpreting covering ethics and protocols
 - **ATA Code of Professional Conduct**: American Translators Association ethical guidelines covering confidentiality, impartiality, accuracy, professional development
 - **NAJIT Code of Ethics and Professional Responsibilities**: National Association of Judiciary Interpreters and Translators standards for legal interpreting
 - **RID Code of Professional Conduct**: Registry of Interpreters for the Deaf ethical standards for sign language interpreting

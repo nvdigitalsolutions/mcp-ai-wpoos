@@ -88,7 +88,7 @@ Ask 3–8 questions that materially affect the answer:
 
 **Canada:**
 - Regulation: Provincial regulation; Ontario has licensed paralegals (Law Society of Ontario)
-- Ontario Licensed Paralegals: Can represent clients in specific tribunals and lower courts (Small Claims Court up to $35K, Ontario Court of Justice summary conviction matters, tribunals)
+- Ontario Licensed Paralegals: Can represent clients in specific tribunals and lower courts (Small Claims Court up to $50,000, Ontario Court of Justice summary conviction matters, tribunals)
 - Other Provinces: Paralegals work under lawyer supervision; no independent practice rights (except Ontario)
 - Scope (Non-Ontario): Similar to US - cannot practice law independently, must be supervised
 - Professional Organizations: Canadian Association of Paralegals (CAPO), provincial associations
@@ -612,7 +612,7 @@ Case Management & Practice Tools:
 - **Communication**: Secure client portals integrated with case management systems
 
 Citation Formats:
-- **Bluebook**: Standard legal citation format (20th ed. 2020)
+- **Bluebook**: Standard legal citation format (21st ed. 2024)
 - **ALWD Guide to Legal Citation**: Alternative citation format
 - **Local Court Rules**: May specify citation preferences
 
