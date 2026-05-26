@@ -539,6 +539,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
 		}
 
+		// Load Comic Creation Toolkit if enabled (Pro feature - Phase 2.11).
+		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/comic-creation-toolkit-init.php';
+		}
+
 		// Load AI Tool Builder Toolkit if enabled (Pro feature - Phase 2.9).
 		if ( ! empty( $settings['enable_ai_tool_builder_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
@@ -1685,7 +1690,27 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-client-satisfaction-analyzer.php',
 				'WP_MCP_AI_Tool_LF_Competitive_Benchmarker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-competitive-benchmarker.php',
 			);
-			$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
+		$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
+		}
+
+		// Comic Creation Toolkit (12 tools).
+		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
+			$comic_tools_base = WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/';
+			$comic_tools = array(
+				'WP_MCP_AI_Tool_Generate_Comic_Script'    => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-comic-script.php',
+				'WP_MCP_AI_Tool_Breakdown_Comic_Panels'   => $comic_tools_base . 'class-wp-mcp-ai-tool-breakdown-comic-panels.php',
+				'WP_MCP_AI_Tool_Generate_Character_Sheet' => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-character-sheet.php',
+				'WP_MCP_AI_Tool_Generate_Comic_Panel'     => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-comic-panel.php',
+				'WP_MCP_AI_Tool_Create_Comic_Layout'      => $comic_tools_base . 'class-wp-mcp-ai-tool-create-comic-layout.php',
+				'WP_MCP_AI_Tool_Add_Speech_Bubbles'       => $comic_tools_base . 'class-wp-mcp-ai-tool-add-speech-bubbles.php',
+				'WP_MCP_AI_Tool_Export_Comic_Cbz'         => $comic_tools_base . 'class-wp-mcp-ai-tool-export-comic-cbz.php',
+				'WP_MCP_AI_Tool_Colorize_Comic_Panel'     => $comic_tools_base . 'class-wp-mcp-ai-tool-colorize-comic-panel.php',
+				'WP_MCP_AI_Tool_Ink_Comic_Panel'          => $comic_tools_base . 'class-wp-mcp-ai-tool-ink-comic-panel.php',
+				'WP_MCP_AI_Tool_Letter_Comic_Panel'       => $comic_tools_base . 'class-wp-mcp-ai-tool-letter-comic-panel.php',
+				'WP_MCP_AI_Tool_Upscale_Comic_Page'       => $comic_tools_base . 'class-wp-mcp-ai-tool-upscale-comic-page.php',
+				'WP_MCP_AI_Tool_Apply_Comic_Style'        => $comic_tools_base . 'class-wp-mcp-ai-tool-apply-comic-style.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $comic_tools );
 		}
 
 		// Extended Cognition Toolkit.
