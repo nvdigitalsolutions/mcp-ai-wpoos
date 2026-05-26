@@ -164,6 +164,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Enable specialized tools for multi-agent coordination: create_agent_team (compose teams), delegate_to_agent (task delegation), and aggregate_agent_results (result merging). These tools allow AI assistants to orchestrate other AI assistants for complex workflows.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'enable_managed_agents'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Managed Agents (Antigravity)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable the Antigravity managed agent via Gemini Interactions API', 'mcp-ai-wpoos' ),
+					'description'    => sprintf(
+						/* translators: %s: link to Antigravity docs */
+						__( 'Enable the <a href="%s" target="_blank">Antigravity agent</a> — a Gemini-powered managed agent that runs in an isolated cloud sandbox with code execution, web browsing, and file management. Each interaction provisions a Linux environment where the agent reasons, plans, and executes tasks autonomously. Note: the Antigravity agent uses its own built-in tools and does not support WordPress function calling. Requires a Gemini API key configured in Provider settings.', 'mcp-ai-wpoos' ),
+						'https://ai.google.dev/gemini-api/docs/antigravity-agent'
+					),
+					'default'        => false,
+				),
 				'section_agent_memory'            => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Agent Memory', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Control the chat-client long-term memory surface. When enabled, logged-in users can store and recall memories across sessions using the memory drawer in the chat interface.', 'mcp-ai-wpoos' ) . '</p>',
