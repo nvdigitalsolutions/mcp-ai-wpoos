@@ -242,12 +242,6 @@ function wp_mcp_ai_manually_load_plugin() {
 		require_once $graphify;
 	}
 
-	// Load the Fantasy Football addon if present so its tests can exercise its classes.
-	$fantasy_football = dirname( __DIR__ ) . '/addons/fantasy-football/nvoos-fantasy-football.php';
-	if ( file_exists( $fantasy_football ) ) {
-		require_once $fantasy_football;
-	}
-
 	// Load the Pro addon if present so its tests (e.g. messaging-channels-ajax,
 	// CPT AI integration, quiz tools) can exercise their classes.
 	// Guard against double-loading: CI environments may have Pro activated as

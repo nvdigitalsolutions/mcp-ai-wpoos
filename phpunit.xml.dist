@@ -18,7 +18,6 @@
             <directory suffix=".php">addons/saas-controller/tests</directory>
             <directory suffix=".php">addons/embedded/tests</directory>
             <directory suffix=".php">addons/algorave/tests</directory>
-            <directory suffix=".php">addons/fantasy-football/tests</directory>
             <directory suffix=".php">addons/graphify/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
