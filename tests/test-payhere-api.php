@@ -16,17 +16,6 @@
 class WP_MCP_AI_PayHere_API_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
-		}
-	}
-
-	/**
 	 * Test that PayHere settings are in default settings.
 	 */
 	public function test_payhere_settings_in_defaults() {

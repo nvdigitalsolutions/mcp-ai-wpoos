@@ -19,18 +19,6 @@
 class WP_MCP_AI_Mesh_Peer_Sites_Save_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Load required classes.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-		}
-	}
-
-	/**
 	 * Test that adding a new peer site saves correctly.
 	 */
 	public function test_adding_new_peer_site_saves() {

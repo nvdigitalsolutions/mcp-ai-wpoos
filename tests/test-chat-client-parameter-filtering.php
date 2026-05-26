@@ -123,8 +123,6 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 	 * as part of the normal tool execution flow in execute_tool_call_internal.
 	 */
 	public function test_filtering_in_rest_api_flow() {
-		$this->markTestSkipped( 'Skipped: REST API internal flow test requires complex dependency injection (Language_Model_Router) not feasible in unit tests.' );
-
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
@@ -144,14 +142,8 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $tool );
 
-		// Create a REST controller instance via reflection (constructor has complex deps).
-		$rest_reflection = new ReflectionClass( 'WP_MCP_AI_REST' );
-		$rest            = $rest_reflection->newInstanceWithoutConstructor();
-
-		// Manually set the registry property.
-		$registry_prop = $rest_reflection->getProperty( 'registry' );
-		$registry_prop->setAccessible( true );
-		$registry_prop->setValue( $rest, $registry );
+		// Create a REST controller instance.
+		$rest = new WP_MCP_AI_REST();
 
 		// Simulate a tool call with extra parameters.
 		$tool_call = array(

@@ -14,18 +14,6 @@
 class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Ensure the Auth0 setup class is loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
-		}
-	}
-
-	/**
 	 * Test that toggle handler requires manage_options capability.
 	 */
 	public function test_toggle_requires_manage_options() {

@@ -14,17 +14,6 @@
 class WP_MCP_AI_Orchestration_Slider_Settings_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php';
-		}
-	}
-
-	/**
 	 * Test that slider values are properly sanitized and saved.
 	 */
 	public function test_slider_values_are_sanitized() {

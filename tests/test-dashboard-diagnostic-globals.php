@@ -9,27 +9,6 @@
 class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// The class is gated behind is_admin() in the loader.
-		if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
-		}
-
-		// The render_diagnostic_page() method was renamed to render_page()
-		// and converted to a static method. The tests below were written
-		// against the old API.
-		if ( ! method_exists( 'WP_MCP_AI_Dashboard_Diagnostic', 'render_diagnostic_page' ) ) {
-			$this->markTestSkipped(
-				'Diagnostic class has been refactored — render_diagnostic_page() no longer exists.'
-			);
-		}
-	}
-
-	/**
 	 * Test that diagnostic correctly identifies new settings dashboard mode.
 	 */
 	public function test_diagnostic_identifies_new_settings_mode() {

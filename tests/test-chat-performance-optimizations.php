@@ -43,8 +43,7 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 		);
 
 		// Initialize REST API.
-		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
-		$registry->init();
+		$registry   = new WP_MCP_AI_Tool_Registry();
 		$openai     = new WP_MCP_AI_OpenAI_Client();
 		$gemini     = new WP_MCP_AI_Gemini_Client();
 		$router     = new WP_MCP_AI_Language_Model_Router( $openai, $gemini );
@@ -90,8 +89,7 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 		}
 
 		// Create new REST instance with cache disabled.
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$registry->init();
+		$registry = new WP_MCP_AI_Tool_Registry();
 		$openai   = new WP_MCP_AI_OpenAI_Client();
 		$gemini   = new WP_MCP_AI_Gemini_Client();
 		$router   = new WP_MCP_AI_Language_Model_Router( $openai, $gemini );

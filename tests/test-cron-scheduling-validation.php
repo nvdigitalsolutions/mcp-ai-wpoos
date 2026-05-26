@@ -247,10 +247,6 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		if ( is_wp_error( $create_result ) ) {
-			$this->markTestSkipped( 'Create cron job returned error: ' . $create_result->get_error_message() );
-		}
-
 		$job_id = $create_result['job_id'];
 
 		// Verify it exists.
@@ -262,10 +258,6 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'job_id' => $job_id ),
 			array( 'user_id' => $this->admin_id )
 		);
-
-		if ( is_wp_error( $result ) ) {
-			$this->markTestSkipped( 'Delete cron job returned error: ' . $result->get_error_message() );
-		}
 
 		$this->assertTrue( $result['deleted'], 'Job should be deleted' );
 
@@ -384,10 +376,6 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		if ( is_wp_error( $result ) ) {
-			$this->markTestSkipped( 'Create cron job returned error: ' . $result->get_error_message() );
-		}
-
 		$this->assertTrue( $result['scheduled'] );
 
 		// Simulate first execution.
@@ -460,9 +448,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		);
 
 		// Should handle gracefully and either reject or fall back to one-time.
-		if ( is_wp_error( $result ) ) {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		} elseif ( isset( $result['scheduled'] ) ) {
+		if ( isset( $result['scheduled'] ) ) {
 			$this->assertIsBool( $result['scheduled'] );
 		} else {
 			$this->assertInstanceOf( WP_Error::class, $result );

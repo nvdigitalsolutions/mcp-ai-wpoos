@@ -19,21 +19,6 @@
 class WP_MCP_AI_OAuth_Token_Preservation_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Ensure required classes are loaded (not always loaded in test bootstrap).
-		if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
-		}
-		if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-tools.php';
-		}
-	}
-
-	/**
 	 * Test that GitHub OAuth tokens are preserved when saving external_tools subtab.
 	 */
 	public function test_github_oauth_tokens_preserved_when_saving_external_tools() {

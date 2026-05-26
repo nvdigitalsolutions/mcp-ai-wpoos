@@ -46,30 +46,6 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-
-		// Load Security Section classes (not auto-loaded in test env because
-		// settings-dashboard-init.php is gated behind is_admin() in loader.php).
-		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		}
-		if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-security.php';
-		}
-
-		// Register the Security section so the registry can resolve it.
-		if ( null === WP_MCP_AI_Settings_Registry::get_section( 'security' ) ) {
-			WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
-		}
-
-		// Clear the repository singleton cache so individual option updates
-		// are visible to WP_MCP_AI_Security_Manager checks.
-		if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
-			$repo = wp_mcp_ai_get_settings_repository();
-			$ref  = new ReflectionProperty( $repo, 'cache' );
-			$ref->setAccessible( true );
-			$ref->setValue( $repo, array() );
-		}
-
 		update_option( 'wp_mcp_ai_settings', $this->base_settings );
 		delete_transient( 'wp_mcp_ai_security_posture' );
 	}
@@ -79,9 +55,6 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		delete_option( 'wp_mcp_ai_settings' );
-		delete_option( 'wp_mcp_ai_enable_ip_blacklist' );
-		delete_option( 'wp_mcp_ai_ip_blacklist' );
-		delete_option( 'wp_mcp_ai_enable_ip_whitelist' );
 		delete_transient( 'wp_mcp_ai_security_posture' );
 		parent::tearDown();
 	}
@@ -458,17 +431,11 @@ class Test_Security_Center extends WP_UnitTestCase {
 	public function test_test_ip_blocked_by_blacklist() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		// The Security Manager reads settings via the repository, which looks
-		// up individual prefixed option keys (e.g. wp_mcp_ai_enable_ip_blacklist),
-		// not the combined wp_mcp_ai_settings array.
 		update_option( 'wp_mcp_ai_settings', array(
 			'enable_ip_whitelist' => false,
 			'enable_ip_blacklist' => true,
 			'ip_blacklist'        => "203.0.113.5\n203.0.113.6",
 		) );
-		update_option( 'wp_mcp_ai_enable_ip_blacklist', true );
-		update_option( 'wp_mcp_ai_ip_blacklist', "203.0.113.5\n203.0.113.6" );
-		update_option( 'wp_mcp_ai_enable_ip_whitelist', false );
 
 		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/test-ip' );
@@ -616,7 +583,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public static function data_compliance_frameworks() {
+	public function data_compliance_frameworks() {
 		return array(
 			'owasp' => array( 'owasp' ),
 			'gdpr'  => array( 'gdpr' ),

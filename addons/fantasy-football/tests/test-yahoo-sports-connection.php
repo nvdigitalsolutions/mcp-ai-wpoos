@@ -19,14 +19,6 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Ensure the Integrations section class is loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
-			$section_file = dirname( __DIR__, 3 ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
-			if ( file_exists( $section_file ) ) {
-				require_once $section_file;
-			}
-		}
-
 		// Create an admin user.
 		$this->admin_user = $this->factory->user->create(
 			array(

@@ -26,14 +26,14 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Check if the Fantasy Football addon is available.
-		if ( ! defined( 'NVOOS_FANTASY_FOOTBALL_PATH' ) ) {
-			$this->markTestSkipped( 'Fantasy Football addon not available.' );
+		// Check if the Pro addon is available.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available.' );
 			return;
 		}
 
 		// Load the tool class.
-		$tool_file = NVOOS_FANTASY_FOOTBALL_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-league.php';
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-league.php';
 		if ( ! file_exists( $tool_file ) ) {
 			$this->markTestSkipped( 'ESPN Fantasy Get League tool not found.' );
 			return;

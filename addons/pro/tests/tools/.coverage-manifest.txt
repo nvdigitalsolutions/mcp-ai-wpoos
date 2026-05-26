@@ -29,18 +29,15 @@ wp-mcp-ai-pro-tool-analyze-data-patterns
 wp-mcp-ai-pro-tool-analyze-loop-health
 wp-mcp-ai-pro-tool-calculate-orchestration-capacity
 wp-mcp-ai-pro-tool-check-exit-conditions
-wp-mcp-ai-pro-tool-configure-schedule-widget-defaults
 wp-mcp-ai-pro-tool-convert-html-to-markdown
 wp-mcp-ai-pro-tool-create-pro-schedule
 wp-mcp-ai-pro-tool-create-task-plan
 wp-mcp-ai-pro-tool-create-template
 wp-mcp-ai-pro-tool-delete-pro-schedule
 wp-mcp-ai-pro-tool-detect-completion-indicators
-wp-mcp-ai-pro-tool-dry-run-pro-schedule
 wp-mcp-ai-pro-tool-extract-structured-data
 wp-mcp-ai-pro-tool-generate-password
 wp-mcp-ai-pro-tool-generate-research-report
-wp-mcp-ai-pro-tool-get-schedule-latest-result
 wp-mcp-ai-pro-tool-get-schedule-run-history
 wp-mcp-ai-pro-tool-get-session-status
 wp-mcp-ai-pro-tool-get-task-plan
@@ -49,7 +46,6 @@ wp-mcp-ai-pro-tool-list-pro-schedules
 wp-mcp-ai-pro-tool-list-templates
 wp-mcp-ai-pro-tool-manage-autonomous-session
 wp-mcp-ai-pro-tool-plan-schedules-from-workflow
-wp-mcp-ai-pro-tool-render-schedule-result
 wp-mcp-ai-pro-tool-schedule-channel-broadcast
 wp-mcp-ai-pro-tool-seed-template-library
 wp-mcp-ai-pro-tool-update-pro-schedule
@@ -301,7 +297,6 @@ wp-mcp-ai-tool-ext-cog-get-motion-context
 wp-mcp-ai-tool-ext-cog-manage-sensor-permissions
 wp-mcp-ai-tool-ext-cog-remember-sensory-context
 wp-mcp-ai-tool-extract-pdf-text
-wp-mcp-ai-tool-extract-site-design-from-mockups
 wp-mcp-ai-tool-extract-video-frames
 wp-mcp-ai-tool-extract-video-metadata
 wp-mcp-ai-tool-ezuite-erp
@@ -409,8 +404,6 @@ wp-mcp-ai-tool-get-upcoming-checkups
 wp-mcp-ai-tool-get-vaccination-schedule
 wp-mcp-ai-tool-get-video-metadata
 wp-mcp-ai-tool-get-workflow-execution-log
-wp-mcp-ai-tool-git-change
-wp-mcp-ai-tool-git-inspect
 wp-mcp-ai-tool-git-operations
 wp-mcp-ai-tool-grade-quiz
 wp-mcp-ai-tool-graph-function

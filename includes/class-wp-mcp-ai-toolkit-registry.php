@@ -202,7 +202,7 @@ class WP_MCP_AI_Toolkit_Registry {
 		$tools = array();
 
 		// Get all registered tools.
-		$all_tools = $this->tool_registry->get_all_tools();
+		$all_tools = $this->tool_registry->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			// Get tool metadata.
@@ -302,7 +302,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_tools_by_pattern( $pattern_slug ) {
 		$tools     = array();
-		$all_tools = $this->tool_registry->get_all_tools();
+		$all_tools = $this->tool_registry->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -326,7 +326,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_tools_by_profession( $profession_slug ) {
 		$tools     = array();
-		$all_tools = $this->tool_registry->get_all_tools();
+		$all_tools = $this->tool_registry->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -350,7 +350,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_tools_by_risk_level( $risk_level ) {
 		$tools     = array();
-		$all_tools = $this->tool_registry->get_all_tools();
+		$all_tools = $this->tool_registry->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -373,7 +373,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function search_tools( $search_term ) {
 		$results   = array();
-		$all_tools = $this->tool_registry->get_all_tools();
+		$all_tools = $this->tool_registry->list_tools();
 		$search    = strtolower( $search_term );
 
 		foreach ( $all_tools as $tool ) {
@@ -403,7 +403,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_unmapped_tools() {
 		$unmapped  = array();
-		$all_tools = $this->tool_registry->get_all_tools();
+		$all_tools = $this->tool_registry->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -424,7 +424,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 * @return array Coverage statistics.
 	 */
 	public function get_coverage_report() {
-		$all_tools        = $this->tool_registry->get_all_tools();
+		$all_tools        = $this->tool_registry->list_tools();
 		$total_tools      = count( $all_tools );
 		$mapped_tools     = 0;
 		$toolkit_coverage = array();

@@ -341,7 +341,7 @@ class WP_MCP_AI_Vector_Context_Service {
 			$similarity = $this->cosine_similarity( $query_embedding, $ctx_embedding );
 
 			$context['_vector_similarity'] = (float) $similarity;
-			$scored[]                      = array(
+			$scored[] = array(
 				'record'     => $context,
 				'similarity' => (float) $similarity,
 			);
@@ -549,10 +549,10 @@ class WP_MCP_AI_Vector_Context_Service {
 		 *
 		 * @param int $half_life Half-life in seconds.
 		 */
-		$half_life      = (int) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal_half_life', 30 * DAY_IN_SECONDS );
-		$temporal_score = 0.0;
-		$stored_at_iso  = isset( $context['stored_at'] ) ? (string) $context['stored_at'] : '';
-		$stored_ts      = $stored_at_iso ? strtotime( $stored_at_iso ) : 0;
+		$half_life       = (int) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal_half_life', 30 * DAY_IN_SECONDS );
+		$temporal_score  = 0.0;
+		$stored_at_iso   = isset( $context['stored_at'] ) ? (string) $context['stored_at'] : '';
+		$stored_ts       = $stored_at_iso ? strtotime( $stored_at_iso ) : 0;
 		if ( $temporal_weight > 0 && $stored_ts > 0 && $half_life > 0 ) {
 			$age_seconds    = max( 0, time() - $stored_ts );
 			$decay          = pow( 0.5, $age_seconds / $half_life );
@@ -600,9 +600,9 @@ class WP_MCP_AI_Vector_Context_Service {
 			}
 			if ( ! empty( $filters['tags'] ) && is_array( $filters['tags'] ) ) {
 				++$signals;
-				$tags_lower        = array_map( 'strtolower', array_map( 'strval', $tags ) );
-				$filter_tags_lower = array_map( 'strtolower', array_map( 'strval', $filters['tags'] ) );
-				$tag_intersect     = array_intersect( $tags_lower, $filter_tags_lower );
+				$tags_lower         = array_map( 'strtolower', array_map( 'strval', $tags ) );
+				$filter_tags_lower  = array_map( 'strtolower', array_map( 'strval', $filters['tags'] ) );
+				$tag_intersect      = array_intersect( $tags_lower, $filter_tags_lower );
 				if ( ! empty( $tag_intersect ) ) {
 					++$matched;
 				}
@@ -774,11 +774,11 @@ class WP_MCP_AI_Vector_Context_Service {
 	 * @return WP_MCP_AI_Embedding_Provider_Interface|null
 	 */
 	private function resolve_default_provider() {
-		$settings         = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
-		$has_openai       = ! empty( $settings['openai_api_key'] );
-		$has_ollama       = ! empty( $settings['ollama_endpoint_url'] );
+		$settings        = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$has_openai      = ! empty( $settings['openai_api_key'] );
+		$has_ollama      = ! empty( $settings['ollama_endpoint_url'] );
 		$has_digitalocean = ! empty( $settings['digitalocean_api_key'] );
-		$preference       = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
+		$preference      = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
 
 		// Honour an explicit preference if its backend is available.
 		if ( 'ollama' === $preference && $has_ollama ) {

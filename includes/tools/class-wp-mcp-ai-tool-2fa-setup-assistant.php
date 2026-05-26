@@ -23,8 +23,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/../traits/trait-wp-mcp-ai-tool-wordpress-native.php';
-
 /**
  * 2FA Setup Assistant Tool Class
  *
@@ -48,13 +46,6 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 */
 	public function get_slug() {
 		return '2fa_setup_assistant';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Two-Factor Authentication Setup Assistant', 'mcp-ai-wpoos' );
 	}
 
 	/**
