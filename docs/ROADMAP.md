@@ -1,6 +1,6 @@
 # NV oOS Roadmap
 
-**Last Updated:** May 25, 2026  
+**Last Updated:** May 26, 2026  
 **Version:** 1.1.23
 
 ---
@@ -16,6 +16,26 @@
 3. **Open Standards** - MCP protocol compliance, extensible architecture
 4. **Community Driven** - Open source with transparent development
 5. **Production Ready** - Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.23 — May 2026 ✅
+
+**Release Date:** May 25–26, 2026
+
+### What was delivered in v1.1.23
+
+- ✅ **Zed-Inspired SPA Architecture (Pro + Base).** 9-phase React SPA admin interface: Threads Sidebar, Agent Panel, Command Palette (Cmd+K), Agent Profiles (Write/Ask/Minimal/Custom), @-mention Context (8 entity types), Checkpoints & Diff Review, Inline Assistant (Gutenberg), Multi-Model Comparison, Collaborative Presence (Heartbeat API). ~75 files, ~10,800 lines. Base: 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4).
+- ✅ **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for real Antigravity API (`POST /v1beta/interactions`) with code execution, Google Search grounding, and sandbox environments. `enable_managed_agents` toggle in Orchestration settings.
+- ✅ **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, admin screens, chat drawer, React SPA builds. "Use TypeScript-Compiled Assets" checkbox in Settings → Orchestration.
+- ✅ **Comic Reader Addon (`addons/comic-reader/`).** React-based CBR/CBZ/CB7/CBT reader with dual-page modes, zoom, keyboard nav, touch, fullscreen, shortcode + Gutenberg block.
+- ✅ **Media Studio v0.3.0.** Zoom/pan, drawing tools (Konva canvas), save-to-WP-Media-Library. Image editor now feature-complete.
+- ✅ **SPA Blueprint v3.0.** External React template ingestion & gap analysis pipeline. Adapter automation (API, i18n, CSS scope, bundle optimizer).
+- ✅ **LLM Prompt Cache Optimization v1.5.1.**
+- ✅ **30+ Reliability Fixes.** Cron status diagnostics (HTTP status + body), PHP 8.2+ compatibility ($namespace/$rest_base), PHPUnit 11 (6 batches across base+pro+addons), WP.org compliance re-audit & findings (section 14), May 2026 audit findings (F-AUTHZ-05/06, F-AGENT-01), PHPCS 353→0 errors across 18 files, Docs Hub fixes (browse-repo, folder tree picker, DNS, autocomplete), qs CVE-2026-8723, DeepSeek fallback, test suite stability (wp_die handler, AJAX fixes), net worth calculator parse error.
+- ✅ **Dev Dependencies.** `wp-phpunit/wp-phpunit` 6.9.4→7.0.0, `php-stubs/wordpress-stubs` 6.9.1→7.0.0.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 
