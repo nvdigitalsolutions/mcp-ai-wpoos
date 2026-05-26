@@ -27,6 +27,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_BASE_URL            = 'https://generativelanguage.googleapis.com/v1beta/';
 		const DEFAULT_BASE_URL        = 'https://generativelanguage.googleapis.com/v1beta';
 
+		/** @var string Managed Agents / Antigravity Interactions API endpoint. @since 2.x */
+		const API_INTERACTIONS_ENDPOINT  = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+		/** @var string Managed Agents creation endpoint (custom agents). @since 2.x */
+		const API_MANAGED_AGENTS_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/agents';
+		/** @var string Environment file download endpoint template. @since 2.x */
+		const API_ENV_DOWNLOAD_ENDPOINT  = 'https://generativelanguage.googleapis.com/v1beta/files/environment-%s:download';
+		/** @var string Required Api-Revision header for the Interactions API. @since 2.x */
+		const INTERACTIONS_API_REVISION  = '2026-05-20';
+		/** @var string Current Antigravity managed agent ID. @since 2.x */
+		const ANTIGRAVITY_AGENT_ID       = 'antigravity-preview-05-2026';
+
 		/**
 		 * Retrieve the configured API key.
 		 *

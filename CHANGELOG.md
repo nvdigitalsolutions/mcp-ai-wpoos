@@ -1,5 +1,18 @@
 # oOS – Changelog
 
+## [1.1.24] - 2026-05-26
+
+### Changed — Antigravity Managed Agents API Rewrite
+
+Rewrote the Gemini Managed Agent integration to use the actual Antigravity Interactions API (`POST /v1beta/interactions`) instead of the speculative pre-release agents API assumed at Google I/O 2026. The Antigravity agent now runs through the live API with proper sandbox environments.
+
+- **`WP_MCP_AI_Gemini_Managed_Agent_Service` (rewrite)** — Replaced the speculative `/v1beta/agents` endpoints with the real Interactions API. New `send_interaction()` method replaces the two-step create/run pattern. Added `continue_interaction()` for multi-turn conversations, `download_environment_files()` for sandbox file retrieval, `list_environments()` / `forget_environment()` for local state tracking, and `create_managed_agent()` / `build_agent_environment()` for custom managed agent creation with inline, GitHub, and GCS source support. Added `Api-Revision: 2026-05-20` header to all requests. Added SSE streaming support via cURL-based SSE parser with callback support. Removed deprecated `resolve_tool_definitions()` — Antigravity uses its own built-in tools (`code_execution`, `google_search`, `url_context`), not WordPress function calling.
+- **`WP_MCP_AI_Gemini_Client`** — Added endpoint constants: `API_INTERACTIONS_ENDPOINT`, `API_MANAGED_AGENTS_ENDPOINT`, `API_ENV_DOWNLOAD_ENDPOINT`, `INTERACTIONS_API_REVISION`, `ANTIGRAVITY_AGENT_ID`.
+- **`WP_MCP_AI_Tool_Run_Gemini_Managed_Agent` (rewrite)** — Operations changed from create/run/status/list/terminate to send/continue/stream/download/envs. Parameters updated to reflect the Antigravity API: `input`, `interaction_id`, `environment_id`, `system_instruction`, `agent_tools` (enum: code_execution, google_search, url_context), `agent_id`, `save_path`. Response format now includes interaction/environment IDs and token usage. Token multiplier increased to 15x (Antigravity can accumulate 3-5M tokens per interaction). Removed `function-calling` capability requirement — Antigravity has its own built-in tools.
+- **Admin UI** — Added `enable_managed_agents` checkbox to Settings → Providers → Gemini subtab with documentation link.
+- **Tool Registry** — Registered `run_gemini_managed_agent` in `load_default_tools()` and `get_tool_group_map()`.
+- **Documentation** — Updated `GEMINI_CAPABILITIES_MATRIX.md`: Managed Agents, Code Execution, and Grounding (Google Search) marked as ✅ Implemented via Antigravity.
+
 ## [1.1.23] - 2026-05-25
 
 ### Added — Zed-Inspired SPA Architecture (Pro)
