@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > **This file is loaded every turn by Claude Code.** Keep it focused and actionable.
-> Last reviewed: **May 2026** · Version: **2.3**
+> Last reviewed: **May 2026** · Version: **2.4**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -205,11 +205,27 @@ Ten providers supported. New across v1.1.15–v1.1.19:
 - **LM Studio** (v1.1.15) — native cURL SSE streaming; native `/api/v0` opt-in; embeddings; bearer-token auth; capability-aware tool gating
 - **Kimi (Moonshot AI)** (`WP_MCP_AI_Kimi_Client`, v1.1.19) — OpenAI-compatible API at `https://api.moonshot.cn/v1`; kimi-k2.6 (256K context, default), kimi-k2-thinking (CoT), moonshot-v1-8k/-32k/-128k
 
+### Voice / Realtime API
+
+Multi-provider voice support via a pluggable voice controller (`WP_MCP_AI_REST_Voice_Controller`, `includes/rest/class-wp-mcp-ai-rest-voice-controller.php`). Two providers registered by default:
+- **OpenAI Realtime** (`WP_MCP_AI_OpenAI_Realtime_Client`) — WebRTC/S2S realtime voice via OpenAI's Realtime API.
+- **Gemini Live** (`WP_MCP_AI_Gemini_Live_Client`) — realtime voice via Google's Gemini Live API.
+
+Provider registration pattern: `$voice_controller->register_provider( new ProviderClient() )`. REST routes registered under `mcp-ai/v1/voice/*`.
+
 ### Slash Commands
 
 Pattern: class with `execute( $args, $flags, $context )` returning string/array/WP_Error.
 Registration via `$handler->register( 'name', array( 'handler' => ..., 'capability' => ..., 'aliases' => ... ) )`.
 Located in `includes/slash-commands/commands/`.
+
+### Paper Store
+
+Flat-file storage layer (`includes/paper-store/`) for structured content management with Markdown+YAML drivers. Provides a lightweight, Git-friendly alternative to CPT-based storage for documentation, knowledge bases, and configuration artifacts. Pro addon (`addons/pro/includes/paper-store/`) adds a Markdown+YAML driver (via `symfony/yaml`), Git sync (`WP_MCP_AI_Pro_Paper_Store_Git_Sync`), admin UI, and import/export tools.
+
+### Agent Client Protocol (ACP)
+
+Implements the [Agent Client Protocol](https://agentclientprotocol.com/) specification (`includes/acp/`) — a JSON-RPC 2.0 server that maps ACP `initialize`, `session/*`, and `tool_call` requests to the core NV oOS tool registry. Includes cancellation semantics, capability negotiation, and federation discovery advertisement. Bridges to the existing chat pipeline without duplicating LLM driver logic.
 
 ### LLM Harnessing Subsystem
 
@@ -276,6 +292,7 @@ test(scope): brief description
 | `docs/hooks-reference.md` | Working with plugin hooks |
 | `docs/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
 | `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
+| `docs/features/agent-skills.md` | Working on Agent Skills bundling / curation / catalogues |
 
 ## OpenAI Schema Compatibility
 
@@ -399,6 +416,13 @@ Full agent inventory: [`AGENTS.md`](AGENTS.md)
 ### Useful debug commands
 
 ```bash
+# Run unified health diagnostics (WP/PHP version, tool registry, DLQ, async queue, providers)
+wp mcp-ai health
+wp mcp-ai health --format=json
+
+# Quick version info
+wp mcp-ai version
+
 # Check if plugin is active and which mode
 wp option get wp_mcp_ai_settings --format=json | grep -i version
 
@@ -407,4 +431,27 @@ wp eval "echo count(WP_MCP_AI_Tool_Registry::get_instance()->get_tools());"
 
 # View recent plugin errors
 wp option get wp_mcp_ai_recent_errors --format=json
+
+# Clear all NV oOS caches (settings, tool registry, WP object cache)
+wp mcp-ai cache clear
+
+# Clear ring-buffer logs
+wp mcp-ai log clear
+wp mcp-ai log clear --type=errors --yes
+
+# Retry a failed async job
+wp mcp-ai queue retry <job-id>
+
+# Show job details
+wp mcp-ai queue show <job-id>
+
+# Bulk retry failed jobs (with dry-run preview)
+wp mcp-ai bulk retry-failed
+wp mcp-ai bulk retry-failed --dry-run --limit=10
+
+# Update an assistant from CLI
+wp mcp-ai assistant update 42 --title="New Name" --model=gpt-4o
+
+# Import an assistant from JSON
+wp mcp-ai assistant import --file=assistant-42.json
 ```
