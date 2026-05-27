@@ -48,6 +48,12 @@ jobs:
       WP_TESTS_DIR: /tmp/wordpress-tests-lib
 
     steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
