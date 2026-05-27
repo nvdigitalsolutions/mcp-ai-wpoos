@@ -245,6 +245,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			);
 
+			// Register Voice REST endpoints (realtime voice sessions).
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
+			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
+			$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
+
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );

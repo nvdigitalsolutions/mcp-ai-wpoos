@@ -145,6 +145,15 @@ class WP_MCP_AI_Shortcode {
 			$style_version
 		);
 
+		// Register voice chat styles.
+		$voice_style_relative = 'assets/css/voice-chat.css';
+		wp_register_style(
+			'wp-mcp-ai-voice-chat',
+			WP_MCP_AI_URL . $voice_style_relative,
+			array( self::STYLE_HANDLE ),
+			$this->get_asset_version( $voice_style_relative )
+		);
+
 		// Register embedded LLM client scripts via the Embedded addon (or Pro addon).
 		// The addon provides the actual script files and handles registration.
 		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
@@ -173,6 +182,36 @@ class WP_MCP_AI_Shortcode {
 			$script_path,
 			array(), // No dependencies - all services are bundled together.
 			$script_version,
+			true
+		);
+
+		// Register realtime voice service (standalone, loaded on demand).
+		$voice_realtime_relative = $js_dir . 'chat-voice-realtime-service' . $js_ext;
+		wp_register_script(
+			'wp-mcp-ai-voice-realtime',
+			WP_MCP_AI_URL . $voice_realtime_relative,
+			array(),
+			$this->get_asset_version( $voice_realtime_relative ),
+			true
+		);
+
+		// Register browser voice service (standalone, loaded on demand).
+		$voice_browser_relative = $js_dir . 'chat-browser-voice-service' . $js_ext;
+		wp_register_script(
+			'wp-mcp-ai-voice-browser',
+			WP_MCP_AI_URL . $voice_browser_relative,
+			array(),
+			$this->get_asset_version( $voice_browser_relative ),
+			true
+		);
+
+		// Register voice mode integration (glues voice services to chat UI).
+		$voice_integration_relative = $js_dir . 'chat-voice-mode-integration' . $js_ext;
+		wp_register_script(
+			'wp-mcp-ai-voice-integration',
+			WP_MCP_AI_URL . $voice_integration_relative,
+			array( self::SCRIPT_HANDLE ),
+			$this->get_asset_version( $voice_integration_relative ),
 			true
 		);
 
@@ -223,6 +262,8 @@ class WP_MCP_AI_Shortcode {
 					'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+					'voiceEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/session' ) ) ),
+					'voiceConfigEndpoint'  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
 					'historyPerPage'      => 20,
 					'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 					'currentUserId'       => get_current_user_id(),
@@ -265,6 +306,8 @@ class WP_MCP_AI_Shortcode {
 				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'voiceEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/session' ) ) ),
+				'voiceConfigEndpoint'  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
 				'historyPerPage'      => 20,
 				'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'currentUserId'       => get_current_user_id(),
@@ -273,6 +316,8 @@ class WP_MCP_AI_Shortcode {
 				'showCapabilityFlags' => $show_capability_flags,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
 				'chatDebugMode'       => $chat_debug_mode,
+				'voiceMode'           => isset( $settings['voice_mode'] ) ? $settings['voice_mode'] : 'chained',
+				'voiceAutoPlay'       => isset( $settings['voice_auto_play'] ) ? (bool) $settings['voice_auto_play'] : false,
 				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
 				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
@@ -897,6 +942,12 @@ class WP_MCP_AI_Shortcode {
 			// This prevents conflicts when multiple widgets with different providers are on the same page.
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
+			wp_enqueue_style( 'wp-mcp-ai-voice-chat' );
+
+			// Enqueue voice mode integration when voice mode is enabled.
+			if ( isset( $settings['voice_mode'] ) && 'off' !== $settings['voice_mode'] ) {
+				wp_enqueue_script( 'wp-mcp-ai-voice-integration' );
+			}
 
 			// Enqueue slash commands integration if available.
 			if ( wp_script_is( 'wp-mcp-ai-slash-commands', 'registered' ) ) {

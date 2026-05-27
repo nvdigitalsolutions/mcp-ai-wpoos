@@ -1,0 +1,297 @@
+/**
+ * Voice Chat Styles for NV oOS
+ *
+ * Provides CSS for realtime voice mode, browser voice mode, voice indicators,
+ * voice mode toggle button, waveform visualization, and push-to-talk UI.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+/* ── Voice Mode Toggle Button ────────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--wp-mcp-ai-color-container-border, #d5d5d5);
+    border-radius: 8px;
+    background: var(--wp-mcp-ai-color-container-background, #fff);
+    color: var(--wp-mcp-ai-color-text, #333);
+    transition: all 0.2s ease;
+    min-width: 140px;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__voice-mode-toggle:hover {
+    border-color: var(--wp-mcp-ai-color-primary, #2271b1);
+    background: rgba(34, 113, 177, 0.05);
+}
+
+.wp-mcp-ai-chat__voice-mode-toggle svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* ── Voice Active States on Chat Container ───────────────────────── */
+
+.wp-mcp-ai-chat--voice-realtime {
+    border-color: var(--wp-mcp-ai-color-primary, #2271b1);
+    box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.15);
+}
+
+.wp-mcp-ai-chat--voice-browser {
+    border-color: #34a853;
+    box-shadow: 0 0 0 2px rgba(52, 168, 83, 0.15);
+}
+
+/* ── Realtime Voice Status Bar ───────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-status {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f0f6fc;
+    border: 1px solid #c5d9ed;
+}
+
+.wp-mcp-ai-chat--voice-realtime .wp-mcp-ai-chat__voice-status,
+.wp-mcp-ai-chat--voice-browser .wp-mcp-ai-chat__voice-status {
+    display: flex;
+}
+
+/* ── Status Indicator Dot ────────────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    flex-shrink: 0;
+    animation: wp-mcp-ai-voice-pulse 2s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__voice-realtime--connecting .wp-mcp-ai-chat__voice-status-dot {
+    background: #f0ad4e;
+}
+
+.wp-mcp-ai-chat__voice-realtime--active .wp-mcp-ai-chat__voice-status-dot {
+    background: #5cb85c;
+}
+
+.wp-mcp-ai-chat__voice-realtime--listening .wp-mcp-ai-chat__voice-status-dot {
+    background: #d9534f;
+    animation: wp-mcp-ai-voice-pulse-active 0.8s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__voice-realtime--speaking .wp-mcp-ai-chat__voice-status-dot {
+    background: #2271b1;
+    animation: wp-mcp-ai-voice-pulse-active 0.6s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__voice-realtime--error .wp-mcp-ai-chat__voice-status-dot {
+    background: #d9534f;
+}
+
+@keyframes wp-mcp-ai-voice-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes wp-mcp-ai-voice-pulse-active {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+/* ── Voice Status Text ───────────────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-status-text {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── End Call Button ─────────────────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-end-call {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.85rem;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    background: #d9534f;
+    color: #fff;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__voice-end-call:hover {
+    background: #c9302c;
+}
+
+/* ── Voice Chat Button (mic button in controls) ──────────────────── */
+
+.wp-mcp-ai-chat__voice-chat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--wp-mcp-ai-color-container-border, #d5d5d5);
+    border-radius: 50%;
+    background: var(--wp-mcp-ai-color-container-background, #fff);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat__voice-chat:hover {
+    border-color: var(--wp-mcp-ai-color-primary, #2271b1);
+    background: rgba(34, 113, 177, 0.08);
+}
+
+.wp-mcp-ai-chat__voice-chat svg {
+    width: 18px;
+    height: 18px;
+}
+
+.wp-mcp-ai-chat__voice-chat--recording {
+    border-color: #d9534f;
+    background: rgba(217, 83, 79, 0.1);
+    animation: wp-mcp-ai-voice-record-pulse 1.5s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__voice-chat--recording svg {
+    fill: #d9534f;
+}
+
+.wp-mcp-ai-chat__voice-chat--processing {
+    border-color: #f0ad4e;
+    background: rgba(240, 173, 78, 0.1);
+}
+
+@keyframes wp-mcp-ai-voice-record-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(217, 83, 79, 0); }
+}
+
+/* ── Live Transcription Display ──────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-transcription {
+    display: none;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 14px;
+    font-style: italic;
+    color: #666;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+    border-left: 3px solid var(--wp-mcp-ai-color-primary, #2271b1);
+    min-height: 1.5em;
+}
+
+.wp-mcp-ai-chat--voice-realtime .wp-mcp-ai-chat__voice-transcription,
+.wp-mcp-ai-chat--voice-browser .wp-mcp-ai-chat__voice-transcription {
+    display: block;
+}
+
+/* ── Audio Waveform Visualization ────────────────────────────────── */
+
+.wp-mcp-ai-chat__voice-waveform {
+    display: none;
+    width: 100%;
+    height: 48px;
+    margin: 0.25rem 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.wp-mcp-ai-chat__voice-waveform canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.wp-mcp-ai-chat--voice-realtime .wp-mcp-ai-chat__voice-waveform,
+.wp-mcp-ai-chat--voice-browser .wp-mcp-ai-chat__voice-waveform {
+    display: block;
+}
+
+/* ── Push-to-Talk Button (mobile-friendly) ───────────────────────── */
+
+.wp-mcp-ai-chat__voice-ptt {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1rem;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid var(--wp-mcp-ai-color-primary, #2271b1);
+    border-radius: 50px;
+    background: var(--wp-mcp-ai-color-container-background, #fff);
+    color: var(--wp-mcp-ai-color-primary, #2271b1);
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.wp-mcp-ai-chat__voice-ptt:active,
+.wp-mcp-ai-chat__voice-ptt--active {
+    background: var(--wp-mcp-ai-color-primary, #2271b1);
+    color: #fff;
+    transform: scale(0.97);
+}
+
+.wp-mcp-ai-chat--voice-browser .wp-mcp-ai-chat__voice-ptt {
+    display: flex;
+}
+
+/* ── Responsive: Mobile Voice Optimizations ──────────────────────── */
+
+@media (max-width: 600px) {
+    .wp-mcp-ai-chat__voice-status {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.6rem 0.75rem;
+        font-size: 12px;
+    }
+
+    .wp-mcp-ai-chat__voice-chat {
+        width: 44px;
+        height: 44px;
+    }
+
+    .wp-mcp-ai-chat__voice-chat svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .wp-mcp-ai-chat__voice-mode-toggle {
+        font-size: 12px;
+        padding: 0.4rem 0.75rem;
+        min-width: auto;
+    }
+
+    .wp-mcp-ai-chat__voice-ptt {
+        padding: 1.25rem;
+        font-size: 16px;
+    }
+}
