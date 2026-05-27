@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** May 26, 2026  
-**Version:** 1.1.23
+**Last Updated:** May 27, 2026  
+**Version:** 1.1.24
 
 ---
 
@@ -16,6 +16,20 @@
 3. **Open Standards** - MCP protocol compliance, extensible architecture
 4. **Community Driven** - Open source with transparent development
 5. **Production Ready** - Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.24 — May 2026 ✅
+
+**Release Date:** May 27, 2026
+
+### What was delivered in v1.1.24
+
+- ✅ Version bump synchronization to 1.1.24 across plugin metadata, constants, package manifests, and WordPress.org readme stable tag.
+- ✅ README, changelog, and roadmap documentation refreshed for the maintenance release.
+- ✅ Release ZIP artifacts rebuilt from `bin/rebuild-all-zips.sh` to align published packages with v1.1.24.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 

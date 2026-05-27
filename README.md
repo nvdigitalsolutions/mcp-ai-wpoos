@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.23  
-**Release Date:** 2026-05-26
+**Version:** 1.1.24  
+**Release Date:** 2026-05-27
 
-**Latest Updates:** May 26, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: React admin, threads, profiles, checkpoints, @-mentions, multi-model comparison, collaborative presence. Antigravity Interactions API rewrite. TypeScript upgrade + orchestration toggles. Comic Reader + Media Studio v0.3.0 addons. 30+ reliability fixes).
+**Latest Updates:** May 27, 2026 (v1.1.24) — See [§ Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026) (Maintenance release: version bump synchronization, refreshed release docs, and rebuilt ZIP packages).
+
+**Previous Updates (v1.1.23):** May 26, 2026 (v1.1.23) — Zed-Inspired SPA Architecture, Antigravity Interactions API rewrite, TypeScript upgrade, and reliability fixes. See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) below.
 
 **Previous Updates (v1.1.22):** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
 
@@ -32,7 +34,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
+- [🆕 Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -118,22 +120,11 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.23)
+### ✨ What's New at a Glance (v1.1.24)
 
-- 🖥️ **Pro React SPA — Zed-Inspired Admin Interface.** Threads Sidebar with scope-grouped agent conversations. Agent Panel with SSE streaming chat and tool call cards. Cmd+K Command Palette with fuzzy search across 830+ tools. Hash-based routing with 7 pages (Chat, Settings, Tools, Assistants, Workflows, Analytics).
-- 🔒 **Agent Profiles — Write/Ask/Minimal/Custom.** Built-in tool permission profiles with per-tool allow/deny/confirm patterns and glob-style matching. Filter tools sent to LLM by profile.
-- 💬 **@-mention Context System.** Type `@` to mention posts, tools, skills, threads, files, users, terms, and settings. Debounced autocomplete with keyboard navigation.
-- 📸 **Checkpoints & Diff Review.** Automatic state snapshots on every agentic turn. One-click restore to any checkpoint. Accept/reject individual change hunks with before/after diff visualization.
-- ✏️ **Inline Assistant — Gutenberg AI Text Transform.** Select text in block editor → describe transformation → model rewrites in place or inserts after. Supports GPT-4o, Claude, Gemini.
-- 🔄 **Multi-Model Comparison.** Send same prompt to multiple AI models simultaneously and compare responses side-by-side with timing badges and "Use This Response" selection.
-- 👥 **Collaborative Presence.** Real-time user presence tracking via WordPress Heartbeat API. Avatar stack showing other editors with activity descriptions.
-- 🏗️ **Base Thread Management Infrastructure.** 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4 compatible). Shared by jQuery chat UI and Pro React SPA.
-- 🤖 **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for the real Antigravity Interactions API with code execution, Google Search grounding, and sandbox environments.
-- 📦 **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, and React SPA builds. "Use TypeScript-Compiled Assets" toggle + Antigravity managed agents toggle in Orchestration settings.
-- 📚 **Comic Reader Addon.** New React-based CBR/CBZ/CB7/CBT comic reader with dual-page modes, zoom, keyboard nav, touch, fullscreen, and drag-drop upload.
-- 🎨 **Media Studio v0.3.0.** Zoom/pan, drawing tools (brush, eraser, shapes, text), and save-to-WP-Media-Library. Image editor now feature-complete.
-- 🔧 **30+ Reliability Fixes.** Cron status diagnostics (HTTP status + body in errors), PHP 8.2+ compatibility ($namespace/$rest_base), PHPUnit 11 (6 batches), WP.org compliance re-audit, PHPCS 0 errors (353→0), qs CVE-2026-8723, docs-hub fixes, DeepSeek fallback, test suite stability.
-
+- 📌 **Release version bump to 1.1.24.** Synced plugin header, `WP_MCP_AI_VERSION`, package manifests, and WordPress.org stable tag metadata.
+- 📚 **Documentation refresh.** Updated release metadata and changelog/roadmap references for the 1.1.24 maintenance cut.
+- 📦 **Fresh release artifacts.** Rebuilt plugin and addon ZIP bundles using `bin/rebuild-all-zips.sh` so distributed packages align with this release.
 ### ✨ What's New at a Glance (v1.1.22)
 
 - ✅ **Baseten AI — 11th first-class provider.** Full OpenAI-compatible integration with chat, tools, streaming, and reasoning passthrough at `api.baseten.co/v1`.
@@ -353,6 +344,16 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.24 — May 2026)
+
+### May 27, 2026 — Maintenance Release: Version Sync, Docs Refresh, and Rebuilt ZIPs 📦📝
+
+- ✅ **Version synchronization complete.** Bumped 1.1.24 across plugin header, runtime constants, npm manifests, and `readme.txt` stable tag metadata.
+- ✅ **Release docs updated.** Refreshed README and roadmap release metadata and added this changelog entry for v1.1.24.
+- ✅ **ZIP artifacts rebuilt.** Ran `bin/rebuild-all-zips.sh` to regenerate release distributables for base, Pro, combined, core, WordPress.org, and addon packages.
 
 ---
 

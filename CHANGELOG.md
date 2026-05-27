@@ -1,5 +1,13 @@
 # oOS – Changelog
 
+## [1.1.24] - 2026-05-27
+
+### Changed
+
+- Bumped release version references to 1.1.24 across plugin metadata, constants, package manifests, and WordPress.org readme stable tag.
+- Updated release documentation in README and roadmap for the 1.1.24 maintenance release.
+- Rebuilt distributable ZIP artifacts via `bin/rebuild-all-zips.sh`.
+
 ## [1.1.23] - 2026-05-26
 
 ### Added — Zed-Inspired SPA Architecture (Pro)
