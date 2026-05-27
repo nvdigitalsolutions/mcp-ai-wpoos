@@ -94,7 +94,7 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		$items = array();
 		foreach ( $posts as $post ) {
-			$model = get_post_meta( $post->ID, 'mcp_ai_model', true );
+			$model   = get_post_meta( $post->ID, 'mcp_ai_model', true );
 			$items[] = array(
 				'ID'     => $post->ID,
 				'title'  => $post->post_title,
@@ -156,7 +156,7 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$meta     = array();
 		foreach ( $all_meta as $key => $values ) {
 			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$clean_key        = substr( $key, strlen( 'mcp_ai_' ) );
+				$clean_key          = substr( $key, strlen( 'mcp_ai_' ) );
 				$meta[ $clean_key ] = $values[0] ?? '';
 			}
 		}
@@ -327,9 +327,9 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		if ( ! $yes ) {
 			$action = $force
 				? /* translators: 1: assistant title, 2: assistant post ID */
-				  sprintf( __( 'Permanently delete "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id )
+					sprintf( __( 'Permanently delete "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id )
 				: /* translators: 1: assistant title, 2: assistant post ID */
-				  sprintf( __( 'Trash assistant "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id );
+					sprintf( __( 'Trash assistant "%1$s" (ID %2$d)?', 'mcp-ai-wpoos' ), $post->post_title, $id );
 
 			WP_CLI::confirm( $action );
 		}
@@ -394,7 +394,7 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$meta     = array();
 		foreach ( $all_meta as $key => $values ) {
 			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$clean_key        = substr( $key, strlen( 'mcp_ai_' ) );
+				$clean_key          = substr( $key, strlen( 'mcp_ai_' ) );
 				$meta[ $clean_key ] = $values[0] ?? '';
 			}
 		}
@@ -460,6 +460,254 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		}
 
 		WP_CLI::line( $json );
+	}
+
+	/**
+	 * Update an existing assistant.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <id>
+	 * : The assistant post ID.
+	 *
+	 * [--title=<title>]
+	 * : New title for the assistant.
+	 *
+	 * [--status=<status>]
+	 * : New post status.
+	 * ---
+	 * options:
+	 *   - draft
+	 *   - publish
+	 * ---
+	 *
+	 * [--model=<model>]
+	 * : AI model to assign (e.g. gpt-4o, gemini-2.0-flash).
+	 *
+	 * [--system-prompt=<prompt>]
+	 * : System / persona prompt text for the assistant.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Change the title of assistant 42.
+	 *     $ wp mcp-ai assistant update 42 --title="Support Bot v2"
+	 *
+	 *     # Publish assistant 42 and set its model.
+	 *     $ wp mcp-ai assistant update 42 --status=publish --model=gpt-4o
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function update( $args, $assoc_args ) {
+		$id            = isset( $args[0] ) ? absint( $args[0] ) : 0;
+		$title         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'title', null );
+		$status        = \WP_CLI\Utils\get_flag_value( $assoc_args, 'status', null );
+		$model         = \WP_CLI\Utils\get_flag_value( $assoc_args, 'model', null );
+		$system_prompt = \WP_CLI\Utils\get_flag_value( $assoc_args, 'system-prompt', null );
+
+		if ( ! $id ) {
+			WP_CLI::error( __( 'Please provide a valid assistant ID.', 'mcp-ai-wpoos' ) );
+		}
+
+		$post = get_post( $id );
+
+		if ( ! $post || 'mcp_ai_assistant' !== $post->post_type ) {
+			/* translators: %d: assistant ID */
+			WP_CLI::error( sprintf( __( 'Assistant %d not found.', 'mcp-ai-wpoos' ), $id ) );
+		}
+
+		// At least one field must be provided to update.
+		if ( null === $title && null === $status && null === $model && null === $system_prompt ) {
+			WP_CLI::error( __( 'Please provide at least one field to update (--title, --status, --model, or --system-prompt).', 'mcp-ai-wpoos' ) );
+		}
+
+		$post_data = array(
+			'ID' => $id,
+		);
+
+		if ( null !== $title ) {
+			$title = sanitize_text_field( $title );
+
+			if ( '' === $title ) {
+				WP_CLI::error( __( 'Title cannot be empty.', 'mcp-ai-wpoos' ) );
+			}
+
+			$post_data['post_title'] = $title;
+		}
+
+		if ( null !== $status ) {
+			$status                   = in_array( $status, array( 'draft', 'publish' ), true ) ? $status : 'draft';
+			$post_data['post_status'] = $status;
+		}
+
+		// Update the post if title or status changed.
+		if ( isset( $post_data['post_title'] ) || isset( $post_data['post_status'] ) ) {
+			$result = wp_update_post( $post_data, true );
+
+			if ( is_wp_error( $result ) ) {
+				WP_CLI::error( $result->get_error_message() );
+			}
+		}
+
+		// Update meta fields.
+		if ( null !== $model ) {
+			update_post_meta( $id, 'mcp_ai_model', sanitize_text_field( $model ) );
+		}
+
+		if ( null !== $system_prompt ) {
+			update_post_meta( $id, 'mcp_ai_system_prompt', sanitize_textarea_field( $system_prompt ) );
+		}
+
+		// Re-fetch the post to get the current title for the success message.
+		$updated_post  = get_post( $id );
+		$updated_title = $updated_post ? $updated_post->post_title : $post->post_title;
+
+		/* translators: 1: assistant title, 2: assistant post ID */
+		WP_CLI::success( sprintf( __( 'Updated assistant "%1$s" (ID: %2$d).', 'mcp-ai-wpoos' ), $updated_title, $id ) );
+	}
+
+	/**
+	 * Import an assistant from a JSON file or stdin.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--file=<filename>]
+	 * : Read the import from a file inside the plugin-specific exports directory
+	 * (wp-content/uploads/mcp-ai/exports/). Only a filename is accepted; path
+	 * separators are stripped for security. Mutually exclusive with --stdin.
+	 *
+	 * [--stdin]
+	 * : Read JSON from standard input. Mutually exclusive with --file.
+	 *
+	 * [--porcelain]
+	 * : Output only the created assistant ID.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Import from a file in the exports directory.
+	 *     $ wp mcp-ai assistant import --file=assistant-42.json
+	 *
+	 *     # Import from stdin.
+	 *     $ wp mcp-ai assistant import --stdin < assistant.json
+	 *
+	 *     # Import and get only the new ID.
+	 *     $ wp mcp-ai assistant import --file=assistant-42.json --porcelain
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 * @when after_wp_load
+	 */
+	public function import( $args, $assoc_args ) {
+		$file      = \WP_CLI\Utils\get_flag_value( $assoc_args, 'file', '' );
+		$use_stdin = \WP_CLI\Utils\get_flag_value( $assoc_args, 'stdin', false );
+		$porcelain = \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false );
+
+		if ( $file && $use_stdin ) {
+			WP_CLI::error( __( 'Please provide either --file or --stdin, not both.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( ! $file && ! $use_stdin ) {
+			WP_CLI::error( __( 'Please provide --file=<filename> or --stdin.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $file ) {
+			$upload_dir    = wp_upload_dir();
+			$export_dir    = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) ) . 'mcp-ai/exports/';
+			$safe_filename = sanitize_file_name( basename( $file ) );
+
+			if ( empty( $safe_filename ) ) {
+				WP_CLI::error( __( 'Invalid filename provided.', 'mcp-ai-wpoos' ) );
+			}
+
+			$file_path = $export_dir . $safe_filename;
+
+			if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+				/* translators: %s: file path */
+				WP_CLI::error( sprintf( __( 'File not found or not readable: %s', 'mcp-ai-wpoos' ), $file_path ) );
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- CLI command reading from restricted uploads path.
+			$raw = file_get_contents( $file_path );
+			if ( false === $raw ) {
+				/* translators: %s: file path */
+				WP_CLI::error( sprintf( __( 'Could not read file: %s', 'mcp-ai-wpoos' ), $file_path ) );
+			}
+
+			$json = $raw;
+		} else {
+			// Read from stdin.
+			$json = '';
+			while ( ! feof( STDIN ) ) {
+				$line = fgets( STDIN );
+				if ( false !== $line ) {
+					$json .= $line;
+				}
+			}
+		}
+
+		// Decode and validate the JSON.
+		$data = json_decode( $json, true );
+
+		if ( null === $data || ! is_array( $data ) ) {
+			WP_CLI::error( __( 'Invalid JSON provided. Could not decode.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Validate the expected export structure.
+		if ( ! isset( $data['assistant'] ) || ! is_array( $data['assistant'] ) ) {
+			WP_CLI::error( __( 'Invalid export format: missing "assistant" key.', 'mcp-ai-wpoos' ) );
+		}
+
+		$assistant_data = $data['assistant'];
+
+		if ( ! isset( $assistant_data['title'] ) || '' === trim( (string) $assistant_data['title'] ) ) {
+			WP_CLI::error( __( 'Invalid export format: assistant title is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$title   = sanitize_text_field( $assistant_data['title'] );
+		$status  = isset( $assistant_data['status'] ) ? sanitize_key( $assistant_data['status'] ) : 'draft';
+		$content = isset( $assistant_data['content'] ) ? wp_kses_post( $assistant_data['content'] ) : '';
+
+		$status = in_array( $status, array( 'draft', 'publish' ), true ) ? $status : 'draft';
+
+		$post_data = array(
+			'post_type'    => 'mcp_ai_assistant',
+			'post_title'   => $title,
+			'post_status'  => $status,
+			'post_content' => $content,
+		);
+
+		$new_id = wp_insert_post( $post_data, true );
+
+		if ( is_wp_error( $new_id ) ) {
+			WP_CLI::error( $new_id->get_error_message() );
+		}
+
+		// Import meta fields, excluding credentials (just like export skips them).
+		if ( isset( $assistant_data['meta'] ) && is_array( $assistant_data['meta'] ) ) {
+			foreach ( $assistant_data['meta'] as $meta_key => $meta_value ) {
+				$meta_key = sanitize_key( $meta_key );
+
+				// Skip credential hashes.
+				if ( 'credentials' === $meta_key ) {
+					continue;
+				}
+
+				if ( '' !== $meta_key ) {
+					// Meta keys are stored without the mcp_ai_ prefix in the export;
+					// add it back when saving.
+					update_post_meta( $new_id, 'mcp_ai_' . $meta_key, sanitize_text_field( $meta_value ) );
+				}
+			}
+		}
+
+		if ( $porcelain ) {
+			WP_CLI::line( $new_id );
+			return;
+		}
+
+		/* translators: 1: assistant title, 2: assistant post ID */
+		WP_CLI::success( sprintf( __( 'Imported assistant "%1$s" (ID: %2$d).', 'mcp-ai-wpoos' ), $title, $new_id ) );
 	}
 }
 
