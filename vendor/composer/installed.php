@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/build-comic-reader-addon-zip',
-        'version' => 'dev-copilot/build-comic-reader-addon-zip',
-        'reference' => '7a22fd7c1a2534312100be0acdb8df017ebb1116',
+        'pretty_version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
+        'version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
+        'reference' => '29e28ce26e5e96bc4bc02db851bb938384609fdc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/build-comic-reader-addon-zip',
-            'version' => 'dev-copilot/build-comic-reader-addon-zip',
-            'reference' => '7a22fd7c1a2534312100be0acdb8df017ebb1116',
+            'pretty_version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
+            'version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
+            'reference' => '29e28ce26e5e96bc4bc02db851bb938384609fdc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
