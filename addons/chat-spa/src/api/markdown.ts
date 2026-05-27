@@ -15,11 +15,8 @@ import DOMPurify from 'dompurify';
 // ── One-time marked configuration ───────────────────────────────────────────
 
 marked.setOptions( {
-	breaks: true,     // GFM line breaks
-	gfm: true,        // GitHub Flavored Markdown
-	headerIds: false, // not needed in chat bubbles
-	mangle: false,
-	sanitize: false,  // DOMPurify handles sanitisation
+	breaks: true, // GFM line breaks
+	gfm: true,    // GitHub Flavored Markdown
 } );
 
 // Custom renderer — match the NV oOS CSS class convention so code blocks and

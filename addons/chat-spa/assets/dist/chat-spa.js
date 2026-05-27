@@ -59527,13 +59527,8 @@ ${content}</tr>
   marked.setOptions({
     breaks: true,
     // GFM line breaks
-    gfm: true,
+    gfm: true
     // GitHub Flavored Markdown
-    headerIds: false,
-    // not needed in chat bubbles
-    mangle: false,
-    sanitize: false
-    // DOMPurify handles sanitisation
   });
   var renderer = new marked.Renderer();
   renderer.code = function(code, language) {
