@@ -20,9 +20,9 @@ The contract is the **`wp mcp-ai <subcommand>`** invocation, not the PHP class. 
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_Pro_CLI_Base_Command` (abstract) | `class-wp-mcp-ai-pro-cli-base-command.php` | All concrete Pro commands — extends Base's `WP_MCP_AI_CLI_Base_Command`; adds `assert_pro_loaded()` + `assert_toolkit_enabled()` |
-| `WP_MCP_AI_Pro_CLI_Connection_Command` → `wp mcp-ai connection` | `class-wp-mcp-ai-pro-cli-connection-command.php` | Remote-site connections (mesh peers, Shopify, WP) |
-| `WP_MCP_AI_Pro_CLI_Project_Command` → `wp mcp-ai project` | `class-wp-mcp-ai-pro-cli-project-command.php` | Project CPT CRUD + task plan ops |
-| `WP_MCP_AI_Pro_CLI_Task_Command` → `wp mcp-ai task` | `class-wp-mcp-ai-pro-cli-task-command.php` | Task CPT CRUD + dependencies + bulk ops |
+| `WP_MCP_AI_Pro_CLI_Connection_Command` → `wp mcp-ai connection` | `class-wp-mcp-ai-pro-cli-connection-command.php` | Remote-site connections: create, CRUD (mesh peers, Shopify, WP) |
+| `WP_MCP_AI_Pro_CLI_Project_Command` → `wp mcp-ai project` | `class-wp-mcp-ai-pro-cli-project-command.php` | Project CPT CRUD, update + task plan ops |
+| `WP_MCP_AI_Pro_CLI_Task_Command` → `wp mcp-ai task` | `class-wp-mcp-ai-pro-cli-task-command.php` | Task CPT CRUD, update + dependencies + bulk ops |
 | `WP_MCP_AI_Pro_CLI_Mcp_Server_Command` → `wp mcp-ai mcp-server` | `class-wp-mcp-ai-pro-cli-mcp-server-command.php` | Per-toolkit MCP servers: list/show/enable/disable/tools |
 | `WP_MCP_AI_Pro_CLI_Toolkit_Command` → `wp mcp-ai toolkit` | `class-wp-mcp-ai-pro-cli-toolkit-command.php` | Toolkit enable/disable, status, configuration |
 | `WP_MCP_AI_Pro_CLI_Status_Command` → `wp mcp-ai pro status` | `class-wp-mcp-ai-pro-cli-status-command.php` | Pro addon dependency + toolkit health snapshot |
