@@ -2,7 +2,8 @@
 /**
  * Paper Store Admin UI — Pro WordPress admin page for browsing collections.
  *
- * Registers a submenu under NV oOS admin area with collection list and record browser.
+ * Registers a submenu under NV oOS Assistants menu (same as Skills Manager)
+ * with collection list and record browser.
  * PHP 8.1+ only (Pro addon).
  *
  * @package WP_MCP_AI_Pro
@@ -23,7 +24,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 /**
  * Class WP_MCP_AI_Paper_Admin_UI
  *
- * Singleton. Call init() to register the admin page.
+ * Singleton. Call init() to register the admin page under NV oOS Assistants.
  */
 class WP_MCP_AI_Paper_Admin_UI {
 
@@ -55,6 +56,8 @@ class WP_MCP_AI_Paper_Admin_UI {
 
 	/**
 	 * Initialize admin hooks.
+	 *
+	 * Priority 30 — matches Skill Manager convention.
 	 */
 	public static function init(): void {
 		$instance = self::get_instance();
@@ -62,7 +65,7 @@ class WP_MCP_AI_Paper_Admin_UI {
 	}
 
 	/**
-	 * Register the admin submenu page.
+	 * Register the admin submenu page under NV oOS Assistants.
 	 */
 	public function register_admin_page(): void {
 		add_submenu_page(
@@ -82,9 +85,11 @@ class WP_MCP_AI_Paper_Admin_UI {
 		$manager     = WP_MCP_AI_Paper_Store_Manager::get_instance();
 		$collections = $manager->list_collections();
 
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only browsing, no state changes.
 		$selected_collection = isset( $_GET['collection'] ) ? sanitize_key( wp_unslash( $_GET['collection'] ) ) : '';
 		$selected_record     = isset( $_GET['record'] ) ? sanitize_key( wp_unslash( $_GET['record'] ) ) : '';
 		$action              = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : 'list';
+		// phpcs:enable
 
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html__( 'NVoOS Paper Store', 'mcp-ai-wpoos-pro' ) . '</h1>';
@@ -99,6 +104,18 @@ class WP_MCP_AI_Paper_Admin_UI {
 		}
 
 		echo '</div>';
+	}
+
+	/**
+	 * Build an admin URL for the Paper Store page.
+	 *
+	 * @param array $args Query arguments.
+	 * @return string Full admin URL.
+	 */
+	private function admin_page_url( array $args = array() ): string {
+		$args['page']                    = $this->page_slug;
+		$args['post_type']               = 'mcp_ai_assistant';
+		return add_query_arg( $args, admin_url( 'edit.php' ) );
 	}
 
 	/**
@@ -125,13 +142,7 @@ class WP_MCP_AI_Paper_Admin_UI {
 			$repo  = $manager->get_repository( $collection );
 			$count = $repo->count();
 
-			$view_url = add_query_arg(
-				array(
-					'page'       => $this->page_slug,
-					'collection' => $collection,
-				),
-				admin_url( 'edit.php?post_type=mcp_ai_assistant' )
-			);
+			$view_url = $this->admin_page_url( array( 'collection' => $collection ) );
 
 			echo '<tr>';
 			echo '<td><strong>' . esc_html( $collection ) . '</strong></td>';
@@ -153,10 +164,7 @@ class WP_MCP_AI_Paper_Admin_UI {
 		$repo    = $manager->get_repository( $collection );
 		$records = $repo->all();
 
-		$back_url = add_query_arg(
-			array( 'page' => $this->page_slug ),
-			admin_url( 'edit.php?post_type=mcp_ai_assistant' )
-		);
+		$back_url = $this->admin_page_url();
 
 		echo '<p><a href="' . esc_url( $back_url ) . '">&larr; ' . esc_html__( 'Back to collections', 'mcp-ai-wpoos-pro' ) . '</a></p>';
 		echo '<h2>' . esc_html( sprintf( __( 'Collection: %s', 'mcp-ai-wpoos-pro' ), $collection ) ) . '</h2>';
@@ -175,14 +183,12 @@ class WP_MCP_AI_Paper_Admin_UI {
 		echo '</tr></thead><tbody>';
 
 		foreach ( $records as $record ) {
-			$view_url = add_query_arg(
+			$view_url = $this->admin_page_url(
 				array(
-					'page'       => $this->page_slug,
 					'collection' => $collection,
 					'record'     => $record['id'],
 					'action'     => 'view',
-				),
-				admin_url( 'edit.php?post_type=mcp_ai_assistant' )
+				)
 			);
 
 			$updated = isset( $record['updated_at'] ) ? $record['updated_at'] : '';
@@ -209,13 +215,7 @@ class WP_MCP_AI_Paper_Admin_UI {
 		$repo    = $manager->get_repository( $collection );
 		$record  = $repo->find( $record_id );
 
-		$back_url = add_query_arg(
-			array(
-				'page'       => $this->page_slug,
-				'collection' => $collection,
-			),
-			admin_url( 'edit.php?post_type=mcp_ai_assistant' )
-		);
+		$back_url = $this->admin_page_url( array( 'collection' => $collection ) );
 
 		echo '<p><a href="' . esc_url( $back_url ) . '">&larr; ' . esc_html__( 'Back to collection', 'mcp-ai-wpoos-pro' ) . '</a></p>';
 
