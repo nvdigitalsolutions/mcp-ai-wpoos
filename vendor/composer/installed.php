@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
         'version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
-        'reference' => '02538f7ce2054df64b2fefb9aa6d86e3329c8f0a',
+        'reference' => '29e28ce26e5e96bc4bc02db851bb938384609fdc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
             'version' => 'dev-fix/docs-hub-restore-browse-critical-error-fix',
-            'reference' => '02538f7ce2054df64b2fefb9aa6d86e3329c8f0a',
+            'reference' => '29e28ce26e5e96bc4bc02db851bb938384609fdc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
