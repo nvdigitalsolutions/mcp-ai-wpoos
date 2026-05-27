@@ -78,6 +78,17 @@ function normaliseMessages( raw: unknown ): TranscriptMessage[] {
 			continue;
 		}
 		const content = typeof m.content === 'string' ? m.content : '';
+
+		// Drop consecutive duplicates (same role and content) — these are a
+		// symptom of transcripts saved before the `persistFinishedTurn` fix
+		// that appended `assistantMessage` on top of the already-complete
+		// messages array.  Duplicates compound on every load–save cycle, so
+		// stripping them here also self-heals existing transcripts.
+		const prev = out[ out.length - 1 ];
+		if ( prev && prev.role === role && prev.content === content ) {
+			continue;
+		}
+
 		out.push( { ...m, role, content } );
 	}
 	return out;
