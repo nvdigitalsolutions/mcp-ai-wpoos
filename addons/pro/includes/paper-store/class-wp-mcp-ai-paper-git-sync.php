@@ -84,8 +84,7 @@ class WP_MCP_AI_Paper_Git_Sync {
 		}
 
 		if ( ! wp_next_scheduled( $instance->cron_hook ) ) {
-			$interval = apply_filters( 'wp_mcp_ai_paper_git_sync_interval', HOUR_IN_SECONDS );
-			wp_schedule_event( time(), $this->cron_hook, $instance->cron_hook );
+			wp_schedule_event( time(), 'hourly', $instance->cron_hook );
 		}
 
 		add_action( $instance->cron_hook, array( $instance, 'sync' ) );
