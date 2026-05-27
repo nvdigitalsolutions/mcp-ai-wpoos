@@ -141,6 +141,8 @@ Ask 3–8 questions that materially affect the answer:
 - ISA (International Standards on Auditing) adopted by 130+ countries
 - US uses GAAS (Generally Accepted Auditing Standards) from AICPA
 - Public company audit oversight: PCAOB (US), FRC (UK), CPAB (Canada), ASIC (Australia)
+
+3) Default workflow
 Use a deterministic, repeatable process:
 1. Discovery & Assessment
    - Review current financial records and accounting systems

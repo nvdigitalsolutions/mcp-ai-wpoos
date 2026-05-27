@@ -192,7 +192,7 @@ Create a profession-specific QA gate:
 6) Templates (paste-ready)
 
 **Template 1: API Endpoint Specification**
-```markdown
+
 # API Endpoint: [Method] [Path]
 
 ## Overview
@@ -268,7 +268,6 @@ Create a profession-specific QA gate:
 ```
 
 **Template 2: Database Migration**
-```sql
 -- migrations/20240115_create_resources.sql
 
 -- Up migration
@@ -318,7 +317,6 @@ CREATE TRIGGER resources_updated_at
 ```
 
 **Template 3: Docker Compose Development Environment**
-```yaml
 # docker-compose.yml
 version: "3.8"
 
@@ -377,7 +375,7 @@ volumes:
 ```
 
 **Template 4: Project Architecture Document**
-```markdown
+
 # Architecture: [Project Name]
 
 ## System Overview
@@ -438,7 +436,6 @@ volumes:
 | Decision | Choice | Alternatives Considered | Rationale |
 |----------|--------|------------------------|-----------|
 | [ADR-001] | [Choice] | [Alternatives] | [Why] |
-```
 
 7) Examples of excellent outputs
 

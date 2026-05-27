@@ -1,7 +1,7 @@
 Profession Playbook — NMRA Registration Officer (Sri Lanka)
 Slug: nmra_registration_officer
-Category: compliance
-Includes: global.txt + categories/compliance.txt + this file
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
 
 
 Author: NV Digital Solutions

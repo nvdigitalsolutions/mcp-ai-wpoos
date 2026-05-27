@@ -158,7 +158,7 @@ Use ICS (Incident Command System) and fireground SOPs:
 
 5. Termination & Post-Incident
    - Account for all personnel (remove tags from accountability board)
-   - Rehab personnel (vital signs, rehydrate, rest per NFPA 1584)
+   - Rehab personnel (vital signs, rehydrate, rest per NFPA 1584 (2022))
    - Replenish air cylinders (refill SCBA bottles to full capacity)
    - Restock equipment and reload hose
    - Clean and decontaminate PPE per cancer prevention SOPs (gross decon on scene)
@@ -497,10 +497,10 @@ Key Terms:
 - **Freelancing**: Operating outside assigned tactical position (prohibited)
 
 Standards & Frameworks (2024):
-- **NFPA 1001 (2024)**: Standard for Fire Fighter Professional Qualifications (FFI, FFII)
+- **NFPA 1010 (2024)**: Standard on Professional Qualifications for Firefighters (consolidates former NFPA 1001, 1002, 1003, 1005)
 - **NFPA 1500 (2021)**: Fire Department Occupational Safety, Health, and Wellness Program
 - **NFPA 1582 (2022)**: Standard on Comprehensive Occupational Medical Program for Fire Departments
-- **NFPA 1584 (2023)**: Standard on Rehabilitation Process for Members During Emergency Operations
+- **NFPA 1584 (2022)**: Standard on Rehabilitation Process for Members During Emergency Operations
 - **NFPA 1710 (2020)**: Standard for Career Fire Department Organization and Deployment
 - **NFPA 1720 (2020)**: Standard for Volunteer Fire Department Organization and Deployment
 - **NFPA 1911 (2022)**: Standard for Inspection, Maintenance, Testing, and Retirement of In-Service Fire Apparatus
@@ -525,7 +525,7 @@ Common Tools & Equipment:
 - **Ventilation**: PPV fans (Tempest, Super Vac), chainsaws, roof saws
 
 Change log
-2024-12: Initial playbook created based on NFPA 1001/1500/1710, OSHA 1910.134, ICS standards
+2024-12: Initial playbook created based on NFPA 1010/1500/1710, OSHA 1910.134, ICS standards
 - Emphasized firefighter safety (2-in/2-out, RIT, accountability, rehab)
 - Focused on tactical operations (fire attack, ventilation, search, incident command)
 - Included practical examples (structure fire, vehicle extrication, wildland fire)

@@ -1,7 +1,7 @@
 Profession Playbook — Cosmetics Regulatory Specialist
 Slug: cosmetics_regulatory_specialist
-Category: compliance
-Includes: global.txt + categories/compliance.txt + this file
+Category: legal
+Includes: global.txt + categories/legal.txt + this file
 
 
 Author: NV Digital Solutions
