@@ -57,6 +57,7 @@
         "docs:check-folder-readmes:all": "php bin/check-folder-readmes.php --scope=all",
         "docs:check-folder-readmes:strict": "php bin/check-folder-readmes.php --scope=base --strict",
         "build:autoload": "composer install --no-dev --classmap-authoritative --no-interaction",
+        "skills:sync": "@php bin/sync-agent-skills.php",
         "ci:all": [
             "@lint:errors-only",
             "@docs:check-folder-readmes",
