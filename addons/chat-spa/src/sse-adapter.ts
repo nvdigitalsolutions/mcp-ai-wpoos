@@ -8,17 +8,21 @@
  * JSON: `0:"text"`, `2:[toolCall]`, `8:[annotation]`, `e:{finish}`,
  * `d:{data}`).
  *
- * NV oOS today emits a custom SSE format on `mcp-ai/v1/chat-client`:
+ * NV oOS today emits an OpenAI-compatible SSE format on `mcp-ai/v1/chat-client`:
  *
- *     data: { "type": "message_delta", "delta": "Hello" }
+ *     event: message
+ *     data: { "choices": [{ "delta": { "content": "Hello" } }] }
  *
- *     data: { "type": "tool_call_started", "id": "...", "name": "..." }
+ *     event: message
+ *     data: { "type": "content_block_delta", "delta": { "type": "thinking_delta", "thinking": "..." } }
  *
- *     data: { "type": "tool_call_completed", "id": "...", "result": {...} }
+ *     event: message
+ *     data: { "type": "thinking", "message": "Processing…" }
  *
- *     data: { "type": "memory_event", ... }
+ *     event: error
+ *     data: { "code": "...", "message": "..." }
  *
- *     data: { "type": "done" }
+ *     data: [DONE]
  *
  * Per the addon plan (§3, option A), we ship a **client-side adapter** for
  * v1: a custom `fetch` that POSTs to the existing endpoint, reads the
@@ -50,13 +54,17 @@ export interface ChatFetchOptions {
 
 interface NvOosFrame {
 	type?: string;
-	delta?: string;
+	delta?: string | { content?: string; reasoning_content?: string; thinking?: string; type?: string };
 	text?: string;
 	content?: string;
 	id?: string;
 	name?: string;
 	arguments?: unknown;
 	result?: unknown;
+	choices?: Array< { delta?: { content?: string; reasoning_content?: string; thinking?: string } } >;
+	code?: string;
+	message?: string;
+	tool_results?: Array< { slug?: string; result?: unknown } >;
 	[ k: string ]: unknown;
 }
 
@@ -73,9 +81,83 @@ function encodeChunk( typeId: string, payload: unknown ): Uint8Array {
 /**
  * Translate a single decoded NV oOS SSE frame into zero-or-more Data Stream
  * Protocol chunks.
+ *
+ * NV oOS emits OpenAI-compatible SSE format:
+ *   - Text deltas: { choices: [{ delta: { content: "..." } }] }
+ *   - Reasoning: { choices: [{ delta: { reasoning_content: "..." } }] }
+ *   - Thinking blocks: { type: "content_block_delta", delta: { type: "thinking_delta", thinking: "..." } }
+ *   - Status events: { type: "thinking"|"generating"|"processing_attachments"|"loading_memory" }
+ *   - Error events: { code: "...", message: "..." }
+ *   - Final payload: { data: {...}, choices: [...], tool_results: [...] }
  */
 function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 	const out: Uint8Array[] = [];
+
+	// ── Error frames (event: error) ─────────────────────────────────
+	if ( typeof frame.code === 'string' && typeof frame.message === 'string' ) {
+		out.push( encodeChunk( '3', frame.message ) );
+		return out;
+	}
+
+	// ── OpenAI choices[0].delta.content ─────────────────────────────
+	if ( Array.isArray( frame.choices ) && frame.choices.length > 0 ) {
+		const delta = frame.choices[ 0 ]?.delta;
+		if ( delta ) {
+			// Text content.
+			if ( typeof delta.content === 'string' && delta.content ) {
+				out.push( encodeChunk( '0', delta.content ) );
+			}
+			// Reasoning content (extended thinking).
+			const reasoning =
+				typeof delta.reasoning_content === 'string'
+					? delta.reasoning_content
+					: typeof delta.thinking === 'string'
+						? delta.thinking
+						: '';
+			if ( reasoning ) {
+				out.push( encodeChunk( 'g', reasoning ) );
+			}
+		}
+		// If this frame also carries tool_results, emit them as annotations.
+		if ( Array.isArray( frame.tool_results ) && frame.tool_results.length > 0 ) {
+			out.push( encodeChunk( '8', frame.tool_results ) );
+		}
+		return out;
+	}
+
+	// ── Content block delta (thinking blocks) ───────────────────────
+	if (
+		frame.type === 'content_block_delta' &&
+		frame.delta &&
+		typeof frame.delta === 'object'
+	) {
+		const b = frame.delta;
+		if ( b.type === 'thinking_delta' && typeof b.thinking === 'string' ) {
+			out.push( encodeChunk( 'g', b.thinking ) );
+		}
+		return out;
+	}
+
+	// ── Status events (thinking / generating / processing) ──────────
+	if (
+		frame.type === 'thinking' ||
+		frame.type === 'generating' ||
+		frame.type === 'processing_attachments' ||
+		frame.type === 'loading_memory'
+	) {
+		// Forward as annotation so the UI can show status pills.
+		out.push( encodeChunk( '8', [ frame ] ) );
+		return out;
+	}
+
+	// ── Error frames tagged by parseSseBuffer ───────────────────────
+	if ( frame.type === 'error' ) {
+		const msg = typeof frame.message === 'string' ? frame.message : 'Unknown error';
+		out.push( encodeChunk( '3', msg ) );
+		return out;
+	}
+
+	// ── Fallback for legacy / unknown formats ───────────────────────
 	const type = frame.type ?? '';
 
 	switch ( type ) {
@@ -96,9 +178,6 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			break;
 		}
 		case 'tool_call_started': {
-			// `9:` = single ToolCall (per AI SDK Data Stream Protocol).
-			// Emitting this populates `message.toolInvocations` with state
-			// `'call'` so the UI can render a pending tool-call card.
 			out.push(
 				encodeChunk( '9', {
 					toolCallId: String( frame.id ?? '' ),
@@ -109,9 +188,6 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 			break;
 		}
 		case 'tool_call_completed': {
-			// `a:` = single tool result (Omit<ToolResult, 'args' | 'toolName'>).
-			// `useChat` matches this back to its sibling tool call by
-			// `toolCallId` and flips state to `'result'`.
 			out.push(
 				encodeChunk( 'a', {
 					toolCallId: String( frame.id ?? '' ),
@@ -122,10 +198,6 @@ function translateFrame( frame: NvOosFrame ): Uint8Array[] {
 		}
 		case 'memory_event':
 		case 'annotation': {
-			// `8:` = message_annotations (JSONValue[]). NV oOS memory events
-			// (recall/store/forget) ride the annotation channel so the UI
-			// can render them as small inline pills under the assistant
-			// turn without polluting the text stream.
 			out.push( encodeChunk( '8', [ frame ] ) );
 			break;
 		}
@@ -160,8 +232,11 @@ function parseSseBuffer( buffer: string ): { frames: NvOosFrame[]; rest: string 
 	for ( const part of parts ) {
 		const lines = part.split( '\n' );
 		const dataLines: string[] = [];
+		let eventType = '';
 		for ( const line of lines ) {
-			if ( line.startsWith( 'data:' ) ) {
+			if ( line.startsWith( 'event:' ) ) {
+				eventType = line.slice( 6 ).trim();
+			} else if ( line.startsWith( 'data:' ) ) {
 				dataLines.push( line.slice( 5 ).trimStart() );
 			}
 		}
@@ -174,6 +249,11 @@ function parseSseBuffer( buffer: string ): { frames: NvOosFrame[]; rest: string 
 		}
 		try {
 			const parsed = JSON.parse( raw ) as NvOosFrame;
+			// When the SSE event type is 'error', tag the parsed frame so
+			// translateFrame can immediately emit an error chunk.
+			if ( eventType === 'error' ) {
+				parsed.type = 'error';
+			}
 			frames.push( parsed );
 		} catch {
 			// Non-JSON SSE payloads are forwarded as a text delta so they

@@ -12,5 +12,6 @@
     "height":       { "type": "string",  "default": "" },
     "guest":        { "type": "boolean", "default": false }
   },
-  "supports": { "html": false }
+  "supports": { "html": false, "inserter": true },
+  "editorScript": "file:../../assets/js/block-editor.js"
 }
