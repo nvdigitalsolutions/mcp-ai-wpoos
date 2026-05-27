@@ -13,12 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	return;
+}
+
+require_once __DIR__ . '/class-wp-mcp-ai-cli-base-command.php';
+
 /**
  * Monitor and manage SLA-based job prioritization.
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_CLI_SLA {
+class WP_MCP_AI_CLI_SLA extends WP_MCP_AI_CLI_Base_Command {
 	/**
 	 * Show SLA tier configuration and current status.
 	 *
@@ -42,20 +48,23 @@ class WP_MCP_AI_CLI_SLA {
 	 *     # Export as JSON
 	 *     $ wp mcp-ai sla status --format=json
 	 *
+	 * @when after_wp_load
+	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function status( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_SLA_Manager' ) ) {
-			WP_CLI::error( 'SLA Manager class not found.' );
+			$this->error( __( 'SLA Manager class not found.', 'mcp-ai-wpoos' ) );
 		}
 
-		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
 		// Check if enabled.
 		$enabled = WP_MCP_AI_SLA_Manager::is_enabled();
-		WP_CLI::log( sprintf( 'SLA Prioritization: %s', $enabled ? 'Enabled' : 'Disabled' ) );
-		WP_CLI::log( '' );
+		/* translators: %s: Enabled or Disabled */
+		$this->info( sprintf( __( 'SLA Prioritization: %s', 'mcp-ai-wpoos' ), $enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ) );
+		$this->info( '' );
 
 		// Get tier information.
 		$tiers_info = WP_MCP_AI_SLA_Manager::get_all_tiers_info();
@@ -94,15 +103,17 @@ class WP_MCP_AI_CLI_SLA {
 	 *     # Show tuning recommendations
 	 *     $ wp mcp-ai sla tune
 	 *
+	 * @when after_wp_load
+	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function tune( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_SLA_Manager' ) ) {
-			WP_CLI::error( 'SLA Manager class not found.' );
+			$this->error( __( 'SLA Manager class not found.', 'mcp-ai-wpoos' ) );
 		}
 
-		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
 		$recommendations = WP_MCP_AI_SLA_Manager::get_tuning_recommendations();
 
@@ -134,13 +145,15 @@ class WP_MCP_AI_CLI_SLA {
 			}
 		}
 
-		WP_CLI::log( '' );
+		$this->info( '' );
 		if ( $critical_count > 0 ) {
-			WP_CLI::warning( sprintf( '%d tier(s) have critical issues.', $critical_count ) );
+			/* translators: %d: number of SLA tiers */
+			$this->warning( sprintf( __( '%d tier(s) have critical issues.', 'mcp-ai-wpoos' ), $critical_count ) );
 		} elseif ( $warning_count > 0 ) {
-			WP_CLI::warning( sprintf( '%d tier(s) have warnings.', $warning_count ) );
+			/* translators: %d: number of SLA tiers */
+			$this->warning( sprintf( __( '%d tier(s) have warnings.', 'mcp-ai-wpoos' ), $warning_count ) );
 		} else {
-			WP_CLI::success( 'All SLA tiers are healthy.' );
+			$this->success( __( 'All SLA tiers are healthy.', 'mcp-ai-wpoos' ) );
 		}
 	}
 
@@ -170,80 +183,82 @@ class WP_MCP_AI_CLI_SLA {
 	 *     # Analyze batch tier as JSON
 	 *     $ wp mcp-ai sla analyze batch --format=json
 	 *
+	 * @when after_wp_load
+	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
 	public function analyze( $args, $assoc_args ) {
 		if ( ! class_exists( 'WP_MCP_AI_SLA_Manager' ) ) {
-			WP_CLI::error( 'SLA Manager class not found.' );
+			$this->error( __( 'SLA Manager class not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $args[0] ) ) {
-			WP_CLI::error( 'Tier is required. Use: realtime, near_realtime, or batch' );
+			$this->error( __( 'Tier is required. Use: realtime, near_realtime, or batch', 'mcp-ai-wpoos' ) );
 		}
 
-		$tier   = $args[0];
-		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+		$tier   = sanitize_key( $args[0] );
+		$format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 
 		$metrics = WP_MCP_AI_SLA_Manager::analyze_queue_metrics( $tier );
 
 		if ( isset( $metrics['error'] ) ) {
-			WP_CLI::error( $metrics['error'] );
+			$this->error( $metrics['error'] );
 		}
 
 		// Display metrics as table.
 		$display_items = array(
 			array(
-				'metric' => 'Tier',
+				'metric' => __( 'Tier', 'mcp-ai-wpoos' ),
 				'value'  => $tier,
 			),
 			array(
-				'metric' => 'SLA Target',
+				'metric' => __( 'SLA Target', 'mcp-ai-wpoos' ),
 				'value'  => $metrics['sla_target'] . 's',
 			),
 			array(
-				'metric' => 'Arrival Rate',
+				'metric' => __( 'Arrival Rate', 'mcp-ai-wpoos' ),
 				'value'  => number_format( $metrics['arrival_rate'], 2 ) . ' jobs/sec',
 			),
 			array(
-				'metric' => 'Service Time',
+				'metric' => __( 'Service Time', 'mcp-ai-wpoos' ),
 				'value'  => number_format( $metrics['service_time'], 2 ) . 's',
 			),
 			array(
-				'metric' => 'Wait Time',
+				'metric' => __( 'Wait Time', 'mcp-ai-wpoos' ),
 				'value'  => number_format( $metrics['wait_time'], 2 ) . 's',
 			),
 			array(
-				'metric' => 'Queue Length',
+				'metric' => __( 'Queue Length', 'mcp-ai-wpoos' ),
 				'value'  => number_format( $metrics['queue_length'], 2 ),
 			),
 			array(
-				'metric' => 'System Capacity',
+				'metric' => __( 'System Capacity', 'mcp-ai-wpoos' ),
 				'value'  => number_format( $metrics['system_capacity'], 2 ),
 			),
 			array(
-				'metric' => 'Utilization',
+				'metric' => __( 'Utilization', 'mcp-ai-wpoos' ),
 				'value'  => number_format( $metrics['utilization'] * 100, 1 ) . '%',
 			),
 			array(
-				'metric' => 'Required Workers',
+				'metric' => __( 'Required Workers', 'mcp-ai-wpoos' ),
 				'value'  => $metrics['required_workers'],
 			),
 			array(
-				'metric' => 'Recommended Workers',
+				'metric' => __( 'Recommended Workers', 'mcp-ai-wpoos' ),
 				'value'  => $metrics['recommended_workers'],
 			),
 			array(
-				'metric' => 'Max Concurrent',
+				'metric' => __( 'Max Concurrent', 'mcp-ai-wpoos' ),
 				'value'  => $metrics['max_concurrent'],
 			),
 			array(
-				'metric' => 'Over Capacity',
-				'value'  => $metrics['over_capacity'] ? 'Yes' : 'No',
+				'metric' => __( 'Over Capacity', 'mcp-ai-wpoos' ),
+				'value'  => $metrics['over_capacity'] ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'metric' => 'Meets SLA',
-				'value'  => $metrics['meets_sla'] ? 'Yes' : 'No',
+				'metric' => __( 'Meets SLA', 'mcp-ai-wpoos' ),
+				'value'  => $metrics['meets_sla'] ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' ),
 			),
 		);
 
@@ -251,24 +266,28 @@ class WP_MCP_AI_CLI_SLA {
 
 		// Show current queue stats.
 		if ( isset( $metrics['current_stats'] ) ) {
-			WP_CLI::log( '' );
-			WP_CLI::log( 'Current Queue Stats:' );
-			WP_CLI::log( sprintf( '  Total: %d', $metrics['current_stats']['total'] ) );
-			WP_CLI::log( sprintf( '  Pending: %d', $metrics['current_stats']['pending'] ) );
-			WP_CLI::log( sprintf( '  Active: %d', $metrics['current_stats']['active'] ) );
-			WP_CLI::log( sprintf( '  Failed: %d', $metrics['current_stats']['failed'] ) );
+			$this->info( '' );
+			$this->info( __( 'Current Queue Stats:', 'mcp-ai-wpoos' ) );
+			/* translators: %d: queue stat count */
+				$this->info( sprintf( __( '  Total: %d', 'mcp-ai-wpoos' ), $metrics['current_stats']['total'] ) );
+				/* translators: %d: queue stat count */
+				$this->info( sprintf( __( '  Pending: %d', 'mcp-ai-wpoos' ), $metrics['current_stats']['pending'] ) );
+				/* translators: %d: queue stat count */
+				$this->info( sprintf( __( '  Active: %d', 'mcp-ai-wpoos' ), $metrics['current_stats']['active'] ) );
+				/* translators: %d: queue stat count */
+				$this->info( sprintf( __( '  Failed: %d', 'mcp-ai-wpoos' ), $metrics['current_stats']['failed'] ) );
 		}
 
 		// Show warnings.
-		WP_CLI::log( '' );
+		$this->info( '' );
 		if ( ! $metrics['meets_sla'] ) {
-			WP_CLI::warning( 'SLA target is at risk!' );
+			$this->warning( __( 'SLA target is at risk!', 'mcp-ai-wpoos' ) );
 		}
 		if ( $metrics['over_capacity'] ) {
-			WP_CLI::warning( 'Queue is over capacity!' );
+			$this->warning( __( 'Queue is over capacity!', 'mcp-ai-wpoos' ) );
 		}
 		if ( $metrics['meets_sla'] && ! $metrics['over_capacity'] ) {
-			WP_CLI::success( 'Tier is healthy.' );
+			$this->success( __( 'Tier is healthy.', 'mcp-ai-wpoos' ) );
 		}
 	}
 
@@ -280,6 +299,8 @@ class WP_MCP_AI_CLI_SLA {
 	 *     # Enable SLA prioritization
 	 *     $ wp mcp-ai sla enable
 	 *
+	 * @when after_wp_load
+	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -288,7 +309,7 @@ class WP_MCP_AI_CLI_SLA {
 		$settings['sla_prioritization_enabled'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		WP_CLI::success( 'SLA-based prioritization enabled.' );
+		$this->success( __( 'SLA-based prioritization enabled.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**
@@ -299,6 +320,8 @@ class WP_MCP_AI_CLI_SLA {
 	 *     # Disable SLA prioritization
 	 *     $ wp mcp-ai sla disable
 	 *
+	 * @when after_wp_load
+	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
@@ -307,6 +330,6 @@ class WP_MCP_AI_CLI_SLA {
 		$settings['sla_prioritization_enabled'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		WP_CLI::success( 'SLA-based prioritization disabled.' );
+		$this->success( __( 'SLA-based prioritization disabled.', 'mcp-ai-wpoos' ) );
 	}
 }
