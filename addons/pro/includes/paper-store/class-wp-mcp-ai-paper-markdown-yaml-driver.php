@@ -3,7 +3,7 @@
  * Paper Markdown + YAML Driver — Read/write .md files with YAML frontmatter.
  *
  * Parses Grav-style Markdown files with `---` delimited YAML frontmatter.
- * Uses a simple regex-based parser (no symfony/yaml dependency required).
+ * Uses symfony/yaml (vendored in Pro) for parsing, with a regex fallback.
  * PHP 8.1+ only (Pro addon).
  *
  * @package WP_MCP_AI_Pro
@@ -219,8 +219,7 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 	 * Parse YAML frontmatter from markdown content.
 	 *
 	 * Extracts `---` delimited frontmatter and body.
-	 * Uses a simple recursive-descent parser for basic YAML structures:
-	 * scalars, lists, and nested maps.
+	 * Uses symfony/yaml when available, with a regex fallback.
 	 *
 	 * @param string $content Raw markdown content.
 	 * @return array|WP_Error  array( 'meta' => array, 'body' => string ) or WP_Error.
@@ -237,7 +236,13 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 		$yaml_string = $matches[1];
 		$body        = trim( $matches[2] );
 
-		$meta = $this->parse_yaml_map( $yaml_string );
+		// Try Symfony YAML first.
+		$meta = $this->parse_yaml_symfony( $yaml_string );
+
+		// Fallback to regex parser if Symfony fails or isn't available.
+		if ( is_wp_error( $meta ) || null === $meta ) {
+			$meta = $this->parse_yaml_regex( $yaml_string );
+		}
 
 		if ( is_wp_error( $meta ) ) {
 			return $meta;
@@ -247,6 +252,54 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 			'meta' => $meta,
 			'body' => $body,
 		);
+	}
+
+	/**
+	 * Parse YAML using symfony/yaml if available.
+	 *
+	 * @param string $yaml YAML content.
+	 * @return array|WP_Error|null Parsed array, WP_Error on failure, or null if not available.
+	 */
+	private function parse_yaml_symfony( string $yaml ) {
+		if ( ! class_exists( 'Symfony\\Component\\Yaml\\Yaml' ) ) {
+			return null;
+		}
+
+		try {
+			$parsed = Symfony\Component\Yaml\Yaml::parse( $yaml );
+
+			if ( ! is_array( $parsed ) ) {
+				return new WP_Error(
+					'paper_yaml_parse_failed',
+					__( 'YAML frontmatter did not parse to an array.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return $parsed;
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'paper_yaml_parse_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'YAML parse error: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Parse YAML using the built-in regex fallback parser.
+	 *
+	 * Handles basic YAML structures: scalars, lists, nested maps,
+	 * inline arrays, booleans, and numbers. Used when symfony/yaml
+	 * is not available.
+	 *
+	 * @param string $yaml YAML content.
+	 * @return array|WP_Error
+	 */
+	private function parse_yaml_regex( string $yaml ) {
+		return $this->parse_yaml_map( $yaml );
 	}
 
 	/**
