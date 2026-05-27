@@ -56125,9 +56125,45 @@ Error message: ${getErrorMessage(cause)}`,
     return new TextEncoder().encode(line);
   }
   function translateFrame(frame) {
-    var _a15, _b, _c, _d, _e, _f, _g;
+    var _a15, _b, _c, _d, _e, _f, _g, _h;
     const out = [];
-    const type = (_a15 = frame.type) != null ? _a15 : "";
+    if (typeof frame.code === "string" && typeof frame.message === "string") {
+      out.push(encodeChunk("3", frame.message));
+      return out;
+    }
+    if (Array.isArray(frame.choices) && frame.choices.length > 0) {
+      const delta = (_a15 = frame.choices[0]) == null ? void 0 : _a15.delta;
+      if (delta) {
+        if (typeof delta.content === "string" && delta.content) {
+          out.push(encodeChunk("0", delta.content));
+        }
+        const reasoning = typeof delta.reasoning_content === "string" ? delta.reasoning_content : typeof delta.thinking === "string" ? delta.thinking : "";
+        if (reasoning) {
+          out.push(encodeChunk("g", reasoning));
+        }
+      }
+      if (Array.isArray(frame.tool_results) && frame.tool_results.length > 0) {
+        out.push(encodeChunk("8", frame.tool_results));
+      }
+      return out;
+    }
+    if (frame.type === "content_block_delta" && frame.delta && typeof frame.delta === "object") {
+      const b = frame.delta;
+      if (b.type === "thinking_delta" && typeof b.thinking === "string") {
+        out.push(encodeChunk("g", b.thinking));
+      }
+      return out;
+    }
+    if (frame.type === "thinking" || frame.type === "generating" || frame.type === "processing_attachments" || frame.type === "loading_memory") {
+      out.push(encodeChunk("8", [frame]));
+      return out;
+    }
+    if (frame.type === "error") {
+      const msg = typeof frame.message === "string" ? frame.message : "Unknown error";
+      out.push(encodeChunk("3", msg));
+      return out;
+    }
+    const type = (_b = frame.type) != null ? _b : "";
     switch (type) {
       case "message_delta":
       case "text_delta":
@@ -56141,9 +56177,9 @@ Error message: ${getErrorMessage(cause)}`,
       case "tool_call_started": {
         out.push(
           encodeChunk("9", {
-            toolCallId: String((_b = frame.id) != null ? _b : ""),
-            toolName: String((_c = frame.name) != null ? _c : ""),
-            args: (_d = frame.arguments) != null ? _d : {}
+            toolCallId: String((_c = frame.id) != null ? _c : ""),
+            toolName: String((_d = frame.name) != null ? _d : ""),
+            args: (_e = frame.arguments) != null ? _e : {}
           })
         );
         break;
@@ -56151,8 +56187,8 @@ Error message: ${getErrorMessage(cause)}`,
       case "tool_call_completed": {
         out.push(
           encodeChunk("a", {
-            toolCallId: String((_e = frame.id) != null ? _e : ""),
-            result: (_f = frame.result) != null ? _f : null
+            toolCallId: String((_f = frame.id) != null ? _f : ""),
+            result: (_g = frame.result) != null ? _g : null
           })
         );
         break;
@@ -56167,7 +56203,7 @@ Error message: ${getErrorMessage(cause)}`,
         out.push(
           encodeChunk("e", {
             finishReason: "stop",
-            usage: (_g = frame.usage) != null ? _g : {}
+            usage: (_h = frame.usage) != null ? _h : {}
           })
         );
         break;
@@ -56186,8 +56222,11 @@ Error message: ${getErrorMessage(cause)}`,
     for (const part of parts) {
       const lines = part.split("\n");
       const dataLines = [];
+      let eventType = "";
       for (const line of lines) {
-        if (line.startsWith("data:")) {
+        if (line.startsWith("event:")) {
+          eventType = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
           dataLines.push(line.slice(5).trimStart());
         }
       }
@@ -56200,6 +56239,9 @@ Error message: ${getErrorMessage(cause)}`,
       }
       try {
         const parsed = JSON.parse(raw);
+        if (eventType === "error") {
+          parsed.type = "error";
+        }
         frames.push(parsed);
       } catch (e) {
         frames.push({ type: "message_delta", delta: raw });
