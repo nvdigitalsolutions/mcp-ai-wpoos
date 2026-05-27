@@ -32,6 +32,7 @@ The roster covers the full NV oOS surface: every major subsystem has a single-ow
 | [`toolkit-spa-maintainer.agent.md`](./toolkit-spa-maintainer.agent.md) | One toolkit-SPA addon per session (`toolkit-shell` / `canvas-toolkit` / `document-editor` / `ohif-viewer` / `media-studio` / `video-studio`). | Same per-addon scope wall as `addon-maintainer`, but specialised for React-SPA addons that follow the [Toolkit SPA Blueprint](../../docs/addons/toolkit-spa-blueprint.md) — version-bump rule, license gate, manifest discipline. |
 | [`release-engineer.agent.md`](./release-engineer.agent.md) | Versions, `CHANGELOG.md`, `readme.txt` "Stable tag", `bin/build-addon-zips.sh`. | Refuses `git push`, `git tag`, `gh release create`, and SVN — hands artifacts to a maintainer. |
 | [`docs-maintainer.agent.md`](./docs-maintainer.agent.md) | `docs/`, `README.md`, `readme.txt` (descriptive blocks), `CHANGELOG.md` narrative. | Refuses any change under `includes/`, `addons/`, or `assets/`. |
+| [`acp.agent.md`](./acp.agent.md) | ACP (Agent Client Protocol) integration — JSON-RPC 2.0 server under `includes/acp/`, session management, `tool_call` mapping, federation discovery. | Bridges to the Tool Registry via two-gate sanitisation without duplicating LLM driver logic; maintains upstream spec compliance. |
 
 The roster is deliberately split so each agent owns exactly one subsystem and refuses everything else — chain them via `handoffs:` (per the GitHub Copilot custom-agent spec, Oct 2025) for multi-step workflows.
 
