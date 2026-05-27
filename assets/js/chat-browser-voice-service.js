@@ -24,9 +24,12 @@
 
 	// ── Constants ──────────────────────────────────────────────────────
 
+	// Class constants exported for external use by chat UI modules.
+	/* eslint-disable no-unused-vars */
 	const BROWSER_VOICE_MODE_CLASS = 'wp-mcp-ai-chat--voice-browser';
 	const BROWSER_LISTENING_CLASS = 'wp-mcp-ai-chat__voice-browser--listening';
 	const BROWSER_SPEAKING_CLASS = 'wp-mcp-ai-chat__voice-browser--speaking';
+	/* eslint-enable no-unused-vars */
 
 	// ── Service ─────────────────────────────────────────────────────────
 

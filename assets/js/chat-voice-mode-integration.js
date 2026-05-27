@@ -85,7 +85,7 @@
 		 * @param {HTMLElement} container - Chat container.
 		 * @param {Object} options - Configuration options.
 		 */
-		buildVoiceUI: function (container, options) {
+		buildVoiceUI: function (container, _options) {
 			// Voice status bar.
 			const statusBar = document.createElement('div');
 			statusBar.className = 'wp-mcp-ai-chat__voice-status';
@@ -186,7 +186,7 @@
 					e.preventDefault();
 					self.stopPTT();
 				});
-				this.elements.pttButton.addEventListener('mouseleave', function (e) {
+				this.elements.pttButton.addEventListener('mouseleave', function () {
 					self.stopPTT();
 				});
 				// Touch events for mobile.
@@ -293,7 +293,7 @@
 			this.setStatusMessage('Connecting to voice server…');
 
 			// Build headers function using config.
-			const buildJsonHeaders = function (state) {
+			const buildJsonHeaders = function (_state) {
 				return {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': config.nonce || '',
@@ -336,7 +336,7 @@
 						self.state.voiceRealtimeConn = self.realtimeConn;
 					}
 				})
-				.catch(function (error) {
+				.catch(function (_error) {
 					self.setStatusMessage('Failed to start realtime voice. Using chained mode.');
 					self.setMode(MODE_CHAINED, true);
 				});
@@ -529,7 +529,7 @@
 		 * @param {string} newMode - New mode.
 		 * @param {string} oldMode - Previous mode.
 		 */
-		announceModeChange: function (newMode, oldMode) {
+		announceModeChange: function (newMode, _oldMode) {
 			const message = 'Switched to ' + this.getModeLabel(newMode) + ' mode.';
 			if (this.elements.statusText) {
 				// Brief aria-live announcement.

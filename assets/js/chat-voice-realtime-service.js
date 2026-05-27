@@ -23,12 +23,15 @@
 
 	// ── Constants ──────────────────────────────────────────────────────
 
+	// Class constants exported for external use by chat UI modules.
+	/* eslint-disable no-unused-vars */
 	const REALTIME_VOICE_MODE_CLASS = 'wp-mcp-ai-chat--voice-realtime';
 	const REALTIME_CONNECTING_CLASS = 'wp-mcp-ai-chat__voice-realtime--connecting';
 	const REALTIME_ACTIVE_CLASS = 'wp-mcp-ai-chat__voice-realtime--active';
 	const REALTIME_SPEAKING_CLASS = 'wp-mcp-ai-chat__voice-realtime--speaking';
 	const REALTIME_LISTENING_CLASS = 'wp-mcp-ai-chat__voice-realtime--listening';
 	const REALTIME_ERROR_CLASS = 'wp-mcp-ai-chat__voice-realtime--error';
+	/* eslint-enable no-unused-vars */
 
 	const MAX_RECONNECT_ATTEMPTS = 3;
 	const RECONNECT_DELAY_MS = 1000;
@@ -166,8 +169,6 @@
 			let micStream = null;
 			let micSource = null;
 			let micProcessor = null;
-			let audioQueue = [];
-			let isPlaying = false;
 			let reconnectAttempts = 0;
 
 			const conn = {
@@ -234,10 +235,7 @@
 					reconnectAttempts = 0;
 
 					if (isOpenAI) {
-						// Send the session update with the ephemeral token.
-						const tokenValue = sessionConfig.client_secret && sessionConfig.client_secret.value
-							? sessionConfig.client_secret.value
-							: '';
+						// Send session update with configuration.
 						ws.send(JSON.stringify({
 							type: 'session.update',
 							session: {
@@ -250,13 +248,6 @@
 									prefix_padding_ms: 300,
 									silence_duration_ms: 700,
 								},
-							},
-						}));
-
-						// Authenticate with ephemeral token.
-						ws.send(JSON.stringify({
-							type: 'session.update',
-							session: {
 								tools: sessionConfig.tools || [],
 								instructions: sessionConfig.instructions || '',
 								voice: sessionConfig.voice || 'marin',
@@ -278,19 +269,19 @@
 					try {
 						const msg = JSON.parse(event.data);
 						handleServerMessage(msg, isOpenAI);
-					} catch (e) {
+					} catch (_e) {
 						// Binary audio data (handled separately for Gemini).
 					}
 				};
 
-				ws.onerror = function (e) {
+				ws.onerror = function () {
 					if (callbacks.onError) {
 						callbacks.onError(new Error('WebSocket error.'));
 					}
 					emitState('error');
 				};
 
-				ws.onclose = function (e) {
+				ws.onclose = function () {
 					if (!conn.active) {
 						return;
 					}
@@ -480,7 +471,7 @@
 
 					micSource.connect(micProcessor);
 					micProcessor.connect(audioCtx.destination);
-				}).catch(function (e) {
+				}).catch(function () {
 					if (callbacks.onError) {
 						callbacks.onError(new Error('Microphone access denied.'));
 					}

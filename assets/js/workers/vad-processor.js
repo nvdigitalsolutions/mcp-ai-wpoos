@@ -71,7 +71,7 @@ class VADProcessor extends AudioWorkletProcessor {
 	 * @param {Object} parameters - Audio parameters.
 	 * @return {boolean} True to keep processor alive.
 	 */
-	process(inputs, outputs, parameters) {
+	process(inputs, _outputs, _parameters) {
 		const input = inputs[0];
 		if (!input || !input.length || !input[0]) {
 			return true;
