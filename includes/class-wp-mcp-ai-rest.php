@@ -180,6 +180,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected $assistant_cache = array();
 
 		/**
+		 * Voice controller for realtime voice sessions (OpenAI Realtime / Gemini Live).
+		 *
+		 * @var WP_MCP_AI_REST_Voice_Controller
+		 */
+		protected $voice_controller;
+
+		/**
 		 * Constructor.
 		 *
 		 * @param WP_MCP_AI_Tool_Registry         $registry      Tool registry instance.
