@@ -412,6 +412,13 @@ class WP_MCP_AI_Skill_Registry {
 			if ( ! $skill || empty( $skill['name'] ) ) {
 				continue;
 			}
+
+			// When disable-model-invocation is set, the skill is slash-command
+			// only and should not appear in the autonomous catalog.
+			if ( ! empty( $skill['disable_model_invocation'] ) ) {
+				continue;
+			}
+
 			$desc = isset( $skill['description'] ) ? trim( (string) $skill['description'] ) : '';
 			if ( '' === $desc ) {
 				$desc = __( '(no description)', 'mcp-ai-wpoos' );

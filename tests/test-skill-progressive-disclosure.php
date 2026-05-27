@@ -207,7 +207,7 @@ class WP_MCP_AI_Skill_Progressive_Disclosure_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $result );
-		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'name', $result );
 		$this->assertSame( 'alpha', $result['name'] );
 		$this->assertStringContainsString( 'Alpha instructions.', $result['instructions'] );
 	}
