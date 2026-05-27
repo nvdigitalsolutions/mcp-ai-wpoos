@@ -163,6 +163,7 @@ require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
+require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
 
 /**
  * Manually load the plugin being tested.
