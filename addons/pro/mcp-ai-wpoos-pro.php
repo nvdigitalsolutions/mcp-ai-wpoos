@@ -587,6 +587,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Pro-only: paid third-party billing (Stripe merchant of record).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
 
+		// Load Pro Paper Store (Phase 3) — Markdown+YAML driver, Git sync, admin UI, import/export.
+		// Always enabled when Pro is active and base Paper Store is loaded.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/paper-store/paper-store-pro-init.php';
+
 		// Load Pro Workflow Builder ↔ Base Orchestration bridge (always enabled when Pro is active).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-workflow-bridge.php';
 		add_action( 'init', array( 'WP_MCP_AI_Pro_Workflow_Bridge', 'get_instance' ), 27 );
