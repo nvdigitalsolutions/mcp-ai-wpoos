@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/build-comic-reader-addon-zip',
-        'version' => 'dev-copilot/build-comic-reader-addon-zip',
-        'reference' => '7a22fd7c1a2534312100be0acdb8df017ebb1116',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-d81785c8-0a19-407a-bd05-235b9c7b7c7e',
+        'version' => 'dev-copilot/rebuild-all-zips-d81785c8-0a19-407a-bd05-235b9c7b7c7e',
+        'reference' => 'd3e65505e8310a08670318c396bb7afdb32ec00e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/build-comic-reader-addon-zip',
-            'version' => 'dev-copilot/build-comic-reader-addon-zip',
-            'reference' => '7a22fd7c1a2534312100be0acdb8df017ebb1116',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-d81785c8-0a19-407a-bd05-235b9c7b7c7e',
+            'version' => 'dev-copilot/rebuild-all-zips-d81785c8-0a19-407a-bd05-235b9c7b7c7e',
+            'reference' => 'd3e65505e8310a08670318c396bb7afdb32ec00e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
