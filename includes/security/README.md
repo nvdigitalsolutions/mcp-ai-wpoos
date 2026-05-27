@@ -64,6 +64,15 @@ vector-store, and MCP-server-token-age signals via this hook.
 - Classes in this folder are pure read-only services — they never modify the `wp_mcp_ai_settings` option.
 - The posture score is deterministic given a fixed settings snapshot; no side effects.
 
+## Tests
+
+```bash
+vendor/bin/phpunit tests/test-security-center.php
+```
+
+Tests cover posture report shape, score range, grade validity, quick-wins
+limit, score sensitivity to enabled controls, and signal non-emptiness.
+
 ## Also Load
 
 - [`.context/conventions.md`](../../.context/conventions.md)
