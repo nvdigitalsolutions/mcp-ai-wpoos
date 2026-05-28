@@ -103,6 +103,22 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'query_mesh_intelligent',
 					'deep_research',
 					'web_search',
+					// Continual harness (self-improving agent system).
+					'evolve_harness',
+					'apply_prompt_cue',
+					'list_prompt_cues',
+					'record_reflection',
+					'retrieve_with_provenance',
+					'scope_memory',
+					'select_prompt_cue',
+					'self_consistency_vote',
+					// Memory provenance & recall.
+					'trace_memory_provenance',
+					'recall_memory',
+					// Gemini managed agents.
+					'run_gemini_managed_agent',
+					// Skill loading.
+					'load_skill',
 				),
 			),
 
@@ -161,6 +177,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'validate_reasoning_chain',
 					// File preparation for vector stores.
 					'prepare_file_for_vector_store',
+					// Memory operations.
+					'recall_memory',
+					'trace_memory_provenance',
+					// Gemini managed agents.
+					'run_gemini_managed_agent',
 				),
 			),
 
@@ -262,6 +283,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'suggest_placement',
 					'harmonize_image_into_background',
 					'harmonize_batch',
+					// Omni video (Gemini).
+					'generate_omni_video',
+					'edit_omni_video',
 				),
 			),
 
@@ -677,6 +701,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'huggingface_dataset_is_valid',
 					'huggingface_recommended_datasets',
 					'generate_chart',
+					// Erlang C call center analytics.
+					'calculate_erlang_c',
+					'erlang_c_concurrency_advisor',
+					'erlang_c_queue_health',
+					'erlang_c_staffing_advisor',
 				),
 			),
 
@@ -851,6 +880,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'search_gmail',
 					// Legacy Excel.
 					'pro_excel',
+					// Paper Store flat-file storage.
+					'paper_store_write',
+					'paper_store_read',
+					'paper_store_update',
+					'paper_store_delete',
+					'paper_store_list',
+					'paper_store_search',
 				),
 			),
 
@@ -1026,6 +1062,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Brevo contacts & stats (Pro).
 					'manage_brevo_contacts',
 					'get_brevo_statistics',
+					// Erlang C call center analytics.
+					'calculate_erlang_c',
+					'erlang_c_concurrency_advisor',
+					'erlang_c_queue_health',
+					'erlang_c_staffing_advisor',
 				),
 			),
 
@@ -1052,6 +1093,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'execute_workflow',
 					'validate_workflow',
 					'check_workflow_health',
+					// Skill loading.
+					'load_skill',
 				),
 			),
 
@@ -2155,6 +2198,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Asset Management.
 					'search_attachments',
 					'list_openai_files',
+					// Omni video (Gemini).
+					'generate_omni_video',
+					'edit_omni_video',
 				),
 			),
 
@@ -2609,6 +2655,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'search_content',
 					'create_post',
 					'save_post',
+					// Continual harness (self-improving agent system).
+					'evolve_harness',
+					'apply_prompt_cue',
+					'list_prompt_cues',
+					'record_reflection',
+					'retrieve_with_provenance',
+					'scope_memory',
+					'select_prompt_cue',
+					'self_consistency_vote',
+					// Memory operations.
+					'trace_memory_provenance',
+					'recall_memory',
+					// Gemini managed agents.
+					'run_gemini_managed_agent',
 				),
 			),
 
@@ -2987,6 +3047,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'extract_video_frames',
 					'get_video_metadata',
 					'generate_video_caption',
+					// Omni video (Gemini).
+					'generate_omni_video',
+					'edit_omni_video',
 				),
 			),
 
