@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.23  
-**Release Date:** 2026-05-26
+**Version:** 1.1.24  
+**Release Date:** 2026-05-28
 
-**Latest Updates:** May 26, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: React admin, threads, profiles, checkpoints, @-mentions, multi-model comparison, collaborative presence. Antigravity Interactions API rewrite. TypeScript upgrade + orchestration toggles. Comic Reader + Media Studio v0.3.0 addons. 30+ reliability fixes).
+**Latest Updates:** May 28, 2026 (v1.1.24) — See [§ Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026) (Bug-fix & stabilisation sweep: Paper Store load order, Chat SPA duplicate messages & SSE protocol fixes, skill manager canonical envelope, CVE patches, assistant tool presets coverage, CLI coverage enhancements, Paper Store admin CRUD, folder README convention completion).
+
+**Previous Updates (v1.1.23):** May 26, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: React admin, threads, profiles, checkpoints, @-mentions, multi-model comparison, collaborative presence. Antigravity Interactions API rewrite. TypeScript upgrade + orchestration toggles. Comic Reader + Media Studio v0.3.0 addons. 30+ reliability fixes).
 
 **Previous Updates (v1.1.22):** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
 
@@ -32,7 +34,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
+- [🆕 Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -117,6 +119,17 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.24)
+
+- 🧹 **Bug-Fix & Stabilisation Sweep.** Paper Store Pro interface load order fix (deferred to `wp_mcp_ai_bootstrapped` hook). Chat SPA duplicate-message and SSE protocol-mismatch fixes. Markdown rendering enabled in Chat SPA responses.
+- 🛡️ **Skill Manager Canonical Envelope — Unix Theory P0/P1 Refinement.** Skill manager now returns `WP_Error` on failure instead of the legacy `array('success' => false, ...)` pattern. Skills sync endpoint added for idempotent import/export. YAML frontmatter parsing hardened against colons in description fields.
+- 📝 **Assistant Tool Presets Coverage.** 24 missing tools added to assistant creation presets. Out-of-date tests fixed.
+- 🔒 **CVE Patches.** `tmp` bumped to >=0.2.6 and `symfony/cache` to ^6.4.40 to resolve upstream CVEs. Composer vendor state committed.
+- 🗄️ **Paper Store Admin CRUD.** Full CRUD admin UI for Paper Store collections and records under Assistants menu, matching Skills admin convention.
+- 🖥️ **CLI Coverage Enhancements.** Comprehensive WP-CLI command coverage improvements across the plugin toolchain.
+- 📚 **Folder README Convention — Unix Theory P7.** Folder READMEs added for every PHP-bearing subdirectory across `includes/` and `addons/pro/includes/`. Agent context docs (`CLAUDE.md`, `AGENTS.md`) synced with recent features.
+- 🔧 **Build & CI.** `build-spa-addons` GitHub Actions workflow added. Missing SPA addon ZIPs restored. All SPA bundles rebuilt.
 
 ### ✨ What's New at a Glance (v1.1.23)
 
@@ -353,6 +366,24 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.24 — May 2026)
+
+### May 27–28, 2026 — Bug-Fix & Stabilisation Sweep: Chat SPA Fixes, Unix Theory Refinements, CVE Patches, Paper Store Admin CRUD 🧹🛡️🔒📝
+
+- ✅ **Chat SPA — Duplicate Messages & SSE Protocol Fix.** Fixed a bug where the React SPA could show duplicate message bubbles under rapid SSE streaming. Adapted the frontend to the OpenAI-compatible SSE format emitted by the server, resolving a protocol mismatch that caused silent message drops. Markdown rendering now enabled for assistant responses in the SPA chat surface via `marked` library (`addons/chat-spa/`). Rebuilt `nvoos-chat-spa.zip` artifact.
+- ✅ **Skill Manager Canonical Return Envelope — Unix Theory P0/P1 Refinement.** Fixed the skill manager to return the canonical envelope (`WP_Error` on failure, success array on success) instead of the legacy `array('success' => false, ...)` pattern. This completes the skill-manager migration missed in the earlier P0/P1 sweep (v1.1.21). Added skills sync endpoint for idempotent import/export. Fixed YAML frontmatter parsing by quoting description fields containing colons.
+- ✅ **Paper Store Pro Interface Load Order.** Deferred Pro Paper Store class loading to the `wp_mcp_ai_bootstrapped` hook to resolve a race condition where Pro interfaces were loaded before the base plugin had fully initialised its autoloader and constants.
+- ✅ **Assistant Tool Presets — 24 Missing Tools.** Added 24 under-covered tools to assistant creation presets so new assistants get complete tool coverage by default. Fixed out-of-date tests asserting stale preset strings.
+- ✅ **CVE Patches — Tmp & Symfony Cache.** Bumped `tmp` to >=0.2.6 (via npm overrides + composer) and `symfony/cache` to ^6.4.40 to resolve upstream CVEs. Fixed `composer.lock` source reference. Committed production vendor state. All release ZIPs rebuilt.
+- ✅ **Paper Store Admin CRUD (`addons/pro/`).** Full Create/Read/Update/Delete admin UI for Paper Store collections and records, placed under the Assistants menu following the Skills admin convention.
+- ✅ **CLI Coverage Enhancements.** Comprehensive WP-CLI command coverage improvements across the plugin toolchain (`includes/cli/`).
+- ✅ **Folder README Convention — Unix Theory P7 Completion.** Every PHP-bearing subdirectory under `includes/` and `addons/pro/includes/` now ships a `README.md` — completing the Folder README Convention (Unix Theory Phase P7). CI enforcement via `composer run docs:check-folder-readmes`.
+- ✅ **Agent Context Docs Synced.** `CLAUDE.md`, `AGENTS.md`, and agent files in `.github/agents/` synced with recent features (v2.4/v1.4).
+- ✅ **Build & CI.** New `build-spa-addons` GitHub Actions workflow for automated SPA addon ZIP generation. Restored missing SPA addon ZIPs in `build/`. All SPA addon bundles and ZIPs rebuilt to current versions.
+- 📦 **Versioning** — bumped to **1.1.24** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Provider count: **11** first-class language-model providers.
 
 ---
 
