@@ -90,8 +90,8 @@ if ( $is_enabled && ! $is_base ) {
 	new WP_MCP_AI_CRM_Research_Add();
 
 	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/tools/crm/
-	// Upwork sub-tools: addons/pro/includes/tools/crm/upwork/
+	// Tools are located in: addons/pro/includes/tools/crm/.
+	// Upwork sub-tools are in: addons/pro/includes/tools/crm/upwork/.
 }
 
 /**

@@ -411,10 +411,10 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			<h2><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<p class="description">
 				<?php
-				printf(
-					/* translators: %d: Number of tools listed */
-					esc_html__( 'This toolkit provides %d AI-powered tools across five delivery phases.  Tools marked as available now are ready for your assistants; upcoming phases are in active development.', 'mcp-ai-wpoos-pro' ),
-					$total
+					printf(
+						/* translators: %d: Number of tools listed */
+						esc_html__( 'This toolkit provides %d AI-powered tools across five delivery phases.  Tools marked as available now are ready for your assistants; upcoming phases are in active development.', 'mcp-ai-wpoos-pro' ),
+						esc_html( $total )
 				);
 				?>
 			</p>
