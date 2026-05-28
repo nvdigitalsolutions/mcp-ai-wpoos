@@ -4274,8 +4274,8 @@
     }
 
     function renderSuggestedPrompts(state) {
-        var promptsContainer = state.container.querySelector('.' + PROMPTS_CONTAINER_CLASS);
-        var prompts = state.config.suggestedPrompts;
+        const promptsContainer = state.container.querySelector('.' + PROMPTS_CONTAINER_CLASS);
+        const prompts = state.config.suggestedPrompts;
 
         if (!promptsContainer || !prompts || !prompts.length) {
             return;
@@ -4284,7 +4284,7 @@
         promptsContainer.innerHTML = '';
 
         prompts.forEach(function (prompt) {
-            var chip = document.createElement('button');
+            const chip = document.createElement('button');
             chip.type = 'button';
             chip.className = PROMPT_CHIP_CLASS;
             chip.textContent = prompt;
@@ -4305,7 +4305,7 @@
     function initDarkMode(state, darkToggle) {
         // Load saved preference
         try {
-            var saved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
+            const saved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
             if (saved === 'true' || (saved === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 state.darkMode = true;
                 state.container.classList.add(DARK_MODE_CLASS);
@@ -5405,23 +5405,23 @@
         const fragment = document.createDocumentFragment();
 
         // Add search input if not already present
-        var historyContainer = state.historyContainer;
-        var existingSearch = historyContainer.querySelector('.wp-mcp-ai-chat__history-search');
+        const historyContainer2 = state.historyContainer;
+        const existingSearch = historyContainer2.querySelector('.wp-mcp-ai-chat__history-search');
         if (!existingSearch) {
-            var searchInput = document.createElement('input');
+            const searchInput = document.createElement('input');
             searchInput.type = 'search';
             searchInput.className = 'wp-mcp-ai-chat__history-search';
             searchInput.placeholder = getString('searchHistory', 'Search conversations...');
             searchInput.setAttribute('aria-label', 'Search conversation history');
 
             searchInput.addEventListener('input', function () {
-                var query = this.value.toLowerCase().trim();
-                var items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
+                const query = this.value.toLowerCase().trim();
+                const items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
                 items.forEach(function (item) {
-                    var titleEl = item.querySelector('.wp-mcp-ai-chat__history-session-title');
-                    var previewEl = item.querySelector('.wp-mcp-ai-chat__history-session-preview');
-                    var title = titleEl ? titleEl.textContent : '';
-                    var preview = previewEl ? previewEl.textContent : '';
+                    const titleEl = item.querySelector('.wp-mcp-ai-chat__history-session-title');
+                    const previewEl = item.querySelector('.wp-mcp-ai-chat__history-session-preview');
+                    const title = titleEl ? titleEl.textContent : '';
+                    const preview = previewEl ? previewEl.textContent : '';
 
                     if (!query || title.toLowerCase().indexOf(query) !== -1 || preview.toLowerCase().indexOf(query) !== -1) {
                         item.style.display = '';
@@ -5432,7 +5432,7 @@
             });
 
             // Insert before the history list
-            var historyList = state.historyList;
+            const historyList = state.historyList;
             if (historyList && historyList.parentNode) {
                 historyList.parentNode.insertBefore(searchInput, historyList);
             }
@@ -5470,23 +5470,23 @@
                 // Double-click to edit title
                 title.addEventListener('dblclick', function (e) {
                     e.stopPropagation();
-                    var currentTitle = this.textContent;
-                    var input = document.createElement('input');
+                    const currentTitle = this.textContent;
+                    const input = document.createElement('input');
                     input.type = 'text';
                     input.className = 'wp-mcp-ai-chat__history-edit-input';
                     input.value = currentTitle;
                     input.setAttribute('aria-label', 'Edit conversation title');
 
-                    var parent = this.parentNode;
+                    const parent = this.parentNode;
                     parent.replaceChild(input, this);
                     input.focus();
                     input.select();
 
-                    var sessionKey = session && session.session_key ? session.session_key : '';
+                    const sessionKeyLocal = session && session.session_key ? session.session_key : '';
 
                     function saveTitle() {
-                        var newTitle = input.value.trim() || currentTitle;
-                        var newTitleEl = document.createElement('span');
+                        const newTitle = input.value.trim() || currentTitle;
+                        const newTitleEl = document.createElement('span');
                         newTitleEl.className = 'wp-mcp-ai-chat__history-session-title';
                         newTitleEl.textContent = newTitle;
                         if (input.parentNode) {
@@ -5494,11 +5494,11 @@
                         }
 
                         // Persist to server if transcripts endpoint available
-                        if (state.config.transcriptsEndpoint && sessionKey) {
-                            var updateUrl = state.config.transcriptsEndpoint + '?session_key=' + encodeURIComponent(sessionKey);
+                        if (state.config.transcriptsEndpoint && sessionKeyLocal) {
+                            const updateUrl = state.config.transcriptsEndpoint + '?session_key=' + encodeURIComponent(sessionKeyLocal);
                             postJson(updateUrl, {
                                 assistant_id: state.config.assistantId,
-                                session_key: sessionKey,
+                                session_key: sessionKeyLocal,
                                 title: newTitle
                             });
                         }
@@ -11986,7 +11986,7 @@
                     state.profileExpanded = !state.profileExpanded;
                     profileToggle.setAttribute('aria-expanded', state.profileExpanded ? 'true' : 'false');
                     profileBio.hidden = !state.profileExpanded;
-                    var toggleText = profileToggle.querySelector('.wp-mcp-ai-chat__profile-toggle-text');
+                    const toggleText = profileToggle.querySelector('.wp-mcp-ai-chat__profile-toggle-text');
                     if (toggleText) {
                         toggleText.textContent = state.profileExpanded ? getString('hideAssistantInfo', 'Hide about') : getString('showAssistantInfo', 'About this assistant');
                     }
@@ -12167,16 +12167,16 @@
 
             // Code block copy delegation
             container.addEventListener('click', function (event) {
-                var copyBtn = event.target.closest('.' + CODE_COPY_CLASS);
+                const copyBtn = event.target.closest('.' + CODE_COPY_CLASS);
                 if (!copyBtn) return;
                 
-                var wrapper = copyBtn.closest('.' + CODE_BLOCK_WRAPPER_CLASS);
+                const wrapper = copyBtn.closest('.' + CODE_BLOCK_WRAPPER_CLASS);
                 if (!wrapper) return;
                 
-                var code = wrapper.querySelector('code');
+                const code = wrapper.querySelector('code');
                 if (!code) return;
                 
-                var text = code.textContent || '';
+                const text = code.textContent || '';
                 
                 if (clipboardService && clipboardService.copyTextToClipboard) {
                     clipboardService.copyTextToClipboard(text);
@@ -17226,7 +17226,7 @@
     }
 
     function updateSubmitButtonForSend(state) {
-        var submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+        const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
         if (!submitButton) return;
         
         submitButton.textContent = getString('send', 'Send');
@@ -17236,7 +17236,7 @@
     }
 
     function updateSubmitButtonForStop(state) {
-        var submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+        const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
         if (!submitButton) return;
         
         submitButton.textContent = '\u25A0 ' + getString('stop', 'Stop');
@@ -18020,16 +18020,16 @@
     function attachFeedbackButtons(bubble, state, messageIndex) {
         if (!bubble || bubble.classList.contains('wp-mcp-ai-chat__bubble--user')) return;
         
-        var existing = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
+        const existing = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
         if (existing) existing.remove();
         
-        var container = document.createElement('div');
+        const container = document.createElement('div');
         container.className = FEEDBACK_CONTAINER_CLASS;
         container.setAttribute('role', 'group');
         container.setAttribute('aria-label', 'Message feedback');
         
-        var key = 'msg_' + messageIndex;
-        var currentFeedback = state.feedbackSent[key];
+        const key = 'msg_' + messageIndex;
+        const currentFeedback = state.feedbackSent[key];
         
         function sendFeedback(value) {
             if (state.feedbackSent[key] === value) return;
@@ -18037,7 +18037,7 @@
             state.feedbackSent[key] = value;
             
             // Update active states
-            var btns = container.querySelectorAll('.' + FEEDBACK_BTN_CLASS);
+            const btns = container.querySelectorAll('.' + FEEDBACK_BTN_CLASS);
             btns.forEach(function (btn) {
                 if (btn.getAttribute('data-value') === value) {
                     btn.classList.add(FEEDBACK_ACTIVE_CLASS);
@@ -18048,8 +18048,8 @@
             
             // POST feedback to server if endpoint available
             if (state.config.chatFeedbackEndpoint) {
-                var msg = state.conversation[messageIndex];
-                var payload = {
+                const msg = state.conversation[messageIndex];
+                const payload = {
                     assistant_id: state.config.assistantId,
                     session_key: state.config.sessionKey,
                     message_index: messageIndex,
@@ -18061,7 +18061,7 @@
             }
         }
         
-        var thumbsUp = document.createElement('button');
+        const thumbsUp = document.createElement('button');
         thumbsUp.type = 'button';
         thumbsUp.className = FEEDBACK_BTN_CLASS;
         if (currentFeedback === 'up') thumbsUp.classList.add(FEEDBACK_ACTIVE_CLASS);
@@ -18070,7 +18070,7 @@
         thumbsUp.textContent = FEEDBACK_THUMBS_UP;
         thumbsUp.addEventListener('click', function () { sendFeedback('up'); });
         
-        var thumbsDown = document.createElement('button');
+        const thumbsDown = document.createElement('button');
         thumbsDown.type = 'button';
         thumbsDown.className = FEEDBACK_BTN_CLASS;
         if (currentFeedback === 'down') thumbsDown.classList.add(FEEDBACK_ACTIVE_CLASS);
@@ -18089,8 +18089,8 @@
         if (!bubble || !bubble.classList.contains('wp-mcp-ai-chat__bubble--assistant')) return;
         
         // Only attach to the last assistant message
-        var lastAssistantIndex = -1;
-        for (var i = state.conversation.length - 1; i >= 0; i--) {
+        let lastAssistantIndex = -1;
+        for (let i = state.conversation.length - 1; i >= 0; i--) {
             if (state.conversation[i].role === 'assistant') {
                 lastAssistantIndex = i;
                 break;
@@ -18098,19 +18098,19 @@
         }
         if (messageIndex !== lastAssistantIndex) return;
         
-        var existing = bubble.querySelector('.wp-mcp-ai-chat__regenerate-btn');
+        const existing = bubble.querySelector('.wp-mcp-ai-chat__regenerate-btn');
         if (existing) return;
         
-        var btn = document.createElement('button');
+        const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'wp-mcp-ai-chat__feedback-btn wp-mcp-ai-chat__regenerate-btn';
         btn.setAttribute('aria-label', 'Regenerate response');
-        btn.textContent = '\u267B';
+        btn.textContent = '♻';
         btn.addEventListener('click', function () {
             regenerateLastResponse(state, messageIndex);
         });
         
-        var feedbackContainer = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
+        const feedbackContainer = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
         if (feedbackContainer) {
             feedbackContainer.appendChild(btn);
         }
@@ -18120,20 +18120,20 @@
         if (state.busy) return;
         
         // Remove assistant message and any subsequent tool results
-        var removedMessages = state.conversation.splice(assistantMessageIndex);
+        state.conversation.splice(assistantMessageIndex);
         
         // Remove DOM elements
-        var messagesEl = state.messagesEl;
-        var bubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__message--assistant, .wp-mcp-ai-chat__message--tool');
-        for (var i = bubbles.length - 1; i >= 0; i--) {
+        const messagesEl = state.messagesEl;
+        const bubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__message--assistant, .wp-mcp-ai-chat__message--tool');
+        for (let i = bubbles.length - 1; i >= 0; i--) {
             if (bubbles[i].getAttribute('data-message-index') >= assistantMessageIndex) {
                 bubbles[i].remove();
             }
         }
         
         // Re-send the last user message
-        var lastUserMsg = null;
-        for (var j = state.conversation.length - 1; j >= 0; j--) {
+        let lastUserMsg = null;
+        for (let j = state.conversation.length - 1; j >= 0; j--) {
             if (state.conversation[j].role === 'user') {
                 lastUserMsg = state.conversation[j];
                 break;
