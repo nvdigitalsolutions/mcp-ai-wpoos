@@ -23,15 +23,6 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 	return;
 }
 
-// Load Pro core classes.
-require_once __DIR__ . '/class-wp-mcp-ai-paper-markdown-yaml-driver.php';
-require_once __DIR__ . '/class-wp-mcp-ai-paper-git-sync.php';
-require_once __DIR__ . '/class-wp-mcp-ai-paper-admin-ui.php';
-
-// Load Pro tool classes.
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-import.php';
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-export.php';
-
 /**
  * Register Pro Paper Store features.
  *
@@ -45,6 +36,18 @@ add_action(
 		if ( ! class_exists( 'WP_MCP_AI_Paper_Store_Manager' ) ) {
 			return;
 		}
+
+		// Load Pro core classes now that the base interface is guaranteed loaded.
+		// These must be loaded inside the hook because the Markdown+YAML driver
+		// implements WP_MCP_AI_Paper_Driver_Interface, which is only loaded by
+		// the base Paper Store init at priority 30.
+		require_once __DIR__ . '/class-wp-mcp-ai-paper-markdown-yaml-driver.php';
+		require_once __DIR__ . '/class-wp-mcp-ai-paper-git-sync.php';
+		require_once __DIR__ . '/class-wp-mcp-ai-paper-admin-ui.php';
+
+		// Load Pro tool classes.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-import.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-export.php';
 
 		$manager = WP_MCP_AI_Paper_Store_Manager::get_instance();
 
