@@ -629,6 +629,10 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 			'agency-account-manager.json',
 			'real-estate-buyer-agent.json',
 			'wholesale-distributor.json',
+			'bespoke-concierge.json',
+			'luxeseek-sourcing-agent.json',
+			'business-advisory.json',
+			'career-coach.json',
 		);
 		foreach ( $blueprints as $bp ) {
 			$file = $base . 'includes/tools/crm/examples/' . $bp;

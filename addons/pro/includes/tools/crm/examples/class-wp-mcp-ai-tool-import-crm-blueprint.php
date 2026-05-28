@@ -13,14 +13,14 @@ class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	public function get_name() {
 		return __( 'Import CRM Blueprint', 'mcp-ai-wpoos-pro' ); }
 	public function get_description() {
-		return __( 'Install a curated CRM assistant blueprint for B2B SaaS, agency, real estate, or wholesale distribution workflows.', 'mcp-ai-wpoos-pro' ); }
+		return __( 'Install a curated CRM assistant blueprint for B2B SaaS, agency, real estate, wholesale, bespoke concierge, luxury sourcing, business advisory, or career coaching workflows.', 'mcp-ai-wpoos-pro' ); }
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
 				'blueprint' => array(
 					'type'        => 'string',
-					'enum'        => array( 'b2b-saas-sdr', 'agency-account-manager', 'real-estate-buyer-agent', 'wholesale-distributor' ),
+					'enum'        => array( 'b2b-saas-sdr', 'agency-account-manager', 'real-estate-buyer-agent', 'wholesale-distributor', 'bespoke-concierge', 'luxeseek-sourcing-agent', 'business-advisory', 'career-coach' ),
 					'description' => __( 'Blueprint to import.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
