@@ -1,10 +1,10 @@
 # NV Digital Open Operator System (NV oOS)
 
-[![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
-[![codecov](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos/branch/main/graph/badge.svg)](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos)
-[![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
-[![PHP Linting](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml)
-[![Security Checks](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml)
+[![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg?branch=alpha-working)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml?query=branch%3Aalpha-working)
+[![codecov](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos/branch/alpha-working/graph/badge.svg)](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos/branch/alpha-working)
+[![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg?branch=alpha-working)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml?query=branch%3Aalpha-working)
+[![PHP Linting](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml/badge.svg?branch=alpha-working)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml?query=branch%3Aalpha-working)
+[![Security Checks](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml/badge.svg?branch=alpha-working)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml?query=branch%3Aalpha-working)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
@@ -12,9 +12,9 @@
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.23  
-**Release Date:** 2026-05-25
+**Release Date:** 2026-05-26
 
-**Latest Updates:** May 25, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: Threads Sidebar, Agent Panel, Command Palette, Agent Profiles, @-mention Context, Checkpoints & Diff Review, Inline Assistant, Multi-Model Comparison, Collaborative Presence — Pro React SPA + Base Thread Management Infrastructure).
+**Latest Updates:** May 26, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: React admin, threads, profiles, checkpoints, @-mentions, multi-model comparison, collaborative presence. Antigravity Interactions API rewrite. TypeScript upgrade + orchestration toggles. Comic Reader + Media Studio v0.3.0 addons. 30+ reliability fixes).
 
 **Previous Updates (v1.1.22):** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
 
@@ -32,12 +32,11 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026)
 - [🆕 Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#%EF%B8%8F-warranty--safe-use)
+- [⚠️ Warranty & Safe Use](#-#%EF%B8%8F-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
@@ -129,6 +128,11 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 🔄 **Multi-Model Comparison.** Send same prompt to multiple AI models simultaneously and compare responses side-by-side with timing badges and "Use This Response" selection.
 - 👥 **Collaborative Presence.** Real-time user presence tracking via WordPress Heartbeat API. Avatar stack showing other editors with activity descriptions.
 - 🏗️ **Base Thread Management Infrastructure.** 6 PHP manager classes + 5 REST controllers + 4 DB tables (PHP 7.4 compatible). Shared by jQuery chat UI and Pro React SPA.
+- 🤖 **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for the real Antigravity Interactions API with code execution, Google Search grounding, and sandbox environments.
+- 📦 **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, and React SPA builds. "Use TypeScript-Compiled Assets" toggle + Antigravity managed agents toggle in Orchestration settings.
+- 📚 **Comic Reader Addon.** New React-based CBR/CBZ/CB7/CBT comic reader with dual-page modes, zoom, keyboard nav, touch, fullscreen, and drag-drop upload.
+- 🎨 **Media Studio v0.3.0.** Zoom/pan, drawing tools (brush, eraser, shapes, text), and save-to-WP-Media-Library. Image editor now feature-complete.
+- 🔧 **30+ Reliability Fixes.** Cron status diagnostics (HTTP status + body in errors), PHP 8.2+ compatibility ($namespace/$rest_base), PHPUnit 11 (6 batches), WP.org compliance re-audit, PHPCS 0 errors (353→0), qs CVE-2026-8723, docs-hub fixes, DeepSeek fallback, test suite stability.
 
 ### ✨ What's New at a Glance (v1.1.22)
 
@@ -165,7 +169,7 @@ The plugin works standalone with **~195 base tools** and optionally extends thro
 
 > **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~830 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
-**Addon Ecosystem:** NV oOS ships a growing family of installable addons: **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Toolkit Shell / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. See [`docs/addons/toolkit-spa-blueprint.md`](docs/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
+**Addon Ecosystem:** NV oOS ships a growing family of installable addons: **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Toolkit Shell / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. See [`docs/addons/toolkit-spa-blueprint.md`](docs/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -349,6 +353,23 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.23 — May 2026)
+
+### May 25–26, 2026 — Zed-Inspired SPA Architecture, Antigravity Interactions API Rewrite, TypeScript Upgrade, Comic Reader & Media Studio v0.3.0 🤖🖥️📚🎨🔧
+
+- ✅ **Zed-Inspired SPA Architecture (Pro + Base).** 9-phase React SPA admin interface: Threads Sidebar, Agent Panel with SSE streaming, Cmd+K Command Palette (830+ tools), Agent Profiles (Write/Ask/Minimal/Custom with glob patterns), @-mention Context (8 entity types), Checkpoints & Diff Review with hunk-level accept/reject, Inline Assistant for Gutenberg, Multi-Model Comparison side-by-side, Collaborative Presence via Heartbeat API. ~75 files, ~10,800 lines across Base (PHP 7.4) and Pro (PHP 8.1 + React SPA). All existing jQuery chat UI and REST endpoints preserved.
+- ✅ **Base Thread Management Infrastructure.** 6 PHP manager classes (`Thread_Manager`, `Profile_Manager`, `Checkpoint_Manager`, `Context_Mention_Resolver`, `Command_Registry`) + 5 REST controllers (Threads/Profiles/Checkpoints/Context/Commands) + 4 DB tables. Shared by jQuery chat UI and Pro React SPA.
+- ✅ **Antigravity Interactions API Rewrite.** Gemini Managed Agent service rewritten for real Antigravity API (`POST /v1beta/interactions`) with code execution, Google Search grounding, and sandbox environments. `enable_managed_agents` toggle added to Settings → Orchestration.
+- ✅ **TypeScript Upgrade + Orchestration Toggles.** Shared TS types, services, admin screens, chat drawer, and React SPA builds. "Use TypeScript-Compiled Assets" checkbox in Settings → Orchestration (`WP_MCP_AI_USE_TS_BUILD` constant fallback).
+- ✅ **Comic Reader Addon (`addons/comic-reader/`).** React-based CBR/CBZ/CB7/CBT comic book reader with dual reading modes, zoom controls (25%–400%), keyboard navigation (arrows, A/D, +/-), touch support (swipe + pinch), fullscreen mode, progress persistence, drag-and-drop upload. Shortcode `[nvoos_comic_reader]` + Gutenberg block.
+- ✅ **Media Studio v0.3.0.** Zoom/pan controls, drawing tools (Konva canvas: brush, eraser, shapes, text, undo/redo via history stack), save-to-WP-Media-Library integration (PNG/JPEG export). Drawing mode now shipped integrated into image-editor.
+- ✅ **SPA Blueprint v3.0 + Adapter Automation.** External React template ingestion & gap analysis pipeline. API, i18n, CSS scope, and bundle optimizer adapters automated.
+- ✅ **LLM Prompt Cache Optimization v1.5.1.**
+- ✅ **30+ Reliability Fixes** — Cron status diagnostics (HTTP status code + up to 500 chars of response body in REST fetch errors). PHP 8.2+ compatibility (declared `$namespace`/`$rest_base` properties). PHP comments leaking into HTML output (moved `phpcs:ignore` + `translators` inside `<?php` tags). WordPress.org re-submission compliance (May 26 re-audit findings resolved, section 14 added). May 2026 audit findings (F-AUTHZ-05, F-AUTHZ-06, F-AGENT-01). PHPCS: 353 errors → 0 across 18 files. PHPUnit 11: 6 comprehensive fix batches across base, pro, and addon test suites (class-not-found, dynamic property, WPDieException errors). Docs Hub: browse-repo critical error fix, hierarchical folder tree picker, DNS resolution hardening, `autocomplete="off"` on settings inputs. Net worth calculator: removed stray `*/` causing parse errors. qs DoS vulnerability: CVE-2026-8723 resolved (qs >=6.15.2 via npm overrides). DeepSeek provider fallback: detects first enabled provider instead of hardcoding 'openai'. Test suite stability: wp_die handler at `PHP_INT_MAX`, `DOING_AJAX` defined in 9 test files, SQLite DB cleanup.
+- 📦 **Versioning** — bumped to **1.1.23** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), and `CHANGELOG.md`. Provider count: **11** first-class language-model providers.
 
 ---
 

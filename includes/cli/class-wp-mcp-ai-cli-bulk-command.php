@@ -426,6 +426,138 @@ class WP_MCP_AI_CLI_Bulk_Command extends WP_MCP_AI_CLI_Base_Command {
 			)
 		);
 	}
+
+	/**
+	 * Retry failed async jobs from the job queue.
+	 *
+	 * Queries the async job queue for failed jobs and re-queues them
+	 * for execution. Displays a summary table of retried jobs.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--limit=<number>]
+	 * : Maximum number of failed jobs to retry.
+	 * ---
+	 * default: 50
+	 * ---
+	 *
+	 * [--dry-run]
+	 * : Preview which jobs would be retried without actually retrying them.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Retry up to 50 failed jobs.
+	 *     $ wp mcp-ai bulk retry-failed
+	 *
+	 *     # Preview what would be retried.
+	 *     $ wp mcp-ai bulk retry-failed --dry-run
+	 *
+	 *     # Retry only the 10 most recent failures.
+	 *     $ wp mcp-ai bulk retry-failed --limit=10
+	 *
+	 * @subcommand retry-failed
+	 * @when after_wp_load
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Associative arguments.
+	 * @return void
+	 */
+	public function retry_failed( $args, $assoc_args ) {
+		unset( $args );
+
+		if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
+			$this->error( __( 'Async job queue unavailable.', 'mcp-ai-wpoos' ) );
+			return;
+		}
+
+		$limit   = absint( \WP_CLI\Utils\get_flag_value( $assoc_args, 'limit', 50 ) );
+		$dry_run = $this->is_dry_run( $assoc_args );
+
+		if ( $dry_run ) {
+			$this->dry_run_notice();
+		}
+
+		$failed_jobs = WP_MCP_AI_Async_Job_Queue::get_jobs_by_status( 'failed', $limit );
+
+		if ( empty( $failed_jobs ) ) {
+			$this->info( __( 'No failed jobs found in the queue.', 'mcp-ai-wpoos' ) );
+			return;
+		}
+
+		$executor_available = class_exists( 'WP_MCP_AI_Tool_Async_Executor' );
+		$summary            = array();
+		$retried            = 0;
+		$errors             = 0;
+
+		foreach ( $failed_jobs as $job ) {
+			$job_id   = isset( $job['id'] ) ? (string) $job['id'] : '';
+			$job_type = isset( $job['job_type'] ) ? $job['job_type'] : '';
+			$created  = isset( $job['created_at'] ) ? $job['created_at'] : '';
+
+			if ( $dry_run ) {
+				$summary[] = array(
+					'job_id'     => $job_id,
+					'job_type'   => $job_type,
+					'created_at' => $created,
+					'result'     => __( 'would retry', 'mcp-ai-wpoos' ),
+				);
+				continue;
+			}
+
+			$result_status = '';
+			if ( $executor_available ) {
+				$executor = WP_MCP_AI_Tool_Async_Executor::get_instance();
+				if ( $executor ) {
+					$result = $executor->retry_job( $job_id );
+					if ( is_wp_error( $result ) ) {
+						++$errors;
+						$result_status = $result->get_error_message();
+					} else {
+						++$retried;
+						$result_status = __( 'retried', 'mcp-ai-wpoos' );
+					}
+				} else {
+					++$errors;
+					$result_status = __( 'executor unavailable', 'mcp-ai-wpoos' );
+				}
+			} else {
+				++$errors;
+				$result_status = __( 'executor class missing', 'mcp-ai-wpoos' );
+			}
+
+			$summary[] = array(
+				'job_id'     => $job_id,
+				'job_type'   => $job_type,
+				'created_at' => $created,
+				'result'     => $result_status,
+			);
+		}
+
+		$fields = array( 'job_id', 'job_type', 'created_at', 'result' );
+
+		if ( $dry_run ) {
+			\WP_CLI\Utils\format_items( 'table', $summary, $fields );
+			$this->info(
+				sprintf(
+					/* translators: %d: number of jobs */
+					__( 'Would retry %d failed jobs.', 'mcp-ai-wpoos' ),
+					count( $failed_jobs )
+				)
+			);
+			return;
+		}
+
+		\WP_CLI\Utils\format_items( 'table', $summary, $fields );
+
+		$this->success(
+			sprintf(
+				/* translators: 1: number retried, 2: number with errors */
+				__( 'Retried %1$d jobs, %2$d errors.', 'mcp-ai-wpoos' ),
+				$retried,
+				$errors
+			)
+		);
+	}
 }
 
 WP_CLI::add_command( 'mcp-ai bulk', 'WP_MCP_AI_CLI_Bulk_Command' );

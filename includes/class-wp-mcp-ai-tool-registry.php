@@ -235,8 +235,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return void
 		 */
 		public function clear_tools() {
-			$this->tools                     = array();
-			$this->bootstrapped              = false;
+			$this->tools                 = array();
+			$this->bootstrapped          = false;
 			$this->unavailable_tool_messages = array();
 		}
 
@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 *
 		 * @param string $old_slug Slug of the deprecated tool.
 		 * @param string $new_slug Slug of the replacement tool.
-		 * @param array  $args     Optional metadata: {.
+		 * @param array  $args     Optional metadata: {
 		 *     @type string $since   Version where the alias was introduced (e.g. '1.3.0').
 		 *     @type string $remove  Version where the alias will be removed (e.g. '1.4.0').
 		 *     @type string $message Human-readable migration note.

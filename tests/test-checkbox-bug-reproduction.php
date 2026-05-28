@@ -14,18 +14,6 @@
 class WP_MCP_AI_Checkbox_Bug_Reproduction_Test extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		// Load required classes.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-		}
-	}
-
-	/**
 	 * Test: Try to uncheck enable_mesh and enable_federation
 	 * Expected: Both should become false
 	 * Bug: They stay true (checked)

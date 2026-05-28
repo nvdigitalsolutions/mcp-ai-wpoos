@@ -67,10 +67,10 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'datalist id="wp-mcp-ai-default-openai-models"', $output );
 		$this->assertStringContainsString( 'value="gpt-5"', $output );
 		$this->assertStringContainsString( 'label="GPT-5"', $output );
-		$this->assertStringContainsString( 'value="gpt-4.1"', $output );
+		$this->assertStringContainsString( 'value="gpt-4o"', $output );
 		$this->assertStringContainsString( 'value="gpt-4.1-mini"', $output );
-		$this->assertStringContainsString( 'label="Cost-effective variant of GPT-4o"', $output );
-		$this->assertStringContainsString( '>Cost-effective variant of GPT-4o<', $output );
+		$this->assertStringContainsString( 'label="GPT-4o mini"', $output );
+		$this->assertStringContainsString( '>GPT-4o mini<', $output );
 	}
 
 	/**
@@ -86,19 +86,19 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Verify we have more models than the original 8 hardcoded ones.
 		$this->assertGreaterThanOrEqual( 15, count( $choices ) );
 
-		// Verify some key models are present (from Model Config / CCT defaults).
+		// Verify some key models are present.
 		$this->assertArrayHasKey( 'gpt-5', $choices );
 		$this->assertArrayHasKey( 'gpt-5-mini', $choices );
+		$this->assertArrayHasKey( 'gpt-4o', $choices );
 		$this->assertArrayHasKey( 'gpt-4o-mini', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1-nano', $choices );
-		$this->assertArrayHasKey( 'gpt-5.1', $choices );
-		$this->assertArrayHasKey( 'gpt-5.2', $choices );
-		$this->assertArrayHasKey( 'gpt-5.4', $choices );
-		$this->assertArrayHasKey( 'gpt-5.5', $choices );
-		$this->assertArrayHasKey( 'gpt-5-codex', $choices );
-		$this->assertArrayHasKey( 'gpt-5-nano', $choices );
+		$this->assertArrayHasKey( 'gpt-4-turbo', $choices );
+		$this->assertArrayHasKey( 'gpt-4', $choices );
+		$this->assertArrayHasKey( 'gpt-3.5-turbo', $choices );
+		$this->assertArrayHasKey( 'o1-preview', $choices );
+		$this->assertArrayHasKey( 'o1-mini', $choices );
 	}
 
 	/**
@@ -116,8 +116,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertSame( 'GPT-4o Mini', $method->invoke( $admin_settings, 'gpt-4o-mini' ) );
 		$this->assertSame( 'GPT-4.1', $method->invoke( $admin_settings, 'gpt-4.1' ) );
 		$this->assertSame( 'GPT-4 Turbo', $method->invoke( $admin_settings, 'gpt-4-turbo' ) );
-		$this->assertSame( 'o1 Preview', $method->invoke( $admin_settings, 'o1-preview' ) );
-		$this->assertSame( 'o1 Mini', $method->invoke( $admin_settings, 'o1-mini' ) );
+		$this->assertSame( 'O1 Preview', $method->invoke( $admin_settings, 'o1-preview' ) );
+		$this->assertSame( 'O1 Mini', $method->invoke( $admin_settings, 'o1-mini' ) );
 	}
 
 	/**
@@ -266,10 +266,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( 'https://example.com/crawl/', $sanitized['crawl4ai_base_url'] );
-		// API key is encrypted via sanitize_sensitive_setting.
-		$this->assertStringStartsWith( 'v2:', $sanitized['crawl4ai_api_key'] );
+		$this->assertSame( 'secret token', $sanitized['crawl4ai_api_key'] );
 	}
-
 
 	/**
 	 * Ensure sanitize_settings cleans group email configuration values.
@@ -306,10 +304,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
 		$this->assertSame( '1536x1024', $sanitized['openai_image_size'] );
 		$this->assertSame( 'hd', $sanitized['openai_image_quality'] );
-		// gpt-image-1 family does NOT support response_format, so it falls back to b64_json.
-		$this->assertSame( 'b64_json', $sanitized['openai_image_response_format'] );
+		$this->assertSame( 'url', $sanitized['openai_image_response_format'] );
 	}
-
 
 	/**
 	 * Ensure sanitize_settings rejects invalid OpenAI image configuration values.
@@ -394,21 +390,19 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure the default provider field includes Embedded LLM as the only available option in tests.
-	 *
-	 * In the test bootstrap, all cloud providers are disabled (enable_* = false).
-	 * Embedded LLM is always available when Pro is active, with no API key required.
+	 * Ensure the default provider field includes LM Studio as an option.
 	 */
 	public function test_default_provider_field_includes_lm_studio() {
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		$output = $this->capture_field_output( array( $admin_settings, 'render_default_provider_field' ) );
 
-		// Only embedded LLM is enabled in the test environment.
-		$this->assertStringContainsString( 'value="embeddedllm"', $output );
-		$this->assertStringContainsString( 'Embeddedllm', $output );
+		$this->assertStringContainsString( 'value="openai"', $output );
+		$this->assertStringContainsString( 'value="gemini"', $output );
+		$this->assertStringContainsString( 'value="ollama"', $output );
+		$this->assertStringContainsString( 'value="lm_studio"', $output );
+		$this->assertStringContainsString( 'LM Studio (Local AI)', $output );
 	}
-
 
 	/**
 	 * Ensure defaults include the Cloudways configuration keys.
@@ -495,8 +489,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// API key is encrypted via sanitize_sensitive_setting.
-		$this->assertStringStartsWith( 'v2:', $sanitized['cloudways_api_key'] );
+		$this->assertSame( 'test-api-key-123', $sanitized['cloudways_api_key'] );
 	}
 
 	/**
@@ -605,7 +598,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	 * Test that accordion section headers have onclick handlers for expansion.
 	 */
 	public function test_accordion_section_headers_have_proper_attributes() {
-		$this->markTestSkipped( 'Settings page has multiple section callbacks without method implementations.' );
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		// Capture the output of the settings page.
 		ob_start();
@@ -645,10 +638,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$admin_settings->render_token_usage_section();
 		$output = ob_get_clean();
 
-		// The test bootstrap grants manage_options to all users via user_has_cap filter,
-		// so the section renders even for subscribers in this test environment.
-		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'Token Usage Statistics', $output );
+		// Should not render anything for users without manage_options.
+		$this->assertEmpty( $output );
 	}
 
 	/**
@@ -724,9 +715,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Store some usage data.
 		update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, array( 'test' => 'data' ) );
 
-		// Set a valid nonce so the nonce check doesn't interfere.
-		$_REQUEST['nonce'] = wp_create_nonce( 'wp-mcp-ai-settings' );
-
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		// Suppress die() call.
@@ -734,18 +722,13 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		try {
 			$admin_settings->handle_reset_user_token_usage();
-		} catch ( WPDieException $e ) {
-			// Expected — nonce/capability check failed.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
-		} catch ( WPDieException $e ) {
-			// Also expected in newer WordPress versions.
 		}
 
-		// The test bootstrap grants manage_options to all users, so the capability
-		// check passes and the data is actually deleted.
+		// Data should still be there.
 		$data = get_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
-		$this->assertEmpty( $data );
+		$this->assertNotEmpty( $data );
 	}
 
 	/**
@@ -759,9 +742,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Store some usage data.
 		update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, array( 'test' => 'data' ) );
 
-		// Set a valid nonce so the nonce check doesn't interfere.
-		$_REQUEST['nonce'] = wp_create_nonce( 'wp-mcp-ai-settings' );
-
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		// Suppress die() call.
@@ -769,18 +749,13 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		try {
 			$admin_settings->handle_reset_all_token_usage();
-		} catch ( WPDieException $e ) {
-			// Expected — nonce/capability check failed.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
-		} catch ( WPDieException $e ) {
-			// Also expected in newer WordPress versions.
 		}
 
-		// The test bootstrap grants manage_options to all users, so the capability
-		// check passes and the data is actually deleted.
+		// Data should still be there.
 		$data = get_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
-		$this->assertEmpty( $data );
+		$this->assertNotEmpty( $data );
 	}
 
 	/**
@@ -814,21 +789,16 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Reset all usage.
 		try {
 			$admin_settings->handle_reset_all_token_usage();
-		} catch ( WPDieException $e ) {
-			// Expected — method calls wp_die('1') on success.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
-		} catch ( WPDieException $e ) {
-			// Also expected in newer WordPress versions.
 		}
 
-		// The handler clears the cache by meta_key, but get_user_meta caches by user_id.
-		// So the per-user caches may still return stale data.
+		// Verify cache is cleared - get_user_meta should return false/empty.
 		$cached_data_1 = get_user_meta( $user_id_1, $meta_key, true );
 		$cached_data_2 = get_user_meta( $user_id_2, $meta_key, true );
 
-		$this->assertNotEmpty( $cached_data_1, 'User 1 cache may still hold stale data due to cache key mismatch' );
-		$this->assertNotEmpty( $cached_data_2, 'User 2 cache may still hold stale data due to cache key mismatch' );
+		$this->assertEmpty( $cached_data_1, 'User 1 cache should be cleared' );
+		$this->assertEmpty( $cached_data_2, 'User 2 cache should be cleared' );
 
 		// Verify database is also empty.
 		$db_count = $wpdb->get_var(
@@ -902,29 +872,37 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'http://initial-endpoint:11434', $cached_settings['ollama_endpoint_url'] );
 
 		// Now update the settings in the database.
-		// The update_option hook calls reset_settings_cache(), so the cache is cleared.
 		$updated_settings = array(
 			'ollama_endpoint_url'    => 'http://updated-endpoint:11434',
 			'lm_studio_endpoint_url' => 'http://updated-lm-studio:1234',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $updated_settings );
 
-		// The update_option hook clears the cache. Verify the Base's cache is null.
-		$base_reflection     = new ReflectionClass( 'WP_MCP_AI_Admin_Settings_Base' );
-		$base_cache_property = $base_reflection->getProperty( 'settings_cache' );
-		$base_cache_property->setAccessible( true );
+		// Without clearing the cache, get_settings() would return the cached values.
+		// But we need to verify that in the test connection handlers, the cache IS cleared.
+		// Since we can't directly test private static properties from here,.
+		// we'll use reflection to access and verify the cache state.
 
-		$cache_value = $base_cache_property->getValue();
-		$this->assertNull( $cache_value, 'Cache should be cleared by the update_option hook' );
+		$reflection     = new ReflectionClass( 'WP_MCP_AI_Admin_Settings' );
+		$cache_property = $reflection->getProperty( 'settings_cache' );
+		$cache_property->setAccessible( true );
 
-		// After update_option clears the cache, get_settings should fetch fresh data.
+		// The cache should still contain the old values at this point.
+		$cache_value = $cache_property->getValue();
+		$this->assertNotNull( $cache_value, 'Cache should be populated' );
+		$this->assertEquals( 'http://initial-endpoint:11434', $cache_value['ollama_endpoint_url'] );
+
+		// Now simulate what the fix does: clear the cache.
+		$cache_property->setValue( null );
+
+		// After clearing, get_settings should fetch fresh data from the database.
 		$fresh_settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$this->assertEquals( 'http://updated-endpoint:11434', $fresh_settings['ollama_endpoint_url'] );
 		$this->assertEquals( 'http://updated-lm-studio:1234', $fresh_settings['lm_studio_endpoint_url'] );
 
 		// Clean up.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
-		$base_cache_property->setValue( null, null );
+		$cache_property->setValue( null );
 	}
 
 	/**
@@ -971,13 +949,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		// The sanitizer preserves user-specified order and appends all missing
-		// providers from Model Config (which now includes 16 total).
-		$this->assertGreaterThanOrEqual( 16, count( $sanitized['provider_priority_list'] ) );
-		$this->assertEquals( 'gemini', $sanitized['provider_priority_list'][0] );
-		$this->assertEquals( 'ollama', $sanitized['provider_priority_list'][1] );
-		$this->assertEquals( 'openai', $sanitized['provider_priority_list'][2] );
-		$this->assertEquals( 'lm_studio', $sanitized['provider_priority_list'][3] );
+		$this->assertEquals( array( 'gemini', 'ollama', 'openai', 'lm_studio' ), $sanitized['provider_priority_list'] );
 	}
 
 	/**
@@ -1017,8 +989,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		// All providers from Model Config are present (16 total with missing appended).
-		$this->assertGreaterThanOrEqual( 16, count( $sanitized['provider_priority_list'] ) );
+		$this->assertEquals( 4, count( $sanitized['provider_priority_list'] ) );
 		// Should only have one instance of openai.
 		$this->assertEquals( 1, count( array_keys( $sanitized['provider_priority_list'], 'openai' ) ) );
 	}
@@ -1038,10 +1009,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
 		$this->assertIsArray( $sanitized['provider_priority_list'] );
-		// Should return full provider list from Model Config (16 total, alpha-sorted).
-		$this->assertGreaterThanOrEqual( 16, count( $sanitized['provider_priority_list'] ) );
-		$this->assertContains( 'openai', $sanitized['provider_priority_list'] );
-		$this->assertContains( 'anthropic', $sanitized['provider_priority_list'] );
+		// Should return default list.
+		$this->assertEquals( array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ), $sanitized['provider_priority_list'] );
 	}
 
 	/**
@@ -1058,8 +1027,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		// All providers from Model Config are present (16 total with missing appended).
-		$this->assertGreaterThanOrEqual( 16, count( $sanitized['provider_priority_list'] ) );
+		$this->assertEquals( 5, count( $sanitized['provider_priority_list'] ) );
 		// Specified providers should be first.
 		$this->assertEquals( 'gemini', $sanitized['provider_priority_list'][0] );
 		$this->assertEquals( 'openai', $sanitized['provider_priority_list'][1] );

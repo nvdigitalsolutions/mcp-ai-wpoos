@@ -601,11 +601,7 @@ class WP_MCP_AI_REST_Validator {
 
 		if ( empty( $provider ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			if ( isset( $settings['default_provider'] ) && ! empty( $settings['default_provider'] ) ) {
-				$provider = sanitize_key( $settings['default_provider'] );
-			} else {
-				$provider = self::detect_first_enabled_provider( $settings );
-			}
+			$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
 		}
 
 		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'deepseek', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'embedded' ) );
@@ -614,7 +610,7 @@ class WP_MCP_AI_REST_Validator {
 		}
 
 		if ( ! in_array( $provider, $allowed_providers, true ) ) {
-			$provider = self::detect_first_enabled_provider( WP_MCP_AI_Admin_Settings::get_settings() );
+			$provider = 'openai';
 		}
 
 		$options['provider'] = $provider;
@@ -665,26 +661,14 @@ class WP_MCP_AI_REST_Validator {
 			$system_prompt_source     = 'assistant_config';
 		}
 
-		// Prepare current date/time context to help AI models understand temporal context.
+		// Inject current date/time context to help AI models understand temporal context.
 		// AI models have training cutoffs and need explicit current date information for accurate responses.
-		//
-		// CACHE OPTIMISATION (v1.5.1): When prompt caching is enabled, the date context is
-		// stored in a separate key (dynamic_date_context) instead of being appended to the
-		// system prompt. This preserves byte-identical system prompt prefixes across requests,
-		// allowing provider-side prefix caching to work (DeepSeek disk KV, Anthropic ephemeral,
-		// OpenAI prompt_cache_key, Gemini cache_control). The Prompt_Optimizer places it as
-		// the last message in the array so the cacheable prefix remains stable.
-		//
-		// When prompt caching is disabled (or the assistant hasn't enabled it), the legacy
-		// behaviour of appending to the system prompt is preserved.
 		if ( ! empty( $options['system_prompt'] ) ) {
-			// Use date-only granularity instead of seconds to maximise cache reuse.
-			// The time component changes too frequently for effective caching;
-			// models reliably infer approximate time from the date itself.
 			$current_date_context = sprintf(
-				"\n\n---\n\n**Current Context Information:**\n- Current Date: %s\n- Current Year: %s",
+				"\n\n---\n\n**Current Context Information:**\n- Current Date: %s\n- Current Year: %s\n- Current Time: %s UTC",
 				gmdate( 'l, F j, Y' ),  // e.g., "Monday, February 3, 2026".
-				gmdate( 'Y' )            // e.g., "2026".
+				gmdate( 'Y' ),           // e.g., "2026".
+				gmdate( 'H:i:s' )       // e.g., "14:30:45".
 			);
 
 			/**
@@ -700,10 +684,7 @@ class WP_MCP_AI_REST_Validator {
 
 			// Only inject if not empty after filtering.
 			if ( ! empty( $current_date_context ) ) {
-				// Defer the injection decision to after cache_system_prompt is resolved
-				// (which happens later in this method from assistant_config['prompt_caching']).
-				// We store the prepared context now and decide placement below.
-				$options['_prepared_date_context'] = $current_date_context;
+				$options['system_prompt'] .= $current_date_context;
 			}
 		}
 
@@ -803,36 +784,13 @@ class WP_MCP_AI_REST_Validator {
 			$options['cache_system_prompt'] = true;
 		}
 
-		// --- Deferred date context placement (cache-aware) ---
-		// The date context was prepared earlier and stored in _prepared_date_context.
-		// Now that cache_system_prompt is resolved, decide where to place it:
-		//
-		//   cache ON  → store in dynamic_date_context (placed last by Prompt_Optimizer)
-		//   cache OFF → append to system prompt (legacy behaviour, no cache to protect)
-		//
-		// This ensures the system prompt prefix stays byte-identical across requests
-		// when caching is enabled, while still providing temporal context to models.
-		if ( ! empty( $options['_prepared_date_context'] ) ) {
-			if ( ! empty( $options['cache_system_prompt'] ) ) {
-				// Cache-safe: store separately so the Prompt_Optimizer can place
-				// it as the last message, preserving the static prefix.
-				$options['dynamic_date_context'] = $options['_prepared_date_context'];
-			} else {
-				// Legacy: append directly to system prompt (no cache to protect).
-				$options['system_prompt'] .= $options['_prepared_date_context'];
-			}
-			unset( $options['_prepared_date_context'] );
-		}
-
 		// Generate a stable prompt_cache_key from assistant_id + system_prompt hash.
 		// This routes requests with the same prefix to the same server for higher
 		// cache hit rates on OpenAI, DeepSeek, and OpenRouter.
-		// IMPORTANT: The cache key is generated from the STATIC system prompt only
-		// (before any dynamic context is appended), ensuring it remains stable.
 		if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $options['system_prompt'] ) ) {
 			$assistant_id = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
-			// Use the first 256 chars of the static system prompt as the stable prefix identifier.
-			$prompt_prefix               = substr( $options['system_prompt'], 0, 256 );
+			// Use the first 256 chars of system prompt as the stable prefix identifier.
+			$prompt_prefix = substr( $options['system_prompt'], 0, 256 );
 			$options['prompt_cache_key'] = 'wp_mcp_ai_' . $assistant_id . '_' . md5( $prompt_prefix );
 		}
 
@@ -864,7 +822,7 @@ class WP_MCP_AI_REST_Validator {
 							'prompt_cache_split',
 							'System prompt split for cache optimization',
 							array(
-								'static_core_length'     => strlen( $split['static_core'] ),
+								'static_core_length'  => strlen( $split['static_core'] ),
 								'dynamic_context_length' => strlen( $split['dynamic_context'] ),
 							)
 						);
@@ -1243,63 +1201,5 @@ class WP_MCP_AI_REST_Validator {
 		);
 
 		return $content;
-	}
-
-	/**
-	 * Detect the first enabled AI provider from settings.
-	 *
-	 * When no explicit provider is configured (neither on the assistant
-	 * nor in the default_provider setting), this method scans the known
-	 * provider enable/API-key flags and returns the first one that is
-	 * both enabled and has its credentials configured.
-	 *
-	 * Falls back to 'openai' only as an absolute last resort when no
-	 * provider is enabled at all.
-	 *
-	 * @since 1.4.2
-	 *
-	 * @param array $settings Plugin settings array.
-	 * @return string Provider slug.
-	 */
-	public static function detect_first_enabled_provider( array $settings ) {
-		// Ordered list of provider → enable-flag + api-key pairs.
-		// Providers are checked in this order; the first enabled one wins.
-		$provider_checks = array(
-			'openai'       => array( 'enable_openai', 'openai_api_key' ),
-			'anthropic'    => array( 'enable_anthropic', 'anthropic_api_key' ),
-			'gemini'       => array( 'enable_gemini', 'gemini_api_key' ),
-			'deepseek'     => array( 'enable_deepseek', 'deepseek_api_key' ),
-			'openrouter'   => array( 'enable_openrouter', 'openrouter_api_key' ),
-			'kimi'         => array( 'enable_kimi', 'kimi_api_key' ),
-			'digitalocean' => array( 'enable_digitalocean', 'digitalocean_api_key' ),
-			'nvidia'       => array( 'enable_nvidia', 'nvidia_api_key' ),
-			'ollama'       => array( 'enable_ollama', null ), // Ollama checks endpoint, not API key.
-			'lm_studio'    => array( 'enable_lm_studio', null ),
-			'cloudflare'   => array( 'enable_cloudflare', 'cloudflare_api_token' ),
-			'huggingface'  => array( 'enable_huggingface', 'huggingface_api_key' ),
-			'baseten'      => array( 'enable_baseten', 'baseten_api_key' ),
-			'embedded'     => array( 'enable_embedded', null ),
-		);
-
-		foreach ( $provider_checks as $slug => $flags ) {
-			list( $enable_key, $api_key_key ) = $flags;
-
-			// Provider must be explicitly enabled.
-			if ( empty( $settings[ $enable_key ] ) ) {
-				continue;
-			}
-
-			// If this provider requires an API key, it must be configured.
-			if ( null !== $api_key_key && empty( $settings[ $api_key_key ] ) ) {
-				continue;
-			}
-
-			return $slug;
-		}
-
-		// Absolute last resort: return 'openai' so the router has a
-		// provider to dispatch to. The OpenAI client will return its own
-		// "no API key" error, which is more actionable than a silent failure.
-		return 'openai';
 	}
 }

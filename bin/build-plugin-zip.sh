@@ -188,9 +188,34 @@ composer install --no-dev --prefer-dist --classmap-authoritative --no-interactio
 echo "✅ Production dependencies installed (with optimized classmap autoloader)"
 echo ""
 
-# Clean build directory
-rm -rf build
+# Clean build staging directories only — preserve previously-built ZIP files
+# (ZIPs in build/ are tracked in git; rm -rf build would delete them from the repo)
+rm -rf build/mcp-ai-wpoos \
+       build/mcp-ai-wpoos-base \
+       build/mcp-ai-wpoos-pro \
+       build/mcp-ai-wpoos-core \
+       build/nvdigital-open-operator-system-oos \
+       build/nvdigital-open-operator-system-oos-pro \
+       build/nvdigital-open-operator-system-oos-complete \
+       build/nvdigital-open-operator-system-oos-core \
+       build/wp-mcp-ai \
+       build/wp-mcp-ai-base \
+       build/wp-mcp-ai-pro \
+       build/workflow-builder \
+       build/.tmp-addon-zips
 mkdir -p build
+
+# Remove any previously built main-plugin ZIPs that may carry a stale version stamp.
+# (build-addon-zips.sh handles addon ZIP cleanup separately.)
+rm -f build/mcp-ai-wpoos-*.zip
+rm -f build/mcp-ai-wpoos-base-*.zip
+rm -f build/mcp-ai-wpoos-pro-*.zip
+rm -f build/mcp-ai-wpoos-core-*.zip
+rm -f build/nvdigital-open-operator-system-oos-*.zip
+rm -f build/nvdigital-open-operator-system-oos-pro-*.zip
+rm -f build/nvdigital-open-operator-system-oos-complete-*.zip
+rm -f build/nvdigital-open-operator-system-oos-core-*.zip
+rm -f build/nvdigital-oos-pro-*.zip
 
 # ============================================================================
 # Build Base Version (Standalone, fully functional without Pro)

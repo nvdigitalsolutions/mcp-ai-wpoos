@@ -19,9 +19,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_filter_enables_features() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// Initially, Pro should be disabled.
 		$this->assertFalse( $dashboard->is_pro_active(), 'Pro should be disabled by default' );
@@ -53,9 +51,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Test that constant is checked by temporarily overriding defined().
 		// Since we can't actually define constants in tests, we verify the logic.
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// Initially disabled.
 		$this->assertFalse( $dashboard->is_pro_active(), 'Pro should be disabled without constant or filter' );
@@ -69,9 +65,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 		// Actual priority testing requires defining the constant which we can't do in tests.
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// With filter false, should be disabled.
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_false' );
@@ -87,9 +81,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_filter_with_priority() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// Add filter with priority 0 (simulating WPCode snippet with priority 0).
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true', 0 );
@@ -107,9 +99,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_filter_is_dynamic() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// Check multiple times with different filter states.
 		$this->assertFalse( $dashboard->is_pro_active(), 'Pro should be disabled initially' );
@@ -133,9 +123,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_pro_dashboard_custom_filter_callback() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// Add custom callback that checks a condition.
 		$callback = function () {
@@ -166,9 +154,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 	public function test_is_pro_active_method_is_public() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		$reflection = new ReflectionMethod( $dashboard, 'is_pro_active' );
 		$this->assertTrue( $reflection->isPublic(), 'is_pro_active method should be public' );
@@ -208,9 +194,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Capture output and ensure no PHP warnings are generated.
 		ob_start();
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 		$dashboard->render_overview();
 		$output = ob_get_clean();
 
@@ -239,9 +223,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 		$dashboard->render_overview();
 		$output = ob_get_clean();
 
@@ -273,9 +255,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 
 		// Capture output with Pro disabled.
 		ob_start();
-		// Use Reflection to bypass private constructor (PHPUnit 11 strict visibility).
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Dashboard' );
-		$dashboard  = $reflection->newInstanceWithoutConstructor();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 		$dashboard->render_overview();
 		$output = ob_get_clean();
 

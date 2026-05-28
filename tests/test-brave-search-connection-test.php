@@ -11,7 +11,7 @@
 /**
  * Test Brave Search Connection Test.
  */
-class Test_Brave_Search_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
+class Test_Brave_Search_Connection_Test extends WP_UnitTestCase {
 
 	/**
 	 * Set up the test.
@@ -19,13 +19,13 @@ class Test_Brave_Search_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Load required admin section classes.
-		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
-			require_once dirname( __DIR__ ) . '/includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
-		}
-
 		// Create an admin user.
-		$this->admin_user = $this->as_admin();
+		$this->admin_user = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
+			)
+		);
+		wp_set_current_user( $this->admin_user );
 
 		// Ensure admin classes are loaded.
 		if ( ! did_action( 'admin_init' ) ) {
@@ -148,27 +148,28 @@ class Test_Brave_Search_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 	 * Test AJAX handler with missing API key.
 	 */
 	public function test_brave_search_ajax_handler_requires_api_key() {
-		$this->as_admin();
+		// Set up valid nonce.
+		$_POST['nonce']   = wp_create_nonce( 'wp-mcp-ai-settings' );
+		$_POST['api_key'] = '';
 
-		$response = $this->dispatch(
-			'wp_mcp_ai_test_brave_search_connection',
-			array(
-				'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
-				'api_key' => '',
-			)
-		);
+		// Create instance and call handler.
+		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+
+		// Capture output.
+		ob_start();
+		$ajax_handlers->handle_test_brave_search_connection();
+		$response = ob_get_clean();
+
+		// Parse JSON response.
+		$data = json_decode( $response, true );
 
 		// Verify API key error.
-		$this->assertFalse( $response['success'], 'Response should indicate failure' );
-		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
-		// The response data may be a string (e.g. "-1" from nonce failure) or an
-		// array with a 'message' key. Handle both cases.
-		$error_message = is_array( $response['data'] )
-			? ( $response['data']['message'] ?? wp_json_encode( $response['data'] ) )
-			: (string) $response['data'];
+		$this->assertFalse( $data['success'], 'Response should indicate failure' );
+		$this->assertArrayHasKey( 'data', $data, 'Response should have data' );
+		$this->assertArrayHasKey( 'message', $data['data'], 'Response should have error message' );
 		$this->assertStringContainsString(
 			'API key',
-			$error_message,
+			$data['data']['message'],
 			'Error message should mention API key'
 		);
 	}
@@ -179,6 +180,9 @@ class Test_Brave_Search_Connection_Test extends WP_MCP_AI_Ajax_TestCase {
 	public function tearDown(): void {
 		// Clean up.
 		unset( $_GET['connection'] );
+		unset( $_POST['nonce'] );
+		unset( $_POST['api_key'] );
+
 		parent::tearDown();
 	}
 }

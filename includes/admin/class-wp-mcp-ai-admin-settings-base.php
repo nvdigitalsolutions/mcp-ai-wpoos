@@ -655,6 +655,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'high_tier_max_tokens'                  => 32000,
 				'prediction_confidence_threshold'       => 40,
 				'prediction_safety_buffer'              => 15,
+				'use_ts_build'                          => false,
+
+				// ── Voice & Realtime Settings ──────────────────────────────
+				'voice_mode'                            => 'chained',
+				'voice_realtime_provider'               => 'openai',
+				'voice_auto_play'                       => false,
+				'voice_interruptions'                   => true,
+				'enable_voice_activity_detection'       => true,
+				'vad_silence_threshold'                 => 700,
+				'vad_min_speech_duration'               => 300,
+				'vad_audio_threshold'                   => -50,
+				'vad_prefix_padding_ms'                 => 300,
+				'openai_realtime_model'                 => 'gpt-realtime',
+				'openai_realtime_voice'                 => 'marin',
+				'gemini_live_model'                     => 'gemini-2.5-flash-live',
+				'gemini_live_voice'                     => 'Puck',
+				'chat_enable_voice_chat_button'         => true,
 			);
 		}
 

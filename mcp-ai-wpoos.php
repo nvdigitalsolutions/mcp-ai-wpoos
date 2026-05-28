@@ -93,12 +93,10 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 // When real .mo files are loaded later on 'init' by WordPress's automatic
 // locale machinery, load_textdomain() merges them into the existing object.
 // ---------------------------------------------------------------------------
-// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Pre-populating l10n with NOOP_Translations prevents WP 6.7+ _load_textdomain_just_in_time warnings on English sites. When real .mo files are loaded later on 'init', load_textdomain() merges them into the existing object.
 global $l10n;
 if ( ! isset( $l10n['mcp-ai-wpoos'] ) && class_exists( 'NOOP_Translations' ) ) {
 	$l10n['mcp-ai-wpoos'] = new NOOP_Translations();
 }
-// phpcs:enable
 
 // Load bootstrap files in dependency order.
 require_once __DIR__ . '/includes/bootstrap/constants.php';

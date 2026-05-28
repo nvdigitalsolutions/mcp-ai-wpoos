@@ -97,7 +97,7 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 
 		// Set very short timeout to trigger fallback immediately.
 		$original_timeout = ini_get( 'max_execution_time' );
-		set_time_limit( 30 );
+		set_time_limit( 1 );
 
 		$operation = array(
 			'operation_name' => 'operations/test-timeout',
@@ -266,7 +266,7 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$original_timeout = ini_get( 'max_execution_time' );
-		set_time_limit( 30 );
+		set_time_limit( 1 );
 
 		$operation = array(
 			'operation_name' => 'operations/complete-flow-test',

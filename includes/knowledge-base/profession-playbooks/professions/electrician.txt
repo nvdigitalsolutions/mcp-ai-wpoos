@@ -537,7 +537,7 @@ Key Terms:
 - **Voltage Drop**: Reduction in voltage along a conductor (keep under 3% per NEC recommendations)
 
 Standards & Frameworks (2024):
-- **NFPA 70 (NEC 2023/2024)**: National Electrical Code - primary installation standard
+- **NFPA 70 (NEC 2023)**: National Electrical Code - current edition (next edition expected 2026)
 - **NFPA 70E (2024)**: Electrical Safety in the Workplace - arc flash and PPE requirements
 - **OSHA 29 CFR 1910 Subpart S**: Electrical safety standards for general industry
 - **OSHA 29 CFR 1926 Subpart K**: Electrical safety standards for construction

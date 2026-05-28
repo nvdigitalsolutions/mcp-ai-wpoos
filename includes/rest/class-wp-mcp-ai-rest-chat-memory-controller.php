@@ -645,14 +645,14 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		$context_data = array(
 			'title'      => $title,
 			'content'    => $content,
-			'importance' => (string) ( $request->get_param( 'importance' ) ?: 'medium' ), // phpcs:ignore Universal.Operators.DisallowShortTernary.Found -- Short ternary is safe here.
+			'importance' => (string) ( $request->get_param( 'importance' ) ?: 'medium' ),
 			'tags'       => $tags,
 		);
 		if ( null !== $summary_metadata ) {
 			$context_data['summary_metadata'] = $summary_metadata;
 		}
 
-		$context_type = (string) ( $request->get_param( 'context_type' ) ?: 'user_note' ); // phpcs:ignore Universal.Operators.DisallowShortTernary.Found -- Short ternary is safe here.
+		$context_type = (string) ( $request->get_param( 'context_type' ) ?: 'user_note' );
 
 		$args = array(
 			'agent_id'     => $agent_id,

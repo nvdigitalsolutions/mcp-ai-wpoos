@@ -522,8 +522,8 @@ Standards & Frameworks (2024-2025):
 - **CVAA**: 21st Century Communications and Video Accessibility Act (US legal requirements)
 - **MDA Framework**: Mechanics-Dynamics-Aesthetics model (Hunicke, LeBlanc, Zubek)
 - **Bartle's Player Types**: Achievers, Explorers, Socializers, Killers (player motivation taxonomy)
-- **Quantic Foundry's Player Motivations**: 12 motivations across 6 clusters (2024 research)
-- **Schell's Lenses**: 113 lenses for game design thinking (The Art of Game Design, 3rd Ed. 2019)
+- **Quantic Foundry's Player Motivations**: 12 motivations across 6 clusters (~2015, ongoing research)
+- **Schell's Lenses**: over 100 lenses for game design thinking (The Art of Game Design, 3rd Ed. 2019)
 - **Koster's Theory of Fun**: Learning-based engagement model
 - **ESRB Ratings**: Content rating system (E, E10+, T, M, AO)
 - **PEGI Ratings**: Pan-European Game Information age ratings
@@ -542,7 +542,7 @@ Common Tools & Platforms:
 - **Version Control**: Git, Perforce (for larger projects)
 
 Player Motivation Frameworks:
-- **Bartle's Taxonomy** (1996, updated 2024):
+- **Bartle's Taxonomy** (1996):
   - Achievers: Goal-driven, completion
   - Explorers: Discovery, experimentation
   - Socializers: Interaction, community

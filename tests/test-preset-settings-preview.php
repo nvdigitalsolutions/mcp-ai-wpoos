@@ -14,17 +14,6 @@
 class Test_Preset_Settings_Preview extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-renderer.php';
-		}
-	}
-
-	/**
 	 * Test that preset cards include settings preview section
 	 */
 	public function test_preset_cards_include_settings_preview() {

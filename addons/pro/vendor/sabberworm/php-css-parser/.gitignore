@@ -1,9 +1,0 @@
-/.phive/*
-/.php-cs-fixer.cache
-/.php_cs.cache
-/.phpunit.result.cache
-/composer.lock
-/coverage.xml
-/phpstan.neon
-/vendor/
-!/.phive/phars.xml

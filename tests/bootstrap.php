@@ -125,20 +125,6 @@ if ( ! is_dir( $tests_db_dir ) && ! mkdir( $tests_db_dir, 0775, true ) && ! is_d
 	exit( 1 );
 }
 
-// Clean up the test database from the previous run to avoid corruption.
-// SQLite databases can accumulate journal/WAL files that cause silent
-// crashes when PHPUnit aggregates results after large test batches.
-$db_file = $tests_db_dir . '/wptests.sqlite';
-if ( file_exists( $db_file ) ) {
-	unlink( $db_file );
-}
-// Also remove SQLite journal / WAL files.
-foreach ( array( "{$db_file}-wal", "{$db_file}-shm", "{$db_file}-journal" ) as $aux ) {
-	if ( file_exists( $aux ) ) {
-		unlink( $aux );
-	}
-}
-
 // Wire up SQLite Database Integration drop-in when using SQLite.
 // The fixture provides a db.php drop-in that the WP test bootstrap loads.
 $_sqlite_fixture = $plugin_root . '/tests/fixtures/sqlite-database-integration';
@@ -177,47 +163,12 @@ require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
+require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
 
 /**
  * Manually load the plugin being tested.
  */
 function wp_mcp_ai_manually_load_plugin() {
-	// ── Disable all AI providers by default in tests ────────────
-	// When the plugin bootstraps, it instantiates every provider client
-	// via the container (even if unused). Pre-populating the settings
-	// default means `get_available_providers()` returns nothing and
-	// the router won't attempt real API calls from unmocked tests.
-	// Individual tests re-enable the providers they need via
-	// `update_option( 'wp_mcp_ai_settings', $settings )`.
-	add_filter(
-		'default_option_wp_mcp_ai_settings',
-		static function ( $default ) {
-			$safe_default = is_array( $default ) ? $default : array();
-			return array_merge(
-				$safe_default,
-				array(
-					'enable_openai'       => false,
-					'enable_gemini'       => false,
-					'enable_anthropic'    => false,
-					'enable_ollama'       => false,
-					'enable_lm_studio'    => false,
-					'enable_cloudflare'   => false,
-					'enable_deepseek'     => false,
-					'enable_kimi'         => false,
-					'enable_baseten'      => false,
-					'enable_openrouter'   => false,
-					'enable_digitalocean' => false,
-					'enable_huggingface'  => false,
-					'enable_nvidia'       => false,
-					// enable_embedded intentionally omitted — it is a local/
-					// in-browser provider with no API key, always available.
-				)
-			);
-		},
-		10,
-		1
-	);
-
 	require dirname( __DIR__ ) . '/mcp-ai-wpoos.php';
 
 	// Load the SaaS Controller addon if present so its tests can exercise
@@ -229,85 +180,59 @@ function wp_mcp_ai_manually_load_plugin() {
 	if ( file_exists( $saas_controller ) ) {
 		require $saas_controller;
 	}
-
-	// Load the Docs Hub addon if present so its tests can exercise its classes.
-	$docs_hub = dirname( __DIR__ ) . '/addons/docs-hub/nvoos-docs-hub.php';
-	if ( file_exists( $docs_hub ) ) {
-		require_once $docs_hub;
-	}
-
-	// Load the Graphify addon if present so its tests can exercise its classes.
-	$graphify = dirname( __DIR__ ) . '/addons/graphify/nvoos-graphify.php';
-	if ( file_exists( $graphify ) ) {
-		require_once $graphify;
-	}
-
-	// Load the Pro addon if present so its tests (e.g. messaging-channels-ajax,
-	// CPT AI integration, quiz tools) can exercise their classes.
-	// Guard against double-loading: CI environments may have Pro activated as
-	// a regular plugin (loaded by WordPress before this mu-plugin callback).
-	$pro_addon = dirname( __DIR__ ) . '/addons/pro/mcp-ai-wpoos-pro.php';
-	if ( file_exists( $pro_addon ) && ! function_exists( 'wp_mcp_ai_pro_activate' ) ) {
-		require_once $pro_addon;
-	}
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
 
 /**
- * Detect optional test plugins and set flags for integration tests.
- *
- * Do NOT manually `require_once` plugin files here — WordPress loads
- * them during normal activation (plugins_loaded), and double-loading
- * causes "Cannot declare class" fatal errors when running against a
- * live WordPress site where plugins are already activated.
+ * Load optional test plugins if available.
+ * This allows integration tests to run when plugins are installed.
  */
 function wp_mcp_ai_load_optional_test_plugins() {
 	$wp_core_dir    = getenv( 'WP_CORE_DIR' );
 	$wordpress_path = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
 	$plugins_dir    = $wordpress_path . '/wp-content/plugins';
 
-	// Track which plugins are detected for diagnostic output.
+	// Track which plugins are loaded for test skipping.
 	$loaded_plugins = array();
 
-	// Detect WooCommerce.
+	// Load WooCommerce if available.
 	if ( file_exists( $plugins_dir . '/woocommerce/woocommerce.php' ) ) {
+		require_once $plugins_dir . '/woocommerce/woocommerce.php';
 		$loaded_plugins[] = 'woocommerce';
 		define( 'WP_MCP_AI_TEST_WOOCOMMERCE_ACTIVE', true );
 	}
 
-	// Detect Elementor.
+	// Load Elementor if available.
 	if ( file_exists( $plugins_dir . '/elementor/elementor.php' ) ) {
+		require_once $plugins_dir . '/elementor/elementor.php';
 		$loaded_plugins[] = 'elementor';
 		define( 'WP_MCP_AI_TEST_ELEMENTOR_ACTIVE', true );
 	}
 
-	// Detect Rank Math.
+	// Load Rank Math if available.
 	if ( file_exists( $plugins_dir . '/seo-by-rank-math/rank-math.php' ) ) {
+		require_once $plugins_dir . '/seo-by-rank-math/rank-math.php';
 		$loaded_plugins[] = 'rank-math';
 		define( 'WP_MCP_AI_TEST_RANKMATH_ACTIVE', true );
 	}
 
-	// Detect WPCode (main plugin file is ihaf.php, not insert-headers-and-footers.php).
-	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/ihaf.php' ) ) {
+	// Load WPCode if available.
+	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php' ) ) {
+		require_once $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php';
 		$loaded_plugins[] = 'wpcode';
 		define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
 	}
 
-	// Detect Simple JWT Login.
+	// Load Simple JWT Login if available.
 	if ( file_exists( $plugins_dir . '/simple-jwt-login/simple-jwt-login.php' ) ) {
+		require_once $plugins_dir . '/simple-jwt-login/simple-jwt-login.php';
 		$loaded_plugins[] = 'simple-jwt-login';
 		define( 'WP_MCP_AI_TEST_SIMPLE_JWT_LOGIN_ACTIVE', true );
 	}
 
-	// Detect JetEngine (premium — must be installed manually).
-	if ( file_exists( $plugins_dir . '/jet-engine/jet-engine.php' ) ) {
-		$loaded_plugins[] = 'jet-engine';
-		define( 'WP_MCP_AI_TEST_JETENGINE_ACTIVE', true );
-	}
-
 	if ( ! empty( $loaded_plugins ) ) {
-		fwrite( STDOUT, "\nDetected optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
+		fwrite( STDOUT, "\nLoaded optional test plugins: " . implode( ', ', $loaded_plugins ) . "\n\n" );
 	}
 }
 
@@ -356,56 +281,11 @@ function wp_mcp_ai_init_test_database_tables() {
 	if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 	}
-
-	// Ensure slash command audit table exists for tests.
-	// Created during plugin activation but tests skip activation.
-	if ( class_exists( 'WP_MCP_AI_Slash_Command_Audit' ) ) {
-		$audit = new WP_MCP_AI_Slash_Command_Audit();
-		$audit->create_table();
-	}
-
-	// Ensure metric event store table exists for tests.
-	if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
-		WP_MCP_AI_Metric_Event_Store::get_instance()->install();
-	}
 }
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
 
 require $_tests_dir . '/includes/bootstrap.php';
-
-// ---------------------------------------------------------------------------
-// Global wp_die exception handler.
-//
-// Without this, wp_die("Security check failed.") in AJAX handlers calls PHP's
-// die(), killing the entire PHPUnit process. The wp_die_ajax_handler filter
-// is critical — WordPress uses _ajax_wp_die_handler() (which calls die()
-// directly) when DOING_AJAX is defined, bypassing the standard wp_die_handler
-// filter.
-// ---------------------------------------------------------------------------
-$throw_die_handler = function () {
-	return function ( $message, $title = '', $args = array() ) {
-		// WPDieException extends Exception — only $message is accepted.
-		// Passing $args (array) as $previous (expects Throwable) causes
-		// a TypeError in PHP 8.1+ that silently kills PHPUnit with "-1".
-		throw new WPDieException( $message );
-	};
-};
-$throw_die_handler = function () {
-	return function ( $message, $title = '', $args = array() ) {
-		// WPDieException extends Exception — only $message is accepted.
-		// Passing $args (array) as $previous (expects Throwable) causes
-		// a TypeError in PHP 8.1+ that silently kills PHPUnit with "-1".
-		throw new WPDieException( $message );
-	};
-};
-// Priority 0 = runs BEFORE the test framework's per-test handler (priority 10).
-// The test framework's handler wins when expectException() is active, our
-// handler acts as a global safety net for code paths without a test handler.
-add_filter( 'wp_die_handler', $throw_die_handler, 0 );
-// PHP_INT_MAX for AJAX — WordPress's _ajax_wp_die_handler_filter also runs at
-// priority 10, so we must run AFTER it to override the default '-1' output.
-add_filter( 'wp_die_ajax_handler', $throw_die_handler, PHP_INT_MAX );
 
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.
 // `WP_Ajax_UnitTestCase`) must be loaded after it.

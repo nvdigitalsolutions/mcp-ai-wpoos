@@ -37,13 +37,6 @@ class WP_MCP_AI_Tool_Check_Exit_Conditions {
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Check Exit Conditions', 'mcp-ai-wpoos' );
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @return array

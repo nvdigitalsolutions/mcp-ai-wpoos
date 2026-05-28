@@ -72,12 +72,7 @@ class WP_MCP_AI_Security_Posture {
 		$grade   = $this->score_to_grade( $score );
 
 		// Up to 3 quick wins: unmet signals with highest weight.
-		$unmet = array_filter(
-			$signals,
-			function ( $s ) {
-				return ! $s['passed'];
-			}
-		);
+		$unmet      = array_filter( $signals, function ( $s ) { return ! $s['passed']; } );
 		usort(
 			$unmet,
 			function ( $a, $b ) {
@@ -104,11 +99,10 @@ class WP_MCP_AI_Security_Posture {
 	 */
 	public function invalidate_cache() {
 		delete_transient( self::CACHE_KEY );
-		$this->settings = null;
 	}
 
 	// ------------------------------------------------------------------ //
-	// Private helpers                                                      //
+	//  Private helpers                                                      //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -386,12 +380,12 @@ class WP_MCP_AI_Security_Posture {
 	 * @return int 0-100.
 	 */
 	private function compute_score( $signals ) {
-		$total_weight    = 0;
+		$total_weight   = 0;
 		$achieved_weight = 0;
 
 		foreach ( $signals as $signal ) {
-			$w             = (int) ( $signal['weight'] ?? 0 );
-			$total_weight += $w;
+			$w               = (int) ( $signal['weight'] ?? 0 );
+			$total_weight   += $w;
 			if ( ! empty( $signal['passed'] ) ) {
 				$achieved_weight += $w;
 			}

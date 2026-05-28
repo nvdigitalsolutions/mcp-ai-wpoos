@@ -14,17 +14,6 @@
 class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 
 	/**
-	 * Set up test fixtures.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php';
-		}
-	}
-
-	/**
 	 * Test that orchestration modes metric card shows correct format (X/4).
 	 */
 	public function test_orchestration_modes_shows_correct_format() {

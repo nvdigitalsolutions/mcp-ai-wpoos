@@ -412,6 +412,13 @@ class WP_MCP_AI_Skill_Registry {
 			if ( ! $skill || empty( $skill['name'] ) ) {
 				continue;
 			}
+
+			// When disable-model-invocation is set, the skill is slash-command
+			// only and should not appear in the autonomous catalog.
+			if ( ! empty( $skill['disable_model_invocation'] ) ) {
+				continue;
+			}
+
 			$desc = isset( $skill['description'] ) ? trim( (string) $skill['description'] ) : '';
 			if ( '' === $desc ) {
 				$desc = __( '(no description)', 'mcp-ai-wpoos' );
@@ -657,7 +664,7 @@ class WP_MCP_AI_Skill_Registry {
 			return $files;
 		}
 
-		$dir      = rtrim( $dir, '/\\' );
+		$dir = rtrim( $dir, "/\\" );
 		$base_len = strlen( $dir ) + 1;
 
 		try {
@@ -710,9 +717,9 @@ class WP_MCP_AI_Skill_Registry {
 	 * install only their members without copying every bundled skill.
 	 *
 	 * @since 1.11.0
-	 * @param string     $skill_name  Skill folder name (e.g. `wp-rest-api`).
-	 * @param array|null $source_dirs Optional list of bundled-skill root directories to search.
-	 *                                When null/empty the registry's own roots (base + Pro when defined) are used.
+	 * @param string        $skill_name  Skill folder name (e.g. `wp-rest-api`).
+	 * @param array|null    $source_dirs Optional list of bundled-skill root directories to search.
+	 *                                   When null/empty the registry's own roots (base + Pro when defined) are used.
 	 * @return true|WP_Error True on success, WP_Error on failure (including not found).
 	 */
 	public function install_bundled_skill_by_name( $skill_name, $source_dirs = null ) {

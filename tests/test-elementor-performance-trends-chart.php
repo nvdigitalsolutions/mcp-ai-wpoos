@@ -221,7 +221,6 @@ class WP_MCP_AI_Elementor_Performance_Trends_Chart_Test extends WP_UnitTestCase 
 	 */
 	private function get_mock_widget( $widget_id ) {
 		// Create a mock widget that extends the actual widget class.
-		// get_id() now exists on the stub; use onlyMethods().
 		$widget = $this->getMockBuilder( WP_MCP_AI_Elementor_Performance_Trends_Widget::class )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'get_id', 'get_settings_for_display' ) )

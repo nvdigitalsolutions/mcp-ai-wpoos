@@ -1,6 +1,6 @@
 Profession Playbook — Taxi Driver
 Slug: taxi_driver
-Category: transportation
+Category: other
 Includes: global.txt + categories/other.txt + this file
 
 

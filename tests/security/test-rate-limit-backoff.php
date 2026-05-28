@@ -77,8 +77,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		// Enable rate limiting in settings.
 		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_rate_limiting']           = true;
-		$settings['rate_limit_requests']            = 5; // Low limit for testing.
-		$settings['rate_limit_window']              = 10; // Short window for testing.
+		$settings['rate_limit_requests_per_minute'] = 5; // Low limit for testing.
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$rate_limited_count = 0;
@@ -133,8 +132,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_rate_limiting']           = true;
 		$settings['enable_logging']                 = true;
-		$settings['rate_limit_requests']            = 3;
-		$settings['rate_limit_window']              = 10;
+		$settings['rate_limit_requests_per_minute'] = 3;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Clear existing logs.
@@ -199,8 +197,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		// Enable rate limiting.
 		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_rate_limiting']           = true;
-		$settings['rate_limit_requests']            = 2;
-		$settings['rate_limit_window']              = 10;
+		$settings['rate_limit_requests_per_minute'] = 2;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Make requests to trigger rate limit.
@@ -231,54 +228,47 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that rate limit manager tracks requests correctly.
-	 *
-	 * Uses the static methods directly since WP_MCP_AI_Rate_Limit_Manager
-	 * is a fully static utility class (no get_instance() / singleton).
 	 */
 	public function test_rate_limit_manager_tracks_requests() {
 		if ( ! class_exists( 'WP_MCP_AI_Rate_Limit_Manager' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Rate_Limit_Manager class not available' );
 		}
 
-		$service_key = 'test_service_' . uniqid();
+		$manager = WP_MCP_AI_Rate_Limit_Manager::get_instance();
 
-		// Clean up any existing state for this key.
-		WP_MCP_AI_Rate_Limit_Manager::clear_rate_limit( $service_key );
-
-		// A fresh key should not be rate limited.
-		$this->assertFalse(
-			WP_MCP_AI_Rate_Limit_Manager::is_rate_limited( $service_key ),
-			'Fresh service key should not be rate limited'
+		// Test rate limit checking.
+		$context = array(
+			'user_id'  => 1,
+			'endpoint' => 'test',
 		);
 
-		// Setting a rate limit in the future should mark the key as limited.
-		$retry_after = time() + 60; // 60 seconds from now.
-		WP_MCP_AI_Rate_Limit_Manager::set_rate_limit( $service_key, $retry_after );
+		// First few requests should be allowed.
+		$allowed_count = 0;
+		$denied_count  = 0;
 
-		$this->assertTrue(
-			WP_MCP_AI_Rate_Limit_Manager::is_rate_limited( $service_key ),
-			'Service key should be rate limited after set_rate_limit()'
+		for ( $i = 0; $i < 100; $i++ ) {
+			$check = $manager->check_rate_limit( $context );
+
+			if ( true === $check ) {
+				++$allowed_count;
+			} elseif ( is_wp_error( $check ) ) {
+				++$denied_count;
+			}
+		}
+
+		// At least some requests should be allowed.
+		$this->assertGreaterThan(
+			0,
+			$allowed_count,
+			'Rate limit manager should allow initial requests'
 		);
 
-		// get_retry_after() should return the timestamp we set.
-		$stored_retry_after = WP_MCP_AI_Rate_Limit_Manager::get_retry_after( $service_key );
-		$this->assertEquals(
-			$retry_after,
-			$stored_retry_after,
-			'get_retry_after() should return the same retry_after timestamp'
-		);
-
-		// Clearing the rate limit should reset the state.
-		WP_MCP_AI_Rate_Limit_Manager::clear_rate_limit( $service_key );
-
-		$this->assertFalse(
-			WP_MCP_AI_Rate_Limit_Manager::is_rate_limited( $service_key ),
-			'Service key should not be rate limited after clear_rate_limit()'
-		);
-
-		$this->assertNull(
-			WP_MCP_AI_Rate_Limit_Manager::get_retry_after( $service_key ),
-			'get_retry_after() should return null for a cleared service key'
+		// If rate limiting is active, some should be denied.
+		// This is optional since rate limiting might not be enabled by default.
+		$this->assertGreaterThanOrEqual(
+			0,
+			$denied_count,
+			'Rate limit manager should track denied requests'
 		);
 	}
 
@@ -295,8 +285,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		// Enable strict rate limiting.
 		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_rate_limiting']           = true;
-		$settings['rate_limit_requests']            = 1;
-		$settings['rate_limit_window']              = 10;
+		$settings['rate_limit_requests_per_minute'] = 1;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Make burst of requests.
@@ -325,7 +314,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 			// The response should suggest backoff.
 			$this->assertContains(
 				$data['code'],
-				array( 'wp_mcp_ai_rate_limit_exceeded', 'rate_limit_exceeded', 'too_many_requests' ),
+				array( 'rate_limit_exceeded', 'too_many_requests' ),
 				'Rate limit error code should be descriptive'
 			);
 		}

@@ -42,13 +42,6 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Calculate Orchestration Capacity', 'mcp-ai-wpoos' );
-	}
-
-	/**
 	 * Get tool definition
 	 *
 	 * @return array

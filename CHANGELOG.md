@@ -1,6 +1,6 @@
 # oOS – Changelog
 
-## [1.1.23] - 2026-05-25
+## [1.1.23] - 2026-05-26
 
 ### Added — Zed-Inspired SPA Architecture (Pro)
 
@@ -42,6 +42,43 @@ PHP infrastructure shared by both the existing jQuery chat UI and the new Pro Re
 - React SPA built with `@wordpress/scripts`, Zustand state management, hash-based routing.
 - All existing functionality preserved — new admin page at `wp-mcp-ai-spa` coexists with original `wp-mcp-ai` page.
 - PHPCS: 0 errors, 0 warnings across all 18 new PHP files.
+
+### Changed — Antigravity Managed Agents API Rewrite
+
+Rewrote the Gemini Managed Agent integration to use the actual Antigravity Interactions API (`POST /v1beta/interactions`) instead of the speculative pre-release agents API assumed at Google I/O 2026.
+
+- **`WP_MCP_AI_Gemini_Managed_Agent_Service` (rewrite)** — Replaced speculative `/v1beta/agents` endpoints with the real Interactions API. New `send_interaction()` replaces the two-step create/run pattern. Added `continue_interaction()`, `download_environment_files()`, `list_environments()` / `forget_environment()`, and `create_managed_agent()` / `build_agent_environment()` with inline, GitHub, and GCS source support. Added `Api-Revision: 2026-05-20` header. Added SSE streaming via cURL-based SSE parser with callback support. Removed deprecated `resolve_tool_definitions()` — Antigravity uses its own built-in tools (`code_execution`, `google_search`, `url_context`).
+- **`WP_MCP_AI_Gemini_Client`** — New endpoint constants: `API_INTERACTIONS_ENDPOINT`, `API_MANAGED_AGENTS_ENDPOINT`, `API_ENV_DOWNLOAD_ENDPOINT`.
+- **`WP_MCP_AI_Tool_Run_Gemini_Managed_Agent` (rewrite)** — Operations changed to send/continue/stream/download/envs. Parameters: `input`, `interaction_id`, `environment_id`, `system_instruction`, `agent_tools`, `agent_id`, `save_path`. Token multiplier increased to 15x.
+- **Admin UI** — `enable_managed_agents` toggle added to Settings → Providers → Gemini and Settings → Orchestration.
+- **Documentation** — Updated `GEMINI_CAPABILITIES_MATRIX.md`: Managed Agents, Code Execution, and Grounding marked as ✅ Implemented via Antigravity.
+
+### Added — TypeScript Upgrade & Orchestration Toggles
+
+- **TypeScript Upgrade** — Shared types, services, admin screens, chat drawer, and React SPA builds compiled via TypeScript. Pre-built TS outputs under `assets/js/dist/`.
+- **Orchestration Toggle** — "Use TypeScript-Compiled Assets" checkbox in Settings → Orchestration. Reads from `WP_MCP_AI_Settings_Registry` with `WP_MCP_AI_USE_TS_BUILD` constant fallback.
+- **Antigravity Orchestration Toggle** — `enable_managed_agents` now accessible from both Settings → Providers → Gemini and Settings → Orchestration → Settings.
+
+### Added — New Addons
+
+- **Comic Reader (`addons/comic-reader/`)** — React-based comic book reader. Supports CBR, CBZ, CB7, CBT formats with dual reading modes, zoom controls, keyboard navigation, touch support, fullscreen, progress persistence, and drag-and-drop upload. Shortcode `[nvoos_comic_reader]` + Gutenberg block.
+- **Media Studio v0.3.0 (`addons/media-studio/`)** — Zoom/pan controls, drawing tools (Konva canvas with brush, eraser, shapes, text, undo/redo), and save-to-WP-Media-Library integration. Image editor mode now feature-complete.
+
+### Fixed — Reliability & Compliance
+
+- **Cron Status Diagnostics** — REST fetch errors now include HTTP status code and up to 500 chars of response body (e.g. `HTTP 403: rest_cookie_invalid_nonce`).
+- **PHP 8.2+ Compatibility** — Declared `$namespace` and `$rest_base` properties in `WP_MCP_AI_REST_Controller_Base` to prevent dynamic property deprecation warnings.
+- **PHP Comments Leaking** — Moved `phpcs:ignore` and `translators` comments inside `<?php` tags to prevent leaking into HTML output.
+- **WordPress.org Re-submission Compliance** — All May 26 re-audit findings resolved (section 14 added to compliance doc).
+- **May 2026 Audit Findings** — Resolved F-AUTHZ-05, F-AUTHZ-06, F-AGENT-01.
+- **PHPCS** — 353 errors resolved to 0 across 18 files.
+- **PHPUnit 11 Compatibility** — 6 comprehensive fix batches across base, pro, and addon test suites. Resolved class-not-found errors, dynamic property warnings, and WPDieException constructor errors.
+- **Docs Hub** — Fixed browse-repo critical error, added hierarchical folder tree picker, hardened DNS resolution, added `autocomplete="off"` to settings inputs.
+- **Net Worth Calculator** — Removed stray `*/` causing parse errors in financial & CRM tools.
+- **qs DoS Vulnerability** — Resolved CVE-2026-8723 by forcing `qs >=6.15.2` via npm overrides.
+- **DeepSeek Provider Fallback** — Detects first enabled provider instead of hardcoding 'openai'.
+- **Test Suite Stability** — wp_die handler at `PHP_INT_MAX`, `DOING_AJAX` defined in 9 test files, SQLite DB cleanup, trait/class collision resolution.
+- **Dev Dependencies** — `wp-phpunit/wp-phpunit` 6.9.4→7.0.0, `php-stubs/wordpress-stubs` 6.9.1→7.0.0.
 
 ## [1.1.22] - 2026-05-23
 

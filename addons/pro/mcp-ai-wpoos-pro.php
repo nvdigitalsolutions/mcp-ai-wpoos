@@ -434,49 +434,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
-		// Load Pro SPA (v1.7.0) — React Single Page Application admin interface.
-		// Registers admin page, enqueues assets, and exposes bootstrap REST endpoint.
-		if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
-			$spa_loader    = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
-			$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
-
-			if ( file_exists( $spa_loader ) ) {
-				require_once $spa_loader;
-				$loader = new WP_MCP_AI_Pro_SPA_Loader();
-				$loader->register();
-			}
-
-			if ( file_exists( $spa_bootstrap ) ) {
-				require_once $spa_bootstrap;
-				add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
-			}
-		}
-
-		// Load Pro Inline Assistant (v1.7.0) — Gutenberg sidebar for AI text transformation.
-		$inline_assistant = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-inline-assistant.php';
-		if ( file_exists( $inline_assistant ) ) {
-			require_once $inline_assistant;
-			WP_MCP_AI_Pro_Inline_Assistant::init();
-		}
-
-		// Load Pro Parallel Model Dispatcher (v1.7.0) — multi-model comparison.
-		$parallel_dispatcher   = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
-		$comparison_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-model-comparison-controller.php';
-		if ( file_exists( $parallel_dispatcher ) ) {
-			require_once $parallel_dispatcher;
-		}
-		if ( file_exists( $comparison_controller ) ) {
-			require_once $comparison_controller;
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_Model_Comparison_Controller', 'register_routes' ) );
-		}
-
-		// Load Pro Collaborative Presence (v1.7.0) — real-time user presence for collaborative editing.
-		$collaborative_presence = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-collaborative-presence.php';
-		if ( file_exists( $collaborative_presence ) ) {
-			require_once $collaborative_presence;
-			WP_MCP_AI_Pro_Collaborative_Presence::init();
-		}
-
 		// WebChat integration has been moved to the NV oOS Embedded addon.
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
@@ -582,6 +539,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
 		}
 
+		// Load Comic Creation Toolkit if enabled (Pro feature - Phase 2.11).
+		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/comic-creation-toolkit-init.php';
+		}
+
 		// Load AI Tool Builder Toolkit if enabled (Pro feature - Phase 2.9).
 		if ( ! empty( $settings['enable_ai_tool_builder_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
@@ -624,6 +586,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
 		// Pro-only: paid third-party billing (Stripe merchant of record).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
+
+		// Load Pro Paper Store (Phase 3) — Markdown+YAML driver, Git sync, admin UI, import/export.
+		// Always enabled when Pro is active and base Paper Store is loaded.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/paper-store/paper-store-pro-init.php';
 
 		// Load Pro Workflow Builder ↔ Base Orchestration bridge (always enabled when Pro is active).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-workflow-bridge.php';
@@ -1728,7 +1694,27 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-client-satisfaction-analyzer.php',
 				'WP_MCP_AI_Tool_LF_Competitive_Benchmarker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-competitive-benchmarker.php',
 			);
-			$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
+		$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
+		}
+
+		// Comic Creation Toolkit (12 tools).
+		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
+			$comic_tools_base = WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/';
+			$comic_tools = array(
+				'WP_MCP_AI_Tool_Generate_Comic_Script'    => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-comic-script.php',
+				'WP_MCP_AI_Tool_Breakdown_Comic_Panels'   => $comic_tools_base . 'class-wp-mcp-ai-tool-breakdown-comic-panels.php',
+				'WP_MCP_AI_Tool_Generate_Character_Sheet' => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-character-sheet.php',
+				'WP_MCP_AI_Tool_Generate_Comic_Panel'     => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-comic-panel.php',
+				'WP_MCP_AI_Tool_Create_Comic_Layout'      => $comic_tools_base . 'class-wp-mcp-ai-tool-create-comic-layout.php',
+				'WP_MCP_AI_Tool_Add_Speech_Bubbles'       => $comic_tools_base . 'class-wp-mcp-ai-tool-add-speech-bubbles.php',
+				'WP_MCP_AI_Tool_Export_Comic_Cbz'         => $comic_tools_base . 'class-wp-mcp-ai-tool-export-comic-cbz.php',
+				'WP_MCP_AI_Tool_Colorize_Comic_Panel'     => $comic_tools_base . 'class-wp-mcp-ai-tool-colorize-comic-panel.php',
+				'WP_MCP_AI_Tool_Ink_Comic_Panel'          => $comic_tools_base . 'class-wp-mcp-ai-tool-ink-comic-panel.php',
+				'WP_MCP_AI_Tool_Letter_Comic_Panel'       => $comic_tools_base . 'class-wp-mcp-ai-tool-letter-comic-panel.php',
+				'WP_MCP_AI_Tool_Upscale_Comic_Page'       => $comic_tools_base . 'class-wp-mcp-ai-tool-upscale-comic-page.php',
+				'WP_MCP_AI_Tool_Apply_Comic_Style'        => $comic_tools_base . 'class-wp-mcp-ai-tool-apply-comic-style.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $comic_tools );
 		}
 
 		// Extended Cognition Toolkit.

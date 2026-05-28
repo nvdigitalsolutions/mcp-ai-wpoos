@@ -343,33 +343,20 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Calculate cost for a specific usage record.
 	 *
-	 * Accounts for prompt caching discounts when cached_input pricing
-	 * is available for the provider/model and cached_tokens are provided.
-	 *
 	 * @param string $provider      Provider name (e.g., 'openai', 'gemini').
 	 * @param string $model         Model name (e.g., 'gpt-4o', 'gemini-1.5-pro').
-	 * @param int    $input_tokens  Input token count (including cached).
+	 * @param int    $input_tokens  Input token count.
 	 * @param int    $output_tokens Output token count.
-	 * @param int    $cached_tokens Cached/read-from-cache input tokens (0 = none).
 	 * @return float Cost in USD.
 	 */
-	public static function calculate_cost( $provider, $model, $input_tokens, $output_tokens, $cached_tokens = 0 ) {
+	public static function calculate_cost( $provider, $model, $input_tokens, $output_tokens ) {
 		$pricing = self::get_model_pricing( $provider, $model );
 
 		if ( ! $pricing ) {
 			return 0.0;
 		}
 
-		// Use cached_input pricing when available and tokens were served from cache.
-		if ( $cached_tokens > 0 && isset( $pricing['cached_input'] ) ) {
-			$fresh_tokens  = max( 0, $input_tokens - $cached_tokens );
-			$cached_tokens_cost = ( $cached_tokens / 1000000 ) * $pricing['cached_input'];
-			$fresh_cost    = ( $fresh_tokens / 1000000 ) * $pricing['input'];
-			$input_cost    = $cached_tokens_cost + $fresh_cost;
-		} else {
-			$input_cost = ( $input_tokens / 1000000 ) * $pricing['input'];
-		}
-
+		$input_cost  = ( $input_tokens / 1000000 ) * $pricing['input'];
 		$output_cost = ( $output_tokens / 1000000 ) * $pricing['output'];
 
 		return $input_cost + $output_cost;

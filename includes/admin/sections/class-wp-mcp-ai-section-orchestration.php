@@ -268,6 +268,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					),
 					'default'     => '24',
 				),
+				'use_ts_build'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Use TypeScript-Compiled Assets', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Load TypeScript-compiled JavaScript bundles instead of legacy JS', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the chat interface loads TypeScript-compiled assets from assets/js/dist/ instead of legacy assets/js/*.min.js files. This provides type-safe, modern ESM-based JavaScript. Requires running <code>npm run build:js:ts</code> first to produce the dist/ files. Disable if you encounter issues with the TypeScript build.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				'slider_section_health'           => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'mcp-ai-wpoos' ) . '</h3>',
@@ -442,14 +449,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Reduce token usage by stripping unnecessary grammar and filler words from prompts while preserving all facts, numbers, and technical terms.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_semantic_compression'     => array(
+				'enable_semantic_compression'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'semantic_compression_level'      => array(
+				'semantic_compression_level'       => array(
 					'type'        => 'select',
 					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
 					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
@@ -1689,6 +1696,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_auto_async_execution',
 				'async_tool_timeout',
 				'cron_job_retention_period',
+				'use_ts_build',
 				'section_multi_agent', // Section header.
 				'enable_agent_roles',
 				'enable_professions',
@@ -1899,6 +1907,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'enable_auto_async_execution',
 						'async_tool_timeout',
 						'cron_job_retention_period',
+						'use_ts_build',
 						// Multi-agent orchestration toggles.
 						'enable_agent_roles',
 						'enable_professions',
@@ -2183,7 +2192,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									printf(
 										/* translators: %s: link to the OpenTelemetry connection settings page */
 										wp_kses(
-										/* translators: placeholder */
 											__( 'Configure your OTLP/HTTP endpoint on the %s page.', 'mcp-ai-wpoos' ),
 											array( 'a' => array( 'href' => array() ) )
 										),

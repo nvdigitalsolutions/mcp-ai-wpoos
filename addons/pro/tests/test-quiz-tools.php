@@ -9,38 +9,6 @@
  * Test quiz tool functionality.
  */
 class Test_Quiz_Tools extends WP_UnitTestCase {
-
-	/**
-	 * Bootstrap required quiz tool classes.
-	 */
-	public function setUp(): void {
-		parent::setUp();
-
-		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			define( 'WP_MCP_AI_PRO_PATH', dirname( __DIR__ ) . '/' );
-		}
-
-		$tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/';
-		$quiz_files = array(
-			'class-wp-mcp-ai-tool-create-quiz.php',
-			'class-wp-mcp-ai-tool-get-quiz.php',
-			'class-wp-mcp-ai-tool-list-quizzes.php',
-			'class-wp-mcp-ai-tool-submit-quiz-answer.php',
-			'class-wp-mcp-ai-tool-grade-quiz.php',
-			'class-wp-mcp-ai-tool-get-quiz-submissions.php',
-			'class-wp-mcp-ai-tool-get-quiz-results.php',
-			'class-wp-mcp-ai-tool-update-quiz.php',
-			'class-wp-mcp-ai-tool-delete-quiz.php',
-			'class-wp-mcp-ai-tool-get-quiz-analytics.php',
-			'class-wp-mcp-ai-tool-research-quiz-topic.php',
-		);
-		foreach ( $quiz_files as $file ) {
-			if ( file_exists( $tools_dir . $file ) ) {
-				require_once $tools_dir . $file;
-			}
-		}
-	}
-
 	/**
 	 * Test create_quiz tool.
 	 */

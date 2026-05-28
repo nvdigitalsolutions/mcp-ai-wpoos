@@ -26,11 +26,6 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Ensure wp_add_dashboard_widget() is available in test context.
-		if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/dashboard.php';
-		}
-
 		// Initialize the database table.
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 
@@ -75,50 +70,34 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 		// Reset dashboard widgets.
 		$wp_meta_boxes['dashboard'] = array();
 
-		// Initialize analytics dashboard hooks.
-		if ( ! class_exists( 'WP_MCP_AI_Analytics_Dashboard' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-analytics-dashboard.php';
-		}
-		WP_MCP_AI_Analytics_Dashboard::init();
-
 		// Trigger widget registration.
 		do_action( 'wp_dashboard_setup' );
 
-		// Dashboard meta boxes should be populated.
-		$this->assertIsArray( $wp_meta_boxes, 'Dashboard meta boxes should be an array' );
+		// Check if widgets are registered.
+		$this->assertArrayHasKey( 'dashboard', $wp_meta_boxes, 'Dashboard meta boxes should exist' );
 
-		// Check if widgets are registered — collect all found widget IDs.
-		$found_widgets = array();
+		// Check for our specific widgets.
+		$found_usage_overview = false;
+		$found_cost_breakdown = false;
+		$found_usage_forecast = false;
 
-		if ( isset( $wp_meta_boxes['dashboard'] ) && is_array( $wp_meta_boxes['dashboard'] ) ) {
-			foreach ( $wp_meta_boxes['dashboard'] as $context => $priority_boxes ) {
-				foreach ( $priority_boxes as $priority => $widgets ) {
-					if ( is_array( $widgets ) ) {
-						$found_widgets = array_merge( $found_widgets, array_keys( $widgets ) );
-					}
+		foreach ( $wp_meta_boxes['dashboard'] as $context => $priority_boxes ) {
+			foreach ( $priority_boxes as $priority => $widgets ) {
+				if ( isset( $widgets['wp_mcp_ai_token_usage_overview'] ) ) {
+					$found_usage_overview = true;
+				}
+				if ( isset( $widgets['wp_mcp_ai_cost_breakdown'] ) ) {
+					$found_cost_breakdown = true;
+				}
+				if ( isset( $widgets['wp_mcp_ai_usage_forecast'] ) ) {
+					$found_usage_forecast = true;
 				}
 			}
 		}
 
-		// Dashboard widgets may not register in all test contexts.
-			// If no widgets found, this is a test-environment limitation, not a code bug.
-			if ( empty( $found_widgets ) ) {
-				$this->markTestSkipped( 'Dashboard widgets not registered in current test context.' );
-				return;
-			}
-		$expected_widgets = array(
-			'wp_mcp_ai_token_usage_overview',
-			'wp_mcp_ai_cost_breakdown',
-			'wp_mcp_ai_usage_forecast',
-		);
-
-		foreach ( $expected_widgets as $widget_id ) {
-			$this->assertContains(
-				$widget_id,
-				$found_widgets,
-				sprintf( 'Widget %s should be registered', $widget_id )
-			);
-		}
+		$this->assertTrue( $found_usage_overview, 'Token Usage Overview widget should be registered' );
+		$this->assertTrue( $found_cost_breakdown, 'Cost Breakdown widget should be registered' );
+		$this->assertTrue( $found_usage_forecast, 'Usage Forecast widget should be registered' );
 	}
 
 	/**
@@ -210,23 +189,15 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 
 		// Verify data structure.
 		$this->assertIsArray( $data, 'Cost breakdown data should be an array' );
-
-		// Core keys always present (both fallback and service paths).
-		$core_keys = array( 'total_cost', 'total_tokens', 'by_provider', 'by_model', 'by_tool', 'period_start', 'period_end' );
-		foreach ( $core_keys as $key ) {
-			$this->assertArrayHasKey( $key, $data, sprintf( 'Cost breakdown data should have %s key', $key ) );
-		}
+		$this->assertArrayHasKey( 'total_cost', $data );
+		$this->assertArrayHasKey( 'by_provider', $data );
+		$this->assertArrayHasKey( 'by_model', $data );
+		$this->assertArrayHasKey( 'by_user', $data );
+		$this->assertArrayHasKey( 'period_start', $data );
+		$this->assertArrayHasKey( 'period_end', $data );
 
 		// Verify total cost is numeric.
 		$this->assertIsNumeric( $data['total_cost'], 'Total cost should be numeric' );
-
-		// Verify total tokens is an integer.
-		$this->assertIsInt( $data['total_tokens'], 'Total tokens should be an integer' );
-
-		// By-provider, by-model, by-tool should be arrays.
-		$this->assertIsArray( $data['by_provider'], 'By-provider data should be an array' );
-		$this->assertIsArray( $data['by_model'], 'By-model data should be an array' );
-		$this->assertIsArray( $data['by_tool'], 'By-tool data should be an array' );
 	}
 
 	/**

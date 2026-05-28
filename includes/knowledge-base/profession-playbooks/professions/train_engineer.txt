@@ -1,6 +1,6 @@
 Profession Playbook — Train Engineer
 Slug: train_engineer
-Category: transportation  
+Category: other
 Includes: global.txt + categories/other.txt + this file
 
 

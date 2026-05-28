@@ -24,11 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-memory-co
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-transcript-mining-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
-require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-threads-controller.php';
-require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-profiles-controller.php';
-require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-checkpoints-controller.php';
-require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-context-controller.php';
-require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-commands-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -185,6 +180,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected $assistant_cache = array();
 
 		/**
+		 * Voice controller for realtime voice sessions (OpenAI Realtime / Gemini Live).
+		 *
+		 * @var WP_MCP_AI_REST_Voice_Controller
+		 */
+		protected $voice_controller;
+
+		/**
 		 * Constructor.
 		 *
 		 * @param WP_MCP_AI_Tool_Registry         $registry      Tool registry instance.
@@ -232,11 +234,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
 			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
 			require_once WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
-
+			
 			add_action(
 				'rest_api_init',
 				function () {
-					// Only mount the ACP server if enabled in settings.
+					// Only mount the ACP server if enabled in settings
 					$settings = get_option( 'wp_mcp_ai_settings', array() );
 					if ( empty( $settings['enable_acp_server'] ) ) {
 						return;
@@ -249,6 +251,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$controller->register_routes();
 				}
 			);
+
+			// Register Voice REST endpoints (realtime voice sessions).
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
+			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
+			$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
 
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
@@ -271,30 +279,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( function_exists( 'wp_mcp_ai_container' ) ) {
 				$container = wp_mcp_ai_container();
 				if ( $container->has( 'rest_controller' ) ) {
-					$instance                             = $container->get( 'rest_controller' );
+					$instance = $container->get( 'rest_controller' );
 					$GLOBALS['wp_mcp_ai_rest_controller'] = $instance;
 					return $instance;
 				}
 			}
 
 			// Fallback: construct with real dependencies when container unavailable.
-			$registry                             = WP_MCP_AI_Tool_Registry::get_instance();
-			$client                               = new WP_MCP_AI_Language_Model_Router(
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$client   = new WP_MCP_AI_Language_Model_Router(
 				new WP_MCP_AI_OpenAI_Client(),
 				new WP_MCP_AI_Gemini_Client(),
-				new WP_MCP_AI_Ollama_Client(),
-				null, // lm_studio.
-				null, // anthropic.
-				null, // huggingface.
-				null, // cloudflare.
-				null, // embedded.
-				null, // nvidia.
-				null, // deepseek — instantiated by router constructor default.
-				null, // openrouter.
-				null, // digitalocean.
-				null  // kimi.
+				new WP_MCP_AI_Ollama_Client()
 			);
-			$instance                             = new self( $registry, $client );
+			$instance = new self( $registry, $client );
 			$GLOBALS['wp_mcp_ai_rest_controller'] = $instance;
 			return $instance;
 		}
@@ -335,8 +333,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Clean any existing output so REST responses are not contaminated.
-			// The rest_pre_serve_request filter (ensure_clean_json_output) will.
-			// call clean_all_output_buffers() again right before serving to.
+			// The rest_pre_serve_request filter (ensure_clean_json_output) will
+			// call clean_all_output_buffers() again right before serving to
 			// discard anything that accumulated during request processing.
 			$this->clean_all_output_buffers();
 		}
@@ -521,26 +519,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$a2a_controller = new WP_MCP_AI_REST_A2A_Controller( $this, $this->authenticator, $this->validator );
 				$a2a_controller->register_routes();
 			}
-
-			// Delegate thread management routes to Threads Controller (v1.7.0).
-			$threads_controller = new WP_MCP_AI_REST_Threads_Controller( $this );
-			$threads_controller->register_routes();
-
-			// Delegate profile management routes to Profiles Controller (v1.7.0).
-			$profiles_controller = new WP_MCP_AI_REST_Profiles_Controller();
-			$profiles_controller->register_routes();
-
-			// Delegate checkpoint routes to Checkpoints Controller (v1.7.0).
-			$checkpoints_controller = new WP_MCP_AI_REST_Checkpoints_Controller();
-			$checkpoints_controller->register_routes();
-
-			// Delegate @-mention context routes to Context Controller (v1.7.0).
-			$context_controller = new WP_MCP_AI_REST_Context_Controller();
-			$context_controller->register_routes();
-
-			// Delegate command palette routes to Commands Controller (v1.7.0).
-			$commands_controller = new WP_MCP_AI_REST_Commands_Controller();
-			$commands_controller->register_routes();
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 
@@ -1065,8 +1043,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check if SSE streaming was requested.
 			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
-				// Phase 2 slice 2b: real polling loop emitting typed `job:*`.
-				// diff frames with monotonic `id:` lines + `Last-Event-ID`.
+				// Phase 2 slice 2b: real polling loop emitting typed `job:*`
+				// diff frames with monotonic `id:` lines + `Last-Event-ID`
 				// resume. See docs/features/chat/cron-status-tasks-drawer-plan.md.
 				return $this->stream_status_summary_updates( $request, $response, $service, $user_id, $limit, $assistant_id );
 			}
@@ -1115,10 +1093,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Get job ID from URL parameter.
 			$job_id = $request->get_param( 'job_id' );
 
-			// Self-healing inline kick for async-tool jobs that are stuck.
-			// in `pending` past the stale threshold. Schedules a shutdown.
-			// action that drives the job forward after this response is.
-			// flushed, so the chat client's poll loop automatically heals.
+			// Self-healing inline kick for async-tool jobs that are stuck
+			// in `pending` past the stale threshold. Schedules a shutdown
+			// action that drives the job forward after this response is
+			// flushed, so the chat client's poll loop automatically heals
 			// stuck jobs on hosts where the WP-Cron loopback never fires.
 			// No-op for non-async job IDs (veo_*, regular cron jobs, etc.)
 			// and for jobs that have already advanced past `pending`.
@@ -1191,9 +1169,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$this->sse_handler->send_sse_headers();
 
-			// Parse `Last-Event-ID` so reconnecting clients resume the.
-			// monotonic counter from where they left off. The header is.
-			// surfaced via SAPI under HTTP_LAST_EVENT_ID; we also honour the.
+			// Parse `Last-Event-ID` so reconnecting clients resume the
+			// monotonic counter from where they left off. The header is
+			// surfaced via SAPI under HTTP_LAST_EVENT_ID; we also honour the
 			// `last_event_id` query param for transports that strip headers.
 			$last_event_id = 0;
 			$header_value  = $request->get_header( 'last_event_id' );
@@ -1210,19 +1188,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$last_event_id = max( 0, (int) $header_value );
 			}
 
-			// Monotonic counter starts after the last-acknowledged ID so.
+			// Monotonic counter starts after the last-acknowledged ID so
 			// clients never see a repeat ID on resume.
 			$event_id_seq = $last_event_id;
 
 			// Normalize the initial snapshot for safe JSON encoding.
 			$initial = $this->normalize_data_recursive( $initial );
 
-			// Emit the initial cron_status snapshot frame for back-compat.
+			// Emit the initial cron_status snapshot frame for back-compat
 			// with consumers built against the one-shot SSE payload.
 			++$event_id_seq;
 			$this->sse_handler->send_sse_event_with_id( 'cron_status', $initial, (string) $event_id_seq );
 
-			// Seed the diff baseline from the initial snapshot so.
+			// Seed the diff baseline from the initial snapshot so
 			// subsequent polls only emit frames for real transitions.
 			$prev_jobs = $this->index_jobs_by_id( isset( $initial['jobs'] ) ? $initial['jobs'] : array() );
 
@@ -1266,7 +1244,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				$prev_jobs = $next_jobs;
 
-				// Heartbeat frame keeps proxies and clients alive between.
+				// Heartbeat frame keeps proxies and clients alive between
 				// genuine diffs. Sent every SSE_JOB_HEARTBEAT_INTERVAL polls.
 				if ( 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL ) {
 					++$event_id_seq;
@@ -1370,9 +1348,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Calculate required time: (max_polls * poll_interval) + buffer for processing.
 			$required_time = ( $max_polls * $poll_interval ) + 60; // 6 minutes + 1 minute buffer = 420 seconds.
 
-			// Set timeout if function exists. Some hosting environments disable set_time_limit.
+			// Set timeout if function exists. Some hosting environments disable set_time_limit
 			// for security reasons (safe mode, disable_functions in php.ini).
-			// Silencing errors because set_time_limit may trigger:.
+			// Silencing errors because set_time_limit may trigger:
 			// - Warning when disabled in php.ini (disable_functions)
 			// - Warning when safe mode is enabled.
 			// - Warning when running as Apache module with certain configurations.
@@ -1388,13 +1366,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				++$poll_count;
 
 				// Trigger WordPress cron to ensure async jobs continue processing.
-				// WordPress cron only runs on page loads by default. When a client.
+				// WordPress cron only runs on page loads by default. When a client
 				// is waiting on an SSE connection, no new page loads occur, so cron.
 				// jobs (including veo video polling) may not run. Calling spawn_cron()
 				// ensures any scheduled cron events execute, allowing the job to progress.
 				// We call this periodically (every heartbeat interval) to balance.
 				// responsiveness with avoiding excessive cron triggers.
-				// Note: spawn_cron() is non-blocking and returns quickly; failures.
+				// Note: spawn_cron() is non-blocking and returns quickly; failures
 				// are silently ignored to prevent disrupting the SSE polling loop.
 				if ( 0 === $poll_count % self::SSE_JOB_HEARTBEAT_INTERVAL && function_exists( 'spawn_cron' ) ) {
 					spawn_cron();
@@ -1736,11 +1714,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$provider = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : '';
 			if ( '' === $provider ) {
-				if ( isset( $settings['default_provider'] ) && ! empty( $settings['default_provider'] ) ) {
-					$provider = sanitize_key( $settings['default_provider'] );
-				} else {
-					$provider = WP_MCP_AI_REST_Validator::detect_first_enabled_provider( $settings );
-				}
+				$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
 			}
 
 			$model = isset( $config['model'] ) ? (string) $config['model'] : '';
@@ -1966,9 +1940,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $validated;
 				}
 
-				// If the bearer token was validated but did not map to a WordPress user,.
+				// If the bearer token was validated but did not map to a WordPress user,
 				// reject the request if the assistant requires an authenticated user.
-				// This prevents privilege escalation where an unmapped bearer token.
+				// This prevents privilege escalation where an unmapped bearer token
 				// could piggyback on an existing WordPress session cookie.
 				$auth_user_id = isset( $this->auth_context['authenticated_user_id'] )
 					? (int) $this->auth_context['authenticated_user_id']
@@ -2047,7 +2021,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Enforce capability check for non-admin users authenticated via WP nonce.
 			// Admin users bypass this check; all others must have the required capability.
-			if ( $requires_authenticated_user && ! current_user_can( 'manage_options' ) && ! current_user_can( $capability ) ) {
+			if ( $requires_authenticated_user && ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) {
 				return $this->insufficient_permissions_error( $capability );
 			}
 
@@ -2241,7 +2215,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tools         = $request->get_param( 'tools' );
 			$status        = $request->get_param( 'status' );
 
-			// Title is required for actual creation; when absent treat as a.
+			// Title is required for actual creation; when absent treat as a
 			// connectivity check and return the directory listing instead.
 			if ( empty( $title ) ) {
 				return $this->handle_assistants_index( $request );
@@ -2406,26 +2380,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
-				// This enables the diagnostic page to test MCP endpoint connectivity without requiring.
+				// This enables the diagnostic page to test MCP endpoint connectivity without requiring
 				// bearer tokens for internal REST API calls made via rest_do_request().
-			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
-				// Require a custom internal-diagnostic header to prevent CSRF-style attacks.
-				// where an admin's session cookie could be used cross-origin.
-				// The Origin header check alone is insecure — most programmatic HTTP.
-				// clients (curl, Postman, fetch without CORS) do not send an Origin.
-				// header by default, making empty( $_SERVER['HTTP_ORIGIN'] ) trivially.
-				// exploitable. Use a custom header that cannot be sent cross-origin.
-				$internal_header = $request->get_header( 'X-WP-MCP-AI-Internal-Diagnostic' );
-				$is_local_origin = isset( $_SERVER['HTTP_ORIGIN'] )
-					&& wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST );
+				if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+					// Require a custom internal-diagnostic header to prevent CSRF-style attacks
+					// where an admin's session cookie could be used cross-origin.
+					// The Origin header check alone is insecure — most programmatic HTTP
+					// clients (curl, Postman, fetch without CORS) do not send an Origin
+					// header by default, making empty( $_SERVER['HTTP_ORIGIN'] ) trivially
+					// exploitable. Use a custom header that cannot be sent cross-origin.
+					$internal_header = $request->get_header( 'X-WP-MCP-AI-Internal-Diagnostic' );
+					$is_local_origin = isset( $_SERVER['HTTP_ORIGIN'] )
+						&& wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST );
 
-				$is_internal = ( '1' === $internal_header ) || $is_local_origin;
+					$is_internal = ( '1' === $internal_header ) || $is_local_origin;
 
-				if ( $is_internal ) {
-					$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
-					return true;
+					if ( $is_internal ) {
+						$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
+						return true;
+					}
 				}
-			}
 
 			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted for remote access.
 			return new WP_Error(
@@ -2501,7 +2475,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			// Fallback: If a WordPress user is already authenticated via session cookie,.
+			// Fallback: If a WordPress user is already authenticated via session cookie,
 			// use their identity for cron-status access (e.g. browser-based SSE connections).
 			$current_user_id = get_current_user_id();
 			if ( $current_user_id > 0 ) {
@@ -2779,12 +2753,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
 			// Check if this is an embedded provider with a client-side (WebLLM) model.
-			// Server-side GGUF models (llama.cpp) share the 'embedded' provider key but are.
+			// Server-side GGUF models (llama.cpp) share the 'embedded' provider key but are
 			// processed here on the server — only pure WebLLM requests should be rejected.
 			if ( isset( $assistant_config['provider'] ) && 'embedded' === $assistant_config['provider'] ) {
 				$model_slug = isset( $assistant_config['model'] ) ? $assistant_config['model'] : '';
 
-				// When no model is explicitly set on the assistant, fall back to the global.
+				// When no model is explicitly set on the assistant, fall back to the global
 				// embedded_server_model setting so server-side GGUF inference can proceed.
 				if ( empty( $model_slug ) && class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					$global_settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -2963,34 +2937,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
 
-				// Apply provider-specific prompt strategy for cost and cache optimisation.
-				// Claude gets aggressive trimming; DeepSeek gets everything; OpenAI/Gemini balanced.
-				$resolved_provider = isset( $options['provider'] ) ? $options['provider'] : ( isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'openai' );
-				if ( class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
-					$options = WP_MCP_AI_Prompt_Optimizer::apply_provider_strategy( $options, $resolved_provider );
+			// Reorder messages for optimal prompt caching when enabled.
+			if ( ! empty( $options['cache_system_prompt'] ) && class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
+				$messages = WP_MCP_AI_Prompt_Optimizer::order_for_cache_hit( $messages, $options );
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'prompt_cache_reordered',
+						'Messages reordered for prefix cache optimization',
+						array(
+							'message_count' => count( $messages ),
+							'first_role'    => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'none',
+						)
+					);
 				}
-
-				// Reorder messages for optimal prompt caching when enabled.
-				if ( ! empty( $options['cache_system_prompt'] ) && class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
-					$messages = WP_MCP_AI_Prompt_Optimizer::order_for_cache_hit( $messages, $options );
-
-					// Memory documents and dynamic date context are now embedded in
-					// $messages at the trailing position by order_for_cache_hit().
-					// Clear them from options so provider clients don't re-inject
-					// them (which would cause duplication and break cache ordering).
-					unset( $options['memory_documents'], $options['dynamic_date_context'] );
-
-					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-						WP_MCP_AI_Logger::log_event(
-							'prompt_cache_reordered',
-							'Messages reordered for prefix cache optimization',
-							array(
-								'message_count' => count( $messages ),
-								'first_role'    => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'none',
-							)
-						);
-					}
-				}
+			}
 
 			// Check if streaming is requested for agentic loop support.
 			$wants_streaming = $this->request_wants_event_stream( $request );
@@ -3003,17 +2964,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
 
-			// Phase 3: agentic-loop output guard. Tracks cumulative tool-output bytes.
-			// across all iterations and substitutes oversized payloads with artifact.
+			// Phase 3: agentic-loop output guard. Tracks cumulative tool-output bytes
+			// across all iterations and substitutes oversized payloads with artifact
 			// references so the LLM context stays bounded.
 			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-' . $assistant_id . '-' . wp_generate_uuid4() );
 
 			// Track original tool results for frontend display.
 			$tool_result_messages = array();
 
-			// Track intermediate assistant messages with tool_calls so that.
-			// server-side callers (e.g. the Telegram reply job) can fall back to.
-			// them when the final choice has empty content after the agentic loop.
+			// Track intermediate assistant messages with tool_calls so that
+			// server-side callers (e.g. the Telegram reply job) can fall back to
+			// them when the final choice has empty content after the agentic loop
 			// exhausts its iteration cap.
 			$agentic_tool_messages = array();
 
@@ -3052,8 +3013,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			// Pre-flight TPM validation: truncate or switch model before the.
-			// initial LLM call to avoid TPM-limit rejections (especially.
+			// Pre-flight TPM validation: truncate or switch model before the
+			// initial LLM call to avoid TPM-limit rejections (especially
 			// relevant for Anthropic models with low TPM ceilings).
 			$preflight = $this->preflight_tpm_check( $messages, $options, $assistant_id );
 			if ( is_wp_error( $preflight ) ) {
@@ -3119,7 +3080,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Add the assistant message with tool_calls to the conversation.
-				// This is required by OpenAI's API: an assistant message with tool_calls.
+				// This is required by OpenAI's API: an assistant message with tool_calls
 				// must be followed by tool response messages.
 				$assistant_message = $this->extract_assistant_message_from_response( $response );
 				if ( $assistant_message ) {
@@ -3143,7 +3104,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 
 					// Check if this is an async pending result (background-only tools like video generation).
-					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop.
+					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
@@ -3212,8 +3173,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Create a sanitized version for the LLM (strip large content fields).
 					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
 
-					// Phase 3: agentic-loop output guard. If this single message or the.
-					// cumulative request budget would be exceeded, spill the payload to.
+					// Phase 3: agentic-loop output guard. If this single message or the
+					// cumulative request budget would be exceeded, spill the payload to
 					// an artifact and substitute a small reference envelope.
 					$message_bytes = is_string( $sanitized_result ) ? strlen( $sanitized_result ) : 0;
 					if ( $budget_tracker->should_spill( $message_bytes ) ) {
@@ -3249,7 +3210,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$messages[] = $tool_message;
 				}
 
-				// If any tool returned an async pending result (e.g., video generation),.
+				// If any tool returned an async pending result (e.g., video generation),
 				// exit the agentic loop. The frontend will poll for the async job completion.
 				if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
@@ -3296,7 +3257,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							$model             = $fallback_model;
 							$switched_model    = true;
 
-							// Also switch provider to match the fallback model so the router.
+							// Also switch provider to match the fallback model so the router
 							// sends the request to the correct LLM API endpoint.
 							$fallback_model_config = class_exists( 'WP_MCP_AI_Model_Config' )
 								? WP_MCP_AI_Model_Config::get_model_config( $fallback_model )
@@ -3358,31 +3319,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 
-				// --- Loop model optimisation: use cheaper model for intermediate iterations ---
-					// The first iteration used the assistant's primary model. Intermediate iterations
-					// are mechanical tool-calling turns that don't need expensive reasoning.
-					// The final iteration switches back to the primary model for quality synthesis.
-					$loop_model = $options['model'];
-					if ( class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
-						$resolved_provider = isset( $options['provider'] ) ? $options['provider'] : ( isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'openai' );
-						$loop_model = WP_MCP_AI_Prompt_Optimizer::resolve_loop_model(
-							$options['model'],
-							$resolved_provider,
-							$iteration,
-							$max_iterations,
-							$options
-						);
-					}
-
-					// Temporarily swap model for this loop iteration if a cheaper alternative is available.
-					$original_loop_model = $options['model'];
-					$options['model']    = $loop_model;
-
-					// Call LLM again with tool results.
-					$response = $this->client->create_chat_completion( $messages, $options );
-
-					// Restore the original model for the next iteration's resolution.
-					$options['model'] = $original_loop_model;
+				// Call LLM again with tool results.
+				$response = $this->client->create_chat_completion( $messages, $options );
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
@@ -3428,26 +3366,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
-				// When the loop exits because it hit max_iterations, the final LLM response may.
-				// still contain tool_calls that were never executed (the PHP side did not make.
-				// another iteration to process them). If those tool_calls are forwarded to the.
-				// browser client as-is, the JS will persist an assistant message that has.
-				// tool_call_ids with no matching tool-response messages. On the very next user.
-				// turn the full conversation — including that orphaned assistant message — is.
-				// sent back to OpenAI, which rejects the request with:.
-				// "An assistant message with 'tool_calls' must be followed by tool messages.
-				// responding to each 'tool_call_id'.".
-				// Stripping the unexecuted tool_calls from the final response prevents the.
-				// client from ever storing that invalid state. The defensive filter inside.
-				// filter_tool_messages_for_payload() provides a second layer of protection for.
+				// When the loop exits because it hit max_iterations, the final LLM response may
+				// still contain tool_calls that were never executed (the PHP side did not make
+				// another iteration to process them). If those tool_calls are forwarded to the
+				// browser client as-is, the JS will persist an assistant message that has
+				// tool_call_ids with no matching tool-response messages. On the very next user
+				// turn the full conversation — including that orphaned assistant message — is
+				// sent back to OpenAI, which rejects the request with:
+				// "An assistant message with 'tool_calls' must be followed by tool messages
+				// responding to each 'tool_call_id'."
+				// Stripping the unexecuted tool_calls from the final response prevents the
+				// client from ever storing that invalid state. The defensive filter inside
+				// filter_tool_messages_for_payload() provides a second layer of protection for
 				// any orphaned messages that may have been stored in a previous session.
 				$this->strip_orphaned_tool_calls_from_response( $response, $assistant_id, $iteration, 'Non-SSE' );
 			}
 
-			// FALLBACK: If the LLM returned no text content but we have tool results, inject the.
+			// FALLBACK: If the LLM returned no text content but we have tool results, inject the
 			// tool result text into the response so the frontend has something to display.
-			// This mirrors the same fallback applied in handle_chat_request_with_streaming for SSE,.
-			// and ensures providers like Anthropic that sometimes omit a follow-up text response.
+			// This mirrors the same fallback applied in handle_chat_request_with_streaming for SSE,
+			// and ensures providers like Anthropic that sometimes omit a follow-up text response
 			// after tool execution do not leave the chat interface blank.
 			if ( ! empty( $tool_result_messages ) && ! is_wp_error( $response ) ) {
 				$llm_text = '';
@@ -3556,8 +3494,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'data'         => $response,
 			);
 
-			// Attach intermediate agentic assistant messages (with tool_calls) to the.
-			// response data so that server-side callers such as the Telegram reply job.
+			// Attach intermediate agentic assistant messages (with tool_calls) to the
+			// response data so that server-side callers such as the Telegram reply job
 			// can fall back to partial content when the final choice has empty content.
 			if ( ! empty( $agentic_tool_messages ) ) {
 				$payload['data']['agentic_tool_messages'] = $agentic_tool_messages;
@@ -3654,7 +3592,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// If admin setting was applied by custom filters applicator (priority 5),.
-			// it will be in $default_max. Only use chat client default if $default_max.
+			// it will be in $default_max. Only use chat client default if $default_max
 			// is still the base default (5 for /chat endpoint).
 			// This allows admin setting to override the chat client default.
 			if ( $default_max > 5 ) {
@@ -3698,9 +3636,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$budget_tracker = new WP_MCP_AI_Data_Budget_Tracker( 'chat-stream-' . $assistant_id . '-' . wp_generate_uuid4() );
 
 			// Extend PHP execution time for the duration of the SSE stream.
-			// The default max_execution_time (often 30 s) is too short for embedded LLM.
+			// The default max_execution_time (often 30 s) is too short for embedded LLM
 			// inference (which can take 60–120 s) and long agentic loops.
-			// A bounded 300 s (5 min) limit keeps streams alive for long agentic loops.
+			// A bounded 300 s (5 min) limit keeps streams alive for long agentic loops
 			// without removing the safety net entirely.  ignore_user_abort(true) keeps PHP alive even if nginx closes the upstream connection.
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
@@ -3784,7 +3722,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$transcript_context['request_started_at'] = microtime( true );
 
-			// Pre-flight TPM validation (streaming path): truncate or switch.
+			// Pre-flight TPM validation (streaming path): truncate or switch
 			// model before the initial LLM call to avoid TPM-limit rejections.
 			$preflight = $this->preflight_tpm_check( $messages, $options, $assistant_id );
 			if ( is_wp_error( $preflight ) ) {
@@ -3805,8 +3743,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Resolved provider slug, used for LM Studio native streaming checks below.
 			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 
-			// Enable LM Studio real-time SSE streaming: inject stream_callback so that.
-			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each.
+			// Enable LM Studio real-time SSE streaming: inject stream_callback so that
+			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each
 			// content/reasoning token to the browser as it is generated.
 			if ( function_exists( 'curl_init' ) && 'lm_studio' === $resolved_provider ) {
 				$native_streaming_used      = true;
@@ -3816,7 +3754,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				};
 			}
 
-			// Wrap LLM call in try-catch to handle any uncaught exceptions.
+			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
 			try {
 				$response = $this->client->create_chat_completion( $messages, $options );
@@ -3907,7 +3845,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return;
 			}
 
-			// Remove native-streaming options to prevent them from leaking to a.
+			// Remove native-streaming options to prevent them from leaking to a
 			// different provider if a TPM-triggered model switch occurs in the loop.
 			unset( $options['stream'], $options['stream_callback'] );
 
@@ -3963,7 +3901,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
-					// Wrap tool execution in try-catch to handle any uncaught exceptions.
+					// Wrap tool execution in try-catch to handle any uncaught exceptions
 					// and ensure SSE stream continues even if tool execution fails.
 					try {
 						$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
@@ -4011,7 +3949,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result = $this->normalize_tool_result( $tool_result );
 
 					// Check if this is an async pending result (background-only tools like video generation).
-					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop.
+					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
 					// Continuing to call the LLM with a pending status would cause issues since the LLM.
 					// doesn't understand async job states and might try to call the same tool again.
@@ -4064,10 +4002,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
-					// G8 Phase 2 — emit a `memory_event` SSE frame mid-stream.
-					// when the tool that just ran touched the agent-memory.
-					// subsystem, so the chat client can announce a transient.
-					// "🧠 Used / saved long-term memory." toast immediately.
+					// G8 Phase 2 — emit a `memory_event` SSE frame mid-stream
+					// when the tool that just ran touched the agent-memory
+					// subsystem, so the chat client can announce a transient
+					// "🧠 Used / saved long-term memory." toast immediately
 					// instead of waiting for the assistant message to render.
 					$memory_event_action = $this->classify_memory_tool_action( $tool_name );
 					if ( null !== $memory_event_action ) {
@@ -4177,9 +4115,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$messages[] = $tool_message;
 				}
 
-				// If any tool returned an async pending result (e.g., video generation),.
-				// exit the agentic loop. The frontend is notified via SSE and will poll.
-				// for the async job completion. Continuing to call the LLM with pending.
+				// If any tool returned an async pending result (e.g., video generation),
+				// exit the agentic loop. The frontend is notified via SSE and will poll
+				// for the async job completion. Continuing to call the LLM with pending
 				// status would cause confusion and potential infinite loops.
 				if ( $has_async_pending_result ) {
 					WP_MCP_AI_Logger::log_event(
@@ -4243,7 +4181,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							$model            = $fallback_model;
 							$switched_model   = true;
 
-							// Also switch provider to match the fallback model so the router.
+							// Also switch provider to match the fallback model so the router
 							// sends the request to the correct LLM API endpoint.
 							$fallback_model_config = class_exists( 'WP_MCP_AI_Model_Config' )
 								? WP_MCP_AI_Model_Config::get_model_config( $fallback_model )
@@ -4317,35 +4255,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Call LLM again with tool results.
-					// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
-					$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
-					if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
-						$options['stream']          = true;
-						$options['stream_callback'] = function ( $chunk ) {
-							$this->send_sse_event( 'message', $chunk );
-						};
-					}
-
-					// --- Loop model optimisation (SSE): cheaper model for intermediate turns ---
-					$loop_model = $options['model'];
-					if ( class_exists( 'WP_MCP_AI_Prompt_Optimizer' ) ) {
-						$resolved_provider = isset( $options['provider'] ) ? $options['provider'] : ( isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'openai' );
-						$loop_model = WP_MCP_AI_Prompt_Optimizer::resolve_loop_model(
-							$options['model'],
-							$resolved_provider,
-							$iteration,
-							$max_iterations,
-							$options
-						);
-					}
-
-					$original_loop_model = $options['model'];
-					$options['model']    = $loop_model;
-
-					$response = $this->client->create_chat_completion( $messages, $options );
-
-					$options['model'] = $original_loop_model;
-					unset( $options['stream'], $options['stream_callback'] );
+				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
+				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
+					$options['stream']          = true;
+					$options['stream_callback'] = function ( $chunk ) {
+						$this->send_sse_event( 'message', $chunk );
+					};
+				}
+				$response = $this->client->create_chat_completion( $messages, $options );
+				unset( $options['stream'], $options['stream_callback'] );
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
@@ -4389,10 +4308,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
-				// Same as the non-SSE path: when the loop exits because max_iterations was.
+				// Same as the non-SSE path: when the loop exits because max_iterations was
 				// reached the final LLM response may still have unexecuted tool_calls.
-				// Strip them so the SSE "message" event does not include orphaned tool_call_ids.
-				// that would later cause "An assistant message with 'tool_calls' must be.
+				// Strip them so the SSE "message" event does not include orphaned tool_call_ids
+				// that would later cause "An assistant message with 'tool_calls' must be
 				// followed by tool messages responding to each 'tool_call_id'" errors.
 				$this->strip_orphaned_tool_calls_from_response( $response, $assistant_id, $iteration, 'SSE' );
 			}
@@ -4441,7 +4360,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'streaming chat response' );
 
 			// Extract thinking/reasoning text from the response if present.
-			// Supports multiple providers:.
+			// Supports multiple providers:
 			// - Anthropic extended thinking: message['thinking'] + provider='anthropic'.
 			// - Gemini 2.0 Flash Thinking mode: message['thinking'].
 			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning'].
@@ -4472,7 +4391,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
-			// Skip when LM Studio native streaming was active — reasoning tokens were.
+			// Skip when LM Studio native streaming was active — reasoning tokens were
 			// already forwarded in real time via the stream_callback.
 			if ( ! $native_streaming_used && is_string( $thinking_text ) && '' !== $thinking_text ) {
 				// Format thinking chunks based on provider for optimal client compatibility.
@@ -4558,7 +4477,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Send text content in chunks to simulate streaming (for better UX).
-			// Skip when LM Studio native streaming was active — content tokens were.
+			// Skip when LM Studio native streaming was active — content tokens were
 			// already forwarded in real time via the stream_callback.
 			if ( ! $native_streaming_used && is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
@@ -4623,9 +4542,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// ALWAYS include tool_results in payload if they exist.
-			// This ensures the chat client receives tool execution results even when.
+			// This ensures the chat client receives tool execution results even when
 			// the LLM response is empty or doesn't include commentary.
-			// Critical for tools like vectorize_image where the tool result contains.
+			// Critical for tools like vectorize_image where the tool result contains
 			// the primary information (SVG URL, attachment ID, success message).
 			if ( ! empty( $tool_result_messages ) ) {
 				$payload['tool_results'] = $tool_result_messages;
@@ -4643,8 +4562,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			// Include intermediate assistant messages with tool_calls so the client can.
-			// reconstruct the correct conversation order (assistant+tool_use → tool_result →.
+			// Include intermediate assistant messages with tool_calls so the client can
+			// reconstruct the correct conversation order (assistant+tool_use → tool_result →
 			// final assistant) required by Anthropic and other providers.
 			if ( ! empty( $agentic_tool_messages ) ) {
 				$payload['agentic_tool_messages'] = $agentic_tool_messages;
@@ -6813,8 +6732,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
 			$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
 
-			// If max_output_tokens alone would consume more than 50% of the model's TPM budget,.
-			// cap it proactively to leave room for input tokens. This is especially important for.
+			// If max_output_tokens alone would consume more than 50% of the model's TPM budget,
+			// cap it proactively to leave room for input tokens. This is especially important for
 			// Anthropic models with low Tier 1 TPM limits (e.g. 40K for claude-opus-4-6).
 			if ( $max_output_tokens > 0 ) {
 				$tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
@@ -9607,7 +9526,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Check if message has image content (even if text content is empty).
 				$has_image_content = $this->message_has_image_content( $message );
 
-				// Skip messages with empty content, except:.
+				// Skip messages with empty content, except:
 				// - tool role messages (required for tool responses).
 				// - system role messages (can be empty for context).
 				// - assistant role messages with tool_calls (required for agentic flow).
@@ -10440,11 +10359,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// CRITICAL: Force synchronous execution in agentic loop for most tools.
 			// Async tools must complete before the loop continues to ensure the LLM.
-			// receives actual results, not pending status. Without this, the agentic.
+			// receives actual results, not pending status. Without this, the agentic
 			// loop would continue with pending tool results, and the final LLM response.
 			// would not include the actual tool output (e.g., generated image links).
 			//
-			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that.
+			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that
 			// they MUST run async to avoid HTTP timeouts, even in agentic loops.
 			// These tools are marked with 'background-only' capability flag.
 			$must_run_async = false;
@@ -10586,7 +10505,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement and timeouts.
 			try {
 				// Set execution time limit for synchronous tool execution in agentic loop.
-				// to prevent PHP timeout. Default WordPress limit is 30s, we allow up to 60s.
+				// to prevent PHP timeout. Default WordPress limit is 30s, we allow up to 60s
 				// for tools that might take longer (like image generation).
 				if ( ! empty( $context['agentic_loop'] ) ) {
 					$original_time_limit = ini_get( 'max_execution_time' );
@@ -10626,7 +10545,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
 
 					// Check if this is a pending status (e.g., HTTP 202 from web search)
-					// rather than a hard error. Pending statuses should be handled differently.
+					// rather than a hard error. Pending statuses should be handled differently
 					// to allow the LLM to gracefully respond using alternative sources.
 					$error_data = $result->get_error_data();
 					$is_pending = is_array( $error_data ) && ! empty( $error_data['is_pending'] );
@@ -11045,7 +10964,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => (int) $assistant_id,
 				'user_id'      => (int) $user_id,
 			);
-			$chat_session_id     = '' !== $session_key
+			$chat_session_id = '' !== $session_key
 				? $session_key
 				: WP_MCP_AI_Chat_Continuation_Store::generate_session_id( $context_for_session );
 
@@ -11188,7 +11107,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// For other objects, use get_object_vars() to avoid exposing private/protected properties.
 				// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'.
 				// that can occur when casting objects with private/protected properties to arrays.
-				// For stdClass and simple objects, this works well. For complex objects with magic methods.
+				// For stdClass and simple objects, this works well. For complex objects with magic methods
 				// or ArrayAccess, they should be handled in specific cases above.
 				$object_vars = get_object_vars( $data );
 				return $this->normalize_data_recursive( $object_vars, $depth + 1 );
@@ -11224,7 +11143,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$prompt_tokens     = isset( $response['usage']['prompt_tokens'] ) ? absint( $response['usage']['prompt_tokens'] ) : 0;
 			$completion_tokens = isset( $response['usage']['completion_tokens'] ) ? absint( $response['usage']['completion_tokens'] ) : 0;
-			$cached_tokens     = isset( $response['usage']['cached_tokens'] ) ? absint( $response['usage']['cached_tokens'] ) : 0;
 
 			if ( $prompt_tokens <= 0 && $completion_tokens <= 0 ) {
 				return null;
@@ -11234,8 +11152,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$provider_key,
 				$model_name,
 				$prompt_tokens,
-				$completion_tokens,
-				$cached_tokens
+				$completion_tokens
 			);
 
 			if ( $calculated_cost <= 0 ) {
@@ -11250,24 +11167,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			// Log cost calculation when logging is enabled (integrates with logging layer).
-				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_event(
-						'cost_calculation',
-						'Real-time cost calculated for ' . $context,
-						array(
-							'assistant_id'      => $assistant_id,
-							'user_id'           => $user_id,
-							'provider'          => $provider_key,
-							'model'             => $model_name,
-							'prompt_tokens'     => $prompt_tokens,
-							'completion_tokens' => $completion_tokens,
-							'cached_tokens'     => $cached_tokens,
-							'total_tokens'      => $prompt_tokens + $completion_tokens,
-							'cost_usd'          => $calculated_cost,
-							'is_estimated'      => false,
-						)
-					);
-				}
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'cost_calculation',
+					'Real-time cost calculated for ' . $context,
+					array(
+						'assistant_id'      => $assistant_id,
+						'user_id'           => $user_id,
+						'provider'          => $provider_key,
+						'model'             => $model_name,
+						'prompt_tokens'     => $prompt_tokens,
+						'completion_tokens' => $completion_tokens,
+						'total_tokens'      => $prompt_tokens + $completion_tokens,
+						'cost_usd'          => $calculated_cost,
+						'is_estimated'      => false,
+					)
+				);
+			}
 
 			return $cost_data;
 		}

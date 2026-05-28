@@ -66,16 +66,12 @@ vector-store, and MCP-server-token-age signals via this hook.
 
 ## Tests
 
-No dedicated unit tests exist yet for `WP_MCP_AI_Security_Posture`. The class is
-covered indirectly through the Security Center REST controller integration tests:
-
 ```bash
-vendor/bin/phpunit tests/rest/test-rest-security-center-controller.php
+vendor/bin/phpunit tests/test-security-center.php
 ```
 
-A targeted unit test that exercises the posture score computation against a
-known settings snapshot would increase coverage reliability. The class is
-stateless and deterministic, so it is straightforward to test.
+Tests cover posture report shape, score range, grade validity, quick-wins
+limit, score sensitivity to enabled controls, and signal non-emptiness.
 
 ## Also Load
 

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-        'version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-        'reference' => '54c45cbde18832ea0eb8cff987b2854d8f9c0bcb',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'a4c5fbfabd914822b9ab97fdf13eb72672ee6063',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-            'version' => 'dev-copilot/rebuild-all-zips-3af463f5-6de5-4f49-862d-575591db97f1',
-            'reference' => '54c45cbde18832ea0eb8cff987b2854d8f9c0bcb',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'a4c5fbfabd914822b9ab97fdf13eb72672ee6063',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -197,9 +197,9 @@
             'dev_requirement' => false,
         ),
         'symfony/cache' => array(
-            'pretty_version' => 'v6.4.38',
-            'version' => '6.4.38.0',
-            'reference' => '6ae5a11f1e7506751390ee320a79bda9cb65cdcd',
+            'pretty_version' => 'v6.4.41',
+            'version' => '6.4.41.0',
+            'reference' => '5490a577195422c3c9cda09c64823580858af854',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/cache',
             'aliases' => array(),

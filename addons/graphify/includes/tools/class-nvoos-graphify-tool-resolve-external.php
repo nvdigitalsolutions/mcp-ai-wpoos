@@ -57,11 +57,6 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/** {@inheritdoc} */
-	public function get_required_capability() {
-		return 'edit_posts';
-	}
-
-	/** {@inheritdoc} */
 	public function get_capability_flags() {
 		return array( 'read-only', 'external-api' );
 	}

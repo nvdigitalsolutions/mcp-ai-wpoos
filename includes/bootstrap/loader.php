@@ -199,6 +199,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-voice-provider.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-live-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
@@ -207,14 +210,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-pack-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
-
-// Thread Management Subsystem (v1.7.0) — parallel agent threads, profiles, checkpoints, @-mentions, command palette.
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-threads-schema.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-thread-manager.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-profile-manager.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-checkpoint-manager.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-context-mention-resolver.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-command-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nvidia-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deepseek-client.php';
@@ -322,6 +317,7 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-otel-span-expor
 // Register span exporter — no-op unless `wp_mcp_ai_otel_endpoint` is configured.
 WP_MCP_AI_Otel_Span_Exporter::register();
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
+require_once WP_MCP_AI_PATH . 'includes/paper-store/paper-store-init.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 
