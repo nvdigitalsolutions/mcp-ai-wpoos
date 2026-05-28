@@ -90,7 +90,7 @@ class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'lead_id'              => array(
+				'lead_id'               => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the lead to delete (required).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -245,7 +245,7 @@ class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'lead',
 				$lead_id,
 				array(
-					'email' => $lead_email,
+					'email'  => $lead_email,
 					'action' => 'delete',
 				)
 			);
@@ -259,9 +259,9 @@ class WP_MCP_AI_Tool_Delete_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				$lead_id
 			),
 			array(
-				'lead_id'         => $lead_id,
-				'deleted_email'   => esc_html( $lead_email ),
-				'storage_type'    => $this->data_store->get_storage_type(),
+				'lead_id'       => $lead_id,
+				'deleted_email' => esc_html( $lead_email ),
+				'storage_type'  => $this->data_store->get_storage_type(),
 			)
 		);
 	}

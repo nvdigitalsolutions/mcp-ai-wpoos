@@ -63,40 +63,60 @@ class WP_MCP_AI_CRM_Engine {
 		}
 
 		$defaults = array(
-			'default_currency'             => 'USD',
-			'default_lifecycle_stage'      => 'lead',
-			'qualification_framework'      => 'bant',
-			'hot_score_threshold'          => 70,
-			'warm_score_threshold'         => 40,
-			'audit_retention_days'         => 365,
-			'consent'                      => array(
+			'default_currency'        => 'USD',
+			'default_lifecycle_stage' => 'lead',
+			'qualification_framework' => 'bant',
+			'hot_score_threshold'     => 70,
+			'warm_score_threshold'    => 40,
+			'audit_retention_days'    => 365,
+			'consent'                 => array(
 				'require_double_opt_in'   => true,
 				'default_legal_basis'     => 'legitimate_interest',
 				'unsubscribe_footer_text' => '',
 				'physical_address'        => '',
 			),
-			'routing'                      => array(
+			'routing'                 => array(
 				'strategy'    => 'round_robin',
 				'pool'        => array(),
 				'territories' => array(),
 			),
-			'sequences'                    => array(
+			'sequences'               => array(
 				'send_hours_local'        => array( 9, 18 ),
 				'send_days'               => array( 1, 2, 3, 4, 5 ),
 				'pause_on_reply'          => true,
 				'pause_on_meeting_booked' => true,
 			),
-			'pipeline'                     => array(
+			'pipeline'                => array(
 				'stages' => array(
-					'qualification' => array( 'label' => 'Qualification', 'probability' => 0.10 ),
-					'discovery'     => array( 'label' => 'Discovery',     'probability' => 0.25 ),
-					'proposal'      => array( 'label' => 'Proposal',      'probability' => 0.50 ),
-					'negotiation'   => array( 'label' => 'Negotiation',   'probability' => 0.75 ),
-					'closed_won'    => array( 'label' => 'Closed-Won',    'probability' => 1.00, 'is_won' => true ),
-					'closed_lost'   => array( 'label' => 'Closed-Lost',   'probability' => 0.00, 'is_lost' => true ),
+					'qualification' => array(
+						'label'       => 'Qualification',
+						'probability' => 0.10,
+					),
+					'discovery'     => array(
+						'label'       => 'Discovery',
+						'probability' => 0.25,
+					),
+					'proposal'      => array(
+						'label'       => 'Proposal',
+						'probability' => 0.50,
+					),
+					'negotiation'   => array(
+						'label'       => 'Negotiation',
+						'probability' => 0.75,
+					),
+					'closed_won'    => array(
+						'label'       => 'Closed-Won',
+						'probability' => 1.00,
+						'is_won'      => true,
+					),
+					'closed_lost'   => array(
+						'label'       => 'Closed-Lost',
+						'probability' => 0.00,
+						'is_lost'     => true,
+					),
 				),
 			),
-			'integrations'                 => array(
+			'integrations'            => array(
 				'twilio_account_sid_secret' => '',
 				'whatsapp_phone_number_id'  => '',
 				'gmail_oauth_handle'        => '',
@@ -200,10 +220,10 @@ class WP_MCP_AI_CRM_Engine {
 		if ( null === $score || ! is_numeric( $score ) ) {
 			return 'unscored';
 		}
-		$score = (int) $score;
+		$score    = (int) $score;
 		$settings = self::get_toolkit_settings();
-		$hot  = (int) $settings['hot_score_threshold'];
-		$warm = (int) $settings['warm_score_threshold'];
+		$hot      = (int) $settings['hot_score_threshold'];
+		$warm     = (int) $settings['warm_score_threshold'];
 
 		if ( $score >= $hot ) {
 			return 'hot';
@@ -306,10 +326,10 @@ class WP_MCP_AI_CRM_Engine {
 	 * @return int WordPress user ID, or 0 if no pool is configured.
 	 */
 	public static function get_next_owner() {
-		$settings     = self::get_toolkit_settings();
-		$strategy     = sanitize_key( $settings['routing']['strategy'] );
-		$pool         = isset( $settings['routing']['pool'] ) ? (array) $settings['routing']['pool'] : array();
-		$pool         = array_filter( $pool, 'absint' );
+		$settings = self::get_toolkit_settings();
+		$strategy = sanitize_key( $settings['routing']['strategy'] );
+		$pool     = isset( $settings['routing']['pool'] ) ? (array) $settings['routing']['pool'] : array();
+		$pool     = array_filter( $pool, 'absint' );
 
 		if ( empty( $pool ) ) {
 			return 0;
@@ -340,7 +360,7 @@ class WP_MCP_AI_CRM_Engine {
 			// Weighted: prefer owner with fewest active leads.
 			$workloads = array();
 			foreach ( $pool as $uid ) {
-				$count = self::count_active_leads( $uid );
+				$count             = self::count_active_leads( $uid );
 				$workloads[ $uid ] = $count;
 			}
 			asort( $workloads );
@@ -372,19 +392,21 @@ class WP_MCP_AI_CRM_Engine {
 		}
 
 		// Post-type agnostic: query by meta `contact_owner`.
-		$query = new WP_Query( array(
-			'post_type'      => array( 'mcp_crm_contacts', 'mcp_ai_lead' ),
-			'post_status'    => 'publish',
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		$query = new WP_Query(
+			array(
+				'post_type'      => array( 'mcp_crm_contacts', 'mcp_ai_lead' ),
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				array(
 					'key'   => 'contact_owner',
 					'value' => (string) $user_id,
 				),
-			),
-			'no_found_rows'  => true,
-		) );
+				),
+				'no_found_rows'  => true,
+			)
+		);
 
 		return $query->found_posts;
 	}
@@ -441,7 +463,7 @@ class WP_MCP_AI_CRM_Engine {
 			$dnc_list[ $identifier ] = array();
 		}
 		$dnc_list[ $identifier ][] = sanitize_key( $channel );
-		$dnc_list[ $identifier ]    = array_unique( $dnc_list[ $identifier ] );
+		$dnc_list[ $identifier ]   = array_unique( $dnc_list[ $identifier ] );
 
 		update_option( 'wp_mcp_ai_crm_dnc_list', $dnc_list, false );
 	}

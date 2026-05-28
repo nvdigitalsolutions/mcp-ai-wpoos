@@ -141,10 +141,13 @@ class WP_MCP_AI_CRM_Audit {
 		// Filter by event type.
 		if ( ! empty( $event_type ) ) {
 			$event_type = sanitize_key( $event_type );
-			$entries = array_filter( $entries, function ( $entry ) use ( $event_type ) {
-				return isset( $entry['event'] ) && $entry['event'] === $event_type;
-			} );
-			$entries = array_values( $entries );
+			$entries    = array_filter(
+				$entries,
+				function ( $entry ) use ( $event_type ) {
+					return isset( $entry['event'] ) && $entry['event'] === $event_type;
+				}
+			);
+			$entries    = array_values( $entries );
 		}
 
 		// Paginate.

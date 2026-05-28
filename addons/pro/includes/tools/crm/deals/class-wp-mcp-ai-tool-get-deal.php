@@ -164,17 +164,17 @@ class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		if ( $stage_id ) {
 			$stage_def = WP_MCP_AI_CRM_Pipeline_Stages::get_stage( $stage_id );
 			if ( $stage_def ) {
-				$deal['stage_label'] = isset( $stage_def['label'] ) ? $stage_def['label'] : '';
-				$deal['stage_color'] = isset( $stage_def['color'] ) ? $stage_def['color'] : '';
+				$deal['stage_label']     = isset( $stage_def['label'] ) ? $stage_def['label'] : '';
+				$deal['stage_color']     = isset( $stage_def['color'] ) ? $stage_def['color'] : '';
 				$deal['win_probability'] = WP_MCP_AI_CRM_Pipeline_Stages::probability( $stage_id );
-				$deal['is_won']  = ! empty( $stage_def['is_won'] );
-				$deal['is_lost'] = ! empty( $stage_def['is_lost'] );
+				$deal['is_won']          = ! empty( $stage_def['is_won'] );
+				$deal['is_lost']         = ! empty( $stage_def['is_lost'] );
 			}
 		}
 
 		// Calculate weighted amount.
-		$amount      = isset( $deal['amount'] ) ? (float) $deal['amount'] : 0.0;
-		$probability = isset( $deal['win_probability'] ) ? (float) $deal['win_probability'] : 0.0;
+		$amount                  = isset( $deal['amount'] ) ? (float) $deal['amount'] : 0.0;
+		$probability             = isset( $deal['win_probability'] ) ? (float) $deal['win_probability'] : 0.0;
 		$deal['weighted_amount'] = round( $amount * $probability, 2 );
 
 		// Count associated activities.
@@ -182,10 +182,12 @@ class WP_MCP_AI_Tool_Get_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		if ( class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
 			$activities_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'activities' );
 			if ( $activities_store ) {
-				$activities = $activities_store->query_items( array(
-					'deal_id'  => $deal_id,
-					'per_page' => 1,
-				) );
+				$activities = $activities_store->query_items(
+					array(
+						'deal_id'  => $deal_id,
+						'per_page' => 1,
+					)
+				);
 				if ( is_array( $activities ) ) {
 					$activities_count = count( $activities );
 				}

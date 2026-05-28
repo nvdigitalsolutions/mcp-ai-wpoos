@@ -42,31 +42,31 @@ class WP_MCP_AI_CRM_Pipeline_Stages {
 	 */
 	public static function defaults() {
 		return array(
-			'prospecting'    => array(
+			'prospecting'         => array(
 				'label'       => __( 'Prospecting', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.05,
 				'order'       => 10,
 				'color'       => '#e3e3e3',
 			),
-			'qualification'  => array(
+			'qualification'       => array(
 				'label'       => __( 'Qualification', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.10,
 				'order'       => 20,
 				'color'       => '#d1ecf1',
 			),
-			'needs_analysis' => array(
+			'needs_analysis'      => array(
 				'label'       => __( 'Needs Analysis', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.20,
 				'order'       => 30,
 				'color'       => '#bee5eb',
 			),
-			'value_prop'     => array(
+			'value_prop'          => array(
 				'label'       => __( 'Value Proposition', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.35,
 				'order'       => 40,
 				'color'       => '#c3e6cb',
 			),
-			'id_decision_makers' => array(
+			'id_decision_makers'  => array(
 				'label'       => __( 'ID Decision Makers', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.45,
 				'order'       => 50,
@@ -78,26 +78,26 @@ class WP_MCP_AI_CRM_Pipeline_Stages {
 				'order'       => 60,
 				'color'       => '#fff3cd',
 			),
-			'proposal'       => array(
+			'proposal'            => array(
 				'label'       => __( 'Proposal', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.65,
 				'order'       => 70,
 				'color'       => '#ffeeba',
 			),
-			'negotiation'    => array(
+			'negotiation'         => array(
 				'label'       => __( 'Negotiation', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.80,
 				'order'       => 80,
 				'color'       => '#f5c6cb',
 			),
-			'closed_won'     => array(
+			'closed_won'          => array(
 				'label'       => __( 'Closed Won', 'mcp-ai-wpoos-pro' ),
 				'probability' => 1.00,
 				'is_won'      => true,
 				'order'       => 90,
 				'color'       => '#28a745',
 			),
-			'closed_lost'    => array(
+			'closed_lost'         => array(
 				'label'       => __( 'Closed Lost', 'mcp-ai-wpoos-pro' ),
 				'probability' => 0.00,
 				'is_lost'     => true,
@@ -124,11 +124,14 @@ class WP_MCP_AI_CRM_Pipeline_Stages {
 		$stages   = is_array( $filtered ) ? $filtered : $stages;
 
 		// Sort by order.
-		uasort( $stages, function ( $a, $b ) {
-			$order_a = isset( $a['order'] ) ? (int) $a['order'] : 0;
-			$order_b = isset( $b['order'] ) ? (int) $b['order'] : 0;
-			return $order_a - $order_b;
-		} );
+		uasort(
+			$stages,
+			function ( $a, $b ) {
+				$order_a = isset( $a['order'] ) ? (int) $a['order'] : 0;
+				$order_b = isset( $b['order'] ) ? (int) $b['order'] : 0;
+				return $order_a - $order_b;
+			}
+		);
 
 		return $stages;
 	}
@@ -203,8 +206,11 @@ class WP_MCP_AI_CRM_Pipeline_Stages {
 	 */
 	public static function get_open_stages() {
 		$stages = self::get_stages();
-		return array_filter( $stages, function ( $stage ) {
-			return empty( $stage['is_won'] ) && empty( $stage['is_lost'] );
-		} );
+		return array_filter(
+			$stages,
+			function ( $stage ) {
+				return empty( $stage['is_won'] ) && empty( $stage['is_lost'] );
+			}
+		);
 	}
 }

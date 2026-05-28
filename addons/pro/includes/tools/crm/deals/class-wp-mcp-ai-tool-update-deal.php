@@ -247,9 +247,9 @@ class WP_MCP_AI_Tool_Update_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return $this->format_success_response(
 			__( 'Deal updated successfully.', 'mcp-ai-wpoos-pro' ),
 			array(
-				'deal_id'       => $deal_id,
+				'deal_id'        => $deal_id,
 				'updated_fields' => array_keys( $update_data ),
-				'storage_type'  => $this->data_store->get_storage_type(),
+				'storage_type'   => $this->data_store->get_storage_type(),
 			)
 		);
 	}

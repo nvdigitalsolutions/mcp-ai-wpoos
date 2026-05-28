@@ -236,7 +236,7 @@ class WP_MCP_AI_Tool_List_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$page = max( 1, $page );
 
-		$orderby = isset( $arguments['orderby'] ) ? sanitize_key( $arguments['orderby'] ) : 'created_at';
+		$orderby         = isset( $arguments['orderby'] ) ? sanitize_key( $arguments['orderby'] ) : 'created_at';
 		$allowed_orderby = array( 'id', 'email', 'first_name', 'last_name', 'lead_score', 'lifecycle_stage', 'created_at', 'updated_at' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'created_at';
@@ -291,7 +291,7 @@ class WP_MCP_AI_Tool_List_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			foreach ( $leads as &$lead ) {
 				if ( is_array( $lead ) ) {
-					$score = isset( $lead['lead_score'] ) ? $lead['lead_score'] : null;
+					$score               = isset( $lead['lead_score'] ) ? $lead['lead_score'] : null;
 					$lead['score_label'] = WP_MCP_AI_CRM_Engine::score_label( $score );
 				}
 			}
@@ -307,8 +307,8 @@ class WP_MCP_AI_Tool_List_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'lead',
 				'',
 				array(
-					'count' => $count,
-					'action' => 'list',
+					'count'   => $count,
+					'action'  => 'list',
 					'filters' => wp_json_encode( $query_args ),
 				)
 			);

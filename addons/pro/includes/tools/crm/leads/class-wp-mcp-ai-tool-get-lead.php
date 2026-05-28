@@ -222,7 +222,7 @@ class WP_MCP_AI_Tool_Get_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 
 		// Enrich with score label.
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
-			$score = isset( $lead['lead_score'] ) ? $lead['lead_score'] : null;
+			$score               = isset( $lead['lead_score'] ) ? $lead['lead_score'] : null;
 			$lead['score_label'] = WP_MCP_AI_CRM_Engine::score_label( $score );
 		}
 
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Get_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				'lead',
 				$lead_id,
 				array(
-					'email' => isset( $lead['email'] ) ? $lead['email'] : '',
+					'email'  => isset( $lead['email'] ) ? $lead['email'] : '',
 					'action' => 'read',
 				)
 			);

@@ -91,11 +91,11 @@ class WP_MCP_AI_Tool_Delete_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'deal_id'     => array(
+				'deal_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Deal ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'confirm'     => array(
+				'confirm' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Explicit confirmation flag. Must be true to proceed.', 'mcp-ai-wpoos-pro' ),
 				),

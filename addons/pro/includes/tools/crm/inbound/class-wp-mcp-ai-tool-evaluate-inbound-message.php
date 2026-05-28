@@ -16,39 +16,82 @@
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  */
-if ( ! defined( 'ABSPATH' ) ) { exit; }
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; }
 
 class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	public static function is_available() { $s = get_option( 'wp_mcp_ai_settings', array() ); return ! empty( $s['enable_crm_toolkit'] ); }
-	public static function get_unavailable_reason() { return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
-	public function get_slug() { return 'evaluate_inbound_message'; }
-	public function get_name() { return __( 'Evaluate Inbound Message', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Full inbound triage pipeline: classify intent, detect buying signals, extract/upsert lead, score, qualify, and optionally auto-reply.', 'mcp-ai-wpoos-pro' ); }
+	public static function is_available() {
+		$s = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $s['enable_crm_toolkit'] ); }
+	public static function get_unavailable_reason() {
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	public function get_slug() {
+		return 'evaluate_inbound_message'; }
+	public function get_name() {
+		return __( 'Evaluate Inbound Message', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Full inbound triage pipeline: classify intent, detect buying signals, extract/upsert lead, score, qualify, and optionally auto-reply.', 'mcp-ai-wpoos-pro' ); }
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
+			'type'       => 'object',
 			'properties' => array(
-				'message_body'    => array( 'type' => 'string', 'description' => __( 'Message text, transcript, or email body.', 'mcp-ai-wpoos-pro' ) ),
-				'message_subject' => array( 'type' => 'string', 'description' => __( 'Optional subject line (email).', 'mcp-ai-wpoos-pro' ) ),
-				'channel'         => array( 'type' => 'string', 'enum' => WP_MCP_AI_CRM_Codes::CHANNELS, 'default' => 'email', 'description' => __( 'Message channel.', 'mcp-ai-wpoos-pro' ) ),
-				'sender_email'    => array( 'type' => 'string', 'description' => __( 'Sender email address.', 'mcp-ai-wpoos-pro' ) ),
-				'sender_phone'    => array( 'type' => 'string', 'description' => __( 'Sender phone (E.164 format).', 'mcp-ai-wpoos-pro' ) ),
-				'sender_name'     => array( 'type' => 'string', 'description' => __( 'Sender display name.', 'mcp-ai-wpoos-pro' ) ),
-				'existing_contact_id' => array( 'type' => 'integer', 'description' => __( 'If a matching contact already exists, provide the ID to skip extraction.', 'mcp-ai-wpoos-pro' ) ),
-				'auto_reply'      => array( 'type' => 'boolean', 'default' => false, 'description' => __( 'If true, attempt an auto-reply on the same channel.', 'mcp-ai-wpoos-pro' ) ),
-				'qualification_framework' => array( 'type' => 'string', 'enum' => array( 'bant', 'meddic' ), 'default' => 'bant' ),
+				'message_body'            => array(
+					'type'        => 'string',
+					'description' => __( 'Message text, transcript, or email body.', 'mcp-ai-wpoos-pro' ),
+				),
+				'message_subject'         => array(
+					'type'        => 'string',
+					'description' => __( 'Optional subject line (email).', 'mcp-ai-wpoos-pro' ),
+				),
+				'channel'                 => array(
+					'type'        => 'string',
+					'enum'        => WP_MCP_AI_CRM_Codes::CHANNELS,
+					'default'     => 'email',
+					'description' => __( 'Message channel.', 'mcp-ai-wpoos-pro' ),
+				),
+				'sender_email'            => array(
+					'type'        => 'string',
+					'description' => __( 'Sender email address.', 'mcp-ai-wpoos-pro' ),
+				),
+				'sender_phone'            => array(
+					'type'        => 'string',
+					'description' => __( 'Sender phone (E.164 format).', 'mcp-ai-wpoos-pro' ),
+				),
+				'sender_name'             => array(
+					'type'        => 'string',
+					'description' => __( 'Sender display name.', 'mcp-ai-wpoos-pro' ),
+				),
+				'existing_contact_id'     => array(
+					'type'        => 'integer',
+					'description' => __( 'If a matching contact already exists, provide the ID to skip extraction.', 'mcp-ai-wpoos-pro' ),
+				),
+				'auto_reply'              => array(
+					'type'        => 'boolean',
+					'default'     => false,
+					'description' => __( 'If true, attempt an auto-reply on the same channel.', 'mcp-ai-wpoos-pro' ),
+				),
+				'qualification_framework' => array(
+					'type'    => 'string',
+					'enum'    => array( 'bant', 'meddic' ),
+					'default' => 'bant',
+				),
 			),
-			'required' => array( 'message_body' ),
+			'required'   => array( 'message_body' ),
 		);
 	}
-	public function get_required_capability() { return 'edit_posts'; }
-	public function requires_base_pro() { return true; }
-	public function get_capability_flags() { return array( 'pro', 'database-write', 'requires-capability' ); }
+	public function get_required_capability() {
+		return 'edit_posts'; }
+	public function requires_base_pro() {
+		return true; }
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'requires-capability' ); }
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		if ( ! self::is_available() ) { return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
-		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) { return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
+		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 
 		$channel      = sanitize_key( $arguments['channel'] ?? 'email' );
 		$message_body = sanitize_textarea_field( $arguments['message_body'] . ( ! empty( $arguments['message_subject'] ) ? "\n\nSubject: " . $arguments['message_subject'] : '' ) );
@@ -56,7 +99,10 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		$sender_phone = sanitize_text_field( $arguments['sender_phone'] ?? '' );
 		$sender_name  = sanitize_text_field( $arguments['sender_name'] ?? '' );
 
-		$result = array( 'success' => true, 'pipeline' => array() );
+		$result = array(
+			'success'  => true,
+			'pipeline' => array(),
+		);
 
 		// --- Step 1: Classify intent ---
 		if ( class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
@@ -73,9 +119,12 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		// --- Step 2: Detect buying signals ---
 		if ( class_exists( 'WP_MCP_AI_CRM_Classifier' ) ) {
 			$signals = array();
-			$kw = apply_filters( 'wp_mcp_ai_crm_buying_signal_keywords', array( 'pricing', 'demo', 'next step', 'timeline', 'budget', 'decision maker', 'trial', 'buy', 'purchase' ) );
-			$lower = mb_strtolower( $message_body );
-			foreach ( $kw as $k ) { if ( false !== strpos( $lower, $k ) ) { $signals[] = $k; } }
+			$kw      = apply_filters( 'wp_mcp_ai_crm_buying_signal_keywords', array( 'pricing', 'demo', 'next step', 'timeline', 'budget', 'decision maker', 'trial', 'buy', 'purchase' ) );
+			$lower   = mb_strtolower( $message_body );
+			foreach ( $kw as $k ) {
+				if ( false !== strpos( $lower, $k ) ) {
+					$signals[] = $k; }
+			}
 			$result['pipeline']['buying_signals'] = $signals;
 		}
 
@@ -85,27 +134,61 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 			// Try to find existing contact by email or phone.
 			$existing = null;
 			if ( $sender_email ) {
-				$q = new WP_Query( array( 'post_type' => array( 'mcp_ai_lead', 'mcp_crm_contacts' ), 'post_status' => 'publish', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => 'email', 'value' => $sender_email ) ), 'no_found_rows' => true ) );
-				if ( $q->have_posts() ) { $contact_id = $q->posts[0]; }
+				$q = new WP_Query(
+					array(
+						'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
+						'post_status'    => 'publish',
+						'posts_per_page' => 1,
+						'fields'         => 'ids',
+						'meta_query'     => array(
+							array(
+								'key'   => 'email',
+								'value' => $sender_email,
+							),
+						),
+						'no_found_rows'  => true,
+					)
+				);
+				if ( $q->have_posts() ) {
+					$contact_id = $q->posts[0]; }
 			}
 			if ( ! $contact_id && $sender_phone ) {
-				$q = new WP_Query( array( 'post_type' => array( 'mcp_ai_lead', 'mcp_crm_contacts' ), 'post_status' => 'publish', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_query' => array( array( 'key' => 'phone', 'value' => $sender_phone ) ), 'no_found_rows' => true ) );
-				if ( $q->have_posts() ) { $contact_id = $q->posts[0]; }
+				$q = new WP_Query(
+					array(
+						'post_type'      => array( 'mcp_ai_lead', 'mcp_crm_contacts' ),
+						'post_status'    => 'publish',
+						'posts_per_page' => 1,
+						'fields'         => 'ids',
+						'meta_query'     => array(
+							array(
+								'key'   => 'phone',
+								'value' => $sender_phone,
+							),
+						),
+						'no_found_rows'  => true,
+					)
+				);
+				if ( $q->have_posts() ) {
+					$contact_id = $q->posts[0]; }
 			}
 		}
 		if ( ! $contact_id ) {
 			// Create a new lead.
-			$post_id = wp_insert_post( array(
-				'post_type'   => 'mcp_ai_lead',
-				'post_title'  => $sender_name ?: __( 'Inbound Lead', 'mcp-ai-wpoos-pro' ),
-				'post_status' => 'publish',
-			), true );
+			$post_id = wp_insert_post(
+				array(
+					'post_type'   => 'mcp_ai_lead',
+					'post_title'  => $sender_name ?: __( 'Inbound Lead', 'mcp-ai-wpoos-pro' ),
+					'post_status' => 'publish',
+				),
+				true
+			);
 			if ( ! is_wp_error( $post_id ) ) {
 				$contact_id = $post_id;
 				if ( $sender_name ) {
 					$parts = explode( ' ', $sender_name, 2 );
 					update_post_meta( $contact_id, 'first_name', sanitize_text_field( $parts[0] ) );
-					if ( isset( $parts[1] ) ) { update_post_meta( $contact_id, 'last_name', sanitize_text_field( $parts[1] ) ); }
+					if ( isset( $parts[1] ) ) {
+						update_post_meta( $contact_id, 'last_name', sanitize_text_field( $parts[1] ) ); }
 				}
 				update_post_meta( $contact_id, 'email', $sender_email );
 				update_post_meta( $contact_id, 'phone', $sender_phone );
@@ -115,7 +198,8 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 				// Auto-assign owner.
 				if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 					$owner = WP_MCP_AI_CRM_Engine::get_next_owner();
-					if ( $owner ) { update_post_meta( $contact_id, 'contact_owner', $owner ); }
+					if ( $owner ) {
+						update_post_meta( $contact_id, 'contact_owner', $owner ); }
 				}
 			}
 		}
@@ -124,14 +208,16 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 
 		// --- Step 4: Score lead ---
 		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
-			$score = WP_MCP_AI_CRM_Engine::calculate_lead_score( array(
-				'fit'        => 40,
-				'intent'     => isset( $classification['intent'] ) && in_array( $classification['intent'], array( 'demo_request', 'pricing_inquiry' ) ) ? 80 : 30,
-				'engagement' => 50,
-				'recency'    => 90,
-			) );
+			$score = WP_MCP_AI_CRM_Engine::calculate_lead_score(
+				array(
+					'fit'        => 40,
+					'intent'     => isset( $classification['intent'] ) && in_array( $classification['intent'], array( 'demo_request', 'pricing_inquiry' ) ) ? 80 : 30,
+					'engagement' => 50,
+					'recency'    => 90,
+				)
+			);
 			update_post_meta( $contact_id, 'lead_score', $score );
-			$result['pipeline']['lead_score'] = $score;
+			$result['pipeline']['lead_score']  = $score;
 			$result['pipeline']['score_label'] = WP_MCP_AI_CRM_Engine::score_label( $score );
 		}
 
@@ -151,8 +237,8 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 
 		// --- Step 6: Auto-reply (if enabled) ---
 		if ( ! empty( $arguments['auto_reply'] ) && $contact_id ) {
-			$intent  = isset( $classification['intent'] ) ? $classification['intent'] : 'general';
-			$auto_msg = sprintf( __( 'Thanks for reaching out! Our team will get back to you shortly. (Auto-reply for: %s)', 'mcp-ai-wpoos-pro' ), $intent );
+			$intent                           = isset( $classification['intent'] ) ? $classification['intent'] : 'general';
+			$auto_msg                         = sprintf( __( 'Thanks for reaching out! Our team will get back to you shortly. (Auto-reply for: %s)', 'mcp-ai-wpoos-pro' ), $intent );
 			$result['pipeline']['auto_reply'] = array(
 				'sent'    => true,
 				'channel' => $channel,
@@ -162,11 +248,14 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 
 		// --- Step 7: Schedule follow-up ---
 		if ( $contact_id ) {
-			$follow_up_id = wp_insert_post( array(
-				'post_type'    => 'mcp_ai_crm_activity',
-				'post_title'   => sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $contact_id ),
-				'post_status'  => 'publish',
-			), true );
+			$follow_up_id = wp_insert_post(
+				array(
+					'post_type'   => 'mcp_ai_crm_activity',
+					'post_title'  => sprintf( __( 'Follow up with lead #%d', 'mcp-ai-wpoos-pro' ), $contact_id ),
+					'post_status' => 'publish',
+				),
+				true
+			);
 			if ( ! is_wp_error( $follow_up_id ) ) {
 				update_post_meta( $follow_up_id, 'activity_type', 'task' );
 				update_post_meta( $follow_up_id, 'related_type', 'lead' );

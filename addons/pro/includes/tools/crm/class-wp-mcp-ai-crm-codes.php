@@ -109,7 +109,7 @@ class WP_MCP_AI_CRM_Codes {
 			// --------------------------------------------------------
 			// Qualification frameworks
 			// --------------------------------------------------------
-			'framework:bant'   => array(
+			'framework:bant'       => array(
 				'system' => 'bant',
 				'title'  => 'BANT — Budget · Authority · Need · Timeline',
 				'codes'  => array(
@@ -119,33 +119,33 @@ class WP_MCP_AI_CRM_Codes {
 					'timeline'  => 'Timeline — When do they need to act?',
 				),
 			),
-			'framework:meddic' => array(
+			'framework:meddic'     => array(
 				'system' => 'meddic',
 				'title'  => 'MEDDIC — Metrics · Economic Buyer · Decision Criteria · Decision Process · Identify Pain · Champion',
 				'codes'  => array(
-					'metrics'          => 'Metrics — Quantifiable ROI or KPI improvement.',
-					'economic_buyer'   => 'Economic Buyer — Person who controls the budget.',
-					'decision_criteria'=> 'Decision Criteria — Technical and business requirements.',
-					'decision_process' => 'Decision Process — Steps and stakeholders in the buying process.',
-					'identify_pain'    => 'Identify Pain — Core problem the prospect needs to solve.',
-					'champion'         => 'Champion — Internal advocate with influence.',
+					'metrics'           => 'Metrics — Quantifiable ROI or KPI improvement.',
+					'economic_buyer'    => 'Economic Buyer — Person who controls the budget.',
+					'decision_criteria' => 'Decision Criteria — Technical and business requirements.',
+					'decision_process'  => 'Decision Process — Steps and stakeholders in the buying process.',
+					'identify_pain'     => 'Identify Pain — Core problem the prospect needs to solve.',
+					'champion'          => 'Champion — Internal advocate with influence.',
 				),
 			),
-			'framework:champ'  => array(
+			'framework:champ'      => array(
 				'system' => 'champ',
 				'title'  => 'CHAMP — Challenges · Authority · Money · Prioritisation',
 				'codes'  => array(
-					'challenges'      => 'Challenges — What is driving the need?',
-					'authority'       => 'Authority — Decision-making power.',
-					'money'           => 'Money — Budget availability.',
-					'prioritisation'  => 'Prioritisation — Urgency relative to other initiatives.',
+					'challenges'     => 'Challenges — What is driving the need?',
+					'authority'      => 'Authority — Decision-making power.',
+					'money'          => 'Money — Budget availability.',
+					'prioritisation' => 'Prioritisation — Urgency relative to other initiatives.',
 				),
 			),
 
 			// --------------------------------------------------------
 			// Lifecycle stages
 			// --------------------------------------------------------
-			'lifecycle:hubspot' => array(
+			'lifecycle:hubspot'    => array(
 				'system' => 'hubspot_lifecycle',
 				'title'  => 'HubSpot Lifecycle Stages',
 				'codes'  => array(
@@ -164,51 +164,51 @@ class WP_MCP_AI_CRM_Codes {
 			// --------------------------------------------------------
 			// Sentiment labels
 			// --------------------------------------------------------
-			'sentiment:standard' => array(
+			'sentiment:standard'   => array(
 				'system' => 'sentiment',
 				'title'  => 'Standard Sentiment Labels',
 				'codes'  => array(
-					'positive'  => 'Positive — enthusiastic, ready to buy.',
-					'neutral'   => 'Neutral — inquiring, no strong signal.',
-					'negative'  => 'Negative — frustration, complaint.',
-					'mixed'     => 'Mixed — competing signals.',
-					'unknown'   => 'Unknown — insufficient text to classify.',
+					'positive' => 'Positive — enthusiastic, ready to buy.',
+					'neutral'  => 'Neutral — inquiring, no strong signal.',
+					'negative' => 'Negative — frustration, complaint.',
+					'mixed'    => 'Mixed — competing signals.',
+					'unknown'  => 'Unknown — insufficient text to classify.',
 				),
 			),
 
 			// --------------------------------------------------------
 			// Deal stages
 			// --------------------------------------------------------
-			'pipeline:salesforce' => array(
+			'pipeline:salesforce'  => array(
 				'system' => 'salesforce_pipeline',
 				'title'  => 'Salesforce Pipeline Stages',
 				'codes'  => array(
-					'prospecting'    => 'Prospecting — initial research.',
-					'qualification'  => 'Qualification — BANT/MEDDIC applied.',
-					'needs_analysis' => 'Needs Analysis — discovery call.',
-					'value_prop'     => 'Value Proposition — demo / proposal.',
-					'id_decision_makers' => 'ID Decision Makers — stakeholder mapping.',
+					'prospecting'         => 'Prospecting — initial research.',
+					'qualification'       => 'Qualification — BANT/MEDDIC applied.',
+					'needs_analysis'      => 'Needs Analysis — discovery call.',
+					'value_prop'          => 'Value Proposition — demo / proposal.',
+					'id_decision_makers'  => 'ID Decision Makers — stakeholder mapping.',
 					'perception_analysis' => 'Perception Analysis — addressing concerns.',
-					'proposal'       => 'Proposal / Price Quote — formal offer.',
-					'negotiation'    => 'Negotiation / Review — terms and redlines.',
-					'closed_won'     => 'Closed Won — signed.',
-					'closed_lost'    => 'Closed Lost — no deal.',
+					'proposal'            => 'Proposal / Price Quote — formal offer.',
+					'negotiation'         => 'Negotiation / Review — terms and redlines.',
+					'closed_won'          => 'Closed Won — signed.',
+					'closed_lost'         => 'Closed Lost — no deal.',
 				),
 			),
 
 			// --------------------------------------------------------
 			// Consent legal bases (GDPR Art. 6)
 			// --------------------------------------------------------
-			'consent:basis' => array(
+			'consent:basis'        => array(
 				'system' => 'gdpr_legal_basis',
 				'title'  => 'GDPR Art. 6 Legal Bases for Processing',
 				'codes'  => array(
 					'consent'               => 'Consent — explicit, freely given.',
-					'legitimate_interest'    => 'Legitimate Interest — balanced, documented.',
-					'contractual_necessity'  => 'Contractual Necessity — required to fulfil a contract.',
-					'legal_obligation'       => 'Legal Obligation — required by law.',
-					'vital_interests'        => 'Vital Interests — protect life.',
-					'public_interest'        => 'Public Interest — official authority.',
+					'legitimate_interest'   => 'Legitimate Interest — balanced, documented.',
+					'contractual_necessity' => 'Contractual Necessity — required to fulfil a contract.',
+					'legal_obligation'      => 'Legal Obligation — required by law.',
+					'vital_interests'       => 'Vital Interests — protect life.',
+					'public_interest'       => 'Public Interest — official authority.',
 				),
 			),
 
@@ -265,7 +265,7 @@ class WP_MCP_AI_CRM_Codes {
 		 *
 		 * @param array $packs Default packs.
 		 */
-		$filtered = apply_filters( 'wp_mcp_ai_crm_code_packs', $packs );
+		$filtered    = apply_filters( 'wp_mcp_ai_crm_code_packs', $packs );
 		self::$cache = is_array( $filtered ) ? $filtered : $packs;
 
 		return self::$cache;

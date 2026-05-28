@@ -349,14 +349,14 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Copy remaining simple fields if provided.
 		$simple_fields = array(
-			'first_name'    => 'sanitize_text_field',
-			'last_name'     => 'sanitize_text_field',
-			'company_name'  => 'sanitize_text_field',
-			'job_title'     => 'sanitize_text_field',
-			'source'        => 'sanitize_text_field',
-			'authority'     => 'sanitize_text_field',
-			'need'          => 'sanitize_text_field',
-			'timeline'      => 'sanitize_text_field',
+			'first_name'   => 'sanitize_text_field',
+			'last_name'    => 'sanitize_text_field',
+			'company_name' => 'sanitize_text_field',
+			'job_title'    => 'sanitize_text_field',
+			'source'       => 'sanitize_text_field',
+			'authority'    => 'sanitize_text_field',
+			'need'         => 'sanitize_text_field',
+			'timeline'     => 'sanitize_text_field',
 		);
 
 		foreach ( $simple_fields as $field => $sanitizer ) {
@@ -446,7 +446,7 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				$lead_id,
 				array(
 					'updated_fields' => implode( ',', array_keys( $update_data ) ),
-					'action' => 'update',
+					'action'         => 'update',
 				)
 			);
 		}
@@ -459,9 +459,9 @@ class WP_MCP_AI_Tool_Update_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				$lead_id
 			),
 			array(
-				'lead_id'         => $lead_id,
-				'updated_fields'  => array_keys( $update_data ),
-				'storage_type'    => $this->data_store->get_storage_type(),
+				'lead_id'        => $lead_id,
+				'updated_fields' => array_keys( $update_data ),
+				'storage_type'   => $this->data_store->get_storage_type(),
 			)
 		);
 	}

@@ -288,10 +288,10 @@ class WP_MCP_AI_Tool_Create_Deal implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			__( 'Deal created successfully.', 'mcp-ai-wpoos-pro' ),
 			array(
 				'deal_id'         => $deal_id,
-				'pipeline_stage'   => $pipeline_stage,
-				'win_probability'  => $deal_data['win_probability'],
-				'currency'         => $currency,
-				'storage_type'     => $this->data_store->get_storage_type(),
+				'pipeline_stage'  => $pipeline_stage,
+				'win_probability' => $deal_data['win_probability'],
+				'currency'        => $currency,
+				'storage_type'    => $this->data_store->get_storage_type(),
 			)
 		);
 	}

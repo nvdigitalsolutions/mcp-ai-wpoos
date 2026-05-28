@@ -93,40 +93,40 @@ class WP_MCP_AI_Tool_List_Deals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'pipeline_stage'      => array(
+				'pipeline_stage'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by pipeline stage slug', 'mcp-ai-wpoos-pro' ),
 				),
-				'lead_id'             => array(
+				'lead_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by lead ID', 'mcp-ai-wpoos-pro' ),
 				),
-				'deal_owner'          => array(
+				'deal_owner'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by deal owner user ID', 'mcp-ai-wpoos-pro' ),
 				),
-				'amount_min'          => array(
+				'amount_min'      => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum deal amount', 'mcp-ai-wpoos-pro' ),
 				),
-				'amount_max'          => array(
+				'amount_max'      => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum deal amount', 'mcp-ai-wpoos-pro' ),
 				),
-				'close_date_from'     => array(
+				'close_date_from' => array(
 					'type'        => 'string',
 					'description' => __( 'Filter deals with expected close date on or after (Y-m-d)', 'mcp-ai-wpoos-pro' ),
 				),
-				'close_date_to'       => array(
+				'close_date_to'   => array(
 					'type'        => 'string',
 					'description' => __( 'Filter deals with expected close date on or before (Y-m-d)', 'mcp-ai-wpoos-pro' ),
 				),
-				'per_page'            => array(
+				'per_page'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Results per page', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 				),
-				'page'                => array(
+				'page'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
@@ -224,7 +224,7 @@ class WP_MCP_AI_Tool_List_Deals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				$probability = isset( $deal['win_probability'] ) ? (float) $deal['win_probability'] : 0.0;
 
 				if ( ! isset( $deal['win_probability'] ) ) {
-					$stage_id               = isset( $deal['pipeline_stage'] ) ? $deal['pipeline_stage'] : '';
+					$stage_id                = isset( $deal['pipeline_stage'] ) ? $deal['pipeline_stage'] : '';
 					$deal['win_probability'] = WP_MCP_AI_CRM_Pipeline_Stages::probability( $stage_id );
 					$probability             = $deal['win_probability'];
 				}

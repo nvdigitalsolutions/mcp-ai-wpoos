@@ -85,14 +85,14 @@ class WP_MCP_AI_CRM_Consent {
 		$ua_hashed = $ua_raw ? hash( 'sha256', $ua_raw ) : '';
 
 		$entry = array(
-			'channel'          => $channel,
-			'legal_basis'      => $legal_basis,
-			'status'           => 'active',
-			'granted_at'       => gmdate( 'c' ),
-			'evidence_url'     => sanitize_text_field( $evidence_url ),
-			'source'           => sanitize_key( $source ),
-			'ip_hash'          => $ip_hashed,
-			'user_agent_hash'  => $ua_hashed,
+			'channel'         => $channel,
+			'legal_basis'     => $legal_basis,
+			'status'          => 'active',
+			'granted_at'      => gmdate( 'c' ),
+			'evidence_url'    => sanitize_text_field( $evidence_url ),
+			'source'          => sanitize_key( $source ),
+			'ip_hash'         => $ip_hashed,
+			'user_agent_hash' => $ua_hashed,
 		);
 
 		/**
@@ -108,7 +108,7 @@ class WP_MCP_AI_CRM_Consent {
 		foreach ( $records as $i => $record ) {
 			if ( $record['channel'] === $channel ) {
 				$records[ $i ] = $entry;
-				$found = true;
+				$found         = true;
 				break;
 			}
 		}
@@ -157,7 +157,7 @@ class WP_MCP_AI_CRM_Consent {
 			if ( 'all' === $channel || $record['channel'] === $channel ) {
 				$records[ $i ]['status']     = 'revoked';
 				$records[ $i ]['revoked_at'] = gmdate( 'c' );
-				$changed = true;
+				$changed                     = true;
 			}
 		}
 

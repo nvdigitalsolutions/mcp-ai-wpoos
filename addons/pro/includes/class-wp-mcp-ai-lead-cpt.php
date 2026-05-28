@@ -59,7 +59,7 @@ class WP_MCP_AI_Lead_CPT {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'labels'             => array(
+				'labels'          => array(
 					'name'               => _x( 'Leads', 'post type general name', 'mcp-ai-wpoos-pro' ),
 					'singular_name'      => _x( 'Lead', 'post type singular name', 'mcp-ai-wpoos-pro' ),
 					'menu_name'          => _x( 'Leads', 'admin menu', 'mcp-ai-wpoos-pro' ),
@@ -71,17 +71,17 @@ class WP_MCP_AI_Lead_CPT {
 					'not_found'          => __( 'No leads found.', 'mcp-ai-wpoos-pro' ),
 					'not_found_in_trash' => __( 'No leads found in Trash.', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'        => __( 'CRM lifecycle-stage lead records.', 'mcp-ai-wpoos-pro' ),
-				'public'             => false,
-				'show_ui'            => true,
-				'show_in_menu'       => true,
-				'menu_icon'          => 'dashicons-groups',
-				'menu_position'      => 55,
-				'capability_type'    => 'post',
-				'has_archive'        => false,
-				'hierarchical'       => false,
-				'supports'           => array( 'title', 'author' ),
-				'show_in_rest'       => true,
+				'description'     => __( 'CRM lifecycle-stage lead records.', 'mcp-ai-wpoos-pro' ),
+				'public'          => false,
+				'show_ui'         => true,
+				'show_in_menu'    => true,
+				'menu_icon'       => 'dashicons-groups',
+				'menu_position'   => 55,
+				'capability_type' => 'post',
+				'has_archive'     => false,
+				'hierarchical'    => false,
+				'supports'        => array( 'title', 'author' ),
+				'show_in_rest'    => true,
 			)
 		);
 	}
@@ -96,11 +96,11 @@ class WP_MCP_AI_Lead_CPT {
 		$date = isset( $columns['date'] ) ? $columns['date'] : null;
 		unset( $columns['date'] );
 
-		$columns['lead_status']  = __( 'Status', 'mcp-ai-wpoos-pro' );
-		$columns['lifecycle']    = __( 'Lifecycle', 'mcp-ai-wpoos-pro' );
-		$columns['lead_score']   = __( 'Score', 'mcp-ai-wpoos-pro' );
+		$columns['lead_status']   = __( 'Status', 'mcp-ai-wpoos-pro' );
+		$columns['lifecycle']     = __( 'Lifecycle', 'mcp-ai-wpoos-pro' );
+		$columns['lead_score']    = __( 'Score', 'mcp-ai-wpoos-pro' );
 		$columns['contact_owner'] = __( 'Owner', 'mcp-ai-wpoos-pro' );
-		$columns['source']       = __( 'Source', 'mcp-ai-wpoos-pro' );
+		$columns['source']        = __( 'Source', 'mcp-ai-wpoos-pro' );
 
 		if ( $date ) {
 			$columns['date'] = $date;

@@ -64,7 +64,7 @@ class WP_MCP_AI_CRM_Activity_CPT {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'labels'             => array(
+				'labels'          => array(
 					'name'               => _x( 'Activities', 'post type general name', 'mcp-ai-wpoos-pro' ),
 					'singular_name'      => _x( 'Activity', 'post type singular name', 'mcp-ai-wpoos-pro' ),
 					'menu_name'          => _x( 'Activities', 'admin menu', 'mcp-ai-wpoos-pro' ),
@@ -76,17 +76,17 @@ class WP_MCP_AI_CRM_Activity_CPT {
 					'not_found'          => __( 'No activities found.', 'mcp-ai-wpoos-pro' ),
 					'not_found_in_trash' => __( 'No activities found in Trash.', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'        => __( 'CRM sales activities: calls, emails, meetings, tasks, notes.', 'mcp-ai-wpoos-pro' ),
-				'public'             => false,
-				'show_ui'            => true,
-				'show_in_menu'       => true,
-				'menu_icon'          => 'dashicons-list-view',
-				'menu_position'      => 57,
-				'capability_type'    => 'post',
-				'has_archive'        => false,
-				'hierarchical'       => false,
-				'supports'           => array( 'title', 'editor', 'author' ),
-				'show_in_rest'       => true,
+				'description'     => __( 'CRM sales activities: calls, emails, meetings, tasks, notes.', 'mcp-ai-wpoos-pro' ),
+				'public'          => false,
+				'show_ui'         => true,
+				'show_in_menu'    => true,
+				'menu_icon'       => 'dashicons-list-view',
+				'menu_position'   => 57,
+				'capability_type' => 'post',
+				'has_archive'     => false,
+				'hierarchical'    => false,
+				'supports'        => array( 'title', 'editor', 'author' ),
+				'show_in_rest'    => true,
 			)
 		);
 	}
@@ -101,10 +101,10 @@ class WP_MCP_AI_CRM_Activity_CPT {
 		$date = isset( $columns['date'] ) ? $columns['date'] : null;
 		unset( $columns['date'] );
 
-		$columns['activity_type']  = __( 'Type', 'mcp-ai-wpoos-pro' );
-		$columns['related']        = __( 'Related', 'mcp-ai-wpoos-pro' );
-		$columns['due_date']       = __( 'Due', 'mcp-ai-wpoos-pro' );
-		$columns['disposition']    = __( 'Disposition', 'mcp-ai-wpoos-pro' );
+		$columns['activity_type'] = __( 'Type', 'mcp-ai-wpoos-pro' );
+		$columns['related']       = __( 'Related', 'mcp-ai-wpoos-pro' );
+		$columns['due_date']      = __( 'Due', 'mcp-ai-wpoos-pro' );
+		$columns['disposition']   = __( 'Disposition', 'mcp-ai-wpoos-pro' );
 
 		if ( $date ) {
 			$columns['date'] = $date;
@@ -128,8 +128,8 @@ class WP_MCP_AI_CRM_Activity_CPT {
 					'task'    => 'dashicons-yes',
 					'note'    => 'dashicons-edit',
 				);
-				$type = get_post_meta( $post_id, 'activity_type', true ) ?: 'task';
-				$icon = isset( $dashicons[ $type ] ) ? $dashicons[ $type ] : 'dashicons-yes';
+				$type      = get_post_meta( $post_id, 'activity_type', true ) ?: 'task';
+				$icon      = isset( $dashicons[ $type ] ) ? $dashicons[ $type ] : 'dashicons-yes';
 				echo '<span class="dashicons ' . esc_attr( $icon ) . '" style="vertical-align: middle; margin-right: 4px;"></span> ';
 				echo esc_html( ucfirst( $type ) );
 				break;

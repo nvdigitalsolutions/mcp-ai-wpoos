@@ -93,31 +93,31 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'email'          => array(
+				'email'           => array(
 					'type'        => 'string',
 					'description' => __( 'Email address of the lead (required).', 'mcp-ai-wpoos-pro' ),
 				),
-				'first_name'     => array(
+				'first_name'      => array(
 					'type'        => 'string',
 					'description' => __( 'First name of the lead.', 'mcp-ai-wpoos-pro' ),
 				),
-				'last_name'      => array(
+				'last_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Last name of the lead.', 'mcp-ai-wpoos-pro' ),
 				),
-				'phone'          => array(
+				'phone'           => array(
 					'type'        => 'string',
 					'description' => __( 'Phone number in E.164 format.', 'mcp-ai-wpoos-pro' ),
 				),
-				'company_name'   => array(
+				'company_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Company or organisation name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'job_title'      => array(
+				'job_title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Job title of the lead.', 'mcp-ai-wpoos-pro' ),
 				),
-				'source'         => array(
+				'source'          => array(
 					'type'        => 'string',
 					'description' => __( 'Lead source (e.g. website, referral, event, cold_outreach).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -125,15 +125,15 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'string',
 					'description' => __( 'Lifecycle stage. Defaults to the value configured in toolkit settings if omitted.', 'mcp-ai-wpoos-pro' ),
 				),
-				'contact_owner'  => array(
+				'contact_owner'   => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress user ID for the contact owner. If omitted, auto-assigned via the active routing strategy.', 'mcp-ai-wpoos-pro' ),
 				),
-				'notes'          => array(
+				'notes'           => array(
 					'type'        => 'string',
 					'description' => __( 'General notes about the lead.', 'mcp-ai-wpoos-pro' ),
 				),
-				'tags'           => array(
+				'tags'            => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Tags for categorisation.', 'mcp-ai-wpoos-pro' ),
@@ -313,18 +313,18 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Build lead data payload.
 		$lead_data = array(
-			'email'          => $email,
-			'first_name'     => isset( $arguments['first_name'] ) ? sanitize_text_field( $arguments['first_name'] ) : '',
-			'last_name'      => isset( $arguments['last_name'] ) ? sanitize_text_field( $arguments['last_name'] ) : '',
-			'phone'          => isset( $arguments['phone'] ) ? sanitize_text_field( $arguments['phone'] ) : '',
-			'company_name'   => isset( $arguments['company_name'] ) ? sanitize_text_field( $arguments['company_name'] ) : '',
-			'job_title'      => isset( $arguments['job_title'] ) ? sanitize_text_field( $arguments['job_title'] ) : '',
-			'source'         => isset( $arguments['source'] ) ? sanitize_text_field( $arguments['source'] ) : '',
+			'email'           => $email,
+			'first_name'      => isset( $arguments['first_name'] ) ? sanitize_text_field( $arguments['first_name'] ) : '',
+			'last_name'       => isset( $arguments['last_name'] ) ? sanitize_text_field( $arguments['last_name'] ) : '',
+			'phone'           => isset( $arguments['phone'] ) ? sanitize_text_field( $arguments['phone'] ) : '',
+			'company_name'    => isset( $arguments['company_name'] ) ? sanitize_text_field( $arguments['company_name'] ) : '',
+			'job_title'       => isset( $arguments['job_title'] ) ? sanitize_text_field( $arguments['job_title'] ) : '',
+			'source'          => isset( $arguments['source'] ) ? sanitize_text_field( $arguments['source'] ) : '',
 			'lifecycle_stage' => $lifecycle_stage,
-			'lead_score'     => 0,
-			'contact_owner'  => $contact_owner,
-			'notes'          => isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '',
-			'tags'           => isset( $arguments['tags'] ) ? array_map( 'sanitize_text_field', (array) $arguments['tags'] ) : array(),
+			'lead_score'      => 0,
+			'contact_owner'   => $contact_owner,
+			'notes'           => isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '',
+			'tags'            => isset( $arguments['tags'] ) ? array_map( 'sanitize_text_field', (array) $arguments['tags'] ) : array(),
 		);
 
 		/**
@@ -368,7 +368,7 @@ class WP_MCP_AI_Tool_Create_Lead implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'lead',
 				$lead_id,
 				array(
-					'email' => $email,
+					'email'  => $email,
 					'action' => 'create',
 				)
 			);

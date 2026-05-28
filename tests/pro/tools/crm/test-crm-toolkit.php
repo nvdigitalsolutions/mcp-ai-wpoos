@@ -55,7 +55,7 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Enable CRM toolkit.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_crm_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -135,12 +135,14 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	}
 
 	public function test_engine_calculate_lead_score() {
-		$score = WP_MCP_AI_CRM_Engine::calculate_lead_score( array(
-			'fit'        => 80,
-			'intent'     => 90,
-			'engagement' => 70,
-			'recency'    => 60,
-		) );
+		$score = WP_MCP_AI_CRM_Engine::calculate_lead_score(
+			array(
+				'fit'        => 80,
+				'intent'     => 90,
+				'engagement' => 70,
+				'recency'    => 60,
+			)
+		);
 		$this->assertGreaterThanOrEqual( 0, $score );
 		$this->assertLessThanOrEqual( 100, $score );
 	}
@@ -230,11 +232,13 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// ────────────────────────────────────────────────────────
 
 	public function test_create_lead() {
-		$lead_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_lead',
-			'post_title'  => 'Test Lead',
-			'post_status' => 'publish',
-		) );
+		$lead_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_lead',
+				'post_title'  => 'Test Lead',
+				'post_status' => 'publish',
+			)
+		);
 		$this->assertNotInstanceOf( 'WP_Error', $lead_id );
 		$this->test_lead_ids[] = $lead_id;
 
@@ -247,11 +251,13 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	}
 
 	public function test_lead_meta_fields_persist() {
-		$lead_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_lead',
-			'post_title'  => 'Meta Lead',
-			'post_status' => 'publish',
-		) );
+		$lead_id               = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_lead',
+				'post_title'  => 'Meta Lead',
+				'post_status' => 'publish',
+			)
+		);
 		$this->test_lead_ids[] = $lead_id;
 
 		update_post_meta( $lead_id, 'first_name', 'John' );
@@ -274,11 +280,13 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	}
 
 	public function test_lead_delete_trashes() {
-		$lead_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_lead',
-			'post_title'  => 'To Delete',
-			'post_status' => 'publish',
-		) );
+		$lead_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_lead',
+				'post_title'  => 'To Delete',
+				'post_status' => 'publish',
+			)
+		);
 		wp_trash_post( $lead_id );
 		$post = get_post( $lead_id );
 		$this->assertSame( 'trash', $post->post_status );
@@ -286,11 +294,13 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	}
 
 	public function test_convert_lead_to_customer() {
-		$lead_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_lead',
-			'post_title'  => 'Convert Me',
-			'post_status' => 'publish',
-		) );
+		$lead_id               = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_lead',
+				'post_title'  => 'Convert Me',
+				'post_status' => 'publish',
+			)
+		);
 		$this->test_lead_ids[] = $lead_id;
 
 		update_post_meta( $lead_id, 'lifecycle_stage', 'sql' );
@@ -311,11 +321,13 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	public function test_create_deal() {
 		$lead_id = $this->create_test_lead();
 
-		$deal_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_deal',
-			'post_title'  => 'Test Deal',
-			'post_status' => 'publish',
-		) );
+		$deal_id               = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_deal',
+				'post_title'  => 'Test Deal',
+				'post_status' => 'publish',
+			)
+		);
 		$this->test_deal_ids[] = $deal_id;
 
 		update_post_meta( $deal_id, 'lead_id', $lead_id );
@@ -351,12 +363,14 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	public function test_create_activity() {
 		$lead_id = $this->create_test_lead();
 
-		$activity_id = wp_insert_post( array(
-			'post_type'    => 'mcp_ai_crm_activity',
-			'post_title'   => 'Discovery Call',
-			'post_content' => 'Had a great discovery call.',
-			'post_status'  => 'publish',
-		) );
+		$activity_id               = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_crm_activity',
+				'post_title'   => 'Discovery Call',
+				'post_content' => 'Had a great discovery call.',
+				'post_status'  => 'publish',
+			)
+		);
 		$this->test_activity_ids[] = $activity_id;
 
 		update_post_meta( $activity_id, 'activity_type', 'call' );
@@ -372,11 +386,13 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	}
 
 	public function test_complete_activity() {
-		$activity_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_crm_activity',
-			'post_title'  => 'Task to Complete',
-			'post_status' => 'publish',
-		) );
+		$activity_id               = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_crm_activity',
+				'post_title'  => 'Task to Complete',
+				'post_status' => 'publish',
+			)
+		);
 		$this->test_activity_ids[] = $activity_id;
 
 		update_post_meta( $activity_id, 'completed', '1' );
@@ -428,9 +444,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 
 	public function test_buying_signal_detection() {
 		$signals = array();
-		$kw = apply_filters( 'wp_mcp_ai_crm_buying_signal_keywords', array( 'pricing', 'demo', 'budget' ) );
-		$msg  = 'I need pricing and a demo. We have budget.';
-		$lower = mb_strtolower( $msg );
+		$kw      = apply_filters( 'wp_mcp_ai_crm_buying_signal_keywords', array( 'pricing', 'demo', 'budget' ) );
+		$msg     = 'I need pricing and a demo. We have budget.';
+		$lower   = mb_strtolower( $msg );
 		foreach ( $kw as $k ) {
 			if ( false !== strpos( $lower, $k ) ) {
 				$signals[] = $k;
@@ -483,17 +499,29 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// ────────────────────────────────────────────────────────
 
 	public function test_create_sequence() {
-		$seq_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_sequence',
-			'post_title'  => '5-Day Outreach',
-			'post_status' => 'publish',
-		) );
+		$seq_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_sequence',
+				'post_title'  => '5-Day Outreach',
+				'post_status' => 'publish',
+			)
+		);
 		$this->assertNotInstanceOf( 'WP_Error', $seq_id );
 		$this->test_deal_ids[] = $seq_id;
 
 		$steps = array(
-			array( 'order' => 1, 'channel' => 'email', 'template_id' => 'intro', 'wait_hours' => 0 ),
-			array( 'order' => 2, 'channel' => 'email', 'template_id' => 'followup', 'wait_hours' => 48 ),
+			array(
+				'order'       => 1,
+				'channel'     => 'email',
+				'template_id' => 'intro',
+				'wait_hours'  => 0,
+			),
+			array(
+				'order'       => 2,
+				'channel'     => 'email',
+				'template_id' => 'followup',
+				'wait_hours'  => 48,
+			),
 		);
 		update_post_meta( $seq_id, 'steps', $steps );
 		update_post_meta( $seq_id, 'step_count', count( $steps ) );
@@ -527,19 +555,28 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// ────────────────────────────────────────────────────────
 
 	public function test_create_workflow_rule() {
-		$rule_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_crm_workflow_rule',
-			'post_title'  => 'Auto-Reply Hot Leads',
-			'post_status' => 'publish',
-		) );
+		$rule_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_crm_workflow_rule',
+				'post_title'  => 'Auto-Reply Hot Leads',
+				'post_status' => 'publish',
+			)
+		);
 		$this->assertNotInstanceOf( 'WP_Error', $rule_id );
 		$this->test_deal_ids[] = $rule_id; // reuse cleanup.
 
 		update_post_meta( $rule_id, 'trigger', 'inbound_message_received' );
 		update_post_meta( $rule_id, 'is_active', '1' );
-		update_post_meta( $rule_id, 'actions', array(
-			array( 'type' => 'send_email', 'params' => array( 'template_id' => 'auto_reply' ) ),
-		) );
+		update_post_meta(
+			$rule_id,
+			'actions',
+			array(
+				array(
+					'type'   => 'send_email',
+					'params' => array( 'template_id' => 'auto_reply' ),
+				),
+			)
+		);
 
 		$this->assertSame( 'inbound_message_received', get_post_meta( $rule_id, 'trigger', true ) );
 		$this->assertSame( '1', get_post_meta( $rule_id, 'is_active', true ) );
@@ -569,7 +606,7 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// ────────────────────────────────────────────────────────
 
 	public function test_csv_import_parsing() {
-		$csv = "first_name,last_name,email,company\nAlice,Smith,alice@example.com,Acme\nBob,Jones,bob@example.com,Beta";
+		$csv   = "first_name,last_name,email,company\nAlice,Smith,alice@example.com,Acme\nBob,Jones,bob@example.com,Beta";
 		$lines = explode( "\n", trim( $csv ) );
 		$this->assertCount( 3, $lines ); // header + 2 rows.
 
@@ -586,7 +623,7 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// ────────────────────────────────────────────────────────
 
 	public function test_blueprint_files_exist() {
-		$base = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : dirname( dirname( dirname( __DIR__ ) ) ) . '/addons/pro/';
+		$base       = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : dirname( __DIR__, 3 ) . '/addons/pro/';
 		$blueprints = array(
 			'b2b-saas-sdr.json',
 			'agency-account-manager.json',
@@ -608,23 +645,27 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// ────────────────────────────────────────────────────────
 
 	private function create_test_lead(): int {
-		$lead_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_lead',
-			'post_title'  => 'Test Lead ' . wp_rand(),
-			'post_status' => 'publish',
-		) );
+		$lead_id               = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_lead',
+				'post_title'  => 'Test Lead ' . wp_rand(),
+				'post_status' => 'publish',
+			)
+		);
 		$this->test_lead_ids[] = $lead_id;
 		update_post_meta( $lead_id, 'email', 'lead' . wp_rand() . '@example.com' );
 		return $lead_id;
 	}
 
 	private function create_test_deal(): int {
-		$lead_id = $this->create_test_lead();
-		$deal_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_deal',
-			'post_title'  => 'Test Deal ' . wp_rand(),
-			'post_status' => 'publish',
-		) );
+		$lead_id               = $this->create_test_lead();
+		$deal_id               = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_deal',
+				'post_title'  => 'Test Deal ' . wp_rand(),
+				'post_status' => 'publish',
+			)
+		);
 		$this->test_deal_ids[] = $deal_id;
 		update_post_meta( $deal_id, 'lead_id', $lead_id );
 		update_post_meta( $deal_id, 'deal_stage', 'prospecting' );

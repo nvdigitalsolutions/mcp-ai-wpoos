@@ -58,7 +58,7 @@ class WP_MCP_AI_Deal_CPT {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'labels'             => array(
+				'labels'          => array(
 					'name'               => _x( 'Deals', 'post type general name', 'mcp-ai-wpoos-pro' ),
 					'singular_name'      => _x( 'Deal', 'post type singular name', 'mcp-ai-wpoos-pro' ),
 					'menu_name'          => _x( 'Deals', 'admin menu', 'mcp-ai-wpoos-pro' ),
@@ -70,17 +70,17 @@ class WP_MCP_AI_Deal_CPT {
 					'not_found'          => __( 'No deals found.', 'mcp-ai-wpoos-pro' ),
 					'not_found_in_trash' => __( 'No deals found in Trash.', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'        => __( 'CRM pipeline opportunity records.', 'mcp-ai-wpoos-pro' ),
-				'public'             => false,
-				'show_ui'            => true,
-				'show_in_menu'       => true,
-				'menu_icon'          => 'dashicons-chart-area',
-				'menu_position'      => 56,
-				'capability_type'    => 'post',
-				'has_archive'        => false,
-				'hierarchical'       => false,
-				'supports'           => array( 'title', 'editor', 'author' ),
-				'show_in_rest'       => true,
+				'description'     => __( 'CRM pipeline opportunity records.', 'mcp-ai-wpoos-pro' ),
+				'public'          => false,
+				'show_ui'         => true,
+				'show_in_menu'    => true,
+				'menu_icon'       => 'dashicons-chart-area',
+				'menu_position'   => 56,
+				'capability_type' => 'post',
+				'has_archive'     => false,
+				'hierarchical'    => false,
+				'supports'        => array( 'title', 'editor', 'author' ),
+				'show_in_rest'    => true,
 			)
 		);
 	}

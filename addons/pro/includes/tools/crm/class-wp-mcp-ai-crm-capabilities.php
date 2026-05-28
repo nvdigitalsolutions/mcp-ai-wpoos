@@ -35,11 +35,11 @@ class WP_MCP_AI_CRM_Capabilities {
 	 */
 	const ROLES = array(
 		'sales_manager',    // Oversees pipeline, team assignments, reporting
-		'account_executive',// Owns deals from qualification to close
+		'account_executive', // Owns deals from qualification to close
 		'sdr',              // Sales Development Rep — inbound/outbound prospecting
 		'business_development', // BD: partnerships, channel sales
 		'sales_ops',        // Admin: routing, sequences, CRM hygiene
-		'marketing_manager',// Campaigns, lead scoring config, nurture sequences
+		'marketing_manager', // Campaigns, lead scoring config, nurture sequences
 		'marketing_ops',    // GDPR/consent, automation rules
 		'crm_viewer',       // Read-only dashboards
 	);
@@ -54,55 +54,55 @@ class WP_MCP_AI_CRM_Capabilities {
 	public static function default_map() {
 		return array(
 			// Lead management.
-			'view_lead'                => 'edit_posts',
-			'edit_lead'                => 'edit_posts',
-			'delete_lead'              => 'manage_options',
-			'assign_lead'              => 'edit_posts',
+			'view_lead'               => 'edit_posts',
+			'edit_lead'               => 'edit_posts',
+			'delete_lead'             => 'manage_options',
+			'assign_lead'             => 'edit_posts',
 
 			// Deal / opportunity management.
-			'view_deal'                => 'edit_posts',
-			'edit_deal'                => 'edit_posts',
-			'delete_deal'              => 'manage_options',
-			'move_deal_stage'          => 'edit_posts',
+			'view_deal'               => 'edit_posts',
+			'edit_deal'               => 'edit_posts',
+			'delete_deal'             => 'manage_options',
+			'move_deal_stage'         => 'edit_posts',
 
 			// Contact & company.
-			'view_contact'             => 'edit_posts',
-			'edit_contact'             => 'edit_posts',
-			'delete_contact'           => 'manage_options',
-			'view_company'             => 'edit_posts',
-			'edit_company'             => 'edit_posts',
+			'view_contact'            => 'edit_posts',
+			'edit_contact'            => 'edit_posts',
+			'delete_contact'          => 'manage_options',
+			'view_company'            => 'edit_posts',
+			'edit_company'            => 'edit_posts',
 
 			// Activities.
-			'view_activities'          => 'edit_posts',
-			'create_activity'          => 'edit_posts',
-			'complete_activity'        => 'edit_posts',
+			'view_activities'         => 'edit_posts',
+			'create_activity'         => 'edit_posts',
+			'complete_activity'       => 'edit_posts',
 
 			// Sequences.
-			'manage_sequences'         => 'edit_posts',
-			'enroll_lead_in_sequence'  => 'edit_posts',
-			'pause_sequence'           => 'edit_posts',
+			'manage_sequences'        => 'edit_posts',
+			'enroll_lead_in_sequence' => 'edit_posts',
+			'pause_sequence'          => 'edit_posts',
 
 			// Outbound.
-			'send_outbound'            => 'edit_posts',
-			'auto_reply'               => 'edit_posts',
+			'send_outbound'           => 'edit_posts',
+			'auto_reply'              => 'edit_posts',
 
 			// Workflow command center.
-			'manage_workflow_rules'    => 'manage_options',
-			'view_workflow_inbox'      => 'edit_posts',
+			'manage_workflow_rules'   => 'manage_options',
+			'view_workflow_inbox'     => 'edit_posts',
 
 			// Routing & admin.
-			'configure_routing'        => 'manage_options',
-			'manage_pipeline_stages'   => 'manage_options',
-			'view_pipeline_analytics'  => 'edit_posts',
+			'configure_routing'       => 'manage_options',
+			'manage_pipeline_stages'  => 'manage_options',
+			'view_pipeline_analytics' => 'edit_posts',
 
 			// Compliance.
-			'manage_consent'           => 'manage_options',
-			'view_audit_log'           => 'manage_options',
-			'export_audit_log'         => 'manage_options',
+			'manage_consent'          => 'manage_options',
+			'view_audit_log'          => 'manage_options',
+			'export_audit_log'        => 'manage_options',
 
 			// Data export / import.
-			'import_crm_data'          => 'manage_options',
-			'export_crm_data'          => 'manage_options',
+			'import_crm_data'         => 'manage_options',
+			'export_crm_data'         => 'manage_options',
 		);
 	}
 
@@ -129,8 +129,8 @@ class WP_MCP_AI_CRM_Capabilities {
 	 * @return bool
 	 */
 	public static function can( $logical_cap ) {
-		$map       = self::get_map();
-		$wp_cap    = isset( $map[ $logical_cap ] ) ? $map[ $logical_cap ] : 'manage_options';
+		$map    = self::get_map();
+		$wp_cap = isset( $map[ $logical_cap ] ) ? $map[ $logical_cap ] : 'manage_options';
 		return current_user_can( $wp_cap );
 	}
 }

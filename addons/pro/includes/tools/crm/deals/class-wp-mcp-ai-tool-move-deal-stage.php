@@ -93,11 +93,11 @@ class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'deal_id'    => array(
+				'deal_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Deal ID to move (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'new_stage'  => array(
+				'new_stage' => array(
 					'type'        => 'string',
 					'description' => __( 'Target pipeline stage slug (required)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -228,10 +228,13 @@ class WP_MCP_AI_Tool_Move_Deal_Stage implements WP_MCP_AI_Tool_Interface, WP_MCP
 			if ( $lead_id && class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
 				$lead_store = WP_MCP_AI_Toolkit_Data_Store_Factory::get_store( 'crm', 'leads' );
 				if ( $lead_store ) {
-					$lead_store->update_item( $lead_id, array(
-						'lifecycle_stage' => 'customer',
-						'updated_at'      => current_time( 'mysql' ),
-					) );
+					$lead_store->update_item(
+						$lead_id,
+						array(
+							'lifecycle_stage' => 'customer',
+							'updated_at'      => current_time( 'mysql' ),
+						)
+					);
 				}
 			}
 		}

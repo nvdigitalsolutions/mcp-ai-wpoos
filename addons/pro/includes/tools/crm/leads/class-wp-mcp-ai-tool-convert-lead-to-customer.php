@@ -109,29 +109,29 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'lead_id'         => array(
+				'lead_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the lead to convert (required).', 'mcp-ai-wpoos-pro' ),
 				),
-				'create_deal'     => array(
+				'create_deal' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to create a deal record upon conversion.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'deal_name'       => array(
+				'deal_name'   => array(
 					'type'        => 'string',
 					'description' => __( 'Name of the deal to create. Defaults to "[Lead Name] - New Deal" if omitted.', 'mcp-ai-wpoos-pro' ),
 				),
-				'deal_amount'     => array(
+				'deal_amount' => array(
 					'type'        => 'number',
 					'description' => __( 'Deal amount. Required if create_deal is true.', 'mcp-ai-wpoos-pro' ),
 				),
-				'deal_stage'      => array(
+				'deal_stage'  => array(
 					'type'        => 'string',
 					'description' => __( 'Initial pipeline stage for the deal. Defaults to "qualification".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'qualification',
 				),
-				'deal_owner'      => array(
+				'deal_owner'  => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress user ID of the deal owner. Defaults to the lead\'s contact owner.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -239,7 +239,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$lead_id    = absint( $arguments['lead_id'] );
+		$lead_id     = absint( $arguments['lead_id'] );
 		$create_deal = ! empty( $arguments['create_deal'] );
 
 		// Retrieve existing lead.
@@ -325,11 +325,11 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 
 				// Build deal data.
 				$deal_data = array(
-					'deal_name'   => $deal_name,
-					'lead_id'     => $lead_id,
-					'deal_owner'  => $deal_owner,
-					'deal_stage'  => $deal_stage,
-					'deal_amount' => isset( $arguments['deal_amount'] ) ? floatval( $arguments['deal_amount'] ) : 0.0,
+					'deal_name'    => $deal_name,
+					'lead_id'      => $lead_id,
+					'deal_owner'   => $deal_owner,
+					'deal_stage'   => $deal_stage,
+					'deal_amount'  => isset( $arguments['deal_amount'] ) ? floatval( $arguments['deal_amount'] ) : 0.0,
 					'company_name' => isset( $lead['company_name'] ) ? $lead['company_name'] : '',
 				);
 
@@ -341,16 +341,16 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 					return $this->format_success_response(
 						sprintf(
 							/* translators: %d: lead ID */
-							__( 'Lead #%d converted to customer, but deal creation failed: %s', 'mcp-ai-wpoos-pro' ),
+							__( 'Lead #%1$d converted to customer, but deal creation failed: %2$s', 'mcp-ai-wpoos-pro' ),
 							$lead_id,
 							$deal_id->get_error_message()
 						),
 						array(
-							'lead_id'         => $lead_id,
-							'new_stage'       => 'customer',
-							'deal_created'    => false,
-							'deal_error'      => $deal_id->get_error_message(),
-							'storage_type'    => $this->lead_data_store->get_storage_type(),
+							'lead_id'      => $lead_id,
+							'new_stage'    => 'customer',
+							'deal_created' => false,
+							'deal_error'   => $deal_id->get_error_message(),
+							'storage_type' => $this->lead_data_store->get_storage_type(),
 						)
 					);
 				}

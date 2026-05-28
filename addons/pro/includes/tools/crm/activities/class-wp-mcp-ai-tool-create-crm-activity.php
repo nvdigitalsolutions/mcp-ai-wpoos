@@ -26,30 +26,64 @@ class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 		return __( 'The Create CRM Activity tool requires the CRM Toolkit to be enabled.', 'mcp-ai-wpoos-pro' );
 	}
 
-	public function get_slug() { return 'create_crm_activity'; }
-	public function get_name() { return __( 'Create CRM Activity', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'Log a sales activity (call, email, meeting, task, note) against a lead or deal.', 'mcp-ai-wpoos-pro' ); }
+	public function get_slug() {
+		return 'create_crm_activity'; }
+	public function get_name() {
+		return __( 'Create CRM Activity', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Log a sales activity (call, email, meeting, task, note) against a lead or deal.', 'mcp-ai-wpoos-pro' ); }
 
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'title'           => array( 'type' => 'string', 'description' => __( 'Activity summary / subject.', 'mcp-ai-wpoos-pro' ) ),
-				'activity_type'   => array( 'type' => 'string', 'enum' => WP_MCP_AI_CRM_Activity_CPT::ACTIVITY_TYPES, 'description' => __( 'Type of activity.', 'mcp-ai-wpoos-pro' ), 'default' => 'note' ),
-				'related_type'    => array( 'type' => 'string', 'enum' => array( 'lead', 'deal', 'contact' ), 'description' => __( 'Related entity type.', 'mcp-ai-wpoos-pro' ), 'default' => 'lead' ),
-				'related_id'      => array( 'type' => 'integer', 'description' => __( 'Post ID of the related lead/deal/contact.', 'mcp-ai-wpoos-pro' ) ),
-				'body'            => array( 'type' => 'string', 'description' => __( 'Activity notes / body.', 'mcp-ai-wpoos-pro' ) ),
-				'due_date'        => array( 'type' => 'string', 'description' => __( 'Due date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ) ),
-				'disposition'     => array( 'type' => 'string', 'description' => __( 'Call/meeting disposition slug.', 'mcp-ai-wpoos-pro' ) ),
-				'assigned_to'     => array( 'type' => 'integer', 'description' => __( 'WP user ID the activity is assigned to.', 'mcp-ai-wpoos-pro' ) ),
+				'title'         => array(
+					'type'        => 'string',
+					'description' => __( 'Activity summary / subject.', 'mcp-ai-wpoos-pro' ),
+				),
+				'activity_type' => array(
+					'type'        => 'string',
+					'enum'        => WP_MCP_AI_CRM_Activity_CPT::ACTIVITY_TYPES,
+					'description' => __( 'Type of activity.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'note',
+				),
+				'related_type'  => array(
+					'type'        => 'string',
+					'enum'        => array( 'lead', 'deal', 'contact' ),
+					'description' => __( 'Related entity type.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'lead',
+				),
+				'related_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Post ID of the related lead/deal/contact.', 'mcp-ai-wpoos-pro' ),
+				),
+				'body'          => array(
+					'type'        => 'string',
+					'description' => __( 'Activity notes / body.', 'mcp-ai-wpoos-pro' ),
+				),
+				'due_date'      => array(
+					'type'        => 'string',
+					'description' => __( 'Due date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
+				),
+				'disposition'   => array(
+					'type'        => 'string',
+					'description' => __( 'Call/meeting disposition slug.', 'mcp-ai-wpoos-pro' ),
+				),
+				'assigned_to'   => array(
+					'type'        => 'integer',
+					'description' => __( 'WP user ID the activity is assigned to.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'title' ),
 		);
 	}
 
-	public function get_required_capability() { return 'edit_posts'; }
-	public function requires_base_pro() { return true; }
-	public function get_capability_flags() { return array( 'pro', 'database-write', 'requires-capability' ); }
+	public function get_required_capability() {
+		return 'edit_posts'; }
+	public function requires_base_pro() {
+		return true; }
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'requires-capability' ); }
 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
@@ -65,7 +99,7 @@ class WP_MCP_AI_Tool_Create_CRM_Activity implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$title        = sanitize_text_field( $arguments['title'] );
+		$title         = sanitize_text_field( $arguments['title'] );
 		$activity_type = isset( $arguments['activity_type'] ) ? sanitize_key( $arguments['activity_type'] ) : 'note';
 		if ( ! in_array( $activity_type, WP_MCP_AI_CRM_Activity_CPT::ACTIVITY_TYPES, true ) ) {
 			$activity_type = 'note';

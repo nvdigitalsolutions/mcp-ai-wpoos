@@ -6,63 +6,119 @@
  * @since 2.3.0
  */
 
-if ( ! defined( 'ABSPATH' ) ) { exit; }
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; }
 
 class WP_MCP_AI_Tool_List_CRM_Activities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	public static function is_available() { $s = get_option( 'wp_mcp_ai_settings', array() ); return ! empty( $s['enable_crm_toolkit'] ); }
-	public static function get_unavailable_reason() { return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
-	public function get_slug() { return 'list_crm_activities'; }
-	public function get_name() { return __( 'List CRM Activities', 'mcp-ai-wpoos-pro' ); }
-	public function get_description() { return __( 'List and filter CRM activities.', 'mcp-ai-wpoos-pro' ); }
+	public static function is_available() {
+		$s = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $s['enable_crm_toolkit'] ); }
+	public static function get_unavailable_reason() {
+		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	public function get_slug() {
+		return 'list_crm_activities'; }
+	public function get_name() {
+		return __( 'List CRM Activities', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'List and filter CRM activities.', 'mcp-ai-wpoos-pro' ); }
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
+			'type'       => 'object',
 			'properties' => array(
-				'activity_type' => array( 'type' => 'string', 'enum' => array_merge( array( '' ), WP_MCP_AI_CRM_Activity_CPT::ACTIVITY_TYPES ), 'default' => '' ),
-				'related_type'  => array( 'type' => 'string', 'enum' => array( '', 'lead', 'deal', 'contact' ), 'default' => '' ),
+				'activity_type' => array(
+					'type'    => 'string',
+					'enum'    => array_merge( array( '' ), WP_MCP_AI_CRM_Activity_CPT::ACTIVITY_TYPES ),
+					'default' => '',
+				),
+				'related_type'  => array(
+					'type'    => 'string',
+					'enum'    => array( '', 'lead', 'deal', 'contact' ),
+					'default' => '',
+				),
 				'related_id'    => array( 'type' => 'integer' ),
 				'assigned_to'   => array( 'type' => 'integer' ),
 				'due_before'    => array( 'type' => 'string' ),
-				'completed'     => array( 'type' => 'boolean', 'default' => false ),
-				'per_page'      => array( 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100 ),
-				'page'          => array( 'type' => 'integer', 'default' => 1, 'minimum' => 1 ),
+				'completed'     => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+				'per_page'      => array(
+					'type'    => 'integer',
+					'default' => 20,
+					'minimum' => 1,
+					'maximum' => 100,
+				),
+				'page'          => array(
+					'type'    => 'integer',
+					'default' => 1,
+					'minimum' => 1,
+				),
 			),
 		);
 	}
-	public function get_required_capability() { return 'edit_posts'; }
-	public function requires_base_pro() { return true; }
-	public function get_capability_flags() { return array( 'pro', 'database-read', 'requires-capability' ); }
+	public function get_required_capability() {
+		return 'edit_posts'; }
+	public function requires_base_pro() {
+		return true; }
+	public function get_capability_flags() {
+		return array( 'pro', 'database-read', 'requires-capability' ); }
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		if ( ! self::is_available() ) { return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
+		if ( ! self::is_available() ) {
+			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }
 		$uid = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
-		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) { return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
+		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
+			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 
 		$per_page = min( 100, max( 1, absint( $arguments['per_page'] ?? 20 ) ) );
 		$page     = max( 1, absint( $arguments['page'] ?? 1 ) );
 
-		$args = array( 'post_type' => 'mcp_ai_crm_activity', 'post_status' => 'publish', 'posts_per_page' => $per_page, 'paged' => $page, 'orderby' => 'date', 'order' => 'DESC' );
+		$args = array(
+			'post_type'      => 'mcp_ai_crm_activity',
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		);
 
 		$meta_q = array( 'relation' => 'AND' );
 
 		if ( ! empty( $arguments['activity_type'] ) ) {
-			$meta_q[] = array( 'key' => 'activity_type', 'value' => sanitize_key( $arguments['activity_type'] ) );
+			$meta_q[] = array(
+				'key'   => 'activity_type',
+				'value' => sanitize_key( $arguments['activity_type'] ),
+			);
 		}
 		if ( ! empty( $arguments['related_type'] ) ) {
-			$meta_q[] = array( 'key' => 'related_type', 'value' => sanitize_key( $arguments['related_type'] ) );
+			$meta_q[] = array(
+				'key'   => 'related_type',
+				'value' => sanitize_key( $arguments['related_type'] ),
+			);
 		}
 		if ( ! empty( $arguments['related_id'] ) ) {
-			$meta_q[] = array( 'key' => 'related_id', 'value' => absint( $arguments['related_id'] ), 'type' => 'NUMERIC' );
+			$meta_q[] = array(
+				'key'   => 'related_id',
+				'value' => absint( $arguments['related_id'] ),
+				'type'  => 'NUMERIC',
+			);
 		}
 		if ( ! empty( $arguments['assigned_to'] ) ) {
-			$meta_q[] = array( 'key' => 'assigned_to', 'value' => absint( $arguments['assigned_to'] ), 'type' => 'NUMERIC' );
+			$meta_q[] = array(
+				'key'   => 'assigned_to',
+				'value' => absint( $arguments['assigned_to'] ),
+				'type'  => 'NUMERIC',
+			);
 		}
 		if ( ! empty( $arguments['completed'] ) ) {
-			$meta_q[] = array( 'key' => 'completed', 'value' => '1' );
+			$meta_q[] = array(
+				'key'   => 'completed',
+				'value' => '1',
+			);
 		}
 		if ( count( $meta_q ) > 1 ) { $args['meta_query'] = $meta_q; } // phpcs:ignore
 
-		$q = new WP_Query( $args );
+		$q          = new WP_Query( $args );
 		$activities = array();
 		foreach ( $q->posts as $p ) {
 			$activities[] = array(
@@ -78,8 +134,16 @@ class WP_MCP_AI_Tool_List_CRM_Activities implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) { WP_MCP_AI_CRM_Audit::record( 'activities_listed', 'activity' ); }
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record( 'activities_listed', 'activity' ); }
 
-		return array( 'success' => true, 'activities' => $activities, 'total' => $q->found_posts, 'per_page' => $per_page, 'page' => $page, 'pages' => max( 1, $q->max_num_pages ) );
+		return array(
+			'success'    => true,
+			'activities' => $activities,
+			'total'      => $q->found_posts,
+			'per_page'   => $per_page,
+			'page'       => $page,
+			'pages'      => max( 1, $q->max_num_pages ),
+		);
 	}
 }

@@ -89,23 +89,23 @@ class WP_MCP_AI_CRM_Classifier {
 		$lower = mb_strtolower( $message_body );
 
 		// --- Intent ---
-		$intent          = 'general';
+		$intent            = 'general';
 		$intent_confidence = 0.5;
 
 		$intent_keywords = array(
-			'demo_request'        => array( 'demo', 'demonstration', 'walk through', 'walkthrough', 'see it in action' ),
-			'pricing_inquiry'     => array( 'pricing', 'price', 'cost', 'how much', 'quote', 'rate', 'package' ),
-			'support'             => array( 'help', 'issue', 'problem', 'bug', 'error', 'not working', 'broken', 'fix' ),
-			'complaint'           => array( 'complaint', 'unhappy', 'disappointed', 'angry', 'refund', 'cancel', 'never' ),
-			'follow_up'           => array( 'following up', 'just checking', 'any update', 'status', 'circling back' ),
+			'demo_request'           => array( 'demo', 'demonstration', 'walk through', 'walkthrough', 'see it in action' ),
+			'pricing_inquiry'        => array( 'pricing', 'price', 'cost', 'how much', 'quote', 'rate', 'package' ),
+			'support'                => array( 'help', 'issue', 'problem', 'bug', 'error', 'not working', 'broken', 'fix' ),
+			'complaint'              => array( 'complaint', 'unhappy', 'disappointed', 'angry', 'refund', 'cancel', 'never' ),
+			'follow_up'              => array( 'following up', 'just checking', 'any update', 'status', 'circling back' ),
 			'qualification_response' => array( 'we have budget', 'decision maker', 'timeline', 'authority', 'need' ),
-			'unsubscribe'         => array( 'unsubscribe', 'opt out', 'opt-out', 'stop email', 'remove me' ),
+			'unsubscribe'            => array( 'unsubscribe', 'opt out', 'opt-out', 'stop email', 'remove me' ),
 		);
 
 		foreach ( $intent_keywords as $intent_slug => $keywords ) {
 			foreach ( $keywords as $kw ) {
 				if ( false !== strpos( $lower, $kw ) ) {
-					$intent = $intent_slug;
+					$intent            = $intent_slug;
 					$intent_confidence = 0.7;
 					break 2;
 				}
@@ -113,7 +113,7 @@ class WP_MCP_AI_CRM_Classifier {
 		}
 
 		// --- Spam detection ---
-		$is_spam = false;
+		$is_spam       = false;
 		$spam_keywords = array( 'viagra', 'casino', 'lottery', 'you won', 'click here', 'Nigerian prince' );
 		foreach ( $spam_keywords as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
@@ -139,12 +139,12 @@ class WP_MCP_AI_CRM_Classifier {
 
 		foreach ( $sentiment_keywords['positive'] as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$positive_hits++;
+				++$positive_hits;
 			}
 		}
 		foreach ( $sentiment_keywords['negative'] as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$negative_hits++;
+				++$negative_hits;
 			}
 		}
 
@@ -158,7 +158,7 @@ class WP_MCP_AI_CRM_Classifier {
 
 		// --- Buying signals ---
 		$buying_signals = array();
-		$buying_kw = array( 'pricing', 'demo', 'next step', 'timeline', 'budget', 'decision maker', 'authority', 'trial', 'competing', 'competitor', 'implement', 'rollout', 'buy', 'purchase', 'sign' );
+		$buying_kw      = array( 'pricing', 'demo', 'next step', 'timeline', 'budget', 'decision maker', 'authority', 'trial', 'competing', 'competitor', 'implement', 'rollout', 'buy', 'purchase', 'sign' );
 
 		$buying_kw_filterable = apply_filters( 'wp_mcp_ai_crm_buying_signal_keywords', $buying_kw );
 
@@ -204,19 +204,31 @@ class WP_MCP_AI_CRM_Classifier {
 	 * @return array BANT assessment (budget, authority, need, timeline — each: score 0–100 + evidence).
 	 */
 	public static function extract_bant( $message_body ) {
-		$lower    = mb_strtolower( sanitize_textarea_field( $message_body ) );
-		$bant     = array(
-			'budget'    => array( 'score' => 0, 'evidence' => '' ),
-			'authority' => array( 'score' => 0, 'evidence' => '' ),
-			'need'      => array( 'score' => 0, 'evidence' => '' ),
-			'timeline'  => array( 'score' => 0, 'evidence' => '' ),
+		$lower = mb_strtolower( sanitize_textarea_field( $message_body ) );
+		$bant  = array(
+			'budget'    => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'authority' => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'need'      => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'timeline'  => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
 		);
 
 		// Budget signals.
 		$budget_kw = array( 'budget', 'allocated', 'approved', 'funding', 'invest', 'purchase', 'buy', '$', '€', '£', 'price', 'cost' );
 		foreach ( $budget_kw as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$bant['budget']['score']    = min( 100, $bant['budget']['score'] + 25 );
+				$bant['budget']['score']     = min( 100, $bant['budget']['score'] + 25 );
 				$bant['budget']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -225,7 +237,7 @@ class WP_MCP_AI_CRM_Classifier {
 		$authority_kw = array( 'decision maker', 'ceo', 'cto', 'cfo', 'vp', 'director', 'head of', 'i decide', 'my team', 'approve' );
 		foreach ( $authority_kw as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$bant['authority']['score']    = min( 100, $bant['authority']['score'] + 25 );
+				$bant['authority']['score']     = min( 100, $bant['authority']['score'] + 25 );
 				$bant['authority']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -234,7 +246,7 @@ class WP_MCP_AI_CRM_Classifier {
 		$need_kw = array( 'need', 'problem', 'challenge', 'pain', 'looking for', 'solution', 'help with', 'struggling', 'current tool', 'replacing', 'requires' );
 		foreach ( $need_kw as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$bant['need']['score']    = min( 100, $bant['need']['score'] + 25 );
+				$bant['need']['score']     = min( 100, $bant['need']['score'] + 25 );
 				$bant['need']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -243,7 +255,7 @@ class WP_MCP_AI_CRM_Classifier {
 		$timeline_kw = array( 'urgent', 'asap', 'immediately', 'this week', 'this month', 'this quarter', 'next month', 'deadline', 'timeline', 'rolling out', 'by', 'soon', 'planning', 'q1', 'q2', 'q3', 'q4' );
 		foreach ( $timeline_kw as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$bant['timeline']['score']    = min( 100, $bant['timeline']['score'] + 25 );
+				$bant['timeline']['score']     = min( 100, $bant['timeline']['score'] + 25 );
 				$bant['timeline']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -260,18 +272,36 @@ class WP_MCP_AI_CRM_Classifier {
 	public static function extract_meddic( $message_body ) {
 		$lower  = mb_strtolower( sanitize_textarea_field( $message_body ) );
 		$meddic = array(
-			'metrics'          => array( 'score' => 0, 'evidence' => '' ),
-			'economic_buyer'   => array( 'score' => 0, 'evidence' => '' ),
-			'decision_criteria'=> array( 'score' => 0, 'evidence' => '' ),
-			'decision_process' => array( 'score' => 0, 'evidence' => '' ),
-			'identify_pain'    => array( 'score' => 0, 'evidence' => '' ),
-			'champion'         => array( 'score' => 0, 'evidence' => '' ),
+			'metrics'           => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'economic_buyer'    => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'decision_criteria' => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'decision_process'  => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'identify_pain'     => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
+			'champion'          => array(
+				'score'    => 0,
+				'evidence' => '',
+			),
 		);
 
 		// Metrics.
 		foreach ( array( 'roi', 'kpi', 'metric', '%', 'revenue', 'cost saving', 'efficiency', 'increase', 'reduce' ) as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$meddic['metrics']['score'] = min( 100, $meddic['metrics']['score'] + 25 );
+				$meddic['metrics']['score']     = min( 100, $meddic['metrics']['score'] + 25 );
 				$meddic['metrics']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -279,7 +309,7 @@ class WP_MCP_AI_CRM_Classifier {
 		// Economic buyer.
 		foreach ( array( 'budget owner', 'cfo', 'finance', 'procurement', 'purchasing', 'budget holder' ) as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$meddic['economic_buyer']['score'] = min( 100, $meddic['economic_buyer']['score'] + 30 );
+				$meddic['economic_buyer']['score']     = min( 100, $meddic['economic_buyer']['score'] + 30 );
 				$meddic['economic_buyer']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -287,7 +317,7 @@ class WP_MCP_AI_CRM_Classifier {
 		// Decision criteria.
 		foreach ( array( 'criteria', 'requirement', 'must have', 'nice to have', 'spec', 'compliance', 'security', 'sla' ) as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$meddic['decision_criteria']['score'] = min( 100, $meddic['decision_criteria']['score'] + 20 );
+				$meddic['decision_criteria']['score']     = min( 100, $meddic['decision_criteria']['score'] + 20 );
 				$meddic['decision_criteria']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -295,7 +325,7 @@ class WP_MCP_AI_CRM_Classifier {
 		// Decision process.
 		foreach ( array( 'process', 'approval', 'committee', 'review board', 'stakeholder', 'legal', 'sign off', 'sign-off' ) as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$meddic['decision_process']['score'] = min( 100, $meddic['decision_process']['score'] + 20 );
+				$meddic['decision_process']['score']     = min( 100, $meddic['decision_process']['score'] + 20 );
 				$meddic['decision_process']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -303,7 +333,7 @@ class WP_MCP_AI_CRM_Classifier {
 		// Identify pain.
 		foreach ( array( 'pain', 'problem', 'challenge', 'difficult', 'hard', 'expensive', 'slow', 'manual', 'error' ) as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$meddic['identify_pain']['score'] = min( 100, $meddic['identify_pain']['score'] + 25 );
+				$meddic['identify_pain']['score']     = min( 100, $meddic['identify_pain']['score'] + 25 );
 				$meddic['identify_pain']['evidence'] .= $kw . '; ';
 			}
 		}
@@ -311,7 +341,7 @@ class WP_MCP_AI_CRM_Classifier {
 		// Champion.
 		foreach ( array( 'champion', 'advocate', 'sponsor', 'championing', 'supporter', 'internal', 'driving' ) as $kw ) {
 			if ( false !== strpos( $lower, $kw ) ) {
-				$meddic['champion']['score'] = min( 100, $meddic['champion']['score'] + 30 );
+				$meddic['champion']['score']     = min( 100, $meddic['champion']['score'] + 30 );
 				$meddic['champion']['evidence'] .= $kw . '; ';
 			}
 		}
