@@ -249,7 +249,7 @@ class WP_MCP_AI_Shortcode {
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
 			$chat_debug_mode = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
 			wp_localize_script(
 				self::SCRIPT_HANDLE,
@@ -263,7 +263,7 @@ class WP_MCP_AI_Shortcode {
 					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
 					'voiceEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/session' ) ) ),
-					'voiceConfigEndpoint'  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
+					'voiceConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
 					'historyPerPage'      => 20,
 					'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 					'currentUserId'       => get_current_user_id(),
@@ -307,7 +307,7 @@ class WP_MCP_AI_Shortcode {
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
 				'voiceEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/session' ) ) ),
-				'voiceConfigEndpoint'  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
+				'voiceConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/voice/config' ) ) ),
 				'historyPerPage'      => 20,
 				'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'currentUserId'       => get_current_user_id(),
@@ -1051,8 +1051,8 @@ class WP_MCP_AI_Shortcode {
 				'historyPerPage'             => 20,
 				'maxHistoryMessages'         => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'restNonce'                  => wp_create_nonce( 'wp_rest' ),
-				'assistantName'              => $is_profession_test && isset($profession) && $profession ? get_the_title($profession->ID) : get_the_title($assistant_id),
-				'assistantAvatar'            => $is_profession_test ? '' : (has_post_thumbnail($assistant_id) ? get_the_post_thumbnail_url($assistant_id, 'thumbnail') : ''),
+				'assistantName'              => $is_profession_test && isset( $profession ) && $profession ? get_the_title( $profession->ID ) : get_the_title( $assistant_id ),
+				'assistantAvatar'            => $is_profession_test ? '' : ( has_post_thumbnail( $assistant_id ) ? get_the_post_thumbnail_url( $assistant_id, 'thumbnail' ) : '' ),
 				'assistantBio'               => $is_profession_test ? '' : $assistant_content,
 			);
 
@@ -1251,7 +1251,7 @@ class WP_MCP_AI_Shortcode {
 				$config['toolShortcuts'] = $tool_shortcuts;
 			}
 
-			// Get suggested prompts if available (post meta on assistant)
+			// Get suggested prompts if available (post meta on assistant).
 			$suggested_prompts = array();
 			if ( ! $is_profession_test ) {
 				$prompts_raw = get_post_meta( $assistant_id, '_wp_mcp_ai_suggested_prompts', true );
@@ -1390,12 +1390,13 @@ class WP_MCP_AI_Shortcode {
 			<div class="wp-mcp-ai-chat__assistant">
 				<div class="wp-mcp-ai-chat__profile">
 					<div class="wp-mcp-ai-chat__profile-avatar">
-						<?php 
+						<?php
 						$avatar_url = '';
 						if ( ! $is_profession_test && has_post_thumbnail( $assistant_id ) ) {
 							$avatar_url = get_the_post_thumbnail_url( $assistant_id, 'thumbnail' );
 						}
-						if ( $avatar_url ) : ?>
+						if ( $avatar_url ) :
+							?>
 							<img src="<?php echo esc_url( $avatar_url ); ?>" alt="" class="wp-mcp-ai-chat__profile-img" width="48" height="48" loading="lazy">
 						<?php else : ?>
 							<span class="wp-mcp-ai-chat__profile-icon" aria-hidden="true">
