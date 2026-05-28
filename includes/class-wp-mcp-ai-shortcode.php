@@ -1036,6 +1036,7 @@ class WP_MCP_AI_Shortcode {
 				'toolsEndpoint'              => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'filesEndpoint'              => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'transcriptsEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'chatFeedbackEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-feedback' ) ) ),
 				'embeddedConfigEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/embedded-client-config' ) ) ),
 				'vectorStorePreloadEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/vector-store-preload' ) ) ),
 				'crawl4aiTaskEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
@@ -1050,6 +1051,9 @@ class WP_MCP_AI_Shortcode {
 				'historyPerPage'             => 20,
 				'maxHistoryMessages'         => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'restNonce'                  => wp_create_nonce( 'wp_rest' ),
+				'assistantName'              => $is_profession_test && isset($profession) && $profession ? get_the_title($profession->ID) : get_the_title($assistant_id),
+				'assistantAvatar'            => $is_profession_test ? '' : (has_post_thumbnail($assistant_id) ? get_the_post_thumbnail_url($assistant_id, 'thumbnail') : ''),
+				'assistantBio'               => $is_profession_test ? '' : $assistant_content,
 			);
 
 			// Add async tool timeout using helper method (reuses $settings already fetched).
@@ -1247,6 +1251,18 @@ class WP_MCP_AI_Shortcode {
 				$config['toolShortcuts'] = $tool_shortcuts;
 			}
 
+			// Get suggested prompts if available (post meta on assistant)
+			$suggested_prompts = array();
+			if ( ! $is_profession_test ) {
+				$prompts_raw = get_post_meta( $assistant_id, '_wp_mcp_ai_suggested_prompts', true );
+				if ( is_array( $prompts_raw ) && ! empty( $prompts_raw ) ) {
+					$suggested_prompts = array_values( array_filter( array_map( 'sanitize_text_field', $prompts_raw ) ) );
+				}
+			}
+			if ( ! empty( $suggested_prompts ) ) {
+				$config['suggestedPrompts'] = $suggested_prompts;
+			}
+
 			// Parse CPT action buttons if provided.
 			$cpt_actions = array();
 			if ( ! empty( $atts['cpt_actions'] ) ) {
@@ -1372,22 +1388,64 @@ class WP_MCP_AI_Shortcode {
 			}
 			?>
 			<div class="wp-mcp-ai-chat__assistant">
-				<label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
-					<?php
-					// For profession tests, display the profession title.
-					// For regular assistants, display the assistant title.
-					if ( $is_profession_test && isset( $profession ) && $profession ) {
-						echo esc_html( get_the_title( $profession->ID ) );
-					} else {
-						echo esc_html( get_the_title( $assistant_id ) );
-					}
-					?>
-				</label>
-				<?php if ( $assistant_content ) : ?>
-					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo wp_kses_post( $assistant_content ); ?>
+				<div class="wp-mcp-ai-chat__profile">
+					<div class="wp-mcp-ai-chat__profile-avatar">
+						<?php 
+						$avatar_url = '';
+						if ( ! $is_profession_test && has_post_thumbnail( $assistant_id ) ) {
+							$avatar_url = get_the_post_thumbnail_url( $assistant_id, 'thumbnail' );
+						}
+						if ( $avatar_url ) : ?>
+							<img src="<?php echo esc_url( $avatar_url ); ?>" alt="" class="wp-mcp-ai-chat__profile-img" width="48" height="48" loading="lazy">
+						<?php else : ?>
+							<span class="wp-mcp-ai-chat__profile-icon" aria-hidden="true">
+								<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+							</span>
+						<?php endif; ?>
 					</div>
-				<?php endif; ?>
+					<div class="wp-mcp-ai-chat__profile-info">
+						<div class="wp-mcp-ai-chat__profile-header">
+							<span class="wp-mcp-ai-chat__profile-name">
+								<?php
+								if ( $is_profession_test && isset( $profession ) && $profession ) {
+									echo esc_html( get_the_title( $profession->ID ) );
+								} else {
+									echo esc_html( get_the_title( $assistant_id ) );
+								}
+								?>
+							</span>
+							<?php if ( ! empty( $assistant_provider ) ) : ?>
+								<span class="wp-mcp-ai-chat__profile-badges">
+									<span class="wp-mcp-ai-chat__profile-badge wp-mcp-ai-chat__profile-badge--provider">
+										<?php echo esc_html( ucfirst( $assistant_provider ) ); ?>
+									</span>
+									<?php if ( ! empty( $assistant_model ) ) : ?>
+										<span class="wp-mcp-ai-chat__profile-badge wp-mcp-ai-chat__profile-badge--model">
+											<?php echo esc_html( $assistant_model ); ?>
+										</span>
+									<?php endif; ?>
+									<?php if ( $profession_data && ! empty( $profession_data->post_title ) ) : ?>
+										<span class="wp-mcp-ai-chat__profile-badge wp-mcp-ai-chat__profile-badge--profession">
+											<?php echo esc_html( $profession_data->post_title ); ?>
+										</span>
+									<?php endif; ?>
+								</span>
+							<?php endif; ?>
+						</div>
+						<?php if ( $assistant_content && ! $is_profession_test ) : ?>
+							<button type="button" class="wp-mcp-ai-chat__profile-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id ); ?>-bio">
+								<span class="wp-mcp-ai-chat__profile-toggle-text"><?php esc_html_e( 'About this assistant', 'mcp-ai-wpoos' ); ?></span>
+								<svg class="wp-mcp-ai-chat__profile-toggle-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 15.5a1 1 0 01-.7-.29l-5-5a1 1 0 011.4-1.42L12 13.09l4.3-4.3a1 1 0 011.4 1.42l-5 5a1 1 0 01-.7.29z"/></svg>
+							</button>
+							<div id="<?php echo esc_attr( $instance_id ); ?>-bio" class="wp-mcp-ai-chat__profile-bio" hidden>
+								<?php echo wp_kses_post( $assistant_content ); ?>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+				<label class="wp-mcp-ai-chat__label screen-reader-text" for="<?php echo esc_attr( $textarea_id ); ?>">
+					<?php esc_html_e( 'Chat message', 'mcp-ai-wpoos' ); ?>
+				</label>
 			</div>
 			<div class="wp-mcp-ai-chat__transcript-controls">
 				<button
@@ -1430,7 +1488,8 @@ class WP_MCP_AI_Shortcode {
 					</div>
 				</div>
 			</div>
-			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
+				<div class="wp-mcp-ai-chat__prompts" role="group" aria-label="<?php echo esc_attr__( 'Suggested questions', 'mcp-ai-wpoos' ); ?>"></div>
+				<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>
 					<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>">
@@ -1582,6 +1641,15 @@ class WP_MCP_AI_Shortcode {
 							<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'mcp-ai-wpoos' ); ?></span>
+					</button>
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__dark-toggle"
+						aria-label="<?php echo esc_attr__( 'Switch to dark mode', 'mcp-ai-wpoos' ); ?>"
+						title="<?php echo esc_attr__( 'Toggle dark mode', 'mcp-ai-wpoos' ); ?>"
+						hidden
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7a5 5 0 100 10 5 5 0 000-10z"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
 					</button>
 					<?php if ( ! empty( $team_data ) && $supports_unified_mode ) : ?>
 					<button
