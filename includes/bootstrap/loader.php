@@ -437,7 +437,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
-	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudways-integration-init.php';
+	// Cloudways integration has been migrated to the Pro addon's cloudways-toolkit.
+	// The settings fields (cloudways_email, cloudways_api_key, etc.) remain in base.
+	// AJAX connection handlers have been updated to use the API v2 client.
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
