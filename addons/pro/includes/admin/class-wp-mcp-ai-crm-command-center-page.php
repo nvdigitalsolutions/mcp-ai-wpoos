@@ -542,10 +542,65 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	 * Render the Analytics tab.
 	 */
 	private static function render_analytics_tab() {
+		$kpis    = self::get_analytics_kpis();
+		$stages  = self::get_pipeline_stages_for_analytics();
+		$lead_count    = $kpis['total_leads'];
+		$deal_count    = $kpis['total_deals'];
+		$pipeline_val  = $kpis['pipeline_value'];
+		$weighted_val  = $kpis['weighted_value'];
+		$won_val       = $kpis['won_value'];
+		$activities    = $kpis['recent_activities'];
+		$max_stage     = max( array_column( $stages, 'count' ) ) ?: 1;
 		?>
+		<div class="crm-cc-kpi-grid" style="margin-bottom: 24px;">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total Leads', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $lead_count ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Active Deals', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $deal_count ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Pipeline Value', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( self::format_currency( $pipeline_val ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Weighted Pipeline', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value <?php echo $weighted_val > 0 ? 'win' : ''; ?>"><?php echo esc_html( self::format_currency( $weighted_val ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Closed Won', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value win"><?php echo esc_html( self::format_currency( $won_val ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Recent Activity (30d)', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $activities ) ); ?></div>
+			</div>
+		</div>
+
 		<div class="crm-cc-section">
-			<h2><?php esc_html_e( 'CRM Analytics', 'mcp-ai-wpoos-pro' ); ?></h2>
-			<p><?php esc_html_e( 'Pipeline analytics, conversion rates, and forecasting will be available in a future phase.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<h2><?php esc_html_e( 'Pipeline by Stage', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<?php if ( empty( $stages ) || $max_stage < 1 ) : ?>
+				<p><?php esc_html_e( 'No deals in pipeline yet. Create deals to see stage distribution.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<?php foreach ( $stages as $stage ) : ?>
+					<?php
+					$pct = $max_stage > 0 ? round( ( $stage['count'] / $max_stage ) * 100 ) : 0;
+					$bar_color = 'closed_won' === $stage['stage'] ? '#00a32a' : ( 'closed_lost' === $stage['stage'] ? '#d63638' : '#2271b1' );
+					?>
+					<div class="crm-cc-pipeline-stage">
+						<div class="crm-cc-pipeline-stage-name"><?php echo esc_html( ucwords( str_replace( '_', ' ', $stage['stage'] ) ) ); ?></div>
+						<div class="crm-cc-pipeline-bar-wrap">
+							<div class="crm-cc-pipeline-bar" style="width: <?php echo esc_attr( $pct ); ?>%; background: <?php echo esc_attr( $bar_color ); ?>;"></div>
+						</div>
+						<div class="crm-cc-pipeline-count">
+							<?php echo esc_html( $stage['count'] ); ?>
+							<span style="font-size:11px;color:#646970;margin-left:4px;"><?php echo esc_html( self::format_currency( $stage['value'] ) ); ?></span>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -561,7 +616,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			<p>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-crm-toolkit-settings' ) ); ?>" class="button"><?php esc_html_e( 'CRM Settings', 'mcp-ai-wpoos-pro' ); ?></a>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" class="button"><?php esc_html_e( 'Remote Connections', 'mcp-ai-wpoos-pro' ); ?></a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-schedule-manager' ) ); ?>" class="button"><?php esc_html_e( 'Schedules', 'mcp-ai-wpoos-pro' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-schedule-manager' ) ); ?>" class="button"><?php esc_html_e( 'Schedules', 'mcp-ai-wpoos-pro' ); ?></a>
 			</p>
 		</div>
 		<?php
@@ -762,12 +817,117 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	}
 
 	/**
-	 * Get all sequences.
+	 * Get all sequences (all statuses).
 	 *
 	 * @return array
 	 */
 	private static function get_all_sequences() {
-		return self::get_active_sequences( 100 );
+		return self::get_active_sequences();
+	}
+
+	/**
+	 * Get analytics KPIs for the Analytics tab.
+	 *
+	 * @return array
+	 */
+	private static function get_analytics_kpis() {
+		$lead_count    = wp_count_posts( 'mcp_ai_lead' )->publish ?? 0;
+		$deal_count    = wp_count_posts( 'mcp_ai_deal' )->publish ?? 0;
+
+		$deals = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_deal',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		$pipeline_total = 0;
+		$weighted_total = 0;
+		$won_total      = 0;
+
+		foreach ( $deals as $deal_id ) {
+			$amount      = (float) get_post_meta( $deal_id, 'deal_amount', true );
+			$probability = (float) get_post_meta( $deal_id, 'deal_probability', true );
+			$stage       = get_post_meta( $deal_id, 'deal_stage', true );
+
+			$pipeline_total += $amount;
+			$weighted_total += $amount * max( 0, min( 1, $probability ) );
+
+			if ( 'closed_won' === $stage ) {
+				$won_total += $amount;
+			}
+		}
+
+		$recent = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_crm_activity',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'date_query'     => array(
+					array( 'after' => '30 days ago' ),
+				),
+			)
+		);
+
+		return array(
+			'total_leads'       => (int) $lead_count,
+			'total_deals'       => (int) $deal_count,
+			'pipeline_value'    => $pipeline_total,
+			'weighted_value'    => $weighted_total,
+			'won_value'         => $won_total,
+			'recent_activities' => count( $recent ),
+		);
+	}
+
+	/**
+	 * Get pipeline stage breakdown for analytics charts.
+	 *
+	 * @return array
+	 */
+	private static function get_pipeline_stages_for_analytics() {
+		$stage_names = array(
+			'prospecting',
+			'qualification',
+			'needs_analysis',
+			'value_proposition',
+			'decision_makers',
+			'perception_analysis',
+			'proposal',
+			'negotiation',
+			'closed_won',
+			'closed_lost',
+		);
+
+		$result = array();
+
+		foreach ( $stage_names as $stage ) {
+			$posts = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_deal',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'meta_key'       => 'deal_stage',
+					'meta_value'     => $stage,
+					'fields'         => 'ids',
+				)
+			);
+
+			$total_value = 0;
+			foreach ( $posts as $post_id ) {
+				$total_value += (float) get_post_meta( $post_id, 'deal_amount', true );
+			}
+
+			$result[] = array(
+				'stage' => $stage,
+				'count' => count( $posts ),
+				'value' => $total_value,
+			);
+		}
+
+		return $result;
 	}
 
 	/**

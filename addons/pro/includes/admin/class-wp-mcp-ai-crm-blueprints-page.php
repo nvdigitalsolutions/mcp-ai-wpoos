@@ -51,6 +51,7 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'register_page' ), 27 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_crm_install_blueprint', array( __CLASS__, 'ajax_install_blueprint' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_crm_get_blueprint_details', array( __CLASS__, 'ajax_get_blueprint_details' ) );
 	}
 
 	/**
@@ -162,14 +163,27 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 			'wp-mcp-ai-crm-blueprints',
 			'wpMcpAiCrmBlueprints',
 			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'wp_mcp_ai_crm_bp' ),
-				'i18n'    => array(
-					'installing'   => __( 'Installing...', 'mcp-ai-wpoos-pro' ),
-					'installed'    => __( 'Installed!', 'mcp-ai-wpoos-pro' ),
-					'error'        => __( 'Error installing blueprint.', 'mcp-ai-wpoos-pro' ),
-					'duplicate'    => __( 'This blueprint is already installed.', 'mcp-ai-wpoos-pro' ),
-					'overwrite'    => __( 'Overwrite existing?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+				'editUrl'  => admin_url( 'post.php?action=edit&post=0' ),
+				'nonce'    => wp_create_nonce( 'wp_mcp_ai_crm_bp' ),
+				'i18n'     => array(
+					'installing'    => __( 'Installing...', 'mcp-ai-wpoos-pro' ),
+					'installed'     => __( 'Installed!', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'Error installing blueprint.', 'mcp-ai-wpoos-pro' ),
+					'duplicate'     => __( 'Blueprint already exists.', 'mcp-ai-wpoos-pro' ),
+					'overwrite'     => __( 'Overwrite existing?', 'mcp-ai-wpoos-pro' ),
+					'installLabel'  => __( 'Install Blueprint', 'mcp-ai-wpoos-pro' ),
+					'viewDetails'   => __( 'View Details', 'mcp-ai-wpoos-pro' ),
+					'hideDetails'   => __( 'Hide Details', 'mcp-ai-wpoos-pro' ),
+					'loading'       => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
+					'instructions'  => __( 'Instructions', 'mcp-ai-wpoos-pro' ),
+					'tools'         => __( 'Tools', 'mcp-ai-wpoos-pro' ),
+					'defaults'      => __( 'Defaults', 'mcp-ai-wpoos-pro' ),
+					'model'         => __( 'Model', 'mcp-ai-wpoos-pro' ),
+					'temperature'   => __( 'Temperature', 'mcp-ai-wpoos-pro' ),
+					'maxTokens'     => __( 'Max Tokens', 'mcp-ai-wpoos-pro' ),
+					'noDetails'     => __( 'No additional details available.', 'mcp-ai-wpoos-pro' ),
+					'viewAssistant' => __( 'View Assistant', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -370,6 +384,50 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: get blueprint details.
+	 */
+	public static function ajax_get_blueprint_details() {
+		check_ajax_referer( 'wp_mcp_ai_crm_bp', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$slug = isset( $_POST['blueprint_slug'] ) ? sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ) : '';
+
+		if ( empty( $slug ) ) {
+			wp_send_json_error( array( 'message' => __( 'No blueprint specified.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
+			$installer_path = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-blueprint-installer.php';
+			if ( file_exists( $installer_path ) ) {
+				require_once $installer_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Blueprint installer not available.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$data = WP_MCP_AI_Blueprint_Installer::load_blueprint( self::BLUEPRINTS_DIR, $slug );
+		if ( is_wp_error( $data ) ) {
+			wp_send_json_error( array( 'message' => $data->get_error_message() ) );
+		}
+
+		// Return sanitized subset for frontend display.
+		$result = array(
+			'name'         => $data['name'] ?? '',
+			'description'  => $data['description'] ?? '',
+			'instructions' => $data['instructions'] ?? '',
+			'tools'        => $data['tools'] ?? array(),
+			'defaults'     => $data['defaults'] ?? null,
+		);
 
 		wp_send_json_success( $result );
 	}

@@ -96,15 +96,26 @@ if ( $is_enabled && ! $is_base ) {
 
 		// Load CRM Settings page (now under NV CRM menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-settings-page.php';
+		new WP_MCP_AI_CRM_Settings_Page();
 
-		// Load Research & Add Company page (now under NV CRM menu).
+		// Load Research & Add pages (per-CPT, under NV CRM menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
 		WP_MCP_AI_Company_Research_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-lead-research-page.php';
+		WP_MCP_AI_Lead_Research_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-research-page.php';
+		WP_MCP_AI_Deal_Research_Page::init();
 
 		// Load CRM Blueprints page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';
 		WP_MCP_AI_CRM_Blueprints_Page::init();
 	}
+
+	// Load CRM REST controller for Toolkit Shell SPA.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-crm-rest-controller.php';
+	WP_MCP_AI_CRM_REST_Controller::get_instance()->init();
 
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-crm-research-add.php';
