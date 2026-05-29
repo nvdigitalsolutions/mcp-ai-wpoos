@@ -76,9 +76,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		if ( self::$page_hook !== $hook ) {
-			// Fallback: check GET parameter.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			if ( ! isset( $_GET['page'] ) || self::PAGE_SLUG !== $_GET['page'] ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page detection for asset enqueue.
+			$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+			if ( ! $page || ! in_array( $page, array( self::PAGE_SLUG, WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG ), true ) ) {
 				return;
 			}
 		}
@@ -247,11 +247,11 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<nav class="nav-tab-wrapper">
 					<?php
 					$tabs = array(
-						'overview'   => __( 'Overview', 'mcp-ai-wpoos-pro' ),
-						'pipeline'   => __( 'Pipeline', 'mcp-ai-wpoos-pro' ),
-						'activities' => __( 'Activities', 'mcp-ai-wpoos-pro' ),
-						'sequences'  => __( 'Sequences', 'mcp-ai-wpoos-pro' ),
-						'analytics'  => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
+						'overview'      => __( 'Overview', 'mcp-ai-wpoos-pro' ),
+						'pipeline'      => __( 'Pipeline', 'mcp-ai-wpoos-pro' ),
+						'activities'    => __( 'Activities', 'mcp-ai-wpoos-pro' ),
+						'sequences'     => __( 'Sequences', 'mcp-ai-wpoos-pro' ),
+						'analytics'     => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
 						'configuration' => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
 					);
 					foreach ( $tabs as $slug => $label ) {
@@ -408,7 +408,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		<div class="crm-cc-section">
 			<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<p>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_CRM_Command_Center_Page::PAGE_SLUG . '&tab=pipeline' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=pipeline' ) ); ?>" class="button">
 					<?php esc_html_e( 'View Pipeline', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_company&page=research-company' ) ); ?>" class="button">
@@ -542,15 +542,16 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	 * Render the Analytics tab.
 	 */
 	private static function render_analytics_tab() {
-		$kpis    = self::get_analytics_kpis();
-		$stages  = self::get_pipeline_stages_for_analytics();
-		$lead_count    = $kpis['total_leads'];
-		$deal_count    = $kpis['total_deals'];
-		$pipeline_val  = $kpis['pipeline_value'];
-		$weighted_val  = $kpis['weighted_value'];
-		$won_val       = $kpis['won_value'];
-		$activities    = $kpis['recent_activities'];
-		$max_stage     = max( array_column( $stages, 'count' ) ) ?: 1;
+		$kpis         = self::get_analytics_kpis();
+		$stages       = self::get_pipeline_stages_for_analytics();
+		$lead_count   = $kpis['total_leads'];
+		$deal_count   = $kpis['total_deals'];
+		$pipeline_val = $kpis['pipeline_value'];
+		$weighted_val = $kpis['weighted_value'];
+		$won_val      = $kpis['won_value'];
+		$activities   = $kpis['recent_activities'];
+		$max_stage    = max( array_column( $stages, 'count' ) );
+		$max_stage    = $max_stage > 0 ? $max_stage : 1;
 		?>
 		<div class="crm-cc-kpi-grid" style="margin-bottom: 24px;">
 			<div class="crm-cc-kpi">
@@ -586,7 +587,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			<?php else : ?>
 				<?php foreach ( $stages as $stage ) : ?>
 					<?php
-					$pct = $max_stage > 0 ? round( ( $stage['count'] / $max_stage ) * 100 ) : 0;
+					$pct       = $max_stage > 0 ? round( ( $stage['count'] / $max_stage ) * 100 ) : 0;
 					$bar_color = 'closed_won' === $stage['stage'] ? '#00a32a' : ( 'closed_lost' === $stage['stage'] ? '#d63638' : '#2271b1' );
 					?>
 					<div class="crm-cc-pipeline-stage">
@@ -654,8 +655,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				'post_status'    => $status,
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
-				'meta_key'       => $meta_key,
-				'meta_value'     => $meta_value,
+				'meta_key'       => $meta_key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Intentional single-key count lookup.
+				'meta_value'     => $meta_value, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Intentional single-key count lookup.
 				'no_found_rows'  => false,
 			)
 		);
@@ -699,13 +700,13 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	 */
 	private static function get_pipeline_stages() {
 		$all_stages = array(
-			'prospecting'     => __( 'Prospecting', 'mcp-ai-wpoos-pro' ),
-			'qualification'   => __( 'Qualification', 'mcp-ai-wpoos-pro' ),
-			'needs_analysis'  => __( 'Needs Analysis', 'mcp-ai-wpoos-pro' ),
-			'proposal'        => __( 'Proposal', 'mcp-ai-wpoos-pro' ),
-			'negotiation'     => __( 'Negotiation', 'mcp-ai-wpoos-pro' ),
-			'closed_won'      => __( 'Closed Won', 'mcp-ai-wpoos-pro' ),
-			'closed_lost'     => __( 'Closed Lost', 'mcp-ai-wpoos-pro' ),
+			'prospecting'    => __( 'Prospecting', 'mcp-ai-wpoos-pro' ),
+			'qualification'  => __( 'Qualification', 'mcp-ai-wpoos-pro' ),
+			'needs_analysis' => __( 'Needs Analysis', 'mcp-ai-wpoos-pro' ),
+			'proposal'       => __( 'Proposal', 'mcp-ai-wpoos-pro' ),
+			'negotiation'    => __( 'Negotiation', 'mcp-ai-wpoos-pro' ),
+			'closed_won'     => __( 'Closed Won', 'mcp-ai-wpoos-pro' ),
+			'closed_lost'    => __( 'Closed Lost', 'mcp-ai-wpoos-pro' ),
 		);
 
 		$deal_posts = get_posts(
@@ -774,9 +775,10 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		$result = array();
 		foreach ( $activities as $activity ) {
-			$result[] = array(
+			$activity_type = get_post_meta( $activity->ID, '_activity_type', true );
+			$result[]      = array(
 				'date'        => get_the_date( 'Y-m-d H:i', $activity ),
-				'type'        => get_post_meta( $activity->ID, '_activity_type', true ) ?: __( 'Activity', 'mcp-ai-wpoos-pro' ),
+				'type'        => $activity_type ? $activity_type : __( 'Activity', 'mcp-ai-wpoos-pro' ),
 				'subject'     => get_the_title( $activity ),
 				'description' => wp_trim_words( $activity->post_content, 15 ),
 			);
@@ -804,12 +806,15 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		$result = array();
 		foreach ( $sequences as $seq ) {
-			$result[] = array(
+			$seq_status = get_post_meta( $seq->ID, '_sequence_status', true );
+			$seq_steps  = get_post_meta( $seq->ID, '_sequence_steps', true );
+			$seq_target = get_post_meta( $seq->ID, '_sequence_target', true );
+			$result[]   = array(
 				'id'     => $seq->ID,
 				'title'  => get_the_title( $seq ),
-				'status' => get_post_meta( $seq->ID, '_sequence_status', true ) ?: __( 'Draft', 'mcp-ai-wpoos-pro' ),
-				'steps'  => get_post_meta( $seq->ID, '_sequence_steps', true ) ?: '0',
-				'target' => get_post_meta( $seq->ID, '_sequence_target', true ) ?: '—',
+				'status' => $seq_status ? $seq_status : __( 'Draft', 'mcp-ai-wpoos-pro' ),
+				'steps'  => $seq_steps ? $seq_steps : '0',
+				'target' => $seq_target ? $seq_target : '—',
 			);
 		}
 
@@ -831,8 +836,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	 * @return array
 	 */
 	private static function get_analytics_kpis() {
-		$lead_count    = wp_count_posts( 'mcp_ai_lead' )->publish ?? 0;
-		$deal_count    = wp_count_posts( 'mcp_ai_deal' )->publish ?? 0;
+		$lead_count = wp_count_posts( 'mcp_ai_lead' )->publish ?? 0;
+		$deal_count = wp_count_posts( 'mcp_ai_deal' )->publish ?? 0;
 
 		$deals = get_posts(
 			array(
@@ -909,8 +914,8 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					'post_type'      => 'mcp_ai_deal',
 					'post_status'    => 'publish',
 					'posts_per_page' => -1,
-					'meta_key'       => 'deal_stage',
-					'meta_value'     => $stage,
+					'meta_key'       => 'deal_stage', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Intentional stage lookup for pipeline totals.
+					'meta_value'     => $stage, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Intentional stage lookup for pipeline totals.
 					'fields'         => 'ids',
 				)
 			);
