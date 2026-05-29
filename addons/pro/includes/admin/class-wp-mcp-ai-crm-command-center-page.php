@@ -561,7 +561,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			<p>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-crm-toolkit-settings' ) ); ?>" class="button"><?php esc_html_e( 'CRM Settings', 'mcp-ai-wpoos-pro' ); ?></a>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" class="button"><?php esc_html_e( 'Remote Connections', 'mcp-ai-wpoos-pro' ); ?></a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-schedule-manager' ) ); ?>" class="button"><?php esc_html_e( 'Schedules', 'mcp-ai-wpoos-pro' ); ?></a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-schedule-manager' ) ); ?>" class="button"><?php esc_html_e( 'Schedules', 'mcp-ai-wpoos-pro' ); ?></a>
 			</p>
 		</div>
 		<?php
