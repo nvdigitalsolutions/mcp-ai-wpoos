@@ -24,9 +24,65 @@ $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_bas
 // Only load if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
 
+	// ---- Phase A: Shared CRM engine (loaded before any tool) ----
+	$crm_engine_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/';
+
+	// Shared engine classes (mirrors Healthcare toolkit architecture).
+	$_crm_files = array(
+		'class-wp-mcp-ai-crm-engine.php',
+		'class-wp-mcp-ai-crm-codes.php',
+		'class-wp-mcp-ai-crm-audit.php',
+		'class-wp-mcp-ai-crm-capabilities.php',
+		'class-wp-mcp-ai-crm-consent.php',
+		'class-wp-mcp-ai-crm-pipeline-stages.php',
+		'class-wp-mcp-ai-crm-classifier.php',
+	);
+	foreach ( $_crm_files as $_file ) {
+		$_path = $crm_engine_dir . $_file;
+		if ( file_exists( $_path ) ) {
+			require_once $_path;
+		}
+	}
+
+	// Load shared blueprint installer (used by import_crm_blueprint and import_healthcare_blueprint).
+	$_installer = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-blueprint-installer.php';
+	if ( file_exists( $_installer ) ) {
+		require_once $_installer;
+	}
+
 	// Load Company CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
+
+	// Phase B: Load Lead, Deal, and Activity CPTs.
+	$_phase_b_cpts = array(
+		'class-wp-mcp-ai-lead-cpt.php',
+		'class-wp-mcp-ai-deal-cpt.php',
+		'class-wp-mcp-ai-crm-activity-cpt.php',
+	);
+	foreach ( $_phase_b_cpts as $_cpt_file ) {
+		$_cpt_path = WP_MCP_AI_PRO_PATH . 'includes/' . $_cpt_file;
+		if ( file_exists( $_cpt_path ) ) {
+			require_once $_cpt_path;
+		}
+	}
+	WP_MCP_AI_Lead_CPT::init();
+	WP_MCP_AI_Deal_CPT::init();
+	WP_MCP_AI_CRM_Activity_CPT::init();
+
+	// Phase D: Load Sequence and Workflow Rule CPTs.
+	$_phase_d_cpts = array(
+		'class-wp-mcp-ai-sequence-cpt.php',
+		'class-wp-mcp-ai-crm-workflow-rule-cpt.php',
+	);
+	foreach ( $_phase_d_cpts as $_cpt_file ) {
+		$_cpt_path = WP_MCP_AI_PRO_PATH . 'includes/' . $_cpt_file;
+		if ( file_exists( $_cpt_path ) ) {
+			require_once $_cpt_path;
+		}
+	}
+	WP_MCP_AI_Sequence_CPT::init();
+	WP_MCP_AI_CRM_Workflow_Rule_CPT::init();
 
 	// Load CRM admin pages.
 	if ( is_admin() ) {
@@ -41,14 +97,13 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/crm/.
+	// Upwork sub-tools are in: addons/pro/includes/tools/crm/upwork/.
 }
 
 /**
  * Enqueue CRM toolkit admin styles.
- *
- * @param string $hook Current admin page hook.
  */
-function wp_mcp_ai_enqueue_crm_toolkit_admin_styles( $hook ) {
+function wp_mcp_ai_enqueue_crm_toolkit_admin_styles() {
 	// Only load if toolkit is enabled.
 	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	if ( empty( $settings['enable_crm_toolkit'] ) ) {

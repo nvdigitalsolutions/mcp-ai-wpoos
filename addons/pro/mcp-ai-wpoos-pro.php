@@ -938,21 +938,98 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add CRM Toolkit tools if enabled.
 		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
 			$crm_tools = array(
-				// CRM core CRUD tools.
-				'WP_MCP_AI_Tool_Manage_CRM_Contact'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-manage-crm-contact.php',
-				'WP_MCP_AI_Tool_Create_Company'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-create-company.php',
-				'WP_MCP_AI_Tool_Get_Companies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
-				'WP_MCP_AI_Tool_Research_Company'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-research-company.php',
-				// CRM Email Search tools (with caching + scheduling).
-				'WP_MCP_AI_Tool_CRM_Email_Search_Leads'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
+				// ── CRM core CRUD (11 pre-Phase A) ──
+				'WP_MCP_AI_Tool_Manage_CRM_Contact'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-manage-crm-contact.php',
+				'WP_MCP_AI_Tool_Create_Company'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-create-company.php',
+				'WP_MCP_AI_Tool_Get_Companies'             => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
+				'WP_MCP_AI_Tool_Research_Company'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-research-company.php',
+				'WP_MCP_AI_Tool_CRM_Email_Search_Leads'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
 				'WP_MCP_AI_Tool_CRM_Email_Search_Correspondence' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php',
 				'WP_MCP_AI_Tool_CRM_Email_Search_Accounting' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php',
-				// Upwork CRM tools.
-				'WP_MCP_AI_Tool_Search_Upwork_Jobs'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-search-upwork-jobs.php',
-				'WP_MCP_AI_Tool_Score_Upwork_Job'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-score-upwork-job.php',
-				'WP_MCP_AI_Tool_Draft_Upwork_Proposal'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-draft-upwork-proposal.php',
-				// MemPalace capture tool (Phase B1).
-				'WP_MCP_AI_Tool_CRM_Capture_Interaction' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php',
+				'WP_MCP_AI_Tool_Search_Upwork_Jobs'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php',
+				'WP_MCP_AI_Tool_Score_Upwork_Job'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-score-upwork-job.php',
+				'WP_MCP_AI_Tool_Draft_Upwork_Proposal'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/upwork/class-wp-mcp-ai-tool-draft-upwork-proposal.php',
+				'WP_MCP_AI_Tool_CRM_Capture_Interaction'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php',
+
+				// ── Phase B: Leads (6) ──
+				'WP_MCP_AI_Tool_Create_Lead'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-create-lead.php',
+				'WP_MCP_AI_Tool_List_Leads'                => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-list-leads.php',
+				'WP_MCP_AI_Tool_Get_Lead'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-get-lead.php',
+				'WP_MCP_AI_Tool_Update_Lead'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-update-lead.php',
+				'WP_MCP_AI_Tool_Delete_Lead'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-delete-lead.php',
+				'WP_MCP_AI_Tool_Convert_Lead_To_Customer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-convert-lead-to-customer.php',
+
+				// ── Phase B: Deals (6) ──
+				'WP_MCP_AI_Tool_Create_Deal'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-create-deal.php',
+				'WP_MCP_AI_Tool_List_Deals'                => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-list-deals.php',
+				'WP_MCP_AI_Tool_Get_Deal'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-get-deal.php',
+				'WP_MCP_AI_Tool_Update_Deal'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-update-deal.php',
+				'WP_MCP_AI_Tool_Delete_Deal'               => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-delete-deal.php',
+				'WP_MCP_AI_Tool_Move_Deal_Stage'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/deals/class-wp-mcp-ai-tool-move-deal-stage.php',
+
+				// ── Phase B: Activities (5) ──
+				'WP_MCP_AI_Tool_Create_CRM_Activity'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-create-crm-activity.php',
+				'WP_MCP_AI_Tool_List_CRM_Activities'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-list-crm-activities.php',
+				'WP_MCP_AI_Tool_Get_CRM_Activity'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-get-crm-activity.php',
+				'WP_MCP_AI_Tool_Complete_CRM_Activity'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-complete-crm-activity.php',
+				'WP_MCP_AI_Tool_Snooze_CRM_Activity'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/activities/class-wp-mcp-ai-tool-snooze-crm-activity.php',
+
+				// ── Phase B: Pipeline Analytics (3) ──
+				'WP_MCP_AI_Tool_Get_Pipeline_View'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-get-pipeline-view.php',
+				'WP_MCP_AI_Tool_Get_Conversion_Funnel'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-get-conversion-funnel.php',
+				'WP_MCP_AI_Tool_Forecast_Pipeline_Revenue' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/analytics/class-wp-mcp-ai-tool-forecast-pipeline-revenue.php',
+
+				// ── Phase B: Routing (2) ──
+				'WP_MCP_AI_Tool_Assign_Lead_To_Owner'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/routing/class-wp-mcp-ai-tool-assign-lead-to-owner.php',
+				'WP_MCP_AI_Tool_Rotate_Leads'              => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/routing/class-wp-mcp-ai-tool-rotate-leads.php',
+
+				// ── Phase C: Inbound Triage (7) ──
+				'WP_MCP_AI_Tool_Evaluate_Inbound_Message'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php',
+				'WP_MCP_AI_Tool_Classify_Message_Intent'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-classify-message-intent.php',
+				'WP_MCP_AI_Tool_Extract_Lead_From_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-extract-lead-from-message.php',
+				'WP_MCP_AI_Tool_Detect_Buying_Signals'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-detect-buying-signals.php',
+				'WP_MCP_AI_Tool_Score_Lead'                => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-score-lead.php',
+				'WP_MCP_AI_Tool_Qualify_Lead_Bant'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-qualify-lead-bant.php',
+				'WP_MCP_AI_Tool_Qualify_Lead_Meddic'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-qualify-lead-meddic.php',
+
+				// ── Phase C: Outbound Multichannel (8) ──
+				'WP_MCP_AI_Tool_Send_Lead_Email'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-email.php',
+				'WP_MCP_AI_Tool_Send_Lead_SMS'             => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-sms.php',
+				'WP_MCP_AI_Tool_Send_Lead_Whatsapp'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-whatsapp.php',
+				'WP_MCP_AI_Tool_Send_Lead_Dm'              => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-send-lead-dm.php',
+				'WP_MCP_AI_Tool_Log_Call_Outcome'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-log-call-outcome.php',
+				'WP_MCP_AI_Tool_Draft_Lead_Reply'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-draft-lead-reply.php',
+				'WP_MCP_AI_Tool_Auto_Reply_Inbound'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-auto-reply-inbound.php',
+				'WP_MCP_AI_Tool_Schedule_Follow_Up'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-schedule-follow-up.php',
+
+				// ── Phase D: Sequences (7) ──
+				'WP_MCP_AI_Tool_Create_Outreach_Sequence'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-create-outreach-sequence.php',
+				'WP_MCP_AI_Tool_Update_Outreach_Sequence'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-update-outreach-sequence.php',
+				'WP_MCP_AI_Tool_Delete_Outreach_Sequence'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-delete-outreach-sequence.php',
+				'WP_MCP_AI_Tool_List_Outreach_Sequences'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-list-outreach-sequences.php',
+				'WP_MCP_AI_Tool_Enroll_Lead_In_Sequence'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-enroll-lead-in-sequence.php',
+				'WP_MCP_AI_Tool_Manage_Sequence_State'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-manage-sequence-state.php',
+				'WP_MCP_AI_Tool_Get_Sequence_Performance'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-get-sequence-performance.php',
+
+				// ── Phase D: Command Center (5) ──
+				'WP_MCP_AI_Tool_Create_Workflow_Rule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-create-workflow-rule.php',
+				'WP_MCP_AI_Tool_Manage_Workflow_Rules'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-manage-workflow-rules.php',
+				'WP_MCP_AI_Tool_Simulate_Workflow_Rule'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-simulate-workflow-rule.php',
+				'WP_MCP_AI_Tool_Get_Workflow_Inbox'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-get-workflow-inbox.php',
+				'WP_MCP_AI_Tool_Auto_Route_Inbound_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-auto-route-inbound-message.php',
+				'WP_MCP_AI_Tool_Get_Owner_Workload'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-get-owner-workload.php',
+
+				// ── Phase E: Compliance (7) ──
+				'WP_MCP_AI_Tool_Record_Consent'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-record-consent.php',
+				'WP_MCP_AI_Tool_Revoke_Consent'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-revoke-consent.php',
+				'WP_MCP_AI_Tool_Process_Opt_Out'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-process-opt-out.php',
+				'WP_MCP_AI_Tool_Check_Dnc_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-check-dnc-status.php',
+				'WP_MCP_AI_Tool_Get_Consent_Audit'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-get-consent-audit.php',
+				'WP_MCP_AI_Tool_Import_CRM_Csv'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-import-crm-csv.php',
+				'WP_MCP_AI_Tool_Connect_To_External_Crm'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-connect-to-external-crm.php',
+
+				// ── Phase E: Blueprint (1) ──
+				'WP_MCP_AI_Tool_Import_CRM_Blueprint'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples/class-wp-mcp-ai-tool-import-crm-blueprint.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $crm_tools );
 		}
@@ -1182,10 +1259,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Healthcare Interoperability tools (Phase E) — gated on health & wellness toggle.
 		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
 			$interop_tools = array(
-				'WP_MCP_AI_Tool_Import_FHIR_Bundle'   => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
-				'WP_MCP_AI_Tool_Export_CCDA_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
-				'WP_MCP_AI_Tool_Import_HL7v2_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
-				'WP_MCP_AI_Tool_Connect_To_EHR'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
+				'WP_MCP_AI_Tool_Import_FHIR_Bundle'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
+				'WP_MCP_AI_Tool_Export_CCDA_Document'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
+				'WP_MCP_AI_Tool_Import_HL7v2_Message'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
+				'WP_MCP_AI_Tool_Connect_To_EHR'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
+				// Phase E: Blueprint import.
+				'WP_MCP_AI_Tool_Import_Healthcare_Blueprint' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/examples/class-wp-mcp-ai-tool-import-healthcare-blueprint.php',
 			);
 			$pro_tools     = array_merge( $pro_tools, $interop_tools );
 		}
@@ -1694,13 +1773,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-client-satisfaction-analyzer.php',
 				'WP_MCP_AI_Tool_LF_Competitive_Benchmarker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-competitive-benchmarker.php',
 			);
-		$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
+			$pro_tools              = array_merge( $pro_tools, $law_firm_toolkit_tools );
 		}
 
 		// Comic Creation Toolkit (12 tools).
 		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
 			$comic_tools_base = WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/';
-			$comic_tools = array(
+			$comic_tools      = array(
 				'WP_MCP_AI_Tool_Generate_Comic_Script'    => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-comic-script.php',
 				'WP_MCP_AI_Tool_Breakdown_Comic_Panels'   => $comic_tools_base . 'class-wp-mcp-ai-tool-breakdown-comic-panels.php',
 				'WP_MCP_AI_Tool_Generate_Character_Sheet' => $comic_tools_base . 'class-wp-mcp-ai-tool-generate-character-sheet.php',
@@ -1714,7 +1793,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Upscale_Comic_Page'       => $comic_tools_base . 'class-wp-mcp-ai-tool-upscale-comic-page.php',
 				'WP_MCP_AI_Tool_Apply_Comic_Style'        => $comic_tools_base . 'class-wp-mcp-ai-tool-apply-comic-style.php',
 			);
-			$pro_tools = array_merge( $pro_tools, $comic_tools );
+			$pro_tools        = array_merge( $pro_tools, $comic_tools );
 		}
 
 		// Extended Cognition Toolkit.

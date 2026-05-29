@@ -222,7 +222,7 @@ class WP_MCP_AI_Company_CPT {
 				'capability_type'    => 'post',
 				'has_archive'        => false,
 				'hierarchical'       => false,
-				'menu_position'      => 56,
+				'menu_position'      => 54,
 				'supports'           => array( 'title', 'editor', 'author', 'thumbnail' ),
 				'show_in_rest'       => true,
 			)
