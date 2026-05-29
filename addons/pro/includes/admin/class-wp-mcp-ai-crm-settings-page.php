@@ -186,6 +186,26 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
 		}
+
+		// Migrate legacy CRM research assistant option into the grouped option.
+		$legacy_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', null );
+		if ( null !== $legacy_assistant && ! isset( $settings['research_assistant'] ) ) {
+			$settings['research_assistant'] = $legacy_assistant;
+			// Persist the change so the engine cache stays current.
+			$stored         = get_option( $this->option_name, array() );
+			$stored['research_assistant'] = $legacy_assistant;
+			update_option( $this->option_name, $stored );
+			// Update engine cache.
+			if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+				WP_MCP_AI_CRM_Engine::flush_settings_cache();
+			}
+		}
+
+		// Resolve current assistant selection.
+		$current_assistant = isset( $settings['research_assistant'] ) ? $settings['research_assistant'] : 'default';
+		$assistants        = $this->get_available_assistants();
+
+		$option_name = $this->option_name;
 		?>
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'CRM & Email Marketing Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -200,7 +220,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Qualification Framework', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="qualification_framework">
+						<select name="<?php echo esc_attr( $option_name ); ?>[qualification_framework]">
 							<option value="bant" <?php selected( $settings['qualification_framework'] ?? 'bant', 'bant' ); ?>><?php esc_html_e( 'BANT — Budget · Authority · Need · Timeline', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="meddic" <?php selected( $settings['qualification_framework'] ?? '', 'meddic' ); ?>><?php esc_html_e( 'MEDDIC — Metrics · Economic Buyer · Decision Criteria · Decision Process · Identify Pain · Champion', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="champ" <?php selected( $settings['qualification_framework'] ?? '', 'champ' ); ?>><?php esc_html_e( 'CHAMP — Challenges · Authority · Money · Prioritisation', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -211,14 +231,14 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Hot Lead Threshold', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="hot_score_threshold" value="<?php echo esc_attr( $settings['hot_score_threshold'] ?? 70 ); ?>" min="0" max="100" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[hot_score_threshold]" value="<?php echo esc_attr( $settings['hot_score_threshold'] ?? 70 ); ?>" min="0" max="100" class="small-text" />
 						<p class="description"><?php esc_html_e( 'Score ≥ threshold → hot lead (0–100).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Warm Lead Threshold', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="warm_score_threshold" value="<?php echo esc_attr( $settings['warm_score_threshold'] ?? 40 ); ?>" min="0" max="100" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[warm_score_threshold]" value="<?php echo esc_attr( $settings['warm_score_threshold'] ?? 40 ); ?>" min="0" max="100" class="small-text" />
 						<p class="description"><?php esc_html_e( 'Score ≥ threshold → warm lead (0–100).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -228,7 +248,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Routing Strategy', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="routing_strategy">
+						<select name="<?php echo esc_attr( $option_name ); ?>[routing][strategy]">
 							<option value="round_robin" <?php selected( $settings['routing']['strategy'] ?? 'round_robin', 'round_robin' ); ?>><?php esc_html_e( 'Round Robin — distribute evenly among pool', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="weighted" <?php selected( $settings['routing']['strategy'] ?? '', 'weighted' ); ?>><?php esc_html_e( 'Weighted — assign to rep with fewest active leads', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
@@ -242,7 +262,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					<th scope="row"><?php esc_html_e( 'Require Double Opt-In', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
-							<input type="checkbox" name="require_double_opt_in" value="1" <?php checked( ! empty( $settings['consent']['require_double_opt_in'] ) ); ?> />
+							<input type="checkbox" name="<?php echo esc_attr( $option_name ); ?>[consent][require_double_opt_in]" value="1" <?php checked( ! empty( $settings['consent']['require_double_opt_in'] ) ); ?> />
 							<?php esc_html_e( 'Require explicit opt-in confirmation before sending outbound email', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'When enabled, email outbound is blocked for contacts without an active consent record (GDPR-compliant default). When disabled, legitimate-interest emails are allowed.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -251,7 +271,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<tr>
 					<th scope="row"><?php esc_html_e( 'CAN-SPAM Physical Address', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="text" name="physical_address" value="<?php echo esc_attr( $settings['consent']['physical_address'] ?? '' ); ?>" class="regular-text" />
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[consent][physical_address]" value="<?php echo esc_attr( $settings['consent']['physical_address'] ?? '' ); ?>" class="regular-text" />
 						<p class="description"><?php esc_html_e( 'Required by U.S. CAN-SPAM Act.  Inserted into the footer of outbound marketing emails.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -261,7 +281,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Audit Retention (days)', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="audit_retention_days" value="<?php echo esc_attr( $settings['audit_retention_days'] ?? 365 ); ?>" min="30" max="2555" class="small-text" />
+						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[audit_retention_days]" value="<?php echo esc_attr( $settings['audit_retention_days'] ?? 365 ); ?>" min="30" max="2555" class="small-text" />
 						<p class="description"><?php esc_html_e( 'How long PII/consent audit entries are retained in the rolling buffer.  For long-term storage, use the wp_mcp_ai_crm_after_audit action to forward to an external SIEM.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -290,11 +310,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Research & Add Assistant', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<?php
-						$current_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
-						$assistants        = $this->get_available_assistants();
-						?>
-						<select name="wp_mcp_ai_crm_research_assistant" id="crm_research_assistant">
+						<select name="<?php echo esc_attr( $option_name ); ?>[research_assistant]" id="crm_research_assistant">
 							<?php foreach ( $assistants as $assistant_id => $assistant_name ) : ?>
 								<option value="<?php echo esc_attr( $assistant_id ); ?>" <?php selected( $current_assistant, $assistant_id ); ?>>
 									<?php echo esc_html( $assistant_name ); ?>
@@ -302,7 +318,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 							<?php endforeach; ?>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Select which AI assistant to use for company research on the Research & Add pages. This assistant will help with web search, industry analysis, and target company identification.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Select which AI assistant to use as the default for all Research & Add pages (Company, Lead, Deal). Each CPT settings page can override this default.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -490,6 +506,88 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		}
 
 		return $assistants;
+	}
+
+	/**
+	 * Sanitize CRM toolkit settings before saving.
+	 *
+	 * Merges submitted form fields into the full stored settings array so that
+	 * nested sub-arrays (pipeline stages, integrations, etc.) are never lost.
+	 *
+	 * @param array $input Submitted settings array keyed by field name.
+	 * @return array Sanitized settings array.
+	 */
+	public function sanitize_settings( $input ) {
+		// Start from the existing full options array to preserve nested defaults.
+		$existing = get_option( $this->option_name, array() );
+		if ( ! is_array( $existing ) ) {
+			$existing = array();
+		}
+
+		// Merge with CRM Engine defaults for any missing keys.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$defaults = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		} else {
+			$defaults = array();
+		}
+		$sanitized = array_replace_recursive( $defaults, $existing );
+
+		// --- Lead Scoring & Qualification ---
+		if ( isset( $input['qualification_framework'] ) ) {
+			$valid_frameworks = array( 'bant', 'meddic', 'champ' );
+			if ( in_array( $input['qualification_framework'], $valid_frameworks, true ) ) {
+				$sanitized['qualification_framework'] = $input['qualification_framework'];
+			}
+		}
+
+		if ( isset( $input['hot_score_threshold'] ) ) {
+			$sanitized['hot_score_threshold'] = min( 100, max( 0, absint( $input['hot_score_threshold'] ) ) );
+		}
+
+		if ( isset( $input['warm_score_threshold'] ) ) {
+			$sanitized['warm_score_threshold'] = min( 100, max( 0, absint( $input['warm_score_threshold'] ) ) );
+		}
+
+		// --- Routing ---
+		if ( isset( $input['routing']['strategy'] ) ) {
+			$valid_strategies = array( 'round_robin', 'weighted' );
+			if ( in_array( $input['routing']['strategy'], $valid_strategies, true ) ) {
+				$sanitized['routing']['strategy'] = $input['routing']['strategy'];
+			}
+		}
+
+		// --- Consent & Compliance ---
+		if ( isset( $input['consent']['require_double_opt_in'] ) ) {
+			$sanitized['consent']['require_double_opt_in'] = (bool) $input['consent']['require_double_opt_in'];
+		} else {
+			// Checkbox: if not in POST, it was unchecked.
+			$sanitized['consent']['require_double_opt_in'] = false;
+		}
+
+		if ( isset( $input['consent']['physical_address'] ) ) {
+			$sanitized['consent']['physical_address'] = sanitize_textarea_field( $input['consent']['physical_address'] );
+		}
+
+		// --- Storage & Audit ---
+		if ( isset( $input['audit_retention_days'] ) ) {
+			$sanitized['audit_retention_days'] = min( 2555, max( 30, absint( $input['audit_retention_days'] ) ) );
+		}
+
+		// --- AI Integration ---
+		if ( isset( $input['research_assistant'] ) ) {
+			if ( 'default' === $input['research_assistant'] ) {
+				$sanitized['research_assistant'] = 'default';
+			} else {
+				$sanitized['research_assistant'] = absint( $input['research_assistant'] );
+			}
+		}
+
+		// Clear engine static cache so next read picks up the new values.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			WP_MCP_AI_CRM_Engine::flush_settings_cache();
+		}
+
+		return $sanitized;
 	}
 
 	/**

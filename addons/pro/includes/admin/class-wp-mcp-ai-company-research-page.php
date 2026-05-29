@@ -129,6 +129,7 @@ class WP_MCP_AI_Company_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
+		$current_mode = self::get_current_mode();
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
@@ -136,6 +137,14 @@ class WP_MCP_AI_Company_Research_Page {
 			</h1>
 
 			<hr class="wp-header-end">
+
+			<?php self::render_mode_tabs( $current_mode ); ?>
+
+			<?php if ( 'import' === $current_mode ) : ?>
+				<?php self::render_import_section(); ?>
+			<?php elseif ( 'consolidate' === $current_mode ) : ?>
+				<?php self::render_consolidation_dashboard(); ?>
+			<?php else : ?>
 
 			<div class="wp-mcp-ai-research-info-box">
 				<h3><?php esc_html_e( 'AI-Powered Company Research', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -167,8 +176,9 @@ class WP_MCP_AI_Company_Research_Page {
 					<h2><?php esc_html_e( 'AI Research Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
 					<div class="wp-mcp-ai-research-chat-container">
 						<?php
-						// Get the assigned assistant for CRM research.
-						$assigned_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
+						// Get the assigned assistant from the grouped CRM toolkit settings.
+						$crm_settings       = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_toolkit_settings() : array();
+						$assigned_assistant = isset( $crm_settings['research_assistant'] ) ? $crm_settings['research_assistant'] : 'default';
 
 						// Render the AI chat interface with the assigned assistant.
 						if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
@@ -297,6 +307,8 @@ class WP_MCP_AI_Company_Research_Page {
 					</form>
 				</div>
 			</div>
+
+			<?php endif; ?>
 		</div>
 
 		<style>
