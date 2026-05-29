@@ -44,6 +44,12 @@ if ( $is_enabled && ! $is_base ) {
 		}
 	}
 
+	// Load shared blueprint installer (used by import_crm_blueprint and import_healthcare_blueprint).
+	$_installer = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-blueprint-installer.php';
+	if ( file_exists( $_installer ) ) {
+		require_once $_installer;
+	}
+
 	// Load Company CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
@@ -96,10 +102,8 @@ if ( $is_enabled && ! $is_base ) {
 
 /**
  * Enqueue CRM toolkit admin styles.
- *
- * @param string $hook Current admin page hook.
  */
-function wp_mcp_ai_enqueue_crm_toolkit_admin_styles( $hook ) {
+function wp_mcp_ai_enqueue_crm_toolkit_admin_styles() {
 	// Only load if toolkit is enabled.
 	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	if ( empty( $settings['enable_crm_toolkit'] ) ) {

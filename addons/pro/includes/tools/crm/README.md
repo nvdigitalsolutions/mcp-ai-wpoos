@@ -1,8 +1,7 @@
 # CRM Toolkit
 
 > Unified umbrella for the CRM & Email Marketing toolkits in NV oOS Pro.
-> **Phase A deployed — foundations in place.  Phases B–E follow the roadmap in
-> [`addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md`](../../../docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md).**
+> **Phases A–E deployed.** Shared engine, lead/deal/activity CRUD, inbound triage, outbound multichannel, sequences, command centre, compliance, and assistant blueprints are all in place. See the [enhancement plan](../../../docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md) for the full roadmap and design rationale.
 
 This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 
@@ -28,21 +27,22 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | Email search (leads, accounting, correspondence) | `.` (flat) | Core | Pre-Phase A (existing) |
 | MemPalace capture | `.` (flat) | Core | Pre-Phase A (existing) |
 | Upwork (proposals, scoring, search) | `upwork/` | Core (relocated Phase A) | Pre-Phase A |
-| Lead CRUD + qualification | `leads/` | Lead Management | Phase B → |
-| Deal / opportunity CRUD | `deals/` | Pipeline | Phase B → |
-| Activity CRUD (calls, meetings, tasks) | `activities/` | Core | Phase B → |
-| Outreach sequences | `sequences/` | Automation | Phase D → |
-| Inbound triage | `inbound/` | Multichannel | Phase C → |
-| Outbound send | `outbound/` | Multichannel | Phase C → |
-| Lead routing | `routing/` | Core | Phase B → |
-| Pipeline analytics | `analytics/` | Reporting | Phase B → |
-| Consent, DNC, opt-out | `compliance/` | Compliance | Phase E → |
-| Workflow Command Center | `command-center/` | Automation | Phase D → |
-| Assistant blueprints | `examples/` | Interop | Phase E → |
+| Lead CRUD + qualification | `leads/` | Lead Management | Phase B ✅ |
+| Deal / opportunity CRUD | `deals/` | Pipeline | Phase B ✅ |
+| Activity CRUD (calls, meetings, tasks) | `activities/` | Core | Phase B ✅ |
+| Outreach sequences | `sequences/` | Automation | Phase D ✅ |
+| Inbound triage | `inbound/` | Multichannel | Phase C ✅ |
+| Outbound send | `outbound/` | Multichannel | Phase C ✅ |
+| Lead routing | `routing/` | Core | Phase B ✅ |
+| Pipeline analytics | `analytics/` | Reporting | Phase B ✅ |
+| Consent, DNC, opt-out | `compliance/` | Compliance | Phase E ✅ |
+| Workflow Command Center | `command-center/` | Automation | Phase D ✅ |
+| Assistant blueprints | `examples/` | Interop | Phase E ✅ |
 
-> Phase A introduces the unified umbrella and the shared infrastructure.  Existing
-> tools continue to register normally; subsequent phases will implement tools in
-> the empty subdirectories without changing existing tool slugs.
+> All five phases are implemented. Each subdirectory contains its tool files;
+> the shared engine classes provide cross-cutting infrastructure. See the
+> [enhancement plan](../../../docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md) for the
+> design rationale and per-phase tool counts.
 
 ---
 
@@ -61,8 +61,13 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Draft_Upwork_Proposal` | `upwork/class-wp-mcp-ai-tool-draft-upwork-proposal.php` | tool registry |
 | `WP_MCP_AI_Tool_Score_Upwork_Job` | `upwork/class-wp-mcp-ai-tool-score-upwork-job.php` | tool registry |
 | `WP_MCP_AI_Tool_Search_Upwork_Jobs` | `upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php` | tool registry |
+| `WP_MCP_AI_Tool_Import_CRM_Blueprint` | `examples/class-wp-mcp-ai-tool-import-crm-blueprint.php` | tool registry |
 
-## Shared Infrastructure (engine classes — Phase A)
+## Shared Infrastructure (engine classes + installer)
+
+| Symbol | File | Purpose |
+|---|---|---|
+| `WP_MCP_AI_Blueprint_Installer` | `../class-wp-mcp-ai-blueprint-installer.php` | Shared static installer for all toolkit blueprints |
 
 | Symbol | File | Purpose |
 |---|---|---|

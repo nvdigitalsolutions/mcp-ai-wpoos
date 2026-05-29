@@ -1,12 +1,16 @@
 <?php
 /**
- * Import CRM Blueprint — installs a curated CRM assistant blueprint.
+ * Import Healthcare Blueprint — installs a curated healthcare assistant blueprint.
  *
  * Delegates to the shared WP_MCP_AI_Blueprint_Installer for file loading,
  * JSON parsing, duplicate detection, post insertion, and meta population.
  *
+ * Healthcare blueprints use the direct WordPress-style format with post_title,
+ * post_status, post_content, and meta_input keys that map directly to the
+ * wp_insert_post / update_post_meta API.
+ *
  * @package   WP_MCP_AI_Pro
- * @subpackage CRM_Toolkit
+ * @subpackage Healthcare_Toolkit
  * @since     2.3.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
@@ -18,23 +22,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Imports a curated CRM assistant blueprint into the mcp_ai_assistant CPT.
+ * Imports a curated healthcare assistant blueprint into the mcp_ai_assistant CPT.
  *
  * @since 2.3.0
  */
-class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Import_Healthcare_Blueprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
-	 * Directory containing CRM blueprint JSON files.
+	 * Directory containing healthcare blueprint JSON files.
 	 *
 	 * @since 2.3.0
 	 * @var string
 	 */
-	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples';
+	const BLUEPRINTS_DIR = WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/examples';
 
 	/**
-	 * Available CRM blueprint slugs.
+	 * Available healthcare blueprint slugs.
 	 *
 	 * Must stay synchronised with the .json files in the examples/ directory.
 	 *
@@ -42,14 +46,10 @@ class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	 * @var string[]
 	 */
 	const BLUEPRINT_SLUGS = array(
-		'b2b-saas-sdr',
-		'agency-account-manager',
-		'real-estate-buyer-agent',
-		'wholesale-distributor',
-		'bespoke-concierge',
-		'luxeseek-sourcing-agent',
-		'business-advisory',
-		'career-coach',
+		'general-clinic',
+		'veterinary-practice',
+		'personal-health-tracker',
+		'radiology-review',
 	);
 
 	/**
@@ -57,35 +57,39 @@ class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public static function is_available() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $settings['enable_crm_toolkit'] );
+		return (
+			! empty( $settings['enable_health_wellness_management'] ) ||
+			! empty( $settings['enable_healthcare_imaging'] ) ||
+			! empty( $settings['enable_medical_vitals'] )
+		);
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Import CRM Blueprint tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
+		return __( 'The Import Healthcare Blueprint tool requires at least one healthcare sub-toolkit (Health & Wellness, Healthcare Imaging, or Medical Vitals) to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'import_crm_blueprint';
+		return 'import_healthcare_blueprint';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Import CRM Blueprint', 'mcp-ai-wpoos-pro' );
+		return __( 'Import Healthcare Blueprint', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Install a curated CRM assistant blueprint for B2B SaaS SDR, agency account management, real estate buyer agent, wholesale distribution, bespoke concierge, luxury sourcing, business advisory, or career coaching workflows.', 'mcp-ai-wpoos-pro' );
+		return __( 'Install a curated healthcare assistant blueprint for general clinic front desk, veterinary practice, personal health tracking, or radiology review workflows. Blueprints include pre-configured PHI audit logging, FHIR/CCDA/HL7v2 tool sets, and capability-gated access.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -127,7 +131,7 @@ class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-write', 'requires-capability' );
+		return array( 'pro', 'database-write', 'pii-access', 'requires-capability' );
 	}
 
 	/**
@@ -157,7 +161,35 @@ class WP_MCP_AI_Tool_Import_CRM_Blueprint implements WP_MCP_AI_Tool_Interface, W
 			return $data;
 		}
 
+		// Healthcare blueprints carry an extra PHI-audit marker in meta_input.
+		// Ensure it's present for the audit system to gate PHI access.
+		if ( isset( $data['meta_input'] ) && ! empty( $data['meta_input']['_wp_mcp_ai_audit_phi'] ) ) {
+			/**
+			 * Fires before a healthcare blueprint with PHI audit enabled
+			 * is installed. Use this to enforce BAA acknowledgement gates.
+			 *
+			 * @since 2.3.0
+			 *
+			 * @param string $blueprint_slug The blueprint slug being installed.
+			 */
+			do_action( 'wp_mcp_ai_healthcare_before_blueprint_install', $bp );
+		}
+
 		// Install as an mcp_ai_assistant post.
-		return WP_MCP_AI_Blueprint_Installer::install( $data, $bp, $overwrite );
+		$result = WP_MCP_AI_Blueprint_Installer::install( $data, $bp, $overwrite );
+
+		if ( ! is_wp_error( $result ) && isset( $result['assistant_id'] ) ) {
+			/**
+			 * Fires after a healthcare blueprint has been successfully installed.
+			 *
+			 * @since 2.3.0
+			 *
+			 * @param int    $assistant_id   The assistant post ID.
+			 * @param string $blueprint_slug The blueprint slug.
+			 */
+			do_action( 'wp_mcp_ai_healthcare_after_blueprint_install', $result['assistant_id'], $bp );
+		}
+
+		return $result;
 	}
 }
