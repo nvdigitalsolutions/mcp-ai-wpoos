@@ -113,6 +113,10 @@ if ( $is_enabled && ! $is_base ) {
 		WP_MCP_AI_CRM_Blueprints_Page::init();
 	}
 
+	// Load CRM REST controller for Toolkit Shell SPA.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-crm-rest-controller.php';
+	WP_MCP_AI_CRM_REST_Controller::get_instance()->init();
+
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-crm-research-add.php';
 	new WP_MCP_AI_CRM_Research_Add();

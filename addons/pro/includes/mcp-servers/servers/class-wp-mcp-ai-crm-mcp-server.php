@@ -2,8 +2,8 @@
 /**
  * CRM Toolkit MCP Server
  *
- * Multi-page R&A pilot: company-research, post-research, page-research, place-research.
- * No consolidate-add surfaces.
+ * CRM-specific ingestion surfaces: company research, lead research, and deal research.
+ * Updated for v1.1.24 per-CPT research page architecture.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0
@@ -43,7 +43,7 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 	 */
 	public function get_description() {
 		return __(
-			'Customer relationship management — companies, contacts, places, and outbound posts/pages. Supports four AI-powered Research & Add ingestion surfaces.',
+			'Customer relationship management — companies, leads/contacts, deals/opportunities, pipeline analytics, and multichannel outreach.',
 			'mcp-ai-wpoos-pro'
 		);
 	}
@@ -57,7 +57,7 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 		return array(
 			array(
 				'type'               => 'research_add',
-				'page_slug'          => 'company-research',
+				'page_slug'          => 'crm-company-research',
 				'entity_type'        => 'mcp_ai_company',
 				'class_ref'          => 'WP_MCP_AI_Company_Research_Page',
 				'bound_assistant_id' => 0,
@@ -65,27 +65,19 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 			),
 			array(
 				'type'               => 'research_add',
-				'page_slug'          => 'post-research',
-				'entity_type'        => 'post',
-				'class_ref'          => 'WP_MCP_AI_Post_Research_Page',
+				'page_slug'          => 'crm-lead-research',
+				'entity_type'        => 'mcp_ai_lead',
+				'class_ref'          => 'WP_MCP_AI_Lead_Research_Page',
 				'bound_assistant_id' => 0,
-				'label'              => __( 'Research & Add Posts', 'mcp-ai-wpoos-pro' ),
+				'label'              => __( 'Research & Add Leads', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
 				'type'               => 'research_add',
-				'page_slug'          => 'page-research',
-				'entity_type'        => 'page',
-				'class_ref'          => 'WP_MCP_AI_Page_Research_Page',
+				'page_slug'          => 'crm-deal-research',
+				'entity_type'        => 'mcp_ai_deal',
+				'class_ref'          => 'WP_MCP_AI_Deal_Research_Page',
 				'bound_assistant_id' => 0,
-				'label'              => __( 'Research & Add Pages', 'mcp-ai-wpoos-pro' ),
-			),
-			array(
-				'type'               => 'research_add',
-				'page_slug'          => 'place-research',
-				'entity_type'        => 'mcp_ai_place',
-				'class_ref'          => 'WP_MCP_AI_Place_Research_Page',
-				'bound_assistant_id' => 0,
-				'label'              => __( 'Research & Add Places', 'mcp-ai-wpoos-pro' ),
+				'label'              => __( 'Research & Add Deals', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}
@@ -106,14 +98,53 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 		return apply_filters(
 			'wp_mcp_ai_toolkit_mcp_server_crm_candidate_tools',
 			array(
-				'crm_create_contact',
-				'crm_update_contact',
-				'crm_search_contacts',
-				'crm_create_company',
-				'crm_search_companies',
-				'crm_create_email_campaign',
-				'crm_send_email',
-				'crm_validate_email',
+				// Company tools.
+				'create_company',
+				'get_companies',
+				'research_company',
+				'manage_crm_contact',
+				// Lead tools.
+				'create_lead',
+				'list_leads',
+				'get_lead',
+				'update_lead',
+				'delete_lead',
+				'convert_lead_to_customer',
+				// Deal tools.
+				'create_deal',
+				'list_deals',
+				'get_deal',
+				'update_deal',
+				'delete_deal',
+				'move_deal_stage',
+				// Pipeline & analytics.
+				'get_pipeline_view',
+				'forecast_pipeline_revenue',
+				'get_conversion_funnel',
+				// Inbound triage.
+				'evaluate_inbound_message',
+				'classify_message_intent',
+				'extract_lead_from_message',
+				'score_lead',
+				'qualify_lead_bant',
+				'qualify_lead_meddic',
+				'detect_buying_signals',
+				// Routing.
+				'assign_lead_to_owner',
+				'rotate_leads',
+				// Outbound.
+				'draft_lead_reply',
+				'schedule_follow_up',
+				// Activities.
+				'create_crm_activity',
+				'list_crm_activities',
+				// Email search.
+				'crm_email_search_leads',
+				'crm_email_search_correspondence',
+				// Compliance.
+				'record_consent',
+				'revoke_consent',
+				'check_dnc_status',
 			)
 		);
 	}
