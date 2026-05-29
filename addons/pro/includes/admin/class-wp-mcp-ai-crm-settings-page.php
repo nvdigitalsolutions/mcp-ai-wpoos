@@ -602,7 +602,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	}
 }
 
-// Initialize settings page.
-if ( is_admin() ) {
+// Initialize settings page (guard prevents duplicate registration if loaded more than once).
+if ( is_admin() && ! isset( $GLOBALS['wp_mcp_ai_crm_settings_page_initialized'] ) ) {
+	$GLOBALS['wp_mcp_ai_crm_settings_page_initialized'] = true;
 	new WP_MCP_AI_CRM_Settings_Page();
 }

@@ -119,6 +119,11 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	 * Add settings submenu page under NV oOS Pro Dashboard.
 	 */
 	public function add_settings_page() {
+		static $registered = array();
+		if ( isset( $registered[ $this->page_slug ] ) ) {
+			return;
+		}
+		$registered[ $this->page_slug ] = true;
 		add_submenu_page(
 			$this->parent_slug,
 			$this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ),
