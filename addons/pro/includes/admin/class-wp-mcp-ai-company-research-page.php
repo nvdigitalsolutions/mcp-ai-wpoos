@@ -174,7 +174,7 @@ class WP_MCP_AI_Company_Research_Page {
 						if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 							$shortcode_instance = new WP_MCP_AI_Shortcode();
 							$shortcode          = sprintf(
-								'[nvoos_chat assistant="%s" placeholder="%s"]',
+								'[mcp_ai_chat assistant="%s" placeholder="%s"]',
 								esc_attr( $assigned_assistant ),
 								esc_attr__( 'Ask me to research companies, industries, or help identify target prospects...', 'mcp-ai-wpoos-pro' )
 							);
