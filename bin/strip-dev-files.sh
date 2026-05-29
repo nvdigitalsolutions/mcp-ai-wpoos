@@ -143,6 +143,7 @@ DEV_PATHS=(
 	".git-branch-info"
 
 	# AI agent and editor configuration (dev-only)
+	".agents"
 	".bmad"
 	".codex"
 	".codex-wordpress"
