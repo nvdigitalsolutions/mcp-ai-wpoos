@@ -57,8 +57,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_fetch_ollama_models'    => 'handle_fetch_ollama_models',
 				'wp_ajax_wp_mcp_ai_test_lm_studio_connection' => 'handle_test_lm_studio_connection',
 				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models' => 'handle_fetch_lm_studio_models',
-				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data',
-				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
+				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data_v2',
+				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection_v2',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_tavily_connection' => 'handle_test_tavily_connection',
@@ -372,9 +372,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		}
 
 		/**
-		 * Handle AJAX request to fetch Cloudways data.
+		 * Handle AJAX request to fetch Cloudways data (API v2).
+		 *
+		 * @since 1.0.0
+		 * @updated 1.1.15 — Migrated to Cloudways API v2.
 		 */
-		public function handle_fetch_cloudways_data() {
+		public function handle_fetch_cloudways_data_v2() {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -390,25 +393,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get timeout from settings.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 			$timeout      = max( 5, $timeout );
 
-			// Step 1: Get OAuth token.
-			$oauth_url      = 'https://api.cloudways.com/api/v1/oauth/access_token';
+			// Step 1: Get OAuth token via API v2.
+			$oauth_url      = 'https://api.cloudways.com/api/v2/oauth/access_token';
 			$oauth_response = wp_remote_post(
 				$oauth_url,
 				array(
-					'body'    => wp_json_encode(
-						array(
-							'email'   => $email,
-							'api_key' => $api_key,
-						)
-					),
-					'headers' => array(
-						'Content-Type' => 'application/json',
+					'body'    => array(
+						'email'   => $email,
+						'api_key' => $api_key,
 					),
 					'timeout' => $timeout,
 				)
@@ -430,8 +427,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$access_token = $oauth_data['access_token'];
 
-			// Step 2: Fetch servers.
-			$servers_url      = 'https://api.cloudways.com/api/v1/server';
+			// Step 2: Fetch servers via API v2.
+			$servers_url      = 'https://api.cloudways.com/api/v2/server';
 			$servers_response = wp_remote_get(
 				$servers_url,
 				array(
@@ -458,7 +455,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$servers = array();
 			foreach ( $servers_data['servers'] as $server ) {
-				// Validate that expected fields exist.
 				if ( ! isset( $server['id'] ) || ! isset( $server['label'] ) ) {
 					continue;
 				}
@@ -470,11 +466,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				);
 			}
 
-			// Step 3: Fetch applications from the first server.
+			// Step 3: Fetch applications from the first server via API v2.
 			$apps = array();
 			if ( ! empty( $servers ) ) {
 				$first_server_id = $servers[0]['id'];
-				$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v1/apps' );
+				$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v2/app' );
 				$apps_response   = wp_remote_get(
 					$apps_url,
 					array(
@@ -492,7 +488,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 					if ( 200 === $apps_code && ! empty( $apps_data['apps'] ) ) {
 						foreach ( $apps_data['apps'] as $app ) {
-							// Validate that expected fields exist.
 							if ( ! isset( $app['id'] ) || ! isset( $app['label'] ) ) {
 								continue;
 							}
@@ -609,9 +604,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		}
 
 		/**
-		 * Handle AJAX request to test Cloudways connection.
+		 * Handle AJAX request to test Cloudways connection (API v2).
+		 *
+		 * @since 1.0.0
+		 * @updated 1.1.15 — Migrated to Cloudways API v2.
 		 */
-		public function handle_test_cloudways_connection() {
+		public function handle_test_cloudways_connection_v2() {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -627,25 +625,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get timeout from settings.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 			$timeout      = max( 5, $timeout );
 
-			// Step 1: Exchange email + API key for OAuth access token.
-			$oauth_url      = 'https://api.cloudways.com/api/v1/oauth/access_token';
+			// Step 1: Exchange email + API key for OAuth access token via API v2.
+			$oauth_url      = 'https://api.cloudways.com/api/v2/oauth/access_token';
 			$oauth_response = wp_remote_post(
 				$oauth_url,
 				array(
-					'body'    => wp_json_encode(
-						array(
-							'email'   => $email,
-							'api_key' => $api_key,
-						)
-					),
-					'headers' => array(
-						'Content-Type' => 'application/json',
+					'body'    => array(
+						'email'   => $email,
+						'api_key' => $api_key,
 					),
 					'timeout' => $timeout,
 				)
@@ -684,8 +676,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$access_token = $oauth_data['access_token'];
 
-			// Step 2: Verify the token by fetching account servers.
-			$servers_url      = 'https://api.cloudways.com/api/v1/server';
+			// Step 2: Verify the token by fetching account servers via API v2.
+			$servers_url      = 'https://api.cloudways.com/api/v2/server';
 			$servers_response = wp_remote_get(
 				$servers_url,
 				array(
@@ -719,7 +711,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Prepare account information.
 			$server_count = 0;
 			if ( ! empty( $servers_data['servers'] ) && is_array( $servers_data['servers'] ) ) {
 				$server_count = count( $servers_data['servers'] );
