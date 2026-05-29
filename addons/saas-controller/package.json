@@ -9,8 +9,8 @@
 		"node": ">=18.17.0"
 	},
 	"scripts": {
-		"build": "run-s build:worker build:admin",
-		"build:worker": "run-s build:worker:bundle build:worker:stamp",
+		"build": "npm run build:worker && npm run build:admin",
+		"build:worker": "npm run build:worker:bundle && npm run build:worker:stamp",
 		"build:worker:bundle": "esbuild worker/src/index.ts --bundle --format=esm --target=es2022 --outfile=worker/dist/index.js",
 		"build:worker:stamp": "node scripts/stamp-drift-manifest.mjs",
 		"check:drift-manifest": "node scripts/stamp-drift-manifest.mjs --check",
