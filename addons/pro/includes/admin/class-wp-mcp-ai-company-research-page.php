@@ -37,7 +37,7 @@ class WP_MCP_AI_Company_Research_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'crm-company-research';
+	const PAGE_SLUG = 'research-company';
 
 	/**
 	 * Initialize the page.
@@ -50,11 +50,11 @@ class WP_MCP_AI_Company_Research_Page {
 	}
 
 	/**
-	 * Add submenu page under NV CRM menu.
+	 * Add submenu page under Companies CPT menu.
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG,
+			'edit.php?post_type=mcp_ai_company',
 			__( 'Research & Add Company', 'mcp-ai-wpoos-pro' ),
 			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
@@ -69,8 +69,8 @@ class WP_MCP_AI_Company_Research_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function enqueue_assets( $hook ) {
-		// Only load on our research page (now under NV CRM menu).
-		if ( WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG . '_page_' . self::PAGE_SLUG !== $hook ) {
+		// Only load on our research page (now under Companies CPT menu).
+		if ( 'mcp_ai_company_page_' . self::PAGE_SLUG !== $hook ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page slug check for asset enqueue.
 			if ( ! isset( $_GET['page'] ) || self::PAGE_SLUG !== $_GET['page'] ) {
 				return;

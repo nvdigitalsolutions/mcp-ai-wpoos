@@ -411,7 +411,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_CRM_Command_Center_Page::PAGE_SLUG . '&tab=pipeline' ) ); ?>" class="button">
 					<?php esc_html_e( 'View Pipeline', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=crm-company-research' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_company&page=research-company' ) ); ?>" class="button">
 					<?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-crm-toolkit-settings' ) ); ?>" class="button">

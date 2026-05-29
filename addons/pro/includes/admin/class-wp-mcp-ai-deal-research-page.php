@@ -37,7 +37,7 @@ class WP_MCP_AI_Deal_Research_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'crm-deal-research';
+	const PAGE_SLUG = 'research-deal';
 
 	/**
 	 * Initialize the page.
@@ -50,11 +50,11 @@ class WP_MCP_AI_Deal_Research_Page {
 	}
 
 	/**
-	 * Add submenu page under NV CRM menu.
+	 * Add submenu page under Deals CPT menu.
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG,
+			'edit.php?post_type=mcp_ai_deal',
 			__( 'Research & Add Deal', 'mcp-ai-wpoos-pro' ),
 			__( 'Deal Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
@@ -69,7 +69,7 @@ class WP_MCP_AI_Deal_Research_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function enqueue_assets( $hook ) {
-		if ( WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG . '_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( 'mcp_ai_deal_page_' . self::PAGE_SLUG !== $hook ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page slug check for asset enqueue.
 			if ( ! isset( $_GET['page'] ) || self::PAGE_SLUG !== $_GET['page'] ) {
 				return;
