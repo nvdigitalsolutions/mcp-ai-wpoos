@@ -91,6 +91,7 @@ addons/pro/assets/vendor/** -text
 .github/                    export-ignore
 
 # AI agent and editor configuration (dev-only)
+.agents/                    export-ignore
 .bmad/                      export-ignore
 .codex/                     export-ignore
 .context/                   export-ignore

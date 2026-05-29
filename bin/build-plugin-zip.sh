@@ -279,6 +279,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.agents' \
         --exclude '.bmad' \
         --exclude '.context' \
         --exclude '.zed' \
@@ -747,6 +748,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.agents' \
         --exclude '.bmad' \
         --exclude '.context' \
         --exclude '.zed' \
