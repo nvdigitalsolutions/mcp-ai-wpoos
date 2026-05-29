@@ -77,7 +77,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				</p>
 				<p>
 					<strong><?php esc_html_e( 'Architecture:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier.  See the enhancement roadmap for the phased delivery plan.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier. Phases A, B, D & E are complete; Phase C has 1 integration stub remaining.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 
@@ -105,8 +105,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				</tbody>
 			</table>
 
-			<!-- Phase B–E upcoming -->
-			<h3><?php esc_html_e( 'Upcoming Phases (B → E)', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<!-- Phase roadmap status -->
+			<h3><?php esc_html_e( 'Phased Roadmap Status', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<table class="widefat fixed striped" style="max-width: 900px;">
 				<thead>
 					<tr>
@@ -123,29 +123,29 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						<td>—</td>
 						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
-					<tr>
+					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase B', 'mcp-ai-wpoos-pro' ); ?></strong></td>
 						<td><?php esc_html_e( 'Lead CRUD, deal/opportunity CRUD, activity CRUD, pipeline analytics, lead routing', 'mcp-ai-wpoos-pro' ); ?></td>
 						<td>~22</td>
-						<td><?php esc_html_e( 'Planned', 'mcp-ai-wpoos-pro' ); ?></td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
-					<tr>
+					<tr style="background-color: #fff3cd;">
 						<td><strong><?php esc_html_e( 'Phase C', 'mcp-ai-wpoos-pro' ); ?></strong></td>
 						<td><?php esc_html_e( 'Inbound triage (email/SMS/WhatsApp), multichannel outbound send, auto-reply, AI draft', 'mcp-ai-wpoos-pro' ); ?></td>
-						<td>~18</td>
-						<td><?php esc_html_e( 'Planned', 'mcp-ai-wpoos-pro' ); ?></td>
+						<td>15 tools built</td>
+						<td><span style="color: #856404;">⚠ <?php esc_html_e( 'In Progress — IMAP polling depends on ext-imap', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
-					<tr>
+					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase D', 'mcp-ai-wpoos-pro' ); ?></strong></td>
 						<td><?php esc_html_e( 'Outreach sequences, Workflow Command Center unified inbox, workflow rules engine', 'mcp-ai-wpoos-pro' ); ?></td>
-						<td>~14</td>
-						<td><?php esc_html_e( 'Planned', 'mcp-ai-wpoos-pro' ); ?></td>
+						<td>13 tools built</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
-					<tr>
+					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase E', 'mcp-ai-wpoos-pro' ); ?></strong></td>
-						<td><?php esc_html_e( 'Consent/DNC/opt-out tools, CSV import, external CRM sync, 4 assistant blueprints', 'mcp-ai-wpoos-pro' ); ?></td>
-						<td>~8</td>
-						<td><?php esc_html_e( 'Planned', 'mcp-ai-wpoos-pro' ); ?></td>
+						<td><?php esc_html_e( 'Consent/DNC/opt-out tools, CSV import, external CRM sync, 8 assistant blueprints', 'mcp-ai-wpoos-pro' ); ?></td>
+						<td>8 tools built</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
 				</tbody>
 			</table>
@@ -354,8 +354,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'search_upwork_jobs'              => __( 'Search Upwork Jobs', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// ---- Phase B: CRUD + Pipeline + Routing (22 tools planned) ----
-		$tools[ __( 'Phase B — Lead, Deal & Pipeline (22 tools, upcoming)', 'mcp-ai-wpoos-pro' ) ] = array(
+		// ---- Phase B: CRUD + Pipeline + Routing (22 tools) ----
+		$tools[ __( 'Phase B — Lead, Deal & Pipeline (22 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
 			'create_lead'               => __( 'Create Lead', 'mcp-ai-wpoos-pro' ),
 			'list_leads'                => __( 'List Leads', 'mcp-ai-wpoos-pro' ),
 			'get_lead'                  => __( 'Get Lead', 'mcp-ai-wpoos-pro' ),
@@ -364,44 +364,68 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'convert_lead_to_customer'  => __( 'Convert Lead to Customer', 'mcp-ai-wpoos-pro' ),
 			'create_deal'               => __( 'Create Deal', 'mcp-ai-wpoos-pro' ),
 			'list_deals'                => __( 'List Deals', 'mcp-ai-wpoos-pro' ),
+			'get_deal'                  => __( 'Get Deal', 'mcp-ai-wpoos-pro' ),
 			'update_deal'               => __( 'Update Deal', 'mcp-ai-wpoos-pro' ),
+			'delete_deal'               => __( 'Delete Deal', 'mcp-ai-wpoos-pro' ),
 			'move_deal_stage'           => __( 'Move Deal Stage', 'mcp-ai-wpoos-pro' ),
+			'create_crm_activity'       => __( 'Create CRM Activity', 'mcp-ai-wpoos-pro' ),
+			'list_crm_activities'       => __( 'List CRM Activities', 'mcp-ai-wpoos-pro' ),
+			'get_crm_activity'          => __( 'Get CRM Activity', 'mcp-ai-wpoos-pro' ),
+			'complete_crm_activity'     => __( 'Complete CRM Activity', 'mcp-ai-wpoos-pro' ),
+			'snooze_crm_activity'       => __( 'Snooze CRM Activity', 'mcp-ai-wpoos-pro' ),
 			'get_pipeline_view'         => __( 'Pipeline Kanban View', 'mcp-ai-wpoos-pro' ),
+			'get_conversion_funnel'     => __( 'Conversion Funnel', 'mcp-ai-wpoos-pro' ),
 			'forecast_pipeline_revenue' => __( 'Forecast Pipeline Revenue', 'mcp-ai-wpoos-pro' ),
 			'assign_lead_to_owner'      => __( 'Assign Lead to Owner', 'mcp-ai-wpoos-pro' ),
-			'…'                         => __( '+ 9 more tools →', 'mcp-ai-wpoos-pro' ),
+			'rotate_leads'              => __( 'Rotate Leads', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// ---- Phase C: Inbound Triage + Outbound (18 tools planned) ----
-		$tools[ __( 'Phase C — Inbound Triage & Outbound (18 tools, upcoming)', 'mcp-ai-wpoos-pro' ) ] = array(
+		// ---- Phase C: Inbound Triage + Outbound (15 tools, in progress) ----
+		$tools[ __( 'Phase C — Inbound Triage & Outbound (15 tools, in progress)', 'mcp-ai-wpoos-pro' ) ] = array(
 			'evaluate_inbound_message'  => __( 'Evaluate Inbound Message', 'mcp-ai-wpoos-pro' ),
 			'classify_message_intent'   => __( 'Classify Message Intent', 'mcp-ai-wpoos-pro' ),
 			'extract_lead_from_message' => __( 'Extract Lead from Message', 'mcp-ai-wpoos-pro' ),
+			'detect_buying_signals'     => __( 'Detect Buying Signals', 'mcp-ai-wpoos-pro' ),
 			'score_lead'                => __( 'Score Lead (composite)', 'mcp-ai-wpoos-pro' ),
 			'qualify_lead_bant'         => __( 'Qualify Lead (BANT)', 'mcp-ai-wpoos-pro' ),
+			'qualify_lead_meddic'       => __( 'Qualify Lead (MEDDIC)', 'mcp-ai-wpoos-pro' ),
 			'send_lead_email'           => __( 'Send Lead Email', 'mcp-ai-wpoos-pro' ),
 			'send_lead_sms'             => __( 'Send Lead SMS', 'mcp-ai-wpoos-pro' ),
 			'send_lead_whatsapp'        => __( 'Send Lead WhatsApp', 'mcp-ai-wpoos-pro' ),
-			'…'                         => __( '+ 10 more tools →', 'mcp-ai-wpoos-pro' ),
+			'send_lead_dm'              => __( 'Send Lead DM', 'mcp-ai-wpoos-pro' ),
+			'log_call_outcome'          => __( 'Log Call Outcome', 'mcp-ai-wpoos-pro' ),
+			'draft_lead_reply'          => __( 'Draft Lead Reply', 'mcp-ai-wpoos-pro' ),
+			'auto_reply_inbound'        => __( 'Auto-Reply Inbound', 'mcp-ai-wpoos-pro' ),
+			'schedule_follow_up'        => __( 'Schedule Follow-Up', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// ---- Phase D: Sequences + Command Center (14 tools planned) ----
-		$tools[ __( 'Phase D — Sequences & Command Center (14 tools, upcoming)', 'mcp-ai-wpoos-pro' ) ] = array(
-			'create_outreach_sequence' => __( 'Create Outreach Sequence', 'mcp-ai-wpoos-pro' ),
-			'enroll_lead_in_sequence'  => __( 'Enroll Lead in Sequence', 'mcp-ai-wpoos-pro' ),
-			'get_sequence_performance' => __( 'Sequence Performance', 'mcp-ai-wpoos-pro' ),
-			'create_workflow_rule'     => __( 'Create Workflow Rule', 'mcp-ai-wpoos-pro' ),
-			'get_workflow_inbox'       => __( 'Workflow Command Center Inbox', 'mcp-ai-wpoos-pro' ),
-			'…'                        => __( '+ 9 more tools →', 'mcp-ai-wpoos-pro' ),
+		// ---- Phase D: Sequences + Command Center (13 tools) ----
+		$tools[ __( 'Phase D — Sequences & Command Center (13 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
+			'create_outreach_sequence'   => __( 'Create Outreach Sequence', 'mcp-ai-wpoos-pro' ),
+			'update_outreach_sequence'   => __( 'Update Outreach Sequence', 'mcp-ai-wpoos-pro' ),
+			'delete_outreach_sequence'   => __( 'Delete Outreach Sequence', 'mcp-ai-wpoos-pro' ),
+			'list_outreach_sequences'    => __( 'List Outreach Sequences', 'mcp-ai-wpoos-pro' ),
+			'enroll_lead_in_sequence'    => __( 'Enroll Lead in Sequence', 'mcp-ai-wpoos-pro' ),
+			'manage_sequence_state'      => __( 'Manage Sequence State', 'mcp-ai-wpoos-pro' ),
+			'get_sequence_performance'   => __( 'Sequence Performance', 'mcp-ai-wpoos-pro' ),
+			'create_workflow_rule'       => __( 'Create Workflow Rule', 'mcp-ai-wpoos-pro' ),
+			'manage_workflow_rules'      => __( 'Manage Workflow Rules', 'mcp-ai-wpoos-pro' ),
+			'simulate_workflow_rule'     => __( 'Simulate Workflow Rule', 'mcp-ai-wpoos-pro' ),
+			'get_workflow_inbox'         => __( 'Workflow Command Center Inbox', 'mcp-ai-wpoos-pro' ),
+			'get_owner_workload'         => __( 'Get Owner Workload', 'mcp-ai-wpoos-pro' ),
+			'auto_route_inbound_message' => __( 'Auto-Route Inbound Message', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// ---- Phase E: Compliance + Interop (8 tools planned) ----
-		$tools[ __( 'Phase E — Compliance & Interop (8 tools, upcoming)', 'mcp-ai-wpoos-pro' ) ] = array(
+		// ---- Phase E: Compliance + Interop (8 tools) ----
+		$tools[ __( 'Phase E — Compliance & Interop (8 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
 			'record_consent'          => __( 'Record Consent', 'mcp-ai-wpoos-pro' ),
 			'revoke_consent'          => __( 'Revoke Consent', 'mcp-ai-wpoos-pro' ),
+			'process_opt_out'         => __( 'Process Opt-Out', 'mcp-ai-wpoos-pro' ),
 			'check_dnc_status'        => __( 'Check DNC Status', 'mcp-ai-wpoos-pro' ),
+			'get_consent_audit'       => __( 'Get Consent Audit', 'mcp-ai-wpoos-pro' ),
+			'import_crm_csv'          => __( 'Import CRM CSV', 'mcp-ai-wpoos-pro' ),
 			'connect_to_external_crm' => __( 'Connect to External CRM', 'mcp-ai-wpoos-pro' ),
-			'…'                       => __( '+ 4 more tools →', 'mcp-ai-wpoos-pro' ),
+			'import_crm_blueprint'    => __( 'Import CRM Blueprint', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $tools;
@@ -430,7 +454,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				<?php
 					printf(
 						/* translators: %d: Number of tools listed */
-						esc_html__( 'This toolkit provides %d AI-powered tools across five delivery phases.  Tools marked as available now are ready for your assistants; upcoming phases are in active development.', 'mcp-ai-wpoos-pro' ),
+						esc_html__( 'This toolkit provides %d AI-powered tools. Phases A, B, D & E are complete; Phase C has 1 remaining integration item.', 'mcp-ai-wpoos-pro' ),
 						esc_html( $total )
 					);
 				?>

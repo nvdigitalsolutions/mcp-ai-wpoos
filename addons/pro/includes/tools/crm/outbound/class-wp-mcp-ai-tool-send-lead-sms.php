@@ -47,6 +47,25 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) && WP_MCP_AI_CRM_Engine::check_dnc( $phone, 'sms' ) ) {
 			return new WP_Error( 'dnc_blocked', __( 'Phone is on the DNC list.', 'mcp-ai-wpoos-pro' ) ); }
 
+		// Before-outbound-send hook.
+		$veto = apply_filters( 'wp_mcp_ai_crm_before_outbound_send', null, $lead_id, 'sms', $context );
+		if ( is_wp_error( $veto ) ) {
+			return $veto;
+		}
+
+		// Suppression check.
+		$block = apply_filters( 'wp_mcp_ai_crm_suppression_check', null, $lead_id, 'sms' );
+		if ( is_wp_error( $block ) ) {
+			return $block;
+		}
+
+		// Sequence step hooks.
+		$sequence_id = isset( $arguments['sequence_id'] ) ? absint( $arguments['sequence_id'] ) : 0;
+		$step_index  = isset( $arguments['sequence_step'] ) ? absint( $arguments['sequence_step'] ) : 0;
+		if ( $sequence_id ) {
+			do_action( 'wp_mcp_ai_crm_sequence_step_before_send', $lead_id, $sequence_id, $step_index, 'sms', $arguments, $context );
+		}
+
 		// TCPA quiet hours check (9am-9pm local, approximated to UTC).
 		$hour = (int) gmdate( 'G' );
 		if ( $hour < 13 || $hour > 1 ) {
@@ -69,6 +88,10 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			update_post_meta( $activity_id, 'disposition', 'sms_sent' ); }
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record( 'outbound_sms_sent', 'lead', $lead_id, array( 'phone' => $phone ) ); }
+		do_action( 'wp_mcp_ai_crm_after_outbound_send', $lead_id, 'sms', array( 'activity_id' => $activity_id ), $context );
+		if ( $sequence_id ) {
+			do_action( 'wp_mcp_ai_crm_sequence_step_after_send', $lead_id, $sequence_id, $step_index, 'sms', $activity_id, $context );
+		}
 		return array(
 			'success'     => true,
 			'message'     => __( 'SMS sent (stub).', 'mcp-ai-wpoos-pro' ),

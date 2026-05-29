@@ -74,6 +74,25 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'dnc_blocked', __( 'Lead email is on the Do Not Contact list.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Before-outbound-send hook (allows external code to veto).
+		$veto = apply_filters( 'wp_mcp_ai_crm_before_outbound_send', null, $lead_id, 'email', $context );
+		if ( is_wp_error( $veto ) ) {
+			return $veto;
+		}
+
+		// Suppression check (allows external DNC/compliance integrations to block).
+		$block = apply_filters( 'wp_mcp_ai_crm_suppression_check', null, $lead_id, 'email' );
+		if ( is_wp_error( $block ) ) {
+			return $block;
+		}
+
+		// Sequence step hooks — fire when this send is part of an outreach sequence.
+		$sequence_id = isset( $arguments['sequence_id'] ) ? absint( $arguments['sequence_id'] ) : 0;
+		$step_index  = isset( $arguments['sequence_step'] ) ? absint( $arguments['sequence_step'] ) : 0;
+		if ( $sequence_id ) {
+			do_action( 'wp_mcp_ai_crm_sequence_step_before_send', $lead_id, $sequence_id, $step_index, 'email', $arguments, $context );
+		}
+
 		$subject = sanitize_text_field( $arguments['subject'] );
 		$body    = wp_kses_post( $arguments['body'] );
 
@@ -108,6 +127,12 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record( 'outbound_email_sent', 'lead', $lead_id, array( 'email' => $email ) ); }
+
+		do_action( 'wp_mcp_ai_crm_after_outbound_send', $lead_id, 'email', array( 'activity_id' => $activity_id ), $context );
+
+		if ( $sequence_id ) {
+			do_action( 'wp_mcp_ai_crm_sequence_step_after_send', $lead_id, $sequence_id, $step_index, 'email', $activity_id, $context );
+		}
 
 		return array(
 			'success'     => true,

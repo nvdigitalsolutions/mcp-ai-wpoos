@@ -55,6 +55,16 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 			if ( ( $email && WP_MCP_AI_CRM_Engine::check_dnc( $email, $channel ) ) || ( $phone && WP_MCP_AI_CRM_Engine::check_dnc( $phone, $channel ) ) ) {
 				return new WP_Error( 'dnc_blocked', __( 'DNC blocked.', 'mcp-ai-wpoos-pro' ) ); }
 		}
+		// Before-outbound-send hook.
+		$veto = apply_filters( 'wp_mcp_ai_crm_before_outbound_send', null, $lead_id, $channel, $context );
+		if ( is_wp_error( $veto ) ) {
+			return $veto;
+		}
+		// Suppression check.
+		$block = apply_filters( 'wp_mcp_ai_crm_suppression_check', null, $lead_id, $channel );
+		if ( is_wp_error( $block ) ) {
+			return $block;
+		}
 		// Default templates per intent.
 		$templates   = array(
 			'new_inquiry'     => __( "Thanks for reaching out! We've received your inquiry and our team will get back to you within 24 hours.", 'mcp-ai-wpoos-pro' ),
@@ -89,6 +99,7 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 					'channel' => $channel,
 				)
 			); }
+		do_action( 'wp_mcp_ai_crm_after_outbound_send', $lead_id, $channel, array( 'activity_id' => $activity_id ), $context );
 		return array(
 			'success'     => true,
 			'message'     => __( 'Auto-reply sent.', 'mcp-ai-wpoos-pro' ),

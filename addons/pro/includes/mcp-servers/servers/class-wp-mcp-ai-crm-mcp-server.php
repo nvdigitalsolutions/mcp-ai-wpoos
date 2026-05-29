@@ -138,6 +138,9 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 				// Activities.
 				'create_crm_activity',
 				'list_crm_activities',
+				'get_crm_activity',
+				'complete_crm_activity',
+				'snooze_crm_activity',
 				// Email search.
 				'crm_email_search_leads',
 				'crm_email_search_correspondence',

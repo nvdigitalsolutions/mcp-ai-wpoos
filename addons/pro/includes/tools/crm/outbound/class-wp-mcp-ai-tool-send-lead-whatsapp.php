@@ -46,6 +46,17 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'no_phone', __( 'Lead has no WhatsApp-capable phone.', 'mcp-ai-wpoos-pro' ) ); }
 		if ( class_exists( 'WP_MCP_AI_CRM_Consent' ) && ! WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'whatsapp' ) ) {
 			return new WP_Error( 'consent_required', __( 'No WhatsApp consent on file.', 'mcp-ai-wpoos-pro' ) ); }
+		// DNC gate.
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) && WP_MCP_AI_CRM_Engine::check_dnc( $phone, 'whatsapp' ) ) {
+			return new WP_Error( 'dnc_blocked', __( 'Phone is on the DNC list.', 'mcp-ai-wpoos-pro' ) ); }
+		// Before-outbound-send hook.
+		$veto = apply_filters( 'wp_mcp_ai_crm_before_outbound_send', null, $lead_id, 'whatsapp', $context );
+		if ( is_wp_error( $veto ) ) {
+			return $veto; }
+		// Suppression check.
+		$block = apply_filters( 'wp_mcp_ai_crm_suppression_check', null, $lead_id, 'whatsapp' );
+		if ( is_wp_error( $block ) ) {
+			return $block; }
 		$message = sanitize_textarea_field( $arguments['message'] );
 		// Stub — no real API call.
 		$activity_id = wp_insert_post(
@@ -63,6 +74,7 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 			update_post_meta( $activity_id, 'disposition', 'whatsapp_sent' ); }
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 			WP_MCP_AI_CRM_Audit::record( 'outbound_whatsapp_sent', 'lead', $lead_id ); }
+		do_action( 'wp_mcp_ai_crm_after_outbound_send', $lead_id, 'whatsapp', array( 'activity_id' => $activity_id ), $context );
 		return array(
 			'success'     => true,
 			'message'     => __( 'WhatsApp message sent (stub).', 'mcp-ai-wpoos-pro' ),
