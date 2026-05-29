@@ -57,7 +57,7 @@ _wsl_rerun_if_needed() {
 	done
 	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
 	echo ""
-	exec wsl bash -c "cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
 }
 _wsl_rerun_if_needed "$@"
 

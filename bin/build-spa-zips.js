@@ -15,15 +15,15 @@ const ROOT = path.resolve(__dirname, '..');
 const BUILD_DIR = path.join(ROOT, 'build');
 const EXCLUDES = ['node_modules', '.git', 'tests', 'package-lock.json', '.DS_Store'];
 
-// Map of addon directory name → output ZIP slug prefix
+// Map of addon directory name → output ZIP slug prefix.
+// NOTE: chat-spa, comic-reader, and docs-hub are built by bin/build-addon-zips.sh
+// (which handles npm build steps, source exclusions, and version stamping).
+// This script handles only the remaining SPA addons that are NOT built there.
 const ADDONS = [
-	{ dir: 'chat-spa',        slug: 'nvoos-chat-spa',        entryFile: 'nvoos-chat-spa.php' },
 	{ dir: 'canvas-toolkit',  slug: 'nvoos-canvas-toolkit',  entryFile: 'nvoos-canvas-toolkit.php' },
 	{ dir: 'document-editor', slug: 'nvoos-document-editor', entryFile: 'nvoos-document-editor.php' },
 	{ dir: 'media-studio',    slug: 'nvoos-media-studio',    entryFile: 'nvoos-media-studio.php' },
 	{ dir: 'toolkit-shell',   slug: 'nvoos-toolkit-shell',   entryFile: 'nvoos-toolkit-shell.php' },
-	{ dir: 'comic-reader',    slug: 'nvoos-comic-reader',    entryFile: 'nvoos-comic-reader.php' },
-	{ dir: 'docs-hub',        slug: 'nvoos-docs-hub',        entryFile: 'nvoos-docs-hub.php' },
 ];
 
 function readVersion(entryFile) {

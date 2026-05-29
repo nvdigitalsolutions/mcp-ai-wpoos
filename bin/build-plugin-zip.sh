@@ -63,7 +63,7 @@ _wsl_rerun_if_needed() {
 	done
 	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
 	echo ""
-	exec wsl bash -c "cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:\$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
 }
 _wsl_rerun_if_needed "$@"
 
@@ -159,6 +159,7 @@ if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" 
     BUILD_PRO=true
     BUILD_COMBINED=true
     BUILD_CORE_ONLY=true
+    BUILD_WP_ORG=true
 fi
 
 # WordPress.org packages are generated from the base and combined ZIPs
@@ -244,17 +245,14 @@ rm -rf build/mcp-ai-wpoos \
        build/.tmp-addon-zips
 mkdir -p build
 
-# Remove any previously built main-plugin ZIPs that may carry a stale version stamp.
+# Remove previously built main-plugin ZIPs that may carry a stale version stamp.
+# Only clean ZIPs for the variants being built in *this* invocation, so
+# incremental builds (e.g. --base then --pro) don't wipe each other.
 # (build-addon-zips.sh handles addon ZIP cleanup separately.)
-rm -f build/mcp-ai-wpoos-*.zip
-rm -f build/mcp-ai-wpoos-base-*.zip
-rm -f build/mcp-ai-wpoos-pro-*.zip
-rm -f build/mcp-ai-wpoos-core-*.zip
-rm -f build/nvdigital-open-operator-system-oos-*.zip
-rm -f build/nvdigital-open-operator-system-oos-pro-*.zip
-rm -f build/nvdigital-open-operator-system-oos-complete-*.zip
-rm -f build/nvdigital-open-operator-system-oos-core-*.zip
-rm -f build/nvdigital-oos-pro-*.zip
+[ "$BUILD_BASE"     = true ] && rm -f build/mcp-ai-wpoos-base-*.zip build/nvdigital-open-operator-system-oos-*.zip
+[ "$BUILD_PRO"      = true ] && rm -f build/mcp-ai-wpoos-pro-*.zip build/nvdigital-open-operator-system-oos-pro-*.zip build/nvdigital-oos-pro-*.zip
+[ "$BUILD_COMBINED" = true ] && rm -f build/mcp-ai-wpoos-[0-9]*.zip build/nvdigital-open-operator-system-oos-complete-*.zip
+[ "$BUILD_CORE_ONLY" = true ] && rm -f build/mcp-ai-wpoos-core-*.zip build/nvdigital-open-operator-system-oos-core-*.zip
 
 # ============================================================================
 # Build Base Version (Standalone, fully functional without Pro)
