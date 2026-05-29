@@ -19,20 +19,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Clone' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_Server_Clone extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_server_clone';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Clone Server', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Clone an existing server to a new server with the same applications and optionally settings, domains, cron jobs, and SSL certificates.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -50,10 +59,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Server_Clone' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'reversible' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 			$label     = $this->sanitize_label( $arguments );

@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_ssh_key_delete';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Delete SSH Key', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Delete a previously added SSH key by its ID.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -45,10 +54,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_SSH_Key_Delete' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'non-reversible' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$ssh_key_id = isset( $arguments['ssh_key_id'] ) ? absint( $arguments['ssh_key_id'] ) : 0;
 

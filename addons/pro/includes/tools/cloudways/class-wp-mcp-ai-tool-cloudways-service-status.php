@@ -19,20 +19,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Service_Status' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_Service_Status extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_service_status';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Check Service Status', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Check the status of all services (nginx, mysql, php-fpm, varnish, redis) on a server.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -46,10 +55,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Service_Status' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 

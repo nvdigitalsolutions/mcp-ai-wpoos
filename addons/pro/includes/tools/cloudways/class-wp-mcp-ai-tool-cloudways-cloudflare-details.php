@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_Cloudflare_Details extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_cloudflare_details';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Cloudflare CDN Details', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'View Cloudflare CDN status, configuration, and usage for an app.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -49,10 +58,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 			$app_id    = $this->sanitize_app_id( $arguments );
@@ -85,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Cloudflare_Details' ) ) {
 				);
 			}
 
-			$cf = $result['cloudflare'];
+			$cf         = $result['cloudflare'];
 			$cloudflare = array(
 				'status'         => isset( $cf['status'] ) ? sanitize_text_field( $cf['status'] ) : '',
 				'enabled'        => isset( $cf['enabled'] ) ? (bool) $cf['enabled'] : false,

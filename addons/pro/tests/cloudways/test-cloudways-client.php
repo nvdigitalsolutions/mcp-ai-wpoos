@@ -18,9 +18,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Test_Cloudways_Client extends WP_UnitTestCase {
 
-	/** @var array Original options. */
+	/**
+	 * Original options for restoration.
+	 *
+	 * @var array
+	 */
 	private $original_options;
 
+	/**
+	 * Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -28,19 +35,22 @@ class Test_Cloudways_Client extends WP_UnitTestCase {
 		$this->original_options = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Seed credentials.
-		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['cloudways_email']      = 'test@example.com';
-		$settings['cloudways_api_key']    = 'test_api_key_12345';
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['cloudways_email']          = 'test@example.com';
+		$settings['cloudways_api_key']        = 'test_api_key_12345';
 		$settings['enable_cloudways_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Reset singleton.
-		$ref    = new ReflectionClass( 'WP_MCP_AI_Cloudways_Client' );
-		$inst   = $ref->getProperty( 'instance' );
+		$ref  = new ReflectionClass( 'WP_MCP_AI_Cloudways_Client' );
+		$inst = $ref->getProperty( 'instance' );
 		$inst->setAccessible( true );
 		$inst->setValue( null );
 	}
 
+	/**
+	 * Tear down test.
+	 */
 	public function tearDown(): void {
 		// Restore original options.
 		update_option( 'wp_mcp_ai_settings', $this->original_options );
@@ -93,7 +103,7 @@ class Test_Cloudways_Client extends WP_UnitTestCase {
 	 * Test get_access_token returns the cached token.
 	 */
 	public function test_get_access_token_returns_cached_token() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['cloudways_access_token']     = 'cached_token_value';
 		$settings['cloudways_token_expires_at'] = time() + 3600;
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -124,7 +134,14 @@ class Test_Cloudways_Client extends WP_UnitTestCase {
 	 * Test GET request returns decoded JSON on success.
 	 */
 	public function test_get_returns_data_on_success() {
-		$expected = array( 'servers' => array( array( 'id' => 1, 'label' => 'Test Server' ) ) );
+		$expected = array(
+			'servers' => array(
+				array(
+					'id'    => 1,
+					'label' => 'Test Server',
+				),
+			),
+		);
 
 		add_filter(
 			'pre_http_request',
@@ -138,7 +155,7 @@ class Test_Cloudways_Client extends WP_UnitTestCase {
 		);
 
 		// Seed a valid token.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['cloudways_access_token']     = 'test_token';
 		$settings['cloudways_token_expires_at'] = time() + 3600;
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -163,7 +180,7 @@ class Test_Cloudways_Client extends WP_UnitTestCase {
 			10
 		);
 
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['cloudways_access_token']     = 'bad_token';
 		$settings['cloudways_token_expires_at'] = time() + 3600;
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -177,7 +194,7 @@ class Test_Cloudways_Client extends WP_UnitTestCase {
 	 * Test disconnect clears cached tokens.
 	 */
 	public function test_disconnect_clears_tokens() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['cloudways_access_token']     = 'some_token';
 		$settings['cloudways_token_expires_at'] = time() + 3600;
 		$settings['cloudways_connected']        = true;

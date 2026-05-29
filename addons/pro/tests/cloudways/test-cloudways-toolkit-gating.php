@@ -20,6 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 
+	/**
+	 * Set up test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -48,7 +51,7 @@ class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 	 * Test helper function returns false when toolkit is disabled.
 	 */
 	public function test_toolkit_disabled_returns_false() {
-		$settings                            = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_cloudways_toolkit'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -59,7 +62,7 @@ class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 	 * Test helper function returns true when toolkit is enabled.
 	 */
 	public function test_toolkit_enabled_returns_true() {
-		$settings                            = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_cloudways_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -70,7 +73,7 @@ class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 	 * Test is_available returns false without credentials.
 	 */
 	public function test_list_servers_unavailable_without_credentials() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_cloudways_toolkit'] = true;
 		unset( $settings['cloudways_email'], $settings['cloudways_api_key'] );
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -85,10 +88,10 @@ class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 	 * Test is_available returns true with credentials and toolkit enabled.
 	 */
 	public function test_list_servers_available_with_credentials() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_cloudways_toolkit'] = true;
-		$settings['cloudways_email']         = 'test@example.com';
-		$settings['cloudways_api_key']       = 'test_key';
+		$settings['cloudways_email']          = 'test@example.com';
+		$settings['cloudways_api_key']        = 'test_key';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		if ( class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Servers' ) ) {
@@ -106,19 +109,19 @@ class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 
 		$tool_classes = array_filter(
 			get_declared_classes(),
-			function ( $class ) {
-				return 0 === strpos( $class, 'WP_MCP_AI_Tool_Cloudways_' )
-					&& 'WP_MCP_AI_Tool_Cloudways_Base' !== $class
-					&& is_subclass_of( $class, 'WP_MCP_AI_Tool_Cloudways_Base' );
+			function ( $class_name ) {
+						return 0 === strpos( $class_name, 'WP_MCP_AI_Tool_Cloudways_' )
+							&& 'WP_MCP_AI_Tool_Cloudways_Base' !== $class_name
+							&& is_subclass_of( $class_name, 'WP_MCP_AI_Tool_Cloudways_Base' );
 			}
 		);
 
-		foreach ( $tool_classes as $class ) {
-			$tool = new $class();
+		foreach ( $tool_classes as $class_name ) {
+			$tool = new $class_name();
 			$this->assertSame(
 				'manage_options',
 				$tool->get_required_capability(),
-				sprintf( '%s should require manage_options', $class )
+				sprintf( '%s should require manage_options', $class_name )
 			);
 		}
 	}
@@ -133,17 +136,17 @@ class Test_Cloudways_Toolkit_Gating extends WP_UnitTestCase {
 
 		$tool_classes = array_filter(
 			get_declared_classes(),
-			function ( $class ) {
-				return 0 === strpos( $class, 'WP_MCP_AI_Tool_Cloudways_' )
-					&& 'WP_MCP_AI_Tool_Cloudways_Base' !== $class
-					&& is_subclass_of( $class, 'WP_MCP_AI_Tool_Cloudways_Base' );
+			function ( $class_name ) {
+				return 0 === strpos( $class_name, 'WP_MCP_AI_Tool_Cloudways_' )
+					&& 'WP_MCP_AI_Tool_Cloudways_Base' !== $class_name
+					&& is_subclass_of( $class_name, 'WP_MCP_AI_Tool_Cloudways_Base' );
 			}
 		);
 
-		foreach ( $tool_classes as $class ) {
-			$tool  = new $class();
+		foreach ( $tool_classes as $class_name ) {
+			$tool  = new $class_name();
 			$flags = $tool->get_capability_flags();
-			$this->assertContains( 'pro', $flags, sprintf( '%s should have pro flag', $class ) );
+			$this->assertContains( 'pro', $flags, sprintf( '%s should have pro flag', $class_name ) );
 		}
 	}
 }

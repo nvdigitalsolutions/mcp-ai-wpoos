@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_app_vulnerabilities_list';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'List App Vulnerabilities', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List WordPress vulnerabilities with severity scores for an application.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -49,10 +58,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Vulnerabilities_List' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 			$app_id    = $this->sanitize_app_id( $arguments );

@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_dns_delete_record';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'DNS Delete Record', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Delete a DNS record for a domain.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -50,10 +59,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Delete_Record' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'non-reversible' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$domain    = isset( $arguments['domain'] ) ? sanitize_text_field( $arguments['domain'] ) : '';
 			$record_id = isset( $arguments['record_id'] ) ? absint( $arguments['record_id'] ) : 0;

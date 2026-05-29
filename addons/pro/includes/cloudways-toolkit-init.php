@@ -40,10 +40,8 @@ if ( is_admin() ) {
 
 /**
  * Enqueue Cloudways toolkit admin styles.
- *
- * @param string $hook Current admin page hook.
  */
-function wp_mcp_ai_enqueue_cloudways_toolkit_admin_styles( $hook ) {
+function wp_mcp_ai_enqueue_cloudways_toolkit_admin_styles() {
 	if ( ! wp_mcp_ai_is_cloudways_toolkit_enabled() ) {
 		return;
 	}

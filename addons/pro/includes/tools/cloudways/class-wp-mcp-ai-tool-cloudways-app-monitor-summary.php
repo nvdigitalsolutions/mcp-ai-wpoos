@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_app_monitor_summary';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'App Monitoring Summary', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'View application-level usage metrics.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -49,10 +58,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 			$app_id    = $this->sanitize_app_id( $arguments );
@@ -88,7 +105,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Monitor_Summary' ) ) {
 			$summary = $result['summary'];
 
 			$data = array(
-				'requests' => isset( $summary['requests'] ) ? sanitize_text_field( $summary['requests'] ) : '',
+				'requests'  => isset( $summary['requests'] ) ? sanitize_text_field( $summary['requests'] ) : '',
 				'bandwidth' => isset( $summary['bandwidth'] ) ? sanitize_text_field( $summary['bandwidth'] ) : '',
 			);
 

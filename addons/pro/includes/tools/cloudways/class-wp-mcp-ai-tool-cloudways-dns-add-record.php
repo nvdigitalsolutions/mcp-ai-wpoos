@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Add_Record' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_DNS_Add_Record extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_dns_add_record';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'DNS Add Record', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Add a DNS record for a domain.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -65,10 +74,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_DNS_Add_Record' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'reversible' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$domain = isset( $arguments['domain'] ) ? sanitize_text_field( $arguments['domain'] ) : '';
 			$type   = isset( $arguments['type'] ) ? sanitize_text_field( $arguments['type'] ) : '';

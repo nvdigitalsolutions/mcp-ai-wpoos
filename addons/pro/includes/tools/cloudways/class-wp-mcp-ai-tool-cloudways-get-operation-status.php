@@ -19,20 +19,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Get_Operation_Status' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_Get_Operation_Status extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_get_operation_status';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Get Operation Status', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Check the status of an asynchronous operation (server creation, backup, scaling, etc.).', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -46,10 +55,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Get_Operation_Status' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$operation_id = isset( $arguments['operation_id'] ) ? sanitize_text_field( $arguments['operation_id'] ) : '';
 
@@ -77,10 +94,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Get_Operation_Status' ) ) {
 			$operation = $result['operation'];
 
 			$data = array(
-				'id'        => sanitize_text_field( $operation['id'] ),
-				'status'    => sanitize_text_field( $operation['status'] ),
-				'type'      => isset( $operation['type'] ) ? sanitize_text_field( $operation['type'] ) : '',
-				'progress'  => isset( $operation['progress'] ) ? absint( $operation['progress'] ) : 0,
+				'id'       => sanitize_text_field( $operation['id'] ),
+				'status'   => sanitize_text_field( $operation['status'] ),
+				'type'     => isset( $operation['type'] ) ? sanitize_text_field( $operation['type'] ) : '',
+				'progress' => isset( $operation['progress'] ) ? absint( $operation['progress'] ) : 0,
 			);
 
 			return $this->success(

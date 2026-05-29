@@ -19,20 +19,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Servers' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_List_Servers extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_list_servers';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'List Cloudways Servers', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'List all Cloudways servers with status, cloud provider, region, IP, and application count.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -40,10 +49,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Servers' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'read-only', 'cacheable' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$result = $this->client()->get( '/server' );
 
@@ -61,15 +78,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_List_Servers' ) ) {
 			$servers = array();
 			foreach ( $result['servers'] as $server ) {
 				$servers[] = array(
-					'id'               => absint( $server['id'] ),
-					'label'            => sanitize_text_field( $server['label'] ),
-					'status'           => sanitize_text_field( $server['status'] ),
-					'cloud'            => sanitize_text_field( $server['cloud'] ),
-					'region'           => sanitize_text_field( $server['region'] ),
-					'public_ip'        => sanitize_text_field( $server['public_ip'] ),
-					'app_count'        => absint( $server['app_count'] ),
-					'ram'              => sanitize_text_field( $server['ram'] ),
-					'instance_type'    => sanitize_text_field( $server['instance_type'] ),
+					'id'            => absint( $server['id'] ),
+					'label'         => sanitize_text_field( $server['label'] ),
+					'status'        => sanitize_text_field( $server['status'] ),
+					'cloud'         => sanitize_text_field( $server['cloud'] ),
+					'region'        => sanitize_text_field( $server['region'] ),
+					'public_ip'     => sanitize_text_field( $server['public_ip'] ),
+					'app_count'     => absint( $server['app_count'] ),
+					'ram'           => sanitize_text_field( $server['ram'] ),
+					'instance_type' => sanitize_text_field( $server['instance_type'] ),
 				);
 			}
 

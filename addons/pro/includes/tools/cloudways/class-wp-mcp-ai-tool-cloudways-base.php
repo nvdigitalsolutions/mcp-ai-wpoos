@@ -105,6 +105,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Base' ) ) {
 		 *
 		 * @return array<string>
 		 */
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array(
 				'pro',

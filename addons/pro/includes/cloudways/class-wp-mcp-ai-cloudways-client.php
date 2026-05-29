@@ -279,7 +279,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
 			);
 
 			if ( ! empty( $body ) ) {
-				$args['body']    = wp_json_encode( $body );
+				$args['body']                    = wp_json_encode( $body );
 				$args['headers']['Content-Type'] = 'application/json';
 			}
 
@@ -308,7 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
 				);
 			}
 
-			$status_code = wp_remote_retrieve_response_code( $response );
+			$status_code   = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
 			$data          = json_decode( $response_body, true );
 

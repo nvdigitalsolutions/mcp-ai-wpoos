@@ -18,20 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Create' ) ) {
 
+	/**
+	 * {@inheritdoc}
+	 */
 	class WP_MCP_AI_Tool_Cloudways_App_Create extends WP_MCP_AI_Tool_Cloudways_Base {
 
+		/** {@inheritdoc} */
+
+		/** {@inheritdoc} */
 		public function get_slug() {
 			return 'cloudways_app_create';
 		}
 
+		/** {@inheritdoc} */
 		public function get_name() {
 			return __( 'Create App', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_description() {
 			return __( 'Create a new application (WordPress, Laravel, Magento, etc.) on a server.', 'mcp-ai-wpoos-pro' );
 		}
 
+		/** {@inheritdoc} */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
@@ -54,10 +63,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Create' ) ) {
 			);
 		}
 
+		/** {@inheritdoc} */
 		public function get_capability_flags() {
 			return array_merge( parent::get_capability_flags(), array( 'write', 'state-changing', 'reversible' ) );
 		}
 
+		/**
+		 * {@inheritdoc}
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Contextual data.
+		 * @return array|WP_Error
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$server_id = $this->sanitize_server_id( $arguments );
 			$app       = isset( $arguments['app'] ) ? sanitize_text_field( $arguments['app'] ) : '';
@@ -74,7 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_App_Create' ) ) {
 			if ( '' === $app || ! in_array( $app, $valid_apps, true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudways_invalid_app',
-					__( 'A valid application type is required (wordpress, woocommerce, laravel, magento, php).', 'mcp-ai-wpoos-pro' )
+					__( 'A valid application type is required (WordPress, woocommerce, laravel, magento, php).', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
