@@ -12,6 +12,8 @@ class WP_MCP_AI_Tool_Delete_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 		return 'delete_outreach_sequence'; }
 	public function get_name() {
 		return __( 'Delete Outreach Sequence', 'mcp-ai-wpoos-pro' ); }
+	public function get_description() {
+		return __( 'Permanently remove an outreach sequence and its step definitions.', 'mcp-ai-wpoos-pro' ); }
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
