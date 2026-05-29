@@ -20,6 +20,7 @@ on:
     branches:
       - main
       - develop
+      - alpha-working
       - 'release/**'
       - 'hotfix/**'
       - 'copilot/**'
@@ -49,6 +50,7 @@ on:
     branches:
       - main
       - develop
+      - alpha-working
     paths:
       - 'assets/js/**/*.js'
       - 'assets/css/**/*.css'
