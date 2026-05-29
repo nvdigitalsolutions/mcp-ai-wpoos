@@ -96,6 +96,7 @@ if ( $is_enabled && ! $is_base ) {
 
 		// Load CRM Settings page (now under NV CRM menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-settings-page.php';
+		new WP_MCP_AI_CRM_Settings_Page();
 
 		// Load Research & Add pages (per-CPT, under NV CRM menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
