@@ -157,7 +157,7 @@ jobs:
 
       - name: Commit built files (WordPress standard)
         if: |
-          github.event_name == 'push' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
           steps.check_changes.outputs.changed == 'true' &&
           !contains(github.event.head_commit.message, '[skip ci]') &&
           !contains(github.event.head_commit.message, '[skip build]')
