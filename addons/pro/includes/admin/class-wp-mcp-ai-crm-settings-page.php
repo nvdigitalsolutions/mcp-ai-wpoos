@@ -32,6 +32,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		$this->toolkit_name     = __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_crm_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-crm-toolkit-settings';
+		$this->parent_slug      = WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG;
 		$this->has_research     = true;
 		$this->has_remote_sites = false;
 		$this->icon             = 'dashicons-email';
