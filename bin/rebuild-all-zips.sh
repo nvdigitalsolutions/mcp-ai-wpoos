@@ -23,6 +23,51 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
+# ---------------------------------------------------------------------------
+# WSL auto-detection: when running natively on Windows (Git Bash / MSYS2)
+# without a working rsync, automatically re-execute inside WSL where the
+# full Linux toolchain (rsync, zip, php) is available.
+# ---------------------------------------------------------------------------
+_wsl_rerun_if_needed() {
+	# Only applies to Windows-native shells (MINGW / MSYS)
+	case "$(uname -s)" in
+		MINGW*|MSYS*) ;;
+		*) return 0 ;;
+	esac
+
+	# Already running inside WSL? Skip (WSL uname reports "Linux")
+	# If rsync is already working natively, skip
+	if rsync --version >/dev/null 2>&1; then
+		return 0
+	fi
+
+	# Check if WSL is available
+	if ! command -v wsl >/dev/null 2>&1; then
+		return 0
+	fi
+
+	# Build WSL-safe paths from the current Git Bash absolute paths.
+	# Git Bash gives /f/project; WSL needs /mnt/f/project.
+	_wsl_root="$(echo "$ROOT_DIR" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	_wsl_script="$(echo "$0" | sed 's|\\|/|g')"
+	# If $0 is a relative path, make it absolute
+	case "$_wsl_script" in
+		/*) ;;
+		*) _wsl_script="$_wsl_root/$_wsl_script" ;;
+	esac
+	_wsl_script="$(echo "$_wsl_script" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+
+	# Build a safely-escaped argument string for the re-exec
+	_wsl_args=""
+	for _arg in "$@"; do
+		_wsl_args="$_wsl_args $(printf '%q' "$_arg")"
+	done
+	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
+	echo ""
+	exec wsl bash -c "cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+}
+_wsl_rerun_if_needed "$@"
+
 # Parse arguments
 VERSION_ARG=""
 SKIP_NPM_ARG=""
