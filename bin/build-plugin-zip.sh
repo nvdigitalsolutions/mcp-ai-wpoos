@@ -161,6 +161,12 @@ if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" 
     BUILD_CORE_ONLY=true
 fi
 
+# WordPress.org packages are generated from the base and combined ZIPs
+if [ "$BUILD_WP_ORG" = true ]; then
+    BUILD_BASE=true
+    BUILD_COMBINED=true
+fi
+
 # Get version if not specified
 if [ -z "$VERSION" ]; then
     VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
