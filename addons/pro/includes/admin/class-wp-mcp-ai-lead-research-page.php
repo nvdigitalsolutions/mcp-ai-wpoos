@@ -118,7 +118,8 @@ class WP_MCP_AI_Lead_Research_Page {
 
 						<div class="wp-mcp-ai-research-chat-container">
 							<?php
-							$assigned_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
+							$crm_settings       = class_exists( 'WP_MCP_AI_CRM_Engine' ) ? WP_MCP_AI_CRM_Engine::get_toolkit_settings() : array();
+							$assigned_assistant = isset( $crm_settings['research_assistant'] ) ? $crm_settings['research_assistant'] : 'default';
 							if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 								$shortcode_instance = new WP_MCP_AI_Shortcode();
 								$shortcode          = sprintf(

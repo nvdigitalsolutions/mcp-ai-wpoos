@@ -340,12 +340,12 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				<?php
 				settings_fields( $this->option_name . '_group' );
 				do_settings_sections( $this->option_name );
+				$this->render_configuration_tab();
 				submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) );
 				?>
 			</form>
 		</div><!-- .toolkit-card -->
 		<?php
-		$this->render_configuration_tab();
 	}
 
 	/**

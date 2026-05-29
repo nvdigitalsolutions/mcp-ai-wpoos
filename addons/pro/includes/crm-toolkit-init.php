@@ -108,6 +108,16 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-research-page.php';
 		WP_MCP_AI_Deal_Research_Page::init();
 
+		// Load per-CPT Settings pages (under each CPT submenu).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-settings-page.php';
+		WP_MCP_AI_Company_Settings_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-lead-settings-page.php';
+		WP_MCP_AI_Lead_Settings_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
+		WP_MCP_AI_Deal_Settings_Page::init();
+
 		// Load CRM Blueprints page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';
 		WP_MCP_AI_CRM_Blueprints_Page::init();
