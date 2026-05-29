@@ -64,7 +64,7 @@ _wsl_rerun_if_needed() {
 	done
 	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
 	echo ""
-	exec wsl bash -c "cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
 }
 _wsl_rerun_if_needed "$@"
 
@@ -139,6 +139,21 @@ fi
 
 echo ""
 echo "=========================================="
+echo "Building SPA Add-on ZIPs"
+echo "=========================================="
+echo ""
+
+# Build remaining SPA addon ZIPs (canvas-toolkit, document-editor, media-studio,
+# toolkit-shell) that are NOT covered by build-addon-zips.sh.
+if command -v node >/dev/null 2>&1; then
+    echo "Running build-spa-zips.js..."
+    node "$SCRIPT_DIR/build-spa-zips.js"
+else
+    echo "⚠️  Node.js not available — skipping SPA addon ZIPs."
+fi
+
+echo ""
+echo "=========================================="
 echo "Building WordPress.org Compliant Package"
 echo "=========================================="
 echo ""
@@ -163,8 +178,19 @@ if [ -d "$ROOT_DIR/build/toolkit-addons" ]; then
     echo ""
 fi
 if ls "$ROOT_DIR/build"/nvoos-*-linux-x64-v*.zip >/dev/null 2>&1; then
-    echo "📦 Standalone add-ons:"
+    echo "📦 Standalone add-ons (traditional):"
     ls -lh "$ROOT_DIR/build"/nvoos-*-linux-x64-v*.zip | awk '{print "   " $9 " (" $5 ")"}'
+    echo ""
+fi
+if ls "$ROOT_DIR/build"/nvoos-*-toolkit-v*.zip >/dev/null 2>&1 || \
+   ls "$ROOT_DIR/build"/nvoos-document-editor-v*.zip >/dev/null 2>&1 || \
+   ls "$ROOT_DIR/build"/nvoos-media-studio-v*.zip >/dev/null 2>&1 || \
+   ls "$ROOT_DIR/build"/nvoos-toolkit-shell-v*.zip >/dev/null 2>&1; then
+    echo "📦 SPA add-ons (canvas-toolkit, document-editor, media-studio, toolkit-shell):"
+    ls -lh "$ROOT_DIR/build"/nvoos-*-toolkit-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
+    ls -lh "$ROOT_DIR/build"/nvoos-document-editor-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
+    ls -lh "$ROOT_DIR/build"/nvoos-media-studio-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
+    ls -lh "$ROOT_DIR/build"/nvoos-toolkit-shell-v*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
     echo ""
 fi
 echo "📄 WordPress.org submission package:"

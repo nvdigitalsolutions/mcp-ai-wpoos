@@ -51,20 +51,19 @@ const bundledOptions = {
 	logLevel: 'info',
 };
 
-// Modern build options for ES2020+ with code splitting (Phase 6)
-const modernOptions = {
+// TypeScript ESM build options (for src/ TypeScript services)
+const tsBuildOptions = {
 	bundle: true,
 	minify: true,
 	sourcemap: true,
 	target: ['es2020', 'chrome113', 'safari18'],
-	format: 'esm', // ES modules for better tree shaking
-	splitting: true, // Enable code splitting
+	format: 'esm',
+	splitting: false,
 	logLevel: 'info',
 	loader: {
 		'.wasm': 'file',
 		'.data': 'file',
 	},
-	chunkNames: 'chunks/[name]-[hash]',
 };
 
 // Build configurations for each file
@@ -201,74 +200,62 @@ const builds = [
 	{
 		entryPoints: ['assets/js/src/shared/index.ts'],
 		outfile: 'assets/js/dist/shared.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/storage.ts'],
 		outfile: 'assets/js/dist/storage.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/clipboard.ts'],
 		outfile: 'assets/js/dist/clipboard.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/markdown.ts'],
 		outfile: 'assets/js/dist/markdown.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/http-client.ts'],
 		outfile: 'assets/js/dist/http-client.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/sse.ts'],
 		outfile: 'assets/js/dist/sse.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/ui-utilities.ts'],
 		outfile: 'assets/js/dist/ui-utilities.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/audio.ts'],
 		outfile: 'assets/js/dist/audio.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/transcription.ts'],
 		outfile: 'assets/js/dist/transcription.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/attachments.ts'],
 		outfile: 'assets/js/dist/attachments.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/memory-service.ts'],
 		outfile: 'assets/js/dist/memory-service.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	{
 		entryPoints: ['assets/js/src/services/storage-util.ts'],
 		outfile: 'assets/js/dist/storage-util.js',
-		...modernOptions,
-		splitting: false,
+		...tsBuildOptions,
 	},
 	// Chat bundle (TS version)
 	{
