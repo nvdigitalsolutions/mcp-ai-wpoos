@@ -98,7 +98,12 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-settings-page.php';
 		new WP_MCP_AI_CRM_Settings_Page();
 
-		// Load Research & Add pages (per-CPT, under NV CRM menu).
+		// Load per-CPT settings pages (under each CPT's menu, like Image Settings).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-lead-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
+
+		// Load Research & Add pages (per-CPT, under individual CPT menus).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
 		WP_MCP_AI_Company_Research_Page::init();
 

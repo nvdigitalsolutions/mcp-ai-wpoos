@@ -57,7 +57,7 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 		return array(
 			array(
 				'type'               => 'research_add',
-				'page_slug'          => 'crm-company-research',
+				'page_slug'          => 'research-company',
 				'entity_type'        => 'mcp_ai_company',
 				'class_ref'          => 'WP_MCP_AI_Company_Research_Page',
 				'bound_assistant_id' => 0,
@@ -65,7 +65,7 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 			),
 			array(
 				'type'               => 'research_add',
-				'page_slug'          => 'crm-lead-research',
+				'page_slug'          => 'research-lead',
 				'entity_type'        => 'mcp_ai_lead',
 				'class_ref'          => 'WP_MCP_AI_Lead_Research_Page',
 				'bound_assistant_id' => 0,
@@ -73,7 +73,7 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 			),
 			array(
 				'type'               => 'research_add',
-				'page_slug'          => 'crm-deal-research',
+				'page_slug'          => 'research-deal',
 				'entity_type'        => 'mcp_ai_deal',
 				'class_ref'          => 'WP_MCP_AI_Deal_Research_Page',
 				'bound_assistant_id' => 0,
