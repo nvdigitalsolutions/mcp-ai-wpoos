@@ -1988,6 +1988,96 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
+				'deal_velocity_tracker' => array(
+					'name'          => __( 'Deal Velocity Tracker', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily assistant run that tracks deal movement through pipeline stages, alerts when deals stall beyond 2x average stage duration.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-chart-line',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'pipeline', 'deals', 'velocity' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run a daily deal velocity analysis. Review all open deals and track movement through pipeline stages over the last 30 days. Calculate average stage duration for each pipeline stage. Flag any deal that has been in its current stage longer than 2x the average duration for that stage. For stalled deals, include deal name, current stage, days in stage, deal value, and assigned rep. Suggest next actions to unblock each stalled deal.',
+						),
+					),
+				),
+				'win_loss_analysis' => array(
+					'name'          => __( 'Win/Loss Analysis', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monthly assistant run analysing closed-won vs closed-lost patterns by segment, competitor, deal size, rep.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-analytics',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'monthly',
+					'tags'          => array( 'crm', 'analytics', 'win-loss', 'deals' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a monthly win/loss analysis of all deals closed in the previous month. Compare closed-won vs closed-lost patterns segmented by: industry/segment, primary competitor (when recorded), deal size bracket, and sales rep. Identify the top 3 reasons deals were lost based on close notes. Surface the top-performing rep segments and deal types. Generate a summary with win rate percentage, average deal size by outcome, and actionable recommendations for the coming month.',
+						),
+					),
+				),
+				'sales_forecast_accuracy' => array(
+					'name'          => __( 'Sales Forecast Accuracy', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly assistant run comparing forecasted vs actual revenue for forecast accuracy metrics.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-chart-bar',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'forecasting', 'revenue', 'accuracy' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a weekly sales forecast accuracy report. Compare the previous week\'s forecasted revenue (from pipeline commit and best-case categories) against actual closed-won revenue. Calculate forecast accuracy percentage (actual / forecasted × 100) overall and per rep. Identify reps with accuracy below 70% or above 120% (over-forecasting or sandbagging). Highlight deals that slipped from their forecasted close date. Provide recommendations to improve forecast reliability.',
+						),
+					),
+				),
+				'account_health_scorecard' => array(
+					'name'          => __( 'Account Health Scorecard', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly assistant run scoring accounts on engagement, support health, financial health, and satisfaction.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-heart',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'accounts', 'health', 'scoring' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run a weekly account health scorecard for all active accounts. Score each account across four dimensions: engagement (email opens, portal logins, meeting attendance), support health (open ticket count, average resolution time, escalation rate), financial health (payment status, credit holds, contract value trends), and satisfaction (NPS scores, survey responses, churn signals). Assign each account a red/amber/green health status. Generate a summary table of at-risk accounts (red status) with the primary risk driver and recommended intervention.',
+						),
+					),
+				),
+				'contract_renewal_reminder' => array(
+					'name'          => __( 'Contract Renewal Reminder', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily channel broadcast (to Slack) alerting account managers of renewals at 90/60/30 day milestones.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'business',
+					'icon'          => 'dashicons-calendar',
+					'schedule_type' => 'channel_broadcast',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'renewals', 'contracts', 'retention' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run a daily contract renewal scan. Identify all active contracts with end dates at the 90-day, 60-day, and 30-day milestones. For each renewal, compile: account name, contract value, renewal date, assigned account manager, and current account health status. Format the results as a concise Slack message organised by urgency tier (30-day, 60-day, 90-day). Tag the relevant account managers. Include a summary count of renewals due in each tier.',
+						),
+					),
+				),
+				'churn_risk_early_warning' => array(
+					'name'          => __( 'Churn Risk Early Warning', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly assistant run detecting churn signals from engagement, support, financial, and sentiment data.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-warning',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'churn', 'retention', 'risk' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run a weekly churn risk early warning analysis. Detect churn signals across four categories: engagement decline (reduced logins, lower email engagement, fewer feature adoptions), support deterioration (increasing ticket volume, longer resolution times, negative sentiment in ticket responses), financial warning signs (late payments, downgrade requests, reduced usage), and sentiment shifts (negative NPS changes, complaint patterns, contract clause disputes). Score each account on churn probability (low/medium/high). For high-risk accounts, include specific risk drivers, account value, and a recommended retention play.',
+						),
+					),
+				),
 			);
 		}
 

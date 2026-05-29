@@ -37,24 +37,24 @@ class WP_MCP_AI_Company_Research_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'research-company';
+	const PAGE_SLUG = 'crm-company-research';
 
 	/**
 	 * Initialize the page.
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 26 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_company_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_company', array( __CLASS__, 'ajax_handle_import' ) );
 	}
 
 	/**
-	 * Add submenu page under Companies menu.
+	 * Add submenu page under NV CRM menu.
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_company',
+			WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG,
 			__( 'Research & Add Company', 'mcp-ai-wpoos-pro' ),
 			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
@@ -69,9 +69,12 @@ class WP_MCP_AI_Company_Research_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function enqueue_assets( $hook ) {
-		// Only load on our research page.
-		if ( 'mcp_ai_company_page_' . self::PAGE_SLUG !== $hook ) {
-			return;
+		// Only load on our research page (now under NV CRM menu).
+		if ( WP_MCP_AI_CRM_Admin_Menu::PARENT_SLUG . '_page_' . self::PAGE_SLUG !== $hook ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page slug check for asset enqueue.
+			if ( ! isset( $_GET['page'] ) || self::PAGE_SLUG !== $_GET['page'] ) {
+				return;
+			}
 		}
 
 		// Enqueue chat assets.

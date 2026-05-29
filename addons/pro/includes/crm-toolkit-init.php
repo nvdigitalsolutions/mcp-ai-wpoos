@@ -86,9 +86,24 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Load CRM admin pages.
 	if ( is_admin() ) {
+		// Load CRM Admin Menu registry (top-level "NV CRM" menu).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-admin-menu.php';
+		WP_MCP_AI_CRM_Admin_Menu::init();
+
+		// Load CRM Command Center page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-command-center-page.php';
+		WP_MCP_AI_CRM_Command_Center_Page::init();
+
+		// Load CRM Settings page (now under NV CRM menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-settings-page.php';
+
+		// Load Research & Add Company page (now under NV CRM menu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
 		WP_MCP_AI_Company_Research_Page::init();
+
+		// Load CRM Blueprints page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';
+		WP_MCP_AI_CRM_Blueprints_Page::init();
 	}
 
 	// Load Research & Add for CCT/CPT integration.
