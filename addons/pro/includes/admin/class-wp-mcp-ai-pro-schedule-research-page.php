@@ -760,7 +760,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 
 			if ( null === $result ) {
 				if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow' ) ) {
-					require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php';
+					require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php';
 				}
 				$tool   = new WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow();
 				$result = $tool->execute( $args, $context );

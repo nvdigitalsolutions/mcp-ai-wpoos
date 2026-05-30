@@ -334,7 +334,7 @@ class WP_MCP_AI_Task_Research_Page {
 
 		// Use the create_task tool to create the task.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Task' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-task.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-create-task.php';
 		}
 
 		$tool   = new WP_MCP_AI_Tool_Create_Task();
@@ -517,7 +517,7 @@ class WP_MCP_AI_Task_Research_Page {
 		);
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Task' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-task.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-create-task.php';
 		}
 
 		$tool = new WP_MCP_AI_Tool_Create_Task();

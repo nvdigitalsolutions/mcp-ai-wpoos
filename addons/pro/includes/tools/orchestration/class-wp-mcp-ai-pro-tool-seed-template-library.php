@@ -76,7 +76,7 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 
 			// Ensure the create_template tool class is loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Template' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-template.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php';
 			}
 
 			// Create template using create_template tool.
