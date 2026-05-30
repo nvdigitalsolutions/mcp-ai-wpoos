@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > **This file is loaded every turn by Claude Code.** Keep it focused and actionable.
-> Last reviewed: **May 2026** · Version: **2.4**
+> Last reviewed: **May 31, 2026** · Version: **2.5**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~960 tools (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, Anthropic, HuggingFace, NVIDIA), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,10 +50,11 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~830 tools total)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~960 tools total)
 ├── tools/                              ← base tool implementations (~195 classes; live count is authoritative)
 ├── services/                           ← 20+ service classes
 ├── admin/                              ← WordPress admin UI
+├── blueprints/                         ← Unified blueprint installer + import tools
 ├── slash-commands/                     ← /help, /ship, /compact, /context, etc.
 ├── integrations/                       ← JetEngine, Elementor, Auth0
 ├── a2a/                                ← Agent-to-Agent protocol
@@ -61,7 +62,11 @@ includes/
 addons/pro/
 ├── mcp-ai-wpoos-pro.php                ← Pro entry (auto-loaded, no WP plugin header)
 └── includes/
-    ├── tools/                          ← ~635+ pro tools
+    ├── tools/                          ← ~765+ pro tools
+    │   ├── cloudways/                  ← Cloudways Toolkit (60 tools + API v2 client)
+    │   ├── crm/                        ← CRM Toolkit (70+ tools, 5 phases)
+    │   └── ...
+    ├── cloudways/                      ← Cloudways API v2 OAuth client + helpers
     └── ...                             ← Pro admin, REST, services
 ```
 

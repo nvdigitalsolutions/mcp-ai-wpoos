@@ -1,13 +1,23 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 21, 2026  
-**Plugin Version:** 1.1.21  
+**Last Updated:** May 31, 2026  
+**Plugin Version:** 1.1.25  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
+
+> **📌 MAY 31, 2026 UPDATE (v1.1.25):** 🧩☁️🏢💬📂 **UNIFIED BLUEPRINT SYSTEM, CLOUDWAYS TOOLKIT, CRM TOOLKIT (PHASES A–E), CHAT UI ENHANCEMENTS, UNIX-THEORY REORG PHASE 4–5**
+> - **Unified Blueprint System** — 55 pre-built AI assistants across 25 toolkits with one-click import. Shared `WP_MCP_AI_Blueprint_Installer`. JSON Schema validation. Healthcare blueprint import tool with HIPAA-aware templates. 4 Aerlinn blueprints. Full doc: [`docs/features/unified-blueprint-system.md`](features/unified-blueprint-system.md).
+> - **Cloudways Pro Toolkit** — 60 AI tools for server/app management via Cloudways API v2. `WP_MCP_AI_Cloudways_Client` OAuth singleton. Tool categories: Server Mgmt, App Mgmt, Security, Backups, Team, DNS. Admin dashboard with real-time status. Full doc: [`docs/features/cloudways-toolkit.md`](features/cloudways-toolkit.md).
+> - **CRM Toolkit Phases A–E Complete** — 70+ tools: Lead Management (A), Multi-channel Triage (B), Integration Hooks (C), Extensibility Hooks (D), Compliance (E). Command Center, per-CPT research pages, analytics dashboard, REST API at `/mcp-ai-pro/v1/crm/`. Full doc: [`docs/features/crm-toolkit.md`](features/crm-toolkit.md).
+> - **Chat UI Enhancements** — 7 features: profile card, stop generation, feedback widget, code copy, dark mode, saved prompts, prompt search. Base + Pro support. Full doc: [`docs/features/chat-ui-enhancements.md`](features/chat-ui-enhancements.md).
+> - **Unix-Theory Reorg Phase 4–5** — Pro tools reorganised into modular Unix-theory folders. Stale `require_once` paths + hardcoded paths fixed.
+> - **Pro Toolkit MCP Server Settings** — Phases A–C admin page.
+> - **Build Infrastructure** — `workflow_dispatch` commits, `build/.gitkeep` restored, WSL auto-detection.
+> - **Versioning** — bumped to 1.1.25 across all manifests. Tool count: ~195 base + ~765 Pro (~960 total; live registry is authoritative).
 
 > **📌 MAY 21, 2026 UPDATE (v1.1.21):** 🛡️🔒🧠⚡ **WP.ORG COMPLIANCE COMPLETE, CANONICAL RETURN ENVELOPE, SEMANTIC COMPRESSION, AI PROMPT CACHING, MEMORY LAYER PHASES 3–7**
 > - **WordPress.org Compliance — All 10 Findings (F1–F10) Resolved.** 53 files converted from inline scripts/styles to WP enqueue APIs; 11 PHP parse errors fixed. Re-audit verified: zero dangerous functions, all superglobals sanitized, all HTTP calls timed out, zero bare phpcs:ignore. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md).
