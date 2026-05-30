@@ -3152,7 +3152,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Load the seed tool.
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Seed_Template_Library' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php';
 			}
 
 			// Execute the seeding tool.

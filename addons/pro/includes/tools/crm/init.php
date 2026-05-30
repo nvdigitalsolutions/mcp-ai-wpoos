@@ -45,7 +45,7 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Load shared blueprint installer (used by import_crm_blueprint and import_healthcare_blueprint).
-	$_installer = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-blueprint-installer.php';
+	$_installer = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
 	if ( file_exists( $_installer ) ) {
 		require_once $_installer;
 	}

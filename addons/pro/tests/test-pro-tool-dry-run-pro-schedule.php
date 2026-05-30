@@ -10,9 +10,9 @@
 
 if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule' )
 	&& defined( 'WP_MCP_AI_PRO_PATH' )
-	&& file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php' )
+	&& file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php' )
 ) {
-	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php';
 }
 
 /**

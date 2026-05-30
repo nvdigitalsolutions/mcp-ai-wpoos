@@ -571,7 +571,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				wp_send_json_error( array( 'message' => __( 'A schedule_id is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
 			}
 
-			$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php';
+			$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php';
 			if ( file_exists( $tool_file ) ) {
 				require_once $tool_file;
 			}
@@ -693,7 +693,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			}
 
 			if ( null === $result ) {
-				$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php';
+				$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php';
 				if ( file_exists( $tool_file ) ) {
 					require_once $tool_file;
 				}

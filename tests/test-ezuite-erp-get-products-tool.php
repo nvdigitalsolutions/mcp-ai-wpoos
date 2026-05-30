@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 		}
 
 		// Load the pro tool file.
-		$pro_tool_path = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ezuite-erp-get-products.php';
+		$pro_tool_path = WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-tool-ezuite-erp-get-products.php';
 		if ( ! file_exists( $pro_tool_path ) ) {
 			$this->markTestSkipped( 'Pro addon not available. EZuite ERP Get Products tool is a pro tool.' );
 			return;
