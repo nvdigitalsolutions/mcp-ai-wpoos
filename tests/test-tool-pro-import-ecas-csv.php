@@ -44,7 +44,7 @@ class Test_Tool_Pro_Import_ECAs_CSV extends WP_UnitTestCase {
 		WP_MCP_AI_ECA_CPT::register_post_types();
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_ECAs_CSV' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-import-ecas-csv.php';
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/eca-management/class-wp-mcp-ai-tool-import-ecas-csv.php';
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Import_ECAs_CSV();

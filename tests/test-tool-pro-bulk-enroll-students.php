@@ -44,7 +44,7 @@ class Test_Tool_Pro_Bulk_Enroll_Students extends WP_UnitTestCase {
 		WP_MCP_AI_ECA_CPT::register_post_types();
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Bulk_Enroll_Students' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-bulk-enroll-students.php';
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/eca-management/class-wp-mcp-ai-tool-bulk-enroll-students.php';
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Bulk_Enroll_Students();

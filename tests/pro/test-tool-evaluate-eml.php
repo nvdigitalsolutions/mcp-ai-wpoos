@@ -19,7 +19,7 @@ class Test_Tool_Evaluate_Eml extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Evaluate_Eml' ) ) {
-			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-evaluate-eml.php';
+			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/developer/class-wp-mcp-ai-tool-evaluate-eml.php';
 			if ( file_exists( $tool_file ) ) {
 				require_once $tool_file;
 			}

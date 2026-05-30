@@ -19,7 +19,7 @@ class Test_Tool_Generate_Truth_Table extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Truth_Table' ) ) {
-			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-truth-table.php';
+			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/math/class-wp-mcp-ai-tool-generate-truth-table.php';
 			if ( file_exists( $tool_file ) ) {
 				require_once $tool_file;
 			}

@@ -750,65 +750,65 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Load Pro tool files.
 		$pro_tools = array(
 			// Universal-operator math/logic tools (Boolean NAND + continuous EML).
-			'WP_MCP_AI_Tool_Evaluate_Logic_Gate'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-evaluate-logic-gate.php',
-			'WP_MCP_AI_Tool_Generate_Truth_Table'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-truth-table.php',
-			'WP_MCP_AI_Tool_Evaluate_Eml'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-evaluate-eml.php',
+			'WP_MCP_AI_Tool_Evaluate_Logic_Gate'           => WP_MCP_AI_PRO_PATH . 'includes/tools/math/class-wp-mcp-ai-tool-evaluate-logic-gate.php',
+			'WP_MCP_AI_Tool_Generate_Truth_Table'          => WP_MCP_AI_PRO_PATH . 'includes/tools/math/class-wp-mcp-ai-tool-generate-truth-table.php',
+			'WP_MCP_AI_Tool_Evaluate_Eml'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-evaluate-eml.php',
 			// Remote WordPress/WooCommerce Connection tool.
-			'WP_MCP_AI_Tool_Remote_WP_Connection'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-wp-connection.php',
+			'WP_MCP_AI_Tool_Remote_WP_Connection'          => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php',
 			// Generic REST API Connection tool.
-			'WP_MCP_AI_Tool_Generic_REST_API'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generic-rest-api.php',
+			'WP_MCP_AI_Tool_Generic_REST_API'              => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-generic-rest-api.php',
 			// NPM Package Enhanced Tools (new in 1.1.0).
-			'WP_MCP_AI_Tool_Format_Code_Prettier'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-format-code-prettier.php',
-			'WP_MCP_AI_Tool_Generate_Email_Template'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-email-template.php',
-			'WP_MCP_AI_Tool_Transcode_Video'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcode-video.php',
+			'WP_MCP_AI_Tool_Format_Code_Prettier'          => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-format-code-prettier.php',
+			'WP_MCP_AI_Tool_Generate_Email_Template'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-email-template.php',
+			'WP_MCP_AI_Tool_Transcode_Video'               => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-transcode-video.php',
 			// EZuite ERP Connection tool.
-			'WP_MCP_AI_Tool_EZuite_ERP'                    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ezuite-erp.php',
-			'WP_MCP_AI_Tool_EZuite_ERP_Get_Products'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ezuite-erp-get-products.php',
+			'WP_MCP_AI_Tool_EZuite_ERP'                    => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-tool-ezuite-erp.php',
+			'WP_MCP_AI_Tool_EZuite_ERP_Get_Products'       => WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/class-wp-mcp-ai-tool-ezuite-erp-get-products.php',
 			// Exec service tools (video, audio, CLI).
-			'WP_MCP_AI_Tool_Check_WP_CLI'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
-			'WP_MCP_AI_Tool_Extract_Video_Frames'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php',
-			'WP_MCP_AI_Tool_Get_Video_Metadata'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php',
-			'WP_MCP_AI_Tool_Remove_Background'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
-			'WP_MCP_AI_Tool_Generate_Jukebox_Music'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
-			'WP_MCP_AI_Tool_Check_Jukebox_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
+			'WP_MCP_AI_Tool_Check_WP_CLI'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-check-wp-cli.php',
+			'WP_MCP_AI_Tool_Extract_Video_Frames'          => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-extract-video-frames.php',
+			'WP_MCP_AI_Tool_Get_Video_Metadata'            => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-get-video-metadata.php',
+			'WP_MCP_AI_Tool_Remove_Background'             => WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/class-wp-mcp-ai-tool-remove-background.php',
+			'WP_MCP_AI_Tool_Generate_Jukebox_Music'        => WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/class-wp-mcp-ai-tool-generate-jukebox-music.php',
+			'WP_MCP_AI_Tool_Check_Jukebox_Status'          => WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/class-wp-mcp-ai-tool-check-jukebox-status.php',
 			// Architectural Drawing tool (Pro feature).
-			'WP_MCP_AI_Tool_Generate_Architectural_Drawing' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php',
+			'WP_MCP_AI_Tool_Generate_Architectural_Drawing' => WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/class-wp-mcp-ai-tool-generate-architectural-drawing.php',
 			// Project Management tools (Pro feature).
-			'WP_MCP_AI_Tool_Create_Project'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-project.php',
-			'WP_MCP_AI_Tool_Update_Project'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-project.php',
-			'WP_MCP_AI_Tool_Delete_Project'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-project.php',
-			'WP_MCP_AI_Tool_List_Projects'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-projects.php',
-			'WP_MCP_AI_Tool_Research_Project'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-project.php',
-			'WP_MCP_AI_Tool_Create_Task'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-task.php',
-			'WP_MCP_AI_Tool_Update_Task'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-task.php',
-			'WP_MCP_AI_Tool_Delete_Task'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-task.php',
-			'WP_MCP_AI_Tool_List_Tasks'                    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-tasks.php',
+			'WP_MCP_AI_Tool_Create_Project'                => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-create-project.php',
+			'WP_MCP_AI_Tool_Update_Project'                => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-update-project.php',
+			'WP_MCP_AI_Tool_Delete_Project'                => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-delete-project.php',
+			'WP_MCP_AI_Tool_List_Projects'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-list-projects.php',
+			'WP_MCP_AI_Tool_Research_Project'              => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-project.php',
+			'WP_MCP_AI_Tool_Create_Task'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-create-task.php',
+			'WP_MCP_AI_Tool_Update_Task'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-update-task.php',
+			'WP_MCP_AI_Tool_Delete_Task'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-delete-task.php',
+			'WP_MCP_AI_Tool_List_Tasks'                    => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-list-tasks.php',
 			// Task Dependency tools (Pro feature - v1.2.0).
-			'WP_MCP_AI_Tool_Add_Task_Dependency'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-task-dependency.php',
-			'WP_MCP_AI_Tool_Remove_Task_Dependency'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-task-dependency.php',
-			'WP_MCP_AI_Tool_Get_Task_Dependencies'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-task-dependencies.php',
-			'WP_MCP_AI_Tool_Create_Event'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-event.php',
-			'WP_MCP_AI_Tool_Update_Event'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-event.php',
-			'WP_MCP_AI_Tool_Delete_Event'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
-			'WP_MCP_AI_Tool_List_Events'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
-			'WP_MCP_AI_Tool_Get_Calendar_View'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
+			'WP_MCP_AI_Tool_Add_Task_Dependency'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-add-task-dependency.php',
+			'WP_MCP_AI_Tool_Remove_Task_Dependency'        => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-remove-task-dependency.php',
+			'WP_MCP_AI_Tool_Get_Task_Dependencies'         => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-get-task-dependencies.php',
+			'WP_MCP_AI_Tool_Create_Event'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-create-event.php',
+			'WP_MCP_AI_Tool_Update_Event'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-update-event.php',
+			'WP_MCP_AI_Tool_Delete_Event'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-delete-event.php',
+			'WP_MCP_AI_Tool_List_Events'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-list-events.php',
+			'WP_MCP_AI_Tool_Get_Calendar_View'             => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-get-calendar-view.php',
 			// NOTE: Core orchestration tools (9 tools) moved to base plugin in includes/orchestration-init.php
 			// This includes: create/update/get task plan, manage sessions, detect completion, check exit conditions,
 			// analyze loop health, get session status, calculate capacity (Little's Law).
 			// Research Enhancement tools (Ralph pattern - Phase 2 - Pro only).
-			'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
-			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
-			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
-			'WP_MCP_AI_Pro_Tool_Generate_Research_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-generate-research-report.php',
-			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
-			'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-verify-information.php',
+			'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
+			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
+			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
+			'WP_MCP_AI_Pro_Tool_Generate_Research_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-generate-research-report.php',
+			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
+			'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
 			// Template Management tools (Ralph pattern - Phase 3).
-			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-template.php',
-			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-instantiate-template.php',
-			'WP_MCP_AI_Pro_Tool_List_Templates'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-templates.php',
-			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php',
+			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php',
+			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-instantiate-template.php',
+			'WP_MCP_AI_Pro_Tool_List_Templates'            => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-list-templates.php',
+			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
-			'WP_MCP_AI_Tool_Export_Calendar_ICS'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			'WP_MCP_AI_Tool_Export_Calendar_ICS'           => WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// PARA Methodology tools (Pro feature - v1.2.0).
 			'WP_MCP_AI_Tool_PARA_Classify_Item'            => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-classify-item.php',
 			'WP_MCP_AI_Tool_PARA_Move_To_Archives'         => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-move-to-archives.php',
@@ -916,28 +916,28 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
 			'WP_MCP_AI_Pro_Tool_Update_Option'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-update-option.php',
 			// WP All Import/Export Pro tools.
-			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-export.php',
-			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-export.php',
-			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php',
-			'WP_MCP_AI_Pro_Tool_Delete_All_Import'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Import'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-import.php',
 			// Pro Schedule Manager tools.
-			'WP_MCP_AI_Pro_Tool_Create_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
-			'WP_MCP_AI_Pro_Tool_Update_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-update-pro-schedule.php',
-			'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-delete-pro-schedule.php',
-			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
-			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
-			'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php',
-			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
-			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
-			'WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-latest-result.php',
-			'WP_MCP_AI_Pro_Tool_Render_Schedule_Result'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-render-schedule-result.php',
-			'WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-configure-schedule-widget-defaults.php',
+			'WP_MCP_AI_Pro_Tool_Create_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_Update_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-update-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-delete-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
+			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
+			'WP_MCP_AI_Pro_Tool_Dry_Run_Pro_Schedule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-dry-run-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
+			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
+			'WP_MCP_AI_Pro_Tool_Get_Schedule_Latest_Result' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-get-schedule-latest-result.php',
+			'WP_MCP_AI_Pro_Tool_Render_Schedule_Result'    => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-render-schedule-result.php',
+			'WP_MCP_AI_Pro_Tool_Configure_Schedule_Widget_Defaults' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-configure-schedule-widget-defaults.php',
 			// iSAMS School Management System tool.
-			'WP_MCP_AI_Tool_ISAMS_Query'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
+			'WP_MCP_AI_Tool_ISAMS_Query'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
-			'WP_MCP_AI_Tool_Web_Browser'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
+			'WP_MCP_AI_Tool_Web_Browser'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/capture/class-wp-mcp-ai-tool-web-browser.php',
 			// Webpage Screenshot tool — always available, Playwright + mshots fallback.
-			'WP_MCP_AI_Tool_Capture_Webpage_Screenshot'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-capture-webpage-screenshot.php',
+			'WP_MCP_AI_Tool_Capture_Webpage_Screenshot'    => WP_MCP_AI_PRO_PATH . 'includes/tools/capture/class-wp-mcp-ai-tool-capture-webpage-screenshot.php',
 		);
 
 		// Add CRM Toolkit tools if enabled.
@@ -1042,9 +1042,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add AI CPT Management tools if enabled.
 		if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
 			$cpt_research_tools = array(
-				'WP_MCP_AI_Tool_Research_Post'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-post.php',
-				'WP_MCP_AI_Tool_Research_Page'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-page.php',
-				'WP_MCP_AI_Tool_Research_Blog_Post' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-blog-post.php',
+				'WP_MCP_AI_Tool_Research_Post'      => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-post.php',
+				'WP_MCP_AI_Tool_Research_Page'      => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-page.php',
+				'WP_MCP_AI_Tool_Research_Blog_Post' => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-blog-post.php',
 			);
 			$pro_tools          = array_merge( $pro_tools, $cpt_research_tools );
 		}
@@ -1053,50 +1053,50 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
 			$eca_tools = array(
 				// ECA Management (CRUD).
-				'WP_MCP_AI_Tool_Create_ECA'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
-				'WP_MCP_AI_Tool_List_ECAs'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
-				'WP_MCP_AI_Tool_Get_ECA'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca.php',
-				'WP_MCP_AI_Tool_Update_ECA'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-eca.php',
-				'WP_MCP_AI_Tool_Delete_ECA'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-eca.php',
+				'WP_MCP_AI_Tool_Create_ECA'                => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-eca.php',
+				'WP_MCP_AI_Tool_List_ECAs'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-ecas.php',
+				'WP_MCP_AI_Tool_Get_ECA'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-get-eca.php',
+				'WP_MCP_AI_Tool_Update_ECA'                => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-update-eca.php',
+				'WP_MCP_AI_Tool_Delete_ECA'                => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-delete-eca.php',
 				// Student Management (CRUD).
-				'WP_MCP_AI_Tool_Create_Student'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-student.php',
-				'WP_MCP_AI_Tool_List_Students'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-students.php',
-				'WP_MCP_AI_Tool_Get_Student'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student.php',
-				'WP_MCP_AI_Tool_Update_Student'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-student.php',
-				'WP_MCP_AI_Tool_Delete_Student'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-student.php',
+				'WP_MCP_AI_Tool_Create_Student'            => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-student.php',
+				'WP_MCP_AI_Tool_List_Students'             => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-list-students.php',
+				'WP_MCP_AI_Tool_Get_Student'               => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-get-student.php',
+				'WP_MCP_AI_Tool_Update_Student'            => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-update-student.php',
+				'WP_MCP_AI_Tool_Delete_Student'            => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-delete-student.php',
 				// Specialized ECA tools.
-				'WP_MCP_AI_Tool_Enroll_Student_ECA'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
-				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php',
-				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
-				'WP_MCP_AI_Tool_Research_ECA'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-eca.php',
+				'WP_MCP_AI_Tool_Enroll_Student_ECA'        => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-enroll-student-eca.php',
+				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS'  => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-students-from-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS'      => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
+				'WP_MCP_AI_Tool_Research_ECA'              => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-research-eca.php',
 				// Attendance & participation tools.
-				'WP_MCP_AI_Tool_Mark_ECA_Attendance'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-mark-eca-attendance.php',
-				'WP_MCP_AI_Tool_Get_ECA_Attendance_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca-attendance-report.php',
-				'WP_MCP_AI_Tool_Get_Student_Participation_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student-participation-summary.php',
+				'WP_MCP_AI_Tool_Mark_ECA_Attendance'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-mark-eca-attendance.php',
+				'WP_MCP_AI_Tool_Get_ECA_Attendance_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-get-eca-attendance-report.php',
+				'WP_MCP_AI_Tool_Get_Student_Participation_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-get-student-participation-summary.php',
 				// Waitlist & enrollment automation.
-				'WP_MCP_AI_Tool_Manage_ECA_Waitlist'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-eca-waitlist.php',
-				'WP_MCP_AI_Tool_Withdraw_Student_ECA'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-withdraw-student-eca.php',
-				'WP_MCP_AI_Tool_Bulk_Enroll_Students'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-bulk-enroll-students.php',
+				'WP_MCP_AI_Tool_Manage_ECA_Waitlist'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-manage-eca-waitlist.php',
+				'WP_MCP_AI_Tool_Withdraw_Student_ECA'      => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-withdraw-student-eca.php',
+				'WP_MCP_AI_Tool_Bulk_Enroll_Students'      => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-bulk-enroll-students.php',
 				// Scheduling & conflict detection.
-				'WP_MCP_AI_Tool_Check_ECA_Conflicts'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-eca-conflicts.php',
-				'WP_MCP_AI_Tool_Set_ECA_Schedule'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-set-eca-schedule.php',
-				'WP_MCP_AI_Tool_Get_ECA_Timetable'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca-timetable.php',
+				'WP_MCP_AI_Tool_Check_ECA_Conflicts'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-check-eca-conflicts.php',
+				'WP_MCP_AI_Tool_Set_ECA_Schedule'          => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-set-eca-schedule.php',
+				'WP_MCP_AI_Tool_Get_ECA_Timetable'         => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-get-eca-timetable.php',
 				// Notifications & communication.
-				'WP_MCP_AI_Tool_Send_ECA_Notification'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-eca-notification.php',
-				'WP_MCP_AI_Tool_Configure_ECA_Notifications' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-configure-eca-notifications.php',
-				'WP_MCP_AI_Tool_Send_ECA_Parent_Report'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-eca-parent-report.php',
+				'WP_MCP_AI_Tool_Send_ECA_Notification'     => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-send-eca-notification.php',
+				'WP_MCP_AI_Tool_Configure_ECA_Notifications' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-configure-eca-notifications.php',
+				'WP_MCP_AI_Tool_Send_ECA_Parent_Report'    => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-send-eca-parent-report.php',
 				// Reporting & analytics.
-				'WP_MCP_AI_Tool_Generate_ECA_Analytics'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-eca-analytics.php',
-				'WP_MCP_AI_Tool_Generate_ECA_Participation_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-eca-participation-report.php',
-				'WP_MCP_AI_Tool_Export_ECA_Data'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-eca-data.php',
+				'WP_MCP_AI_Tool_Generate_ECA_Analytics'    => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-generate-eca-analytics.php',
+				'WP_MCP_AI_Tool_Generate_ECA_Participation_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-generate-eca-participation-report.php',
+				'WP_MCP_AI_Tool_Export_ECA_Data'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-export-eca-data.php',
 				// Integration tools.
-				'WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-eca-enrollments-from-isams.php',
-				'WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-to-isams.php',
-				'WP_MCP_AI_Tool_Sync_ECAs_From_SOCS'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-socs.php',
+				'WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-eca-enrollments-from-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS'        => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-ecas-to-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_From_SOCS'       => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-sync-ecas-from-socs.php',
 				// Workflow & lifecycle.
-				'WP_MCP_AI_Tool_Manage_ECA_Term'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-eca-term.php',
-				'WP_MCP_AI_Tool_Create_ECA_Workflow_Rule'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca-workflow-rule.php',
-				'WP_MCP_AI_Tool_Import_ECAs_CSV'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-ecas-csv.php',
+				'WP_MCP_AI_Tool_Manage_ECA_Term'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-manage-eca-term.php',
+				'WP_MCP_AI_Tool_Create_ECA_Workflow_Rule'  => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-create-eca-workflow-rule.php',
+				'WP_MCP_AI_Tool_Import_ECAs_CSV'           => WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/class-wp-mcp-ai-tool-import-ecas-csv.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $eca_tools );
 		}
@@ -1105,20 +1105,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			$quiz_tools = array(
 				// Quiz CRUD.
-				'WP_MCP_AI_Tool_Create_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
-				'WP_MCP_AI_Tool_Get_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
-				'WP_MCP_AI_Tool_List_Quizzes'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
-				'WP_MCP_AI_Tool_Update_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-quiz.php',
-				'WP_MCP_AI_Tool_Delete_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-quiz.php',
+				'WP_MCP_AI_Tool_Create_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-create-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz.php',
+				'WP_MCP_AI_Tool_List_Quizzes'         => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-list-quizzes.php',
+				'WP_MCP_AI_Tool_Update_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-update-quiz.php',
+				'WP_MCP_AI_Tool_Delete_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-delete-quiz.php',
 				// Quiz specialized tools.
-				'WP_MCP_AI_Tool_Submit_Quiz_Answer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
-				'WP_MCP_AI_Tool_Grade_Quiz'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
-				'WP_MCP_AI_Tool_Get_Quiz_Submissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
-				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
-				'WP_MCP_AI_Tool_Get_Quiz_Analytics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-analytics.php',
-				'WP_MCP_AI_Tool_Research_Quiz_Topic'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-quiz-topic.php',
+				'WP_MCP_AI_Tool_Submit_Quiz_Answer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-submit-quiz-answer.php',
+				'WP_MCP_AI_Tool_Grade_Quiz'           => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-grade-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Submissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz-submissions.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz-results.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Analytics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-get-quiz-analytics.php',
+				'WP_MCP_AI_Tool_Research_Quiz_Topic'  => WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/class-wp-mcp-ai-tool-research-quiz-topic.php',
 				// KaTeX math rendering tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Render_Math_Equation' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-render-math-equation.php',
+				'WP_MCP_AI_Tool_Render_Math_Equation' => WP_MCP_AI_PRO_PATH . 'includes/tools/math/class-wp-mcp-ai-tool-render-math-equation.php',
 			);
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
@@ -1126,15 +1126,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
-				'WP_MCP_AI_Tool_Create_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-place.php',
-				'WP_MCP_AI_Tool_List_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-places.php',
-				'WP_MCP_AI_Tool_Update_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-place.php',
-				'WP_MCP_AI_Tool_Delete_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-place.php',
-				'WP_MCP_AI_Tool_Get_Place'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-place.php',
-				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-and-save-places.php',
-				'WP_MCP_AI_Tool_Research_Place'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-place.php',
+				'WP_MCP_AI_Tool_Create_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'              => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
+				'WP_MCP_AI_Tool_Research_Place'         => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
 				// Turf.js geospatial analysis tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Analyze_Geospatial'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				'WP_MCP_AI_Tool_Analyze_Geospatial'     => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
@@ -1185,7 +1185,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Specialized Health & Wellness Tools.
 				'WP_MCP_AI_Tool_Get_Member_Health_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
 				'WP_MCP_AI_Tool_Get_Medication_Schedule'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-medication-schedule.php',
-				'WP_MCP_AI_Tool_Research_Policy'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-policy.php',
+				'WP_MCP_AI_Tool_Research_Policy'           => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-policy.php',
 				// Chart.js data visualization tool (enhanced with NPM package).
 				'WP_MCP_AI_Tool_Generate_Health_Chart'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-health-chart.php',
 				// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
@@ -1276,9 +1276,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 		// Vehicle Estimation tools — always available Pro tools.
 		$vehicle_tools = array(
-			'WP_MCP_AI_Tool_VIN_Decode'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php',
-			'WP_MCP_AI_Tool_Vehicle_Repair_Estimate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php',
-			'WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php',
+			'WP_MCP_AI_Tool_VIN_Decode'                => WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vin-decode.php',
+			'WP_MCP_AI_Tool_Vehicle_Repair_Estimate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-repair-estimate.php',
+			'WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate' => WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php',
 		);
 		$pro_tools     = array_merge( $pro_tools, $vehicle_tools );
 
@@ -1289,7 +1289,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Coupons'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-coupons.php',
-				'WP_MCP_AI_Tool_Research_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-product.php',
+				'WP_MCP_AI_Tool_Research_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-product.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $woo_tools );
 		}
@@ -1305,7 +1305,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-smart-search.php';
 		}
 		$shopify_tools = array(
-			'WP_MCP_AI_Tool_Remote_Shopify_Connection' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-shopify-connection.php',
+			'WP_MCP_AI_Tool_Remote_Shopify_Connection' => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-shopify-connection.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Products'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Orders'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Customers'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
@@ -1345,14 +1345,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Media Toolkit tools if enabled.
 		if ( ! empty( $settings['enable_media_toolkit'] ) ) {
 			$media_toolkit_tools = array(
-				'WP_MCP_AI_Tool_List_Media_Templates'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-media-templates.php',
-				'WP_MCP_AI_Tool_Apply_Media_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php',
-				'WP_MCP_AI_Tool_Create_Media_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-template.php',
-				'WP_MCP_AI_Tool_Create_Media_Collection'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-collection.php',
-				'WP_MCP_AI_Tool_Process_Collection'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php',
-				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php',
+				'WP_MCP_AI_Tool_List_Media_Templates'      => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-list-media-templates.php',
+				'WP_MCP_AI_Tool_Apply_Media_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-apply-media-template.php',
+				'WP_MCP_AI_Tool_Create_Media_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-create-media-template.php',
+				'WP_MCP_AI_Tool_Create_Media_Collection'   => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-create-media-collection.php',
+				'WP_MCP_AI_Tool_Process_Collection'        => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-process-collection.php',
+				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-apply-collection-template.php',
 				// Sharp image optimization tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Optimize_Image_Sharp'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-optimize-image-sharp.php',
+				'WP_MCP_AI_Tool_Optimize_Image_Sharp'      => WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/class-wp-mcp-ai-tool-optimize-image-sharp.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
