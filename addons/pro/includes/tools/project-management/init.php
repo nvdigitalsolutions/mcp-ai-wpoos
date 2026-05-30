@@ -15,9 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Load CPT classes.
-require_once __DIR__ . '/class-wp-mcp-ai-project-cpt.php';
-require_once __DIR__ . '/class-wp-mcp-ai-task-cpt.php';
-require_once __DIR__ . '/class-wp-mcp-ai-event-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-project-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-event-cpt.php';
 
 // Load Research & Add and Settings pages for admin.
 if ( is_admin() ) {
@@ -33,19 +33,19 @@ if ( is_admin() ) {
 		new WP_MCP_AI_Project_Management_Research_Add();
 
 		// Load Project Research & Add and Settings pages (under Projects menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-research-page.php';
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-settings-page.php';
 
 		// Load Event Research & Add and Settings pages (under Events menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-research-page.php';
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-settings-page.php';
 
 		// Load Event Consolidate & Add page (under Events menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-consolidate-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-consolidate-page.php';
 		WP_MCP_AI_Event_Consolidate_Page::init();
 
 		// Load Task Research & Add page (under Tasks menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-task-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-task-research-page.php';
 		WP_MCP_AI_Task_Research_Page::init();
 	}
 }
@@ -66,14 +66,14 @@ function wp_mcp_ai_init_project_management_admin() {
 	}
 
 	// Load metabox classes.
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-metabox.php';
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-task-metabox.php';
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-event-metabox.php';
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-admin-columns.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-metabox.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-task-metabox.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-event-metabox.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-management-admin-columns.php';
 
 	// Load AI-enhanced features.
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-management-ai-actions.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
 
 	// Initialize metaboxes.
 	WP_MCP_AI_Project_Metabox::init();

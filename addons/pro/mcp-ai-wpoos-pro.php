@@ -438,7 +438,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
 		// Load Media Toolkit if enabled (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
 
 		// Load MCP Apps subsystem (remote MCP server connections per assistant).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/mcp-apps-init.php';
@@ -454,7 +454,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Load Project Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/init.php';
 
 		// Load Ralph Orchestration CCT schemas (Pro feature).
 		if ( function_exists( 'jet_engine' ) ) {
@@ -474,26 +474,26 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Load Places Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/places/init.php';
 
 		// Load ECA Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/eca-management-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/init.php';
 
 		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
 
 		// Load Quiz Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
 
 		// Load Healthcare Toolkit (unified umbrella for Medical Vitals,
 		// Health & Wellness, and Healthcare Imaging).  The unified
 		// bootstrap eagerly loads shared infrastructure (engine, codes,
 		// FHIR builders, audit ledger, capability map) and conditionally
 		// loads each sub-toolkit based on its `enable_*` setting.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-toolkit-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/init.php';
 
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/init.php';
 
 		// ========================================================================
 		// NEW PRO TOOLKITS (Phase 1 - Foundation)
@@ -501,79 +501,79 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load E-commerce Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/ecommerce-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/init.php';
 		}
 
 		// Load Social Media Management Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_social_media_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/social-media-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/init.php';
 		}
 
 		// Load Advanced Analytics Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_analytics_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/analytics-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/init.php';
 		}
 
 		// Load Multi-language Content Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_multilingual_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/multilingual-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/init.php';
 		}
 
 		// Load Video Production Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_video_production_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/video-production-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/init.php';
 		}
 
 		// Load Cloudways Pro Toolkit if enabled (Pro feature — server/application management).
 		if ( ! empty( $settings['enable_cloudways_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/cloudways-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/init.php';
 		}
 
 		// Load Financial Planner Toolkit if enabled (Pro feature - Phase 2.5).
 		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/financial-planner-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/init.php';
 		}
 
 		// Load DJ Management Toolkit if enabled (Pro feature - Phase 2.7).
 		if ( ! empty( $settings['enable_dj_management_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/dj-management-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/init.php';
 		}
 
 		// Load Image Production Toolkit if enabled (Pro feature - Phase 2.8).
 		if ( ! empty( $settings['enable_image_production_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
 		// Load Comic Creation Toolkit if enabled (Pro feature - Phase 2.11).
 		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/comic-creation-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/init.php';
 		}
 
 		// Load AI Tool Builder Toolkit if enabled (Pro feature - Phase 2.9).
 		if ( ! empty( $settings['enable_ai_tool_builder_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ai-tool-builder/init.php';
 		}
 
 		// Load Architect Agent Toolkit if enabled (Pro feature).
 		// Self-editing capabilities with GitHub Copilot CLI parity.
 		if ( ! empty( $settings['enable_architect_agent_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/architect-agent-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/init.php';
 		}
 
 		// Load Architectural Design Toolkit if enabled (Pro feature - Phase 2.10).
 		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/init.php';
 		}
 
 		// Load Site Creator Toolkit if enabled (Pro feature).
 		// Advanced site creation with page/section/widget builders and Architect Agent integration.
 		if ( ! empty( $settings['enable_site_creator_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/site-creator-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/init.php';
 		}
 
 		// Load Password Vault Manager (Pro feature - Phase 2.11).
 		// Always enabled - provides secure password storage with AES-256-GCM encryption.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/password-vault-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/vault/init.php';
 
 		// Load Pro Skill Manager (always enabled - provides skill upload, install, and editor UI).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/skills-manager-init.php';
@@ -606,35 +606,35 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php';
 		}
 
 		// Load CRM Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/crm-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/crm/init.php';
 		}
 
 		// Load Regulatory Registration Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/init.php';
 		}
 
 		// Load CRE Debt & Securitization Toolkit if enabled (Pro feature).
 		// Provides CPTs (Loans, Properties), portfolio dashboard, and research pages.
 		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/cre-debt-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/init.php';
 		}
 
 		// Load Law Firm Toolkit if enabled (Pro feature).
 		// Provides CPTs (Matters, Clients, Documents, Time Entries, Trust Txns),
 		// firm dashboard, and research pages.
 		if ( ! empty( $settings['enable_law_firm_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/law-firm-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/init.php';
 		}
 
 		// Load Chat Channels Integration Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/init.php';
 
 			// Load WhatsApp Webhook Controller for real-time message handling.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
@@ -666,7 +666,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Extended Cognition Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/extended-cognition-toolkit-init.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
 		}
 
 		// ========================================================================
@@ -833,88 +833,88 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// Remotion programmatic video creation tool (React/Node.js, always-on pro tool).
 			'WP_MCP_AI_Tool_Create_Remotion_Video'         => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			// Product Actualization tool.
-			'WP_MCP_AI_Pro_Tool_Product_Actualization'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
+			'WP_MCP_AI_Pro_Tool_Product_Actualization'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Validate Image for Product Placement tool.
-			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Product' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-product.php',
+			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Product' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-product.php',
 			// Validate Image for Vehicle Estimate tool.
-			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php',
+			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php',
 			// Product Price Lookup tool.
-			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
+			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
 			// Listing image download tools (Google Maps, Facebook, Instagram).
-			'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-download-google-maps-images.php',
-			'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-download-facebook-page-images.php',
-			'WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-download-instagram-page-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-google-maps-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-facebook-page-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-download-instagram-page-images.php',
 			// Social media publishing tools.
-			'WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-post-facebook-instagram.php',
-			'WP_MCP_AI_Pro_Tool_Post_Tiktok_Video'         => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-post-tiktok-video.php',
-			'WP_MCP_AI_Pro_Tool_Post_Linkedin_Update'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-post-linkedin-update.php',
-			'WP_MCP_AI_Pro_Tool_Post_Google_Business_Update' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-post-google-business-update.php',
+			'WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-post-facebook-instagram.php',
+			'WP_MCP_AI_Pro_Tool_Post_Tiktok_Video'         => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-post-tiktok-video.php',
+			'WP_MCP_AI_Pro_Tool_Post_Linkedin_Update'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-post-linkedin-update.php',
+			'WP_MCP_AI_Pro_Tool_Post_Google_Business_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-post-google-business-update.php',
 			// Social media insights/reporting tools.
-			'WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-facebook-instagram-insights.php',
-			'WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-tiktok-insights.php',
-			'WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-linkedin-insights.php',
-			'WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-business-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Facebook_Instagram_Insights' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-get-facebook-instagram-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Tiktok_Insights'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-get-tiktok-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights'     => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-get-linkedin-insights.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-pro-tool-get-google-business-insights.php',
 			// Messaging tools.
-			'WP_MCP_AI_Pro_Tool_Send_Whatsapp_Message'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php',
-			'WP_MCP_AI_Pro_Tool_Send_Telegram_Message'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php',
-			'WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php',
+			'WP_MCP_AI_Pro_Tool_Send_Whatsapp_Message'     => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php',
+			'WP_MCP_AI_Pro_Tool_Send_Telegram_Message'     => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-telegram-message.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS'       => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php',
 			// Chat channels tools (Discord, Slack, Teams).
-			'WP_MCP_AI_Pro_Tool_Send_Slack_Message'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-slack-message.php',
-			'WP_MCP_AI_Pro_Tool_Get_Slack_Channels'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-slack-channels.php',
-			'WP_MCP_AI_Pro_Tool_Get_Slack_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-slack-messages.php',
-			'WP_MCP_AI_Pro_Tool_Create_Slack_Channel'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-slack-channel.php',
-			'WP_MCP_AI_Pro_Tool_Send_Discord_Message'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-discord-message.php',
-			'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-discord-channels.php',
-			'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-discord-messages.php',
-			'WP_MCP_AI_Pro_Tool_Create_Discord_Channel'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-discord-channel.php',
-			'WP_MCP_AI_Pro_Tool_Send_Teams_Message'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-teams-message.php',
-			'WP_MCP_AI_Pro_Tool_Get_Teams_Channels'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-teams-channels.php',
-			'WP_MCP_AI_Pro_Tool_Get_Teams_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-teams-messages.php',
-			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-messenger-message.php',
-			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
-			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
+			'WP_MCP_AI_Pro_Tool_Send_Slack_Message'        => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-slack-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Channels'        => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-slack-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-slack-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Slack_Channel'      => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-create-slack-channel.php',
+			'WP_MCP_AI_Pro_Tool_Send_Discord_Message'      => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-discord-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'      => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-discord-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'      => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-discord-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Discord_Channel'    => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-create-discord-channel.php',
+			'WP_MCP_AI_Pro_Tool_Send_Teams_Message'        => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-teams-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Teams_Channels'        => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-teams-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Teams_Messages'        => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-teams-messages.php',
+			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'    => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-messenger-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
+			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
 			// Google Chat tools.
-			'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
-			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
-			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
-			'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
+			'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message'  => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'    => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages'  => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space'  => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
 			// Enhanced Telegram tools.
-			'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
-			'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
+			'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'      => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'   => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
 			// Enhanced WhatsApp tools.
-			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-whatsapp-template.php',
-			'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
+			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template'    => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-send-whatsapp-template.php',
+			'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'     => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
 			// Unified broadcast tool.
-			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
+			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
 			// Email and communication tools.
-			'WP_MCP_AI_Pro_Tool_Search_Gmail'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
-			'WP_MCP_AI_Pro_Tool_Search_Drive'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
-			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
-			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'          => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
-			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
-			'WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php',
-			'WP_MCP_AI_Pro_Tool_Send_Mailgun_Email'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailgun-email.php',
+			'WP_MCP_AI_Pro_Tool_Search_Gmail'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-gmail.php',
+			'WP_MCP_AI_Pro_Tool_Search_Drive'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-drive.php',
+			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'        => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
+			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'          => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'     => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
+			'WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics'      => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php',
+			'WP_MCP_AI_Pro_Tool_Send_Mailgun_Email'        => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailgun-email.php',
 			// Google Workspace tools.
-			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
-			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
+			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
 			// Business and accounting tools.
-			'WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-quickbooks-report.php',
-			'WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php',
-			'WP_MCP_AI_Pro_Tool_Get_Import_Duty'           => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-import-duty.php',
+			'WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-get-quickbooks-report.php',
+			'WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php',
+			'WP_MCP_AI_Pro_Tool_Get_Import_Duty'           => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-get-import-duty.php',
 			// Code and development tools.
-			'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-wpcode-snippet.php',
-			'WP_MCP_AI_Pro_Tool_Generic_REST'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php',
+			'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'     => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-pro-tool-create-wpcode-snippet.php',
+			'WP_MCP_AI_Pro_Tool_Generic_REST'              => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-pro-tool-generic-rest.php',
 			// Toolkit CPT – generic CRUD/search for any pro toolkit Custom Post Type.
-			'WP_MCP_AI_Pro_Tool_CPT'                       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-cpt.php',
+			'WP_MCP_AI_Pro_Tool_CPT'                       => WP_MCP_AI_PRO_PATH . 'includes/tools/infrastructure/class-wp-mcp-ai-pro-tool-cpt.php',
 			// GitHub tools.
-			'WP_MCP_AI_Pro_Tool_Github_Repository_Operations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-github-repository-operations.php',
-			'WP_MCP_AI_Pro_Tool_List_Github_Repositories'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-list-github-repositories.php',
-			'WP_MCP_AI_Pro_Tool_Manage_Github_Codespace'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-manage-github-codespace.php',
+			'WP_MCP_AI_Pro_Tool_Github_Repository_Operations' => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-pro-tool-github-repository-operations.php',
+			'WP_MCP_AI_Pro_Tool_List_Github_Repositories'  => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-pro-tool-list-github-repositories.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Github_Codespace'   => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-pro-tool-manage-github-codespace.php',
 			// Site Creator and related tools.
-			'WP_MCP_AI_Pro_Tool_Site_Creator'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-site-creator.php',
-			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-plugin.php',
-			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
-			'WP_MCP_AI_Pro_Tool_Update_Option'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-update-option.php',
+			'WP_MCP_AI_Pro_Tool_Site_Creator'              => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-site-creator.php',
+			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-install-and-activate-plugin.php',
+			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
+			'WP_MCP_AI_Pro_Tool_Update_Option'             => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-update-option.php',
 			// WP All Import/Export Pro tools.
 			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'       => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-schedule-all-export.php',
 			'WP_MCP_AI_Pro_Tool_Delete_All_Export'         => WP_MCP_AI_PRO_PATH . 'includes/tools/wp-all-import-export/class-wp-mcp-ai-tool-delete-all-export.php',
@@ -1143,71 +1143,71 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
 			$health_wellness_tools = array(
 				// Member Management (CRUD).
-				'WP_MCP_AI_Tool_Create_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-member.php',
-				'WP_MCP_AI_Tool_List_Members'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-members.php',
-				'WP_MCP_AI_Tool_Get_Member'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member.php',
-				'WP_MCP_AI_Tool_Update_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-member.php',
-				'WP_MCP_AI_Tool_Delete_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-member.php',
+				'WP_MCP_AI_Tool_Create_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-create-member.php',
+				'WP_MCP_AI_Tool_List_Members'              => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-list-members.php',
+				'WP_MCP_AI_Tool_Get_Member'                => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-get-member.php',
+				'WP_MCP_AI_Tool_Update_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-update-member.php',
+				'WP_MCP_AI_Tool_Delete_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/members/class-wp-mcp-ai-tool-delete-member.php',
 				// Policy Management (CRUD + Search).
-				'WP_MCP_AI_Tool_Create_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-policy.php',
-				'WP_MCP_AI_Tool_List_Policies'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-policies.php',
-				'WP_MCP_AI_Tool_Get_Policy'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-policy.php',
-				'WP_MCP_AI_Tool_Update_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-policy.php',
-				'WP_MCP_AI_Tool_Delete_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-policy.php',
-				'WP_MCP_AI_Tool_Search_Policies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-policies.php',
+				'WP_MCP_AI_Tool_Create_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-create-policy.php',
+				'WP_MCP_AI_Tool_List_Policies'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-list-policies.php',
+				'WP_MCP_AI_Tool_Get_Policy'                => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-get-policy.php',
+				'WP_MCP_AI_Tool_Update_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-update-policy.php',
+				'WP_MCP_AI_Tool_Delete_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-delete-policy.php',
+				'WP_MCP_AI_Tool_Search_Policies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/policies/class-wp-mcp-ai-tool-search-policies.php',
 				// Prescription Management (CRUD + Search).
-				'WP_MCP_AI_Tool_Create_Prescription'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-prescription.php',
-				'WP_MCP_AI_Tool_List_Prescriptions'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-prescriptions.php',
-				'WP_MCP_AI_Tool_Get_Prescription'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-prescription.php',
-				'WP_MCP_AI_Tool_Update_Prescription'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-prescription.php',
-				'WP_MCP_AI_Tool_Delete_Prescription'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-prescription.php',
-				'WP_MCP_AI_Tool_Search_Prescriptions'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-prescriptions.php',
+				'WP_MCP_AI_Tool_Create_Prescription'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/prescriptions/class-wp-mcp-ai-tool-create-prescription.php',
+				'WP_MCP_AI_Tool_List_Prescriptions'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/prescriptions/class-wp-mcp-ai-tool-list-prescriptions.php',
+				'WP_MCP_AI_Tool_Get_Prescription'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/prescriptions/class-wp-mcp-ai-tool-get-prescription.php',
+				'WP_MCP_AI_Tool_Update_Prescription'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/prescriptions/class-wp-mcp-ai-tool-update-prescription.php',
+				'WP_MCP_AI_Tool_Delete_Prescription'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/prescriptions/class-wp-mcp-ai-tool-delete-prescription.php',
+				'WP_MCP_AI_Tool_Search_Prescriptions'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/prescriptions/class-wp-mcp-ai-tool-search-prescriptions.php',
 				// Medical Record Management (CRUD + Search).
-				'WP_MCP_AI_Tool_Create_Medical_Record'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-medical-record.php',
-				'WP_MCP_AI_Tool_List_Medical_Records'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-medical-records.php',
-				'WP_MCP_AI_Tool_Get_Medical_Record'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-medical-record.php',
-				'WP_MCP_AI_Tool_Update_Medical_Record'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-medical-record.php',
-				'WP_MCP_AI_Tool_Delete_Medical_Record'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-medical-record.php',
-				'WP_MCP_AI_Tool_Search_Medical_Records'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-medical-records.php',
+				'WP_MCP_AI_Tool_Create_Medical_Record'     => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-create-medical-record.php',
+				'WP_MCP_AI_Tool_List_Medical_Records'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-list-medical-records.php',
+				'WP_MCP_AI_Tool_Get_Medical_Record'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-get-medical-record.php',
+				'WP_MCP_AI_Tool_Update_Medical_Record'     => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-update-medical-record.php',
+				'WP_MCP_AI_Tool_Delete_Medical_Record'     => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-delete-medical-record.php',
+				'WP_MCP_AI_Tool_Search_Medical_Records'    => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-search-medical-records.php',
 				// Checkup/Appointment Management (CRUD + Specialized).
-				'WP_MCP_AI_Tool_Create_Checkup'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-checkup.php',
-				'WP_MCP_AI_Tool_List_Checkups'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-checkups.php',
-				'WP_MCP_AI_Tool_Get_Checkup'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-checkup.php',
-				'WP_MCP_AI_Tool_Update_Checkup'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-checkup.php',
-				'WP_MCP_AI_Tool_Delete_Checkup'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-checkup.php',
-				'WP_MCP_AI_Tool_Get_Upcoming_Checkups'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-upcoming-checkups.php',
+				'WP_MCP_AI_Tool_Create_Checkup'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-create-checkup.php',
+				'WP_MCP_AI_Tool_List_Checkups'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-list-checkups.php',
+				'WP_MCP_AI_Tool_Get_Checkup'               => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-get-checkup.php',
+				'WP_MCP_AI_Tool_Update_Checkup'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-update-checkup.php',
+				'WP_MCP_AI_Tool_Delete_Checkup'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-delete-checkup.php',
+				'WP_MCP_AI_Tool_Get_Upcoming_Checkups'     => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/checkups/class-wp-mcp-ai-tool-get-upcoming-checkups.php',
 				// Allergy Management (CRUD).
-				'WP_MCP_AI_Tool_Create_Allergy'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-allergy.php',
-				'WP_MCP_AI_Tool_List_Allergies'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-allergies.php',
-				'WP_MCP_AI_Tool_Get_Allergy'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-allergy.php',
-				'WP_MCP_AI_Tool_Update_Allergy'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-allergy.php',
-				'WP_MCP_AI_Tool_Delete_Allergy'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-allergy.php',
+				'WP_MCP_AI_Tool_Create_Allergy'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-create-allergy.php',
+				'WP_MCP_AI_Tool_List_Allergies'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-list-allergies.php',
+				'WP_MCP_AI_Tool_Get_Allergy'               => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-get-allergy.php',
+				'WP_MCP_AI_Tool_Update_Allergy'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-update-allergy.php',
+				'WP_MCP_AI_Tool_Delete_Allergy'            => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/allergies/class-wp-mcp-ai-tool-delete-allergy.php',
 				// Specialized Health & Wellness Tools.
-				'WP_MCP_AI_Tool_Get_Member_Health_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
-				'WP_MCP_AI_Tool_Get_Medication_Schedule'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-medication-schedule.php',
+				'WP_MCP_AI_Tool_Get_Member_Health_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-get-member-health-summary.php',
+				'WP_MCP_AI_Tool_Get_Medication_Schedule'   => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-get-medication-schedule.php',
 				'WP_MCP_AI_Tool_Research_Policy'           => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-policy.php',
 				// Chart.js data visualization tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Generate_Health_Chart'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-health-chart.php',
+				'WP_MCP_AI_Tool_Generate_Health_Chart'     => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-generate-health-chart.php',
 				// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
-				'WP_MCP_AI_Tool_Create_Health_Reminder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-health-reminder.php',
-				'WP_MCP_AI_Tool_Track_Vaccinations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-track-vaccinations.php',
-				'WP_MCP_AI_Tool_Log_Health_Metrics'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-health-metrics.php',
-				'WP_MCP_AI_Tool_Log_Vital_Signs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-vital-signs.php',
-				'WP_MCP_AI_Tool_Import_Vitals'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-vitals.php',
-				'WP_MCP_AI_Tool_Export_FHIR_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-fhir-data.php',
-				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-care-plan.php',
+				'WP_MCP_AI_Tool_Create_Health_Reminder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-create-health-reminder.php',
+				'WP_MCP_AI_Tool_Track_Vaccinations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-track-vaccinations.php',
+				'WP_MCP_AI_Tool_Log_Health_Metrics'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-log-health-metrics.php',
+				'WP_MCP_AI_Tool_Log_Vital_Signs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-log-vital-signs.php',
+				'WP_MCP_AI_Tool_Import_Vitals'             => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-import-vitals.php',
+				'WP_MCP_AI_Tool_Export_FHIR_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-fhir-data.php',
+				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-manage-care-plan.php',
 				// Health Research: compile data from CCT, options, files, and vector store.
-				'WP_MCP_AI_Tool_Compile_Health_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-compile-health-research-data.php',
+				'WP_MCP_AI_Tool_Compile_Health_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-compile-health-research-data.php',
 				// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
-				'WP_MCP_AI_Tool_Guide_Health_Record_Creation' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-guide-health-record-creation.php',
-				'WP_MCP_AI_Tool_Parse_Health_Information'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-parse-health-information.php',
+				'WP_MCP_AI_Tool_Guide_Health_Record_Creation' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-guide-health-record-creation.php',
+				'WP_MCP_AI_Tool_Parse_Health_Information'  => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/reminders-research/class-wp-mcp-ai-tool-parse-health-information.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 
 			// Auto-include JetEngine CCT tool when health management is enabled and JetEngine is active.
 			// This allows the AI to create/update/delete vitals_log CCT items directly without using create_post.
 			if ( function_exists( 'jet_engine' ) && ! isset( $pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] ) ) {
-				$pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php';
+				$pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] = WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine.php';
 			}
 		}
 
@@ -1248,8 +1248,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-dicomweb-client.php';
 
 			$imaging_tools = array(
-				'WP_MCP_AI_Tool_Manage_Imaging_Studies'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
-				'WP_MCP_AI_Tool_Interpret_Imaging_Study' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-interpret-imaging-study.php',
+				'WP_MCP_AI_Tool_Manage_Imaging_Studies'  => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+				'WP_MCP_AI_Tool_Interpret_Imaging_Study' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-interpret-imaging-study.php',
 				// Phase D — DICOMweb depth.
 				'WP_MCP_AI_Tool_Connect_DICOMweb'        => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-connect-dicomweb.php',
 				'WP_MCP_AI_Tool_Import_DICOM_Study'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-import-dicom-study.php',
@@ -1285,10 +1285,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add WooCommerce tools if enabled.
 		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {
 			$woo_tools = array(
-				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
-				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
-				'WP_MCP_AI_Pro_Tool_Woo_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
-				'WP_MCP_AI_Pro_Tool_Woo_Coupons'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-coupons.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-products.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-orders.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Customers' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-customers.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Coupons'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-woo-coupons.php',
 				'WP_MCP_AI_Tool_Research_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/research/class-wp-mcp-ai-tool-research-product.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $woo_tools );
@@ -1298,38 +1298,38 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// The tools themselves validate the connection at execution time.
 		// Load the shared Shopify connection resolver trait.
 		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Connection_Resolver' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-connection-resolver.php';
 		}
 		// Load the smart search trait for progressive query relaxation.
 		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Smart_Search' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-smart-search.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-smart-search.php';
 		}
 		$shopify_tools = array(
 			'WP_MCP_AI_Tool_Remote_Shopify_Connection' => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-shopify-connection.php',
-			'WP_MCP_AI_Pro_Tool_Shopify_Products'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
-			'WP_MCP_AI_Pro_Tool_Shopify_Orders'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
-			'WP_MCP_AI_Pro_Tool_Shopify_Customers'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
-			'WP_MCP_AI_Pro_Tool_Shopify_Inventory'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
-			'WP_MCP_AI_Pro_Tool_Shopify_Catalog'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-catalog.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Products'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-products.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Orders'        => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-orders.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Customers'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-customers.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Inventory'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Catalog'       => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-catalog.php',
 		);
 		$pro_tools     = array_merge( $pro_tools, $shopify_tools );
 
 		// Add JetEngine tools if enabled.
 		if ( ! empty( $settings['enable_jetengine_tools'] ) ) {
 			$jetengine_tools = array(
-				'WP_MCP_AI_Pro_Tool_JetEngine' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine.php',
 			);
 			$pro_tools       = array_merge( $pro_tools, $jetengine_tools );
 
 			// JetEngine 3.8+ MCP Server tools.
 			$jetengine_mcp_tools = array(
-				'WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php',
-				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-post-type.php',
-				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-taxonomy.php',
-				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-meta-field.php',
-				'WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-manage-relations.php',
-				'WP_MCP_AI_Pro_Tool_JetEngine_Site_Context' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-site-context.php',
-				'WP_MCP_AI_Pro_Tool_JetEngine_Prompts'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-prompts.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-create-post-type.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-create-taxonomy.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-create-meta-field.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-manage-relations.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Site_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-site-context.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Prompts'    => WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/class-wp-mcp-ai-pro-tool-jetengine-prompts.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $jetengine_mcp_tools );
 		}
@@ -1337,7 +1337,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Elementor tools if enabled.
 		if ( ! empty( $settings['enable_elementor_widgets'] ) ) {
 			$elementor_tools = array(
-				'WP_MCP_AI_Pro_Tool_Elementor' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
+				'WP_MCP_AI_Pro_Tool_Elementor' => WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/class-wp-mcp-ai-pro-tool-elementor.php',
 			);
 			$pro_tools       = array_merge( $pro_tools, $elementor_tools );
 		}

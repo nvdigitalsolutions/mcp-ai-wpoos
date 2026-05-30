@@ -39,7 +39,7 @@ class Test_Google_Service_Account_Helper extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Pro addon not available' );
 		}
 
-		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+		$path = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 
 		if ( ! file_exists( $path ) ) {
 			$this->markTestSkipped( 'Google Service Account class not found at ' . $path );

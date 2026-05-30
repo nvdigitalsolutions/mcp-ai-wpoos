@@ -28,4 +28,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-toolkit-init.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/init.php';

@@ -18,10 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Load CPT classes.
-require_once __DIR__ . '/class-wp-mcp-ai-architectural-project-cpt.php';
-require_once __DIR__ . '/class-wp-mcp-ai-architectural-drawing-cpt.php';
-require_once __DIR__ . '/class-wp-mcp-ai-architectural-specification-cpt.php';
-require_once __DIR__ . '/class-wp-mcp-ai-architectural-precedent-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-project-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-drawing-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-specification-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-architectural-precedent-cpt.php';
 
 // Initialize CPTs - they have their own checks for enabled/base version.
 WP_MCP_AI_Architectural_Project_CPT::init();
@@ -39,18 +39,18 @@ if ( is_admin() ) {
 
 	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		// Load Project Settings and Research & Add pages (under Design Projects menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-settings-page.php';
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-project-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-project-research-page.php';
 		WP_MCP_AI_Architectural_Project_Research_Page::init();
 
 		// Load Drawing Settings and Research & Add pages (under Drawings menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-settings-page.php';
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-drawing-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-drawing-research-page.php';
 		WP_MCP_AI_Architectural_Drawing_Research_Page::init();
 
 		// Load Specification Settings and Research & Add pages (under Specifications menu).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-settings-page.php';
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-specification-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-specification-research-page.php';
 		WP_MCP_AI_Architectural_Specification_Research_Page::init();
 	}
 }
@@ -71,9 +71,9 @@ function wp_mcp_ai_init_architectural_design_admin() {
 	}
 
 	// Load metabox classes.
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-metabox.php';
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-metabox.php';
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-metabox.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-project-metabox.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-drawing-metabox.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-specification-metabox.php';
 
 	// Initialize metaboxes.
 	WP_MCP_AI_Architectural_Project_Metabox::init();

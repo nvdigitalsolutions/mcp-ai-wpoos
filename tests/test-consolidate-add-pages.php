@@ -298,7 +298,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Pro addon not available' );
 		}
 
-		$init_file = WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
+		$init_file = WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/init.php';
 		if ( ! file_exists( $init_file ) ) {
 			$this->markTestSkipped( 'project-management-init.php not found' );
 		}
@@ -379,7 +379,7 @@ class Test_Consolidate_Add_Pages extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Pro addon not available' );
 		}
 
-		$init_file = WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
+		$init_file = WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
 		if ( ! file_exists( $init_file ) ) {
 			$this->markTestSkipped( 'media-toolkit-init.php not found' );
 		}
