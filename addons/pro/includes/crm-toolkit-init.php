@@ -139,6 +139,23 @@ if ( $is_enabled && ! $is_base ) {
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/crm/.
 	// Upwork sub-tools are in: addons/pro/includes/tools/crm/upwork/.
+
+	// ---- Phase C: Chat channel message → CRM inbound pipeline listener ----
+	add_action( 'wp_mcp_ai_chat_channel_message_received', 'wp_mcp_ai_crm_handle_chat_channel_message', 10, 6 );
+
+	// ---- Phase C: IMAP polling job (stub — see class-wp-mcp-ai-crm-imap-listener.php) ----
+	$_imap_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-imap-listener.php';
+	if ( file_exists( $_imap_file ) ) {
+		require_once $_imap_file;
+		WP_MCP_AI_CRM_IMAP_Listener::maybe_schedule();
+	}
+
+	// ---- Phase C: Web form → CRM lead pipeline listener ----
+	$_webform_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-web-form-listener.php';
+	if ( file_exists( $_webform_file ) ) {
+		require_once $_webform_file;
+		WP_MCP_AI_CRM_Web_Form_Listener::init();
+	}
 }
 
 /**
@@ -169,3 +186,50 @@ function wp_mcp_ai_enqueue_crm_toolkit_admin_styles() {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_crm_toolkit_admin_styles' );
+
+/**
+ * Handle an inbound chat channel message by routing it to the CRM evaluation pipeline.
+ *
+ * Hooks into 'wp_mcp_ai_chat_channel_message_received' fired by
+ * WP_MCP_AI_Channel_Messages_CCT::insert() for every inbound message.
+ *
+ * @since 2.3.0
+ *
+ * @param int    $message_id        Row ID of the persisted message.
+ * @param string $channel           Channel slug (whatsapp, telegram, etc.).
+ * @param string $channel_contact_id Platform-side contact/user ID.
+ * @param string $contact_name      Display name of the sender.
+ * @param string $content           Message body.
+ * @param string $message_type      Message type (text, image, etc.).
+ */
+function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type ) {
+	// Only process text messages.
+	if ( 'text' !== $message_type ) {
+		return;
+	}
+
+	// Bail if the evaluate_inbound_message tool class isn't loaded.
+	$_tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php';
+	if ( ! file_exists( $_tool_file ) ) {
+		return;
+	}
+	require_once $_tool_file;
+
+	if ( ! class_exists( 'WP_MCP_AI_Tool_Evaluate_Inbound_Message' ) ) {
+		return;
+	}
+
+	// Build arguments for evaluate_inbound_message.
+	$arguments = array(
+		'channel'            => $channel,
+		'channel_contact_id' => $channel_contact_id,
+		'sender_name'        => $contact_name,
+		'message_body'       => $content,
+		'message_id'         => $message_id,
+		'source'             => 'chat_channel',
+	);
+
+	$tool    = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
+	$context = array( 'user_id' => 0 ); // System-initiated, no user context.
+	$tool->execute( $arguments, $context );
+}

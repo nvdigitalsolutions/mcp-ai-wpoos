@@ -62,6 +62,22 @@ class WP_MCP_AI_Tool_Simulate_Workflow_Rule implements WP_MCP_AI_Tool_Interface,
 			'would_match' => $would_match,
 			'actions'     => array(),
 		);
+
+		/**
+		 * Fires when a CRM workflow rule's conditions match and actions
+		 * are about to be dispatched (simulated or real).
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param int    $rule_id   The workflow rule post ID.
+		 * @param string $trigger   The trigger type slug.
+		 * @param array  $actions   The actions to be dispatched.
+		 * @param array  $arguments Original tool arguments (context).
+		 * @param bool   $is_active Whether the rule is active.
+		 * @param bool   $simulated Whether this is a dry-run.
+		 */
+		do_action( 'wp_mcp_ai_crm_workflow_trigger', $rule_id, $trigger, $actions, $arguments, $is_active, true );
+
 		if ( $would_match && $is_active ) {
 			foreach ( $actions as $a ) {
 				$result['actions'][] = array(

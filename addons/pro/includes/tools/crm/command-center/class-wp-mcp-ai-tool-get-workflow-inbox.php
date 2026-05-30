@@ -153,6 +153,19 @@ class WP_MCP_AI_Tool_Get_Workflow_Inbox implements WP_MCP_AI_Tool_Interface, WP_
 		$total                = array_sum( array_column( $inbox['sections'], 'count' ) );
 		$inbox['total_items'] = $total;
 		$inbox['message']     = $total > 0 ? sprintf( __( '%d items need your attention.', 'mcp-ai-wpoos-pro' ), $total ) : __( 'Inbox is clear — great job!', 'mcp-ai-wpoos-pro' );
+
+		/**
+		 * Filter the command center inbox response, allowing addons to inject
+		 * custom widget sections into the inbox payload.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param array $inbox     The inbox array with keys: sections, total_items, message.
+		 * @param array $arguments Original tool arguments.
+		 * @param array $context   Execution context (user_id, etc.).
+		 */
+		$inbox = apply_filters( 'wp_mcp_ai_crm_command_center_widgets', $inbox, $arguments, $context );
+
 		return array_merge( array( 'success' => true ), $inbox );
 	}
 }
