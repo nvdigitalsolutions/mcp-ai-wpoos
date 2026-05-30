@@ -200,4 +200,4 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 }
 
 // Register the handler with the Schedule Manager.
-add_action( self::JOB_HOOK, array( 'WP_MCP_AI_CRM_IMAP_Listener', 'poll' ) );
+add_action( WP_MCP_AI_CRM_IMAP_Listener::JOB_HOOK, array( 'WP_MCP_AI_CRM_IMAP_Listener', 'poll' ) );
