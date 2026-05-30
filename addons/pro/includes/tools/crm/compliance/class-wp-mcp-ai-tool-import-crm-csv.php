@@ -6,17 +6,35 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 class WP_MCP_AI_Tool_Import_CRM_Csv implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function is_available() {
 		$s = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $s['enable_crm_toolkit'] ); }
+	/**
+	 * {@inheritdoc}
+	 */
 	public static function get_unavailable_reason() {
 		return __( 'CRM Toolkit required.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
 		return 'import_crm_csv'; }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
 		return __( 'Import CRM CSV', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
 		return __( 'Bulk import leads from CSV data with field mapping, deduplication by email, and dry-run preview.', 'mcp-ai-wpoos-pro' ); }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -47,12 +65,24 @@ class WP_MCP_AI_Tool_Import_CRM_Csv implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			),
 			'required'   => array( 'csv_data' ),
 		); }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts'; }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
 		return true; }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'requires-capability' ); }
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() ); }

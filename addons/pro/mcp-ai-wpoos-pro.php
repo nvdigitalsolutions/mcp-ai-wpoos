@@ -411,9 +411,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 				new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
 
 				// Phase 7 — dedicated admin page for Toolkit MCP Server management.
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
-				new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
-			}
+						require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
+						new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
+					}
+
+					// Unified Blueprints Browser — browse and install curated assistants from all toolkits.
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-unified-blueprints-page.php';
+					WP_MCP_AI_Unified_Blueprints_Page::init();
 
 			// WebLLM settings page has been moved to the NV oOS Embedded addon.
 

@@ -107,8 +107,10 @@ class WP_MCP_AI_Blueprint_Installer {
 	 * @return array|WP_Error      Success envelope or WP_Error.
 	 */
 	public static function install( array $data, $blueprint_slug, $overwrite = false ) {
-		// ── Resolve post data from either format ──
-		if ( isset( $data['post_title'] ) ) {
+			// ── Resolve post data from either format ──
+			$is_healthcare_style = isset( $data['post_title'] );
+
+		if ( $is_healthcare_style ) {
 			// Healthcare-style: direct WordPress post fields.
 			$post_title   = $data['post_title'];
 			$post_content = $data['post_content'] ?? '';
@@ -116,23 +118,28 @@ class WP_MCP_AI_Blueprint_Installer {
 			$meta_input   = $data['meta_input'] ?? array();
 		} else {
 			// CRM-style: abstracted blueprint.
-			$post_title   = $data['name'] ?? ucwords( str_replace( '-', ' ', $blueprint_slug ) );
-			$post_content = $data['description'] ?? '';
+			$raw_meta   = $data['meta'] ?? array();
+			$post_title = $data['name'] ?? ucwords( str_replace( '-', ' ', $blueprint_slug ) );
+			// Use instructions as post_content when available (more useful than description).
+			$post_content = ! empty( $raw_meta['instructions'] )
+				? $raw_meta['instructions']
+				: ( $data['description'] ?? '' );
 			$post_status  = 'publish';
-			$meta_input   = $data['meta'] ?? array();
+			// Build canonical meta from the abstracted CRM fields.
+			$meta_input = self::remap_crm_meta_to_canonical( $raw_meta );
 		}
 
-		// Use WP_Query instead of deprecated get_page_by_title().
-		$existing_query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_assistant',
-				'title'          => $post_title,
-				'posts_per_page' => 1,
-				'post_status'    => 'any',
-				'no_found_rows'  => true,
-			)
-		);
-		$existing_id    = $existing_query->have_posts() ? $existing_query->posts[0]->ID : 0;
+			// Use WP_Query instead of deprecated get_page_by_title().
+			$existing_query = new WP_Query(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'title'          => $post_title,
+					'posts_per_page' => 1,
+					'post_status'    => 'any',
+					'no_found_rows'  => true,
+				)
+			);
+		$existing_id        = $existing_query->have_posts() ? $existing_query->posts[0]->ID : 0;
 		wp_reset_postdata();
 
 		if ( $existing_id ) {
@@ -188,31 +195,45 @@ class WP_MCP_AI_Blueprint_Installer {
 			}
 		}
 
-		// Always store the blueprint source slug.
-		update_post_meta( $assistant_id, '_blueprint_source', sanitize_key( $blueprint_slug ) );
+			// For CRM-style blueprints, also persist the raw abstracted meta keys
+			// so that the blueprints page and future reads have access to the
+			// original fields (channels, framework, auto_reply_enabled, etc.).
+		if ( ! $is_healthcare_style && ! empty( $data['meta'] ) ) {
+			foreach ( $data['meta'] as $key => $value ) {
+				$sanitised_key = sanitize_key( $key );
+				// Don't overwrite canonical keys that were already written above.
+				if ( 0 === strpos( $sanitised_key, '_wp_mcp_ai_' ) || 0 === strpos( $sanitised_key, 'mcp_ai_' ) ) {
+					continue;
+				}
+				update_post_meta( $assistant_id, $sanitised_key, $value );
+			}
+		}
 
-		/**
-		 * Fires after a blueprint has been installed.
-		 *
-		 * @since 2.3.0
-		 *
-		 * @param int    $assistant_id   The assistant post ID.
-		 * @param string $blueprint_slug The blueprint slug that was installed.
-		 * @param array  $data           The parsed blueprint JSON data.
-		 */
-		do_action( 'wp_mcp_ai_blueprint_installed', $assistant_id, $blueprint_slug, $data );
+			// Always store the blueprint source slug.
+			update_post_meta( $assistant_id, '_blueprint_source', sanitize_key( $blueprint_slug ) );
 
-		return array(
-			'success'      => true,
-			'message'      => sprintf(
-				/* translators: 1: blueprint name, 2: assistant ID */
-				__( 'Blueprint "%1$s" imported as assistant #%2$d.', 'mcp-ai-wpoos-pro' ),
-				$post_title,
-				$assistant_id
-			),
-			'blueprint'    => $blueprint_slug,
-			'assistant_id' => $assistant_id,
-		);
+			/**
+			* Fires after a blueprint has been installed.
+			*
+			* @since 2.3.0
+			*
+			* @param int    $assistant_id   The assistant post ID.
+			* @param string $blueprint_slug The blueprint slug that was installed.
+			* @param array  $data           The parsed blueprint JSON data.
+			*/
+			do_action( 'wp_mcp_ai_blueprint_installed', $assistant_id, $blueprint_slug, $data );
+
+			return array(
+				'success'      => true,
+				'message'      => sprintf(
+					/* translators: 1: blueprint name, 2: assistant ID */
+					__( 'Blueprint "%1$s" imported as assistant #%2$d.', 'mcp-ai-wpoos-pro' ),
+					$post_title,
+					$assistant_id
+				),
+				'blueprint'    => $blueprint_slug,
+				'assistant_id' => $assistant_id,
+			);
 	}
 
 	/**
@@ -243,6 +264,151 @@ class WP_MCP_AI_Blueprint_Installer {
 
 		sort( $slugs );
 		return $slugs;
+	}
+
+	/**
+	 * Remap CRM-style abstracted blueprint meta fields to canonical
+	 * WordPress post meta keys that the assistant system reads.
+	 *
+	 * CRM blueprints use abstracted keys like `available_tools` and
+	 * `instructions`. The assistant CPT stores these under canonical
+	 * meta keys (`_wp_mcp_ai_tools`, `_wp_mcp_ai_system_prompt`, etc.).
+	 * This method translates between the two schemas and also injects
+	 * sensible defaults for provider / model / temperature from the
+	 * plugin settings when the blueprint doesn't supply them.
+	 *
+	 * @since  2.3.1
+	 *
+	 * @param  array $raw_meta The `meta` block from a CRM-style blueprint JSON.
+	 * @return array           Canonical meta key→value pairs.
+	 */
+	private static function remap_crm_meta_to_canonical( array $raw_meta ) {
+		$canonical = array();
+
+		// ── Tools ──
+		if ( ! empty( $raw_meta['available_tools'] ) && is_array( $raw_meta['available_tools'] ) ) {
+			$canonical['_wp_mcp_ai_tools'] = array_map( 'sanitize_key', $raw_meta['available_tools'] );
+		}
+
+		// ── System prompt ──
+		if ( ! empty( $raw_meta['instructions'] ) ) {
+			$canonical['_wp_mcp_ai_system_prompt'] = wp_strip_all_tags( $raw_meta['instructions'] );
+		}
+
+		// ── Required capability ──
+		if ( ! empty( $raw_meta['required_capability'] ) ) {
+			$canonical['mcp_ai_required_capability'] = sanitize_key( $raw_meta['required_capability'] );
+		} else {
+			$canonical['mcp_ai_required_capability'] = 'edit_posts';
+		}
+
+		// ── Profession → primary roles lookup ──
+		if ( ! empty( $raw_meta['profession'] ) ) {
+			$profession_post_id = self::find_profession_post_id( $raw_meta['profession'] );
+			if ( $profession_post_id ) {
+				$canonical['_wp_mcp_ai_primary_roles'] = array( $profession_post_id );
+			}
+		}
+
+		// ── Provider / model / temperature defaults from plugin settings ──
+		$settings         = get_option( 'wp_mcp_ai_settings', array() );
+		$default_provider = ! empty( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
+		$default_model    = self::resolve_default_model( $settings, $default_provider );
+		$default_temp     = isset( $settings['default_temperature'] ) ? floatval( $settings['default_temperature'] ) : 0.7;
+
+		$canonical['_wp_mcp_ai_provider']    = sanitize_key( $default_provider );
+		$canonical['_wp_mcp_ai_model']       = sanitize_text_field( $default_model );
+		$canonical['_wp_mcp_ai_temperature'] = $default_temp;
+
+		return $canonical;
+	}
+
+	/**
+	 * Look up a profession post ID by its slug or title.
+	 *
+	 * The CRM blueprint `profession` field contains a machine-readable
+	 * slug (e.g. "business_development", "sdr"). We match against the
+	 * post_name of mcp_ai_profession posts, falling back to a title search.
+	 *
+	 * @since  2.3.1
+	 *
+	 * @param  string $profession_slug Profession identifier from the blueprint.
+	 * @return int|null                Profession post ID or null if not found.
+	 */
+	private static function find_profession_post_id( $profession_slug ) {
+		if ( ! post_type_exists( 'mcp_ai_profession' ) ) {
+			return null;
+		}
+
+		// Try exact post_name match first.
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'name'           => sanitize_title( $profession_slug ),
+				'posts_per_page' => 1,
+				'post_status'    => 'publish',
+				'no_found_rows'  => true,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( $query->have_posts() ) {
+			$id = $query->posts[0];
+			wp_reset_postdata();
+			return (int) $id;
+		}
+		wp_reset_postdata();
+
+		// Fall back: search by title (case-insensitive LIKE).
+		$readable = ucwords( str_replace( '_', ' ', $profession_slug ) );
+		$query    = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'title'          => $readable,
+				'posts_per_page' => 1,
+				'post_status'    => 'publish',
+				'no_found_rows'  => true,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( $query->have_posts() ) {
+			$id = $query->posts[0];
+			wp_reset_postdata();
+			return (int) $id;
+		}
+		wp_reset_postdata();
+
+		return null;
+	}
+
+	/**
+	 * Resolve the default model for a given provider from saved settings.
+	 *
+	 * @since  2.3.1
+	 *
+	 * @param  array  $settings Saved plugin settings.
+	 * @param  string $provider Provider slug.
+	 * @return string           Model identifier.
+	 */
+	private static function resolve_default_model( $settings, $provider ) {
+		if ( ! empty( $settings['default_model'] ) ) {
+			return $settings['default_model'];
+		}
+
+		$fallbacks = array(
+			'openai'      => 'gpt-4.1',
+			'anthropic'   => 'claude-sonnet-4-6',
+			'gemini'      => 'gemini-3.5-flash',
+			'ollama'      => 'llama4',
+			'lm_studio'   => 'local',
+			'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
+			'huggingface' => 'meta-llama/Llama-4-8B-Instruct',
+			'deepseek'    => 'deepseek-v4-pro',
+			'embedded'    => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+		);
+
+		return isset( $fallbacks[ $provider ] ) ? $fallbacks[ $provider ] : 'gpt-4.1';
 	}
 
 	/**

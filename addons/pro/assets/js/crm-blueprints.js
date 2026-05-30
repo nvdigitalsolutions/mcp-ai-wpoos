@@ -166,6 +166,9 @@
 					if ( bp.defaults ) {
 						html += '<h4 style="margin: 12px 0 4px;">' + config.i18n.defaults + '</h4>';
 						html += '<div style="font-size: 12px; color: #646970;">';
+						if ( bp.defaults.provider ) {
+							html += 'Provider: <strong>' + escHtml( bp.defaults.provider ) + '</strong><br>';
+						}
 						if ( bp.defaults.model ) {
 							html += config.i18n.model + ': <strong>' + escHtml( bp.defaults.model ) + '</strong><br>';
 						}
@@ -174,6 +177,19 @@
 						}
 						if ( bp.defaults.max_tokens ) {
 							html += config.i18n.maxTokens + ': <strong>' + escHtml( bp.defaults.max_tokens ) + '</strong><br>';
+						}
+						if ( bp.defaults.profession ) {
+							html += 'Profession: <strong>' + escHtml( bp.defaults.profession ) + '</strong><br>';
+						}
+						if ( bp.defaults.framework ) {
+							html += 'Framework: <strong>' + escHtml( bp.defaults.framework.toUpperCase() ) + '</strong><br>';
+						}
+						if ( bp.defaults.channels && bp.defaults.channels.length ) {
+							html += 'Channels: ';
+							$.each( bp.defaults.channels, function ( i, ch ) {
+								html += '<span class="crm-bp-tag" style="font-size: 11px;">' + escHtml( ch ) + '</span> ';
+							} );
+							html += '<br>';
 						}
 						html += '</div>';
 					}

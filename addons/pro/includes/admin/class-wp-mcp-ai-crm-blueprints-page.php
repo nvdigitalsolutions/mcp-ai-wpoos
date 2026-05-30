@@ -163,10 +163,10 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 			'wp-mcp-ai-crm-blueprints',
 			'wpMcpAiCrmBlueprints',
 			array(
-				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-				'editUrl'  => admin_url( 'post.php?action=edit&post=0' ),
-				'nonce'    => wp_create_nonce( 'wp_mcp_ai_crm_bp' ),
-				'i18n'     => array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'editUrl' => admin_url( 'post.php?action=edit&post=0' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_crm_bp' ),
+				'i18n'    => array(
 					'installing'    => __( 'Installing...', 'mcp-ai-wpoos-pro' ),
 					'installed'     => __( 'Installed!', 'mcp-ai-wpoos-pro' ),
 					'error'         => __( 'Error installing blueprint.', 'mcp-ai-wpoos-pro' ),
@@ -197,14 +197,15 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$blueprints    = self::get_all_blueprints();
-		$installed     = self::get_installed_blueprints();
+		$blueprints = self::get_all_blueprints();
+		$installed  = self::get_installed_blueprints();
 
 		// Handle non-AJAX install (fallback).
 		if ( isset( $_POST['wp_mcp_ai_crm_install_blueprint'] ) ) {
 			check_admin_referer( 'wp_mcp_ai_crm_bp' );
-			$result = self::install_blueprint(
-				sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ),
+			$bp_slug = isset( $_POST['blueprint_slug'] ) ? sanitize_key( wp_unslash( $_POST['blueprint_slug'] ) ) : '';
+			$result  = self::install_blueprint(
+				$bp_slug,
 				! empty( $_POST['overwrite'] )
 			);
 			if ( is_wp_error( $result ) ) {
@@ -294,7 +295,7 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 			return array();
 		}
 
-		$slugs = WP_MCP_AI_Blueprint_Installer::list_blueprints( self::BLUEPRINTS_DIR );
+		$slugs  = WP_MCP_AI_Blueprint_Installer::list_blueprints( self::BLUEPRINTS_DIR );
 		$result = array();
 
 		foreach ( $slugs as $slug ) {
@@ -316,12 +317,12 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 	private static function get_installed_blueprints() {
 		$posts = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_assistant',
-				'post_status'    => 'any',
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
-				'meta_key'       => '_blueprint_source',
-				'meta_compare'   => 'EXISTS',
+				'post_type'        => 'mcp_ai_assistant',
+				'post_status'      => 'any',
+				'posts_per_page'   => -1,
+				'fields'           => 'ids',
+				'meta_key'         => '_blueprint_source', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+					'meta_compare' => 'EXISTS',
 			)
 		);
 
@@ -420,15 +421,56 @@ class WP_MCP_AI_CRM_Blueprints_Page {
 			wp_send_json_error( array( 'message' => $data->get_error_message() ) );
 		}
 
-		// Return sanitized subset for frontend display.
-		$result = array(
-			'name'         => $data['name'] ?? '',
-			'description'  => $data['description'] ?? '',
-			'instructions' => $data['instructions'] ?? '',
-			'tools'        => $data['tools'] ?? array(),
-			'defaults'     => $data['defaults'] ?? null,
-		);
+			// Blueprint fields may be at the top level (healthcare-style)
+			// or nested inside `meta` (CRM-style). Normalise to a flat
+			// structure before building the response.
+			$meta = $data['meta'] ?? $data['meta_input'] ?? array();
 
-		wp_send_json_success( $result );
+			// CRM-style instructions are in meta.instructions;
+			// healthcare-style uses post_content / meta_input._wp_mcp_ai_system_prompt.
+			$instructions = $meta['instructions']
+				?? $meta['_wp_mcp_ai_system_prompt']
+				?? $data['post_content']
+				?? $data['instructions']
+				?? '';
+
+			// CRM-style tools are in meta.available_tools;
+			// healthcare-style uses meta_input._wp_mcp_ai_tools.
+			$tools = $meta['available_tools']
+				?? $meta['_wp_mcp_ai_tools']
+				?? $data['tools']
+				?? array();
+
+			// Build a sensible defaults block for the preview panel.
+			$defaults = array();
+		if ( ! empty( $meta['_wp_mcp_ai_model'] ) ) {
+			$defaults['model'] = $meta['_wp_mcp_ai_model'];
+		}
+		if ( isset( $meta['_wp_mcp_ai_temperature'] ) ) {
+			$defaults['temperature'] = $meta['_wp_mcp_ai_temperature'];
+		}
+		if ( ! empty( $meta['_wp_mcp_ai_provider'] ) ) {
+			$defaults['provider'] = $meta['_wp_mcp_ai_provider'];
+		}
+		if ( ! empty( $meta['profession'] ) ) {
+			$defaults['profession'] = $meta['profession'];
+		}
+		if ( ! empty( $meta['framework'] ) ) {
+			$defaults['framework'] = $meta['framework'];
+		}
+		if ( ! empty( $meta['channels'] ) ) {
+			$defaults['channels'] = $meta['channels'];
+		}
+
+			// Return sanitized subset for frontend display.
+			$result = array(
+				'name'         => $data['name'] ?? $data['post_title'] ?? '',
+				'description'  => $data['description'] ?? $data['post_content'] ?? '',
+				'instructions' => $instructions,
+				'tools'        => is_array( $tools ) ? $tools : array(),
+				'defaults'     => ! empty( $defaults ) ? $defaults : null,
+			);
+
+			wp_send_json_success( $result );
 	}
 }
