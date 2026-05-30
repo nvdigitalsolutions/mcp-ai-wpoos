@@ -6,6 +6,9 @@
  * panel dimensions, style presets, and export options for the Comic
  * Creation Toolkit.
  *
+ * Now extends WP_MCP_AI_Toolkit_Settings_Base for a consistent tabbed
+ * interface with full MCP Server configuration.
+ *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
@@ -16,301 +19,59 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load base class from image production for pattern reference.
-// The CPT settings base is already available.
-require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
+// Load base class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settings-base.php';
 
 /**
  * Comic Creation Settings Page
+ *
+ * @since 2.0.0
  */
-class WP_MCP_AI_Comic_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
+class WP_MCP_AI_Comic_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 	/**
 	 * Constructor.
+	 *
+	 * @since 2.0.0
 	 */
 	public function __construct() {
-		$this->option_name = 'wp_mcp_ai_comic_creation_settings';
-		$this->post_type   = 'mcp_ai_comic';
-		$this->page_title  = __( 'Comic Creation Settings', 'mcp-ai-wpoos-pro' );
-		$this->menu_title  = __( 'Comic Settings', 'mcp-ai-wpoos-pro' );
-		$this->page_slug   = 'comic-creation-settings';
+		$this->toolkit_slug  = 'comic_creation'; // Kebab-converts to 'comic-creation' for MCP server lookup.
+		$this->toolkit_name  = __( 'Comic Creation', 'mcp-ai-wpoos-pro' );
+		$this->option_name   = 'wp_mcp_ai_comic_creation_settings';
+		$this->page_slug     = 'comic-creation-settings';
+		$this->icon          = 'dashicons-format-image';
+		$this->has_research  = true;
 
-		// Call parent constructor to set up hooks.
 		parent::__construct();
 	}
 
 	/**
-	 * Add settings submenu page.
+	 * Get toolkit slug.
+	 *
+	 * @return string
 	 */
-	public function add_settings_page() {
-		add_submenu_page(
-			'edit.php?post_type=mcp_ai_comic',
-			$this->page_title,
-			$this->menu_title,
-			'manage_options',
-			$this->page_slug,
-			array( $this, 'render_settings_page' )
-		);
+	protected function get_toolkit_slug() {
+		return $this->toolkit_slug;
 	}
 
 	/**
-	 * Register settings.
+	 * Get toolkit name.
+	 *
+	 * @return string
 	 */
-	public function register_settings() {
-		// Call parent to register base fields (assistant).
-		parent::register_settings();
-
-		// Add comic creation-specific settings.
-		add_settings_field(
-			'default_comic_style',
-			__( 'Default Comic Style', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_default_comic_style_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'default_panel_dimensions',
-			__( 'Default Panel Dimensions', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_default_panel_dimensions_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'default_image_generator',
-			__( 'Default Image Generator', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_default_image_generator_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'default_export_format',
-			__( 'Default Export Format', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_default_export_format_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'speech_bubble_defaults',
-			__( 'Speech Bubble Defaults', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_speech_bubble_defaults_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'enable_research',
-			__( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_enable_research_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'default_page_layout',
-			__( 'Default Page Layout', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_default_page_layout_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'enable_mime_types',
-			__( 'Allow Comic File Uploads', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_enable_mime_types_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-	}
-
-	/**
-	 * Render default comic style field.
-	 */
-	public function render_default_comic_style_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['default_comic_style'] ) ? $options['default_comic_style'] : 'american-comic';
-
-		?>
-		<select name="<?php echo esc_attr( $this->option_name ); ?>[default_comic_style]" class="regular-text">
-			<option value="american-comic" <?php selected( $value, 'american-comic' ); ?>><?php esc_html_e( 'American Comic', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="manga" <?php selected( $value, 'manga' ); ?>><?php esc_html_e( 'Manga', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="webtoon" <?php selected( $value, 'webtoon' ); ?>><?php esc_html_e( 'Webtoon (Vertical Scroll)', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="graphic-novel" <?php selected( $value, 'graphic-novel' ); ?>><?php esc_html_e( 'Graphic Novel', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="comic-strip" <?php selected( $value, 'comic-strip' ); ?>><?php esc_html_e( 'Comic Strip', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="noir" <?php selected( $value, 'noir' ); ?>><?php esc_html_e( 'Noir (B&W)', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="silver-age" <?php selected( $value, 'silver-age' ); ?>><?php esc_html_e( 'Silver Age (Retro)', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="euro-comic" <?php selected( $value, 'euro-comic' ); ?>><?php esc_html_e( 'European Comic', 'mcp-ai-wpoos-pro' ); ?></option>
-		</select>
-		<p class="description"><?php esc_html_e( 'Default art style applied to newly created comics', 'mcp-ai-wpoos-pro' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Render default panel dimensions field.
-	 */
-	public function render_default_panel_dimensions_field() {
-		$options = get_option( $this->option_name, array() );
-		$width   = isset( $options['default_panel_width'] ) ? absint( $options['default_panel_width'] ) : 800;
-		$height  = isset( $options['default_panel_height'] ) ? absint( $options['default_panel_height'] ) : 1200;
-
-		?>
-		<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_panel_width]" value="<?php echo esc_attr( $width ); ?>" min="256" max="2048" class="small-text" />
-		<span>×</span>
-		<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_panel_height]" value="<?php echo esc_attr( $height ); ?>" min="256" max="2048" class="small-text" />
-		<span>px</span>
-		<p class="description"><?php esc_html_e( 'Default dimensions for AI-generated comic panels (width × height). Webtoon style uses 800×2000.', 'mcp-ai-wpoos-pro' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Render default image generator field.
-	 */
-	public function render_default_image_generator_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['default_image_generator'] ) ? $options['default_image_generator'] : 'dalle';
-
-		?>
-		<select name="<?php echo esc_attr( $this->option_name ); ?>[default_image_generator]" class="regular-text">
-			<option value="dalle" <?php selected( $value, 'dalle' ); ?>>DALL-E</option>
-			<option value="midjourney" <?php selected( $value, 'midjourney' ); ?>>Midjourney</option>
-			<option value="stable_diffusion" <?php selected( $value, 'stable_diffusion' ); ?>>Stable Diffusion</option>
-		</select>
-		<p class="description"><?php esc_html_e( 'Default AI service for comic panel image generation', 'mcp-ai-wpoos-pro' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Render default export format field.
-	 */
-	public function render_default_export_format_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['default_export_format'] ) ? $options['default_export_format'] : 'cbz';
-
-		?>
-		<select name="<?php echo esc_attr( $this->option_name ); ?>[default_export_format]" class="regular-text">
-			<option value="cbz" <?php selected( $value, 'cbz' ); ?>>CBZ (ZIP Archive — Recommended)</option>
-			<option value="cbr" <?php selected( $value, 'cbr' ); ?>>CBR (RAR Archive — Legacy)</option>
-		</select>
-		<p class="description"><?php esc_html_e( 'Default format for exporting completed comics. CBZ is the open standard.', 'mcp-ai-wpoos-pro' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Render speech bubble defaults field.
-	 */
-	public function render_speech_bubble_defaults_field() {
-		$options    = get_option( $this->option_name, array() );
-		$font       = isset( $options['speech_bubble_font'] ) ? $options['speech_bubble_font'] : 'ComicSans';
-		$font_color = isset( $options['speech_bubble_font_color'] ) ? $options['speech_bubble_font_color'] : '#000000';
-		$bg_color   = isset( $options['speech_bubble_bg_color'] ) ? $options['speech_bubble_bg_color'] : '#FFFFFF';
-
-		?>
-		<table class="form-table" style="margin:0; padding:0;">
-			<tr>
-				<td style="padding:2px 10px 2px 0;"><label for="speech_bubble_font"><?php esc_html_e( 'Font', 'mcp-ai-wpoos-pro' ); ?></label></td>
-				<td style="padding:2px 0;">
-					<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[speech_bubble_font]" id="speech_bubble_font" value="<?php echo esc_attr( $font ); ?>" class="regular-text" />
-				</td>
-			</tr>
-			<tr>
-				<td style="padding:2px 10px 2px 0;"><label for="speech_bubble_font_color"><?php esc_html_e( 'Text Color', 'mcp-ai-wpoos-pro' ); ?></label></td>
-				<td style="padding:2px 0;">
-					<input type="color" name="<?php echo esc_attr( $this->option_name ); ?>[speech_bubble_font_color]" id="speech_bubble_font_color" value="<?php echo esc_attr( $font_color ); ?>" />
-				</td>
-			</tr>
-			<tr>
-				<td style="padding:2px 10px 2px 0;"><label for="speech_bubble_bg_color"><?php esc_html_e( 'Bubble Color', 'mcp-ai-wpoos-pro' ); ?></label></td>
-				<td style="padding:2px 0;">
-					<input type="color" name="<?php echo esc_attr( $this->option_name ); ?>[speech_bubble_bg_color]" id="speech_bubble_bg_color" value="<?php echo esc_attr( $bg_color ); ?>" />
-				</td>
-			</tr>
-		</table>
-		<p class="description"><?php esc_html_e( 'Default appearance for speech bubbles and captions', 'mcp-ai-wpoos-pro' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Render enable research field.
-	 */
-	public function render_enable_research_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : false;
-
-		?>
-		<label>
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
-				id="enable_research"
-				value="1"
-				<?php checked( $value, true ); ?>
-			/>
-			<?php esc_html_e( 'Enable the Research & Add page for comic creation with AI assistance', 'mcp-ai-wpoos-pro' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'When enabled, users can access the Research & Add page to create comic scripts and panels using AI.', 'mcp-ai-wpoos-pro' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Render default page layout field.
-	 */
-	public function render_default_page_layout_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['default_page_layout'] ) ? $options['default_page_layout'] : 'single';
-
-		?>
-		<select name="<?php echo esc_attr( $this->option_name ); ?>[default_page_layout]" class="regular-text">
-			<option value="single" <?php selected( $value, 'single' ); ?>><?php esc_html_e( 'Single Page', 'mcp-ai-wpoos-pro' ); ?></option>
-			<option value="double" <?php selected( $value, 'double' ); ?>><?php esc_html_e( 'Double Page Spread', 'mcp-ai-wpoos-pro' ); ?></option>
-		</select>
-		<p class="description"><?php esc_html_e( 'Default page viewing mode for new comics', 'mcp-ai-wpoos-pro' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Render enable MIME types field.
-	 */
-	public function render_enable_mime_types_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['enable_mime_types'] ) ? (bool) $options['enable_mime_types'] : true;
-
-		?>
-		<label>
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( $this->option_name ); ?>[enable_mime_types]"
-				id="enable_mime_types"
-				value="1"
-				<?php checked( $value, true ); ?>
-			/>
-			<?php esc_html_e( 'Allow CBR, CBZ, CB7, and CBT comic archive uploads in WordPress Media Library', 'mcp-ai-wpoos-pro' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'Adds comic archive file types to the list of allowed upload MIME types. Disable if your host blocks these formats.', 'mcp-ai-wpoos-pro' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Render section description.
-	 */
-	public function render_section_description() {
-		echo '<p>' . esc_html__( 'Configure the AI assistant and default settings for Comic Creation.', 'mcp-ai-wpoos-pro' ) . '</p>';
+	protected function get_toolkit_name() {
+		return $this->toolkit_name;
 	}
 
 	/**
 	 * Render overview tab.
+	 *
+	 * @since 2.0.0
 	 */
 	protected function render_overview_tab() {
 		?>
 		<div class="toolkit-card">
 			<h2><?php esc_html_e( 'Comic Creation Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
-
 			<p><?php esc_html_e( 'AI-powered comic book creation toolkit for generating scripts, characters, panels, and complete comic books with professional layouts and export.', 'mcp-ai-wpoos-pro' ); ?></p>
 
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -338,38 +99,225 @@ class WP_MCP_AI_Comic_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render configuration tab content.
+	 *
+	 * @since 2.0.0
+	 */
+	protected function render_configuration_tab() {
+		$options = get_option( $this->option_name, array() );
+		$assistant_id  = isset( $options['research_assistant_id'] ) ? absint( $options['research_assistant_id'] ) : 0;
+		$comic_style   = isset( $options['default_comic_style'] ) ? $options['default_comic_style'] : 'american-comic';
+		$panel_width   = isset( $options['default_panel_width'] ) ? absint( $options['default_panel_width'] ) : 800;
+		$panel_height  = isset( $options['default_panel_height'] ) ? absint( $options['default_panel_height'] ) : 1200;
+		$image_gen     = isset( $options['default_image_generator'] ) ? $options['default_image_generator'] : 'dalle';
+		$export_format = isset( $options['default_export_format'] ) ? $options['default_export_format'] : 'cbz';
+		$font          = isset( $options['speech_bubble_font'] ) ? $options['speech_bubble_font'] : 'ComicSans';
+		$font_color    = isset( $options['speech_bubble_font_color'] ) ? $options['speech_bubble_font_color'] : '#000000';
+		$bg_color      = isset( $options['speech_bubble_bg_color'] ) ? $options['speech_bubble_bg_color'] : '#FFFFFF';
+		$page_layout   = isset( $options['default_page_layout'] ) ? $options['default_page_layout'] : 'single';
+		$research_on   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : false;
+		$mime_types_on = isset( $options['enable_mime_types'] ) ? (bool) $options['enable_mime_types'] : true;
+		?>
+		<h2><?php esc_html_e( 'Comic Creation Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
+		<p class="description"><?php esc_html_e( 'Configure the AI assistant and default settings for Comic Creation.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">
+					<label for="research_assistant_id"><?php esc_html_e( 'AI Assistant', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<?php
+					$assistants = get_posts(
+						array(
+							'post_type'      => 'mcp_ai_assistant',
+							'posts_per_page' => -1,
+							'orderby'        => 'title',
+							'order'          => 'ASC',
+						)
+					);
+					?>
+					<select name="<?php echo esc_attr( $this->option_name ); ?>[research_assistant_id]" id="research_assistant_id">
+						<option value="0"><?php esc_html_e( '— Use default assistant —', 'mcp-ai-wpoos-pro' ); ?></option>
+						<?php foreach ( $assistants as $assistant ) : ?>
+							<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $assistant_id, $assistant->ID ); ?>>
+								<?php echo esc_html( $assistant->post_title ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<p class="description"><?php esc_html_e( 'Select the AI assistant to use for comic creation.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label for="default_comic_style"><?php esc_html_e( 'Default Comic Style', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<select name="<?php echo esc_attr( $this->option_name ); ?>[default_comic_style]" id="default_comic_style" class="regular-text">
+						<option value="american-comic" <?php selected( $comic_style, 'american-comic' ); ?>><?php esc_html_e( 'American Comic', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="manga" <?php selected( $comic_style, 'manga' ); ?>><?php esc_html_e( 'Manga', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="webtoon" <?php selected( $comic_style, 'webtoon' ); ?>><?php esc_html_e( 'Webtoon (Vertical Scroll)', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="graphic-novel" <?php selected( $comic_style, 'graphic-novel' ); ?>><?php esc_html_e( 'Graphic Novel', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="comic-strip" <?php selected( $comic_style, 'comic-strip' ); ?>><?php esc_html_e( 'Comic Strip', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="noir" <?php selected( $comic_style, 'noir' ); ?>><?php esc_html_e( 'Noir (B&W)', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="silver-age" <?php selected( $comic_style, 'silver-age' ); ?>><?php esc_html_e( 'Silver Age (Retro)', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="euro-comic" <?php selected( $comic_style, 'euro-comic' ); ?>><?php esc_html_e( 'European Comic', 'mcp-ai-wpoos-pro' ); ?></option>
+					</select>
+					<p class="description"><?php esc_html_e( 'Default art style applied to newly created comics.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label><?php esc_html_e( 'Default Panel Dimensions', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_panel_width]" value="<?php echo esc_attr( $panel_width ); ?>" min="256" max="2048" class="small-text" />
+					<span>×</span>
+					<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[default_panel_height]" value="<?php echo esc_attr( $panel_height ); ?>" min="256" max="2048" class="small-text" />
+					<span>px</span>
+					<p class="description"><?php esc_html_e( 'Default dimensions for AI-generated comic panels (width × height). Webtoon style uses 800×2000.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label for="default_image_generator"><?php esc_html_e( 'Default Image Generator', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<select name="<?php echo esc_attr( $this->option_name ); ?>[default_image_generator]" id="default_image_generator" class="regular-text">
+						<option value="dalle" <?php selected( $image_gen, 'dalle' ); ?>>DALL-E</option>
+						<option value="midjourney" <?php selected( $image_gen, 'midjourney' ); ?>>Midjourney</option>
+						<option value="stable_diffusion" <?php selected( $image_gen, 'stable_diffusion' ); ?>>Stable Diffusion</option>
+					</select>
+					<p class="description"><?php esc_html_e( 'Default AI service for comic panel image generation.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label for="default_export_format"><?php esc_html_e( 'Default Export Format', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<select name="<?php echo esc_attr( $this->option_name ); ?>[default_export_format]" id="default_export_format" class="regular-text">
+						<option value="cbz" <?php selected( $export_format, 'cbz' ); ?>>CBZ (ZIP Archive — Recommended)</option>
+						<option value="cbr" <?php selected( $export_format, 'cbr' ); ?>>CBR (RAR Archive — Legacy)</option>
+					</select>
+					<p class="description"><?php esc_html_e( 'Default format for exporting completed comics. CBZ is the open standard.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label><?php esc_html_e( 'Speech Bubble Defaults', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<table class="form-table" style="margin:0; padding:0;">
+						<tr>
+							<td style="padding:2px 10px 2px 0;"><label for="speech_bubble_font"><?php esc_html_e( 'Font', 'mcp-ai-wpoos-pro' ); ?></label></td>
+							<td style="padding:2px 0;">
+								<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[speech_bubble_font]" id="speech_bubble_font" value="<?php echo esc_attr( $font ); ?>" class="regular-text" />
+							</td>
+						</tr>
+						<tr>
+							<td style="padding:2px 10px 2px 0;"><label for="speech_bubble_font_color"><?php esc_html_e( 'Text Color', 'mcp-ai-wpoos-pro' ); ?></label></td>
+							<td style="padding:2px 0;">
+								<input type="color" name="<?php echo esc_attr( $this->option_name ); ?>[speech_bubble_font_color]" id="speech_bubble_font_color" value="<?php echo esc_attr( $font_color ); ?>" />
+							</td>
+						</tr>
+						<tr>
+							<td style="padding:2px 10px 2px 0;"><label for="speech_bubble_bg_color"><?php esc_html_e( 'Bubble Color', 'mcp-ai-wpoos-pro' ); ?></label></td>
+							<td style="padding:2px 0;">
+								<input type="color" name="<?php echo esc_attr( $this->option_name ); ?>[speech_bubble_bg_color]" id="speech_bubble_bg_color" value="<?php echo esc_attr( $bg_color ); ?>" />
+							</td>
+						</tr>
+					</table>
+					<p class="description"><?php esc_html_e( 'Default appearance for speech bubbles and captions.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row">
+					<label for="default_page_layout"><?php esc_html_e( 'Default Page Layout', 'mcp-ai-wpoos-pro' ); ?></label>
+				</th>
+				<td>
+					<select name="<?php echo esc_attr( $this->option_name ); ?>[default_page_layout]" id="default_page_layout" class="regular-text">
+						<option value="single" <?php selected( $page_layout, 'single' ); ?>><?php esc_html_e( 'Single Page', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="double" <?php selected( $page_layout, 'double' ); ?>><?php esc_html_e( 'Double Page Spread', 'mcp-ai-wpoos-pro' ); ?></option>
+					</select>
+					<p class="description"><?php esc_html_e( 'Default page viewing mode for new comics.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]" id="enable_research" value="1" <?php checked( $research_on, true ); ?> />
+						<?php esc_html_e( 'Enable the Research & Add page for comic creation with AI assistance', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'When enabled, users can access the Research & Add page to create comic scripts and panels using AI.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Comic File Uploads', 'mcp-ai-wpoos-pro' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_mime_types]" id="enable_mime_types" value="1" <?php checked( $mime_types_on, true ); ?> />
+						<?php esc_html_e( 'Allow CBR, CBZ, CB7, and CBT comic archive uploads in WordPress Media Library', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Adds comic archive file types to the list of allowed upload MIME types. Disable if your host blocks these formats.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	/**
 	 * Get tools list.
+	 *
+	 * @since 2.0.0
 	 *
 	 * @return array
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_comic_script'       => __( 'Generate Comic Script', 'mcp-ai-wpoos-pro' ),
-			'breakdown_comic_panels'      => __( 'Breakdown Comic Panels', 'mcp-ai-wpoos-pro' ),
-			'generate_character_sheet'    => __( 'Generate Character Sheet', 'mcp-ai-wpoos-pro' ),
-			'generate_comic_panel'        => __( 'Generate Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'create_comic_layout'         => __( 'Create Comic Layout', 'mcp-ai-wpoos-pro' ),
-			'add_speech_bubbles'          => __( 'Add Speech Bubbles', 'mcp-ai-wpoos-pro' ),
-			'export_comic_cbz'            => __( 'Export Comic (CBZ/CBR)', 'mcp-ai-wpoos-pro' ),
-			'colorize_comic_panel'        => __( 'Colorize Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'ink_comic_panel'             => __( 'Ink Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'letter_comic_panel'          => __( 'Letter Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'upscale_comic_page'          => __( 'Upscale Comic Page', 'mcp-ai-wpoos-pro' ),
-			'apply_comic_style'           => __( 'Apply Comic Style', 'mcp-ai-wpoos-pro' ),
+			'generate_comic_script'     => __( 'Generate Comic Script', 'mcp-ai-wpoos-pro' ),
+			'breakdown_comic_panels'    => __( 'Breakdown Comic Panels', 'mcp-ai-wpoos-pro' ),
+			'generate_character_sheet'  => __( 'Generate Character Sheet', 'mcp-ai-wpoos-pro' ),
+			'generate_comic_panel'      => __( 'Generate Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'create_comic_layout'       => __( 'Create Comic Layout', 'mcp-ai-wpoos-pro' ),
+			'add_speech_bubbles'        => __( 'Add Speech Bubbles', 'mcp-ai-wpoos-pro' ),
+			'export_comic_cbz'          => __( 'Export Comic (CBZ/CBR)', 'mcp-ai-wpoos-pro' ),
+			'colorize_comic_panel'      => __( 'Colorize Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'ink_comic_panel'           => __( 'Ink Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'letter_comic_panel'        => __( 'Letter Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'upscale_comic_page'        => __( 'Upscale Comic Page', 'mcp-ai-wpoos-pro' ),
+			'apply_comic_style'         => __( 'Apply Comic Style', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
 	/**
 	 * Sanitize settings.
 	 *
+	 * @since 2.0.0
+	 *
 	 * @param array $input Settings input.
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		// Call parent sanitization for base fields.
-		$sanitized = parent::sanitize_settings( $input );
+		if ( ! is_array( $input ) ) {
+			return array();
+		}
 
-		// Add comic creation-specific sanitization.
+		$sanitized = array();
+
+		if ( isset( $input['research_assistant_id'] ) ) {
+			$sanitized['research_assistant_id'] = absint( $input['research_assistant_id'] );
+		}
+
 		if ( isset( $input['default_comic_style'] ) ) {
 			$sanitized['default_comic_style'] = sanitize_text_field( $input['default_comic_style'] );
 		}
