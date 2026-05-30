@@ -25,11 +25,11 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 
 		// Ensure tool classes are loaded.
 		$vin_path      = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php'
-			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vin-decode.php';
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vin-decode.php'
+			: dirname( __DIR__ ) . '/includes/tools/automotive/class-wp-mcp-ai-tool-vin-decode.php';
 		$estimate_path = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php'
-			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php';
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-repair-estimate.php'
+			: dirname( __DIR__ ) . '/includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-repair-estimate.php';
 
 		if ( file_exists( $vin_path ) ) {
 			require_once $vin_path;
@@ -39,8 +39,8 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 		}
 
 		$cleaning_path = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php'
-			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php';
+					? WP_MCP_AI_PRO_PATH . 'includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php'
+					: dirname( __DIR__ ) . '/includes/tools/automotive/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php';
 		if ( file_exists( $cleaning_path ) ) {
 			require_once $cleaning_path;
 		}

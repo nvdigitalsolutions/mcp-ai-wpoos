@@ -149,7 +149,7 @@ class WP_MCP_AI_Tool_Import_Healthcare_Blueprint implements WP_MCP_AI_Tool_Inter
 
 		// Ensure shared installer is available.
 		if ( ! class_exists( 'WP_MCP_AI_Blueprint_Installer' ) ) {
-			$installer_path = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-blueprint-installer.php';
+			$installer_path = WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-blueprint-installer.php';
 			if ( file_exists( $installer_path ) ) {
 				require_once $installer_path;
 			}
