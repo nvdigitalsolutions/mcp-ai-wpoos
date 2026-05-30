@@ -23,7 +23,7 @@ Comprehensive guides for all users
 ### 📚 **[API Reference](reference/)**
 Complete technical reference
 - **[REST API](reference/api/rest-api.md)** ⭐ Essential
-- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All ~830 tools (~195 base + ~635 Pro; live count authoritative)
+- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All ~960 tools (~195 base + ~765 Pro; live count authoritative)
 - **[Models](reference/models/)** - AI model specifications
 - **[Technical Specs](reference/technical/)** - Token counting, compatibility
 
