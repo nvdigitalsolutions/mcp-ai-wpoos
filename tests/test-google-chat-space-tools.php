@@ -28,7 +28,7 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		}
 
 		if ( ! class_exists( $class_name ) ) {
-			$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/' . $file_name;
+			$path = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/' . $file_name;
 
 			if ( ! file_exists( $path ) ) {
 				$this->markTestSkipped( $class_name . ' file not found at ' . $path );

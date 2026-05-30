@@ -2,7 +2,8 @@
  * NV oOS Chat SPA — single message renderer.
  *
  * Renders three layers per message:
- *   1. Plain text (`m.content`).
+ *   1. Markdown → HTML content (`m.content`) — parsed through marked + DOMPurify
+ *      for XSS-safe rich-text display.
  *   2. Tool-invocation cards (`m.toolInvocations`) — populated automatically
  *      by `useChat` from the AI SDK Data Stream `9:` tool_call and `a:`
  *      tool_result chunks emitted by `../sse-adapter.ts`.
@@ -11,7 +12,8 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { type JSX, useState } from 'react';
+import { type JSX, useMemo, useState } from 'react';
+import { renderMarkdown } from '../api/markdown';
 
 interface ToolInvocation {
 	state: 'partial-call' | 'call' | 'result';
@@ -47,7 +49,7 @@ export function MessageView( { message }: MessageViewProps ): JSX.Element {
 			<span className="nvoos-chat-spa-role">{ message.role }</span>
 
 			{ typeof message.content === 'string' && message.content !== '' && (
-				<div className="nvoos-chat-spa-content">{ message.content }</div>
+				<SafeMarkdownContent text={ message.content } />
 			) }
 
 			{ tools.length > 0 && (
@@ -71,6 +73,25 @@ export function MessageView( { message }: MessageViewProps ): JSX.Element {
 				</div>
 			) }
 		</div>
+	);
+}
+
+/**
+ * XSS-safe markdown rendering wrapper.
+ *
+ * Runs `renderMarkdown` (marked → DOMPurify) inside `useMemo` keyed on the
+ * raw text so expensive parsing is only repeated when the content changes.
+ * The sanitised HTML is then set via `dangerouslySetInnerHTML` — safe
+ * because DOMPurify strips every tag and attribute not on the allowlist.
+ */
+function SafeMarkdownContent( { text }: { text: string } ): JSX.Element {
+	const html = useMemo( () => renderMarkdown( text ), [ text ] );
+
+	return (
+		<div
+			className="nvoos-chat-spa-content"
+			dangerouslySetInnerHTML={ { __html: html } }
+		/>
 	);
 }
 

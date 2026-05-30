@@ -3155,7 +3155,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	 * Test that manage_telegram_webhook tool includes secret_token in schema.
 	 */
 	public function test_manage_telegram_webhook_tool_has_secret_token_in_schema() {
-		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php';
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php';
 		if ( ! file_exists( $tool_file ) ) {
 			$this->markTestSkipped( 'manage_telegram_webhook tool not available' );
 			return;
@@ -3176,7 +3176,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	 * Test that an invalid secret_token is rejected by the execute method.
 	 */
 	public function test_manage_telegram_webhook_tool_rejects_invalid_secret_token() {
-		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php';
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php';
 		if ( ! file_exists( $tool_file ) ) {
 			$this->markTestSkipped( 'manage_telegram_webhook tool not available' );
 			return;

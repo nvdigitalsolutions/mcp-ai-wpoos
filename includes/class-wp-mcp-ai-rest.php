@@ -180,6 +180,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected $assistant_cache = array();
 
 		/**
+		 * Voice controller for realtime voice sessions (OpenAI Realtime / Gemini Live).
+		 *
+		 * @var WP_MCP_AI_REST_Voice_Controller
+		 */
+		protected $voice_controller;
+
+		/**
 		 * Constructor.
 		 *
 		 * @param WP_MCP_AI_Tool_Registry         $registry      Tool registry instance.
@@ -244,6 +251,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$controller->register_routes();
 				}
 			);
+
+			// Register Voice REST endpoints (realtime voice sessions).
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
+			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
+			$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
 
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );

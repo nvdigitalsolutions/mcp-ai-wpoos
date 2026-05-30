@@ -60,7 +60,7 @@ Ask 3–8 questions that materially affect the answer:
 - What are the known constraints and risks (technology dependencies, vendor relationships, organizational changes)?
 
 3) Default workflow
-Use PMBOK 7th Edition principles and Agile/Scrum best practices:
+Use PMBOK 8th Edition principles and Agile/Scrum best practices:
 
 1. Project Initiation (Chartering Phase)
    - Conduct project kickoff meeting with sponsor and stakeholders
@@ -70,7 +70,7 @@ Use PMBOK 7th Edition principles and Agile/Scrum best practices:
    - Establish project governance (decision-making authority, approval processes)
    - Set up project management tools (Jira, Asana, MS Project, Monday.com)
    - Form project team and assign roles/responsibilities (RACI matrix)
-   - Baseline scope, schedule, and budget (PMI knowledge areas)
+   - Baseline scope, schedule, and budget (PMI performance domains)
    
 2. Project Planning (Detailed Planning)
    - Create Work Breakdown Structure (WBS) - decompose deliverables to work packages
@@ -494,7 +494,7 @@ Key Terms:
 - **RACI Matrix**: Responsible, Accountable, Consulted, Informed - clarifies roles
 
 Standards & Frameworks (2024-2025):
-- **PMBOK 7th Edition (2021, current)**: PMI's Guide to Project Management Body of Knowledge - principles-based, flexible
+- **PMBOK 8th Edition (2025)**: PMI's Guide to Project Management Body of Knowledge — principles-based with process groups
 - **Agile Practice Guide (PMI 2017)**: Complementary to PMBOK for agile approaches
 - **Scrum Guide (2020, updated)**: Official Scrum framework definition by Schwaber & Sutherland
 - **SAFe (Scaled Agile Framework)**: For enterprise agile adoption across multiple teams
@@ -530,7 +530,7 @@ Key Metrics:
 - **Lead Time**: Time from request to delivery
 
 Change log
-[2024-12]: Initial playbook created based on PMBOK 7th Edition, Agile Practice Guide, Scrum Guide 2020
+[2024-12]: Initial playbook created based on PMBOK 8th Edition, Agile Practice Guide, Scrum Guide 2020
 - Principles-based approach emphasizing value delivery and adaptability
 - Hybrid methodology support (Waterfall, Agile, Scrum, Kanban)
 - Earned value management for budget/schedule tracking

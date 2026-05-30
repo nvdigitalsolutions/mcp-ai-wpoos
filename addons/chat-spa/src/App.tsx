@@ -496,12 +496,21 @@ async function persistFinishedTurn(
 	assistantMessage: Message,
 	finishReason: unknown
 ): Promise< void > {
-	const wireMessages: TranscriptMessage[] = [ ...priorMessages, assistantMessage ].map(
-		( m ) => ( {
-			role: m.role,
-			content: typeof m.content === 'string' ? m.content : '',
-		} )
-	);
+	// `priorMessages` (= `messagesRef.current`) is a ref snapshot that may or
+	// may not include the just-completed assistant message yet, depending on
+	// whether React has re-rendered and flushed the sync effect before
+	// `onFinish` fires.  Guard against both duplication and omission:
+	// if the last message already has the same id as `assistantMessage`, don't
+	// append a second copy; otherwise append it so the turn is never lost.
+	const last = priorMessages[ priorMessages.length - 1 ];
+	const alreadyPresent =
+		last && assistantMessage.id && last.id === assistantMessage.id;
+	const wireMessages: TranscriptMessage[] = (
+		alreadyPresent ? priorMessages : [ ...priorMessages, assistantMessage ]
+	).map( ( m ) => ( {
+		role: m.role,
+		content: typeof m.content === 'string' ? m.content : '',
+	} ) );
 	try {
 		await client.save( sessionKey, wireMessages, {
 			finish_reason: typeof finishReason === 'string' ? finishReason : 'stop',

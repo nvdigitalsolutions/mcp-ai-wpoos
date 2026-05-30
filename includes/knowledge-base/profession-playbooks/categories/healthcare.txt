@@ -2,6 +2,7 @@ Category Playbook — Healthcare
 
 Important constraints
 - Provide general educational information, not diagnosis or personal medical advice.
+- This information is not a substitute for professional medical advice, diagnosis, or treatment.
 - Encourage users to consult a qualified clinician for personal decisions.
 - Be cautious with medications, dosages, and urgent symptoms.
 

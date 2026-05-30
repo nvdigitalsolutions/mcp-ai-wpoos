@@ -658,6 +658,12 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			}
 
 			$normalized = array(
+			'choices'       => array(
+				array(
+					'message'      => $message,
+					'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+				),
+			),
 			'content'       => $content,
 			'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
 			'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',

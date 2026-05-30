@@ -65,7 +65,7 @@ class NV_oOS_Docs_Hub_Settings {
 				'i18n'      => array(
 					'enterOwnerRepo' => __( 'Enter owner and repo first.', 'nvoos-docs-hub' ),
 					/* translators: Loading indicator text. */
-					'loading'        => __( 'Loading\u2026', 'nvoos-docs-hub' ),
+					'loading'        => __( 'Loading…', 'nvoos-docs-hub' ),
 					'filesFound'     => __( 'files found.', 'nvoos-docs-hub' ),
 					'noFilesFound'   => __( 'No Markdown files found in this ref / path.', 'nvoos-docs-hub' ),
 				),
@@ -547,9 +547,12 @@ class NV_oOS_Docs_Hub_Settings {
 			if ( preg_match( '#(^|/)\.\.(/|$)#', $line ) ) {
 				continue;
 			}
-			if ( ! preg_match( '#^[A-Za-z0-9_./\-]+/?$#', $line ) ) {
-				continue;
-			}
+			// Allow common filename characters. The '..' check above prevents
+			// path traversal independently of this character class, so we can
+			// be permissive for legitimate repo filenames.
+			if ( ! preg_match( '#^[A-Za-z0-9_./\- @(){}\[\]\'"!,;+]+/?$#', $line ) ) {
+					continue;
+				}
 			$out[] = $line;
 		}
 		return array_values( array_unique( $out ) );
@@ -739,10 +742,30 @@ class NV_oOS_Docs_Hub_Settings {
 
 			<form method="post" action="options.php">
 				<?php
-				settings_fields( 'nvoos_docs_hub_settings_group' );
-				do_settings_sections( 'nvoos-docs-hub' );
-				submit_button();
-				?>
+					settings_fields( 'nvoos_docs_hub_settings_group' );
+					try {
+						do_settings_sections( 'nvoos-docs-hub' );
+					} catch ( \Throwable $e ) {
+						echo '<div class="notice notice-error"><p>';
+						echo esc_html(
+							sprintf(
+								/* translators: %s: error message */
+								__( 'Error rendering settings sections: %s', 'nvoos-docs-hub' ),
+								$e->getMessage()
+							)
+						);
+						echo '</p></div>';
+						error_log(
+							sprintf(
+								'[NV oOS Docs Hub] do_settings_sections fatal: %s in %s:%d',
+								$e->getMessage(),
+								$e->getFile(),
+								$e->getLine()
+							)
+						);
+					}
+					submit_button();
+					?>
 			</form>
 		</div>
 		<?php
@@ -937,6 +960,7 @@ class NV_oOS_Docs_Hub_Settings {
 
 		echo '<div id="nvoos-dh-remote-repos-wrap">';
 
+		try {
 		foreach ( $repos as $i => $r ) :
 			// Defensive: a malformed (string/null/scalar) row from a partial migration must
 			// not fatal the settings page. Coerce to an array and surface an inline notice.
@@ -1127,6 +1151,25 @@ class NV_oOS_Docs_Hub_Settings {
 			</div>
 			<?php
 		endforeach;
+		} catch ( \Throwable $e ) {
+			echo '<div class="notice notice-error inline" style="margin:10px 0;"><p>';
+			echo esc_html(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Error rendering remote repository settings: %s', 'nvoos-docs-hub' ),
+					$e->getMessage()
+				)
+			);
+			echo '</p></div>';
+			error_log(
+				sprintf(
+					'[NV oOS Docs Hub] render_remote_repos fatal: %s in %s:%d',
+					$e->getMessage(),
+					$e->getFile(),
+					$e->getLine()
+				)
+			);
+		}
 
 		echo '</div><!-- #nvoos-dh-remote-repos-wrap -->';
 		echo '<p>';

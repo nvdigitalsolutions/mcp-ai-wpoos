@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **May 2026** · Version: **1.3**
+> Last reviewed: **May 2026** · Version: **1.4**
 
 ### Related Files
 
@@ -27,8 +27,8 @@ These are the AI assistants that human maintainers invoke when working on the re
 |-------|----------|-------------|---------|-------|
 | **Claude Code** | Anthropic | [`CLAUDE.md`](CLAUDE.md) | Manual / Copilot Coding Agent | Full codebase — code generation, review, refactoring, docs |
 | **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
-| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents (13 in this repo — reviewers, writers per subsystem, plus `addon-maintainer` and `toolkit-spa-maintainer` parameterised per addon). See each `*.agent.md` for scope. |
-| **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (13 profiles) — same scopes, mapped to Zed's tool registry |
+| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents (14 in this repo — reviewers, writers per subsystem, plus `addon-maintainer`, `toolkit-spa-maintainer` parameterised per addon, and `acp` for Agent Client Protocol). See each `*.agent.md` for scope. |
+| **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (14 profiles) — same scopes, mapped to Zed's tool registry |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
@@ -123,7 +123,7 @@ This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.
 **Template + examples:**
 
 - Canonical (empty) template: [`.context/templates/agent-file-template.md`](.context/templates/agent-file-template.md)
-- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 13-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, **toolkit-SPA addons** following the [Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md), release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
+- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 14-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, **toolkit-SPA addons** following the [Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md), **ACP protocol** implementation, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
 
 ---
 

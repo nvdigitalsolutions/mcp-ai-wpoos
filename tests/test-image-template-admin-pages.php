@@ -98,8 +98,8 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 		global $submenu;
 
 		// Load the initialization file to ensure admin pages are loaded.
-		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
 		// Initialize CPT to ensure it's registered.
@@ -135,8 +135,8 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 		global $submenu;
 
 		// Load the initialization file to ensure admin pages are loaded.
-		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
 		// Initialize CPT to ensure it's registered.
@@ -177,8 +177,8 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 		global $submenu;
 
 		// Load the initialization file.
-		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
 		}
 
 		// Initialize CPT to ensure it's registered.

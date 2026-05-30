@@ -425,7 +425,7 @@ class WP_MCP_AI_Media_Collection_CPT {
 
 			// Load tool.
 			if ( ! class_exists( 'WP_MCP_AI_Tool_Process_Collection' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-process-collection.php';
 			}
 
 			$tool = new WP_MCP_AI_Tool_Process_Collection();
@@ -560,7 +560,7 @@ class WP_MCP_AI_Media_Collection_CPT {
 
 		// Use the process_collection tool.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Process_Collection' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-process-collection.php';
 		}
 
 		$tool   = new WP_MCP_AI_Tool_Process_Collection();

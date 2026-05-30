@@ -772,7 +772,7 @@ Subject: Science & Literacy Integration
 Duration: 60 minutes
 
 STANDARDS:
-- NGSS 2-LS2-1: Plan and conduct an investigation to determine if plants need sunlight and water to grow
+- NGSS 1-LS3-1: Make observations to construct an evidence-based account that young plants and animals are like, but not exactly like, their parents
 - CCSS.ELA-LITERACY.RI.2.3: Describe the connection between events in a text
 
 LEARNING OBJECTIVES:
@@ -927,8 +927,7 @@ Standards & Frameworks (2024):
 - **Common Core State Standards (CCSS)**: Learning standards for English Language Arts and Mathematics (adopted by most states)
 - **Next Generation Science Standards (NGSS)**: Science learning standards emphasizing practices and crosscutting concepts
 - **State Content Standards**: State-specific standards for all subject areas (check your state education department)
-- **Danielson Framework for Teaching**: Teacher evaluation framework (4 domains: Planning, Classroom Environment, Instruction, Professional Responsibilities)
-- **Charlotte Danielson Model**: Similar to above, focuses on effective teaching practices
+- **Danielson Framework for Teaching**: Teacher evaluation framework by Charlotte Danielson (4 domains: Planning, Classroom Environment, Instruction, Professional Responsibilities)
 - **Responsive Classroom**: Approach emphasizing social-emotional learning, morning meeting, positive teacher language
 - **Whole Brain Teaching**: Active learning strategy using brain-based techniques (Class-Yes, Teach-OK, Mirror)
 - **Fountas & Pinnell Literacy System**: Guided reading approach with leveled texts (A-Z)

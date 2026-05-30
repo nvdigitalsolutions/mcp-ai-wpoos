@@ -1,5 +1,58 @@
 # oOS – Changelog
 
+## [1.1.24] - 2026-05-28
+
+### Fixed — Paper Store Pro Interface Load Order (PR #5160)
+
+- Deferred Pro Paper Store class loading to the `wp_mcp_ai_bootstrapped` hook to resolve a race condition where Pro interfaces were loaded before the base plugin had fully initialised its autoloader and constants.
+
+### Fixed — Assistant Tool Presets Coverage (PR #5159)
+
+- Added 24 missing tools to assistant creation presets so new assistants get complete tool coverage by default.
+- Fixed out-of-date tests that were asserting stale preset strings.
+
+### Fixed — CVE: Tmp & Symfony Cache Dependencies (PR #5157)
+
+- Bumped `tmp` to >=0.2.6 and `symfony/cache` to ^6.4.40 to resolve upstream CVEs.
+- Fixed `composer.lock` source reference and committed production vendor state.
+- Rebuilt all release ZIP artifacts.
+
+### Fixed — Chat SPA Duplicate Messages & Markdown Rendering (PR #5155)
+
+- Fixed a bug where the React chat SPA could show duplicate message bubbles under rapid SSE streaming.
+- Added proper markdown rendering via the `marked` library for assistant responses in the SPA chat surface.
+- Removed non-existent marked v9 options from `setOptions` calls.
+
+### Fixed — Chat SPA SSE Protocol Mismatch (PR #5153)
+
+- Adapted the chat SPA frontend to the OpenAI-compatible SSE format emitted by the server, resolving a protocol mismatch that caused silent message drops.
+- Rebuilt `nvoos-chat-spa.zip` artifact.
+
+### Fixed — Skill Manager Canonical Return Envelope (PR #5154)
+
+- **Unix Theory P0/P1 refinement.** Fixed the skill manager to return the canonical envelope (`WP_Error` on failure, success array on success) instead of the legacy `array('success' => false, ...)` pattern.
+- Added skills sync endpoint for idempotent import/export.
+- Fixed YAML frontmatter parsing by quoting description fields that contain colons.
+
+### Added — Paper Store Admin CRUD (PR #5147)
+
+- Full CRUD admin UI for Paper Store collections and records under the Assistants menu, following the Skills admin convention.
+
+### Added — CLI Coverage Enhancements (PR #5151)
+
+- Comprehensive WP-CLI command coverage enhancements across the plugin toolchain.
+
+### Added — Build & CI Infrastructure (PRs #5148, #5150)
+
+- Added `build-spa-addons` GitHub Actions workflow for automated SPA addon ZIP generation.
+- Restored missing SPA addon ZIPs in the `build/` directory.
+- Rebuilt all SPA addon bundles and ZIPs to current versions.
+
+### Changed — Documentation (PRs #5149, #5152)
+
+- **Unix Theory P7 completion.** Added folder READMEs for every PHP-bearing subdirectory across `includes/` and `addons/pro/includes/`, completing the Folder README Convention (P7).
+- Synced `CLAUDE.md`, `AGENTS.md`, and agent context files with recent features (v2.4/v1.4 of the agent context system).
+
 ## [1.1.23] - 2026-05-26
 
 ### Added — Zed-Inspired SPA Architecture (Pro)

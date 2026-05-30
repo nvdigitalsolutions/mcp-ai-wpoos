@@ -28,6 +28,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Capture_Tool_Base' ) ) {
 class WP_MCP_AI_Tool_CRM_Capture_Interaction extends WP_MCP_AI_Pro_Capture_Tool_Base {
 
 	/**
+	 * Determine whether CRM toolkit and capture base are available.
+	 *
+	 * @since 2.3.0
+	 * @return bool
+	 */
+	public static function is_available() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_crm_toolkit'] );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @since 2.3.0
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'The CRM Capture Interaction tool requires the CRM Toolkit to be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {

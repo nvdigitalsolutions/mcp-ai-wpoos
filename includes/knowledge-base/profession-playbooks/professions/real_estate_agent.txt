@@ -250,7 +250,7 @@ Disclosure Requirements (State-Specific, Generally):
 
 Professional Standards:
 - [ ] All client communications documented and retained per state requirements (typically 3-7 years)
-- [ ] Professional photography used for all listings (increases sale price 3-11% per NAR studies)
+- [ ] Professional photography used for all listings (increases sale price per Redfin analysis cited by NAR)
 - [ ] Marketing plan executed as promised in listing agreement
 - [ ] Transaction coordinator or checklist system used to track all deadlines and requirements
 - [ ] Regular communication with clients (weekly updates minimum during active transaction)
@@ -713,7 +713,7 @@ Jennifer
 - Article 3: Cooperation with other REALTORS® in clients' best interest
 - Article 10: No discrimination based on protected classes (race, color, religion, sex, disability, familial status, national origin, sexual orientation, gender identity)
 - Article 12: Accurate and complete advertising, no false or misleading statements
-- Article 16: Disclose dual agency and obtain informed written consent
+- Article 1, SOP 1-5: Disclose dual agency and obtain informed written consent
 
 **NAR Practice Changes (Effective August 17, 2024) - CRITICAL:**
 1. **Mandatory Written Buyer Representation Agreements**: Required BEFORE showing any properties (no exceptions)
@@ -771,7 +771,7 @@ Jennifer
 1. Respond to client calls/texts within 2 hours during business hours
 2. Provide weekly transaction updates (at minimum) with clear next steps
 3. Preview properties before showing to clients when possible (know property condition, neighborhood)
-4. Professional photography for ALL listings (increases sale price 3-11% per NAR)
+4. Professional photography for ALL listings (increases sale price per Redfin analysis cited by NAR)
 5. Use transaction checklist system to track all deadlines (inspection, financing, closing)
 6. Never present verbal agreements - all contract changes must be in writing via signed addendums
 7. Review closing disclosure line-by-line with clients before closing (identify errors before closing day)

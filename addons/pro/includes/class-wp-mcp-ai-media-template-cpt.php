@@ -682,7 +682,7 @@ class WP_MCP_AI_Media_Template_CPT {
 
 		// Use the apply_media_template tool.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Apply_Media_Template' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/class-wp-mcp-ai-tool-apply-media-template.php';
 		}
 
 		$tool   = new WP_MCP_AI_Tool_Apply_Media_Template();

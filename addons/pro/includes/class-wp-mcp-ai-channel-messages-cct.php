@@ -167,27 +167,42 @@ class WP_MCP_AI_Channel_Messages_CCT {
 		// Store Unix timestamp as integer.
 		$row['message_timestamp'] = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : time();
 
+		$message_id = false;
+
 		if ( $handler && method_exists( $handler, 'create_item' ) ) {
-			$result = $handler->create_item( $row );
-			return is_numeric( $result ) ? (int) $result : false;
+			$result     = $handler->create_item( $row );
+			$message_id = is_numeric( $result ) ? (int) $result : false;
 		}
 
 		// Fallback: direct DB insert when JetEngine is not available but table exists.
-		if ( self::table_exists() ) {
+		if ( ! $message_id && self::table_exists() ) {
 			global $wpdb;
 			$table = self::get_table_name();
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->insert( $table, $row );
-			return $wpdb->insert_id ? $wpdb->insert_id : false;
+			$message_id = $wpdb->insert_id ? (int) $wpdb->insert_id : false;
 		}
 
 		// Final fallback: use the CPT store when neither JetEngine nor the table
 		// is available (e.g. first run without JetEngine installed).
-		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
-			return WP_MCP_AI_Channel_Messages_CPT::insert( $data );
+		if ( ! $message_id && class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+			$message_id = WP_MCP_AI_Channel_Messages_CPT::insert( $data );
 		}
 
-		return false;
+		// Fire the message-received hook so CRM and other toolkits can react.
+		if ( $message_id && 'inbound' === $row['direction'] ) {
+			do_action(
+				'wp_mcp_ai_chat_channel_message_received',
+				$message_id,
+				$row['channel'],
+				$row['channel_contact_id'],
+				$row['contact_name'],
+				$row['content'],
+				$row['message_type']
+			);
+		}
+
+		return $message_id;
 	}
 
 	/**

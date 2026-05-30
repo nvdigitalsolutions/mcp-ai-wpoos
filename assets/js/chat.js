@@ -98,6 +98,29 @@
     const SAVE_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M15.5 3H4.5A1.5 1.5 0 003 4.5v11A1.5 1.5 0 004.5 17h11a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0015.5 3zm-7 1h3v4h-3V4zm7.5 11.5a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5v-11a.5.5 0 01.5-.5h2v4.5a.5.5 0 00.5.5h4a.5.5 0 00.5-.5V4h4a.5.5 0 01.5.5v11z"/><path d="M6 11h8v1H6zm0 2h8v1H6z"/></svg>';
     const SAVE_SUCCESS_ICON = '<svg class="wp-mcp-ai-save-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
 
+    // Feedback button constants
+    const FEEDBACK_CONTAINER_CLASS = 'wp-mcp-ai-chat__feedback';
+    const FEEDBACK_BTN_CLASS = 'wp-mcp-ai-chat__feedback-btn';
+    const FEEDBACK_ACTIVE_CLASS = 'wp-mcp-ai-chat__feedback-btn--active';
+    const FEEDBACK_THUMBS_UP = '\uD83D\uDC4D';
+    const FEEDBACK_THUMBS_DOWN = '\uD83D\uDC4E';
+
+    // Code block copy constants
+    const CODE_BLOCK_WRAPPER_CLASS = 'wp-mcp-ai-chat__code-block-wrapper';
+    const CODE_COPY_CLASS = 'wp-mcp-ai-chat__code-copy';
+    const CODE_COPY_SUCCESS_CLASS = 'wp-mcp-ai-chat__code-copy--success';
+
+    // Profile card constants
+    const PROFILE_TOGGLE_CLASS = 'wp-mcp-ai-chat__profile-toggle';
+
+    // Dark mode constants
+    const DARK_MODE_CLASS = 'wp-mcp-ai-chat--dark-mode';
+    const DARK_MODE_STORAGE_KEY = 'wp_mcp_ai_dark_mode';
+
+    // Suggested prompts constants
+    const PROMPTS_CONTAINER_CLASS = 'wp-mcp-ai-chat__prompts';
+    const PROMPT_CHIP_CLASS = 'wp-mcp-ai-chat__prompt-chip';
+
     // Transcription constants
     const TRANSCRIBE_TOOL_NAME = transcriptionService && transcriptionService.TRANSCRIBE_TOOL_NAME || 'transcribe_openai_audio';
     const TRANSCRIBE_RECORDING_CLASS = transcriptionService && transcriptionService.TRANSCRIBE_RECORDING_CLASS || audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
@@ -680,7 +703,6 @@
             credentials: 'same-origin',
             body: JSON.stringify(data)
         };
-        
         if (options.signal) {
             fetchOptions.signal = options.signal;
         }
@@ -4251,6 +4273,82 @@
         });
     }
 
+    function renderSuggestedPrompts(state) {
+        const promptsContainer = state.container.querySelector('.' + PROMPTS_CONTAINER_CLASS);
+        const prompts = state.config.suggestedPrompts;
+
+        if (!promptsContainer || !prompts || !prompts.length) {
+            return;
+        }
+
+        promptsContainer.innerHTML = '';
+
+        prompts.forEach(function (prompt) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = PROMPT_CHIP_CLASS;
+            chip.textContent = prompt;
+
+            chip.addEventListener('click', function () {
+                state.textarea.value = prompt;
+                state.textarea.focus();
+                // Optionally auto-submit
+                // state.textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            promptsContainer.appendChild(chip);
+        });
+
+        promptsContainer.hidden = false;
+    }
+
+    function initDarkMode(state, darkToggle) {
+        // Load saved preference
+        try {
+            const saved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
+            if (saved === 'true' || (saved === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                state.darkMode = true;
+                state.container.classList.add(DARK_MODE_CLASS);
+            }
+        } catch (e) { /* localStorage unavailable */ }
+
+        if (!darkToggle) return;
+
+        // Show the toggle button
+        darkToggle.hidden = false;
+
+        // Update icon based on current mode
+        updateDarkToggleIcon(darkToggle, state.darkMode);
+
+        darkToggle.addEventListener('click', function (event) {
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+            state.darkMode = !state.darkMode;
+
+            if (state.darkMode) {
+                state.container.classList.add(DARK_MODE_CLASS);
+            } else {
+                state.container.classList.remove(DARK_MODE_CLASS);
+            }
+
+            updateDarkToggleIcon(darkToggle, state.darkMode);
+
+            try {
+                localStorage.setItem(DARK_MODE_STORAGE_KEY, state.darkMode ? 'true' : 'false');
+            } catch (e) { /* localStorage unavailable */ }
+        });
+    }
+
+    function updateDarkToggleIcon(toggle, isDark) {
+        toggle.innerHTML = isDark
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44.06-.9.1-1.36.1z"/></svg>'
+            : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7a5 5 0 100 10 5 5 0 000-10z"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+
+        toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        toggle.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+
     /**
      * Handle CPT action button click.
      * Extracts conversation data and triggers the configured action.
@@ -5306,6 +5404,40 @@
 
         const fragment = document.createDocumentFragment();
 
+        // Add search input if not already present
+        const historyContainer2 = state.historyContainer;
+        const existingSearch = historyContainer2.querySelector('.wp-mcp-ai-chat__history-search');
+        if (!existingSearch) {
+            const searchInput = document.createElement('input');
+            searchInput.type = 'search';
+            searchInput.className = 'wp-mcp-ai-chat__history-search';
+            searchInput.placeholder = getString('searchHistory', 'Search conversations...');
+            searchInput.setAttribute('aria-label', 'Search conversation history');
+
+            searchInput.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                const items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
+                items.forEach(function (item) {
+                    const titleEl = item.querySelector('.wp-mcp-ai-chat__history-session-title');
+                    const previewEl = item.querySelector('.wp-mcp-ai-chat__history-session-preview');
+                    const title = titleEl ? titleEl.textContent : '';
+                    const preview = previewEl ? previewEl.textContent : '';
+
+                    if (!query || title.toLowerCase().indexOf(query) !== -1 || preview.toLowerCase().indexOf(query) !== -1) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+
+            // Insert before the history list
+            const historyList = state.historyList;
+            if (historyList && historyList.parentNode) {
+                historyList.parentNode.insertBefore(searchInput, historyList);
+            }
+        }
+
         state.historySessions.forEach(function (session, index) {
             const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__history-item';
@@ -5334,6 +5466,56 @@
                 const title = document.createElement('span');
                 title.className = 'wp-mcp-ai-chat__history-session-title';
                 title.textContent = sessionTitle;
+
+                // Double-click to edit title
+                title.addEventListener('dblclick', function (e) {
+                    e.stopPropagation();
+                    const currentTitle = this.textContent;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'wp-mcp-ai-chat__history-edit-input';
+                    input.value = currentTitle;
+                    input.setAttribute('aria-label', 'Edit conversation title');
+
+                    const parent = this.parentNode;
+                    parent.replaceChild(input, this);
+                    input.focus();
+                    input.select();
+
+                    const sessionKeyLocal = session && session.session_key ? session.session_key : '';
+
+                    function saveTitle() {
+                        const newTitle = input.value.trim() || currentTitle;
+                        const newTitleEl = document.createElement('span');
+                        newTitleEl.className = 'wp-mcp-ai-chat__history-session-title';
+                        newTitleEl.textContent = newTitle;
+                        if (input.parentNode) {
+                            input.parentNode.replaceChild(newTitleEl, input);
+                        }
+
+                        // Persist to server if transcripts endpoint available
+                        if (state.config.transcriptsEndpoint && sessionKeyLocal) {
+                            const updateUrl = state.config.transcriptsEndpoint + '?session_key=' + encodeURIComponent(sessionKeyLocal);
+                            postJson(updateUrl, {
+                                assistant_id: state.config.assistantId,
+                                session_key: sessionKeyLocal,
+                                title: newTitle
+                            });
+                        }
+                    }
+
+                    input.addEventListener('blur', saveTitle);
+                    input.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Enter') {
+                            ev.preventDefault();
+                            saveTitle();
+                        } else if (ev.key === 'Escape') {
+                            input.value = currentTitle;
+                            saveTitle();
+                        }
+                    });
+                });
+
                 content.appendChild(title);
             }
 
@@ -11654,6 +11836,10 @@
             const historyRefresh = container.querySelector('.wp-mcp-ai-chat__history-refresh');
             const historyLoadMore = container.querySelector('.wp-mcp-ai-chat__history-load-more');
             const cptActionsContainer = container.querySelector('.wp-mcp-ai-chat__cpt-actions');
+            const profileToggle = container.querySelector('.' + PROFILE_TOGGLE_CLASS);
+            const profileBio = container.querySelector('.wp-mcp-ai-chat__profile-bio');
+            const promptsContainer = container.querySelector('.' + PROMPTS_CONTAINER_CLASS);
+            const darkToggle = container.querySelector('.wp-mcp-ai-chat__dark-toggle');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -11780,12 +11966,40 @@
                 cptActionsContainer: cptActionsContainer,
                 lastToolResults: Object.create(null), // Store last results from each tool for CPT actions
                 embeddedClient: null, // Instance of embedded LLM client (created when needed for embedded provider)
+                profileExpanded: false,
+                feedbackSent: Object.create(null),
+                abortController: null,
+                darkMode: false,
             };
 
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
             renderCptActionButtons(state);
             initAgentPanel(container);
+
+            // Initialize profile toggle
+            if (profileToggle && profileBio) {
+                profileToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+                    state.profileExpanded = !state.profileExpanded;
+                    profileToggle.setAttribute('aria-expanded', state.profileExpanded ? 'true' : 'false');
+                    profileBio.hidden = !state.profileExpanded;
+                    const toggleText = profileToggle.querySelector('.wp-mcp-ai-chat__profile-toggle-text');
+                    if (toggleText) {
+                        toggleText.textContent = state.profileExpanded ? getString('hideAssistantInfo', 'Hide about') : getString('showAssistantInfo', 'About this assistant');
+                    }
+                });
+            }
+
+            // Initialize suggested prompts
+            if (promptsContainer && instanceConfig.suggestedPrompts && instanceConfig.suggestedPrompts.length) {
+                renderSuggestedPrompts(state);
+            }
+
+            // Initialize dark mode toggle
+            initDarkMode(state, darkToggle);
 
             // Initialize tool shortcuts collapsed state
             if (state.toolShortcutsContainer) {
@@ -11950,6 +12164,34 @@
                     updateQuotaMonitor(quotaMonitor);
                 }, 30000);
             }
+
+            // Code block copy delegation
+            container.addEventListener('click', function (event) {
+                const copyBtn = event.target.closest('.' + CODE_COPY_CLASS);
+                if (!copyBtn) return;
+                
+                const wrapper = copyBtn.closest('.' + CODE_BLOCK_WRAPPER_CLASS);
+                if (!wrapper) return;
+                
+                const code = wrapper.querySelector('code');
+                if (!code) return;
+                
+                const text = code.textContent || '';
+                
+                if (clipboardService && clipboardService.copyTextToClipboard) {
+                    clipboardService.copyTextToClipboard(text);
+                } else {
+                    fallbackCopyText(text);
+                }
+                
+                copyBtn.textContent = getString('copied', 'Copied!');
+                copyBtn.classList.add(CODE_COPY_SUCCESS_CLASS);
+                
+                setTimeout(function () {
+                    copyBtn.textContent = getString('copy', 'Copy');
+                    copyBtn.classList.remove(CODE_COPY_SUCCESS_CLASS);
+                }, 2000);
+            });
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             
@@ -12633,6 +12875,13 @@
             });
         }
 
+        // Create abort controller for stop generation
+        if (state.abortController) {
+            try { state.abortController.abort(); } catch (e) {}
+        }
+        state.abortController = new AbortController();
+        updateSubmitButtonForSend(state);
+
         const previousConversationLength = state.conversation.length;
         
         // Extract display metadata from rendered message
@@ -12660,6 +12909,7 @@
             });
         } else {
             // In debug mode, send immediately without bundling
+            updateSubmitButtonForStop(state);
             sendChat(state, {
                 previousConversationLength: previousConversationLength,
                 pendingAttachments: pending,
@@ -12732,6 +12982,7 @@
         // one message than lose all of them.
         const firstSubmission = bundledSubmissions[0];
 
+        updateSubmitButtonForStop(state);
         sendChat(state, firstSubmission);
     }
 
@@ -13789,6 +14040,7 @@
         function finalize() {
             state.busy = false;
             disableForm(state, false);
+            updateSubmitButtonForSend(state);
         }
 
         // Check if provider is embedded - run LLM client-side in browser.
@@ -13825,7 +14077,7 @@
             getMessagesEndpoint(state),
             payload,
             buildJsonHeaders(state),
-            { state: state }
+            { state: state, signal: state.abortController ? state.abortController.signal : undefined }
         )
             .then(function (response) {
                 return response
@@ -13975,7 +14227,7 @@
             headers,
             // streaming: true bypasses the Ky HTTP client in favour of native fetch.
             // Ky's timeout and afterResponse body-clone break SSE stream reading.
-            { state: state, streaming: true }
+            { state: state, streaming: true, signal: state.abortController ? state.abortController.signal : undefined }
         )
             .then(function (response) {
                 // Diagnostic logging (Separation of Concerns)
@@ -16973,6 +17225,40 @@
         }
     }
 
+    function updateSubmitButtonForSend(state) {
+        const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+        if (!submitButton) return;
+        
+        submitButton.textContent = getString('send', 'Send');
+        submitButton.classList.remove('wp-mcp-ai-chat__submit--stop');
+        
+        submitButton.onclick = null; // Remove any stop handler
+    }
+
+    function updateSubmitButtonForStop(state) {
+        const submitButton = state.container.querySelector('.wp-mcp-ai-chat__submit');
+        if (!submitButton) return;
+        
+        submitButton.textContent = '\u25A0 ' + getString('stop', 'Stop');
+        submitButton.classList.add('wp-mcp-ai-chat__submit--stop');
+        
+        // Override click to abort
+        submitButton.onclick = function (event) {
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+            if (state.abortController) {
+                try { state.abortController.abort(); } catch (e) {}
+                state.abortController = null;
+            }
+            state.busy = false;
+            updateSubmitButtonForSend(state);
+            if (state.statusEl) {
+                setStatus(state.container, getString('generationStopped', 'Generation stopped.'), { type: 'info', showTime: true });
+            }
+        };
+    }
+
     /**
      * Set status message with optional indicator type and time tracking.
      * 
@@ -17721,7 +18007,142 @@
         listEl.appendChild(entry);
         scrollBatcher.scrollToBottom(listEl);
 
+        // Attach feedback buttons to assistant bubbles
+        if (chatState) {
+            attachFeedbackButtons(entry, chatState, chatState.conversation.length - 1);
+            // Attach regenerate button
+            attachRegenerateButton(entry, chatState, chatState.conversation.length - 1);
+        }
+
         return entry;
+    }
+
+    function attachFeedbackButtons(bubble, state, messageIndex) {
+        if (!bubble || bubble.classList.contains('wp-mcp-ai-chat__bubble--user')) return;
+        
+        const existing = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
+        if (existing) existing.remove();
+        
+        const container = document.createElement('div');
+        container.className = FEEDBACK_CONTAINER_CLASS;
+        container.setAttribute('role', 'group');
+        container.setAttribute('aria-label', 'Message feedback');
+        
+        const key = 'msg_' + messageIndex;
+        const currentFeedback = state.feedbackSent[key];
+        
+        function sendFeedback(value) {
+            if (state.feedbackSent[key] === value) return;
+            
+            state.feedbackSent[key] = value;
+            
+            // Update active states
+            const btns = container.querySelectorAll('.' + FEEDBACK_BTN_CLASS);
+            btns.forEach(function (btn) {
+                if (btn.getAttribute('data-value') === value) {
+                    btn.classList.add(FEEDBACK_ACTIVE_CLASS);
+                } else {
+                    btn.classList.remove(FEEDBACK_ACTIVE_CLASS);
+                }
+            });
+            
+            // POST feedback to server if endpoint available
+            if (state.config.chatFeedbackEndpoint) {
+                const msg = state.conversation[messageIndex];
+                const payload = {
+                    assistant_id: state.config.assistantId,
+                    session_key: state.config.sessionKey,
+                    message_index: messageIndex,
+                    rating: value,
+                    message_content: msg ? (msg.content || '') : ''
+                };
+                
+                httpClientService ? httpClientService.postJson(state.config.chatFeedbackEndpoint, payload, {}) : postJson(state.config.chatFeedbackEndpoint, payload, {});
+            }
+        }
+        
+        const thumbsUp = document.createElement('button');
+        thumbsUp.type = 'button';
+        thumbsUp.className = FEEDBACK_BTN_CLASS;
+        if (currentFeedback === 'up') thumbsUp.classList.add(FEEDBACK_ACTIVE_CLASS);
+        thumbsUp.setAttribute('data-value', 'up');
+        thumbsUp.setAttribute('aria-label', 'Thumbs up');
+        thumbsUp.textContent = FEEDBACK_THUMBS_UP;
+        thumbsUp.addEventListener('click', function () { sendFeedback('up'); });
+        
+        const thumbsDown = document.createElement('button');
+        thumbsDown.type = 'button';
+        thumbsDown.className = FEEDBACK_BTN_CLASS;
+        if (currentFeedback === 'down') thumbsDown.classList.add(FEEDBACK_ACTIVE_CLASS);
+        thumbsDown.setAttribute('data-value', 'down');
+        thumbsDown.setAttribute('aria-label', 'Thumbs down');
+        thumbsDown.textContent = FEEDBACK_THUMBS_DOWN;
+        thumbsDown.addEventListener('click', function () { sendFeedback('down'); });
+        
+        container.appendChild(thumbsUp);
+        container.appendChild(thumbsDown);
+        
+        bubble.appendChild(container);
+    }
+
+    function attachRegenerateButton(bubble, state, messageIndex) {
+        if (!bubble || !bubble.classList.contains('wp-mcp-ai-chat__bubble--assistant')) return;
+        
+        // Only attach to the last assistant message
+        let lastAssistantIndex = -1;
+        for (let i = state.conversation.length - 1; i >= 0; i--) {
+            if (state.conversation[i].role === 'assistant') {
+                lastAssistantIndex = i;
+                break;
+            }
+        }
+        if (messageIndex !== lastAssistantIndex) return;
+        
+        const existing = bubble.querySelector('.wp-mcp-ai-chat__regenerate-btn');
+        if (existing) return;
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wp-mcp-ai-chat__feedback-btn wp-mcp-ai-chat__regenerate-btn';
+        btn.setAttribute('aria-label', 'Regenerate response');
+        btn.textContent = '♻';
+        btn.addEventListener('click', function () {
+            regenerateLastResponse(state, messageIndex);
+        });
+        
+        const feedbackContainer = bubble.querySelector('.' + FEEDBACK_CONTAINER_CLASS);
+        if (feedbackContainer) {
+            feedbackContainer.appendChild(btn);
+        }
+    }
+
+    function regenerateLastResponse(state, assistantMessageIndex) {
+        if (state.busy) return;
+        
+        // Remove assistant message and any subsequent tool results
+        state.conversation.splice(assistantMessageIndex);
+        
+        // Remove DOM elements
+        const messagesEl = state.messagesEl;
+        const bubbles = messagesEl.querySelectorAll('.wp-mcp-ai-chat__message--assistant, .wp-mcp-ai-chat__message--tool');
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            if (bubbles[i].getAttribute('data-message-index') >= assistantMessageIndex) {
+                bubbles[i].remove();
+            }
+        }
+        
+        // Re-send the last user message
+        let lastUserMsg = null;
+        for (let j = state.conversation.length - 1; j >= 0; j--) {
+            if (state.conversation[j].role === 'user') {
+                lastUserMsg = state.conversation[j];
+                break;
+            }
+        }
+        
+        if (lastUserMsg) {
+            sendChat(state);
+        }
     }
 
     function shouldDisplayJsonResponse(role, text, allowMarkdown) {
@@ -18139,7 +18560,7 @@
         codeBlocks.forEach(function (item) {
             const language = item.language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
             const className = language ? ' class="language-' + language + '"' : '';
-            const codeHtml = '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre>';
+            const codeHtml = '<div class="' + CODE_BLOCK_WRAPPER_CLASS + '"><pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre><button type="button" class="' + CODE_COPY_CLASS + '" aria-label="Copy code">' + getString('copy', 'Copy') + '</button></div>';
             html = replaceAll(html, item.placeholder, codeHtml);
         });
 
