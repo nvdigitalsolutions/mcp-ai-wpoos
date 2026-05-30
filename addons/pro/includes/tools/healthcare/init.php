@@ -44,7 +44,7 @@ if ( ! is_array( $wp_mcp_ai_settings ) ) {
 // itself gates on `enable_health_wellness_management` for admin UI bits and
 // always registers its CPTs and migration so existing data remains
 // accessible even when the toggle is off.
-require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/init.php';
 
 // Sub-toolkit C: Healthcare Imaging.
 if ( ! empty( $wp_mcp_ai_settings['enable_healthcare_imaging'] ) ) {

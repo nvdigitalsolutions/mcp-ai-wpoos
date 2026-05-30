@@ -8,9 +8,9 @@
  * @license   GPL-3.0-or-later
  */
 
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-brevo-email.php';
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php';
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-brevo-email.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 
 /**

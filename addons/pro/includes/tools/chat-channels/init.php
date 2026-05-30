@@ -157,7 +157,7 @@ function wp_mcp_ai_load_chat_channels_tools() {
 	}
 
 	$registry  = WP_MCP_AI_Tool_Registry::get_instance();
-	$tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/';
 
 	// All channel tools, grouped by platform for readability.
 	$all_tools = array(
@@ -252,7 +252,7 @@ function wp_mcp_ai_load_chat_channels_tools() {
 	}
 
 	// Apple Messages for Business (iMessage) tools.
-	$apple_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$apple_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/';
 	$apple_tools     = array(
 		'WP_MCP_AI_Pro_Tool_Send_Apple_Message'       => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message.php',
 		'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive' => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php',
@@ -279,7 +279,7 @@ function wp_mcp_ai_load_chat_channels_tools() {
 	}
 
 	// iCloud Drive tools.
-	$icloud_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$icloud_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/';
 	$icloud_tools     = array(
 		'WP_MCP_AI_Pro_Tool_List_iCloud_Drive_Files'  => $icloud_tools_dir . 'class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php',
 		'WP_MCP_AI_Pro_Tool_Get_iCloud_Drive_File'    => $icloud_tools_dir . 'class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php',

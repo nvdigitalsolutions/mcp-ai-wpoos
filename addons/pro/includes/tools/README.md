@@ -65,6 +65,11 @@ Tool **categories** (each lives in its own subdirectory with its own topic-speci
 | `site-creator-toolkit/` | Plugin/theme install, options, full-site bootstrap |
 | `social-media/` | Facebook / Instagram / LinkedIn / TikTok / Google Business publishing + insights |
 | `vault/` | AES-256-GCM encrypted credential storage |
+| `chat-channels/` | Slack, Discord, Teams, Messenger, Google Chat, Apple Messages, iCloud, Telegram, WhatsApp, Twitter, OneDrive, Outlook — ~50 messaging tools |
+| `email-marketing/` | Brevo, Mailjet, Mailgun — send, contacts, analytics |
+| `google-workspace/` | Gmail, Drive, Calendar, Analytics — search, create, report |
+| `infrastructure/` | Cross-cutting Pro infrastructure (generic CPT CRUD) |
+| `jetengine/` | JetEngine CCT, post-type, taxonomy, meta-field, relations, MCP bridge |
 | `vector-storage/` | Pinecone, Chroma, pgvector adapters |
 | `video-production/` | Remotion, transcoding, metadata extraction |
 | `wp-all-import-export/` | WP All Import / WP All Export scheduled operations |
@@ -90,7 +95,7 @@ Folder-specific deltas (canonical rules in [`.context/tool-registry.md`](../../.
 - Sanitise every `$arguments[…]` value at entry; escape on every output path. PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` is enforced.
 - Every tool **must** be gated by its toolkit setting in `wp_mcp_ai_pro_register_tools()` so Base-mode sites never see Pro tools.
 - HIPAA / PHI-touching tools (under `healthcare/`) MUST write to the imaging/PHI audit log (`WP_MCP_AI_Imaging_Audit_Log`) and gate on `WP_MCP_AI_Imaging_Capabilities`.
-- A small set of newer tools live under [`../src/Tools/`](../src/) (Shopify, Woo, JetEngine, social media, ChatChannels, Google Workspace) — those follow the same interface and registry rules but are loaded via classmap from the StudlyCase layout. See the [`../src/`](../src/) README for the rationale.
+- Integration tools that previously lived under [`../src/Tools/`](../src/) (Shopify, Woo, JetEngine, social media, ChatChannels, Google Workspace, email, etc.) have been consolidated into their respective domain folders above as part of the Unix-theory migration (Phase 4). The `src/Tools/` directory no longer exists.
 
 ## Tests
 

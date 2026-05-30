@@ -642,7 +642,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 	 * Test that the manage_telegram_commands tool class exists.
 	 */
 	public function test_manage_telegram_commands_tool_exists() {
-		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-commands.php';
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-manage-telegram-commands.php';
 
 		if ( ! file_exists( $tool_file ) ) {
 			$this->markTestSkipped( 'Manage Telegram commands tool file not found.' );

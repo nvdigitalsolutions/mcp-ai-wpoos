@@ -47,7 +47,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Load the pro tool file.
-		$pro_tool_path = WP_MCP_AI_PATH . '../addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php';
+		$pro_tool_path = WP_MCP_AI_PATH . '../addons/pro/includes/tools/developer/class-wp-mcp-ai-pro-tool-generic-rest.php';
 		if ( ! file_exists( $pro_tool_path ) ) {
 			$this->markTestSkipped( 'Pro addon not available. Generic REST tool is now a pro tool.' );
 			return;

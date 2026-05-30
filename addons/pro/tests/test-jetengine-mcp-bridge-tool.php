@@ -34,8 +34,8 @@ class Test_JetEngine_MCP_Bridge_Tool extends WP_UnitTestCase {
 
 		// Load tool classes.
 		$tools_dir = defined( 'WP_MCP_AI_PRO_PATH' )
-			? WP_MCP_AI_PRO_PATH . 'includes/src/Tools/'
-			: dirname( __DIR__ ) . '/includes/src/Tools/';
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/jetengine/'
+			: dirname( __DIR__ ) . '/includes/tools/jetengine/';
 
 		$files = array(
 			'class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php',

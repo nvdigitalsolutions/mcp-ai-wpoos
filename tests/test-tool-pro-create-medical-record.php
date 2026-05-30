@@ -45,7 +45,7 @@ class Test_Tool_Pro_Create_Medical_Record extends WP_UnitTestCase {
 		WP_MCP_AI_Health_Wellness_CPT::register_post_types();
 
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Medical_Record' ) ) {
-			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-create-medical-record.php';
+			require_once dirname( __DIR__ ) . '/addons/pro/includes/tools/healthcare/wellness/medical-records/class-wp-mcp-ai-tool-create-medical-record.php';
 		}
 
 		$this->tool = new WP_MCP_AI_Tool_Create_Medical_Record();

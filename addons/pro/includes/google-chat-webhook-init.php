@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load the Google Chat webhook handler class.
 if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Handler' ) ) {
-	require_once __DIR__ . '/src/ChatChannels/class-wp-mcp-ai-google-chat-webhook-handler.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/src/ChatChannels/class-wp-mcp-ai-google-chat-webhook-handler.php';
 }
 
 // Register webhook REST API routes on rest_api_init only when the full-featured

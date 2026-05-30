@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 
 if ( ! trait_exists( 'WP_MCP_AI_Shopify_Connection_Resolver' ) ) {
-	require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-connection-resolver.php';
 }
 
 /**
