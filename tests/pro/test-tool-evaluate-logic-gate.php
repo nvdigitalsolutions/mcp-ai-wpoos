@@ -19,7 +19,7 @@ class Test_Tool_Evaluate_Logic_Gate extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Evaluate_Logic_Gate' ) ) {
-			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-evaluate-logic-gate.php';
+			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/math/class-wp-mcp-ai-tool-evaluate-logic-gate.php';
 			if ( file_exists( $tool_file ) ) {
 				require_once $tool_file;
 			}
