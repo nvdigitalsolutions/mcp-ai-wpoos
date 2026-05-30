@@ -34,6 +34,39 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
+# ---------------------------------------------------------------------------
+# WSL auto-detection: when running natively on Windows (Git Bash / MSYS2)
+# without a working rsync, automatically re-execute inside WSL.
+# ---------------------------------------------------------------------------
+_wsl_rerun_if_needed() {
+	case "$(uname -s)" in
+		MINGW*|MSYS*) ;;
+		*) return 0 ;;
+	esac
+	if rsync --version >/dev/null 2>&1; then
+		return 0
+	fi
+	if ! command -v wsl >/dev/null 2>&1; then
+		return 0
+	fi
+	_wsl_root="$(echo "$ROOT_DIR" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	_wsl_script="$(echo "$0" | sed 's|\\|/|g')"
+	case "$_wsl_script" in
+		/*) ;;
+		*) _wsl_script="$_wsl_root/$_wsl_script" ;;
+	esac
+	_wsl_script="$(echo "$_wsl_script" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	# Build a safely-escaped argument string for the re-exec
+	_wsl_args=""
+	for _arg in "$@"; do
+		_wsl_args="$_wsl_args $(printf '%q' "$_arg")"
+	done
+	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
+	echo ""
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:\$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+}
+_wsl_rerun_if_needed "$@"
+
 # Default values
 BUILD_BASE=false
 BUILD_PRO=false
@@ -126,6 +159,13 @@ if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" 
     BUILD_PRO=true
     BUILD_COMBINED=true
     BUILD_CORE_ONLY=true
+    BUILD_WP_ORG=true
+fi
+
+# WordPress.org packages are generated from the base and combined ZIPs
+if [ "$BUILD_WP_ORG" = true ]; then
+    BUILD_BASE=true
+    BUILD_COMBINED=true
 fi
 
 # Get version if not specified
@@ -205,17 +245,14 @@ rm -rf build/mcp-ai-wpoos \
        build/.tmp-addon-zips
 mkdir -p build
 
-# Remove any previously built main-plugin ZIPs that may carry a stale version stamp.
+# Remove previously built main-plugin ZIPs that may carry a stale version stamp.
+# Only clean ZIPs for the variants being built in *this* invocation, so
+# incremental builds (e.g. --base then --pro) don't wipe each other.
 # (build-addon-zips.sh handles addon ZIP cleanup separately.)
-rm -f build/mcp-ai-wpoos-*.zip
-rm -f build/mcp-ai-wpoos-base-*.zip
-rm -f build/mcp-ai-wpoos-pro-*.zip
-rm -f build/mcp-ai-wpoos-core-*.zip
-rm -f build/nvdigital-open-operator-system-oos-*.zip
-rm -f build/nvdigital-open-operator-system-oos-pro-*.zip
-rm -f build/nvdigital-open-operator-system-oos-complete-*.zip
-rm -f build/nvdigital-open-operator-system-oos-core-*.zip
-rm -f build/nvdigital-oos-pro-*.zip
+[ "$BUILD_BASE"     = true ] && rm -f build/mcp-ai-wpoos-base-*.zip build/nvdigital-open-operator-system-oos-*.zip
+[ "$BUILD_PRO"      = true ] && rm -f build/mcp-ai-wpoos-pro-*.zip build/nvdigital-open-operator-system-oos-pro-*.zip build/nvdigital-oos-pro-*.zip
+[ "$BUILD_COMBINED" = true ] && rm -f build/mcp-ai-wpoos-[0-9]*.zip build/nvdigital-open-operator-system-oos-complete-*.zip
+[ "$BUILD_CORE_ONLY" = true ] && rm -f build/mcp-ai-wpoos-core-*.zip build/nvdigital-open-operator-system-oos-core-*.zip
 
 # ============================================================================
 # Build Base Version (Standalone, fully functional without Pro)
@@ -240,6 +277,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.agents' \
         --exclude '.bmad' \
         --exclude '.context' \
         --exclude '.zed' \
@@ -708,6 +746,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.codex-wordpress' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.agents' \
         --exclude '.bmad' \
         --exclude '.context' \
         --exclude '.zed' \

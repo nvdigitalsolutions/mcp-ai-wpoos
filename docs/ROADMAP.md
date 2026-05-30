@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** May 26, 2026  
-**Version:** 1.1.23
+**Last Updated:** May 28, 2026  
+**Version:** 1.1.24
 
 ---
 
@@ -16,6 +16,26 @@
 3. **Open Standards** - MCP protocol compliance, extensible architecture
 4. **Community Driven** - Open source with transparent development
 5. **Production Ready** - Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.24 — May 2026 ✅
+
+**Release Date:** May 27–28, 2026
+
+### What was delivered in v1.1.24
+
+- ✅ **Bug-Fix & Stabilisation Sweep.** Paper Store Pro interface load order fix (deferred to `wp_mcp_ai_bootstrapped`). Chat SPA duplicate-message and SSE protocol-mismatch fixes. Markdown rendering enabled in Chat SPA responses via `marked`.
+- ✅ **Skill Manager Canonical Return Envelope — Unix Theory P0/P1.** Skill manager fixed to return canonical envelope (`WP_Error` on failure) instead of legacy `array('success' => false, ...)`. Skills sync endpoint added. YAML frontmatter parsing hardened against colons.
+- ✅ **Assistant Tool Presets — 24 Missing Tools Added.** Tool coverage gap filled in assistant creation presets. Out-of-date tests fixed.
+- ✅ **CVE Patches.** `tmp` >=0.2.6, `symfony/cache` ^6.4.40. Composer vendor state committed. All release ZIPs rebuilt.
+- ✅ **Paper Store Admin CRUD.** Full CRUD admin UI under Assistants menu, matching Skills admin convention.
+- ✅ **CLI Coverage Enhancements.** Comprehensive WP-CLI command coverage improvements.
+- ✅ **Folder README Convention — Unix Theory P7 Complete.** Every `includes/` and `addons/pro/includes/` PHP subdirectory now ships a `README.md`. CI enforcement via `composer run docs:check-folder-readmes`.
+- ✅ **Agent Context Docs Synced.** `CLAUDE.md`, `AGENTS.md`, and `.github/agents/` synced with recent features (v2.4/v1.4).
+- ✅ **Build & CI.** `build-spa-addons` workflow added. Missing SPA addon ZIPs restored. All SPA bundles rebuilt.
+
+See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 
 ---
 

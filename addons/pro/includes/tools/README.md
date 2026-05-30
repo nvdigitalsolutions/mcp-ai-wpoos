@@ -33,25 +33,46 @@ Tool **categories** (each lives in its own subdirectory with its own topic-speci
 | `analytics/` | Multi-source analytics ingestion + reporting |
 | `architect-agent/` | Architect-agent planning and execution wrappers |
 | `architectural-design/` | AEC project, drawing, precedent, specification tools |
+| `automotive/` | Vehicle estimation, VIN decoding, repair quotes |
 | `calendar-booking/` | Bookable resources, slots, holds, ICS export |
-| `capture/` | Webpage screenshots, frame extraction, OCR feeders |
+| `capture/` | Webpage screenshots, frame extraction, OCR feeders, web browser |
+| `cloudways/` | Cloudways server/application management |
+| `comic-creation/` | Comic character, script, panel creation tools |
 | `cre-debt/` | Commercial real-estate debt modelling |
 | `crm/` | Upwork / generic CRM bridges |
+| `developer/` | Code formatting, CLI checks, geospatial analysis, REST testing |
 | `dj-management/` | Jukebox status, music generation, set planning |
 | `document-generation/` | PDF/DOCX/XLSX rendering via PhpOffice + Dompdf + TCPDF |
+| `eca-management/` | ECAs, students, attendance, iSAMS/SOCS sync |
 | `ecommerce/` | Woo/Shopify product / order / customer / coupon tooling |
+| `erp-ezuite/` | EZUite ERP product and data retrieval |
 | `extended-cognition/` | Sensor session orchestration for the Ext Cog harness |
 | `financial-planning/` | Accounts, projections, market-analysis tools |
 | `healthcare/` | Members, allergies, prescriptions, vitals, FHIR export (HIPAA-sensitive) |
 | `image-production/` | Sharp, background-removal, template application |
 | `law-firm/` | Matters, regulatory registration, policies |
+| `math/` | Calculus, equation solving, matrix ops, logic gates, graphing |
+| `media/` | Media collections, templates, batch processing |
 | `multilingual/` | Translation, locale routing |
+| `orchestration/` | Pro schedules, task plans, templates, autonomous sessions |
+| `paper-store/` | Markdown+YAML document store with Git sync |
+| `places/` | Location/place CRUD with geospatial search |
 | `project-management/` | Tasks, plans, dependencies, project CPT ops |
+| `quiz-management/` | Quiz creation, grading, analytics, submissions |
 | `regulatory-registration/` | ECA, ESG, compliance registries |
+| `remote-connections/` | Remote WordPress/Shopify REST API connections |
+| `research/` | Generic AI-assisted content research tools |
 | `site-creator-toolkit/` | Plugin/theme install, options, full-site bootstrap |
 | `social-media/` | Facebook / Instagram / LinkedIn / TikTok / Google Business publishing + insights |
+| `vault/` | AES-256-GCM encrypted credential storage |
+| `chat-channels/` | Slack, Discord, Teams, Messenger, Google Chat, Apple Messages, iCloud, Telegram, WhatsApp, Twitter, OneDrive, Outlook — ~50 messaging tools |
+| `email-marketing/` | Brevo, Mailjet, Mailgun — send, contacts, analytics |
+| `google-workspace/` | Gmail, Drive, Calendar, Analytics — search, create, report |
+| `infrastructure/` | Cross-cutting Pro infrastructure (generic CPT CRUD) |
+| `jetengine/` | JetEngine CCT, post-type, taxonomy, meta-field, relations, MCP bridge |
 | `vector-storage/` | Pinecone, Chroma, pgvector adapters |
 | `video-production/` | Remotion, transcoding, metadata extraction |
+| `wp-all-import-export/` | WP All Import / WP All Export scheduled operations |
 
 Authoritative catalogue: [`docs/reference/tools/tool-reference.md`](../../../../docs/reference/tools/tool-reference.md); live count via `WP_MCP_AI_Tool_Registry::get_tools()`.
 
@@ -74,7 +95,7 @@ Folder-specific deltas (canonical rules in [`.context/tool-registry.md`](../../.
 - Sanitise every `$arguments[…]` value at entry; escape on every output path. PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` is enforced.
 - Every tool **must** be gated by its toolkit setting in `wp_mcp_ai_pro_register_tools()` so Base-mode sites never see Pro tools.
 - HIPAA / PHI-touching tools (under `healthcare/`) MUST write to the imaging/PHI audit log (`WP_MCP_AI_Imaging_Audit_Log`) and gate on `WP_MCP_AI_Imaging_Capabilities`.
-- A small set of newer tools live under [`../src/Tools/`](../src/) (Shopify, Woo, JetEngine, social media, ChatChannels, Google Workspace) — those follow the same interface and registry rules but are loaded via classmap from the StudlyCase layout. See the [`../src/`](../src/) README for the rationale.
+- Integration tools that previously lived under [`../src/Tools/`](../src/) (Shopify, Woo, JetEngine, social media, ChatChannels, Google Workspace, email, etc.) have been consolidated into their respective domain folders above as part of the Unix-theory migration (Phase 4). The `src/Tools/` directory no longer exists.
 
 ## Tests
 
@@ -108,7 +129,7 @@ Implementation-status notes for in-progress tools live in [`IMPLEMENTATION_STATU
 
 ## See Also
 
-- Per-category READMEs (topic-specific, not replaced by this top-level file): `addons/pro/includes/tools/<category>/README.md` — e.g. [`analytics/`](./analytics/), [`ai-tool-builder/`](./ai-tool-builder/), [`cre-debt/`](./cre-debt/), [`healthcare/`](./healthcare/), [`architectural-design/`](./architectural-design/), [`calendar-booking/`](./calendar-booking/), [`dj-management/`](./dj-management/), [`document-generation/`](./document-generation/), [`ecommerce/`](./ecommerce/), [`financial-planning/`](./financial-planning/), [`image-production/`](./image-production/), [`multilingual/`](./multilingual/), [`site-creator-toolkit/`](./site-creator-toolkit/), [`social-media/`](./social-media/), [`video-production/`](./video-production/), and the other sibling subdirectories listed above
+- Per-category READMEs (topic-specific, not replaced by this top-level file): `addons/pro/includes/tools/<category>/README.md` — e.g. [`ai-tool-builder/`](./ai-tool-builder/), [`analytics/`](./analytics/), [`architect-agent/`](./architect-agent/), [`architectural-design/`](./architectural-design/), [`automotive/`](./automotive/), [`calendar-booking/`](./calendar-booking/), [`capture/`](./capture/), [`cloudways/`](./cloudways/), [`comic-creation/`](./comic-creation/), [`cre-debt/`](./cre-debt/), [`crm/`](./crm/), [`developer/`](./developer/), [`dj-management/`](./dj-management/), [`document-generation/`](./document-generation/), [`eca-management/`](./eca-management/), [`ecommerce/`](./ecommerce/), [`erp-ezuite/`](./erp-ezuite/), [`extended-cognition/`](./extended-cognition/), [`financial-planning/`](./financial-planning/), [`healthcare/`](./healthcare/), [`image-production/`](./image-production/), [`law-firm/`](./law-firm/), [`math/`](./math/), [`media/`](./media/), [`multilingual/`](./multilingual/), [`orchestration/`](./orchestration/), [`paper-store/`](./paper-store/), [`places/`](./places/), [`project-management/`](./project-management/), [`quiz-management/`](./quiz-management/), [`regulatory-registration/`](./regulatory-registration/), [`remote-connections/`](./remote-connections/), [`research/`](./research/), [`site-creator-toolkit/`](./site-creator-toolkit/), [`social-media/`](./social-media/), [`vault/`](./vault/), [`vector-storage/`](./vector-storage/), [`video-production/`](./video-production/), [`wp-all-import-export/`](./wp-all-import-export/), and the other sibling subdirectories listed above
 - Base counterpart: [`includes/tools/`](../../../../includes/tools/) — same interface, ~195 tools
 - Sibling surfaces: [`addons/pro/includes/rest/`](../rest/), [`addons/pro/includes/cli/`](../cli/), [`addons/pro/includes/slash-commands/`](../slash-commands/)
 - Newer classmap-loaded sibling: [`addons/pro/includes/src/`](../src/) — integration-heavy Pro tools (Shopify, Woo, JetEngine, social, ChatChannels)

@@ -1,8 +1,10 @@
-# Pro `src/` — Integration Tool Tree
+# Pro `src/` — Shared Pro Source Tree
+
+> **Migration notice (May 2026):** The `src/Tools/` subdirectory has been consolidated into [`addons/pro/includes/tools/`](../tools/) as part of the Unix-theory migration (Phase 4). All ~110 integration tool files (Shopify, WooCommerce, JetEngine, social media, email, Google Workspace, ChatChannels, etc.) now live in their respective domain folders under `tools/`. The `src/Tools/` directory no longer exists.
 
 ## Purpose
 
-Houses the newer integration-heavy Pro tool classes — Shopify, WooCommerce, JetEngine, Elementor, social media (Facebook / Instagram / LinkedIn / TikTok / Google Business), email (Brevo / Mailjet / Mailgun), Google Workspace (Calendar, Analytics, Drive, Gmail), QuickBooks, GitHub, WPCode, chat channels (Slack / Discord / Teams / Messenger / Google Chat / Apple Messages / iCloud / Telegram / WhatsApp) — laid out under StudlyCase subdirectories so the directory shape mirrors the (future) PSR-4 namespace tree without yet introducing PHP namespaces.
+Houses Pro infrastructure classes that don't fit neatly under `tools/<domain>/`.
 
 ## Tier
 
@@ -10,8 +12,8 @@ Houses the newer integration-heavy Pro tool classes — Shopify, WooCommerce, Je
 |---|---|
 | **Distribution** | Pro |
 | **PHP target** | 8.1+ |
-| **Loaded by** | Explicit classmap in `wp_mcp_ai_pro_register_tools()` ([`addons/pro/mcp-ai-wpoos-pro.php`](../../mcp-ai-wpoos-pro.php)) — each `WP_MCP_AI_Pro_Tool_*` class is registered with `WP_MCP_AI_Tool_Registry` and its file `require_once`-d on demand. Chat-channel tools are batch-loaded from [`addons/pro/includes/chat-channels-toolkit-init.php`](../chat-channels-toolkit-init.php); the Google Chat webhook handler is required from [`addons/pro/includes/google-chat-webhook-init.php`](../google-chat-webhook-init.php) |
-| **Optional dependencies** | WooCommerce, JetEngine, Elementor, Shopify Admin API, Brevo, Mailjet, Mailgun, QuickBooks Online + Desktop, Google APIs (Workspace + Analytics + Business + Chat), Facebook Graph, Instagram Graph, LinkedIn API, TikTok Marketing API, GitHub API, WPCode, Telegram Bot API, WhatsApp Cloud API, Slack Web API, Discord API, Microsoft Graph (Teams + Outlook), Apple Messages for Business, iCloud Drive — each tool checks for its dependency at runtime |
+| **Loaded by** | Various init files in [`addons/pro/includes/`](../) |
+| **Optional dependencies** | Varies by class |
 
 ## Public Surface
 

@@ -8,7 +8,7 @@
  * @license   GPL-3.0-or-later
  */
 
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailgun-email.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailgun-email.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 
 /**

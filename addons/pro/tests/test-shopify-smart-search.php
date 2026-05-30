@@ -76,7 +76,7 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-smart-search.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-smart-search.php';
 
 		$this->helper = new Smart_Search_Test_Helper();
 	}
@@ -412,8 +412,8 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	 * Test that the Catalog tool schema includes smart_search parameter.
 	 */
 	public function test_catalog_schema_has_smart_search() {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-catalog.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-connection-resolver.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-catalog.php';
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Shopify_Catalog();
 		$schema = $tool->get_parameters_schema();
@@ -427,13 +427,13 @@ class Test_Shopify_Smart_Search extends WP_UnitTestCase {
 	 * Test that the Products tool schema includes smart_search parameter.
 	 */
 	public function test_products_schema_has_smart_search() {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/trait-wp-mcp-ai-shopify-connection-resolver.php';
 
 		if ( ! trait_exists( 'WP_MCP_AI_Tool_Product_Card' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-product-card.php';
 		}
 
-		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-shopify-products.php';
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Shopify_Products();
 		$schema = $tool->get_parameters_schema();

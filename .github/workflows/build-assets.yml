@@ -20,6 +20,7 @@ on:
     branches:
       - main
       - develop
+      - alpha-working
       - 'release/**'
       - 'hotfix/**'
       - 'copilot/**'
@@ -49,6 +50,7 @@ on:
     branches:
       - main
       - develop
+      - alpha-working
     paths:
       - 'assets/js/**/*.js'
       - 'assets/css/**/*.css'
@@ -129,14 +131,18 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
+          # Ensure build/ directory exists (it may not if .gitkeep was just restored
+          # or if the directory was deleted from the repo).
+          mkdir -p build
+
           # Add all built files
           git add -f assets/**/*.min.css assets/**/*.min.css.map 2>/dev/null || true
           git add -f assets/**/*.min.js assets/**/*.min.js.map 2>/dev/null || true
-          git add -f build/*.zip
+          git add -f build/*.zip 2>/dev/null || true
           # Also commit individual toolkit add-on ZIPs (e.g. oos-toolkit-tcpdf, oos-toolkit-document-generation, …)
           # so they appear alongside the other distributions in build/.
           if [ -d "build/toolkit-addons" ] && [ -n "$(ls -A build/toolkit-addons/*.zip 2>/dev/null)" ]; then
-            git add -f build/toolkit-addons/*.zip
+            git add -f build/toolkit-addons/*.zip 2>/dev/null || true
           fi
           git add -f addons/pro/build/tma-template-builder/ 2>/dev/null || true
           git add -f addons/pro/build/tma-woo-shop/ 2>/dev/null || true
@@ -155,7 +161,7 @@ jobs:
 
       - name: Commit built files (WordPress standard)
         if: |
-          github.event_name == 'push' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
           steps.check_changes.outputs.changed == 'true' &&
           !contains(github.event.head_commit.message, '[skip ci]') &&
           !contains(github.event.head_commit.message, '[skip build]')
@@ -186,11 +192,12 @@ jobs:
           git pull --rebase --autostash origin ${{ github.ref_name }} || {
             echo "⚠️ Rebase conflict detected. Attempting to resolve..."
             # For build artifacts, we can safely use ours strategy
-            git checkout --ours build/*.zip
-            git add -f build/*.zip
+            mkdir -p build
+            git checkout --ours build/*.zip 2>/dev/null || true
+            git add -f build/*.zip 2>/dev/null || true
             if [ -d "build/toolkit-addons" ] && [ -n "$(ls -A build/toolkit-addons/*.zip 2>/dev/null)" ]; then
-              git checkout --ours build/toolkit-addons/*.zip
-              git add -f build/toolkit-addons/*.zip
+              git checkout --ours build/toolkit-addons/*.zip 2>/dev/null || true
+              git add -f build/toolkit-addons/*.zip 2>/dev/null || true
             fi
             git rebase --continue || {
               echo "❌ Failed to resolve rebase conflicts"

@@ -10939,7 +10939,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// Load the helper class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
 
 		// Resolve an access token — supports Service Account JSON, legacy raw tokens, and OAuth refresh tokens.
@@ -11097,7 +11097,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// Load the helper class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
 
 		// Resolve an access token — supports Service Account JSON, legacy raw tokens, and OAuth refresh tokens.
@@ -11350,7 +11350,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 			}
 
 			$gc_access_token = '';
@@ -11578,7 +11578,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 			}
 
 			$gc_access_token = '';

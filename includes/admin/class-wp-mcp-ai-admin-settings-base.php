@@ -375,6 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'cloudflare_api_token',
 				'nvidia_api_key',
 				'cloudways_api_key',
+				'cloudways_access_token',
 				'mailjet_api_key',
 				'mailjet_api_secret',
 				'brevo_api_key',

@@ -16,7 +16,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 	 * Test that the tool class file exists.
 	 */
 	public function test_class_file_exists() {
-		$file = dirname( __DIR__ ) . '/addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = dirname( __DIR__ ) . '/addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		$this->assertFileExists( $file, 'Tool class file should exist.' );
 	}
 
@@ -28,7 +28,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -51,7 +51,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -69,7 +69,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -87,7 +87,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -107,7 +107,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -141,7 +141,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -165,7 +165,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -183,7 +183,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -210,7 +210,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -239,7 +239,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -261,7 +261,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -278,7 +278,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}
@@ -295,7 +295,7 @@ class Test_Pro_Tool_Validate_Image_For_Vehicle extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_PATH not defined.' );
 		}
 
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
+		$file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php';
 		if ( ! file_exists( $file ) ) {
 			$this->markTestSkipped( 'Tool file not found.' );
 		}

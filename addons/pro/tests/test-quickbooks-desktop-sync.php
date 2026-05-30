@@ -42,9 +42,9 @@ class Test_QuickBooks_Desktop_Sync extends WP_UnitTestCase {
 
 		// Load required classes.
 		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php';
 		} else {
-			require_once dirname( __DIR__ ) . '/includes/src/Tools/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php';
+			require_once dirname( __DIR__ ) . '/includes/tools/ecommerce/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php';
 		}
 
 		$this->tool = new WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync();

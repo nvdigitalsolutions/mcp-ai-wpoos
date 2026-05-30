@@ -21,7 +21,7 @@ class Test_Capture_Webpage_Screenshot_Tool extends WP_UnitTestCase {
 
 		// Load the tool class directly if Pro addon is not loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Capture_Webpage_Screenshot' ) ) {
-			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-capture-webpage-screenshot.php';
+			$tool_file = dirname( dirname( __DIR__ ) ) . '/addons/pro/includes/tools/capture/class-wp-mcp-ai-tool-capture-webpage-screenshot.php';
 			if ( file_exists( $tool_file ) ) {
 				require_once $tool_file;
 			}

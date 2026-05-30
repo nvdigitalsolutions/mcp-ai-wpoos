@@ -15,6 +15,7 @@
 .wordpress-org
 
 # Development configuration
+.agents
 .bmad
 .codex
 .context

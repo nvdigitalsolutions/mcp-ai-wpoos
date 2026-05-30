@@ -1062,7 +1062,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Load the Google Service Account helper.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
 
 		$access_token = '';

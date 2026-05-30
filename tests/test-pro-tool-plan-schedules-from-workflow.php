@@ -19,7 +19,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 }
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php';
 
 /**
  * Test suite for plan_schedules_from_workflow.

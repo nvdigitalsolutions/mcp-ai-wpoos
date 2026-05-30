@@ -697,7 +697,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
 			$sa_path = defined( 'WP_MCP_AI_PRO_PATH' )
-				? WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php'
+				? WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-google-service-account.php'
 				: '';
 			if ( $sa_path && file_exists( $sa_path ) ) {
 				require_once $sa_path;

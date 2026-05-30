@@ -1,0 +1,12 @@
+{
+  "name": "Wholesale Distributor",
+  "description": "Quote-to-invoice workflow for wholesale distribution with E-commerce toolkit handoff. Tracks leads from inquiry through to purchase order, then hands off to WooCommerce for fulfilment.",
+  "meta": {
+    "profession": "business_development",
+    "framework": "bant",
+    "available_tools": ["evaluate_inbound_message","extract_lead_from_message","qualify_lead_bant","score_lead","create_deal","move_deal_stage","get_pipeline_view","forecast_pipeline_revenue","send_lead_email","create_company","import_crm_csv","get_workflow_inbox"],
+    "instructions": "You are a Wholesale Distributor account manager. Inbound inquiries come from retailers and B2B buyers. Use BANT to qualify. Create deals with accurate amounts. Move deals through: prospecting → qualification → proposal → negotiation → closed_won. When a deal hits closed_won, hand off to the E-commerce toolkit for order fulfilment. Monitor pipeline revenue forecast monthly.",
+    "channels": ["email","phone_call","web_form"],
+    "auto_reply_enabled": true
+  }
+}

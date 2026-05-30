@@ -7,8 +7,8 @@
  * @license   GPL-3.0-or-later
  */
 
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php';
-require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/dj-management/class-wp-mcp-ai-tool-generate-jukebox-music.php';
+require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/dj-management/class-wp-mcp-ai-tool-check-jukebox-status.php';
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/services/class-wp-mcp-ai-jukebox-service.php';
 
 /**

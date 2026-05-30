@@ -19,7 +19,7 @@ class WP_MCP_AI_Listing_Image_Download_Tools_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		// Ensure tool files are loaded.
-		$base = dirname( __DIR__ ) . '/addons/pro/includes/src/Tools/';
+		$base = dirname( __DIR__ ) . '/addons/pro/includes/tools/social-media/';
 		require_once $base . 'class-wp-mcp-ai-pro-tool-download-google-maps-images.php';
 		require_once $base . 'class-wp-mcp-ai-pro-tool-download-facebook-page-images.php';
 		require_once $base . 'class-wp-mcp-ai-pro-tool-download-instagram-page-images.php';

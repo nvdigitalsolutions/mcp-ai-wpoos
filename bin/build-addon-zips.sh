@@ -15,6 +15,7 @@
 #   build/nvoos-embedded-v<embedded-version>.zip
 #   build/nvoos-saas-controller-v<saas-controller-version>.zip
 #   build/nvoos-comic-reader-v<comic-reader-version>.zip
+#   build/nvoos-chat-spa-v<chat-spa-version>.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
@@ -26,6 +27,39 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
+
+# ---------------------------------------------------------------------------
+# WSL auto-detection: when running natively on Windows (Git Bash / MSYS2)
+# without a working rsync, automatically re-execute inside WSL.
+# ---------------------------------------------------------------------------
+_wsl_rerun_if_needed() {
+	case "$(uname -s)" in
+		MINGW*|MSYS*) ;;
+		*) return 0 ;;
+	esac
+	if rsync --version >/dev/null 2>&1; then
+		return 0
+	fi
+	if ! command -v wsl >/dev/null 2>&1; then
+		return 0
+	fi
+	_wsl_root="$(echo "$ROOT_DIR" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	_wsl_script="$(echo "$0" | sed 's|\\|/|g')"
+	case "$_wsl_script" in
+		/*) ;;
+		*) _wsl_script="$_wsl_root/$_wsl_script" ;;
+	esac
+	_wsl_script="$(echo "$_wsl_script" | sed 's|^/\([a-zA-Z]\)/|/mnt/\1/|')"
+	# Build a safely-escaped argument string for the re-exec
+	_wsl_args=""
+	for _arg in "$@"; do
+		_wsl_args="$_wsl_args $(printf '%q' "$_arg")"
+	done
+	echo "ℹ️  Windows detected without working rsync → re-executing via WSL..."
+	echo ""
+	exec wsl bash -c "export PATH=/usr/bin:/bin:/usr/local/bin:$PATH; cd '$_wsl_root' && bash '$_wsl_script' $_wsl_args"
+}
+_wsl_rerun_if_needed "$@"
 
 SKIP_CANVAS=false
 STRICT_CANVAS=false
@@ -92,6 +126,9 @@ DOCS_HUB_VERSION=${DOCS_HUB_VERSION:-dev}
 COMIC_READER_VERSION=$(_read_addon_version "addons/comic-reader/nvoos-comic-reader.php")
 COMIC_READER_VERSION=${COMIC_READER_VERSION:-dev}
 
+CHAT_SPA_VERSION=$(_read_addon_version "addons/chat-spa/nvoos-chat-spa.php")
+CHAT_SPA_VERSION=${CHAT_SPA_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -120,8 +157,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, and addons/comic-reader must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, and addons/chat-spa must exist."
 exit 1
 fi
 
@@ -145,6 +182,7 @@ GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${GRAPHIFY_VERSION}.zip"
 DOCS_HUB_ZIP="${OUTPUT_DIR}/nvoos-docs-hub-v${DOCS_HUB_VERSION}.zip"
 SAAS_CONTROLLER_ZIP="${OUTPUT_DIR}/nvoos-saas-controller-v${SAAS_VERSION}.zip"
 COMIC_READER_ZIP="${OUTPUT_DIR}/nvoos-comic-reader-v${COMIC_READER_VERSION}.zip"
+CHAT_SPA_ZIP="${OUTPUT_DIR}/nvoos-chat-spa-v${CHAT_SPA_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
 rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
@@ -155,14 +193,15 @@ rm -f "$OUTPUT_DIR"/nvoos-graphify-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-docs-hub-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-saas-controller-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-comic-reader-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-chat-spa-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=9
-else
 TOTAL_STEPS=10
+else
+TOTAL_STEPS=11
 fi
 
 echo "=========================================="
@@ -176,6 +215,8 @@ rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.distignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json'
 (
@@ -192,6 +233,7 @@ rsync -a "addons/embedded/" "${TMP_DIR}/embedded-stage/nvoos-embedded/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json'
 (
@@ -208,6 +250,8 @@ rsync -a "addons/fantasy-football/" "${TMP_DIR}/ff-stage/nvoos-fantasy-football/
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.distignore' \
 --exclude 'tests/'
 (
 cd "${TMP_DIR}/ff-stage"
@@ -259,6 +303,7 @@ rsync -a "addons/graphify/" "${TMP_DIR}/graphify-stage/nvoos-graphify/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json'
 (
@@ -292,11 +337,14 @@ rsync -a "addons/docs-hub/" "${TMP_DIR}/docs-hub-stage/nvoos-docs-hub/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json' \
 --exclude 'package.json' \
 --exclude 'tsconfig.json' \
 --exclude 'esbuild.config.js' \
+--exclude 'eslint.config.js' \
+--exclude 'vitest.config.ts' \
 --exclude 'src/'
 (
 cd "${TMP_DIR}/docs-hub-stage"
@@ -332,6 +380,8 @@ rsync -a "addons/saas-controller/" "${TMP_DIR}/saas-controller-stage/nvoos-saas-
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.distignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json' \
 --exclude 'package.json' \
@@ -370,6 +420,7 @@ rsync -a "addons/comic-reader/" "${TMP_DIR}/comic-reader-stage/nvoos-comic-reade
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
+--exclude '.gitignore' \
 --exclude 'tests/' \
 --exclude 'package-lock.json' \
 --exclude 'package.json' \
@@ -383,6 +434,46 @@ zip -r -q "${ROOT_DIR}/${COMIC_READER_ZIP}" nvoos-comic-reader/
 )
 COMIC_READER_SIZE=$(du -h "$COMIC_READER_ZIP" | cut -f1)
 echo "✅ ${COMIC_READER_ZIP} (${COMIC_READER_SIZE})"
+echo ""
+
+echo "[9/${TOTAL_STEPS}] Building nvoos-chat-spa-v${CHAT_SPA_VERSION}.zip"
+# Build the React SPA if Node is available, then package.
+if [ -d "addons/chat-spa/node_modules" ] || command -v npm >/dev/null 2>&1; then
+if [ ! -d "addons/chat-spa/node_modules" ]; then
+echo "  ℹ️  Installing chat-spa npm dependencies (npm ci)..."
+( cd addons/chat-spa && npm ci --no-audit --no-fund --silent ) || {
+echo "⚠️  Warning: npm ci failed for chat-spa — packaging without rebuilt artifacts."
+}
+fi
+if [ -d "addons/chat-spa/node_modules" ]; then
+echo "  ℹ️  Building chat-spa artifacts (npm run build)..."
+( cd addons/chat-spa && npm run build --silent ) || {
+echo "⚠️  Warning: npm run build failed for chat-spa — packaging existing artifacts (if any)."
+}
+fi
+else
+echo "  ℹ️  npm not available — packaging existing assets/dist/ if present."
+fi
+mkdir -p "${TMP_DIR}/chat-spa-stage/nvoos-chat-spa"
+rsync -a "addons/chat-spa/" "${TMP_DIR}/chat-spa-stage/nvoos-chat-spa/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude 'tests/' \
+--exclude 'package-lock.json' \
+--exclude 'package.json' \
+--exclude 'tsconfig.json' \
+--exclude 'vitest.config.ts' \
+--exclude 'esbuild.config.cjs' \
+--exclude 'eslint.config.js' \
+--exclude 'src/'
+(
+cd "${TMP_DIR}/chat-spa-stage"
+zip -r -q "${ROOT_DIR}/${CHAT_SPA_ZIP}" nvoos-chat-spa/
+)
+CHAT_SPA_SIZE=$(du -h "$CHAT_SPA_ZIP" | cut -f1)
+echo "✅ ${CHAT_SPA_ZIP} (${CHAT_SPA_SIZE})"
 echo ""
 
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
@@ -407,7 +498,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[9/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+echo "[10/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -496,6 +587,7 @@ echo "  - ${CS3D_ZIP}"
 echo "  - ${GRAPHIFY_ZIP}"
 echo "  - ${SAAS_CONTROLLER_ZIP}"
 echo "  - ${COMIC_READER_ZIP}"
+echo "  - ${CHAT_SPA_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then
