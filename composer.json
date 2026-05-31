@@ -19,6 +19,7 @@
     "_comment_symfony_pin": "Symfony deps are pinned to the 6.4 LTS line because the base plugin's PHP floor is 7.4. Symfony 7.x requires PHP 8.2+ and uses readonly/enum syntax that fatal-parses on PHP 7.4 even when not executed. 6.4 LTS is supported until November 2027.",
     "require": {
         "rahul900day/tiktoken-php": "^1.0",
+        "psr/event-dispatcher": "^1.0",
         "symfony/http-client": "^6.4.36",
         "nyholm/psr7": "^1.8",
         "symfony/validator": "^6.4.36",
