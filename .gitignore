@@ -77,8 +77,13 @@ composer.phar
 
 # Keep installed.php and installed.json so plugin works after cloning
 # These files are needed for composer autoloader to function properly
-#!/vendor/composer/installed.php
-#!/vendor/composer/installed.json
+# NOTE: These files are NOT tracked because they change between
+# composer install (dev) and composer install --no-dev (production).
+# After cloning, run: composer install --no-dev --classmap-authoritative
+# For development, run: composer install
+# The generated autoload files will be created fresh each time.
+/vendor/composer/installed.php
+/vendor/composer/installed.json
 
 # Exclude test and development files from vendor packages
 /vendor/*/*/test/
