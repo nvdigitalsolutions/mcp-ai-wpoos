@@ -1,5 +1,6 @@
 {
     "name": "oos/core",
+    "version": "1.0.0",
     "description": "Framework-agnostic AI orchestration engine — agentic loop, tool registry, provider routing, SSE streaming.",
     "type": "library",
     "license": "MIT",
@@ -33,5 +34,14 @@
         "oos/wordpress-adapter": "WordPress integration via the adapter layer",
         "oos/laravel-adapter": "Laravel integration via the adapter layer",
         "oos/craft-adapter": "Craft CMS integration via the adapter layer"
+    },
+    "repositories": {
+        "local-adapters": {
+            "type": "path",
+            "url": "../*",
+            "options": {
+                "symlink": true
+            }
+        }
     }
 }

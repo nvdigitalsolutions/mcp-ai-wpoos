@@ -233,6 +233,12 @@ function wp_mcp_ai_oos_orchestrator() {
  * @return bool
  */
 function wp_mcp_ai_oos_engine_enabled(): bool {
+	// Check the admin setting first (Chat Client > Behavior > OOS Engine).
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_engine'] ) ) {
+		return true;
+	}
+
 	if ( defined( 'WP_MCP_AI_OOS_ENGINE' ) && WP_MCP_AI_OOS_ENGINE ) {
 		return true;
 	}

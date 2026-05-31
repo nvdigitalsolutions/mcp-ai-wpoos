@@ -146,6 +146,12 @@ composer.phar
 /vendor/symfony/*/Resources/translations/
 /vendor/symfony/*/Resources/bin/
 
+# Exclude vendor directories from lib/core extraction packages
+# These are standalone Composer packages; their vendors are not committed.
+lib/*/vendor/
+lib/*/composer.lock
+lib/*/tests/vendor/
+
 # Pro addon dependencies
 # Exclude node_modules (development only)
 /addons/pro/node_modules/
