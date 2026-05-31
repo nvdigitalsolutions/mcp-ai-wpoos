@@ -20,6 +20,7 @@
 .codex
 .context
 .devcontainer
+.zed
 .eslintrc.json
 .eslintignore
 .editorconfig
@@ -33,6 +34,7 @@ MAINTAINER_MAP.md
 # Build tools and dependencies
 node_modules
 vendor-dev
+composer.json
 composer.lock
 package.json
 package-lock.json
@@ -77,6 +79,7 @@ docs
 !includes/bundled-skills/
 !includes/bundled-skills/*/
 !includes/bundled-skills/*/SKILL.md
+!includes/bundled-skills/THIRD_PARTY_NOTICES.md
 
 # Other development files
 Makefile
@@ -85,6 +88,7 @@ Gulpfile.js
 
 # Source files (only include built bundles)
 src/
+packages/
 
 # Archives
 *.zip
@@ -170,6 +174,4 @@ assets/js/workers
 !LICENSE
 
 # AI-generated documentation and development files (WordPress.org compliance)
-archive/wordpress-org-submission/
-archive/development-phases/
-archive/production-status/
+archive/

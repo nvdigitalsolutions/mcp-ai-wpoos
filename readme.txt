@@ -5,11 +5,11 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.24
+Stable tag: 1.1.25
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with 11 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare & Ollama. 230+ built-in tools.
+AI Assistant framework with 13 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 250+ built-in tools.
 
 == Submission Scope ==
 
@@ -32,7 +32,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 230+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 250+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
 **Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
@@ -292,7 +292,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 230+ tools for content, media, research, and operations
+4. **Tool Registry** - 250+ tools for content, media, research, and operations
 5. **Profession Templates** - 296 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
@@ -674,7 +674,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 *Fixed*
 
 * **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
-* **Inconsistent tool count in readme** — The headline description and the Base Plugin section now both report `230+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
+* **Inconsistent tool count in readme** — The headline description and the Base Plugin section now both report `250+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
 * **Missing canonical `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). The MCP protocol is a primary feature and was previously undiscoverable in plugin search.
 
 *Changed*
@@ -772,7 +772,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* `docs/reference/tools/tool-reference.md` fully audited — all 230+ tools in `load_default_tools` (base + extended) now documented
+* `docs/reference/tools/tool-reference.md` fully audited — all 250+ tools in `load_default_tools` (base + extended) now documented
 * 14 new sections added to tool-reference.md: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queuing tools
 * New feature guide `docs/features/erlang-c-staffing-tools.md` with industry standards table, usage scenarios, and helper class API reference
 * `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
@@ -1281,6 +1281,14 @@ Initial release. Welcome to Open Operator System!
 * **Terms of Service:** https://www.digitalocean.com/legal/terms-of-service-agreement
 * **Privacy Policy:** https://www.digitalocean.com/legal/privacy-policy
 * **Data Usage:** See DigitalOcean's privacy policy; processed within DigitalOcean's infrastructure
+
+**6f. Baseten API**
+* **Purpose:** AI model inference provider for running open-source models (Llama, Mistral, etc.)
+* **Data Sent:** Prompt text, conversation history, tool definitions
+* **When:** When the Baseten provider is configured with an API key in plugin settings
+* **Service URL:** https://inference.baseten.co/v1
+* **Terms of Service:** https://www.baseten.co/terms-and-conditions/
+* **Privacy Policy:** https://www.baseten.co/privacy-policy/
 
 = Optional Third-Party Service Integrations =
 
