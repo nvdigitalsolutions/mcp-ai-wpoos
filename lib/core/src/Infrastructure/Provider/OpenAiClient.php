@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
+use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Psr\Http\Client\ClientInterface as HttpClientInterface;
+
 class OpenAiClient extends OpenAiCompatibleClient {
 
 	private const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
