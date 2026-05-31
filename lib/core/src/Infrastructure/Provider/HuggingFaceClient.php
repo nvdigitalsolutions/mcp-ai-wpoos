@@ -1,6 +1,8 @@
 <?php
 /**
- * OpenAI provider client — framework-agnostic implementation.
+ * HuggingFace Inference provider client.
+ *
+ * OpenAI-compatible API via HuggingFace's text-generation-inference endpoint.
  *
  * @package Oos\Core
  * @since   1.0.0
@@ -11,21 +13,19 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
-class OpenAiClient extends OpenAiCompatibleClient
+class HuggingFaceClient extends OpenAiCompatibleClient
 {
-    private const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
-
     public function __construct(
         SettingsStoreInterface $settings,
         HttpClientInterface $http,
         ErrorFactoryInterface $errors,
     ) {
         parent::__construct($settings, $http, $errors);
-        $this->providerSlug = 'openai';
+        $this->providerSlug = 'huggingface';
     }
 
     protected function getDefaultBaseUrl(): string
     {
-        return self::DEFAULT_BASE_URL;
+        return 'https://api-inference.huggingface.co/v1';
     }
 }

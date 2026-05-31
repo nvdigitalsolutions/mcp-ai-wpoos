@@ -1,6 +1,8 @@
 <?php
 /**
- * OpenAI provider client — framework-agnostic implementation.
+ * Cloudflare Workers AI provider client.
+ *
+ * OpenAI-compatible API. Default endpoint uses the Cloudflare AI Gateway.
  *
  * @package Oos\Core
  * @since   1.0.0
@@ -11,21 +13,19 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
-class OpenAiClient extends OpenAiCompatibleClient
+class CloudflareClient extends OpenAiCompatibleClient
 {
-    private const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
-
     public function __construct(
         SettingsStoreInterface $settings,
         HttpClientInterface $http,
         ErrorFactoryInterface $errors,
     ) {
         parent::__construct($settings, $http, $errors);
-        $this->providerSlug = 'openai';
+        $this->providerSlug = 'cloudflare';
     }
 
     protected function getDefaultBaseUrl(): string
     {
-        return self::DEFAULT_BASE_URL;
+        return 'https://api.cloudflare.com/client/v4/accounts/:account_id/ai/v1';
     }
 }
