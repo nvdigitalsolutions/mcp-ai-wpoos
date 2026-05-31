@@ -1144,7 +1144,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'            => 'wordpress-plugins',
-				'get_woo_recent_orders'              => 'wordpress-plugins',
+								'get_elementor_form_submissions'    => 'wordpress-plugins',
+								'get_all_form_submissions'          => 'wordpress-plugins',
+								'get_woo_recent_orders'              => 'wordpress-plugins',
 				'get_woo_products'                   => 'wordpress-plugins',
 				'create_woo_product'                 => 'wordpress-plugins',
 				'get_jetengine_items'                => 'wordpress-plugins',
@@ -1761,7 +1763,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_FF_Create_League_Report'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
 				'WP_MCP_AI_Tool_FF_Player_Research'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
-				'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
+								'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
+								'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-form-submissions.php',
+								'WP_MCP_AI_Tool_Get_All_Form_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-form-submissions.php',
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
 				'WP_MCP_AI_Tool_Get_Woo_Products'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
 				'WP_MCP_AI_Tool_Create_Woo_Product'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-woo-product.php',

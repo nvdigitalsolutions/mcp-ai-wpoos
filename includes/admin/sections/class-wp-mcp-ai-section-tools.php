@@ -2569,15 +2569,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Check for plugin-specific tools.
 			$plugin_requirements = array(
 				'get_elementor_templates'        => array(
-					'plugin' => 'Elementor',
-					'check'  => 'class_exists',
-					'value'  => '\Elementor\Plugin',
-				),
-				'import_elementor_template_kit'  => array(
-					'plugin' => 'Elementor',
-					'check'  => 'class_exists',
-					'value'  => '\Elementor\Plugin',
-				),
+									'plugin' => 'Elementor',
+									'check'  => 'class_exists',
+									'value'  => '\Elementor\Plugin',
+								),
+								'import_elementor_template_kit'  => array(
+									'plugin' => 'Elementor',
+									'check'  => 'class_exists',
+									'value'  => '\Elementor\Plugin',
+								),
+								'get_elementor_form_submissions' => array(
+									'plugin' => 'Elementor Pro',
+									'check'  => 'class_exists',
+									'value'  => '\ElementorPro\Plugin',
+								),
+								'get_all_form_submissions'       => array(
+									'plugin' => 'JetFormBuilder or Elementor Pro',
+									'checks' => array(
+										array(
+											'check' => 'class_exists',
+											'value' => 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions',
+										),
+										array(
+											'check' => 'class_exists',
+											'value' => 'WP_MCP_AI_Tool_Get_Elementor_Form_Submissions',
+										),
+									),
+									'require_all' => false,
+								),
 				'get_woo_recent_orders'          => array(
 					'plugin' => 'WooCommerce',
 					'check'  => 'class_exists',
@@ -2647,25 +2666,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				$requirement = $plugin_requirements[ $slug ];
 
 				// Support both single check and multiple checks.
-				if ( isset( $requirement['checks'] ) ) {
-					// Multiple checks - all must pass.
-					foreach ( $requirement['checks'] as $check_config ) {
-						$check_func  = $check_config['check'];
-						$check_value = $check_config['value'];
+								if ( isset( $requirement['checks'] ) ) {
+									$require_all = ! isset( $requirement['require_all'] ) || $requirement['require_all'];
 
-						// Validate check function is in allowlist.
-						if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
-							// Invalid check function - mark tool as unavailable.
-							$missing[] = $requirement['plugin'];
-							break;
-						}
+									if ( $require_all ) {
+										// Multiple checks - all must pass.
+										foreach ( $requirement['checks'] as $check_config ) {
+											$check_func  = $check_config['check'];
+											$check_value = $check_config['value'];
 
-						if ( ! $check_func( $check_value ) ) {
-							$missing[] = $requirement['plugin'];
-							break; // No need to check further once one fails.
-						}
-					}
-				} else {
+											// Validate check function is in allowlist.
+											if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+												// Invalid check function - mark tool as unavailable.
+												$missing[] = $requirement['plugin'];
+												break;
+											}
+
+											if ( ! $check_func( $check_value ) ) {
+												$missing[] = $requirement['plugin'];
+												break; // No need to check further once one fails.
+											}
+										}
+									} else {
+										// Multiple checks - at least one must pass (OR logic).
+										$any_passed = false;
+										foreach ( $requirement['checks'] as $check_config ) {
+											$check_func  = $check_config['check'];
+											$check_value = $check_config['value'];
+
+											// Validate check function is in allowlist.
+											if ( ! in_array( $check_func, $allowed_check_functions, true ) ) {
+												continue;
+											}
+
+											if ( $check_func( $check_value ) ) {
+												$any_passed = true;
+												break;
+											}
+										}
+
+										if ( ! $any_passed ) {
+											$missing[] = $requirement['plugin'];
+										}
+									}
+								} else {
 					// Single check.
 					$check_func  = $requirement['check'];
 					$check_value = $requirement['value'];
