@@ -238,7 +238,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			add_action(
 				'rest_api_init',
 				function () {
-					// Only mount the ACP server if enabled in settings
+					// Only mount the ACP server if enabled in settings.
 					$settings = get_option( 'wp_mcp_ai_settings', array() );
 					if ( empty( $settings['enable_acp_server'] ) ) {
 						return;
@@ -348,7 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Server   $server  Server instance.
 		 * @return bool
 		 */
-		public function ensure_clean_json_output( $served, $result, $request, $server ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
+		public function ensure_clean_json_output( $served, $result, $request, $server ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
 			// Only process our endpoints.
 			$route = $request->get_route();
 			if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
@@ -2021,7 +2021,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Enforce capability check for non-admin users authenticated via WP nonce.
 			// Admin users bypass this check; all others must have the required capability.
-			if ( $requires_authenticated_user && ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) {
+			if ( $requires_authenticated_user && ! current_user_can( 'administrator' ) && ! current_user_can( $capability ) ) { // phpcs:ignore WordPress.WP.Capabilities.RoleFound -- Intentional super-admin bypass; 'administrator' role is checked as a gate for admin users who always hold all capabilities.
 				return $this->insufficient_permissions_error( $capability );
 			}
 
@@ -6342,7 +6342,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request   Original request.
 		 * @return array|WP_Error Member response or error.
 		 */
-		protected function invoke_team_member( $member_id, $messages, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
+		protected function invoke_team_member( $member_id, $messages, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter reserved for future implementation.
 			// Load profession configuration.
 			$profession_config = $this->load_profession_configuration( $member_id, array() );
 
@@ -9377,15 +9377,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Determine whether an array is sequentially indexed.
 		 *
-		 * @param array $array Array to inspect.
+		 * @param array $arr Array to inspect.
 		 * @return bool
 		 */
-		protected function is_sequential_array( $array ) {
-			if ( ! is_array( $array ) ) {
+		protected function is_sequential_array( $arr ) {
+			if ( ! is_array( $arr ) ) {
 				return false;
 			}
 
-			if ( array() === $array ) {
+			if ( array() === $arr ) {
 				return true;
 			}
 
@@ -10002,23 +10002,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Multibyte-safe string length helper.
 		 *
-		 * @param string $string String to measure.
+		 * @param string $str String to measure.
 		 * @return int
 		 */
-		protected function mb_strlen( $string ) {
-			return function_exists( 'mb_strlen' ) ? mb_strlen( $string ) : strlen( $string );
+		protected function mb_strlen( $str ) {
+			return function_exists( 'mb_strlen' ) ? mb_strlen( $str ) : strlen( $str );
 		}
 
 		/**
 		 * Multibyte-safe substring helper.
 		 *
-		 * @param string $string Input string.
+		 * @param string $str    Input string.
 		 * @param int    $start  Start position.
 		 * @param int    $length Length of substring.
 		 * @return string
 		 */
-		protected function mb_substr( $string, $start, $length ) {
-			return function_exists( 'mb_substr' ) ? mb_substr( $string, $start, $length ) : substr( $string, $start, $length );
+		protected function mb_substr( $str, $start, $length ) {
+			return function_exists( 'mb_substr' ) ? mb_substr( $str, $start, $length ) : substr( $str, $start, $length );
 		}
 
 		/**
