@@ -81,7 +81,7 @@ function wp_mcp_ai_oos_orchestrator() {
 	$content       = new Oos\WordPress\Adapter\ContentStore();
 	$auth          = new Oos\WordPress\Adapter\AuthProvider();
 	$files         = new Oos\WordPress\Adapter\FileStore();
-	$cache         = new Oos\WordPress\Adapter\CacheStore( wp_using_ext_object_cache() );
+	$cache         = new Oos\WordPress\Adapter\CacheStore( (bool) wp_using_ext_object_cache() );
 	$queue         = new Oos\WordPress\Adapter\QueueClient();
 	$events        = new Oos\WordPress\Adapter\EventDispatcher();
 
