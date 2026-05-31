@@ -2707,6 +2707,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		public function handle_chat_request( WP_REST_Request $request ) {
 			$this->hydrate_request_body_params( $request );
 
+			// Feature flag: route to the framework-agnostic OOS engine when enabled.
+			// Activate via ?engine=oos, X-WP-MCP-AI-Engine: oos header, or
+			// define('WP_MCP_AI_OOS_ENGINE', true).
+			if ( function_exists( 'wp_mcp_ai_oos_engine_enabled' ) && wp_mcp_ai_oos_engine_enabled() ) {
+				return $this->handle_chat_request_oos( $request );
+			}
+
 			// Check if this is a unified team, profession test, or regular assistant request.
 			$raw_assistant_id = $request->get_param( 'assistant_id' );
 			$team_id          = $this->extract_team_id( $raw_assistant_id );
@@ -11187,5 +11194,105 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			return $cost_data;
 		}
+
+		/**
+		 * Handle a chat request using the framework-agnostic OOS engine.
+		 *
+		 * This is the bridge method that translates WordPress REST request
+		 * data into the OOS ChatOrchestrator's expected input format and
+		 * converts the response back to WP_REST_Response.
+		 *
+		 * Activated via ?engine=oos query parameter, X-WP-MCP-AI-Engine header,
+		 * or the WP_MCP_AI_OOS_ENGINE constant.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_chat_request_oos( WP_REST_Request $request ) {
+				// Translate WordPress types to OOS domain types.
+				$assistant_id = $this->resolve_assistant_id(
+					$request->get_param( 'assistant_id' )
+				);
+
+				$user_id = get_current_user_id();
+
+				// Build assistant config from WordPress post meta.
+				$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration(
+					$assistant_id
+				);
+
+				// Sanitize messages.
+				$sanitized = $this->validator->sanitize_messages(
+					$request->get_param( 'messages' )
+				);
+
+				if ( is_wp_error( $sanitized ) ) {
+					return $sanitized;
+				}
+
+				$messages = $sanitized['messages'];
+
+				// Build options.
+				$options = [];
+				$raw_options = $request->get_param( 'options' );
+				if ( is_array( $raw_options ) ) {
+					$options = $raw_options;
+				}
+
+				// Add tools from assistant config.
+				if ( ! empty( $assistant_config['tools'] ) ) {
+					$options['tools'] = $assistant_config['tools'];
+				}
+
+				// Provider and model from assistant config.
+				if ( ! empty( $assistant_config['provider'] ) ) {
+					$options['provider'] = $assistant_config['provider'];
+				}
+				if ( ! empty( $assistant_config['model'] ) ) {
+					$options['model'] = $assistant_config['model'];
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'oos_engine_chat',
+					'OOS engine handling chat request',
+					[
+						'assistant_id' => $assistant_id,
+						'message_count' => count( $messages ),
+						'provider'      => $options['provider'] ?? 'default',
+						'model'         => $options['model'] ?? 'default',
+					]
+				);
+
+				// Delegate to the framework-agnostic orchestrator.
+				$orchestrator = wp_mcp_ai_oos_orchestrator();
+
+				$result = $orchestrator->handleChat(
+					messages: $messages,
+					assistantConfig: $assistant_config,
+					userId: $user_id,
+					assistantId: $assistant_id,
+					options: $options,
+				);
+
+				// Translate OOS response back to WordPress REST format.
+				$payload = [
+					'assistant_id' => $assistant_id,
+					'data'         => $result['response'] ?? [],
+				];
+
+				if ( ! empty( $result['tool_results'] ) ) {
+					$payload['tool_results'] = $result['tool_results'];
+				}
+
+				if ( ! empty( $result['cost'] ) ) {
+					$payload['cost'] = $result['cost'];
+				}
+
+				if ( ! empty( $result['iterations'] ) ) {
+					$payload['iterations'] = $result['iterations'];
+				}
+
+				return rest_ensure_response( $payload );
+			}
+		}
 	}
-}
