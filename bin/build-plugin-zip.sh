@@ -307,8 +307,9 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'docker-compose.yml' \
         --exclude 'patches' \
         --exclude 'docs' \
-        --exclude 'core' \
-        --exclude 'shared' \
+        --exclude '/core' \
+        --exclude '/shared' \
+        --exclude '/lib' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
@@ -776,8 +777,8 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'docker-compose.yml' \
         --exclude 'patches' \
         --exclude 'docs' \
-        --exclude 'core' \
-        --exclude 'shared' \
+        --exclude '/core' \
+        --exclude '/shared' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \

@@ -27,8 +27,12 @@ if ( PHP_VERSION_ID < 80100 ) {
 	return;
 }
 
-// Bail if the lib/ directory doesn't exist (WordPress.org build excludes it).
-if ( ! is_dir( WP_MCP_AI_PATH . 'lib/' ) ) {
+// Guard: the lib/ directory is excluded from WordPress.org base builds.
+// Only the full (complete) build ships with the cross-platform extraction.
+// Bail early when lib/ is absent so we don't crash on partial deployments.
+$lib_core_dir    = WP_MCP_AI_PATH . 'lib/core/src/';
+$lib_adapter_dir = WP_MCP_AI_PATH . 'lib/wordpress-adapter/src/';
+if ( ! is_dir( $lib_core_dir ) || ! is_dir( $lib_adapter_dir ) ) {
 	return;
 }
 
@@ -55,6 +59,7 @@ if ( ! class_exists( 'Oos\Core\Domain\Contract\ErrorFactoryInterface' ) ) {
 
 				if ( file_exists( $file ) ) {
 					require $file;
+					return;
 				}
 			}
 		}
