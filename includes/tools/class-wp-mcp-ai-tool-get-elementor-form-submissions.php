@@ -77,26 +77,26 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'form_post_id' => array(
+				'form_post_id'  => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Post ID of the page containing the Elementor form widget. Use get_elementor_templates to find the correct ID.', 'mcp-ai-wpoos' ),
 				),
-				'element_id'   => array(
+				'element_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'Optional Elementor widget ID (e.g. "abc1234") to filter submissions by a specific form widget on the page.', 'mcp-ai-wpoos' ),
 				),
-				'status'       => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional submission status filter (e.g. success, failed).', 'mcp-ai-wpoos' ),
 				),
-				'limit'        => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of submissions to return (1-50).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
-				'transport'    => array(
+				'transport'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'auto', 'rest', 'http' ),
 					'description' => __( 'Optional transport hint. Use "rest" for local REST API calls, "http" for remote. Default "auto" prefers local when available.', 'mcp-ai-wpoos' ),
@@ -177,10 +177,10 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 	protected function execute_local( $form_post_id, $limit, $status, $element_id ) {
 		global $wpdb;
 
-		$submissions_table  = $wpdb->prefix . 'e_submissions';
-		$values_table       = $wpdb->prefix . 'e_submissions_values';
+		$submissions_table = $wpdb->prefix . 'e_submissions';
+		$values_table      = $wpdb->prefix . 'e_submissions_values';
 
-		$where_clauses = array( $wpdb->prepare( 's.post_id = %d', $form_post_id ) );
+		$where_clauses   = array( $wpdb->prepare( 's.post_id = %d', $form_post_id ) );
 		$where_clauses[] = $wpdb->prepare( 's.type = %s', 'form' );
 
 		if ( $status ) {
@@ -210,10 +210,10 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 
 		if ( empty( $submissions ) ) {
 			return array(
-				'transport'   => 'local',
+				'transport'    => 'local',
 				'form_post_id' => $form_post_id,
-				'submissions' => array(),
-				'total'       => 0,
+				'submissions'  => array(),
+				'total'        => 0,
 			);
 		}
 
@@ -231,16 +231,16 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 			$sid = absint( $sub['id'] );
 
 			$records[] = array(
-				'id'           => $sid,
-				'form_name'    => isset( $sub['form_name'] ) ? sanitize_text_field( $sub['form_name'] ) : '',
-				'element_id'   => isset( $sub['element_id'] ) ? sanitize_key( $sub['element_id'] ) : '',
-				'status'       => isset( $sub['status'] ) ? sanitize_key( $sub['status'] ) : '',
-				'user_id'      => isset( $sub['user_id'] ) ? absint( $sub['user_id'] ) : 0,
-				'user_ip'      => isset( $sub['user_ip'] ) ? sanitize_text_field( $sub['user_ip'] ) : '',
-				'referer'      => isset( $sub['referer'] ) ? esc_url_raw( $sub['referer'] ) : '',
-				'created_at'   => isset( $sub['created_at_gmt'] ) ? $this->format_datetime( $sub['created_at_gmt'] ) : '',
-				'updated_at'   => isset( $sub['updated_at_gmt'] ) ? $this->format_datetime( $sub['updated_at_gmt'] ) : '',
-				'fields'       => isset( $fields_by_submission[ $sid ] ) ? $fields_by_submission[ $sid ] : array(),
+				'id'         => $sid,
+				'form_name'  => isset( $sub['form_name'] ) ? sanitize_text_field( $sub['form_name'] ) : '',
+				'element_id' => isset( $sub['element_id'] ) ? sanitize_key( $sub['element_id'] ) : '',
+				'status'     => isset( $sub['status'] ) ? sanitize_key( $sub['status'] ) : '',
+				'user_id'    => isset( $sub['user_id'] ) ? absint( $sub['user_id'] ) : 0,
+				'user_ip'    => isset( $sub['user_ip'] ) ? sanitize_text_field( $sub['user_ip'] ) : '',
+				'referer'    => isset( $sub['referer'] ) ? esc_url_raw( $sub['referer'] ) : '',
+				'created_at' => isset( $sub['created_at_gmt'] ) ? $this->format_datetime( $sub['created_at_gmt'] ) : '',
+				'updated_at' => isset( $sub['updated_at_gmt'] ) ? $this->format_datetime( $sub['updated_at_gmt'] ) : '',
+				'fields'     => isset( $fields_by_submission[ $sid ] ) ? $fields_by_submission[ $sid ] : array(),
 			);
 		}
 
@@ -305,9 +305,9 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 		// Build the remote REST API request.
 		$rest_url = rtrim( $connection['url'], '/' ) . '/wp-json/mcp-ai/v1/tools/execute';
 		$args     = array(
-			'tool'          => 'get_elementor_form_submissions',
-			'form_post_id'  => $form_post_id,
-			'limit'         => $limit,
+			'tool'         => 'get_elementor_form_submissions',
+			'form_post_id' => $form_post_id,
+			'limit'        => $limit,
 		);
 
 		if ( $status ) {
@@ -332,29 +332,31 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 			case 'application_password':
 				if ( ! empty( $connection['username'] ) && ! empty( $connection['password'] ) ) {
 					$password = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] );
-					$encoded  = base64_encode( $connection['username'] . ':' . $password );
-					$request_args['headers']['Authorization'] = 'Basic ' . $encoded;
+						// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Required for HTTP Basic Auth per RFC 7617.
+						$encoded                                  = base64_encode( $connection['username'] . ':' . $password );
+						$request_args['headers']['Authorization'] = 'Basic ' . $encoded;
 				}
 				break;
 
 			case 'basic_auth':
 				if ( ! empty( $connection['username'] ) && ! empty( $connection['password'] ) ) {
 					$password = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] );
-					$encoded  = base64_encode( $connection['username'] . ':' . $password );
+					// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Required for HTTP Basic Auth per RFC 7617.
+					$encoded                                  = base64_encode( $connection['username'] . ':' . $password );
 					$request_args['headers']['Authorization'] = 'Basic ' . $encoded;
 				}
 				break;
 
 			case 'custom_header':
 				if ( ! empty( $connection['api_key'] ) ) {
-					$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+					$api_key                              = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
 					$request_args['headers']['X-API-Key'] = $api_key;
 				}
 				break;
 
 			case 'jwt':
 				if ( ! empty( $connection['token'] ) ) {
-					$token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
+					$token                                    = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
 					$request_args['headers']['Authorization'] = 'Bearer ' . $token;
 				}
 				break;
@@ -389,8 +391,8 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 		}
 
 		// Wrap the remote result with connection metadata.
-		$data['transport']     = 'remote';
-		$data['connection_id'] = $connection_id;
+		$data['transport']       = 'remote';
+		$data['connection_id']   = $connection_id;
 		$data['connection_name'] = isset( $connection['name'] ) ? $connection['name'] : $connection_id;
 
 		return $data;
@@ -412,18 +414,18 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 		$values_table = $wpdb->prefix . 'e_submissions_values';
 		$placeholders = implode( ',', array_fill( 0, count( $submission_ids ), '%d' ) );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT submission_id, `key`, `value`
-				 FROM {$values_table}
-				 WHERE submission_id IN ({$placeholders})
-				 ORDER BY id ASC",
-				...$submission_ids
-			),
-			ARRAY_A
-		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$rows = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT submission_id, `key`, `value`
+						 FROM {$values_table}
+						 WHERE submission_id IN ({$placeholders})
+						 ORDER BY id ASC",
+						...$submission_ids
+					),
+					ARRAY_A
+				);
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$fields_by_submission = array();
 		$field_count_by_sub   = array();
@@ -439,7 +441,7 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 				continue;
 			}
 
-			$field_count_by_sub[ $sid ]++;
+			++$field_count_by_sub[ $sid ];
 
 			$name  = sanitize_key( $row['key'] );
 			$label = str_replace( array( '_', '-' ), ' ', $name );
@@ -546,13 +548,13 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 	 * Sanitize the maximum number of submissions to return.
 	 *
 	 * @param mixed $value   Raw value from the assistant.
-	 * @param int   $default Default value when input is missing.
+	 * @param int   $default_value Default value when input is missing.
 	 * @return int
 	 */
-	protected function sanitize_limit( $value, $default ) {
+	protected function sanitize_limit( $value, $default_value ) {
 		$limit = absint( $value );
 		if ( $limit < 1 ) {
-			$limit = $default;
+			$limit = $default_value;
 		}
 
 		return (int) min( 50, $limit );

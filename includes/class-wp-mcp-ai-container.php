@@ -783,13 +783,20 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-			'section.comments',
-			function () {
-				return new WP_MCP_AI_Section_Comments();
-			}
-		);
+					'section.comments',
+					function () {
+						return new WP_MCP_AI_Section_Comments();
+					}
+				);
 
-		// Services.
+				$this->singleton(
+					'section.form_submissions',
+					function () {
+						return new WP_MCP_AI_Section_Form_Submissions();
+					}
+				);
+
+				// Services.
 		$this->singleton(
 			'service.chat',
 			function ( $container ) {

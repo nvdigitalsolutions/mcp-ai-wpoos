@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'sources'    => array(
+				'sources'       => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
@@ -94,15 +94,15 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 					),
 					'description' => __( 'Optional list of sources to query. Omit to query all available sources. Valid values: jetformbuilder, elementor, remote.', 'mcp-ai-wpoos' ),
 				),
-				'form_id'    => array(
+				'form_id'       => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Optional form ID to filter results. For JetFormBuilder this is the form post ID; for Elementor this is the page post ID.', 'mcp-ai-wpoos' ),
 				),
-				'status'     => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional submission status filter (e.g. success, failed).', 'mcp-ai-wpoos' ),
 				),
-				'limit'      => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of submissions per source (1-50).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 			$jfb_tool = new WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions();
 			if ( $jfb_tool->is_available() ) {
 				$jfb_args = array(
-					'limit'  => $limit,
+					'limit'     => $limit,
 					'transport' => $connection_id ? 'http' : 'auto',
 				);
 				if ( $status ) {
@@ -192,7 +192,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 						$sub['source'] = 'jetformbuilder';
 					}
 					unset( $sub );
-					$all_submissions = array_merge( $all_submissions, $subs );
+					$all_submissions          = array_merge( $all_submissions, $subs );
 					$totals['jetformbuilder'] = isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
 				}
 			}
@@ -227,7 +227,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 						$sub['source'] = 'elementor';
 					}
 					unset( $sub );
-					$all_submissions = array_merge( $all_submissions, $subs );
+					$all_submissions     = array_merge( $all_submissions, $subs );
 					$totals['elementor'] = isset( $el_result['total'] ) ? (int) $el_result['total'] : count( $subs );
 				}
 			}
@@ -277,17 +277,17 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 						$remote_result  = $jfb_tool->execute( $remote_args, $remote_context );
 
 						if ( ! is_wp_error( $remote_result ) ) {
-							$subs = isset( $remote_result['submissions'] ) ? $remote_result['submissions'] : array();
+							$subs       = isset( $remote_result['submissions'] ) ? $remote_result['submissions'] : array();
 							$conn_label = isset( $conn['name'] ) ? $conn['name'] : $conn_id;
 							foreach ( $subs as &$sub ) {
-								$sub['source']       = 'jetformbuilder';
-								$sub['connection']   = $conn_id;
+								$sub['source']          = 'jetformbuilder';
+								$sub['connection']      = $conn_id;
 								$sub['connection_name'] = $conn_label;
 							}
 							unset( $sub );
 							$all_submissions = array_merge( $all_submissions, $subs );
-							$key = 'remote_jfb_' . $conn_id;
-							$totals[ $key ] = isset( $remote_result['total'] ) ? (int) $remote_result['total'] : count( $subs );
+							$key             = 'remote_jfb_' . $conn_id;
+							$totals[ $key ]  = isset( $remote_result['total'] ) ? (int) $remote_result['total'] : count( $subs );
 						}
 					}
 				}
@@ -307,7 +307,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 						$remote_result = $elementor_tool->execute( $remote_args, $context );
 
 						if ( ! is_wp_error( $remote_result ) ) {
-							$subs = isset( $remote_result['submissions'] ) ? $remote_result['submissions'] : array();
+							$subs       = isset( $remote_result['submissions'] ) ? $remote_result['submissions'] : array();
 							$conn_label = isset( $conn['name'] ) ? $conn['name'] : $conn_id;
 							foreach ( $subs as &$sub ) {
 								$sub['source']          = 'elementor';
@@ -316,8 +316,8 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 							}
 							unset( $sub );
 							$all_submissions = array_merge( $all_submissions, $subs );
-							$key = 'remote_elementor_' . $conn_id;
-							$totals[ $key ] = isset( $remote_result['total'] ) ? (int) $remote_result['total'] : count( $subs );
+							$key             = 'remote_elementor_' . $conn_id;
+							$totals[ $key ]  = isset( $remote_result['total'] ) ? (int) $remote_result['total'] : count( $subs );
 						}
 					}
 				}
@@ -325,15 +325,18 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Sort all submissions by date descending.
-		usort( $all_submissions, function ( $a, $b ) {
-			$date_a = isset( $a['created_at'] ) ? $a['created_at'] : '';
-			$date_b = isset( $b['created_at'] ) ? $b['created_at'] : '';
-			return strcmp( $date_b, $date_a );
-		} );
+		usort(
+			$all_submissions,
+			function ( $a, $b ) {
+				$date_a = isset( $a['created_at'] ) ? $a['created_at'] : '';
+				$date_b = isset( $b['created_at'] ) ? $b['created_at'] : '';
+				return strcmp( $date_b, $date_a );
+			}
+		);
 
 		$output = array(
-			'submissions'     => $all_submissions,
-			'total'           => count( $all_submissions ),
+			'submissions'      => $all_submissions,
+			'total'            => count( $all_submissions ),
 			'totals_by_source' => $totals,
 		);
 
