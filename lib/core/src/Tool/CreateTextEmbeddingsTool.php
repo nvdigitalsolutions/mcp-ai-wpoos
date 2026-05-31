@@ -17,106 +17,112 @@ use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
-class CreateTextEmbeddingsTool extends AbstractTool
-{
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        private readonly SettingsStoreInterface $settings,
-        private readonly HttpClientInterface $http,
-    ) {
-        parent::__construct($errors);
-    }
+class CreateTextEmbeddingsTool extends AbstractTool {
 
-    public function getSlug(): string { return 'create_text_embeddings'; }
-    public function getName(): string { return 'Create Text Embeddings'; }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly SettingsStoreInterface $settings,
+		private readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
 
-    public function getDescription(): string
-    {
-        return 'Generates vector embeddings for text using the OpenAI Embeddings API. Useful for semantic search and similarity comparison.';
-    }
+	public function getSlug(): string {
+		return 'create_text_embeddings'; }
+	public function getName(): string {
+		return 'Create Text Embeddings'; }
 
-    public function getParametersSchema(): array
-    {
-        return [
-            'type'       => 'object',
-            'properties' => [
-                'text' => [
-                    'type'        => 'string',
-                    'description' => 'The text to embed.',
-                ],
-                'model' => [
-                    'type'        => 'string',
-                    'description' => 'Embedding model. Default: text-embedding-3-small.',
-                    'default'     => 'text-embedding-3-small',
-                ],
-                'dimensions' => [
-                    'type'        => 'integer',
-                    'description' => 'Output dimensions (only for text-embedding-3 models).',
-                ],
-            ],
-            'required'             => ['text'],
-            'additionalProperties' => false,
-        ];
-    }
+	public function getDescription(): string {
+		return 'Generates vector embeddings for text using the OpenAI Embeddings API. Useful for semantic search and similarity comparison.';
+	}
 
-    public function getRequiredCapability(): string { return 'read'; }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'text'       => array(
+					'type'        => 'string',
+					'description' => 'The text to embed.',
+				),
+				'model'      => array(
+					'type'        => 'string',
+					'description' => 'Embedding model. Default: text-embedding-3-small.',
+					'default'     => 'text-embedding-3-small',
+				),
+				'dimensions' => array(
+					'type'        => 'integer',
+					'description' => 'Output dimensions (only for text-embedding-3 models).',
+				),
+			),
+			'required'             => array( 'text' ),
+			'additionalProperties' => false,
+		);
+	}
 
-    public function execute(array $arguments = [], array $context = []): mixed
-    {
-        $text  = $this->stringParam($arguments, 'text');
-        $model = $this->stringParam($arguments, 'model', 'text-embedding-3-small');
+	public function getRequiredCapability(): string {
+		return 'read'; }
 
-        if ('' === $text) {
-            return $this->errors->validationFailed(
-                'The text parameter is required.',
-                ['text' => ['Text to embed is required.']],
-            );
-        }
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$text  = $this->stringParam( $arguments, 'text' );
+		$model = $this->stringParam( $arguments, 'model', 'text-embedding-3-small' );
 
-        $apiKey = $this->settings->getApiKey('openai');
-        if (null === $apiKey || '' === $apiKey) {
-            return $this->errors->create('missing_api_key', 'No OpenAI API key configured.', ['status' => 400]);
-        }
+		if ( '' === $text ) {
+			return $this->errors->validationFailed(
+				'The text parameter is required.',
+				array( 'text' => array( 'Text to embed is required.' ) ),
+			);
+		}
 
-        $baseUrl = $this->settings->getApiBaseUrl('openai') ?? 'https://api.openai.com/v1';
+		$apiKey = $this->settings->getApiKey( 'openai' );
+		if ( null === $apiKey || '' === $apiKey ) {
+			return $this->errors->create( 'missing_api_key', 'No OpenAI API key configured.', array( 'status' => 400 ) );
+		}
 
-        $payload = ['model' => $model, 'input' => $text];
+		$baseUrl = $this->settings->getApiBaseUrl( 'openai' ) ?? 'https://api.openai.com/v1';
 
-        $dimensions = $this->intParam($arguments, 'dimensions');
-        if ($dimensions > 0) {
-            $payload['dimensions'] = $dimensions;
-        }
+		$payload = array(
+			'model' => $model,
+			'input' => $text,
+		);
 
-        try {
-            $body = \json_encode($payload);
-            $request = new \Nyholm\Psr7\Request(
-                'POST',
-                $baseUrl . '/embeddings',
-                [
-                    'Authorization' => "Bearer {$apiKey}",
-                    'Content-Type'  => 'application/json',
-                ],
-                $body,
-            );
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+		$dimensions = $this->intParam( $arguments, 'dimensions' );
+		if ( $dimensions > 0 ) {
+			$payload['dimensions'] = $dimensions;
+		}
 
-            if ( ! is_array($data) || ! isset($data['data'][0]['embedding'])) {
-                return $this->errors->create('embeddings_failed', 'OpenAI returned an unexpected embeddings response.');
-            }
+		try {
+			$body     = \json_encode( $payload );
+			$request  = new \Nyholm\Psr7\Request(
+				'POST',
+				$baseUrl . '/embeddings',
+				array(
+					'Authorization' => "Bearer {$apiKey}",
+					'Content-Type'  => 'application/json',
+				),
+				$body,
+			);
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            $embedding = $data['data'][0]['embedding'];
-            $usage     = $data['usage']['total_tokens'] ?? 0;
+			if ( ! is_array( $data ) || ! isset( $data['data'][0]['embedding'] ) ) {
+				return $this->errors->create( 'embeddings_failed', 'OpenAI returned an unexpected embeddings response.' );
+			}
 
-            return $this->success('Embeddings generated.', [
-                'model'       => $data['model'] ?? $model,
-                'dimensions'  => \count($embedding),
-                'tokens_used' => $usage,
-                'embedding'   => $embedding,
-            ]);
+			$embedding = $data['data'][0]['embedding'];
+			$usage     = $data['usage']['total_tokens'] ?? 0;
 
-        } catch (\Exception $e) {
-            return $this->errors->create('embeddings_failed', $e->getMessage());
-        }
-    }
+			return $this->success(
+				'Embeddings generated.',
+				array(
+					'model'       => $data['model'] ?? $model,
+					'dimensions'  => \count( $embedding ),
+					'tokens_used' => $usage,
+					'embedding'   => $embedding,
+				)
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'embeddings_failed', $e->getMessage() );
+		}
+	}
 }

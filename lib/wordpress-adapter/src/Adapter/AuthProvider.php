@@ -21,254 +21,247 @@ use Oos\Core\Domain\Entity\Credential;
 use Oos\Core\Domain\Entity\UserInfo;
 use Oos\Core\Domain\Error\AuthenticationException;
 
-class AuthProvider implements AuthProviderInterface
-{
-    public function currentUserId(): int
-    {
-        return \get_current_user_id();
-    }
+class AuthProvider implements AuthProviderInterface {
 
-    public function userCan(int $userId, string $capability, ?int $objectId = null): bool
-    {
-        if ('' === $capability || 'public' === $capability) {
-            return true;
-        }
+	public function currentUserId(): int {
+		return \get_current_user_id();
+	}
 
-        if (null !== $objectId) {
-            return \user_can($userId, $capability, $objectId);
-        }
+	public function userCan( int $userId, string $capability, ?int $objectId = null ): bool {
+		if ( '' === $capability || 'public' === $capability ) {
+			return true;
+		}
 
-        return \user_can($userId, $capability);
-    }
+		if ( null !== $objectId ) {
+			return \user_can( $userId, $capability, $objectId );
+		}
 
-    public function authenticate(string $token, string $tokenType = 'bearer'): AuthContext
-    {
-        switch ($tokenType) {
-            case 'bearer':
-                return $this->authenticateBearer($token);
-            case 'nonce':
-                return $this->authenticateNonce($token);
-            case 'mesh':
-                return $this->authenticateMesh($token);
-            case 'guest':
-                return $this->authenticateGuest($token);
-            default:
-                throw new AuthenticationException(
-                    "Unknown token type: {$tokenType}",
-                    'invalid',
-                );
-        }
-    }
+		return \user_can( $userId, $capability );
+	}
 
-    public function issueCredential(int $assistantId, array $options = []): Credential
-    {
-        if ( ! \current_user_can('manage_options')) {
-            throw new AuthenticationException(
-                'Only administrators can issue credentials.',
-                'forbidden',
-            );
-        }
+	public function authenticate( string $token, string $tokenType = 'bearer' ): AuthContext {
+		switch ( $tokenType ) {
+			case 'bearer':
+				return $this->authenticateBearer( $token );
+			case 'nonce':
+				return $this->authenticateNonce( $token );
+			case 'mesh':
+				return $this->authenticateMesh( $token );
+			case 'guest':
+				return $this->authenticateGuest( $token );
+			default:
+				throw new AuthenticationException(
+					"Unknown token type: {$tokenType}",
+					'invalid',
+				);
+		}
+	}
 
-        // Generate a WordPress-style token: prefix + random bytes.
-        $tokenBytes = \random_bytes(48);
-        $token      = 'cred_' . \bin2hex($tokenBytes);
-        $secret     = \wp_hash_password($token);
-        $credId     = \wp_generate_uuid4();
+	public function issueCredential( int $assistantId, array $options = array() ): Credential {
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			throw new AuthenticationException(
+				'Only administrators can issue credentials.',
+				'forbidden',
+			);
+		}
 
-        $expiresAt = null;
-        if ( ! empty($options['expires_in_seconds'])) {
-            $expiresAt = (new \DateTimeImmutable())->add(
-                new \DateInterval('PT' . (int) $options['expires_in_seconds'] . 'S'),
-            );
-        }
+		// Generate a WordPress-style token: prefix + random bytes.
+		$tokenBytes = \random_bytes( 48 );
+		$token      = 'cred_' . \bin2hex( $tokenBytes );
+		$secret     = \wp_hash_password( $token );
+		$credId     = \wp_generate_uuid4();
 
-        $grantedCapabilities = $options['capabilities'] ?? ['edit_posts'];
+		$expiresAt = null;
+		if ( ! empty( $options['expires_in_seconds'] ) ) {
+			$expiresAt = ( new \DateTimeImmutable() )->add(
+				new \DateInterval( 'PT' . (int) $options['expires_in_seconds'] . 'S' ),
+			);
+		}
 
-        // Store the credential hash in post meta on the assistant.
-        $existing = \get_post_meta($assistantId, '_wp_mcp_ai_credentials', true);
-        if ( ! is_array($existing)) {
-            $existing = [];
-        }
+		$grantedCapabilities = $options['capabilities'] ?? array( 'edit_posts' );
 
-        $existing[$credId] = [
-            'secret'       => $secret,
-            'capabilities' => $grantedCapabilities,
-            'created_at'   => \gmdate('c'),
-            'expires_at'   => $expiresAt?->format('c'),
-        ];
+		// Store the credential hash in post meta on the assistant.
+		$existing = \get_post_meta( $assistantId, '_wp_mcp_ai_credentials', true );
+		if ( ! is_array( $existing ) ) {
+			$existing = array();
+		}
 
-        \update_post_meta($assistantId, '_wp_mcp_ai_credentials', $existing);
+		$existing[ $credId ] = array(
+			'secret'       => $secret,
+			'capabilities' => $grantedCapabilities,
+			'created_at'   => \gmdate( 'c' ),
+			'expires_at'   => $expiresAt?->format( 'c' ),
+		);
 
-        return new Credential(
-            id: $credId,
-            token: $token,
-            secret: $secret,
-            assistantId: $assistantId,
-            createdAt: new \DateTimeImmutable(),
-            expiresAt: $expiresAt,
-            capabilities: $grantedCapabilities,
-        );
-    }
+		\update_post_meta( $assistantId, '_wp_mcp_ai_credentials', $existing );
 
-    public function revokeCredential(string $credentialId): void
-    {
-        // Walk all assistants to find and remove the credential.
-        $assistants = \get_posts([
-            'post_type'      => 'mcp_ai_assistant',
-            'post_status'    => 'any',
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-        ]);
+		return new Credential(
+			id: $credId,
+			token: $token,
+			secret: $secret,
+			assistantId: $assistantId,
+			createdAt: new \DateTimeImmutable(),
+			expiresAt: $expiresAt,
+			capabilities: $grantedCapabilities,
+		);
+	}
 
-        foreach ($assistants as $assistantId) {
-            $credentials = \get_post_meta($assistantId, '_wp_mcp_ai_credentials', true);
-            if (is_array($credentials) && isset($credentials[$credentialId])) {
-                unset($credentials[$credentialId]);
-                \update_post_meta($assistantId, '_wp_mcp_ai_credentials', $credentials);
-                break;
-            }
-        }
-    }
+	public function revokeCredential( string $credentialId ): void {
+		// Walk all assistants to find and remove the credential.
+		$assistants = \get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
 
-    public function getUserInfo(int $userId): ?UserInfo
-    {
-        $user = \get_userdata($userId);
-        if ( ! $user instanceof \WP_User) {
-            return null;
-        }
+		foreach ( $assistants as $assistantId ) {
+			$credentials = \get_post_meta( $assistantId, '_wp_mcp_ai_credentials', true );
+			if ( is_array( $credentials ) && isset( $credentials[ $credentialId ] ) ) {
+				unset( $credentials[ $credentialId ] );
+				\update_post_meta( $assistantId, '_wp_mcp_ai_credentials', $credentials );
+				break;
+			}
+		}
+	}
 
-        return new UserInfo(
-            id: $user->ID,
-            login: $user->user_login,
-            displayName: $user->display_name,
-            email: $user->user_email,
-            roles: array_values($user->roles),
-            capabilities: array_keys($user->allcaps, true, true),
-        );
-    }
+	public function getUserInfo( int $userId ): ?UserInfo {
+		$user = \get_userdata( $userId );
+		if ( ! $user instanceof \WP_User ) {
+			return null;
+		}
 
-    public function isUserMemberOfSite(int $userId): bool
-    {
-        if ( ! \is_multisite()) {
-            return $this->getUserInfo($userId) !== null;
-        }
+		return new UserInfo(
+			id: $user->ID,
+			login: $user->user_login,
+			displayName: $user->display_name,
+			email: $user->user_email,
+			roles: array_values( $user->roles ),
+			capabilities: array_keys( $user->allcaps, true, true ),
+		);
+	}
 
-        return \is_user_member_of_blog($userId, \get_current_blog_id());
-    }
+	public function isUserMemberOfSite( int $userId ): bool {
+		if ( ! \is_multisite() ) {
+			return $this->getUserInfo( $userId ) !== null;
+		}
 
-    // ─── Private authentication helpers ────────────────────────────────
+		return \is_user_member_of_blog( $userId, \get_current_blog_id() );
+	}
 
-    private function authenticateBearer(string $token): AuthContext
-    {
-        // Walk assistants to find a matching credential.
-        $assistants = \get_posts([
-            'post_type'      => 'mcp_ai_assistant',
-            'post_status'    => 'publish',
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-        ]);
+	// ─── Private authentication helpers ────────────────────────────────
 
-        foreach ($assistants as $assistantId) {
-            $credentials = \get_post_meta($assistantId, '_wp_mcp_ai_credentials', true);
-            if ( ! is_array($credentials)) {
-                continue;
-            }
+	private function authenticateBearer( string $token ): AuthContext {
+		// Walk assistants to find a matching credential.
+		$assistants = \get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
 
-            foreach ($credentials as $credId => $cred) {
-                if ( ! is_array($cred) || empty($cred['secret'])) {
-                    continue;
-                }
+		foreach ( $assistants as $assistantId ) {
+			$credentials = \get_post_meta( $assistantId, '_wp_mcp_ai_credentials', true );
+			if ( ! is_array( $credentials ) ) {
+				continue;
+			}
 
-                if (\wp_check_password($token, $cred['secret'])) {
-                    // Check expiration.
-                    if ( ! empty($cred['expires_at'])) {
-                        $expires = \DateTimeImmutable::createFromFormat('c', $cred['expires_at']);
-                        if ($expires && $expires <= new \DateTimeImmutable()) {
-                            continue; // Expired — skip.
-                        }
-                    }
+			foreach ( $credentials as $credId => $cred ) {
+				if ( ! is_array( $cred ) || empty( $cred['secret'] ) ) {
+					continue;
+				}
 
-                    // Map the credential to a WordPress user. If the assistant
-                    // has an author, use that user for capability resolution.
-                    $post      = \get_post($assistantId);
-                    $mappedId  = $post instanceof \WP_Post ? (int) $post->post_author : 0;
-                    $userInfo  = $mappedId > 0 ? $this->getUserInfo($mappedId) : null;
+				if ( \wp_check_password( $token, $cred['secret'] ) ) {
+					// Check expiration.
+					if ( ! empty( $cred['expires_at'] ) ) {
+						$expires = \DateTimeImmutable::createFromFormat( 'c', $cred['expires_at'] );
+						if ( $expires && $expires <= new \DateTimeImmutable() ) {
+							continue; // Expired — skip.
+						}
+					}
 
-                    return new AuthContext(
-                        userId: $mappedId,
-                        authenticated: true,
-                        tokenType: 'bearer',
-                        scopedAssistantId: $assistantId,
-                        capabilities: $cred['capabilities'] ?? [],
-                        metadata: [
-                            'token_context' => [
-                                'credential_id' => $credId,
-                                'assistant_id'  => $assistantId,
-                            ],
-                        ],
-                    );
-                }
-            }
-        }
+					// Map the credential to a WordPress user. If the assistant
+					// has an author, use that user for capability resolution.
+					$post     = \get_post( $assistantId );
+					$mappedId = $post instanceof \WP_Post ? (int) $post->post_author : 0;
+					$userInfo = $mappedId > 0 ? $this->getUserInfo( $mappedId ) : null;
 
-        throw new AuthenticationException('Invalid or expired bearer token.', 'invalid');
-    }
+					return new AuthContext(
+						userId: $mappedId,
+						authenticated: true,
+						tokenType: 'bearer',
+						scopedAssistantId: $assistantId,
+						capabilities: $cred['capabilities'] ?? array(),
+						metadata: array(
+							'token_context' => array(
+								'credential_id' => $credId,
+								'assistant_id'  => $assistantId,
+							),
+						),
+					);
+				}
+			}
+		}
 
-    private function authenticateNonce(string $token): AuthContext
-    {
-        if ( ! \wp_verify_nonce($token, 'wp_rest')) {
-            throw new AuthenticationException('Invalid REST nonce.', 'invalid');
-        }
+		throw new AuthenticationException( 'Invalid or expired bearer token.', 'invalid' );
+	}
 
-        $userId = \get_current_user_id();
+	private function authenticateNonce( string $token ): AuthContext {
+		if ( ! \wp_verify_nonce( $token, 'wp_rest' ) ) {
+			throw new AuthenticationException( 'Invalid REST nonce.', 'invalid' );
+		}
 
-        return new AuthContext(
-            userId: $userId,
-            authenticated: $userId > 0,
-            tokenType: 'nonce',
-            metadata: [
-                'is_user_logged_in' => \is_user_logged_in(),
-            ],
-        );
-    }
+		$userId = \get_current_user_id();
 
-    private function authenticateMesh(string $token): AuthContext
-    {
-        $settings = \get_option('wp_mcp_ai_settings', []);
-        $meshKey  = $settings['mesh_api_key'] ?? '';
+		return new AuthContext(
+			userId: $userId,
+			authenticated: $userId > 0,
+			tokenType: 'nonce',
+			metadata: array(
+				'is_user_logged_in' => \is_user_logged_in(),
+			),
+		);
+	}
 
-        if ('' === $meshKey || ! \hash_equals($meshKey, $token)) {
-            throw new AuthenticationException('Invalid mesh API key.', 'invalid');
-        }
+	private function authenticateMesh( string $token ): AuthContext {
+		$settings = \get_option( 'wp_mcp_ai_settings', array() );
+		$meshKey  = $settings['mesh_api_key'] ?? '';
 
-        return new AuthContext(
-            authenticated: true,
-            tokenType: 'mesh',
-            capabilities: ['manage_options'], // Mesh has full access.
-            metadata: ['mesh_authenticated' => true],
-        );
-    }
+		if ( '' === $meshKey || ! \hash_equals( $meshKey, $token ) ) {
+			throw new AuthenticationException( 'Invalid mesh API key.', 'invalid' );
+		}
 
-    private function authenticateGuest(string $token): AuthContext
-    {
-        if ( ! \class_exists('WP_MCP_AI_Shortcode')) {
-            throw new AuthenticationException('Guest tokens are not available.', 'invalid');
-        }
+		return new AuthContext(
+			authenticated: true,
+			tokenType: 'mesh',
+			capabilities: array( 'manage_options' ), // Mesh has full access.
+			metadata: array( 'mesh_authenticated' => true ),
+		);
+	}
 
-        // Guest tokens are validated by the WP_MCP_AI_Shortcode helper.
-        $assistantId = \WP_MCP_AI_Shortcode::validate_guest_token($token, 0, null);
+	private function authenticateGuest( string $token ): AuthContext {
+		if ( ! \class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			throw new AuthenticationException( 'Guest tokens are not available.', 'invalid' );
+		}
 
-        if ( ! $assistantId) {
-            throw new AuthenticationException('Invalid guest token.', 'invalid');
-        }
+		// Guest tokens are validated by the WP_MCP_AI_Shortcode helper.
+		$assistantId = \WP_MCP_AI_Shortcode::validate_guest_token( $token, 0, null );
 
-        return new AuthContext(
-            userId: 0,
-            authenticated: true,
-            tokenType: 'guest',
-            scopedAssistantId: (int) $assistantId,
-            capabilities: ['public'],
-            metadata: ['is_guest' => true],
-        );
-    }
+		if ( ! $assistantId ) {
+			throw new AuthenticationException( 'Invalid guest token.', 'invalid' );
+		}
+
+		return new AuthContext(
+			userId: 0,
+			authenticated: true,
+			tokenType: 'guest',
+			scopedAssistantId: (int) $assistantId,
+			capabilities: array( 'public' ),
+			metadata: array( 'is_guest' => true ),
+		);
+	}
 }

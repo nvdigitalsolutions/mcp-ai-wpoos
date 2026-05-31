@@ -144,7 +144,7 @@ class WP_MCP_AI_Deal_Research_Page {
 
 		// Fallback: get first available assistant.
 		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
-			$assistants = get_posts(
+			$assistants   = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
 					'post_status'    => 'publish',
@@ -204,7 +204,7 @@ class WP_MCP_AI_Deal_Research_Page {
 		);
 
 		// Get current mode from query string for initial workflow.
-		$current_mode = self::get_current_mode();
+		$current_mode     = self::get_current_mode();
 		$initial_workflow = ( 'import' === $current_mode ) ? 'import' : ( ( 'consolidate' === $current_mode ) ? 'review' : 'research' );
 		?>
 		<script>

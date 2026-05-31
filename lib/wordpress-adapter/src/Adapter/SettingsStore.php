@@ -16,157 +16,147 @@ namespace Oos\WordPress\Adapter;
 
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
 
-class SettingsStore implements SettingsStoreInterface
-{
-    /**
-     * The WordPress option key that holds all plugin settings.
-     */
-    private const OPTION_KEY = 'wp_mcp_ai_settings';
+class SettingsStore implements SettingsStoreInterface {
 
-    /**
-     * Default settings used when the option is not yet set.
-     */
-    private const DEFAULTS = [
-        'default_provider'            => 'openai',
-        'default_model'               => 'gpt-4o-mini',
-        'default_gemini_model'        => 'gemini-2.0-flash',
-        'request_timeout'             => 60,
-        'enable_rate_limiting'        => false,
-        'rate_limit_requests'         => 100,
-        'rate_limit_window'           => 3600,
-        'enable_high_token_model_switch' => true,
-        'enable_multi_agent_teams'    => true,
-        'enable_acp_server'           => false,
-        'enable_a2a_server'           => false,
-        'enable_chat_memory'          => true,
-        'rest_enable_assistant_list'  => true,
-        'rest_enable_assistant_create'=> false,
-        'rest_enable_assistant_delete'=> false,
-    ];
+	/**
+	 * The WordPress option key that holds all plugin settings.
+	 */
+	private const OPTION_KEY = 'wp_mcp_ai_settings';
 
-    public function get(string $key, mixed $default = null): mixed
-    {
-        $settings = $this->all();
+	/**
+	 * Default settings used when the option is not yet set.
+	 */
+	private const DEFAULTS = array(
+		'default_provider'               => 'openai',
+		'default_model'                  => 'gpt-4o-mini',
+		'default_gemini_model'           => 'gemini-2.0-flash',
+		'request_timeout'                => 60,
+		'enable_rate_limiting'           => false,
+		'rate_limit_requests'            => 100,
+		'rate_limit_window'              => 3600,
+		'enable_high_token_model_switch' => true,
+		'enable_multi_agent_teams'       => true,
+		'enable_acp_server'              => false,
+		'enable_a2a_server'              => false,
+		'enable_chat_memory'             => true,
+		'rest_enable_assistant_list'     => true,
+		'rest_enable_assistant_create'   => false,
+		'rest_enable_assistant_delete'   => false,
+	);
 
-        return $settings[$key] ?? $default;
-    }
+	public function get( string $key, mixed $default = null ): mixed {
+		$settings = $this->all();
 
-    public function all(): array
-    {
-        $settings = \get_option(self::OPTION_KEY, []);
+		return $settings[ $key ] ?? $default;
+	}
 
-        if ( ! is_array($settings)) {
-            $settings = [];
-        }
+	public function all(): array {
+		$settings = \get_option( self::OPTION_KEY, array() );
 
-        return \array_merge(self::DEFAULTS, $settings);
-    }
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
 
-    public function set(string $key, mixed $value): void
-    {
-        $settings         = $this->all();
-        $settings[$key] = $value;
-        \update_option(self::OPTION_KEY, $settings, false);
-    }
+		return \array_merge( self::DEFAULTS, $settings );
+	}
 
-    public function delete(string $key): void
-    {
-        $settings = $this->all();
-        unset($settings[$key]);
-        \update_option(self::OPTION_KEY, $settings, false);
-    }
+	public function set( string $key, mixed $value ): void {
+		$settings         = $this->all();
+		$settings[ $key ] = $value;
+		\update_option( self::OPTION_KEY, $settings, false );
+	}
 
-    public function getDefaultProvider(): string
-    {
-        return (string) $this->get('default_provider', 'openai');
-    }
+	public function delete( string $key ): void {
+		$settings = $this->all();
+		unset( $settings[ $key ] );
+		\update_option( self::OPTION_KEY, $settings, false );
+	}
 
-    public function getDefaultModel(): string
-    {
-        $provider = $this->getDefaultProvider();
+	public function getDefaultProvider(): string {
+		return (string) $this->get( 'default_provider', 'openai' );
+	}
 
-        if ('gemini' === $provider) {
-            return (string) $this->get('default_gemini_model', 'gemini-2.0-flash');
-        }
+	public function getDefaultModel(): string {
+		$provider = $this->getDefaultProvider();
 
-        return (string) $this->get('default_model', 'gpt-4o-mini');
-    }
+		if ( 'gemini' === $provider ) {
+			return (string) $this->get( 'default_gemini_model', 'gemini-2.0-flash' );
+		}
 
-    public function getApiKey(string $provider): ?string
-    {
-        $keyMap = [
-            'openai'           => 'openai_api_key',
-            'openai_huggingface' => 'huggingface_api_key', // HuggingFace uses OpenAI-compatible endpoint
-            'gemini'           => 'gemini_api_key',
-            'anthropic'        => 'anthropic_api_key',
-            'deepseek'         => 'deepseek_api_key',
-            'ollama'           => null, // Ollama is local — no API key needed.
-            'lm_studio'        => null, // LM Studio is local.
-            'openrouter'       => 'openrouter_api_key',
-            'kimi'             => 'kimi_api_key',
-            'digitalocean'     => 'digitalocean_api_key',
-            'nvidia_nim'       => 'nvidia_nim_api_key',
-            'cloudflare'       => 'cloudflare_api_key',
-        ];
+		return (string) $this->get( 'default_model', 'gpt-4o-mini' );
+	}
 
-        $optionKey = $keyMap[$provider] ?? "{$provider}_api_key";
+	public function getApiKey( string $provider ): ?string {
+		$keyMap = array(
+			'openai'             => 'openai_api_key',
+			'openai_huggingface' => 'huggingface_api_key', // HuggingFace uses OpenAI-compatible endpoint
+			'gemini'             => 'gemini_api_key',
+			'anthropic'          => 'anthropic_api_key',
+			'deepseek'           => 'deepseek_api_key',
+			'ollama'             => null, // Ollama is local — no API key needed.
+			'lm_studio'          => null, // LM Studio is local.
+			'openrouter'         => 'openrouter_api_key',
+			'kimi'               => 'kimi_api_key',
+			'digitalocean'       => 'digitalocean_api_key',
+			'nvidia_nim'         => 'nvidia_nim_api_key',
+			'cloudflare'         => 'cloudflare_api_key',
+		);
 
-        if (null === $optionKey) {
-            return ''; // Local providers return empty string, not null.
-        }
+		$optionKey = $keyMap[ $provider ] ?? "{$provider}_api_key";
 
-        $key = $this->get($optionKey);
+		if ( null === $optionKey ) {
+			return ''; // Local providers return empty string, not null.
+		}
 
-        return is_string($key) && '' !== $key ? $key : null;
-    }
+		$key = $this->get( $optionKey );
 
-    public function getApiBaseUrl(string $provider): ?string
-    {
-        $urlMap = [
-            'openai'      => 'openai_base_url',
-            'gemini'      => 'gemini_api_base_url',
-            'anthropic'   => 'anthropic_base_url',
-            'deepseek'    => 'deepseek_base_url',
-            'ollama'      => 'ollama_base_url',
-            'lm_studio'   => 'lm_studio_base_url',
-            'openrouter'  => 'openrouter_base_url',
-            'kimi'        => 'kimi_base_url',
-            'digitalocean'=> 'digitalocean_base_url',
-            'nvidia_nim'  => 'nvidia_nim_base_url',
-            'cloudflare'  => 'cloudflare_base_url',
-        ];
+		return is_string( $key ) && '' !== $key ? $key : null;
+	}
 
-        $optionKey = $urlMap[$provider] ?? null;
-        if (null === $optionKey) {
-            return null;
-        }
+	public function getApiBaseUrl( string $provider ): ?string {
+		$urlMap = array(
+			'openai'       => 'openai_base_url',
+			'gemini'       => 'gemini_api_base_url',
+			'anthropic'    => 'anthropic_base_url',
+			'deepseek'     => 'deepseek_base_url',
+			'ollama'       => 'ollama_base_url',
+			'lm_studio'    => 'lm_studio_base_url',
+			'openrouter'   => 'openrouter_base_url',
+			'kimi'         => 'kimi_base_url',
+			'digitalocean' => 'digitalocean_base_url',
+			'nvidia_nim'   => 'nvidia_nim_base_url',
+			'cloudflare'   => 'cloudflare_base_url',
+		);
 
-        $url = $this->get($optionKey);
+		$optionKey = $urlMap[ $provider ] ?? null;
+		if ( null === $optionKey ) {
+			return null;
+		}
 
-        return is_string($url) && '' !== $url ? \untrailingslashit($url) : null;
-    }
+		$url = $this->get( $optionKey );
 
-    public function getRequestTimeout(): int
-    {
-        return max(5, (int) $this->get('request_timeout', 60));
-    }
+		return is_string( $url ) && '' !== $url ? \untrailingslashit( $url ) : null;
+	}
 
-    public function isEnabled(string $feature): bool
-    {
-        $flagMap = [
-            'rate_limiting'           => 'enable_rate_limiting',
-            'high_token_model_switch' => 'enable_high_token_model_switch',
-            'multi_agent_teams'       => 'enable_multi_agent_teams',
-            'acp_server'              => 'enable_acp_server',
-            'a2a_server'              => 'enable_a2a_server',
-            'chat_memory'             => 'enable_chat_memory',
-            'assistant_list_rest'     => 'rest_enable_assistant_list',
-            'assistant_create_rest'   => 'rest_enable_assistant_create',
-            'assistant_delete_rest'   => 'rest_enable_assistant_delete',
-        ];
+	public function getRequestTimeout(): int {
+		return max( 5, (int) $this->get( 'request_timeout', 60 ) );
+	}
 
-        $optionKey = $flagMap[$feature] ?? $feature;
+	public function isEnabled( string $feature ): bool {
+		$flagMap = array(
+			'rate_limiting'           => 'enable_rate_limiting',
+			'high_token_model_switch' => 'enable_high_token_model_switch',
+			'multi_agent_teams'       => 'enable_multi_agent_teams',
+			'acp_server'              => 'enable_acp_server',
+			'a2a_server'              => 'enable_a2a_server',
+			'chat_memory'             => 'enable_chat_memory',
+			'assistant_list_rest'     => 'rest_enable_assistant_list',
+			'assistant_create_rest'   => 'rest_enable_assistant_create',
+			'assistant_delete_rest'   => 'rest_enable_assistant_delete',
+		);
 
-        return (bool) $this->get($optionKey, false);
-    }
+		$optionKey = $flagMap[ $feature ] ?? $feature;
+
+		return (bool) $this->get( $optionKey, false );
+	}
 }

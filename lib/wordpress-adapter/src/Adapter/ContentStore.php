@@ -25,269 +25,260 @@ use Oos\Core\Domain\Error\AccessDeniedException;
 use Oos\Core\Domain\Error\NotFoundException;
 use Oos\Core\Domain\Error\ValidationException;
 
-class ContentStore implements ContentStoreInterface
-{
-    public function find(int $id, ?int $userId = null): ?ContentItem
-    {
-        $post = \get_post($id);
+class ContentStore implements ContentStoreInterface {
 
-        if ( ! $post instanceof \WP_Post ) {
-            return null;
-        }
+	public function find( int $id, ?int $userId = null ): ?ContentItem {
+		$post = \get_post( $id );
 
-        // If a user context is provided, check read permission.
-        if (null !== $userId && ! $this->userCanAccess($id, $userId, 'read')) {
-            return null;
-        }
+		if ( ! $post instanceof \WP_Post ) {
+			return null;
+		}
 
-        return $this->hydrateContentItem($post);
-    }
+		// If a user context is provided, check read permission.
+		if ( null !== $userId && ! $this->userCanAccess( $id, $userId, 'read' ) ) {
+			return null;
+		}
 
-    public function query(ContentQuery $query): ContentCollection
-    {
-        $args = [
-            'post_type'      => [] === $query->types ? 'any' : $query->types,
-            'post_status'    => $query->statuses,
-            's'              => $query->search,
-            'author'         => $query->authorId,
-            'post__in'       => $query->include,
-            'post__not_in'   => $query->exclude,
-            'orderby'        => $query->orderBy,
-            'order'          => $query->order,
-            'posts_per_page' => $query->perPage,
-            'paged'          => $query->page,
+		return $this->hydrateContentItem( $post );
+	}
+
+	public function query( ContentQuery $query ): ContentCollection {
+		$args = array(
+			'post_type'      => array() === $query->types ? 'any' : $query->types,
+			'post_status'    => $query->statuses,
+			's'              => $query->search,
+			'author'         => $query->authorId,
+			'post__in'       => $query->include,
+			'post__not_in'   => $query->exclude,
+			'orderby'        => $query->orderBy,
+			'order'          => $query->order,
+			'posts_per_page' => $query->perPage,
+			'paged'          => $query->page,
             // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-            'meta_query'     => $query->metaQuery,
+			'meta_query'     => $query->metaQuery,
             // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-            'tax_query'      => $query->taxQuery,
-        ];
+			'tax_query'      => $query->taxQuery,
+		);
 
-        $wpQuery = new \WP_Query($args);
+		$wpQuery = new \WP_Query( $args );
 
-        $items = [];
-        foreach ($wpQuery->posts as $post) {
-            if ($post instanceof \WP_Post) {
-                $items[] = $this->hydrateContentItem($post);
-            }
-        }
+		$items = array();
+		foreach ( $wpQuery->posts as $post ) {
+			if ( $post instanceof \WP_Post ) {
+				$items[] = $this->hydrateContentItem( $post );
+			}
+		}
 
-        $total      = (int) ($wpQuery->found_posts ?? 0);
-        $totalPages = $query->perPage > 0
-            ? (int) ceil($total / $query->perPage)
-            : 1;
+		$total      = (int) ( $wpQuery->found_posts ?? 0 );
+		$totalPages = $query->perPage > 0
+			? (int) ceil( $total / $query->perPage )
+			: 1;
 
-        return new ContentCollection(
-            items: $items,
-            total: $total,
-            page: $query->page,
-            perPage: $query->perPage,
-            totalPages: $totalPages,
-        );
-    }
+		return new ContentCollection(
+			items: $items,
+			total: $total,
+			page: $query->page,
+			perPage: $query->perPage,
+			totalPages: $totalPages,
+		);
+	}
 
-    public function create(CreateContentCommand $command): ContentItem
-    {
-        $postData = [
-            'post_title'   => $command->title,
-            'post_type'    => $command->type,
-            'post_status'  => $command->status,
-            'post_content' => $command->content,
-            'post_author'  => $command->authorId,
-            'post_excerpt' => $command->excerpt,
-        ];
+	public function create( CreateContentCommand $command ): ContentItem {
+		$postData = array(
+			'post_title'   => $command->title,
+			'post_type'    => $command->type,
+			'post_status'  => $command->status,
+			'post_content' => $command->content,
+			'post_author'  => $command->authorId,
+			'post_excerpt' => $command->excerpt,
+		);
 
-        $postId = \wp_insert_post($postData, true);
+		$postId = \wp_insert_post( $postData, true );
 
-        if (\is_wp_error($postId)) {
-            throw new ValidationException(
-                $postId->get_error_message(),
-                ['title' => [$postId->get_error_message()]],
-            );
-        }
+		if ( \is_wp_error( $postId ) ) {
+			throw new ValidationException(
+				$postId->get_error_message(),
+				array( 'title' => array( $postId->get_error_message() ) ),
+			);
+		}
 
-        // Set meta fields.
-        foreach ($command->meta as $key => $value) {
-            \update_post_meta($postId, \sanitize_key($key), $value);
-        }
+		// Set meta fields.
+		foreach ( $command->meta as $key => $value ) {
+			\update_post_meta( $postId, \sanitize_key( $key ), $value );
+		}
 
-        // Set taxonomy terms.
-        foreach ($command->taxonomyInput as $taxonomy => $terms) {
-            \wp_set_post_terms($postId, $terms, \sanitize_key($taxonomy));
-        }
+		// Set taxonomy terms.
+		foreach ( $command->taxonomyInput as $taxonomy => $terms ) {
+			\wp_set_post_terms( $postId, $terms, \sanitize_key( $taxonomy ) );
+		}
 
-        $post = \get_post($postId);
-        if ( ! $post instanceof \WP_Post ) {
-            throw new NotFoundException('Created post not found.', 'post', $postId);
-        }
+		$post = \get_post( $postId );
+		if ( ! $post instanceof \WP_Post ) {
+			throw new NotFoundException( 'Created post not found.', 'post', $postId );
+		}
 
-        return $this->hydrateContentItem($post);
-    }
+		return $this->hydrateContentItem( $post );
+	}
 
-    public function update(int $id, UpdateContentCommand $command): ContentItem
-    {
-        $post = \get_post($id);
-        if ( ! $post instanceof \WP_Post ) {
-            throw new NotFoundException('Post not found.', 'post', $id);
-        }
+	public function update( int $id, UpdateContentCommand $command ): ContentItem {
+		$post = \get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			throw new NotFoundException( 'Post not found.', 'post', $id );
+		}
 
-        if ( ! $this->userCanAccess($id, $command->userId, 'edit')) {
-            throw new AccessDeniedException(
-                'You do not have permission to edit this post.',
-                $command->userId,
-                'edit_post',
-                $id,
-            );
-        }
+		if ( ! $this->userCanAccess( $id, $command->userId, 'edit' ) ) {
+			throw new AccessDeniedException(
+				'You do not have permission to edit this post.',
+				$command->userId,
+				'edit_post',
+				$id,
+			);
+		}
 
-        $postData = ['ID' => $id];
+		$postData = array( 'ID' => $id );
 
-        if (null !== $command->title) {
-            $postData['post_title'] = $command->title;
-        }
-        if (null !== $command->content) {
-            $postData['post_content'] = $command->content;
-        }
-        if (null !== $command->status) {
-            $postData['post_status'] = $command->status;
-        }
-        if (null !== $command->excerpt) {
-            $postData['post_excerpt'] = $command->excerpt;
-        }
+		if ( null !== $command->title ) {
+			$postData['post_title'] = $command->title;
+		}
+		if ( null !== $command->content ) {
+			$postData['post_content'] = $command->content;
+		}
+		if ( null !== $command->status ) {
+			$postData['post_status'] = $command->status;
+		}
+		if ( null !== $command->excerpt ) {
+			$postData['post_excerpt'] = $command->excerpt;
+		}
 
-        $result = \wp_update_post($postData, true);
+		$result = \wp_update_post( $postData, true );
 
-        if (\is_wp_error($result)) {
-            throw new ValidationException(
-                $result->get_error_message(),
-            );
-        }
+		if ( \is_wp_error( $result ) ) {
+			throw new ValidationException(
+				$result->get_error_message(),
+			);
+		}
 
-        // Merge meta fields.
-        foreach ($command->meta as $key => $value) {
-            \update_post_meta($id, \sanitize_key($key), $value);
-        }
+		// Merge meta fields.
+		foreach ( $command->meta as $key => $value ) {
+			\update_post_meta( $id, \sanitize_key( $key ), $value );
+		}
 
-        // Set taxonomy terms (replace, not append).
-        foreach ($command->taxonomyInput as $taxonomy => $terms) {
-            \wp_set_post_terms($id, $terms, \sanitize_key($taxonomy));
-        }
+		// Set taxonomy terms (replace, not append).
+		foreach ( $command->taxonomyInput as $taxonomy => $terms ) {
+			\wp_set_post_terms( $id, $terms, \sanitize_key( $taxonomy ) );
+		}
 
-        $post = \get_post($id);
-        if ( ! $post instanceof \WP_Post ) {
-            throw new NotFoundException('Post not found after update.', 'post', $id);
-        }
+		$post = \get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			throw new NotFoundException( 'Post not found after update.', 'post', $id );
+		}
 
-        return $this->hydrateContentItem($post);
-    }
+		return $this->hydrateContentItem( $post );
+	}
 
-    public function delete(int $id, int $userId): void
-    {
-        if ( ! $this->userCanAccess($id, $userId, 'delete')) {
-            throw new AccessDeniedException(
-                'You do not have permission to delete this post.',
-                $userId,
-                'delete_post',
-                $id,
-            );
-        }
+	public function delete( int $id, int $userId ): void {
+		if ( ! $this->userCanAccess( $id, $userId, 'delete' ) ) {
+			throw new AccessDeniedException(
+				'You do not have permission to delete this post.',
+				$userId,
+				'delete_post',
+				$id,
+			);
+		}
 
-        $result = \wp_delete_post($id, true);
+		$result = \wp_delete_post( $id, true );
 
-        if ( ! $result || (\is_wp_error($result) && 'trash' !== \get_post_status($id))) {
-            throw new NotFoundException('Post could not be deleted.', 'post', $id);
-        }
-    }
+		if ( ! $result || ( \is_wp_error( $result ) && 'trash' !== \get_post_status( $id ) ) ) {
+			throw new NotFoundException( 'Post could not be deleted.', 'post', $id );
+		}
+	}
 
-    public function getMeta(int $id): array
-    {
-        $meta = \get_post_meta($id);
+	public function getMeta( int $id ): array {
+		$meta = \get_post_meta( $id );
 
-        if ( ! is_array($meta)) {
-            return [];
-        }
+		if ( ! is_array( $meta ) ) {
+			return array();
+		}
 
-        // WordPress stores all meta values as arrays; unwrap single values.
-        $unwrapped = [];
-        foreach ($meta as $key => $values) {
-            if (is_array($values) && 1 === count($values)) {
-                $unwrapped[$key] = reset($values);
-            } else {
-                $unwrapped[$key] = $values;
-            }
-        }
+		// WordPress stores all meta values as arrays; unwrap single values.
+		$unwrapped = array();
+		foreach ( $meta as $key => $values ) {
+			if ( is_array( $values ) && 1 === count( $values ) ) {
+				$unwrapped[ $key ] = reset( $values );
+			} else {
+				$unwrapped[ $key ] = $values;
+			}
+		}
 
-        return $unwrapped;
-    }
+		return $unwrapped;
+	}
 
-    public function getTaxonomyTerms(int $id): array
-    {
-        $post = \get_post($id);
-        if ( ! $post instanceof \WP_Post ) {
-            return [];
-        }
+	public function getTaxonomyTerms( int $id ): array {
+		$post = \get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array();
+		}
 
-        $taxonomies = \get_object_taxonomies($post->post_type, 'names');
-        $terms = [];
+		$taxonomies = \get_object_taxonomies( $post->post_type, 'names' );
+		$terms      = array();
 
-        foreach ($taxonomies as $taxonomy) {
-            $postTerms = \wp_get_post_terms($id, $taxonomy, ['fields' => 'names']);
-            if (is_array($postTerms) && [] !== $postTerms) {
-                $terms[$taxonomy] = $postTerms;
-            }
-        }
+		foreach ( $taxonomies as $taxonomy ) {
+			$postTerms = \wp_get_post_terms( $id, $taxonomy, array( 'fields' => 'names' ) );
+			if ( is_array( $postTerms ) && array() !== $postTerms ) {
+				$terms[ $taxonomy ] = $postTerms;
+			}
+		}
 
-        return $terms;
-    }
+		return $terms;
+	}
 
-    public function userCanAccess(int $id, int $userId, string $operation = 'read'): bool
-    {
-        $post = \get_post($id);
-        if ( ! $post instanceof \WP_Post ) {
-            return false;
-        }
+	public function userCanAccess( int $id, int $userId, string $operation = 'read' ): bool {
+		$post = \get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return false;
+		}
 
-        // Map domain operation to WordPress capability.
-        $capabilityMap = [
-            'read'   => 'read_post',
-            'edit'   => 'edit_post',
-            'delete' => 'delete_post',
-        ];
+		// Map domain operation to WordPress capability.
+		$capabilityMap = array(
+			'read'   => 'read_post',
+			'edit'   => 'edit_post',
+			'delete' => 'delete_post',
+		);
 
-        $capability = $capabilityMap[$operation] ?? 'read_post';
+		$capability = $capabilityMap[ $operation ] ?? 'read_post';
 
-        return \user_can($userId, $capability, $id);
-    }
+		return \user_can( $userId, $capability, $id );
+	}
 
-    /**
-     * Convert a WP_Post to the framework-agnostic ContentItem.
-     */
-    private function hydrateContentItem(\WP_Post $post): ContentItem
-    {
-        $createdAt = \DateTimeImmutable::createFromFormat(
-            'Y-m-d H:i:s',
-            $post->post_date_gmt,
-            new \DateTimeZone('UTC'),
-        ) ?: new \DateTimeImmutable();
+	/**
+	 * Convert a WP_Post to the framework-agnostic ContentItem.
+	 */
+	private function hydrateContentItem( \WP_Post $post ): ContentItem {
+		$createdAt = \DateTimeImmutable::createFromFormat(
+			'Y-m-d H:i:s',
+			$post->post_date_gmt,
+			new \DateTimeZone( 'UTC' ),
+		) ?: new \DateTimeImmutable();
 
-        $updatedAt = \DateTimeImmutable::createFromFormat(
-            'Y-m-d H:i:s',
-            $post->post_modified_gmt,
-            new \DateTimeZone('UTC'),
-        ) ?: $createdAt;
+		$updatedAt = \DateTimeImmutable::createFromFormat(
+			'Y-m-d H:i:s',
+			$post->post_modified_gmt,
+			new \DateTimeZone( 'UTC' ),
+		) ?: $createdAt;
 
-        return new ContentItem(
-            id: $post->ID,
-            title: $post->post_title,
-            content: $post->post_content,
-            status: $post->post_status,
-            type: $post->post_type,
-            authorId: (int) $post->post_author,
-            createdAt: $createdAt,
-            updatedAt: $updatedAt,
-            meta: $this->getMeta($post->ID),
-            taxonomy: $this->getTaxonomyTerms($post->ID),
-            excerpt: $post->post_excerpt ?: null,
-            slug: $post->post_name ?: null,
-        );
-    }
+		return new ContentItem(
+			id: $post->ID,
+			title: $post->post_title,
+			content: $post->post_content,
+			status: $post->post_status,
+			type: $post->post_type,
+			authorId: (int) $post->post_author,
+			createdAt: $createdAt,
+			updatedAt: $updatedAt,
+			meta: $this->getMeta( $post->ID ),
+			taxonomy: $this->getTaxonomyTerms( $post->ID ),
+			excerpt: $post->post_excerpt ?: null,
+			slug: $post->post_name ?: null,
+		);
+	}
 }

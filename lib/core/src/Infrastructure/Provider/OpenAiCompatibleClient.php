@@ -22,137 +22,133 @@ namespace Oos\Core\Infrastructure\Provider;
 /**
  * Base for providers whose API is compatible with OpenAI's /v1/chat/completions.
  */
-abstract class OpenAiCompatibleClient extends AbstractProviderClient
-{
-    public function chat(array $messages, array $options = []): mixed
-    {
-        $apiKey = $this->getApiKey();
+abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 
-        if ('' === $apiKey) {
-            return $this->missingApiKeyError();
-        }
+	public function chat( array $messages, array $options = array() ): mixed {
+		$apiKey = $this->getApiKey();
 
-        $model   = $this->resolveModel($options);
-        $baseUrl = $this->getBaseUrl();
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
 
-        $payload = [
-            'model'    => $model,
-            'messages' => $messages,
-        ];
+		$model   = $this->resolveModel( $options );
+		$baseUrl = $this->getBaseUrl();
 
-        if (isset($options['temperature'])) {
-            $payload['temperature'] = (float) $options['temperature'];
-        }
-        if (isset($options['max_tokens'])) {
-            $payload['max_tokens'] = (int) $options['max_tokens'];
-        }
-        if ( ! empty($options['tools'])) {
-            $payload['tools'] = $options['tools'];
-        }
-        if ( ! empty($options['tool_choice'])) {
-            $payload['tool_choice'] = $options['tool_choice'];
-        }
-        if (isset($options['top_p'])) {
-            $payload['top_p'] = (float) $options['top_p'];
-        }
-        if ( ! empty($options['stream'])) {
-            $payload['stream'] = (bool) $options['stream'];
-        }
+		$payload = array(
+			'model'    => $model,
+			'messages' => $messages,
+		);
 
-        try {
-            $body = \json_encode($payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            return $this->errors->create(
-                'json_encode_failed',
-                'Failed to encode chat request payload.',
-                ['error' => $e->getMessage()],
-            );
-        }
+		if ( isset( $options['temperature'] ) ) {
+			$payload['temperature'] = (float) $options['temperature'];
+		}
+		if ( isset( $options['max_tokens'] ) ) {
+			$payload['max_tokens'] = (int) $options['max_tokens'];
+		}
+		if ( ! empty( $options['tools'] ) ) {
+			$payload['tools'] = $options['tools'];
+		}
+		if ( ! empty( $options['tool_choice'] ) ) {
+			$payload['tool_choice'] = $options['tool_choice'];
+		}
+		if ( isset( $options['top_p'] ) ) {
+			$payload['top_p'] = (float) $options['top_p'];
+		}
+		if ( ! empty( $options['stream'] ) ) {
+			$payload['stream'] = (bool) $options['stream'];
+		}
 
-        $headers = $this->buildAuthHeaders($apiKey);
+		try {
+			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $e ) {
+			return $this->errors->create(
+				'json_encode_failed',
+				'Failed to encode chat request payload.',
+				array( 'error' => $e->getMessage() ),
+			);
+		}
 
-        try {
-            $request  = new \Nyholm\Psr7\Request(
-                'POST',
-                $baseUrl . '/chat/completions',
-                $headers,
-                $body,
-            );
-            $response = $this->http->sendRequest($request);
+		$headers = $this->buildAuthHeaders( $apiKey );
 
-            $body       = (string) $response->getBody();
-            $statusCode = $response->getStatusCode();
+		try {
+			$request  = new \Nyholm\Psr7\Request(
+				'POST',
+				$baseUrl . '/chat/completions',
+				$headers,
+				$body,
+			);
+			$response = $this->http->sendRequest( $request );
 
-            if ($statusCode >= 400) {
-                return $this->parseError($statusCode, $body);
-            }
+			$body       = (string) $response->getBody();
+			$statusCode = $response->getStatusCode();
 
-            $data = \json_decode($body, true);
+			if ( $statusCode >= 400 ) {
+				return $this->parseError( $statusCode, $body );
+			}
 
-            return is_array($data) ? $data : $this->errors->create(
-                'invalid_response',
-                'Provider returned an unexpected response format.',
-                ['raw' => $body],
-            );
+			$data = \json_decode( $body, true );
 
-        } catch (\Psr\Http\Client\ClientExceptionInterface $e) {
-            return $this->errors->create(
-                'http_request_failed',
-                "API request failed: {$e->getMessage()}",
-            );
-        }
-    }
+			return is_array( $data ) ? $data : $this->errors->create(
+				'invalid_response',
+				'Provider returned an unexpected response format.',
+				array( 'raw' => $body ),
+			);
 
-    public function stream(array $messages, array $options = [], ?callable $onChunk = null): mixed
-    {
-        $options['stream'] = true;
-        return $this->chat($messages, $options);
-    }
+		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+			return $this->errors->create(
+				'http_request_failed',
+				"API request failed: {$e->getMessage()}",
+			);
+		}
+	}
 
-    public function listModels(): mixed
-    {
-        $apiKey = $this->getApiKey();
+	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
+		$options['stream'] = true;
+		return $this->chat( $messages, $options );
+	}
 
-        if ('' === $apiKey) {
-            return $this->missingApiKeyError();
-        }
+	public function listModels(): mixed {
+		$apiKey = $this->getApiKey();
 
-        $baseUrl = $this->getBaseUrl();
-        $headers = $this->buildAuthHeaders($apiKey);
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
 
-        try {
-            $request  = new \Nyholm\Psr7\Request('GET', $baseUrl . '/models', $headers);
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+		$baseUrl = $this->getBaseUrl();
+		$headers = $this->buildAuthHeaders( $apiKey );
 
-            if ( ! is_array($data) || ! isset($data['data'])) {
-                return [];
-            }
+		try {
+			$request  = new \Nyholm\Psr7\Request( 'GET', $baseUrl . '/models', $headers );
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            $models = [];
-            foreach ($data['data'] as $m) {
-                if (is_array($m) && isset($m['id'])) {
-                    $models[] = $m['id'];
-                }
-            }
-            \sort($models);
-            return $models;
-        } catch (\Exception $e) {
-            return $this->errors->create('list_models_failed', $e->getMessage());
-        }
-    }
+			if ( ! is_array( $data ) || ! isset( $data['data'] ) ) {
+				return array();
+			}
 
-    protected function parseError(int $statusCode, string $body): mixed
-    {
-        $data  = \json_decode($body, true);
-        $msg   = is_array($data) && isset($data['error']['message'])
-            ? $data['error']['message']
-            : 'API returned status ' . $statusCode;
+			$models = array();
+			foreach ( $data['data'] as $m ) {
+				if ( is_array( $m ) && isset( $m['id'] ) ) {
+					$models[] = $m['id'];
+				}
+			}
+			\sort( $models );
+			return $models;
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'list_models_failed', $e->getMessage() );
+		}
+	}
 
-        if (429 === $statusCode) {
-            return $this->errors->rateLimited($msg);
-        }
+	protected function parseError( int $statusCode, string $body ): mixed {
+		$data = \json_decode( $body, true );
+		$msg  = is_array( $data ) && isset( $data['error']['message'] )
+			? $data['error']['message']
+			: 'API returned status ' . $statusCode;
 
-        return $this->errors->create("http_{$statusCode}", $msg, ['status' => $statusCode]);
-    }
+		if ( 429 === $statusCode ) {
+			return $this->errors->rateLimited( $msg );
+		}
+
+		return $this->errors->create( "http_{$statusCode}", $msg, array( 'status' => $statusCode ) );
+	}
 }

@@ -14,280 +14,272 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
-class GeminiClient extends AbstractProviderClient
-{
-    private const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+class GeminiClient extends AbstractProviderClient {
 
-    public function __construct(
-        SettingsStoreInterface $settings,
-        HttpClientInterface $http,
-        ErrorFactoryInterface $errors,
-    ) {
-        parent::__construct($settings, $http, $errors);
-        $this->providerSlug = 'gemini';
-    }
+	private const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
-    protected function getDefaultBaseUrl(): string
-    {
-        return self::DEFAULT_BASE_URL;
-    }
+	public function __construct(
+		SettingsStoreInterface $settings,
+		HttpClientInterface $http,
+		ErrorFactoryInterface $errors,
+	) {
+		parent::__construct( $settings, $http, $errors );
+		$this->providerSlug = 'gemini';
+	}
 
-    public function chat(array $messages, array $options = []): mixed
-    {
-        $apiKey = $this->getApiKey();
+	protected function getDefaultBaseUrl(): string {
+		return self::DEFAULT_BASE_URL;
+	}
 
-        if ('' === $apiKey) {
-            return $this->missingApiKeyError();
-        }
+	public function chat( array $messages, array $options = array() ): mixed {
+		$apiKey = $this->getApiKey();
 
-        $model   = $this->resolveModel($options);
-        $baseUrl = $this->getBaseUrl();
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
 
-        // Convert OpenAI-format messages to Gemini format.
-        $contents   = $this->convertMessages($messages);
-        $systemText = $this->extractSystemInstruction($messages);
+		$model   = $this->resolveModel( $options );
+		$baseUrl = $this->getBaseUrl();
 
-        $payload = [
-            'contents' => $contents,
-        ];
+		// Convert OpenAI-format messages to Gemini format.
+		$contents   = $this->convertMessages( $messages );
+		$systemText = $this->extractSystemInstruction( $messages );
 
-        if ('' !== $systemText) {
-            $payload['systemInstruction'] = [
-                'parts' => [['text' => $systemText]],
-            ];
-        }
+		$payload = array(
+			'contents' => $contents,
+		);
 
-        if ( ! empty($options['tools'])) {
-            $payload['tools'] = $this->convertToolsToGemini($options['tools']);
-        }
+		if ( '' !== $systemText ) {
+			$payload['systemInstruction'] = array(
+				'parts' => array( array( 'text' => $systemText ) ),
+			);
+		}
 
-        $generationConfig = [];
-        if (isset($options['temperature'])) {
-            $generationConfig['temperature'] = (float) $options['temperature'];
-        }
-        if (isset($options['max_tokens'])) {
-            $generationConfig['maxOutputTokens'] = (int) $options['max_tokens'];
-        }
-        if (isset($options['top_p'])) {
-            $generationConfig['topP'] = (float) $options['top_p'];
-        }
-        if ([] !== $generationConfig) {
-            $payload['generationConfig'] = $generationConfig;
-        }
+		if ( ! empty( $options['tools'] ) ) {
+			$payload['tools'] = $this->convertToolsToGemini( $options['tools'] );
+		}
 
-        $url = $baseUrl . '/models/' . \urlencode($model) . ':generateContent?key=' . \urlencode($apiKey);
+		$generationConfig = array();
+		if ( isset( $options['temperature'] ) ) {
+			$generationConfig['temperature'] = (float) $options['temperature'];
+		}
+		if ( isset( $options['max_tokens'] ) ) {
+			$generationConfig['maxOutputTokens'] = (int) $options['max_tokens'];
+		}
+		if ( isset( $options['top_p'] ) ) {
+			$generationConfig['topP'] = (float) $options['top_p'];
+		}
+		if ( array() !== $generationConfig ) {
+			$payload['generationConfig'] = $generationConfig;
+		}
 
-        try {
-            $body = \json_encode($payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            return $this->errors->create('json_encode_failed', $e->getMessage());
-        }
+		$url = $baseUrl . '/models/' . \urlencode( $model ) . ':generateContent?key=' . \urlencode( $apiKey );
 
-        try {
-            $request  = new \Nyholm\Psr7\Request(
-                'POST',
-                $url,
-                ['Content-Type' => 'application/json'],
-                $body,
-            );
-            $response   = $this->http->sendRequest($request);
-            $statusCode = $response->getStatusCode();
-            $respBody   = (string) $response->getBody();
+		try {
+			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $e ) {
+			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
+		}
 
-            if ($statusCode >= 400) {
-                return $this->errors->create("http_{$statusCode}", $respBody, ['status' => $statusCode]);
-            }
+		try {
+			$request    = new \Nyholm\Psr7\Request(
+				'POST',
+				$url,
+				array( 'Content-Type' => 'application/json' ),
+				$body,
+			);
+			$response   = $this->http->sendRequest( $request );
+			$statusCode = $response->getStatusCode();
+			$respBody   = (string) $response->getBody();
 
-            return $this->normalizeResponse(\json_decode($respBody, true) ?: [], $model);
+			if ( $statusCode >= 400 ) {
+				return $this->errors->create( "http_{$statusCode}", $respBody, array( 'status' => $statusCode ) );
+			}
 
-        } catch (\Psr\Http\Client\ClientExceptionInterface $e) {
-            return $this->errors->create('http_request_failed', $e->getMessage());
-        }
-    }
+			return $this->normalizeResponse( \json_decode( $respBody, true ) ?: array(), $model );
 
-    public function stream(array $messages, array $options = [], ?callable $onChunk = null): mixed
-    {
-        return $this->chat($messages, $options);
-    }
+		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+			return $this->errors->create( 'http_request_failed', $e->getMessage() );
+		}
+	}
 
-    public function listModels(): mixed
-    {
-        $apiKey = $this->getApiKey();
-        if ('' === $apiKey) {
-            return $this->missingApiKeyError();
-        }
+	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
+		return $this->chat( $messages, $options );
+	}
 
-        $url = $this->getBaseUrl() . '/models?key=' . \urlencode($apiKey);
+	public function listModels(): mixed {
+		$apiKey = $this->getApiKey();
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
 
-        try {
-            $request  = new \Nyholm\Psr7\Request('GET', $url);
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+		$url = $this->getBaseUrl() . '/models?key=' . \urlencode( $apiKey );
 
-            if ( ! is_array($data) || ! isset($data['models'])) {
-                return [];
-            }
+		try {
+			$request  = new \Nyholm\Psr7\Request( 'GET', $url );
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            $models = [];
-            foreach ($data['models'] as $m) {
-                if (is_array($m) && isset($m['name'])) {
-                    // Extract model ID from "models/gemini-pro"
-                    $models[] = \str_replace('models/', '', $m['name']);
-                }
-            }
-            \sort($models);
-            return $models;
-        } catch (\Exception $e) {
-            return $this->errors->create('list_models_failed', $e->getMessage());
-        }
-    }
+			if ( ! is_array( $data ) || ! isset( $data['models'] ) ) {
+				return array();
+			}
 
-    // ─── Gemini-specific message conversion ──────────────────────────
+			$models = array();
+			foreach ( $data['models'] as $m ) {
+				if ( is_array( $m ) && isset( $m['name'] ) ) {
+					// Extract model ID from "models/gemini-pro"
+					$models[] = \str_replace( 'models/', '', $m['name'] );
+				}
+			}
+			\sort( $models );
+			return $models;
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'list_models_failed', $e->getMessage() );
+		}
+	}
 
-    /**
-     * Convert OpenAI-format messages to Gemini contents array.
-     */
-    private function convertMessages(array $messages): array
-    {
-        $contents = [];
+	// ─── Gemini-specific message conversion ──────────────────────────
 
-        foreach ($messages as $msg) {
-            $role = $msg['role'] ?? 'user';
+	/**
+	 * Convert OpenAI-format messages to Gemini contents array.
+	 */
+	private function convertMessages( array $messages ): array {
+		$contents = array();
 
-            // Skip system messages — handled separately.
-            if ('system' === $role) {
-                continue;
-            }
+		foreach ( $messages as $msg ) {
+			$role = $msg['role'] ?? 'user';
 
-            $geminiRole = 'assistant' === $role ? 'model' : 'user';
+			// Skip system messages — handled separately.
+			if ( 'system' === $role ) {
+				continue;
+			}
 
-            // Build the parts array.
-            $parts = [];
+			$geminiRole = 'assistant' === $role ? 'model' : 'user';
 
-            if (is_string($msg['content'] ?? null)) {
-                $parts[] = ['text' => $msg['content']];
-            } elseif (is_array($msg['content'] ?? null)) {
-                foreach ($msg['content'] as $segment) {
-                    if (isset($segment['text'])) {
-                        $parts[] = ['text' => $segment['text']];
-                    } elseif (isset($segment['image_url']['url'])) {
-                        $parts[] = [
-                            'inlineData' => [
-                                'mimeType' => 'image/jpeg',
-                                'data'     => \preg_replace(
-                                    '#^data:image/\w+;base64,#',
-                                    '',
-                                    $segment['image_url']['url'],
-                                ),
-                            ],
-                        ];
-                    }
-                }
-            }
+			// Build the parts array.
+			$parts = array();
 
-            if ([] === $parts) {
-                continue;
-            }
+			if ( is_string( $msg['content'] ?? null ) ) {
+				$parts[] = array( 'text' => $msg['content'] );
+			} elseif ( is_array( $msg['content'] ?? null ) ) {
+				foreach ( $msg['content'] as $segment ) {
+					if ( isset( $segment['text'] ) ) {
+						$parts[] = array( 'text' => $segment['text'] );
+					} elseif ( isset( $segment['image_url']['url'] ) ) {
+						$parts[] = array(
+							'inlineData' => array(
+								'mimeType' => 'image/jpeg',
+								'data'     => \preg_replace(
+									'#^data:image/\w+;base64,#',
+									'',
+									$segment['image_url']['url'],
+								),
+							),
+						);
+					}
+				}
+			}
 
-            // Merge consecutive messages from the same role.
-            $last = \count($contents) - 1;
-            if ($last >= 0 && $contents[$last]['role'] === $geminiRole) {
-                $contents[$last]['parts'] = \array_merge(
-                    $contents[$last]['parts'],
-                    $parts,
-                );
-            } else {
-                $contents[] = [
-                    'role'  => $geminiRole,
-                    'parts' => $parts,
-                ];
-            }
-        }
+			if ( array() === $parts ) {
+				continue;
+			}
 
-        return $contents;
-    }
+			// Merge consecutive messages from the same role.
+			$last = \count( $contents ) - 1;
+			if ( $last >= 0 && $contents[ $last ]['role'] === $geminiRole ) {
+				$contents[ $last ]['parts'] = \array_merge(
+					$contents[ $last ]['parts'],
+					$parts,
+				);
+			} else {
+				$contents[] = array(
+					'role'  => $geminiRole,
+					'parts' => $parts,
+				);
+			}
+		}
 
-    private function extractSystemInstruction(array $messages): string
-    {
-        foreach ($messages as $msg) {
-            if (('system' === ($msg['role'] ?? '')) && is_string($msg['content'] ?? null)) {
-                return $msg['content'];
-            }
-        }
-        return '';
-    }
+		return $contents;
+	}
 
-    /**
-     * Convert OpenAI tool definitions to Gemini function declarations.
-     */
-    private function convertToolsToGemini(array $tools): array
-    {
-        $declarations = [];
+	private function extractSystemInstruction( array $messages ): string {
+		foreach ( $messages as $msg ) {
+			if ( ( 'system' === ( $msg['role'] ?? '' ) ) && is_string( $msg['content'] ?? null ) ) {
+				return $msg['content'];
+			}
+		}
+		return '';
+	}
 
-        foreach ($tools as $tool) {
-            if (isset($tool['function'])) {
-                $declarations[] = [
-                    'name'        => $tool['function']['name'],
-                    'description' => $tool['function']['description'] ?? '',
-                    'parameters'  => $tool['function']['parameters'] ?? [],
-                ];
-            }
-        }
+	/**
+	 * Convert OpenAI tool definitions to Gemini function declarations.
+	 */
+	private function convertToolsToGemini( array $tools ): array {
+		$declarations = array();
 
-        return [['functionDeclarations' => $declarations]];
-    }
+		foreach ( $tools as $tool ) {
+			if ( isset( $tool['function'] ) ) {
+				$declarations[] = array(
+					'name'        => $tool['function']['name'],
+					'description' => $tool['function']['description'] ?? '',
+					'parameters'  => $tool['function']['parameters'] ?? array(),
+				);
+			}
+		}
 
-    /**
-     * Normalize Gemini response to the OpenAI-compatible shape expected
-     * by the agentic loop and frontend.
-     */
-    private function normalizeResponse(array $data, string $model): array
-    {
-        $text = '';
+		return array( array( 'functionDeclarations' => $declarations ) );
+	}
 
-        if (isset($data['candidates'][0]['content']['parts'])) {
-            foreach ($data['candidates'][0]['content']['parts'] as $part) {
-                if (isset($part['text'])) {
-                    $text .= $part['text'];
-                }
-            }
-        }
+	/**
+	 * Normalize Gemini response to the OpenAI-compatible shape expected
+	 * by the agentic loop and frontend.
+	 */
+	private function normalizeResponse( array $data, string $model ): array {
+		$text = '';
 
-        $finishReason = $data['candidates'][0]['finishReason'] ?? 'STOP';
+		if ( isset( $data['candidates'][0]['content']['parts'] ) ) {
+			foreach ( $data['candidates'][0]['content']['parts'] as $part ) {
+				if ( isset( $part['text'] ) ) {
+					$text .= $part['text'];
+				}
+			}
+		}
 
-        // Map Gemini finish reasons to OpenAI.
-        $reasonMap = [
-            'STOP'             => 'stop',
-            'MAX_TOKENS'       => 'length',
-            'SAFETY'           => 'content_filter',
-            'RECITATION'       => 'content_filter',
-            'MALFORMED_FUNCTION_CALL' => 'tool_calls',
-        ];
+		$finishReason = $data['candidates'][0]['finishReason'] ?? 'STOP';
 
-        $usage = [];
-        if (isset($data['usageMetadata'])) {
-            $usage = [
-                'prompt_tokens'     => $data['usageMetadata']['promptTokenCount'] ?? 0,
-                'completion_tokens' => $data['usageMetadata']['candidatesTokenCount'] ?? 0,
-                'total_tokens'      => $data['usageMetadata']['totalTokenCount'] ?? 0,
-            ];
-        }
+		// Map Gemini finish reasons to OpenAI.
+		$reasonMap = array(
+			'STOP'                    => 'stop',
+			'MAX_TOKENS'              => 'length',
+			'SAFETY'                  => 'content_filter',
+			'RECITATION'              => 'content_filter',
+			'MALFORMED_FUNCTION_CALL' => 'tool_calls',
+		);
 
-        return [
-            'id'      => $data['candidates'][0]['content']['parts'][0]['text'] ?? '',
-            'object'  => 'chat.completion',
-            'model'   => $model,
-            'choices' => [
-                [
-                    'index'         => 0,
-                    'message'       => [
-                        'role'    => 'assistant',
-                        'content' => $text,
-                    ],
-                    'finish_reason' => $reasonMap[$finishReason] ?? 'stop',
-                ],
-            ],
-            'usage'   => $usage,
-        ];
-    }
+		$usage = array();
+		if ( isset( $data['usageMetadata'] ) ) {
+			$usage = array(
+				'prompt_tokens'     => $data['usageMetadata']['promptTokenCount'] ?? 0,
+				'completion_tokens' => $data['usageMetadata']['candidatesTokenCount'] ?? 0,
+				'total_tokens'      => $data['usageMetadata']['totalTokenCount'] ?? 0,
+			);
+		}
+
+		return array(
+			'id'      => $data['candidates'][0]['content']['parts'][0]['text'] ?? '',
+			'object'  => 'chat.completion',
+			'model'   => $model,
+			'choices' => array(
+				array(
+					'index'         => 0,
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => $text,
+					),
+					'finish_reason' => $reasonMap[ $finishReason ] ?? 'stop',
+				),
+			),
+			'usage'   => $usage,
+		);
+	}
 }

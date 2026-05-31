@@ -181,27 +181,27 @@ class NV_oOS_Docs_Hub_CLI extends WP_CLI_Command {
 					'Value' => $last_built > 0 ? gmdate( 'Y-m-d H:i:s', $last_built ) . ' UTC' : 'Never',
 				),
 				array(
-					'Key' => 'Total Pages',
+					'Key'   => 'Total Pages',
 					'Value' => $total_pages,
 				),
 				array(
-					'Key' => 'Broken Links',
+					'Key'   => 'Broken Links',
 					'Value' => $broken_links,
 				),
 				array(
-					'Key' => 'Version',
+					'Key'   => 'Version',
 					'Value' => NVOOS_DOCS_HUB_VERSION,
 				),
 				array(
-					'Key' => 'Rebuild Phase',
+					'Key'   => 'Rebuild Phase',
 					'Value' => $rebuild['phase'],
 				),
 				array(
-					'Key' => 'Rebuild Progress',
+					'Key'   => 'Rebuild Progress',
 					'Value' => sprintf( '%d / %d (%d%%)', $rebuild['processed'], $rebuild['total'], $rebuild['percentage'] ),
 				),
 				array(
-					'Key' => 'Last Error',
+					'Key'   => 'Last Error',
 					'Value' => $rebuild['last_error'] ? $rebuild['last_error'] : '—',
 				),
 			),

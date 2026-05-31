@@ -21,260 +21,251 @@ use Oos\Core\Domain\Event\BeforeToolExecution;
 use Oos\Core\Domain\Event\AfterToolExecution;
 use Oos\Core\Domain\Event\ToolsRegistered;
 
-class ToolRegistry
-{
-    /**
-     * Registered tools keyed by slug.
-     *
-     * @var array<string, ToolInterface>
-     */
-    private array $tools = [];
+class ToolRegistry {
 
-    /**
-     * Slugs that have been disabled and should not execute.
-     *
-     * @var array<string, bool>
-     */
-    private array $disabled = [];
+	/**
+	 * Registered tools keyed by slug.
+	 *
+	 * @var array<string, ToolInterface>
+	 */
+	private array $tools = array();
 
-    /**
-     * Deprecated aliases mapping old slug → new slug.
-     *
-     * @var array<string, string>
-     */
-    private array $aliases = [];
+	/**
+	 * Slugs that have been disabled and should not execute.
+	 *
+	 * @var array<string, bool>
+	 */
+	private array $disabled = array();
 
-    public function __construct(
-        private readonly EventDispatcherInterface $events,
-        private readonly ErrorFactoryInterface $errors,
-    ) {}
+	/**
+	 * Deprecated aliases mapping old slug → new slug.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $aliases = array();
 
-    /**
-     * Register a tool.
-     *
-     * @throws \RuntimeException  When a tool with the same slug already exists.
-     */
-    public function register(ToolInterface $tool): void
-    {
-        $slug = $tool->getSlug();
+	public function __construct(
+		private readonly EventDispatcherInterface $events,
+		private readonly ErrorFactoryInterface $errors,
+	) {}
 
-        if (isset($this->tools[$slug])) {
-            throw new \RuntimeException("Tool '{$slug}' is already registered.");
-        }
+	/**
+	 * Register a tool.
+	 *
+	 * @throws \RuntimeException  When a tool with the same slug already exists.
+	 */
+	public function register( ToolInterface $tool ): void {
+		$slug = $tool->getSlug();
 
-        $this->tools[$slug] = $tool;
-    }
+		if ( isset( $this->tools[ $slug ] ) ) {
+			throw new \RuntimeException( "Tool '{$slug}' is already registered." );
+		}
 
-    /**
-     * Register a deprecated alias pointing to a current tool slug.
-     */
-    public function registerAlias(string $alias, string $targetSlug): void
-    {
-        $this->aliases[$alias] = $targetSlug;
-    }
+		$this->tools[ $slug ] = $tool;
+	}
 
-    /**
-     * Get a tool by slug, resolving aliases.
-     *
-     * @return ToolInterface|null  Null if not found.
-     */
-    public function get(string $slug): ?ToolInterface
-    {
-        // Resolve alias chain.
-        $resolved = $this->resolveAlias($slug);
+	/**
+	 * Register a deprecated alias pointing to a current tool slug.
+	 */
+	public function registerAlias( string $alias, string $targetSlug ): void {
+		$this->aliases[ $alias ] = $targetSlug;
+	}
 
-        return $this->tools[$resolved] ?? null;
-    }
+	/**
+	 * Get a tool by slug, resolving aliases.
+	 *
+	 * @return ToolInterface|null  Null if not found.
+	 */
+	public function get( string $slug ): ?ToolInterface {
+		// Resolve alias chain.
+		$resolved = $this->resolveAlias( $slug );
 
-    /**
-     * Check if a tool is registered (and not disabled).
-     */
-    public function has(string $slug): bool
-    {
-        $resolved = $this->resolveAlias($slug);
+		return $this->tools[ $resolved ] ?? null;
+	}
 
-        return isset($this->tools[$resolved]) && ! isset($this->disabled[$resolved]);
-    }
+	/**
+	 * Check if a tool is registered (and not disabled).
+	 */
+	public function has( string $slug ): bool {
+		$resolved = $this->resolveAlias( $slug );
 
-    /**
-     * Disable a tool so it won't execute.
-     */
-    public function disable(string $slug): void
-    {
-        $this->disabled[$this->resolveAlias($slug)] = true;
-    }
+		return isset( $this->tools[ $resolved ] ) && ! isset( $this->disabled[ $resolved ] );
+	}
 
-    /**
-     * Re-enable a previously disabled tool.
-     */
-    public function enable(string $slug): void
-    {
-        unset($this->disabled[$this->resolveAlias($slug)]);
-    }
+	/**
+	 * Disable a tool so it won't execute.
+	 */
+	public function disable( string $slug ): void {
+		$this->disabled[ $this->resolveAlias( $slug ) ] = true;
+	}
 
-    /**
-     * Get all registered tool slugs.
-     *
-     * @return string[]
-     */
-    public function getSlugs(): array
-    {
-        return \array_keys($this->tools);
-    }
+	/**
+	 * Re-enable a previously disabled tool.
+	 */
+	public function enable( string $slug ): void {
+		unset( $this->disabled[ $this->resolveAlias( $slug ) ] );
+	}
 
-    /**
-     * Get all registered tools (slug → instance).
-     *
-     * @return array<string, ToolInterface>
-     */
-    public function all(): array
-    {
-        return $this->tools;
-    }
+	/**
+	 * Get all registered tool slugs.
+	 *
+	 * @return string[]
+	 */
+	public function getSlugs(): array {
+		return \array_keys( $this->tools );
+	}
 
-    /**
-     * Get only enabled tools (slug → instance).
-     *
-     * @return array<string, ToolInterface>
-     */
-    public function enabled(): array
-    {
-        $enabled = [];
+	/**
+	 * Get all registered tools (slug → instance).
+	 *
+	 * @return array<string, ToolInterface>
+	 */
+	public function all(): array {
+		return $this->tools;
+	}
 
-        foreach ($this->tools as $slug => $tool) {
-            if ( ! isset($this->disabled[$slug])) {
-                $enabled[$slug] = $tool;
-            }
-        }
+	/**
+	 * Get only enabled tools (slug → instance).
+	 *
+	 * @return array<string, ToolInterface>
+	 */
+	public function enabled(): array {
+		$enabled = array();
 
-        return $enabled;
-    }
+		foreach ( $this->tools as $slug => $tool ) {
+			if ( ! isset( $this->disabled[ $slug ] ) ) {
+				$enabled[ $slug ] = $tool;
+			}
+		}
 
-    /**
-     * Get the number of registered tools.
-     */
-    public function count(): int
-    {
-        return \count($this->tools);
-    }
+		return $enabled;
+	}
 
-    /**
-     * Get the number of enabled tools.
-     */
-    public function enabledCount(): int
-    {
-        return \count($this->tools) - \count($this->disabled);
-    }
+	/**
+	 * Get the number of registered tools.
+	 */
+	public function count(): int {
+		return \count( $this->tools );
+	}
 
-    /**
-     * Execute a tool by slug with arguments and context.
-     *
-     * Fires BeforeToolExecution and AfterToolExecution domain events.
-     *
-     * @return mixed  Tool result or error.
-     */
-    public function execute(string $slug, array $arguments = [], array $context = []): mixed
-    {
-        $tool = $this->get($slug);
+	/**
+	 * Get the number of enabled tools.
+	 */
+	public function enabledCount(): int {
+		return \count( $this->tools ) - \count( $this->disabled );
+	}
 
-        if (null === $tool) {
-            return $this->errors->notFound("Tool '{$slug}' is not registered.");
-        }
+	/**
+	 * Execute a tool by slug with arguments and context.
+	 *
+	 * Fires BeforeToolExecution and AfterToolExecution domain events.
+	 *
+	 * @return mixed  Tool result or error.
+	 */
+	public function execute( string $slug, array $arguments = array(), array $context = array() ): mixed {
+		$tool = $this->get( $slug );
 
-        if (isset($this->disabled[$tool->getSlug()])) {
-            return $this->errors->forbidden("Tool '{$slug}' is disabled.");
-        }
+		if ( null === $tool ) {
+			return $this->errors->notFound( "Tool '{$slug}' is not registered." );
+		}
 
-        // Check capability.
-        $capability = $tool->getRequiredCapability();
-        if ('' !== $capability) {
-            $userId = $context['user_id'] ?? 0;
-            if ($userId > 0 && ! ($context['auth_provider'] ?? null)?->userCan($userId, $capability)) {
-                return $this->errors->forbidden(
-                    "You do not have permission to execute '{$slug}'.",
-                );
-            }
-        }
+		if ( isset( $this->disabled[ $tool->getSlug() ] ) ) {
+			return $this->errors->forbidden( "Tool '{$slug}' is disabled." );
+		}
 
-        $startedAt = \microtime(true);
+		// Check capability.
+		$capability = $tool->getRequiredCapability();
+		if ( '' !== $capability ) {
+			$userId = $context['user_id'] ?? 0;
+			if ( $userId > 0 && ! ( $context['auth_provider'] ?? null )?->userCan( $userId, $capability ) ) {
+				return $this->errors->forbidden(
+					"You do not have permission to execute '{$slug}'.",
+				);
+			}
+		}
 
-        // Before hook.
-        $this->events->dispatch(new BeforeToolExecution(
-            toolSlug: $slug,
-            arguments: $arguments,
-            context: $context,
-            startedAtMicros: $startedAt,
-        ));
+		$startedAt = \microtime( true );
 
-        $result = $tool->execute($arguments, $context);
+		// Before hook.
+		$this->events->dispatch(
+			new BeforeToolExecution(
+				toolSlug: $slug,
+				arguments: $arguments,
+				context: $context,
+				startedAtMicros: $startedAt,
+			)
+		);
 
-        $durationMs = (\microtime(true) - $startedAt) * 1000;
+		$result = $tool->execute( $arguments, $context );
 
-        // After hook.
-        $this->events->dispatch(new AfterToolExecution(
-            toolSlug: $slug,
-            arguments: $arguments,
-            context: $context,
-            result: $result,
-            isError: $this->errors->isError($result),
-            durationMs: $durationMs,
-        ));
+		$durationMs = ( \microtime( true ) - $startedAt ) * 1000;
 
-        return $result;
-    }
+		// After hook.
+		$this->events->dispatch(
+			new AfterToolExecution(
+				toolSlug: $slug,
+				arguments: $arguments,
+				context: $context,
+				result: $result,
+				isError: $this->errors->isError( $result ),
+				durationMs: $durationMs,
+			)
+		);
 
-    /**
-     * Build OpenAI-compatible tool definitions for all enabled tools.
-     *
-     * @return array  Array of { type: 'function', function: { name, description, parameters } }
-     */
-    public function buildToolDefinitions(): array
-    {
-        $definitions = [];
+		return $result;
+	}
 
-        foreach ($this->enabled() as $slug => $tool) {
-            $definitions[] = [
-                'type'     => 'function',
-                'function' => [
-                    'name'        => $slug,
-                    'description' => $tool->getDescription(),
-                    'parameters'  => $tool->getParametersSchema(),
-                ],
-            ];
-        }
+	/**
+	 * Build OpenAI-compatible tool definitions for all enabled tools.
+	 *
+	 * @return array  Array of { type: 'function', function: { name, description, parameters } }
+	 */
+	public function buildToolDefinitions(): array {
+		$definitions = array();
 
-        return $definitions;
-    }
+		foreach ( $this->enabled() as $slug => $tool ) {
+			$definitions[] = array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => $slug,
+					'description' => $tool->getDescription(),
+					'parameters'  => $tool->getParametersSchema(),
+				),
+			);
+		}
 
-    /**
-     * Notify that all tools have been registered.
-     *
-     * Call this after registering a batch of tools so observers
-     * (logging, OTEL, admin UI) can react.
-     */
-    public function notifyRegistered(): void
-    {
-        $this->events->dispatch(new ToolsRegistered(
-            toolSlugs: $this->getSlugs(),
-        ));
-    }
+		return $definitions;
+	}
 
-    /**
-     * Resolve a chain of aliases to a canonical slug.
-     */
-    private function resolveAlias(string $slug): string
-    {
-        $seen = [];
+	/**
+	 * Notify that all tools have been registered.
+	 *
+	 * Call this after registering a batch of tools so observers
+	 * (logging, OTEL, admin UI) can react.
+	 */
+	public function notifyRegistered(): void {
+		$this->events->dispatch(
+			new ToolsRegistered(
+				toolSlugs: $this->getSlugs(),
+			)
+		);
+	}
 
-        while (isset($this->aliases[$slug])) {
-            if (isset($seen[$slug])) {
-                // Circular alias detected — break.
-                break;
-            }
-            $seen[$slug] = true;
-            $slug        = $this->aliases[$slug];
-        }
+	/**
+	 * Resolve a chain of aliases to a canonical slug.
+	 */
+	private function resolveAlias( string $slug ): string {
+		$seen = array();
 
-        return $slug;
-    }
+		while ( isset( $this->aliases[ $slug ] ) ) {
+			if ( isset( $seen[ $slug ] ) ) {
+				// Circular alias detected — break.
+				break;
+			}
+			$seen[ $slug ] = true;
+			$slug          = $this->aliases[ $slug ];
+		}
+
+		return $slug;
+	}
 }

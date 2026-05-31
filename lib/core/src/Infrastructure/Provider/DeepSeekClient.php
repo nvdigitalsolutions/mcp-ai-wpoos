@@ -14,19 +14,18 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
-class DeepSeekClient extends OpenAiCompatibleClient
-{
-    public function __construct(
-        SettingsStoreInterface $settings,
-        HttpClientInterface $http,
-        ErrorFactoryInterface $errors,
-    ) {
-        parent::__construct($settings, $http, $errors);
-        $this->providerSlug = 'deepseek';
-    }
+class DeepSeekClient extends OpenAiCompatibleClient {
 
-    protected function getDefaultBaseUrl(): string
-    {
-        return 'https://api.deepseek.com/v1';
-    }
+	public function __construct(
+		SettingsStoreInterface $settings,
+		HttpClientInterface $http,
+		ErrorFactoryInterface $errors,
+	) {
+		parent::__construct( $settings, $http, $errors );
+		$this->providerSlug = 'deepseek';
+	}
+
+	protected function getDefaultBaseUrl(): string {
+		return 'https://api.deepseek.com/v1';
+	}
 }

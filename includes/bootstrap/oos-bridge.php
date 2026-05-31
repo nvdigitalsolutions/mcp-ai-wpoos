@@ -32,26 +32,28 @@ if ( PHP_VERSION_ID < 80100 ) {
 // Register PSR-4 autoloading for the extraction packages if not already
 // handled by Composer. This is a no-op if composer autoload is present.
 if ( ! class_exists( 'Oos\Core\Domain\Contract\ErrorFactoryInterface' ) ) {
-	spl_autoload_register( function ( string $class ): void {
-		$prefixes = [
-			'Oos\\Core\\'      => WP_MCP_AI_PATH . 'lib/core/src/',
-			'Oos\\WordPress\\' => WP_MCP_AI_PATH . 'lib/wordpress-adapter/src/',
-		];
+	spl_autoload_register(
+		function ( string $class_name ): void {
+			$prefixes = array(
+				'Oos\\Core\\'      => WP_MCP_AI_PATH . 'lib/core/src/',
+				'Oos\\WordPress\\' => WP_MCP_AI_PATH . 'lib/wordpress-adapter/src/',
+			);
 
-		foreach ( $prefixes as $prefix => $baseDir ) {
-			$len = strlen( $prefix );
-			if ( strncmp( $prefix, $class, $len ) !== 0 ) {
-				continue;
-			}
+			foreach ( $prefixes as $prefix => $base_dir ) {
+				$len = strlen( $prefix );
+				if ( strncmp( $prefix, $class_name, $len ) !== 0 ) {
+					continue;
+				}
 
-			$relativeClass = substr( $class, $len );
-			$file          = $baseDir . str_replace( '\\', '/', $relativeClass ) . '.php';
+				$relative_class = substr( $class_name, $len );
+				$file           = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
 
-			if ( file_exists( $file ) ) {
-				require $file;
+				if ( file_exists( $file ) ) {
+					require $file;
+				}
 			}
 		}
-	} );
+	);
 }
 
 // ─── Adapter Wiring ───────────────────────────────────────────────────
@@ -74,14 +76,14 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// ─── Adapters ──────────────────────────────────────────────────
 
-	$errorFactory = new Oos\WordPress\Adapter\ErrorFactory();
-	$settings     = new Oos\WordPress\Adapter\SettingsStore();
-	$content      = new Oos\WordPress\Adapter\ContentStore();
-	$auth         = new Oos\WordPress\Adapter\AuthProvider();
-	$files        = new Oos\WordPress\Adapter\FileStore();
-	$cache        = new Oos\WordPress\Adapter\CacheStore( wp_using_ext_object_cache() );
-	$queue        = new Oos\WordPress\Adapter\QueueClient();
-	$events       = new Oos\WordPress\Adapter\EventDispatcher();
+	$error_factory = new Oos\WordPress\Adapter\ErrorFactory();
+	$settings      = new Oos\WordPress\Adapter\SettingsStore();
+	$content       = new Oos\WordPress\Adapter\ContentStore();
+	$auth          = new Oos\WordPress\Adapter\AuthProvider();
+	$files         = new Oos\WordPress\Adapter\FileStore();
+	$cache         = new Oos\WordPress\Adapter\CacheStore( wp_using_ext_object_cache() );
+	$queue         = new Oos\WordPress\Adapter\QueueClient();
+	$events        = new Oos\WordPress\Adapter\EventDispatcher();
 
 	// Map existing wp_mcp_ai_* hooks to the event dispatcher for backward compat.
 	$events->mapEventToHook(
@@ -104,103 +106,103 @@ function wp_mcp_ai_oos_orchestrator() {
 	// ─── HTTP Client (PSR-18) ──────────────────────────────────────
 
 	// Use Symfony HttpClient with PSR-18 adapter since it's already a dependency.
-	$httpClient = new \Symfony\Component\HttpClient\Psr18Client();
+	$http_client = new \Symfony\Component\HttpClient\Psr18Client();
 
 	// ─── Provider Clients ──────────────────────────────────────────
 
-	$router = new Oos\Core\Application\Provider\ProviderRouter( $settings, $errorFactory );
+	$router = new Oos\Core\Application\Provider\ProviderRouter( $settings, $error_factory );
 
 	// Register all 12 providers.
-	$router->register( new Oos\Core\Infrastructure\Provider\OpenAiClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\GeminiClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\AnthropicClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\DeepSeekClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\OpenRouterClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\KimiClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\OllamaClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\LmStudioClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\DigitalOceanClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\NvidiaNimClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\CloudflareClient( $settings, $httpClient, $errorFactory ) );
-	$router->register( new Oos\Core\Infrastructure\Provider\HuggingFaceClient( $settings, $httpClient, $errorFactory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\OpenAiClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\GeminiClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\AnthropicClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\DeepSeekClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\OpenRouterClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\KimiClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\OllamaClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\LmStudioClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\DigitalOceanClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\NvidiaNimClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\CloudflareClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Oos\Core\Infrastructure\Provider\HuggingFaceClient( $settings, $http_client, $error_factory ) );
 
 	// ─── Core Services ─────────────────────────────────────────────
 
-	$toolRegistry = new Oos\Core\Application\Tool\ToolRegistry( $events, $errorFactory );
+	$tool_registry = new Oos\Core\Application\Tool\ToolRegistry( $events, $error_factory );
 
 	// ─── Register migrated framework-agnostic tools ────────────────
 	// Tier 1: External API / public data tools.
-	$toolRegistry->register( new Oos\Core\Tool\WebSearchTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\GetGdacsEventsTool( $errorFactory, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\GetNhcActiveStormsTool( $errorFactory, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\GetOpenMeteoForecastTool( $errorFactory, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\ReliefwebReportsTool( $errorFactory, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\GetModelInformationTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\ListAvailableModelsTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\ModerateContentTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\CreateTextEmbeddingsTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\SuggestBestModelTool( $errorFactory ) );
-	$toolRegistry->register( new Oos\Core\Tool\DeepResearchTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\ProbeRemoteMcpTool( $errorFactory, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\RunCrawl4AiJobTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\Crawl4AiPriceLookupTool( $errorFactory, $settings, $httpClient ) );
+	$tool_registry->register( new Oos\Core\Tool\WebSearchTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\GetGdacsEventsTool( $error_factory, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\GetNhcActiveStormsTool( $error_factory, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\GetOpenMeteoForecastTool( $error_factory, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\ReliefwebReportsTool( $error_factory, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\GetModelInformationTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\ListAvailableModelsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\ModerateContentTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\CreateTextEmbeddingsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\SuggestBestModelTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\DeepResearchTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\ProbeRemoteMcpTool( $error_factory, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\RunCrawl4AiJobTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\Crawl4AiPriceLookupTool( $error_factory, $settings, $http_client ) );
 
 	// HuggingFace dataset tools.
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetSearchTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetInfoTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetRowsTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetSizeTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetStatisticsTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetIsValidTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetListSplitsTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetFilterTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetParquetTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetPreviewRowsTool( $errorFactory, $settings, $httpClient ) );
-	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceRecommendedDatasetsTool( $errorFactory, $settings, $httpClient ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetSearchTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetGetInfoTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetGetRowsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetGetSizeTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetGetStatisticsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetIsValidTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetListSplitsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetFilterTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetGetParquetTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceDatasetPreviewRowsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Oos\Core\Tool\HuggingFaceRecommendedDatasetsTool( $error_factory, $settings, $http_client ) );
 
 	// Client-side tools.
-	$toolRegistry->register( new Oos\Core\Tool\ClientAnalyzeSentimentTool( $errorFactory ) );
-	$toolRegistry->register( new Oos\Core\Tool\ClientSummarizeTextTool( $errorFactory ) );
-	$toolRegistry->register( new Oos\Core\Tool\ClientTranslateTextTool( $errorFactory ) );
-	$toolRegistry->register( new Oos\Core\Tool\ClientExtractEntitiesTool( $errorFactory ) );
-	$toolRegistry->register( new Oos\Core\Tool\ClientQuestionAnsweringTool( $errorFactory ) );
-	$toolRegistry->register( new Oos\Core\Tool\ClientSemanticSearchTool( $errorFactory ) );
+	$tool_registry->register( new Oos\Core\Tool\ClientAnalyzeSentimentTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ClientSummarizeTextTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ClientTranslateTextTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ClientExtractEntitiesTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ClientQuestionAnsweringTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ClientSemanticSearchTool( $error_factory ) );
 
 	// Content tools (use WordPress ContentStore adapter).
-	$toolRegistry->register( new Oos\Core\Tool\GetPostTool( $errorFactory, $content ) );
-	$toolRegistry->register( new Oos\Core\Tool\GetRecentPostsTool( $errorFactory, $content ) );
-	$toolRegistry->register( new Oos\Core\Tool\SearchContentTool( $errorFactory, $content ) );
-	$toolRegistry->register( new Oos\Core\Tool\CreatePostTool( $errorFactory, $content ) );
-	$toolRegistry->register( new Oos\Core\Tool\UpdatePostTool( $errorFactory, $content ) );
-	$toolRegistry->register( new Oos\Core\Tool\DeletePostTool( $errorFactory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\GetPostTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\GetRecentPostsTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\SearchContentTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\CreatePostTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\UpdatePostTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\DeletePostTool( $error_factory, $content ) );
 
 	// User tools (use WordPress AuthProvider adapter).
-	$toolRegistry->register( new Oos\Core\Tool\GetUserInfoTool( $errorFactory, $auth ) );
+	$tool_registry->register( new Oos\Core\Tool\GetUserInfoTool( $error_factory, $auth ) );
 
 	// Skill tools.
-	$skillRegistry = new Oos\Core\Application\Skill\SkillRegistry();
-	$toolRegistry->register( new Oos\Core\Tool\LoadSkillTool( $errorFactory, $skillRegistry ) );
-	$toolRegistry->register( new Oos\Core\Tool\ListSkillsTool( $errorFactory, $skillRegistry ) );
+	$skill_registry = new Oos\Core\Application\Skill\SkillRegistry();
+	$tool_registry->register( new Oos\Core\Tool\LoadSkillTool( $error_factory, $skill_registry ) );
+	$tool_registry->register( new Oos\Core\Tool\ListSkillsTool( $error_factory, $skill_registry ) );
 
 	// File tools (use WordPress FileStore adapter).
-	$toolRegistry->register( new Oos\Core\Tool\SearchAttachmentsTool( $errorFactory, $files ) );
+	$tool_registry->register( new Oos\Core\Tool\SearchAttachmentsTool( $error_factory, $files ) );
 
 	// Geo tools.
-	$toolRegistry->register( new Oos\Core\Tool\GeocodeAddressTool( $errorFactory, $settings, $httpClient ) );
+	$tool_registry->register( new Oos\Core\Tool\GeocodeAddressTool( $error_factory, $settings, $http_client ) );
 
 	// Site admin tools.
-	$toolRegistry->register( new Oos\Core\Tool\GetSiteSummaryTool( $errorFactory, $settings ) );
+	$tool_registry->register( new Oos\Core\Tool\GetSiteSummaryTool( $error_factory, $settings ) );
 
-	$toolRegistry->notifyRegistered();
+	$tool_registry->notifyRegistered();
 
-	$sse          = new Oos\Core\Infrastructure\Streaming\SseHandler();
-	$costs        = new Oos\Core\Infrastructure\Cost\CostCalculator();
+	$sse   = new Oos\Core\Infrastructure\Streaming\SseHandler();
+	$costs = new Oos\Core\Infrastructure\Cost\CostCalculator();
 
 	$orchestrator = new Oos\Core\Application\Chat\ChatOrchestrator(
-		$toolRegistry,
+		$tool_registry,
 		$router,
 		$events,
-		$errorFactory,
+		$error_factory,
 		$costs,
 		$sse,
 	);

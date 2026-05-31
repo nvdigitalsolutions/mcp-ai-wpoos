@@ -15,78 +15,74 @@ declare(strict_types=1);
 
 namespace Oos\Core\Domain\Entity;
 
-final readonly class ContentItem implements \JsonSerializable
-{
-    /**
-     * @param string                 $id
-     * @param string                 $title
-     * @param string                 $content
-     * @param string                 $status    'publish', 'draft', 'private', 'pending', 'trash'
-     * @param string                 $type      'post', 'page', 'mcp_ai_assistant', etc.
-     * @param int                    $authorId
-     * @param \DateTimeImmutable     $createdAt
-     * @param \DateTimeImmutable     $updatedAt
-     * @param array<string, mixed>   $meta      Key-value metadata fields.
-     * @param array<string, array<int, string>> $taxonomy  Taxonomy slug → [term names].
-     * @param string|null            $excerpt
-     * @param string|null            $slug
-     */
-    public function __construct(
-        public int $id,
-        public string $title,
-        public string $content,
-        public string $status,
-        public string $type,
-        public int $authorId,
-        public \DateTimeImmutable $createdAt,
-        public \DateTimeImmutable $updatedAt,
-        public array $meta = [],
-        public array $taxonomy = [],
-        public ?string $excerpt = null,
-        public ?string $slug = null,
-    ) {}
+final readonly class ContentItem implements \JsonSerializable {
 
-    /**
-     * Check if the item is publicly visible.
-     */
-    public function isPublished(): bool
-    {
-        return 'publish' === $this->status;
-    }
+	/**
+	 * @param string                            $id
+	 * @param string                            $title
+	 * @param string                            $content
+	 * @param string                            $status    'publish', 'draft', 'private', 'pending', 'trash'
+	 * @param string                            $type      'post', 'page', 'mcp_ai_assistant', etc.
+	 * @param int                               $authorId
+	 * @param \DateTimeImmutable                $createdAt
+	 * @param \DateTimeImmutable                $updatedAt
+	 * @param array<string, mixed>              $meta      Key-value metadata fields.
+	 * @param array<string, array<int, string>> $taxonomy  Taxonomy slug → [term names].
+	 * @param string|null                       $excerpt
+	 * @param string|null                       $slug
+	 */
+	public function __construct(
+		public int $id,
+		public string $title,
+		public string $content,
+		public string $status,
+		public string $type,
+		public int $authorId,
+		public \DateTimeImmutable $createdAt,
+		public \DateTimeImmutable $updatedAt,
+		public array $meta = array(),
+		public array $taxonomy = array(),
+		public ?string $excerpt = null,
+		public ?string $slug = null,
+	) {}
 
-    /**
-     * Get a single meta field value, with a default fallback.
-     */
-    public function getMetaValue(string $key, mixed $default = null): mixed
-    {
-        return $this->meta[$key] ?? $default;
-    }
+	/**
+	 * Check if the item is publicly visible.
+	 */
+	public function isPublished(): bool {
+		return 'publish' === $this->status;
+	}
 
-    /**
-     * Get terms for a specific taxonomy.
-     *
-     * @return string[]
-     */
-    public function getTerms(string $taxonomy): array
-    {
-        return $this->taxonomy[$taxonomy] ?? [];
-    }
+	/**
+	 * Get a single meta field value, with a default fallback.
+	 */
+	public function getMetaValue( string $key, mixed $default = null ): mixed {
+		return $this->meta[ $key ] ?? $default;
+	}
 
-    public function jsonSerialize(): array
-    {
-        return [
-            'id'         => $this->id,
-            'title'      => $this->title,
-            'content'    => $this->content,
-            'status'     => $this->status,
-            'type'       => $this->type,
-            'author_id'  => $this->authorId,
-            'created_at' => $this->createdAt->format('c'),
-            'updated_at' => $this->updatedAt->format('c'),
-            'meta'       => $this->meta,
-            'taxonomy'   => $this->taxonomy,
-            'excerpt'    => $this->excerpt,
-            'slug'       => $this->slug,
-        ];
-    }
+	/**
+	 * Get terms for a specific taxonomy.
+	 *
+	 * @return string[]
+	 */
+	public function getTerms( string $taxonomy ): array {
+		return $this->taxonomy[ $taxonomy ] ?? array();
+	}
+
+	public function jsonSerialize(): array {
+		return array(
+			'id'         => $this->id,
+			'title'      => $this->title,
+			'content'    => $this->content,
+			'status'     => $this->status,
+			'type'       => $this->type,
+			'author_id'  => $this->authorId,
+			'created_at' => $this->createdAt->format( 'c' ),
+			'updated_at' => $this->updatedAt->format( 'c' ),
+			'meta'       => $this->meta,
+			'taxonomy'   => $this->taxonomy,
+			'excerpt'    => $this->excerpt,
+			'slug'       => $this->slug,
+		);
+	}
 }

@@ -18,73 +18,71 @@ namespace Oos\Core\Tool;
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
-abstract class AbstractHuggingFaceTool extends AbstractTool
-{
-    protected const API_BASE = 'https://datasets-server.huggingface.co';
+abstract class AbstractHuggingFaceTool extends AbstractTool {
 
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        protected readonly SettingsStoreInterface $settings,
-        protected readonly HttpClientInterface $http,
-    ) {
-        parent::__construct($errors);
-    }
+	protected const API_BASE = 'https://datasets-server.huggingface.co';
 
-    public function getRequiredCapability(): string { return 'read'; }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		protected readonly SettingsStoreInterface $settings,
+		protected readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
 
-    /**
-     * Build auth headers — HuggingFace optionally uses a bearer token.
-     */
-    protected function buildHeaders(): array
-    {
-        $headers = ['Accept' => 'application/json'];
-        $token   = $this->settings->getApiKey('huggingface');
+	public function getRequiredCapability(): string {
+		return 'read'; }
 
-        if (null !== $token && '' !== $token) {
-            $headers['Authorization'] = "Bearer {$token}";
-        }
+	/**
+	 * Build auth headers — HuggingFace optionally uses a bearer token.
+	 */
+	protected function buildHeaders(): array {
+		$headers = array( 'Accept' => 'application/json' );
+		$token   = $this->settings->getApiKey( 'huggingface' );
 
-        return $headers;
-    }
+		if ( null !== $token && '' !== $token ) {
+			$headers['Authorization'] = "Bearer {$token}";
+		}
 
-    /**
-     * Make a GET request to the HuggingFace Datasets API.
-     */
-    protected function apiGet(string $path, array $query = []): mixed
-    {
-        $url = self::API_BASE . $path;
-        if ([] !== $query) {
-            $url .= '?' . \http_build_query($query);
-        }
+		return $headers;
+	}
 
-        $request  = new \Nyholm\Psr7\Request('GET', $url, $this->buildHeaders());
-        $response = $this->http->sendRequest($request);
+	/**
+	 * Make a GET request to the HuggingFace Datasets API.
+	 */
+	protected function apiGet( string $path, array $query = array() ): mixed {
+		$url = self::API_BASE . $path;
+		if ( array() !== $query ) {
+			$url .= '?' . \http_build_query( $query );
+		}
 
-        if ($response->getStatusCode() >= 400) {
-            return $this->errors->create(
-                'hf_api_error',
-                "HuggingFace API returned HTTP {$response->getStatusCode()}.",
-                ['status' => $response->getStatusCode()],
-            );
-        }
+		$request  = new \Nyholm\Psr7\Request( 'GET', $url, $this->buildHeaders() );
+		$response = $this->http->sendRequest( $request );
 
-        return \json_decode((string) $response->getBody(), true);
-    }
+		if ( $response->getStatusCode() >= 400 ) {
+			return $this->errors->create(
+				'hf_api_error',
+				"HuggingFace API returned HTTP {$response->getStatusCode()}.",
+				array( 'status' => $response->getStatusCode() ),
+			);
+		}
 
-    /**
-     * Validate that a dataset name parameter is present.
-     */
-    protected function requireDataset(array $arguments): string
-    {
-        $dataset = $this->stringParam($arguments, 'dataset');
-        if ('' === $dataset) {
-            // Return type is mixed from requireParam but we know this path.
-            $result = $this->requireParam($arguments, 'dataset');
-            if ($this->errors->isError($result)) {
-                return ''; // Error already handled — caller should propagate.
-            }
-            return (string) $result;
-        }
-        return $dataset;
-    }
+		return \json_decode( (string) $response->getBody(), true );
+	}
+
+	/**
+	 * Validate that a dataset name parameter is present.
+	 */
+	protected function requireDataset( array $arguments ): string {
+		$dataset = $this->stringParam( $arguments, 'dataset' );
+		if ( '' === $dataset ) {
+			// Return type is mixed from requireParam but we know this path.
+			$result = $this->requireParam( $arguments, 'dataset' );
+			if ( $this->errors->isError( $result ) ) {
+				return ''; // Error already handled — caller should propagate.
+			}
+			return (string) $result;
+		}
+		return $dataset;
+	}
 }

@@ -23,14 +23,14 @@ namespace Oos\Core\Domain\Event;
  *
  * Replaces: do_action('wp_mcp_ai_before_tool_execution', ...)
  */
-final class BeforeToolExecution
-{
-    public function __construct(
-        public readonly string $toolSlug,
-        public readonly array $arguments,
-        public readonly array $context,
-        public readonly float $startedAtMicros,
-    ) {}
+final class BeforeToolExecution {
+
+	public function __construct(
+		public readonly string $toolSlug,
+		public readonly array $arguments,
+		public readonly array $context,
+		public readonly float $startedAtMicros,
+	) {}
 }
 
 /**
@@ -38,16 +38,16 @@ final class BeforeToolExecution
  *
  * Replaces: do_action('wp_mcp_ai_after_tool_execution', ...)
  */
-final class AfterToolExecution
-{
-    public function __construct(
-        public readonly string $toolSlug,
-        public readonly array $arguments,
-        public readonly array $context,
-        public readonly mixed $result,
-        public readonly bool $isError,
-        public readonly float $durationMs,
-    ) {}
+final class AfterToolExecution {
+
+	public function __construct(
+		public readonly string $toolSlug,
+		public readonly array $arguments,
+		public readonly array $context,
+		public readonly mixed $result,
+		public readonly bool $isError,
+		public readonly float $durationMs,
+	) {}
 }
 
 /**
@@ -55,14 +55,14 @@ final class AfterToolExecution
  *
  * Replaces: do_action('wp_mcp_ai_before_chat_request', ...)
  */
-final class BeforeChatRequest
-{
-    public function __construct(
-        public readonly int $assistantId,
-        public array $messages,
-        public array $options,
-        public readonly array $authContext,
-    ) {}
+final class BeforeChatRequest {
+
+	public function __construct(
+		public readonly int $assistantId,
+		public array $messages,
+		public array $options,
+		public readonly array $authContext,
+	) {}
 }
 
 /**
@@ -70,14 +70,14 @@ final class BeforeChatRequest
  *
  * Replaces: do_action('wp_mcp_ai_after_chat_response', ...)
  */
-final class AfterChatResponse
-{
-    public function __construct(
-        public readonly int $assistantId,
-        public readonly array $response,
-        public readonly array $requestContext,
-        public readonly float $durationMs,
-    ) {}
+final class AfterChatResponse {
+
+	public function __construct(
+		public readonly int $assistantId,
+		public readonly array $response,
+		public readonly array $requestContext,
+		public readonly float $durationMs,
+	) {}
 }
 
 /**
@@ -85,12 +85,12 @@ final class AfterChatResponse
  *
  * Replaces: do_action('wp_mcp_ai_agentic_iteration_complete', ...)
  */
-final class AgenticIterationComplete
-{
-    public function __construct(
-        public readonly int $iteration,
-        public readonly int $assistantId,
-    ) {}
+final class AgenticIterationComplete {
+
+	public function __construct(
+		public readonly int $iteration,
+		public readonly int $assistantId,
+	) {}
 }
 
 /**
@@ -98,14 +98,14 @@ final class AgenticIterationComplete
  *
  * Replaces: do_action('wp_mcp_ai_agentic_loop_completed', ...)
  */
-final class AgenticLoopCompleted
-{
-    public function __construct(
-        public readonly int $totalIterations,
-        public readonly int $assistantId,
-        public readonly array $toolResults,
-        public readonly bool $limitReached,
-    ) {}
+final class AgenticLoopCompleted {
+
+	public function __construct(
+		public readonly int $totalIterations,
+		public readonly int $assistantId,
+		public readonly array $toolResults,
+		public readonly bool $limitReached,
+	) {}
 }
 
 /**
@@ -113,14 +113,14 @@ final class AgenticLoopCompleted
  *
  * Replaces: do_action('wp_mcp_ai_cost_calculated', ...)
  */
-final class CostCalculated
-{
-    public function __construct(
-        public readonly array $costData,
-        public readonly int $assistantId,
-        public readonly int $userId,
-        public readonly array $response,
-    ) {}
+final class CostCalculated {
+
+	public function __construct(
+		public readonly array $costData,
+		public readonly int $assistantId,
+		public readonly int $userId,
+		public readonly array $response,
+	) {}
 }
 
 /**
@@ -128,12 +128,12 @@ final class CostCalculated
  *
  * Replaces: do_action('wp_mcp_ai_register_tools', ...)
  */
-final class ToolsRegistered
-{
-    /**
-     * @param string[] $toolSlugs
-     */
-    public function __construct(
-        public readonly array $toolSlugs,
-    ) {}
+final class ToolsRegistered {
+
+	/**
+	 * @param string[] $toolSlugs
+	 */
+	public function __construct(
+		public readonly array $toolSlugs,
+	) {}
 }

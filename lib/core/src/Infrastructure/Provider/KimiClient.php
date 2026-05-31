@@ -14,19 +14,18 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
-class KimiClient extends OpenAiCompatibleClient
-{
-    public function __construct(
-        SettingsStoreInterface $settings,
-        HttpClientInterface $http,
-        ErrorFactoryInterface $errors,
-    ) {
-        parent::__construct($settings, $http, $errors);
-        $this->providerSlug = 'kimi';
-    }
+class KimiClient extends OpenAiCompatibleClient {
 
-    protected function getDefaultBaseUrl(): string
-    {
-        return 'https://api.moonshot.cn/v1';
-    }
+	public function __construct(
+		SettingsStoreInterface $settings,
+		HttpClientInterface $http,
+		ErrorFactoryInterface $errors,
+	) {
+		parent::__construct( $settings, $http, $errors );
+		$this->providerSlug = 'kimi';
+	}
+
+	protected function getDefaultBaseUrl(): string {
+		return 'https://api.moonshot.cn/v1';
+	}
 }

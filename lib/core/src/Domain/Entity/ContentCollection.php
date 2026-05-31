@@ -14,37 +14,34 @@ declare(strict_types=1);
 
 namespace Oos\Core\Domain\Entity;
 
-final readonly class ContentCollection implements \JsonSerializable
-{
-    /**
-     * @param ContentItem[] $items
-     */
-    public function __construct(
-        public array $items,
-        public int $total,
-        public int $page,
-        public int $perPage,
-        public int $totalPages,
-    ) {}
+final readonly class ContentCollection implements \JsonSerializable {
 
-    public function hasItems(): bool
-    {
-        return [] !== $this->items;
-    }
+	/**
+	 * @param ContentItem[] $items
+	 */
+	public function __construct(
+		public array $items,
+		public int $total,
+		public int $page,
+		public int $perPage,
+		public int $totalPages,
+	) {}
 
-    public function hasMorePages(): bool
-    {
-        return $this->page < $this->totalPages;
-    }
+	public function hasItems(): bool {
+		return array() !== $this->items;
+	}
 
-    public function jsonSerialize(): array
-    {
-        return [
-            'items'       => $this->items,
-            'total'       => $this->total,
-            'page'        => $this->page,
-            'per_page'    => $this->perPage,
-            'total_pages' => $this->totalPages,
-        ];
-    }
+	public function hasMorePages(): bool {
+		return $this->page < $this->totalPages;
+	}
+
+	public function jsonSerialize(): array {
+		return array(
+			'items'       => $this->items,
+			'total'       => $this->total,
+			'page'        => $this->page,
+			'per_page'    => $this->perPage,
+			'total_pages' => $this->totalPages,
+		);
+	}
 }

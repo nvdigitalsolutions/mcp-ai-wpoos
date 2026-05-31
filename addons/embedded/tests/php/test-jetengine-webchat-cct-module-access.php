@@ -30,7 +30,7 @@ if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
 		 *
 		 * @var array
 		 */
-		private $modules        = array();
+		private $modules = array();
 
 		/**
 		 * Constructor.

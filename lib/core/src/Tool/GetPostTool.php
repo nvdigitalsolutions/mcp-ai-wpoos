@@ -19,86 +19,81 @@ namespace Oos\Core\Tool;
 use Oos\Core\Domain\Contract\ContentStoreInterface;
 use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 
-class GetPostTool extends AbstractTool
-{
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        private readonly ContentStoreInterface $content,
-    ) {
-        parent::__construct($errors);
-    }
+class GetPostTool extends AbstractTool {
 
-    public function getSlug(): string
-    {
-        return 'get_post';
-    }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly ContentStoreInterface $content,
+	) {
+		parent::__construct( $errors );
+	}
 
-    public function getName(): string
-    {
-        return 'Get Post';
-    }
+	public function getSlug(): string {
+		return 'get_post';
+	}
 
-    public function getDescription(): string
-    {
-        return 'Retrieves a content item by ID, including its metadata and taxonomy terms.';
-    }
+	public function getName(): string {
+		return 'Get Post';
+	}
 
-    public function getParametersSchema(): array
-    {
-        return [
-            'type'       => 'object',
-            'properties' => [
-                'post_id' => [
-                    'type'        => 'integer',
-                    'description' => 'The ID of the post to retrieve.',
-                    'minimum'     => 1,
-                ],
-                'include_meta' => [
-                    'type'        => 'boolean',
-                    'description' => 'Whether to include metadata. Default: true.',
-                    'default'     => true,
-                ],
-                'include_taxonomies' => [
-                    'type'        => 'boolean',
-                    'description' => 'Whether to include taxonomy terms. Default: true.',
-                    'default'     => true,
-                ],
-            ],
-            'required'             => ['post_id'],
-            'additionalProperties' => false,
-        ];
-    }
+	public function getDescription(): string {
+		return 'Retrieves a content item by ID, including its metadata and taxonomy terms.';
+	}
 
-    public function execute(array $arguments = [], array $context = []): mixed
-    {
-        $postId = $this->intParam($arguments, 'post_id');
-        if ($postId <= 0) {
-            return $this->errors->validationFailed(
-                'post_id is required and must be a positive integer.',
-                ['post_id' => ['A valid post ID is required.']],
-            );
-        }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'post_id'            => array(
+					'type'        => 'integer',
+					'description' => 'The ID of the post to retrieve.',
+					'minimum'     => 1,
+				),
+				'include_meta'       => array(
+					'type'        => 'boolean',
+					'description' => 'Whether to include metadata. Default: true.',
+					'default'     => true,
+				),
+				'include_taxonomies' => array(
+					'type'        => 'boolean',
+					'description' => 'Whether to include taxonomy terms. Default: true.',
+					'default'     => true,
+				),
+			),
+			'required'             => array( 'post_id' ),
+			'additionalProperties' => false,
+		);
+	}
 
-        $userId = $context['user_id'] ?? null;
-        $item   = $this->content->find($postId, $userId);
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$postId = $this->intParam( $arguments, 'post_id' );
+		if ( $postId <= 0 ) {
+			return $this->errors->validationFailed(
+				'post_id is required and must be a positive integer.',
+				array( 'post_id' => array( 'A valid post ID is required.' ) ),
+			);
+		}
 
-        if (null === $item) {
-            return $this->errors->notFound('The requested post does not exist or you do not have permission to view it.');
-        }
+		$userId = $context['user_id'] ?? null;
+		$item   = $this->content->find( $postId, $userId );
 
-        $includeMeta       = $this->boolParam($arguments, 'include_meta', true);
-        $includeTaxonomies = $this->boolParam($arguments, 'include_taxonomies', true);
+		if ( null === $item ) {
+			return $this->errors->notFound( 'The requested post does not exist or you do not have permission to view it.' );
+		}
 
-        $data = $item->jsonSerialize();
+		$includeMeta       = $this->boolParam( $arguments, 'include_meta', true );
+		$includeTaxonomies = $this->boolParam( $arguments, 'include_taxonomies', true );
 
-        if ( ! $includeMeta) {
-            unset($data['meta']);
-        }
+		$data = $item->jsonSerialize();
 
-        if ( ! $includeTaxonomies) {
-            unset($data['taxonomy']);
-        }
+		if ( ! $includeMeta ) {
+			unset( $data['meta'] );
+		}
 
-        return $this->success('Post retrieved.', $data);
-    }
+		if ( ! $includeTaxonomies ) {
+			unset( $data['taxonomy'] );
+		}
+
+		return $this->success( 'Post retrieved.', $data );
+	}
 }

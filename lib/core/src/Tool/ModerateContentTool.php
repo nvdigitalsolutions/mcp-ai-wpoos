@@ -17,112 +17,117 @@ use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
-class ModerateContentTool extends AbstractTool
-{
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        private readonly SettingsStoreInterface $settings,
-        private readonly HttpClientInterface $http,
-    ) {
-        parent::__construct($errors);
-    }
+class ModerateContentTool extends AbstractTool {
 
-    public function getSlug(): string { return 'moderate_content'; }
-    public function getName(): string { return 'Moderate Content'; }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly SettingsStoreInterface $settings,
+		private readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
 
-    public function getDescription(): string
-    {
-        return 'Checks text content for policy violations using the OpenAI Moderation API. Returns flagged categories and confidence scores.';
-    }
+	public function getSlug(): string {
+		return 'moderate_content'; }
+	public function getName(): string {
+		return 'Moderate Content'; }
 
-    public function getParametersSchema(): array
-    {
-        return [
-            'type'       => 'object',
-            'properties' => [
-                'text' => [
-                    'type'        => 'string',
-                    'description' => 'The text content to moderate.',
-                ],
-                'model' => [
-                    'type'        => 'string',
-                    'description' => 'Moderation model. Default: omni-moderation-latest.',
-                    'default'     => 'omni-moderation-latest',
-                ],
-            ],
-            'required'             => ['text'],
-            'additionalProperties' => false,
-        ];
-    }
+	public function getDescription(): string {
+		return 'Checks text content for policy violations using the OpenAI Moderation API. Returns flagged categories and confidence scores.';
+	}
 
-    public function getRequiredCapability(): string { return 'read'; }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'text'  => array(
+					'type'        => 'string',
+					'description' => 'The text content to moderate.',
+				),
+				'model' => array(
+					'type'        => 'string',
+					'description' => 'Moderation model. Default: omni-moderation-latest.',
+					'default'     => 'omni-moderation-latest',
+				),
+			),
+			'required'             => array( 'text' ),
+			'additionalProperties' => false,
+		);
+	}
 
-    public function execute(array $arguments = [], array $context = []): mixed
-    {
-        $text  = $this->stringParam($arguments, 'text');
-        $model = $this->stringParam($arguments, 'model', 'omni-moderation-latest');
+	public function getRequiredCapability(): string {
+		return 'read'; }
 
-        if ('' === $text) {
-            return $this->errors->validationFailed(
-                'The text parameter is required.',
-                ['text' => ['Text content to moderate is required.']],
-            );
-        }
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$text  = $this->stringParam( $arguments, 'text' );
+		$model = $this->stringParam( $arguments, 'model', 'omni-moderation-latest' );
 
-        $apiKey = $this->settings->getApiKey('openai');
+		if ( '' === $text ) {
+			return $this->errors->validationFailed(
+				'The text parameter is required.',
+				array( 'text' => array( 'Text content to moderate is required.' ) ),
+			);
+		}
 
-        if (null === $apiKey || '' === $apiKey) {
-            return $this->errors->create(
-                'missing_api_key',
-                'No OpenAI API key configured. Add one in plugin settings.',
-                ['status' => 400],
-            );
-        }
+		$apiKey = $this->settings->getApiKey( 'openai' );
 
-        $baseUrl = $this->settings->getApiBaseUrl('openai') ?? 'https://api.openai.com/v1';
+		if ( null === $apiKey || '' === $apiKey ) {
+			return $this->errors->create(
+				'missing_api_key',
+				'No OpenAI API key configured. Add one in plugin settings.',
+				array( 'status' => 400 ),
+			);
+		}
 
-        try {
-            $body = \json_encode(['model' => $model, 'input' => $text]);
-            $request = new \Nyholm\Psr7\Request(
-                'POST',
-                $baseUrl . '/moderations',
-                [
-                    'Authorization' => "Bearer {$apiKey}",
-                    'Content-Type'  => 'application/json',
-                ],
-                $body,
-            );
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+		$baseUrl = $this->settings->getApiBaseUrl( 'openai' ) ?? 'https://api.openai.com/v1';
 
-            if ( ! is_array($data) || ! isset($data['results'][0])) {
-                return $this->errors->create('moderation_failed', 'OpenAI Moderation returned an unexpected response.');
-            }
+		try {
+			$body     = \json_encode(
+				array(
+					'model' => $model,
+					'input' => $text,
+				)
+			);
+			$request  = new \Nyholm\Psr7\Request(
+				'POST',
+				$baseUrl . '/moderations',
+				array(
+					'Authorization' => "Bearer {$apiKey}",
+					'Content-Type'  => 'application/json',
+				),
+				$body,
+			);
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            $result    = $data['results'][0];
-            $flagged   = $result['flagged'] ?? false;
-            $categories = [];
+			if ( ! is_array( $data ) || ! isset( $data['results'][0] ) ) {
+				return $this->errors->create( 'moderation_failed', 'OpenAI Moderation returned an unexpected response.' );
+			}
 
-            foreach (($result['category_scores'] ?? []) as $category => $score) {
-                $categories[] = [
-                    'category' => \str_replace(['/', '_'], ' ', $category),
-                    'score'    => \round((float) $score, 4),
-                    'flagged'  => (bool) ($result['categories'][$category] ?? false),
-                ];
-            }
+			$result     = $data['results'][0];
+			$flagged    = $result['flagged'] ?? false;
+			$categories = array();
 
-            \usort($categories, fn($a, $b) => $b['score'] <=> $a['score']);
+			foreach ( ( $result['category_scores'] ?? array() ) as $category => $score ) {
+				$categories[] = array(
+					'category' => \str_replace( array( '/', '_' ), ' ', $category ),
+					'score'    => \round( (float) $score, 4 ),
+					'flagged'  => (bool) ( $result['categories'][ $category ] ?? false ),
+				);
+			}
 
-            return $this->success(
-                $flagged ? 'Content flagged by moderation.' : 'Content passed moderation.',
-                [
-                    'flagged'    => $flagged,
-                    'categories' => $categories,
-                ],
-            );
+			\usort( $categories, fn( $a, $b ) => $b['score'] <=> $a['score'] );
 
-        } catch (\Exception $e) {
-            return $this->errors->create('moderation_failed', $e->getMessage());
-        }
-    }
+			return $this->success(
+				$flagged ? 'Content flagged by moderation.' : 'Content passed moderation.',
+				array(
+					'flagged'    => $flagged,
+					'categories' => $categories,
+				),
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'moderation_failed', $e->getMessage() );
+		}
+	}
 }

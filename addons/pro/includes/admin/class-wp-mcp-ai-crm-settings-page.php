@@ -192,7 +192,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 		if ( null !== $legacy_assistant && ! isset( $settings['research_assistant'] ) ) {
 			$settings['research_assistant'] = $legacy_assistant;
 			// Persist the change so the engine cache stays current.
-			$stored         = get_option( $this->option_name, array() );
+			$stored                       = get_option( $this->option_name, array() );
 			$stored['research_assistant'] = $legacy_assistant;
 			update_option( $this->option_name, $stored );
 			// Update engine cache.

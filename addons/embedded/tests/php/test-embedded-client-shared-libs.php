@@ -51,8 +51,8 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_Embedded_Client requires the Pro addon.' );
 		}
 
-		$this->client  = new WP_MCP_AI_Embedded_Client();
-		$base          = wp_tempnam( 'wp-mcp-ai-test' );
+		$this->client = new WP_MCP_AI_Embedded_Client();
+		$base         = wp_tempnam( 'wp-mcp-ai-test' );
 		@unlink( $base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
 		$this->tmp_dir = $base . '-dir';
 		wp_mkdir_p( $this->tmp_dir );
@@ -253,9 +253,9 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 		// file is present as a regular entry; the symlinks are not.
 		$archive_path = $this->create_mock_archive(
 			array(
-				'bundle/llama-cli'         => 'mock-binary-content',
-				'bundle/libmtmd.so.0.9.8'  => 'mock-mtmd-lib-content',
-				'bundle/libggml.so.0.9.8'  => 'mock-ggml-lib-content',
+				'bundle/llama-cli'        => 'mock-binary-content',
+				'bundle/libmtmd.so.0.9.8' => 'mock-mtmd-lib-content',
+				'bundle/libggml.so.0.9.8' => 'mock-ggml-lib-content',
 			)
 		);
 
@@ -848,9 +848,9 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	 * @return string Absolute path to the created archive.
 	 */
 	private function create_mock_archive( array $entries ) {
-		$tmp_base  = wp_tempnam( 'wp-mcp-ai-test-archive' );
-		$tar_path  = $tmp_base . '.tar';
-		$tgz_path  = $tmp_base . '.tar.gz';
+		$tmp_base   = wp_tempnam( 'wp-mcp-ai-test-archive' );
+		$tar_path   = $tmp_base . '.tar';
+		$tgz_path   = $tmp_base . '.tar.gz';
 		$final_path = $tmp_base . '-archive.tar.gz';
 
 		// Write files to a staging sub-directory so PharData can add them.

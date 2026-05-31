@@ -23,161 +23,154 @@ namespace Oos\Core\Tool;
 use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Oos\Core\Domain\Contract\ToolInterface;
 
-abstract class AbstractTool implements ToolInterface
-{
-    public function __construct(
-        protected readonly ErrorFactoryInterface $errors,
-    ) {}
+abstract class AbstractTool implements ToolInterface {
 
-    // ─── ToolInterface (abstract — each tool implements) ─────────────
+	public function __construct(
+		protected readonly ErrorFactoryInterface $errors,
+	) {}
 
-    abstract public function getSlug(): string;
+	// ─── ToolInterface (abstract — each tool implements) ─────────────
 
-    abstract public function getName(): string;
+	abstract public function getSlug(): string;
 
-    abstract public function getDescription(): string;
+	abstract public function getName(): string;
 
-    abstract public function getParametersSchema(): array;
+	abstract public function getDescription(): string;
 
-    /**
-     * The capability required to execute this tool.
-     *
-     * Override in concrete tools. Return empty string for public tools.
-     */
-    public function getRequiredCapability(): string
-    {
-        return 'edit_posts';
-    }
+	abstract public function getParametersSchema(): array;
 
-    abstract public function execute(array $arguments = [], array $context = []): mixed;
+	/**
+	 * The capability required to execute this tool.
+	 *
+	 * Override in concrete tools. Return empty string for public tools.
+	 */
+	public function getRequiredCapability(): string {
+		return 'edit_posts';
+	}
 
-    // ─── Canonical envelope helpers ───────────────────────────────────
+	abstract public function execute( array $arguments = array(), array $context = array() ): mixed;
 
-    /**
-     * Format a successful tool response.
-     *
-     * This is THE canonical success shape for all tools. Use it instead
-     * of returning raw arrays.
-     *
-     * @return array{success: true, message: string, data: mixed}
-     */
-    protected function success(string $message, mixed $data = null): array
-    {
-        $response = [
-            'success' => true,
-            'message' => $message,
-        ];
+	// ─── Canonical envelope helpers ───────────────────────────────────
 
-        if (null !== $data) {
-            $response['data'] = $data;
-        }
+	/**
+	 * Format a successful tool response.
+	 *
+	 * This is THE canonical success shape for all tools. Use it instead
+	 * of returning raw arrays.
+	 *
+	 * @return array{success: true, message: string, data: mixed}
+	 */
+	protected function success( string $message, mixed $data = null ): array {
+		$response = array(
+			'success' => true,
+			'message' => $message,
+		);
 
-        return $response;
-    }
+		if ( null !== $data ) {
+			$response['data'] = $data;
+		}
 
-    /**
-     * Format an empty result (not found / no data).
-     *
-     * @return array{success: true, message: string, data: array}
-     */
-    protected function emptyResult(string $message = 'No results found.'): array
-    {
-        return $this->success($message, []);
-    }
+		return $response;
+	}
 
-    /**
-     * Format a collection response with items and total count.
-     *
-     * @return array{success: true, message: string, data: array{items: array, total: int}}
-     */
-    protected function collection(string $message, array $items, int $total): array
-    {
-        return $this->success($message, [
-            'items' => $items,
-            'total' => $total,
-        ]);
-    }
+	/**
+	 * Format an empty result (not found / no data).
+	 *
+	 * @return array{success: true, message: string, data: array}
+	 */
+	protected function emptyResult( string $message = 'No results found.' ): array {
+		return $this->success( $message, array() );
+	}
 
-    // ─── Error helpers ────────────────────────────────────────────────
+	/**
+	 * Format a collection response with items and total count.
+	 *
+	 * @return array{success: true, message: string, data: array{items: array, total: int}}
+	 */
+	protected function collection( string $message, array $items, int $total ): array {
+		return $this->success(
+			$message,
+			array(
+				'items' => $items,
+				'total' => $total,
+			)
+		);
+	}
 
-    /**
-     * Require a parameter and return an error if it's missing.
-     *
-     * @return mixed  The parameter value, or an error.
-     */
-    protected function requireParam(array $arguments, string $key): mixed
-    {
-        if (empty($arguments[$key]) && ! isset($arguments[$key])) {
-            return $this->errors->validationFailed(
-                "The '{$key}' parameter is required.",
-                [$key => ['This field is required.']],
-            );
-        }
+	// ─── Error helpers ────────────────────────────────────────────────
 
-        return $arguments[$key];
-    }
+	/**
+	 * Require a parameter and return an error if it's missing.
+	 *
+	 * @return mixed  The parameter value, or an error.
+	 */
+	protected function requireParam( array $arguments, string $key ): mixed {
+		if ( empty( $arguments[ $key ] ) && ! isset( $arguments[ $key ] ) ) {
+			return $this->errors->validationFailed(
+				"The '{$key}' parameter is required.",
+				array( $key => array( 'This field is required.' ) ),
+			);
+		}
 
-    /**
-     * Require the user to have a specific capability.
-     *
-     * @return mixed  null if authorized, error if not.
-     */
-    protected function requireCapability(array $context, string $capability): mixed
-    {
-        $userId = $context['user_id'] ?? 0;
+		return $arguments[ $key ];
+	}
 
-        if ($userId <= 0) {
-            return $this->errors->forbidden('You must be logged in to execute this tool.');
-        }
+	/**
+	 * Require the user to have a specific capability.
+	 *
+	 * @return mixed  null if authorized, error if not.
+	 */
+	protected function requireCapability( array $context, string $capability ): mixed {
+		$userId = $context['user_id'] ?? 0;
 
-        // The auth provider should be injected if needed; for now,
-        // capability is checked by the ToolRegistry before execute().
-        return null;
-    }
+		if ( $userId <= 0 ) {
+			return $this->errors->forbidden( 'You must be logged in to execute this tool.' );
+		}
 
-    /**
-     * Sanitize an integer parameter from arguments.
-     */
-    protected function intParam(array $arguments, string $key, int $default = 0): int
-    {
-        return isset($arguments[$key]) ? (int) $arguments[$key] : $default;
-    }
+		// The auth provider should be injected if needed; for now,
+		// capability is checked by the ToolRegistry before execute().
+		return null;
+	}
 
-    /**
-     * Sanitize a string parameter from arguments.
-     */
-    protected function stringParam(array $arguments, string $key, string $default = ''): string
-    {
-        $value = $arguments[$key] ?? $default;
+	/**
+	 * Sanitize an integer parameter from arguments.
+	 */
+	protected function intParam( array $arguments, string $key, int $default = 0 ): int {
+		return isset( $arguments[ $key ] ) ? (int) $arguments[ $key ] : $default;
+	}
 
-        return is_string($value) ? \trim(\strip_tags($value)) : $default;
-    }
+	/**
+	 * Sanitize a string parameter from arguments.
+	 */
+	protected function stringParam( array $arguments, string $key, string $default = '' ): string {
+		$value = $arguments[ $key ] ?? $default;
 
-    /**
-     * Sanitize a boolean parameter from arguments.
-     */
-    protected function boolParam(array $arguments, string $key, bool $default = false): bool
-    {
-        $value = $arguments[$key] ?? $default;
+		return is_string( $value ) ? \trim( \strip_tags( $value ) ) : $default;
+	}
 
-        if (is_bool($value)) {
-            return $value;
-        }
+	/**
+	 * Sanitize a boolean parameter from arguments.
+	 */
+	protected function boolParam( array $arguments, string $key, bool $default = false ): bool {
+		$value = $arguments[ $key ] ?? $default;
 
-        if (is_string($value)) {
-            return \filter_var($value, \FILTER_VALIDATE_BOOLEAN);
-        }
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
 
-        return (bool) $value;
-    }
+		if ( is_string( $value ) ) {
+			return \filter_var( $value, \FILTER_VALIDATE_BOOLEAN );
+		}
 
-    /**
-     * Sanitize an array parameter from arguments.
-     */
-    protected function arrayParam(array $arguments, string $key, array $default = []): array
-    {
-        $value = $arguments[$key] ?? $default;
+		return (bool) $value;
+	}
 
-        return is_array($value) ? $value : $default;
-    }
+	/**
+	 * Sanitize an array parameter from arguments.
+	 */
+	protected function arrayParam( array $arguments, string $key, array $default = array() ): array {
+		$value = $arguments[ $key ] ?? $default;
+
+		return is_array( $value ) ? $value : $default;
+	}
 }

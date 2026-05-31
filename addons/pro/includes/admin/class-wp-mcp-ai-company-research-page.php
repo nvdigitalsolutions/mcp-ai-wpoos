@@ -146,7 +146,7 @@ class WP_MCP_AI_Company_Research_Page {
 
 		// Fallback: get first available assistant.
 		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
-			$assistants = get_posts(
+			$assistants   = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
 					'post_status'    => 'publish',
@@ -206,7 +206,7 @@ class WP_MCP_AI_Company_Research_Page {
 		);
 
 		// Get current mode from query string for initial workflow.
-		$current_mode = self::get_current_mode();
+		$current_mode     = self::get_current_mode();
 		$initial_workflow = ( 'import' === $current_mode ) ? 'import' : ( ( 'consolidate' === $current_mode ) ? 'review' : 'research' );
 		?>
 		<script>
@@ -409,8 +409,8 @@ class WP_MCP_AI_Company_Research_Page {
 	 * Render review & quality workflow section.
 	 */
 	protected static function render_review_workflow() {
-		$total_companies  = wp_count_posts( 'mcp_ai_company' );
-		$published_count  = isset( $total_companies->publish ) ? $total_companies->publish : 0;
+		$total_companies = wp_count_posts( 'mcp_ai_company' );
+		$published_count = isset( $total_companies->publish ) ? $total_companies->publish : 0;
 
 		$companies = get_posts(
 			array(
@@ -420,15 +420,15 @@ class WP_MCP_AI_Company_Research_Page {
 			)
 		);
 
-		$complete_count    = 0;
-		$with_industry     = 0;
-		$with_website      = 0;
-		$with_location     = 0;
+		$complete_count = 0;
+		$with_industry  = 0;
+		$with_website   = 0;
+		$with_location  = 0;
 
 		foreach ( $companies as $company ) {
-			$industry  = get_post_meta( $company->ID, '_company_industry', true );
-			$website   = get_post_meta( $company->ID, '_company_website', true );
-			$city      = get_post_meta( $company->ID, '_company_city', true );
+			$industry = get_post_meta( $company->ID, '_company_industry', true );
+			$website  = get_post_meta( $company->ID, '_company_website', true );
+			$city     = get_post_meta( $company->ID, '_company_city', true );
 
 			if ( $industry ) {
 				++$with_industry;

@@ -20,197 +20,193 @@ use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
-class WebSearchTool extends AbstractTool
-{
-    private const MAX_RESULTS = 5;
+class WebSearchTool extends AbstractTool {
 
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        private readonly SettingsStoreInterface $settings,
-        private readonly HttpClientInterface $http,
-    ) {
-        parent::__construct($errors);
-    }
+	private const MAX_RESULTS = 5;
 
-    public function getSlug(): string
-    {
-        return 'web_search';
-    }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly SettingsStoreInterface $settings,
+		private readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
 
-    public function getName(): string
-    {
-        return 'Web Search';
-    }
+	public function getSlug(): string {
+		return 'web_search';
+	}
 
-    public function getDescription(): string
-    {
-        return 'Performs a web search and returns the top results.';
-    }
+	public function getName(): string {
+		return 'Web Search';
+	}
 
-    public function getParametersSchema(): array
-    {
-        return [
-            'type'       => 'object',
-            'properties' => [
-                'query' => [
-                    'type'        => 'string',
-                    'description' => 'The search query.',
-                ],
-                'count' => [
-                    'type'        => 'integer',
-                    'description' => 'Number of results (1-10). Default: 5.',
-                    'minimum'     => 1,
-                    'maximum'     => 10,
-                    'default'     => 5,
-                ],
-            ],
-            'required'             => ['query'],
-            'additionalProperties' => false,
-        ];
-    }
+	public function getDescription(): string {
+		return 'Performs a web search and returns the top results.';
+	}
 
-    public function getRequiredCapability(): string
-    {
-        return 'read';
-    }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'query' => array(
+					'type'        => 'string',
+					'description' => 'The search query.',
+				),
+				'count' => array(
+					'type'        => 'integer',
+					'description' => 'Number of results (1-10). Default: 5.',
+					'minimum'     => 1,
+					'maximum'     => 10,
+					'default'     => 5,
+				),
+			),
+			'required'             => array( 'query' ),
+			'additionalProperties' => false,
+		);
+	}
 
-    public function execute(array $arguments = [], array $context = []): mixed
-    {
-        $query = $this->stringParam($arguments, 'query');
-        if ('' === $query) {
-            return $this->errors->validationFailed(
-                'The query parameter is required.',
-                ['query' => ['A search query is required.']],
-            );
-        }
+	public function getRequiredCapability(): string {
+		return 'read';
+	}
 
-        $count = $this->intParam($arguments, 'count', self::MAX_RESULTS);
-        $count = \max(1, \min(10, $count));
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$query = $this->stringParam( $arguments, 'query' );
+		if ( '' === $query ) {
+			return $this->errors->validationFailed(
+				'The query parameter is required.',
+				array( 'query' => array( 'A search query is required.' ) ),
+			);
+		}
 
-        // Use the Brave Search API if a key is configured.
-        $braveKey = $this->settings->getApiKey('brave');
+		$count = $this->intParam( $arguments, 'count', self::MAX_RESULTS );
+		$count = \max( 1, \min( 10, $count ) );
 
-        if (null !== $braveKey && '' !== $braveKey) {
-            return $this->searchWithBrave($query, $count, $braveKey);
-        }
+		// Use the Brave Search API if a key is configured.
+		$braveKey = $this->settings->getApiKey( 'brave' );
 
-        // Fallback: DuckDuckGo Instant Answer API (free, no key).
-        return $this->searchWithDuckDuckGo($query, $count);
-    }
+		if ( null !== $braveKey && '' !== $braveKey ) {
+			return $this->searchWithBrave( $query, $count, $braveKey );
+		}
 
-    /**
-     * Search using the Brave Search API.
-     */
-    private function searchWithBrave(string $query, int $count, string $apiKey): mixed
-    {
-        $url = 'https://api.search.brave.com/res/v1/web/search?' . \http_build_query([
-            'q'     => $query,
-            'count' => $count,
-        ]);
+		// Fallback: DuckDuckGo Instant Answer API (free, no key).
+		return $this->searchWithDuckDuckGo( $query, $count );
+	}
 
-        try {
-            $request = new \Nyholm\Psr7\Request(
-                'GET',
-                $url,
-                [
-                    'Accept'             => 'application/json',
-                    'X-Subscription-Token' => $apiKey,
-                ],
-            );
-            $response = $this->http->sendRequest($request);
+	/**
+	 * Search using the Brave Search API.
+	 */
+	private function searchWithBrave( string $query, int $count, string $apiKey ): mixed {
+		$url = 'https://api.search.brave.com/res/v1/web/search?' . \http_build_query(
+			array(
+				'q'     => $query,
+				'count' => $count,
+			)
+		);
 
-            if ($response->getStatusCode() >= 400) {
-                return $this->errors->create(
-                    'search_failed',
-                    "Search returned HTTP {$response->getStatusCode()}.",
-                    ['status' => $response->getStatusCode()],
-                );
-            }
+		try {
+			$request  = new \Nyholm\Psr7\Request(
+				'GET',
+				$url,
+				array(
+					'Accept'               => 'application/json',
+					'X-Subscription-Token' => $apiKey,
+				),
+			);
+			$response = $this->http->sendRequest( $request );
 
-            $data = \json_decode((string) $response->getBody(), true);
+			if ( $response->getStatusCode() >= 400 ) {
+				return $this->errors->create(
+					'search_failed',
+					"Search returned HTTP {$response->getStatusCode()}.",
+					array( 'status' => $response->getStatusCode() ),
+				);
+			}
 
-            $results = [];
-            foreach ($data['web']['results'] ?? [] as $r) {
-                $results[] = [
-                    'title'       => $r['title'] ?? '',
-                    'url'         => $r['url'] ?? '',
-                    'description' => $r['description'] ?? '',
-                ];
-            }
+			$data = \json_decode( (string) $response->getBody(), true );
 
-            return $this->collection(
-                "Found {$data['web']['total_results']} results.",
-                $results,
-                (int) ($data['web']['total_results'] ?? 0),
-            );
+			$results = array();
+			foreach ( $data['web']['results'] ?? array() as $r ) {
+				$results[] = array(
+					'title'       => $r['title'] ?? '',
+					'url'         => $r['url'] ?? '',
+					'description' => $r['description'] ?? '',
+				);
+			}
 
-        } catch (\Exception $e) {
-            return $this->errors->create(
-                'search_request_failed',
-                "Search request failed: {$e->getMessage()}",
-            );
-        }
-    }
+			return $this->collection(
+				"Found {$data['web']['total_results']} results.",
+				$results,
+				(int) ( $data['web']['total_results'] ?? 0 ),
+			);
 
-    /**
-     * Search using DuckDuckGo Instant Answer API (free tier, no auth).
-     */
-    private function searchWithDuckDuckGo(string $query, int $count): mixed
-    {
-        $url = 'https://api.duckduckgo.com/?' . \http_build_query([
-            'q'      => $query,
-            'format' => 'json',
-            'no_html' => 1,
-        ]);
+		} catch ( \Exception $e ) {
+			return $this->errors->create(
+				'search_request_failed',
+				"Search request failed: {$e->getMessage()}",
+			);
+		}
+	}
 
-        try {
-            $request  = new \Nyholm\Psr7\Request('GET', $url);
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+	/**
+	 * Search using DuckDuckGo Instant Answer API (free tier, no auth).
+	 */
+	private function searchWithDuckDuckGo( string $query, int $count ): mixed {
+		$url = 'https://api.duckduckgo.com/?' . \http_build_query(
+			array(
+				'q'       => $query,
+				'format'  => 'json',
+				'no_html' => 1,
+			)
+		);
 
-            if ( ! is_array($data)) {
-                return $this->emptyResult('No search results found.');
-            }
+		try {
+			$request  = new \Nyholm\Psr7\Request( 'GET', $url );
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            $results = [];
+			if ( ! is_array( $data ) ) {
+				return $this->emptyResult( 'No search results found.' );
+			}
 
-            // DuckDuckGo returns a single abstract + related topics.
-            if ( ! empty($data['AbstractText'])) {
-                $results[] = [
-                    'title'       => $data['Heading'] ?? $query,
-                    'url'         => $data['AbstractURL'] ?? '',
-                    'description' => $data['AbstractText'],
-                ];
-            }
+			$results = array();
 
-            foreach (($data['RelatedTopics'] ?? []) as $topic) {
-                if (\count($results) >= $count) {
-                    break;
-                }
-                if (is_array($topic) && ! empty($topic['Text'])) {
-                    $results[] = [
-                        'title'       => $topic['FirstURL'] ?? '',
-                        'url'         => $topic['FirstURL'] ?? '',
-                        'description' => $topic['Text'],
-                    ];
-                }
-            }
+			// DuckDuckGo returns a single abstract + related topics.
+			if ( ! empty( $data['AbstractText'] ) ) {
+				$results[] = array(
+					'title'       => $data['Heading'] ?? $query,
+					'url'         => $data['AbstractURL'] ?? '',
+					'description' => $data['AbstractText'],
+				);
+			}
 
-            if ([] === $results) {
-                return $this->emptyResult('No search results found for: ' . $query);
-            }
+			foreach ( ( $data['RelatedTopics'] ?? array() ) as $topic ) {
+				if ( \count( $results ) >= $count ) {
+					break;
+				}
+				if ( is_array( $topic ) && ! empty( $topic['Text'] ) ) {
+					$results[] = array(
+						'title'       => $topic['FirstURL'] ?? '',
+						'url'         => $topic['FirstURL'] ?? '',
+						'description' => $topic['Text'],
+					);
+				}
+			}
 
-            return $this->collection(
-                "Found results for: {$query}",
-                $results,
-                \count($results),
-            );
+			if ( array() === $results ) {
+				return $this->emptyResult( 'No search results found for: ' . $query );
+			}
 
-        } catch (\Exception $e) {
-            return $this->errors->create(
-                'search_request_failed',
-                "Search request failed: {$e->getMessage()}",
-            );
-        }
-    }
+			return $this->collection(
+				"Found results for: {$query}",
+				$results,
+				\count( $results ),
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create(
+				'search_request_failed',
+				"Search request failed: {$e->getMessage()}",
+			);
+		}
+	}
 }

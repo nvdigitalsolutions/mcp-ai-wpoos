@@ -16,25 +16,24 @@ declare(strict_types=1);
 
 namespace Oos\Core\Domain\Error;
 
-final class DomainError implements \JsonSerializable
-{
-    /**
-     * @param string $code    Machine-readable error code (snake_case).
-     * @param string $message Human-readable error message.
-     * @param array  $data    Additional structured error data.
-     */
-    public function __construct(
-        public readonly string $code,
-        public readonly string $message,
-        public readonly array $data = [],
-    ) {}
+final class DomainError implements \JsonSerializable {
 
-    public function jsonSerialize(): array
-    {
-        return [
-            'code'    => $this->code,
-            'message' => $this->message,
-            'data'    => $this->data,
-        ];
-    }
+	/**
+	 * @param string $code    Machine-readable error code (snake_case).
+	 * @param string $message Human-readable error message.
+	 * @param array  $data    Additional structured error data.
+	 */
+	public function __construct(
+		public readonly string $code,
+		public readonly string $message,
+		public readonly array $data = array(),
+	) {}
+
+	public function jsonSerialize(): array {
+		return array(
+			'code'    => $this->code,
+			'message' => $this->message,
+			'data'    => $this->data,
+		);
+	}
 }

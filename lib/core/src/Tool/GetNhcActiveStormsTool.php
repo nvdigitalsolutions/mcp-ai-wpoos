@@ -16,68 +16,71 @@ namespace Oos\Core\Tool;
 use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
-class GetNhcActiveStormsTool extends AbstractTool
-{
-    private const API_URL = 'https://www.nhc.noaa.gov/CurrentStorms.json';
+class GetNhcActiveStormsTool extends AbstractTool {
 
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        private readonly HttpClientInterface $http,
-    ) {
-        parent::__construct($errors);
-    }
+	private const API_URL = 'https://www.nhc.noaa.gov/CurrentStorms.json';
 
-    public function getSlug(): string { return 'get_nhc_active_storms'; }
-    public function getName(): string { return 'Get NHC Active Storms'; }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
 
-    public function getDescription(): string
-    {
-        return 'Retrieves active tropical storms and hurricanes from the NOAA National Hurricane Center.';
-    }
+	public function getSlug(): string {
+		return 'get_nhc_active_storms'; }
+	public function getName(): string {
+		return 'Get NHC Active Storms'; }
 
-    public function getParametersSchema(): array
-    {
-        return [
-            'type'                 => 'object',
-            'additionalProperties' => false,
-        ];
-    }
+	public function getDescription(): string {
+		return 'Retrieves active tropical storms and hurricanes from the NOAA National Hurricane Center.';
+	}
 
-    public function getRequiredCapability(): string { return 'read'; }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'additionalProperties' => false,
+		);
+	}
 
-    public function execute(array $arguments = [], array $context = []): mixed
-    {
-        try {
-            $request  = new \Nyholm\Psr7\Request('GET', self::API_URL);
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+	public function getRequiredCapability(): string {
+		return 'read'; }
 
-            $storms = $data['activeStorms'] ?? [];
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		try {
+			$request  = new \Nyholm\Psr7\Request( 'GET', self::API_URL );
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            if ( ! is_array($storms) || [] === $storms) {
-                return $this->success('No active tropical storms at this time.');
-            }
+			$storms = $data['activeStorms'] ?? array();
 
-            $formatted = \array_map(function (array $s): array {
-                return [
-                    'name'             => $s['name'] ?? $s['stormName'] ?? '',
-                    'category'         => $s['category'] ?? '',
-                    'wind_speed_mph'   => (int) ($s['maxWindSpeed'] ?? 0),
-                    'pressure_mb'      => (int) ($s['minCentralPressure'] ?? 0),
-                    'latitude'         => (float) ($s['latitude'] ?? 0),
-                    'longitude'        => (float) ($s['longitude'] ?? 0),
-                    'last_updated'     => $s['lastUpdate'] ?? '',
-                ];
-            }, $storms);
+			if ( ! is_array( $storms ) || array() === $storms ) {
+				return $this->success( 'No active tropical storms at this time.' );
+			}
 
-            return $this->collection(
-                "Found " . \count($formatted) . " active storm(s).",
-                $formatted,
-                \count($formatted),
-            );
+			$formatted = \array_map(
+				function ( array $s ): array {
+					return array(
+						'name'           => $s['name'] ?? $s['stormName'] ?? '',
+						'category'       => $s['category'] ?? '',
+						'wind_speed_mph' => (int) ( $s['maxWindSpeed'] ?? 0 ),
+						'pressure_mb'    => (int) ( $s['minCentralPressure'] ?? 0 ),
+						'latitude'       => (float) ( $s['latitude'] ?? 0 ),
+						'longitude'      => (float) ( $s['longitude'] ?? 0 ),
+						'last_updated'   => $s['lastUpdate'] ?? '',
+					);
+				},
+				$storms
+			);
 
-        } catch (\Exception $e) {
-            return $this->errors->create('nhc_failed', "NHC request failed: {$e->getMessage()}");
-        }
-    }
+			return $this->collection(
+				'Found ' . \count( $formatted ) . ' active storm(s).',
+				$formatted,
+				\count( $formatted ),
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'nhc_failed', "NHC request failed: {$e->getMessage()}" );
+		}
+	}
 }

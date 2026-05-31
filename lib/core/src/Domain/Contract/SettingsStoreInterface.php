@@ -15,63 +15,63 @@ declare(strict_types=1);
 
 namespace Oos\Core\Domain\Contract;
 
-interface SettingsStoreInterface
-{
-    /**
-     * Get a single setting value.
-     *
-     * @return mixed  The setting value, or $default if not set.
-     */
-    public function get(string $key, mixed $default = null): mixed;
+interface SettingsStoreInterface {
 
-    /**
-     * Get all settings as an associative array.
-     *
-     * @return array<string, mixed>
-     */
-    public function all(): array;
+	/**
+	 * Get a single setting value.
+	 *
+	 * @return mixed  The setting value, or $default if not set.
+	 */
+	public function get( string $key, mixed $default = null ): mixed;
 
-    /**
-     * Set a setting value.
-     */
-    public function set(string $key, mixed $value): void;
+	/**
+	 * Get all settings as an associative array.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function all(): array;
 
-    /**
-     * Delete a setting entirely.
-     */
-    public function delete(string $key): void;
+	/**
+	 * Set a setting value.
+	 */
+	public function set( string $key, mixed $value ): void;
 
-    /**
-     * Get the default AI provider slug (e.g., 'openai', 'gemini').
-     */
-    public function getDefaultProvider(): string;
+	/**
+	 * Delete a setting entirely.
+	 */
+	public function delete( string $key ): void;
 
-    /**
-     * Get the default AI model identifier.
-     */
-    public function getDefaultModel(): string;
+	/**
+	 * Get the default AI provider slug (e.g., 'openai', 'gemini').
+	 */
+	public function getDefaultProvider(): string;
 
-    /**
-     * Get an API key for a given provider.
-     *
-     * @return string|null  Null if no key is configured for this provider.
-     */
-    public function getApiKey(string $provider): ?string;
+	/**
+	 * Get the default AI model identifier.
+	 */
+	public function getDefaultModel(): string;
 
-    /**
-     * Get the base URL for a provider's API endpoint.
-     *
-     * Returns null when the provider uses its default endpoint.
-     */
-    public function getApiBaseUrl(string $provider): ?string;
+	/**
+	 * Get an API key for a given provider.
+	 *
+	 * @return string|null  Null if no key is configured for this provider.
+	 */
+	public function getApiKey( string $provider ): ?string;
 
-    /**
-     * Get the request timeout in seconds for HTTP calls to AI providers.
-     */
-    public function getRequestTimeout(): int;
+	/**
+	 * Get the base URL for a provider's API endpoint.
+	 *
+	 * Returns null when the provider uses its default endpoint.
+	 */
+	public function getApiBaseUrl( string $provider ): ?string;
 
-    /**
-     * Check if a boolean feature flag is enabled.
-     */
-    public function isEnabled(string $feature): bool;
+	/**
+	 * Get the request timeout in seconds for HTTP calls to AI providers.
+	 */
+	public function getRequestTimeout(): int;
+
+	/**
+	 * Check if a boolean feature flag is enabled.
+	 */
+	public function isEnabled( string $feature ): bool;
 }

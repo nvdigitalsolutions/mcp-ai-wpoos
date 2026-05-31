@@ -15,30 +15,28 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
-class LmStudioClient extends OpenAiCompatibleClient
-{
-    public function __construct(
-        SettingsStoreInterface $settings,
-        HttpClientInterface $http,
-        ErrorFactoryInterface $errors,
-    ) {
-        parent::__construct($settings, $http, $errors);
-        $this->providerSlug = 'lm_studio';
-    }
+class LmStudioClient extends OpenAiCompatibleClient {
 
-    protected function getDefaultBaseUrl(): string
-    {
-        return 'http://localhost:1234/v1';
-    }
+	public function __construct(
+		SettingsStoreInterface $settings,
+		HttpClientInterface $http,
+		ErrorFactoryInterface $errors,
+	) {
+		parent::__construct( $settings, $http, $errors );
+		$this->providerSlug = 'lm_studio';
+	}
 
-    protected function buildAuthHeaders(string $apiKey): array
-    {
-        $headers = ['Content-Type' => 'application/json'];
+	protected function getDefaultBaseUrl(): string {
+		return 'http://localhost:1234/v1';
+	}
 
-        if ('' !== $apiKey) {
-            $headers['Authorization'] = "Bearer {$apiKey}";
-        }
+	protected function buildAuthHeaders( string $apiKey ): array {
+		$headers = array( 'Content-Type' => 'application/json' );
 
-        return $headers;
-    }
+		if ( '' !== $apiKey ) {
+			$headers['Authorization'] = "Bearer {$apiKey}";
+		}
+
+		return $headers;
+	}
 }

@@ -16,115 +16,126 @@ namespace Oos\Core\Tool;
 use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
-class ReliefwebReportsTool extends AbstractTool
-{
-    private const API_URL = 'https://api.reliefweb.int/v1/reports';
+class ReliefwebReportsTool extends AbstractTool {
 
-    public function __construct(
-        ErrorFactoryInterface $errors,
-        private readonly HttpClientInterface $http,
-    ) {
-        parent::__construct($errors);
-    }
+	private const API_URL = 'https://api.reliefweb.int/v1/reports';
 
-    public function getSlug(): string { return 'reliefweb_reports'; }
-    public function getName(): string { return 'ReliefWeb Reports'; }
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly HttpClientInterface $http,
+	) {
+		parent::__construct( $errors );
+	}
 
-    public function getDescription(): string
-    {
-        return 'Retrieves humanitarian reports from ReliefWeb, the UN OCHA information service.';
-    }
+	public function getSlug(): string {
+		return 'reliefweb_reports'; }
+	public function getName(): string {
+		return 'ReliefWeb Reports'; }
 
-    public function getParametersSchema(): array
-    {
-        return [
-            'type'       => 'object',
-            'properties' => [
-                'query' => [
-                    'type'        => 'string',
-                    'description' => 'Search query for reports.',
-                ],
-                'country' => [
-                    'type'        => 'string',
-                    'description' => 'Filter by country (ISO code or name).',
-                ],
-                'limit' => [
-                    'type'        => 'integer',
-                    'description' => 'Max results (1-50). Default: 10.',
-                    'minimum'     => 1,
-                    'maximum'     => 50,
-                    'default'     => 10,
-                ],
-            ],
-            'required'             => ['query'],
-            'additionalProperties' => false,
-        ];
-    }
+	public function getDescription(): string {
+		return 'Retrieves humanitarian reports from ReliefWeb, the UN OCHA information service.';
+	}
 
-    public function getRequiredCapability(): string { return 'read'; }
+	public function getParametersSchema(): array {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'query'   => array(
+					'type'        => 'string',
+					'description' => 'Search query for reports.',
+				),
+				'country' => array(
+					'type'        => 'string',
+					'description' => 'Filter by country (ISO code or name).',
+				),
+				'limit'   => array(
+					'type'        => 'integer',
+					'description' => 'Max results (1-50). Default: 10.',
+					'minimum'     => 1,
+					'maximum'     => 50,
+					'default'     => 10,
+				),
+			),
+			'required'             => array( 'query' ),
+			'additionalProperties' => false,
+		);
+	}
 
-    public function execute(array $arguments = [], array $context = []): mixed
-    {
-        $query   = $this->stringParam($arguments, 'query');
-        $country = $this->stringParam($arguments, 'country');
-        $limit   = $this->intParam($arguments, 'limit', 10);
+	public function getRequiredCapability(): string {
+		return 'read'; }
 
-        $filter = ['field' => 'title', 'value' => $query];
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
+		$query   = $this->stringParam( $arguments, 'query' );
+		$country = $this->stringParam( $arguments, 'country' );
+		$limit   = $this->intParam( $arguments, 'limit', 10 );
 
-        if ('' !== $country) {
-            $filter = [
-                'operator' => 'AND',
-                'conditions' => [
-                    $filter,
-                    ['field' => 'country.name', 'value' => $country],
-                ],
-            ];
-        }
+		$filter = array(
+			'field' => 'title',
+			'value' => $query,
+		);
 
-        $body = \json_encode([
-            'appname' => 'o-os-core',
-            'query'   => ['value' => ''],
-            'filter'  => ['conditions' => [$filter]],
-            'limit'   => $limit,
-            'sort'    => ['date.created:desc'],
-            'fields'  => ['include' => ['title', 'body', 'date', 'source', 'url', 'country', 'format']],
-        ]);
+		if ( '' !== $country ) {
+			$filter = array(
+				'operator'   => 'AND',
+				'conditions' => array(
+					$filter,
+					array(
+						'field' => 'country.name',
+						'value' => $country,
+					),
+				),
+			);
+		}
 
-        try {
-            $request = new \Nyholm\Psr7\Request(
-                'POST',
-                self::API_URL,
-                ['Content-Type' => 'application/json'],
-                $body,
-            );
-            $response = $this->http->sendRequest($request);
-            $data     = \json_decode((string) $response->getBody(), true);
+		$body = \json_encode(
+			array(
+				'appname' => 'o-os-core',
+				'query'   => array( 'value' => '' ),
+				'filter'  => array( 'conditions' => array( $filter ) ),
+				'limit'   => $limit,
+				'sort'    => array( 'date.created:desc' ),
+				'fields'  => array( 'include' => array( 'title', 'body', 'date', 'source', 'url', 'country', 'format' ) ),
+			)
+		);
 
-            if ( ! is_array($data) || ! isset($data['data'])) {
-                return $this->emptyResult('No ReliefWeb reports found.');
-            }
+		try {
+			$request  = new \Nyholm\Psr7\Request(
+				'POST',
+				self::API_URL,
+				array( 'Content-Type' => 'application/json' ),
+				$body,
+			);
+			$response = $this->http->sendRequest( $request );
+			$data     = \json_decode( (string) $response->getBody(), true );
 
-            $reports = \array_map(function (array $r): array {
-                $fields = $r['fields'] ?? [];
-                return [
-                    'title'   => $fields['title'] ?? '',
-                    'date'    => $fields['date']['created'] ?? '',
-                    'source'  => $fields['source'][0]['name'] ?? '',
-                    'country' => \implode(', ', \array_column($fields['country'] ?? [], 'name')),
-                    'url'     => $fields['url'] ?? $r['href'] ?? '',
-                    'format'  => $fields['format'][0]['name'] ?? '',
-                    'summary' => \mb_substr(\strip_tags((string) ($fields['body'] ?? '')), 0, 500),
-                ];
-            }, $data['data']);
+			if ( ! is_array( $data ) || ! isset( $data['data'] ) ) {
+				return $this->emptyResult( 'No ReliefWeb reports found.' );
+			}
 
-            return $this->collection(
-                "Found " . \count($reports) . " ReliefWeb reports.",
-                $reports,
-                (int) ($data['totalCount'] ?? \count($reports)),
-            );
+			$reports = \array_map(
+				function ( array $r ): array {
+					$fields = $r['fields'] ?? array();
+					return array(
+						'title'   => $fields['title'] ?? '',
+						'date'    => $fields['date']['created'] ?? '',
+						'source'  => $fields['source'][0]['name'] ?? '',
+						'country' => \implode( ', ', \array_column( $fields['country'] ?? array(), 'name' ) ),
+						'url'     => $fields['url'] ?? $r['href'] ?? '',
+						'format'  => $fields['format'][0]['name'] ?? '',
+						'summary' => \mb_substr( \strip_tags( (string) ( $fields['body'] ?? '' ) ), 0, 500 ),
+					);
+				},
+				$data['data']
+			);
 
-        } catch (\Exception $e) {
-            return $this->errors->create('reliefweb_failed', "ReliefWeb request failed: {$e->getMessage()}");
-        }
-    }
+			return $this->collection(
+				'Found ' . \count( $reports ) . ' ReliefWeb reports.',
+				$reports,
+				(int) ( $data['totalCount'] ?? \count( $reports ) ),
+			);
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'reliefweb_failed', "ReliefWeb request failed: {$e->getMessage()}" );
+		}
+	}
 }
