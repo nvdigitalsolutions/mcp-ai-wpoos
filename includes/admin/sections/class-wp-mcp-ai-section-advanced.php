@@ -124,12 +124,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'step'        => 1,
 				),
 				'enable_opcache_reset'          => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
+						'type'           => 'checkbox',
+						'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
+						'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
+						'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
+						'default'        => false,
+					),
+					'enable_oos_engine'             => array(
+						'type'           => 'checkbox',
+						'label'          => __( 'OOS Engine (Experimental)', 'mcp-ai-wpoos' ),
+						'checkbox_label' => __( 'Use the framework-agnostic OOS extraction engine', 'mcp-ai-wpoos' ),
+						'description'    => __( 'Routes chat requests through the extracted oOS/core engine instead of the legacy WordPress-specific path. This cross-platform AI orchestration engine is designed to run identically on WordPress, Laravel, and Craft CMS via hexagonal Ports &amp; Adapters architecture. Requires PHP 8.1+. The legacy engine handles all requests when disabled.', 'mcp-ai-wpoos' ),
+						'default'        => false,
+					),
 				// Federation & Mesh Settings.
 				'enable_mesh'                   => array(
 					'type'           => 'checkbox',
@@ -266,7 +273,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'id'     => 'system',
 					'label'  => __( 'System', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'enable_opcache_reset' ),
+					'fields' => array( 'enable_opcache_reset', 'enable_oos_engine' ),
 				),
 				'settings_management'    => array(
 					'id'     => 'settings_management',
