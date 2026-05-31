@@ -110,11 +110,15 @@ SOFTWARE.
 
 ## Skills sourced from `anthropics/skills`
 
-The remaining bundled skills (e.g. `pdf`, `docx`, `xlsx`, `pptx`,
-`canvas-design`, `algorithmic-art`, `frontend-design`, `mcp-builder`,
-`skill-creator`, `code-reviewer`, `web-artifacts-builder`, `webapp-testing`,
-`brand-guidelines`, `theme-factory`, `slack-gif-creator`, `excalidraw-diagram`,
-`internal-comms`, `doc-coauthoring`, `browser-use`, `remotion`, `valyu`,
-`planetscale`, `shannon`, `karpathy-coding-principles`) originate from the
-Anthropic Skills repository at https://github.com/anthropics/skills and
-follow that repository's license terms.
+The remaining bundled skills (e.g. `canvas-design`, `algorithmic-art`,
+`frontend-design`, `mcp-builder`, `skill-creator`, `code-reviewer`,
+`web-artifacts-builder`, `webapp-testing`, `brand-guidelines`,
+`theme-factory`, `slack-gif-creator`, `excalidraw-diagram`, `internal-comms`,
+`doc-coauthoring`, `browser-use`, `remotion`, `valyu`, `planetscale`,
+`shannon`, `karpathy-coding-principles`) originate from the Anthropic Skills
+repository at https://github.com/anthropics/skills and are redistributed
+under Apache-2.0 (see LICENSE.txt in this directory).
+
+Four skills from the same upstream repository (`pdf`, `docx`, `xlsx`,
+`pptx`) were removed from this distribution because they are licensed
+"Proprietary" and are not compatible with the GPLv3 license of this plugin.

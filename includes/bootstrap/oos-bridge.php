@@ -27,6 +27,11 @@ if ( PHP_VERSION_ID < 80100 ) {
 	return;
 }
 
+// Bail if the lib/ directory doesn't exist (WordPress.org build excludes it).
+if ( ! is_dir( WP_MCP_AI_PATH . 'lib/' ) ) {
+	return;
+}
+
 // ─── PSR-4 Autoloader ─────────────────────────────────────────────────
 
 // Register PSR-4 autoloading for the extraction packages if not already
