@@ -52,7 +52,7 @@ public function cancel( string $jobId ): bool;
 	 *
 	 * @param string $handler         Handler class name or ID.
 	 * @param array  $payload         Serializable payload.
-	 * @param string $cronExpression  Cron expression (e.g., '*/5 * * * * ')
+	 * @param string $cronExpression  Cron expression (e.g. a 5-minute interval)
      *                                or interval string ('hourly', 'daily', 'twicedaily').
      *
      * @return string  Schedule ID for later unscheduling.
