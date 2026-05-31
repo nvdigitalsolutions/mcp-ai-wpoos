@@ -116,6 +116,14 @@ class WP_MCP_AI_Blueprint_Installer {
 			$post_content = $data['post_content'] ?? '';
 			$post_status  = $data['post_status'] ?? 'publish';
 			$meta_input   = $data['meta_input'] ?? array();
+
+			// Resolve profession → primary roles for healthcare-style too.
+			if ( ! empty( $data['profession'] ) && ! isset( $meta_input['_wp_mcp_ai_primary_roles'] ) ) {
+				$profession_post_id = self::find_profession_post_id( $data['profession'] );
+				if ( $profession_post_id ) {
+					$meta_input['_wp_mcp_ai_primary_roles'] = array( $profession_post_id );
+				}
+			}
 		} else {
 			// CRM-style: abstracted blueprint.
 			$raw_meta   = $data['meta'] ?? array();
@@ -340,6 +348,15 @@ class WP_MCP_AI_Blueprint_Installer {
 			return null;
 		}
 
+		// ── CRM role slug aliases ──
+		// Some profession definitions use a prefixed slug (e.g. crm_sales_manager)
+		// while CRM blueprints and tool tags use a shorter form (sales_manager).
+		// This mapping bridges the two until the profession definitions are reseeded
+		// with the canonical slugs.
+		$crm_slug_aliases = array(
+			'sales_manager' => 'crm_sales_manager',
+		);
+
 		// Try exact post_name match first.
 		$query = new WP_Query(
 			array(
@@ -359,7 +376,29 @@ class WP_MCP_AI_Blueprint_Installer {
 		}
 		wp_reset_postdata();
 
-		// Fall back: search by title (case-insensitive LIKE).
+		// Fall back 1: try CRM slug alias (e.g. sales_manager → crm_sales_manager).
+		if ( isset( $crm_slug_aliases[ $profession_slug ] ) ) {
+			$alias_slug = $crm_slug_aliases[ $profession_slug ];
+			$query      = new WP_Query(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'name'           => sanitize_title( $alias_slug ),
+					'posts_per_page' => 1,
+					'post_status'    => 'publish',
+					'no_found_rows'  => true,
+					'fields'         => 'ids',
+				)
+			);
+
+			if ( $query->have_posts() ) {
+				$id = $query->posts[0];
+				wp_reset_postdata();
+				return (int) $id;
+			}
+			wp_reset_postdata();
+		}
+
+		// Fall back 2: search by title (case-insensitive LIKE).
 		$readable = ucwords( str_replace( '_', ' ', $profession_slug ) );
 		$query    = new WP_Query(
 			array(
