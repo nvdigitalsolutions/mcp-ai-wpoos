@@ -18,7 +18,7 @@ namespace Oos\Core\Domain\Entity;
 final readonly class ContentItem implements \JsonSerializable {
 
 	/**
-	 * @param string                            $id
+	 * @param int                               $id
 	 * @param string                            $title
 	 * @param string                            $content
 	 * @param string                            $status    'publish', 'draft', 'private', 'pending', 'trash'

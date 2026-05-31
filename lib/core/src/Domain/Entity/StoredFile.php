@@ -22,10 +22,10 @@ final readonly class StoredFile implements \JsonSerializable {
 	 * @param string               $mimeType       MIME type (e.g., 'image/png').
 	 * @param int                  $sizeBytes      File size in bytes.
 	 * @param string               $localPath      Absolute filesystem path.
-	 * @param string|null          $publicUrl      Publicly accessible URL, if any.
-	 * @param array<string, mixed> $metadata       Arbitrary metadata (OpenAI file_id, dimensions, etc.).
 	 * @param int                  $ownerId        User who owns the file.
 	 * @param \DateTimeImmutable   $createdAt
+	 * @param string|null          $publicUrl      Publicly accessible URL, if any.
+	 * @param array<string, mixed> $metadata       Arbitrary metadata (OpenAI file_id, dimensions, etc.).
 	 */
 	public function __construct(
 		public int $id,
@@ -33,10 +33,10 @@ final readonly class StoredFile implements \JsonSerializable {
 		public string $mimeType,
 		public int $sizeBytes,
 		public string $localPath,
-		public ?string $publicUrl = null,
-		public array $metadata = array(),
 		public int $ownerId,
 		public \DateTimeImmutable $createdAt,
+		public ?string $publicUrl = null,
+		public array $metadata = array(),
 	) {}
 
 	/**
