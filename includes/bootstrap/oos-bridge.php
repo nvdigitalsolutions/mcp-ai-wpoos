@@ -169,6 +169,17 @@ function wp_mcp_ai_oos_orchestrator() {
 	// Content tools (use WordPress ContentStore adapter).
 	$toolRegistry->register( new Oos\Core\Tool\GetPostTool( $errorFactory, $content ) );
 	$toolRegistry->register( new Oos\Core\Tool\CreatePostTool( $errorFactory, $content ) );
+	$toolRegistry->register( new Oos\Core\Tool\GetRecentPostsTool( $errorFactory, $content ) );
+	$toolRegistry->register( new Oos\Core\Tool\SearchContentTool( $errorFactory, $content ) );
+
+	// File tools (use WordPress FileStore adapter).
+	$toolRegistry->register( new Oos\Core\Tool\SearchAttachmentsTool( $errorFactory, $files ) );
+
+	// Geo tools.
+	$toolRegistry->register( new Oos\Core\Tool\GeocodeAddressTool( $errorFactory, $settings, $httpClient ) );
+
+	// Site admin tools.
+	$toolRegistry->register( new Oos\Core\Tool\GetSiteSummaryTool( $errorFactory, $settings ) );
 
 	$toolRegistry->notifyRegistered();
 
