@@ -11221,6 +11221,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistant_id
 				);
 
+				// Validate assistant access.
+				if ( $assistant_id ) {
+					$assistant_post = $this->validate_assistant_access( $assistant_id );
+					if ( is_wp_error( $assistant_post ) ) {
+						return $assistant_post;
+					}
+				}
+
+				// Build transcript context for session-key generation and recording.
+				$transcript_context = [
+					'save_transcript' => $this->should_save_transcript( $request ),
+					'session_key'     => $this->validator->sanitize_session_key_param(
+						$request->get_param( 'session_key' )
+					),
+				];
+
 				// Sanitize messages.
 				$sanitized = $this->validator->sanitize_messages(
 					$request->get_param( 'messages' )
@@ -11231,6 +11247,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				$messages = $sanitized['messages'];
+
+				// Inject system prompt from assistant config as the first message.
+				// The OOS ChatOrchestrator passes messages directly to the provider;
+				// it does not auto-inject the system prompt from $assistantConfig.
+				if ( ! empty( $assistant_config['system_prompt'] ) ) {
+					$has_system = false;
+					foreach ( $messages as $msg ) {
+						if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+							$has_system = true;
+							break;
+						}
+					}
+					if ( ! $has_system ) {
+						array_unshift(
+							$messages,
+							[
+								'role'    => 'system',
+								'content' => $assistant_config['system_prompt'],
+							]
+						);
+					}
+				}
 
 				// Build options.
 				$options = [];
@@ -11252,6 +11290,40 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$options['model'] = $assistant_config['model'];
 				}
 
+				// Pass through temperature and max_tokens from assistant config if not
+				// already set in request options.
+				if ( ! isset( $options['temperature'] ) && isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] ) {
+					$options['temperature'] = (float) $assistant_config['temperature'];
+				}
+				if ( ! isset( $options['max_tokens'] ) && ! empty( $assistant_config['max_tokens'] ) ) {
+					$options['max_tokens'] = (int) $assistant_config['max_tokens'];
+				}
+
+				// Inject professional prompt into system message when present.
+				$professional_prompt = $request->get_param( 'professional_prompt' );
+				if ( ! empty( $professional_prompt ) && is_string( $professional_prompt ) ) {
+					$has_system = false;
+					$system_idx = -1;
+					foreach ( $messages as $idx => $msg ) {
+						if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+							$has_system = true;
+							$system_idx = $idx;
+							break;
+						}
+					}
+					if ( $has_system && $system_idx >= 0 ) {
+						$messages[ $system_idx ]['content'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $messages[ $system_idx ]['content'];
+					} else {
+						array_unshift(
+							$messages,
+							[
+								'role'    => 'system',
+								'content' => $professional_prompt,
+							]
+						);
+					}
+				}
+
 				WP_MCP_AI_Logger::log_event(
 					'oos_engine_chat',
 					'OOS engine handling chat request',
@@ -11263,22 +11335,113 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					]
 				);
 
-				// Delegate to the framework-agnostic orchestrator.
-				$orchestrator = wp_mcp_ai_oos_orchestrator();
+				try {
+					// Delegate to the framework-agnostic orchestrator.
+					$orchestrator = wp_mcp_ai_oos_orchestrator();
 
-				$result = $orchestrator->handleChat(
-					messages: $messages,
-					assistantConfig: $assistant_config,
-					userId: $user_id,
-					assistantId: $assistant_id,
-					options: $options,
-				);
+					// Check if the client requests SSE streaming.
+					$want_stream = $this->request_wants_event_stream( $request )
+						|| $request->get_param( 'stream' );
+
+					if ( $want_stream && method_exists( $orchestrator, 'handleChatStreaming' ) ) {
+						// handleChatStreaming() sends SSE headers, status events,
+						// tool-execution progress, text chunks, the final message
+						// event, and the [DONE] marker.  After it returns, the
+						// stream is complete — we only need to record the transcript
+						// and exit.
+						$result = $orchestrator->handleChatStreaming(
+							messages: $messages,
+							assistantConfig: $assistant_config,
+							userId: $user_id,
+							assistantId: $assistant_id,
+							options: $options,
+						);
+
+						// Record the transcript.
+						if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+							WP_MCP_AI_Chat_Transcript_Recorder::record(
+								$assistant_id,
+								$messages,
+								$options,
+								$result['response'] ?? [],
+								$request,
+								$user_id,
+								$transcript_context
+							);
+						}
+
+						exit;
+					}
+
+					// Non-streaming path.
+					$result = $orchestrator->handleChat(
+						messages: $messages,
+						assistantConfig: $assistant_config,
+						userId: $user_id,
+						assistantId: $assistant_id,
+						options: $options,
+					);
+				} catch ( \Exception $e ) {
+					WP_MCP_AI_Logger::log_error(
+						'oos_engine_exception',
+						'Exception in OOS chat handler: ' . $e->getMessage(),
+						[
+							'exception' => $e->getMessage(),
+							'trace'     => $e->getTraceAsString(),
+						]
+					);
+
+					return new WP_Error(
+						'oos_engine_error',
+						sprintf(
+							/* translators: %s: error message */
+							__( 'The OOS engine encountered an error: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+						[ 'status' => 500 ]
+					);
+				} catch ( \Error $e ) {
+					WP_MCP_AI_Logger::log_error(
+						'oos_engine_fatal_error',
+						'Fatal error in OOS chat handler: ' . $e->getMessage(),
+						[
+							'error' => $e->getMessage(),
+							'file'  => $e->getFile(),
+							'line'  => $e->getLine(),
+							'trace' => $e->getTraceAsString(),
+						]
+					);
+
+					return new WP_Error(
+						'oos_engine_fatal_error',
+						__( 'A fatal error occurred in the OOS engine. Please check the plugin configuration.', 'mcp-ai-wpoos' ),
+						[ 'status' => 500 ]
+					);
+				}
+
+				// Record the transcript and get the session key.
+				$recorded_session_key = null;
+				if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+					$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
+						$assistant_id,
+						$messages,
+						$options,
+						$result['response'] ?? [],
+						$request,
+						$user_id,
+						$transcript_context
+					);
+				}
 
 				// Translate OOS response back to WordPress REST format.
 				$payload = [
 					'assistant_id' => $assistant_id,
 					'data'         => $result['response'] ?? [],
 				];
+
+				if ( $recorded_session_key ) {
+					$payload['sessionKey'] = $recorded_session_key;
+				}
 
 				if ( ! empty( $result['tool_results'] ) ) {
 					$payload['tool_results'] = $result['tool_results'];
