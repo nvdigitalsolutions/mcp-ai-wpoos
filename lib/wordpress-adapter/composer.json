@@ -1,0 +1,15 @@
+{
+    "name": "oos/wordpress-adapter",
+    "description": "WordPress adapter implementations for the oOS Core engine.",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "require": {
+        "php": "^7.4",
+        "oos/core": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Oos\\WordPress\\": "src/"
+        }
+    }
+}
