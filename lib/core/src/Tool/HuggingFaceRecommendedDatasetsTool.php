@@ -69,10 +69,10 @@ class HuggingFaceRecommendedDatasetsTool extends AbstractHuggingFaceTool {
 				'rows'        => 30000,
 			),
 			array(
-				'dataset'  => 'fashion_mnist',
-				'category' => 'vision',
-				'description':'Fashion product image classification',
-				'rows'     => 70000,
+				'dataset'     => 'fashion_mnist',
+				'category'    => 'vision',
+				'description' => 'Fashion product image classification',
+				'rows'        => 70000,
 			),
 		);
 		if ( '' !== $category ) {
