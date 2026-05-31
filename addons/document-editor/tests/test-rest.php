@@ -19,10 +19,10 @@ class Test_Document_Editor_REST extends WP_UnitTestCase {
 			register_post_type(
 				NV_oOS_Document_Editor_REST::POST_TYPE,
 				array(
-					'public'       => false,
-					'supports'     => array( 'title', 'editor' ),
+					'public'          => false,
+					'supports'        => array( 'title', 'editor' ),
 					'capability_type' => 'post',
-					'map_meta_cap' => true,
+					'map_meta_cap'    => true,
 				)
 			);
 		}

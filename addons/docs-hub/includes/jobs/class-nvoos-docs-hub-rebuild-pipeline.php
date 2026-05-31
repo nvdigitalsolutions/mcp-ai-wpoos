@@ -458,11 +458,11 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 			array_merge(
 				$state,
 				array(
-					'phase'    => NV_oOS_Docs_Hub_Rebuild_State::PHASE_PAGES,
-					'cursor'   => 0,
-					'total'    => count( $slugs ),
-					'cap_hit'  => $cap_hit || $state['cap_hit'],
-					'_slugs'   => $slugs,
+					'phase'   => NV_oOS_Docs_Hub_Rebuild_State::PHASE_PAGES,
+					'cursor'  => 0,
+					'total'   => count( $slugs ),
+					'cap_hit' => $cap_hit || $state['cap_hit'],
+					'_slugs'  => $slugs,
 				)
 			)
 		);
@@ -488,8 +488,8 @@ class NV_oOS_Docs_Hub_Rebuild_Pipeline {
 			return $this->advance_to( NV_oOS_Docs_Hub_Rebuild_State::PHASE_LINKS );
 		}
 
-		$indexer  = $this->load_indexer_from_staging();
-		$cache    = new NV_oOS_Docs_Hub_Cache();
+		$indexer = $this->load_indexer_from_staging();
+		$cache   = new NV_oOS_Docs_Hub_Cache();
 		$cache->use_staging( true );
 
 		$chunk_size = $this->chunk_size();

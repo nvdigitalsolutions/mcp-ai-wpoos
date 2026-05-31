@@ -305,8 +305,8 @@ class NV_oOS_Comic_Reader_REST {
 						'sanitize_callback' => 'absint',
 					),
 					'panel_ids' => array(
-						'type'     => 'array',
-						'items'    => array( 'type' => 'integer' ),
+						'type'  => 'array',
+						'items' => array( 'type' => 'integer' ),
 					),
 				),
 			)
@@ -379,8 +379,8 @@ class NV_oOS_Comic_Reader_REST {
 	public static function health() {
 		return rest_ensure_response(
 			array(
-				'status'  => 'ok',
-				'version' => defined( 'NVOOS_COMIC_READER_VERSION' ) ? NVOOS_COMIC_READER_VERSION : 'unknown',
+				'status'           => 'ok',
+				'version'          => defined( 'NVOOS_COMIC_READER_VERSION' ) ? NVOOS_COMIC_READER_VERSION : 'unknown',
 				'supports_creator' => true,
 			)
 		);
@@ -437,8 +437,8 @@ class NV_oOS_Comic_Reader_REST {
 			$args['s'] = $search;
 		}
 
-		$query   = new WP_Query( $args );
-		$comics  = array();
+		$query  = new WP_Query( $args );
+		$comics = array();
 
 		foreach ( $query->posts as $post ) {
 			$comics[] = self::format_comic_item( $post );
@@ -446,10 +446,10 @@ class NV_oOS_Comic_Reader_REST {
 
 		return rest_ensure_response(
 			array(
-				'comics'     => $comics,
-				'total'      => (int) $query->found_posts,
-				'page'       => $page,
-				'per_page'   => $per_page,
+				'comics'      => $comics,
+				'total'       => (int) $query->found_posts,
+				'page'        => $page,
+				'per_page'    => $per_page,
 				'total_pages' => (int) $query->max_num_pages,
 			)
 		);
@@ -486,8 +486,8 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function get_comic_file( $request ) {
-		$id      = $request->get_param( 'id' );
-		$post    = get_post( $id );
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
 
 		if ( ! $post || 'attachment' !== $post->post_type ) {
 			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
@@ -504,7 +504,7 @@ class NV_oOS_Comic_Reader_REST {
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
-		$content  = file_get_contents( $file_path );
+		$content = file_get_contents( $file_path );
 		if ( false === $content ) {
 			return new WP_Error( 'read_error', __( 'Failed to read comic file.', 'nvoos-comic-reader' ), array( 'status' => 500 ) );
 		}
@@ -541,9 +541,9 @@ class NV_oOS_Comic_Reader_REST {
 			if ( $cover_url ) {
 				return rest_ensure_response(
 					array(
-						'id'       => (int) $cover_id,
-						'url'      => $cover_url,
-						'cached'   => true,
+						'id'     => (int) $cover_id,
+						'url'    => $cover_url,
+						'cached' => true,
 					)
 				);
 			}
@@ -552,10 +552,10 @@ class NV_oOS_Comic_Reader_REST {
 		// No cached cover — client will extract from archive.
 		return rest_ensure_response(
 			array(
-				'id'       => $id,
-				'url'      => '',
-				'cached'   => false,
-				'extract'  => rest_url( self::REST_NAMESPACE . '/comics/' . $id . '/file' ),
+				'id'      => $id,
+				'url'     => '',
+				'cached'  => false,
+				'extract' => rest_url( self::REST_NAMESPACE . '/comics/' . $id . '/file' ),
 			)
 		);
 	}
@@ -687,12 +687,12 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function create_creator_comic( $request ) {
-		$title            = $request->get_param( 'title' );
-		$style            = $request->get_param( 'style' );
+		$title             = $request->get_param( 'title' );
+		$style             = $request->get_param( 'style' );
 		$reading_direction = $request->get_param( 'reading_direction' );
-		$page_layout      = $request->get_param( 'page_layout' );
-		$series_name      = $request->get_param( 'series_name' );
-		$issue_number     = $request->get_param( 'issue_number' );
+		$page_layout       = $request->get_param( 'page_layout' );
+		$series_name       = $request->get_param( 'series_name' );
+		$issue_number      = $request->get_param( 'issue_number' );
 
 		$post_id = wp_insert_post(
 			array(
@@ -700,11 +700,11 @@ class NV_oOS_Comic_Reader_REST {
 				'post_title'  => $title,
 				'post_status' => 'publish',
 				'meta_input'  => array(
-					'_nvoos_comic_style'            => $style,
+					'_nvoos_comic_style'             => $style,
 					'_nvoos_comic_reading_direction' => $reading_direction,
-					'_nvoos_comic_page_layout'      => $page_layout,
-					'_nvoos_comic_series_name'      => $series_name,
-					'_nvoos_comic_issue_number'     => $issue_number,
+					'_nvoos_comic_page_layout'       => $page_layout,
+					'_nvoos_comic_series_name'       => $series_name,
+					'_nvoos_comic_issue_number'      => $issue_number,
 				),
 			),
 			true
@@ -787,8 +787,8 @@ class NV_oOS_Comic_Reader_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function update_creator_comic( $request ) {
-		$id               = $request->get_param( 'id' );
-		$post             = get_post( $id );
+		$id   = $request->get_param( 'id' );
+		$post = get_post( $id );
 
 		if ( ! $post || 'mcp_ai_comic' !== $post->post_type ) {
 			return new WP_Error( 'not_found', __( 'Comic not found.', 'nvoos-comic-reader' ), array( 'status' => 404 ) );
@@ -841,21 +841,24 @@ class NV_oOS_Comic_Reader_REST {
 		}
 
 		// Ensure numeric ordering.
-		usort( $panels, function ( $a, $b ) {
-			$page_a = isset( $a['page'] ) ? (int) $a['page'] : 0;
-			$page_b = isset( $b['page'] ) ? (int) $b['page'] : 0;
-			if ( $page_a !== $page_b ) {
-				return $page_a - $page_b;
+		usort(
+			$panels,
+			function ( $a, $b ) {
+				$page_a = isset( $a['page'] ) ? (int) $a['page'] : 0;
+				$page_b = isset( $b['page'] ) ? (int) $b['page'] : 0;
+				if ( $page_a !== $page_b ) {
+					return $page_a - $page_b;
+				}
+				$pn_a = isset( $a['panel'] ) ? (int) $a['panel'] : 0;
+				$pn_b = isset( $b['panel'] ) ? (int) $b['panel'] : 0;
+				return $pn_a - $pn_b;
 			}
-			$pn_a = isset( $a['panel'] ) ? (int) $a['panel'] : 0;
-			$pn_b = isset( $b['panel'] ) ? (int) $b['panel'] : 0;
-			return $pn_a - $pn_b;
-		} );
+		);
 
 		return rest_ensure_response(
 			array(
-				'panels' => $panels,
-				'total'  => count( $panels ),
+				'panels'   => $panels,
+				'total'    => count( $panels ),
 				'comic_id' => $id,
 			)
 		);
@@ -1084,17 +1087,17 @@ class NV_oOS_Comic_Reader_REST {
 		$ext       = strtolower( pathinfo( $post->guid, PATHINFO_EXTENSION ) );
 
 		return array(
-			'id'          => (int) $post->ID,
-			'title'       => get_the_title( $post ),
-			'filename'    => basename( get_attached_file( $post->ID ) ?: '' ),
-			'format'      => strtoupper( $ext ),
-			'file_size'   => $file_size,
-			'file_url'    => $file_url ?: '',
+			'id'            => (int) $post->ID,
+			'title'         => get_the_title( $post ),
+			'filename'      => basename( get_attached_file( $post->ID ) ?: '' ),
+			'format'        => strtoupper( $ext ),
+			'file_size'     => $file_size,
+			'file_url'      => $file_url ?: '',
 			'file_endpoint' => rest_url( self::REST_NAMESPACE . '/comics/' . $post->ID . '/file' ),
-			'cover_url'   => '',
-			'date'        => get_the_date( 'c', $post ),
-			'modified'    => get_the_modified_date( 'c', $post ),
-			'mime_type'   => $post->post_mime_type,
+			'cover_url'     => '',
+			'date'          => get_the_date( 'c', $post ),
+			'modified'      => get_the_modified_date( 'c', $post ),
+			'mime_type'     => $post->post_mime_type,
 		);
 	}
 

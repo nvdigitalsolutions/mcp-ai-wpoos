@@ -144,7 +144,7 @@ class WP_MCP_AI_Lead_Research_Page {
 
 		// Fallback: get first available assistant.
 		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
-			$assistants = get_posts(
+			$assistants   = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
 					'post_status'    => 'publish',
@@ -201,7 +201,7 @@ class WP_MCP_AI_Lead_Research_Page {
 		);
 
 		// Get current mode from query string for initial workflow.
-		$current_mode = self::get_current_mode();
+		$current_mode     = self::get_current_mode();
 		$initial_workflow = ( 'import' === $current_mode ) ? 'import' : ( ( 'consolidate' === $current_mode ) ? 'review' : 'research' );
 		?>
 		<script>
@@ -404,7 +404,7 @@ class WP_MCP_AI_Lead_Research_Page {
 	 * Render review & quality workflow section.
 	 */
 	protected static function render_review_workflow() {
-		$total_leads    = wp_count_posts( 'mcp_ai_lead' );
+		$total_leads     = wp_count_posts( 'mcp_ai_lead' );
 		$published_count = isset( $total_leads->publish ) ? $total_leads->publish : 0;
 
 		$leads = get_posts(
@@ -421,9 +421,9 @@ class WP_MCP_AI_Lead_Research_Page {
 		$qualified_count = 0;
 
 		foreach ( $leads as $lead ) {
-			$email     = get_post_meta( $lead->ID, 'email', true );
-			$score     = get_post_meta( $lead->ID, 'lead_score', true );
-			$status    = get_post_meta( $lead->ID, 'lead_status', true );
+			$email  = get_post_meta( $lead->ID, 'email', true );
+			$score  = get_post_meta( $lead->ID, 'lead_score', true );
+			$status = get_post_meta( $lead->ID, 'lead_status', true );
 
 			if ( $email ) {
 				++$with_email;
@@ -532,16 +532,16 @@ class WP_MCP_AI_Lead_Research_Page {
 
 		// Save lead metadata.
 		$meta_fields = array(
-			'lead_status'   => 'status',
-			'email'         => 'email',
-			'phone'         => 'phone',
-			'company'       => 'company',
-			'source'        => 'source',
-			'lead_score'    => 'score',
+			'lead_status'     => 'status',
+			'email'           => 'email',
+			'phone'           => 'phone',
+			'company'         => 'company',
+			'source'          => 'source',
+			'lead_score'      => 'score',
 			'estimated_value' => 'value',
-			'contact_owner' => 'assigned_to',
-			'next_action'   => 'next_action',
-			'notes'         => 'notes',
+			'contact_owner'   => 'assigned_to',
+			'next_action'     => 'next_action',
+			'notes'           => 'notes',
 		);
 
 		foreach ( $meta_fields as $meta_key => $post_key ) {

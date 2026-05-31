@@ -34,12 +34,12 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 * @since 1.2.0
 	 */
 	public function __construct() {
-		$this->toolkit_slug  = 'eca';
-		$this->toolkit_name  = __( 'ECA Management', 'mcp-ai-wpoos-pro' );
-		$this->option_name   = 'wp_mcp_ai_eca_settings';
-		$this->page_slug     = 'eca-settings';
-		$this->icon          = 'dashicons-groups';
-		$this->has_research  = true;
+		$this->toolkit_slug = 'eca';
+		$this->toolkit_name = __( 'ECA Management', 'mcp-ai-wpoos-pro' );
+		$this->option_name  = 'wp_mcp_ai_eca_settings';
+		$this->page_slug    = 'eca-settings';
+		$this->icon         = 'dashicons-groups';
+		$this->has_research = true;
 
 		parent::__construct();
 	}
@@ -117,8 +117,8 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 * @since 1.2.0
 	 */
 	protected function render_configuration_tab() {
-		$options = get_option( $this->option_name, array() );
-		$research_on = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
+		$options      = get_option( $this->option_name, array() );
+		$research_on  = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
 		$assistant_id = isset( $options['research_assistant_id'] ) ? absint( $options['research_assistant_id'] ) : 0;
 		?>
 		<h2><?php esc_html_e( 'ECA Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>

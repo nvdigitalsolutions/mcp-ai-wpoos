@@ -441,7 +441,7 @@ class WP_MCP_AI_Company_Settings_Page {
 	protected function get_company_tools() {
 		$tools = array();
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 			$all_tools = $registry->get_tools();
 			foreach ( $all_tools as $slug => $tool ) {
 				if ( strpos( $slug, 'company' ) !== false ) {

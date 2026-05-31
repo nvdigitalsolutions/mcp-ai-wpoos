@@ -35,12 +35,12 @@ class WP_MCP_AI_Law_Firm_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 * @since 2.0.0
 	 */
 	public function __construct() {
-		$this->toolkit_slug  = 'law_firm'; // Kebab-converts to 'law-firm' for MCP server lookup.
-		$this->toolkit_name  = __( 'Law Firm', 'mcp-ai-wpoos-pro' );
-		$this->option_name   = 'wp_mcp_ai_law_firm_settings';
-		$this->page_slug     = 'law-firm-settings';
-		$this->icon          = 'dashicons-businessman';
-		$this->has_research  = true;
+		$this->toolkit_slug = 'law_firm'; // Kebab-converts to 'law-firm' for MCP server lookup.
+		$this->toolkit_name = __( 'Law Firm', 'mcp-ai-wpoos-pro' );
+		$this->option_name  = 'wp_mcp_ai_law_firm_settings';
+		$this->page_slug    = 'law-firm-settings';
+		$this->icon         = 'dashicons-businessman';
+		$this->has_research = true;
 
 		parent::__construct();
 	}
@@ -151,7 +151,7 @@ class WP_MCP_AI_Law_Firm_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 * @since 2.0.0
 	 */
 	protected function render_configuration_tab() {
-		$options = get_option( $this->option_name, array() );
+		$options              = get_option( $this->option_name, array() );
 		$assistant_id         = isset( $options['research_assistant_id'] ) ? absint( $options['research_assistant_id'] ) : 0;
 		$default_jurisdiction = isset( $options['default_jurisdiction'] ) ? $options['default_jurisdiction'] : 'federal';
 		$default_state        = isset( $options['default_state'] ) ? $options['default_state'] : '';

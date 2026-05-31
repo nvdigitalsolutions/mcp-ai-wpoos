@@ -136,6 +136,7 @@ svn-*
 addons
 core
 shared
+lib
 
 # Specific exclusions for this plugin
 # Note: test-capability-flags-integration.php moved to bin/ which is already excluded

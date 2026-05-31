@@ -176,3 +176,6 @@ archive/production-status/         export-ignore
 # Misc dev artifacts
 mcp-diagnostic-debug.php    export-ignore
 test-storage-service.html   export-ignore
+
+# Cross-platform extraction library (dev-only; not bundled in plugin)
+lib/                        export-ignore

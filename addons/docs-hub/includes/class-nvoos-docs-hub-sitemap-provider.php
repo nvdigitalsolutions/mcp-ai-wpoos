@@ -70,7 +70,7 @@ class NV_oOS_Docs_Hub_Sitemap_Provider extends WP_Sitemaps_Provider {
 		$offset    = ( $page_num - 1 ) * $page_size;
 		$batch     = array_slice( $entries, $offset, $page_size );
 
-		$urls        = array();
+		$urls          = array();
 		$shortcode_url = $this->get_docs_page_url();
 
 		if ( ! $shortcode_url ) {

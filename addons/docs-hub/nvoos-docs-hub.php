@@ -110,8 +110,8 @@ if ( ! function_exists( 'fnmatch' ) ) {
 		}
 
 		// Anchor and apply case-folding.
-		$regex   = '#^' . $regex . '$#';
-		$mods    = 'us';
+		$regex = '#^' . $regex . '$#';
+		$mods  = 'us';
 		if ( $flags & 16 ) { // FNM_CASEFOLD = 16.
 			$mods .= 'i';
 		}

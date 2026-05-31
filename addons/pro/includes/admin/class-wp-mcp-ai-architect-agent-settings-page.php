@@ -42,12 +42,12 @@ class WP_MCP_AI_Architect_Agent_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 * @since 1.1.0
 	 */
 	public function __construct() {
-		$this->toolkit_slug  = 'architect_agent'; // Kebab-converts to 'architect-agent' for MCP server lookup.
-		$this->toolkit_name  = __( 'Architect Agent', 'mcp-ai-wpoos-pro' );
-		$this->option_name   = 'wp_mcp_ai_architect_agent_toolkit_settings';
-		$this->page_slug     = 'nvoos-architect-agent-toolkit';
-		$this->icon          = 'dashicons-editor-code';
-		$this->has_research  = false;
+		$this->toolkit_slug     = 'architect_agent'; // Kebab-converts to 'architect-agent' for MCP server lookup.
+		$this->toolkit_name     = __( 'Architect Agent', 'mcp-ai-wpoos-pro' );
+		$this->option_name      = 'wp_mcp_ai_architect_agent_toolkit_settings';
+		$this->page_slug        = 'nvoos-architect-agent-toolkit';
+		$this->icon             = 'dashicons-editor-code';
+		$this->has_research     = false;
 		$this->has_remote_sites = false;
 
 		parent::__construct();
@@ -198,10 +198,10 @@ class WP_MCP_AI_Architect_Agent_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 */
 	protected function get_tools_list() {
 		return array(
-			'manage_files'         => __( 'Manage Files', 'mcp-ai-wpoos-pro' ),
+			'manage_files'          => __( 'Manage Files', 'mcp-ai-wpoos-pro' ),
 			'execute_shell_command' => __( 'Execute Shell Command', 'mcp-ai-wpoos-pro' ),
-			'git_operations'       => __( 'Git Operations', 'mcp-ai-wpoos-pro' ),
-			'search_codebase'      => __( 'Search Codebase', 'mcp-ai-wpoos-pro' ),
+			'git_operations'        => __( 'Git Operations', 'mcp-ai-wpoos-pro' ),
+			'search_codebase'       => __( 'Search Codebase', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

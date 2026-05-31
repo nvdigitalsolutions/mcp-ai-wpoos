@@ -178,15 +178,15 @@ class Test_Docs_Hub_Indexer extends WP_UnitTestCase {
 
 		$entries = array(
 			array(
-				'path' => $file_a,
-				'source' => 'base',
-				'plugin_name' => 'Test Plugin',
+				'path'          => $file_a,
+				'source'        => 'base',
+				'plugin_name'   => 'Test Plugin',
 				'relative_path' => 'docs/readme.md',
 			),
 			array(
-				'path' => $file_b,
-				'source' => 'base',
-				'plugin_name' => 'Test Plugin',
+				'path'          => $file_b,
+				'source'        => 'base',
+				'plugin_name'   => 'Test Plugin',
 				'relative_path' => 'docs/install.md',
 			),
 		);

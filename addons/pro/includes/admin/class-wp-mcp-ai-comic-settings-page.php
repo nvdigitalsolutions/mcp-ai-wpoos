@@ -35,12 +35,12 @@ class WP_MCP_AI_Comic_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 * @since 2.0.0
 	 */
 	public function __construct() {
-		$this->toolkit_slug  = 'comic_creation'; // Kebab-converts to 'comic-creation' for MCP server lookup.
-		$this->toolkit_name  = __( 'Comic Creation', 'mcp-ai-wpoos-pro' );
-		$this->option_name   = 'wp_mcp_ai_comic_creation_settings';
-		$this->page_slug     = 'comic-creation-settings';
-		$this->icon          = 'dashicons-format-image';
-		$this->has_research  = true;
+		$this->toolkit_slug = 'comic_creation'; // Kebab-converts to 'comic-creation' for MCP server lookup.
+		$this->toolkit_name = __( 'Comic Creation', 'mcp-ai-wpoos-pro' );
+		$this->option_name  = 'wp_mcp_ai_comic_creation_settings';
+		$this->page_slug    = 'comic-creation-settings';
+		$this->icon         = 'dashicons-format-image';
+		$this->has_research = true;
 
 		parent::__construct();
 	}
@@ -104,7 +104,7 @@ class WP_MCP_AI_Comic_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 * @since 2.0.0
 	 */
 	protected function render_configuration_tab() {
-		$options = get_option( $this->option_name, array() );
+		$options       = get_option( $this->option_name, array() );
 		$assistant_id  = isset( $options['research_assistant_id'] ) ? absint( $options['research_assistant_id'] ) : 0;
 		$comic_style   = isset( $options['default_comic_style'] ) ? $options['default_comic_style'] : 'american-comic';
 		$panel_width   = isset( $options['default_panel_width'] ) ? absint( $options['default_panel_width'] ) : 800;
@@ -284,18 +284,18 @@ class WP_MCP_AI_Comic_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_comic_script'     => __( 'Generate Comic Script', 'mcp-ai-wpoos-pro' ),
-			'breakdown_comic_panels'    => __( 'Breakdown Comic Panels', 'mcp-ai-wpoos-pro' ),
-			'generate_character_sheet'  => __( 'Generate Character Sheet', 'mcp-ai-wpoos-pro' ),
-			'generate_comic_panel'      => __( 'Generate Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'create_comic_layout'       => __( 'Create Comic Layout', 'mcp-ai-wpoos-pro' ),
-			'add_speech_bubbles'        => __( 'Add Speech Bubbles', 'mcp-ai-wpoos-pro' ),
-			'export_comic_cbz'          => __( 'Export Comic (CBZ/CBR)', 'mcp-ai-wpoos-pro' ),
-			'colorize_comic_panel'      => __( 'Colorize Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'ink_comic_panel'           => __( 'Ink Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'letter_comic_panel'        => __( 'Letter Comic Panel', 'mcp-ai-wpoos-pro' ),
-			'upscale_comic_page'        => __( 'Upscale Comic Page', 'mcp-ai-wpoos-pro' ),
-			'apply_comic_style'         => __( 'Apply Comic Style', 'mcp-ai-wpoos-pro' ),
+			'generate_comic_script'    => __( 'Generate Comic Script', 'mcp-ai-wpoos-pro' ),
+			'breakdown_comic_panels'   => __( 'Breakdown Comic Panels', 'mcp-ai-wpoos-pro' ),
+			'generate_character_sheet' => __( 'Generate Character Sheet', 'mcp-ai-wpoos-pro' ),
+			'generate_comic_panel'     => __( 'Generate Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'create_comic_layout'      => __( 'Create Comic Layout', 'mcp-ai-wpoos-pro' ),
+			'add_speech_bubbles'       => __( 'Add Speech Bubbles', 'mcp-ai-wpoos-pro' ),
+			'export_comic_cbz'         => __( 'Export Comic (CBZ/CBR)', 'mcp-ai-wpoos-pro' ),
+			'colorize_comic_panel'     => __( 'Colorize Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'ink_comic_panel'          => __( 'Ink Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'letter_comic_panel'       => __( 'Letter Comic Panel', 'mcp-ai-wpoos-pro' ),
+			'upscale_comic_page'       => __( 'Upscale Comic Page', 'mcp-ai-wpoos-pro' ),
+			'apply_comic_style'        => __( 'Apply Comic Style', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

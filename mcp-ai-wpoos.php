@@ -107,6 +107,7 @@ require_once __DIR__ . '/includes/bootstrap/hooks.php';
 require_once __DIR__ . '/includes/bootstrap/loader.php';
 require_once __DIR__ . '/includes/bootstrap/activation.php';
 require_once __DIR__ . '/includes/class-wp-mcp-ai-plugin.php';
+require_once __DIR__ . '/includes/bootstrap/oos-bridge.php';
 
 // Register lifecycle hooks (must reference WP_MCP_AI_FILE, defined above).
 register_activation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_activate' );

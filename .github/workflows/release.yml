@@ -225,6 +225,7 @@ jobs:
             --exclude 'examples'
             --exclude 'packages'
             --exclude 'src'
+            --exclude 'lib'
             --exclude 'ARCHITECTURE.md'
             --exclude 'RELEASE_CHECKLIST.md'
             --exclude 'CONTRIBUTING.md'

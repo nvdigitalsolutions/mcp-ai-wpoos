@@ -100,16 +100,16 @@ class NV_oOS_Docs_Hub_Indexer {
 			$slug_counter = 1;
 			while ( isset( $this->slug_map[ $slug ] ) ) {
 				$slug = $base_slug . '-' . $slug_counter;
-				$slug_counter++;
+				++$slug_counter;
 			}
 
 			$this->slug_map[ $slug ] = array(
-				'path'         => $entry['path'],
-				'title'        => $title,
-				'source'       => $entry['source'],
-				'plugin_name'  => $entry['plugin_name'],
-				'order'        => $order,
-				'frontmatter'  => $frontmatter,
+				'path'          => $entry['path'],
+				'title'         => $title,
+				'source'        => $entry['source'],
+				'plugin_name'   => $entry['plugin_name'],
+				'order'         => $order,
+				'frontmatter'   => $frontmatter,
 				'relative_path' => $entry['relative_path'],
 			);
 
@@ -137,9 +137,9 @@ class NV_oOS_Docs_Hub_Indexer {
 		// rebuild will run this in its own phase).
 		if ( $detect_broken ) {
 			foreach ( $this->slug_map as $slug => $data ) {
-				$content             = $this->read_file( $data['path'] );
-				$broken              = $this->detect_broken_links( $content, $data['path'], $data['relative_path'] );
-				$this->broken_links  = array_merge( $this->broken_links, $broken );
+				$content            = $this->read_file( $data['path'] );
+				$broken             = $this->detect_broken_links( $content, $data['path'], $data['relative_path'] );
+				$this->broken_links = array_merge( $this->broken_links, $broken );
 			}
 		}
 
@@ -378,8 +378,8 @@ class NV_oOS_Docs_Hub_Indexer {
 		}
 
 		foreach ( $matches as $match ) {
-			$level  = strlen( $match[1] );
-			$raw    = trim( $match[2] );
+			$level = strlen( $match[1] );
+			$raw   = trim( $match[2] );
 			// Keep the anchor based on the raw text (rehype-slug does the same),
 			// but strip inline Markdown from the display text.
 			$anchor = $this->slugify_heading( $raw );
@@ -576,7 +576,7 @@ class NV_oOS_Docs_Hub_Indexer {
 		$crumbs = array(
 			array(
 				'label' => $data['plugin_name'],
-				'slug' => null,
+				'slug'  => null,
 			),
 		);
 
@@ -585,13 +585,13 @@ class NV_oOS_Docs_Hub_Indexer {
 		if ( 'General' !== $section ) {
 			$crumbs[] = array(
 				'label' => $section,
-				'slug' => null,
+				'slug'  => null,
 			);
 		}
 
 		$crumbs[] = array(
 			'label' => $data['title'],
-			'slug' => null,
+			'slug'  => null,
 		);
 
 		return $crumbs;
@@ -637,8 +637,8 @@ class NV_oOS_Docs_Hub_Indexer {
 
 		// PHP 7.4 has no native stable sort key parameter; use array_multisort
 		// with the original index as the secondary key to guarantee stability.
-		$keys   = array();
-		$index  = array();
+		$keys  = array();
+		$index = array();
 		foreach ( $entries as $i => $entry ) {
 			$source  = isset( $entry['source'] ) ? (string) $entry['source'] : '';
 			$keys[]  = isset( $priority[ $source ] ) ? (int) $priority[ $source ] : 999;
