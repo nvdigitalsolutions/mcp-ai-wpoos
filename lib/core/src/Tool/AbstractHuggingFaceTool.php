@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Oos\Core\Tool;
 
+use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
