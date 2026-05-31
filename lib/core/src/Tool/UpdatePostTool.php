@@ -58,7 +58,15 @@ class UpdatePostTool extends AbstractTool {
 		if ( $userId <= 0 ) {
 			return $this->errors->forbidden( 'You must be logged in.' );
 		}
-		$cmd = new UpdateContentCommand( title:$this->stringParam( $arguments, 'title' ) ?: null, content:$this->stringParam( $arguments, 'content' ) ?: null, status:$this->stringParam( $arguments, 'status' ) ?: null, excerpt:$this->stringParam( $arguments, 'excerpt' ) ?: null, userId:$userId );
+		$cmd = new UpdateContentCommand(
+			userId: $userId,
+			title: $this->stringParam( $arguments, 'title' ) ?: null,
+			content: $this->stringParam( $arguments, 'content' ) ?: null,
+			status: $this->stringParam( $arguments, 'status' ) ?: null,
+			excerpt: $this->stringParam( $arguments, 'excerpt' ) ?: null,
+			meta: array(),
+			taxonomyInput: array(),
+		);
 		try {
 			$item = $this->c->update( $postId, $cmd );
 			return $this->success( 'Post updated.', $item->jsonSerialize() );

@@ -19,9 +19,9 @@ final readonly class CreateContentCommand {
 	/**
 	 * @param string                  $title
 	 * @param string                  $type            Content type slug.
+	 * @param int                     $authorId        User ID of the author.
 	 * @param string                  $status          'publish', 'draft', 'private', 'pending'.
 	 * @param string                  $content         Raw content body.
-	 * @param int                     $authorId        User ID of the author.
 	 * @param string|null             $excerpt         Optional summary.
 	 * @param array<string, mixed>    $meta            Meta fields to set on creation.
 	 * @param array<string, string[]> $taxonomyInput   Taxonomy slug → [term names or IDs].
@@ -29,9 +29,9 @@ final readonly class CreateContentCommand {
 	public function __construct(
 		public string $title,
 		public string $type,
+		public int $authorId,
 		public string $status = 'publish',
 		public string $content = '',
-		public int $authorId,
 		public ?string $excerpt = null,
 		public array $meta = array(),
 		public array $taxonomyInput = array(),
