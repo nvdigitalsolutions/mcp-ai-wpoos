@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Oos\Core\Tool;
 
 use Oos\Core\Application\Skill\SkillRegistry;
+use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 class LoadSkillTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SkillRegistry $skills ) {
 		parent::__construct( $e );}
