@@ -127,6 +127,51 @@ function wp_mcp_ai_oos_orchestrator() {
 	// ─── Core Services ─────────────────────────────────────────────
 
 	$toolRegistry = new Oos\Core\Application\Tool\ToolRegistry( $events, $errorFactory );
+
+	// ─── Register migrated framework-agnostic tools ────────────────
+	// Tier 1: External API / public data tools.
+	$toolRegistry->register( new Oos\Core\Tool\WebSearchTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\GetGdacsEventsTool( $errorFactory, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\GetNhcActiveStormsTool( $errorFactory, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\GetOpenMeteoForecastTool( $errorFactory, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\ReliefwebReportsTool( $errorFactory, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\GetModelInformationTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\ListAvailableModelsTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\ModerateContentTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\CreateTextEmbeddingsTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\SuggestBestModelTool( $errorFactory ) );
+	$toolRegistry->register( new Oos\Core\Tool\DeepResearchTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\ProbeRemoteMcpTool( $errorFactory, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\RunCrawl4AiJobTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\Crawl4AiPriceLookupTool( $errorFactory, $settings, $httpClient ) );
+
+	// HuggingFace dataset tools.
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetSearchTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetInfoTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetRowsTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetSizeTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetStatisticsTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetIsValidTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetListSplitsTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetFilterTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetGetParquetTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceDatasetPreviewRowsTool( $errorFactory, $settings, $httpClient ) );
+	$toolRegistry->register( new Oos\Core\Tool\HuggingFaceRecommendedDatasetsTool( $errorFactory, $settings, $httpClient ) );
+
+	// Client-side tools.
+	$toolRegistry->register( new Oos\Core\Tool\ClientAnalyzeSentimentTool( $errorFactory ) );
+	$toolRegistry->register( new Oos\Core\Tool\ClientSummarizeTextTool( $errorFactory ) );
+	$toolRegistry->register( new Oos\Core\Tool\ClientTranslateTextTool( $errorFactory ) );
+	$toolRegistry->register( new Oos\Core\Tool\ClientExtractEntitiesTool( $errorFactory ) );
+	$toolRegistry->register( new Oos\Core\Tool\ClientQuestionAnsweringTool( $errorFactory ) );
+	$toolRegistry->register( new Oos\Core\Tool\ClientSemanticSearchTool( $errorFactory ) );
+
+	// Content tools (use WordPress ContentStore adapter).
+	$toolRegistry->register( new Oos\Core\Tool\GetPostTool( $errorFactory, $content ) );
+	$toolRegistry->register( new Oos\Core\Tool\CreatePostTool( $errorFactory, $content ) );
+
+	$toolRegistry->notifyRegistered();
+
 	$sse          = new Oos\Core\Infrastructure\Streaming\SseHandler();
 	$costs        = new Oos\Core\Infrastructure\Cost\CostCalculator();
 
