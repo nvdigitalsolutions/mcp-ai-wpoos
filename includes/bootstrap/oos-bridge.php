@@ -168,9 +168,19 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// Content tools (use WordPress ContentStore adapter).
 	$toolRegistry->register( new Oos\Core\Tool\GetPostTool( $errorFactory, $content ) );
-	$toolRegistry->register( new Oos\Core\Tool\CreatePostTool( $errorFactory, $content ) );
 	$toolRegistry->register( new Oos\Core\Tool\GetRecentPostsTool( $errorFactory, $content ) );
 	$toolRegistry->register( new Oos\Core\Tool\SearchContentTool( $errorFactory, $content ) );
+	$toolRegistry->register( new Oos\Core\Tool\CreatePostTool( $errorFactory, $content ) );
+	$toolRegistry->register( new Oos\Core\Tool\UpdatePostTool( $errorFactory, $content ) );
+	$toolRegistry->register( new Oos\Core\Tool\DeletePostTool( $errorFactory, $content ) );
+
+	// User tools (use WordPress AuthProvider adapter).
+	$toolRegistry->register( new Oos\Core\Tool\GetUserInfoTool( $errorFactory, $auth ) );
+
+	// Skill tools.
+	$skillRegistry = new Oos\Core\Application\Skill\SkillRegistry();
+	$toolRegistry->register( new Oos\Core\Tool\LoadSkillTool( $errorFactory, $skillRegistry ) );
+	$toolRegistry->register( new Oos\Core\Tool\ListSkillsTool( $errorFactory, $skillRegistry ) );
 
 	// File tools (use WordPress FileStore adapter).
 	$toolRegistry->register( new Oos\Core\Tool\SearchAttachmentsTool( $errorFactory, $files ) );
