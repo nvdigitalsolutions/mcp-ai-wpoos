@@ -15,6 +15,10 @@ declare(strict_types=1);
 
 namespace Oos\Core\Infrastructure\Provider;
 
+use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Psr\Http\Client\ClientInterface as HttpClientInterface;
+
 class AnthropicClient extends AbstractProviderClient {
 
 	private const DEFAULT_BASE_URL = 'https://api.anthropic.com/v1';
