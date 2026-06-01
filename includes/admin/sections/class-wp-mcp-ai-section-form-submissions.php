@@ -81,14 +81,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Form_Submissions' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			$fields = array(
-				'form_submissions_overview' => array(
-					'type'    => 'html',
-					'content' => $this->get_overview_content(),
-				),
-			);
+			// This is a display-only section; no editable fields.
+			return array();
+		}
 
-			return $fields;
+		/**
+		 * Render the section content.
+		 *
+		 * Not used — we override render_wrapper() instead.
+		 */
+		public function render() {
+			// Not used - we override render_wrapper() instead.
+		}
+
+		/**
+		 * Override render_wrapper to provide custom layout without form table.
+		 */
+		public function render_wrapper() {
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
+			?>
+			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
+				<?php if ( $description ) : ?>
+					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
+				<?php endif; ?>
+				<?php echo $this->get_overview_content(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped at generation sites. ?>
+			</div>
+			<?php
 		}
 
 		/**
