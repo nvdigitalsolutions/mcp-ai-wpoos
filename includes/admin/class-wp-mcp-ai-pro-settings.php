@@ -1228,14 +1228,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
-			// Check Pro addon vendor directory.
+			// Check Pro addon vendor directory (does not require autoload.php gate;
+			// package directories are always present when installed via Composer).
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
-				if ( file_exists( $pro_vendor_autoload ) ) {
-					$pro_vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/' . $package;
-					if ( file_exists( $pro_vendor_path ) ) {
-						return true;
-					}
+				$pro_vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/' . $package;
+				if ( file_exists( $pro_vendor_path ) ) {
+					return true;
 				}
 			}
 
