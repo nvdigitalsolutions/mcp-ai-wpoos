@@ -11214,8 +11214,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// existing WordPress-specific workflow; profession-only requests
 				// are enriched with profession metadata and then flow through OOS.
 				$raw_assistant_id = $request->get_param( 'assistant_id' );
-				$team_id          = $this->extract_team_id( $raw_assistant_id );
-				$profession_id    = $this->extract_profession_id( $raw_assistant_id );
+				$team_id = $this->extract_team_id( $raw_assistant_id );
+				$profession_id = $this->extract_profession_id( $raw_assistant_id );
 
 				// Unified team requests ("unified_team_123") use the full multi-agent
 				// orchestration path. The OOS ChatOrchestrator does not yet implement
