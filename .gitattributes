@@ -156,6 +156,7 @@ addons/embedded/tests/      export-ignore
 
 # Docker (dev-only)
 docker-compose.yml          export-ignore
+docker/                     export-ignore
 Dockerfile                  export-ignore
 
 # Documentation (dev-only; readme.txt / README.md / CHANGELOG.md / CONTRIBUTING.md kept)
