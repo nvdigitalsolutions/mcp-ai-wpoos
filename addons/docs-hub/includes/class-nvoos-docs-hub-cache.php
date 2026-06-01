@@ -223,8 +223,8 @@ class NV_oOS_Docs_Hub_Cache {
 		}
 
 		// Delete page cache files.
-		$pages_dir   = $dir . '/pages';
-		$page_jsons  = is_dir( $pages_dir ) ? glob( $pages_dir . '/*.json' ) : array();
+		$pages_dir  = $dir . '/pages';
+		$page_jsons = is_dir( $pages_dir ) ? glob( $pages_dir . '/*.json' ) : array();
 		if ( ! empty( $page_jsons ) ) {
 			foreach ( $page_jsons as $file ) {
 				wp_delete_file( $file );
@@ -563,8 +563,8 @@ class NV_oOS_Docs_Hub_Cache {
 			return false;
 		}
 
-		$file      = $dir . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, $relative_path );
-		$file_dir  = dirname( $file );
+		$file     = $dir . DIRECTORY_SEPARATOR . str_replace( '/', DIRECTORY_SEPARATOR, $relative_path );
+		$file_dir = dirname( $file );
 
 		if ( ! wp_mkdir_p( $file_dir ) ) {
 			return false;

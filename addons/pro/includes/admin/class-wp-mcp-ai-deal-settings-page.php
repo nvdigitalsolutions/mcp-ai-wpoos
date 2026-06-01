@@ -255,10 +255,10 @@ class WP_MCP_AI_Deal_Settings_Page {
 	protected function render_configuration_tab() {
 		$settings = get_option( self::OPTION_NAME, array() );
 
-		$current_assistant  = isset( $settings['assistant_id'] ) ? $settings['assistant_id'] : 'default';
-		$default_stage      = isset( $settings['default_pipeline_stage'] ) ? $settings['default_pipeline_stage'] : 'qualification';
-		$default_amount     = isset( $settings['default_amount'] ) ? $settings['default_amount'] : '';
-		$default_currency   = isset( $settings['default_currency'] ) ? $settings['default_currency'] : 'USD';
+		$current_assistant = isset( $settings['assistant_id'] ) ? $settings['assistant_id'] : 'default';
+		$default_stage     = isset( $settings['default_pipeline_stage'] ) ? $settings['default_pipeline_stage'] : 'qualification';
+		$default_amount    = isset( $settings['default_amount'] ) ? $settings['default_amount'] : '';
+		$default_currency  = isset( $settings['default_currency'] ) ? $settings['default_currency'] : 'USD';
 
 		$available_assistants = $this->get_available_assistants();
 		?>
@@ -437,7 +437,7 @@ class WP_MCP_AI_Deal_Settings_Page {
 	protected function get_deal_tools() {
 		$tools = array();
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 			$all_tools = $registry->get_tools();
 			foreach ( $all_tools as $slug => $tool ) {
 				if ( strpos( $slug, 'deal' ) !== false || strpos( $slug, 'pipeline' ) !== false ) {

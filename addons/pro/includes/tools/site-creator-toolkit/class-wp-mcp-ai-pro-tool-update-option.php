@@ -20,6 +20,77 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Option names that are safe for AI tools to modify.
+	 *
+	 * Critical WordPress options (siteurl, home, active_plugins, cron,
+	 * wp_user_roles, template, stylesheet, users_can_register, etc.) are
+	 * deliberately excluded to prevent site takeover and privilege escalation.
+	 *
+	 * @since 1.0.0
+	 * @var string[]
+	 */
+	const ALLOWED_OPTIONS = array(
+		'blogname',
+		'blogdescription',
+		'admin_email',
+		'timezone_string',
+		'date_format',
+		'time_format',
+		'start_of_week',
+		'posts_per_page',
+		'posts_per_rss',
+		'show_on_front',
+		'page_on_front',
+		'page_for_posts',
+		'default_category',
+		'default_post_format',
+		'comment_moderation',
+		'comments_notify',
+		'moderation_notify',
+		'comment_registration',
+		'thread_comments',
+		'thread_comments_depth',
+		'default_ping_status',
+		'default_comment_status',
+		'require_name_email',
+		'blog_public',
+		'wp_mcp_ai_settings',
+	);
+
+	/**
+	 * Per-option type schema for value coercion.
+	 *
+	 * @since 1.0.0
+	 * @var array<string,string>
+	 */
+	const OPTION_TYPES = array(
+		'blogname'               => 'string',
+		'blogdescription'        => 'string',
+		'admin_email'            => 'email',
+		'timezone_string'        => 'string',
+		'date_format'            => 'string',
+		'time_format'            => 'string',
+		'start_of_week'          => 'int',
+		'posts_per_page'         => 'int',
+		'posts_per_rss'          => 'int',
+		'show_on_front'          => 'string',
+		'page_on_front'          => 'int',
+		'page_for_posts'         => 'int',
+		'default_category'       => 'int',
+		'default_post_format'    => 'string',
+		'comment_moderation'     => 'int',
+		'comments_notify'        => 'int',
+		'moderation_notify'      => 'int',
+		'comment_registration'   => 'int',
+		'thread_comments'        => 'int',
+		'thread_comments_depth'  => 'int',
+		'default_ping_status'    => 'string',
+		'default_comment_status' => 'string',
+		'require_name_email'     => 'int',
+		'blog_public'            => 'int',
+	);
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.0.0
@@ -86,7 +157,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_required_capability() {
-		return 'edit_posts';
+		return 'manage_options';
 	}
 
 	/**
@@ -124,17 +195,51 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
+		// Enforce option-name allowlist to prevent modification of critical
+		// WordPress options (active_plugins, siteurl, wp_user_roles, etc.)
+		// that could lead to site takeover or privilege escalation.
+		$is_allowed = in_array( $option_name, self::ALLOWED_OPTIONS, true )
+			|| strpos( $option_name, 'wp_mcp_ai_' ) === 0
+			|| strpos( $option_name, 'theme_mods_' ) === 0;
+
+		if ( ! $is_allowed ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden_option',
+				sprintf(
+					/* translators: %s: option name */
+					__( 'The option "%s" cannot be modified via AI tools for security reasons.', 'mcp-ai-wpoos-pro' ),
+					$option_name
+				)
+			);
+		}
+
 		$option_value = isset( $arguments['option_value'] ) ? $arguments['option_value'] : '';
+
+		// Coerce value to the expected type for the option.
+		if ( isset( self::OPTION_TYPES[ $option_name ] ) ) {
+			switch ( self::OPTION_TYPES[ $option_name ] ) {
+				case 'string':
+					$option_value = sanitize_text_field( (string) $option_value );
+					break;
+				case 'int':
+					$option_value = absint( $option_value );
+					break;
+				case 'email':
+					$option_value = sanitize_email( (string) $option_value );
+					break;
+			}
+		}
 
 		// Use update_option which handles both create and update.
 		$updated = update_option( $option_name, $option_value );
 
 		// update_option returns false if the value is the same, which isn't an error.
+		// Do NOT return the option_value in the response — avoids leaking
+		// sensitive values to AI model context.
 		return array(
-			'success'      => true,
-			'option_name'  => $option_name,
-			'option_value' => $option_value,
-			'message'      => $updated
+			'success'     => true,
+			'option_name' => $option_name,
+			'message'     => $updated
 				? sprintf(
 					/* translators: %s: option name */
 					__( 'Option "%s" updated successfully.', 'mcp-ai-wpoos-pro' ),

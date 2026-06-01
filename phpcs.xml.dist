@@ -19,6 +19,8 @@
 <exclude-pattern>*/node_modules/*</exclude-pattern>
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
+<exclude-pattern>*/lib/*</exclude-pattern>
+<exclude-pattern>*/docker/*</exclude-pattern>
 <!--
 	The phpcs/ directory contains custom PHPCS sniff classes which follow the
 	upstream PHPCS naming convention (CamelCase class files, camelCase variables
@@ -41,6 +43,10 @@
 <exclude-pattern>*/addons/pro/includes/tools/crm/class-wp-mcp-ai-tool-research-company.php</exclude-pattern>
 <exclude-pattern>*/addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php</exclude-pattern>
 <exclude-pattern>*/addons/pro/includes/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php</exclude-pattern>
+
+<!-- oos-bridge.php wires the OOS core package (camelCase classes) into WordPress;
+     variable names intentionally follow the upstream OOS\Core\* convention. -->
+<exclude-pattern>*/includes/bootstrap/oos-bridge.php</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>

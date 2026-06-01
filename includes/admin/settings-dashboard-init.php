@@ -61,6 +61,7 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Advanced'            => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
 			'WP_MCP_AI_Section_Media'               => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
+						'WP_MCP_AI_Section_Form_Submissions'     => 'includes/admin/sections/class-wp-mcp-ai-section-form-submissions.php',
 		);
 
 		// Add Pro sections if Pro addon is loaded.
@@ -183,7 +184,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$container->get( 'section.schedule_manager' );
 
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+				// Register the Form Submissions dashboard section.
+				WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.form_submissions' ) );
+				// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
 
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.

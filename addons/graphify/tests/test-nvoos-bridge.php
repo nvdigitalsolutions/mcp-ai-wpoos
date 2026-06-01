@@ -66,7 +66,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_transcript_label_passthrough_for_other_slugs() {
 		$item = array(
-			'_ID' => 1,
+			'_ID'   => 1,
 			'title' => 'My Memory',
 		);
 
@@ -94,11 +94,11 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	public function test_transcript_content_messages_array() {
 		$messages = array(
 			array(
-				'role' => 'user',
+				'role'    => 'user',
 				'content' => 'Hello world',
 			),
 			array(
-				'role' => 'assistant',
+				'role'    => 'assistant',
 				'content' => 'Hi there',
 			),
 		);
@@ -121,7 +121,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 			'choices' => array(
 				array(
 					'message' => array(
-						'role' => 'assistant',
+						'role'    => 'assistant',
 						'content' => 'I can help with that.',
 					),
 				),
@@ -143,7 +143,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_transcript_content_passthrough() {
 		$item = array(
-			'_ID' => 1,
+			'_ID'  => 1,
 			'body' => 'Hello',
 		);
 
@@ -199,7 +199,7 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_memory_palace_edges_empty_item() {
 		$item  = array(
-			'_ID' => 11,
+			'_ID'   => 11,
 			'title' => 'Bare memory',
 		);
 		$edges = NV_oOS_Graphify_NV_oOS_Bridge::emit_memory_palace_edges( array(), 'ai_chat_agent_memories', $item, 'cct_ai_chat_agent_memories_11' );
@@ -211,12 +211,12 @@ class Test_NV_oOS_Graphify_NV_oOS_Bridge extends WP_UnitTestCase {
 	 */
 	public function test_memory_palace_edges_other_slug() {
 		$item       = array(
-			'_ID' => 1,
+			'_ID'  => 1,
 			'wing' => 'TestWing',
 		);
 		$seed_edges = array(
 			array(
-				'relation' => 'AUTHORED_BY',
+				'relation'       => 'AUTHORED_BY',
 				'source_node_id' => 'a',
 				'target_node_id' => 'b',
 			),

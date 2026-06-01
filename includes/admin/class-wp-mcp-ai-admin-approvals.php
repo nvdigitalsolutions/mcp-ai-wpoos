@@ -40,6 +40,7 @@ class WP_MCP_AI_Admin_Approvals {
 	public function add_menu_page() {
 		$pending_count = $this->get_pending_count();
 		$menu_title    = $pending_count > 0
+			/* translators: %d: number of pending approval items */
 			? sprintf( __( 'Approvals <span class="awaiting-mod">%d</span>', 'mcp-ai-wpoos' ), $pending_count )
 			: __( 'Approvals', 'mcp-ai-wpoos' );
 

@@ -151,17 +151,17 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Enforce manage_options capability regardless of tool-framework checks.
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Insufficient permissions. Only administrators may manage the password vault.',
+			return new WP_Error(
+				'wp_mcp_ai_vault_forbidden',
+				__( 'Insufficient permissions. Only administrators may manage the password vault.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate action.
 		if ( empty( $arguments['action'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_action',
+				__( 'Missing required argument: action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -179,9 +179,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 				return $this->delete_item( $arguments );
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => 'Invalid action. Use: create, update, or delete',
+				return new WP_Error(
+					'wp_mcp_ai_vault_invalid_action',
+					__( 'Invalid action. Use: create, update, or delete', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -195,9 +195,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	protected function create_item( $arguments ) {
 		// Validate required fields.
 		if ( empty( $arguments['name'] ) || empty( $arguments['item_type'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required arguments: name and item_type are required for create action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_fields',
+				__( 'Missing required arguments: name and item_type are required for create action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -209,9 +209,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 
 		// Validate item type.
 		if ( ! in_array( $item_type, array( 'login', 'note', 'card', 'identity' ), true ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Invalid item_type. Must be: login, note, card, or identity',
+			return new WP_Error(
+				'wp_mcp_ai_vault_invalid_type',
+				__( 'Invalid item_type. Must be: login, note, card, or identity', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -226,10 +226,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 		);
 
 		if ( is_wp_error( $post_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $post_id->get_error_message(),
-			);
+			return $post_id;
 		}
 
 		// Save metadata.
@@ -266,9 +263,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	protected function update_item( $arguments ) {
 		// Validate required fields.
 		if ( empty( $arguments['item_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: item_id is required for update action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_item_id',
+				__( 'Missing required argument: item_id is required for update action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -276,17 +273,17 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 		$post    = get_post( $item_id );
 
 		if ( ! $post || 'mcp_vault_item' !== $post->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => 'Vault item not found',
+			return new WP_Error(
+				'wp_mcp_ai_vault_item_not_found',
+				__( 'Vault item not found', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check ownership.
-		if ( get_current_user_id() != $post->post_author ) {
-			return array(
-				'success' => false,
-				'error'   => 'You do not have permission to update this vault item',
+		if ( (int) get_current_user_id() !== (int) $post->post_author ) {
+			return new WP_Error(
+				'wp_mcp_ai_vault_not_owner',
+				__( 'You do not have permission to update this vault item', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -339,9 +336,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	protected function delete_item( $arguments ) {
 		// Validate required fields.
 		if ( empty( $arguments['item_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: item_id is required for delete action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_item_id',
+				__( 'Missing required argument: item_id is required for delete action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -349,17 +346,17 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 		$post    = get_post( $item_id );
 
 		if ( ! $post || 'mcp_vault_item' !== $post->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => 'Vault item not found',
+			return new WP_Error(
+				'wp_mcp_ai_vault_item_not_found',
+				__( 'Vault item not found', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check ownership.
-		if ( get_current_user_id() != $post->post_author ) {
-			return array(
-				'success' => false,
-				'error'   => 'You do not have permission to delete this vault item',
+		if ( (int) get_current_user_id() !== (int) $post->post_author ) {
+			return new WP_Error(
+				'wp_mcp_ai_vault_not_owner',
+				__( 'You do not have permission to delete this vault item', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -368,9 +365,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 		$result = wp_delete_post( $item_id, true );
 
 		if ( ! $result ) {
-			return array(
-				'success' => false,
-				'error'   => 'Failed to delete vault item',
+			return new WP_Error(
+				'wp_mcp_ai_vault_delete_failed',
+				__( 'Failed to delete vault item', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

@@ -165,8 +165,8 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 				'panels_count' => __( 'Panels Per Page', 'mcp-ai-wpoos-pro' ),
 			),
 			'validation_rules'   => array(
-				'style'   => array(
-					'type'          => 'string',
+				'style'        => array(
+					'type'           => 'string',
 					'allowed_values' => array(
 						'manga',
 						'western',
@@ -178,56 +178,56 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 						'custom',
 					),
 				),
-				'pages'   => array(
+				'pages'        => array(
 					'type' => 'integer',
-					'min' => 1,
-					'max' => 500,
+					'min'  => 1,
+					'max'  => 500,
 				),
-				'issue'   => array(
+				'issue'        => array(
 					'type' => 'integer_or_text',
 				),
 				'panels_count' => array(
 					'type' => 'integer',
-					'min' => 1,
-					'max' => 12,
+					'min'  => 1,
+					'max'  => 12,
 				),
 			),
 			'quality_dimensions' => array(
-				'art_quality'   => __( 'Art style consistency and resolution', 'mcp-ai-wpoos-pro' ),
-				'storytelling'  => __( 'Narrative coherence and pacing', 'mcp-ai-wpoos-pro' ),
-				'lettering'     => __( 'Clear and readable speech bubbles', 'mcp-ai-wpoos-pro' ),
-				'formatting'    => __( 'Proper page layout and panel flow', 'mcp-ai-wpoos-pro' ),
-				'metadata'      => __( 'Complete series and issue tracking', 'mcp-ai-wpoos-pro' ),
+				'art_quality'  => __( 'Art style consistency and resolution', 'mcp-ai-wpoos-pro' ),
+				'storytelling' => __( 'Narrative coherence and pacing', 'mcp-ai-wpoos-pro' ),
+				'lettering'    => __( 'Clear and readable speech bubbles', 'mcp-ai-wpoos-pro' ),
+				'formatting'   => __( 'Proper page layout and panel flow', 'mcp-ai-wpoos-pro' ),
+				'metadata'     => __( 'Complete series and issue tracking', 'mcp-ai-wpoos-pro' ),
 			),
 			'comic_fields'       => array(
-				'comic_title'    => __( 'Comic Title', 'mcp-ai-wpoos-pro' ),
-				'comic_style'    => __( 'Art Style', 'mcp-ai-wpoos-pro' ),
-				'series_name'   => __( 'Series Name', 'mcp-ai-wpoos-pro' ),
-				'issue_number'  => __( 'Issue Number', 'mcp-ai-wpoos-pro' ),
+				'comic_title'       => __( 'Comic Title', 'mcp-ai-wpoos-pro' ),
+				'comic_style'       => __( 'Art Style', 'mcp-ai-wpoos-pro' ),
+				'series_name'       => __( 'Series Name', 'mcp-ai-wpoos-pro' ),
+				'issue_number'      => __( 'Issue Number', 'mcp-ai-wpoos-pro' ),
 				'reading_direction' => __( 'Reading Direction', 'mcp-ai-wpoos-pro' ),
-				'page_layout'   => __( 'Page Layout', 'mcp-ai-wpoos-pro' ),
-				'description'   => __( 'Synopsis', 'mcp-ai-wpoos-pro' ),
+				'page_layout'       => __( 'Page Layout', 'mcp-ai-wpoos-pro' ),
+				'description'       => __( 'Synopsis', 'mcp-ai-wpoos-pro' ),
 			),
 			'panel_fields'       => array(
-				'panel_number'    => __( 'Panel Number', 'mcp-ai-wpoos-pro' ),
-				'panel_content'   => __( 'Panel Content / Image', 'mcp-ai-wpoos-pro' ),
-				'speech_bubbles'  => __( 'Speech Bubbles', 'mcp-ai-wpoos-pro' ),
-				'panel_layout'    => __( 'Panel Size & Position', 'mcp-ai-wpoos-pro' ),
-				'panel_style'     => __( 'Panel Style (Ink/Color/Pencil)', 'mcp-ai-wpoos-pro' ),
+				'panel_number'   => __( 'Panel Number', 'mcp-ai-wpoos-pro' ),
+				'panel_content'  => __( 'Panel Content / Image', 'mcp-ai-wpoos-pro' ),
+				'speech_bubbles' => __( 'Speech Bubbles', 'mcp-ai-wpoos-pro' ),
+				'panel_layout'   => __( 'Panel Size & Position', 'mcp-ai-wpoos-pro' ),
+				'panel_style'    => __( 'Panel Style (Ink/Color/Pencil)', 'mcp-ai-wpoos-pro' ),
 			),
 			'character_fields'   => array(
-				'character_name'        => __( 'Character Name', 'mcp-ai-wpoos-pro' ),
-				'character_role'        => __( 'Role (Hero, Villain, Sidekick)', 'mcp-ai-wpoos-pro' ),
+				'character_name'         => __( 'Character Name', 'mcp-ai-wpoos-pro' ),
+				'character_role'         => __( 'Role (Hero, Villain, Sidekick)', 'mcp-ai-wpoos-pro' ),
 				'appearance_description' => __( 'Appearance Description', 'mcp-ai-wpoos-pro' ),
-				'personality_traits'   => __( 'Personality Traits', 'mcp-ai-wpoos-pro' ),
-				'reference_image'      => __( 'Reference Image', 'mcp-ai-wpoos-pro' ),
+				'personality_traits'     => __( 'Personality Traits', 'mcp-ai-wpoos-pro' ),
+				'reference_image'        => __( 'Reference Image', 'mcp-ai-wpoos-pro' ),
 			),
 			'script_fields'      => array(
-				'script_title'      => __( 'Script Title', 'mcp-ai-wpoos-pro' ),
-				'script_content'    => __( 'Full Script', 'mcp-ai-wpoos-pro' ),
-				'page_count'        => __( 'Page Count', 'mcp-ai-wpoos-pro' ),
-				'panel_breakdown'   => __( 'Panel Breakdown', 'mcp-ai-wpoos-pro' ),
-				'author'            => __( 'Author / Writer', 'mcp-ai-wpoos-pro' ),
+				'script_title'    => __( 'Script Title', 'mcp-ai-wpoos-pro' ),
+				'script_content'  => __( 'Full Script', 'mcp-ai-wpoos-pro' ),
+				'page_count'      => __( 'Page Count', 'mcp-ai-wpoos-pro' ),
+				'panel_breakdown' => __( 'Panel Breakdown', 'mcp-ai-wpoos-pro' ),
+				'author'          => __( 'Author / Writer', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}
@@ -268,7 +268,7 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			return new WP_Error( 'invalid_cbz', __( 'Invalid CBZ archive', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$comic_pages = array();
+		$comic_pages      = array();
 		$image_extensions = array( 'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp' );
 
 		for ( $i = 0; $i < $zip->num_files; $i++ ) {
@@ -288,9 +288,9 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			}
 
 			$comic_pages[] = array(
-				'page_name' => $file_info['filename'],
-				'filename'  => $filename,
-				'extension' => $extension,
+				'page_name'  => $file_info['filename'],
+				'filename'   => $filename,
+				'extension'  => $extension,
 				'page_order' => $i + 1,
 				'mime_type'  => 'image/' . ( 'jpg' === $extension ? 'jpeg' : $extension ),
 			);
@@ -317,9 +317,9 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			return new WP_Error( 'empty_csv', __( 'CSV file is empty', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$headers  = str_getcsv( array_shift( $lines ) );
-		$scripts  = array();
-		$panels   = array();
+		$headers = str_getcsv( array_shift( $lines ) );
+		$scripts = array();
+		$panels  = array();
 
 		foreach ( $lines as $line ) {
 			if ( empty( trim( $line ) ) ) {
@@ -541,9 +541,9 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			'post_status'    => 'any',
 		);
 
-		$comics   = get_posts( $args );
-		$total    = count( $comics );
-		$panel_count = 0;
+		$comics              = get_posts( $args );
+		$total               = count( $comics );
+		$panel_count         = 0;
 		$panels_with_content = 0;
 
 		foreach ( $comics as $comic ) {
@@ -591,9 +591,9 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			'post_status'    => 'any',
 		);
 
-		$comics       = get_posts( $args );
-		$char_count   = 0;
-		$characters_with_role = 0;
+		$comics                = get_posts( $args );
+		$char_count            = 0;
+		$characters_with_role  = 0;
 		$characters_with_image = 0;
 
 		foreach ( $comics as $comic ) {
@@ -648,9 +648,9 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			'post_status'    => 'any',
 		);
 
-		$comics        = get_posts( $args );
-		$total         = count( $comics );
-		$with_script   = 0;
+		$comics         = get_posts( $args );
+		$total          = count( $comics );
+		$with_script    = 0;
 		$with_breakdown = 0;
 
 		foreach ( $comics as $comic ) {
@@ -731,7 +731,7 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 		// Check series name.
 		if ( ! get_post_meta( $comic_id, '_series_name', true ) ) {
-			$score -= 15;
+			$score   -= 15;
 			$issues[] = 'missing_series';
 		}
 
@@ -754,7 +754,7 @@ class WP_MCP_AI_Comic_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 		// Check content/script.
 		if ( empty( $comic->post_content ) ) {
-			$score -= 15;
+			$score   -= 15;
 			$issues[] = 'missing_content';
 		}
 

@@ -62,7 +62,7 @@ class NV_oOS_Docs_Hub_Rebuild_Job_Source implements Interface_WP_MCP_AI_Cron_Sta
 		}
 
 		// Only admins see this system-level job.
-		$user_id  = $user_id > 0 ? (int) $user_id : (int) get_current_user_id();
+		$user_id = $user_id > 0 ? (int) $user_id : (int) get_current_user_id();
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
 			return array();
 		}
@@ -82,10 +82,10 @@ class NV_oOS_Docs_Hub_Rebuild_Job_Source implements Interface_WP_MCP_AI_Cron_Sta
 			return array();
 		}
 
-		$phase    = (string) $state['phase'];
-		$total    = (int) $state['total'];
+		$phase     = (string) $state['phase'];
+		$total     = (int) $state['total'];
 		$processed = (int) $state['processed'];
-		$progress = $total > 0 ? min( 100, (int) round( ( $processed / $total ) * 100 ) ) : null;
+		$progress  = $total > 0 ? min( 100, (int) round( ( $processed / $total ) * 100 ) ) : null;
 
 		// Map rebuild phase to a normalized status.
 		$terminal_phases = array(

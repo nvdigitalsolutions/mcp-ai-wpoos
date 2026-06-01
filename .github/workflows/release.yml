@@ -246,9 +246,10 @@ jobs:
           # WordPress.org submission, plus the CDN-loading files enumerated
           # in `.distignore` lines 152–164 (transformers, langchain, web-worker).
           BASE_ONLY_EXCLUDES=(
-            --exclude 'addons'
-            --exclude 'core'
-            --exclude 'shared'
+            --exclude '/addons'
+            --exclude '/core'
+            --exclude '/shared'
+            --exclude '/lib'
             --exclude 'includes/class-wp-mcp-ai-langchain-enqueue.php'
             --exclude 'includes/class-wp-mcp-ai-transformers-enqueue.php'
             --exclude 'includes/class-wp-mcp-ai-webworker-enqueue.php'

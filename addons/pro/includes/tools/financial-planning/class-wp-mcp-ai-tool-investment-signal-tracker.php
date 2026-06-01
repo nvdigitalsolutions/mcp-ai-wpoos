@@ -238,6 +238,14 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 				return $this->update_signal( $arguments, $current_user_id );
 
 			case 'list':
+				// Only admins may view other users' signals.
+				if ( $target_user_id !== $current_user_id
+					&& ! user_can( $current_user_id, 'manage_options' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_forbidden',
+						__( 'You do not have permission to view another user\'s signals.', 'mcp-ai-wpoos-pro' )
+					);
+				}
 				return $this->list_signals( $target_user_id );
 
 			case 'evaluate':

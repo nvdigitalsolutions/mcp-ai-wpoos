@@ -129,7 +129,7 @@ class WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker implements WP_MCP_AI_Tool_
 	 * {@inheritdoc}
 	 */
 	public function get_required_capability() {
-		return 'edit_posts';
+		return 'manage_options';
 	}
 
 	/**

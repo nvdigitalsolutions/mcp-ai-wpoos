@@ -66,23 +66,23 @@ class NV_oOS_Docs_Hub_Rebuild_State {
 	public static function get() {
 		$raw  = get_option( self::OPTION_KEY, array() );
 		$base = array(
-			'job_id'          => '',
-			'phase'           => self::PHASE_IDLE,
-			'cursor'          => 0,
-			'total'           => 0,
-			'processed'       => 0,
-			'errors'          => array(),
-			'warnings'        => array(),
-			'started_at'      => 0,
-			'updated_at'      => 0,
-			'finished_at'     => 0,
-			'phase_timings'   => array(),
-			'sync'            => false,
-			'cap_hit'         => false,
-			'last_error'      => '',
-			'duration_ms'     => 0,
-			'pages'           => 0,
-			'broken_links'    => 0,
+			'job_id'        => '',
+			'phase'         => self::PHASE_IDLE,
+			'cursor'        => 0,
+			'total'         => 0,
+			'processed'     => 0,
+			'errors'        => array(),
+			'warnings'      => array(),
+			'started_at'    => 0,
+			'updated_at'    => 0,
+			'finished_at'   => 0,
+			'phase_timings' => array(),
+			'sync'          => false,
+			'cap_hit'       => false,
+			'last_error'    => '',
+			'duration_ms'   => 0,
+			'pages'         => 0,
+			'broken_links'  => 0,
 		);
 
 		if ( ! is_array( $raw ) ) {
@@ -101,9 +101,9 @@ class NV_oOS_Docs_Hub_Rebuild_State {
 	 * @return array The new state.
 	 */
 	public static function update( $patch ) {
-		$current             = self::get();
-		$next                = array_merge( $current, (array) $patch );
-		$next['updated_at']  = time();
+		$current            = self::get();
+		$next               = array_merge( $current, (array) $patch );
+		$next['updated_at'] = time();
 		update_option( self::OPTION_KEY, $next, false );
 		return $next;
 	}

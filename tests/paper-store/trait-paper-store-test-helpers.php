@@ -10,7 +10,10 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+	// ABSPATH not yet defined — this trait is being loaded before WordPress.
+	// Return early without defining the trait. The bootstrap should load this
+	// file after the WP PHPUnit bootstrap (which defines ABSPATH).
+	return;
 }
 
 /**

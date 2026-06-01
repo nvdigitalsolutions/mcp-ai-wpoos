@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.24  
-**Release Date:** 2026-05-28
+**Version:** 1.1.25  
+**Release Date:** 2026-05-31
 
-**Latest Updates:** May 28, 2026 (v1.1.24) — See [§ Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026) (Bug-fix & stabilisation sweep: Paper Store load order, Chat SPA duplicate messages & SSE protocol fixes, skill manager canonical envelope, CVE patches, assistant tool presets coverage, CLI coverage enhancements, Paper Store admin CRUD, folder README convention completion).
+**Latest Updates:** May 31, 2026 (v1.1.25) — See [§ Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026) (Unified Blueprint System: 55 pre-built assistants across 25 toolkits. Cloudways Pro Toolkit: v2 API client + 60 server/app management tools + dashboard. CRM Toolkit Phases A–E: 70+ tools for lead management, multi-channel triage, sequences, command center, compliance. Chat UI enhancements: profile card, stop generation, feedback, code copy, dark mode, prompts, search. Pro Toolkit MCP Server settings pages Phases A–C. Unix-theory tool reorganisation Phase 4–5 complete. Build infrastructure hardening).
 
-**Previous Updates (v1.1.23):** May 26, 2026 (v1.1.23) — See [§ Latest Updates (v1.1.23 — May 2026)](#-latest-updates-v1123--may-2026) (Zed-Inspired SPA Architecture: React admin, threads, profiles, checkpoints, @-mentions, multi-model comparison, collaborative presence. Antigravity Interactions API rewrite. TypeScript upgrade + orchestration toggles. Comic Reader + Media Studio v0.3.0 addons. 30+ reliability fixes).
+**Previous Updates (v1.1.24):** May 28, 2026 (v1.1.24) — See [§ Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026) (Bug-fix & stabilisation sweep: Paper Store load order, Chat SPA duplicate messages & SSE protocol fixes, skill manager canonical envelope, CVE patches, assistant tool presets coverage, CLI coverage enhancements, Paper Store admin CRUD, folder README convention completion).
 
 **Previous Updates (v1.1.22):** May 23, 2026 (v1.1.22) — See [§ Latest Updates (v1.1.22 — May 2026)](#-latest-updates-v1122--may-2026) (May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup, Gemini I/O 2026 Refresh, Security Fixes).
 
@@ -34,7 +34,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026)
+- [🆕 Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -120,6 +120,17 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.25)
+
+- 🧩 **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits — one-click import for CRM, Cloudways, Healthcare, Aerlinn, WooCommerce, Content, DevOps, and 20+ more. Shared blueprint installer with JSON Schema validation, deduplication, and per-toolkit manifests. Healthcare blueprint import tool with HIPAA-aware templates.
+- ☁️ **Cloudways Pro Toolkit.** 60 AI tools for server and application management via Cloudways API v2. OAuth-authenticated client with token caching. Server monitoring, scaling, backups, bot protection, SSL, SSH keys, DNS, CDN. Admin dashboard with real-time status and quick actions.
+- 🏢 **CRM Toolkit Phases A–E Complete.** 70+ tools: lead management, multi-channel triage (email/SMS/chat), outreach sequences, integration hooks (Phase C), extensibility hooks (Phase D), GDPR/CCPA compliance (Phase E). Command Center with dashboard widgets. Per-CPT research pages for leads and deals. Analytics dashboard with pipeline waterfall, conversion funnel, sequence performance. Full REST API.
+- 💬 **Chat UI Enhancements.** Profile card with avatar/model/capability. Stop generation button during streaming. Thumbs-up/down feedback widget with Continual Harness integration. Code copy button on every code block. Dark mode toggle with system-default + localStorage persistence. Saved prompts panel with categories and search.
+- 📂 **Unix-Theory Tool Reorganisation Phase 4–5 Complete.** All Pro tools reorganised into modular Unix-theory folders. Phase 4 + Healthcare B–E + Phase 5 migration finished. Stale `require_once` paths and hardcoded paths in registry + tests fixed.
+- 🎛 **Pro Toolkit MCP Server Settings Pages.** Phases A–C: per-toolkit server configuration, detail views, audit logs, and discovery endpoint management.
+- 🏥 **Aerlinn + Healthcare Blueprints.** 4 Aerlinn assistants (Bespoke Concierge, Luxeseek, Business Advisory, Career Coach). Healthcare blueprint import tool with HIPAA-aware templates and medical record tool pre-selection.
+- 🔧 **Build Infrastructure Hardening.** `workflow_dispatch` commits built assets back to branch. `build/.gitkeep` restored. WSL auto-detection in build scripts. Alpha-working branch added to workflow triggers.
+
 ### ✨ What's New at a Glance (v1.1.24)
 
 - 🧹 **Bug-Fix & Stabilisation Sweep.** Paper Store Pro interface load order fix (deferred to `wp_mcp_ai_bootstrapped` hook). Chat SPA duplicate-message and SSE protocol-mismatch fixes. Markdown rendering enabled in Chat SPA responses.
@@ -178,9 +189,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~635 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~830 built-in tools** (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~765 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal lifecycle) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~960 built-in tools** (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~830 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~960 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal lifecycle, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
 **Addon Ecosystem:** NV oOS ships a growing family of installable addons: **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Toolkit Shell / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. See [`docs/addons/toolkit-spa-blueprint.md`](docs/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
@@ -247,8 +258,8 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **10 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Kimi (Moonshot AI), Embedded
-- **~830 tool classes** (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
-- **34 REST controllers** (16 base + 18 pro) under the `mcp-ai/v1` namespace
+- **~960 tool classes** (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
 - **Toolkit MCP servers** — per-toolkit JSON-RPC 2.0 servers exposed under `/wp-json/mcp-ai-pro/v1/mcp/{slug}`; discoverable at `/.well-known/mcp`
@@ -366,6 +377,22 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.25 — May 2026)
+
+### May 29–31, 2026 — Unified Blueprint System, Cloudways Toolkit, CRM Toolkit (Phases A–E), Chat UI Enhancements, Unix-Theory Reorg Phase 4–5 🧩☁️🏢💬📂
+
+- ✅ **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits (`addons/pro/includes/blueprints/`). Shared `WP_MCP_AI_Blueprint_Installer` class with JSON Schema validation, slug-based deduplication, tool resolution, and capability mapping. Blueprint manifest format: JSON with slug, name, description, toolkit, system_prompt, model, temperature, tools array, capability_profile, icon, version. Post-import hook `wp_mcp_ai_blueprint_imported`. Programmatic import via `blueprint_import` tool (`manage_options`). Full doc: [`docs/features/unified-blueprint-system.md`](docs/features/unified-blueprint-system.md).
+- ✅ **Cloudways Pro Toolkit.** 60 AI-powered tools (`addons/pro/includes/tools/cloudways/`) wrapping the Cloudways API v2. `WP_MCP_AI_Cloudways_Client` singleton — OAuth 2.0 token exchange, automatic refresh, token caching in `wp_mcp_ai_settings`, typed `WP_Error` mapping (401/429/404). Helper functions: `wp_mcp_ai_is_cloudways_toolkit_enabled()`, `wp_mcp_ai_cloudways_has_credentials()`, `wp_mcp_ai_cloudways_param_*()` shared schema fragments. Tool categories: Server Management (~15), Application Management (~15), Security (~10), Backups & Monitoring (~10), Team & Access (~5), DNS & Domains (~5). Admin dashboard: Server Overview, Application Grid, Quick Actions, Usage Charts, Alert Feed. Full doc: [`docs/features/cloudways-toolkit.md`](docs/features/cloudways-toolkit.md).
+- ✅ **CRM Toolkit Phases A–E Complete.** 70+ tools (`addons/pro/includes/tools/crm/`). Phase A — Lead Management (~20 tools): capture, score, enrich, dedup, segment, import/export, timeline, assignment, status transitions. Phase B — Multi-channel Triage (~15 tools): email/SMS/chat routing, auto-responders, sentiment analysis, priority queue, channel health. Phase C — Integration Hooks (~10 tools): webhook receiver/dispatcher, external CRM sync (HubSpot, Salesforce), Zapier bridge, integration status. Phase D — Extensibility (~10 tools): custom field mapping, workflow triggers, plugin bridge, extension registration. Phase E — Compliance (~15 tools): GDPR export/delete, CCPA report, consent audit, retention check, data inventory. Admin interface: Command Center (dashboard widgets, quick actions, activity feed), per-CPT Research Pages (leads, deals, custom), Analytics Dashboard (pipeline waterfall, conversion funnel, sequence performance, team performance). REST API at `/mcp-ai-pro/v1/crm/`. Settings: `crm_leads_cpt`, `crm_deals_cpt`, `crm_default_pipeline`, `crm_email_provider`, `crm_sms_provider`, `crm_data_retention_days`. Full doc: [`docs/features/crm-toolkit.md`](docs/features/crm-toolkit.md).
+- ✅ **Chat UI Enhancements — 7 Features (Base + Pro).** Profile card (collapsible, auto-hide on scroll, avatar/model/capability). Stop generation (aborts SSE, preserves partial response, `wp_mcp_ai_chat_stop_generation` event). Feedback widget (thumbs-up/down, post meta storage, Continual Harness integration). Code copy button (clipboard API + `execCommand` fallback). Dark mode toggle (`prefers-color-scheme` default, `localStorage` persistence, CSS custom properties). Saved prompts panel (star messages, categories, quick insert). Prompt search (debounced 150ms, `Ctrl+K` shortcut, Fuse.js in React SPA). All features available in both base jQuery (`assets/js/chat.js`) and Pro React SPA (`addons/chat-spa/`). Full doc: [`docs/features/chat-ui-enhancements.md`](docs/features/chat-ui-enhancements.md).
+- ✅ **Unix-Theory Tool Reorganisation — Phase 4–5 Complete.** Pro tools (`addons/pro/includes/tools/`) reorganised into modular Unix-theory folders. Phase 4 (remaining tool categories) + Healthcare B–E + Phase 5 migration complete. Stale `require_once` paths fixed across tool registry and loader (PRs #5184, #5187, #5188). Hardcoded file paths in tool registry and tests resolved.
+- ✅ **Pro Toolkit MCP Server Settings Pages — Phases A–C.** Per-toolkit MCP server configuration (`nvoos-pro-toolkit-mcp-servers` admin page): Servers tab (list + status), Detail tab (per-server config), Audit tab (connection logs), Discovery tab (endpoint management). Configurable at Settings → Toolkit MCP Servers.
+- ✅ **Aerlinn + Healthcare Blueprints.** 4 Aerlinn assistant blueprints: Bespoke Concierge (luxury travel/lifestyle), Luxeseek (high-end shopping/procurement), Business Advisory (executive strategy/operations), Career Coach (professional development/transitions). Healthcare blueprint import tool with HIPAA-aware system prompt templates, medical record tool pre-selection, compliance audit trail initialization, and PHI handling configuration.
+- ✅ **Build Infrastructure Hardening.** `workflow_dispatch` in `build-assets` workflow now commits built assets back to the calling branch (PR #5180). `build/.gitkeep` restored and build-assets workflow hardened (PR #5181). WSL auto-detection in build scripts for cross-platform compatibility (PR #5165). Alpha-working branch added to build-assets workflow triggers (PR #5179).
+- 📦 **Versioning** — bumped to **1.1.25** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, and `README.md`. Provider count: **11** first-class language-model providers. Tool count updated to reflect new Cloudways (+60) and CRM (+70) tools (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ---
 
@@ -2295,11 +2322,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~960 tools (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 - ✅ Complete plugin with base + Pro features combined
-- ✅ All ~830 built-in tools ready to use (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ All ~960 built-in tools ready to use (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -2528,12 +2555,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (9 providers, ~830 tool classes, 34 REST controllers)
+- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (11 providers, ~960 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~830 tools documented (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~960 tools documented (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
