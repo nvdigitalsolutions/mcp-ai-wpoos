@@ -261,3 +261,7 @@ tests/wp-tests-config-local.php
 # tracked, but ignore per-user local overrides.
 .zed/*.local.json
 .zed/.local/
+docker/laravel/app/*
+docker/craft/app/*
+!docker/laravel/app/.gitkeep
+!docker/craft/app/.gitkeep
