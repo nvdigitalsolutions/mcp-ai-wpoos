@@ -11209,10 +11209,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return WP_REST_Response|WP_Error
 		 */
 		public function handle_chat_request_oos( WP_REST_Request $request ) {
+				// Detect team / profession prefixes before resolving to an assistant ID.
+				// The OOS engine delegates multi-agent team orchestration to the
+				// existing WordPress-specific workflow; profession-only requests
+				// are enriched with profession metadata and then flow through OOS.
+				$raw_assistant_id = $request->get_param( 'assistant_id' );
+				$team_id          = $this->extract_team_id( $raw_assistant_id );
+				$profession_id    = $this->extract_profession_id( $raw_assistant_id );
+
+				// Unified team requests ("unified_team_123") use the full multi-agent
+				// orchestration path. The OOS ChatOrchestrator does not yet implement
+				// team coordination, so we delegate to the existing handler.
+				if ( $team_id ) {
+					return $this->handle_unified_team_request( $request, $team_id );
+				}
+
 				// Translate WordPress types to OOS domain types.
-				$assistant_id = $this->resolve_assistant_id(
-					$request->get_param( 'assistant_id' )
-				);
+				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 
 				$user_id = get_current_user_id();
 
@@ -11220,6 +11233,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration(
 					$assistant_id
 				);
+
+				// Merge profession configuration when testing a profession.
+				if ( $profession_id ) {
+					$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
+				}
 
 				// Validate assistant access.
 			if ( $assistant_id ) {
