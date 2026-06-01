@@ -1,3 +1,4 @@
+<?php
 /**
  * Uninstall handler for NV oOS Cloudways Dashboard.
  *
