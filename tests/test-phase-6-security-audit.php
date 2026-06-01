@@ -154,7 +154,7 @@ class Test_Phase_6_Security_Audit extends WP_UnitTestCase {
 		$nonce  = wp_create_nonce( $action );
 
 		// Valid nonce should verify.
-		$this->assertTrue( wp_verify_nonce( $nonce, $action ), 'Valid nonce should verify' );
+		$this->assertSame( 1, wp_verify_nonce( $nonce, $action ), 'Valid nonce should verify' );
 
 		// Invalid nonce should not verify.
 		$invalid_nonce = 'invalid_nonce_123';

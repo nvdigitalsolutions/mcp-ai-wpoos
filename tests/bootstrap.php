@@ -159,11 +159,44 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', false );
 }
 
+// ============================================================
+// PHPUnit 11 Compatibility: parseTestMethodAnnotations() was
+// removed in PHPUnit 10+. The wp-phpunit abstract-testcase.php
+// still calls it. Patch it at bootstrap time.
+// ============================================================
+if ( ! class_exists( 'WP_MCP_AI_PHPUnit11_Compat' ) ) {
+	class WP_MCP_AI_PHPUnit11_Compat {
+		public static function parseTestMethodAnnotations( $cn, $mn = null ) {
+			return array( 'class' => array(), 'method' => array() );
+		}
+	}
+}
+
+$abstract_testcase = $plugin_root . '/vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php';
+if ( file_exists( $abstract_testcase ) ) {
+	$atc = file_get_contents( $abstract_testcase );
+	$atc = str_replace(
+		'\PHPUnit\Util\Test::parseTestMethodAnnotations',
+		'\WP_MCP_AI_PHPUnit11_Compat::parseTestMethodAnnotations',
+		$atc
+	);
+	// PHPUnit 11 removed TestCase::getName(); use name() instead
+	$atc = str_replace(
+		'$this->getName( false )',
+		'$this->name()',
+		$atc
+	);
+	file_put_contents( $abstract_testcase, $atc );
+}
+// ============================================================
+
 require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
-require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
+
+// NOTE: paper-store trait loaded after WP bootstrap below
+// (it has an ABSPATH guard that requires WordPress to be loaded first)
 
 /**
  * Manually load the plugin being tested.
@@ -179,6 +212,23 @@ function wp_mcp_ai_manually_load_plugin() {
 	$saas_controller = dirname( __DIR__ ) . '/addons/saas-controller/nvoos-saas-controller.php';
 	if ( file_exists( $saas_controller ) ) {
 		require $saas_controller;
+	}
+
+	// Ensure security/ISO classes are loaded (loader.php may stop short
+	// if intermediate class instantiations fail in CLI context).
+	$security_files = array(
+		'includes/class-wp-mcp-ai-security-audit.php',
+		'includes/class-wp-mcp-ai-security-training.php',
+		'includes/class-wp-mcp-ai-supplier-security.php',
+		'includes/class-wp-mcp-ai-asset-inventory.php',
+		'includes/class-wp-mcp-ai-information-labelling.php',
+		'includes/class-wp-mcp-ai-incident-learning.php',
+	);
+	foreach ( $security_files as $file ) {
+		$path = dirname( __DIR__ ) . '/' . $file;
+		if ( file_exists( $path ) ) {
+			require_once $path;
+		}
 	}
 }
 
@@ -257,17 +307,25 @@ function wp_mcp_ai_setup_test_environment() {
 	// Set auth cookie.
 	$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $admin_id, time() + HOUR_IN_SECONDS, 'logged_in' );
 
-	// Enable all capabilities for admin user in tests.
+	// Store admin ID for the capability filter.
+	$GLOBALS['wp_mcp_ai_test_admin_id'] = $admin_id;
+
+	// Grant full capabilities to the test admin user only.
 	add_filter(
 		'user_has_cap',
-		function ( $allcaps ) {
-			$allcaps['manage_options']    = true;
-			$allcaps['edit_posts']        = true;
-			$allcaps['upload_files']      = true;
-			$allcaps['edit_others_posts'] = true;
-			$allcaps['delete_posts']      = true;
+		function ( $allcaps, $caps, $args, $user ) {
+			$admin_id = isset( $GLOBALS['wp_mcp_ai_test_admin_id'] ) ? $GLOBALS['wp_mcp_ai_test_admin_id'] : 0;
+			if ( $user instanceof WP_User && (int) $user->ID === (int) $admin_id ) {
+				$allcaps['manage_options']    = true;
+				$allcaps['edit_posts']        = true;
+				$allcaps['upload_files']      = true;
+				$allcaps['edit_others_posts'] = true;
+				$allcaps['delete_posts']      = true;
+			}
 			return $allcaps;
-		}
+		},
+		10,
+		4
 	);
 }
 
@@ -285,8 +343,14 @@ function wp_mcp_ai_init_test_database_tables() {
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
 
+// Wrap WP PHPUnit bootstrap in output buffering to prevent output
+// from the WP test framework (WP_PHPUnit_Util_Getopt echoes) from
+// interfering with PHPUnit 11's test runner.
+ob_start();
 require $_tests_dir . '/includes/bootstrap.php';
+ob_end_clean();
 
 // Helpers that depend on classes provided by the WP test bootstrap (e.g.
 // `WP_Ajax_UnitTestCase`) must be loaded after it.
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';
+require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';

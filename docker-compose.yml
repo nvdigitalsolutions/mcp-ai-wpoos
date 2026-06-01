@@ -17,7 +17,7 @@ services:
 
   # ── WordPress Application Server ─────────────────────────
   wordpress:
-    image: wordpress:6.7-php8.2-apache
+    image: wordpress:6.9-php8.2-apache
     container_name: oos-wp
     restart: unless-stopped
     depends_on:

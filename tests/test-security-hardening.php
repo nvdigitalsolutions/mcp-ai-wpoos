@@ -133,8 +133,8 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 		$test_input = 'test<script>alert(1)</script>';
 		$sanitized  = sanitize_key( $test_input );
 
-		$this->assertNotContains( '<', $sanitized, 'sanitize_key should remove HTML tags' );
-		$this->assertNotContains( '>', $sanitized, 'sanitize_key should remove HTML tags' );
+		$this->assertStringNotContainsString( '<', $sanitized, 'sanitize_key should remove HTML tags' );
+		$this->assertStringNotContainsString( '>', $sanitized, 'sanitize_key should remove HTML tags' );
 	}
 
 	/**
@@ -175,7 +175,7 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 		$test_input = '<script>alert("xss")</script>normal text';
 		$sanitized  = sanitize_text_field( $test_input );
 
-		$this->assertNotContains( '<script>', $sanitized, 'sanitize_text_field should remove script tags' );
+		$this->assertStringNotContainsString( '<script>', $sanitized, 'sanitize_text_field should remove script tags' );
 		$this->assertStringContainsString( 'normal text', $sanitized, 'sanitize_text_field should preserve safe text' );
 	}
 
