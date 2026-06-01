@@ -99,6 +99,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interf
 				'components'      => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of template components (header, body, buttons with parameters).', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'object' ),
 				),
 			),
 			'required'             => array( 'access_token', 'phone_number_id', 'to', 'template_name' ),

@@ -375,15 +375,20 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		$cleanup_hooks = array(
 			'wp_mcp_ai_check_license',
 			'wp_mcp_ai_audit_trail_prune',
-			'wp_mcp_ai_approval_queue_cleanup',
-			'wp_mcp_ai_asset_discovery',
-			'wp_mcp_ai_async_job_queue',
-			'wp_mcp_ai_async_job_queue_cleanup',
+			'wp_mcp_ai_approval_cleanup',
+			'wp_mcp_ai_cleanup_async_results',
 			'wp_mcp_ai_dlq_cleanup',
 			'wp_mcp_ai_cleanup_token_tracking',
-			'wp_mcp_ai_annual_training_reminder',
-			'wp_mcp_ai_dependency_scan',
 			'wp_mcp_ai_cleanup_job_cache',
+			'wp_mcp_ai_cleanup_old_errors',
+			'wp_mcp_ai_cleanup_slash_audit',
+			'wp_mcp_ai_memory_tier_sweep',
+			'wp_mcp_ai_markup_cleanup',
+			'wp_mcp_ai_harness_eval_tick',
+			'wp_mcp_ai_skill_catalogue_refresh',
+			'wp_mcp_ai_nv_cloud_balance_refresh',
+			'wp_mcp_ai_team_budget_reset_daily',
+			'wp_mcp_ai_hourly_forecast_check',
 		);
 
 		foreach ( $cleanup_hooks as $hook ) {

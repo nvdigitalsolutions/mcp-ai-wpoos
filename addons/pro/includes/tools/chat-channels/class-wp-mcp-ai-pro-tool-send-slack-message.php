@@ -78,6 +78,7 @@ class WP_MCP_AI_Pro_Tool_Send_Slack_Message implements WP_MCP_AI_Tool_Interface,
 				'blocks'    => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of Block Kit blocks for rich formatting.', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'object' ),
 				),
 				'thread_ts' => array(
 					'type'        => 'string',
