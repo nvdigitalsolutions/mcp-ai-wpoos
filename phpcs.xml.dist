@@ -20,6 +20,7 @@
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
 <exclude-pattern>*/lib/*</exclude-pattern>
+<exclude-pattern>*/docker/*</exclude-pattern>
 <!--
 	The phpcs/ directory contains custom PHPCS sniff classes which follow the
 	upstream PHPCS naming convention (CamelCase class files, camelCase variables
