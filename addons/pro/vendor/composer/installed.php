@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/pro-addon',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '933810a584e1ef21059a99045307603557542bb6',
+        'reference' => 'bfcfd4981731350578e9c6de7677234b192fc889',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -94,7 +94,7 @@
         'mcp-ai-wpoos/pro-addon' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '933810a584e1ef21059a99045307603557542bb6',
+            'reference' => 'bfcfd4981731350578e9c6de7677234b192fc889',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
