@@ -149,22 +149,22 @@ class Test_Docs_Hub_Scanner extends WP_UnitTestCase {
 
 		$entries = array(
 			array(
-				'path' => '/docs/readme.md',
+				'path'          => '/docs/readme.md',
 				'relative_path' => 'docs/readme.md',
-				'source' => 'base',
-				'plugin_name' => 'Test',
+				'source'        => 'base',
+				'plugin_name'   => 'Test',
 			),
 			array(
-				'path' => '/docs/internal.md',
+				'path'          => '/docs/internal.md',
 				'relative_path' => 'docs/internal.md',
-				'source' => 'base',
-				'plugin_name' => 'Test',
+				'source'        => 'base',
+				'plugin_name'   => 'Test',
 			),
 			array(
-				'path' => '/docs/public.md',
+				'path'          => '/docs/public.md',
 				'relative_path' => 'docs/public.md',
-				'source' => 'base',
-				'plugin_name' => 'Test',
+				'source'        => 'base',
+				'plugin_name'   => 'Test',
 			),
 		);
 

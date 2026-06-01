@@ -413,6 +413,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$auth_type = 'custom_header';
 			}
 
+			// For Form Data Source connections, default to application_password auth.
+			if ( 'form_data_source' === $connection_type ) {
+				$auth_type = 'application_password';
+			}
+
 			// For EZuite ERP connections, always use custom_header auth.
 			if ( 'ezuite_erp' === $connection_type ) {
 				$auth_type = 'custom_header';
@@ -1311,6 +1316,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
 								<?php esc_html_e( 'Generic REST API', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="form_data_source" <?php selected( $connection_type, 'form_data_source' ); ?>>
+								<?php esc_html_e( 'Form Data Source (JFB / Elementor)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="isams" <?php selected( $connection_type, 'isams' ); ?>>
 								<?php esc_html_e( 'iSAMS (School Management)', 'mcp-ai-wpoos-pro' ); ?>

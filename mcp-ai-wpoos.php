@@ -2,8 +2,8 @@
 /**
  * Plugin Name: NV Digital Open Operator System (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with 10+ AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare & Ollama). Includes 230+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top.
- * Version: 1.1.24
+ * Description: AI Assistant framework with 13 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama). Includes 250+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top.
+ * Version: 1.1.25
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -107,6 +107,7 @@ require_once __DIR__ . '/includes/bootstrap/hooks.php';
 require_once __DIR__ . '/includes/bootstrap/loader.php';
 require_once __DIR__ . '/includes/bootstrap/activation.php';
 require_once __DIR__ . '/includes/class-wp-mcp-ai-plugin.php';
+require_once __DIR__ . '/includes/bootstrap/oos-bridge.php';
 
 // Register lifecycle hooks (must reference WP_MCP_AI_FILE, defined above).
 register_activation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_activate' );
@@ -116,4 +117,14 @@ register_uninstall_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_uninstall' );
 // Boot the plugin on plugins_loaded.
 if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
+}
+
+// Load plugin textdomain for bundled translations.
+add_action( 'init', 'wp_mcp_ai_load_textdomain' );
+function wp_mcp_ai_load_textdomain() {
+	load_plugin_textdomain(
+		'mcp-ai-wpoos',
+		false,
+		dirname( plugin_basename( WP_MCP_AI_FILE ) ) . '/languages/'
+	);
 }

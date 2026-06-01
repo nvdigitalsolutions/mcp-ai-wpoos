@@ -780,25 +780,25 @@ class NV_oOS_Docs_Hub_Remote_Repo {
 			// Resolve via dns_get_record so we honour both A (IPv4) and AAAA (IPv6) records.
 			// Every returned address must pass the public-range filter, and we then pin
 			// the first valid candidate via CURLOPT_RESOLVE to defeat DNS rebinding.
-			try {
-				$resolved_ip = $this->resolve_public_ip( $host );
-			} catch ( \Throwable $e ) {
-				return new WP_Error(
-					'nvoos_docs_hub_dns_failed',
-					sprintf(
-						/* translators: %s: error message */
-						__( 'DNS resolution error for %s.', 'nvoos-docs-hub' ),
-						esc_html( $host )
-					)
-				);
-			}
-			if ( is_wp_error( $resolved_ip ) ) {
-				return $resolved_ip;
-			}
+		try {
+			$resolved_ip = $this->resolve_public_ip( $host );
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'nvoos_docs_hub_dns_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'DNS resolution error for %s.', 'nvoos-docs-hub' ),
+					esc_html( $host )
+				)
+			);
+		}
+		if ( is_wp_error( $resolved_ip ) ) {
+			return $resolved_ip;
+		}
 
 		// --- DNS-rebind defence: pin the resolved IP at the cURL level ---
-		$port          = wp_parse_url( $url, PHP_URL_PORT );
-		$port          = $port ? (int) $port : 443;
+		$port = wp_parse_url( $url, PHP_URL_PORT );
+		$port = $port ? (int) $port : 443;
 		// CURLOPT_RESOLVE syntax differs for IPv6: hostname:port:[ipv6] (the IP must be bracketed).
 		$is_ipv6       = false !== strpos( $resolved_ip, ':' );
 		$resolve_entry = $host . ':' . $port . ':' . ( $is_ipv6 ? '[' . $resolved_ip . ']' : $resolved_ip );

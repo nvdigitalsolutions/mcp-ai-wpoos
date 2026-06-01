@@ -305,10 +305,12 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'jest.config.js' \
         --exclude 'esbuild.config.js' \
         --exclude 'docker-compose.yml' \
+        --exclude '/docker' \
         --exclude 'patches' \
         --exclude 'docs' \
-        --exclude 'core' \
-        --exclude 'shared' \
+        --exclude '/core' \
+        --exclude '/shared' \
+        --exclude '/lib' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \
@@ -774,10 +776,11 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'jest.config.js' \
         --exclude 'esbuild.config.js' \
         --exclude 'docker-compose.yml' \
+        --exclude '/docker' \
         --exclude 'patches' \
         --exclude 'docs' \
-        --exclude 'core' \
-        --exclude 'shared' \
+        --exclude '/core' \
+        --exclude '/shared' \
         --exclude 'archive' \
         --exclude 'packages' \
         --exclude '/src' \

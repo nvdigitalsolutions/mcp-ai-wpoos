@@ -3,16 +3,18 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_SRC="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORKSPACE_ROOT="$(cd "${PLUGIN_SRC}/.." && pwd)"
-WP_ROOT="${WP_ROOT:-${WORKSPACE_ROOT}/wordpress}"
-WP_URL="${WORDPRESS_SITE_URL:-http://localhost}"
-WP_TITLE="${WORDPRESS_SITE_TITLE:-WordPress Development Site}"
+# Place WordPress inside the workspace so it survives container rebuilds
+WP_ROOT="${WP_ROOT:-${PLUGIN_SRC}/wordpress}"
+WP_URL="${WORDPRESS_SITE_URL:-http://localhost:8000}"
+WP_TITLE="${WORDPRESS_SITE_TITLE:-NV oOS Dev}"
 WP_ADMIN_USER="${WORDPRESS_ADMIN_USER:-admin}"
 WP_ADMIN_PASS="${WORDPRESS_ADMIN_PASSWORD:-password}"
 WP_ADMIN_EMAIL="${WORDPRESS_ADMIN_EMAIL:-admin@example.com}"
 DB_NAME="${WORDPRESS_DB_NAME:-wordpress}"
-DB_USER="${WORDPRESS_DB_USER:-root}"
-DB_PASS="${WORDPRESS_DB_PASSWORD:-root}"
+DB_USER="${WORDPRESS_DB_USER:-wordpress}"
+DB_PASS="${WORDPRESS_DB_PASSWORD:-wordpress}"
+# When running inside the devcontainer compose setup, the DB host is
+# the 'db' service. Fall back to 127.0.0.1 for standalone use.
 DB_HOST="${WORDPRESS_DB_HOST:-127.0.0.1}"
 
 WP_FLAGS=()

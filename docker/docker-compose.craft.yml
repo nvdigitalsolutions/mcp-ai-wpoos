@@ -1,0 +1,93 @@
+# ───────────────────────────────────────────────
+# oOS Engine → Craft CMS Integration Dev Environment
+# ───────────────────────────────────────────────
+# Start:  docker compose -f docker/docker-compose.craft.yml up -d
+# Stop:   docker compose -f docker/docker-compose.craft.yml down -v
+# Shell:  docker compose -f docker/docker-compose.craft.yml exec app bash
+
+name: oos-craft
+
+services:
+  # ── PHP Application Server ──────────────────
+  app:
+    build:
+      context: ..
+      dockerfile: docker/craft/Dockerfile
+    container_name: oos-craft-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8002:8080"
+    environment:
+      CRAFT_ENVIRONMENT: dev
+      CRAFT_APP_ID: CraftCMS--12345
+      CRAFT_SECURITY_KEY: dev-only-change-in-production-abcdef123456
+      CRAFT_DB_DRIVER: mysql
+      CRAFT_DB_SERVER: db
+      CRAFT_DB_PORT: 3306
+      CRAFT_DB_DATABASE: craft
+      CRAFT_DB_USER: craft
+      CRAFT_DB_PASSWORD: craft
+      CRAFT_DB_SCHEMA: public
+      CRAFT_DB_TABLE_PREFIX: ""
+      CRAFT_DEV_MODE: "true"
+      CRAFT_ALLOW_ADMIN_CHANGES: "true"
+      CRAFT_DISALLOW_ROBOTS: "true"
+      CRAFT_SITE_URL: http://localhost:8002
+      PRIMARY_SITE_URL: http://localhost:8002
+      REDIS_HOST: redis
+      # oOS engine settings
+      OOS_DEFAULT_PROVIDER: openai
+      OOS_DEFAULT_MODEL: gpt-4o-mini
+      OOS_CACHE_DURATION: 3600
+      OOS_QUEUE_TTR: 300
+      OOS_STORAGE_VOLUME: uploads
+      OOS_MESH_API_KEY:
+    volumes:
+      # Mount the whole oOS project so lib/{core,craft-adapter} are symlinked
+      - ../:/workspace/oos:ro
+      # Craft CMS app at docker/craft/app/
+      - ./craft/app:/var/www/html
+      - craft_storage:/var/www/html/storage
+      - craft_vendor:/var/www/html/vendor
+      - craft_cpresources:/var/www/html/web/cpresources
+    working_dir: /var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ── MySQL 8.0 ───────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: oos-craft-db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: craft
+      MYSQL_USER: craft
+      MYSQL_PASSWORD: craft
+    volumes:
+      - craft_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pcraft", "--ssl-mode=DISABLED"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis (cache + queue) ──────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: oos-craft-redis
+    volumes:
+      - craft_redis:/data
+
+volumes:
+  craft_db:
+  craft_redis:
+  craft_storage:
+  craft_vendor:
+  craft_cpresources:

@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **May 2026**
+> Last reviewed: **May 31, 2026**
 
 ### Related Files
 
@@ -104,6 +104,7 @@ mcp-ai-wpoos/
 │   │   └─ widgets/            ← Dashboard widget classes
 │   │
 │   ├─ assistants/             ← Assistant CPT registration and metaboxes
+│   ├─ blueprints/             ← Unified blueprint installer + import tools
 │   ├─ services/               ← Business logic (20+ service classes)
 │   │   └─ class-wp-mcp-ai-transcript-mining-job.php  ← Retroactive transcript mining background job
 │   ├─ rest/                   ← REST controllers
@@ -133,12 +134,16 @@ mcp-ai-wpoos/
 ├─ addons/pro/
 │   ├─ mcp-ai-wpoos-pro.php    ← Pro entry point (no WP plugin header in repo)
 │   └─ includes/
-│       ├─ tools/              ← ~635 pro tool classes (same naming convention)
+│       ├─ tools/              ← ~765 pro tool classes (same naming convention)
+│       │   ├─ cloudways/      ← Cloudways Pro Toolkit — 60 tools + API v2 client
+│       │   ├─ crm/            ← CRM Toolkit — 70+ tools, 5 phases A–E
+│       │   └─ ...
 │       ├─ harness/            ← Layer H fine-tune curriculum exporter (Pro)
 │       │   └─ class-wp-mcp-ai-tool-export-fine-tune-curriculum.php
 │       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin…)
 │       ├─ rest/               ← Pro REST controllers (channels, TMA, social…)
 │       ├─ integrations/       ← WooCommerce, Shopify, social media, Google, GitHub
+│       ├─ cloudways/          ← Cloudways API v2 OAuth client + helpers
 │       ├─ services/           ← Pro-specific service classes
 │       └─ bundled-skills/     ← Pro-exclusive SKILL.md files
 │

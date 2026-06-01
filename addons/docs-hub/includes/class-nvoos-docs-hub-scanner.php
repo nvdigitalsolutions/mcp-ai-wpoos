@@ -219,11 +219,11 @@ class NV_oOS_Docs_Hub_Scanner {
 				if ( ! $this->is_allowed_file( $file ) ) {
 					continue;
 				}
-				$relative = ltrim( str_replace( $real_docs, '', $file ), DIRECTORY_SEPARATOR );
+				$relative  = ltrim( str_replace( $real_docs, '', $file ), DIRECTORY_SEPARATOR );
 				$entries[] = array(
-					'path'         => $file,
-					'source'       => 'base',
-					'plugin_name'  => 'NV oOS Base',
+					'path'          => $file,
+					'source'        => 'base',
+					'plugin_name'   => 'NV oOS Base',
 					'relative_path' => str_replace( DIRECTORY_SEPARATOR, '/', 'docs/' . $relative ),
 				);
 			}
@@ -244,7 +244,7 @@ class NV_oOS_Docs_Hub_Scanner {
 	 * @return array
 	 */
 	private function scan_addons() {
-		$addons_dir = dirname( NVOOS_DOCS_HUB_PATH );
+		$addons_dir  = dirname( NVOOS_DOCS_HUB_PATH );
 		$real_addons = realpath( $addons_dir );
 		if ( false === $real_addons ) {
 			return array();

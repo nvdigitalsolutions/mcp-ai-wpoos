@@ -19,6 +19,7 @@
     "_comment_symfony_pin": "Symfony deps are pinned to the 6.4 LTS line because the base plugin's PHP floor is 7.4. Symfony 7.x requires PHP 8.2+ and uses readonly/enum syntax that fatal-parses on PHP 7.4 even when not executed. 6.4 LTS is supported until November 2027.",
     "require": {
         "rahul900day/tiktoken-php": "^1.0",
+        "psr/event-dispatcher": "^1.0",
         "symfony/http-client": "^6.4.36",
         "nyholm/psr7": "^1.8",
         "symfony/validator": "^6.4.36",
@@ -41,9 +42,9 @@
     "scripts": {
         "lint": "phpcs",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",
-        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,test-capability-flags-integration.php,tests/helpers,tests/fixtures .",
-        "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,tests .",
-        "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,tests .",
+        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,docker,tests/helpers,tests/fixtures .",
+        "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
+        "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
         "format": "phpcbf",
         "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
         "test:install": "bash bin/install-wp-tests.sh wordpress_test root '' localhost latest",

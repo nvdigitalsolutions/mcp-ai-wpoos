@@ -191,9 +191,21 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$transport = 'auto';
 		}
 
+		// Accept a connection_id for remote WordPress sites configured in the Remote Site Manager.
+		$connection_id = isset( $payload['connection_id'] ) ? sanitize_key( (string) $payload['connection_id'] ) : '';
+		if ( empty( $connection_id ) && isset( $context['remote_connection_id'] ) ) {
+			$connection_id = sanitize_key( (string) $context['remote_connection_id'] );
+		}
+
 		$route = self::build_route( $config['route'], $form_id );
 
 		$result = null;
+
+		// If a connection_id is provided, force remote dispatch through the saved connection.
+		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return self::dispatch_via_connection( $connection_id, $route, $config['method'], $params, $context );
+		}
+
 		if ( 'http' !== $transport ) {
 			$result = self::dispatch_internal( $route, $config['method'], $params, $config['args_location'] );
 
@@ -308,6 +320,152 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		}
 
 		return self::normalise_success( $data, $status, $response->get_headers(), 'rest' );
+	}
+
+	/**
+	 * Dispatch via a saved Remote Site Manager connection.
+	 *
+	 * Uses the connection's stored URL and credentials to make an
+	 * authenticated HTTP request to the remote WordPress site's
+	 * JetFormBuilder REST API.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $connection_id Remote connection identifier.
+	 * @param string $route         Route relative to the JetFormBuilder namespace.
+	 * @param string $method        HTTP method.
+	 * @param array  $params        Request parameters.
+	 * @param array  $context       Execution context.
+	 * @return array|WP_Error
+	 */
+	protected static function dispatch_via_connection( $connection_id, $route, $method, array $params, array $context = array() ) {
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			return new WP_Error(
+				'wp_mcp_ai_connection_not_found',
+				sprintf(
+					/* translators: %s: connection ID */
+					__( 'Remote connection "%s" was not found.', 'mcp-ai-wpoos' ),
+					$connection_id
+				)
+			);
+		}
+
+		if ( empty( $connection['enabled'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_connection_disabled',
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Remote connection "%s" is disabled.', 'mcp-ai-wpoos' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
+			);
+		}
+
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_connection_no_url',
+				__( 'The remote connection has no URL configured.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$base_url = rtrim( $connection['url'], '/' );
+		$rest_url = $base_url . '/wp-json/' . self::REST_NAMESPACE . '/' . ltrim( $route, '/' );
+
+		// Attach query parameters for GET requests.
+		if ( 'GET' === strtoupper( $method ) && ! empty( $params ) ) {
+			$rest_url = add_query_arg( $params, $rest_url );
+		}
+
+		$request_args = array(
+			'method'  => strtoupper( $method ),
+			'timeout' => 30,
+			'headers' => array(
+				'Accept' => 'application/json',
+			),
+		);
+
+		// Attach body for non-GET requests.
+		if ( 'GET' !== strtoupper( $method ) ) {
+			$request_args['body']    = wp_json_encode( $params );
+			$request_args['headers']['Content-Type'] = 'application/json';
+		}
+
+		// Apply authentication.
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+		switch ( $auth_type ) {
+			case 'application_password':
+			case 'basic_auth':
+				if ( ! empty( $connection['username'] ) && ! empty( $connection['password'] ) ) {
+					$password = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] );
+					// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+					$encoded = base64_encode( $connection['username'] . ':' . $password );
+					$request_args['headers']['Authorization'] = 'Basic ' . $encoded;
+				}
+				break;
+
+			case 'custom_header':
+				if ( ! empty( $connection['api_key'] ) ) {
+					$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+					$request_args['headers']['X-API-Key'] = $api_key;
+				}
+				break;
+
+			case 'jwt':
+				if ( ! empty( $connection['token'] ) ) {
+					$token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
+					$request_args['headers']['Authorization'] = 'Bearer ' . $token;
+				}
+				break;
+
+			case 'none':
+			default:
+				break;
+		}
+
+		$response = wp_remote_request( $rest_url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_remote_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Remote request failed: %s', 'mcp-ai-wpoos' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status  = (int) wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$headers = wp_remote_retrieve_headers( $response );
+		$data    = json_decode( $body, true );
+
+		if ( null === $data && '' !== $body ) {
+			$data = $body;
+		}
+
+		if ( $status >= 400 ) {
+			return self::normalise_http_error( $status, $data, 'http' );
+		}
+
+		$header_array = array();
+		if ( $headers instanceof \Requests_Utility_CaseInsensitiveDictionary ) {
+			$header_array = $headers->getAll();
+		} elseif ( is_array( $headers ) ) {
+			$header_array = $headers;
+		}
+
+		$result = self::normalise_success( $data, $status, $header_array, 'http' );
+
+		// Tag the result with connection metadata.
+		if ( is_array( $result ) ) {
+			$result['connection_id']   = $connection_id;
+			$result['connection_name'] = isset( $connection['name'] ) ? $connection['name'] : $connection_id;
+		}
+
+		return $result;
 	}
 
 	/**
