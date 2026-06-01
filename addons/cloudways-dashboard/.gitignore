@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build artifacts (committed in this repo, but listed for .gitignore clarity)
+# assets/dist/cloudways-dashboard.js
+# assets/dist/cloudways-dashboard.css
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.sublime-*
+
+# Logs
+*.log
