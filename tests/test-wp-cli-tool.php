@@ -8,9 +8,7 @@
  * @license   GPL-3.0-or-later
  */
 
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php';
-
-// Also load Pro variant if available
+// Load the Pro tool if available (no base version exists).
 if ( ! class_exists( 'WP_MCP_AI_Tool_Check_WP_CLI' ) ) {
 	$pro_path = WP_MCP_AI_PATH . 'addons/pro/includes/tools/developer/class-wp-mcp-ai-tool-check-wp-cli.php';
 	if ( file_exists( $pro_path ) ) {
