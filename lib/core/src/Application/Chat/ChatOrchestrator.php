@@ -83,9 +83,12 @@ class ChatOrchestrator {
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
 		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs );
 
-		if ( array() !== $toolDefinitions ) {
-			$options['tools'] = $toolDefinitions;
-		}
+		// Always replace tools with the properly-resolved definitions.
+		// If no tools resolve (e.g., none are registered in the OOS
+		// tool registry), an empty array prevents raw tool slugs from
+		// leaking to the provider and causing API errors like
+		// "Invalid type for 'tools[0]': expected an object".
+		$options['tools'] = $toolDefinitions;
 
 		// Merge assistant config into options.
 		$options['provider'] ??= $assistantConfig['provider'] ?? '';
@@ -283,9 +286,13 @@ class ChatOrchestrator {
 
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
 		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs );
-		if ( array() !== $toolDefinitions ) {
-			$options['tools'] = $toolDefinitions;
-		}
+
+		// Always replace tools with the properly-resolved definitions.
+		// If no tools resolve (e.g., none are registered in the OOS
+		// tool registry), an empty array prevents raw tool slugs from
+		// leaking to the provider and causing API errors like
+		// "Invalid type for 'tools[0]': expected an object".
+		$options['tools'] = $toolDefinitions;
 
 		$options['provider'] ??= $assistantConfig['provider'] ?? '';
 		$options['model']    ??= $assistantConfig['model'] ?? '';

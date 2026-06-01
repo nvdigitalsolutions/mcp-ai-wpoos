@@ -11270,19 +11270,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-				// Build options.
-				$options     = array();
-				$raw_options = $request->get_param( 'options' );
+										// Merge additional_tools from the client request.
+												$additional_tools = $request->get_param( 'additional_tools' );
+			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
+					$additional_tools = array_filter( array_map( 'sanitize_key', $additional_tools ) );
+				if ( ! empty( $additional_tools ) ) {
+					if ( ! isset( $assistant_config['tools'] ) || ! is_array( $assistant_config['tools'] ) ) {
+						$assistant_config['tools'] = array();
+					}
+												$assistant_config['tools'] = array_values(
+													array_unique( array_merge( $assistant_config['tools'], $additional_tools ) )
+												);
+				}
+			}
+
+												// Build options.
+												$options     = array();
+												$raw_options = $request->get_param( 'options' );
 			if ( is_array( $raw_options ) ) {
-				$options = $raw_options;
+					$options = $raw_options;
 			}
 
-				// Add tools from assistant config.
-			if ( ! empty( $assistant_config['tools'] ) ) {
-				$options['tools'] = $assistant_config['tools'];
-			}
-
-				// Provider and model from assistant config.
+												// Provider and model from assistant config.
 			if ( ! empty( $assistant_config['provider'] ) ) {
 				$options['provider'] = $assistant_config['provider'];
 			}
