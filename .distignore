@@ -67,6 +67,7 @@ coverage
 
 # Docker
 docker-compose.yml
+docker/
 Dockerfile
 
 # Documentation (keep only readme.txt and essential files)
