@@ -83,6 +83,10 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Install Pro addon dependencies
+        working-directory: addons/pro
+        run: composer install --no-dev --no-interaction --prefer-dist --ignore-platform-req=ext-fileinfo --ignore-platform-req=ext-gd --ignore-platform-req=ext-zip
+
       - name: Configure WordPress test suite
         run: |
           bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
