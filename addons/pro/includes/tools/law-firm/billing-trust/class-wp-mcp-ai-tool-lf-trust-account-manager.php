@@ -125,7 +125,7 @@ class WP_MCP_AI_Tool_LF_Trust_Account_Manager implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_required_capability() {
-		return 'edit_posts';
+		return 'manage_options';
 	}
 
 	/**
