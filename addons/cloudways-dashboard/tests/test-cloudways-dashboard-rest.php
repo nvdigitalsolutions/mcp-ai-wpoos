@@ -104,44 +104,74 @@ class Test_Cloudways_Dashboard_REST extends WP_UnitTestCase {
 
 	// ── Permission Tests ─────────────────────────────────────────────
 
+	/**
+	 * Test that unauthenticated health endpoint returns 401.
+	 */
 	public function test_unauthorized_health_returns_401() {
 		$this->assertStatus( $this->dispatch( 'GET', '/health', 0 ), 401 );
 	}
 
+	/**
+	 * Test that subscriber health endpoint returns 403.
+	 */
 	public function test_subscriber_health_returns_403() {
 		$this->assertStatus( $this->dispatch( 'GET', '/health', $this->subscriber_id ), 403 );
 	}
 
+	/**
+	 * Test that admin health endpoint returns 200.
+	 */
 	public function test_admin_health_returns_200() {
 		$this->assertStatus( $this->dispatch( 'GET', '/health', $this->admin_id ), 200 );
 	}
 
+	/**
+	 * Test that unauthenticated servers endpoint returns 401.
+	 */
 	public function test_unauthorized_servers_returns_401() {
 		$this->assertStatus( $this->dispatch( 'GET', '/servers', 0 ), 401 );
 	}
 
+	/**
+	 * Test that subscriber servers endpoint returns 403.
+	 */
 	public function test_subscriber_servers_returns_403() {
 		$this->assertStatus( $this->dispatch( 'GET', '/servers', $this->subscriber_id ), 403 );
 	}
 
+	/**
+	 * Test that unauthenticated toolkits endpoint returns 401.
+	 */
 	public function test_unauthorized_toolkits_returns_401() {
 		$this->assertStatus( $this->dispatch( 'GET', '/toolkits', 0 ), 401 );
 	}
 
+	/**
+	 * Test that subscriber toolkits endpoint returns 403.
+	 */
 	public function test_subscriber_toolkits_returns_403() {
 		$this->assertStatus( $this->dispatch( 'GET', '/toolkits', $this->subscriber_id ), 403 );
 	}
 
+	/**
+	 * Test that unauthenticated settings endpoint returns 401.
+	 */
 	public function test_unauthorized_settings_returns_401() {
 		$this->assertStatus( $this->dispatch( 'GET', '/settings', 0 ), 401 );
 	}
 
+	/**
+	 * Test that subscriber settings endpoint returns 403.
+	 */
 	public function test_subscriber_settings_returns_403() {
 		$this->assertStatus( $this->dispatch( 'GET', '/settings', $this->subscriber_id ), 403 );
 	}
 
 	// ── Health Endpoint ──────────────────────────────────────────────
 
+	/**
+	 * Test that health response has expected shape.
+	 */
 	public function test_health_response_shape() {
 		$resp = $this->dispatch( 'GET', '/health', $this->admin_id );
 		$this->assertStatus( $resp, 200 );
@@ -155,6 +185,9 @@ class Test_Cloudways_Dashboard_REST extends WP_UnitTestCase {
 
 	// ── Toolkits Endpoint ────────────────────────────────────────────
 
+	/**
+	 * Test that toolkits response has expected shape.
+	 */
 	public function test_toolkits_response_shape() {
 		$resp = $this->dispatch( 'GET', '/toolkits', $this->admin_id );
 		$this->assertStatus( $resp, 200 );
@@ -167,6 +200,9 @@ class Test_Cloudways_Dashboard_REST extends WP_UnitTestCase {
 
 	// ── Settings Endpoint ────────────────────────────────────────────
 
+	/**
+	 * Test that settings GET response has expected shape.
+	 */
 	public function test_settings_get_shape() {
 		$resp = $this->dispatch( 'GET', '/settings', $this->admin_id );
 		$this->assertStatus( $resp, 200 );
@@ -176,6 +212,9 @@ class Test_Cloudways_Dashboard_REST extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'masked_email', $data );
 	}
 
+	/**
+	 * Test that settings PUT with missing fields returns 400.
+	 */
 	public function test_settings_put_missing_fields_returns_400() {
 		$request = new WP_REST_Request( 'PUT', '/' . self::NS . '/settings' );
 		$request->set_header( 'Content-Type', 'application/json' );
@@ -188,12 +227,18 @@ class Test_Cloudways_Dashboard_REST extends WP_UnitTestCase {
 
 	// ── Summary Endpoint ─────────────────────────────────────────────
 
+	/**
+	 * Test that summary endpoint requires authentication.
+	 */
 	public function test_summary_auth_required() {
 		$this->assertStatus( $this->dispatch( 'GET', '/summary', 0 ), 401 );
 	}
 
 	// ── Projects Endpoint ────────────────────────────────────────────
 
+	/**
+	 * Test that projects endpoint requires authentication.
+	 */
 	public function test_projects_auth_required() {
 		$this->assertStatus( $this->dispatch( 'GET', '/projects', 0 ), 401 );
 	}

@@ -75,14 +75,17 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 		);
 
 		if ( $action_id ) {
-			update_option( self::status_key( $app_id ), array(
-				'status'       => 'provisioning',
-				'action_id'    => $action_id,
-				'attempt'      => 0,
-				'started_at'   => time(),
-				'last_poll_at' => null,
-				'error'        => null,
-			) );
+			update_option(
+				self::status_key( $app_id ),
+				array(
+					'status'       => 'provisioning',
+					'action_id'    => $action_id,
+					'attempt'      => 0,
+					'started_at'   => time(),
+					'last_poll_at' => null,
+					'error'        => null,
+				)
+			);
 		}
 
 		return $action_id;
@@ -173,8 +176,8 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	 * @return void
 	 */
 	private static function on_running( $app_id, $app, $toolkit_ids, $assistant_ids ) {
-		$app_url  = isset( $app['app_fqdn'] ) ? $app['app_fqdn'] : '';
-		$cname    = isset( $app['cname'] ) ? $app['cname'] : $app_url;
+		$app_url = isset( $app['app_fqdn'] ) ? $app['app_fqdn'] : '';
+		$cname = isset( $app['cname'] ) ? $app['cname'] : $app_url;
 		$username = isset( $app['username'] ) ? $app['username'] : '';
 		$password = isset( $app['password'] ) ? $app['password'] : '';
 
@@ -223,13 +226,13 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	 * Uses wp_remote_post to the target site's REST API (if accessible) or
 	 * records the intent for manual install.
 	 *
-	 * @param int    $app_id   Cloudways app ID.
-	 * @param string $cname    App domain.
-	 * @param string $username App username.
-	 * @param string $password App password.
+	 * @param int    $app_id    Cloudways app ID.
+	 * @param string $cname     App domain.
+	 * @param string $_username App username (reserved for future use).
+	 * @param string $_password App password (reserved for future use).
 	 * @return string 'installed', 'pending_manual', or 'unreachable'.
 	 */
-	private static function install_nvos_plugin( $app_id, $cname, $username, $password ) {
+	private static function install_nvos_plugin( $app_id, $cname, $_username, $_password ) {
 		if ( empty( $cname ) ) {
 			return 'no_domain';
 		}
@@ -247,11 +250,14 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 
 		// Record the intent — the plugin slug to install.
 		$plugin_slug = 'mcp-ai-wpoos';
-		update_option( "nvoos_cw_app_plugin_intent_{$app_id}", array(
-			'site_url'    => $site_url,
-			'plugin_slug' => $plugin_slug,
-			'created_at'  => time(),
-		) );
+		update_option(
+			"nvoos_cw_app_plugin_intent_{$app_id}",
+			array(
+				'site_url'    => $site_url,
+				'plugin_slug' => $plugin_slug,
+				'created_at'  => time(),
+			)
+		);
 
 		self::log_info( $app_id, "Plugin install intent recorded for {$plugin_slug} on {$cname}" );
 		return 'pending_manual';
@@ -271,7 +277,10 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 			'applied_at' => time(),
 			'status'     => 'pending_install',
 		);
-		update_option( "nvoos_cw_toolkit_intents_{$app_id}", $intents );
+		update_option(
+			"nvoos_cw_toolkit_intents_{$app_id}",
+			$intents
+		);
 		self::log_info( $app_id, "Toolkit intent recorded: {$tk_slug}" );
 		return 'pending_install';
 	}
@@ -320,8 +329,8 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 		if ( null !== $attempt ) {
 			$current['attempt'] = $attempt;
 		}
-		$current['status']        = $status;
-		$current['last_poll_at']  = time();
+		$current['status'] = $status;
+		$current['last_poll_at'] = time();
 		if ( null !== $error ) {
 			$current['error'] = $error;
 		}
@@ -345,7 +354,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	/**
 	 * Log an info-level message about this app.
 	 *
-	 * @param int    $app_id  Cloudways app ID.
+	 * @param int $app_id Cloudways app ID.
 	 * @param string $message Log message.
 	 * @return void
 	 */
@@ -358,7 +367,7 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	/**
 	 * Log an error-level message about this app.
 	 *
-	 * @param int    $app_id  Cloudways app ID.
+	 * @param int $app_id Cloudways app ID.
 	 * @param string $message Error message.
 	 * @return void
 	 */

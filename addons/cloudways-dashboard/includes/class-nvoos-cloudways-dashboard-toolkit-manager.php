@@ -43,9 +43,9 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 	/**
 	 * Apply one or more toolkits to a site.
 	 *
-	 * @param int     $app_id       Cloudways app ID.
-	 * @param array   $toolkit_slugs Toolkit slugs to apply.
-	 * @param array   $options      {
+	 * @param int   $app_id Cloudways app ID.
+	 * @param array $toolkit_slugs Toolkit slugs to apply.
+	 * @param array $options {
 	 *     Optional. Application options.
 	 *
 	 *     @type array $assistant_defaults Key-value of assistant defaults.
@@ -53,7 +53,7 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 	 * @return array Results per toolkit slug.
 	 */
 	public static function apply_toolkits( $app_id, $toolkit_slugs, $options = array() ) {
-		$state  = self::get_site_toolkits( $app_id );
+		$state = self::get_site_toolkits( $app_id );
 		$results = array();
 
 		foreach ( $toolkit_slugs as $slug ) {
@@ -105,7 +105,7 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 	 * @return array Results per toolkit slug.
 	 */
 	public static function remove_toolkits( $app_id, $toolkit_slugs ) {
-		$state   = self::get_site_toolkits( $app_id );
+		$state = self::get_site_toolkits( $app_id );
 		$results = array();
 
 		foreach ( $toolkit_slugs as $slug ) {
@@ -149,6 +149,7 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 	public static function get_global_summary() {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$keys = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
@@ -156,34 +157,37 @@ class NV_oOS_CloudwaysDashboard_Toolkit_Manager {
 			)
 		);
 
-		$sites    = array();
-		$counts   = array();
+		$sites = array();
+		$counts = array();
 		$total_tk = 0;
 
 		if ( is_array( $keys ) ) {
 			foreach ( $keys as $key ) {
-				$app_id  = (int) str_replace( 'nvoos_cw_site_toolkits_', '', $key );
+				$app_id = (int) str_replace( 'nvoos_cw_site_toolkits_', '', $key );
 				$toolkits = get_option( $key, array() );
-				$active = array_filter( $toolkits, function ( $t ) {
-					return 'active' === $t['status'];
-				} );
+				$active = array_filter(
+					$toolkits,
+					function ( $t ) {
+						return 'active' === $t['status'];
+					}
+				);
 
 				$sites[ $app_id ] = array(
-					'app_id'   => $app_id,
-					'total'    => count( $active ),
-					'active'   => array_keys( $active ),
+					'app_id' => $app_id,
+					'total'  => count( $active ),
+					'active' => array_keys( $active ),
 				);
 
 				foreach ( $active as $slug => $data ) {
 					$counts[ $slug ] = ( $counts[ $slug ] ?? 0 ) + 1;
-					$total_tk++;
+					++$total_tk;
 				}
 			}
 		}
 
 		return array(
-			'sites'        => $sites,
-			'toolkit_counts' => $counts,
+			'sites'              => $sites,
+			'toolkit_counts'     => $counts,
 			'total_applications' => $total_tk,
 		);
 	}

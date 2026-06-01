@@ -15,14 +15,15 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 global $wpdb;
 
 $prefixes = array(
-	'nvoos_cw_pending_toolkits_',    // Pending toolkit configuration
-	'nvoos_cw_provisioning_',        // Provisioning status
-	'nvoos_cw_site_toolkits_',       // Per-site toolkit state
-	'nvoos_cw_app_plugin_intent_',   // Plugin install intents
-	'nvoos_cw_toolkit_intents_',     // Toolkit application intents
+	'nvoos_cw_pending_toolkits_',    // Pending toolkit configuration.
+	'nvoos_cw_provisioning_',        // Provisioning status.
+	'nvoos_cw_site_toolkits_',       // Per-site toolkit state.
+	'nvoos_cw_app_plugin_intent_',   // Plugin install intents.
+	'nvoos_cw_toolkit_intents_',     // Toolkit application intents.
 );
 
 foreach ( $prefixes as $prefix ) {
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 	$keys = $wpdb->get_col(
 		$wpdb->prepare(
 			"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",

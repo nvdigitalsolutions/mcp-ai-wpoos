@@ -65,9 +65,11 @@ class NV_oOS_CloudwaysDashboard_Plugin {
 		NV_oOS_CloudwaysDashboard_Shortcode::enqueue_assets( array() );
 
 		// Inline script to mount the React app inside WP-Admin.
-		$config = wp_json_encode( array(
-			'isAdmin' => true,
-		) );
+		$config = wp_json_encode(
+			array(
+				'isAdmin' => true,
+			)
+		);
 		wp_add_inline_script(
 			'nvoos-cloudways-dashboard',
 			sprintf(

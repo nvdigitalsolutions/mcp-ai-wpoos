@@ -86,15 +86,19 @@ class NV_oOS_CloudwaysDashboard_Shortcode {
 		wp_register_style( $handle, $css, array(), NVOOS_CLOUDWAYS_DASHBOARD_VERSION );
 		wp_register_script( $handle, $src, array(), NVOOS_CLOUDWAYS_DASHBOARD_VERSION, true );
 
-		wp_localize_script( $handle, 'NVOOS_CLOUDWAYS_DASHBOARD', array(
-			'apiUrl'   => esc_url_raw( rest_url( NV_oOS_CloudwaysDashboard_REST::REST_NAMESPACE ) ),
-			'proApi'   => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
-			'baseApi'  => esc_url_raw( rest_url( 'mcp-ai/v1' ) ),
-			'tkApi'    => esc_url_raw( rest_url( 'nvoos-toolkit-shell/v1' ) ),
-			'nonce'    => wp_create_nonce( 'wp_rest' ),
-			'config'   => $config,
-			'locale'   => get_locale(),
-		) );
+		wp_localize_script(
+			$handle,
+			'NVOOS_CLOUDWAYS_DASHBOARD',
+			array(
+				'apiUrl'  => esc_url_raw( rest_url( NV_oOS_CloudwaysDashboard_REST::REST_NAMESPACE ) ),
+				'proApi'  => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
+				'baseApi' => esc_url_raw( rest_url( 'mcp-ai/v1' ) ),
+				'tkApi'   => esc_url_raw( rest_url( 'nvoos-toolkit-shell/v1' ) ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'config'  => $config,
+				'locale'  => get_locale(),
+			)
+		);
 
 		wp_enqueue_style( $handle );
 		wp_enqueue_script( $handle );

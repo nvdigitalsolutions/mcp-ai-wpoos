@@ -30,150 +30,236 @@ class NV_oOS_CloudwaysDashboard_REST {
 	 */
 	public static function register_routes() {
 		// ── Health ───────────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/health', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'health' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/health',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'health' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Servers ───────────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/servers', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'list_servers' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-			'args'                => array(
-				'project_id' => array(
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/servers',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'list_servers' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				'args' => array(
+					'project_id' => array(
+						'type' => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
-			),
-		) );
+			)
+		);
 
-		register_rest_route( self::REST_NAMESPACE, '/servers/(?P<id>\d+)', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'get_server' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/servers/(?P<id>\d+)',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'get_server' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
-		register_rest_route( self::REST_NAMESPACE, '/servers/(?P<id>\d+)/apps', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'list_server_apps' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/servers/(?P<id>\d+)/apps',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'list_server_apps' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Apps / Sites ─────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/apps', array(
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/apps',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'list_apps' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-			),
-			array(
-				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'create_app' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-				'args'                => array(
-					'server_id'     => array( 'type' => 'integer', 'required' => true ),
-					'application'   => array( 'type' => 'string', 'required' => true ),
-					'app_label'     => array( 'type' => 'string', 'required' => true ),
-					'project_name'  => array( 'type' => 'string', 'required' => true ),
-					'toolkit_ids'   => array( 'type' => 'array', 'default' => array(), 'items' => array( 'type' => 'string' ) ),
-					'assistant_ids' => array( 'type' => 'array', 'default' => array(), 'items' => array( 'type' => 'string' ) ),
+				array(
+					'methods' => \WP_REST_Server::READABLE,
+					'callback' => array( __CLASS__, 'list_apps' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
 				),
-			),
-		) );
+				array(
+					'methods' => \WP_REST_Server::CREATABLE,
+					'callback' => array( __CLASS__, 'create_app' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
+					'args' => array(
+						'server_id' => array(
+							'type' => 'integer',
+							'required' => true,
+						),
+						'application' => array(
+							'type' => 'string',
+							'required' => true,
+						),
+						'app_label' => array(
+							'type' => 'string',
+							'required' => true,
+						),
+						'project_name' => array(
+							'type' => 'string',
+							'required' => true,
+						),
+						'toolkit_ids' => array(
+							'type' => 'array',
+							'default' => array(),
+							'items' => array(
+								'type' => 'string',
+							),
+						),
+						'assistant_ids' => array(
+							'type' => 'array',
+							'default' => array(),
+							'items' => array(
+								'type' => 'string',
+							),
+						),
+					),
+				),
+			)
+		);
 
-		register_rest_route( self::REST_NAMESPACE, '/apps/(?P<id>\d+)', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'get_app' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/apps/(?P<id>\d+)',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'get_app' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Toolkits ──────────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/toolkits', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'list_toolkits' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/toolkits',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'list_toolkits' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Settings ──────────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/settings', array(
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/settings',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_settings' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-			),
-			array(
-				'methods'             => \WP_REST_Server::EDITABLE,
-				'callback'            => array( __CLASS__, 'update_settings' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-				'args'                => array(
-					'cloudways_email'   => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_email' ),
-					'cloudways_api_key' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+				array(
+					'methods' => \WP_REST_Server::READABLE,
+					'callback' => array( __CLASS__, 'get_settings' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
 				),
-			),
-		) );
+				array(
+					'methods' => \WP_REST_Server::EDITABLE,
+					'callback' => array( __CLASS__, 'update_settings' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
+					'args' => array(
+						'cloudways_email' => array(
+							'type' => 'string',
+							'sanitize_callback' => 'sanitize_email',
+						),
+						'cloudways_api_key' => array(
+							'type' => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
 
 		// ── Dashboard summary ─────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/summary', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'dashboard_summary' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/summary',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'dashboard_summary' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Provisioning Status ────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/apps/(?P<id>\d+)/provisioning', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'get_provisioning_status' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/apps/(?P<id>\d+)/provisioning',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'get_provisioning_status' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Site Toolkits ──────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/apps/(?P<id>\d+)/toolkits', array(
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/apps/(?P<id>\d+)/toolkits',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_site_toolkits' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-			),
-			array(
-				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'apply_site_toolkits' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-				'args'                => array(
-					'toolkits' => array(
-						'type'     => 'array',
-						'required' => true,
-						'items'    => array( 'type' => 'string' ),
+				array(
+					'methods' => \WP_REST_Server::READABLE,
+					'callback' => array( __CLASS__, 'get_site_toolkits' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
+				),
+				array(
+					'methods' => \WP_REST_Server::CREATABLE,
+					'callback' => array( __CLASS__, 'apply_site_toolkits' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
+					'args' => array(
+						'toolkits' => array(
+							'type' => 'array',
+							'required' => true,
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
-			),
-			array(
-				'methods'             => \WP_REST_Server::EDITABLE,
-				'callback'            => array( __CLASS__, 'remove_site_toolkits' ),
-				'permission_callback' => array( __CLASS__, 'admin_permission' ),
-				'args'                => array(
-					'toolkits' => array(
-						'type'     => 'array',
-						'required' => true,
-						'items'    => array( 'type' => 'string' ),
+				array(
+					'methods' => \WP_REST_Server::EDITABLE,
+					'callback' => array( __CLASS__, 'remove_site_toolkits' ),
+					'permission_callback' => array( __CLASS__, 'admin_permission' ),
+					'args' => array(
+						'toolkits' => array(
+							'type' => 'array',
+							'required' => true,
+							'items' => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
-			),
-		) );
+			)
+		);
 
 		// ── Toolkit Global Summary ─────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/toolkits/summary', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'toolkit_global_summary' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/toolkits/summary',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'toolkit_global_summary' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 
 		// ── Projects ──────────────────────────────────────────────────
-		register_rest_route( self::REST_NAMESPACE, '/projects', array(
-			'methods'             => \WP_REST_Server::READABLE,
-			'callback'            => array( __CLASS__, 'list_projects' ),
-			'permission_callback' => array( __CLASS__, 'admin_permission' ),
-		) );
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/projects',
+			array(
+				'methods' => \WP_REST_Server::READABLE,
+				'callback' => array( __CLASS__, 'list_projects' ),
+				'permission_callback' => array( __CLASS__, 'admin_permission' ),
+			)
+		);
 	}
 
 	// ── Permission Callbacks ─────────────────────────────────────────
@@ -245,9 +331,9 @@ class NV_oOS_CloudwaysDashboard_REST {
 			$client_status = $c->is_configured() ? 'connected' : 'not_configured';
 		}
 		return rest_ensure_response( array(
-			'status'         => 'ok',
-			'version'        => NVOOS_CLOUDWAYS_DASHBOARD_VERSION,
-			'cloudways'      => $client_status,
+			'status' => 'ok',
+			'version' => NVOOS_CLOUDWAYS_DASHBOARD_VERSION,
+			'cloudways' => $client_status,
 		) );
 	}
 
@@ -325,7 +411,7 @@ class NV_oOS_CloudwaysDashboard_REST {
 			}
 			$apps = isset( $apps_result['apps'] ) ? $apps_result['apps'] : array();
 			foreach ( $apps as &$app ) {
-				$app['server_id']   = $server['id'];
+				$app['server_id'] = $server['id'];
 				$app['server_name'] = isset( $server['label'] ) ? $server['label'] : '';
 			}
 			unset( $app );
@@ -345,15 +431,15 @@ class NV_oOS_CloudwaysDashboard_REST {
 		if ( is_wp_error( $client ) ) {
 			return $client;
 		}
-		$server_id   = absint( $request->get_param( 'server_id' ) );
+		$server_id = absint( $request->get_param( 'server_id' ) );
 		$application = sanitize_text_field( $request->get_param( 'application' ) );
-		$app_label   = sanitize_text_field( $request->get_param( 'app_label' ) );
+		$app_label = sanitize_text_field( $request->get_param( 'app_label' ) );
 		$project_name = sanitize_text_field( $request->get_param( 'project_name' ) );
 
 		$body = array(
-			'server_id'    => (string) $server_id,
-			'application'  => $application,
-			'app_label'    => $app_label,
+			'server_id' => (string) $server_id,
+			'application' => $application,
+			'app_label' => $app_label,
 			'project_name' => $project_name,
 		);
 
@@ -363,7 +449,7 @@ class NV_oOS_CloudwaysDashboard_REST {
 		}
 
 		// Record the intent — toolkits/assistants will be applied post-creation.
-		$toolkit_ids   = (array) $request->get_param( 'toolkit_ids' );
+		$toolkit_ids = (array) $request->get_param( 'toolkit_ids' );
 		$assistant_ids = (array) $request->get_param( 'assistant_ids' );
 		$app_id = isset( $result['app']['id'] ) ? absint( $result['app']['id'] ) : 0;
 
@@ -371,9 +457,9 @@ class NV_oOS_CloudwaysDashboard_REST {
 			// Store pending toolkit configuration.
 			if ( ! empty( $toolkit_ids ) || ! empty( $assistant_ids ) ) {
 				update_option( "nvoos_cw_pending_toolkits_{$app_id}", array(
-					'toolkit_ids'   => array_map( 'sanitize_key', $toolkit_ids ),
+					'toolkit_ids' => array_map( 'sanitize_key', $toolkit_ids ),
 					'assistant_ids' => array_map( 'sanitize_key', $assistant_ids ),
-					'created_at'    => time(),
+					'created_at' => time(),
 				) );
 			}
 
@@ -433,11 +519,11 @@ class NV_oOS_CloudwaysDashboard_REST {
 			$all = \NV_oOS_Toolkit_Shell_Manifest_Registry::get_all();
 			foreach ( $all as $slug => $manifest ) {
 				$toolkits[] = array(
-					'slug'        => $slug,
-					'label'       => isset( $manifest['label'] ) ? $manifest['label'] : $slug,
+					'slug' => $slug,
+					'label' => isset( $manifest['label'] ) ? $manifest['label'] : $slug,
 					'description' => isset( $manifest['description'] ) ? $manifest['description'] : '',
-					'icon'        => isset( $manifest['icon'] ) ? $manifest['icon'] : 'admin-generic',
-					'version'     => isset( $manifest['version'] ) ? $manifest['version'] : '1.0',
+					'icon' => isset( $manifest['icon'] ) ? $manifest['icon'] : 'admin-generic',
+					'version' => isset( $manifest['version'] ) ? $manifest['version'] : '1.0',
 				);
 			}
 		}
@@ -472,7 +558,7 @@ class NV_oOS_CloudwaysDashboard_REST {
 			}
 		}
 		return rest_ensure_response( array(
-			'configured'   => $configured,
+			'configured' => $configured,
 			'masked_email' => $masked_email,
 		) );
 	}
@@ -484,13 +570,13 @@ class NV_oOS_CloudwaysDashboard_REST {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public static function update_settings( $request ) {
-		$email   = $request->get_param( 'cloudways_email' );
+		$email = $request->get_param( 'cloudways_email' );
 		$api_key = $request->get_param( 'cloudways_api_key' );
 		if ( ! $email || ! $api_key ) {
 			return new \WP_Error( 'missing_fields', __( 'Email and API key are required.', 'nvoos-cloudways-dashboard' ), array( 'status' => 400 ) );
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['cloudways_email']   = sanitize_email( $email );
+		$settings['cloudways_email'] = sanitize_email( $email );
 		$settings['cloudways_api_key'] = sanitize_text_field( $api_key );
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -519,11 +605,11 @@ class NV_oOS_CloudwaysDashboard_REST {
 		$server_data = $servers_resp->get_data();
 		$servers = isset( $server_data['servers'] ) ? $server_data['servers'] : array();
 
-		$total_apps      = 0;
+		$total_apps = 0;
 		$running_servers = 0;
 		foreach ( $servers as $s ) {
 			if ( isset( $s['status'] ) && 'running' === strtolower( $s['status'] ) ) {
-				$running_servers++;
+				++$running_servers;
 			}
 			// Count apps lazily from cached data if available.
 		}
@@ -536,10 +622,10 @@ class NV_oOS_CloudwaysDashboard_REST {
 		}
 
 		return rest_ensure_response( array(
-			'total_servers'     => count( $servers ),
-			'running_servers'   => $running_servers,
-			'total_apps'        => $total_apps,
-			'total_toolkits'    => count( self::list_toolkits()->get_data()['toolkits'] ?? array() ),
+			'total_servers' => count( $servers ),
+			'running_servers' => $running_servers,
+			'total_apps' => $total_apps,
+			'total_toolkits' => count( self::list_toolkits()->get_data()['toolkits'] ?? array() ),
 		) );
 	}
 
@@ -570,7 +656,7 @@ class NV_oOS_CloudwaysDashboard_REST {
 
 		// Also fetch latest Cloudways app data if the client is available.
 		$app_data = null;
-		$client   = self::get_cw_client();
+		$client = self::get_cw_client();
 		if ( ! is_wp_error( $client ) ) {
 			$result = $client->get( "/app/{$app_id}" );
 			if ( ! is_wp_error( $result ) ) {
@@ -582,32 +668,48 @@ class NV_oOS_CloudwaysDashboard_REST {
 		$pending = get_option( "nvoos_cw_pending_toolkits_{$app_id}", null );
 
 		return rest_ensure_response( array(
-			'app_id'             => $app_id,
-			'status'             => isset( $status['status'] ) ? $status['status'] : 'unknown',
-			'attempt'            => isset( $status['attempt'] ) ? $status['attempt'] : 0,
-			'started_at'         => isset( $status['started_at'] ) ? $status['started_at'] : null,
-			'last_poll_at'       => isset( $status['last_poll_at'] ) ? $status['last_poll_at'] : null,
-			'error'              => isset( $status['error'] ) ? $status['error'] : null,
-			'results'            => isset( $status['results'] ) ? $status['results'] : null,
-			'app_data'           => $app_data,
-			'pending_toolkits'   => $pending,
+			'app_id' => $app_id,
+			'status' => isset( $status['status'] ) ? $status['status'] : 'unknown',
+			'attempt' => isset( $status['attempt'] ) ? $status['attempt'] : 0,
+			'started_at' => isset( $status['started_at'] ) ? $status['started_at'] : null,
+			'last_poll_at' => isset( $status['last_poll_at'] ) ? $status['last_poll_at'] : null,
+			'error' => isset( $status['error'] ) ? $status['error'] : null,
+			'results' => isset( $status['results'] ) ? $status['results'] : null,
+			'app_data' => $app_data,
+			'pending_toolkits' => $pending,
 		) );
 	}
 
 	// ── Site Toolkit Endpoints ──────────────────────────────────────
 
+	/**
+	 * GET /apps/{id}/toolkits
+	 *
+	 * Get toolkits applied to a specific site.
+	 *
+	 * @param \WP_REST_Request $request REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
 	public static function get_site_toolkits( $request ) {
-		$app_id   = absint( $request->get_param( 'id' ) );
+		$app_id = absint( $request->get_param( 'id' ) );
 		$toolkits = \NV_oOS_CloudwaysDashboard_Toolkit_Manager::get_site_toolkits( $app_id );
 		return rest_ensure_response( array(
-			'app_id'   => $app_id,
+			'app_id' => $app_id,
 			'toolkits' => $toolkits,
-			'count'    => count( $toolkits ),
+			'count' => count( $toolkits ),
 		) );
 	}
 
+	/**
+	 * POST /apps/{id}/toolkits
+	 *
+	 * Apply toolkits to a specific site.
+	 *
+	 * @param \WP_REST_Request $request REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
 	public static function apply_site_toolkits( $request ) {
-		$app_id       = absint( $request->get_param( 'id' ) );
+		$app_id = absint( $request->get_param( 'id' ) );
 		$toolkit_slugs = (array) $request->get_param( 'toolkits' );
 		if ( empty( $toolkit_slugs ) ) {
 			return new \WP_Error( 'no_toolkits', __( 'At least one toolkit slug is required.', 'nvoos-cloudways-dashboard' ), array( 'status' => 400 ) );
@@ -616,8 +718,16 @@ class NV_oOS_CloudwaysDashboard_REST {
 		return rest_ensure_response( array( 'app_id' => $app_id, 'results' => $results ) );
 	}
 
+	/**
+	 * PUT /apps/{id}/toolkits
+	 *
+	 * Remove toolkits from a specific site.
+	 *
+	 * @param \WP_REST_Request $request REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
 	public static function remove_site_toolkits( $request ) {
-		$app_id       = absint( $request->get_param( 'id' ) );
+		$app_id = absint( $request->get_param( 'id' ) );
 		$toolkit_slugs = (array) $request->get_param( 'toolkits' );
 		if ( empty( $toolkit_slugs ) ) {
 			return new \WP_Error( 'no_toolkits', __( 'At least one toolkit slug is required.', 'nvoos-cloudways-dashboard' ), array( 'status' => 400 ) );
@@ -626,6 +736,13 @@ class NV_oOS_CloudwaysDashboard_REST {
 		return rest_ensure_response( array( 'app_id' => $app_id, 'results' => $results ) );
 	}
 
+	/**
+	 * GET /toolkits/summary
+	 *
+	 * Get a global summary of all toolkits.
+	 *
+	 * @return \WP_REST_Response
+	 */
 	public static function toolkit_global_summary() {
 		return rest_ensure_response( \NV_oOS_CloudwaysDashboard_Toolkit_Manager::get_global_summary() );
 	}
