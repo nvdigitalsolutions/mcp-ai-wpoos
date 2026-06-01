@@ -394,20 +394,29 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Enforce capability — importing PHI/vitals requires elevated permissions.
+		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_others_posts' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to import vitals data.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		$member_id = absint( $arguments['member_id'] ?? 0 );
 		if ( ! $member_id ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'member_id is required and must be a positive integer.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_missing_member',
+				__( 'member_id is required and must be a positive integer.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Verify the member post exists.
 		$member_post = get_post( $member_id );
 		if ( ! $member_post || 'mcp_ai_member' !== $member_post->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( __( 'No mcp_ai_member found with ID %d.', 'mcp-ai-wpoos-pro' ), $member_id ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_member_not_found',
+				sprintf( __( 'No mcp_ai_member found with ID %d.', 'mcp-ai-wpoos-pro' ), $member_id )
 			);
 		}
 
@@ -417,9 +426,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$dry_run = ! empty( $arguments['dry_run'] );
 
 		if ( '' === $data ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'data is required and cannot be empty.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_empty_data',
+				__( 'data is required and cannot be empty.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -694,9 +703,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$decoded = json_decode( $json, true );
 
 		if ( null === $decoded ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid JSON: could not decode the supplied data.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_invalid_json',
+				__( 'Invalid JSON: could not decode the supplied data.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -707,9 +716,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		if ( ! is_array( $decoded ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'JSON data must be an array of record objects or a single record object.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_invalid_json_structure',
+				__( 'JSON data must be an array of record objects or a single record object.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -834,9 +843,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	private function parse_fhir_json( $json ) {
 		$decoded = json_decode( $json, true );
 		if ( null === $decoded ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid JSON: could not decode the supplied data.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_invalid_fhir_json',
+				__( 'Invalid JSON: could not decode the supplied data.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -855,9 +864,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		} elseif ( 'Observation' === $resource_type ) {
 			$observations[] = $decoded;
 		} else {
-			return array(
-				'success' => false,
-				'error'   => __( 'FHIR JSON must be a Bundle or a single Observation resource.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_invalid_fhir_resource',
+				__( 'FHIR JSON must be a Bundle or a single Observation resource.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -977,9 +986,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$lines = explode( "\n", $csv );
 
 		if ( empty( $lines ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'CSV data is empty.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_import_vitals_empty_csv',
+				__( 'CSV data is empty.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

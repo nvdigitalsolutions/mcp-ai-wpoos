@@ -96,17 +96,17 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Enforce manage_options capability regardless of tool-framework checks.
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Insufficient permissions. Only administrators may access the password vault.',
+			return new WP_Error(
+				'wp_mcp_ai_vault_forbidden',
+				__( 'Insufficient permissions. Only administrators may access the password vault.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate action.
 		if ( empty( $arguments['action'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required argument: action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_action',
+				__( 'Missing required argument: action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -124,9 +124,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 				return $this->get_item( $arguments );
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => 'Invalid action. Use: list, search, or get',
+				return new WP_Error(
+					'wp_mcp_ai_vault_invalid_action',
+					__( 'Invalid action. Use: list, search, or get', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -197,9 +197,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 */
 	protected function search_items( $arguments ) {
 		if ( empty( $arguments['query'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Search query is required for search action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_query',
+				__( 'Search query is required for search action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -258,9 +258,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 */
 	protected function get_item( $arguments ) {
 		if ( empty( $arguments['item_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Item ID is required for get action',
+			return new WP_Error(
+				'wp_mcp_ai_vault_missing_item_id',
+				__( 'Item ID is required for get action', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -268,17 +268,17 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 		$post    = get_post( $item_id );
 
 		if ( ! $post || 'mcp_vault_item' !== $post->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => 'Vault item not found',
+			return new WP_Error(
+				'wp_mcp_ai_vault_item_not_found',
+				__( 'Vault item not found', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check ownership.
-		if ( get_current_user_id() != $post->post_author ) {
-			return array(
-				'success' => false,
-				'error'   => 'You do not have permission to access this vault item',
+		if ( (int) get_current_user_id() !== (int) $post->post_author ) {
+			return new WP_Error(
+				'wp_mcp_ai_vault_not_owner',
+				__( 'You do not have permission to access this vault item', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
