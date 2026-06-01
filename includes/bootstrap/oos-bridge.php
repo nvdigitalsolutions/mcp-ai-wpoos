@@ -263,7 +263,23 @@ add_action(
 	'wp_mcp_ai_bootstrapped',
 	function () {
 		// Pre-warm the orchestrator so it's ready when a chat request arrives.
-		wp_mcp_ai_oos_orchestrator();
+		// Wrap in a try-catch so a broken lib/ or missing dependency doesn't
+		// crash the entire WordPress request.
+		try {
+			wp_mcp_ai_oos_orchestrator();
+		} catch ( \Throwable $e ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP_MCP_AI] OOS orchestrator pre-warm failed: %s in %s:%d',
+						$e->getMessage(),
+						$e->getFile(),
+						$e->getLine()
+					)
+				);
+			}
+		}
 	},
 	12
 );
