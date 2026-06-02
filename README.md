@@ -31,6 +31,19 @@
 **Patent Status:** Patent Pending (Application #19/410,504)  
 **Documentation:** [Grade A (95/100)](docs/DOCUMENTATION_REVIEW_SUMMARY.md) - 659 files, 100% feature coverage
 
+## 🔍 For Reviewers & Auditors
+
+> **New to this repo? Start here → [`docs/FOR_REVIEWERS.md`](docs/FOR_REVIEWERS.md)**
+>
+> That document answers every common question in one place: what the project is, current security posture, what's production vs experimental, PHP version requirements, AI development methodology, compliance status, and scoping advice for a limited-budget review.
+>
+> **Quick links for reviewers:**
+> - [Addon Inventory](docs/ADDON_INVENTORY.md) — what each of 18 addons does and its status
+> - [Security Posture](docs/SECURITY_POSTURE.md) — current state of all 50 audit findings
+> - [Compliance Traceability](docs/compliance/TRACEABILITY.md) — every .org rejection reason → commit → verification command
+> - [AI-Assisted Development](docs/development/AI_ASSISTED_DEVELOPMENT.md) — methodology, transparency, and what to scrutinize
+> - [Architecture Overview](docs/architecture/ARCHITECTURE.md) — component diagram and data flow
+
 ## 📑 Table of Contents
 
 ### Getting Started
