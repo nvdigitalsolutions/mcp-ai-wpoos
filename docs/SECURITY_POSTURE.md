@@ -19,7 +19,7 @@ The base plugin (the part that would ship to WordPress.org) has **0 Critical, 0 
 | **Critical** | 0 | — | — | — | — |
 | **High** | 5 | 3 | 2 | 0 | 0 |
 | **Medium** | 14 | 14 | 0 | 0 | 0 |
-| **Low** | 21 | 14 | 1 | 1 | 1 |
+| **Low** | 21 | 16 | 1 | 0 | 1 |
 | **Informational** | 10 | — | — | — | — |
 | **Total** | **50** | | | | |
 
@@ -48,15 +48,14 @@ The base plugin (the part that would ship to WordPress.org) has **0 Critical, 0 
 | Remaining | Sandboxed iframe + strict Content-Security-Policy header |
 | Risk | Low when `WP_MCP_AI_ALLOW_TONEJS_EVAL` is `false` (default). Strudel engine does not use `new Function()`. |
 
-### F-LINT-02 — Pro Tree Excluded from PHPCS
+### F-LINT-02 — Pro Tree PHPCS (RESOLVED ✅)
 | Field | Value |
 |---|---|
 | Severity | **Low** |
-| Status | 🟠 **Open** |
-| What | `addons/pro/*` excluded from PHPCS in `phpcs.xml.dist:24` |
-| Measurement | 5,806 errors / 8,141 warnings across 745 files; 11,016 violations are `phpcbf`-auto-fixable |
-| Risk | Low — Pro addon is not distributed via WordPress.org. `.distignore` excludes `addons/`. |
-| Roadmap | R-T-01 — re-enable PHPCS on pro tree, auto-fix, document remaining exceptions |
+| Status | ✅ **Resolved** (May 2026, PRs #5070, #5078) |
+| What | `addons/pro/*` was blanket-excluded from PHPCS in `phpcs.xml.dist` |
+| Resolution | Blanket exclusion removed. 93% error reduction across all addons (1,143 → 82). Remaining errors are: (a) 8 files with PHP 8.3 parse errors in the PHPCS tokenizer, not code bugs; (b) naming convention exemptions (addons use `NVOOS_*` naming) which are documented and intentional. |
+| Risk | Resolved — Pro addon is not distributed via WordPress.org. `.distignore` excludes `addons/`. |
 
 ### F-CMP-04 — Minified JS Without Source Maps (Partial)
 | Field | Value |

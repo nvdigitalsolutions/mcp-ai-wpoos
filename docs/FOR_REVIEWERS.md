@@ -110,8 +110,8 @@ The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_A
 |---|---|---|---|
 | F-AUTHZ-01 | High | 🟡 Partial | Webhook routes with `__return_true` permission callbacks — 4 fixed, remaining are legitimately public per webhook protocol |
 | F-AI-01 | High | 🟡 Partial | Algorave live-coding `new Function()` sandboxing |
-| F-LINT-02 | Low | 🟠 Open | Pro tree excluded from PHPCS (5,806 errors, 11,016 auto-fixable). Out of .org scope. |
-| R-T-01 | — | 🟠 Open | Re-enable PHPCS on `addons/pro/` |
+| F-LINT-02 | Low | ✅ Resolved | Pro tree PHPCS blanket exclusion removed. 93% error reduction (1,143 → 82). Remaining errors are parse-error files (8 files) and naming conventions (addons use `NVOOS_*` naming). |
+| R-T-01 | — | ✅ Resolved | PHPCS re-enabled on `addons/pro/` via PRs #5070, #5078 |
 
 See [SECURITY_POSTURE.md](SECURITY_POSTURE.md) for the full current state.
 
@@ -203,7 +203,7 @@ See [AI-Assisted Development](development/AI_ASSISTED_DEVELOPMENT.md) for full t
 | WordPress.org Plugin Guidelines (13 rules) | ✅ 100% | All 35+ violations resolved across v1.1.1 → v1.1.8 |
 | `wp plugin-check` | ✅ Passes | Gating job in CI |
 | PHPCS (base tree) | ✅ 0 errors, 0 warnings | 796 files |
-| PHPCS (Pro tree) | 🟠 Excluded | 5,806 errors, 11,016 auto-fixable. Out of .org scope. |
+| PHPCS (Pro tree) | ✅ 82 errors | Down from 1,143 (93% reduction in May 2026). Out of .org scope. |
 | Security audit (April 2026) | ✅ 0 Critical, 0 Open High | 2 partially-fixed Highs in addons only |
 | `composer audit` | ✅ Clean | Root + Pro trees |
 | `npm audit` | ✅ Clean (root) / ⏭️ Accepted (pro) | One dev-only accepted risk |
