@@ -100,7 +100,8 @@ This quick reference provides fast access to the most common tasks and commands 
 ```bash
 # SSH into your server and clone directly into plugins directory
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 # Activate the plugin in WordPress admin — it is ready to use.
 ```
 
@@ -108,11 +109,13 @@ git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 ```bash
 # Option 1: Clone directly into WordPress (recommended)
 cd /path/to/wordpress/wp-content/plugins/
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 # Activate the plugin — pre-built assets included, no npm needed.
 
 # Option 2 (development): Clone, rebuild assets, then copy
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
 # Only on a machine with proper write access and Node.js installed:
 npm install && npm run build
