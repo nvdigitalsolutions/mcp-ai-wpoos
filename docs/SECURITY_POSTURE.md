@@ -19,9 +19,12 @@ The base plugin (the part that would ship to WordPress.org) has **0 Critical, 0 
 | **Critical** | 0 | — | — | — | — |
 | **High** | 5 | 3 | 2 | 0 | 0 |
 | **Medium** | 14 | 14 | 0 | 0 | 0 |
-| **Low** | 21 | 16 | 1 | 0 | 1 |
+| **Low** | 21 | 19 | 1 | 0 | 1 |
 | **Informational** | 10 | — | — | — | — |
 | **Total** | **50** | | | | |
+
+Low Fixed count includes 4 findings closed as false-positive in the April 2026 audit.
+
 
 ---
 
