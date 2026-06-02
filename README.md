@@ -2258,13 +2258,11 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 > This repository includes production-optimized vendor dependencies with classmap-authoritative autoloading configured by default in composer.json. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
 
 > **⚡ Use a shallow clone**  
-> This repository has a long history and is very large (~10 GB). A normal clone can take a long time and consume significant disk space. Unless you need the full commit history (for contributing or debugging), always use `--depth 1`:
+> A full clone of this repository is ~10 GB due to its long history. Use `--depth 1` to download only the latest snapshot (~500 MB) — much faster and smaller. If you later need the full history, run `git fetch --unshallow`.
 >
 > ```bash
 > git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 > ```
->
-> This downloads only the latest files — much faster and smaller. If you later need the full history, run `git fetch --unshallow`.
 
 If you're cloning from GitHub:
 
