@@ -28,7 +28,7 @@ The repo is a **monorepo** containing:
 |---|---|
 | Is this your first WordPress plugin? | Yes |
 | Was this written by AI? | Heavily. Multi-agent pipeline with human review. See [AI-Assisted Development](development/AI_ASSISTED_DEVELOPMENT.md). |
-| Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 2 Partially-Fixed High findings (both in addons). See [Security Posture](SECURITY_POSTURE.md). |
+| Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 5 High (3 Fixed, 2 Partially Fixed — both in addons). May 2026 hardening resolved an additional 1 Critical + 5 Warnings. See [Security Posture](SECURITY_POSTURE.md). |
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) |
 | What WP version? | 6.0+, tested up to 6.9 |
 | Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~584 advanced tools (commercial license). Base never gates features behind a license check. |
@@ -204,7 +204,7 @@ See [AI-Assisted Development](development/AI_ASSISTED_DEVELOPMENT.md) for full t
 | `wp plugin-check` | ✅ Passes | Gating job in CI |
 | PHPCS (base tree) | ✅ 0 errors, 0 warnings | 796 files |
 | PHPCS (Pro tree) | ✅ 82 errors | Down from 1,143 (93% reduction in May 2026). Out of .org scope. |
-| Security audit (April 2026) | ✅ 0 Critical, 0 Open High | 2 partially-fixed Highs in addons only |
+| Security audit (April 2026) | ✅ 0 Critical, 2 Partially Fixed High (addons only) | 3 of 5 Highs already Fixed. May 2026 hardening added. |
 | `composer audit` | ✅ Clean | Root + Pro trees |
 | `npm audit` | ✅ Clean (root) / ⏭️ Accepted (pro) | One dev-only accepted risk |
 | ISO 27001 / SOC 2 / HIPAA | 📋 Aspirational documentation | Not a certification |
