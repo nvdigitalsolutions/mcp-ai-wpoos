@@ -109,9 +109,9 @@ The base plugin (the part that would ship to WordPress.org) has **0 Critical, 0 
 
 ## What Would Pass a .org Review Today
 
-Based on the April 2026 re-audit:
+Based on the April 2026 re-audit and May 2026 hardening (re-audit May 19, code review May 23):
 
-- ✅ All 13 WordPress.org Plugin Directory Guidelines pass (audited April 15, 2026)
+- ✅ All 18 WordPress.org Plugin Directory Guidelines pass (most recent re-audit: May 23, 2026)
 - ✅ `wp plugin-check` passes (gating CI job)
 - ✅ PHPCS: 0 errors, 0 warnings on the WP.org-shipped tree (796 files)
 - ✅ `composer audit`: clean on both root and pro trees

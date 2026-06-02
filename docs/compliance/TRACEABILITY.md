@@ -111,6 +111,10 @@ composer run build && wp plugin-check mcp-ai-wpoos.zip
 | v1.1.3 | Mar 4, 2026 | Automated review — external services, sanitization, library versions, license gating, URLs, WPCS sweep |
 | v1.1.7 | Apr 9, 2026 | 404 URLs, capability flags, CLI export path, file writes |
 | v1.1.8 | Apr 15, 2026 | Full 13-guideline re-audit, Pro external services documented |
+| v1.1.10 | Apr 27, 2026 | April security audit — 50 findings, 0 Critical |
+| v1.1.15–v1.1.16 | May 9, 2026 | Inline scripts, cache directory, user hardening, input sanitization, production builds |
+| v1.1.21–v1.1.22 | May 19–23, 2026 | Pre-submission code review — 1 Critical + 5 Warnings resolved. Addons PHPCS 93% reduction. |
+| v1.1.25 | May 31, 2026 | Current release. All prior compliance maintained. |
 
 ---
 

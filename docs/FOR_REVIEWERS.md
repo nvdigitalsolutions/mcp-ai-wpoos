@@ -103,7 +103,7 @@ See [ADDON_INVENTORY.md](ADDON_INVENTORY.md) for full details.
 
 ## 5. Known Issues (What Needs Attention)
 
-The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 2 Partially-Fixed High, 14 Medium (all Fixed), 21 Low, 10 Informational.**
+The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (16 Fixed), 10 Informational.** Additional hardening in May 2026 (v1.1.15–v1.1.25) resolved 1 Critical + 5 Warnings from code review.
 
 ### Still open / partially fixed (as of v1.1.25):
 | ID | Severity | Status | What |
@@ -200,7 +200,7 @@ See [AI-Assisted Development](development/AI_ASSISTED_DEVELOPMENT.md) for full t
 
 | Framework | Status | Notes |
 |---|---|---|
-| WordPress.org Plugin Guidelines (13 rules) | ✅ 100% | All 35+ violations resolved across v1.1.1 → v1.1.8 |
+| WordPress.org Plugin Guidelines (18 rules) | ✅ 100% | All 35+ violations resolved across v1.1.1 → v1.1.22. Most recent re-audit: May 23, 2026. |
 | `wp plugin-check` | ✅ Passes | Gating job in CI |
 | PHPCS (base tree) | ✅ 0 errors, 0 warnings | 796 files |
 | PHPCS (Pro tree) | ✅ 82 errors | Down from 1,143 (93% reduction in May 2026). Out of .org scope. |
