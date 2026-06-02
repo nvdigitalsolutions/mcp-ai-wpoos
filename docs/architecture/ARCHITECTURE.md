@@ -1,7 +1,7 @@
 # NV oOS Architecture Overview
 
-**Last Updated:** April 2026
-**Version:** 1.1.6
+**Last Updated:** June 2026
+**Version:** 1.1.25
 
 This document provides a high-level architectural overview of the Open Operator System (NV oOS) plugin. For detailed technical documentation, see the main [docs](../) directory. For a step-by-step trace of a chat request, see [REQUEST-FLOW-WALKTHROUGH.md](REQUEST-FLOW-WALKTHROUGH.md).
 
@@ -16,7 +16,91 @@ This document provides a high-level architectural overview of the Open Operator 
 
 ## System Overview
 
-NV oOS is a WordPress plugin that provides an AI Assistant framework integrating with **9 language-model providers** and implementing the Model Context Protocol (MCP) for tool-based AI interactions. The plugin ships **837 tool classes** (227 base + 610 pro) across 34 REST controllers.
+NV oOS is a WordPress plugin that provides an AI Assistant framework integrating with **13 language-model providers** and implementing the Model Context Protocol (MCP) for tool-based AI interactions. The plugin ships **~815 tool classes** (231 base + 584 pro) across 34 REST controllers.
+
+### Component Diagram
+
+```mermaid
+graph TD
+    A[WordPress Site] --> B[REST API Layer]
+    B --> C[Chat Endpoints]
+    B --> D[MCP JSON-RPC]
+    B --> E[SSE Streaming]
+    B --> F[Webhook Handlers]
+
+    C --> G[Orchestration Layer]
+    D --> G
+    E --> G
+
+    G --> H[Agentic Loop]
+    G --> I[Resource Manager]
+    G --> J[Token Budget]
+
+    H --> K[Language Model Router]
+    K --> L1[OpenAI]
+    K --> L2[Gemini]
+    K --> L3[Anthropic]
+    K --> L4[DeepSeek]
+    K --> L5[OpenRouter]
+    K --> L6[Baseten]
+    K --> L7[Kimi]
+    K --> L8[DigitalOcean]
+    K --> L9[NVIDIA NIM]
+    K --> L10[Cloudflare]
+    K --> L11[Hugging Face]
+    K --> L12[LM Studio]
+    K --> L13[Ollama]
+
+    H --> M[Tool Registry]
+    M --> N[Base Tools ~231]
+    M --> O[Pro Tools ~584]
+
+    N --> P[WordPress Core]
+    O --> P
+
+    P --> Q[(MySQL Database)]
+    P --> R[File System]
+    P --> S[WP Options / Transients]
+
+    B --> T[Authentication]
+    T --> T1[WP Nonces]
+    T --> T2[Assistant Credentials]
+    T --> T3[Auth0 Tokens]
+    T --> T4[Guest Tokens]
+
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style G fill:#bfb,stroke:#333
+    style K fill:#fbb,stroke:#333
+    style M fill:#ffb,stroke:#333
+```
+
+### Repository Component Map
+
+```mermaid
+graph LR
+    subgraph "Monorepo"
+        BASE[mcp-ai-wpoos.php<br/>Base Plugin<br/>GPLv3 · PHP 7.4+]
+        PRO[addons/pro/<br/>Pro Addon<br/>Proprietary · PHP 8.1+]
+        ADDONS[addons/*/<br/>15 Addons<br/>Various Licenses]
+        CORE[core/<br/>Core Plugin<br/>GPLv3 · Standalone]
+        WORKER[addons/cloud-worker/<br/>Cloudflare Worker<br/>Not a WP Plugin]
+    end
+
+    BASE -->|requires| WP[WordPress 6.0+]
+    PRO -->|requires| BASE
+    ADDONS -->|require| BASE
+    PRO -->|optional dep| ADDONS
+
+    CORE -->|separate product| WP
+    WORKER -->|SaaS backend| PRO
+
+    style BASE fill:#4a9,stroke:#333,color:#fff
+    style PRO fill:#94a,stroke:#333,color:#fff
+    style ADDONS fill:#49a,stroke:#333,color:#fff
+    style CORE fill:#999,stroke:#333,color:#fff
+    style WORKER fill:#f93,stroke:#333
+```
 
 ### High-Level Architecture
 
