@@ -141,7 +141,7 @@ Bumped to 1.1.22 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 
 - **`WP_MCP_AI_Baseten_Client`** — full provider integration with OpenAI-compatible API at `https://api.baseten.co/v1` (PR #5067). Chat completions, tool/function calling, JSON mode, SSE streaming, reasoning content passthrough. Settings → Providers → Baseten subtab; Provider Diagnostics card; Model Discovery `baseten` branch.
 - **Catalog entries + provider badges** — Baseten model entries seeded in `model-catalog.json`; provider logo badges registered; CCT options updated.
-- **External service documentation** — terms/privacy URLs corrected to working paths; added to `docs/EXTERNAL_SERVICES.md` and `readme.txt` service disclosures. Provider now listed as 11th first-class AI provider alongside OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, and Ollama.
+- **External service documentation** — terms/privacy URLs corrected to working paths; added to `docs/reference/EXTERNAL_SERVICES.md` and `readme.txt` service disclosures. Provider now listed as 11th first-class AI provider alongside OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, and Ollama.
 
 ### Added — CoSAI Secure-by-Design Agentic System (May 2026)
 
@@ -216,7 +216,7 @@ New self-improving agent infrastructure as part of the Gemini I/O 2026 feature d
 ### Fixed — LM Studio External Service URLs
 
 - Replaced all `lmstudio.ai` URLs with the GitHub organization URL (`github.com/lmstudio-ai`) after all `lmstudio.ai` paths began returning HTTP 500 errors.
-- Updated Terms URL in `readme.txt` (500 → homepage), `docs/EXTERNAL_SERVICES.md`, and the provider configuration.
+- Updated Terms URL in `readme.txt` (500 → homepage), `docs/reference/EXTERNAL_SERVICES.md`, and the provider configuration.
 
 ### Fixed — Semantic Compression Settings Location (PRs #5056, #5057)
 
@@ -310,7 +310,7 @@ Bumped to 1.1.21 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 
 ### Added — Folder README Convention Phase P7
 
-- **Base backfill.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/guides/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`.
+- **Base backfill.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`.
 - **Pro reconciliation.** `addons/pro/includes/` subdirectories documented with the same README convention, completing P0–P7 for the full plugin tree.
 
 ### Fixed — Final WP.org Compliance Cleanup (F8–F10, PR #5058)
@@ -383,7 +383,7 @@ Bumped to 1.1.19 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 - Settings UI: new **Kimi** subtab under **Settings → Providers** with `enable_kimi`, `kimi_api_key`, `kimi_model`, and `kimi_base_url` fields.
 - `WP_MCP_AI_Model_Config::get_active_providers()` now includes `kimi` when the provider is enabled with an API key configured.
 - Provider Diagnostics card with a lightweight model-list probe.
-- WP.org compliance docs updated: `docs/EXTERNAL_SERVICES.md` now documents Kimi (Moonshot AI), OpenRouter, and DigitalOcean API endpoints with service URLs, data-sharing disclosures, and ToS links.
+- WP.org compliance docs updated: `docs/reference/EXTERNAL_SERVICES.md` now documents Kimi (Moonshot AI), OpenRouter, and DigitalOcean API endpoints with service URLs, data-sharing disclosures, and ToS links.
 
 ### Added — Agent Client Protocol (ACP) Server
 
@@ -402,7 +402,7 @@ Bumped to 1.1.19 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` 
 ### Added — Unix Theory Phase P7: Folder README Convention
 
 - Every PHP-bearing subdirectory under `includes/` (base plugin) now ships a `README.md` declaring the folder's purpose, public surface, neighbor folders, and which `.context/*.md` files to load alongside it.
-- Convention defined in `docs/guides/developer/folder-readme-convention.md`; canonical template at `.context/templates/folder-readme-template.md`.
+- Convention defined in `docs/developer/folder-readme-convention.md`; canonical template at `.context/templates/folder-readme-template.md`.
 - Enforced by `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
 - Extends the Unix Theory Compliance series (P0–P7 now complete for base plugin).
 
@@ -515,7 +515,7 @@ The complete set of changes captured in this release is broken down below; the p
   `TICK_LOCK_TTL`.
 - New test: `tests/test-veo-inline-kick.php` (4 cases: constant assertions,
   lock prevents double-poll, missing-metadata bail, filter disable).
-- Architecture doc `docs/architecture/inline-async-tick-pattern.md` updated:
+- Architecture doc `docs/developer/architecture/inline-async-tick-pattern.md` updated:
   Slice 6 added to the Tier-1 consumer table; the "Future Tier-1 consumers"
   note removed (all planned slices are now complete).
 
@@ -708,7 +708,7 @@ The complete set of changes captured in this release is broken down below; the p
   measurement bootstrap can record `inline_kick.duration_ms` and
   `inline_kick.failure.count` for OTel.
 - Docs: new architecture page
-  `docs/architecture/inline-async-tick-pattern.md`; async-tool guide
+  `docs/developer/architecture/inline-async-tick-pattern.md`; async-tool guide
   updated with the fallback section.
 
 ### Fixed — Transcript mining job stuck in `queued` on WP-Cron-disabled hosts
@@ -868,7 +868,7 @@ New `includes/helpers/class-wp-mcp-ai-user-context-helper.php` centralises privi
 - **B11** — Sanitisation gaps on settings inputs closed.
 - **B12** — All REST permission callbacks reviewed; missing `manage_options` gates added.
 - **B13** — `$_POST['approval_id|resolution|note']` in approvals handler now wrapped with `wp_unslash()`; bare `phpcs:ignore NonceVerification.Recommended` lines in DAG builder replaced with explanatory comments.
-- **49/49 base AJAX handlers** confirmed with `check_ajax_referer()`. Full evidence: `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`.
+- **49/49 base AJAX handlers** confirmed with `check_ajax_referer()`. Full evidence: `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`.
 
 #### Fixed — Docs Hub
 
@@ -921,9 +921,9 @@ All 271 AJAX handlers now have test coverage. Allowlist cleared to 0. CI guard a
 
 #### Documentation
 
-- **`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`** — full evidence table for all WP.org B-series findings.
+- **`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`** — full evidence table for all WP.org B-series findings.
 - **`SUBMISSION.md`** — reviewer-response table cross-referencing each finding to the fix commit.
-- **`docs/addons/toolkit-spa-blueprint.md`** — updated to v2.5: §20 migration guide from legacy `chat.js` to Chat SPA; Tier B/C/D/E tables updated; status line updated.
+- **`docs/developer/addons/toolkit-spa-blueprint.md`** — updated to v2.5: §20 migration guide from legacy `chat.js` to Chat SPA; Tier B/C/D/E tables updated; status line updated.
 - **`CREDITS.md` / `THIRD_PARTY_NOTICES.md`** — updated for GrapesJS, @grapesjs/react, tldraw, bpmn-js, rehype-highlight, lowlight; per-addon README Credits sections added.
 
 ## [1.1.16] - 2026-05-06
@@ -1058,7 +1058,7 @@ Re-lands the full orchestration feature set with a JetEngine CCT init-priority f
 
 #### Added — LLM Harnessing Subsystem (Base + Pro, `includes/harness/`)
 
-Seven opt-in layers that improve response quality without modifying existing tool behaviour. Every layer is off by default; activation is per assistant via the **LLM Harness** metabox on the assistant edit screen. Full reference: [`docs/llm-harness.md`](docs/llm-harness.md).
+Seven opt-in layers that improve response quality without modifying existing tool behaviour. Every layer is off by default; activation is per assistant via the **LLM Harness** metabox on the assistant edit screen. Full reference: [`docs/features/llm-harness.md`](docs/features/llm-harness.md).
 
 - **Layer A — Prompt / Cue** (`WP_MCP_AI_Prompt_Cue_Library`): registry of seven named, versioned cue templates (Chain-of-Thought, Failure-Modes-First, Plan-Then-Solve, Cite-or-Abstain, Tool-or-Abstain, Clarify-First, State-Uncertainty) that prepend to — never replace — the assistant's existing system prompt. Extensible via `wp_mcp_ai_register_prompt_cues`. Selected per task class via `wp_mcp_ai_select_prompt_cue`.
 - **Layer B — Reasoning / Rehearsal** (`WP_MCP_AI_Reasoning_Trace`): canonical trace schema (`assumptions → constraints → plan → intermediate_results → verification → answer`) plus a self-consistency vote primitive (best-of-N sampling with configurable N).
@@ -1202,9 +1202,9 @@ A new in-the-loop image / document markup system that lets tools pause the agent
 - **Telemetry**: bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
 - **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags. Read access requires `edit_posts`; reset requires `manage_options`.
 - **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
-- **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+- **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/reference/hooks/hooks-reference.md`.
 - **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
-- **Docs**: `docs/markup-subsystem.md` walks through the end-to-end flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+- **Docs**: `docs/features/markup-subsystem.md` walks through the end-to-end flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
 
 ### Added — QMS + PARA Methodology Integration (Pro)
 
@@ -1259,7 +1259,7 @@ A foundation pass plus the five highest-leverage capture tools layered onto the 
 
 - **Phase A — foundation** (`#129d2610`, follow-up `#bb386022`): the MemPalace-inspired Capture Framework scaffolding — base capture interface, lifecycle hooks, and shared time-source / tier-logging utilities — with review fixes for time consistency and tier-logging payload shape.
 - **Phase B1 — five highest-leverage capture tools** (`#1760c658`): the first batch of capture tools that write into the durable `ai_agent_memories` CCT through the Phase 4a/4b bridge.
-- Cross-link: see `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` for the unified MemPalace/Letta/Zep/mem0/Cognee schema rationale that the capture tools target.
+- Cross-link: see `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md` for the unified MemPalace/Letta/Zep/mem0/Cognee schema rationale that the capture tools target.
 
 ### Added — Graphify CPT/CCT integration suite
 
@@ -1300,8 +1300,8 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 ### Documentation
 
 - `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 narrative and reconciled tool counts (~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative).
-- `docs/markup-subsystem.md` walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
-- `docs/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
+- `docs/features/markup-subsystem.md` walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+- `docs/reference/hooks/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 - `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
 
 ### Versioning
@@ -1335,7 +1335,7 @@ The agent-memory subsystem was the only persistent surface in the plugin still b
 - Dual-write hook on `wp_mcp_ai_memory_stored`; new `wp_mcp_ai_memory_deleted` action fired from `manage_context_lifecycle` delete path with subscriber-driven CCT cleanup.
 - `get_agent_memory_stats()` now returns `persistent_storage` (CCT count + per-tier breakdown) when JetEngine is active. New "Persistent (CCT) / Cache only" stat card on the agent-memory dashboard.
 - Tests: `tests/test-jetengine-agent-memories-cct.php` (slug/schema/REST args/required fields/field-id ranges) and `tests/test-agent-memory-cct-bridge.php` (tier classifier, record build, filter mutation, delete-event payload). 13 new tests pass; 24 existing regression tests still pass.
-- Source files inspired by [MemPalace](https://github.com/MemPalace/mempalace) now cite the upstream URL in their file headers: `class-wp-mcp-ai-tool-store-agent-context.php`, `class-wp-mcp-ai-tool-wake-up-context.php`, `class-wp-mcp-ai-tool-mine-agent-memory.php`, `class-wp-mcp-ai-jetengine-agent-memories-cct.php`, `interface-wp-mcp-ai-embedding-provider.php`, `class-wp-mcp-ai-embedding-provider-openai.php`, `class-wp-mcp-ai-embedding-provider-ollama.php`, `class-wp-mcp-ai-vector-context-service.php`. Documentation in `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` already linked the upstream project; the source citations now match the documentation.
+- Source files inspired by [MemPalace](https://github.com/MemPalace/mempalace) now cite the upstream URL in their file headers: `class-wp-mcp-ai-tool-store-agent-context.php`, `class-wp-mcp-ai-tool-wake-up-context.php`, `class-wp-mcp-ai-tool-mine-agent-memory.php`, `class-wp-mcp-ai-jetengine-agent-memories-cct.php`, `interface-wp-mcp-ai-embedding-provider.php`, `class-wp-mcp-ai-embedding-provider-openai.php`, `class-wp-mcp-ai-embedding-provider-ollama.php`, `class-wp-mcp-ai-vector-context-service.php`. Documentation in `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md` already linked the upstream project; the source citations now match the documentation.
 - Deferred to follow-up PRs (per the published plan): **4b-3** memory-tier parameter on `store_agent_context` / `wake_up_context` / `retrieve_agent_memory` (separate review window) and **4b-5** promote-on-pressure hygiene service.
 
 ### Added — AI Harmonization sub-toolkit (Pro)
@@ -1444,8 +1444,8 @@ A small but tightly-scoped compliance pass to clear the remaining WordPress.org 
 Documentation, distribution, and one targeted bug fix release. No source-code changes to plugin runtime behavior beyond the Veo 3.1 fix.
 
 ### Documentation
-- **New `docs/compliance/SECURITY_AUDIT_2026_04.md`** — Published summary of the April 2026 security & compliance code review covering the base plugin, the Pro addon, and the six minor addons (`algorave`, `canvas`, `cornerstone3d`, `embedded`, `fantasy-football`, `graphify`). Cross-references the nine deliverables under `docs/audit/2026-04/`. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
-- `docs/DOCUMENTATION_INDEX.md`, `docs/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/audit/2026-04/README.md` cross-reference the new audit summary.
+- **New `docs/operations/compliance/SECURITY_AUDIT_2026_04.md`** — Published summary of the April 2026 security & compliance code review covering the base plugin, the Pro addon, and the six minor addons (`algorave`, `canvas`, `cornerstone3d`, `embedded`, `fantasy-football`, `graphify`). Cross-references the nine deliverables under `docs/project/audits/2026-04/`. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
+- `docs/DOCUMENTATION_INDEX.md`, `docs/operations/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/project/audits/2026-04/README.md` cross-reference the new audit summary.
 - `README.md` Latest Updates banner refreshed for v1.1.10; the **Active Security Monitoring** section now links to the published audit summary.
 
 ### Changed
@@ -1478,8 +1478,8 @@ Major delivery of the end-to-end **Measurement subsystem** (12 sequenced PRs) pl
   - Every signal carries a privacy tier, a direction (`higher_is_better` / `lower_is_better` / `neutral`), and a paired counter-metric so dashboards cannot Goodhart a single dimension.
   - New stock metrics include tool-execution, chat-loop, agentic-loop, and SSE/stream families, all emitted through a single `wp_mcp_ai_register_metrics` registry.
 - **Graphify addon v0.5.0** — NV oOS Graphify (WordPress Knowledge Graph) restored under `addons/graphify/` after a short revert cycle.
-- **`docs/ORCHESTRATION_REFERENCE.md`** (April 16, 2026) — New single authoritative reference for the orchestration layer: all 10 workflow presets, all 13 resource presets with full settings-comparison matrices, PSO algorithm documentation, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data-storage keys, admin UI, and service-file index.
-- **`docs/measurement/`** — Full subsystem docs: `README.md`, `rollout-plan.md`, `goodhart-checklist.md`, `verifier-authoring.md`, `reward-authoring.md`, `eval-harness.md`, `persistent-store.md`, `dashboard.md`, `sse-stream.md`, `tool-execution.md`, `chat-turn.md`, `budgets.md`, `otel-exporter.md`, `privacy-matrix.md`, `conventions.md`.
+- **`docs/reference/orchestration/ORCHESTRATION_REFERENCE.md`** (April 16, 2026) — New single authoritative reference for the orchestration layer: all 10 workflow presets, all 13 resource presets with full settings-comparison matrices, PSO algorithm documentation, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data-storage keys, admin UI, and service-file index.
+- **`docs/reference/measurement/`** — Full subsystem docs: `README.md`, `rollout-plan.md`, `goodhart-checklist.md`, `verifier-authoring.md`, `reward-authoring.md`, `eval-harness.md`, `persistent-store.md`, `dashboard.md`, `sse-stream.md`, `tool-execution.md`, `chat-turn.md`, `budgets.md`, `otel-exporter.md`, `privacy-matrix.md`, `conventions.md`.
 
 ### Security
 - **PHPUnit upgraded to 11.x** with WordPress-compatibility patches (American-English `normalized` naming patch, wp-phpunit-phpunit10 compat) to resolve the argument-injection vulnerability **GHSA-qrr6-mg7r-m243**. A short PHPUnit 12 attempt was reverted because of wp-phpunit incompatibility; the final landing is on PHPUnit 11.
@@ -1546,7 +1546,7 @@ Major delivery of the end-to-end **Measurement subsystem** (12 sequenced PRs) pl
 
 ### Compliance
 - **Full WordPress.org Plugin Guidelines re-audit** — all 13 guidelines pass
-- **New compliance document** `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline, code statistics, and file references
+- **New compliance document** `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline, code statistics, and file references
 - 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output escaping instances confirmed across the base plugin
 
 
@@ -1561,7 +1561,7 @@ Major additions including full MCP 2024-11-05 protocol compliance (all 11 method
 - **MCP Apps — Per-Assistant Remote MCP Server Connections (April 10, 2026)** (PR #4646, SEP-1865): Each assistant can connect to up to 10 remote MCP servers as "apps". JSON-RPC 2.0 client over Streamable HTTP transport (`initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read`). Tool bridge wraps each remote tool as local `WP_MCP_AI_Tool_Interface` with `mcp_app_{label}_{tool}` slug. REST endpoints: `POST /mcp-apps/test`, `POST /mcp-apps/discover`, `GET /mcp-apps/{id}`. Admin metabox with repeater-style UI (label, server URL, auth, timeout, SSL verify). Transient-cached discovery (5min TTL). Remote tools registered via `wp_mcp_ai_register_tools` at priority 50.
 - **CRE Debt & Securitization Pro Toolkit — 57 Tools (April 10–11, 2026)** (PRs #4647, #4650): Complete commercial real estate debt toolkit across five modules: Originations (11), Underwriting (13), CMBS/Securitization (10), Debt Fund (11), Asset Management (12). Shared `WP_MCP_AI_CRE_Debt_Calculator` with amortization, DSCR/LTV/debt yield, NPV, IRR, DCF, loan sizing, equity waterfall, defeasance/yield maintenance. CPT/CCT infrastructure with Chart.js admin dashboard. Settings toggle: `enable_cre_debt_toolkit`. All outputs include `ANALYSIS ONLY — Not investment advice.`
 - **36 Pro Toolkit Professions + 17 Teams (April 11, 2026)** (PR #4652): 5 new profession knowledge bases (`pro-cre-debt.json`, `pro-financial-services.json`, `pro-digital-media.json`, `pro-business-operations.json`, `pro-specialized-services.json`) mapping 36 new roles to 275+ pro toolkit tool slugs. 2 new team configs (`cre-debt-teams.json` with 7 teams, `pro-toolkit-teams.json` with 10 teams). Total professions: 296 (was 259). Total teams: 100.
-- **Compliance document** — `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_09.md` with full remediation details for all reviewer-flagged issues plus proactive audit results (PRs #4642, #4645, #4654, #4658)
+- **Compliance document** — `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_09.md` with full remediation details for all reviewer-flagged issues plus proactive audit results (PRs #4642, #4645, #4654, #4658)
 
 ### Fixed
 - **AJAX capability checks (April 11, 2026)** (PR #4658) — `dismiss_directory_notice` and `dismiss_price_notice` handlers now require `manage_options` capability in addition to nonce verification
@@ -1837,7 +1837,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
 - Production classmap autoloader regenerated (686 entries)
 
 ### Documentation
-- Added `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_03_24.md` — Pass 17 compliance verification report
+- Added `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_03_24.md` — Pass 17 compliance verification report
 - Added `docs/03-wp-org-compliance.md` — compliance change log for this PR
 
 ## [1.1.4] - 2026-03-15
@@ -2033,7 +2033,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Security**: Capability-based authorization, rate limiting (10 commands/minute), comprehensive logging
   - **Test Coverage**: 45+ test cases covering all commands and workflow functionality
   - **Documentation**: Complete implementation guide with usage examples
-  - See [SLASH_COMMANDS_GUIDE.md](docs/SLASH_COMMANDS_GUIDE.md)
+  - See [SLASH_COMMANDS_GUIDE.md](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md)
 
 - **Pro Toolkit Slash Commands - Phase 2 Complete (February 4, 2026)**: Specialized commands for pro toolkits with automated workflows
   - **21 Commands Implemented**: 
@@ -2135,7 +2135,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
     - File: `includes/class-wp-mcp-ai-job-notifier-rest.php`
     - Impact: Prevents users from accessing other users' job data via ID enumeration
     - Added `is_user_authorized_for_job()` with 7 authorization paths (admin, user, assistant, team, profession, agent, virtual agent)
-  - **Security Report**: Complete vulnerability analysis and remediation guide in `docs/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md`
+  - **Security Report**: Complete vulnerability analysis and remediation guide in `docs/operations/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md`
   - **Files Changed**: 4 files modified, ~400 lines of security hardening code added
   - **Result**: 100% of critical/high vulnerabilities resolved; 2 medium severity issues remain (CORS policy, rate limiting)
 
@@ -2180,7 +2180,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
 
 ### Documentation
 - **Root Directory Documentation Consolidation (January 29, 2026)**: Major cleanup of root directory documentation
-  - **Implementation Summaries**: Moved 19 implementation summary files to `docs/implementation-history/2026/`
+  - **Implementation Summaries**: Moved 19 implementation summary files to `docs/history/2026/`
     - Admin pages enhancement summaries (3 files)
     - AJAX test implementation summary
     - Chat job status SSE implementation
@@ -2189,10 +2189,10 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
     - System status summaries (2 files)
     - Task summary
     - Generic enhancement and implementation summaries
-  - **Deployment Documentation**: Moved 2 deployment guides to `docs/deployment/`
+  - **Deployment Documentation**: Moved 2 deployment guides to `docs/operations/deployment/`
     - PRODUCTION_DEPLOYMENT.md
     - PRODUCTION_READY.md
-  - **Security Documentation**: Moved 1 security report to `docs/security/`
+  - **Security Documentation**: Moved 1 security report to `docs/operations/security/`
     - SECURITY_COMPLIANCE_REPORT.md
   - **Root Directory**: Now contains only 6 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md, DEPENDENCIES_BUNDLING.md) plus 2 supporting files (readme.txt, tool-status.txt)
   - **Updated**: DOCUMENTATION.md to reflect new organization structure
@@ -2230,7 +2230,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Implementation Status**: 85-90% complete with comprehensive test suite (12 PHPUnit tests, 9 integration tests)
   - **Documentation**: Complete documentation suite (55.3KB across 6 files) including usage guide, validation results, and workflow examples
   - **PHP Workaround Extension**: Extends core orchestration layer's "persistent-behavior illusion" to enable distributed agent coordination in stateless PHP environment
-  - See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical documentation
+  - See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical documentation
   - See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview
 
 ### Fixed
@@ -2306,7 +2306,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Settings Features**: Overview tabs, configuration tabs, provider setup, research & add capabilities, remote sites support, WP-CLI integration
   - **Multi-Agent Functionality**: Each toolkit can have dedicated AI assistant; up to 5 concurrent agents (one per active toolkit)
   - **Specialization**: Domain-specific agents (product expert, content creator, translator, video editor, financial advisor, DJ, architect, etc.)
-  - See [docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md](docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
+  - See [docs/history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md](docs/history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
 
 - **Social Media Analytics Tools (January 15-22, 2026)**: Added 4 new analytics tools to Social Media Toolkit
   - **Get Cross-Platform Analytics** (`get_cross_platform_analytics`) - Unified metrics dashboard aggregating data from multiple platforms (623 lines)
@@ -2333,7 +2333,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - ~90KB documentation across 14 comprehensive procedures
   - Dynamic compliance dashboard calculations
   - Complete control mappings for all three frameworks
-  - See [Weekly Summary](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md)
+  - See [Weekly Summary](docs/history/2026/WEEKLY_SUMMARY_2026-01-06.md)
 
 - **Pro CPT Documentation - January 6, 2026**: Created comprehensive documentation for Pro custom post types
   - Events, Quizzes, and Places CPT overview (21 tools total)
@@ -2347,14 +2347,14 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Reviewed 5 major changes: Token Manager fix, Provider Keys fix, OAuth fix, HuggingFace fix, Model Dropdown fix
   - All changes passed security and quality checks
   - Status: Production ready
-  - See [docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md](docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
+  - See [docs/history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md](docs/history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
 
 - **Root Directory Reorganization (January 13, 2026)**: Cleaned up root directory by moving documentation files
   - Moved 20+ markdown files to organized subdirectories
   - Root now contains only 5 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md)
-  - Files organized into: `docs/fixes/`, `docs/implementation-history/2026/`, `docs/implementation-summaries/`
+  - Files organized into: `docs/fixes/`, `docs/history/2026/`, `docs/implementation-summaries/`
   - Zero information loss during reorganization
-  - See [docs/implementation-history/2026/ROOT_DIRECTORY_ORGANIZATION_2026-01-13.md](docs/implementation-history/2026/ROOT_DIRECTORY_ORGANIZATION_2026-01-13.md)
+  - See [docs/history/2026/ROOT_DIRECTORY_ORGANIZATION_2026-01-13.md](docs/history/2026/ROOT_DIRECTORY_ORGANIZATION_2026-01-13.md)
 
 - **Fix Documentation (January 15-21, 2026)**: Created comprehensive documentation for all recent fixes
   - 6 detailed fix documentation files created
@@ -2423,12 +2423,12 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Documentation: 9.5/10 - 659 comprehensive files
   - Test Coverage: 8.5/10 - 565 test files
   - Tool inventory verified: 217 tool files (151 base + 66 Pro)
-  - See [CODE_REVIEW_2026-01-02.md](docs/implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)
+  - See [CODE_REVIEW_2026-01-02.md](docs/history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)
 
 ### Changed
 - **Root Directory Organization**: Cleaned up root directory by moving troubleshooting documentation files (January 10, 2026)
-  - Moved `CLOUDFLARE-SYSTEM-PROMPT-TEST.md` from root to `docs/troubleshooting/common/`
-  - Moved `MODEL-MANAGER-FIX-VERIFICATION.md` from root to `docs/troubleshooting/common/`
+  - Moved `CLOUDFLARE-SYSTEM-PROMPT-TEST.md` from root to `docs/operations/troubleshooting/common/`
+  - Moved `MODEL-MANAGER-FIX-VERIFICATION.md` from root to `docs/operations/troubleshooting/common/`
   - Root directory now contains only 5 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md)
   - Zero information loss during reorganization
 
@@ -2530,7 +2530,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Reorganized 40 files from root and docs/ directories into logical categories
   - Created clear category structure: archive/, features/, guides/, reference/, troubleshooting/
   - Maintained zero information loss during reorganization
-  - Added `DOCUMENTATION_REORGANIZATION_SUMMARY.md` tracking document (now in `docs/implementation-history/2025/documentation/`)
+  - Added `DOCUMENTATION_REORGANIZATION_SUMMARY.md` tracking document (now in `docs/history/2025/documentation/`)
   - Clean root directory maintained (6 essential MD files only)
   - Well-organized subdirectories with clear navigation via `docs/DOCUMENTATION_INDEX.md`
 - **Tool Count Clarification**: Updated documentation to accurately reflect tool counts
@@ -2548,15 +2548,15 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
     - Security review (10/10 score - no vulnerabilities found)
     - Documentation quality assessment (9/10 score)
     - Architecture review and recommendations
-    - See `docs/implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-24.md`
+    - See `docs/history/2025/code-reviews/CODE_REVIEW_2025-12-24.md`
   - December 25: Complete codebase analysis and comprehensive review
     - Full PHP linting with WordPress Coding Standards (470 files)
     - JavaScript linting with ESLint (52 files, all passed)
     - Security scan (10/10 - zero vulnerabilities found)
     - Architecture assessment (9.5/10)
     - Overall grade: A- (92/100) - Production Ready
-    - See `docs/implementation-history/2025/code-reviews/COMPREHENSIVE_CODE_REVIEW_2025-12-25.md`
-    - See `docs/implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-25.md`
+    - See `docs/history/2025/code-reviews/COMPREHENSIVE_CODE_REVIEW_2025-12-25.md`
+    - See `docs/history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-25.md`
 
 ### Fixed
 - Version number inconsistencies across documentation files (1.0.0 → 1.1.0)
@@ -2770,7 +2770,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Dynamically create assistant message when `tool_results` present but no LLM message exists
   - Fixed `handleChatResponse()` to process tool results even when no `choices` array is returned
   - Added `startAsyncToolPolling` helper function to reduce code duplication
-  - See `docs/archive/fixes/ASYNC_TOOL_RESULT_FIX.md` for technical details
+  - See `docs/history/archive/fixes/ASYNC_TOOL_RESULT_FIX.md` for technical details
 
 - **Async Tool ID Mismatch Fix (PR #1772)**: Fixed subsequent API failures after async video generation
   - Skip pending async tool results when adding to conversation (will be added on completion)
@@ -2884,24 +2884,24 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Preserves agentic workflow - no manual re-uploading needed
   - Added 2 comprehensive unit tests (`test_sanitize_messages_processes_input_image_segments` and `test_sanitize_messages_processes_input_file_segments`)
   - Backward compatible with all existing segment types
-  - See `docs/archive/fixes/CHAT_CLIENT_ATTACHMENT_FIX.md` for technical details
+  - See `docs/history/archive/fixes/CHAT_CLIENT_ATTACHMENT_FIX.md` for technical details
 
 ### Documentation
 - **Documentation Organization (November 27, 2025)**: Continued documentation cleanup
-  - Moved 13 additional fix documentation files from root to `docs/archive/fixes/`
+  - Moved 13 additional fix documentation files from root to `docs/history/archive/fixes/`
   - Files moved: ASYNC_TOOL_RESULT_FIX.md, FILE_BASED_POLLING_IMPLEMENTATION.md, FIX_SUMMARY.md, IMAGE_ATTACHMENT_URL_FIX.md, IMAGE_EDIT_403_FIX.md, ISSUE_RESOLUTION_SUMMARY.md, PULL_REQUEST_SUMMARY.md, ROTATE_IMAGE_FIX.md, ROTATE_IMAGE_FIX_SUMMARY.md, VEO_FILENAME_FIX.md, VEO_NOTIFICATION_FLOW.md, VEO_TOOL_CALL_ID_AND_COST_FIX.md, VIDEO_EXTRACTION_FIX_SUMMARY.md
   - Root directory now contains only 5 essential files (README.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, BUILD.md)
 
 - **Documentation Organization (November 24, 2025)**: Completed initial documentation cleanup
-  - Moved 62 non-essential markdown files from root to `docs/archive/` subdirectories
+  - Moved 62 non-essential markdown files from root to `docs/history/archive/` subdirectories
   - Root directory now contains only 5 essential files (README.md, CONTRIBUTING.md, SECURITY.md, CHANGELOG.md, BUILD.md)
   - Organized files into logical categories:
-    - `docs/archive/fixes/` - Bug fix summaries and technical details (31 files)
-    - `docs/archive/features/` - Feature implementation documentation (14 files)
-    - `docs/archive/implementations/` - Implementation summaries (5 files)
-    - `docs/archive/phases/` - Phase documents (4 files)
-    - `docs/archive/testing/` - Test guides and summaries (3 files)
-    - `docs/archive/summaries/` - General summaries (1 file)
+    - `docs/history/archive/fixes/` - Bug fix summaries and technical details (31 files)
+    - `docs/history/archive/features/` - Feature implementation documentation (14 files)
+    - `docs/history/archive/implementations/` - Implementation summaries (5 files)
+    - `docs/history/archive/phases/` - Phase documents (4 files)
+    - `docs/history/archive/testing/` - Test guides and summaries (3 files)
+    - `docs/history/archive/summaries/` - General summaries (1 file)
   - All documentation preserved (nothing deleted, only organized)
   - Easier navigation and discovery of relevant documentation
   - Completes the documentation reorganization initiated on November 18, 2025
@@ -2916,7 +2916,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Comprehensive test coverage (21 new unit tests in `tests/test-gemini-file-service-caching.php`)
   - All features follow proper Separation of Concerns (Service layer handles business logic)
   - Reduces API costs and improves performance by avoiding duplicate uploads
-  - **Status**: Phase 2.1 Complete ✅ (see `docs/archive/VIDEO_ANALYSIS_ROADMAP.md`)
+  - **Status**: Phase 2.1 Complete ✅ (see `docs/history/archive/VIDEO_ANALYSIS_ROADMAP.md`)
 
 ### Documentation
 - **Documentation Reorganization (November 18, 2025)**: Comprehensive cleanup and consolidation of documentation
@@ -2927,12 +2927,12 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
     - Security audit findings and recommendations
     - Prioritized action items with time estimates
   - Reorganized 95+ documentation files into logical archive structure
-    - Created `docs/archive/implementations/` for implementation summaries
-    - Created `docs/archive/phases/` for phase documents
-    - Created `docs/archive/fixes/` for fix summaries and issue resolutions
-    - Created `docs/archive/features/` for feature documentation
-    - Created `docs/archive/code-reviews/` for code review reports
-    - Created `docs/archive/testing/` for test infrastructure docs
+    - Created `docs/history/archive/implementations/` for implementation summaries
+    - Created `docs/history/archive/phases/` for phase documents
+    - Created `docs/history/archive/fixes/` for fix summaries and issue resolutions
+    - Created `docs/history/archive/features/` for feature documentation
+    - Created `docs/history/archive/code-reviews/` for code review reports
+    - Created `docs/history/archive/testing/` for test infrastructure docs
   - **Root directory now contains only 5 essential files**:
     - README.md - Main plugin documentation
     - CONTRIBUTING.md - Contribution guidelines

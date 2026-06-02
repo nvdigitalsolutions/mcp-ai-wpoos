@@ -94,7 +94,7 @@ class WP_MCP_AI_ISO27001_Badge {
 					__( 'This plugin has achieved ISO/IEC 27001:2022 certification (Date: %s). All information security controls are implemented and audited.', 'mcp-ai-wpoos' ),
 					$cert_date
 				),
-				'docs_link'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001',
+				'docs_link'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001',
 				'class'       => 'certified',
 			);
 		}
@@ -103,7 +103,7 @@ class WP_MCP_AI_ISO27001_Badge {
 		return array(
 			'label'       => __( 'Fully Compliant', 'mcp-ai-wpoos' ),
 			'description' => __( 'This plugin is fully compliant with ISO/IEC 27001:2022 Information Security Management System (ISMS) framework with 100% of applicable controls implemented (83 of 83).', 'mcp-ai-wpoos' ),
-			'docs_link'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001',
+			'docs_link'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001',
 			'class'       => 'compliant',
 		);
 	}

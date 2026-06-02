@@ -326,7 +326,7 @@ class WP_MCP_AI_Tool_Example_Tool extends WP_MCP_AI_Tool_Base {
 
 ## Tool Return Envelope (Canonical)
 
-Every tool's `execute()` returns **exactly one of two shapes**. This is the canonical envelope landed by Phase P0 of the [Unix Theory Compliance Proposal](../docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope).
+Every tool's `execute()` returns **exactly one of two shapes**. This is the canonical envelope landed by Phase P0 of the [Unix Theory Compliance Proposal](../docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope).
 
 ```php
 // SUCCESS — array with success/message/data:

@@ -610,7 +610,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="notice notice-error">
 					<p>
 						<strong><?php esc_html_e( 'Error loading compliance data:', 'mcp-ai-wpoos' ); ?></strong>
-						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/operations/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 				<?php
@@ -922,7 +922,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="notice notice-error">
 					<p>
 						<strong><?php esc_html_e( 'Error loading compliance data:', 'mcp-ai-wpoos' ); ?></strong>
-						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/operations/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 				<?php
@@ -1865,7 +1865,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<span class="dashicons dashicons-warning"></span>
 					<?php esc_html_e( 'Manage Risks', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/README.md' ); ?>" class="button" target="_blank">
+				<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/README.md' ); ?>" class="button" target="_blank">
 					<span class="dashicons dashicons-book"></span>
 					<?php esc_html_e( 'View ISMS Documentation', 'mcp-ai-wpoos' ); ?>
 				</a>
@@ -2056,7 +2056,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function render_documentation_links() {
 			// Link to GitHub repository documentation (always up-to-date).
-			$github_base = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/';
+			$github_base = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/';
 			$docs        = array(
 				'ISMS-Policy.md'                => __( 'ISMS Policy', 'mcp-ai-wpoos' ),
 				'Statement-of-Applicability.md' => __( 'Statement of Applicability', 'mcp-ai-wpoos' ),
@@ -2539,8 +2539,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</td>
 						<td><span class="wp-mcp-ai-status-badge wp-mcp-ai-status-implemented"><?php esc_html_e( 'Complete', 'mcp-ai-wpoos' ); ?></span></td>
 						<td>
-							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>"
-						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" class="button button-small" target="_blank">
+							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Statement-of-Applicability.md' ); ?>"
+						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Statement-of-Applicability.md' ); ?>" class="button button-small" target="_blank">
 								<?php esc_html_e( 'View Report', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</td>
@@ -2833,7 +2833,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="notice notice-warning inline">
 					<p>
 						<strong><?php esc_html_e( 'Unable to load risk register.', 'mcp-ai-wpoos' ); ?></strong>
-						<?php esc_html_e( 'Please check that the Risk-Register.md file is available at docs/compliance/iso27001/Risk-Register.md', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Please check that the Risk-Register.md file is available at docs/operations/compliance/iso27001/Risk-Register.md', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 			<?php else : ?>
@@ -2906,7 +2906,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							)
 						),
 						count( $risks ),
-						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
+						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
 					);
 					?>
 				</p>
@@ -3248,7 +3248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback to parsing markdown file (development/debugging).
-			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
+			$soa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/iso27001/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soa_file ) ) {
 				return array();
@@ -3351,7 +3351,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback to file parsing.
-			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
+			$soc2_file = WP_MCP_AI_PATH . 'docs/operations/compliance/soc2/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soc2_file ) ) {
 				return 0;
@@ -3391,7 +3391,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback to file parsing.
-			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
+			$hipaa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/hipaa/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $hipaa_file ) ) {
 				return 0;
@@ -3433,7 +3433,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of criteria with id, name, category, status, status_key, applicable, implementation, and mapping.
 		 */
 		private function get_soc2_controls() {
-			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
+			$soc2_file = WP_MCP_AI_PATH . 'docs/operations/compliance/soc2/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soc2_file ) ) {
 				return array();
@@ -3523,7 +3523,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of safeguards with id, name, category, status, status_key, applicable, implementation, and mapping.
 		 */
 		private function get_hipaa_controls() {
-			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
+			$hipaa_file = WP_MCP_AI_PATH . 'docs/operations/compliance/hipaa/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $hipaa_file ) ) {
 				return array();
@@ -3795,7 +3795,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of risks with id, name, description, category, likelihood, impact, risk_score, risk_level, treatment, and status.
 		 */
 		private function get_risk_register_entries() {
-			$risk_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Risk-Register.md';
+			$risk_file = WP_MCP_AI_PATH . 'docs/operations/compliance/iso27001/Risk-Register.md';
 
 			if ( ! file_exists( $risk_file ) ) {
 				return array();

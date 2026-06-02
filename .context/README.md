@@ -39,7 +39,7 @@ In addition to the subsystem files above, every PHP-bearing subdirectory under `
 This is the **structural** layer of context engineering: it stays close to the code, doesn't drift, and slots between subsystem files (this directory) and feature files (`active/`). See:
 
 - Template: [`templates/folder-readme-template.md`](templates/folder-readme-template.md)
-- Convention: [`../docs/guides/developer/folder-readme-convention.md`](../docs/guides/developer/folder-readme-convention.md)
+- Convention: [`../docs/developer/folder-readme-convention.md`](../docs/developer/folder-readme-convention.md)
 - Enforcement: `composer run docs:check-folder-readmes` (part of `composer run ci:all`)
 
 ## Context Loading Strategy (GSD Principle)
@@ -62,6 +62,6 @@ Use the template at `templates/active-feature-template.md` as the starting point
 ## GSD × BMAD Workflow
 
 Context files are a core part of the **GSD × BMAD methodology** implemented in NV oOS.
-The full workflow is documented in `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`.
+The full workflow is documented in `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`.
 
 Agent definitions that consume these context files are in `.bmad/agents/`.

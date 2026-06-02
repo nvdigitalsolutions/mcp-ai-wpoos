@@ -91,7 +91,7 @@ Every agent session loads these two files:
 
 ### Folder context (loaded per folder being edited)
 
-Every PHP-bearing subdirectory under `includes/` (Base) and `addons/pro/includes/` (Pro) ships a `README.md` that follows the [folder README convention](docs/guides/developer/folder-readme-convention.md). When an agent edits a file inside `includes/<folder>/`, it should first read `includes/<folder>/README.md` for the folder's purpose, public surface, neighbors, and which `.context/*.md` files to also load.
+Every PHP-bearing subdirectory under `includes/` (Base) and `addons/pro/includes/` (Pro) ships a `README.md` that follows the [folder README convention](docs/developer/folder-readme-convention.md). When an agent edits a file inside `includes/<folder>/`, it should first read `includes/<folder>/README.md` for the folder's purpose, public surface, neighbors, and which `.context/*.md` files to also load.
 
 Folder READMEs are the **persistent, code-co-located, structural** layer of context. They:
 
@@ -99,7 +99,7 @@ Folder READMEs are the **persistent, code-co-located, structural** layer of cont
 - Are enforced by `composer run docs:check-folder-readmes` (part of `composer run ci:all`).
 - Use the canonical template at [`.context/templates/folder-readme-template.md`](.context/templates/folder-readme-template.md).
 
-Full convention: [`docs/guides/developer/folder-readme-convention.md`](docs/guides/developer/folder-readme-convention.md).
+Full convention: [`docs/developer/folder-readme-convention.md`](docs/developer/folder-readme-convention.md).
 
 ### Feature context (loaded per active feature)
 
@@ -123,7 +123,7 @@ This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.
 **Template + examples:**
 
 - Canonical (empty) template: [`.context/templates/agent-file-template.md`](.context/templates/agent-file-template.md)
-- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 14-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, **toolkit-SPA addons** following the [Toolkit SPA Blueprint](docs/addons/toolkit-spa-blueprint.md), **ACP protocol** implementation, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
+- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 14-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, **toolkit-SPA addons** following the [Toolkit SPA Blueprint](docs/developer/addons/toolkit-spa-blueprint.md), **ACP protocol** implementation, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
 
 ---
 
@@ -240,7 +240,7 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New BMAD agent or workflow change | `.bmad/agents/*.yaml`, `AGENTS.md`, `.bmad/teams/feature-development.yaml` |
 | New subsystem context | `.context/`, `AGENTS.md` (context-loading table) |
 | New external AI agent | `AGENTS.md` (agent inventory), `MAINTAINER_MAP.md` (AI coordination section) |
-| New `includes/` or `addons/pro/includes/` subdirectory | Add `README.md` per [folder README convention](docs/guides/developer/folder-readme-convention.md); run `composer run docs:check-folder-readmes` |
+| New `includes/` or `addons/pro/includes/` subdirectory | Add `README.md` per [folder README convention](docs/developer/folder-readme-convention.md); run `composer run docs:check-folder-readmes` |
 | New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR. If a matching agent also exists in [`examples/agents/`](examples/agents/), update `.zed/settings.json` so the Zed profile's tool block stays in sync. |
 | New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
 
@@ -256,7 +256,7 @@ These files should be reviewed whenever:
 
 ## 7. References
 
-- [GSD × BMAD Methodology Proposal](docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md)
+- [GSD × BMAD Methodology Proposal](docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md)
 - [Agent Memory Management Guide](docs/AGENT-MEMORY-COMPLETE-GUIDE.md)
 - [Developer Hooks Reference](docs/DEVELOPER_HOOKS_REFERENCE.md)
 - [Architecture Decision Record #1 — Module Boundaries](docs/ADR_001_module_boundaries.md)

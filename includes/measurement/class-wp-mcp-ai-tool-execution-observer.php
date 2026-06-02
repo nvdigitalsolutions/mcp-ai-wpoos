@@ -24,7 +24,7 @@
  *   The context payload sent to `record()` contains only tool_slug,
  *   outcome, and (hashed) assistant/user ids if present. Tool
  *   arguments and results are never included — the Internal privacy
- *   tier explicitly forbids them (see `docs/measurement/privacy-matrix.md`).
+ *   tier explicitly forbids them (see `docs/reference/measurement/privacy-matrix.md`).
  *
  * Opt-out:
  *   Return `false` from the `wp_mcp_ai_tool_execution_observer_enabled`

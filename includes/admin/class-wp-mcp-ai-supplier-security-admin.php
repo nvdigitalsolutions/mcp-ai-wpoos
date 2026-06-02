@@ -302,12 +302,12 @@ class WP_MCP_AI_Supplier_Security_Admin {
 				<h3><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos' ); ?></h3>
 				<ul>
 					<li>
-						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/procedures/Vendor-Security.md' ); ?>" target="_blank">
+						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/procedures/Vendor-Security.md' ); ?>" target="_blank">
 							<?php esc_html_e( '📄 Vendor Security Assessment Procedure', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</li>
 					<li>
-						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" target="_blank">
+						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/operations/compliance/iso27001/Statement-of-Applicability.md' ); ?>" target="_blank">
 							<?php esc_html_e( '📋 Statement of Applicability', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</li>

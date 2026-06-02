@@ -1,7 +1,7 @@
 name: Security Regression Guards
 
 # Static guards that prevent dangerous patterns from regressing into the
-# codebase. Per the 2026-04 security audit (docs/audit/2026-04/), these gates
+# codebase. Per the 2026-04 security audit (docs/project/audits/2026-04/), these gates
 # start advisory (continue-on-error) so that the historical baseline of
 # pre-existing occurrences does not block unrelated work, then become blocking
 # once the in-flight remediation (R-S-01, R-S-02, R-S-06) lands.

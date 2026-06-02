@@ -8,8 +8,8 @@
  * capability, and nonce action, then cross-references which handlers are
  * referenced by anything in `tests/`. Produces:
  *
- *   - docs/testing/ajax-handler-inventory.md  (human-readable summary table)
- *   - docs/testing/ajax-handler-inventory.csv (machine-readable, for diffing)
+ *   - docs/developer/testing-docs/ajax-handler-inventory.md  (human-readable summary table)
+ *   - docs/developer/testing-docs/ajax-handler-inventory.csv (machine-readable, for diffing)
  *
  * Usage:
  *   php bin/audit-ajax-handlers.php           # regenerate inventory files
@@ -245,14 +245,14 @@ foreach ( $handlers as $name => $regs ) {
 	);
 }
 
-$md_file = $plugin_root . '/docs/testing/ajax-handler-inventory.md';
+$md_file = $plugin_root . '/docs/developer/testing-docs/ajax-handler-inventory.md';
 if ( ! is_dir( dirname( $md_file ) ) ) {
 	mkdir( dirname( $md_file ), 0755, true );
 }
 file_put_contents( $md_file, $md );
 
 // Emit CSV.
-$csv_file = $plugin_root . '/docs/testing/ajax-handler-inventory.csv';
+$csv_file = $plugin_root . '/docs/developer/testing-docs/ajax-handler-inventory.csv';
 $fh       = fopen( $csv_file, 'w' );
 fputcsv( $fh, array( 'handler', 'file', 'line', 'capability', 'nonce_action', 'is_pro', 'is_tested', 'on_allowlist' ) );
 foreach ( $handlers as $name => $regs ) {
