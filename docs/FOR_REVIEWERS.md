@@ -121,7 +121,8 @@ See [SECURITY_POSTURE.md](SECURITY_POSTURE.md) for the full current state.
 
 ```bash
 # Option 1: Docker (recommended)
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Use --depth 1 for a fast shallow clone (repo is very large)
+git clone --depth 1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
 docker compose up -d
 # → http://localhost:8000  (admin: admin / password)
