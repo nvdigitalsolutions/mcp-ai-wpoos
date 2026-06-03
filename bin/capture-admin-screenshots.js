@@ -27,12 +27,12 @@ const OUT = path.resolve(__dirname, '..', 'docs', 'screenshots');
 function out(cat, f) { return path.join(OUT, cat, f); }
 
 async function login(page) {
-  await page.goto(`${ADMIN}/`, { waitUntil: 'networkidle' });
+  await page.goto(`${ADMIN}/`, { waitUntil: 'networkidle', timeout: 60000 });
   if (page.url().includes('wp-login')) {
     await page.fill('#user_login', USER);
     await page.fill('#user_pass', PASS);
     await page.click('#wp-submit');
-    await page.waitForURL('**/wp-admin/**', { timeout: 15000 });
+    await page.waitForURL('**/wp-admin/**', { timeout: 60000 });
   }
   await page.waitForTimeout(500);
 }
