@@ -170,7 +170,7 @@ class WP_MCP_AI_Chat_Turn_Metrics {
 			array(
 				'id'             => self::CHAT_AGENTIC_ITERATIONS,
 				'label'          => __( 'Agentic iterations per turn', 'mcp-ai-wpoos' ),
-				'description'    => __( 'Number of agentic tool-call rounds inside a single chat turn. Reserved definition — not emitted by the shipped observer; see docs/measurement/chat-turn.md.', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Number of agentic tool-call rounds inside a single chat turn. Reserved definition — not emitted by the shipped observer; see docs/reference/measurement/chat-turn.md.', 'mcp-ai-wpoos' ),
 				'type'           => WP_MCP_AI_Measurement_Registry::TYPE_HISTOGRAM,
 				'unit'           => 'iterations',
 				'direction'      => WP_MCP_AI_Measurement_Registry::DIRECTION_NEUTRAL,

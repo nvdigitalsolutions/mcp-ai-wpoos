@@ -415,7 +415,7 @@ jobs:
   # Runs the official `wp plugin-check` command against the built ZIP — the
   # exact same artifact that `10up/action-wordpress-plugin-deploy` would push.
   # Any reported Errors block the release; Warnings are surfaced for triage.
-  # See docs/audit/2026-04/wp-org-submission-checklist.md row R-T-04.
+  # See docs/project/audits/2026-04/wp-org-submission-checklist.md row R-T-04.
   # =============================================================================
   plugin-check:
     name: WordPress.org Plugin Check

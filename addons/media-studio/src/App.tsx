@@ -10,6 +10,7 @@
  */
 
 import type { ReactElement } from 'react';
+import { __ } from '@wordpress/i18n';
 import { ImageEditor } from './components/ImageEditor';
 import { MediaPlayer } from './components/MediaPlayer';
 import { AudioWaveform } from './components/AudioWaveform';
@@ -56,7 +57,12 @@ export function App( { config }: AppProps ) {
 			data-mode={ mode }
 			style={ heightStyle }
 		>
-			{ surface }
+			<a className="nvoos-skip-link" href="#nvoos-media-main-content">
+				{ __( 'Skip to main content', 'nvoos-media-studio' ) }
+			</a>
+			<div id="nvoos-media-main-content" tabIndex={ -1 }>
+				{ surface }
+			</div>
 		</div>
 	);
 }

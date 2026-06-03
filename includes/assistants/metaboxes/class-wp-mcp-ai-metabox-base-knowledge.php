@@ -66,7 +66,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/professionals/profession-base-knowledge-seeding.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/user-guides/professionals/profession-base-knowledge-seeding.md';
 	}
 
 	/**

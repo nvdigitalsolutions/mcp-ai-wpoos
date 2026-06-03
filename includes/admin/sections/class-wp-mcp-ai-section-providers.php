@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_documentation_url() {
-			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab';
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/admin-guides/SETTINGS_DASHBOARD_GUIDE.md#providers-tab';
 		}
 
 		/**

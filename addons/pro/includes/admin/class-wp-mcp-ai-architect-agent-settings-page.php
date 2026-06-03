@@ -132,7 +132,7 @@ class WP_MCP_AI_Architect_Agent_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 				printf(
 					/* translators: %s: documentation file path */
 					esc_html__( 'For complete setup instructions and usage examples, see %s', 'mcp-ai-wpoos-pro' ),
-					'<code>docs/guides/setup/ARCHITECT_AGENT_SETUP.md</code>'
+					'<code>docs/getting-started/ARCHITECT_AGENT_SETUP.md</code>'
 				);
 				?>
 			</p>

@@ -11,6 +11,19 @@ import { createRoot, Root } from 'react-dom/client';
 import { App } from './App';
 import './styles/main.css';
 
+// Load @axe-core/react in development builds for live accessibility audit output.
+// esbuild replaces process.env.NODE_ENV with "production" in prod builds,
+// making this block dead code that is eliminated by tree-shaking.
+if ( process.env.NODE_ENV !== 'production' ) {
+	Promise.all( [
+		import( 'react' ),
+		import( 'react-dom' ),
+		import( '@axe-core/react' ),
+	] ).then( ( [ React, ReactDOM, axe ] ) => {
+		axe.default( React, ReactDOM, 1000 );
+	} ).catch( () => { /* axe unavailable */ } );
+}
+
 interface ComicReaderConfig {
 	comicId: number;
 	mode: 'library' | 'reader';

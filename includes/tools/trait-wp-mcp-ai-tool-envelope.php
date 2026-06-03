@@ -25,7 +25,7 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  *
- * @link    docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md
+ * @link    docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
