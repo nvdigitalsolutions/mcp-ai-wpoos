@@ -3751,20 +3751,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 
 			// Enable real-time SSE streaming for providers that support curl-based
-			// streaming (LM Studio local models and DeepSeek cloud API).  Each
-			// provider's client has a do_realtime_curl_stream() method that forwards
-			// content/reasoning tokens to the browser as they are generated.
-			$native_streaming_providers = apply_filters(
-				'wp_mcp_ai_native_streaming_providers',
-				array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
-			);
-			if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
-				$native_streaming_used      = true;
-				$options['stream']          = true;
-				$options['stream_callback'] = function ( $chunk ) {
-					$this->send_sse_event( 'message', $chunk );
-				};
-			}
+				// streaming (LM Studio local models and DeepSeek cloud API).  Each
+				// provider's client has a do_realtime_curl_stream() method that forwards
+				// content/reasoning tokens to the browser as they are generated.
+				//
+				// When disabled via the wp_mcp_ai_disable_native_streaming filter,
+				// the system falls back to simulated chunking (full response split
+				// into pieces with delays).
+				$disable_native = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
+				if ( ! $disable_native ) {
+					$native_streaming_providers = apply_filters(
+						'wp_mcp_ai_native_streaming_providers',
+						array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
+					);
+					if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
+						$native_streaming_used      = true;
+						$options['stream']          = true;
+						$options['stream_callback'] = function ( $chunk ) {
+							$this->send_sse_event( 'message', $chunk );
+						};
+					}
+				}
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
