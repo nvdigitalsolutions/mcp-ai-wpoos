@@ -1,32 +1,36 @@
 # NV oOS Documentation Screenshot Progress
 
-## Current Status (January 9, 2026)
+## Current Status (June 3, 2026)
 
-### Completed Screenshots: 66 total (93% of target)
+### Completed Screenshots: 103 total (base + Pro dashboard)
 
-#### Admin Interface (63 screenshots) ✅
-- ✅ 01-62: Comprehensive admin interface documentation
-- Includes: Plugin activation, settings pages (general, providers, authentication, security, advanced, orchestration, tools manager), assistant management, profession templates, teams overview, token manager, cron manager, pro dashboard, diagnostic pages, and more
+#### Admin Interface (94 screenshots) ✅
+- Settings pages: all tabs captured (general, AI providers,
+  authentication, tools & features, tools manager, security, advanced,
+  orchestration)
+- Assistants: list, create, build, test
+- Professions: list, create, test
+- Teams: list, create
+- Token Manager, Cron Manager, Remote Sites, Crawl4AI Monitor, MCP Diagnostic
+- Content Assistant, HF Datasets, Onboarding Wizard, Measurement Dashboard,
+  Mesh Settings, Diagnostics, System Status, Tools Manager, Tool Presets
+- WordPress Dashboard, Plugins List
+
+#### Pro Dashboard (6 screenshots) ✅
+- Overview, Analytics, Monitoring, Settings, Diagnostics
 
 #### Frontend (3 screenshots) ✅
-- ✅ 01-03: Homepage views with TwentyTwentyFour theme
-- Full page and viewport captures
+- Homepage views with theme
 
-### Remaining High-Priority Screenshots (5 total)
+### Remaining
 
-#### Chat Interface (16 screenshots)
-**Status:** ✅ Automation tools ready! Ready for capture with AI provider API key
+#### Chat Interface (16 screenshots) — requires AI provider API key
+#### Pro Toolkits & Research Pages — require correct page slug enumeration
 
-**Automation Tools Created (January 9, 2026):**
-- ✅ `bin/capture-chat-screenshots.sh` - Automated WordPress setup script
-- ✅ `bin/playwright-capture-screenshots.js` - Playwright automation for screenshot capture
-- ✅ `docs/screenshots/CHAT_CAPTURE_GUIDE.md` - Comprehensive capture guide (32 pages)
-
-**To capture screenshots:**
-1. Set AI provider API key: `export OPENAI_API_KEY="sk-..."`
-2. Run setup: `./bin/capture-chat-screenshots.sh`
-3. Run automation: `node bin/playwright-capture-screenshots.js`
-4. Manual Elementor captures (requires Elementor plugin)
+**Automation Tools Available:**
+- `bin/capture-chat-screenshots.sh` - Automated WordPress setup
+- `bin/playwright-capture-screenshots.js` - Playwright screenshot automation
+- `docs/screenshots/CHAT_CAPTURE_GUIDE.md` - Comprehensive capture guide
 
 **Screenshot List:**
 1. `chat/frontend-shortcode.png` - Basic chat interface via `[wp_mcp_ai_chat]` shortcode [Automated]
