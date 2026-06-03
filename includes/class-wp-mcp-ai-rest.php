@@ -3751,20 +3751,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 
 			// Enable real-time SSE streaming for providers that support curl-based
-			// streaming (LM Studio local models and DeepSeek cloud API).  Each
-			// provider's client has a do_realtime_curl_stream() method that forwards
-			// content/reasoning tokens to the browser as they are generated.
-			$native_streaming_providers = apply_filters(
-				'wp_mcp_ai_native_streaming_providers',
-				array( 'lm_studio', 'deepseek' )
-			);
-			if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
-				$native_streaming_used      = true;
-				$options['stream']          = true;
-				$options['stream_callback'] = function ( $chunk ) {
-					$this->send_sse_event( 'message', $chunk );
-				};
-			}
+				// streaming (LM Studio local models and DeepSeek cloud API).  Each
+				// provider's client has a do_realtime_curl_stream() method that forwards
+				// content/reasoning tokens to the browser as they are generated.
+				//
+				// When disabled via the wp_mcp_ai_disable_native_streaming filter or the
+					// Disable Native Streaming setting (Advanced → System), the system falls
+					// back to simulated chunking (full response split into pieces with delays).
+					$disable_native  = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
+					$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+					$disable_native  = $disable_native || ( ! empty( $settings['disable_native_streaming'] ) );
+				if ( ! $disable_native ) {
+					$native_streaming_providers = apply_filters(
+						'wp_mcp_ai_native_streaming_providers',
+						array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
+					);
+					if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
+						$native_streaming_used      = true;
+						$options['stream']          = true;
+						$options['stream_callback'] = function ( $chunk ) {
+							$this->send_sse_event( 'message', $chunk );
+						};
+					}
+				}
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -4268,10 +4277,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Call LLM again with tool results.
 				// Re-enable native streaming if still on a streaming-capable provider (may have switched for TPM).
-				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				$loop_provider              = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 				$native_streaming_providers = apply_filters(
 					'wp_mcp_ai_native_streaming_providers',
-					array( 'lm_studio', 'deepseek' )
+					array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
 				);
 				if ( $native_streaming_used && in_array( $loop_provider, $native_streaming_providers, true ) ) {
 					$options['stream']          = true;
@@ -11223,15 +11232,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// existing WordPress-specific workflow; profession-only requests
 				// are enriched with profession metadata and then flow through OOS.
 				$raw_assistant_id = $request->get_param( 'assistant_id' );
-				$team_id = $this->extract_team_id( $raw_assistant_id );
-				$profession_id = $this->extract_profession_id( $raw_assistant_id );
+				$team_id          = $this->extract_team_id( $raw_assistant_id );
+				$profession_id    = $this->extract_profession_id( $raw_assistant_id );
 
 				// Unified team requests ("unified_team_123") use the full multi-agent
 				// orchestration path. The OOS ChatOrchestrator does not yet implement
 				// team coordination, so we delegate to the existing handler.
-				if ( $team_id ) {
-					return $this->handle_unified_team_request( $request, $team_id );
-				}
+			if ( $team_id ) {
+				return $this->handle_unified_team_request( $request, $team_id );
+			}
 
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
@@ -11244,9 +11253,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Merge profession configuration when testing a profession.
-				if ( $profession_id ) {
-					$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
-				}
+			if ( $profession_id ) {
+				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
+			}
 
 				// Validate assistant access.
 			if ( $assistant_id ) {
