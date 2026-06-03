@@ -238,8 +238,8 @@ class ChatOrchestrator {
 		// Calculate cost.
 		$cost = $this->costs->calculateFromResponse(
 			$response,
-			$options['provider'] ?? '',
-			$options['model'] ?? '',
+			$options['provider'],
+			$options['model'],
 		);
 
 		return array(
@@ -467,8 +467,8 @@ class ChatOrchestrator {
 
 		$cost = $this->costs->calculateFromResponse(
 			$response,
-			$options['provider'] ?? '',
-			$options['model'] ?? '',
+			$options['provider'],
+			$options['model'],
 		);
 
 		$payload = array(

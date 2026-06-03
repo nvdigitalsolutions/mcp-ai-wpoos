@@ -2,11 +2,13 @@
 
 ## Comprehensive Proposal for Framework-Agnostic AI Orchestration Engine
 
-**Status:** Proposal  
-**Version:** 1.0.0  
-**Date:** 2026-05-31  
+**Status:** Partially Implemented — operational behind `?engine=oos` feature flag  
+**Version:** 1.1.0 (implementation notes added)  
+**Date:** 2026-05-31 (proposal), updated 2026-06-03 (status)  
 **Author:** AI Agent (via NV oOS)  
 **Audience:** Engineering leadership, architecture reviewers  
+
+> **📌 Implementation Status:** This proposal is **35–40% implemented**. The full `oos/core` package with 9 contracts, 10 entities, 5 errors, 8 events, 4 application services, 12 provider clients, and 43 migrated tools exists at `lib/core/`. All 8 WordPress adapters are complete. The extraction runs behind a feature flag (`?engine=oos`). See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for a detailed current-state assessment.
 
 ---
 

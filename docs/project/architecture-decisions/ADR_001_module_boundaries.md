@@ -137,6 +137,7 @@ Because the codebase is large, migration is incremental:
 - [ARCHITECTURE_REFACTOR_PROPOSAL.md](ARCHITECTURE_REFACTOR_PROPOSAL.md)
 - [BUILD_MATRIX.md](BUILD_MATRIX.md)
 - [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
+- [../proposals/cross-platform-extraction-gap-analysis.md](../proposals/cross-platform-extraction-gap-analysis.md) — downstream extraction implementing these layer boundaries at `lib/core/`
 
 ---
 

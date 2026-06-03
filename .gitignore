@@ -265,3 +265,5 @@ docker/laravel/app/*
 docker/craft/app/*
 !docker/laravel/app/.gitkeep
 !docker/craft/app/.gitkeep
+lib/core/.phpstan-cache/
+lib/core/.phpunit.cache/
