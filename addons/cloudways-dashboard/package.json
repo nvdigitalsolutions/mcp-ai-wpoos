@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@axe-core/react": "4.10.2",
-    "@types/node": "^25.9.1",
+    "@types/node": "^22.15.17",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.4",
     "@typescript-eslint/parser": "8.32.0",
