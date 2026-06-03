@@ -199,6 +199,6 @@ class CostCalculator {
 		}
 
 		// Fall back to provider default.
-		return $providerPricing['default'] ?? array( 0.0, 0.0 );
+		return $providerPricing['default'];
 	}
 }

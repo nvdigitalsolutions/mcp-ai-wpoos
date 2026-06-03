@@ -1,7 +1,7 @@
 {
     "name": "oos/core",
     "version": "1.0.0",
-    "description": "Framework-agnostic AI orchestration engine — agentic loop, tool registry, provider routing, SSE streaming.",
+    "description": "Framework-agnostic AI orchestration engine \u00e2\u20ac\u201d agentic loop, tool registry, provider routing, SSE streaming.",
     "type": "library",
     "license": "MIT",
     "require": {
@@ -44,5 +44,15 @@
                 "symlink": true
             }
         }
+    },
+    "scripts": {
+        "lint": "phpstan analyse --no-progress",
+        "lint:level8": "phpstan analyse --level 8 --no-progress",
+        "test": "phpunit --no-configuration --bootstrap tests/bootstrap.php tests/Unit/",
+        "test:with-config": "phpunit",
+        "ci": [
+            "@lint",
+            "@test"
+        ]
     }
 }
