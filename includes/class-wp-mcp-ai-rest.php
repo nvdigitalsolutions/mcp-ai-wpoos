@@ -3747,13 +3747,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$messages = $preflight['messages'];
 			$options  = $preflight['options'];
 
-			// Resolved provider slug, used for LM Studio native streaming checks below.
+			// Resolved provider slug, used for native streaming checks below.
 			$resolved_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 
-			// Enable LM Studio real-time SSE streaming: inject stream_callback so that
-			// do_realtime_curl_stream() in WP_MCP_AI_LM_Studio_Client forwards each
-			// content/reasoning token to the browser as it is generated.
-			if ( function_exists( 'curl_init' ) && 'lm_studio' === $resolved_provider ) {
+			// Enable real-time SSE streaming for providers that support curl-based
+			// streaming (LM Studio local models and DeepSeek cloud API).  Each
+			// provider's client has a do_realtime_curl_stream() method that forwards
+			// content/reasoning tokens to the browser as they are generated.
+			$native_streaming_providers = apply_filters(
+				'wp_mcp_ai_native_streaming_providers',
+				array( 'lm_studio', 'deepseek' )
+			);
+			if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
 				$native_streaming_used      = true;
 				$options['stream']          = true;
 				$options['stream_callback'] = function ( $chunk ) {
@@ -4262,9 +4267,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Call LLM again with tool results.
-				// Re-enable native streaming if still on LM Studio provider (may have switched for TPM).
+				// Re-enable native streaming if still on a streaming-capable provider (may have switched for TPM).
 				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
-				if ( $native_streaming_used && 'lm_studio' === $loop_provider ) {
+				$native_streaming_providers = apply_filters(
+					'wp_mcp_ai_native_streaming_providers',
+					array( 'lm_studio', 'deepseek' )
+				);
+				if ( $native_streaming_used && in_array( $loop_provider, $native_streaming_providers, true ) ) {
 					$options['stream']          = true;
 					$options['stream_callback'] = function ( $chunk ) {
 						$this->send_sse_event( 'message', $chunk );
@@ -4398,7 +4407,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
-			// Skip when LM Studio native streaming was active — reasoning tokens were
+			// Skip when native streaming was active — reasoning tokens were
 			// already forwarded in real time via the stream_callback.
 			if ( ! $native_streaming_used && is_string( $thinking_text ) && '' !== $thinking_text ) {
 				// Format thinking chunks based on provider for optimal client compatibility.
@@ -4484,7 +4493,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Send text content in chunks to simulate streaming (for better UX).
-			// Skip when LM Studio native streaming was active — content tokens were
+			// Skip when native streaming was active — content tokens were
 			// already forwarded in real time via the stream_callback.
 			if ( ! $native_streaming_used && is_string( $text_content ) && '' !== $text_content ) {
 				// Format content chunks in OpenAI-compatible format.
