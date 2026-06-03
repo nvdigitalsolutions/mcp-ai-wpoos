@@ -42,7 +42,7 @@ Houses every WordPress-aware adapter that implements an interface from `includes
 ## Conventions
 
 - **Every class here implements an interface from `includes/interfaces/`.** Bare adapters with no contract belong somewhere else.
-- Direct WordPress API calls are not only allowed but expected — that is this folder's job. Higher layers (`domain/`, `services/` where possible) should remain WordPress-agnostic; see [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md).
+- Direct WordPress API calls are not only allowed but expected — that is this folder's job. Higher layers (`domain/`, `services/` where possible) should remain WordPress-agnostic; see [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md).
 - Subfolder roles are fixed:
   - `wp/` — adapters over WordPress core APIs (`get_option`, `current_user_can`, etc.).
   - `http/` — adapters over `wp_remote_*` and streaming requests.
@@ -65,7 +65,7 @@ Provider-specific behaviour is also covered by the broader `tests/test-*-provide
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — outbound HTTP, secrets, capability rules
 - [`.context/rest-api.md`](../../.context/rest-api.md) — adapters that surface in REST endpoints
-- [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md) — why this layer exists
+- [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — why this layer exists
 
 ## See Also
 

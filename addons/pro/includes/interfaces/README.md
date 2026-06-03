@@ -57,7 +57,7 @@ No standalone `test-toolkit-data-store-interface.php` exists — coverage is int
 - [`../../../../.context/security-checklist.md`](../../../../.context/security-checklist.md) — input/output rules implementers must satisfy
 - [`../../../../.context/pro-vs-base.md`](../../../../.context/pro-vs-base.md) — Base/Pro placement rules
 - [`../../../../CLAUDE.md`](../../../../CLAUDE.md) — PHP-compat, canonical tool envelope
-- [`../../../../docs/ADR_001_module_boundaries.md`](../../../../docs/ADR_001_module_boundaries.md) — why these contracts exist
+- [`../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — why these contracts exist
 
 ## See Also
 

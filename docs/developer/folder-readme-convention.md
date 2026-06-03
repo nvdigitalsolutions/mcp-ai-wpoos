@@ -1,6 +1,6 @@
 # Folder README Convention
 
-> Phase P7 of the [Unix Theory Compliance Enhancement Proposal](../../proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md).
+> Phase P7 of the [Unix Theory Compliance Enhancement Proposal](../../project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md).
 > Last reviewed: June 2026.
 
 ---
@@ -11,7 +11,7 @@ Every immediate subdirectory of `includes/` (Base) and `addons/pro/includes/` (P
 
 ## Why
 
-The plugin already practices Unix theory at the **tool** level (one tool, one responsibility — see the [Unix Theory Compliance proposal](../../proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md)). Folder READMEs apply the same disciplines at the **directory** level:
+The plugin already practices Unix theory at the **tool** level (one tool, one responsibility — see the [Unix Theory Compliance proposal](../../project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md)). Folder READMEs apply the same disciplines at the **directory** level:
 
 | Unix rule | What a folder README delivers |
 |---|---|
@@ -119,4 +119,4 @@ Folder READMEs slot in between `.context/*.md` (subsystem-level) and `.context/a
 - [`.context/templates/folder-readme-template.md`](../../../.context/templates/folder-readme-template.md) — the canonical template
 - [`bin/check-folder-readmes.php`](../../../bin/check-folder-readmes.php) — enforcement script
 - [`AGENTS.md` §2](../../../AGENTS.md) — context-loading strategy + layering rule
-- [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](../../proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md) — full Unix-theory mapping
+- [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](../../project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md) — full Unix-theory mapping

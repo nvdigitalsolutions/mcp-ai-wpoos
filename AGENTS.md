@@ -86,7 +86,7 @@ Every agent session loads these two files:
 | [`.context/chat-ui.md`](.context/chat-ui.md) | Working on frontend chat interface |
 | [`.context/testing.md`](.context/testing.md) | Writing or reviewing tests |
 | [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
-| [`docs/llm-harness.md`](docs/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
+| [`docs/features/llm-harness.md`](docs/features/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
 | [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md) | Working on the Chat-client Memory Bridge or Memory Drawer |
 
 ### Folder context (loaded per folder being edited)
@@ -257,9 +257,9 @@ These files should be reviewed whenever:
 ## 7. References
 
 - [GSD × BMAD Methodology Proposal](docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md)
-- [Agent Memory Management Guide](docs/AGENT-MEMORY-COMPLETE-GUIDE.md)
-- [Developer Hooks Reference](docs/DEVELOPER_HOOKS_REFERENCE.md)
-- [Architecture Decision Record #1 — Module Boundaries](docs/ADR_001_module_boundaries.md)
+- [Agent Memory Management Guide](docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md)
+- [Developer Hooks Reference](docs/reference/hooks/DEVELOPER_HOOKS_REFERENCE.md)
+- [Architecture Decision Record #1 — Module Boundaries](docs/project/architecture-decisions/ADR_001_module_boundaries.md)
 - [Context Engineering Files README](.context/README.md)
 - [BMAD Agent Definitions README](.bmad/README.md)
 - [GitHub CODEOWNERS Documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)

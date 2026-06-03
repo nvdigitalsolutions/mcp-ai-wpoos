@@ -142,7 +142,7 @@ If the total exceeds 30%, drop lower-priority subsystem files. The Scrum Master 
 ## Token Usage Tracking (Phase 6 Metric)
 
 Record actual token usage at session start for Phase 6 budget optimization tracking.
-See `docs/GSD-BMAD-METRICS-BASELINE.md` for the full metrics tracking table.
+See `docs/project/GSD-BMAD-METRICS-BASELINE.md` for the full metrics tracking table.
 
 | Session Date | Feature | Phase | Context Tokens | % of Window | Notes |
 |-------------|---------|-------|---------------|-------------|-------|
@@ -163,6 +163,6 @@ See `docs/GSD-BMAD-METRICS-BASELINE.md` for the full metrics tracking table.
 
 - `.context/templates/active-feature-template.md` — Feature context file template
 - `.context/templates/ralph-loop-session.md` — Autonomous loop session configuration
-- `docs/GSD-BMAD-METRICS-BASELINE.md` — Phase 6 metrics baseline and token tracking
-- `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md` — Full methodology (Phase 0 section)
+- `docs/project/GSD-BMAD-METRICS-BASELINE.md` — Phase 6 metrics baseline and token tracking
+- `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md` — Full methodology (Phase 0 section)
 - `.bmad/agents/nv-oos-scrum-master.yaml` — Scrum Master agent definition

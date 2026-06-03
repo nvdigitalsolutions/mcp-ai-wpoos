@@ -32,7 +32,7 @@ Holds the plugin's pure-PHP domain layer — value objects and constant catalogu
 
 ## Conventions
 
-- **Zero direct WordPress API calls.** Any options API, capability check, `$wpdb` access, or filesystem call in this folder is a defect. See [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md) — the `WordPress.WP.GlobalVariablesOverride` PHPCS rule in [`phpcs.xml.dist`](../../phpcs.xml.dist) enforces the global-variable side of this.
+- **Zero direct WordPress API calls.** Any options API, capability check, `$wpdb` access, or filesystem call in this folder is a defect. See [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — the `WordPress.WP.GlobalVariablesOverride` PHPCS rule in [`phpcs.xml.dist`](../../phpcs.xml.dist) enforces the global-variable side of this.
 - **No I/O of any kind** — no `file_*`, no `curl_*`, no `wp_remote_*`. If you need to load data from disk or HTTP, do it in `infrastructure/` and inject the result.
 - Files in this folder are **constant catalogues and value objects only**. Classes here must be safe to instantiate (or use statically) at any point in the request lifecycle, including before `plugins_loaded`.
 - Domain classes should be referenced via their fully-qualified class constants (`WP_MCP_AI_Pattern_Constants::PATTERN_ORCHESTRATOR`) rather than re-declared as raw strings in consumers.
@@ -52,7 +52,7 @@ Risk-level constants are exercised indirectly via every tool execution test (cap
 
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — even pure code must define safe defaults
-- [`docs/ADR_001_module_boundaries.md`](../../docs/ADR_001_module_boundaries.md) — the rule that keeps this folder pure
+- [`docs/project/architecture-decisions/ADR_001_module_boundaries.md`](../../docs/project/architecture-decisions/ADR_001_module_boundaries.md) — the rule that keeps this folder pure
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — where risk levels surface to the agent runtime
 
 ## See Also
