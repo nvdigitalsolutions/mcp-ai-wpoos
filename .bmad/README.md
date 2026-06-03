@@ -13,7 +13,7 @@ This directory contains the **BMAD (Breakthrough Method for Agile AI-Driven Deve
 
 ## Overview
 
-NV oOS uses a hybrid **GSD × BMAD** methodology for AI-assisted feature development. The full workflow is documented in [`docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`](../docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
+NV oOS uses a hybrid **GSD × BMAD** methodology for AI-assisted feature development. The full workflow is documented in [`docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`](../docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
 
 Each agent definition (`.yaml` file) specifies a BMAD role with:
 - **Persona** — role identity, communication style
@@ -69,6 +69,6 @@ role behavior when working on feature development tasks.
 
 - [`teams/`](teams/) — Multi-agent team compositions
 - [`.context/`](../.context/) — GSD context engineering files
-- [`docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`](../docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md) — Full methodology documentation
-- [`docs/proposals/templates/`](../docs/proposals/templates/) — PRD, Architecture Spec, and Project Brief templates
+- [`docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`](../docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md) — Full methodology documentation
+- [`docs/project/proposals/templates/`](../docs/project/proposals/templates/) — PRD, Architecture Spec, and Project Brief templates
 - [`CONTRIBUTING.md`](../CONTRIBUTING.md) — Phase-completion checklists

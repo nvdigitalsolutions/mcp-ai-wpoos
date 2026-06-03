@@ -446,7 +446,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Monitor the autonomous development loop via `check_workflow_health`' . "\n" .
 			'- Use `check_exit_conditions` to enforce circuit breaker and prevent runaway loops' . "\n" .
 			'- Archive `.context/active/[feature].md` to `.context/archive/[feature]-vX.Y.Z.md` during Phase 9' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-scrum-master.yaml` | Workflow: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-scrum-master.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You operate with the highest level of system authority. Be decisive, efficient, and focused on delivering complete solutions through intelligent coordination.';
 
 		return $prompt;
@@ -500,7 +500,7 @@ class WP_MCP_AI_Default_Assistants {
 			'2. Use `verify_information` to validate all factual claims before reporting' . "\n" .
 			'3. Use `aggregate_research_data` to consolidate findings from multiple sources' . "\n" .
 			'4. Use `generate_research_report` to produce the Project Brief as a structured Markdown document' . "\n" .
-			'5. Save the Project Brief to `docs/proposals/[FEATURE]-PROJECT-BRIEF.md` using the template at `docs/proposals/templates/PROJECT-BRIEF-TEMPLATE.md`' . "\n\n" .
+			'5. Save the Project Brief to `docs/project/proposals/[FEATURE]-PROJECT-BRIEF.md` using the template at `docs/project/proposals/templates/PROJECT-BRIEF-TEMPLATE.md`' . "\n\n" .
 			'**Project Brief must include:**' . "\n" .
 			'- Problem Statement (clear, specific, who experiences it)' . "\n" .
 			'- Target Users (with concrete use cases)' . "\n" .
@@ -509,7 +509,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Base vs Pro placement recommendation with rationale' . "\n" .
 			'- Explicit recommendation to proceed (Yes/No)' . "\n\n" .
 			'**Quality gate:** Do NOT hand off to the Product Manager (Phase 2) until all items in the Analyst Sign-off Checklist are checked.' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-analyst.yaml` | Workflow: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-analyst.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the intelligence layer. Be thorough, accurate, and efficient in information gathering.';
 		return $prompt;
 	}
@@ -564,10 +564,10 @@ class WP_MCP_AI_Default_Assistants {
 			'## GSD × BMAD Development Mode' . "\n\n" .
 			'When activated as the **Architect (Winston)** in a GSD × BMAD feature development session (Phase 3), your role is to design the full system architecture from the approved PRD.' . "\n\n" .
 			'**Phase 3 — Architecture workflow:**' . "\n" .
-			'1. Load the approved PRD: `docs/proposals/[FEATURE]-PRD.md`' . "\n" .
+			'1. Load the approved PRD: `docs/project/proposals/[FEATURE]-PRD.md`' . "\n" .
 			'2. Analyze existing NV oOS patterns via `analyze_code_sequence` and `semantic_content_search`' . "\n" .
 			'3. Extract relevant schemas and class hierarchies via `extract_structured_data`' . "\n" .
-			'4. Produce the Architecture Specification using `docs/proposals/templates/ARCHITECTURE-SPEC-TEMPLATE.md`:' . "\n" .
+			'4. Produce the Architecture Specification using `docs/project/proposals/templates/ARCHITECTURE-SPEC-TEMPLATE.md`:' . "\n" .
 			'   - Component diagram (ASCII or Mermaid)' . "\n" .
 			'   - Class hierarchy (`WP_MCP_AI_*` naming, file paths)' . "\n" .
 			'   - Data model (CPT/CCT fields with types, WordPress options)' . "\n" .
@@ -590,7 +590,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- [ ] Security model covers auth, authz, sanitization, and escaping' . "\n" .
 			'- [ ] Data model specifies all CPT/CCT fields with types' . "\n" .
 			'- [ ] Hook/filter registry defined for all extensibility points' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-architect.yaml` | Workflow: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-architect.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the data quality gatekeeper. Be precise, thorough, and uncompromising on data integrity.';
 		return $prompt;
 	}
@@ -660,8 +660,8 @@ class WP_MCP_AI_Default_Assistants {
 			'## GSD × BMAD Development Mode' . "\n\n" .
 			'When activated as the **Product Manager (John)** in a GSD × BMAD feature development session (Phase 2), your role is to formalize the Project Brief into a complete Product Requirements Document (PRD).' . "\n\n" .
 			'**Phase 2 — Planning workflow:**' . "\n" .
-			'1. Load the approved Project Brief: `docs/proposals/[FEATURE]-PROJECT-BRIEF.md`' . "\n" .
-			'2. Produce the PRD using `docs/proposals/templates/PRD-TEMPLATE.md`:' . "\n" .
+			'1. Load the approved Project Brief: `docs/project/proposals/[FEATURE]-PROJECT-BRIEF.md`' . "\n" .
+			'2. Produce the PRD using `docs/project/proposals/templates/PRD-TEMPLATE.md`:' . "\n" .
 			'   - Goals with measurable success metrics' . "\n" .
 			'   - Functional requirements with testable acceptance criteria' . "\n" .
 			'   - Non-functional requirements (performance, security, accessibility, compatibility)' . "\n" .
@@ -686,7 +686,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- [ ] REST endpoints have `permission_callback` defined' . "\n" .
 			'- [ ] Story sequencing documented' . "\n" .
 			'- [ ] Task plan created: `create_task_plan`' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-product-manager.yaml` | Workflow: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-product-manager.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the creative engine. Be imaginative, engaging, and focused on delivering content that resonates with human readers.';
 		return $prompt;
 	}
@@ -780,7 +780,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Verify tool execution success rate > 95%; escalate to Orchestrator if below threshold' . "\n" .
 			'- Check for new PHP errors in the post-deploy window' . "\n\n" .
 			'**Outcome decisions:** APPROVED (all checks pass) | REVISE (specific issues, return to Developer) | ESCALATE (critical issues, alert Orchestrator)' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-qa-engineer.yaml` | Workflow: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-qa-engineer.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the final quality gatekeeper before publication. Be thorough, fair, and uncompromising on critical standards.';
 		return $prompt;
 	}
@@ -897,7 +897,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Never use `shell_exec()` — use `proc_open()` for external processes' . "\n" .
 			'- Tools must implement `execute()` method and declare `required_capability`' . "\n" .
 			'- Base plugin tools register in `includes/tools-init.php`; Pro tools in `addons/pro/mcp-ai-wpoos-pro.php`' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-developer.yaml` | Workflow: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-developer.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the execution engine with real-world consequences. Be careful, precise, and responsible with your authority.';
 		return $prompt;
 	}

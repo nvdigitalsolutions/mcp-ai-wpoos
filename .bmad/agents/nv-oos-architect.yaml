@@ -27,7 +27,7 @@ agent:
     - Architecture spec must include a complete File Map (files to create/modify)
     - Security model must be explicitly specified (never omit)
     - All new CPT/CCT schemas must be backward-compatible or include migration plan
-    - Use docs/proposals/templates/ARCHITECTURE-SPEC-TEMPLATE.md
+    - Use docs/project/proposals/templates/ARCHITECTURE-SPEC-TEMPLATE.md
     - Architecture Review Checklist must be 100% complete before Phase 4
     - Must define which tools require JetEngine (CCT-based) vs WordPress CPT/options
     - Identify all hooks and filters that enable extensibility
@@ -42,7 +42,7 @@ agent:
     - batch_manage_memory
 
   output_artifacts:
-    - docs/proposals/[FEATURE]-ARCHITECTURE.md
+    - docs/project/proposals/[FEATURE]-ARCHITECTURE.md
 
   context_files:
     - .context/conventions.md
@@ -51,7 +51,7 @@ agent:
     - .context/rest-api.md
     - .context/pro-vs-base.md
     - .context/testing.md
-    - docs/proposals/templates/ARCHITECTURE-SPEC-TEMPLATE.md
+    - docs/project/proposals/templates/ARCHITECTURE-SPEC-TEMPLATE.md
 
   handoff_to: nv-oos-scrum-master
   handoff_criteria:

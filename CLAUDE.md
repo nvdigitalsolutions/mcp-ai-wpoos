@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Example extends WP_MCP_AI_Tool_Base {
 
 ## Tool Return Format — Canonical Envelope
 
-Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
+Every tool's `execute()` method returns **exactly one of two shapes**. This is the canonical envelope enforced repo-wide (see [Unix Theory Compliance Proposal §2.2](docs/project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md#22-canonical-return-envelope)).
 
 ```php
 // SUCCESS — array with success/message/data:
@@ -151,7 +151,7 @@ Every tool's `execute()` method must satisfy two gates (Unix Theory Compliance �
 - **Gate 1 — Sanitize at entry:** all `$arguments[...]` values are sanitised at the top of `execute()` **before** any business logic (use `absint`, `sanitize_text_field`, `sanitize_key`, `wp_kses_post`, `esc_url_raw`, etc.).
 - **Gate 2 — Escape at exit:** every value returned in the canonical-envelope `data` array — and every value inserted into a database, redirect URL, response header, or rendered HTML — is escaped/prepared (use `esc_html`, `esc_attr`, `esc_url`, `wp_json_encode`, `$wpdb->prepare()` with placeholders).
 
-The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
+The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` (severity 5 — visible under `composer run lint`, silent under `composer run lint:base`). The sniff warns when `$arguments[...]` is interpolated into a double-quoted string or concatenated with `.` outside a recognised safe wrapper. Full sanitiser / escaper allow-list and rationale: [`docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 
 ## Base vs Pro Decision
 
@@ -396,7 +396,7 @@ This repository is developed by multiple AI coding agents. You (Claude Code) are
 **Key points for Claude Code sessions:**
 - Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.
 - Load subsystem-specific context files (listed in "Context Engineering Files" above) only when working on that subsystem.
-- **When editing files inside `includes/<folder>/`, also read `includes/<folder>/README.md` first.** Folder READMEs declare each folder's purpose, public surface, and neighbors, and tell you which `.context/*.md` files to also load. See [`docs/guides/developer/folder-readme-convention.md`](docs/guides/developer/folder-readme-convention.md). The same applies to `addons/pro/includes/<folder>/README.md`.
+- **When editing files inside `includes/<folder>/`, also read `includes/<folder>/README.md` first.** Folder READMEs declare each folder's purpose, public surface, and neighbors, and tell you which `.context/*.md` files to also load. See [`docs/developer/folder-readme-convention.md`](docs/developer/folder-readme-convention.md). The same applies to `addons/pro/includes/<folder>/README.md`.
 - If a BMAD workflow is active, the orchestrator agent coordinates — follow the phase gates documented in `CONTRIBUTING.md`.
 - Do **not** duplicate work that another agent has already completed. Check `git log` for recent commits by other agents.
 

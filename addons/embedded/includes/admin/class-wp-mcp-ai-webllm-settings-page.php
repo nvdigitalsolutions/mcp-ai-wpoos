@@ -281,7 +281,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Implementation Plan:', 'mcp-ai-wpoos' ); ?></strong>
-						<code>docs/proposals/WEB-LLM-IMPLEMENTATION-PHASE-1.md</code>
+						<code>docs/project/proposals/WEB-LLM-IMPLEMENTATION-PHASE-1.md</code>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Bundle Impact:', 'mcp-ai-wpoos' ); ?></strong>

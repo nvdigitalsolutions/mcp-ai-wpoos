@@ -13,7 +13,7 @@
  *     of the base rubric; leaving counters blank would be a regression.
  *   - All definitions stay in the `internal` privacy tier. Any future
  *     metric that touches user content MUST move to `sensitive` or
- *     `restricted` (see `docs/measurement/privacy-matrix.md`).
+ *     `restricted` (see `docs/reference/measurement/privacy-matrix.md`).
  *   - Metrics are registered under the canonical
  *     `wp_mcp_ai_register_metrics` hook at priority 20 so third-party
  *     registrations at priority 10 can pre-empt a stock metric by

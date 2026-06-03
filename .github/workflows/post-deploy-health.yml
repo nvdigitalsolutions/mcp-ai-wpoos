@@ -19,7 +19,7 @@
 #   WP_HEALTH_CHECK_TOKEN - Repository SECRET (Settings → Secrets and variables → Secrets)
 #                           Bearer token (assistant credential) with read access
 #
-# Reference: docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md (Phase 8)
+# Reference: docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md (Phase 8)
 
 name: Phase 8 — Post-Deploy Health Check
 
@@ -222,7 +222,7 @@ jobs:
           ## 🔍 Phase 8 — Post-Release Monitoring Checklist
 
           > GSD × BMAD Phase 8 (Monitoring) — 48–72 hour post-release window.
-          > Reference: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`
+          > Reference: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`
 
           ### Automated Checks (this workflow)
           - [x] Release artifact validated (CHANGELOG, plugin header, required files)

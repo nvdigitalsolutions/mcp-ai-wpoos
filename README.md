@@ -33,16 +33,16 @@
 
 ## 🔍 For Reviewers & Auditors
 
-> **New to this repo? Start here → [`docs/FOR_REVIEWERS.md`](docs/FOR_REVIEWERS.md)**
+> **New to this repo? Start here → [`docs/project/FOR_REVIEWERS.md`](docs/project/FOR_REVIEWERS.md)**
 >
 > That document answers every common question in one place: what the project is, current security posture, what's production vs experimental, PHP version requirements, AI development methodology, compliance status, and scoping advice for a limited-budget review.
 >
 > **Quick links for reviewers:**
-> - [Addon Inventory](docs/ADDON_INVENTORY.md) — what each of 18 addons does and its status
-> - [Security Posture](docs/SECURITY_POSTURE.md) — current state of all 50 audit findings
-> - [Compliance Traceability](docs/compliance/TRACEABILITY.md) — every .org rejection reason → commit → verification command
-> - [AI-Assisted Development](docs/development/AI_ASSISTED_DEVELOPMENT.md) — methodology, transparency, and what to scrutinize
-> - [Architecture Overview](docs/architecture/ARCHITECTURE.md) — component diagram and data flow
+> - [Addon Inventory](docs/project/ADDON_INVENTORY.md) — what each of 18 addons does and its status
+> - [Security Posture](docs/operations/security/SECURITY_POSTURE.md) — current state of all 50 audit findings
+> - [Compliance Traceability](docs/operations/compliance/TRACEABILITY.md) — every .org rejection reason → commit → verification command
+> - [AI-Assisted Development](docs/developer/AI_ASSISTED_DEVELOPMENT.md) — methodology, transparency, and what to scrutinize
+> - [Architecture Overview](docs/developer/architecture/ARCHITECTURE.md) — component diagram and data flow
 
 ## 📑 Table of Contents
 
@@ -200,13 +200,13 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - **LM Studio**: Self-hosted (no external data transmission)
 - **Baseten**: [Terms](https://www.baseten.co/terms-of-service) | [Privacy](https://www.baseten.co/privacy)
 
-See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 20 services.  
+See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
 The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~765 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal lifecycle) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~960 built-in tools** (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 > **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~960 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal lifecycle, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
-**Addon Ecosystem:** NV oOS ships a growing family of installable addons: **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Toolkit Shell / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. See [`docs/addons/toolkit-spa-blueprint.md`](docs/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
+**Addon Ecosystem:** NV oOS ships a growing family of installable addons: **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Toolkit Shell / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -223,7 +223,7 @@ The plugin works standalone with **~195 base tools** and optionally extends thro
 **NV oOS actively prevents and monitors against nefarious behavior**. The plugin includes:
 
 - **Nefarious Usage Monitor** - Real-time detection of suspicious patterns and automatic emergency shutdown capabilities【F:includes/class-wp-mcp-ai-nefarious-usage-monitor.php†L1-L676】
-- **Root Security Key** - Optional emergency authentication layer to prevent unauthorized reactivation after security incidents【F:docs/root-security-key.md†L1-L511】
+- **Root Security Key** - Optional emergency authentication layer to prevent unauthorized reactivation after security incidents【F:docs/features/security/root-security-key.md†L1-L511】
 - **Granular Capability Controls** - Every tool and API endpoint enforces WordPress capabilities to prevent unauthorized access
 - **Rate Limiting** - Built-in protection against abuse with configurable limits per user, model, and time period
 - **Comprehensive Audit Logging** - Track all API calls, tool executions, and security events for compliance and forensic analysis
@@ -231,9 +231,9 @@ The plugin works standalone with **~195 base tools** and optionally extends thro
 
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
-**Latest audit:** See [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/).
+**Latest audit:** See [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](docs/operations/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/project/audits/2026-04/`](docs/project/audits/2026-04/).
 
-**WordPress.org compliance hardening (May 9, 2026):** [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — findings B3, B8, B10, B13, and production vendor remap all resolved.
+**WordPress.org compliance hardening (May 9, 2026):** [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — findings B3, B8, B10, B13, and production vendor remap all resolved.
 
 ### ⚠️ Warranty & Safe Use
 
@@ -280,7 +280,7 @@ NV oOS implements a comprehensive orchestration layer for managing AI operations
 - **7 LLM Harness layers (+ 1 Pro)** — opt-in epistemic layers A–H activated per-assistant via the **LLM Harness** metabox
 - **Orchestration Phases 1–7** — HITL approval queue, prompt-injection detector, structured output, OTel exporter, DAG builder, durable runs, triggers/webhooks, sub-agents
 
-> **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
+> **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
 ### Core Orchestration Layer: Overcoming PHP's Limitations
 
@@ -325,9 +325,9 @@ $result = $orchestrator->execute_team_workflow( $team, $task, $context );
 ```
 
 **Documentation:**
-- See [Multi-Agent Orchestration](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical details
-- See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview  
-- See [DEEPSEEK-V4-USAGE-GUIDE.md](docs/DEEPSEEK-V4-USAGE-GUIDE.md) for practical examples
+- See [Multi-Agent Orchestration](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical details
+- See [DEEPSEEK-V4-README.md](docs/reference/models/DEEPSEEK-V4-README.md) for documentation suite overview  
+- See [DEEPSEEK-V4-USAGE-GUIDE.md](docs/reference/models/DEEPSEEK-V4-USAGE-GUIDE.md) for practical examples
 
 ### Why This Architecture Is Novel: Overcoming PHP's Limitations
 - Event loops and background workers
@@ -348,7 +348,7 @@ $result = $orchestrator->execute_team_workflow( $team, $task, $context );
 | Request-based lifecycle | SSE controller implements streaming within request boundaries |
 | No background workers | WordPress cron system simulates async job processing |
 
-This makes NV oOS patent-worthy as a **technical workaround** — it achieves sophisticated AI orchestration in an environment specifically not designed for such patterns. See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for the complete technical analysis.
+This makes NV oOS patent-worthy as a **technical workaround** — it achieves sophisticated AI orchestration in an environment specifically not designed for such patterns. See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for the complete technical analysis.
 
 ### Computer-Implemented Resource Management
 
@@ -389,7 +389,7 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Meta AI Jukebox (music generation)
 - Supporting services for video and audio processing
 
-The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
 
@@ -448,7 +448,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### May 22–23, 2026 — Baseten Provider (11th), CoSAI Secure-by-Design Agentic System, Continual Harness P5, SaaS Controller P2/P4, npm VAD/Chat-Bubble/Memory-UI, Studio Test Env, Addons PHPCS Cleanup 🤖🔌🛡️📦🧹
 
-- ✅ **Baseten AI — 11th first-class provider.** `WP_MCP_AI_Baseten_Client` with full OpenAI-compatible integration (chat, tools, streaming, reasoning passthrough) at `api.baseten.co/v1`. Settings → Providers → Baseten subtab; Provider Diagnostics card; Model Discovery `baseten` branch. Catalog entries, provider badges, CCT options seeded. Service documentation in [`docs/EXTERNAL_SERVICES.md`](docs/EXTERNAL_SERVICES.md).
+- ✅ **Baseten AI — 11th first-class provider.** `WP_MCP_AI_Baseten_Client` with full OpenAI-compatible integration (chat, tools, streaming, reasoning passthrough) at `api.baseten.co/v1`. Settings → Providers → Baseten subtab; Provider Diagnostics card; Model Discovery `baseten` branch. Catalog entries, provider badges, CCT options seeded. Service documentation in [`docs/reference/EXTERNAL_SERVICES.md`](docs/reference/EXTERNAL_SERVICES.md).
 - ✅ **CoSAI Secure-by-Design Agentic System.** Four new `includes/agents/` classes implementing all three CoSAI principles + MCP-T3/T5 sandbox: `WP_MCP_AI_Agent_Capability_Boundary` (immutable per-session tool allow-lists, rate limiting, budget exhaustion), `WP_MCP_AI_Agent_Audit_Trail` (cryptographic SHA-256 chain-of-custody audit trails, dual CPT+options storage, immutable events, OTel-compatible schema), `WP_MCP_AI_Agent_Approval_Gate` (risk-tiered approval low/medium/high/critical), and `WP_MCP_AI_Agent_Code_Sandbox` (isolated `proc_open`-based code execution for Python/Node.js/Bash/PHP with timeout enforcement and output caps). All provider-agnostic.
 - ✅ **Gemini I/O 2026 Model Refresh.** Gemini 3.5 Flash added as recommended model (4x faster output, dynamic thinking, 1M context, $1.50/$9.00 per 1M tokens). Gemini Omni Flash as new video generation default (10s, native audio, multi-turn editing, AI avatars). Gemini 3.1 Flash deprecated (sunset 2026-09-01). All admin settings, onboarding wizard, Ext Cog, cost calculator, and model catalog migration updated.
 - ✅ **Continual Harness — Self-Improving Agent System (P5).** Agents learn from execution history, refine strategies over successive runs, and improve tool selection accuracy through feedback loops. Integrated with the CoSAI audit trail for transparent improvement tracking.
@@ -467,7 +467,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### May 20–21, 2026 — WP.org Compliance Complete, Canonical Return Envelope, Semantic Compression, AI Prompt Caching 🛡️🔒📊🧠⚡
 
-- ✅ **WordPress.org Compliance — All 10 Findings Resolved (F1–F10).** All inline `<script>`/`<style>` echoes removed from 53 base-plugin files and converted to `wp_add_inline_style()` / `wp_print_inline_script_tag()`. Fixed PHP parse errors (duplicate `<?php`, spurious `?>`, missing `<?php` tags) across 11 files. F3 (bare `WP_PLUGIN_DIR`), F5 (tool HTML fragments), F6 (bare `phpcs:ignore` — ~50 annotated), F7b (logger path bounding), F8 (remaining `$_GET` `wp_unslash()` — 3 instances), F9 (remaining bare `phpcs:ignore` — 15 instances), and F10 (unguarded constants in `addons/` — 11 instances) all resolved. May 20 re-audit: dangerous-functions, superglobal-access, HTTP-timeout, inline-notice audits verified clean. Inline style handles registered properly (8 locations) to prevent silent CSS failures. Build pipeline hardened — `.codex-wordpress` and `phpcs` excluded from ZIPs; webpack-dev-server bumped to `>=5.2.4` for CVE-2026-6402. Pro Settings CSS loading restored. Full compliance evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md).
+- ✅ **WordPress.org Compliance — All 10 Findings Resolved (F1–F10).** All inline `<script>`/`<style>` echoes removed from 53 base-plugin files and converted to `wp_add_inline_style()` / `wp_print_inline_script_tag()`. Fixed PHP parse errors (duplicate `<?php`, spurious `?>`, missing `<?php` tags) across 11 files. F3 (bare `WP_PLUGIN_DIR`), F5 (tool HTML fragments), F6 (bare `phpcs:ignore` — ~50 annotated), F7b (logger path bounding), F8 (remaining `$_GET` `wp_unslash()` — 3 instances), F9 (remaining bare `phpcs:ignore` — 15 instances), and F10 (unguarded constants in `addons/` — 11 instances) all resolved. May 20 re-audit: dangerous-functions, superglobal-access, HTTP-timeout, inline-notice audits verified clean. Inline style handles registered properly (8 locations) to prevent silent CSS failures. Build pipeline hardened — `.codex-wordpress` and `phpcs` excluded from ZIPs; webpack-dev-server bumped to `>=5.2.4` for CVE-2026-6402. Pro Settings CSS loading restored. Full compliance evidence: [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_19.md).
 - ✅ **Canonical Return Envelope — Unix Theory P0/P1 Complete.** Converted 191 non-canonical `array('success' => false, ...)` returns to `new WP_Error()` across 105 files (49 tool classes + 24 service/admin/rest/slash-command files). `WPMCPAI.Tools.CanonicalReturnEnvelope` sniff now clean; `SanitizeAtEntry` violation in `create-task-plan.php` resolved. Five justified exceptions remain (process utilities, not tool `execute()`). Caller sites hardened to test `is_wp_error()` instead of `$result['success']`.
 - ✅ **Semantic Caveman Compression.** New `WP_MCP_AI_Semantic_Compressor` service (1,988 lines + 1,156 test lines + 44 unit tests) strips grammar and filler words while preserving facts, numbers, and technical terms. Opt-in via admin setting. Protects code blocks, JSON, URLs, emails, and HTML from compression. Settings moved from Advanced → Orchestration tab. See [`docs/features/semantic-compression.md`](docs/features/semantic-compression.md).
 - ✅ **AI Prompt Caching — All Providers.** Comprehensive response caching across all five AI providers. New `WP_MCP_AI_Chat_Response_Cache` and `WP_MCP_AI_Prompt_Optimizer` classes. Cache eligibility: non-streaming, temperature=0, `cache_system_prompt` enabled. Keys use `sanitize_key()` + `absint()` + `md5()`. Invalidation on assistant config changes; TTL bounded 60s–3600s. Cache Performance dashboard in Token Manager section.
@@ -502,7 +502,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Kimi (Moonshot AI) provider — 10th first-class language-model provider.** New `WP_MCP_AI_Kimi_Client` wrapping the OpenAI-compatible API at `https://api.moonshot.cn/v1`. Models: `kimi-k2.6` (256K context, multimodal, tool calling — default), `kimi-k2.5`, `kimi-k2` (reasoning), `kimi-k2-thinking` (chain-of-thought), legacy `moonshot-v1-8k/-32k/-128k`. Settings → Providers → **Kimi** subtab; Provider Diagnostics card. WP.org compliance docs updated with Kimi, OpenRouter, and DigitalOcean service disclosures.
 - ✅ **Agent Client Protocol (ACP) Server.** Full ACP standard implementation enabling external AI clients (Zed, JetBrains, Neovim, Claude Desktop) to natively drive NV oOS assistants over JSON-RPC 2.0 + HTTP/SSE transport. Core: `WP_MCP_AI_ACP_Server`, `WP_MCP_AI_ACP_JSONRPC_Dispatcher`, `WP_MCP_AI_ACP_Session_Manager`, `WP_MCP_AI_ACP_Session_Bridge`, `WP_MCP_AI_ACP_Transport_HTTP`. `/.well-known/ai-peer` extended to advertise ACP endpoint, transports, and auth methods. **Orchestration → Settings** gains `enable_acp_server` + `acp_require_approval` toggles. PHPUnit coverage scaffolding in `tests/acp/`. See `docs/features/acp-server.md`.
 - ✅ **MCP Bridge (`bin/mcp-bridge.js`).** Lightweight Node.js stdio-to-HTTP relay for local MCP clients (Claude Desktop, Cursor, Zed). Bridges the MCP stdio transport to the plugin's HTTP + SSE endpoint — no server-side changes required.
-- ✅ **Unix Theory Phase P7 — Folder README convention.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/guides/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`. Completes P0–P7 for the base plugin.
+- ✅ **Unix Theory Phase P7 — Folder README convention.** Every PHP-bearing `includes/` subdirectory now ships a `README.md` declaring its purpose, public surface, and context-file links. Convention: `docs/developer/folder-readme-convention.md`; enforced by `composer run docs:check-folder-readmes`. Completes P0–P7 for the base plugin.
 - ✅ **GDPR — JetEngine Privacy Exporters.** New privacy exporter classes for JetEngine CCT data (chat transcripts, agent memory, approval queue entries), registered via WordPress's `wp_privacy_personal_data_exporters` hook when JetEngine is active.
 - ✅ **Security hardening (5 patches).** (1) Sensitive settings keys (API keys, tokens) encrypted at rest + masked in admin UI (#4990). (2) Webhook endpoints now reject requests missing the required shared secret (#4988). (3) User-configurable URLs in outgoing HTTP requests replaced with `wp_safe_remote_get`/`wp_safe_remote_post` to block SSRF (#4991). (4) Attachment URLs in tool results validated against `https`/`http` scheme allowlist to prevent `javascript:`/`data:` injection (#4975). (5) Sensitive console logs gated behind `WP_MCP_AI_DEBUG` + admin-only JS toggle (#4984).
 - ✅ **Chat Bubble / Test Model UI sweep (13 PRs).** Chat bubble self-init via `wpMcpAiChatInit.init(scope)`; panel CSS scoped to bubble context; `kses_chat_output()` preserves interactive form/button/input controls; Test Model chat submission fully restored; professional selector AJAX render uses `kses_chat_output()`; bubble re-init isolated to its own ID/panel; submit button fixed inside outer page forms; unified team chat response normalization.
@@ -520,10 +520,10 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
   - **P3 — Data-contract metadata.** Optional `WP_MCP_AI_Tool_Data_Contract_Interface` (`get_data_contract() => array{produces?, consumes?}`). The tool service appends `[Data contract: produces=X, consumes=A|B]` to the OpenAI function-calling description. Filter `wp_mcp_ai_tool_data_contract_description_suffix`.
   - **P4 — Tool lifecycle descriptor.** Optional 5th arg on `wp_mcp_ai_after_tool_execution`; `WP_MCP_AI_Tool_Lifecycle_Descriptor::build()` returns `{success, error_code, data_type, duration_ms}`. OTel spans gain `nvoos.tool.data_type` + `nvoos.tool.duration_ms`. 4-arg subscribers stay back-compat.
   - **P5 — Back-compat alias infrastructure.** Registry gains `register_deprecated_alias()`, `get_deprecated_aliases()`, `resolve_deprecated_alias()`, `reset_deprecated_alias_invocations()`. Action `wp_mcp_ai_tool_deprecated_alias_invoked` fires once per request per slug. Aliases live in a separate map invisible to `build_tools_payload`. Sets up Tier-A decompositions for v1.3.0.
-  - **P6 — Sanitize-at-entry sniff.** New PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` enforces Gate 1 of the two-gate sanitisation rule for `$arguments[...]` interpolation/concatenation. Codification: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
+  - **P6 — Sanitize-at-entry sniff.** New PHPCS sniff `WPMCPAI.Tools.SanitizeAtEntry` enforces Gate 1 of the two-gate sanitisation rule for `$arguments[...]` interpolation/concatenation. Codification: [`docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 - ✅ **DigitalOcean Serverless Inference provider (new — 9th provider).** `WP_MCP_AI_DigitalOcean_Client` wraps the OpenAI-compatible API at `https://inference.do-ai.run/v1`. Chat completions, tool/function calling, JSON mode, SSE streaming, native `/embeddings`, model listing, reasoning passthrough. Settings → Providers → DigitalOcean subtab; Model Discovery `digitalocean` branch; Provider Diagnostics card with `GET /v1/models` probe; default embedding model `gte-large-en-v1.5`. DigitalOcean Agent endpoints (`*.agents.do-ai.run`) intentionally out of scope.
 - ✅ **Async chat continuation (slices 1–6 complete).** Durable continuation store + dispatcher for async tool jobs, LLM re-entry, session frame buffer, SSE stream controller, `chat.js` client integration, Pro webhook notifier (`addons/pro/includes/services/class-wp-mcp-ai-pro-chat-continuation-notifier.php`), OTel hooks + Jest tests. Plan: [`docs/features/chat/async-continuation.md`](docs/features/chat/async-continuation.md).
-- ✅ **Jobs/Tasks Drawer + cron-status integration (PRs A–G complete).** Inline job progress card (`.wp-mcp-ai-job-card__*` BEM block) with progress bar, ETA, step list, and Cancel/Retry buttons subscribed to `wpMcpAiJobBus` events. New REST routes `POST /mcp-ai/v1/cron-status/{job_id}/cancel` and `.../retry`; actions `wp_mcp_ai_job_cancelled`, `wp_mcp_ai_job_retried`. Tasks Drawer + toasts in chat shortcode (default-on via filter `wp_mcp_ai_chat_tasks_drawer`). Five new OTel hooks emit `nvoos.chat.jobs.*` OTLP spans. Docs: [`docs/features/chat/cron-status-integration.md`](docs/features/chat/cron-status-integration.md), [`docs/guides/developer/tool-development/registering-a-job-source.md`](docs/guides/developer/tool-development/registering-a-job-source.md).
+- ✅ **Jobs/Tasks Drawer + cron-status integration (PRs A–G complete).** Inline job progress card (`.wp-mcp-ai-job-card__*` BEM block) with progress bar, ETA, step list, and Cancel/Retry buttons subscribed to `wpMcpAiJobBus` events. New REST routes `POST /mcp-ai/v1/cron-status/{job_id}/cancel` and `.../retry`; actions `wp_mcp_ai_job_cancelled`, `wp_mcp_ai_job_retried`. Tasks Drawer + toasts in chat shortcode (default-on via filter `wp_mcp_ai_chat_tasks_drawer`). Five new OTel hooks emit `nvoos.chat.jobs.*` OTLP spans. Docs: [`docs/features/chat/cron-status-integration.md`](docs/features/chat/cron-status-integration.md), [`docs/developer/tool-development/registering-a-job-source.md`](docs/developer/tool-development/registering-a-job-source.md).
 - ✅ **Toolkit MCP Servers Phase 7 admin UI.** New `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` (slug `nvoos-pro-toolkit-mcp-servers`) — 5-tab admin page (Servers / Detail / Audit / Discovery / Help). Action hook `wp_mcp_ai_toolkit_mcp_server_toggled`. Observability card + assistant metabox links updated. Pro plugin load order fix so the toolkit page registers before the admin block.
 - ✅ **JetEngine CCT memory mirror.** `retrieve_agent_memory` + `recall` now hydrate directly from the JetEngine CCT mirror when available; pipeline deduped to avoid double-suppression.
 - ✅ **Security / maintenance.** Bumped npm `langsmith` minimum to `>=0.6.0` (GHSA-3644-q5cj-c5c7). Added `wp_read_video_metadata` guard (`media.php`) in Veo and Sora video tools. Production autoload restored: `--no-dev --classmap-authoritative` with manual `dev: false` / `dev-package-names: []` patches.
@@ -535,7 +535,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### May 10, 2026 — WP.org Compliance, Chat SPA Phases 1–7, Docs Hub v0.3.8, Toolkit SPA Blueprint Phases 5–12, Coverage Campaign 🛡️💬📚🧪
 
-- ✅ **WordPress.org Compliance Hardening (B-series, PRs #4892, #4902)** — resolved reviewer findings B1/B2/B3/B5/B8/B10/B11/B12/B13: inline `<script>`/`<style>` echoes removed, `WP_CONTENT_DIR` path replaced with `wp_upload_dir()`, central `WP_MCP_AI_User_Context_Helper::safe_set_current_user()` with `get_userdata()` + multisite `is_user_member_of_blog()` validation, `wp_unslash()` added to approval handler `$_POST` reads, 49/49 base AJAX handlers confirmed with `check_ajax_referer()`. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
+- ✅ **WordPress.org Compliance Hardening (B-series, PRs #4892, #4902)** — resolved reviewer findings B1/B2/B3/B5/B8/B10/B11/B12/B13: inline `<script>`/`<style>` echoes removed, `WP_CONTENT_DIR` path replaced with `wp_upload_dir()`, central `WP_MCP_AI_User_Context_Helper::safe_set_current_user()` with `get_userdata()` + multisite `is_user_member_of_blog()` validation, `wp_unslash()` added to approval handler `$_POST` reads, 49/49 base AJAX handlers confirmed with `check_ajax_referer()`. Full evidence: [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
 - ✅ **Build-pipeline split (Track A)** — `bin/build-plugin-zip.sh --wp-org` flag produces a WP.org-compliant base-only ZIP; the full GitHub Release ZIP is a separate artifact. `addons/`, `.zed`, and root `*.md` files excluded from the submission ZIP.
 - ✅ **Chat SPA addon (`addons/chat-spa/`) — all 7 phases complete (v0.6.0)** — React replacement for the legacy chat shortcode: Phase 1 (Vercel AI SDK UI + custom SSE→Data Stream Protocol adapter), Phase 2 (tool-call cards + memory pills + admin embed), Phase 3 (transcripts sidebar with load/save/delete), Phase 4 (memory drawer — Memories/Scope/Audit tabs), Phase 5 (HITL approval bar with 6 s polling), Phase 6 (file attachments + regenerate + message branching), Phase 7 (`WP_MCP_AI_LEGACY_CHAT_JS` opt-out constant + blueprint §20 migration guide). Bundle ~81.3 KB gzip.
 - ✅ **Docs Hub addon (`addons/docs-hub/`) — v0.1.0 → v0.3.8** — remote-first defaults + tree-picker UX (v0.3.0), chunked rebuild + CLI subcommand (v0.2.x), anchor/scroll fixes, mobile sidebar toggle, GitHub subtree path fetch, RemoteAnchor, in-page link routing, defensive `remote_repos` coercion + REST/SSRF hardening (v0.3.6), a11y root attrs + skip-link + reduced-motion (v0.3.7), syntax highlighting via rehype-highlight, `PageFooter` (last_modified + edit-on-GitHub), `NV_oOS_Docs_Hub_Sitemap_Provider`, admin `repo-picker.js` extracted from inline script (v0.3.8).
@@ -561,7 +561,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
   - **Audit log** (`NVOOS_SaaS_Controller_Audit_Log`) — 200-entry ring buffer across channels `cloudflare / stripe / openrouter / internal`.
   - **REST namespace** `/wp-json/nvoos-saas/v1/` — 19 routes, all requiring `manage_options` except `POST /webhooks/stripe` (signature-gated).
   - **Key filters:** `nvoos_saas_controller_apply_token_ttl`, `nvoos_saas_controller_audit_log_max_entries`, `nvoos_saas_controller_audit_log_record`, `nvoos_saas_controller_webhook_events_max_entries`, `nvoos_saas_controller_apply_job_state_ttl`, `nvoos_saas_controller_worker_dist_path`, `nvoos_saas_controller_worker_compatibility_date`, `nvoos_saas_controller_worker_upload_metadata`.
-  - **Reference:** [`addons/saas-controller/README.md`](addons/saas-controller/README.md) · [`docs/saas-controller.md`](docs/saas-controller.md).
+  - **Reference:** [`addons/saas-controller/README.md`](addons/saas-controller/README.md) · [`docs/operations/deployment/saas-controller.md`](docs/operations/deployment/saas-controller.md).
 
 - ✅ **Structured Logging Integration (PR #4849)** — `WP_MCP_AI_Logger` calls added systematically across the plugin and all addons:
   - **`WP_MCP_AI_Agent_Memory_CCT_Bridge`** (Phase 4b-2) — all bridge writes, CCT mirror failures, filter-suppressed writes, and deletions logged at appropriate levels.
@@ -574,7 +574,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### WordPress.org Compliance Hardening (May 9, 2026) 🛡️
 
-**Five clusters of WordPress.org automated-review findings resolved.** Full evidence catalogued in [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Per-finding reviewer-response table in [`SUBMISSION.md`](SUBMISSION.md).
+**Five clusters of WordPress.org automated-review findings resolved.** Full evidence catalogued in [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Per-finding reviewer-response table in [`SUBMISSION.md`](SUBMISSION.md).
 
 - ✅ **B3 — Inline `<script>` / `<style>` removed** — dead WP < 5.7 fallback branches deleted; config blocks converted to `wp_print_inline_script_tag()` hooked on `admin_enqueue_scripts`; admin telemetry CSS moved to `wp_add_inline_style()`.
 - ✅ **B8 — Filesystem cache path corrected** — cache base directory moved from `WP_CONTENT_DIR/cache/wp-mcp-ai` to `wp_upload_dir()['basedir']/wp-mcp-ai-cache` (`includes/cache/class-wp-mcp-ai-cache-service.php`).
@@ -609,7 +609,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
   - **Layer G** — Eval Scheduler: daily cron (`wp_mcp_ai_harness_eval_tick`) runs eval suites for all harness-enabled assistants via `wp_mcp_ai_harness_eval_generator`.
   - **Layer H** — Fine-tune Curriculum Export (Pro, `WP_MCP_AI_Tool_Export_Fine_Tune_Curriculum`): exports eval suites as OpenAI chat-format JSONL to `mcp-ai/harness-curriculum/` with `.htaccess`/`index.php` guards; per-case char cap filterable via `wp_mcp_ai_pro_curriculum_per_case_char_cap`.
   - **Harness profile** stored in `_wp_mcp_ai_harness_profile` post meta: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`.
-  - Reference: [`docs/llm-harness.md`](docs/llm-harness.md).
+  - Reference: [`docs/features/llm-harness.md`](docs/features/llm-harness.md).
 
 - ✅ **19 new slash commands (11 base + 8 Pro)** — the in-chat CLI nearly doubled, bringing base to 24 total. New base commands: `/jobs`, `/status`, `/cost`, `/diagnose`, `/tools`, `/skills`, `/preset`, `/model`, `/clear`, `/reset`, `/resume`. Pre-existing base commands: `/help`, `/next-task`, `/ship`, `/clean-content`, `/optimize-perf`, `/sync-docs`, `/workflow`, `/compact`, `/context`, `/remember`, `/forget`, `/scope`, `/markup-stats`. New Pro commands: `/schedule`, `/schedule-preset`, `/workflow-preset`, `/run`, `/agent`, `/mcp-app`, `/persona`, `/broadcast`. All registered from `includes/slash-commands/slash-commands-init.php` (base) and the `wp_mcp_ai_slash_commands_initialized` action (Pro). Reference: [`docs/features/slash-commands-guide.md`](docs/features/slash-commands-guide.md).
 
@@ -650,9 +650,9 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
   - **Settings UI** toggle under **NV oOS → Settings → General**.
   - **Telemetry + admin dashboard** — bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters; **NV oOS → Markup Telemetry** renders the summary as a server-rendered HTML table with a colour-coded completion-rate card and a nonce-protected `Reset counters` form.
   - **Slash command** `/markup-stats` (alias `/markup`) renders the same summary as Markdown with `--verbose`, `--json`, and `--reset` flags.
-  - **Hooks** (4 actions + 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts` — documented in [`docs/hooks-reference.md`](docs/hooks-reference.md).
+  - **Hooks** (4 actions + 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts` — documented in [`docs/reference/hooks/hooks-reference.md`](docs/reference/hooks/hooks-reference.md).
   - **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
-  - Reference: [`docs/markup-subsystem.md`](docs/markup-subsystem.md).
+  - Reference: [`docs/features/markup-subsystem.md`](docs/features/markup-subsystem.md).
 
 - ✅ **Agent Skills Phases 1–4 (PR #4771)** — the Agent Skills surface (per the [agentskills.io](https://agentskills.io/specification) specification) is now end-to-end across base + Pro:
   - *Phase 1* — **Bundled WP-developer skills**: 28+ new `SKILL.md` files curated from the MIT-licensed [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) catalogue under `addons/pro/includes/bundled-skills/` (WooCommerce HPOS, payment gateways, REST API v4, shipping, Stripe, variations, customer & sessions, classic emails, coupons, product search/select; WooCommerce Memberships access discounts + subscriptions linkage + hooks; WooCommerce Subscriptions renewal scheduler + switching/gifting + hooks; JetEngine dynamic visibility + listings callbacks + query builder custom types; JetFormBuilder action events + external API + item decorator + messages + form actions + sidebar panels + settings tabs; WP Rocket cache invalidation + rejection filters). Base plugin gains a `wp-abilities-api` skill under `includes/bundled-skills/`. New `THIRD_PARTY_NOTICES.md` in both `bundled-skills/` directories carries upstream attribution and license text.
@@ -665,7 +665,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **MemPalace Capture Framework Phases A + B1** — a foundation pass plus the five highest-leverage capture tools layered onto the Phase 4a/4b durable agent-memory bridge shipped in 1.1.13:
   - *Phase A* — base capture interface, lifecycle hooks, and shared time-source / tier-logging utilities, with a follow-up review fix for time consistency and tier-logging payload shape.
   - *Phase B1* — five highest-leverage capture tools that write into the durable `ai_agent_memories` Custom Content Type through the Phase 4a/4b bridge.
-  - See [`docs/AGENT-MEMORY-COMPLETE-GUIDE.md`](docs/AGENT-MEMORY-COMPLETE-GUIDE.md) for the unified MemPalace / Letta / Zep / mem0 / Cognee schema rationale that the capture tools target.
+  - See [`docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md`](docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md) for the unified MemPalace / Letta / Zep / mem0 / Cognee schema rationale that the capture tools target.
 
 - ✅ **Graphify CPT/CCT integration suite** — JetEngine custom post types and Custom Content Types are now first-class citizens across every Graphify surface:
   - **Knowledge graph builds (#4779)** — JetEngine CPTs and CCTs are detected, structured (`cct_{slug}` nodes + `AUTHORED_BY` edges), and semantically embedded end-to-end through dedicated cache prefixes and cron actions.
@@ -700,7 +700,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 - ✅ **OpenAI `gpt-image-2` (Images 2.0)** — first-class support added in [`WP_MCP_AI_OpenAI_Client`](includes/class-wp-mcp-ai-openai-client.php) and [`WP_MCP_AI_Tool_Generate_OpenAI_Image`](includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php), now the default image model across the base plugin and Pro image tools. New 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square), `2048x1152` (16:9), `1152x2048` (9:16). Cost / token tables and admin model dropdowns ("Images 2.0 (Recommended)") updated to match. Pro tools `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` default to `gpt-image-2` as well. Existing sites with a saved `openai_image_model` setting are unaffected. Filters unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`. New PHPUnit `test_gpt_image_2_is_recognized_and_default` covers the default, the `hd → high` quality remap, and the suppression of `response_format` on the wire.
 
-- ✅ **Phase 4a/4b — durable agent-memory bridge (MemPalace-inspired)** — agent memory was the only persistent surface in the plugin still backed solely by transients (cache-evictable). With JetEngine active, every transient memory write is now mirrored into a durable `ai_agent_memories` Custom Content Type with an industry-standard schema combining ideas from **Letta / MemGPT** (memory tier, verbatim immutability flag, expires_at TTL anchor), **Zep** (bi-temporal validity, source provenance), **mem0** (importance, verbatim discipline, source tracking), **Cognee**, and [**MemPalace**](https://github.com/MemPalace/mempalace) (hierarchical scope via wing/room, verbatim-storage discipline). Transients remain the primary fast read path; the CCT is the durable backing store. Vector and graph references (`embedding_id`, `graph_node_id`) are nullable forward-compatibility hooks. New `wp_mcp_ai_memory_deleted` action fires from `manage_context_lifecycle` delete path with subscriber-driven CCT cleanup. The agent-memory dashboard now surfaces a **"Persistent (CCT) / Cache only"** stat card. Source files inspired by MemPalace now cite the upstream project in their file headers so attribution matches `docs/AGENT-MEMORY-COMPLETE-GUIDE.md`. Tests: `tests/test-jetengine-agent-memories-cct.php` + `tests/test-agent-memory-cct-bridge.php` (13 new tests; 24 existing regression tests still pass).
+- ✅ **Phase 4a/4b — durable agent-memory bridge (MemPalace-inspired)** — agent memory was the only persistent surface in the plugin still backed solely by transients (cache-evictable). With JetEngine active, every transient memory write is now mirrored into a durable `ai_agent_memories` Custom Content Type with an industry-standard schema combining ideas from **Letta / MemGPT** (memory tier, verbatim immutability flag, expires_at TTL anchor), **Zep** (bi-temporal validity, source provenance), **mem0** (importance, verbatim discipline, source tracking), **Cognee**, and [**MemPalace**](https://github.com/MemPalace/mempalace) (hierarchical scope via wing/room, verbatim-storage discipline). Transients remain the primary fast read path; the CCT is the durable backing store. Vector and graph references (`embedding_id`, `graph_node_id`) are nullable forward-compatibility hooks. New `wp_mcp_ai_memory_deleted` action fires from `manage_context_lifecycle` delete path with subscriber-driven CCT cleanup. The agent-memory dashboard now surfaces a **"Persistent (CCT) / Cache only"** stat card. Source files inspired by MemPalace now cite the upstream project in their file headers so attribution matches `docs/features/memory/AGENT-MEMORY-COMPLETE-GUIDE.md`. Tests: `tests/test-jetengine-agent-memories-cct.php` + `tests/test-agent-memory-cct-bridge.php` (13 new tests; 24 existing regression tests still pass).
 
 - ✅ **AI Harmonization sub-toolkit (Pro)** — 14 new Pro tools for cross-model output reconciliation, registered alongside the existing orchestration toolkit with their own registry section and admin-doc presets. The Architectural Design Toolkit and other Pro toolkits' in-app docs were refreshed in the same pass to cross-link the new harmonization workflows.
 
@@ -745,7 +745,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### April 27, 2026 — Security Audit Summary, Production Vendor Autoload, Veo 3.1 Fix 🛡️
 
-- ✅ **April 2026 Security Audit Summary published** — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/) into a single reference for maintainers and operators. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied include WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
+- ✅ **April 2026 Security Audit Summary published** — New [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](docs/operations/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/project/audits/2026-04/`](docs/project/audits/2026-04/) into a single reference for maintainers and operators. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied include WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
 - ✅ **Production-ready vendor autoload (PR #4733)** — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative` (677 production classes); the plugin is now deployable from a clean clone without a separate `composer install` step. Local development still requires `composer install` for dev dependencies.
 - ✅ **Veo 3.1 `generate_veo_video` fix (PR #4735)** — `seed` parameter is now sent only to Veo 2.0 (`veo-2.0-generate-001`); Veo 3.1 (`veo-3.1-generate-preview`) rejects the parameter and the tool now silently drops it on that model.
 
@@ -753,7 +753,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### Measurement Subsystem GA (April 24–25, 2026) ⭐ **NEW**
 
-**End-to-end measurement / evals / reward stack shipped across 12 sequenced PRs** — stock metrics, persistent store, eval harness, Pro rubric presets, WP-CLI runner, regression alerting, and a full Measurement dashboard. See [`docs/measurement/README.md`](docs/measurement/README.md) and [`docs/measurement/rollout-plan.md`](docs/measurement/rollout-plan.md).
+**End-to-end measurement / evals / reward stack shipped across 12 sequenced PRs** — stock metrics, persistent store, eval harness, Pro rubric presets, WP-CLI runner, regression alerting, and a full Measurement dashboard. See [`docs/reference/measurement/README.md`](docs/reference/measurement/README.md) and [`docs/reference/measurement/rollout-plan.md`](docs/reference/measurement/rollout-plan.md).
 
 - ✅ **Stock metrics** — tool-execution, chat-loop, agentic-loop, and SSE/stream metrics all emitted through a single `wp_mcp_ai_register_metrics` registry. Every signal carries a privacy tier, a direction (`higher_is_better` / `lower_is_better` / `neutral`), and a paired counter-metric so dashboards cannot Goodhart a single dimension.
 - ✅ **Persistent metric event store** — `{prefix}mcp_ai_metric_events` table with per-request persister, retention cron, `wp_mcp_ai_metric_retention_days` filter (default 30 days). Table is dropped on uninstall when *Delete data on uninstall* is enabled.
@@ -782,7 +782,7 @@ All admin dashboards (ECA, Schedule Manager, Agent Command Center, Measurement) 
 
 ### Comprehensive Orchestration Reference (April 16, 2026)
 
-New [`docs/ORCHESTRATION_REFERENCE.md`](docs/ORCHESTRATION_REFERENCE.md) is the single authoritative reference for the orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings-comparison matrices), PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service-file index.
+New [`docs/reference/orchestration/ORCHESTRATION_REFERENCE.md`](docs/reference/orchestration/ORCHESTRATION_REFERENCE.md) is the single authoritative reference for the orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings-comparison matrices), PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service-file index.
 
 ---
 
@@ -806,9 +806,9 @@ OpenAI file/model management · text embeddings & vector stores · multi-agent o
 
 ### WordPress.org Compliance Re-Audit (April 15, 2026) 🔒
 
-All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output-escaping instances — is catalogued in `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`.
+All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output-escaping instances — is catalogued in `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`.
 
-A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, and the production vendor remap is documented in [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
+A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, and the production vendor remap is documented in [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md).
 
 ---
 
@@ -985,7 +985,7 @@ A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, 
 - ✅ **SQL hardening** — `$wpdb->dbname` interpolation replaced with `$wpdb->prepare('%s', DB_NAME)`. `esc_sql()` on table names in 5 files. Pre-prepared `$where` fragment elimination.
 - ✅ **Guest token TTL** — `guest_token_lifetime` setting now wired to actual token system. Absolute max TTL (7 days) prevents indefinite renewal.
 - ✅ **Output escaping** — Shortcode `echo $assistant_content` → `echo wp_kses_post($assistant_content)`. Removed `urldecode()` after `sanitize_text_field()`.
-- ✅ **Security hardening proposal** — `docs/proposals/SECURITY_HARDENING_PROPOSAL.md` with P1–P3 roadmap.
+- ✅ **Security hardening proposal** — `docs/project/proposals/SECURITY_HARDENING_PROPOSAL.md` with P1–P3 roadmap.
 
 ### Schedule Preset Install Overrides (April 5, 2026) 🔧 **UPDATED**
 
@@ -1437,7 +1437,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **Command Features**: Chaining, conditional logic, parameter validation, result passing, error handling
 - **Integration**: JavaScript autocomplete, REST API endpoint, WP-CLI support
 - **Security**: Capability-based authorization, rate limiting (10 commands/minute), comprehensive logging
-- [Slash Commands Guide →](docs/SLASH_COMMANDS_GUIDE.md)
+- [Slash Commands Guide →](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md)
 
 **Phase 2 - Pro Toolkit Commands (February 4, 2026):**
 - **21 Specialized Commands** across 3 pro toolkits:
@@ -1485,10 +1485,10 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 **Root Directory Organization:**
 - Moved 5 additional documentation files from root to appropriate docs/ subdirectories:
-  - `FEDERATION_SETUP_GUIDE.md` → `docs/guides/admin/` (admin setup guide)
+  - `FEDERATION_SETUP_GUIDE.md` → `docs/admin-guides/` (admin setup guide)
   - `FEDERATION_DIRECTORY_DEBUG.md` → `docs/fixes/federation/` (bug fix documentation)
   - `README-MULTI-AGENT-SYSTEM.md` → `docs/features/multi-agent/` (feature documentation)
-  - `PRODUCTION_COMPOSER.md` → `docs/deployment/` (deployment guide)
+  - `PRODUCTION_COMPOSER.md` → `docs/operations/deployment/` (deployment guide)
   - Removed duplicate `FIX_SUMMARY.md` (multiple versions exist in docs/fixes/)
 - **Root now contains only 3 essential files**: README.md, CHANGELOG.md, CONTRIBUTING.md
 - All configuration files remain in root (package.json, composer.json, phpunit.xml.dist, etc.)
@@ -1496,8 +1496,8 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - Complete organization documented in [REPOSITORY_ORGANIZATION.md](docs/REPOSITORY_ORGANIZATION.md)
 
 **Previous Cleanup (January 30, 2026):**
-- Moved 7 implementation files to `docs/implementation-history/2026/january/`
-- Created [PROPOSALS_COMPLETION_STATUS.md](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
+- Moved 7 implementation files to `docs/history/2026/january/`
+- Created [PROPOSALS_COMPLETION_STATUS.md](docs/project/proposals/PROPOSALS_COMPLETION_STATUS.md)
 - **64 total proposals tracked**: 18 complete (28%), 6 in progress (9%), 40 pending (63%)
 
 **Files Changed**: 5 files moved, 3 documentation files updated  
@@ -1545,8 +1545,8 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 **Documentation Consolidation:**
 - Moved 23 files from root to organized subdirectories
 - Root now contains 6 essential docs + 2 supporting files (down from 31)
-- Created comprehensive security report: [CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md](docs/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md)
-- All implementation summaries organized in `docs/implementation-history/2026/`
+- Created comprehensive security report: [CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md](docs/operations/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md)
+- All implementation summaries organized in `docs/history/2026/`
 
 **Files Changed**: 6 modified (~400 lines added)  
 **Security Posture**: 100% critical/high issues resolved (2 medium remain)
@@ -1569,9 +1569,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **Multi-Agent Workflows** - Predefined team templates for research, content, e-commerce, and development workflows
 - **Implementation Status** - 85-90% complete with comprehensive test suite (12 PHPUnit tests, 9 integration tests)
 - **Documentation** - Complete documentation suite (55.3KB across 6 files):
-  - [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) - Documentation suite overview
-  - [DEEPSEEK-V4-USAGE-GUIDE.md](docs/DEEPSEEK-V4-USAGE-GUIDE.md) - Practical examples and usage patterns
-  - [Multi-Agent Orchestration](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) - Complete technical documentation
+  - [DEEPSEEK-V4-README.md](docs/reference/models/DEEPSEEK-V4-README.md) - Documentation suite overview
+  - [DEEPSEEK-V4-USAGE-GUIDE.md](docs/reference/models/DEEPSEEK-V4-USAGE-GUIDE.md) - Practical examples and usage patterns
+  - [Multi-Agent Orchestration](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) - Complete technical documentation
 
 ### Pro Toolkit Memory-Based Tracking (January 22, 2026) ⭐ **NEW**
 
@@ -1649,13 +1649,13 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - ✅ **Total: 189 Pro toolkit tools** across 13 specialized domains
 - ✅ **All "planned" toolkits implemented**: Calendar Booking, DJ Management, Image Production, and AI Tool Builder are fully functional (not planned!)
 - ✅ Multi-agent functionality: Each toolkit can have dedicated AI assistant (up to 13 concurrent specialized agents)
-- [Phase 3 Details →](docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
+- [Phase 3 Details →](docs/history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
 
 **Documentation Updates:**
 - ✅ Code review completed (Jan 18) - All changes production ready
 - ✅ Documentation consolidation (Jan 22) - Menu fixes consolidated, TOOLKIT_MEMORY_TRACKING moved to docs/features/
 - ✅ 6 detailed fix documentation files created
-- [Code Review →](docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
+- [Code Review →](docs/history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
 
 ### Composer Autoloader Optimization (January 22, 2026)
 
@@ -1671,7 +1671,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - ✅ All distribution packages regenerated
   
 - **Documentation:** [BUILD.md](docs/BUILD.md#troubleshooting) includes troubleshooting section for this error
-- **Implementation:** Root directory cleaned - 9 planning/implementation docs moved to [`docs/implementation-history/2026/january/`](docs/implementation-history/2026/january/)
+- **Implementation:** Root directory cleaned - 9 planning/implementation docs moved to [`docs/history/2026/january/`](docs/history/2026/january/)
 
 > **Repository Maintenance:** Root now contains only 6 essential markdown files: README, CHANGELOG, CONTRIBUTING, SECURITY, BUILD, and DEPENDENCIES_BUNDLING.
 
@@ -1679,7 +1679,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 **NEW:** Production-ready settings management with comprehensive backup, validation, and diagnostic tools:
 
-- **[Settings Management Guide](docs/guides/admin/settings-management.md)** - Complete feature documentation
+- **[Settings Management Guide](docs/admin-guides/settings-management.md)** - Complete feature documentation
   - 5 new management features (Health Check, Export, Import, Clear Cache, Reset)
   - 7-step robust save process with automatic backups
   - WordPress best practices for settings storage
@@ -1698,7 +1698,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - Accessibility features
   - Screenshot capture guide
   
-- **[Pro Settings & Toolkits](docs/guides/admin/pro-settings-toolkits.md)** ⭐ **NEW**
+- **[Pro Settings & Toolkits](docs/admin-guides/pro-settings-toolkits.md)** ⭐ **NEW**
   - All 8 Pro toolkits documented (650+ tools)
   - Media Toolkit, Document Generation, Project Management
   - Places, ECA, Health & Wellness, Cloudways, AI CPT Management
@@ -1718,30 +1718,30 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 > **📌 JANUARY 13, 2026 UPDATE:** **PR #2883 - Gmail OAuth UX Enhancement** - Added auto-display of OAuth redirect URI in Gmail/Google Drive connection settings, eliminating `redirect_uri_mismatch` errors. Users can now copy the exact URI directly from the admin interface. [Details](docs/fixes/gmail-oauth-fix-summary.md)
 
 > **📌 JANUARY 13, 2026 UPDATE:** **Root Directory Organization** - Consolidated 14 markdown files from root to organized subdirectories:
-> - 9 migration/implementation reports → `docs/implementation-history/2026/migrations/`
+> - 9 migration/implementation reports → `docs/history/2026/migrations/`
 > - 2 FlowHub fixes → `docs/fixes/`
 > - 2 Gmail OAuth files (consolidated into existing docs) → `docs/fixes/gmail-oauth-fix-summary.md`
-> - 1 settings change report → `docs/implementation-history/2026/settings/`
-> - 1 PHPCS tracking file → `docs/development/`
+> - 1 settings change report → `docs/history/2026/settings/`
+> - 1 PHPCS tracking file → `docs/developer/`
 > 
 > Repository root now contains only 6 essential files: README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, and BUILD.
 
-> **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](docs/implementation-history/2026/ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
+> **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](docs/history/2026/ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
 
-> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md) - historical compliance-posture work, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment. For current compliance posture, see `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`.
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/history/2026/WEEKLY_SUMMARY_2026-01-06.md) - historical compliance-posture work, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment. For current compliance posture, see `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`.
 
-> **📌 DECEMBER 23, 2025 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
+> **📌 DECEMBER 23, 2025 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
 
-> **For complete implementation details, see [Consolidated Implementation Summaries 2025](docs/implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)**
+> **For complete implementation details, see [Consolidated Implementation Summaries 2025](docs/history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)**
 
 ### 📅 Weekly Summary (Jan 30, 2026) ⭐ **LATEST**
-- **Repository Organization** - Root directory cleaned: 7 implementation docs moved to `docs/implementation-history/2026/january/`, test files to `tests/manual/`, examples to `examples/`
+- **Repository Organization** - Root directory cleaned: 7 implementation docs moved to `docs/history/2026/january/`, test files to `tests/manual/`, examples to `examples/`
 - **Proposals Status Tracking** - Comprehensive tracking document created: 64 proposals (18 complete, 6 in progress, 40 pending)
 - **Documentation Consolidation** - Root now contains only essential documentation (down from 31 files to 8 essential files)
 - **Dependencies Documentation** - DEPENDENCIES_BUNDLING.md confirmed in root per stakeholder request
 - **Status Updates** - Identified discrepancies in DeepSeek V4 completion status (needs reconciliation)
 - **Action Items Identified** - WordPress Integration completion (42-82%), Toolkit Enhancement approval decision, Firefly III review
-- [Proposals Status →](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
+- [Proposals Status →](docs/project/proposals/PROPOSALS_COMPLETION_STATUS.md)
 
 ### 📅 Weekly Summary (Dec 30 - Jan 6, 2026)
 - **Compliance posture documentation** - historical ISO 27001, SOC 2, and HIPAA framework work landed; current docs avoid unbacked percentage claims and point operators to `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`
@@ -1751,7 +1751,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **Text Domain Migration** - Complete migration to mcp-ai-wpoos (12,773 instances)
 - **Production Ready** - Dev dependencies removed from vendor, repository ready for production clones
 - **Documentation Organization** - 25 files moved to organized subdirectories
-- [Full Weekly Summary →](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md)
+- [Full Weekly Summary →](docs/history/2026/WEEKLY_SUMMARY_2026-01-06.md)
 
 ### 🏆 ISO 27001/SOC 2/HIPAA Multi-Framework Compliance (Jan 6, 2026)
 - **ISO 27001:2022** - 100% compliance achieved (83 of 83 applicable controls)
@@ -1761,7 +1761,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **SOC 2** - 100% compliant (54 Trust Services Criteria across 5 categories)
 - **HIPAA** - 98% compliant (42 of 43 Security Rule safeguards)
 - **Documentation** - ~90KB across 14 comprehensive procedures with complete control mappings
-- [Compliance Documentation →](docs/compliance/)
+- [Compliance Documentation →](docs/operations/compliance/)
 
 ### 📅 Weekly Summary (Dec 16 - 23, 2025)
 - **PR #2364:** Profession model architecture improvements - Major re-architecture for proper knowledge layering
@@ -1770,7 +1770,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **11 Major Bug Fixes:** Async tools, SSE streaming, chat UI, security, authentication
 - **Code Quality:** Improved to 98/100 (97.5% issue reduction)
 - **40+ New Test Cases:** Comprehensive test coverage for all changes
-- [Full Weekly Summary →](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md)
+- [Full Weekly Summary →](docs/history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md)
 
 ### 🌍 Gemini Geospatial API Integration (Dec 22, 2025)
 - **AI-Powered Location Queries** - Natural language queries about restaurants, attractions, routes, and local information
@@ -1799,18 +1799,18 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **100% Coverage** - All 13 IGCSE professions utilized across modular team structure
 - **Cambridge IGCSE Alignment** - Official syllabus codes for all subjects
 - **Flexible Deployment** - Modular architecture for individual or combined team usage
-- [Full Details →](docs/implementation-history/2025/summaries/IGCSE_IMPLEMENTATION_SUMMARY.md)
+- [Full Details →](docs/history/2025/summaries/IGCSE_IMPLEMENTATION_SUMMARY.md)
 
 ### 🔧 Recent Bug Fixes
-- **Tool Toggle Fix** - Resolved nonce mismatch preventing tool enable/disable ([Details](docs/implementation-history/2025/fixes/BUGFIX_TOOL_TOGGLE.md))
-- **IGCSE Professions Seeding** - Fixed database seeding for all 13 IGCSE professions ([Details](docs/implementation-history/2025/fixes/IGCSE_PROFESSIONS_SEEDING_FIX.md))
-- **Documentation Links** - Fixed 717 broken links (100% success) ([Details](docs/implementation-history/2025/summaries/LINK_FIX_SUMMARY.md))
+- **Tool Toggle Fix** - Resolved nonce mismatch preventing tool enable/disable ([Details](docs/history/2025/fixes/BUGFIX_TOOL_TOGGLE.md))
+- **IGCSE Professions Seeding** - Fixed database seeding for all 13 IGCSE professions ([Details](docs/history/2025/fixes/IGCSE_PROFESSIONS_SEEDING_FIX.md))
+- **Documentation Links** - Fixed 717 broken links (100% success) ([Details](docs/history/2025/summaries/LINK_FIX_SUMMARY.md))
 
 ### 📊 Code Quality (Dec 19, 2025)
 - **Grade: A (98/100)** - ✅ APPROVED FOR PRODUCTION
 - **96% Reduction** - Code style violations reduced from 1,026 to 40
 - **Zero Vulnerabilities** - Security score 100/100
-- [Full Code Review →](docs/implementation-history/2025/summaries/IMPROVEMENTS_SUMMARY.md)
+- [Full Code Review →](docs/history/2025/summaries/IMPROVEMENTS_SUMMARY.md)
 
 ---
 
@@ -1861,7 +1861,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🎯 **7 Automated Workflows**: Pre-built workflow templates for abandoned cart recovery, social media campaigns, video marketing, inventory management, and more
 - 🔐 **Security**: Capability-based authorization, rate limiting, comprehensive audit logging
 - 💡 **Integration**: JavaScript autocomplete, REST API endpoint, WP-CLI support
-- [Documentation →](docs/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+- [Documentation →](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
 - 💬 **Chat Channels Toolkit (47 Tools)**: Integrate with 11 platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X, Office 365 (Outlook + OneDrive), iCloud Drive
@@ -1890,7 +1890,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 💬 **Floating Chat Bubble** ⭐ **NEW** - Configurable floating chat bubble widget for Elementor and Gutenberg. 4 position variants, 3 sizes, bounce/pulse animations, dark mode, WCAG focus states, sessionStorage persistence.
 - 🧷 Granular control over allowed attachment MIME types for chat uploads
 - 🔐 Secure REST API endpoints
-- 🔑 **Root Security Key** - Optional wp-config.php constant that can be enabled during emergency shutdown to require authentication before re-initializing the plugin. Provides an additional layer of protection against unauthorized reactivation after security incidents.【F:docs/root-security-key.md†L1-L511】【F:includes/class-wp-mcp-ai-root-security-key.php†L1-L360】
+- 🔑 **Root Security Key** - Optional wp-config.php constant that can be enabled during emergency shutdown to require authentication before re-initializing the plugin. Provides an additional layer of protection against unauthorized reactivation after security incidents.【F:docs/features/security/root-security-key.md†L1-L511】【F:includes/class-wp-mcp-ai-root-security-key.php†L1-L360】
 - 🛰 Assistant directory endpoint that advertises MCP tool/resource capabilities and negotiates Server-Sent Events handshakes for clients such as LM Studio or Claude Desktop.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1772】
 - 📝 Full JSON-RPC 2.0 MCP endpoint (`/mcp`) for standards-compliant remote client communication
 - 🔑 Configurable API credentials and defaults for OpenAI, Gemini, and Anthropic (with subscription tier support for Team/Enterprise plans and custom base URLs)
@@ -1908,7 +1908,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🎯 Intelligent token overflow handling with automatic model switching (gpt-4.1-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
 - 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/ENABLE-SSE-STREAMING.md†L1-L100】
 - 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
-- 🔧 **Symfony Process Component** - Modern process execution framework replacing direct `exec()` calls in Pro addon tools for enhanced security, timeout management, and error handling【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+- 🔧 **Symfony Process Component** - Modern process execution framework replacing direct `exec()` calls in Pro addon tools for enhanced security, timeout management, and error handling【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
 - 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
 - ⚙️ **Optimized settings page** with external CSS stylesheet (240 lines added to admin-settings.css) and request-level caching for improved admin performance【F:assets/css/admin-settings.css†L1-L984】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L27-L32】
@@ -1916,16 +1916,16 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 ### Settings Management ⭐ **NEW**
 - 🔧 **Robust Settings System** - 7-step save process with automatic backups, validation, and cache management ensures settings persist correctly across all tabs and subtabs【F:includes/admin/class-wp-mcp-ai-settings-dashboard.php†L262-L410】
 - 🔍 **Health Check** - Run 6 diagnostic checks to verify settings integrity, provider configuration, and system status with GOOD/WARNING/CRITICAL status indicators【F:includes/admin/sections/class-wp-mcp-ai-section-advanced.php†L1500-L1650】
-- 💾 **Export Settings** - Download all plugin settings as timestamped JSON files for backup or migration to other sites【F:docs/guides/admin/settings-management.md†L40-L80】
-- 📤 **Import Settings** - Upload and validate settings from previously exported backups with automatic pre-import backup and 5-step validation【F:docs/guides/admin/settings-management.md†L85-L135】
-- 🗑️ **Clear Cache** - One-click clearing of static cache, object cache, and transients when settings changes don't take effect【F:docs/guides/admin/settings-management.md†L140-L165】
-- ↩️ **Reset to Defaults** - Safely reset all settings to default values with automatic backup before reset【F:docs/guides/admin/settings-management.md†L170-L200】
+- 💾 **Export Settings** - Download all plugin settings as timestamped JSON files for backup or migration to other sites【F:docs/admin-guides/settings-management.md†L40-L80】
+- 📤 **Import Settings** - Upload and validate settings from previously exported backups with automatic pre-import backup and 5-step validation【F:docs/admin-guides/settings-management.md†L85-L135】
+- 🗑️ **Clear Cache** - One-click clearing of static cache, object cache, and transients when settings changes don't take effect【F:docs/admin-guides/settings-management.md†L140-L165】
+- ↩️ **Reset to Defaults** - Safely reset all settings to default values with automatic backup before reset【F:docs/admin-guides/settings-management.md†L170-L200】
 - 🔒 **Security** - File size validation (max 5MB), MIME type checking, JSON validation, and comprehensive input sanitization【F:includes/admin/class-wp-mcp-ai-settings-dashboard.php†L970-L1030】
 - 📊 **Automatic Backups** - Every save operation creates a timestamped backup (keeps last 5) for emergency recovery【F:includes/admin/class-wp-mcp-ai-settings-dashboard.php†L285-L295】
-- 🛡️ **Data Protection** - 3-layer protection (section filtering, merge strategy, sensitive key filtering) prevents accidental data loss when saving from tabs/subtabs【F:docs/guides/admin/settings-management.md†L230-L280】
-- 📖 **Pro Toolkits** - Enable and configure 8 specialized Pro toolkits (650+ tools) including Project Management, Document Generation, Health & Wellness, CRE Debt & Securitization, and more【F:docs/guides/admin/pro-settings-toolkits.md†L1-L650】
+- 🛡️ **Data Protection** - 3-layer protection (section filtering, merge strategy, sensitive key filtering) prevents accidental data loss when saving from tabs/subtabs【F:docs/admin-guides/settings-management.md†L230-L280】
+- 📖 **Pro Toolkits** - Enable and configure 8 specialized Pro toolkits (650+ tools) including Project Management, Document Generation, Health & Wellness, CRE Debt & Securitization, and more【F:docs/admin-guides/pro-settings-toolkits.md†L1-L650】
 
-➡️ **Complete Documentation:** [Settings Management Guide](docs/guides/admin/settings-management.md) | [Quick Reference](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/guides/admin/pro-settings-toolkits.md)
+➡️ **Complete Documentation:** [Settings Management Guide](docs/admin-guides/settings-management.md) | [Quick Reference](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/admin-guides/pro-settings-toolkits.md)
 
 ## 🧠 Memory & Tool Stack Overview
 
@@ -1957,7 +1957,7 @@ The drawer is wired to the REST proxy at `/mcp-ai/v1/chat-memory/` and receives 
 
 ### LLM Harnessing Subsystem
 
-Seven opt-in per-request layers (`includes/harness/`) improve response quality without changing existing tool behaviour. Activated per-assistant via the **LLM Harness** metabox. Layers: **A** Prompt/Cue → **B** Reasoning Trace → **C** Tool Routing → **D** Retrieval → **E** Self-Refine → **F** Memory Scoping + PII Filter → **G** Eval Scheduler. Pro Layer H exports fine-tune curricula as OpenAI JSONL. Full reference: [`docs/llm-harness.md`](docs/llm-harness.md).
+Seven opt-in per-request layers (`includes/harness/`) improve response quality without changing existing tool behaviour. Activated per-assistant via the **LLM Harness** metabox. Layers: **A** Prompt/Cue → **B** Reasoning Trace → **C** Tool Routing → **D** Retrieval → **E** Self-Refine → **F** Memory Scoping + PII Filter → **G** Eval Scheduler. Pro Layer H exports fine-tune curricula as OpenAI JSONL. Full reference: [`docs/features/llm-harness.md`](docs/features/llm-harness.md).
 
 ### Workflow families & tool combos
 
@@ -2210,7 +2210,7 @@ Without JetEngine, chat conversations are **only stored in browser localStorage*
 - ⚠️ No cross-device synchronization
 - ⚠️ Lost if browser data is cleared
 
-See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
+See [docs/chat-history-persistence.md](docs/user-guides/chat/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
 
 ---
 
@@ -2232,7 +2232,7 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 3. **Upload, activate, and run the wizard** — in your local WordPress dashboard go to **Plugins → Add New → Upload Plugin**, select the zip, activate it, and follow the [🚀 Getting Started Wizard](#-installation). For a free local AI model (no API key needed), install [LM Studio](https://lmstudio.ai/) and point the wizard at `http://localhost:1234`.
 
-> **🗺 Single-file auto-installer (roadmap)** — A single cross-platform installer that bootstraps the entire stack automatically is on the roadmap. See the [App / Plugin Distribution Proposal](docs/proposals/NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md) for current status and the plan.
+> **🗺 Single-file auto-installer (roadmap)** — A single cross-platform installer that bootstraps the entire stack automatically is on the roadmap. See the [App / Plugin Distribution Proposal](docs/project/proposals/NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md) for current status and the plan.
 
 ### Requirements
 
@@ -2578,18 +2578,18 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (11 providers, ~960 tool classes, 36 REST controllers)
-- **[Request Flow Walkthrough](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (11 providers, ~960 tool classes, 36 REST controllers)
+- **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
 - **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~960 tools documented (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
-- **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
+- **[Testing & Quality Report](docs/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
 ### 📦 Archive
 - **[Historical Documentation](archive/README.md)** - 50+ archived files from 2024-2025 development (Phase 6, fixes, status reports)
-- **[Docs Archive](docs/archive/)** - Consolidated implementation history and superseded documentation
+- **[Docs Archive](docs/history/archive/)** - Consolidated implementation history and superseded documentation
 
 ### For New Users
 - **🚀 [Getting Started Wizard](#-installation)** ⭐ NEW — 4-step guided setup that connects your AI provider, selects a use case, and creates a ready-to-use assistant in under 2 minutes. 8 presets available: Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose.
@@ -2597,12 +2597,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - [5-Minute Quick Start](docs/getting-started/QUICK_START_5_MINUTES.md) - Get started immediately: from zero to first chat
 - [Setup Checklist](docs/getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
 - [Remote Client Quickstart](docs/getting-started/quick-starts/remote-client-quickstart.md) - Connect Claude Desktop, LM Studio, or other MCP clients
-- [Best Practices](docs/guides/developer/best-practices/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
+- [Best Practices](docs/developer/best-practices/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
 
 ### For Developers
-- **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
-- [Code Review Master](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
-- [Action Items](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
+- **[Testing & Quality Report](docs/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
+- [Code Review Master](docs/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
+- [Action Items](docs/history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/reference/api/mcp-server-authentication.md) - Authentication methods and security
 - [MCP JSON-RPC 2.0 Endpoint](docs/reference/api/mcp-endpoint.md) - Model Context Protocol implementation
 
@@ -2614,14 +2614,14 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - [Federation & Discovery](docs/features/federation/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
 
 ### Performance & Optimization
-- [Message Bundling](docs/guides/user/chat/message-bundling-feature.md) - Client-side message optimization
+- [Message Bundling](docs/user-guides/chat/message-bundling-feature.md) - Client-side message optimization
 - [High Token Tool Handling](docs/features/tools/presets/high-token-tool-handling.md) - Agentic loop token management
 - [Job Notification System](docs/features/async-jobs/job-notification-system.md) - Real-time async job updates
 - [Chat Performance Optimizations](docs/features/chat/chat-performance-optimizations.md) - Complete performance guide
 - [Mesh Routing Guide](docs/features/federation/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
 
 ### Historical Documentation
-- **[Archive Directory](docs/archive/)** - 95+ historical documents organized by category:
+- **[Archive Directory](docs/history/archive/)** - 95+ historical documents organized by category:
   - `implementations/` - Implementation summaries and technical details
   - `phases/` - Development phase documents
   - `fixes/` - Bug fix summaries and issue resolutions
@@ -2652,8 +2652,8 @@ Complete these after installation to unlock every integration point:
 - [ ] **Connect QuickBooks Online** under **Settings → NV oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → NV oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
-- [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
-- [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
+- [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/features/security/root-security-key.md†L1-L511】
+- [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/operations/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
 ## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, Baseten, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare)
 
@@ -2743,7 +2743,7 @@ The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships wi
 
 From the ChatKit dashboard configure the **NV oOS** integration and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:mcp-ai-wpoos.php†L25-L72】
 
-Consult [`docs/chatkit-integration.md`](docs/guides/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
+Consult [`docs/chatkit-integration.md`](docs/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
 ## 🌐 Crawl4AI Integration
 
@@ -2856,7 +2856,7 @@ The plugin includes **optional, privacy-first activation tracking** to help us u
    add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );
    ```
 
-**Full Privacy Details**: See [EXTERNAL_SERVICES.md](docs/EXTERNAL_SERVICES.md#plugin-analytics-service) for complete documentation.
+**Full Privacy Details**: See [EXTERNAL_SERVICES.md](docs/reference/EXTERNAL_SERVICES.md#plugin-analytics-service) for complete documentation.
 
 ---
 
@@ -2928,7 +2928,7 @@ Message bundling is enabled by default and requires no configuration. To disable
 window.wpMcpAiChatDebugMode = true;
 ```
 
-➡️ See [docs/message-bundling-feature.md](docs/guides/user/chat/message-bundling-feature.md) for configuration options and implementation details.
+➡️ See [docs/message-bundling-feature.md](docs/user-guides/chat/message-bundling-feature.md) for configuration options and implementation details.
 
 ## 🎯 Agentic Loop Token Management
 
@@ -3096,7 +3096,7 @@ The Federation & Discovery system provides three deployment modes:
 
 The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds. These findings have been consolidated into the master code review document. One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.
 
-➡️ See [docs/CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
+➡️ See [docs/CODE-REVIEW-MASTER.md](docs/developer/best-practices/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
 
 ## 🔒 MCP Server Authentication
 
@@ -3511,7 +3511,7 @@ The MCP endpoint uses enhanced authentication aligned with MCP 2024-11-05 securi
 - **Comprehensive Logging**: Track errors, tool executions, and chat interactions
 - **Sensitive Data Protection**: Automatic redaction of API keys and tokens in logs
 
-See [Error Handling Documentation](docs/guides/developer/best-practices/ERROR_HANDLING.md) for detailed usage.
+See [Error Handling Documentation](docs/developer/best-practices/ERROR_HANDLING.md) for detailed usage.
 
 **MCP Standard Error Codes**:
 - **-32700**: Parse error (invalid JSON)
@@ -3596,7 +3596,7 @@ When you save an assistant through the WordPress admin:
 - Integrating with JetEngine dashboards
 - Querying basic assistant metadata
 
-➡️ **[Read the complete CPT vs CCT guide](docs/architecture/integrations/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
+➡️ **[Read the complete CPT vs CCT guide](docs/developer/architecture/integrations/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
 
 ## ⚡ Assistant Tool Shortcuts
 
@@ -3782,8 +3782,8 @@ Test assistants, professions, and teams directly from the WordPress admin **befo
 **Security Note:** All test pages require `manage_options` capability and are restricted to WordPress administrators. Sensitive tools are enabled in test environments because administrators already have full site access.
 
 **Documentation:**
-- [Test Assistant Feature Enhancements](docs/guides/user/assistants/test-assistant-enhancements.md) - Complete testing capabilities guide
-- [Dynamic Assistant Creation System](docs/archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
+- [Test Assistant Feature Enhancements](docs/user-guides/assistants/test-assistant-enhancements.md) - Complete testing capabilities guide
+- [Dynamic Assistant Creation System](docs/history/archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
 
 ### Custom Professions & Teams
 
@@ -4366,24 +4366,24 @@ Create issues at: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- **[MASTER_CONSOLIDATION_2025.md](docs/implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
-- [CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
-- [CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
-- [ACTION_ITEMS.md](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Current development priorities
+- **[MASTER_CONSOLIDATION_2025.md](docs/history/2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
+- [CONSOLIDATION_MAP.md](docs/history/2025/summaries/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
+- [CODE-REVIEW-MASTER.md](docs/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
+- [ACTION_ITEMS.md](docs/history/2025/summaries/ACTION_ITEMS.md) - Current development priorities
 
 ### Documentation
 
 Comprehensive documentation is available:
 
-- **[MASTER_CONSOLIDATION_2025.md](docs/implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
-- **[CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
+- **[MASTER_CONSOLIDATION_2025.md](docs/history/2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
+- **[CONSOLIDATION_MAP.md](docs/history/2025/summaries/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
 - **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index (535+ files)
-- **[CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Master code review (98/100)
-- **[TESTING_AND_QUALITY_REPORT.md](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
+- **[CODE-REVIEW-MASTER.md](docs/developer/best-practices/CODE-REVIEW-MASTER.md)** - Master code review (98/100)
+- **[TESTING_AND_QUALITY_REPORT.md](docs/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
 
 **For Historical Reference:**
-- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)
-- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history (superseded by MASTER_CONSOLIDATION_2025.md)
+- [CONSOLIDATED_BUGS_AND_FIXES.md](docs/history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)
+- [CONSOLIDATED_SESSION_SUMMARIES.md](docs/history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md) - Development history (superseded by MASTER_CONSOLIDATION_2025.md)
 
 ### Security Vulnerabilities
 

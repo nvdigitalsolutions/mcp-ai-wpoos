@@ -1,39 +1,51 @@
-# Features Documentation
+# Features Guides
 
-Feature-specific documentation organized by AI providers, tools, and capabilities.
+This directory contains comprehensive how-to guides for NV oOS features.
 
-## 📂 Feature Categories
+## Available Guides
 
-### [AI Providers](ai-providers/)
-Provider-specific features:
-- **[Gemini](ai-providers/gemini/)** - Google Gemini integration
-- **[LM Studio](ai-providers/lm-studio/)** - Local AI models
-- **[OpenAI](ai-providers/openai/)** - OpenAI Sora video generation
-- **[Jukebox](ai-providers/jukebox/)** - Meta AI Jukebox music generation
+### HuggingFace Datasets
 
-### [Tools](tools/)
-Tool features by category:
-- **[Image Tools](tools/image/)** - Graphic editor suite, image manipulation
-- **[Video Tools](tools/video/)** - Veo fallback, async job completion
-- **[Communication](tools/communication/)** - Group email functionality
-- **[Crawl4AI](tools/crawl4ai/)** - Job tracking
-- **[Design](tools/design/)** - Design professional tools
-- **[Presets](tools/presets/)** - High-token tool handling
-- **[New Tools](tools/new-tools/)** - Tool implementation plans
+- **[HUGGINGFACE_DATASETS_HOW_TO.md](HUGGINGFACE_DATASETS_HOW_TO.md)** - Complete how-to guide
+  - Step-by-step setup and configuration
+  - All 11 dataset tools with examples
+  - WordPress integration patterns
+  - REST API usage
+  - Troubleshooting and best practices
+  - 1,139 lines of comprehensive documentation
 
-### [Core Features](.)
-System-wide features:
-- **[Chat](chat/)** - Chat optimization, performance, communication
-- **[Security](security/)** - Security hardening, key rotation
-- **[Performance](performance/)** - Rate limiting, token management, TPM validation
-- **[Federation](federation/)** - Federation discovery, mesh computing
-- **[Analytics](analytics/)** - Analytics engine, token manager enhancement
-- **[Streaming](streaming/)** - SSE streaming, text display, thinking text
-- **[Memory](memory/)** - Memory limits, token enhancements
-- **[Async Jobs](async-jobs/)** - Job notification system
-- **[Regions](regions/)** - Region enhancement and implementation
+**Related Documentation:**
+- [Quick Start Guide](../../features/ai-providers/huggingface/HUGGINGFACE_DATASETS_QUICK_START.md)
+- [Code Examples](../../examples/huggingface-datasets-code-examples.md)
+- [Dataset Catalog](../../features/ai-providers/huggingface/HUGGINGFACE_TOP_DATASETS.md)
 
-## 🔗 Related Documentation
-- [Getting Started](../getting-started/)
-- [Reference](../reference/)
-- [Architecture](../architecture/)
+## Adding New Guides
+
+When adding a new feature guide:
+
+1. Create a new markdown file with clear, descriptive name
+2. Follow the structure of existing guides:
+   - Table of contents
+   - Introduction and overview
+   - Prerequisites
+   - Step-by-step instructions
+   - Code examples with expected outputs
+   - Integration patterns
+   - Troubleshooting section
+   - Best practices
+3. Update this README with a link to your guide
+4. Update the main [DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md)
+5. Add related examples to [docs/examples/](../../examples/)
+
+## Documentation Standards
+
+- Use clear, concise language
+- Provide working code examples
+- Include expected outputs
+- Add troubleshooting tips
+- Link to related documentation
+- Keep examples up-to-date with current plugin version
+
+---
+
+**Last Updated:** December 23, 2025

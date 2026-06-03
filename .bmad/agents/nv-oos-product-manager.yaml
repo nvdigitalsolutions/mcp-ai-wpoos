@@ -25,7 +25,7 @@ agent:
     - All tool definitions must follow NV oOS tool registry patterns (slug, capability, parameters)
     - All REST endpoints must declare a permission_callback
     - Security requirements (authentication, authorization, data handling) must be explicit
-    - PRD must use docs/proposals/templates/PRD-TEMPLATE.md
+    - PRD must use docs/project/proposals/templates/PRD-TEMPLATE.md
     - Do not advance to Phase 3 until PRD has a complete PRD Validation Checklist ✅
     - Base vs Pro gating must be specified for every feature component
 
@@ -39,7 +39,7 @@ agent:
     - batch_manage_memory
 
   output_artifacts:
-    - docs/proposals/[FEATURE]-PRD.md
+    - docs/project/proposals/[FEATURE]-PRD.md
 
   context_files:
     - .context/conventions.md
@@ -47,7 +47,7 @@ agent:
     - .context/pro-vs-base.md
     - .context/tool-registry.md
     - .context/rest-api.md
-    - docs/proposals/templates/PRD-TEMPLATE.md
+    - docs/project/proposals/templates/PRD-TEMPLATE.md
 
   handoff_to: nv-oos-architect
   handoff_criteria:
