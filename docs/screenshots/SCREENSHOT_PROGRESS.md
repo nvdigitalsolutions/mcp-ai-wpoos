@@ -2,18 +2,22 @@
 
 ## Current Status (June 3, 2026)
 
-### Completed Screenshots: 97 total (all base plugin)
+### Completed Screenshots: 103 total (base + Pro dashboard)
 
 #### Admin Interface (94 screenshots) ✅
-- Settings pages: all tabs captured (general, overview, AI providers,
+- Settings pages: all tabs captured (general, AI providers,
   authentication, tools & features, tools manager, security, advanced,
   orchestration)
 - Assistants: list, create, build, test
 - Professions: list, create, test
 - Teams: list, create
-- Token Manager, Cron Manager, Remote Sites
-- Crawl4AI Monitor, MCP Diagnostic
+- Token Manager, Cron Manager, Remote Sites, Crawl4AI Monitor, MCP Diagnostic
+- Content Assistant, HF Datasets, Onboarding Wizard, Measurement Dashboard,
+  Mesh Settings, Diagnostics, System Status, Tools Manager, Tool Presets
 - WordPress Dashboard, Plugins List
+
+#### Pro Dashboard (6 screenshots) ✅
+- Overview, Analytics, Monitoring, Settings, Diagnostics
 
 #### Frontend (3 screenshots) ✅
 - Homepage views with theme
@@ -21,8 +25,7 @@
 ### Remaining
 
 #### Chat Interface (16 screenshots) — requires AI provider API key
-#### Pro Pages — requires Pro addon activated (29 pages)
-#### Tools Manager, Tool Presets, Diagnostics — require Pro addon
+#### Pro Toolkits & Research Pages — require correct page slug enumeration
 
 **Automation Tools Available:**
 - `bin/capture-chat-screenshots.sh` - Automated WordPress setup
