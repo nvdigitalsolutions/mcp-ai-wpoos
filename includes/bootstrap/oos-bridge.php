@@ -181,6 +181,11 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Oos\Core\Tool\ScheduleJobTool( $error_factory, $queue ) );
 	$tool_registry->register( new Oos\Core\Tool\UnscheduleJobTool( $error_factory, $queue ) );
 	$tool_registry->register( new Oos\Core\Tool\ListJobsTool( $error_factory, $queue ) );
+	$tool_registry->register( new Oos\Core\Tool\GetPostMetaTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\FormatDateTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\TimeAgoTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\MergeArraysTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ParseCsvTool( $error_factory ) );
 	$tool_registry->register( new Oos\Core\Tool\DeepResearchTool( $error_factory, $settings ) );
 	$tool_registry->register( new Oos\Core\Tool\ProbeRemoteMcpTool( $error_factory, $http_client ) );
 	$tool_registry->register( new Oos\Core\Tool\RunCrawl4AiJobTool( $error_factory, $settings, $http_client ) );
