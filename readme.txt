@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.25
+Stable tag: 1.1.26
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -270,7 +270,6 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 
 * [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues) - Bug reports and feature requests
 * [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs) - Comprehensive guides
-* [WordPress.org Forums](https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/) - Community support (after WordPress.org approval)
 
 = Is this plugin patented? =
 
@@ -297,6 +296,28 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.26 - June 3, 2026 =
+
+Bumped to 1.1.26 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts: ~195 base + ~765 Pro (~960 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+
+**Cross-Platform Extraction Engine Phases 0–2 + Site-Builder Node-Graph + SPA a11y Hardening + Screenshot & Docs Overhaul**
+
+* **Cross-Platform Extraction Engine (Phases 0–2).** Framework-agnostic OOS core in `lib/`: monorepo foundations, 8 domain interfaces with WordPress adapters, 12 AI provider clients, core application layer, AbstractTool base class, SkillRegistry, 33 migrated tools. OOS bridge with feature flag (`WP_MCP_AI_OOS_ENGINE_ENABLED`). Full proposal: `docs/project/proposals/cross-platform-extraction-architecture.md`.
+* **Site-Builder Node-Graph Pipeline (Phases 1–4).** Visual site construction subsystem with node-graph architecture. SPA blueprint v3.0 from pipeline output.
+* **SPA a11y Hardening Phase 5.** axe-core accessibility testing across all 7 SPA addons. Keyboard navigation, ARIA labels, focus management, screen-reader support.
+* **Screenshot Overhaul.** 137 Playwright captures, 79 tracked pages, inventory + maintenance plan + coverage checker.
+* **Docs Reorganization.** Unix-theory separation of concerns across `docs/`. Per-folder READMEs restored.
+* **Form Submissions Data Source.** JFB + Elementor integration with admin dashboard. PHPUnit tests + PHPStan fixes.
+* **Cloudways Dashboard SPA v0.1.0.** New React SPA addon.
+* **Laravel & Craft CMS Adapters.** OOS core extraction adapters.
+* **Blueprint Profession Roles.** 6 missing definitions + CRM/healthcare role assignments.
+* **Pro Toolkits Security Audit Phase 1.** 9 HIGH-severity findings fixed.
+* **OOS Engine Stability.** PSR-4 event classes, ErrorFactoryInterface imports, provider client imports, event dispatcher dependency, parse/CacheStore errors, Gemini tools fix, team/profession integration.
+* **Reviewer Onboarding Docs.** Complete suite at `docs/project/FOR_REVIEWERS.md`.
+* **Docker Dev Environments.** WordPress, Laravel, Craft CMS all fixed.
+* **Test Infrastructure.** 95% of PHPUnit failures resolved across all suites.
+* **Infrastructure Fixes.** TCPDF autoloader, Pro vendor files, puppeteer detection, NPM package status, vendor gitignore, shallow clone recommendation.
 
 = 1.1.21 - May 20, 2026 =
 
@@ -673,7 +694,6 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Fixed*
 
-* **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
 * **Inconsistent tool count in readme** — The headline description and the Base Plugin section now both report `250+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
 * **Missing canonical `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). The MCP protocol is a primary feature and was previously undiscoverable in plugin search.
 

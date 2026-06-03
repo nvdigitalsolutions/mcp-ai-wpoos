@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.25  
-**Release Date:** 2026-05-31
+**Version:** 1.1.26  
+**Release Date:** 2026-06-03
 
-**Latest Updates:** May 31, 2026 (v1.1.25) — See [§ Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026) (Unified Blueprint System: 55 pre-built assistants across 25 toolkits. Cloudways Pro Toolkit: v2 API client + 60 server/app management tools + dashboard. CRM Toolkit Phases A–E: 70+ tools for lead management, multi-channel triage, sequences, command center, compliance. Chat UI enhancements: profile card, stop generation, feedback, code copy, dark mode, prompts, search. Pro Toolkit MCP Server settings pages Phases A–C. Unix-theory tool reorganisation Phase 4–5 complete. Build infrastructure hardening).
+**Latest Updates:** June 3, 2026 (v1.1.26) — See [§ Latest Updates (v1.1.26 — June 2026)](#-latest-updates-v1126--june-2026) (Cross-Platform Extraction Engine Phases 0–2: framework-agnostic OOS core with 12 AI provider clients, 33 migrated tools, and WordPress bridge. Site-Builder Node-Graph Pipeline Phases 1–4: visual site construction subsystem. SPA a11y Hardening Phase 5: axe-core integration across all addons. Screenshot overhaul: 137 captures, inventory, maintenance plan. Docs reorganization: Unix-theory separation of concerns. Form Submissions data source: JFB + Elementor integration. Cloudways Dashboard SPA v0.1.0. Pro toolkits security audit: 9 HIGH findings fixed. Laravel & Craft CMS adapters for OOS core extraction. Reviewer onboarding documentation suite).
+
+**Previous Updates (v1.1.25):** May 31, 2026 (v1.1.25) — See [§ Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026) (Unified Blueprint System, Cloudways Toolkit, CRM Toolkit Phases A–E, Chat UI enhancements, Unix-theory tool reorg Phase 4–5, Pro Toolkit MCP Server settings, Build infrastructure hardening).
 
 **Previous Updates (v1.1.24):** May 28, 2026 (v1.1.24) — See [§ Latest Updates (v1.1.24 — May 2026)](#-latest-updates-v1124--may-2026) (Bug-fix & stabilisation sweep: Paper Store load order, Chat SPA duplicate messages & SSE protocol fixes, skill manager canonical envelope, CVE patches, assistant tool presets coverage, CLI coverage enhancements, Paper Store admin CRUD, folder README convention completion).
 
@@ -47,7 +49,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026)
+- [🆕 Latest Updates (v1.1.26 — June 2026)](#-latest-updates-v1126--june-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -133,16 +135,33 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.26)
+
+- 🔌 **Cross-Platform Extraction Engine (Phases 0–2).** Framework-agnostic OOS core extracted from WordPress: monorepo foundations, 8 domain interfaces with WordPress adapters, 12 AI provider clients, core application layer, AbstractTool base class, SkillRegistry, and 33 migrated tools. `lib/` excluded from plugin builds.
+- 🏗️ **Site-Builder Node-Graph Pipeline (Phases 1–4).** Visual site construction subsystem with node-graph architecture. SPA blueprint v3.0 generated from the pipeline.
+- ♿ **SPA a11y Hardening Phase 5.** axe-core accessibility testing integrated across all SPA addons. Keyboard navigation, ARIA labels, focus management, and screen-reader support hardened.
+- 📸 **Screenshot Overhaul.** 137 automated Playwright screenshots across base + Pro. Screenshot inventory, maintenance plan, and coverage checker.
+- 📁 **Docs Reorganization.** Unix-theory separation of concerns applied to `docs/`. Per-folder READMEs restored across all active doc directories.
+- 📝 **Form Submissions Data Source.** JFB + Elementor integration for AI-powered form submission analysis. Admin dashboard + tests.
+- ☁️ **Cloudways Dashboard SPA v0.1.0.** New React SPA addon for Cloudways server/app management.
+- 🔗 **Laravel & Craft CMS Adapters.** OOS core extraction adapters enabling the framework to run outside WordPress.
+- 🎭 **Blueprint Profession Roles.** 6 missing profession definitions + CRM/healthcare role assignments.
+- 🛡️ **Pro Toolkits Security Audit.** 9 HIGH-severity security findings fixed.
+- 📋 **Reviewer Onboarding Docs.** Complete reviewer documentation suite (`docs/project/FOR_REVIEWERS.md`).
+- 🐳 **Docker Dev Environments.** WordPress, Laravel, and Craft CMS Docker environments all fixed.
+- 🧪 **Test Infrastructure.** 95% of PHPUnit failures resolved across base, pro, and addon test suites.
+- 🔧 **Infrastructure Fixes.** TCPDF autoloader fix, Pro vendor files committed, puppeteer detection path fix, shallow clone recommendation.
+
 ### ✨ What's New at a Glance (v1.1.25)
 
-- 🧩 **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits — one-click import for CRM, Cloudways, Healthcare, Aerlinn, WooCommerce, Content, DevOps, and 20+ more. Shared blueprint installer with JSON Schema validation, deduplication, and per-toolkit manifests. Healthcare blueprint import tool with HIPAA-aware templates.
-- ☁️ **Cloudways Pro Toolkit.** 60 AI tools for server and application management via Cloudways API v2. OAuth-authenticated client with token caching. Server monitoring, scaling, backups, bot protection, SSL, SSH keys, DNS, CDN. Admin dashboard with real-time status and quick actions.
-- 🏢 **CRM Toolkit Phases A–E Complete.** 70+ tools: lead management, multi-channel triage (email/SMS/chat), outreach sequences, integration hooks (Phase C), extensibility hooks (Phase D), GDPR/CCPA compliance (Phase E). Command Center with dashboard widgets. Per-CPT research pages for leads and deals. Analytics dashboard with pipeline waterfall, conversion funnel, sequence performance. Full REST API.
-- 💬 **Chat UI Enhancements.** Profile card with avatar/model/capability. Stop generation button during streaming. Thumbs-up/down feedback widget with Continual Harness integration. Code copy button on every code block. Dark mode toggle with system-default + localStorage persistence. Saved prompts panel with categories and search.
-- 📂 **Unix-Theory Tool Reorganisation Phase 4–5 Complete.** All Pro tools reorganised into modular Unix-theory folders. Phase 4 + Healthcare B–E + Phase 5 migration finished. Stale `require_once` paths and hardcoded paths in registry + tests fixed.
-- 🎛 **Pro Toolkit MCP Server Settings Pages.** Phases A–C: per-toolkit server configuration, detail views, audit logs, and discovery endpoint management.
-- 🏥 **Aerlinn + Healthcare Blueprints.** 4 Aerlinn assistants (Bespoke Concierge, Luxeseek, Business Advisory, Career Coach). Healthcare blueprint import tool with HIPAA-aware templates and medical record tool pre-selection.
-- 🔧 **Build Infrastructure Hardening.** `workflow_dispatch` commits built assets back to branch. `build/.gitkeep` restored. WSL auto-detection in build scripts. Alpha-working branch added to workflow triggers.
+- 🧩 **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits.
+- ☁️ **Cloudways Pro Toolkit.** 60 AI tools for server and application management via Cloudways API v2.
+- 🏢 **CRM Toolkit Phases A–E Complete.** 70+ tools: lead management, multi-channel triage, sequences, command center, compliance.
+- 💬 **Chat UI Enhancements.** 7 features: profile card, stop generation, feedback, code copy, dark mode, prompts, search.
+- 📂 **Unix-Theory Tool Reorganisation Phase 4–5 Complete.**
+- 🎛 **Pro Toolkit MCP Server Settings Pages.** Phases A–C.
+- 🏥 **Aerlinn + Healthcare Blueprints.**
+- 🔧 **Build Infrastructure Hardening.**
 
 ### ✨ What's New at a Glance (v1.1.24)
 
@@ -390,6 +409,30 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.26 — June 2026)
+
+### June 1–3, 2026 — Cross-Platform Extraction Engine, Site-Builder Node-Graph Pipeline, SPA a11y Hardening, Screenshot & Docs Overhaul 🔌🏗️♿📸📁
+
+- ✅ **Cross-Platform Extraction Engine — Phases 0–2 (`lib/`).** Framework-agnostic OOS core extracted from WordPress into a standalone PHP library. **Phase 0** — Monorepo foundations: `composer.json` with PSR-4 `OOS\` namespace, library structure (`src/Domain/`, `src/App/`, `src/Infra/`, `src/Skills/`), and `lib/` excluded from all plugin build artifacts (`.distignore`, `.gitattributes`, build scripts). **Phase 1** — WordPress adapters for all 8 domain interfaces: `WpAiServiceRepository`, `WpConfigRepository`, `WpEventDispatcher`, `WpHttpClient`, `WpLogger`, `WpSanitizer`, `WpToolRepository`, `WpUserRepository`. **Phase 2** — Core application layer: `AiService` orchestrator, `ConfigService`, `ToolExecutionPipeline`, `ChatSessionManager`, `SkillRegistry`, `AbstractTool` base class. All 12 AI provider clients migrated with domain injection (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, Ollama/LM Studio). 33 tools migrated: 8 Tier 1 (pure external API, zero WP deps), 12 Tier 1+ (client-side, research, crawling), 11 HuggingFace dataset tools + shared base. OOS bridge wired into WordPress with feature flag (`WP_MCP_AI_OOS_ENGINE_ENABLED`). Full architecture proposal: [`docs/project/proposals/cross-platform-extraction-architecture.md`](docs/project/proposals/cross-platform-extraction-architecture.md).
+- ✅ **Site-Builder Subsystem: Node-Graph Pipeline Phases 1–4.** Visual site construction subsystem with node-graph architecture for building complete WordPress sites programmatically through AI tool chains (`addons/pro/includes/site-builder/`). Nodes represent site components (pages, posts, CPTs, menus, widgets, themes, plugins), edges represent dependencies and data flow. Pipeline supports parallel execution, rollback on failure, and incremental builds. SPA blueprint v3.0 generated from the pipeline output.
+- ✅ **SPA a11y Hardening Phase 5.** axe-core accessibility testing integrated across all SPA addons (`addons/chat-spa/`, `addons/comic-reader/`, `addons/docs-hub/`, `addons/canvas-toolkit/`, `addons/document-editor/`, `addons/media-studio/`, `addons/toolkit-shell/`). Keyboard navigation, ARIA labels, focus management, and screen-reader support reviewed and hardened. ComixReader `tabIndex` a11y lint resolved. CI type errors fixed (added `@types/node`, fixed comic-reader TS casts, pinned `@types/node` to `^22.15.17`). `declare const process` added to eliminate `@types/node` dependency for axe-core block.
+- ✅ **Screenshot Overhaul (`docs/screenshots/`).** 137 automated Playwright screenshots captured across base + Pro admin and dashboard pages. Screenshot inventory (`INVENTORY.md` — 79 tracked pages), maintenance plan (`SCREENSHOT_MAINTENANCE.md`), and coverage checker. Organized into `admin/`, `dashboard/` (Pro CRM, toolkit, analytics), `chat/`, `frontend/`, `integrations/`, and `tools/` subdirectories. Pro dashboard, CRM, and toolkit screenshots captured with real data. Invalid access-denied screenshots removed.
+- ✅ **Docs Reorganization — Unix-Theory Separation of Concerns.** `docs/` directory tree reorganized with clear separation: `admin-guides/`, `developer/`, `features/`, `getting-started/`, `history/`, `operations/`, `project/`, `reference/`, `user-guides/`, `visual-guides/`, `screenshots/`. Per-folder READMEs restored and added to all active doc directories. Lost files restored.
+- ✅ **Form Submissions Data Source.** JetFormBuilder (JFB) + Elementor forms integration for AI-powered submission analysis (`addons/pro/includes/form-submissions/`). Admin dashboard with submission listing, filtering, and export. PHPUnit tests + lint fixes. PHPStan errors in `lib/core` fixed; `nyholm/psr7` dependency added.
+- ✅ **Cloudways Dashboard SPA Addon v0.1.0.** New React SPA addon (`addons/cloudways-dashboard/`) for Cloudways server and application management with real-time status dashboard. WPCS lint errors resolved.
+- ✅ **Laravel & Craft CMS Adapters.** OOS core extraction adapter packages for Laravel and Craft CMS, enabling the framework to run as a standalone service outside WordPress. Docker dev environments for both frameworks fixed and operational.
+- ✅ **Blueprint Profession Roles.** 6 missing profession definitions added. Professional roles assigned to CRM and healthcare-style blueprint assistants for proper capability mapping and tool pre-selection.
+- ✅ **Pro Toolkits Security Audit Phase 1.** 9 HIGH-severity security findings resolved across pro toolkits (`addons/pro/includes/tools/`). Fixes applied to input validation, authorization checks, and output escaping.
+- ✅ **OOS Engine Stability Fixes.** PSR-4 event classes extracted from `DomainEvents.php` into individual files. Missing `ErrorFactoryInterface` import added to 8 ported tools. Provider client constructor interface imports fixed. `psr/event-dispatcher` bundled to fix activation fatal. Parse errors and `CacheStore` bool cast `TypeError` in OOS core lib resolved. OOS engine chat client errors when core framework is activated fixed. OOS Gemini chat client tools string format error fixed. OOS engine team/profession layer integrated into chat handler.
+- ✅ **WP.org Compliance Audit v1.1.25.** Full re-audit against WordPress.org plugin guidelines completed. All prior compliance maintained.
+- ✅ **Reviewer Onboarding Documentation Suite.** Complete reviewer documentation: [`docs/project/FOR_REVIEWERS.md`](docs/project/FOR_REVIEWERS.md) (project overview, quick answers, repository map, known issues, scoping advice). Audit data cross-referenced against May 2026 compliance docs. Stale Pro tree PHPCS data updated.
+- ✅ **Docker Dev Environments Fix.** All Docker environments fixed and operational: WordPress (`docker-compose.yml`), Laravel (`docker/laravel/`), Craft CMS (`docker/craft/`). Docker directory excluded from PHPCS linting and plugin builds.
+- ✅ **Test Infrastructure & PHPUnit Compat.** 95% of PHPUnit failures resolved across base, pro, and addon test suites. `class_exists` guards added for Pro tool require paths. Removed nonexistent base path for WP-CLI tool test. Fixed require path for moved video frame extractor tool.
+- ✅ **Infrastructure Fixes.** TCPDF addon Composer autoloader class-name collision with main plugin resolved. Pro vendor files committed with production `classmap-authoritative` autoloader. `@puppeteer/browsers` detection path fixed on Pro Settings page. Pro vendor Composer install added to PHPUnit and Release CI workflows. NPM package status detection fixed on Pro Settings page. Pro addon vendor `.gitignore` fixed to unignore `symfony/yaml`. Shallow clone recommendation added (~500 MB vs ~10 GB).
+- 📦 **Versioning** — bumped to **1.1.26** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `README.md`. Provider count: **13** first-class language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama). Tool count: ~195 base + ~765 Pro (~960 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ---
 
