@@ -60,7 +60,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Kimi (Moonshot AI) provider** — 10th first-class language-model provider. `WP_MCP_AI_Kimi_Client` at `https://api.moonshot.cn/v1`. Models: kimi-k2.6 (256K, default), kimi-k2-thinking (CoT), moonshot-v1-*. Settings → Providers → Kimi subtab.
 > - **ACP Server** — Full Agent Client Protocol implementation. `WP_MCP_AI_ACP_Server` + `WP_MCP_AI_ACP_JSONRPC_Dispatcher` + `WP_MCP_AI_ACP_Session_Manager` + `WP_MCP_AI_ACP_Session_Bridge` + `WP_MCP_AI_ACP_Transport_HTTP`. JSON-RPC 2.0 over HTTP/SSE. `/.well-known/ai-peer` extended. `enable_acp_server` + `acp_require_approval` toggles in Orchestration → Settings. PHPUnit coverage in `tests/acp/`. Reference: [`docs/features/acp-server.md`](features/acp-server.md).
 > - **MCP Bridge** — `bin/mcp-bridge.js` stdio-to-HTTP relay for Claude Desktop, Cursor, Zed.
-> - **Unix Theory P7** — Folder README convention complete. Every `includes/` subdir ships a `README.md`. Enforced by `composer run docs:check-folder-readmes`. Convention: [`docs/guides/developer/folder-readme-convention.md`](guides/developer/folder-readme-convention.md).
+> - **Unix Theory P7** — Folder README convention complete. Every `includes/` subdir ships a `README.md`. Enforced by `composer run docs:check-folder-readmes`. Convention: [`docs/guides/developer/folder-readme-convention.md`](developer/folder-readme-convention.md).
 > - **GDPR** — JetEngine privacy exporters for CCT data (transcripts, memory, approvals).
 > - **Security hardening** — Settings-key encryption + admin-UI masking; webhook secret enforcement; SSRF via `wp_safe_remote_get`; attachment URL scheme allowlist; client-log debug-gate.
 > - **Chat Bubble sweep (13 PRs)** — Self-init via `wpMcpAiChatInit`; `kses_chat_output()` preserves form controls; Test Model fully restored; panel-fit + scoped CSS.
@@ -68,10 +68,10 @@ This document provides a comprehensive index of all documentation available for 
 > - **Versioning** — bumped to 1.1.19 across `mcp-ai-wpoos.php`, `constants.php`, `package.json`, `package-lock.json`, `readme.txt`, `CHANGELOG.md`, `README.md`.
 
 > **📌 MAY 14, 2026 UPDATE (v1.1.18):** 🧠⚙️📡🛡️ **UNIX THEORY P0–P6, DIGITALOCEAN PROVIDER, ASYNC CHAT CONTINUATION, JOBS/TASKS DRAWER, TOOLKIT MCP SERVERS PHASE 7**
-> - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](proposals/audits/P6-sanitize-escape-codification-2026-05.md).
+> - **Unix Theory Compliance Phases P0–P6** — canonical return envelope + `WPMCPAI.Tools.CanonicalReturnEnvelope` PHPCS sniff (P0/P1); capability-fence audit (P2); `WP_MCP_AI_Tool_Data_Contract_Interface` (P3); tool-lifecycle descriptor 5th arg + OTel `nvoos.tool.data_type` / `duration_ms` (P4); back-compat alias infrastructure on the tool registry (P5); `WPMCPAI.Tools.SanitizeAtEntry` PHPCS sniff (P6). Master proposal: [`docs/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md`](project/proposals/UNIX_THEORY_COMPLIANCE_ENHANCEMENT_PROPOSAL.md). Codification doc: [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](project/proposals/audits/P6-sanitize-escape-codification-2026-05.md).
 > - **DigitalOcean Serverless Inference provider** (9th provider) — `WP_MCP_AI_DigitalOcean_Client` + OpenAI-compatible chat / tool calls / streaming / embeddings; default embedding model `gte-large-en-v1.5`; Provider Diagnostics card. Reference: [`docs/features/ai-providers/digitalocean.md`](features/ai-providers/digitalocean.md).
 > - **Async chat continuation** (slices 1–6) — durable store, dispatcher, LLM re-entry, SSE frame buffer, Pro webhook notifier, OTel hooks + Jest tests. Plan: [`docs/features/chat/async-continuation.md`](features/chat/async-continuation.md).
-> - **Jobs/Tasks Drawer + cron-status** (PRs A–G) — inline job-progress card subscribing to `wpMcpAiJobBus`; `POST /mcp-ai/v1/cron-status/{job_id}/cancel|retry` routes; Tasks Drawer + toasts (default-on via `wp_mcp_ai_chat_tasks_drawer` filter); 5 OTel hooks → `nvoos.chat.jobs.*` spans. Docs: [`docs/features/chat/cron-status-integration.md`](features/chat/cron-status-integration.md), [`docs/guides/developer/tool-development/registering-a-job-source.md`](guides/developer/tool-development/registering-a-job-source.md).
+> - **Jobs/Tasks Drawer + cron-status** (PRs A–G) — inline job-progress card subscribing to `wpMcpAiJobBus`; `POST /mcp-ai/v1/cron-status/{job_id}/cancel|retry` routes; Tasks Drawer + toasts (default-on via `wp_mcp_ai_chat_tasks_drawer` filter); 5 OTel hooks → `nvoos.chat.jobs.*` spans. Docs: [`docs/features/chat/cron-status-integration.md`](features/chat/cron-status-integration.md), [`docs/guides/developer/tool-development/registering-a-job-source.md`](developer/tool-development/registering-a-job-source.md).
 > - **Toolkit MCP Servers Phase 7 admin UI** — `WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page` (slug `nvoos-pro-toolkit-mcp-servers`) — 5-tab admin page (Servers / Detail / Audit / Discovery / Help).
 > - **JetEngine CCT memory mirror** — `retrieve_agent_memory` + `recall` hydrate from the CCT mirror when available.
 > - **Security / maintenance** — langsmith `>=0.6.0` (GHSA-3644-q5cj-c5c7); `wp_read_video_metadata` guard in Veo/Sora tools; production autoload restoration.
@@ -211,7 +211,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **New Telegram Features** - Inline mode, deep linking, payment webhooks, full-screen mode
 > - **10 New Tools** proposed - Payment, inline mode, and enhanced bot management tools
 > - **4-Phase Roadmap** - 14 weeks, 200 estimated hours
-> - **See**: [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md)
+> - **See**: [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](project/proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md)
 
 > **📌 FEBRUARY 17, 2026 UPDATE:** 🧹 **ROOT MARKDOWN FILES CONSOLIDATION** ⭐
 > - **Markdown File Review Complete** - Reviewed and consolidated all root markdown files
@@ -345,7 +345,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Repository Organization Complete** - Root directory cleaned, 7 implementation docs moved to `docs/implementation-history/2026/january/`
 > - **Files Moved**: IMPLEMENTATION_COMPLETE.md, IMPLEMENTATION_SUMMARY.md, PR_SUMMARY.md, ORCHESTRATION_MODES_ENHANCEMENT_SUMMARY.md, REGULATORY_TOOLKIT_ENHANCEMENT.md, TOOLKIT_ENHANCEMENT_README.md, VISUAL_GUIDE.md
 > - **Test Files Organized** - test-toolkit-registry.php → tests/manual/, wpcode-snippet.php → examples/
-> - **Proposals Status Tracking** - New comprehensive tracking document: [PROPOSALS_COMPLETION_STATUS.md](proposals/PROPOSALS_COMPLETION_STATUS.md)
+> - **Proposals Status Tracking** - New comprehensive tracking document: [PROPOSALS_COMPLETION_STATUS.md](project/proposals/PROPOSALS_COMPLETION_STATUS.md)
 > - **Repository Documentation** - New guide: [REPOSITORY_ORGANIZATION.md](REPOSITORY_ORGANIZATION.md)
 > - **64 Proposals Tracked**: 18 complete (28%), 6 in progress (9%), 40 pending (63%)
 > - **Root Now Contains**: Only 8 essential files (README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, BUILD, DEPENDENCIES_BUNDLING, CODEOWNERS)
@@ -407,7 +407,7 @@ This document provides a comprehensive index of all documentation available for 
 ### New documents (Phase 7 gap-fill)
 
 - **[docs/orchestration-reference.md](orchestration-reference.md)** ⭐ **NEW** — Canonical orchestration documentation hub. 2-paragraph NV oOS overview, links to every orchestration-relevant doc, full Phase 1 Observability reference (Run Timeline, Layer I Prompt Injection Detector, Structured Output Guardrail, OTel span exporter), full Phase 2 HITL reference (`request_user_approval` tool, `WP_MCP_AI_Approval_Queue`, REST `/mcp-ai/v1/approvals/*`, admin Approvals page), and Phase 3–6 roadmap table. Distinct from [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) (the deep infrastructure reference).
-- **[docs/comparisons/orchestration-platform-comparison.md](proposals/orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
+- **[docs/comparisons/orchestration-platform-comparison.md](project/proposals/orchestration-platform-comparison.md)** ⭐ **NEW** — NV oOS vs LangGraph vs CrewAI vs AutoGen vs OpenAI Agent Builder vs n8n-AI. 15-row feature matrix covering platform type, LLM provider support, tool count, MCP, A2A, HITL, visual DAG, durable execution, OTel, prompt injection detection, structured output, memory, deployment, WordPress/WooCommerce integration, and license. Includes an honest "where others lead" assessment. Canonical path: `docs/comparisons/orchestration-platform-comparison.md` — see the file's footer note for the one-command `git mv` to its permanent home once `docs/comparisons/` is created.
 - **[docs/quickstart-workflow.md](quickstart-workflow.md)** ⭐ **NEW** — "Build your first workflow in 10 minutes" tutorial. Creates an assistant, enables `write_post` + `request_user_approval`, writes a system prompt, triggers the HITL loop from the chat UI, reviews the approval request in **NV oOS → Approvals**, approves, and watches the post publish. Welcoming tone; H2/H3 headings, numbered steps, code blocks.
 
 ---
@@ -462,7 +462,7 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Comprehensive WordPress integration gap analysis and enhancement proposal:
 
-- **[WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md](proposals/WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md)** ⭐ **NEW (Jan 28)**
+- **[WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md](project/proposals/WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md)** ⭐ **NEW (Jan 28)**
   - Complete technical specification for 24 WordPress integration improvements
   - Current state: 82/100 → Target: 95/100 integration score
   - **Critical gaps identified:** 82 output escaping issues, 97 enqueue violations
@@ -517,12 +517,12 @@ This document provides a comprehensive index of all documentation available for 
   - ✅ **GMAIL_OAUTH_FIX_SUMMARY.md** → Consolidated with `docs/fixes/gmail-oauth-fix-summary.md` (added Jan 27 Google API Client library fix)
 
 - **Proposals Directory Consolidated (37 files → 37 files with 5 consolidated master documents):**
-  - **[proposals/README.md](proposals/README.md)** ⭐ **NEW** - Comprehensive index and organization
-  - **[DEEPSEEK-V4-STATUS-AND-ROADMAP.md](proposals/DEEPSEEK-V4-STATUS-AND-ROADMAP.md)** ⭐ **NEW** - Consolidates 8 DeepSeek files into single status document
-  - **[WEBLLM-ROADMAP-AND-STATUS.md](proposals/WEBLLM-ROADMAP-AND-STATUS.md)** ⭐ **NEW** - Consolidates 5 WebLLM files
-  - **[PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md](proposals/PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md)** ⭐ **NEW** - Consolidates 3 Playwright files
-  - **[BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](proposals/BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)** ⭐ **NEW** - Consolidates 3 Bitwarden files
-  - **[RALPH-WIGGUM-CCT-ORCHESTRATION.md](proposals/RALPH-WIGGUM-CCT-ORCHESTRATION.md)** ⭐ **NEW** - Consolidates 4 Ralph/CCT files
+  - **[proposals/README.md](project/proposals/README.md)** ⭐ **NEW** - Comprehensive index and organization
+  - **[DEEPSEEK-V4-STATUS-AND-ROADMAP.md](project/proposals/DEEPSEEK-V4-STATUS-AND-ROADMAP.md)** ⭐ **NEW** - Consolidates 8 DeepSeek files into single status document
+  - **[WEBLLM-ROADMAP-AND-STATUS.md](project/proposals/WEBLLM-ROADMAP-AND-STATUS.md)** ⭐ **NEW** - Consolidates 5 WebLLM files
+  - **[PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md](project/proposals/PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md)** ⭐ **NEW** - Consolidates 3 Playwright files
+  - **[BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](project/proposals/BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)** ⭐ **NEW** - Consolidates 3 Bitwarden files
+  - **[RALPH-WIGGUM-CCT-ORCHESTRATION.md](project/proposals/RALPH-WIGGUM-CCT-ORCHESTRATION.md)** ⭐ **NEW** - Consolidates 4 Ralph/CCT files
 
 **Key Improvements:**
 - 📊 Clear status tracking (✅ Implemented, ⏳ Active, 🔮 Pending, 📚 Reference)
@@ -543,7 +543,7 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Evaluation and decision to create Playwright-based browser automation Pro tool:
 
-- **[PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md)** ⭐ **NEW (Jan 9)**
+- **[PLAYWRIGHT_INTEGRATION_EVALUATION.md](project/proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md)** ⭐ **NEW (Jan 9)**
   - Full technical evaluation of Playwright integration options
   - Analysis: Enhance web_search vs Create new Pro tool
   - **Decision: Create new Pro tool `web_browser`**
@@ -552,7 +552,7 @@ This document provides a comprehensive index of all documentation available for 
   - 8-week implementation roadmap
   - Complete capability flags and parameter schema
 
-- **[WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md)** ⭐ **NEW (Jan 9)**
+- **[WEB_BROWSER_PRO_TOOL_SUMMARY.md](project/proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md)** ⭐ **NEW (Jan 9)**
   - Executive decision summary for stakeholders
   - **Key rationale: Base version size management** (118 tools, 17MB)
   - Playwright would add ~200MB dependencies (10x increase)
@@ -679,7 +679,7 @@ Comprehensive review of all gap documentation with exceptional results:
 
 Complete code coverage tracking and visualization system:
 
-- **[CODE_COVERAGE_DASHBOARD.md](guides/developer/testing/CODE_COVERAGE_DASHBOARD.md)** ⭐ **NEW (Jan 3)**
+- **[CODE_COVERAGE_DASHBOARD.md](developer/testing/CODE_COVERAGE_DASHBOARD.md)** ⭐ **NEW (Jan 3)**
   - Codecov integration with badge ✅
   - Automatic coverage reporting in CI/CD
   - Interactive online dashboard at codecov.io
@@ -1091,7 +1091,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 - **NEW (December 3, 2025):** [CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - Comprehensive bugs and fixes report with Pro addon updates
 - **NEW (December 4, 2025):** [CODE_REVIEW_2025-12-04.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-04.md) - Complete code review and enhancement update
 - **NEW (December 6, 2025):** [CODE_REVIEW_2025-12-06.md](implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-06.md) - Comprehensive code review with 96/100 score - security audit, quality analysis, documentation assessment
-- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
+- Consolidated report: [TESTING_AND_QUALITY_REPORT.md](developer/testing/TESTING_AND_QUALITY_REPORT.md) - Complete testing and code quality analysis
 
 ---
 
@@ -1103,12 +1103,12 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 3. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
 4. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
 5. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-6. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+6. [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
-2. **[TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
-3. [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
+2. **[TESTING_AND_QUALITY_REPORT.md](developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Complete testing and quality analysis (2,106 tests, code quality, security audit)
+3. [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code review (95/100 score)
 4. [DEVELOPMENT-HISTORY.md](visual-guides/misc/DEVELOPMENT-HISTORY.md) - Consolidated development history and milestones
 5. [TECHNICAL-REFERENCE.md](reference/technical/TECHNICAL-REFERENCE.md) - Consolidated technical fixes and implementations
 6. [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks
@@ -1166,8 +1166,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 |----------|-------------|----------|
 | **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** | **⭐ MASTER:** ALL bugs, fixes, improvements (Dec 7, 2025) - Pro tools, async execution, output escaping, site creator, SSE streaming, CodeSniffer cleanup | Developers/QA |
 | **[CONSOLIDATED_SESSION_SUMMARIES.md](implementation-history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md)** | **⭐ MASTER:** ALL development sessions consolidated - December 2025, November 2025, archived sessions with complete work history | Developers/PM |
-| **[CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md)** | **⭐ MASTER:** Consolidated code reviews - 96/100 score, all categories, review history | Developers/QA |
-| **[TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
+| **[CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md)** | **⭐ MASTER:** Consolidated code reviews - 96/100 score, all categories, review history | Developers/QA |
+| **[TESTING_AND_QUALITY_REPORT.md](developer/testing/TESTING_AND_QUALITY_REPORT.md)** | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
 
 **Individual Code Reviews (For Reference):**
 
@@ -1178,7 +1178,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Active code quality issues tracking | Developers |
 | [DEVELOPMENT-HISTORY.md](visual-guides/misc/DEVELOPMENT-HISTORY.md) | Chronological development history | Developers |
 | [TECHNICAL-REFERENCE.md](reference/technical/TECHNICAL-REFERENCE.md) | Consolidated technical documentation | Developers |
-| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |
+| [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md) | Comprehensive code review (95/100 score) | Developers |
 
 ### Getting Started
 
@@ -1188,7 +1188,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
-| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
+| [BEST_PRACTICES.md](developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
 | **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
@@ -1221,9 +1221,9 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
-| [WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
-| [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md) | **NEW (Mar 2026):** Comprehensive Telegram Mini App enhancement - Stars payments, inline mode, deep linking, all 23 Pro toolkits integration, monetization strategy (41KB) | Developers/Stakeholders |
+| [PLAYWRIGHT_INTEGRATION_EVALUATION.md](project/proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
+| [WEB_BROWSER_PRO_TOOL_SUMMARY.md](project/proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
+| [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](project/proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md) | **NEW (Mar 2026):** Comprehensive Telegram Mini App enhancement - Stars payments, inline mode, deep linking, all 23 Pro toolkits integration, monetization strategy (41KB) | Developers/Stakeholders |
 
 ### Integration Guides
 
@@ -1231,11 +1231,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 |----------|-------------|----------|
 | [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) | Google OAuth 2.0 setup for Gmail integration | Admins/Users |
 | [oauth-settings-architecture.md](architecture/integrations/oauth-settings-architecture.md) | OAuth settings architecture and hybrid system design | Developers |
-| [chatkit-integration.md](guides/developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
+| [chatkit-integration.md](developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
 | [elementor-widgets.md](architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](reference/api/jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
 | [jetengine-api-compatibility.md](architecture/integrations/jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
-| [jukebox-integration.md](guides/developer/integration/jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
+| [jukebox-integration.md](developer/integration/jukebox-integration.md) | **NEW:** OpenAI Jukebox music generation integration (music with vocals, local installation) | Admins/Devs |
 
 ### Remote Client Setup
 
@@ -1293,7 +1293,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [tools-manager.md](guides/admin/tools/tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
 | [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
-| [tool-image-download.md](guides/developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
+| [tool-image-download.md](developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
 | **[CRAWL4AI_SERVICE_IMPLEMENTATION.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_IMPLEMENTATION.md)** ⭐ **NEW (Jan 2026)** | **Complete Crawl4AI remote service implementation** - Copy-paste ready Python/FastAPI code, Docker deployment, browser pool management (30KB) | Developers |
 | **[CRAWL4AI_SERVICE_REFERENCE.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_REFERENCE.md)** ⭐ **NEW (Jan 2026)** | **Crawl4AI service API reference** - REST endpoints, deployment guides, integration examples, troubleshooting (32KB) | Developers/Admins |
 | [CRAWL4AI-JOB-TRACKING.md](features/tools/crawl4ai/CRAWL4AI-JOB-TRACKING.md) | Job tracking enhancement for Crawl4AI (all job types tracked) | Developers |
@@ -1342,7 +1342,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [PERFORMANCE-OPTIMIZATION.md](features/performance/PERFORMANCE-OPTIMIZATION.md) | **NEW:** Comprehensive guide to caching system and database optimizations (Phase 1) | Developers/Admins |
-| [DYNAMIC-CONFIGURATION-FILTERS.md](guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
+| [DYNAMIC-CONFIGURATION-FILTERS.md](developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
 | [message-bundling-feature.md](guides/user/chat/message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](features/tools/presets/high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](reference/technical/token-counting.md) | Token counting tool for budget management | Users/Devs |
@@ -1354,7 +1354,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [job-notification-system.md](features/async-jobs/job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](features/chat/chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
 | [tpm-limit-validation.md](features/performance/tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
-| [tool-llm-sanitization.md](guides/developer/tool-development/tool-llm-sanitization.md) | Tool output sanitization | Developers |
+| [tool-llm-sanitization.md](developer/tool-development/tool-llm-sanitization.md) | Tool output sanitization | Developers |
 
 ### MCP Protocol
 
@@ -1373,7 +1373,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) | Common deployment issues | Admins |
 | [voice-chat-troubleshooting.md](troubleshooting/chat/voice-chat-troubleshooting.md) | **NEW:** Voice chat 404 error diagnosis and fixes | All Users |
 | [console-testing.md](getting-started/first-steps/console-testing.md) | **NEW:** Browser console testing utility for chat transcripts API | Developers |
-| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| [CRON_TESTING_GUIDE.md](developer/testing/CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](reference/technical/php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](getting-started/installation-setup/multisite-support.md) | Multisite configuration | Admins |
 | [REMAINING_ISSUES.md](implementation-history/2025/summaries/REMAINING_ISSUES.md) | Known minor issues | Developers |
@@ -1395,7 +1395,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | Executive summary of comprehensive gap analysis (Dec 6, 2025) | Everyone |
 | **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** | Full gap analysis - 365 files, 9 categories, 35 gaps identified (Dec 6, 2025) | Developers/QA |
 | **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | Step-by-step quick fixes with code examples (Dec 6, 2025) | Developers |
-| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | Master Code Review - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
+| [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md) | Master Code Review - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
 | [archive/](archive/README.md) | Historical code reviews (archived for reference) | Developers |
 | [SETTINGS_PAGE_CODE_REVIEW.md](implementation-history/2025/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
 | [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
@@ -1429,9 +1429,9 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[CODE_COVERAGE_DASHBOARD.md](guides/developer/testing/CODE_COVERAGE_DASHBOARD.md)** | **⭐ NEW (Jan 3, 2026):** Code coverage dashboard with Codecov integration, auto-reporting in CI/CD | Developers/QA |
-| [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
-| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| **[CODE_COVERAGE_DASHBOARD.md](developer/testing/CODE_COVERAGE_DASHBOARD.md)** | **⭐ NEW (Jan 3, 2026):** Code coverage dashboard with Codecov integration, auto-reporting in CI/CD | Developers/QA |
+| [TESTING_AND_QUALITY_REPORT.md](developer/testing/TESTING_AND_QUALITY_REPORT.md) | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
+| [CRON_TESTING_GUIDE.md](developer/testing/CRON_TESTING_GUIDE.md) | Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 
 ### Technical Documentation
 
@@ -1582,7 +1582,7 @@ Essential files only (reduced from 30 to 5 files):
 
 ### Contributing
 1. Read [../CONTRIBUTING.md](../CONTRIBUTING.md)
-2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md)
+2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](developer/best-practices/CODE-REVIEW-MASTER.md)
 3. Follow security practices in [../SECURITY.md](../SECURITY.md)
 4. Submit pull requests with documentation updates
 

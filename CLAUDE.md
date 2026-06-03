@@ -94,7 +94,7 @@ When a file is **derived from**, **heavily inspired by**, or **wraps** an upstre
  */
 ```
 
-The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
+The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/project/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
 
 ## Tool Implementation Pattern
 
@@ -171,7 +171,7 @@ The plugin fires 60+ hooks. Key ones:
 - `wp_mcp_ai_cost_calculated` — token cost tracking
 - `wp_mcp_ai_slash_commands_initialized` — slash command system ready
 
-Full reference: `docs/hooks-reference.md`
+Full reference: `docs/reference/hooks/hooks-reference.md`
 
 ### Agentic Loop (REST API)
 
@@ -234,7 +234,7 @@ Implements the [Agent Client Protocol](https://agentclientprotocol.com/) specifi
 
 ### LLM Harnessing Subsystem
 
-Seven opt-in per-request layers (`includes/harness/`) that improve response quality without modifying existing tool behaviour. All layers are off by default and activated per-assistant via the **LLM Harness** metabox on the assistant edit screen. Harness profile stored in `_wp_mcp_ai_harness_profile` post meta (keys: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`). Pro Layer H (`addons/pro/includes/harness/`) exports fine-tune curricula as OpenAI JSONL — loaded via `addons/pro/includes/harness-init.php`. Key hooks: `wp_mcp_ai_register_prompt_cues`, `wp_mcp_ai_harness_profile`, `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_eval_generator`, `wp_mcp_ai_harness_eval_tick`. Reference: `docs/llm-harness.md`.
+Seven opt-in per-request layers (`includes/harness/`) that improve response quality without modifying existing tool behaviour. All layers are off by default and activated per-assistant via the **LLM Harness** metabox on the assistant edit screen. Harness profile stored in `_wp_mcp_ai_harness_profile` post meta (keys: `enabled`, `layers`, `cost_ceiling_usd`, `tools.router_mode`, `tools.preset_weights`, `evals_enabled`, `pii_filter`). Pro Layer H (`addons/pro/includes/harness/`) exports fine-tune curricula as OpenAI JSONL — loaded via `addons/pro/includes/harness-init.php`. Key hooks: `wp_mcp_ai_register_prompt_cues`, `wp_mcp_ai_harness_profile`, `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_eval_generator`, `wp_mcp_ai_harness_eval_tick`. Reference: `docs/features/llm-harness.md`.
 
 ### Chat-client Memory Bridge
 
@@ -294,8 +294,8 @@ test(scope): brief description
 | `.context/chat-ui.md` | Working on frontend chat |
 | `.context/testing.md` | Writing PHPUnit tests |
 | `.context/pro-vs-base.md` | Base vs Pro decisions |
-| `docs/hooks-reference.md` | Working with plugin hooks |
-| `docs/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
+| `docs/reference/hooks/hooks-reference.md` | Working with plugin hooks |
+| `docs/features/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
 | `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
 | `docs/features/agent-skills.md` | Working on Agent Skills bundling / curation / catalogues |
 

@@ -25,7 +25,7 @@ Before writing any code, confirm:
 > `data` array is escaped on its way out (Gate 2). The repo enforces the
 > highest-risk Gate-1 violations via the PHPCS sniff
 > `WPMCPAI.Tools.SanitizeAtEntry`. See the codification document at
-> [`docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](../docs/proposals/audits/P6-sanitize-escape-codification-2026-05.md)
+> [`docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md`](../docs/project/proposals/audits/P6-sanitize-escape-codification-2026-05.md)
 > for the canonical sanitiser/escaper allow-list and the sniff's scope.
 
 ### Use the Right Function
