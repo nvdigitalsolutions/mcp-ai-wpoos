@@ -2,38 +2,27 @@
 
 ## Current Status (June 3, 2026)
 
-### Completed Screenshots: 136 total
+### Completed Screenshots: 97 total (all base plugin)
 
-#### Admin Interface (102 screenshots) ✅
-- Settings pages: all tabs captured (general, overview, AI providers, authentication,
-  token manager, tools & features, tools manager, security, advanced, orchestration, logs)
+#### Admin Interface (94 screenshots) ✅
+- Settings pages: all tabs captured (general, overview, AI providers,
+  authentication, tools & features, tools manager, security, advanced,
+  orchestration)
 - Assistants: list, create, build, test
 - Professions: list, create, test
-- Teams: list, create, build, test
-- Token Manager, Cron Manager, Diagnostics (3 pages), System Status
-- Remote Sites, Mesh Settings, Workflow Builder
-- Crawl4AI Monitor, Hugging Face Datasets, Onboarding Wizard, Measurement Dashboard
-- Content Assistant, WordPress Dashboard, Plugins List
-
-#### Dashboard (29 screenshots) ✅
-- Pro Dashboard: overview, analytics, monitoring, ISO 27001, SOC 2, security training,
-  security monitor
-- Pro Toolkits: ECA, Schedule Manager, Agent Command Center, Toolkit Settings,
-  Toolkit MCP Servers
-- Pro Research Pages: company, deal, event, comic, document template, architectural
-  project/drawing/specification, calendar booking, CRE debt, financial account, ECA
-- Pro Consolidate: event, comic, health records, CRE debt dashboard, health wellness
-
-#### Tools (2 screenshots) ✅
-- Tools Manager, Tool Presets
+- Teams: list, create
+- Token Manager, Cron Manager, Remote Sites
+- Crawl4AI Monitor, MCP Diagnostic
+- WordPress Dashboard, Plugins List
 
 #### Frontend (3 screenshots) ✅
 - Homepage views with theme
 
 ### Remaining
 
-#### Chat Interface (16 screenshots)
-**Status:** Requires AI provider API key
+#### Chat Interface (16 screenshots) — requires AI provider API key
+#### Pro Pages — requires Pro addon activated (29 pages)
+#### Tools Manager, Tool Presets, Diagnostics — require Pro addon
 
 **Automation Tools Available:**
 - `bin/capture-chat-screenshots.sh` - Automated WordPress setup
