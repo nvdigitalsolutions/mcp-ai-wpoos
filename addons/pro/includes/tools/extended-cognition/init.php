@@ -112,6 +112,16 @@ function wp_mcp_ai_ext_cog_enqueue_assets() {
 		$deps[] = $handle;
 	}
 
+	// Camera viewfinder UI (1.8.0) — depends on camera module.
+	wp_register_script(
+		'wp-mcp-ai-ext-cog-viewfinder',
+		WP_MCP_AI_PRO_URL . 'assets/js/ext-cognition-camera-viewfinder.js',
+		array( 'wp-mcp-ai-ext-cog-camera' ),
+		$ver,
+		true
+	);
+	$deps[] = 'wp-mcp-ai-ext-cog-viewfinder';
+
 	// Sensor bridge — depends on all sensor modules.
 	wp_enqueue_script(
 		'wp-mcp-ai-ext-cog-bridge',
