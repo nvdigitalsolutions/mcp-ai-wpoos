@@ -3,12 +3,14 @@
 # Builds each toolkit-SPA addon and verifies the gzipped JS bundle stays
 # within its tier threshold (blueprint §16):
 #
-#   Tier A  toolkit-shell    ≤ 200 KB gzip
-#   Tier B  canvas-toolkit   ≤ 1600 KB gzip (specialist canvas — tldraw + bpmn-js + mermaid)
-#   Tier C  document-editor  ≤ 500 KB gzip  (v0.2.0: Tiptap + GrapesJS site-creator mode)
-#   Tier D  media-studio     ≤ 900 KB gzip  (specialist shell — higher tolerance)
-#   Tier E  chat-spa         ≤ 350 KB gzip
-#   Docs    docs-hub         ≤ 250 KB gzip  (v0.3.8: React + FlexSearch + rehype-highlight)
+#   Tier A  toolkit-shell         ≤ 200 KB gzip
+#   Tier B  canvas-toolkit        ≤ 1600 KB gzip (specialist canvas — tldraw + bpmn-js + mermaid)
+#   Tier C  document-editor       ≤ 500 KB gzip  (v0.2.0: Tiptap + GrapesJS site-creator mode)
+#   Tier D  media-studio          ≤ 900 KB gzip  (specialist shell — higher tolerance)
+#   Tier E  chat-spa              ≤ 350 KB gzip
+#   Docs    docs-hub              ≤ 250 KB gzip  (React + FlexSearch + rehype-highlight)
+#   Docs    cloudways-dashboard   ≤ 200 KB gzip  (Velzon-themed React SPA)
+#   Docs    comic-reader          ≤ 200 KB gzip  (React-based comic reader)
 #
 # Failures are blocking. The job prints the actual size alongside the limit so
 # contributors know how much headroom remains.
@@ -37,6 +39,12 @@ on:
       - 'addons/chat-spa/src/**'
       - 'addons/chat-spa/esbuild.config.cjs'
       - 'addons/chat-spa/package.json'
+      - 'addons/cloudways-dashboard/src/**'
+      - 'addons/cloudways-dashboard/esbuild.config.cjs'
+      - 'addons/cloudways-dashboard/package.json'
+      - 'addons/comic-reader/src/**'
+      - 'addons/comic-reader/esbuild.config.cjs'
+      - 'addons/comic-reader/package.json'
   pull_request:
     paths:
       - 'addons/toolkit-shell/src/**'
@@ -57,6 +65,12 @@ on:
       - 'addons/chat-spa/src/**'
       - 'addons/chat-spa/esbuild.config.cjs'
       - 'addons/chat-spa/package.json'
+      - 'addons/cloudways-dashboard/src/**'
+      - 'addons/cloudways-dashboard/esbuild.config.cjs'
+      - 'addons/cloudways-dashboard/package.json'
+      - 'addons/comic-reader/src/**'
+      - 'addons/comic-reader/esbuild.config.cjs'
+      - 'addons/comic-reader/package.json'
 
 jobs:
   bundle-size:
@@ -76,9 +90,13 @@ jobs:
           - addon: media-studio
             limit_kb: 900
           - addon: docs-hub
-            limit_kb: 250  # v0.3.8: React + FlexSearch + rehype-highlight common languages
+            limit_kb: 250  # React + FlexSearch + rehype-highlight common languages
           - addon: chat-spa
             limit_kb: 350  # Vercel AI SDK UI (@ai-sdk/react) + React 19 baseline
+          - addon: cloudways-dashboard
+            limit_kb: 200
+          - addon: comic-reader
+            limit_kb: 200
 
     steps:
       - name: Checkout repository
