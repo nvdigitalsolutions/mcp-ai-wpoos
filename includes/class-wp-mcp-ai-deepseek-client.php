@@ -262,7 +262,31 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				return $payload;
 			}
 
-			$url = $this->get_base_url() . self::API_ENDPOINT;
+			$url          = $this->get_base_url() . self::API_ENDPOINT;
+			$is_streaming = ! empty( $payload['stream'] );
+
+			// Real-time SSE: if a stream_callback is provided AND cURL is available,
+			// bypass wp_remote_post entirely.  wp_remote_post always buffers the full
+			// response body before returning, so its stream_callback fires only after
+			// the complete download, not while the model is generating tokens.
+			// CURLOPT_WRITEFUNCTION fires for every incoming network chunk, forwarding
+			// each content/reasoning delta to the browser the moment it arrives.
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'deepseek_request',
+							'Sending real-time streaming request to DeepSeek via cURL.',
+							array(
+								'model'    => $model,
+								'realtime' => true,
+							)
+						);
+					}
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $this->resolve_timeout( $options ), $realtime_cb );
+				}
+			}
 
 			$request_args = array(
 				'headers' => $this->build_request_headers( $api_key ),
@@ -329,6 +353,281 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			}
 
 			return $normalized;
+		}
+
+
+		/**
+		 * Perform a real-time SSE stream request to DeepSeek using direct cURL.
+		 *
+		 * Unlike the `wp_remote_post` path (which buffers the full response body
+		 * before returning), this method uses `CURLOPT_WRITEFUNCTION` to process
+		 * each network chunk as it arrives from DeepSeek.  Every `delta.content`
+		 * or `delta.reasoning_content` token is forwarded to `$stream_callback`
+		 * immediately, so the browser SSE connection receives tokens in real time
+		 * as the model generates them.
+		 *
+		 * DeepSeek's streaming format is identical to OpenAI's: SSE lines with
+		 * `data: {JSON}` payloads terminated by `data: [DONE]`.  This method
+		 * reuses the same parser proven in the LM Studio client.
+		 *
+		 * @param string   $url             Full `chat/completions` endpoint URL.
+		 * @param array    $payload         Request payload (`stream: true` already set).
+		 * @param string   $model           Resolved model identifier (for normalization).
+		 * @param int      $timeout         Request timeout in seconds.
+		 * @param callable $stream_callback Invoked with each content/reasoning chunk array.
+		 * @return array|WP_Error Normalized response on success, WP_Error on failure.
+		 */
+		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
+			// Build cURL-style header list.
+			$api_key = $this->get_api_key();
+			$headers = $this->build_request_headers( $api_key );
+			$curl_headers = array();
+			foreach ( $headers as $header_name => $header_value ) {
+				$curl_headers[] = $header_name . ': ' . $header_value;
+			}
+
+			// Accumulator state shared between the CURLOPT_WRITEFUNCTION closure
+			// and the assembly code that runs after curl_exec() completes.
+			$sse_buffer          = '';
+			$http_status         = 0;
+			$accumulated_content = '';
+			$accumulated_reason  = '';
+			$tool_calls_by_idx   = array();
+			$response_id         = '';
+			$finish_reason       = null;
+			$usage               = null;
+			$found_done          = false;
+
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_exec
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+			/*
+			 * Direct cURL is required here for real-time DeepSeek streaming.
+			 *
+			 * wp_remote_post() buffers the entire response body in memory and
+			 * only returns it after the connection closes. It cannot forward
+			 * individual tokens to the browser as they arrive from the API.
+			 *
+			 * CURLOPT_WRITEFUNCTION with a streaming callback is the only way
+			 * to deliver Server-Sent Events token-by-token in real time. For
+			 * non-streaming requests, the standard wp_remote_post() fallback
+			 * is used instead (see the is_streaming guard above).
+			 */
+			$ch = curl_init();
+
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_URL            => $url,
+					CURLOPT_POST           => true,
+					CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
+					CURLOPT_HTTPHEADER     => $curl_headers,
+					CURLOPT_TIMEOUT        => max( 120, $timeout ),
+					CURLOPT_RETURNTRANSFER => false,
+					// DeepSeek is a public cloud API, always verify SSL.
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_SSL_VERIFYHOST => 2,
+
+					// Capture the HTTP status code from the response header line.
+					CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status ) {
+						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $matches ) ) {
+							$http_status = (int) $matches[1];
+						}
+						return strlen( $header );
+					},
+
+					// Process SSE data as it arrives.
+					CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+						$sse_buffer .= $data;
+
+						while ( false !== ( $newline_pos = strpos( $sse_buffer, "\n" ) ) ) {
+							$line       = trim( substr( $sse_buffer, 0, $newline_pos ) );
+							$sse_buffer = substr( $sse_buffer, $newline_pos + 1 );
+
+							if ( '' === $line || ':' === $line[0] ) {
+								continue;
+							}
+
+							if ( 'data: [DONE]' === $line ) {
+								$found_done = true;
+								continue;
+							}
+
+							if ( 0 !== strpos( $line, 'data: ' ) ) {
+								continue;
+							}
+
+							$chunk = json_decode( substr( $line, 6 ), true );
+							if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+								continue;
+							}
+
+							if ( '' === $response_id && isset( $chunk['id'] ) ) {
+								$response_id = (string) $chunk['id'];
+							}
+
+							$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
+							$delta  = isset( $choice['delta'] ) ? $choice['delta'] : array();
+
+							if ( isset( $delta['content'] ) && is_string( $delta['content'] ) && '' !== $delta['content'] ) {
+								$accumulated_content .= $delta['content'];
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'content' => $delta['content'] ) ),
+										),
+									)
+								);
+							}
+
+							if ( isset( $delta['reasoning_content'] ) && is_string( $delta['reasoning_content'] ) && '' !== $delta['reasoning_content'] ) {
+								$accumulated_reason .= $delta['reasoning_content'];
+								call_user_func(
+									$stream_callback,
+									array(
+										'choices' => array(
+											array( 'delta' => array( 'reasoning_content' => $delta['reasoning_content'] ) ),
+										),
+									)
+								);
+							}
+
+							if ( isset( $delta['tool_calls'] ) && is_array( $delta['tool_calls'] ) ) {
+								foreach ( $delta['tool_calls'] as $tc_delta ) {
+									if ( ! is_array( $tc_delta ) || ! isset( $tc_delta['index'] ) ) {
+										continue;
+									}
+									$idx = (int) $tc_delta['index'];
+									if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
+										$tool_calls_by_idx[ $idx ] = array(
+											'index'    => $idx,
+											'id'       => '',
+											'type'     => 'function',
+											'function' => array(
+												'name'      => '',
+												'arguments' => '',
+											),
+										);
+									}
+									if ( isset( $tc_delta['id'] ) ) {
+										$tool_calls_by_idx[ $idx ]['id'] = (string) $tc_delta['id'];
+									}
+									if ( isset( $tc_delta['type'] ) ) {
+										$tool_calls_by_idx[ $idx ]['type'] = (string) $tc_delta['type'];
+									}
+									if ( isset( $tc_delta['function']['name'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+									}
+									if ( isset( $tc_delta['function']['arguments'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
+									}
+								}
+							}
+
+							if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+								$finish_reason = $choice['finish_reason'];
+							}
+							if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
+								$usage = $chunk['usage'];
+							}
+						}
+
+						return strlen( $data );
+					},
+				)
+			);
+
+			curl_exec( $ch );
+			$curl_errno = curl_errno( $ch );
+			$curl_error = curl_error( $ch );
+			curl_close( $ch );
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_init
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_exec
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_errno
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_error
+			// phpcs:enable WordPress.WP.AlternativeFunctions.curl_curl_close
+
+			if ( $curl_errno ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'DeepSeek real-time streaming failed.',
+						array(
+							'error' => $curl_error,
+							'errno' => $curl_errno,
+						)
+					);
+				}
+				return new WP_Error(
+					'wp_mcp_ai_http_error',
+					$curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( $http_status >= 400 ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'DeepSeek real-time streaming returned HTTP error.',
+						array( 'code' => $http_status )
+					);
+				}
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					__( 'DeepSeek returned an error during streaming.', 'mcp-ai-wpoos' ),
+					array( 'status' => $http_status )
+				);
+			}
+
+			if ( ! $found_done ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'deepseek_realtime_stream',
+						'Real-time SSE stream ended without [DONE] sentinel (model may have been interrupted).',
+						array( 'model' => $model )
+					);
+				}
+			}
+
+			// Assemble the chat.completion-shaped response from accumulated streaming data.
+			$message = array(
+				'role'    => 'assistant',
+				'content' => $accumulated_content,
+			);
+
+			if ( '' !== $accumulated_reason ) {
+				$message['reasoning_content'] = $accumulated_reason;
+			}
+
+			if ( ! empty( $tool_calls_by_idx ) ) {
+				ksort( $tool_calls_by_idx );
+				$message['tool_calls'] = array_values( $tool_calls_by_idx );
+			}
+
+			$assembled = array(
+				'id'      => $response_id,
+				'object'  => 'chat.completion',
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => $message,
+						'finish_reason' => $finish_reason,
+					),
+				),
+			);
+
+			if ( null !== $usage ) {
+				$assembled['usage'] = $usage;
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'deepseek_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
+			}
+
+			return $this->normalize_response( $assembled );
 		}
 
 		/**
