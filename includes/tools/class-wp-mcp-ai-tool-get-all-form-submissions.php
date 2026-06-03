@@ -171,18 +171,30 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 				// If no specific form_id is given, discover all JetFormBuilder
 				// forms so the unified tool can aggregate across them.
 				$jfb_form_ids = $form_id ? array( $form_id ) : array();
-				if ( empty( $jfb_form_ids ) && class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' ) ) {
-					$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
-					$forms_result = $forms_tool->execute(
-						array( 'limit' => 50 ),
-						$context
-					);
-					if ( ! is_wp_error( $forms_result ) && ! empty( $forms_result['forms'] ) ) {
-						foreach ( $forms_result['forms'] as $form ) {
-							if ( ! empty( $form['id'] ) ) {
-								$jfb_form_ids[] = $form['id'];
+				if ( empty( $jfb_form_ids ) ) {
+					// Prefer the tool's REST-based discovery.
+					if ( class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' ) ) {
+						$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
+						$forms_result = $forms_tool->execute(
+							array( 'limit' => 50 ),
+							$context
+						);
+						if ( ! is_wp_error( $forms_result ) && ! empty( $forms_result['forms'] ) ) {
+							foreach ( $forms_result['forms'] as $form ) {
+								if ( ! empty( $form['id'] ) ) {
+									$jfb_form_ids[] = $form['id'];
+								}
 							}
+						} elseif ( is_wp_error( $forms_result ) ) {
+							$errors['jetformbuilder_forms'] = $forms_result->get_error_message();
 						}
+					}
+
+					// Fallback: query the JFB records table directly for distinct
+					// form IDs when REST discovery returned nothing (e.g. due to
+					// permission restrictions on the REST endpoint).
+					if ( empty( $jfb_form_ids ) ) {
+						$jfb_form_ids = $this->discover_jfb_forms_local();
 					}
 				}
 
@@ -210,8 +222,8 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 							$sub['source'] = 'jetformbuilder';
 						}
 						unset( $sub );
-						$all_submissions       = array_merge( $all_submissions, $subs );
-						$jfb_running_total    += isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
+						$all_submissions    = array_merge( $all_submissions, $subs );
+						$jfb_running_total += isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
 					}
 				}
 				$totals['jetformbuilder'] = $jfb_running_total;
@@ -367,9 +379,49 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 		return $output;
 	}
 
+	/**
+	 * Discover JetFormBuilder form IDs from the records table directly,
+	 * bypassing the REST API when its endpoints are unavailable.
+	 *
+	 * This fallback queries the `jet_fb_records` table for distinct form
+	 * IDs, providing the same information that `get_jetformbuilder_forms`
+	 * would return through the REST API — but without depending on the
+	 * REST route being registered or accessible.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return int[] Form IDs found in the records table.
+	 */
+	private function discover_jfb_forms_local() {
+		global $wpdb;
+
+		$records_table = $wpdb->prefix . 'jet_fb_records';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table_exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $records_table )
+		);
+
+		if ( ! $table_exists ) {
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return array();
+		}
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$form_ids = $wpdb->get_col(
+			"SELECT DISTINCT form_id FROM {$records_table} ORDER BY form_id DESC LIMIT 50"
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( empty( $form_ids ) ) {
+			return array();
+		}
+
+		return array_map( 'absint', $form_ids );
+	}
+
 
 	/**
-
 	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @since 1.1.0
