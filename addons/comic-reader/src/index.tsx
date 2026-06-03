@@ -11,6 +11,10 @@ import { createRoot, Root } from 'react-dom/client';
 import { App } from './App';
 import './styles/main.css';
 
+// TypeScript: declare process.env for esbuild define replacement.
+// esbuild replaces process.env.NODE_ENV with "production" in prod builds.
+declare const process: { env: { NODE_ENV: string } };
+
 // Load @axe-core/react in development builds for live accessibility audit output.
 // esbuild replaces process.env.NODE_ENV with "production" in prod builds,
 // making this block dead code that is eliminated by tree-shaking.
