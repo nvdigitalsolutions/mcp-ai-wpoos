@@ -167,9 +167,9 @@ To propose new playbooks:
 
 ## Related Documentation
 
-- [Toolkit Enhancement Proposal](/docs/proposals/TOOLKIT_ENHANCEMENT_PROPOSAL.md)
-- [Toolkit Quick Reference](/docs/proposals/TOOLKIT_QUICK_REFERENCE.md)
-- [Playbook Template](/docs/proposals/PLAYBOOK_TEMPLATE.md)
+- [Toolkit Enhancement Proposal](/docs/project/proposals/TOOLKIT_ENHANCEMENT_PROPOSAL.md)
+- [Toolkit Quick Reference](/docs/project/proposals/TOOLKIT_QUICK_REFERENCE.md)
+- [Playbook Template](/docs/project/proposals/PLAYBOOK_TEMPLATE.md)
 - [Pattern Registry](/includes/class-wp-mcp-ai-pattern-registry.php)
 
 ---

@@ -21,4 +21,4 @@ These classes are the "brain" of the oOS engine — they coordinate providers, t
 - [`../Infrastructure/Provider/README.md`](../Infrastructure/Provider/README.md) — provider clients registered by the router
 - [`../Infrastructure/Streaming/README.md`](../Infrastructure/Streaming/README.md) — SSE handler used by the orchestrator
 - [`../Infrastructure/Cost/README.md`](../Infrastructure/Cost/README.md) — cost calculation
-- [`docs/proposals/cross-platform-extraction-architecture.md`](../../../../docs/proposals/cross-platform-extraction-architecture.md)
+[`docs/project/proposals/cross-platform-extraction-architecture.md`](../../../../docs/project/proposals/cross-platform-extraction-architecture.md)

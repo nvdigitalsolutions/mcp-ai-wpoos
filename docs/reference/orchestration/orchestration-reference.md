@@ -26,9 +26,9 @@ NV oOS (Open Operator System) is a WordPress-native AI orchestration platform th
 | Document | What You'll Find |
 |---|---|
 | [Orchestration Layer Reference](ORCHESTRATION_REFERENCE.md) | Workflow presets, resource presets, PSO adaptive optimization, tool execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data-storage keys, admin UI |
-| [Architecture Overview](architecture/ARCHITECTURE.md) | System overview, 9-provider LLM router, 34 REST controllers, tool layer (~830 tools; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative), data flow, key design patterns |
-| [Request Flow Walkthrough](architecture/REQUEST-FLOW-WALKTHROUGH.md) | End-to-end trace of a chat message: `sendChat()` → REST → auth → SSE → LLM router → agentic loop (up to 15 iterations) → tool execution → response |
-| [LLM Harness](llm-harness.md) | Seven opt-in per-request layers (Prompt/Cue, Reasoning, Tool Routing, Retrieval, Self-Refine, Memory Scoping, Evaluation) — the *epistemic* quality layer that sits on top of, and delegates to, the orchestration layer |
+| [Architecture Overview](developer/architecture/ARCHITECTURE.md) | System overview, 9-provider LLM router, 34 REST controllers, tool layer (~830 tools; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative), data flow, key design patterns |
+| [Request Flow Walkthrough](developer/architecture/REQUEST-FLOW-WALKTHROUGH.md) | End-to-end trace of a chat message: `sendChat()` → REST → auth → SSE → LLM router → agentic loop (up to 15 iterations) → tool execution → response |
+| [LLM Harness](../../features/llm-harness.md) | Seven opt-in per-request layers (Prompt/Cue, Reasoning, Tool Routing, Retrieval, Self-Refine, Memory Scoping, Evaluation) — the *epistemic* quality layer that sits on top of, and delegates to, the orchestration layer |
 
 ---
 
@@ -70,7 +70,7 @@ add_filter( 'wp_mcp_ai_harness_profile', function( $profile, $assistant_id ) {
 }, 10, 2 );
 ```
 
-When the detector fires it blocks execution and returns a `WP_Error` with code `injection_detected`. Flagged requests are surfaced in the Run Timeline. The layer is strictly opt-in to preserve existing behaviour — see [`docs/llm-harness.md`](llm-harness.md) for a full description of the harness profile schema and all available keys.
+When the detector fires it blocks execution and returns a `WP_Error` with code `injection_detected`. Flagged requests are surfaced in the Run Timeline. The layer is strictly opt-in to preserve existing behaviour — see [`docs/llm-harness.md`](../../features/llm-harness.md) for a full description of the harness profile schema and all available keys.
 
 ### Structured Output Guardrail
 
@@ -227,9 +227,9 @@ The Phase 3 base classes (`WP_MCP_AI_Workflow_CPT`, `WP_MCP_AI_Workflow_Engine_V
 
 | Resource | Description |
 |---|---|
-| [Platform comparison](comparisons/orchestration-platform-comparison.md) | NV oOS vs LangGraph, CrewAI, AutoGen, OpenAI Agent Builder, n8n-AI — feature matrix with honest notes |
-| [10-minute quickstart](quickstart-workflow.md) | Build your first HITL workflow end-to-end |
-| [Hooks reference](hooks-reference.md) | All 60+ action and filter hooks |
+| [Platform comparison](../../project/proposals/orchestration-platform-comparison.md) | NV oOS vs LangGraph, CrewAI, AutoGen, OpenAI Agent Builder, n8n-AI — feature matrix with honest notes |
+| [10-minute quickstart](../../getting-started/quickstart-workflow.md) | Build your first HITL workflow end-to-end |
+| [Hooks reference](../hooks/hooks-reference.md) | All 60+ action and filter hooks |
 | [Full documentation index](DOCUMENTATION_INDEX.md) | Comprehensive index of all 1,600+ docs |
 | [`CLAUDE.md`](../CLAUDE.md) | Canonical naming, PHP compatibility, and security rules |
 | [`.context/conventions.md`](../.context/conventions.md) | Coding conventions, class naming, file organisation |

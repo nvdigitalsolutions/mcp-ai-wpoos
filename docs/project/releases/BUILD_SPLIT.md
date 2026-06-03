@@ -48,4 +48,4 @@ GitHub Actions builds both artifacts on every release tag. The WP.org ZIP is upl
 
 WordPress.org plugin reviewers check the submission ZIP for compliance against WP Plugin Handbook guidelines. Including Pro addon code (which uses PHP 8.1+ enums and paid API integrations) in the WP.org submission ZIP would fail review immediately. The split lets the public WP.org listing stay on the base plugin while the full feature set ships through GitHub Releases.
 
-See [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) for the compliance posture.
+See [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](../../operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) for the compliance posture.

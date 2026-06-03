@@ -300,7 +300,7 @@
 **Need Details?**
 - Feature implementations → [summaries/](summaries/)
 - Bug fixes → [fixes/](fixes/)
-- Testing procedures → [../../guides/testing/](../../guides/testing/)
+- Testing procedures → [../../developer/testing/](../../developer/testing/)
 - Code quality → [summaries/IMPROVEMENTS_SUMMARY.md](summaries/IMPROVEMENTS_SUMMARY.md)
 
 ---

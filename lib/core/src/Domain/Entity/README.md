@@ -36,4 +36,4 @@ Immutable value objects and command DTOs that carry data across the oOS core eng
 ## Also Load
 
 - [`../Contract/README.md`](../Contract/README.md)
-- [`docs/proposals/cross-platform-extraction-architecture.md`](../../../../../docs/proposals/cross-platform-extraction-architecture.md)
+[`docs/project/proposals/cross-platform-extraction-architecture.md`](../../../../../docs/project/proposals/cross-platform-extraction-architecture.md)

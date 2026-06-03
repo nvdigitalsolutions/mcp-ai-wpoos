@@ -55,4 +55,4 @@ vendor/bin/phpunit tests/test-tool-web-search.php
 - [`../Domain/Contract/ToolInterface.php`](../Domain/Contract/ToolInterface.php)
 - [`../Domain/Contract/ContentStoreInterface.php`](../Domain/Contract/ContentStoreInterface.php)
 - [`AbstractTool.php`](AbstractTool.php)
-- [`docs/proposals/cross-platform-extraction-architecture.md`](../../../../docs/proposals/cross-platform-extraction-architecture.md)
+[`docs/project/proposals/cross-platform-extraction-architecture.md`](../../../../docs/project/proposals/cross-platform-extraction-architecture.md)

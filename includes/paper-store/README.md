@@ -102,7 +102,7 @@ vendor/bin/phpunit tests/paper-store/test-paper-tool-delete.php
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style, PHP 7.4 compat (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md) — path traversal, sanitisation (always)
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — tool registration conventions
-- [`docs/proposals/paper-store-architecture.md`](../../docs/proposals/paper-store-architecture.md) — full architecture proposal
+[`docs/project/proposals/paper-store-architecture.md`](../../docs/project/proposals/paper-store-architecture.md) — full architecture proposal
 
 ## See Also
 

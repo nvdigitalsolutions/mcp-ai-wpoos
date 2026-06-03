@@ -265,14 +265,14 @@ The Open Operator System (NV oOS) plugin is in **excellent shape** for productio
 
 ## Related Documents
 
-- [GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) - Detailed master status
+- [GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) - Detailed master status
 - [PROJECT_MANAGEMENT_GAP_ANALYSIS.md](PROJECT_MANAGEMENT_GAP_ANALYSIS.md) - PM system gaps
-- [PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md) - General plugin gaps
-- [QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md) - Quick fixes
-- [GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md) - Executive overview
+- [PLUGIN_GAP_ANALYSIS.md](history/2025/summaries/PLUGIN_GAP_ANALYSIS.md) - General plugin gaps
+- [QUICK_WINS_GAP_FIXES.md](history/2025/summaries/QUICK_WINS_GAP_FIXES.md) - Quick fixes
+- [GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md) - Executive overview
 - [GEMINI_INTEGRATION_GAP_ANALYSIS.md](features/ai-providers/gemini/GEMINI_INTEGRATION_GAP_ANALYSIS.md) - Gemini API gaps
 - [OPENAI_API_GAP_ANALYSIS.md](features/ai-providers/openai/OPENAI_API_GAP_ANALYSIS.md) - OpenAI API gaps
-- [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) - TODO tracking
+- [ACTION_ITEMS.md](history/2025/summaries/ACTION_ITEMS.md) - TODO tracking
 
 ---
 

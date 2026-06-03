@@ -340,8 +340,8 @@ All changes maintain full backward compatibility:
 - GitHub Copilot Agent - Code review and documentation consolidation
 
 **Documentation References:**
-- [February 2026 Updates](docs/FEBRUARY_2026_UPDATES.md)
-- [Code Review Summary](docs/CODE_REVIEW_SUMMARY_FEB_2026.md)
+- [February 2026 Updates](FEBRUARY_2026_UPDATES.md)
+- [Code Review Summary](CODE_REVIEW_SUMMARY_FEB_2026.md)
 - [Changelog](CHANGELOG.md)
 - [Product Research Fixes](PRODUCT_RESEARCH_FIX_SUMMARY.md)
 

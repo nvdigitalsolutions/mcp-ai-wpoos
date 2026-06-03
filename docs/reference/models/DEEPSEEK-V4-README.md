@@ -171,7 +171,7 @@ $result = $orchestrator->execute_team_workflow( $team, $task, $context );
 
 ### Architecture Documentation
 
-**File:** [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+**File:** [ORCHESTRATION-LAYER-ARCHITECTURE.md](developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
 
 **Section 6: Multi-Agent Orchestration (DeepSeek V4-Inspired Enhancement)**
 

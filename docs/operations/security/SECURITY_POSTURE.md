@@ -1,7 +1,7 @@
 # Security Posture — Current State
 
 > **Last Updated:** June 2, 2026
-> **Based on:** April 2026 Security Audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) + subsequent remediation
+> **Based on:** April 2026 Security Audit ([SECURITY_AUDIT_2026_04.md](../compliance/SECURITY_AUDIT_2026_04.md)) + subsequent remediation
 > **Audit scope:** Base plugin + Pro addon + 6 minor addons = 2,983 PHP files, 815 tools
 
 ---
@@ -150,4 +150,4 @@ Based on the April 2026 re-audit and May 2026 hardening (re-audit May 19, code r
 
 ---
 
-**Related documents:** [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [compliance/SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md) · [compliance/TRACEABILITY.md](compliance/TRACEABILITY.md) · [ADDON_INVENTORY.md](ADDON_INVENTORY.md)
+**Related documents:** [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [compliance/SECURITY_AUDIT_2026_04.md](../compliance/SECURITY_AUDIT_2026_04.md) · [compliance/TRACEABILITY.md](../compliance/TRACEABILITY.md) · [ADDON_INVENTORY.md](ADDON_INVENTORY.md)

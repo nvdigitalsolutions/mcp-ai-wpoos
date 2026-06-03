@@ -42,6 +42,6 @@ lib/
 
 ## Also Load
 
-- [`docs/proposals/cross-platform-extraction-architecture.md`](../docs/proposals/cross-platform-extraction-architecture.md) — full proposal
+[`docs/project/proposals/cross-platform-extraction-architecture.md`](../docs/project/proposals/cross-platform-extraction-architecture.md) — full proposal
 - [`.context/conventions.md`](../.context/conventions.md) — naming, style
 - [`includes/bootstrap/oos-bridge.php`](../includes/bootstrap/oos-bridge.php) — WordPress DI wiring

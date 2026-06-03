@@ -2048,7 +2048,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Automatic Field Mapping**: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.) to form inputs
   - **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer for different API versions
   - **Settings**: Two independent toggles - "Enable AI Assistant for JetEngine CPTs" and "Enable Research & Add Pages for JetEngine CPTs"
-  - **Documentation**: Complete integration guide at [docs/jetengine-integration-guide.md](docs/jetengine-integration-guide.md)
+  - **Documentation**: Complete integration guide at [docs/features/integrations/jetengine-integration-guide.md](docs/features/integrations/jetengine-integration-guide.md)
   - **Testing**: Comprehensive test suite with 100% passing tests
   - Merge PR #3678
 - **Package Pre-Bundling System (February 12, 2026)**: Enhanced vendor directory pre-bundling for critical npm packages
@@ -2057,7 +2057,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Added core document generation packages: pdfkit, docx, exceljs, qrcode, turndown, cheerio
   - Updated package detection logic to check vendor directory before node_modules
   - Eliminates need for `npm install` on production servers, faster deployment
-  - See [FEBRUARY_2026_UPDATES.md](docs/FEBRUARY_2026_UPDATES.md)
+  - See [FEBRUARY_2026_UPDATES.md](docs/history/2026/implementations/FEBRUARY_2026_UPDATES.md)
 
 ### Fixed - February 2026
 - **Product Research Page Rendering (February 10, 2026)**: Fixed admin hook detection pattern causing CSS/JS not to load on Product Consolidate page
@@ -2119,7 +2119,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Requirements**: WooCommerce for e-commerce commands; appropriate user capabilities
   - **Test Coverage**: 50+ test methods across 4 test files
   - **Documentation**: Complete command reference with workflow examples
-  - See [PRO_TOOLKIT_SLASH_COMMANDS.md](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+  - See [PRO_TOOLKIT_SLASH_COMMANDS.md](docs/user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & WebChat Integration
 - **Chat Channels Toolkit - Production Ready (February 3, 2026)**: Comprehensive integration with 6 major chat platforms
@@ -2161,7 +2161,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Memory-Based Tracking**: Replaced hard toolkit limits with transparent memory usage tracking
   - **Test Coverage**: Comprehensive test suite for all toolkit features
   - **Documentation**: Complete toolkit architecture and implementation guides
-  - See [TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md](docs/TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md)
+  - See [TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md](docs/history/2026/implementations/TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md)
 
 - **Toolkit Enhancement System - Complete (January 30, 2026)**: Advanced toolkit registry and pattern-based orchestration
   - **12 Toolkit Categories**: Comprehensive taxonomy system with metadata-driven tool discovery
@@ -2170,7 +2170,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **12 Core Classes**: ~10,000 LOC implementing registry, patterns, workflows, and integration layer
   - **Test Coverage**: 79 tests across 5 test files (100% passing)
   - **Documentation**: 150KB+ including technical specs, executive summaries, and visual guides
-  - See [TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md](docs/TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md)
+  - See [TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md](docs/admin-guides/TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md)
 
 ### Repository Organization
 - **Repository Root Cleanup (February 2, 2026)**: Archived historical status files and reorganized structure
@@ -2298,7 +2298,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Documentation**: Complete documentation suite (55.3KB across 6 files) including usage guide, validation results, and workflow examples
   - **PHP Workaround Extension**: Extends core orchestration layer's "persistent-behavior illusion" to enable distributed agent coordination in stateless PHP environment
   - See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical documentation
-  - See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview
+  - See [DEEPSEEK-V4-README.md](docs/reference/models/DEEPSEEK-V4-README.md) for documentation suite overview
 
 ### Fixed
 - **Token Manager Save Issue (January 21, 2026)**: Fixed tool settings not persisting despite success messages

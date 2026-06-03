@@ -225,7 +225,7 @@ All seven tools are auto-registered via `wp_mcp_ai_register_tools` at priority 3
 
 ## Hooks
 
-See [`docs/hooks-reference.md` → LLM Harness Hooks](hooks-reference.md#llm-harness-hooks) for the full list:
+See [`docs/reference/hooks/hooks-reference.md` → LLM Harness Hooks](../reference/hooks/hooks-reference.md#llm-harness-hooks) for the full list:
 
 - `wp_mcp_ai_register_prompt_cues` (action)
 - `wp_mcp_ai_select_prompt_cue` (filter)

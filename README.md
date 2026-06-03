@@ -9,7 +9,7 @@
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
-[![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
+[![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.26  
 **Release Date:** 2026-06-03
@@ -31,7 +31,7 @@
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
 **Patent Status:** Patent Pending (Application #19/410,504)  
-**Documentation:** [Grade A (95/100)](docs/DOCUMENTATION_REVIEW_SUMMARY.md) — 1,617 files across 12 directories, 108 admin screenshots, 100% feature coverage
+**Documentation:** [Grade A (95/100)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md) — 1,617 files across 12 directories, 108 admin screenshots, 100% feature coverage
 
 ## 🔍 For Reviewers & Auditors
 
@@ -250,7 +250,7 @@ The plugin works standalone with **~195 base tools** and optionally extends thro
 
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
-**Latest audit:** See [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](docs/operations/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/project/audits/2026-04/`](docs/project/audits/2026-04/).
+**Latest audit:** See [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](docs/operations/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/project/audits/2026-04/`](docs/operations/compliance/).
 
 **WordPress.org compliance hardening (May 9, 2026):** [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — findings B3, B8, B10, B13, and production vendor remap all resolved.
 
@@ -788,7 +788,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### April 27, 2026 — Security Audit Summary, Production Vendor Autoload, Veo 3.1 Fix 🛡️
 
-- ✅ **April 2026 Security Audit Summary published** — New [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](docs/operations/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/project/audits/2026-04/`](docs/project/audits/2026-04/) into a single reference for maintainers and operators. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied include WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
+- ✅ **April 2026 Security Audit Summary published** — New [`docs/operations/compliance/SECURITY_AUDIT_2026_04.md`](docs/operations/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/project/audits/2026-04/`](docs/operations/compliance/) into a single reference for maintainers and operators. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied include WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
 - ✅ **Production-ready vendor autoload (PR #4733)** — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative` (677 production classes); the plugin is now deployable from a clean clone without a separate `composer install` step. Local development still requires `composer install` for dev dependencies.
 - ✅ **Veo 3.1 `generate_veo_video` fix (PR #4735)** — `seed` parameter is now sent only to Veo 2.0 (`veo-2.0-generate-001`); Veo 3.1 (`veo-3.1-generate-preview`) rejects the parameter and the tool now silently drops it on that model.
 
@@ -1396,7 +1396,7 @@ All commands share the `WP_MCP_AI_Pro_CLI_Base_Command` base class with assertio
 - ✅ **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer
 - ✅ **Settings**: Two independent toggles for metaboxes and research pages
 - ✅ **Testing**: Comprehensive test suite with 100% passing tests
-- [Complete Integration Guide →](docs/jetengine-integration-guide.md)
+- [Complete Integration Guide →](docs/features/integrations/jetengine-integration-guide.md)
 
 ### Package Pre-Bundling System (February 12, 2026) ⭐ **NEW**
 
@@ -1424,7 +1424,7 @@ NV oOS Pro now pre-bundles critical npm packages in the vendor directory, dramat
 - `addons/pro/scripts/copy-dependencies.js` - Added document generation utility packages
 - `addons/pro/includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php` - Enhanced package detection
 
-[Complete February 2026 Updates →](docs/FEBRUARY_2026_UPDATES.md)
+[Complete February 2026 Updates →](docs/history/2026/implementations/FEBRUARY_2026_UPDATES.md)
 
 ### Product Research Page Fixes (February 10-11, 2026) ⭐ **NEW**
 
@@ -1489,7 +1489,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - **Video Production (6)**: `/video-subtitle`, `/video-template`, `/video-analytics`, `/video-merge`, `/video-thumbnail`, `/video-compress`
 - **7 Automated Workflows**: Abandoned cart recovery, multi-platform campaigns, video marketing, inventory management, social planning, video post-production
 - **Test Coverage**: 50+ test methods across 4 test files (100% passing)
-- [Pro Toolkit Slash Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+- [Pro Toolkit Slash Commands →](docs/user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
 
@@ -1729,7 +1729,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - Step-by-step usage instructions
   - Troubleshooting guide and best practices
   
-- **[Quick Reference Card](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md)** - At-a-glance guide
+- **[Quick Reference Card](docs/admin-guides/settings/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md)** - At-a-glance guide
   - Feature summaries and workflows
   - Security checklist and backup strategy
   - Error message reference
@@ -1904,7 +1904,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🎯 **7 Automated Workflows**: Pre-built workflow templates for abandoned cart recovery, social media campaigns, video marketing, inventory management, and more
 - 🔐 **Security**: Capability-based authorization, rate limiting, comprehensive audit logging
 - 💡 **Integration**: JavaScript autocomplete, REST API endpoint, WP-CLI support
-- [Documentation →](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+- [Documentation →](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
 - 💬 **Chat Channels Toolkit (47 Tools)**: Integrate with 11 platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X, Office 365 (Outlook + OneDrive), iCloud Drive
@@ -1968,7 +1968,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🛡️ **Data Protection** - 3-layer protection (section filtering, merge strategy, sensitive key filtering) prevents accidental data loss when saving from tabs/subtabs【F:docs/admin-guides/settings-management.md†L230-L280】
 - 📖 **Pro Toolkits** - Enable and configure 8 specialized Pro toolkits (650+ tools) including Project Management, Document Generation, Health & Wellness, CRE Debt & Securitization, and more【F:docs/admin-guides/pro-settings-toolkits.md†L1-L650】
 
-➡️ **Complete Documentation:** [Settings Management Guide](docs/admin-guides/settings-management.md) | [Quick Reference](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/admin-guides/pro-settings-toolkits.md)
+➡️ **Complete Documentation:** [Settings Management Guide](docs/admin-guides/settings-management.md) | [Quick Reference](docs/admin-guides/settings/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/admin-guides/pro-settings-toolkits.md)
 
 ## 🧠 Memory & Tool Stack Overview
 

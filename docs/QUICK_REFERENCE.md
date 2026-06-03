@@ -20,7 +20,7 @@ This quick reference provides fast access to the most common tasks and commands 
   - *"Place this product photo on an AI-generated kitchen counter."*
   - *"Drop the attached subject onto this uploaded background, lower-center, with a soft contact shadow."*
   - *"Rebuild this catalog page with consistent harmonization across all eight products."*
-- **April 2026 Security Audit Summary** 🛡️ (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/audit/2026-04/`](audit/2026-04/). No Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
+- **April 2026 Security Audit Summary** 🛡️ (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](operations/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/audit/2026-04/`](audit/2026-04/). No Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
 - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
 - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0 (`veo-2.0-generate-001`); Veo 3.1 (`veo-3.1-generate-preview`) rejects it (PR #4735).
 - **Measurement Subsystem GA** ⭐ (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics for tool-execution, chat-loop, agentic-loop, and SSE; persistent `{prefix}mcp_ai_metric_events` table with retention cron (`wp_mcp_ai_metric_retention_days`, default 30 days); eval harness with verifier-independence enforcement; Pro rubric presets (`prompt_adherence`, `json_schema`, `citation_presence`) and counterfactual runner; OTel JSON exporter; Measurement dashboard under **Tools → Measurement** with time-range + sparkline; `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. See [`docs/measurement/README.md`](measurement/README.md).
@@ -622,7 +622,7 @@ Settings → NV oOS → Chat Theme
 
 ## 🧠 LLM Harness Quick Toggle
 
-Per-assistant opt-in: Edit Assistant → **LLM Harness** metabox → Enable → check the layers you want (A–H). All layers are off by default. Reference: [docs/llm-harness.md](llm-harness.md).
+Per-assistant opt-in: Edit Assistant → **LLM Harness** metabox → Enable → check the layers you want (A–H). All layers are off by default. Reference: [docs/llm-harness.md](features/llm-harness.md).
 
 ---
 
@@ -645,7 +645,7 @@ Discovery endpoint: `GET /.well-known/mcp` (returns JSON array of all enabled to
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
 - [Tool Reference](reference/tools/tool-reference.md) - All ~830 tools detailed (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
-- [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
+- [Orchestration Budget Enforcement](developer/architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
 ### External Links
 - [OpenAI Platform](https://platform.openai.com/)

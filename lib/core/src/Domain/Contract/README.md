@@ -48,4 +48,4 @@ Interfaces are tested through their adapter implementations. See `lib/wordpress-
 ## Also Load
 
 - [`.context/conventions.md`](../../../../.context/conventions.md)
-- [`docs/proposals/cross-platform-extraction-architecture.md`](../../../../../docs/proposals/cross-platform-extraction-architecture.md)
+[`docs/project/proposals/cross-platform-extraction-architecture.md`](../../../../../docs/project/proposals/cross-platform-extraction-architecture.md)

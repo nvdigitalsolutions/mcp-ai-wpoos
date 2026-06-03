@@ -54,7 +54,7 @@ This guide covers two audiences:
 | **Site administrator** (connects a WordPress site to an existing NV oOS Cloud account) | §3, §4, §6, §8, §9 |
 
 > **Authoritative references.** When this guide and the following documents disagree, the linked documents win:
-> - [`docs/features/nv-cloud.md`](features/nv-cloud.md) — feature spec (plugin contract, hooks, constants)
+> - [`docs/features/nv-cloud.md`](../../features/nv-cloud.md) — feature spec (plugin contract, hooks, constants)
 > - [`addons/cloud-worker/README.md`](../addons/cloud-worker/README.md) — Worker source-of-truth (deploy commands, schema)
 > - [`docs/deployment/PRODUCTION_DEPLOYMENT.md`](deployment/PRODUCTION_DEPLOYMENT.md) — plugin-side production deploy
 
@@ -290,13 +290,13 @@ NV oOS Cloud inherits the broader plugin's compliance documentation:
 
 | Framework | Status | Reference |
 |---|---|---|
-| ISO/IEC 27001:2022 | 100% (83 / 83 controls) | [`compliance/iso27001/`](compliance/iso27001/) |
-| SOC 2 Trust Services | 100% (54 / 54 criteria) | [`compliance/soc2/`](compliance/soc2/) |
-| HIPAA Security Rule | 98% (42 / 43 safeguards) | [`compliance/hipaa/`](compliance/hipaa/) |
+| ISO/IEC 27001:2022 | 100% (83 / 83 controls) | [`compliance/iso27001/`](../compliance/iso27001/) |
+| SOC 2 Trust Services | 100% (54 / 54 criteria) | [`compliance/soc2/`](../compliance/soc2/) |
+| HIPAA Security Rule | 98% (42 / 43 safeguards) | [`compliance/hipaa/`](../compliance/hipaa/) |
 | GDPR / UK-GDPR | Data Processing Addendum on request | [`SECURITY.md`](../SECURITY.md) |
 
-Full posture references: [`docs/HIPAA_POSTURE.md`](HIPAA_POSTURE.md),
-[`docs/compliance/`](compliance/).
+Full posture references: [`docs/HIPAA_POSTURE.md`](../security/HIPAA_POSTURE.md),
+[`docs/compliance/`](../compliance/).
 
 ### 7.3 Incident response
 
@@ -372,7 +372,7 @@ The Pro plugin module exposes the following hooks for downstream addons:
 | `wp_mcp_ai_nv_cloud_request_billed` | action | Fires per chat turn with `(wholesale, fee, total, cost_data)`. |
 | `wp_mcp_ai_route_to_provider` | filter (base) | Lets any add-on register a provider id. |
 
-Full hook reference: [`docs/features/nv-cloud.md`](features/nv-cloud.md) §"Filters and actions".
+Full hook reference: [`docs/features/nv-cloud.md`](../../features/nv-cloud.md) §"Filters and actions".
 
 ---
 
@@ -496,12 +496,12 @@ Full hook reference: [`docs/features/nv-cloud.md`](features/nv-cloud.md) §"Filt
 
 | Document | Purpose |
 |---|---|
-| [`docs/features/nv-cloud.md`](features/nv-cloud.md) | NV oOS Cloud feature spec (plugin contract, hooks, constants). |
+| [`docs/features/nv-cloud.md`](../../features/nv-cloud.md) | NV oOS Cloud feature spec (plugin contract, hooks, constants). |
 | [`addons/cloud-worker/README.md`](../addons/cloud-worker/README.md) | Cloudflare Worker source-of-truth (deploy commands, schema). |
 | [`docs/deployment/PRODUCTION_DEPLOYMENT.md`](deployment/PRODUCTION_DEPLOYMENT.md) | Plugin-side production deploy guide. |
 | [`docs/PRODUCTION_SETUP.md`](PRODUCTION_SETUP.md) | Composer / autoloader posture for production. |
-| [`docs/HIPAA_POSTURE.md`](HIPAA_POSTURE.md) | HIPAA compliance posture. |
-| [`docs/compliance/`](compliance/) | ISO 27001, SOC 2, HIPAA detailed control mappings. |
+| [`docs/HIPAA_POSTURE.md`](../security/HIPAA_POSTURE.md) | HIPAA compliance posture. |
+| [`docs/compliance/`](../compliance/) | ISO 27001, SOC 2, HIPAA detailed control mappings. |
 | [`SECURITY.md`](../SECURITY.md) | Vulnerability disclosure. |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | PR process and quality gates. |
 

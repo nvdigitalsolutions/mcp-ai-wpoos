@@ -82,7 +82,7 @@ For extra safety — and to see the harness in action — you can also turn on t
 3. Under harness options, tick **Require approval for destructive actions** (maps to `injection_detector.enabled = true` in the harness profile).
 4. Click **Update** to save.
 
-> **What this does:** The harness layer inspects every tool call for injection patterns before execution. It's off by default to preserve existing behaviour; enabling it per-assistant gives you a targeted safety net without affecting other assistants. See [`docs/llm-harness.md`](llm-harness.md) for the full harness profile schema.
+> **What this does:** The harness layer inspects every tool call for injection patterns before execution. It's off by default to preserve existing behaviour; enabling it per-assistant gives you a targeted safety net without affecting other assistants. See [`docs/llm-harness.md`](../features/llm-harness.md) for the full harness profile schema.
 
 ---
 
@@ -167,8 +167,8 @@ You've just built and run a Human-in-the-Loop workflow entirely inside WordPress
 ### Deepen your orchestration knowledge
 
 - **[Orchestration Documentation Hub](orchestration-reference.md)** — the canonical index for all orchestration features including the full HITL API reference, OTel span exporter, prompt injection detection, and the Phase 3–6 roadmap.
-- **[LLM Harness Layers](llm-harness.md)** — seven opt-in per-assistant layers for better reasoning, retrieval-with-provenance, self-critique loops, and structured output enforcement.
-- **[Hooks Reference](hooks-reference.md)** — all 60+ action and filter hooks; use `wp_mcp_ai_before_tool_execution` to build custom approval logic in PHP.
+- **[LLM Harness Layers](../features/llm-harness.md)** — seven opt-in per-assistant layers for better reasoning, retrieval-with-provenance, self-critique loops, and structured output enforcement.
+- **[Hooks Reference](../reference/hooks/hooks-reference.md)** — all 60+ action and filter hooks; use `wp_mcp_ai_before_tool_execution` to build custom approval logic in PHP.
 
 ### Extend the workflow
 
@@ -179,5 +179,5 @@ You've just built and run a Human-in-the-Loop workflow entirely inside WordPress
 ### Get help
 
 - **[Getting Started guides](getting-started/)** — installation, first assistant, and provider setup.
-- **[Troubleshooting](troubleshooting/)** — common issues and their fixes.
+- **[Troubleshooting](operations/troubleshooting/)** — common issues and their fixes.
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** — if you want to extend NV oOS or contribute a skill or tool.

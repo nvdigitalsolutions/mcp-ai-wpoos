@@ -161,8 +161,8 @@ if ( ! self::is_user_authorized_for_job( $job_metadata, $current_user_id ) ) {
 
 ## Quick Links
 
-- **Full Review:** [CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)
-- **Fix Details:** [SECURITY_FIXES_2026-02-06.md](implementation-summaries/SECURITY_FIXES_2026-02-06.md)
+- **Full Review:** [CODE_REVIEW_2026-02-06.md](history/2026/CODE_REVIEW_2026-02-06.md)
+- **Fix Details:** [SECURITY_FIXES_2026-02-06.md](history/2026/implementation-summaries/SECURITY_FIXES_2026-02-06.md)
 - **Executive Summary:** [CODE_REVIEW_EXECUTIVE_SUMMARY_2026-02-06.md](CODE_REVIEW_EXECUTIVE_SUMMARY_2026-02-06.md)
 - **Previous Review:** [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
 

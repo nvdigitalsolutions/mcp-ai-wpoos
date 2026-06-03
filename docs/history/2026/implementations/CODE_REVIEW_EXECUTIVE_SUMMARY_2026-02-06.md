@@ -258,8 +258,8 @@ The February 6, 2026 code review confirms that the NV oOS plugin has successfull
 ## Contact & References
 
 ### Documentation
-- **Full Code Review:** [CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)
-- **Security Fixes:** [SECURITY_FIXES_2026-02-06.md](implementation-summaries/SECURITY_FIXES_2026-02-06.md)
+- **Full Code Review:** [CODE_REVIEW_2026-02-06.md](history/2026/CODE_REVIEW_2026-02-06.md)
+- **Security Fixes:** [SECURITY_FIXES_2026-02-06.md](history/2026/implementation-summaries/SECURITY_FIXES_2026-02-06.md)
 - **Previous Review:** [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
 - **Roadmap:** [ROADMAP.md](ROADMAP.md)
 

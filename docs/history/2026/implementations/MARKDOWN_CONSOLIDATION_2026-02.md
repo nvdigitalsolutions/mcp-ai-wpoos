@@ -180,6 +180,6 @@ Successfully consolidated root markdown files, reducing clutter while maintainin
 
 ## Related Documentation
 - [Documentation Index](DOCUMENTATION_INDEX.md)
-- [Architecture Documentation](architecture/README.md)
-- [Canvas Packaging Analysis](architecture/canvas-packaging-analysis.md)
-- [Pro Plugin Size Optimization](architecture/pro-plugin-size-optimization.md)
+- [Architecture Documentation](developer/architecture/README.md)
+- [Canvas Packaging Analysis](developer/architecture/canvas-packaging-analysis.md)
+- [Pro Plugin Size Optimization](developer/architecture/pro-plugin-size-optimization.md)

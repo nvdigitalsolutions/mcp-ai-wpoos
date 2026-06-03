@@ -315,6 +315,6 @@ Happy workflow building!
 ---
 
 **Next Steps:**
-1. Read the [Pro Workflow Builder Guide](/docs/pro-workflow-builder.md)
+1. Read the [Pro Workflow Builder Guide](/docs/project/pro-workflow-builder.md)
 2. Try the [Interactive Tutorial](#) (Coming soon)
 3. Join the [Community Forum](https://nvdigitalsolutions.com/community)

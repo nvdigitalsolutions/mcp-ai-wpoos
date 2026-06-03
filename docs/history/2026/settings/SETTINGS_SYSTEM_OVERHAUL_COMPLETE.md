@@ -483,11 +483,11 @@ Pro Bundles:
 
 ## Related Documentation
 
-- [Settings Management Guide](docs/guides/admin/settings-management.md)
-- [Quick Reference](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md)
+- [Settings Management Guide](docs/admin-guides/settings-management.md)
+- [Quick Reference](docs/admin-guides/settings/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md)
 - [Visual UI Guide](docs/visual-guides/settings-management-ui.md)
-- [Pro Toolkits Guide](docs/guides/admin/pro-settings-toolkits.md)
-- [Settings Dashboard](docs/guides/admin/settings/README.md)
+- [Pro Toolkits Guide](docs/admin-guides/pro-settings-toolkits.md)
+- [Settings Dashboard](docs/admin-guides/settings/README.md)
 
 ---
 

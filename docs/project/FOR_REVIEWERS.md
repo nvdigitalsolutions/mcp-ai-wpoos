@@ -32,7 +32,7 @@ The repo is a **monorepo** containing:
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) |
 | What WP version? | 6.0+, tested up to 6.9 |
 | Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~584 advanced tools (commercial license). Base never gates features behind a license check. |
-| Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](compliance/TRACEABILITY.md). |
+| Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](../operations/compliance/TRACEABILITY.md). |
 | Can it be resubmitted to .org? | Possibly, but the window has closed. The author is seeking professional review before deciding next steps. |
 
 ---
@@ -103,7 +103,7 @@ See [ADDON_INVENTORY.md](ADDON_INVENTORY.md) for full details.
 
 ## 5. Known Issues (What Needs Attention)
 
-The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (16 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.26) resolved 1 Critical + 5 Warnings from code review.
+The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (16 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.26) resolved 1 Critical + 5 Warnings from code review.
 
 ### Still open / partially fixed (as of v1.1.26):
 | ID | Severity | Status | What |

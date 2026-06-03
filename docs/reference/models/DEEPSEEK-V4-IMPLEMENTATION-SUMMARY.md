@@ -332,7 +332,7 @@ $result = $orchestrator->execute_team_workflow(
 
 **IMPORTANT:** For complete technical details of the multi-agent orchestration system, see:
 
-**[ORCHESTRATION-LAYER-ARCHITECTURE.md - Section 6](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement)**
+**[ORCHESTRATION-LAYER-ARCHITECTURE.md - Section 6](developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement)**
 
 This is the **authoritative technical reference** that documents:
 - How multi-agent orchestration extends the core orchestration layer
