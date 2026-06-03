@@ -27,7 +27,7 @@ for (const line of lines) {
   if (sectionMatch) currentSection = sectionMatch[1];
 
   // Extract lines with | status |
-  const rowMatch = line.match(/^\| `?([^`|]+)`?\s+\|\s+`?([^`|]+)`?\s+\|\s+([✅⏳⚠️])\s+\|/);
+  const rowMatch = line.match(/^\| `?([^`|]+)`?\s+\|\s+`?([^`|]+)`?\s+\|\s+([✅⏳🔑🔧📦⚠️])\s+\|/);
   if (rowMatch) {
     const [, slug, file, status] = rowMatch;
     expected.push({

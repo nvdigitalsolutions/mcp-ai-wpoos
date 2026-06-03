@@ -96,6 +96,25 @@ async function ss(page, url, cat, file, pro = false) {
   await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-crawl4ai-monitor`, 'admin', 'crawl4ai-monitor.png');
   await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-mcp-diagnostic`, 'admin', 'mcp-diagnostic.png');
 
+  // ── More Base Pages ──
+  console.log('\n=== More Base ===');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-dlq-manager`, 'admin', 'dlq-manager.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-markup-telemetry`, 'admin', 'markup-telemetry.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-ext-cognition`, 'admin', 'ext-cognition.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-skill-manager`, 'admin', 'skill-manager.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-skill-settings`, 'admin', 'skill-settings.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-getting-started`, 'admin', 'getting-started.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-settings`, 'admin', 'settings-legacy.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-simple-settings`, 'admin', 'simple-settings.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-plugins`, 'admin', 'plugins-integration.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-workflow-editor`, 'admin', 'workflow-editor.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-mesh-settings`, 'admin', 'mesh-settings.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-content-assistant`, 'admin', 'content-assistant.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-diagnostics`, 'admin', 'diagnostics.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-hf-datasets`, 'admin', 'hf-datasets.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-onboarding`, 'admin', 'onboarding-wizard.png');
+  await ss(page, `${ADMIN}/admin.php?page=wp-mcp-ai-system-status`, 'admin', 'system-status.png');
+
   // ── Pro Dashboard (JS-heavy, needs extra wait) ──
   console.log('\n=== Pro Dashboard ===');
   await ss(page, `${ADMIN}/admin.php?page=nvoos-pro-dashboard`, 'dashboard', 'pro-dashboard-overview.png', true);
