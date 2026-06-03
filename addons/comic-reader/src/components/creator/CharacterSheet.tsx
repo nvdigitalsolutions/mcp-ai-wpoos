@@ -59,7 +59,7 @@ export function CharacterSheet({ comicId }: CharacterSheetProps) {
 		setError(null);
 		try {
 			const data = await fetchCharacters(comicId);
-			setCharacters(data.characters as Character[]);
+				setCharacters(data.characters as unknown as Character[]);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t('errorLoad'));
 		} finally {

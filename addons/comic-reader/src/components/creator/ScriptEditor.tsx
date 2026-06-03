@@ -116,15 +116,15 @@ export function ScriptEditor({ comicId, onScriptCreated }: ScriptEditorProps) {
 		try {
 			const comic = await fetchCreatorComic(comicId);
 			// Pull script data from comic meta
-			setScript({
-				id: comicId,
-				title: comic.title,
-				premise: (comic as Record<string, unknown>).script_premise as string || '',
-				genre: (comic as Record<string, unknown>).script_genre as string || '',
-				panel_count:
-					((comic as Record<string, unknown>).script_panel_count as number) || 0,
-				scenes: (comic as Record<string, unknown>).script_scenes as Scene[] || [],
-			});
+				setScript({
+					id: comicId,
+					title: comic.title,
+					premise: (comic as unknown as Record<string, unknown>).script_premise as string || '',
+					genre: (comic as unknown as Record<string, unknown>).script_genre as string || '',
+					panel_count:
+						((comic as unknown as Record<string, unknown>).script_panel_count as number) || 0,
+					scenes: (comic as unknown as Record<string, unknown>).script_scenes as Scene[] || [],
+				});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t('errorLoad'));
 		} finally {
