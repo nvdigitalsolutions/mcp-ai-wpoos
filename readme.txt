@@ -270,7 +270,6 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 
 * [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues) - Bug reports and feature requests
 * [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs) - Comprehensive guides
-* [WordPress.org Forums](https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/) - Community support (after WordPress.org approval)
 
 = Is this plugin patented? =
 
@@ -695,7 +694,6 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Fixed*
 
-* **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
 * **Inconsistent tool count in readme** — The headline description and the Base Plugin section now both report `250+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
 * **Missing canonical `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). The MCP protocol is a primary feature and was previously undiscoverable in plugin search.
 
