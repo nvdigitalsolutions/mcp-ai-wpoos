@@ -815,6 +815,18 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				);
 			}
 
+			// Filter orphaned tool messages before sending to DeepSeek.
+			// DeepSeek's API is OpenAI-compatible and will reject messages
+			// where tool messages lack a matching assistant tool_call.
+			// This mirrors the same filtering performed by the OpenAI and
+			// Anthropic clients.
+			$messages = $this->filter_tool_messages_for_payload( $messages );
+
+			// Normalise content arrays into strings for compatibility.
+			// The REST layer represents text-only messages as arrays of
+			// segments; collapse them back to strings that DeepSeek expects.
+			$messages = $this->normalise_messages_for_payload( $messages );
+
 			// Pass through messages unchanged (OpenAI-compatible format).
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
@@ -888,13 +900,230 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		}
 
 		/**
-		 * Handle a non-2xx API response and return an appropriate WP_Error.
+		 * Drop tool role messages that are not associated with the most recent
+		 * assistant tool call.
 		 *
-		 * @param int          $code     HTTP status code.
-		 * @param array        $decoded  Decoded JSON response body.
-		 * @param array|object $response Full WP HTTP response.
-		 * @return WP_Error
+		 * DeepSeek's API is OpenAI-compatible and requires tool responses to
+		 * immediately follow the assistant message that emitted the corresponding
+		 * tool call. When intervening messages appear between those entries the
+		 * request may be rejected. This normaliser filters out any tool messages
+		 * that no longer have a matching pending call so the payload remains valid.
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::filter_tool_messages_for_payload().
+		 *
+		 * @since 2026.06
+		 *
+		 * @param array $messages Chat history supplied by the caller.
+		 * @return array
 		 */
+		protected function filter_tool_messages_for_payload( array $messages ) {
+			if ( empty( $messages ) ) {
+				return $messages;
+			}
+
+			$filtered                = array();
+			$pending_calls           = array();
+			$awaiting_tool_responses = false;
+			$incomplete_group_start  = null;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+				if ( '' === $role ) {
+					continue;
+				}
+
+				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never
+					// fully answered, drop the entire incomplete group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'deepseek_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before user/system message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+					$filtered[]              = $message;
+					continue;
+				}
+
+				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'deepseek_dropped_incomplete_tool_group',
+								'Dropped assistant message with unresolved tool_calls before next assistant message.',
+								array(
+									'pending_call_ids' => array_keys( $pending_calls ),
+								)
+							);
+						}
+					}
+
+					$pending_calls           = array();
+					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
+
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! is_array( $tool_call ) ) {
+								continue;
+							}
+
+							$call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+							if ( '' === $call_id ) {
+								continue;
+							}
+
+							$pending_calls[ $call_id ] = true;
+						}
+					}
+
+					if ( ! empty( $pending_calls ) ) {
+						$awaiting_tool_responses = true;
+						$incomplete_group_start  = count( $filtered );
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				if ( 'tool' === $role ) {
+					$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+					if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'deepseek_dropped_orphan_tool_message',
+								'Dropping tool message without matching tool call before DeepSeek request.',
+								array(
+									'tool_call_id' => $tool_call_id,
+									'reason'       => '' === $tool_call_id
+										? 'missing_tool_call_id'
+										: ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+								)
+							);
+						}
+
+						continue;
+					}
+
+					unset( $pending_calls[ $tool_call_id ] );
+
+					if ( empty( $pending_calls ) ) {
+						$awaiting_tool_responses = false;
+						$incomplete_group_start  = null;
+					}
+
+					$filtered[] = $message;
+					continue;
+				}
+
+				$pending_calls           = array();
+				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
+				$filtered[]              = $message;
+			}
+
+			return array_values( $filtered );
+		}
+
+		/**
+		 * Prepare chat messages for the DeepSeek Chat Completions payload.
+		 *
+		 * The REST layer represents text-only messages as arrays of segments so
+		 * attachments and tool calls can be normalised consistently. Older
+		 * DeepSeek models may only accept plain strings for the `content` field.
+		 * To remain compatible we collapse text-only segment arrays back into
+		 * strings while preserving multimodal payloads that rely on structured
+		 * segments.
+		 *
+		 * Logic mirrors WP_MCP_AI_OpenAI_Client::normalise_messages_for_payload().
+		 *
+		 * @since 2026.06
+		 *
+		 * @param array $messages Sanitised chat messages.
+		 * @return array
+		 */
+		protected function normalise_messages_for_payload( array $messages ) {
+			$normalised = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$normalised[] = $message;
+					continue;
+				}
+
+				$segments = array_values( $message['content'] );
+
+				if ( empty( $segments ) ) {
+					$message['content'] = '';
+					$normalised[]       = $message;
+					continue;
+				}
+
+				$all_text   = true;
+				$text_parts = array();
+
+				foreach ( $segments as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$all_text = false;
+						break;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					if ( 'text' !== $type ) {
+						$all_text = false;
+						break;
+					}
+
+					$text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+				}
+
+				if ( $all_text ) {
+					$text_parts         = array_filter(
+						$text_parts,
+						static function ( $part ) {
+							return '' !== trim( $part );
+						}
+					);
+					$message['content'] = implode( "\n\n", $text_parts );
+				} else {
+					$message['content'] = $segments;
+				}
+
+				$normalised[] = $message;
+			}
+
+			return $normalised;
+		}
+
+	/**
+	 * Translate a DeepSeek HTTP error into a WP_Error.
+	 * Handle a non-2xx API response and return an appropriate WP_Error.
+	 *
+	 * @param int          $code     HTTP status code.
+	 * @param array        $decoded  Decoded JSON response body.
+	 * @param array|object $response Full WP HTTP response.
+	 * @return WP_Error
+	 */
 		protected function handle_api_error( $code, array $decoded, $response ) {
 			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from DeepSeek.', 'mcp-ai-wpoos' );
 			$error_data    = array(
@@ -957,17 +1186,18 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			}
 
 			$normalized = array(
-			'choices'       => array(
-				array(
-					'message'      => $message,
-					'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+				'choices'       => array(
+					array(
+						'message'      => $message,
+						'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+					),
 				),
-			),
-			'content'       => $content,
-			'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
-			'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
-			'usage'         => $raw_usage,
-			'raw'           => $decoded,
+				'content'       => $content,
+				'finish_reason' => isset( $choice['finish_reason'] ) ? $choice['finish_reason'] : '',
+				'model'         => isset( $decoded['model'] ) ? $decoded['model'] : '',
+				'provider'      => 'deepseek',
+				'usage'         => $raw_usage,
+				'raw'           => $decoded,
 			);
 
 			// Pass through tool_calls when present (function calling).
