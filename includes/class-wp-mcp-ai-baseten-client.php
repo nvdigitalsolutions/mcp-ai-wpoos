@@ -312,115 +312,164 @@ if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			return $normalized;
 		}
 
-	/**
-	 * Perform a real-time SSE stream request to Baseten using direct cURL.
-	 *
-	 * Uses CURLOPT_WRITEFUNCTION to process each network chunk as it arrives.
-	 *
-	 * @param string   $url      Full endpoint URL.
-	 * @param array    $payload  Request payload (stream: true already set).
-	 * @param string   $model    Resolved model identifier.
-	 * @param int      $timeout  Request timeout in seconds.
-	 * @param callable $stream_callback Invoked with each content chunk array.
-	 * @return array|WP_Error
-	 */
-	protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
-		$api_key = $this->get_api_key();
-		$raw_headers = $this->build_request_headers( $api_key );
-		$curl_headers = array();
-		foreach ( $raw_headers as $header_name => $header_value ) {
-			$curl_headers[] = $header_name . ': ' . $header_value;
-		}
+		/**
+		 * Perform a real-time SSE stream request to Baseten using direct cURL.
+		 *
+		 * Uses CURLOPT_WRITEFUNCTION to process each network chunk as it arrives.
+		 *
+		 * @param string   $url      Full endpoint URL.
+		 * @param array    $payload  Request payload (stream: true already set).
+		 * @param string   $model    Resolved model identifier.
+		 * @param int      $timeout  Request timeout in seconds.
+		 * @param callable $stream_callback Invoked with each content chunk array.
+		 * @return array|WP_Error
+		 */
+		protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
+			$api_key      = $this->get_api_key();
+			$raw_headers  = $this->build_request_headers( $api_key );
+			$curl_headers = array();
+			foreach ( $raw_headers as $header_name => $header_value ) {
+				$curl_headers[] = $header_name . ': ' . $header_value;
+			}
 
-		$sse_buffer          = '';
-		$http_status         = 0;
-		$accumulated_content = '';
-		$tool_calls_by_idx   = array();
-		$response_id         = '';
-		$finish_reason       = null;
-		$usage               = null;
-		$found_done          = false;
+			$sse_buffer          = '';
+			$http_status         = 0;
+			$accumulated_content = '';
+			$tool_calls_by_idx   = array();
+			$response_id         = '';
+			$finish_reason       = null;
+			$usage               = null;
+			$found_done          = false;
 
-		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
-		$ch = curl_init();
-		curl_setopt_array( $ch, array(
-			CURLOPT_URL            => $url,
-			CURLOPT_POST           => true,
-			CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
-			CURLOPT_HTTPHEADER     => $curl_headers,
-			CURLOPT_TIMEOUT        => max( 120, $timeout ),
-			CURLOPT_RETURNTRANSFER => false,
-			CURLOPT_SSL_VERIFYPEER => true,
-			CURLOPT_SSL_VERIFYHOST => 2,
-			CURLOPT_HEADERFUNCTION => function ( $_ch, $header ) use ( &$http_status ) {
-				if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $m ) ) {
-					$http_status = (int) $m[1];
-				}
-				return strlen( $header );
-			},
-			CURLOPT_WRITEFUNCTION => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
-				$sse_buffer .= $data;
-				while ( false !== ( $pos = strpos( $sse_buffer, "
-" ) ) ) {
-					$line = trim( substr( $sse_buffer, 0, $pos ) );
-					$sse_buffer = substr( $sse_buffer, $pos + 1 );
-					if ( '' === $line || ':' === $line[0] ) continue;
-					if ( 'data: [DONE]' === $line ) { $found_done = true; continue; }
-					if ( 0 !== strpos( $line, 'data: ' ) ) continue;
-					$chunk = json_decode( substr( $line, 6 ), true );
-					if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) continue;
-					if ( '' === $response_id && isset( $chunk['id'] ) ) $response_id = (string) $chunk['id'];
-					$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
-					$delta = isset( $choice['delta'] ) ? $choice['delta'] : array();
-					if ( ! empty( $delta['content'] ) ) {
-						$accumulated_content .= $delta['content'];
-						call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
-					}
-					if ( ! empty( $delta['tool_calls'] ) ) {
-						foreach ( $delta['tool_calls'] as $tc ) {
-							if ( ! isset( $tc['index'] ) ) continue;
-							$idx = (int) $tc['index'];
-							if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
-								$tool_calls_by_idx[ $idx ] = array( 'index' => $idx, 'id' => '', 'type' => 'function', 'function' => array( 'name' => '', 'arguments' => '' ) );
-							}
-							if ( isset( $tc['id'] ) ) $tool_calls_by_idx[ $idx ]['id'] .= $tc['id'];
-							if ( isset( $tc['function']['name'] ) ) $tool_calls_by_idx[ $idx ]['function']['name'] .= $tc['function']['name'];
-							if ( isset( $tc['function']['arguments'] ) ) $tool_calls_by_idx[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
+			// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+			$ch = curl_init();
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_URL            => $url,
+					CURLOPT_POST           => true,
+					CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
+					CURLOPT_HTTPHEADER     => $curl_headers,
+					CURLOPT_TIMEOUT        => max( 120, $timeout ),
+					CURLOPT_RETURNTRANSFER => false,
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_SSL_VERIFYHOST => 2,
+					CURLOPT_HEADERFUNCTION => function ( $_ch, $header ) use ( &$http_status ) {
+						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $m ) ) {
+							$http_status = (int) $m[1];
 						}
-					}
-					if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) $finish_reason = $choice['finish_reason'];
-					if ( ! empty( $chunk['usage'] ) ) $usage = $chunk['usage'];
-				}
-				return strlen( $data );
-			},
-		) );
-		curl_exec( $ch );
-		$curl_errno = curl_errno( $ch );
-		$curl_error = curl_error( $ch );
-		curl_close( $ch );
-		// phpcs:enable
+						return strlen( $header );
+					},
+					CURLOPT_WRITEFUNCTION  => function ( $_ch, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+						$sse_buffer .= $data;
+						while ( false !== ( $pos = strpos(
+							$sse_buffer,
+							'
+'
+						) ) ) {
+							$line = trim( substr( $sse_buffer, 0, $pos ) );
+							$sse_buffer = substr( $sse_buffer, $pos + 1 );
+							if ( '' === $line || ':' === $line[0] ) {
+								continue;
+							}
+							if ( 'data: [DONE]' === $line ) {
+								$found_done = true;
+								continue; }
+							if ( 0 !== strpos( $line, 'data: ' ) ) {
+								continue;
+							}
+							$chunk = json_decode( substr( $line, 6 ), true );
+							if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+								continue;
+							}
+							if ( '' === $response_id && isset( $chunk['id'] ) ) {
+								$response_id = (string) $chunk['id'];
+							}
+							$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
+							$delta = isset( $choice['delta'] ) ? $choice['delta'] : array();
+							if ( ! empty( $delta['content'] ) ) {
+								$accumulated_content .= $delta['content'];
+								call_user_func( $stream_callback, array( 'choices' => array( array( 'delta' => array( 'content' => $delta['content'] ) ) ) ) );
+							}
+							if ( ! empty( $delta['tool_calls'] ) ) {
+								foreach ( $delta['tool_calls'] as $tc ) {
+									if ( ! isset( $tc['index'] ) ) {
+										continue;
+									}
+									$idx = (int) $tc['index'];
+									if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
+										$tool_calls_by_idx[ $idx ] = array(
+											'index'    => $idx,
+											'id'       => '',
+											'type'     => 'function',
+											'function' => array(
+												'name' => '',
+												'arguments' => '',
+											),
+										);
+									}
+									if ( isset( $tc['id'] ) ) {
+										$tool_calls_by_idx[ $idx ]['id'] .= $tc['id'];
+									}
+									if ( isset( $tc['function']['name'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['name'] .= $tc['function']['name'];
+									}
+									if ( isset( $tc['function']['arguments'] ) ) {
+										$tool_calls_by_idx[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
+									}
+								}
+							}
+							if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+								$finish_reason = $choice['finish_reason'];
+							}
+							if ( ! empty( $chunk['usage'] ) ) {
+								$usage = $chunk['usage'];
+							}
+						}
+						return strlen( $data );
+					},
+				)
+			);
+			curl_exec( $ch );
+			$curl_errno = curl_errno( $ch );
+			$curl_error = curl_error( $ch );
+			curl_close( $ch );
+			// phpcs:enable
 
-		if ( $curl_errno ) {
-			return new WP_Error( 'wp_mcp_ai_http_error', $curl_error ?: __( 'cURL streaming request failed.', 'mcp-ai-wpoos' ) );
-		}
-		if ( $http_status >= 400 ) {
-			return new WP_Error( 'wp_mcp_ai_api_error', __( 'Baseten returned an error during streaming.', 'mcp-ai-wpoos' ), array( 'status' => $http_status ) );
-		}
+			if ( $curl_errno ) {
+				return new WP_Error( 'wp_mcp_ai_http_error', $curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' ) );
+			}
+			if ( $http_status >= 400 ) {
+				return new WP_Error( 'wp_mcp_ai_api_error', __( 'Baseten returned an error during streaming.', 'mcp-ai-wpoos' ), array( 'status' => $http_status ) );
+			}
 
-		$message = array( 'role' => 'assistant', 'content' => $accumulated_content );
-		if ( ! empty( $tool_calls_by_idx ) ) {
-			ksort( $tool_calls_by_idx );
-			$message['tool_calls'] = array_values( $tool_calls_by_idx );
+			$message = array(
+				'role'    => 'assistant',
+				'content' => $accumulated_content,
+			);
+			if ( ! empty( $tool_calls_by_idx ) ) {
+				ksort( $tool_calls_by_idx );
+				$message['tool_calls'] = array_values( $tool_calls_by_idx );
+			}
+			$assembled = array(
+				'id'      => $response_id,
+				'object'  => 'chat.completion',
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => $message,
+						'finish_reason' => $finish_reason,
+					),
+				),
+			);
+			if ( null !== $usage ) {
+				$assembled['usage'] = $usage;
+			}
+			if ( ! empty( $model ) ) {
+				$assembled['model'] = $model;
+			}
+			return $assembled;
 		}
-		$assembled = array(
-			'id'      => $response_id,
-			'object'  => 'chat.completion',
-			'choices' => array( array( 'index' => 0, 'message' => $message, 'finish_reason' => $finish_reason ) ),
-		);
-		if ( null !== $usage ) $assembled['usage'] = $usage;
-		if ( ! empty( $model ) ) $assembled['model'] = $model;
-		return $assembled;
-	}
 
 
 		/**

@@ -4268,7 +4268,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Call LLM again with tool results.
 				// Re-enable native streaming if still on a streaming-capable provider (may have switched for TPM).
-				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
+				$loop_provider              = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 				$native_streaming_providers = apply_filters(
 					'wp_mcp_ai_native_streaming_providers',
 					array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
@@ -11223,15 +11223,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// existing WordPress-specific workflow; profession-only requests
 				// are enriched with profession metadata and then flow through OOS.
 				$raw_assistant_id = $request->get_param( 'assistant_id' );
-				$team_id = $this->extract_team_id( $raw_assistant_id );
-				$profession_id = $this->extract_profession_id( $raw_assistant_id );
+				$team_id          = $this->extract_team_id( $raw_assistant_id );
+				$profession_id    = $this->extract_profession_id( $raw_assistant_id );
 
 				// Unified team requests ("unified_team_123") use the full multi-agent
 				// orchestration path. The OOS ChatOrchestrator does not yet implement
 				// team coordination, so we delegate to the existing handler.
-				if ( $team_id ) {
-					return $this->handle_unified_team_request( $request, $team_id );
-				}
+			if ( $team_id ) {
+				return $this->handle_unified_team_request( $request, $team_id );
+			}
 
 				// Translate WordPress types to OOS domain types.
 				$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
@@ -11244,9 +11244,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// Merge profession configuration when testing a profession.
-				if ( $profession_id ) {
-					$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
-				}
+			if ( $profession_id ) {
+				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
+			}
 
 				// Validate assistant access.
 			if ( $assistant_id ) {
