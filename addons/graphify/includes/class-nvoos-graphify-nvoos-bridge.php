@@ -682,9 +682,9 @@ class NV_oOS_Graphify_NV_oOS_Bridge {
 		// OpenAI completion response shape.
 		if ( isset( $decoded['choices'] ) && is_array( $decoded['choices'] ) ) {
 			foreach ( $decoded['choices'] as $choice ) {
-				if ( isset( $choice['message']['content'] ) ) {
+				if ( isset( $choice['message']['content'] ) && is_scalar( $choice['message']['content'] ) ) {
 					$texts[] = wp_strip_all_tags( (string) $choice['message']['content'] );
-				} elseif ( isset( $choice['text'] ) ) {
+				} elseif ( isset( $choice['text'] ) && is_scalar( $choice['text'] ) ) {
 					$texts[] = wp_strip_all_tags( (string) $choice['text'] );
 				}
 			}

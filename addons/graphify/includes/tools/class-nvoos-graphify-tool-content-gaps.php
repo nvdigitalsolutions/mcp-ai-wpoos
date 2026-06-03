@@ -21,6 +21,13 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'edit_posts';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_content_gaps';

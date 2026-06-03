@@ -22,6 +22,13 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 
 	use WP_MCP_AI_Tool_Default_Capability;
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'manage_options';
+	}
+
 	/** {@inheritdoc} */
 	public function get_slug() {
 		return 'graphify_sync_remote_source';
