@@ -281,7 +281,17 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 				continue;
 			}
 
+			// JetFormBuilder may return different key names for the record ID.
 			$id = isset( $entry['id'] ) ? absint( $entry['id'] ) : 0;
+			if ( ! $id && isset( $entry['ID'] ) ) {
+				$id = absint( $entry['ID'] );
+			}
+			if ( ! $id && isset( $entry['record_id'] ) ) {
+				$id = absint( $entry['record_id'] );
+			}
+			if ( ! $id && isset( $entry['submission_id'] ) ) {
+				$id = absint( $entry['submission_id'] );
+			}
 			if ( ! $id ) {
 				continue;
 			}
@@ -345,6 +355,18 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 
 			if ( isset( $payload['data'] ) && is_array( $payload['data'] ) ) {
 				return $this->coerce_list_from_payload( $payload['data'] );
+			}
+
+			if ( isset( $payload['records'] ) && is_array( $payload['records'] ) ) {
+				return $this->coerce_list_from_payload( $payload['records'] );
+			}
+
+			if ( isset( $payload['submissions'] ) && is_array( $payload['submissions'] ) ) {
+				return $this->coerce_list_from_payload( $payload['submissions'] );
+			}
+
+			if ( isset( $payload['items'] ) && is_array( $payload['items'] ) ) {
+				return $this->coerce_list_from_payload( $payload['items'] );
 			}
 		}
 
