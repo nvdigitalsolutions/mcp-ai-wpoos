@@ -153,6 +153,11 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Oos\Core\Tool\CreateTextEmbeddingsTool( $error_factory, $settings, $http_client ) );
 	$tool_registry->register( new Oos\Core\Tool\SuggestBestModelTool( $error_factory ) );
 	$tool_registry->register( new Oos\Core\Tool\CountTokensTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\GetPostTaxonomiesTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\CountPostsTool( $error_factory, $content ) );
+	$tool_registry->register( new Oos\Core\Tool\TruncateTextTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\MathEvalTool( $error_factory ) );
+	$tool_registry->register( new Oos\Core\Tool\ColorConvertTool( $error_factory ) );
 	$tool_registry->register( new Oos\Core\Tool\GetSettingTool( $error_factory, $settings ) );
 	$tool_registry->register( new Oos\Core\Tool\UpdateSettingTool( $error_factory, $settings ) );
 	$tool_registry->register( new Oos\Core\Tool\ListSettingsTool( $error_factory, $settings ) );
