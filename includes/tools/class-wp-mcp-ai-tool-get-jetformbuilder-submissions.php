@@ -128,6 +128,28 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			$transport = 'auto';
 		}
 
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( (string) $arguments['connection_id'] ) : '';
+
+		// Prefer direct database queries for local requests to avoid the
+		// JetFormBuilder REST endpoint's manage_options capability requirement.
+		// The local path is used when transport is 'auto' or 'rest' and no
+		// remote connection is targeted. Explicit 'http' transport or a
+		// connection_id forces the REST/handler dispatch path.
+		if ( 'http' !== $transport && ! $connection_id ) {
+			$local = $this->query_submissions_local( $form_id, $limit, $status );
+			if ( null !== $local ) {
+				return $local;
+			}
+
+			// Tables do not exist yet — fall through to REST dispatch.
+			if ( 'rest' === $transport ) {
+				return new WP_Error(
+					'wp_mcp_ai_jetformbuilder_no_tables',
+					__( 'The JetFormBuilder records database tables were not found.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
 		$params = array(
 			'per_page' => $limit,
 		);
@@ -264,6 +286,189 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 		$status = sanitize_key( $status );
 
 		return $status;
+	}
+
+	/**
+	 * Query JetFormBuilder submissions directly from the custom database tables.
+	 *
+	 * Bypasses the JFB REST endpoint which requires manage_options, allowing
+	 * users with edit_posts or equivalent to retrieve submissions.
+	 *
+	 * @param string $form_id Form identifier.
+	 * @param int    $limit   Maximum records to return.
+	 * @param string $status  Optional status filter.
+	 * @return array|null Normalised result array, or null when tables are missing.
+	 */
+	protected function query_submissions_local( $form_id, $limit, $status ) {
+		global $wpdb;
+
+		$records_table = $wpdb->prefix . 'jet_fb_records';
+		$fields_table  = $wpdb->prefix . 'jet_fb_records_fields';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$records_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $records_table ) );
+		$fields_exists  = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $fields_table ) );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		if ( ! $records_exists || ! $fields_exists ) {
+			return null;
+		}
+
+		$where_clauses = array( $wpdb->prepare( 'r.form_id = %d', absint( $form_id ) ) );
+
+		if ( $status ) {
+			$where_clauses[] = $wpdb->prepare( 'r.status = %s', $status );
+		}
+
+		$where = implode( ' AND ', $where_clauses );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT r.id, r.form_id, r.status, r.user_id, r.created_at, r.updated_at
+					 FROM {$records_table} r
+					 WHERE {$where}
+					 ORDER BY r.created_at DESC
+					 LIMIT %d",
+				$limit
+			),
+			ARRAY_A
+		);
+
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$records_table} r WHERE {$where}"
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		if ( empty( $rows ) ) {
+			return array(
+				'transport'   => 'local',
+				'status'      => 200,
+				'form_id'     => $form_id,
+				'submissions' => array(),
+				'total'       => 0,
+			);
+		}
+
+		// Batch-load field values for all retrieved records.
+		$record_ids = array();
+		foreach ( $rows as $row ) {
+			$record_ids[] = absint( $row['id'] );
+		}
+
+		$fields_by_record = $this->load_fields_local( $record_ids );
+
+		$records = array();
+		foreach ( $rows as $row ) {
+			$rid = absint( $row['id'] );
+
+			$created = '';
+			if ( ! empty( $row['created_at'] ) ) {
+				$created = $this->format_datetime( $row['created_at'] );
+			}
+
+			$records[] = array(
+				'id'         => $rid,
+				'status'     => isset( $row['status'] ) ? sanitize_key( $row['status'] ) : '',
+				'created_at' => $created,
+				'fields'     => isset( $fields_by_record[ $rid ] ) ? $fields_by_record[ $rid ] : array(),
+			);
+		}
+
+		return array(
+			'transport'   => 'local',
+			'status'      => 200,
+			'form_id'     => $form_id,
+			'submissions' => $records,
+			'total'       => $total,
+		);
+	}
+
+	/**
+	 * Batch-load field values for a set of JetFormBuilder record IDs.
+	 *
+	 * @param int[] $record_ids List of record identifiers.
+	 * @return array<int, array<int, array{name: string, label: string, value: string}>>
+	 */
+	protected function load_fields_local( array $record_ids ) {
+		global $wpdb;
+
+		if ( empty( $record_ids ) ) {
+			return array();
+		}
+
+		$fields_table = $wpdb->prefix . 'jet_fb_records_fields';
+		$placeholders = implode( ',', array_fill( 0, count( $record_ids ), '%d' ) );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT record_id, field_name, field_value
+					 FROM {$fields_table}
+					 WHERE record_id IN ({$placeholders})
+					 ORDER BY id ASC",
+				...$record_ids
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$fields_by_record = array();
+		$field_count      = array();
+
+		foreach ( $rows as $row ) {
+			$rid = absint( $row['record_id'] );
+			if ( ! isset( $field_count[ $rid ] ) ) {
+				$field_count[ $rid ] = 0;
+			}
+
+			// Limit to 8 fields per record to keep responses compact.
+			if ( $field_count[ $rid ] >= 8 ) {
+				continue;
+			}
+
+			++$field_count[ $rid ];
+
+			$name  = sanitize_key( $row['field_name'] );
+			$label = $this->normalise_field_label( '', $name );
+			$value = $this->normalise_field_value( $row['field_value'] );
+
+			if ( ! isset( $fields_by_record[ $rid ] ) ) {
+				$fields_by_record[ $rid ] = array();
+			}
+
+			$fields_by_record[ $rid ][] = array(
+				'name'  => $name,
+				'label' => $label,
+				'value' => $value,
+			);
+		}
+
+		return $fields_by_record;
+	}
+
+	/**
+	 * Format a database datetime value to W3C format.
+	 *
+	 * @param string $datetime Raw datetime string.
+	 * @return string
+	 */
+	protected function format_datetime( $datetime ) {
+		$datetime = is_string( $datetime ) ? trim( $datetime ) : '';
+		if ( '' === $datetime ) {
+			return '';
+		}
+
+		// If already in ISO 8601 / W3C format, return as-is.
+		if ( false !== strpos( $datetime, 'T' ) ) {
+			return $datetime;
+		}
+
+		$formatted = mysql2date( DATE_W3C, $datetime, false );
+
+		return $formatted ? $formatted : $datetime;
 	}
 
 	/**
