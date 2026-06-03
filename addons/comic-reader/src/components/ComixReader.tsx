@@ -219,6 +219,8 @@ export function ComixReader({ comic, direction }: ComixReaderProps) {
 		<div
 			ref={containerRef}
 			className={`nvoos-cr-reader ${isFullscreen ? 'nvoos-cr-reader--fullscreen' : ''}`}
+			role="application"
+			aria-label={t('comicReader')}
 			tabIndex={0}
 		>
 			<PageViewer

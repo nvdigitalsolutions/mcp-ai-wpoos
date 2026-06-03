@@ -387,7 +387,7 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 	): string {
 		// Sort inputs by key for deterministic hashing.
 		ksort( $inputs );
-		$hash = md5( $slug . '::' . serialize( $inputs ) );
+		$hash = md5( $slug . '::' . wp_json_encode( $inputs ) );
 
 		return self::CACHE_PREFIX . $pipeline_id . '_' . $node_id . '_' . $hash;
 	}
@@ -425,8 +425,12 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 	 * Clear the transient cache for an entire pipeline.
 	 *
 	 * Deletes all cached node outputs whose key matches the pipeline prefix.
-	 * Uses WordPress's pattern-deletion where supported; falls back to
-	 * individual deletion via key iteration for older WP versions.
+	 * Uses direct SQL deletion for performance on large cache sets.
+	 *
+	 * NOTE: This only clears database-stored transients. In environments with
+	 * a persistent object cache (Redis, Memcached), stale entries may survive
+	 * until their TTL expires. For full clearance in those environments,
+	 * iterate with delete_transient() or call wp_cache_flush().
 	 *
 	 * @since 1.2.0
 	 *
@@ -464,6 +468,9 @@ class WP_MCP_AI_Site_Pipeline_Executor {
 
 	/**
 	 * Clear all site-builder node caches across all pipelines.
+	 *
+	 * NOTE: Same object-cache caveat as clear_cache() applies — this only
+	 * clears database-stored transients, not external object cache entries.
 	 *
 	 * @since 1.2.0
 	 *

@@ -141,15 +141,14 @@ class WP_MCP_AI_Site_Blueprint_Compiler {
 			}
 
 			// Validate required top-level keys.
-			$required = array( 'slug', 'name', 'internalGraph' );
-			foreach ( $required as $key ) {
-				if ( ! isset( $data[ $key ] ) ) {
-					continue 2; // Skip to next directory.
-				}
+			if ( ! $this->validate_blueprint_data( $data ) ) {
+				continue;
 			}
 
-			// Ensure slug matches filename.
-			if ( $data['slug'] !== $slug ) {
+			// Normalise slug comparison: sanitize_file_name() can strip special
+			// characters from the input slug (e.g. 'My-__Blueprint' → 'my-__blueprint'),
+			// so compare sanitised versions of both sides to avoid false mismatches.
+			if ( sanitize_file_name( $data['slug'] ) !== $slug ) {
 				continue;
 			}
 
@@ -158,6 +157,24 @@ class WP_MCP_AI_Site_Blueprint_Compiler {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Validate that a decoded blueprint has all required top-level keys.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $data Decoded blueprint JSON.
+	 * @return bool True if valid, false otherwise.
+	 */
+	private function validate_blueprint_data( array $data ): bool {
+		$required = array( 'slug', 'name', 'internalGraph' );
+		foreach ( $required as $key ) {
+			if ( ! isset( $data[ $key ] ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
