@@ -219,7 +219,7 @@ export function ComixReader({ comic, direction }: ComixReaderProps) {
 		<div
 			ref={containerRef}
 			className={`nvoos-cr-reader ${isFullscreen ? 'nvoos-cr-reader--fullscreen' : ''}`}
-			tabIndex={0}
+			tabIndex={0} // eslint-disable-line jsx-a11y/no-noninteractive-tabindex -- managed by useKeyboardNav hook
 		>
 			<PageViewer
 				leftPage={

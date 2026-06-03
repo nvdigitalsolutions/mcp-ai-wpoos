@@ -59,7 +59,10 @@ export function CharacterSheet({ comicId }: CharacterSheetProps) {
 		setError(null);
 		try {
 			const data = await fetchCharacters(comicId);
-			setCharacters(data.characters as Character[]);
+			// @todo Replace the double-cast (as unknown as Character[]) with a
+			// proper type guard or DTO hydration once the REST API response type
+			// is defined in the api layer.
+			setCharacters(data.characters as unknown as Character[]);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : t('errorLoad'));
 		} finally {
