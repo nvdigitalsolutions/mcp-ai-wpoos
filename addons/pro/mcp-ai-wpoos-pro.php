@@ -669,9 +669,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Load Extended Cognition Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
-		}
+			if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
+
+				// Load Product Brand Taxonomy for vision recognition (1.8.0).
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-brand-taxonomy.php';
+				WP_MCP_AI_Product_Brand_Taxonomy::init();
+
+				// Load HF Vision Inference Service (1.8.0).
+				require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-hf-vision-inference-service.php';
+
+				// Load Action Scheduler callbacks for video analysis (1.8.0).
+								require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/as-callbacks.php';
+								add_action( 'init', 'wp_mcp_ai_ext_cog_register_as_hooks', 30 );
+			}
 
 		// ========================================================================
 		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
@@ -1877,18 +1888,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		}
 
 		// Extended Cognition Toolkit.
-		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
-			$ext_cog_tools = array(
-				'WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-manage-sensor-permissions.php',
-				'WP_MCP_AI_Tool_Ext_Cog_Capture_Visual' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-visual.php',
-				'WP_MCP_AI_Tool_Ext_Cog_Capture_Audio'  => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-audio.php',
-				'WP_MCP_AI_Tool_Ext_Cog_Capture_Screen' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-screen.php',
-				'WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-get-motion-context.php',
-				'WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-sensory-input.php',
-				'WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-remember-sensory-context.php',
-			);
-			$pro_tools     = array_merge( $pro_tools, $ext_cog_tools );
-		}
+			if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+				$ext_cog_tools = array(
+					'WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-manage-sensor-permissions.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Capture_Visual' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-visual.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Capture_Audio'  => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-audio.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Capture_Screen' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-screen.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-get-motion-context.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-sensory-input.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-remember-sensory-context.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Detect_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-detect-objects.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Recognize_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-recognize-products.php',
+					'WP_MCP_AI_Tool_Ext_Cog_Analyze_Video_Feed' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-video-feed.php',
+				);
+				$pro_tools     = array_merge( $pro_tools, $ext_cog_tools );
+			}
 
 		/**
 		 * Filter the list of Pro tools to register.

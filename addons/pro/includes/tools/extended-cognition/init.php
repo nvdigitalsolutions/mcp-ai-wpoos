@@ -68,6 +68,15 @@ function wp_mcp_ai_ext_cog_get_settings() {
 		'rate_limit'          => isset( $all['ext_cog_rate_limit'] ) ? absint( $all['ext_cog_rate_limit'] ) : 10,
 		'max_capture_size_kb' => isset( $all['ext_cog_max_capture_size_kb'] ) ? absint( $all['ext_cog_max_capture_size_kb'] ) : 2048,
 		'vision_model'        => isset( $all['ext_cog_vision_model'] ) ? sanitize_text_field( $all['ext_cog_vision_model'] ) : 'auto',
+
+		// Vision recognition (1.8.0).
+		'hf_detection_model'         => isset( $all['ext_cog_hf_detection_model'] ) ? sanitize_text_field( $all['ext_cog_hf_detection_model'] ) : '',
+		'hf_classification_model'    => isset( $all['ext_cog_hf_classification_model'] ) ? sanitize_text_field( $all['ext_cog_hf_classification_model'] ) : '',
+		'hf_embedding_model'         => isset( $all['ext_cog_hf_embedding_model'] ) ? sanitize_text_field( $all['ext_cog_hf_embedding_model'] ) : '',
+		'min_detection_confidence'   => isset( $all['ext_cog_min_detection_confidence'] ) ? (float) $all['ext_cog_min_detection_confidence'] : 0.5,
+		'enable_video_analysis'      => ! empty( $all['ext_cog_enable_video_analysis'] ),
+		'max_video_frames'           => isset( $all['ext_cog_max_video_frames'] ) ? absint( $all['ext_cog_max_video_frames'] ) : 60,
+		'brand_catalog'              => isset( $all['ext_cog_brand_catalog'] ) ? sanitize_textarea_field( $all['ext_cog_brand_catalog'] ) : '',
 	);
 }
 
