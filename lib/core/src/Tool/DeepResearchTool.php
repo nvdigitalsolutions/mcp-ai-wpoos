@@ -1,23 +1,44 @@
 <?php
-/** Deep Research — multi-step research using web search + AI model.
+/**
+ * Deep Research — multi-step research using web search + AI model.
  *
- * @package Oos\Core @since 1.0.0 @license MIT */
+ * Orchestrates a research workflow: search → analyze → synthesize.
+ * The agentic loop handles the actual tool execution; this tool
+ * returns the framework and instructions.
+ *
+ * @package Oos\Core
+ * @since   1.0.0
+ * @license MIT
+ */
+
 declare(strict_types=1);
+
 namespace Oos\Core\Tool;
 
 use Oos\Core\Domain\Contract\ErrorFactoryInterface;
 use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class DeepResearchTool extends AbstractTool {
-	public function __construct( ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h ) {
-		parent::__construct( $e );}
+
+	public function __construct(
+		ErrorFactoryInterface $errors,
+		private readonly SettingsStoreInterface $settings,
+	) {
+		parent::__construct( $errors );
+	}
+
 	public function getSlug(): string {
-		return 'deep_research'; }
+		return 'deep_research';
+	}
+
 	public function getName(): string {
-		return 'Deep Research'; }
+		return 'Deep Research';
+	}
+
 	public function getDescription(): string {
-		return 'Performs multi-step research by searching the web and synthesizing findings using an AI model.'; }
+		return 'Performs multi-step research by searching the web and synthesizing findings using an AI model.';
+	}
+
 	public function getParametersSchema(): array {
 		return array(
 			'type'                 => 'object',
@@ -36,23 +57,38 @@ class DeepResearchTool extends AbstractTool {
 			),
 			'required'             => array( 'query' ),
 			'additionalProperties' => false,
-		); }
+		);
+	}
+
 	public function getRequiredCapability(): string {
-		return 'read'; }
+		return 'read';
+	}
+
 	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$query = $this->stringParam( $arguments, 'query' );
 		if ( '' === $query ) {
-			return $this->errors->validationFailed( 'query is required.', array( 'query' => array( 'Research query is required.' ) ) );
+			return $this->errors->validationFailed(
+				'query is required.',
+				array( 'query' => array( 'Research query is required.' ) ),
+			);
 		}
+
 		$depth = $this->intParam( $arguments, 'depth', 2 );
-		// Deep research orchestrates web_search + AI analysis. Return the framework — the agentic loop handles the rest.
+
+		// Determine default search provider from settings.
+		$searchProvider = $this->settings->get( 'default_provider', 'openai' );
+
 		return $this->success(
 			'Deep research initiated.',
 			array(
 				'query'        => $query,
 				'depth'        => $depth,
+				'provider'     => $searchProvider,
 				'steps'        => array( 'search', 'analyze', 'synthesize' ),
-				'instructions' => 'Use web_search to gather sources, then synthesize findings across ' . $depth . ' iterations.',
+				'instructions' => sprintf(
+					'Use web_search to gather sources, then synthesize findings across %d iterations.',
+					$depth,
+				),
 			)
 		);
 	}

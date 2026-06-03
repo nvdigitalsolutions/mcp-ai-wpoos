@@ -1,8 +1,10 @@
 # Architecture Refactor Proposal — NV oOS
 
-**Date:** March 2026  
-**Status:** Proposal / Under Review  
+**Date:** March 2026 (updated 2026-06-03)  
+**Status:** In Progress — Phase 1–2 partially implemented; `lib/core` extraction operational  
 **Scope:** Feasibility analysis and complete phased plan for the four architectural improvements identified in the design review.
+
+> **📌 Update (2026-06-03):** The internal layer boundaries from this proposal (Phases 1–2) have informed the cross-platform extraction now live in `lib/core/`. See [`../proposals/cross-platform-extraction-gap-analysis.md`](../proposals/cross-platform-extraction-gap-analysis.md) for the current state of the downstream extraction.
 
 ---
 
