@@ -3755,10 +3755,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// provider's client has a do_realtime_curl_stream() method that forwards
 				// content/reasoning tokens to the browser as they are generated.
 				//
-				// When disabled via the wp_mcp_ai_disable_native_streaming filter,
-				// the system falls back to simulated chunking (full response split
-				// into pieces with delays).
-				$disable_native = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
+				// When disabled via the wp_mcp_ai_disable_native_streaming filter or the
+					// Disable Native Streaming setting (Advanced → System), the system falls
+					// back to simulated chunking (full response split into pieces with delays).
+					$disable_native  = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
+					$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+					$disable_native  = $disable_native || ( ! empty( $settings['disable_native_streaming'] ) );
 				if ( ! $disable_native ) {
 					$native_streaming_providers = apply_filters(
 						'wp_mcp_ai_native_streaming_providers',
