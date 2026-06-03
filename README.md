@@ -29,7 +29,7 @@
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
 **Patent Status:** Patent Pending (Application #19/410,504)  
-**Documentation:** [Grade A (95/100)](docs/DOCUMENTATION_REVIEW_SUMMARY.md) - 659 files, 100% feature coverage
+**Documentation:** [Grade A (95/100)](docs/DOCUMENTATION_REVIEW_SUMMARY.md) — 1,617 files across 12 directories, 136 admin screenshots, 100% feature coverage
 
 ## 🔍 For Reviewers & Auditors
 
@@ -1392,13 +1392,13 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 **1. Admin Hook Detection Fix (Feb 10)**
 - Fixed CSS/JS not loading on Product Consolidate page
 - Corrected hook pattern from CPT to custom menu format
-- [Detailed Documentation →](docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_FIX_SUMMARY.md)
+- [Detailed Documentation →](docs/history/2026/fixes/product-page-admin-hook-detection-fix-2026-02-10.md) | [Summary →](docs/history/archive/2025/fixes/PRODUCT_RESEARCH_FIX_SUMMARY.md)
 
 **2. Tab System Fix (Feb 11)**
 - Fixed all workflow tabs displaying simultaneously
 - Added defensive inline styles and flexible hook matching
 - Enhanced CSS specificity to prevent overrides
-- [Detailed Documentation →](docs/fixes/product-research-tab-system-fix-2026-02-11.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
+- [Detailed Documentation →](docs/history/2026/fixes/product-research-tab-system-fix-2026-02-11.md) | [Summary →](docs/history/archive/2025/fixes/PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
 
 **3. Additional Fixes:**
 - Improved asset enqueuing priority
@@ -1414,7 +1414,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - ✅ Fixed menu placement inconsistencies
 - ✅ Fixed empty page display issue
 
-[Quick Reference →](docs/fixes/pro-workflow-builder-fix-quick-reference-2026-02-05.md)
+[Quick Reference →](docs/history/2026/fixes/pro-workflow-builder-fix-quick-reference-2026-02-05.md)
 
 ### OAuth & API Connection Fixes (February 3, 2026) ⭐ **NEW**
 
@@ -1486,10 +1486,10 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 **Root Directory Organization:**
 - Moved 5 additional documentation files from root to appropriate docs/ subdirectories:
   - `FEDERATION_SETUP_GUIDE.md` → `docs/admin-guides/` (admin setup guide)
-  - `FEDERATION_DIRECTORY_DEBUG.md` → `docs/fixes/federation/` (bug fix documentation)
+  - `FEDERATION_DIRECTORY_DEBUG.md` → `docs/history/2026/fixes/federation/` (bug fix documentation)
   - `README-MULTI-AGENT-SYSTEM.md` → `docs/features/multi-agent/` (feature documentation)
   - `PRODUCTION_COMPOSER.md` → `docs/operations/deployment/` (deployment guide)
-  - Removed duplicate `FIX_SUMMARY.md` (multiple versions exist in docs/fixes/)
+  - Removed duplicate `FIX_SUMMARY.md` (multiple versions exist in docs/history/2026/fixes/)
 - **Root now contains only 3 essential files**: README.md, CHANGELOG.md, CONTRIBUTING.md
 - All configuration files remain in root (package.json, composer.json, phpunit.xml.dist, etc.)
 - Supporting documentation organized by type: guides, fixes, features, deployment
@@ -1611,37 +1611,37 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 1. **Token Manager Save Issue (Jan 21)** - Fixed tool settings not persisting despite success messages
    - Root Cause: Triple-sanitization causing data loss
    - Impact: All tool limits, multipliers, and model preferences now save correctly
-   - [Details →](docs/fixes/token-manager-save-issue-fix-2026-01-21.md)
+   - [Details →](docs/history/2026/fixes/token-manager-save-issue-fix-2026-01-21.md)
 
 2. **Provider Keys Clearing (Jan 20)** - Fixed API keys being cleared on tab navigation
    - Root Cause: Double-sanitization via WordPress Settings API
    - Impact: Provider configurations persist across admin tab navigation
-   - [Details →](docs/fixes/provider-keys-clearing-fix-2026-01-20.md)
+   - [Details →](docs/history/2026/fixes/provider-keys-clearing-fix-2026-01-20.md)
 
 3. **Unified Team Transcripts (Jan 18)** - Fixed transcript recording for team chats
    - Root Cause: Missing pattern recognition for team member assistant IDs
    - Impact: Transcripts save for all team chat types (unified_team_*, team_*_member_*)
-   - [Details →](docs/fixes/unified-team-transcript-recording-fix-2026-01-18.md)
+   - [Details →](docs/history/2026/fixes/unified-team-transcript-recording-fix-2026-01-18.md)
 
 4. **Tool Preset Multiplier (Jan 18)** - Fixed broken "Apply Preset" button on Token Manager
    - Root Cause: Tool registry query returning empty array
    - Impact: Preset application works correctly (Conservative/Balanced/Performance/Aggressive)
-   - [Details →](docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md)
+   - [Details →](docs/history/2026/fixes/TOOL_PRESET_MULTIPLIER_FIX.md)
 
 5. **HuggingFace Token Limits (Jan 17)** - Fixed Qwen3-Coder exceeding max_completion_tokens
    - Root Cause: Using deprecated `max_tokens` parameter
    - Impact: Qwen models work correctly with proper token limits
-   - [Details →](docs/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md)
+   - [Details →](docs/history/2026/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md)
 
 6. **OAuth Redirect URI (Jan 17)** - Fixed Gmail OAuth redirect_uri_mismatch errors
    - Root Cause: Inconsistent URL construction
    - Impact: OAuth flows consistent across all WordPress installations
-   - [Details →](docs/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md)
+   - [Details →](docs/history/2026/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md)
 
 7. **Model Dropdown Base+Pro (Jan 16)** - Fixed dropdown when base & pro plugins both active
    - Root Cause: Script localization lost with multiple plugin instances
    - Impact: Model dropdown works in all deployment modes
-   - [Details →](docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
+   - [Details →](docs/history/2026/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
 
 **Pro Toolkit Infrastructure - Phase 3 Complete:**
 - ✅ All 13 Pro toolkit settings pages implemented
@@ -1713,14 +1713,14 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - ✅ 3-layer data protection
 - ✅ Security-hardened file validation
 
-> **📌 JANUARY 18, 2026 UPDATE:** **PR #2990 - Tool Preset Multiplier Fix** - Fixed broken "Apply Preset" button on Token Manager page. The button was silently failing to update tool multipliers when users selected presets (Conservative, Balanced, Performance, Aggressive). Root cause: `get_all_recommendations()` only queried tool registry which returned empty array. Solution: Refactored to iterate through tool categories first (200+ tools), then check registry for dynamic tools. [Fix Details](docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md) | [Testing Plan](docs/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md)
+> **📌 JANUARY 18, 2026 UPDATE:** **PR #2990 - Tool Preset Multiplier Fix** - Fixed broken "Apply Preset" button on Token Manager page. The button was silently failing to update tool multipliers when users selected presets (Conservative, Balanced, Performance, Aggressive). Root cause: `get_all_recommendations()` only queried tool registry which returned empty array. Solution: Refactored to iterate through tool categories first (200+ tools), then check registry for dynamic tools. [Fix Details](docs/history/2026/fixes/TOOL_PRESET_MULTIPLIER_FIX.md) | [Testing Plan](docs/history/2026/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md)
 
-> **📌 JANUARY 13, 2026 UPDATE:** **PR #2883 - Gmail OAuth UX Enhancement** - Added auto-display of OAuth redirect URI in Gmail/Google Drive connection settings, eliminating `redirect_uri_mismatch` errors. Users can now copy the exact URI directly from the admin interface. [Details](docs/fixes/gmail-oauth-fix-summary.md)
+> **📌 JANUARY 13, 2026 UPDATE:** **PR #2883 - Gmail OAuth UX Enhancement** - Added auto-display of OAuth redirect URI in Gmail/Google Drive connection settings, eliminating `redirect_uri_mismatch` errors. Users can now copy the exact URI directly from the admin interface. [Details](docs/history/2026/fixes/gmail-oauth-fix-summary.md)
 
 > **📌 JANUARY 13, 2026 UPDATE:** **Root Directory Organization** - Consolidated 14 markdown files from root to organized subdirectories:
 > - 9 migration/implementation reports → `docs/history/2026/migrations/`
-> - 2 FlowHub fixes → `docs/fixes/`
-> - 2 Gmail OAuth files (consolidated into existing docs) → `docs/fixes/gmail-oauth-fix-summary.md`
+> - 2 FlowHub fixes → `docs/history/2026/fixes/`
+> - 2 Gmail OAuth files (consolidated into existing docs) → `docs/history/2026/fixes/gmail-oauth-fix-summary.md`
 > - 1 settings change report → `docs/history/2026/settings/`
 > - 1 PHPCS tracking file → `docs/developer/`
 > 
@@ -2573,7 +2573,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 
 ## 📚 Documentation
 
-NV oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation reorganized February 2026** - Root directory cleaned (50+ files archived), docs consolidated for better navigation.
+NV oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation reorganized June 2026** — Unix-theory separation of concerns. All docs sorted into 12 purpose-driven directories with zero content loss.
 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
@@ -2585,10 +2585,10 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### Essential References
 - **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~960 tools documented (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
-- **[Testing & Quality Report](docs/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
+- **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
 ### 📦 Archive
-- **[Historical Documentation](archive/README.md)** - 50+ archived files from 2024-2025 development (Phase 6, fixes, status reports)
+- **[Historical Documentation](docs/history/archive/2025/README.md)** — 50+ archived files from 2024-2025 development
 - **[Docs Archive](docs/history/archive/)** - Consolidated implementation history and superseded documentation
 
 ### For New Users
@@ -2600,7 +2600,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - [Best Practices](docs/developer/best-practices/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
 
 ### For Developers
-- **[Testing & Quality Report](docs/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
+- **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
 - [Code Review Master](docs/developer/best-practices/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
 - [Action Items](docs/history/2025/summaries/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/reference/api/mcp-server-authentication.md) - Authentication methods and security
