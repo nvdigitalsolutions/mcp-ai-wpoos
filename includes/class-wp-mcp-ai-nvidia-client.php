@@ -406,6 +406,40 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				)
 			);
 
+			// Real-time SSE: if a stream_callback is provided AND cURL is available,
+			// bypass wp_remote_post entirely.
+			$is_streaming = ! empty( $payload['stream'] );
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'nvidia_request',
+							'Sending real-time streaming request to NVIDIA via cURL.',
+							array( 'model' => $model, 'realtime' => true )
+						);
+					}
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
+				}
+			}
+
+			// Real-time SSE: if a stream_callback is provided AND cURL is available,
+			// bypass wp_remote_post entirely.
+			$is_streaming = ! empty( $payload['stream'] );
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'nvidia_request',
+							'Sending real-time streaming request to NVIDIA via cURL.',
+							array( 'model' => $model, 'realtime' => true )
+						);
+					}
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
+				}
+			}
+
 			$response = wp_remote_post( $url, $request_args );
 
 			if ( is_wp_error( $response ) ) {
@@ -709,7 +743,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
+				'stream'   => isset( \$options['stream'] ) ? (bool) \$options['stream'] : false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add tools if provided (OpenAI-compatible function calling).

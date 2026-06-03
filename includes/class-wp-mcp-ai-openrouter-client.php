@@ -320,6 +320,40 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 				);
 			}
 
+			// Real-time SSE: if a stream_callback is provided AND cURL is available,
+			// bypass wp_remote_post entirely.
+			$is_streaming = ! empty( $payload['stream'] );
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'openrouter_request',
+							'Sending real-time streaming request to OpenRouter via cURL.',
+							array( 'model' => $model, 'realtime' => true )
+						);
+					}
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
+				}
+			}
+
+			// Real-time SSE: if a stream_callback is provided AND cURL is available,
+			// bypass wp_remote_post entirely.
+			$is_streaming = ! empty( $payload['stream'] );
+			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
+				if ( null !== $realtime_cb ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'openrouter_request',
+							'Sending real-time streaming request to OpenRouter via cURL.',
+							array( 'model' => $model, 'realtime' => true )
+						);
+					}
+					return $this->do_realtime_curl_stream( $url, $payload, $model, $timeout, $realtime_cb );
+				}
+			}
+
 			$response = wp_remote_post( $url, $request_args );
 
 			if ( is_wp_error( $response ) ) {
@@ -368,6 +402,468 @@ if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 
 			return $normalized;
 		}
+
+	/**
+	 * Perform a real-time SSE stream request to OpenRouter using direct cURL.
+	 *
+	 * Unlike the `wp_remote_post` path (which buffers the full response body
+	 * before returning), this method uses `CURLOPT_WRITEFUNCTION` to process
+	 * each network chunk as it arrives from OpenRouter.  Every `delta.content`
+	 * token is forwarded to `$stream_callback` immediately, so the browser
+	 * SSE connection receives tokens in real time as the model generates them.
+	 *
+	 * @param string   $url             Full chat/completions endpoint URL.
+	 * @param array    $payload         Request payload (`stream: true` already set).
+	 * @param string   $model           Resolved model identifier.
+	 * @param int      $timeout         Request timeout in seconds.
+	 * @param callable $stream_callback Invoked with each content chunk array.
+	 * @return array|WP_Error Normalized response on success, WP_Error on failure.
+	 */
+	protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
+		// Build cURL-style header list.
+		$api_key = $this->get_api_key();
+		$raw_headers = $this->build_request_headers( $api_key );
+		$curl_headers = array();
+		foreach ( $raw_headers as $header_name => $header_value ) {
+			$curl_headers[] = $header_name . ': ' . $header_value;
+		}
+
+		// Accumulator state.
+		$sse_buffer          = '';
+		$http_status         = 0;
+		$accumulated_content = '';
+		$tool_calls_by_idx   = array();
+		$response_id         = '';
+		$finish_reason       = null;
+		$usage               = null;
+		$found_done          = false;
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_exec
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+		$ch = curl_init();
+
+		curl_setopt_array(
+			$ch,
+			array(
+				CURLOPT_URL            => $url,
+				CURLOPT_POST           => true,
+				CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
+				CURLOPT_HTTPHEADER     => $curl_headers,
+				CURLOPT_TIMEOUT        => max( 120, $timeout ),
+				CURLOPT_RETURNTRANSFER => false,
+				CURLOPT_SSL_VERIFYPEER => true,
+				CURLOPT_SSL_VERIFYHOST => 2,
+
+				CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status ) {
+					if ( preg_match( '/^HTTP\\/[\\d.]+ (\\d+)/', $header, $matches ) ) {
+						$http_status = (int) $matches[1];
+					}
+					return strlen( $header );
+				},
+
+				CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					$sse_buffer .= $data;
+
+					while ( false !== ( $newline_pos = strpos( $sse_buffer, "\\n" ) ) ) {
+						$line       = trim( substr( $sse_buffer, 0, $newline_pos ) );
+						$sse_buffer = substr( $sse_buffer, $newline_pos + 1 );
+
+						if ( '' === $line || ':' === $line[0] ) {
+							continue;
+						}
+
+						if ( 'data: [DONE]' === $line ) {
+							$found_done = true;
+							continue;
+						}
+
+						if ( 0 !== strpos( $line, 'data: ' ) ) {
+							continue;
+						}
+
+						$chunk = json_decode( substr( $line, 6 ), true );
+						if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+							continue;
+						}
+
+						if ( '' === $response_id && isset( $chunk['id'] ) ) {
+							$response_id = (string) $chunk['id'];
+						}
+
+						$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
+						$delta  = isset( $choice['delta'] ) ? $choice['delta'] : array();
+
+						if ( isset( $delta['content'] ) && is_string( $delta['content'] ) && '' !== $delta['content'] ) {
+							$accumulated_content .= $delta['content'];
+							call_user_func(
+								$stream_callback,
+								array(
+									'choices' => array(
+										array( 'delta' => array( 'content' => $delta['content'] ) ),
+									),
+								)
+							);
+						}
+
+						if ( isset( $delta['tool_calls'] ) && is_array( $delta['tool_calls'] ) ) {
+							foreach ( $delta['tool_calls'] as $tc_delta ) {
+								if ( ! is_array( $tc_delta ) || ! isset( $tc_delta['index'] ) ) {
+									continue;
+								}
+								$idx = (int) $tc_delta['index'];
+								if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
+									$tool_calls_by_idx[ $idx ] = array(
+										'index'    => $idx,
+										'id'       => '',
+										'type'     => 'function',
+										'function' => array(
+											'name'      => '',
+											'arguments' => '',
+										),
+									);
+								}
+								if ( isset( $tc_delta['id'] ) ) {
+									$tool_calls_by_idx[ $idx ]['id'] = (string) $tc_delta['id'];
+								}
+								if ( isset( $tc_delta['type'] ) ) {
+									$tool_calls_by_idx[ $idx ]['type'] = (string) $tc_delta['type'];
+								}
+								if ( isset( $tc_delta['function']['name'] ) ) {
+									$tool_calls_by_idx[ $idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+								}
+								if ( isset( $tc_delta['function']['arguments'] ) ) {
+									$tool_calls_by_idx[ $idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
+								}
+							}
+						}
+
+						if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+							$finish_reason = $choice['finish_reason'];
+						}
+						if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
+							$usage = $chunk['usage'];
+						}
+					}
+
+					return strlen( $data );
+				},
+			)
+		);
+
+		curl_exec( $ch );
+		$curl_errno = curl_errno( $ch );
+		$curl_error = curl_error( $ch );
+		curl_close( $ch );
+		// phpcs:enable
+
+		if ( $curl_errno ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenRouter real-time streaming failed.',
+					array( 'error' => $curl_error, 'errno' => $curl_errno )
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_http_error',
+				$curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( $http_status >= 400 ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenRouter real-time streaming returned HTTP error.',
+					array( 'code' => $http_status )
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				__( 'OpenRouter returned an error during streaming.', 'mcp-ai-wpoos' ),
+				array( 'status' => $http_status )
+			);
+		}
+
+		if ( ! $found_done ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'openrouter_realtime_stream',
+					'Real-time SSE stream ended without [DONE] sentinel.',
+					array( 'model' => $model )
+				);
+			}
+		}
+
+		$message = array(
+			'role'    => 'assistant',
+			'content' => $accumulated_content,
+		);
+
+		if ( ! empty( $tool_calls_by_idx ) ) {
+			ksort( $tool_calls_by_idx );
+			$message['tool_calls'] = array_values( $tool_calls_by_idx );
+		}
+
+		$assembled = array(
+			'id'       => $response_id,
+			'object'   => 'chat.completion',
+			'choices'  => array(
+				array(
+					'index'         => 0,
+					'message'       => $message,
+					'finish_reason' => $finish_reason,
+				),
+			),
+		);
+
+		if ( null !== $usage ) {
+			$assembled['usage'] = $usage;
+		}
+		if ( ! empty( $model ) ) {
+			$assembled['model'] = $model;
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event( 'openrouter_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
+		}
+
+		return $assembled;
+	}
+
+
+	/**
+	 * Perform a real-time SSE stream request to OpenRouter using direct cURL.
+	 *
+	 * Unlike the `wp_remote_post` path (which buffers the full response body
+	 * before returning), this method uses `CURLOPT_WRITEFUNCTION` to process
+	 * each network chunk as it arrives from OpenRouter.  Every `delta.content`
+	 * token is forwarded to `$stream_callback` immediately, so the browser
+	 * SSE connection receives tokens in real time as the model generates them.
+	 *
+	 * @param string   $url             Full chat/completions endpoint URL.
+	 * @param array    $payload         Request payload (`stream: true` already set).
+	 * @param string   $model           Resolved model identifier.
+	 * @param int      $timeout         Request timeout in seconds.
+	 * @param callable $stream_callback Invoked with each content chunk array.
+	 * @return array|WP_Error Normalized response on success, WP_Error on failure.
+	 */
+	protected function do_realtime_curl_stream( $url, array $payload, $model, $timeout, $stream_callback ) {
+		// Build cURL-style header list.
+		$api_key = $this->get_api_key();
+		$raw_headers = $this->build_request_headers( $api_key );
+		$curl_headers = array();
+		foreach ( $raw_headers as $header_name => $header_value ) {
+			$curl_headers[] = $header_name . ': ' . $header_value;
+		}
+
+		// Accumulator state.
+		$sse_buffer          = '';
+		$http_status         = 0;
+		$accumulated_content = '';
+		$tool_calls_by_idx   = array();
+		$response_id         = '';
+		$finish_reason       = null;
+		$usage               = null;
+		$found_done          = false;
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_setopt_array
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_exec
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_errno
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_error
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_close
+		$ch = curl_init();
+
+		curl_setopt_array(
+			$ch,
+			array(
+				CURLOPT_URL            => $url,
+				CURLOPT_POST           => true,
+				CURLOPT_POSTFIELDS     => wp_json_encode( $payload ),
+				CURLOPT_HTTPHEADER     => $curl_headers,
+				CURLOPT_TIMEOUT        => max( 120, $timeout ),
+				CURLOPT_RETURNTRANSFER => false,
+				CURLOPT_SSL_VERIFYPEER => true,
+				CURLOPT_SSL_VERIFYHOST => 2,
+
+				CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status ) {
+					if ( preg_match( '/^HTTP\\/[\\d.]+ (\\d+)/', $header, $matches ) ) {
+						$http_status = (int) $matches[1];
+					}
+					return strlen( $header );
+				},
+
+				CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
+					$sse_buffer .= $data;
+
+					while ( false !== ( $newline_pos = strpos( $sse_buffer, "\\n" ) ) ) {
+						$line       = trim( substr( $sse_buffer, 0, $newline_pos ) );
+						$sse_buffer = substr( $sse_buffer, $newline_pos + 1 );
+
+						if ( '' === $line || ':' === $line[0] ) {
+							continue;
+						}
+
+						if ( 'data: [DONE]' === $line ) {
+							$found_done = true;
+							continue;
+						}
+
+						if ( 0 !== strpos( $line, 'data: ' ) ) {
+							continue;
+						}
+
+						$chunk = json_decode( substr( $line, 6 ), true );
+						if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+							continue;
+						}
+
+						if ( '' === $response_id && isset( $chunk['id'] ) ) {
+							$response_id = (string) $chunk['id'];
+						}
+
+						$choice = isset( $chunk['choices'][0] ) ? $chunk['choices'][0] : array();
+						$delta  = isset( $choice['delta'] ) ? $choice['delta'] : array();
+
+						if ( isset( $delta['content'] ) && is_string( $delta['content'] ) && '' !== $delta['content'] ) {
+							$accumulated_content .= $delta['content'];
+							call_user_func(
+								$stream_callback,
+								array(
+									'choices' => array(
+										array( 'delta' => array( 'content' => $delta['content'] ) ),
+									),
+								)
+							);
+						}
+
+						if ( isset( $delta['tool_calls'] ) && is_array( $delta['tool_calls'] ) ) {
+							foreach ( $delta['tool_calls'] as $tc_delta ) {
+								if ( ! is_array( $tc_delta ) || ! isset( $tc_delta['index'] ) ) {
+									continue;
+								}
+								$idx = (int) $tc_delta['index'];
+								if ( ! isset( $tool_calls_by_idx[ $idx ] ) ) {
+									$tool_calls_by_idx[ $idx ] = array(
+										'index'    => $idx,
+										'id'       => '',
+										'type'     => 'function',
+										'function' => array(
+											'name'      => '',
+											'arguments' => '',
+										),
+									);
+								}
+								if ( isset( $tc_delta['id'] ) ) {
+									$tool_calls_by_idx[ $idx ]['id'] = (string) $tc_delta['id'];
+								}
+								if ( isset( $tc_delta['type'] ) ) {
+									$tool_calls_by_idx[ $idx ]['type'] = (string) $tc_delta['type'];
+								}
+								if ( isset( $tc_delta['function']['name'] ) ) {
+									$tool_calls_by_idx[ $idx ]['function']['name'] .= (string) $tc_delta['function']['name'];
+								}
+								if ( isset( $tc_delta['function']['arguments'] ) ) {
+									$tool_calls_by_idx[ $idx ]['function']['arguments'] .= (string) $tc_delta['function']['arguments'];
+								}
+							}
+						}
+
+						if ( isset( $choice['finish_reason'] ) && null !== $choice['finish_reason'] ) {
+							$finish_reason = $choice['finish_reason'];
+						}
+						if ( isset( $chunk['usage'] ) && is_array( $chunk['usage'] ) ) {
+							$usage = $chunk['usage'];
+						}
+					}
+
+					return strlen( $data );
+				},
+			)
+		);
+
+		curl_exec( $ch );
+		$curl_errno = curl_errno( $ch );
+		$curl_error = curl_error( $ch );
+		curl_close( $ch );
+		// phpcs:enable
+
+		if ( $curl_errno ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenRouter real-time streaming failed.',
+					array( 'error' => $curl_error, 'errno' => $curl_errno )
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_http_error',
+				$curl_error ? $curl_error : __( 'cURL streaming request failed.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( $http_status >= 400 ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenRouter real-time streaming returned HTTP error.',
+					array( 'code' => $http_status )
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				__( 'OpenRouter returned an error during streaming.', 'mcp-ai-wpoos' ),
+				array( 'status' => $http_status )
+			);
+		}
+
+		if ( ! $found_done ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'openrouter_realtime_stream',
+					'Real-time SSE stream ended without [DONE] sentinel.',
+					array( 'model' => $model )
+				);
+			}
+		}
+
+		$message = array(
+			'role'    => 'assistant',
+			'content' => $accumulated_content,
+		);
+
+		if ( ! empty( $tool_calls_by_idx ) ) {
+			ksort( $tool_calls_by_idx );
+			$message['tool_calls'] = array_values( $tool_calls_by_idx );
+		}
+
+		$assembled = array(
+			'id'       => $response_id,
+			'object'   => 'chat.completion',
+			'choices'  => array(
+				array(
+					'index'         => 0,
+					'message'       => $message,
+					'finish_reason' => $finish_reason,
+				),
+			),
+		);
+
+		if ( null !== $usage ) {
+			$assembled['usage'] = $usage;
+		}
+		if ( ! empty( $model ) ) {
+			$assembled['model'] = $model;
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event( 'openrouter_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
+		}
+
+		return $assembled;
+	}
+
 
 		/**
 		 * List available models from the OpenRouter API.

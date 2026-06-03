@@ -3756,7 +3756,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// content/reasoning tokens to the browser as they are generated.
 			$native_streaming_providers = apply_filters(
 				'wp_mcp_ai_native_streaming_providers',
-				array( 'lm_studio', 'deepseek', 'openai' )
+				array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
 			);
 			if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
 				$native_streaming_used      = true;
@@ -4271,7 +4271,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$loop_provider = sanitize_key( isset( $options['provider'] ) ? $options['provider'] : '' );
 				$native_streaming_providers = apply_filters(
 					'wp_mcp_ai_native_streaming_providers',
-					array( 'lm_studio', 'deepseek', 'openai' )
+					array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
 				);
 				if ( $native_streaming_used && in_array( $loop_provider, $native_streaming_providers, true ) ) {
 					$options['stream']          = true;
