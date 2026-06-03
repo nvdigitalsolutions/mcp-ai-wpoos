@@ -1,5 +1,72 @@
 # oOS – Changelog
 
+## [1.1.26] - 2026-06-03
+
+### Added — Cross-Platform Extraction Engine Phases 0–2 (PRs #5193–#5201)
+
+Framework-agnostic OOS core extracted from WordPress into a standalone PHP library (`lib/`):
+
+- **Phase 0** — Monorepo foundations: `composer.json` with PSR-4 `OOS\` namespace, library structure, `lib/` excluded from plugin builds.
+- **Phase 1** — WordPress adapters for all 8 domain interfaces: `WpAiServiceRepository`, `WpConfigRepository`, `WpEventDispatcher`, `WpHttpClient`, `WpLogger`, `WpSanitizer`, `WpToolRepository`, `WpUserRepository`.
+- **Phase 2** — Core application layer: `AiService` orchestrator, `ConfigService`, `ToolExecutionPipeline`, `ChatSessionManager`, `SkillRegistry`, `AbstractTool` base class. All 12 AI provider clients migrated with domain injection. 33 tools migrated across 3 tiers.
+- OOS bridge wired into WordPress with feature flag (`WP_MCP_AI_OOS_ENGINE_ENABLED`).
+
+### Added — Site-Builder Node-Graph Pipeline Phases 1–4 (PR #5231)
+
+Visual site construction subsystem with node-graph architecture for building complete WordPress sites programmatically through AI tool chains. SPA blueprint v3.0 generated from pipeline output.
+
+### Added — SPA a11y Hardening Phase 5 (PRs #5232, #5234)
+
+axe-core accessibility testing integrated across all 7 SPA addons. Keyboard navigation, ARIA labels, focus management, and screen-reader support reviewed and hardened. CI type errors fixed (`@types/node`, comic-reader TS casts).
+
+### Added — Screenshot Overhaul
+
+137 automated Playwright screenshots captured across base + Pro. Screenshot inventory (79 tracked pages), maintenance plan, and coverage checker added.
+
+### Added — Form Submissions Data Source (PRs #5206, #5207)
+
+JetFormBuilder + Elementor forms integration for AI-powered submission analysis. Admin dashboard, PHPUnit tests, and PHPStan fixes.
+
+### Added — Cloudways Dashboard SPA Addon v0.1.0 (PR #5214)
+
+New React SPA addon for Cloudways server/app management with real-time status dashboard.
+
+### Added — Laravel & Craft CMS Adapters (PR #5205)
+
+OOS core extraction adapter packages for Laravel and Craft CMS, enabling standalone operation outside WordPress.
+
+### Added — Reviewer Onboarding Documentation (PR #5226)
+
+Complete reviewer documentation suite: `docs/project/FOR_REVIEWERS.md`, audit data cross-reference, stale data updates.
+
+### Added — Blueprint Profession Roles (PR #5204)
+
+6 missing profession definitions added. Professional roles assigned to CRM and healthcare-style blueprint assistants.
+
+### Fixed — Pro Toolkits Security Audit Phase 1 (PR #5212)
+
+9 HIGH-severity security findings resolved across pro toolkits: input validation, authorization checks, and output escaping.
+
+### Fixed — OOS Engine Stability (PRs #5196–#5201, #5211, #5213)
+
+PSR-4 event classes extracted from `DomainEvents.php`. Missing `ErrorFactoryInterface` import in 8 ported tools. Provider client constructor interface imports fixed. `psr/event-dispatcher` bundled. Parse errors and `CacheStore` bool cast `TypeError` resolved. OOS Gemini chat client tools string format error fixed. Team/profession layer integrated into chat handler.
+
+### Fixed — Docker Dev Environments (PR #5216)
+
+WordPress, Laravel, and Craft CMS Docker environments all fixed and operational. Docker directory excluded from PHPCS linting and plugin builds.
+
+### Fixed — Test Infrastructure & PHPUnit Compat (PRs #5217, #5216)
+
+95% of PHPUnit failures resolved across base, pro, and addon test suites. `class_exists` guards for Pro tool require paths. Removed nonexistent base path for WP-CLI tool test.
+
+### Fixed — Infrastructure (PRs #5216, #5220–#5225, #5228, #5229)
+
+TCPDF addon Composer autoloader class-name collision resolved. Pro vendor files committed with `classmap-authoritative` autoloader. `@puppeteer/browsers` detection path fixed. Pro vendor Composer install added to CI. NPM package status detection fixed. Pro addon vendor `.gitignore` unignored `symfony/yaml`. Duplicate build ZIPs removed. Shallow clone recommendation added.
+
+### Changed — Documentation (PRs #5227, #5230, #5235)
+
+`docs/` directory tree reorganized with Unix-theory separation of concerns. Per-folder READMEs restored and added to all active doc directories. README and docs updated for new organization and screenshot overhaul. Stale audit data cross-referenced against May 2026 compliance docs.
+
 ## [1.1.24] - 2026-05-28
 
 ### Fixed — Paper Store Pro Interface Load Order (PR #5160)

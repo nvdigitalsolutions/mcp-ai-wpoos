@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** May 31, 2026  
-**Plugin Version:** 1.1.25  
+**Last Updated:** June 3, 2026  
+**Plugin Version:** 1.1.26  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,23 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **📌 JUNE 3, 2026 UPDATE (v1.1.26):** 🔌🏗️♿📸📁 **CROSS-PLATFORM EXTRACTION ENGINE, SITE-BUILDER NODE-GRAPH, SPA A11Y HARDENING, SCREENSHOT & DOCS OVERHAUL**
+> - **Cross-Platform Extraction Engine (Phases 0–2)** — Framework-agnostic OOS core in `lib/`: monorepo foundations, 8 domain interfaces w/ WordPress adapters, 12 AI provider clients, core app layer, AbstractTool base, SkillRegistry, 33 migrated tools, OOS bridge with feature flag. Full proposal: [`docs/project/proposals/cross-platform-extraction-architecture.md`](project/proposals/cross-platform-extraction-architecture.md).
+> - **Site-Builder Node-Graph Pipeline (Phases 1–4)** — Visual site construction subsystem. SPA blueprint v3.0.
+> - **SPA a11y Hardening Phase 5** — axe-core across all 7 SPA addons. Keyboard, ARIA, focus, screen-reader support.
+> - **Screenshot Overhaul** — 137 Playwright captures, 79 tracked pages, maintenance plan + coverage checker.
+> - **Docs Reorganization** — Unix-theory separation of concerns across `docs/`. Per-folder READMEs restored.
+> - **Form Submissions Data Source** — JFB + Elementor integration with admin dashboard.
+> - **Cloudways Dashboard SPA v0.1.0** — New React SPA addon.
+> - **Laravel & Craft CMS Adapters** — OOS core extraction adapters.
+> - **Blueprint Profession Roles** — 6 missing definitions + CRM/healthcare role assignments.
+> - **Pro Toolkits Security Audit Phase 1** — 9 HIGH findings fixed.
+> - **Reviewer Onboarding Docs** — Complete suite at [`docs/project/FOR_REVIEWERS.md`](project/FOR_REVIEWERS.md).
+> - **Docker Dev Environments** — WordPress, Laravel, and Craft CMS all fixed.
+> - **Test Infrastructure** — 95% of PHPUnit failures resolved.
+> - **Infrastructure Fixes** — TCPDF autoloader, Pro vendor files, puppeteer detection, shallow clone recommendation.
+> - **Versioning** — bumped to 1.1.26 across all manifests. Tool count: ~195 base + ~765 Pro (~960 total; live registry is authoritative).
+>
 > **📌 MAY 31, 2026 UPDATE (v1.1.25):** 🧩☁️🏢💬📂 **UNIFIED BLUEPRINT SYSTEM, CLOUDWAYS TOOLKIT, CRM TOOLKIT (PHASES A–E), CHAT UI ENHANCEMENTS, UNIX-THEORY REORG PHASE 4–5**
 > - **Unified Blueprint System** — 55 pre-built AI assistants across 25 toolkits with one-click import. Shared `WP_MCP_AI_Blueprint_Installer`. JSON Schema validation. Healthcare blueprint import tool with HIPAA-aware templates. 4 Aerlinn blueprints. Full doc: [`docs/features/unified-blueprint-system.md`](features/unified-blueprint-system.md).
 > - **Cloudways Pro Toolkit** — 60 AI tools for server/app management via Cloudways API v2. `WP_MCP_AI_Cloudways_Client` OAuth singleton. Tool categories: Server Mgmt, App Mgmt, Security, Backups, Team, DNS. Admin dashboard with real-time status. Full doc: [`docs/features/cloudways-toolkit.md`](features/cloudways-toolkit.md).
