@@ -362,12 +362,25 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( empty( $rows ) ) {
+			// Check whether the form actually exists by looking for ANY
+			// record for this form_id (any status). If there has never
+			// been a record, the form may not exist in this source.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$form_exists = (bool) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT 1 FROM {$records_table} WHERE form_id = %d LIMIT 1",
+					absint( $form_id )
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 			return array(
 				'transport'   => 'local',
 				'status'      => 200,
 				'form_id'     => $form_id,
 				'submissions' => array(),
 				'total'       => 0,
+				'form_found'  => $form_exists,
 			);
 		}
 
@@ -402,6 +415,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			'form_id'     => $form_id,
 			'submissions' => $records,
 			'total'       => $total,
+			'form_found'  => true,
 		);
 	}
 

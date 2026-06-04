@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Retrieves Elementor Pro form submissions for a given form, including key field snapshots. Requires Elementor Pro 3.2+ with Collect Submissions enabled.', 'mcp-ai-wpoos' );
+		return __( 'Retrieves Elementor Pro form submissions for a given page (post_id). Only works with Elementor Pro 3.2+ forms where "Collect Submissions" is enabled. The form_post_id parameter is the WordPress post ID of the page containing the Elementor Form widget. Use get_elementor_templates first to discover available Elementor pages. Returns a form_found flag indicating whether the given post_id actually had any form submissions — false means the form may not exist at that location.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -209,11 +209,25 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		if ( empty( $submissions ) ) {
+			// Check whether the form actually exists by looking for ANY
+			// submissions row for this post_id (any type, not just 'form').
+			// If there's never been a submission for this post_id, the form
+			// may not exist at this location.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$form_exists = (bool) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT 1 FROM {$submissions_table} WHERE post_id = %d LIMIT 1",
+					$form_post_id
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
 			return array(
 				'transport'    => 'local',
 				'form_post_id' => $form_post_id,
 				'submissions'  => array(),
 				'total'        => 0,
+				'form_found'   => $form_exists,
 			);
 		}
 
@@ -258,6 +272,7 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 			'form_post_id' => $form_post_id,
 			'submissions'  => $records,
 			'total'        => $total,
+			'form_found'   => true,
 		);
 	}
 
