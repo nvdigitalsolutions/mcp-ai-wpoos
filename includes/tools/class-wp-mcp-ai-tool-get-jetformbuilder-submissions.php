@@ -271,13 +271,13 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	 * Sanitize the maximum number of submissions to return.
 	 *
 	 * @param mixed $value   Raw value from the assistant.
-	 * @param int   $default Default value when input is missing.
+	 * @param int   $fallback Default value when input is missing.
 	 * @return int
 	 */
-	protected function sanitize_limit( $value, $default ) {
+	protected function sanitize_limit( $value, $fallback ) {
 		$limit = absint( $value );
 		if ( $limit < 1 ) {
-			$limit = $default;
+			$limit = $fallback;
 		}
 
 		return (int) min( 50, $limit );
@@ -592,11 +592,11 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	/**
 	 * Determine whether an array uses sequential keys.
 	 *
-	 * @param array $array Array to inspect.
+	 * @param array $items Array to inspect.
 	 * @return bool
 	 */
-	protected function is_sequential_array( array $array ) {
-		return array_keys( $array ) === range( 0, count( $array ) - 1 );
+	protected function is_sequential_array( array $items ) {
+		return array_keys( $items ) === range( 0, count( $items ) - 1 );
 	}
 
 	/**

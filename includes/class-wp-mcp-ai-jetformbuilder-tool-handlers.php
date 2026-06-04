@@ -132,13 +132,13 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 * Optionally suppress route registration warnings for JetFormBuilder mocks during tests.
 	 *
 	 * @param bool   $trigger  Whether to trigger a PHP warning.
-	 * @param string $function Function name.
+	 * @param string $function_name Function name.
 	 * @param string $message  Warning message.
 	 * @param string $version  Version string.
 	 * @return bool
 	 */
-	public static function maybe_suppress_route_warning( $trigger, $function = '', $message = '', $version = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
-		if ( 'register_rest_route' === $function && false !== strpos( $message, '<code>jet-form-builder/v1</code>' ) ) {
+	public static function maybe_suppress_route_warning( $trigger, $function_name = '', $message = '', $version = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
+		if ( 'register_rest_route' === $function_name && false !== strpos( $message, '<code>jet-form-builder/v1</code>' ) ) {
 			return false;
 		}
 
@@ -338,7 +338,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 * @param array  $context       Execution context.
 	 * @return array|WP_Error
 	 */
-	protected static function dispatch_via_connection( $connection_id, $route, $method, array $params, array $context = array() ) {
+	protected static function dispatch_via_connection( $connection_id, $route, $method, array $params, array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $context reserved for future use.
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
@@ -388,7 +388,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 
 		// Attach body for non-GET requests.
 		if ( 'GET' !== strtoupper( $method ) ) {
-			$request_args['body']    = wp_json_encode( $params );
+			$request_args['body']                    = wp_json_encode( $params );
 			$request_args['headers']['Content-Type'] = 'application/json';
 		}
 
@@ -400,21 +400,21 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 				if ( ! empty( $connection['username'] ) && ! empty( $connection['password'] ) ) {
 					$password = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] );
 					// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-					$encoded = base64_encode( $connection['username'] . ':' . $password );
+					$encoded                                  = base64_encode( $connection['username'] . ':' . $password );
 					$request_args['headers']['Authorization'] = 'Basic ' . $encoded;
 				}
 				break;
 
 			case 'custom_header':
 				if ( ! empty( $connection['api_key'] ) ) {
-					$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+					$api_key                              = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
 					$request_args['headers']['X-API-Key'] = $api_key;
 				}
 				break;
 
 			case 'jwt':
 				if ( ! empty( $connection['token'] ) ) {
-					$token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
+					$token                                    = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
 					$request_args['headers']['Authorization'] = 'Bearer ' . $token;
 				}
 				break;
@@ -612,7 +612,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 * @param WP_REST_Server|null  $server  REST server instance.
 	 * @return mixed
 	 */
-	public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
+	public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
 		if ( ! $request instanceof WP_REST_Request ) {
 			return $result;
 		}
