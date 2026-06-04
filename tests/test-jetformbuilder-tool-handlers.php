@@ -77,8 +77,8 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 	 */
 	public function register_mock_rest_routes( ?WP_REST_Server $server = null ) {
 		register_rest_route(
-			'jet-form-builder/v1',
-			'/forms/',
+			'wp/v2',
+			'/jet-form-builder',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'permission_callback' => '__return_true',
@@ -96,7 +96,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 
 		register_rest_route(
 			'jet-form-builder/v1',
-			'/forms/(?P<id>[^/]+)/fields/',
+			'/(?P<id>[\d]+)/fields',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'permission_callback' => '__return_true',
@@ -115,7 +115,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 
 		register_rest_route(
 			'jet-form-builder/v1',
-			'/forms/(?P<id>[^/]+)/records/',
+			'/records/fetch-page',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'permission_callback' => '__return_true',
@@ -123,7 +123,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 					return new WP_REST_Response(
 						array(
 							'operation' => 'fetch_submissions',
-							'form_id'   => $request['id'],
+							'filters'   => $request->get_param( 'filters' ),
 							'query'     => $request->get_params(),
 						),
 						200
