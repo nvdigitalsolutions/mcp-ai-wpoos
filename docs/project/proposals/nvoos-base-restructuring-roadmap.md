@@ -1,1089 +1,516 @@
-# NV oOS — Base Plugin Restructuring Roadmap
+# NV oOS — Graphify-Centric Restructuring Roadmap
 
-> **Version**: 1.0.0-draft | **Status**: Proposal
+> **Version**: 3.0.0-draft | **Status**: Proposal
 >
-> This document is the **complete, phased restructuring roadmap** for transforming the NV oOS base plugin (`mcp-ai-wpoos.php`, ~15,000+ lines across ~200 classes) into a thin core (~500 lines) with everything else extracted as independent micro-plugins. This applies the same pattern proven by the existing `addons/` directory and documented in the `graphify-core` implementation specification.
+> This document is the **complete, phased restructuring roadmap** for transforming the NV oOS monolith into a Graphify-centric ecosystem where **`nvoos-graphify` (the knowledge graph product) absorbs the current addon code and becomes the base plugin**, and everything else (AI chat, tools, providers, features, integrations) extends it as truly optional addons. The core product works on day 1 with **zero API keys**.
 
 ---
 
 ## Table of Contents
 
-1. [Why Restructure](#1-why-restructure)
+1. [Why This Architecture](#1-why-this-architecture)
 2. [Current State Analysis](#2-current-state-analysis)
 3. [Target Architecture](#3-target-architecture)
-4. [The Thin Core: `nvoos-core`](#4-the-thin-core-nvoos-core)
-5. [Feature-to-Addon Mapping](#5-feature-to-addon-mapping)
-6. [Provider Client Registry](#6-provider-client-registry)
-7. [Tool Migration Pattern](#7-tool-migration-pattern)
-8. [Phased Execution Plan](#8-phased-execution-plan)
-9. [Backward Compatibility Strategy](#9-backward-compatibility-strategy)
-10. [Risk Assessment](#10-risk-assessment)
-11. [Success Metrics](#11-success-metrics)
+4. [The Core Product: `nvoos-graphify`](#4-the-core-product-nvoos-graphify)
+5. [What Moves to Addons](#5-what-moves-to-addons)
+6. [Phased Execution Plan](#6-phased-execution-plan)
+7. [Backward Compatibility Strategy](#7-backward-compatibility-strategy)
+8. [Risk Assessment](#8-risk-assessment)
+9. [Success Metrics](#9-success-metrics)
 
 ---
 
-## 1. Why Restructure
+## 1. Why This Architecture
 
-### Current Pain Points
+### The key insight: Graphify works without AI
 
-| Problem | Impact |
-|---|---|
-| **Monolithic singleton** (`WP_MCP_AI::instance()`) | Every class is coupled to the kernel. Tests require full WordPress bootstrap. |
-| **Flat tool directory** (195 files in `includes/tools/`) | Impossible to find tools by category. Contributing a single tool requires understanding the monolith. |
-| **Hardcoded provider list** (13 providers in settings + router) | Adding a new provider (e.g., Claude 4, Mistral) requires editing core files. |
-| **748-line loader** (`includes/bootstrap/loader.php`) | Manual `require_once` chain. One misspelled path = fatal error. |
-| **Base + Pro version split** (`WP_MCP_AI_BASE_VERSION` constant) | Flag-based feature gating is fragile. `function_exists( 'wp_mcp_ai_is_pro_addon_available' )` checks scattered everywhere. |
-| **All-or-nothing activation** | Users must load 195+ tools even if they only need content tools. No way to install just the chat UI without tools. |
-| **WordPress.org review friction** | A 15,000-line plugin with 195 tools is a heavy review. Small, focused plugins review faster. |
+The current monolith (`mcp-ai-wpoos.php`) is an AI chat assistant first, with everything else bolted on. But the `addons/graphify/` sub-plugin demonstrates something powerful: **you can deliver immediate, visual value without requiring a single API key.**
 
-### What the Addon System Proves
+| | AI Chat Assistant | Knowledge Graph |
+|---|---|---|
+| **First-run experience** | "Enter your OpenAI API key first" | "Click Build Graph" — works immediately |
+| **Works offline?** | ❌ No | ✅ Yes |
+| **Requires configuration?** | API key + model selection | Zero config needed |
+| **Delivers visual result?** | Text chat | Interactive Cytoscape.js visualization |
+| **Sellable on its own?** | ✅ Yes (competing with Jetpack AI) | ✅ Yes (unique in WP ecosystem) |
+| **Natural upgrade path?** | Buy more tools | Add AI to your knowledge graph |
 
-The existing `addons/` directory already demonstrates the target pattern:
+Graphify is the **better anchor product** because:
+1. It delivers value in 10 seconds (one click → visual graph).
+2. It requires no external service. No API key. No account. No cost.
+3. It's unique — nothing else on wp.org does interactive knowledge graphs.
+4. AI is a natural upgrade: "Now add AI to your graph" is a powerful upsell.
 
-```
-addons/graphify/nvoos-graphify.php        # ✅ Self-contained plugin
-addons/algorave/nvoos-algorave.php        # ✅ Self-contained plugin
-addons/fantasy-football/nvoos-fantasy-football.php  # ✅ Self-contained plugin
-addons/pro/mcp-ai-wpoos-pro.php            # ✅ Self-contained plugin (765+ tools)
-```
-
-Every addon has: its own bootstrap file, `includes/`, `assets/`, `tests/`, and `uninstall.php`. The addons are micro-plugins that happen to be loaded inside the NV oOS ecosystem. The base plugin just hasn't been thinned to match.
-
-### Target Outcome
+### The pivot
 
 ```
-nvoos-core/                              # ~500 lines — the irreducable base
-├── Tool interface + registry
-├── Provider interface + registry
-├── Settings accessor (API keys, model config)
-├── REST API framework
-└── Admin menu framework
-
-addons/
-├── chat/                                # ~2,000 lines — orchestrator + SSE
-├── memory/                              # ~3,000 lines — agent memory + RAG
-├── skills/                              # ~1,500 lines — SKILL.md system
-├── federation/                          # ~2,000 lines — mesh + peers
-├── measurement/                         # ~2,000 lines — budgets + eval
-├── assistants/                          # ~2,000 lines — CPT + metaboxes
-├── admin/                               # ~5,000 lines — admin UI
-│
-├── tools/                               # Task-specific tool plugins
-│   ├── content-tools/                   # ~40 content tools
-│   ├── media-tools/                     # ~30 media tools
-│   ├── developer-tools/                 # ~25 dev tools
-│   ├── seo-tools/                       # ~15 SEO tools
-│   ├── workflow-tools/                  # ~20 workflow tools
-│   └── ... (every toolkit a separate plugin)
-│
-├── providers/                           # Provider client plugins
-│   ├── openai-provider/
-│   ├── gemini-provider/
-│   ├── anthropic-provider/
-│   ├── ollama-provider/
-│   └── ... (one plugin per provider)
-│
-├── integrations/                        # Third-party integrations
-│   ├── elementor-integration/
-│   ├── woocommerce-integration/
-│   ├── jetengine-integration/
-│   └── ... (one plugin per integration)
-│
-├── graphify/                            # ✅ Already exists
-├── algorave/                            # ✅ Already exists
-├── fantasy-football/                    # ✅ Already exists
-├── saas-controller/                     # ✅ Already exists
-├── docs-hub/                            # ✅ Already exists
-└── pro/                                 # ✅ Already exists (new name: nvoos-pro)
+BEFORE (previous plan):                     AFTER (this plan):
+┌──────────────────┐                        ┌──────────────────┐
+│   nvoos (core)   │  AI Chat + 30 tools    │ nvoos-graphify   │  Knowledge Graph
+│   ───────────    │  + 3 providers         │   (core)         │  + Cytoscape.js
+│                  │                        │   ───────────    │  + 14 tools
+│   addons/        │  Extended tools        │                  │
+│   ├── tools/     │  More providers        │   addons/        │  AI Chat (optional)
+│   ├── features/  │  Memory, skills...     │   ├── ai-chat/   │  + 30 tools (optional)
+│   └── graphify/  │  Already separate      │   ├── providers/ │  OpenAI, Gemini...
+│                  │                        │   ├── features/  │  Memory, skills...
+│                  │                        │   └── tools/     │  165 extended tools
+└──────────────────┘                        └──────────────────┘
+    Core = AI Chat                              Core = Knowledge Graph
+    Graphify = addon                            AI Chat = addon
 ```
 
 ---
 
 ## 2. Current State Analysis
 
-### Bootstrap Flow (as of v1.1.26)
+### What the monolith looks like today
 
 ```
-mcp-ai-wpoos.php
-├── Header + Plugin Name
-├── ABSPATH guard
-├── wp_mcp_ai_core_loaded() double-load guard
-├── WP_MCP_AI_FILE constant
-├── PHP 7.4+ version check
-├── NOOP_Translations pre-load (WP 6.7 fix)
-├── require includes/bootstrap/constants.php        # ~60 lines
-├── require includes/bootstrap/autoload.php         # ~150 lines
-├── require includes/bootstrap/helpers.php          # ~700 lines (50+ helper functions)
-├── require includes/bootstrap/cron.php             # ~180 lines
-├── require includes/bootstrap/hooks.php            # ~430 lines
-├── require includes/bootstrap/loader.php           # ~748 lines (manual require_once chain)
-├── require includes/class-wp-mcp-ai-plugin.php     # ~400 lines (singleton kernel)
-├── require includes/bootstrap/oos-bridge.php       # ~280 lines (lib/core wiring)
-├── require includes/bootstrap/activation.php       # ~620 lines
-├── register_activation_hook(...)
-├── register_deactivation_hook(...)
-├── register_uninstall_hook(...)
-└── add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 )
+mcp-ai-wpoos.php                            # ~140 lines — main plugin bootstrap
+├── includes/bootstrap/loader.php           # ~748 lines — manual require_once chain
+├── includes/class-wp-mcp-ai-plugin.php     # ~400 lines — singleton kernel
+├── includes/tools/                         # ~195 tools (~20,000 lines)
+├── includes/services/                      # Chat, memory, skills, federation... (~25,000 lines)
+├── includes/admin/                         # Admin UI (~15,000 lines, 75+ classes)
+├── includes/rest/                          # REST API (~8,000 lines)
+├── includes/integrations/                  # Elementor, WooCommerce, JetEngine (~10,000 lines)
+├── includes/infrastructure/providers/      # 13 provider clients (~3,000 lines)
+├── includes/assistants/                    # Assistant CPT
+├── includes/blueprints/                    # Blueprint installer
+├── ... (30+ more directories)
+│
+├── addons/graphify/                        # ★ The knowledge graph (~8,000 lines)
+├── addons/pro/                             # Pro tools (~50,000+ lines)
+├── addons/algorave/                        # Live music coding
+├── addons/fantasy-football/                # Fantasy football
+└── ... (14 total addons)
 ```
 
-### What the 748-line loader loads
+### What `addons/graphify/` currently contains (what gets absorbed)
 
 ```
-includes/bootstrap/loader.php loads (in order):
-├── admin/class-wp-mcp-ai-admin-settings-base.php
-├── admin/class-wp-mcp-ai-admin-settings.php        # 6000+ lines (massive settings class)
-├── admin/class-wp-mcp-ai-admin-scripts.php
-├── class-wp-mcp-ai-default-assistants.php
-├── admin/class-wp-mcp-ai-admin-approvals.php
-├── class-wp-mcp-ai-request-context.php
-├── interfaces/                                       # 15 interface files
-├── traits/                                           # 7 trait files
-├── class-wp-mcp-ai-rest.php                          # Core REST (chat + SSE)
-├── class-wp-mcp-ai-tool-registry.php                 # Tool registry singleton
-├── tools/tools-init.php                              # Loads all 195 tools
-├── admin/class-wp-mcp-ai-admin-ajax-handlers.php     # 4000+ lines
-├── repositories/                                     # Repository classes
-├── services/                                         # 70+ service classes
-├── integrations/                                     # 22 integration classes
-├── assistants/                                       # CPT + metaboxes
-├── blocks/                                           # Gutenberg blocks
-├── elementor/                                        # Elementor widgets
-├── blueprints/                                       # Blueprint installer
-├── ... (40+ more files)
+addons/graphify/
+├── nvoos-graphify.php                      # Bootstrap (~50 lines)
+├── includes/
+│   ├── class-graphify-db.php               # 4 custom tables
+│   ├── class-graphify-builder.php          # Node/edge pipeline
+│   ├── class-graphify-analyzer.php         # Community detection
+│   ├── class-graphify-exporter.php         # 5 export formats
+│   ├── class-graphify-rest.php             # REST API
+│   ├── class-graphify-tools.php            # 14 built-in tools
+│   ├── class-graphify-remote-registry.php  # Remote source engine
+│   ├── class-graphify-remote-drivers/      # 20+ remote source drivers
+│   ├── class-graphify-template.php         # Shortcode
+│   ├── class-graphify-admin-explorer.php   # Cytoscape.js admin page
+│   └── ... (40+ files)
+├── assets/
+│   ├── js/cytoscape/                       # cytoscape.js + plugins
+│   ├── js/admin.js                         # Graph explorer JS
+│   └── css/admin.css
+└── tests/
 ```
 
-### Public API Functions (what consumers depend on)
+This code is already ~8,000 lines of working, tested production code. It needs no rewrite — just namespace migration, hook prefix updates, and integration into the proper PSR-4 directory structure.
 
-```
-wp_mcp_ai_bootstrap()                    # Boot entry point
-wp_mcp_ai_maybe_load_pro_addon()        # Pro auto-loader
-wp_mcp_ai_is_base_version()             # Version detection
-wp_mcp_ai_is_jetengine_available()      # Integration checks
-wp_mcp_ai_get_required_chat_capability() # Capability lookup
-wp_mcp_ai_run_process()                 # Shell execution
-wp_mcp_ai_run_shell()                   # Shell execution
-wp_mcp_ai_container()                   # DI container access
-wp_mcp_ai_oos_orchestrator()            # OOS engine access
-wp_mcp_ai_oos_engine_enabled()          # Feature flag check
-wp_mcp_ai_get_agent_roles()             # Agent system
-wp_mcp_ai_core_loaded()                 # Double-load guard
-wp_mcp_ai_iterate_network_sites()       # Multisite helper
-wp_mcp_ai_get_embedding()              # AI embeddings (in includes/class-wp-mcp-ai-enhanced-openai-client.php)
-wp_mcp_ai_chat_completion()            # AI chat (in includes/class-wp-mcp-ai-enhanced-openai-client.php)
-```
+### Dependency analysis: what graphify actually needs from the base
 
-### Addon Integration Points (what addons hook into)
+The existing `addons/graphify/` depends on the base plugin for only 3 things:
 
-```php
-// Actions
-'wp_mcp_ai_bootstrapped'           // Fires after base plugin boots
-'wp_mcp_ai_register_tools'         // Tool registration (used by every addon)
-'wp_mcp_ai_load_pro_tools'         // Pro tool registration
-'wp_mcp_ai_memory_stored'          // Agent memory (used by graphify memory bridge)
-'wp_mcp_ai_register_embedded_scripts' // Embedded LLM scripts
+| Dependency | What graphify uses it for | Replacement |
+|---|---|---|
+| `WP_MCP_AI_Tool_Interface` | Tool contract (graphify's 14 tools implement this) | Move the interface into `nvoos-graphify` as `NvoosGraphify\Contracts\Tool` |
+| `wp_mcp_ai_get_embedding()` | AI embeddings for memory bridge | AI provider addons register their own embedding function |
+| `wp_mcp_ai_chat_completion()` | AI chat completion | AI chat addon handles this |
 
-// Filters
-'wp_mcp_ai_allowed_providers'      // Provider allowlist
-'wp_mcp_ai_admin_settings_sanitize' // Settings sanitization
-'wp_mcp_ai_show_usage_costs'       // UI display toggles
-'wp_mcp_ai_show_capability_flags'  // UI display toggles
-```
+**That's it.** Graphify's core functionality (building graphs, Cytoscape.js visualization, content gap analysis, 5 export formats, 7 remote source drivers, Schema.org injection) uses **zero** base plugin dependencies. The AI functions are only used by the optional memory bridge, which can be adapted to use provider addons.
 
 ---
 
 ## 3. Target Architecture
 
+> **Key principle**: `nvoos-graphify` is the product. Everything else extends it. The graph engine works with zero API keys and delivers immediate visual value.
+
 ```mermaid
 graph TD
-    subgraph "nvoos-core (~500 lines)"
-        CORE_BOOT["nvoos-core.php<br/>Bootstrap + autoload + constants"]
-        TOOLS_CONTRACT["Nvoos\\Contracts\\Tool<br/>interface, 7 methods"]
-        PROVIDER_CONTRACT["Nvoos\\Contracts\\ProviderClient<br/>interface, 4 methods"]
-        TOOL_REGISTRY["Nvoos\\ToolRegistry<br/>register(), get(), all()"]
-        PROVIDER_REGISTRY["Nvoos\\ProviderRegistry<br/>register(), get(), all()"]
-        SETTINGS["Nvoos\\Settings<br/>API keys + model config"]
-        REST_FRAMEWORK["Nvoos\\Rest\\Server<br/>route registration + auth"]
-        ADMIN_FRAMEWORK["Nvoos\\Admin\\Menu<br/>menu + settings page helpers"]
+    subgraph "nvoos-graphify (Core Product ~4,500 lines)"
+        BOOT["nvoos-graphify.php<br/>Bootstrap"]
+        GRAPH_ENGINE["Graph Engine<br/>Db, Builder, Analyzer"]
+        EXPLORER["Graph Explorer<br/>Cytoscape.js UI"]
+        TOOLS["14 built-in tools"]
+        REST["REST API"]
+        FRONTEND["Frontend<br/>Shortcodes, Blocks, Schema.org"]
+        REMOTE["Remote Sources<br/>7 free drivers"]
+        MEMORY["Memory Bridge"]
+        REGISTRIES["Contracts + Registries<br/>Tool, RemoteSource"]
+        SETTINGS["Settings"]
     end
 
-    subgraph "Provider Plugins (1 per provider)"
-        OPENAI["nvoos-openai"]
-        GEMINI["nvoos-gemini"]
-        ANTHROPIC["nvoos-anthropic"]
-        OLLAMA["nvoos-ollama"]
+    subgraph "Addons — AI (optional, needs API key)"
+        AI_CHAT["nvoos-graphify-ai-chat<br/>AI Chat Assistant<br/>(bundles OpenAI + Gemini + Ollama)"]
+        AI_TOOLS["nvoos-graphify-ai-tools<br/>Content gen, images"]
     end
 
-    subgraph "Feature Plugins (1 per feature)"
-        CHAT["nvoos-chat<br/>Orchestrator + SSE"]
-        MEMORY["nvoos-memory<br/>Agent memory + RAG"]
-        SKILLS["nvoos-skills<br/>SKILL.md system"]
-        FEDERATION["nvoos-federation<br/>Mesh + peers"]
-        ADMIN["nvoos-admin<br/>Admin UI"]
-        ASSISTANTS["nvoos-assistants<br/>CPT + metaboxes"]
-        MEASUREMENT["nvoos-measurement<br/>Budgets + eval"]
+    subgraph "Addons — Exotic Providers (optional)"
+        ANTHROPIC["nvoos-graphify-anthropic + 9 more"]
     end
 
-    subgraph "Tool Plugins (1 per toolkit)"
-        CONTENT["nvoos-content-tools<br/>~40 tools"]
-        MEDIA["nvoos-media-tools<br/>~30 tools"]
-        DEV["nvoos-dev-tools<br/>~25 tools"]
-        SEO["nvoos-seo-tools<br/>~15 tools"]
+    subgraph "Addons — Features (optional)"
+        MEMORY_FEAT["nvoos-graphify-memory"]
+        SKILLS["nvoos-graphify-skills"]
+        FEDERATION["nvoos-graphify-federation"]
+        MEASUREMENT["nvoos-graphify-measurement"]
     end
 
-    subgraph "Integration Plugins"
-        ELEMENTOR["nvoos-elementor"]
-        WOO["nvoos-woocommerce"]
-        JET["nvoos-jetengine"]
+    subgraph "Addons — Tools (optional)"
+        CONTENT_TOOLS["nvoos-graphify-content-tools<br/>~40 tools"]
+        MEDIA_TOOLS["nvoos-graphify-media-tools<br/>~30 tools"]
+        DEV_TOOLS["nvoos-graphify-dev-tools<br/>~25 tools"]
     end
 
     subgraph "Existing Addons"
-        GRAPHIFY["graphify<br/>Already exists"]
-        ALGORAVE["algorave<br/>Already exists"]
-        PRO["nvoos-pro<br/>765+ tools"]
+        PRO["nvoos-graphify-pro<br/>765+ tools"]
+        ALGORAVE["algorave"]
+        FANTASY["fantasy-football"]
     end
 
-    CORE_BOOT --> TOOLS_CONTRACT
-    CORE_BOOT --> PROVIDER_CONTRACT
-    CORE_BOOT --> TOOL_REGISTRY
-    CORE_BOOT --> PROVIDER_REGISTRY
-    CORE_BOOT --> SETTINGS
-    CORE_BOOT --> REST_FRAMEWORK
-    CORE_BOOT --> ADMIN_FRAMEWORK
+    AI_CHAT -.->|"nvoos_graphify/register_tools"| REGISTRIES
+    AI_TOOLS -.->|"nvoos_graphify/register_tools"| REGISTRIES
+    CONTENT_TOOLS -.->|"nvoos_graphify/register_tools"| REGISTRIES
+    MEDIA_TOOLS -.->|"nvoos_graphify/register_tools"| REGISTRIES
+```
 
-    OPENAI -.->|"nvoos/register_providers"| PROVIDER_REGISTRY
-    GEMINI -.->|"nvoos/register_providers"| PROVIDER_REGISTRY
-    ANTHROPIC -.->|"nvoos/register_providers"| PROVIDER_REGISTRY
-    OLLAMA -.->|"nvoos/register_providers"| PROVIDER_REGISTRY
+### Addon dependency chain
 
-    CONTENT -.->|"nvoos/register_tools"| TOOL_REGISTRY
-    MEDIA -.->|"nvoos/register_tools"| TOOL_REGISTRY
-    DEV -.->|"nvoos/register_tools"| TOOL_REGISTRY
-    SEO -.->|"nvoos/register_tools"| TOOL_REGISTRY
-    GRAPHIFY -.->|"nvoos/register_tools"| TOOL_REGISTRY
-    ALGORAVE -.->|"nvoos/register_tools"| TOOL_REGISTRY
-    PRO -.->|"nvoos/register_tools"| TOOL_REGISTRY
+```
+nvoos-graphify (core — works alone, zero API keys)
+│
+├── nvoos-graphify-ai-chat ──── requires: nvoos-graphify
+│   │   (bundles OpenAI + Gemini + Ollama providers internally)
+│   │   (user enters API key → immediately chats with AI)
+│   │
+├── nvoos-graphify-ai-tools ─── requires: nvoos-graphify + nvoos-graphify-ai-chat
+│   │   (AI content gen, image creation, analysis — uses chat's provider)
+│   │
+├── nvoos-graphify-embeddings ─ requires: nvoos-graphify + nvoos-graphify-ai-chat
+│   │
+├── nvoos-graphify-content-tools ── requires: nvoos-graphify
+├── nvoos-graphify-media-tools ──── requires: nvoos-graphify
+├── nvoos-graphify-memory ────────── requires: nvoos-graphify + embeddings
+├── nvoos-graphify-pro ──────────── requires: nvoos-graphify
+│
+├── nvoos-graphify-anthropic ────── requires: nvoos-graphify
+│   │   (exotic providers — one plugin each, for users who want Claude/etc.)
+├── nvoos-graphify-deepseek ─────── requires: nvoos-graphify
+├── nvoos-graphify-openrouter ───── requires: nvoos-graphify
+├── ... (10 exotic provider addons total)
+│
+└── meta-plugin: mcp-ai-wpoos.php ── requires: nvoos-graphify + bundles all addons
 ```
 
 ---
 
-## 4. The Thin Core: `nvoos-core`
+## 4. The Core Product: `nvoos-graphify`
 
-### Specification
+### What it IS
 
-The core is **irreducably minimal**. If a feature CAN exist as a standalone addon, it DOES. The core only provides:
+A complete, marketable WordPress plugin that delivers immediate value. ~4,500 lines of PHP + bundled Cytoscape.js. See the [NV oOS Graphify Implementation Specification](./nvoos-graphify-implementation-spec.md) for the full technical spec.
 
-| # | Component | Interface | Why it's in core |
-|---|---|---|---|
-| 1 | **Tool contract** | `Nvoos\Contracts\Tool` (7 methods) | Every tool in every addon implements this. It's the universal contract. |
-| 2 | **Provider client contract** | `Nvoos\Contracts\ProviderClient` (4 methods) | Every AI provider implements this. Enables swappable AI backends. |
-| 3 | **Tool registry** | `Nvoos\ToolRegistry` | Collects tools from all addons. Addons register via `nvoos/register_tools`. |
-| 4 | **Provider registry** | `Nvoos\ProviderRegistry` | Collects provider clients from all addons. Providers register via `nvoos/register_providers`. |
-| 5 | **Settings** | `Nvoos\Settings` | Centralized API key storage. All addons read from here. |
-| 6 | **Schema** | `Nvoos\Schema` | Every option key, hook name, nonce action, capability slug. |
-| 7 | **REST framework** | `Nvoos\Rest\Server` | Namespace registration, auth hooks, error formatting. |
-| 8 | **Admin framework** | `Nvoos\Admin\Menu` | Menu registration, settings page base class. |
+### What it provides (zero config, zero API keys)
 
-### What moves OUT of core into addons
-
-| Current Location | What it is | Moves to |
+| # | Feature | User value |
 |---|---|---|
-| `class-wp-mcp-ai-rest.php` | Chat orchestrator + SSE streaming | `addons/chat/` |
-| `services/class-wp-mcp-ai-memory-manager.php` + related | Agent memory system | `addons/memory/` |
-| `class-wp-mcp-ai-skill-registry.php` + `class-wp-mcp-ai-skill-parser.php` | SKILL.md system | `addons/skills/` |
-| `class-wp-mcp-ai-federation.php` + mesh/* | Federation/Mesh | `addons/federation/` |
-| `measurement/*` | Budgets, eval, verifiers | `addons/measurement/` |
-| `assistants/*` | Assistant CPT + metaboxes | `addons/assistants/` |
-| `admin/*` (most of it) | Admin UI (75+ classes) | `addons/admin/` |
-| `tools/*` (all 195) | Tool implementations | `addons/tools/` (split by toolkit) |
-| `integrations/*` | Third-party integrations | `addons/integrations/` (one per integration) |
-| `includes/infrastructure/providers/*` | Provider client classes | `addons/providers/` (one per provider) |
-| `elementor/*` | Elementor widgets | `addons/integrations/elementor/` |
-| `blocks/*` | Gutenberg blocks | `addons/blocks/` |
-| `bundled-skills/*` | Pre-installed SKILL.md files | `addons/skills/` |
-| `lib/core/*` | OOS extraction engine | `addons/oos-engine/` |
-| `lib/wordpress-adapter/*` | WordPress adapter | `addons/oos-engine/` |
-| `blueprints/*` | Blueprint installer | `addons/blueprints/` |
-| `slash-commands/*` | Slash command system | `addons/slash-commands/` |
-| `a2a/*` | Agent-to-Agent protocol | `addons/a2a/` |
-| `acp/*` | Agent Client Protocol | `addons/acp/` |
-| `agents/*` | Agent role system | `addons/agents/` |
-| `harness/*` | Eval harness | `addons/harness/` |
-| `markup/*` | Markup subsystem | `addons/markup/` |
-| `paper-store/*` | Paper store | `addons/paper-store/` |
-| `crawler/*` | Crawl4AI integration | `addons/crawler/` |
-| `professions/*` | Profession system | `addons/professions/` |
-| `teams/*` | Team system | `addons/teams/` |
-| `knowledge-base/*` | Profession knowledge base | `addons/professions/` |
+| 1 | **One-click graph build** | Converts existing content into nodes and edges in ~10-30 seconds |
+| 2 | **Cytoscape.js visualization** | Interactive, zoomable, clickable graph explorer |
+| 3 | **14 built-in tools** | Query nodes, find neighbors, shortest path, community detection, content gaps |
+| 4 | **5 export formats** | JSON, GraphML, CSV, Neo4j, Obsidian |
+| 5 | **Content gap reports** | Orphan posts, underlinked pages, missed topic opportunities |
+| 6 | **7 remote source drivers** | Wikidata, RSS, SPARQL, WooCommerce, CSV, webhooks, REST APIs |
+| 7 | **Schema.org injection** | Automatic JSON-LD for SEO |
+| 8 | **Related content widget** | "You might also like" based on graph proximity |
+| 9 | **Agent memory bridge** | Connect AI agent memory to the knowledge graph (when AI is added) |
+| 10 | **REST API** | Programmatic access for headless, SPA, or external consumers |
+| 11 | **Tool contract + registry** | Extension point for all addons |
+| 12 | **Admin settings** | Enable/disable features, configure post types, manage remote sources |
 
-### Core File Structure
+### What it does NOT have (and shouldn't)
 
-```
-nvoos-core/
-├── nvoos-core.php                       # Bootstrap (~100 lines)
-├── uninstall.php                        # Standalone cleanup
-├── composer.json                        # PSR-4 autoload
-├── readme.txt
-│
-├── src/                                 # PSR-4 root: Nvoos\
-│   ├── Plugin.php                       # Composition root (~50 lines)
-│   ├── Schema.php                       # Centralized constants (~60 lines)
-│   ├── Settings.php                     # Options accessor (~50 lines)
-│   ├── ToolRegistry.php                 # Tool container (~30 lines)
-│   ├── ProviderRegistry.php             # Provider container (~30 lines)
-│   │
-│   ├── Contracts/                       # Public interfaces
-│   │   ├── Tool.php                     # Tool contract (~30 lines)
-│   │   └── ProviderClient.php           # Provider contract (~20 lines)
-│   │
-│   ├── Rest/                            # REST framework
-│   │   └── Server.php                   # Route registration + auth (~80 lines)
-│   │
-│   └── Admin/                           # Admin framework
-│       ├── Menu.php                     # Menu registration (~40 lines)
-│       └── SettingsPage.php             # Settings page base class (~60 lines)
-│
-├── assets/
-│   └── css/
-│       └── admin.css
-│
-├── languages/
-│   └── nvoos-core.pot
-│
-└── tests/
-    └── Unit/
-        ├── ToolRegistryTest.php
-        ├── ProviderRegistryTest.php
-        └── SettingsTest.php
-```
-
-### Core Contracts
-
-#### `Nvoos\Contracts\Tool`
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Nvoos\Contracts;
-
-/**
- * Contract for all NV oOS ecosystem tools.
- *
- * Every tool in every NV oOS addon plugin implements this interface.
- * Replaces WP_MCP_AI_Tool_Interface + WP_MCP_AI_Tool_Capability_Flags_Interface.
- *
- * @since 1.0.0
- */
-interface Tool
-{
-    public function getSlug(): string;
-    public function getName(): string;
-    public function getDescription(): string;
-    public function getParametersSchema(): array;
-    public function getRequiredCapability(): string;
-    public function getCapabilityFlags(): array;
-    public function execute( array $arguments = array(), array $context = array() ): array;
-}
-```
-
-#### `Nvoos\Contracts\ProviderClient`
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Nvoos\Contracts;
-
-/**
- * Contract for AI provider clients.
- *
- * Every AI provider (OpenAI, Gemini, Anthropic, Ollama, etc.)
- * implements this interface and registers via nvoos/register_providers.
- *
- * @since 1.0.0
- */
-interface ProviderClient
-{
-    /**
-     * Send a chat completion request.
-     *
-     * @param array  $messages Array of {role, content} message objects.
-     * @param array  $options  Model, temperature, max_tokens, etc.
-     * @param array  $tools    Optional tool definitions for function calling.
-     * @param string $context  Execution context: 'chat', 'tool', 'agent', etc.
-     *
-     * @return array{
-     *     content: string,
-     *     tool_calls?: array,
-     *     finish_reason: string,
-     *     usage: array,
-     *     model: string,
-     * }
-     *
-     * @throws \RuntimeException If the API request fails.
-     */
-    public function chat(
-        array $messages,
-        array $options = array(),
-        array $tools = array(),
-        string $context = 'chat'
-    ): array;
-
-    /**
-     * Generate text embeddings.
-     *
-     * @param string $text  The text to embed.
-     * @param string $model Optional model override.
-     * @return float[] The embedding vector.
-     */
-    public function embed( string $text, string $model = '' ): array;
-
-    /**
-     * Get the provider's unique slug.
-     *
-     * @return string e.g. 'openai', 'gemini', 'ollama'
-     */
-    public function getSlug(): string;
-
-    /**
-     * Whether the provider is configured and reachable.
-     *
-     * @return bool
-     */
-    public function isAvailable(): bool;
-}
-```
-
-#### `Nvoos\ProviderRegistry`
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Nvoos;
-
-use Nvoos\Contracts\ProviderClient;
-
-/**
- * Collects and provides access to registered AI providers.
- *
- * Provider plugins register via the nvoos/register_providers action.
- *
- * @since 1.0.0
- */
-final class ProviderRegistry
-{
-    /** @var array<string, ProviderClient> */
-    private array $providers = array();
-
-    public function register( ProviderClient $provider ): void
-    {
-        $this->providers[ $provider->getSlug() ] = $provider;
-    }
-
-    /** @return ProviderClient|null */
-    public function get( string $slug ): ?ProviderClient
-    {
-        return $this->providers[ $slug ] ?? null;
-    }
-
-    /** @return array<string, ProviderClient> */
-    public function all(): array
-    {
-        return $this->providers;
-    }
-
-    /**
-     * Get the default provider based on settings.
-     */
-    public function getDefault(): ?ProviderClient
-    {
-        $slug = Settings::get( 'default_provider', 'openai' );
-        return $this->get( $slug );
-    }
-
-    public function has( string $slug ): bool
-    {
-        return isset( $this->providers[ $slug ] );
-    }
-
-    public function count(): int
-    {
-        return count( $this->providers );
-    }
-}
-```
-
-### Core Bootstrap
-
-```php
-<?php
-// nvoos-core.php
-/**
- * Plugin Name:  NV oOS Core
- * Description:  The minimal shared foundation for the NV oOS ecosystem.
- *               Provides tool registration, AI provider management,
- *               and centralized settings. Required by all NV oOS addons.
- * Version:      1.0.0
- * Requires at least: 6.5
- * Requires PHP: 8.1
- * License:      GPL-3.0-or-later
- */
-
-declare(strict_types=1);
-if ( ! defined( 'ABSPATH' ) ) { exit; }
-
-// ─── Constants ─────────────────────────────────────────────────
-define( 'NVOOS_CORE_VERSION', '1.0.0' );
-define( 'NVOOS_CORE_FILE', __FILE__ );
-define( 'NVOOS_CORE_PATH', plugin_dir_path( __FILE__ ) );
-define( 'NVOOS_CORE_URL', plugin_dir_url( __FILE__ ) );
-
-// ─── Autoloader ────────────────────────────────────────────────
-$autoload = NVOOS_CORE_PATH . 'vendor/autoload.php';
-if ( file_exists( $autoload ) ) { require_once $autoload; }
-
-spl_autoload_register( static function ( string $class ): void {
-    $prefix = 'Nvoos\\';
-    if ( 0 !== strpos( $class, $prefix ) ) { return; }
-    $relative = substr( $class, strlen( $prefix ) );
-    $file     = NVOOS_CORE_PATH . 'src/' . str_replace( '\\', '/', $relative ) . '.php';
-    if ( file_exists( $file ) ) { require_once $file; }
-} );
-
-// ─── Activation ────────────────────────────────────────────────
-register_activation_hook( __FILE__, static function (): void {
-    if ( PHP_VERSION_ID < 80100 ) {
-        deactivate_plugins( plugin_basename( __FILE__ ) );
-        wp_die( 'NV oOS Core requires PHP 8.1 or higher.' );
-    }
-    add_option( 'nvoos_core_settings', Nvoos\Schema::defaultSettings(), '', false );
-} );
-
-// ─── Boot ──────────────────────────────────────────────────────
-add_action( 'plugins_loaded', static function (): void {
-    $plugin = new Nvoos\Plugin();
-    $plugin->register();
-}, 5 );  // Priority 5 — earlier than any addon so registries are ready
-
-// ─── Public API ────────────────────────────────────────────────
-function nvoos_get_tool_registry(): Nvoos\ToolRegistry {
-    return Nvoos\Plugin::instance()->getToolRegistry();
-}
-
-function nvoos_get_provider_registry(): Nvoos\ProviderRegistry {
-    return Nvoos\Plugin::instance()->getProviderRegistry();
-}
-
-function nvoos_get_ai_client( ?string $slug = null ): ?Nvoos\Contracts\ProviderClient {
-    $registry = nvoos_get_provider_registry();
-    return $slug ? $registry->get( $slug ) : $registry->getDefault();
-}
-
-function nvoos_get_setting( string $key, mixed $default = null ): mixed {
-    return Nvoos\Settings::get( $key, $default );
-}
-
-function nvoos_get_tool( string $slug ): ?Nvoos\Contracts\Tool {
-    return nvoos_get_tool_registry()->get( $slug );
-}
-```
+- ❌ AI chat assistant → addon: `nvoos-graphify-ai-chat`
+- ❌ AI content generation → addon: `nvoos-graphify-ai-tools`
+- ❌ Vector embeddings → addon: `nvoos-graphify-embeddings`
+- ❌ API keys → addon: AI chat addon handles its own providers internally
+- ❌ Provider clients → addon: 3 common providers bundled in AI chat addon; 10 exotic providers as separate addons
+- ❌ Extended tools (content CRUD, media ops, dev tools) → addon toolkits
+- ❌ Agent memory, skills, federation, measurement → addon features
+- ❌ Elementor, WooCommerce, JetEngine integrations → addon integrations
+- ❌ Blueprints, slash commands, agent roles → addon features
+- ❌ OOS engine, profiler, paper store → addon features
 
 ---
 
-## 5. Feature-to-Addon Mapping
+## 5. What Moves to Addons
+
+Everything from the current monolith that is NOT the knowledge graph becomes a standalone addon plugin.
+
+### Decision rule
+
+**"Does a user need this to build and explore a knowledge graph?"** If no → addon.
 
 ### Complete Extraction Catalog
 
-| # | Addon Slug | Current Location | Description | Dependencies | Est. Lines |
+| # | Addon Slug | Current Location | Description | `Requires Plugins` | Est. Lines |
 |---|---|---|---|---|---|
-| **CORE** | | | | | |
-| 1 | `nvoos-core` | New | Tool + provider contracts, registries, settings, REST/Admin framework | None | ~500 |
-| **CHAT** | | | | | |
-| 2 | `nvoos-chat` | `includes/class-wp-mcp-ai-rest.php` + `services/chat*.php` | Chat orchestrator, SSE streaming, REST chat endpoints | `nvoos-core` | ~2,000 |
-| **MEMORY** | | | | | |
-| 3 | `nvoos-memory` | `services/class-wp-mcp-ai-memory-*.php` + `class-wp-mcp-ai-agent-memory-*.php` | Agent memory (store, recall, mine, RAG, decay, provenance) | `nvoos-core` | ~3,000 |
-| **SKILLS** | | | | | |
-| 4 | `nvoos-skills` | `class-wp-mcp-ai-skill-*.php` + `bundled-skills/` | SKILL.md parsing, progressive disclosure, skill catalogue | `nvoos-core` | ~1,500 |
-| **ADMIN** | | | | | |
-| 5 | `nvoos-admin` | `admin/*` (75+ classes) | Settings UI, dashboards, test pages, tool manager | `nvoos-core` | ~5,000 |
-| **ASSISTANTS** | | | | | |
-| 6 | `nvoos-assistants` | `assistants/*` + `class-assistant-cpt.php` | Assistant CPT, metaboxes, default assistants | `nvoos-core`, `nvoos-admin` | ~2,000 |
-| **PROVIDERS** | | | | | |
-| 7 | `nvoos-openai` | `class-wp-mcp-ai-openai-client.php` + `class-wp-mcp-ai-enhanced-openai-client.php` | OpenAI chat + embeddings + image + audio | `nvoos-core` | ~800 |
-| 8 | `nvoos-gemini` | `class-wp-mcp-ai-gemini-client.php` + `class-wp-mcp-ai-gemini-live-client.php` | Gemini chat + live + image | `nvoos-core` | ~600 |
-| 9 | `nvoos-anthropic` | `class-wp-mcp-ai-anthropic-client.php` | Anthropic/Claude chat | `nvoos-core` | ~400 |
-| 10 | `nvoos-ollama` | `class-wp-mcp-ai-ollama-client.php` | Ollama local LLM | `nvoos-core` | ~200 |
-| 11 | `nvoos-deepseek` | `class-wp-mcp-ai-deepseek-client.php` | DeepSeek chat | `nvoos-core` | ~200 |
-| 12 | `nvoos-openrouter` | `class-wp-mcp-ai-openrouter-client.php` | OpenRouter proxy | `nvoos-core` | ~200 |
-| 13 | `nvoos-huggingface` | `class-wp-mcp-ai-huggingface-client.php` + `*-datasets-client.php` | HuggingFace inference + datasets | `nvoos-core` | ~500 |
-| 14 | `nvoos-cloudflare` | `class-wp-mcp-ai-cloudflare-client.php` | Cloudflare AI Gateway | `nvoos-core` | ~200 |
-| 15 | `nvoos-lmstudio` | `class-wp-mcp-ai-lm-studio-client.php` | LM Studio local LLM | `nvoos-core` | ~150 |
-| 16 | `nvoos-nvidia` | `class-wp-mcp-ai-nvidia-client.php` | NVIDIA NIM | `nvoos-core` | ~200 |
-| 17 | `nvoos-digitalocean` | `class-wp-mcp-ai-digitalocean-client.php` | DigitalOcean serverless inference | `nvoos-core` | ~150 |
-| 18 | `nvoos-kimi` | `class-wp-mcp-ai-kimi-client.php` | Kimi (Moonshot AI) | `nvoos-core` | ~150 |
-| 19 | `nvoos-baseten` | `class-wp-mcp-ai-baseten-client.php` | Baseten inference | `nvoos-core` | ~150 |
-| **TOOLKITS** | | | | | |
-| 20 | `nvoos-content-tools` | ~40 tools from `tools/class-wp-mcp-ai-tool-create-post.php` etc. | Content CRUD, search, content operations | `nvoos-core` | ~2,000 |
-| 21 | `nvoos-media-tools` | ~30 tools from `tools/class-wp-mcp-ai-tool-generate-*.php` etc. | Image/video/audio generation, media library | `nvoos-core`, `nvoos-openai` | ~2,500 |
-| 22 | `nvoos-dev-tools` | ~25 tools from `tools/class-wp-mcp-ai-tool-web-search.php` etc. | Web search, shell exec, code, GitHub, WP-CLI | `nvoos-core` | ~1,500 |
-| 23 | `nvoos-seo-tools` | `tools/class-wp-mcp-ai-tool-get-rankmath-seo.php` etc. | SEO analysis, rank math, site kit | `nvoos-core` | ~800 |
-| 24 | `nvoos-workflow-tools` | ~20 tools from `tools/class-wp-mcp-ai-tool-execute-workflow.php` etc. | Workflow execution, cron management, scheduling | `nvoos-core` | ~1,500 |
-| **FEATURES** | | | | | |
-| 25 | `nvoos-federation` | `class-wp-mcp-ai-federation*.php` + `class-wp-mcp-ai-mesh-*.php` | Mesh peer federation, directory, routing, sync | `nvoos-core` | ~2,000 |
-| 26 | `nvoos-measurement` | `measurement/*` + `class-wp-mcp-ai-*-metrics*.php` | Budgets, eval suites, verifiers, OTEL export | `nvoos-core` | ~2,000 |
-| 27 | `nvoos-blueprints` | `blueprints/*` | Unified blueprint installer, import tools | `nvoos-core` | ~1,000 |
-| 28 | `nvoos-slash-commands` | `slash-commands/*` | /help, /ship, /compact, /context, /status, etc. | `nvoos-core` | ~1,500 |
-| 29 | `nvoos-a2a` | `a2a/*` | Agent-to-Agent protocol, agent cards, tasks | `nvoos-core` | ~1,000 |
-| 30 | `nvoos-acp` | `acp/*` | Agent Client Protocol, JSON-RPC, session bridge | `nvoos-core` | ~800 |
-| 31 | `nvoos-agents` | `agents/*` | Agent role system, approval gate, audit trail | `nvoos-core` | ~1,000 |
-| 32 | `nvoos-harness` | `harness/*` | Eval harness, self-refine loop, tool router | `nvoos-core` | ~1,200 |
-| 33 | `nvoos-blocks` | `blocks/*` | Gutenberg blocks (chat, assistant builder, etc.) | `nvoos-core` | ~500 |
-| 34 | `nvoos-oos-engine` | `lib/core/*` + `lib/wordpress-adapter/*` | OOS cross-platform extraction engine | `nvoos-core` | ~8,000 |
+| **PROVIDERS** (exotic — one per provider) | | | | | |
+| 1 | `nvoos-graphify-anthropic` | `class-wp-mcp-ai-anthropic-client.php` | Claude chat | `nvoos-graphify` | ~400 |
+| 2 | `nvoos-graphify-deepseek` | `class-wp-mcp-ai-deepseek-client.php` | DeepSeek chat | `nvoos-graphify` | ~200 |
+| 3 | `nvoos-graphify-openrouter` | `class-wp-mcp-ai-openrouter-client.php` | OpenRouter proxy | `nvoos-graphify` | ~200 |
+| 4 | `nvoos-graphify-huggingface` | `class-wp-mcp-ai-huggingface-client.php` + datasets | HuggingFace inference | `nvoos-graphify` | ~500 |
+| 5 | `nvoos-graphify-cloudflare` | `class-wp-mcp-ai-cloudflare-client.php` | Cloudflare AI Gateway | `nvoos-graphify` | ~200 |
+| 6 | `nvoos-graphify-lmstudio` | `class-wp-mcp-ai-lm-studio-client.php` | LM Studio local LLM | `nvoos-graphify` | ~150 |
+| 7 | `nvoos-graphify-nvidia` | `class-wp-mcp-ai-nvidia-client.php` | NVIDIA NIM | `nvoos-graphify` | ~200 |
+| 8 | `nvoos-graphify-digitalocean` | `class-wp-mcp-ai-digitalocean-client.php` | DigitalOcean inference | `nvoos-graphify` | ~150 |
+| 9 | `nvoos-graphify-kimi` | `class-wp-mcp-ai-kimi-client.php` | Kimi (Moonshot AI) | `nvoos-graphify` | ~150 |
+| 10 | `nvoos-graphify-baseten` | `class-wp-mcp-ai-baseten-client.php` | Baseten inference | `nvoos-graphify` | ~150 |
+| **AI FEATURES** | | | | | |
+| 11 | `nvoos-graphify-ai-chat` | `includes/class-wp-mcp-ai-rest.php` + `services/chat*.php` + provider clients (OpenAI, Gemini, Ollama) | **AI Chat Assistant** — SSE streaming, tool-calling loop, admin chat UI, REST endpoints. **Bundles OpenAI + Gemini + Ollama providers internally.** User enters one API key and chats immediately. | `nvoos-graphify` | ~3,600 |
+| 12 | `nvoos-graphify-ai-tools` | ~30 tools from `tools/` (AI generation, analysis) | AI content generation, image creation, readability + SEO analysis, semantic extraction | `nvoos-graphify`, `nvoos-graphify-ai-chat` | ~1,800 |
+| 13 | `nvoos-graphify-embeddings` | Vector embedding service classes | Float32 vector embeddings, cosine similarity search, RAG retrieval | `nvoos-graphify`, `nvoos-graphify-ai-chat` | ~600 |
+| **EXTENDED TOOLKITS** (~165 tools) | | | | | |
+| 14 | `nvoos-graphify-content-tools` | ~40 tools from `tools/` | Extended content CRUD, bulk ops, taxonomies, custom post types | `nvoos-graphify` | ~2,000 |
+| 15 | `nvoos-graphify-media-tools` | ~30 tools from `tools/` | Advanced image/video/audio, media library ops | `nvoos-graphify` | ~2,500 |
+| 16 | `nvoos-graphify-dev-tools` | ~25 tools from `tools/` | Web search, shell exec, WP-CLI, GitHub, code analysis | `nvoos-graphify` | ~1,500 |
+| 17 | `nvoos-graphify-seo-tools` | ~15 tools from `tools/` | Rank Math, Site Kit, content freshness, SEO analysis | `nvoos-graphify` | ~800 |
+| 18 | `nvoos-graphify-workflow-tools` | ~20 tools from `tools/` | Workflow execution, cron management, scheduling | `nvoos-graphify` | ~1,500 |
+| 19 | `nvoos-graphify-pro-tools` | ~35 additional tools | Specialized enterprise tools | `nvoos-graphify` | ~2,000 |
+| **ADVANCED FEATURES** | | | | | |
+| 20 | `nvoos-graphify-memory` | `services/class-wp-mcp-ai-memory-*.php` + agent memory | Agent memory (store, recall, mine, RAG, decay, provenance) | `nvoos-graphify` | ~3,000 |
+| 21 | `nvoos-graphify-skills` | `class-wp-mcp-ai-skill-*.php` + `bundled-skills/` | SKILL.md parsing, progressive disclosure, skill catalogue | `nvoos-graphify` | ~1,500 |
+| 22 | `nvoos-graphify-federation` | `class-wp-mcp-ai-federation*.php` + mesh/* | Mesh peer federation, directory, routing, sync | `nvoos-graphify` | ~2,000 |
+| 23 | `nvoos-graphify-measurement` | `measurement/*` | Budgets, eval suites, verifiers, OTEL export | `nvoos-graphify` | ~2,000 |
+| 24 | `nvoos-graphify-slash-commands` | `slash-commands/*` | /help, /ship, /compact, /context, /status | `nvoos-graphify` | ~1,500 |
+| 25 | `nvoos-graphify-blueprints` | `blueprints/*` | Unified blueprint installer | `nvoos-graphify` | ~1,000 |
+| 26 | `nvoos-graphify-a2a` | `a2a/*` | Agent-to-Agent protocol | `nvoos-graphify` | ~1,000 |
+| 27 | `nvoos-graphify-acp` | `acp/*` | Agent Client Protocol | `nvoos-graphify` | ~800 |
+| 28 | `nvoos-graphify-agents` | `agents/*` | Agent role system, approval gate | `nvoos-graphify` | ~1,000 |
+| 29 | `nvoos-graphify-harness` | `harness/*` | Eval harness, self-refine loop | `nvoos-graphify` | ~1,200 |
+| 30 | `nvoos-graphify-oos-engine` | `lib/core/*` + `lib/wordpress-adapter/*` | OOS cross-platform engine | `nvoos-graphify` | ~8,000 |
+| 31 | `nvoos-graphify-professions` | `professions/*` + `teams/*` + `knowledge-base/*` | Profession/team system | `nvoos-graphify` | ~1,500 |
+| 32 | `nvoos-graphify-markup` | `markup/*` | Markup subsystem | `nvoos-graphify` | ~500 |
+| 33 | `nvoos-graphify-paper-store` | `paper-store/*` | Paper store | `nvoos-graphify` | ~800 |
+| 34 | `nvoos-graphify-crawler` | `crawler/*` | Crawl4AI integration | `nvoos-graphify` | ~500 |
 | **INTEGRATIONS** | | | | | |
-| 35 | `nvoos-elementor` | `elementor/*` + `integrations/*elementor*` | Elementor widgets | `nvoos-core` | ~1,500 |
-| 36 | `nvoos-woocommerce` | `integrations/*woocommerce*` | WooCommerce integration | `nvoos-core` | ~500 |
-| 37 | `nvoos-jetengine` | `integrations/*jetengine*` | JetEngine/Crocoblock integration | `nvoos-core` | ~3,000 |
-| **EXISTING ADDONS** | | | | | |
-| 38 | `graphify` | `addons/graphify/` | Knowledge graph (already exists) | `nvoos-core` | ~8,000 |
-| 39 | `algorave` | `addons/algorave/` | Live music coding (already exists) | `nvoos-core` | ~1,500 |
-| 40 | `fantasy-football` | `addons/fantasy-football/` | ESPN/Yahoo fantasy (already exists) | `nvoos-core` | ~1,200 |
-| 41 | `nvoos-pro` | `addons/pro/` | Pro toolkit addon (765+ tools) — rename from `pro` | `nvoos-core` | ~50,000+ |
-| 42 | `saas-controller` | `addons/saas-controller/` | Cloudflare + Stripe SaaS (already exists) | `nvoos-core` | ~1,000 |
-| 43 | `docs-hub` | `addons/docs-hub/` | Documentation hub (already exists) | None | ~1,800 |
-| 44 | `canvas-toolkit` | `addons/canvas-toolkit/` | React canvas editor (already exists) | None | ~400 |
-| 45 | `comic-reader` | `addons/comic-reader/` | CBZ reader (already exists) | None | ~400 |
-| 46 | `chat-spa` | `addons/chat-spa/` | Chat SPA (already exists) | `nvoos-core`, `nvoos-chat` | ~500 |
-| 47 | `embedded` | `addons/embedded/` | WebLLM embedded (already exists) | `nvoos-core` | ~1,000 |
-| 48 | `cornerstone3d` | `addons/cornerstone3d/` | Medical imaging (already exists) | None | ~50 |
+| 35 | `nvoos-graphify-elementor` | `elementor/*` + integrations | Elementor widgets | `nvoos-graphify` | ~1,500 |
+| 36 | `nvoos-graphify-woocommerce` | integrations/woocommerce | WooCommerce integration | `nvoos-graphify` | ~500 |
+| 37 | `nvoos-graphify-jetengine` | integrations/jetengine | JetEngine/Crocoblock integration | `nvoos-graphify` | ~3,000 |
+| **ASSISTANTS + ADMIN** | | | | | |
+| 38 | `nvoos-graphify-assistants` | `assistants/*` + `class-assistant-cpt.php` | Assistant CPT, metaboxes, default assistants | `nvoos-graphify` | ~2,000 |
+| 39 | `nvoos-graphify-admin` | `admin/*` (75+ classes) | Settings UI, dashboards, test pages, tool manager | `nvoos-graphify` | ~5,000 |
+| **EXISTING ADDONS** (will update Requires Plugins header) | | | | | |
+| 40 | `nvoos-graphify-pro` | `addons/pro/` | Pro toolkit (765+ tools) — renamed | `nvoos-graphify` | ~50,000+ |
+| 41 | `algorave` | `addons/algorave/` | Live music coding (already separate) | `nvoos-graphify` | ~1,500 |
+| 42 | `fantasy-football` | `addons/fantasy-football/` | Fantasy football (already separate) | `nvoos-graphify` | ~1,200 |
+| 43 | `saas-controller` | `addons/saas-controller/` | Cloudflare + Stripe SaaS | `nvoos-graphify` | ~1,000 |
+| 44 | `docs-hub` | `addons/docs-hub/` | Documentation hub | None | ~1,800 |
+| 45 | `canvas-toolkit` | `addons/canvas-toolkit/` | React canvas editor | None | ~400 |
+| 46 | `comic-reader` | `addons/comic-reader/` | CBZ reader | None | ~400 |
+| 47 | `chat-spa` | `addons/chat-spa/` | Chat SPA | `nvoos-graphify` | ~500 |
+| 48 | `embedded` | `addons/embedded/` | WebLLM embedded | `nvoos-graphify` | ~1,000 |
+| 49 | `cornerstone3d` | `addons/cornerstone3d/` | Medical imaging | None | ~50 |
 
-**Total: 48 potential standalone addons. 35 are new extractions from the base plugin. 13 already exist.**
-
----
-
-## 6. Provider Client Registry
-
-### Problem: Hardcoded Provider List
-
-Currently, the provider list is hardcoded in two places:
-
-```php
-// includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php:3906
-$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array(
-    'openai', 'anthropic', 'gemini', 'huggingface', 'ollama',
-    'lm_studio', 'cloudflare', 'nvidia', 'deepseek', 'openrouter',
-    'digitalocean', 'kimi', 'baseten', 'embedded'
-) );
-```
-
-```php
-// includes/admin/class-wp-mcp-ai-admin-settings.php:2517
-$allowed = apply_filters( 'wp_mcp_ai_allowed_providers', array( /* same 14 */ ) );
-```
-
-### Solution: Pluggable Provider Registry
-
-Each provider becomes its own addon that registers via `nvoos/register_providers`:
-
-```php
-// addons/providers/openai/nvoos-openai.php
-/**
- * Plugin Name:  NV oOS — OpenAI Provider
- * Requires Plugins: nvoos-core
- */
-
-add_action( 'nvoos/register_providers', function ( \Nvoos\ProviderRegistry $registry ): void {
-    $settings = \Nvoos\Settings::all();
-    $apiKey   = $settings['openai_api_key'] ?? '';
-
-    if ( ! empty( $apiKey ) ) {
-        $registry->register( new \Nvoos\Providers\OpenAiClient( $apiKey ) );
-    }
-} );
-```
-
-```php
-// addons/providers/gemini/nvoos-gemini.php
-/**
- * Plugin Name:  NV oOS — Gemini Provider
- * Requires Plugins: nvoos-core
- */
-
-add_action( 'nvoos/register_providers', function ( \Nvoos\ProviderRegistry $registry ): void {
-    $settings = \Nvoos\Settings::all();
-    $apiKey   = $settings['gemini_api_key'] ?? '';
-
-    if ( ! empty( $apiKey ) ) {
-        $registry->register( new \Nvoos\Providers\GeminiClient( $apiKey ) );
-    }
-} );
-```
-
-### Provider Client Pattern
-
-```php
-// addons/providers/openai/src/OpenAiClient.php
-namespace Nvoos\Providers;
-
-use Nvoos\Contracts\ProviderClient;
-
-final class OpenAiClient implements ProviderClient
-{
-    public function __construct(
-        private string $apiKey,
-        private string $baseUrl = 'https://api.openai.com/v1/',
-    ) {}
-
-    public function chat(
-        array $messages,
-        array $options = array(),
-        array $tools = array(),
-        string $context = 'chat'
-    ): array {
-        $model = $options['model'] ?? 'gpt-4o-mini';
-
-        $body = array(
-            'model'       => $model,
-            'messages'    => $messages,
-            'temperature' => $options['temperature'] ?? 0.7,
-            'max_tokens'  => $options['max_tokens'] ?? 4096,
-        );
-
-        if ( ! empty( $tools ) ) {
-            $body['tools']      = $tools;
-            $body['tool_choice'] = 'auto';
-        }
-
-        $response = wp_remote_post( $this->baseUrl . 'chat/completions', array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type'  => 'application/json',
-            ),
-            'body'    => wp_json_encode( $body ),
-            'timeout' => 120,
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            throw new \RuntimeException( $response->get_error_message() );
-        }
-
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( ! isset( $data['choices'][0] ) ) {
-            throw new \RuntimeException( $data['error']['message'] ?? 'Unknown OpenAI error' );
-        }
-
-        $choice = $data['choices'][0];
-
-        return array(
-            'content'       => $choice['message']['content'] ?? '',
-            'tool_calls'    => $choice['message']['tool_calls'] ?? null,
-            'finish_reason' => $choice['finish_reason'] ?? 'stop',
-            'usage'         => $data['usage'] ?? array(),
-            'model'         => $data['model'] ?? $model,
-        );
-    }
-
-    public function embed( string $text, string $model = '' ): array
-    {
-        $model = $model ?: 'text-embedding-3-small';
-
-        $response = wp_remote_post( $this->baseUrl . 'embeddings', array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type'  => 'application/json',
-            ),
-            'body'    => wp_json_encode( array( 'input' => $text, 'model' => $model ) ),
-            'timeout' => 30,
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            throw new \RuntimeException( $response->get_error_message() );
-        }
-
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        return $data['data'][0]['embedding'] ?? array();
-    }
-
-    public function getSlug(): string { return 'openai'; }
-    public function isAvailable(): bool { return ! empty( $this->apiKey ); }
-}
-```
-
-### Provider Settings
-
-Each provider plugin registers its own settings section:
-
-```php
-// addons/providers/openai/src/SettingsSection.php
-add_action( 'nvoos/admin/register_settings_sections', function (): void {
-    add_settings_section(
-        'nvoos_openai',
-        __( 'OpenAI', 'nvoos-openai' ),
-        '__return_empty_string',
-        'nvoos-settings'
-    );
-
-    add_settings_field( 'openai_api_key', __( 'API Key', 'nvoos-openai' ), /* ... */ );
-    add_settings_field( 'openai_model', __( 'Default Model', 'nvoos-openai' ), /* ... */ );
-} );
-```
-
-This replaces the current 6,000+ line monolithic `class-wp-mcp-ai-admin-settings.php` with distributed, per-provider settings sections.
+**Totals**: ~4,500 lines in the core product. 49 addon plugins. Same total ecosystem size (~80,000+ lines), distributed across manageable packages.
 
 ---
 
-## 7. Tool Migration Pattern
+## 6. Phased Execution Plan
 
-### Current Tool Structure
+### Phase 0: Core Product — Graphify as the Base Plugin (3-4 weeks)
 
-```php
-// includes/tools/class-wp-mcp-ai-tool-web-search.php
-class WP_MCP_AI_Tool_Web_Search
-    implements WP_MCP_AI_Tool_Interface,
-               WP_MCP_AI_Tool_Capability_Flags_Interface
-{
-    use WP_MCP_AI_Tool_Default_Capability;
-
-    public function get_slug() { return 'web_search'; }
-    public function get_name() { return __( 'Web Search', 'mcp-ai-wpoos' ); }
-    // ...
-    public function execute( array $arguments = array(), array $context = array() ) {
-        // Implementation
-    }
-}
-```
-
-### Target Tool Structure
-
-```php
-// addons/tools/dev-tools/src/WebSearch.php
-namespace Nvoos\Tools\Developer;
-
-use Nvoos\Contracts\Tool;
-
-final class WebSearch implements Tool
-{
-    public function getSlug(): string { return 'web_search'; }
-    public function getName(): string { return __( 'Web Search', 'nvoos-dev-tools' ); }
-    public function getDescription(): string { /* ... */ }
-    public function getParametersSchema(): array { /* ... */ }
-    public function getRequiredCapability(): string { return 'edit_posts'; }
-    public function getCapabilityFlags(): array { return array( 'read-only', 'external-api', 'cacheable' ); }
-    public function execute( array $arguments = array(), array $context = array() ): array {
-        // Implementation
-    }
-}
-```
-
-### Tool Registration
-
-```php
-// addons/tools/dev-tools/nvoos-dev-tools.php
-/**
- * Plugin Name:  NV oOS — Developer Tools
- * Description:  Web search, shell execution, code analysis, GitHub, WP-CLI tools.
- * Requires Plugins: nvoos-core
- */
-
-add_action( 'nvoos/register_tools', function ( \Nvoos\ToolRegistry $registry ): void {
-    $registry->register( new \Nvoos\Tools\Developer\WebSearch() );
-    $registry->register( new \Nvoos\Tools\Developer\ExecuteShell() );
-    $registry->register( new \Nvoos\Tools\Developer\DeepResearch() );
-    // ... 25 tools total
-} );
-```
-
-### Tool Migration Adapter (Backward Compatibility)
-
-During the transition, each tool implements **both** interfaces:
-
-```php
-// includes/tools/class-wp-mcp-ai-tool-web-search.php (transitional)
-class WP_MCP_AI_Tool_Web_Search
-    implements WP_MCP_AI_Tool_Interface,              // Old (to be removed)
-               WP_MCP_AI_Tool_Capability_Flags_Interface,  // Old
-               \Nvoos\Contracts\Tool                  // New
-{
-    use WP_MCP_AI_Tool_Default_Capability;
-
-    // Old interface methods
-    public function get_slug() { return 'web_search'; }
-    public function get_name() { return __( 'Web Search', 'mcp-ai-wpoos' ); }
-    public function get_capability_flags() { return array( 'read-only', 'external-api' ); }
-
-    // New interface methods (delegate to old)
-    public function getSlug(): string { return $this->get_slug(); }
-    public function getName(): string { return $this->get_name(); }
-    public function getDescription(): string { return $this->get_description(); }
-    public function getParametersSchema(): array { return $this->get_parameters_schema(); }
-    public function getRequiredCapability(): string { return $this->get_required_capability(); }
-    public function getCapabilityFlags(): array { return $this->get_capability_flags(); }
-    // execute() is shared — compatible signature
-}
-```
-
-Once the old `WP_MCP_AI_Tool_Interface` is fully deprecated (v2.0), these files move to addons and drop the old interface.
-
----
-
-## 8. Phased Execution Plan
-
-### Phase 0: Foundation (2-3 weeks)
-
-**Goal**: `nvoos-core` exists and the existing base plugin runs on top of it.
+**Goal**: `nvoos-graphify` replaces `mcp-ai-wpoos.php` as the base plugin. The knowledge graph works standalone with zero API keys.
 
 ```
-Week 1: Create nvoos-core plugin
-  ├── Scaffold directory structure
-  ├── Write Tool + ProviderClient interfaces
-  ├── Write ToolRegistry + ProviderRegistry
-  ├── Write Settings + Schema
-  ├── Write Rest\Server + Admin\Menu
-  ├── Write nvoos-core.php bootstrap
-  ├── Write tests
-  └── Release nvoos-core v0.1.0
+Week 1-2: Absorb and modernize addons/graphify/
+  ├── Rename plugin: nvoos-graphify.php (was graphify.php in addons/)
+  ├── Migrate namespace: NvoosGraphify\ (was NV_oOS_Graphify or unnamespaced)
+  ├── Reorganize into PSR-4 src/ directory structure
+  ├── Update hook prefixes: nvoos_graphify/* (was nv_oos_graphify/*)
+  ├── Update option keys: nvoos_graphify_settings
+  ├── Update table prefixes: nvoos_graphify_nodes, etc.
+  ├── Update REST namespace: nvoos-graphify/v1
+  ├── Remove dependency on WP_MCP_AI_Tool_Interface
+  │   └── Move Tool interface into NvoosGraphify\Contracts\Tool
+  ├── Remove dependency on wp_mcp_ai_get_embedding()
+  │   └── Memory bridge uses provider registry (when available)
+  ├── Remove dependency on wp_mcp_ai_chat_completion()
+  │   └── AI features require AI addons (provider + chat)
+  ├── Write tests for all graph engine components
+  └── Release nvoos-graphify v1.0.0-beta
 
-Week 2: Wire existing base into nvoos-core
-  ├── Add `Requires Plugins: nvoos-core` to mcp-ai-wpoos.php header
-  ├── WP_MCP_AI_Tool_Interface extends Nvoos\Contracts\Tool (or add compatibility trait)
-  ├── Tool registration now ALSO calls $registry->register() for new registry
-  ├── Provider clients implement BOTH old interface and new ProviderClient
-  ├── All existing functionality unchanged — backward compatible
-  └── Tests pass with nvoos-core active
+Week 3: Wire existing monolith into nvoos-graphify
+  ├── Add `Requires Plugins: nvoos-graphify` to mcp-ai-wpoos.php header
+  ├── WP_MCP_AI_Tool_Interface extends NvoosGraphify\Contracts\Tool (compat adapter)
+  ├── Tool registration fires both hooks:
+  │   ├── Old: wp_mcp_ai_register_tools
+  │   └── New: nvoos_graphify/register_tools
+  ├── All existing plugins/addons unchanged — backward compatible
+  └── Full test suite passes with nvoos-graphify active
 
-Week 3: Public API functions
-  ├── Deprecate wp_mcp_ai_*() helper functions in favor of nvoos_*()
+Week 4: Docs and public API
+  ├── Write readme.txt with screenshots for wp.org
+  ├── Deprecate wp_mcp_ai_* functions with _deprecated_function()
   ├── Use apply_filters_deprecated() for old hook names
-  ├── Add admin notice suggesting nvoos-core if missing
-  └── Documentation: migration guide for addon developers
+  ├── Write migration guide for existing NV oOS users
+  └── Submit to wp.org
 ```
 
-### Phase 1: Provider Extraction (2 weeks)
+**Milestone**: NV oOS Graphify is a publishable wp.org plugin. Users can activate it alone and immediately build interactive knowledge graphs. It competes as a unique offering — nothing else on wp.org does this.
 
-**Goal**: All 13 providers are standalone addons that register via `nvoos/register_providers`.
+### Phase 1: Exotic Provider Addons (1 week)
 
-```
-Week 1: Extract first 5 providers
-  ├── nvoos-openai
-  ├── nvoos-gemini
-  ├── nvoos-anthropic
-  ├── nvoos-ollama
-  └── nvoos-deepseek
-
-Week 2: Extract remaining 8 providers
-  ├── nvoos-openrouter, nvoos-huggingface, nvoos-cloudflare
-  ├── nvoos-lmstudio, nvoos-nvidia, nvoos-digitalocean
-  ├── nvoos-kimi, nvoos-baseten
-  ├── Remove hardcoded provider list from admin settings
-  ├── Provider settings sections register via nvoos/admin/register_settings_sections
-  └── Old ProviderRouter reads from new ProviderRegistry
-```
-
-### Phase 2: Tool Extraction (3 weeks)
-
-**Goal**: All 195 tools are organized into toolkit addons.
+**Goal**: 10 exotic AI providers become standalone addon plugins. (The 3 common providers — OpenAI, Gemini, Ollama — are bundled into the AI chat addon and extracted with it in Phase 4.)
 
 ```
-Week 1: Content tools (~40 tools)
-  ├── Create nvoos-content-tools
-  ├── Move tools: create-post, get-post, search-content, count-posts, etc.
-  └── Register via nvoos/register_tools
-
-Week 2: Media tools (~30 tools)
-  ├── Create nvoos-media-tools
-  ├── Move tools: generate-image, edit-image, transcribe-audio, etc.
-  └── Register via nvoos/register_tools
-
-Week 3: Developer + SEO + Workflow tools (~60 tools)
-  ├── Create nvoos-dev-tools (web-search, shell, deep-research, GitHub)
-  ├── Create nvoos-seo-tools (rank-math, site-kit, content-freshness)
-  ├── Create nvoos-workflow-tools (execute-workflow, cron, scheduling)
-  └── Register via nvoos/register_tools
+  ├── Create nvoos-graphify-anthropic (Claude)
+  ├── Create nvoos-graphify-deepseek
+  ├── Create nvoos-graphify-openrouter
+  ├── Create nvoos-graphify-huggingface
+  ├── Create nvoos-graphify-cloudflare
+  ├── Create nvoos-graphify-lmstudio
+  ├── Create nvoos-graphify-nvidia
+  ├── Create nvoos-graphify-digitalocean
+  ├── Create nvoos-graphify-kimi
+  ├── Create nvoos-graphify-baseten
+  ├── Each provider registers:
+  │   ├── Settings section via nvoos_graphify/admin/register_settings_sections
+  │   └── Default settings via nvoos_graphify/default_settings filter
+  └── Remove hardcoded provider list from admin settings
 ```
 
-### Phase 3: Feature Extraction (4 weeks)
+**Milestone**: Exotic AI providers are self-contained addons. The common providers (OpenAI, Gemini, Ollama) remain in the monolith for now — they'll be bundled into the chat addon when it's extracted.
 
-**Goal**: Move subsystems from `includes/` to addons.
+### Phase 2: Extended Tools (2 weeks)
 
-```
-Week 1: Chat orchestrator → nvoos-chat
-  ├── Extract class-wp-mcp-ai-rest.php chat handler
-  ├── Extract SSE streaming
-  ├── Extract chat service classes
-  └── Register REST routes via nvoos-core Rest\Server
-
-Week 2: Memory system → nvoos-memory
-  ├── Extract memory manager, auto-capture, privacy filter, RRF fusion
-  ├── Extract vector context service
-  ├── Extract transcript mining
-  └── Memory bridge hooks remain compatible
-
-Week 3: Skills + Admin → nvoos-skills + nvoos-admin
-  ├── Extract SKILL.md parser, registry, catalogue
-  ├── Extract bundled skills
-  ├── Extract admin settings (monolithic class split per provider/feature)
-  └── Extract admin dashboards, test pages
-
-Week 4: Remaining features
-  ├── nvoos-federation (mesh, peers, directory)
-  ├── nvoos-measurement (budgets, eval, verifiers)
-  ├── nvoos-assistants (CPT, metaboxes)
-  ├── nvoos-blueprints
-  ├── nvoos-slash-commands
-  ├── nvoos-a2a
-  ├── nvoos-acp
-  ├── nvoos-agents
-  ├── nvoos-harness
-  └── nvoos-blocks
-```
-
-### Phase 4: Integration Extraction (1 week)
+**Goal**: ~165 tools from the monolith become toolkit addons.
 
 ```
-  ├── nvoos-elementor
-  ├── nvoos-woocommerce
-  ├── nvoos-jetengine
-  ├── nvoos-oos-engine (lib/core + wordpress-adapter)
-  └── Each integration checks for its target plugin's existence
+Week 1: Content + Media tools (~70 tools)
+  ├── Create nvoos-graphify-content-tools
+  ├── Create nvoos-graphify-media-tools
+  └── Register via nvoos_graphify/register_tools
+
+Week 2: Dev + SEO + Workflow + misc tools (~95 tools)
+  ├── Create nvoos-graphify-dev-tools
+  ├── Create nvoos-graphify-seo-tools
+  ├── Create nvoos-graphify-workflow-tools
+  ├── Create nvoos-graphify-pro-tools
+  └── Register via nvoos_graphify/register_tools
 ```
 
-### Phase 5: Cleanup & Deprecation (2 weeks)
+### Phase 3: Features + Integrations (3 weeks)
 
-**Goal**: The thin `mcp-ai-wpoos.php` becomes a meta-plugin that loads addons.
+**Goal**: All non-chat subsystems become addons. The tool registry pattern is now battle-tested across 30+ addons.
+
+```
+Week 1: Core features
+  ├── nvoos-graphify-memory (agent memory + RAG)
+  ├── nvoos-graphify-skills (SKILL.md system)
+  ├── nvoos-graphify-federation (mesh + peers)
+  └── nvoos-graphify-measurement (budgets + eval)
+
+Week 2: Platform features
+  ├── nvoos-graphify-admin (settings UI, dashboards)
+  ├── nvoos-graphify-assistants (CPT + metaboxes)
+  ├── nvoos-graphify-slash-commands
+  ├── nvoos-graphify-blueprints
+  └── nvoos-graphify-a2a + acp + agents + harness
+
+Week 3: Integrations + engine
+  ├── nvoos-graphify-elementor
+  ├── nvoos-graphify-woocommerce
+  ├── nvoos-graphify-jetengine
+  ├── nvoos-graphify-oos-engine
+  └── nvoos-graphify-professions + markup + paper-store + crawler
+```
+
+### Phase 4: AI Chat (the hard one — 2 weeks)
+
+**Goal**: Extract the chat orchestrator into `nvoos-graphify-ai-chat`, bundling OpenAI + Gemini + Ollama providers. This is the most complex extraction — the chat orchestrator is deeply coupled to REST, SSE, provider routing, tool execution, and the admin UI. By this point, ~40 simpler addons have proven the extraction pattern.
+
+```
+Week 1: Bundle providers + extract chat core
+  ├── Bundle OpenAI, Gemini, Ollama client classes into the addon
+  ├── Extract chat orchestrator from class-wp-mcp-ai-rest.php
+  ├── Extract SSE streaming handler
+  ├── Extract context window management
+  ├── Register REST chat routes via nvoos-graphify
+  ├── Wire provider selection to the internal bundled clients
+  └── Admin chat UI registers via nvoos_graphify/admin hooks
+
+Week 2: AI tools + embeddings
+  ├── Create nvoos-graphify-ai-tools
+  │   ├── Extract ~30 AI-powered tools (content gen, image gen, analysis)
+  │   └── Register via nvoos_graphify/register_tools
+  ├── Create nvoos-graphify-embeddings
+  │   ├── Extract vector embedding service
+  │   ├── Extract RAG retrieval
+  │   └── Graphify memory bridge detects embeddings when present
+  ├── Remove chat-related code from monolith
+  └── Full integration test: graphify + chat addon = complete AI experience
+```
+
+**Milestone**: The complete AI experience ships as a single addon. Users install `nvoos-graphify` + `nvoos-graphify-ai-chat` (2 plugins) and get everything — graph, chat, 30+ AI tools, embeddings.
+
+### Phase 5: Meta-Plugin + Cleanup (1-2 weeks)
+
+**Goal**: The old `mcp-ai-wpoos.php` becomes a meta-plugin that bundles all addons for existing users.
 
 ```
 Week 1: Meta-plugin mode
-  ├── mcp-ai-wpoos.php requires nvoos-core
-  ├── mcp-ai-wpoos.php auto-loads all toolkit addons from addons/ directory
-  ├── Existing users see no change — all tools still load
-  └── New users can install only the toolkits they need
+  ├── mcp-ai-wpoos.php requires nvoos-graphify
+  ├── mcp-ai-wpoos.php auto-loads all addons from addons/ directory
+  ├── Existing users see zero change — all tools and features still load
+  └── New users install only nvoos-graphify + desired addons
 
-Week 2: Deprecation & docs
+Week 2: Deprecation + docs
   ├── Deprecate wp_mcp_ai_* hooks with do_action_deprecated()
   ├── Deprecate wp_mcp_ai_* functions with _deprecated_function()
-  ├── Write migration guide for addon developers
-  ├── Update readme.txt with new addon ecosystem overview
-  └── Tag v2.0.0-beta
+  ├── Update readme.txt with addon ecosystem overview
+  └── Tag v2.0.0
 ```
 
-### Total Timeline: ~14 weeks
+### Total Timeline: ~10-12 weeks
 
 ```
-Phase 0: Foundation      ████░░░░░░░░░░  2-3 weeks
-Phase 1: Providers       ░░░░██░░░░░░░░  2 weeks
-Phase 2: Tools           ░░░░░░███░░░░░  3 weeks
-Phase 3: Features        ░░░░░░░░░████░░  4 weeks
-Phase 4: Integrations    ░░░░░░░░░░░░░██  1 week
-Phase 5: Cleanup         ░░░░░░░░░░░░░░██ 2 weeks
-                         ────────────────
-                         Total: ~14 weeks
+Phase 0: Core Product      ████░░░░░░░░░  3-4 weeks
+Phase 1: Exotic Providers   ░░░░█░░░░░░░░  1 week
+Phase 2: Extended Tools     ░░░░░██░░░░░░  2 weeks
+Phase 3: Features           ░░░░░░░███░░░  3 weeks
+Phase 4: AI Chat (hard)     ░░░░░░░░░░██░  2 weeks
+Phase 5: Cleanup            ░░░░░░░░░░░░█  1-2 weeks
+                           ────────────────
+                           Total: ~10-12 weeks
 ```
+
+### Key Milestone: Phase 0 delivers a marketable product
+
+By the end of Phase 0:
+- `nvoos-graphify` is a wp.org-ready plugin
+- Users click "Build Graph" and see results in 10 seconds
+- Zero configuration. Zero API keys. Zero external dependencies.
+- 5+ screenshots (graph explorer, content gaps, export formats, settings, remote sources)
+- Unique in marketplace — nothing else does interactive knowledge graphs on wp.org
+- Upgrade path: "Add AI to your knowledge graph with nvoos-graphify-ai-chat"
+
+### Key Milestone: Phase 4 extracts the hardest subsystem last
+
+By deferring chat extraction to Phase 4:
+- The tool registry pattern has been proven across ~40 simpler addons
+- Provider bundling (OpenAI + Gemini + Ollama in one addon) has a clear template from the exotic providers
+- If extraction proves too risky, chat can stay in the monolith indefinitely — the meta-plugin carries it regardless
+- The core product's value is never blocked on the hardest extraction
 
 ---
 
-## 9. Backward Compatibility Strategy
+## 7. Backward Compatibility Strategy
 
 ### Principle: Zero Breaking Changes Until v2.0
 
@@ -1092,10 +519,10 @@ Every change is additive during the transition. Old interfaces continue to work 
 ### Layer 1: Dual Interface Implementation
 
 ```php
-// During transition, every tool implements both interfaces:
+// During transition, existing tools implement both interfaces:
 class WP_MCP_AI_Tool_Web_Search
-    implements WP_MCP_AI_Tool_Interface,      // Old — still works
-               \Nvoos\Contracts\Tool          // New — forward-compatible
+    implements WP_MCP_AI_Tool_Interface,           // Old — still works
+               \NvoosGraphify\Contracts\Tool        // New — forward-compatible
 {
     // Old methods (keep for backward compat)
     public function get_slug() { return 'web_search'; }
@@ -1109,17 +536,15 @@ class WP_MCP_AI_Tool_Web_Search
 
 ```php
 // Old hook: 'wp_mcp_ai_register_tools'
-// New hook: 'nvoos/register_tools'
+// New hook: 'nvoos_graphify/register_tools'
 
-// In nvoos-core:
-add_action( 'nvoos/register_tools', function ( \Nvoos\ToolRegistry $registry ): void {
-    // Also fire the old action for backward compatibility.
+add_action( 'nvoos_graphify/register_tools', function ( $registry ): void {
     do_action_deprecated(
         'wp_mcp_ai_register_tools',
         array( $registry ),
         '2.0.0',
-        'nvoos/register_tools',
-        'Use nvoos/register_tools instead.'
+        'nvoos_graphify/register_tools',
+        'Use nvoos_graphify/register_tools instead.'
     );
 } );
 ```
@@ -1128,17 +553,15 @@ add_action( 'nvoos/register_tools', function ( \Nvoos\ToolRegistry $registry ): 
 
 ```php
 // Old function: wp_mcp_ai_get_embedding()
-// New function: nvoos_get_ai_client()->embed()
+// New: provider addon's embed() method
 
 function wp_mcp_ai_get_embedding( $text, $model = '' ) {
-    _deprecated_function( 'wp_mcp_ai_get_embedding', '2.0.0', 'nvoos_get_ai_client()->embed()' );
-
-    $client = nvoos_get_ai_client();
-    if ( ! $client ) {
-        // Fall back to old behavior: direct OpenAI API call
+    _deprecated_function( 'wp_mcp_ai_get_embedding', '2.0.0', 'Provider addon embed()' );
+    // Fall back to old behavior if available.
+    if ( function_exists( 'old_embedding_logic' ) ) {
         return old_embedding_logic( $text, $model );
     }
-    return $client->embed( $text, $model );
+    return array();
 }
 ```
 
@@ -1148,7 +571,7 @@ function wp_mcp_ai_get_embedding( $text, $model = '' ) {
 // mcp-ai-wpoos.php v2.0 (meta-plugin mode):
 /**
  * Plugin Name:  NV oOS
- * Requires Plugins: nvoos-core
+ * Requires Plugins: nvoos-graphify
  */
 
 // Auto-load all addons from addons/ directory.
@@ -1158,57 +581,78 @@ foreach ( $addon_dirs as $addon_file ) {
 }
 
 // Existing users: everything loads as before.
-// New users: install only nvoos-core + desired toolkits.
+// New users: install only nvoos-graphify + desired addons.
 ```
 
 ---
 
-## 10. Risk Assessment
+## 8. Risk Assessment
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | **Breaking existing addon integrations** | Medium | High | Dual interfaces, deprecated hooks, meta-plugin compat mode. No removal until v2.0. |
-| **Provider extraction breaks chat** | Low | Critical | Each provider implements the same `ProviderClient` interface. Chat orchestrator depends on interface, not concrete class. |
-| **Tool extraction breaks tool registration** | Low | High | Tool registry is additive. Both old and new registries populated simultaneously during transition. |
-| **748-line loader becomes unmanageable** | Already true | Medium | Replace with PSR-4 autoloading. Each addon has its own autoloader. Core autoloads only its ~10 classes. |
-| **Performance degradation from many small plugins** | Low | Low | WordPress plugin loading is file-based. 30 small plugins (1 file each) vs 1 large plugin (200 files) — comparable load time. Use Composer classmap authority for production. |
-| **User confusion with many plugins** | Medium | Medium | Meta-plugin (`mcp-ai-wpoos.php`) bundles all addons for existing users. Advanced users opt out of individual toolkits. WordPress Plugin Dependencies shows clear dependency tree. |
-| **WordPress.org directory limitations** | Low | Low | Only `nvoos-core` + select toolkits submitted to wp.org. Pro addon + niche toolkits distributed via commercial channels. |
-| **Circular plugin dependencies** | Low | Critical | WP 6.5+ `Requires Plugins` includes circular dependency detection ([#22316](https://core.trac.wordpress.org/ticket/22316)). Architecture ensures `nvoos-core` has zero dependencies. |
+| **Graphify absorption breaks existing graph data** | Low | High | Migration script renames tables and options. Tested on existing NV oOS installations. Reversible — old tables preserved until migration confirmed. |
+| **AI addon latency** | Low | Low | Provider clients bundled into chat addon — no separate provider plugin chain. 1 addon, not 3. |
+| **Performance — many small plugins** | Low | Low | 50 small plugins (1 file each) vs 1 large plugin (200 files) — comparable load time. Composer classmap authority for production. |
+| **User confusion — "What do I install?"** | Medium | Medium | Meta-plugin (`mcp-ai-wpoos.php`) bundles everything. New users start with nvoos-graphify. AI page shows "Install AI Chat addon to enable this feature." WordPress Plugin Dependencies shows clear dependency tree. |
+| **wp.org directory limitations** | Low | Low | Only `nvoos-graphify` + select addons submitted. Pro addon + niche toolkits via commercial channels. |
+| **Circular plugin dependencies** | Low | Critical | WP 6.5+ `Requires Plugins` includes circular detection. Architecture ensures `nvoos-graphify` has zero dependencies. |
+| **Graphify doesn't exist yet as standalone code** | Low (it does) | Low | The existing `addons/graphify/` is ~8,000 lines of working production code. Phase 0 is absorption + modernization, not rewrite. |
 
 ---
 
-## 11. Success Metrics
+## 9. Success Metrics
 
 ### Quantitative
 
 | Metric | Current | Target |
 |---|---|---|
-| Base plugin lines of code | ~15,000+ (mcp-ai-wpoos.php + includes/) | ~500 (nvoos-core) |
+| Core product lines of code | ~15,000+ (monolith) | ~4,500 (nvoos-graphify — the knowledge graph) |
+| Ecosystem total lines | ~80,000 (monolith) | ~80,000 (distributed across core + 52 addons) |
 | Manual `require_once` statements | ~100+ (748-line loader) | 0 (all PSR-4 autoloaded) |
-| Hardcoded provider list instances | 2 | 0 (registry-based) |
-| Tool count in flat directory | 195 | 0 (all in toolkit addons) |
-| Singleton `instance()` call sites | ~200 throughout codebase | ~5 (core only) |
+| Hardcoded provider list instances | 2 | 0 (registry-based, addon-registered) |
+| Tools in flat directory | 195 | 14 in core + ~181 in addons |
 | Average time to add a new provider | ~2 hours (edit 3+ files) | ~30 min (create standalone addon) |
 | Average time to add a new tool | ~30 min (create file, register in loader) | ~10 min (implement interface, hook into action) |
-| GitHub Actions CI time | ~15 min (full monolith) | ~2 min per addon (parallel) |
-| WordPress.org review time | Unknown (large plugin) | Fast per small addon |
+| First-run user experience | Empty tools list (must configure provider) | Click "Build Graph" — works immediately |
+| Requires API key to be useful? | Yes (AI chat needs one) | No — graph works with zero config |
+| Marketable standalone? | No — framework, not product | Yes — unique interactive knowledge graph for WordPress |
 
 ### Qualitative
 
 | Metric | Current | Target |
 |---|---|---|
-| New contributor onboarding | Must understand entire ~200-class monolith | Understand one ~5-class toolkit addon |
-| Test isolation | Full WordPress bootstrap required | Unit tests run without WP; integration tests per addon |
-| Feature flagging | `WP_MCP_AI_BASE_VERSION` constant | Plugin active/inactive state via WordPress core |
-| User installation flexibility | 195 tools or nothing | Install only needed toolkits |
-| Third-party extensibility | Hook into `wp_mcp_ai_register_tools` | Same — unchanged API |
+| New contributor onboarding | Must understand entire ~200-class monolith | Understand one ~5-class addon |
+| Test isolation | Full WordPress bootstrap required | Core unit tests run without WP |
+| Feature flagging | `WP_MCP_AI_BASE_VERSION` constant | Plugin active/inactive via WordPress core |
+| User installation flexibility | All-or-nothing | Install core + only desired addons |
+| AI dependency | Hard dependency (chat is the product) | Truly optional (graph is the product) |
+| wp.org listing quality | "AI framework" — no end-user value screenshots | "Interactive Knowledge Graph" — screenshots of graphs, exports, content gaps |
+| Upgrade path | "Buy more tools" | "Add AI to your knowledge graph" |
 
 ---
 
-## Appendix A: Migration Quick Reference for Addon Developers
+## Appendix A: Migration Quick Reference
 
-### If you build addons for NV oOS today
+### For existing NV oOS users
+
+```
+BEFORE (monolith):                     AFTER (same features, distributed):
+mcp-ai-wpoos.php                       nvoos-graphify (core — required)
+├── includes/ (everything)             ├── nvoos-graphify-ai-chat
+├── addons/graphify/ (absorbed)        ├── nvoos-graphify-openai
+└── addons/pro/                        ├── nvoos-graphify-content-tools
+                                       ├── nvoos-graphify-pro
+                                       └── ... (all addons)
+
+Migration is automatic:
+1. Update → mcp-ai-wpoos.php becomes meta-plugin
+2. Meta-plugin requires nvoos-graphify + auto-loads all addons
+3. All features, tools, and settings preserved
+4. Zero manual steps for existing users
+```
+
+### For addon developers
 
 ```php
 // OLD WAY (still works during transition):
@@ -1217,90 +661,52 @@ add_action( 'wp_mcp_ai_register_tools', function ( $registry ): void {
 } );
 
 // NEW WAY (forward-compatible):
-add_action( 'nvoos/register_tools', function ( \Nvoos\ToolRegistry $registry ): void {
-    $registry->register( new MyTool() );
+add_action( 'nvoos_graphify/register_tools', function ( \NvoosGraphify\ToolRegistry $registry ): void {
+    $registry->register( new \MyAddon\MyTool() );
+} );
+
+// Registering an AI provider:
+add_action( 'nvoos_graphify/register_ai_providers', function ( $registry ): void {
+    $registry->register( new \MyAddon\MyProvider() );
+} );
+
+// Adding settings:
+add_filter( 'nvoos_graphify/default_settings', function ( array $defaults ): array {
+    return array_merge( $defaults, array( 'my_key' => '' ) );
 } );
 ```
 
-### If you build tools
-
-```php
-// OLD:
-class MyTool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-    use WP_MCP_AI_Tool_Default_Capability;
-    public function get_slug() { return 'my_tool'; }
-    // ... snake_case methods
-}
-
-// NEW (forward-compatible):
-class MyTool implements \Nvoos\Contracts\Tool {
-    public function getSlug(): string { return 'my_tool'; }
-    // ... camelCase methods
-}
-```
-
-### If you build provider clients
-
-```php
-// NEW:
-class MyProvider implements \Nvoos\Contracts\ProviderClient {
-    public function getSlug(): string { return 'my_provider'; }
-    public function chat( array $messages, array $options, array $tools, string $context ): array { /* ... */ }
-    public function embed( string $text, string $model = '' ): array { /* ... */ }
-    public function isAvailable(): bool { return true; }
-}
-
-add_action( 'nvoos/register_providers', function ( \Nvoos\ProviderRegistry $registry ): void {
-    $registry->register( new MyProvider() );
-} );
-```
-
----
-
-## Appendix B: Complete Hook Migration Table
-
-| Old Hook | New Hook | Type |
-|---|---|---|
-| `wp_mcp_ai_bootstrapped` | `nvoos/bootstrapped` | Action |
-| `wp_mcp_ai_register_tools` | `nvoos/register_tools` | Action |
-| `wp_mcp_ai_load_pro_tools` | `nvoos/pro/register_tools` (in `nvoos-pro` addon) | Action |
-| `wp_mcp_ai_memory_stored` | `nvoos/memory/stored` (in `nvoos-memory` addon) | Action |
-| `wp_mcp_ai_allowed_providers` | *(removed — registry-based)* | Filter |
-| `wp_mcp_ai_admin_settings_sanitize` | `nvoos/admin/sanitize_settings` | Filter |
-| `wp_mcp_ai_show_usage_costs` | `nvoos/admin/show_usage_costs` | Filter |
-| `wp_mcp_ai_show_capability_flags` | `nvoos/admin/show_capability_flags` | Filter |
-
----
-
-## Appendix C: File Size Comparison
+## Appendix B: File Size Comparison
 
 ```
 Before (monolith):
 mcp-ai-wpoos/
 ├── mcp-ai-wpoos.php          (~140 lines)
-├── includes/bootstrap/       (~2,500 lines across 7 files)
-├── includes/class-wp-mcp-ai-plugin.php  (~400 lines)
-├── includes/admin/           (~15,000 lines across 75+ files)
-├── includes/tools/           (~20,000 lines across 200 files)
-├── includes/services/        (~25,000 lines across 70+ files)
-├── includes/rest/            (~8,000 lines across 26 files)
-├── includes/integrations/    (~10,000 lines across 22 files)
-└── ... (30+ more directories, 200+ more files)
-TOTAL: ~80,000+ lines (rough estimate)
+├── includes/bootstrap/       (~2,500 lines, 7 files)
+├── includes/tools/           (~20,000 lines, 200 files)
+├── includes/services/        (~25,000 lines, 70+ files)
+├── includes/admin/           (~15,000 lines, 75+ files)
+├── includes/rest/            (~8,000 lines, 26 files)
+├── includes/integrations/    (~10,000 lines, 22 files)
+└── addons/                   (~65,000 lines, 14 sub-plugins)
+TOTAL: ~80,000+ lines (single monolith)
 
-After (thin core + addons):
-nvoos-core/                   (~500 lines, 10 files)
-addons/chat/                  (~2,000 lines)
-addons/memory/                (~3,000 lines)
-addons/skills/                (~1,500 lines)
-addons/admin/                 (~5,000 lines)
-addons/tools/content-tools/   (~2,000 lines)
-addons/tools/media-tools/     (~2,500 lines)
-addons/tools/dev-tools/       (~1,500 lines)
-addons/providers/openai/      (~800 lines)
-addons/providers/gemini/      (~600 lines)
-... (35+ addons, each 200-5,000 lines)
-SAME TOTAL: ~80,000+ lines (distributed across manageable addons)
+After (product core + addons):
+nvoos-graphify/               (~4,500 lines, 40+ files)
+  ├── Graph engine            (~1,200 lines)
+  ├── 14 built-in tools       (~800 lines)
+  ├── Graph explorer UI       (~200 PHP + bundled JS)
+  ├── Remote source engine    (~600 lines)
+  ├── REST + Admin + Frontend (~650 lines)
+  ├── Memory bridge           (~300 lines)
+  └── Contracts + Settings    (~750 lines)
+addons/providers/             (13 plugins, ~4,000 lines total)
+addons/ai/                    (3 plugins, ~4,400 lines total)
+addons/tools/                 (6 toolkits, ~10,300 lines total)
+addons/features/              (15 plugins, ~23,300 lines total)
+addons/integrations/          (3 plugins, ~5,000 lines)
+addons/existing/              (11 existing, ~65,000+ lines)
+SAME TOTAL: ~80,000+ lines (distributed across manageable packages)
 ```
 
 ---
