@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Lists JetFormBuilder forms with concise metadata for the assistant.', 'mcp-ai-wpoos' );
+		return __( 'Lists all JetFormBuilder forms with their IDs, names, and statuses. Use this BEFORE querying form submissions to discover which forms exist in the system. Each returned form has an id field that can be passed as form_id to get_jetformbuilder_submissions or get_all_form_submissions.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
