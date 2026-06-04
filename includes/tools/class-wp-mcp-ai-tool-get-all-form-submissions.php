@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 
 		// Query JetFormBuilder.
 		if ( in_array( 'jetformbuilder', $requested_sources, true )
-			&& class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' )
+		&& class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' )
 		) {
 			$jfb_tool = new WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions();
 			if ( $jfb_tool->is_available() ) {
@@ -172,7 +172,15 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 				// forms so the unified tool can aggregate across them.
 				$jfb_form_ids = $form_id ? array( $form_id ) : array();
 				if ( empty( $jfb_form_ids ) ) {
-					// Prefer the tool's REST-based discovery.
+					// Always query the records table directly for form IDs
+					// that actually have submissions. This is the authoritative
+					// source: it finds every form that has stored record data,
+					// including forms that may no longer exist as CPT posts.
+					$jfb_form_ids = $this->discover_jfb_forms_local();
+
+					// Supplement with forms discovered via the REST API
+					// (which may include forms that have no records yet
+					// but exist as CPT posts).
 					if ( class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' ) ) {
 						$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
 						$forms_result = $forms_tool->execute(
@@ -190,12 +198,8 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 						}
 					}
 
-					// Fallback: query the JFB records table directly for distinct
-					// form IDs when REST discovery returned nothing (e.g. due to
-					// permission restrictions on the REST endpoint).
-					if ( empty( $jfb_form_ids ) ) {
-						$jfb_form_ids = $this->discover_jfb_forms_local();
-					}
+					// Deduplicate form IDs.
+					$jfb_form_ids = array_values( array_unique( $jfb_form_ids ) );
 				}
 
 				$jfb_running_total = 0;
