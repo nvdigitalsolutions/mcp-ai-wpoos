@@ -163,76 +163,76 @@ class WP_MCP_AI_Tool_Get_All_Form_Submissions implements WP_MCP_AI_Tool_Interfac
 		$errors          = array();
 
 		// Query JetFormBuilder.
-	if ( in_array( 'jetformbuilder', $requested_sources, true )
+		if ( in_array( 'jetformbuilder', $requested_sources, true )
 		&& class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' )
-	) {
-		$jfb_tool = new WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions();
-		if ( $jfb_tool->is_available() ) {
-			// If no specific form_id is given, discover all JetFormBuilder
-			// forms so the unified tool can aggregate across them.
-			$jfb_form_ids = $form_id ? array( $form_id ) : array();
-			if ( empty( $jfb_form_ids ) ) {
-				// Always query the records table directly for form IDs
-				// that actually have submissions. This is the authoritative
-				// source: it finds every form that has stored record data,
-				// including forms that may no longer exist as CPT posts.
-				$jfb_form_ids = $this->discover_jfb_forms_local();
+		) {
+			$jfb_tool = new WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions();
+			if ( $jfb_tool->is_available() ) {
+				// If no specific form_id is given, discover all JetFormBuilder
+				// forms so the unified tool can aggregate across them.
+				$jfb_form_ids = $form_id ? array( $form_id ) : array();
+				if ( empty( $jfb_form_ids ) ) {
+					// Always query the records table directly for form IDs
+					// that actually have submissions. This is the authoritative
+					// source: it finds every form that has stored record data,
+					// including forms that may no longer exist as CPT posts.
+					$jfb_form_ids = $this->discover_jfb_forms_local();
 
-				// Supplement with forms discovered via the REST API
-				// (which may include forms that have no records yet
-				// but exist as CPT posts).
-				if ( class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' ) ) {
-					$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
-					$forms_result = $forms_tool->execute(
-						array( 'limit' => 50 ),
-						$context
-					);
-					if ( ! is_wp_error( $forms_result ) && ! empty( $forms_result['forms'] ) ) {
-						foreach ( $forms_result['forms'] as $form ) {
-							if ( ! empty( $form['id'] ) ) {
-								$jfb_form_ids[] = $form['id'];
+					// Supplement with forms discovered via the REST API
+					// (which may include forms that have no records yet
+					// but exist as CPT posts).
+					if ( class_exists( 'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms' ) ) {
+						$forms_tool   = new WP_MCP_AI_Tool_Get_JetFormBuilder_Forms();
+						$forms_result = $forms_tool->execute(
+							array( 'limit' => 50 ),
+							$context
+						);
+						if ( ! is_wp_error( $forms_result ) && ! empty( $forms_result['forms'] ) ) {
+							foreach ( $forms_result['forms'] as $form ) {
+								if ( ! empty( $form['id'] ) ) {
+									$jfb_form_ids[] = $form['id'];
+								}
 							}
+						} elseif ( is_wp_error( $forms_result ) ) {
+							$errors['jetformbuilder_forms'] = $forms_result->get_error_message();
 						}
-					} elseif ( is_wp_error( $forms_result ) ) {
-						$errors['jetformbuilder_forms'] = $forms_result->get_error_message();
+					}
+
+					// Deduplicate form IDs.
+					$jfb_form_ids = array_values( array_unique( $jfb_form_ids ) );
+				}
+
+				$jfb_running_total = 0;
+				foreach ( $jfb_form_ids as $current_form_id ) {
+					$jfb_args = array(
+						'limit'     => $limit,
+						'form_id'   => $current_form_id,
+						'transport' => $connection_id ? 'http' : 'auto',
+					);
+					if ( $status ) {
+						$jfb_args['status'] = $status;
+					}
+					if ( $connection_id ) {
+						$jfb_args['connection_id'] = $connection_id;
+					}
+
+					$jfb_result = $jfb_tool->execute( $jfb_args, $context );
+
+					if ( is_wp_error( $jfb_result ) ) {
+						$errors['jetformbuilder'] = $jfb_result->get_error_message();
+					} else {
+						$subs = isset( $jfb_result['submissions'] ) ? $jfb_result['submissions'] : array();
+						foreach ( $subs as &$sub ) {
+							$sub['source'] = 'jetformbuilder';
+						}
+						unset( $sub );
+						$all_submissions    = array_merge( $all_submissions, $subs );
+						$jfb_running_total += isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
 					}
 				}
-
-				// Deduplicate form IDs.
-				$jfb_form_ids = array_values( array_unique( $jfb_form_ids ) );
+				$totals['jetformbuilder'] = $jfb_running_total;
 			}
-
-			$jfb_running_total = 0;
-			foreach ( $jfb_form_ids as $current_form_id ) {
-				$jfb_args = array(
-					'limit'     => $limit,
-					'form_id'   => $current_form_id,
-					'transport' => $connection_id ? 'http' : 'auto',
-				);
-				if ( $status ) {
-					$jfb_args['status'] = $status;
-				}
-				if ( $connection_id ) {
-					$jfb_args['connection_id'] = $connection_id;
-				}
-
-				$jfb_result = $jfb_tool->execute( $jfb_args, $context );
-
-				if ( is_wp_error( $jfb_result ) ) {
-					$errors['jetformbuilder'] = $jfb_result->get_error_message();
-				} else {
-					$subs = isset( $jfb_result['submissions'] ) ? $jfb_result['submissions'] : array();
-					foreach ( $subs as &$sub ) {
-						$sub['source'] = 'jetformbuilder';
-					}
-					unset( $sub );
-					$all_submissions    = array_merge( $all_submissions, $subs );
-					$jfb_running_total += isset( $jfb_result['total'] ) ? (int) $jfb_result['total'] : count( $subs );
-				}
-			}
-			$totals['jetformbuilder'] = $jfb_running_total;
 		}
-	}
 
 		// Query Elementor Pro.
 		if ( in_array( 'elementor', $requested_sources, true )
