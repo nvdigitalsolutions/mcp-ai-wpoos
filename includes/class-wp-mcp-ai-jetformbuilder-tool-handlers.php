@@ -197,17 +197,18 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			$connection_id = sanitize_key( (string) $context['remote_connection_id'] );
 		}
 
-		$route = self::build_route( $config['route'], $form_id );
+		$route          = self::build_route( $config['route'], $form_id );
+		$rest_namespace = isset( $config['namespace'] ) ? $config['namespace'] : self::REST_NAMESPACE;
 
 		$result = null;
 
 		// If a connection_id is provided, force remote dispatch through the saved connection.
 		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			return self::dispatch_via_connection( $connection_id, $route, $config['method'], $params, $context );
+			return self::dispatch_via_connection( $connection_id, $route, $config['method'], $params, $context, $rest_namespace );
 		}
 
 		if ( 'http' !== $transport ) {
-			$result = self::dispatch_internal( $route, $config['method'], $params, $config['args_location'] );
+			$result = self::dispatch_internal( $route, $config['method'], $params, $config['args_location'], $rest_namespace );
 
 			if ( null !== $result ) {
 				return $result;
@@ -224,7 +225,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			}
 		}
 
-		return self::dispatch_remote( $route, $config['method'], $params, $context );
+		return self::dispatch_remote( $route, $config['method'], $params, $context, $rest_namespace );
 	}
 
 	/**
@@ -273,19 +274,20 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Dispatch the request through the WordPress REST server.
 	 *
-	 * @param string $route         Route relative to the JetFormBuilder namespace.
-	 * @param string $method        HTTP method.
-	 * @param array  $params        Request parameters.
-	 * @param string $args_location Whether params belong in the query string or body.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $method          HTTP method.
+	 * @param array  $params          Request parameters.
+	 * @param string $args_location   Whether params belong in the query string or body.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return array|null
 	 */
-	protected static function dispatch_internal( $route, $method, array $params, $args_location ) {
+	protected static function dispatch_internal( $route, $method, array $params, $args_location, $rest_namespace = '' ) {
 		if ( ! function_exists( 'rest_do_request' ) ) {
 			return null;
 		}
 
 		$method     = strtoupper( $method );
-		$path       = self::prepare_rest_path( $route );
+		$path       = self::prepare_rest_path( $route, $rest_namespace );
 		$request    = new WP_REST_Request( $method, $path );
 		$args_place = 'body' === $args_location ? 'body' : 'query';
 
@@ -331,14 +333,15 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 *
 	 * @since 1.2.0
 	 *
-	 * @param string $connection_id Remote connection identifier.
-	 * @param string $route         Route relative to the JetFormBuilder namespace.
-	 * @param string $method        HTTP method.
-	 * @param array  $params        Request parameters.
-	 * @param array  $context       Execution context.
+	 * @param string $connection_id   Remote connection identifier.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $method          HTTP method.
+	 * @param array  $params          Request parameters.
+	 * @param array  $context         Execution context.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return array|WP_Error
 	 */
-	protected static function dispatch_via_connection( $connection_id, $route, $method, array $params, array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $context reserved for future use.
+	protected static function dispatch_via_connection( $connection_id, $route, $method, array $params, array $context = array(), $rest_namespace = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $context reserved for future use.
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
@@ -471,16 +474,18 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Dispatch the request using wp_remote_request().
 	 *
-	 * @param string $route  Route relative to the JetFormBuilder namespace.
-	 * @param string $method HTTP method.
-	 * @param array  $params Request parameters.
-	 * @param array  $context Execution context.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $method          HTTP method.
+	 * @param array  $params          Request parameters.
+	 * @param array  $context         Execution context.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return array
 	 */
-	protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
-		$method = strtoupper( $method );
-		$url    = WP_MCP_AI_Proxy_Utils::build_rest_url( self::REST_NAMESPACE, $route );
-		$args   = array(
+	protected static function dispatch_remote( $route, $method, array $params, array $context = array(), $rest_namespace = '' ) {
+		$method  = strtoupper( $method );
+		$rest_ns = $rest_namespace ? $rest_namespace : self::REST_NAMESPACE;
+		$url     = WP_MCP_AI_Proxy_Utils::build_rest_url( $rest_ns, $route );
+		$args    = array(
 			'method'  => $method,
 			'timeout' => 20,
 			'headers' => array(),
@@ -551,12 +556,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Build a REST URL suitable for remote proxy requests.
 	 *
-	 * @param string $route Route relative to the JetFormBuilder namespace.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return string
 	 */
-	protected static function prepare_remote_rest_url( $route ) {
-		$route = ltrim( $route, '/' );
-		$url   = rest_url( ltrim( self::REST_NAMESPACE . '/' . $route, '/' ) );
+	protected static function prepare_remote_rest_url( $route, $rest_namespace = '' ) {
+		$rest_ns = $rest_namespace ? $rest_namespace : self::REST_NAMESPACE;
+		$route   = ltrim( $route, '/' );
+		$url     = rest_url( ltrim( $rest_ns . '/' . $route, '/' ) );
 
 		return WP_MCP_AI_Request_Context::normalise_rest_url( $url );
 	}
@@ -692,13 +699,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	/**
 	 * Prepare the REST path for a JetFormBuilder route.
 	 *
-	 * @param string $route Route relative to the namespace.
+	 * @param string $route           Route relative to the namespace.
+	 * @param string $rest_namespace  REST namespace (defaults to jet-form-builder/v1).
 	 * @return string
 	 */
-	protected static function prepare_rest_path( $route ) {
-		$namespace = trim( self::REST_NAMESPACE, '/' );
-		$route     = ltrim( $route, '/' );
-		$path      = '/' . $namespace . '/' . $route;
+	protected static function prepare_rest_path( $route, $rest_namespace = '' ) {
+		$ns    = $rest_namespace ? trim( $rest_namespace, '/' ) : trim( self::REST_NAMESPACE, '/' );
+		$route = ltrim( $route, '/' );
+		$path  = '/' . $ns . '/' . $route;
 
 		return '/' . trim( $path, '/' );
 	}

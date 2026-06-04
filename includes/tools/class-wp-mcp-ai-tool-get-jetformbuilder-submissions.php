@@ -162,17 +162,25 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 		}
 
 		$params = array(
-			'per_page' => $limit,
+			'limit'   => $limit,
+			'filters' => array(),
 		);
 
+		if ( $form_id ) {
+			$params['filters']['form'] = $form_id;
+		}
+
 		if ( $status ) {
-			$params['status'] = $status;
+			$params['filters']['status'] = $status;
+		}
+
+		if ( empty( $params['filters'] ) ) {
+			unset( $params['filters'] );
 		}
 
 		$result = WP_MCP_AI_JetFormBuilder_Tool_Handlers::dispatch(
 			'fetch_submissions',
 			array(
-				'id'        => $form_id,
 				'params'    => $params,
 				'transport' => $transport,
 			),
