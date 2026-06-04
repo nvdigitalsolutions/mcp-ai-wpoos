@@ -112,10 +112,6 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		if ( ! $this->user_can_view_records( $user_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' ) );
-		}
-
 		$form_id = $this->sanitize_form_id( isset( $arguments['form_id'] ) ? $arguments['form_id'] : '' );
 		if ( '' === $form_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_form_id', __( 'A JetFormBuilder form identifier must be provided.', 'mcp-ai-wpoos' ) );
@@ -132,10 +128,20 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 
 		// Prefer direct database queries for local requests to avoid the
 		// JetFormBuilder REST endpoint's manage_options capability requirement.
+		// The local path uses the tool's advertised capability (edit_posts).
 		// The local path is used when transport is 'auto' or 'rest' and no
 		// remote connection is targeted. Explicit 'http' transport or a
 		// connection_id forces the REST/handler dispatch path.
 		if ( 'http' !== $transport && ! $connection_id ) {
+			// Direct DB access only needs the tool's advertised capability.
+			$required_cap = $this->get_required_capability();
+			if ( $required_cap && ! user_can( $user_id, $required_cap ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' )
+				);
+			}
+
 			$local = $this->query_submissions_local( $form_id, $limit, $status );
 			if ( null !== $local ) {
 				return $local;
@@ -148,6 +154,11 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 					__( 'The JetFormBuilder records database tables were not found.', 'mcp-ai-wpoos' )
 				);
 			}
+		}
+
+		// REST dispatch path requires stronger JFB-specific capabilities.
+		if ( ! $this->user_can_view_records( $user_id ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' ) );
 		}
 
 		$params = array(
