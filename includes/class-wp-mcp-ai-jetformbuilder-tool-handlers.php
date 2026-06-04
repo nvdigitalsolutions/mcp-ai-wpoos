@@ -93,7 +93,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	public static function is_available() {
 		self::bootstrap();
 
-		$available = class_exists( 'Jet_Form_Builder' );
+		$available = class_exists( 'Jet_Form_Builder\\Plugin' );
 
 		/**
 		 * Allow tests or extensions to override JetFormBuilder availability detection.
