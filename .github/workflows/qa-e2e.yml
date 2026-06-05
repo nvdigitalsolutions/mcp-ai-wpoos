@@ -225,21 +225,21 @@ jobs:
 
               summary = `## ${statusIcon} E2E QA Results — \`${{ matrix.browser }}\`
 
-| Metric   | Count |
-|----------|-------|
-| Total    | ${tests} |
-| Passed   | ${passed} |
-| Failed   | ${failures} |
-| Errors   | ${errors} |
-| Skipped  | ${skipped} |
+              | Metric   | Count |
+              |----------|-------|
+              | Total    | ${tests} |
+              | Passed   | ${passed} |
+              | Failed   | ${failures} |
+              | Errors   | ${errors} |
+              | Skipped  | ${skipped} |
 
-📊 [View Playwright Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-`;
+              📊 [View Playwright Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              `;
             } else {
               summary = `## ⚠️ E2E QA — \`${{ matrix.browser }}\`
 
-No JUnit results found. Check the workflow logs for details.
-`;
+              No JUnit results found. Check the workflow logs for details.
+              `;
             }
 
             const { data: comments } = await github.rest.issues.listComments({
