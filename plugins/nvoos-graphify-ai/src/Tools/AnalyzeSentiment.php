@@ -7,8 +7,10 @@ namespace NvoosGraphifyAi\Tools;
  * Browser-native sentiment analysis via client-side Transformers.js.
  */
 class AnalyzeSentiment extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_analyze_sentiment'; }
-	public function getName(): string { return __( 'Analyze Sentiment', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_analyze_sentiment'; }
+	public function getName(): string {
+		return __( 'Analyze Sentiment', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Analyze the sentiment of text using browser-native AI. Returns sentiment score and label.', 'nvoos-graphify-ai' );
 	}
@@ -16,7 +18,10 @@ class AnalyzeSentiment extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'text' => array( 'type' => 'string', 'description' => 'Text to analyze.' ),
+				'text' => array(
+					'type'        => 'string',
+					'description' => 'Text to analyze.',
+				),
 			),
 			'required'   => array( 'text' ),
 		);

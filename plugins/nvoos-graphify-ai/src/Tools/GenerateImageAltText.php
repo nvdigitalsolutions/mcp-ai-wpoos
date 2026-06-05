@@ -9,8 +9,10 @@ use NvoosGraphifyAi\Chat\ChatService;
  * Generate image alt text using AI.
  */
 class GenerateImageAltText extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_generate_image_alt_text'; }
-	public function getName(): string { return __( 'Generate Image Alt Text', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_generate_image_alt_text'; }
+	public function getName(): string {
+		return __( 'Generate Image Alt Text', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Generate accessibility-friendly alt text for an image using AI.', 'nvoos-graphify-ai' );
 	}
@@ -18,8 +20,14 @@ class GenerateImageAltText extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'attachment_id' => array( 'type' => 'integer', 'description' => 'WordPress attachment ID.' ),
-				'image_url'     => array( 'type' => 'string', 'description' => 'Image URL to analyze.' ),
+				'attachment_id' => array(
+					'type'        => 'integer',
+					'description' => 'WordPress attachment ID.',
+				),
+				'image_url'     => array(
+					'type'        => 'string',
+					'description' => 'Image URL to analyze.',
+				),
 			),
 		);
 	}
@@ -36,10 +44,19 @@ class GenerateImageAltText extends AbstractAiTool {
 		}
 
 		$messages = array(
-			array( 'role' => 'user', 'content' => array(
-				array( 'type' => 'text', 'text' => 'Describe this image in one concise sentence for accessibility (alt text).' ),
-				array( 'type' => 'image_url', 'image_url' => array( 'url' => $imageUrl ) ),
-			) ),
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Describe this image in one concise sentence for accessibility (alt text).',
+					),
+					array(
+						'type'      => 'image_url',
+						'image_url' => array( 'url' => $imageUrl ),
+					),
+				),
+			),
 		);
 
 		$result = ChatService::process( $messages );
@@ -52,6 +69,10 @@ class GenerateImageAltText extends AbstractAiTool {
 			update_post_meta( $attachmentId, '_wp_attachment_image_alt', $altText );
 		}
 
-		return array( 'success' => true, 'alt_text' => $altText, 'attachment_id' => $attachmentId );
+		return array(
+			'success'       => true,
+			'alt_text'      => $altText,
+			'attachment_id' => $attachmentId,
+		);
 	}
 }

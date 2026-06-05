@@ -28,19 +28,19 @@ define( 'NVOOS_GRAPHIFY_AI_FILE', __FILE__ );
 define( 'NVOOS_GRAPHIFY_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_GRAPHIFY_AI_URL', plugin_dir_url( __FILE__ ) );
 
-// ─── Autoloader ────────────────────────────────────────────────
+// Autoloader — Composer primary, spl fallback.
 $autoload = NVOOS_GRAPHIFY_AI_PATH . 'vendor/autoload.php';
 if ( file_exists( $autoload ) ) {
 	require_once $autoload;
 }
 
 spl_autoload_register(
-	static function ( string $class ): void {
+	static function ( string $fqcn ): void {
 		$prefix = 'NvoosGraphifyAi\\';
-		if ( 0 !== strpos( $class, $prefix ) ) {
+		if ( 0 !== strpos( $fqcn, $prefix ) ) {
 			return;
 		}
-		$relative = substr( $class, strlen( $prefix ) );
+		$relative = substr( $fqcn, strlen( $prefix ) );
 		$file     = NVOOS_GRAPHIFY_AI_PATH . 'src/' . str_replace( '\\', '/', $relative ) . '.php';
 		if ( file_exists( $file ) ) {
 			require_once $file;
@@ -48,7 +48,7 @@ spl_autoload_register(
 	}
 );
 
-// ─── Activation guard: nvoos-graphify must be active ──────────
+// Activation guard: nvoos-graphify must be active.
 if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) {
 	add_action(
 		'admin_notices',
@@ -62,7 +62,7 @@ if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) {
 	return;
 }
 
-// ─── Boot ──────────────────────────────────────────────────────
+// Boot — after nvoos-graphify (priority 10).
 add_action(
 	'plugins_loaded',
 	static function (): void {
@@ -70,5 +70,5 @@ add_action(
 			\NvoosGraphifyAi\Plugin::instance()->register();
 		}
 	},
-	20 // After nvoos-graphify (priority 10).
+	20
 );

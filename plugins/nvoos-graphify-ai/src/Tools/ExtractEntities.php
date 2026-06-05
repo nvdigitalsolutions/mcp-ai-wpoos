@@ -7,8 +7,10 @@ namespace NvoosGraphifyAi\Tools;
  * Browser-native entity extraction via client-side Transformers.js.
  */
 class ExtractEntities extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_extract_entities'; }
-	public function getName(): string { return __( 'Extract Entities', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_extract_entities'; }
+	public function getName(): string {
+		return __( 'Extract Entities', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Extract named entities from text using browser-native AI. Returns people, places, organizations, and more.', 'nvoos-graphify-ai' );
 	}
@@ -16,7 +18,10 @@ class ExtractEntities extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'text' => array( 'type' => 'string', 'description' => 'Text to extract entities from.' ),
+				'text' => array(
+					'type'        => 'string',
+					'description' => 'Text to extract entities from.',
+				),
 			),
 			'required'   => array( 'text' ),
 		);

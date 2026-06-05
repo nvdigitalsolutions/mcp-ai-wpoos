@@ -9,8 +9,10 @@ use NvoosGraphifyAi\Chat\ChatService;
  * Search knowledge graph using semantic similarity (RAG retrieval).
  */
 class SemanticSearch extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_semantic_search'; }
-	public function getName(): string { return __( 'Semantic Search', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_semantic_search'; }
+	public function getName(): string {
+		return __( 'Semantic Search', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Search the knowledge graph using semantic similarity. Combines keyword search, graph traversal, and vector similarity for RAG retrieval.', 'nvoos-graphify-ai' );
 	}
@@ -18,8 +20,16 @@ class SemanticSearch extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'query' => array( 'type' => 'string', 'description' => 'Search query.' ),
-				'limit' => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 50, 'default' => 10 ),
+				'query' => array(
+					'type'        => 'string',
+					'description' => 'Search query.',
+				),
+				'limit' => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 50,
+					'default' => 10,
+				),
 			),
 			'required'   => array( 'query' ),
 		);
@@ -31,16 +41,26 @@ class SemanticSearch extends AbstractAiTool {
 			return new \WP_Error( 'nvoos_graphify_ai', __( 'Query is required.', 'nvoos-graphify-ai' ) );
 		}
 
-		// Use the core graph for keyword search.
+		// Use the core graph for keyword search. The table name from
+		// prefix is a known safe identifier — not user input.
 		global $wpdb;
-		$table = $wpdb->prefix . 'nvoos_graphify_nodes';
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
 		$results = $wpdb->get_results(
-			$wpdb->prepare( "SELECT node_id, label, type FROM {$table} WHERE label LIKE %s LIMIT %d", '%' . $wpdb->esc_like( $query ) . '%', $limit * 2 ),
+			$wpdb->prepare(
+				"SELECT node_id, label, type FROM {$wpdb->prefix}nvoos_graphify_nodes WHERE label LIKE %s LIMIT %d",
+				'%' . $wpdb->esc_like( $query ) . '%',
+				$limit * 2
+			),
 			ARRAY_A
 		);
+		// phpcs:enable
 
 		if ( empty( $results ) ) {
-			return array( 'success' => true, 'nodes' => array(), 'message' => __( 'No matching nodes found.', 'nvoos-graphify-ai' ) );
+			return array(
+				'success' => true,
+				'nodes'   => array(),
+				'message' => __( 'No matching nodes found.', 'nvoos-graphify-ai' ),
+			);
 		}
 
 		// Build context for AI reranking.
@@ -50,8 +70,14 @@ class SemanticSearch extends AbstractAiTool {
 		}
 
 		$messages = array(
-			array( 'role' => 'system', 'content' => 'You are a search relevance ranker. Rank these nodes by relevance to the query. Return only a JSON array of node_ids in order of relevance.' ),
-			array( 'role' => 'user', 'content' => $context ),
+			array(
+				'role'    => 'system',
+				'content' => 'You are a search relevance ranker. Rank these nodes by relevance to the query. Return only a JSON array of node_ids in order of relevance.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => $context,
+			),
 		);
 
 		$result = ChatService::process( $messages );
@@ -61,7 +87,7 @@ class SemanticSearch extends AbstractAiTool {
 
 		$content = trim( $result['content'] ?? '' );
 		$content = preg_replace( '/^```(?:json)?\s*|\s*```$/m', '', $content );
-		$ranked   = json_decode( $content, true );
+		$ranked  = json_decode( $content, true );
 
 		$final = array();
 		if ( is_array( $ranked ) ) {
@@ -76,6 +102,10 @@ class SemanticSearch extends AbstractAiTool {
 			}
 		}
 
-		return array( 'success' => true, 'nodes' => $final ?: $results, 'count' => count( $final ?: $results ) );
+		return array(
+			'success' => true,
+			'nodes'   => $final ?: $results,
+			'count'   => count( $final ?: $results ),
+		);
 	}
 }

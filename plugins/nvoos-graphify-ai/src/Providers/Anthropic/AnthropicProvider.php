@@ -15,7 +15,7 @@ use NvoosGraphifyAi\Settings;
  */
 class AnthropicProvider implements ProviderClient {
 
-	private const API_BASE = 'https://api.anthropic.com/v1';
+	private const API_BASE    = 'https://api.anthropic.com/v1';
 	private const API_VERSION = '2023-06-01';
 
 	public function chat( array $messages, array $options = array() ) {
@@ -27,8 +27,8 @@ class AnthropicProvider implements ProviderClient {
 			);
 		}
 
-		$model   = $options['model'] ?? 'claude-sonnet-4-20250514';
-		$system  = $this->extractSystem( $messages );
+		$model     = $options['model'] ?? 'claude-sonnet-4-20250514';
+		$system    = $this->extractSystem( $messages );
 		$formatted = $this->formatMessages( $messages );
 
 		$body = array(
@@ -77,16 +77,16 @@ class AnthropicProvider implements ProviderClient {
 			);
 		}
 
-		$content    = '';
-		$toolCalls  = array();
+		$content   = '';
+		$toolCalls = array();
 
 		foreach ( $data['content'] ?? array() as $block ) {
 			if ( 'text' === ( $block['type'] ?? '' ) ) {
 				$content .= $block['text'];
 			} elseif ( 'tool_use' === ( $block['type'] ?? '' ) ) {
 				$toolCalls[] = array(
-					'id'   => $block['id'] ?? '',
-					'type' => 'function',
+					'id'       => $block['id'] ?? '',
+					'type'     => 'function',
 					'function' => array(
 						'name'      => $block['name'] ?? '',
 						'arguments' => wp_json_encode( $block['input'] ?? array() ),
@@ -121,7 +121,7 @@ class AnthropicProvider implements ProviderClient {
 	 * Extract system message from the messages array.
 	 */
 	private function extractSystem( array &$messages ): string {
-		$system = '';
+		$system   = '';
 		$filtered = array();
 
 		foreach ( $messages as $msg ) {

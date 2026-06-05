@@ -125,10 +125,10 @@ abstract class OpenAiCompatibleProvider implements ProviderClient {
 			return $response;
 		}
 
-		$content       = '';
-		$usage         = array();
-		$toolCalls     = array();
-		$finishReason  = '';
+		$content      = '';
+		$usage        = array();
+		$toolCalls    = array();
+		$finishReason = '';
 
 		$rawBody = wp_remote_retrieve_body( $response );
 		$lines   = explode( "\n", $rawBody );
@@ -164,8 +164,8 @@ abstract class OpenAiCompatibleProvider implements ProviderClient {
 					$idx = $tc['index'] ?? 0;
 					if ( ! isset( $toolCalls[ $idx ] ) ) {
 						$toolCalls[ $idx ] = array(
-							'id'   => $tc['id'] ?? '',
-							'type' => 'function',
+							'id'       => $tc['id'] ?? '',
+							'type'     => 'function',
 							'function' => array(
 								'name'      => $tc['function']['name'] ?? '',
 								'arguments' => '',

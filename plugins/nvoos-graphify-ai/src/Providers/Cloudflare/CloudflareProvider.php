@@ -14,5 +14,6 @@ class CloudflareProvider extends OpenAiCompatibleProvider {
 	protected function defaultModel(): string {
 		return Settings::get( 'cloudflare_model', '@cf/meta/llama-3.3-70b-instruct' );
 	}
-	public function getProviderSlug(): string { return 'cloudflare'; }
+	public function getProviderSlug(): string {
+		return 'cloudflare'; }
 }

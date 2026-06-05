@@ -26,13 +26,13 @@ class GeminiProvider implements ProviderClient {
 			);
 		}
 
-		$model    = $options['model'] ?? 'gemini-2.5-flash';
-		$contents = $this->formatContents( $messages );
+		$model             = $options['model'] ?? 'gemini-2.5-flash';
+		$contents          = $this->formatContents( $messages );
 		$systemInstruction = $this->extractSystemInstruction( $messages );
 
 		$body = array(
-			'contents'          => $contents,
-			'generationConfig'  => array(
+			'contents'         => $contents,
+			'generationConfig' => array(
 				'temperature'     => $options['temperature'] ?? Settings::get( 'ai_temperature', 0.7 ),
 				'maxOutputTokens' => $options['max_tokens'] ?? (int) Settings::get( 'ai_max_tokens', 4096 ),
 			),
@@ -76,7 +76,7 @@ class GeminiProvider implements ProviderClient {
 			);
 		}
 
-		$candidate = $data['candidates'][0] ?? array();
+		$candidate   = $data['candidates'][0] ?? array();
 		$contentPart = $candidate['content'] ?? array();
 		$parts       = $contentPart['parts'] ?? array();
 
@@ -89,8 +89,8 @@ class GeminiProvider implements ProviderClient {
 			}
 			if ( ! empty( $part['functionCall'] ) ) {
 				$toolCalls[] = array(
-					'id'   => wp_generate_uuid4(),
-					'type' => 'function',
+					'id'       => wp_generate_uuid4(),
+					'type'     => 'function',
 					'function' => array(
 						'name'      => $part['functionCall']['name'] ?? '',
 						'arguments' => wp_json_encode( $part['functionCall']['args'] ?? array() ),
@@ -148,7 +148,10 @@ class GeminiProvider implements ProviderClient {
 				$parts[] = array(
 					'functionResponse' => array(
 						'name'     => '', // Gemini infers from context.
-						'response' => array( 'name' => '', 'content' => $msg['content'] ?? '' ),
+						'response' => array(
+							'name'    => '',
+							'content' => $msg['content'] ?? '',
+						),
 					),
 				);
 			} elseif ( 'model' === $geminiRole && ! empty( $msg['tool_calls'] ) ) {
@@ -170,12 +173,17 @@ class GeminiProvider implements ProviderClient {
 					if ( 'text' === ( $block['type'] ?? '' ) ) {
 						$parts[] = array( 'text' => $block['text'] ?? '' );
 					} elseif ( 'image_url' === ( $block['type'] ?? '' ) ) {
-						$url = $block['image_url']['url'] ?? '';
+						$url      = $block['image_url']['url'] ?? '';
 						$mimeType = 'image/jpeg';
 						if ( 0 === strpos( $url, 'data:' ) ) {
 							$mimeType = explode( ';', substr( $url, 5 ) )[0];
-							$data = explode( ',', $url, 2 )[1] ?? '';
-							$parts[] = array( 'inlineData' => array( 'mimeType' => $mimeType, 'data' => $data ) );
+							$data     = explode( ',', $url, 2 )[1] ?? '';
+							$parts[]  = array(
+								'inlineData' => array(
+									'mimeType' => $mimeType,
+									'data'     => $data,
+								),
+							);
 						}
 					}
 				}

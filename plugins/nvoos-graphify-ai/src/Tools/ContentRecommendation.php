@@ -9,8 +9,10 @@ use NvoosGraphifyAi\Chat\ChatService;
  * AI-powered content recommendation engine.
  */
 class ContentRecommendation extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_content_recommendation'; }
-	public function getName(): string { return __( 'Content Recommendation', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_content_recommendation'; }
+	public function getName(): string {
+		return __( 'Content Recommendation', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Get AI-powered content recommendations. Analyzes your content and suggests related topics, gaps, and opportunities.', 'nvoos-graphify-ai' );
 	}
@@ -18,9 +20,20 @@ class ContentRecommendation extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'topic'   => array( 'type' => 'string', 'description' => 'Topic to get recommendations for.' ),
-				'post_id' => array( 'type' => 'integer', 'description' => 'Post ID to analyze.' ),
-				'count'   => array( 'type' => 'integer', 'minimum' => 1, 'maximum' => 20, 'default' => 5 ),
+				'topic'   => array(
+					'type'        => 'string',
+					'description' => 'Topic to get recommendations for.',
+				),
+				'post_id' => array(
+					'type'        => 'integer',
+					'description' => 'Post ID to analyze.',
+				),
+				'count'   => array(
+					'type'    => 'integer',
+					'minimum' => 1,
+					'maximum' => 20,
+					'default' => 5,
+				),
 			),
 		);
 	}
@@ -41,8 +54,14 @@ class ContentRecommendation extends AbstractAiTool {
 		}
 
 		$messages = array(
-			array( 'role' => 'system', 'content' => "You are a content strategist. Based on the given content, suggest {$count} specific related content topics. Return ONLY a JSON array of strings." ),
-			array( 'role' => 'user', 'content' => $topic ),
+			array(
+				'role'    => 'system',
+				'content' => "You are a content strategist. Based on the given content, suggest {$count} specific related content topics. Return ONLY a JSON array of strings.",
+			),
+			array(
+				'role'    => 'user',
+				'content' => $topic,
+			),
 		);
 
 		$result = ChatService::process( $messages );

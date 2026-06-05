@@ -9,8 +9,10 @@ use NvoosGraphifyAi\Chat\ChatService;
  * Auto-categorize content using AI.
  */
 class CategorizeContent extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_categorize_content'; }
-	public function getName(): string { return __( 'Categorize Content', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_categorize_content'; }
+	public function getName(): string {
+		return __( 'Categorize Content', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Auto-categorize WordPress content using AI. Assigns categories and tags based on content analysis.', 'nvoos-graphify-ai' );
 	}
@@ -21,8 +23,14 @@ class CategorizeContent extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'post_id' => array( 'type' => 'integer', 'description' => 'Post ID to categorize.' ),
-				'content' => array( 'type' => 'string', 'description' => 'Content to categorize (alternative to post_id).' ),
+				'post_id' => array(
+					'type'        => 'integer',
+					'description' => 'Post ID to categorize.',
+				),
+				'content' => array(
+					'type'        => 'string',
+					'description' => 'Content to categorize (alternative to post_id).',
+				),
 			),
 		);
 	}
@@ -43,12 +51,23 @@ class CategorizeContent extends AbstractAiTool {
 		}
 
 		// Get existing categories for context.
-		$categories = get_categories( array( 'hide_empty' => false, 'number' => 20 ) );
+		$categories = get_categories(
+			array(
+				'hide_empty' => false,
+				'number'     => 20,
+			)
+		);
 		$catList    = implode( ', ', wp_list_pluck( $categories, 'name' ) );
 
 		$messages = array(
-			array( 'role' => 'system', 'content' => "Analyze this content and suggest WordPress categories and tags. Available categories: {$catList}. Return ONLY a JSON object with 'categories' (array of matching category names) and 'tags' (array of 5-10 relevant tag strings)." ),
-			array( 'role' => 'user', 'content' => $content ),
+			array(
+				'role'    => 'system',
+				'content' => "Analyze this content and suggest WordPress categories and tags. Available categories: {$catList}. Return ONLY a JSON object with 'categories' (array of matching category names) and 'tags' (array of 5-10 relevant tag strings).",
+			),
+			array(
+				'role'    => 'user',
+				'content' => $content,
+			),
 		);
 
 		$result = ChatService::process( $messages );
@@ -59,7 +78,10 @@ class CategorizeContent extends AbstractAiTool {
 		$resp    = trim( $result['content'] ?? '' );
 		$resp    = preg_replace( '/^```(?:json)?\s*|\s*```$/m', '', $resp );
 		$data    = json_decode( $resp, true );
-		$applied = array( 'categories' => array(), 'tags' => array() );
+		$applied = array(
+			'categories' => array(),
+			'tags'       => array(),
+		);
 
 		if ( is_array( $data ) && $postId ) {
 			if ( ! empty( $data['categories'] ) ) {
@@ -85,6 +107,10 @@ class CategorizeContent extends AbstractAiTool {
 			}
 		}
 
-		return array( 'success' => true, 'applied' => $applied, 'post_id' => $postId );
+		return array(
+			'success' => true,
+			'applied' => $applied,
+			'post_id' => $postId,
+		);
 	}
 }

@@ -23,8 +23,8 @@ class ChatService {
 	/**
 	 * Process a chat request through the tool-calling loop.
 	 *
-	 * @param array               $messages  The conversation history.
-	 * @param string|null         $provider  Optional provider slug override.
+	 * @param array                $messages  The conversation history.
+	 * @param string|null          $provider  Optional provider slug override.
 	 * @param callable|string|null $callback Optional streaming callback or SSE output function.
 	 * @return array|\WP_Error The final response array.
 	 */
@@ -51,7 +51,7 @@ class ChatService {
 		$finalUsage = array();
 
 		while ( $iteration < self::MAX_ITERATIONS ) {
-			$iteration++;
+			++$iteration;
 
 			// Choose streaming or non-streaming based on callback presence.
 			if ( is_callable( $callback ) ) {
@@ -63,7 +63,7 @@ class ChatService {
 						$callback( $chunk, $done );
 					}
 				};
-				$result = $client->stream( $messages, $options, $streamCb );
+				$result   = $client->stream( $messages, $options, $streamCb );
 			} else {
 				$result = $client->chat( $messages, $options );
 			}
@@ -78,7 +78,7 @@ class ChatService {
 			}
 
 			// If the model returned a final text response, we're done.
-			$hasContent = ! empty( $result['content'] );
+			$hasContent   = ! empty( $result['content'] );
 			$hasToolCalls = ! empty( $result['tool_calls'] );
 
 			if ( ! $hasToolCalls ) {
@@ -95,7 +95,7 @@ class ChatService {
 				'content'    => $result['content'] ?? null,
 				'tool_calls' => $result['tool_calls'],
 			);
-			$messages[] = $assistantMsg;
+			$messages[]   = $assistantMsg;
 
 			// Execute each tool call and append the result.
 			foreach ( $result['tool_calls'] as $toolCall ) {
@@ -103,7 +103,7 @@ class ChatService {
 				$toolArgs = array();
 
 				if ( ! empty( $toolCall['function']['arguments'] ) && is_string( $toolCall['function']['arguments'] ) ) {
-					$decoded = json_decode( $toolCall['function']['arguments'], true );
+					$decoded  = json_decode( $toolCall['function']['arguments'], true );
 					$toolArgs = is_array( $decoded ) ? $decoded : array();
 				}
 
@@ -169,7 +169,7 @@ class ChatService {
 			$schema = $tool->getParametersSchema();
 
 			$definitions[] = array(
-				'type' => 'function',
+				'type'     => 'function',
 				'function' => array(
 					'name'        => $tool->getSlug(),
 					'description' => $tool->getDescription(),

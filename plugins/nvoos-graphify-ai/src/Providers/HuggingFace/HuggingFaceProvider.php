@@ -14,5 +14,6 @@ class HuggingFaceProvider extends OpenAiCompatibleProvider {
 	protected function defaultModel(): string {
 		return Settings::get( 'huggingface_model', 'meta-llama/Llama-3.3-70B-Instruct' );
 	}
-	public function getProviderSlug(): string { return 'huggingface'; }
+	public function getProviderSlug(): string {
+		return 'huggingface'; }
 }

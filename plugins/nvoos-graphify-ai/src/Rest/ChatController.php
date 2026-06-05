@@ -43,10 +43,10 @@ class ChatController {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'stream' => array(
-						'required'          => false,
-						'type'              => 'boolean',
-						'default'           => false,
+					'stream'   => array(
+						'required' => false,
+						'type'     => 'boolean',
+						'default'  => false,
 					),
 				),
 			)
@@ -92,9 +92,9 @@ class ChatController {
 			header( 'Connection: keep-alive' );
 			header( 'X-Accel-Buffering: no' );
 
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions,WordPress.PHP.IniSet.Risky,Generic.PHP.NoSilencedErrors.Discouraged — required for SSE streaming.
 			@ini_set( 'output_buffering', 'off' );
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions,WordPress.PHP.IniSet.Risky,Generic.PHP.NoSilencedErrors.Discouraged — required for SSE streaming.
 			@ini_set( 'zlib.output_compression', 'off' );
 
 			if ( function_exists( 'wp_ob_end_flush_all' ) ) {
@@ -103,7 +103,7 @@ class ChatController {
 
 			$streamCb = static function ( string $chunk ) {
 				if ( '' !== $chunk ) {
-					echo "data: " . wp_json_encode( array( 'content' => $chunk ) ) . "\n\n";
+					echo 'data: ' . wp_json_encode( array( 'content' => $chunk ) ) . "\n\n";
 					flush();
 				}
 			};
@@ -115,7 +115,7 @@ class ChatController {
 			);
 
 			if ( is_wp_error( $result ) ) {
-				echo "data: " . wp_json_encode( array( 'error' => $result->get_error_message() ) ) . "\n\n";
+				echo 'data: ' . wp_json_encode( array( 'error' => $result->get_error_message() ) ) . "\n\n";
 			}
 
 			echo "data: [DONE]\n\n";
@@ -169,7 +169,7 @@ class ChatController {
 			flush();
 			return;
 		}
-		echo "data: " . wp_json_encode( array( 'content' => $chunk ) ) . "\n\n";
+		echo 'data: ' . wp_json_encode( array( 'content' => $chunk ) ) . "\n\n";
 		flush();
 	}
 

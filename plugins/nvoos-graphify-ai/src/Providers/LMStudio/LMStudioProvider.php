@@ -13,5 +13,6 @@ class LMStudioProvider extends OpenAiCompatibleProvider {
 	protected function defaultModel(): string {
 		return Settings::get( 'lmstudio_model', 'local-model' );
 	}
-	public function getProviderSlug(): string { return 'lmstudio'; }
+	public function getProviderSlug(): string {
+		return 'lmstudio'; }
 }

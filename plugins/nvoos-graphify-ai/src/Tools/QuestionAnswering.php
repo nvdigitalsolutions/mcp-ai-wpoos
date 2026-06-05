@@ -10,8 +10,10 @@ use NvoosGraphifyAi\Chat\ChatService;
  * AI-powered text completion / question answering tool.
  */
 class QuestionAnswering extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_question_answering'; }
-	public function getName(): string { return __( 'AI Question Answering', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_question_answering'; }
+	public function getName(): string {
+		return __( 'AI Question Answering', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Answer questions using AI. Provide context and a question to get an AI-generated answer.', 'nvoos-graphify-ai' );
 	}
@@ -19,8 +21,14 @@ class QuestionAnswering extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'question' => array( 'type' => 'string', 'description' => 'The question to answer.' ),
-				'context'  => array( 'type' => 'string', 'description' => 'Optional context to ground the answer.' ),
+				'question' => array(
+					'type'        => 'string',
+					'description' => 'The question to answer.',
+				),
+				'context'  => array(
+					'type'        => 'string',
+					'description' => 'Optional context to ground the answer.',
+				),
 			),
 			'required'   => array( 'question' ),
 		);
@@ -37,13 +45,22 @@ class QuestionAnswering extends AbstractAiTool {
 			$prompt = "Context:\n{$ctx}\n\nQuestion: {$question}";
 		}
 
-		$messages = array( array( 'role' => 'user', 'content' => $prompt ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		);
 		$result   = ChatService::process( $messages );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		return array( 'success' => true, 'answer' => $result['content'] ?? '', 'model' => $result['model'] ?? '' );
+		return array(
+			'success' => true,
+			'answer'  => $result['content'] ?? '',
+			'model'   => $result['model'] ?? '',
+		);
 	}
 }

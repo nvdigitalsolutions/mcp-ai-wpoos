@@ -7,8 +7,10 @@ namespace NvoosGraphifyAi\Tools;
  * Browser-native text translation via client-side Transformers.js.
  */
 class TranslateText extends AbstractAiTool {
-	public function getSlug(): string { return 'ai_translate_text'; }
-	public function getName(): string { return __( 'Translate Text', 'nvoos-graphify-ai' ); }
+	public function getSlug(): string {
+		return 'ai_translate_text'; }
+	public function getName(): string {
+		return __( 'Translate Text', 'nvoos-graphify-ai' ); }
 	public function getDescription(): string {
 		return __( 'Translate text between languages using browser-native AI. Processes instantly without server round-trip.', 'nvoos-graphify-ai' );
 	}
@@ -16,9 +18,18 @@ class TranslateText extends AbstractAiTool {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'text'          => array( 'type' => 'string', 'description' => 'Text to translate.' ),
-				'source_lang'   => array( 'type' => 'string', 'description' => 'Source language code (e.g. en).' ),
-				'target_lang'   => array( 'type' => 'string', 'description' => 'Target language code (e.g. fr).' ),
+				'text'        => array(
+					'type'        => 'string',
+					'description' => 'Text to translate.',
+				),
+				'source_lang' => array(
+					'type'        => 'string',
+					'description' => 'Source language code (e.g. en).',
+				),
+				'target_lang' => array(
+					'type'        => 'string',
+					'description' => 'Target language code (e.g. fr).',
+				),
 			),
 			'required'   => array( 'text', 'target_lang' ),
 		);

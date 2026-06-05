@@ -66,8 +66,8 @@ class OllamaProvider implements ProviderClient {
 		if ( ! empty( $msg['tool_calls'] ) ) {
 			foreach ( $msg['tool_calls'] as $tc ) {
 				$toolCalls[] = array(
-					'id'   => wp_generate_uuid4(),
-					'type' => 'function',
+					'id'       => wp_generate_uuid4(),
+					'type'     => 'function',
 					'function' => array(
 						'name'      => $tc['function']['name'] ?? '',
 						'arguments' => is_array( $tc['function']['arguments'] ?? null )
