@@ -25,6 +25,13 @@
         "wp-phpunit/wp-phpunit": "*",
         "yoast/phpunit-polyfills": "^4.0"
     },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=Unit",
+        "test:integration": "phpunit --testsuite=Integration",
+        "lint": "phpcs --standard=WordPress src/ tests/",
+        "format": "phpcbf --standard=WordPress src/ tests/"
+    },
     "autoload": {
         "psr-4": {
             "NvoosGraphify\\": "src/"

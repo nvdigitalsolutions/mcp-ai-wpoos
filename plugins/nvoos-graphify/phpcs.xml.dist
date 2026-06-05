@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<ruleset name="NV oOS Graphify">
+    <description>WordPress Coding Standards for NV oOS Graphify</description>
+
+    <!-- Only scan our source code. -->
+    <file>src/</file>
+    <file>tests/</file>
+    <file>nvoos-graphify.php</file>
+    <file>uninstall.php</file>
+
+    <!-- Exclude vendor and build artifacts. -->
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+    <exclude-pattern>/assets/vendor/*</exclude-pattern>
+    <exclude-pattern>/languages/*</exclude-pattern>
+
+    <!-- Use WordPress-Extra ruleset. -->
+    <rule ref="WordPress-Extra">
+        <!-- Allow PSR-4 file naming: one class per file, PascalCase. -->
+        <exclude name="WordPress.Files.FileName"/>
+    </rule>
+
+    <!-- Allow WordPress.DB.PreparedSQL.InterpolatedNotPrepared for custom table queries
+         that interpolate table names from Schema constants. All other SQL is prepared. -->
+    <rule ref="WordPress.DB.PreparedSQL.InterpolatedNotPrepared">
+        <exclude-pattern>*/src/Graph/Db.php</exclude-pattern>
+    </rule>
+
+    <!-- Require strict types. -->
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
+
+    <!-- Require use function imports instead of global function calls. -->
+    <rule ref="SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly">
+        <properties>
+            <property name="allowFallbackGlobalFunctions" value="false"/>
+            <property name="allowFallbackGlobalConstants" value="false"/>
+        </properties>
+    </rule>
+
+    <!-- Config. -->
+    <config name="minimum_wp_version" value="6.5"/>
+    <arg name="colors"/>
+    <arg value="ps"/>
+</ruleset>
