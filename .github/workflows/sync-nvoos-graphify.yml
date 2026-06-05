@@ -1,0 +1,24 @@
+name: Sync nvoos-graphify
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'nvoos-graphify/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=nvoos-graphify --branch=nvoos-graphify-split
+
+      - name: Push to nvoos-graphify
+        run: |
+          git push https://x-access-token:${{ secrets.NVOOS_GRAPHIFY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-graphify.git nvoos-graphify-split:main --force
