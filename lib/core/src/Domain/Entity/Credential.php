@@ -8,14 +8,14 @@
  * The secret is hashed and should never be returned in API responses
  * after creation. The token is what clients use for authentication.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class Credential implements \JsonSerializable {
 

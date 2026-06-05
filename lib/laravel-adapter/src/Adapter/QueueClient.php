@@ -7,17 +7,17 @@
  * generic jobs that the oOS core can track via the database queue
  * driver.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\QueueClientInterface;
-use Oos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Entity\JobStatus;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,12 +30,12 @@ class QueueClient implements QueueClientInterface {
 	private string $connection;
 
 	/**
-	 * @param string $connection  Queue connection name. Defaults to OOS_QUEUE_CONNECTION env or 'database'.
+	 * @param string $connection  Queue connection name. Defaults to NVOOS_QUEUE_CONNECTION env or 'database'.
 	 */
 	public function __construct( string $connection = '' ) {
 		$this->connection = '' !== $connection
 			? $connection
-			: ( env( 'OOS_QUEUE_CONNECTION', 'database' ) ?: 'database' );
+			: ( env( 'NVOOS_QUEUE_CONNECTION', 'database' ) ?: 'database' );
 	}
 
 	/**
@@ -55,7 +55,7 @@ class QueueClient implements QueueClientInterface {
 		$queue = $options['queue'] ?? 'oos';
 		$delay = isset( $options['delay_seconds'] ) ? (int) $options['delay_seconds'] : 0;
 
-		$job = new \Oos\Laravel\Jobs\OosToolJob(
+		$job = new \Nvoos\Laravel\Jobs\NvoosToolJob(
 			handler: $handler,
 			payload: $payload,
 		);
@@ -174,7 +174,7 @@ class QueueClient implements QueueClientInterface {
 
 		$this->ensureSchedulesTable();
 
-		DB::table( 'oos_schedules' )->insert( array(
+		DB::table( 'nvoos_schedules' )->insert( array(
 			'id'              => $scheduleId,
 			'handler'         => $handler,
 			'payload'         => json_encode( $payload, JSON_UNESCAPED_SLASHES ),
@@ -192,8 +192,8 @@ class QueueClient implements QueueClientInterface {
 	 * @param string $scheduleId  Schedule identifier.
 	 */
 	public function unschedule( string $scheduleId ): void {
-		if ( Schema::hasTable( 'oos_schedules' ) ) {
-			DB::table( 'oos_schedules' )->where( 'id', $scheduleId )->delete();
+		if ( Schema::hasTable( 'nvoos_schedules' ) ) {
+			DB::table( 'nvoos_schedules' )->where( 'id', $scheduleId )->delete();
 		}
 	}
 
@@ -256,11 +256,11 @@ class QueueClient implements QueueClientInterface {
 	 * Create the schedules table if it doesn't exist.
 	 */
 	private function ensureSchedulesTable(): void {
-		if ( Schema::hasTable( 'oos_schedules' ) ) {
+		if ( Schema::hasTable( 'nvoos_schedules' ) ) {
 			return;
 		}
 
-		Schema::create( 'oos_schedules', function ( $table ) {
+		Schema::create( 'nvoos_schedules', function ( $table ) {
 			$table->string( 'id' )->primary();
 			$table->string( 'handler' );
 			$table->text( 'payload' )->nullable();

@@ -6,37 +6,37 @@
  * and registers the ChatOrchestrator as a singleton. Published config
  * and migrations allow projects to customise the integration.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\ServiceProvider;
+namespace Nvoos\Laravel\ServiceProvider;
 
 use Illuminate\Support\ServiceProvider;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\CacheStoreInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
-use Oos\Core\Domain\Contract\FileStoreInterface;
-use Oos\Core\Domain\Contract\QueueClientInterface;
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Application\Chat\ChatOrchestrator;
-use Oos\Core\Application\Tool\ToolRegistry;
-use Oos\Core\Application\Provider\ProviderRouter;
-use Oos\Laravel\Adapter\ErrorFactory;
-use Oos\Laravel\Adapter\CacheStore;
-use Oos\Laravel\Adapter\SettingsStore;
-use Oos\Laravel\Adapter\EventDispatcher;
-use Oos\Laravel\Adapter\FileStore;
-use Oos\Laravel\Adapter\QueueClient;
-use Oos\Laravel\Adapter\AuthProvider;
-use Oos\Laravel\Adapter\ContentStore;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Application\Chat\ChatOrchestrator;
+use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Laravel\Adapter\ErrorFactory;
+use Nvoos\Laravel\Adapter\CacheStore;
+use Nvoos\Laravel\Adapter\SettingsStore;
+use Nvoos\Laravel\Adapter\EventDispatcher;
+use Nvoos\Laravel\Adapter\FileStore;
+use Nvoos\Laravel\Adapter\QueueClient;
+use Nvoos\Laravel\Adapter\AuthProvider;
+use Nvoos\Laravel\Adapter\ContentStore;
 
-class OosServiceProvider extends ServiceProvider {
+class NvoosServiceProvider extends ServiceProvider {
 
 	/**
 	 * Register oOS services into the Laravel container.
@@ -44,7 +44,7 @@ class OosServiceProvider extends ServiceProvider {
 	public function register(): void {
 		// Merge default configuration.
 		$this->mergeConfigFrom(
-			__DIR__ . '/../../config/oos.php',
+			__DIR__ . '/../../config/nvoos.php',
 			'oos',
 		);
 
@@ -76,7 +76,7 @@ class OosServiceProvider extends ServiceProvider {
 		// Publish the config file.
 		$this->publishes(
 			array(
-				__DIR__ . '/../../config/oos.php' => config_path( 'oos.php' ),
+				__DIR__ . '/../../config/nvoos.php' => config_path( 'nvoos.php' ),
 			),
 			'oos-config',
 		);
@@ -92,7 +92,7 @@ class OosServiceProvider extends ServiceProvider {
 		// Register console commands.
 		if ( $this->app->runningInConsole() ) {
 			$this->commands( array(
-				// Future: OosToolList, OosProviderPing, etc.
+				// Future: NvoosToolList, NvoosProviderPing, etc.
 			) );
 		}
 	}

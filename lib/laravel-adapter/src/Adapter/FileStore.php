@@ -9,19 +9,19 @@
  * multiple filesystem back-ends. The configured disk determines where
  * files are stored.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\FileStoreInterface;
-use Oos\Core\Domain\Entity\StoredFile;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Illuminate\Support\Facades\Storage;
 
 class FileStore implements FileStoreInterface {
@@ -38,10 +38,10 @@ class FileStore implements FileStoreInterface {
 
 	/**
 	 * @param string $disk  Laravel filesystem disk to use.
-	 *                      Defaults to the OOS_STORAGE_DISK env or 'public'.
+	 *                      Defaults to the NVOOS_STORAGE_DISK env or 'public'.
 	 */
 	public function __construct( string $disk = '' ) {
-		$this->disk = '' !== $disk ? $disk : ( env( 'OOS_STORAGE_DISK', 'public' ) ?: 'public' );
+		$this->disk = '' !== $disk ? $disk : ( env( 'NVOOS_STORAGE_DISK', 'public' ) ?: 'public' );
 	}
 
 	/**
@@ -252,12 +252,12 @@ class FileStore implements FileStoreInterface {
 			return array();
 		}
 
-		// Metadata search requires the oos_file_metadata table.
-		if ( ! \Illuminate\Support\Facades\Schema::hasTable( 'oos_file_metadata' ) ) {
+		// Metadata search requires the nvoos_file_metadata table.
+		if ( ! \Illuminate\Support\Facades\Schema::hasTable( 'nvoos_file_metadata' ) ) {
 			return array();
 		}
 
-		$query = \Illuminate\Support\Facades\DB::table( 'oos_file_metadata' );
+		$query = \Illuminate\Support\Facades\DB::table( 'nvoos_file_metadata' );
 
 		foreach ( $criteria as $key => $value ) {
 			if ( is_string( $value ) ) {
@@ -302,8 +302,8 @@ class FileStore implements FileStoreInterface {
 	 */
 	private function resolvePath( int $fileId ): ?string {
 		// If there's a files table, look it up.
-		if ( \Illuminate\Support\Facades\Schema::hasTable( 'oos_files' ) ) {
-			$row = \Illuminate\Support\Facades\DB::table( 'oos_files' )
+		if ( \Illuminate\Support\Facades\Schema::hasTable( 'nvoos_files' ) ) {
+			$row = \Illuminate\Support\Facades\DB::table( 'nvoos_files' )
 				->where( 'id', $fileId )
 				->first();
 

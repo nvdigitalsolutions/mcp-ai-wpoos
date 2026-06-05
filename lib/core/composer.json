@@ -35,27 +35,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Oos\\Core\\": "src/"
+            "Nvoos\\Core\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Oos\\Core\\Tests\\": "tests/"
+            "Nvoos\\Core\\Tests\\": "tests/"
         }
     },
     "suggest": {
-        "oos/wordpress-adapter": "WordPress integration via the adapter layer",
-        "oos/laravel-adapter": "Laravel integration via the adapter layer",
-        "oos/craft-adapter": "Craft CMS integration via the adapter layer"
-    },
-    "repositories": {
-        "local-adapters": {
-            "type": "path",
-            "url": "../*",
-            "options": {
-                "symlink": true
-            }
-        }
+        "nvoos/wordpress-adapter": "WordPress integration via the adapter layer",
+        "nvoos/laravel-adapter": "Laravel integration via the adapter layer",
+        "nvoos/craft-adapter": "Craft CMS integration via the adapter layer"
     },
     "scripts": {
         "lint": "phpstan analyse --no-progress",

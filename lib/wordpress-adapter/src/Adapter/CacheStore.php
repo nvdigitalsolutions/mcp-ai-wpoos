@@ -6,16 +6,16 @@
  * PSR-6-extending CacheStoreInterface. It extends PSR-6 with simpler
  * transient-style convenience methods.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 

@@ -6,19 +6,19 @@
  * constructor injection. Tests mock both interfaces to control responses
  * without any WordPress dependency.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Entity\ContentItem;
-use Oos\Core\Tool\GetPostTool;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Tool\GetPostTool;
 use PHPUnit\Framework\TestCase;
 use DateTimeImmutable;
 

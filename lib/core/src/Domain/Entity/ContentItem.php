@@ -6,14 +6,14 @@
  * custom type, or any publishable entity). Used by ContentStoreInterface
  * and all tools that read content.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class ContentItem implements \JsonSerializable {
 

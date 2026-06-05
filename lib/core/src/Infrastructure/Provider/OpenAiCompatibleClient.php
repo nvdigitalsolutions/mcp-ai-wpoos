@@ -10,14 +10,14 @@
  * Providers that diverge from the OpenAI schema (Gemini, Anthropic)
  * extend AbstractProviderClient directly.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Provider;
+namespace Nvoos\Core\Infrastructure\Provider;
 
 /**
  * Base for providers whose API is compatible with OpenAI's /v1/chat/completions.

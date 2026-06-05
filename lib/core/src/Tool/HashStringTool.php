@@ -5,14 +5,14 @@
  * Pure logic — zero external dependencies. Uses PHP's built-in hash()
  * with md5, sha1, sha256, sha512, and xxh64 support.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class HashStringTool extends AbstractTool {
 

@@ -6,17 +6,17 @@
  * Default endpoint: http://localhost:1234/v1.
  * Supports SSE streaming natively.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Provider;
+namespace Nvoos\Core\Infrastructure\Provider;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class LmStudioClient extends OpenAiCompatibleClient {

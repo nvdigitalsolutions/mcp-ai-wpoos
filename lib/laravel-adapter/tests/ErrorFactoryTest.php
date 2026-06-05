@@ -5,16 +5,16 @@
  * Verifies the adapter correctly implements ErrorFactoryInterface,
  * maps domain error codes to HTTP statuses, and normalises exceptions.
  *
- * @package Oos\Laravel\Tests
+ * @package Nvoos\Laravel\Tests
  * @since   1.0.0
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Tests\Adapter;
+namespace Nvoos\Laravel\Tests\Adapter;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Laravel\Adapter\ErrorFactory;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Laravel\Adapter\ErrorFactory;
 use PHPUnit\Framework\TestCase;
 
 class ErrorFactoryTest extends TestCase {

@@ -4,7 +4,7 @@
  *
  * Stores admin-modifiable settings that override config file defaults.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  */
 
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
 	public function up(): void {
-		Schema::create( 'oos_settings', function ( Blueprint $table ) {
+		Schema::create( 'nvoos_settings', function ( Blueprint $table ) {
 			$table->string( 'key' )->primary();
 			$table->text( 'value' )->nullable();
 			$table->timestamps();
@@ -25,6 +25,6 @@ return new class extends Migration {
 	}
 
 	public function down(): void {
-		Schema::dropIfExists( 'oos_settings' );
+		Schema::dropIfExists( 'nvoos_settings' );
 	}
 };

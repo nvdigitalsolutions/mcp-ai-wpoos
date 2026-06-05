@@ -5,14 +5,14 @@
  * Pure PHP — zero external dependencies. Uses PHP's built-in strip_tags()
  * and html_entity_decode(). Framework-agnostic.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class StripHtmlTool extends AbstractTool {
 

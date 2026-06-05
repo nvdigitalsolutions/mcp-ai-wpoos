@@ -11,16 +11,16 @@
  *  - Core filter()    → WordPress apply_filters
  *  - Existing WP hooks (wp_mcp_ai_*) continue to work alongside both.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 
 class EventDispatcher implements EventDispatcherInterface {
 

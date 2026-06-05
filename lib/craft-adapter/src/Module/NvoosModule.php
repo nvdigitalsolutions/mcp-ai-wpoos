@@ -6,30 +6,30 @@
  * application components. Bootstrap this module in config/app.php
  * to make the ChatOrchestrator available to the Craft application.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Module;
+namespace Nvoos\Craft\Module;
 
 use Craft;
 use yii\base\Module as BaseModule;
-use Oos\Core\Application\Chat\ChatOrchestrator;
-use Oos\Core\Application\Tool\ToolRegistry;
-use Oos\Core\Application\Provider\ProviderRouter;
-use Oos\Craft\Adapter\ErrorFactory;
-use Oos\Craft\Adapter\CacheStore;
-use Oos\Craft\Adapter\SettingsStore;
-use Oos\Craft\Adapter\EventDispatcher;
-use Oos\Craft\Adapter\FileStore;
-use Oos\Craft\Adapter\QueueClient;
-use Oos\Craft\Adapter\AuthProvider;
-use Oos\Craft\Adapter\ContentStore;
+use Nvoos\Core\Application\Chat\ChatOrchestrator;
+use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Craft\Adapter\ErrorFactory;
+use Nvoos\Craft\Adapter\CacheStore;
+use Nvoos\Craft\Adapter\SettingsStore;
+use Nvoos\Craft\Adapter\EventDispatcher;
+use Nvoos\Craft\Adapter\FileStore;
+use Nvoos\Craft\Adapter\QueueClient;
+use Nvoos\Craft\Adapter\AuthProvider;
+use Nvoos\Craft\Adapter\ContentStore;
 
-class OosModule extends BaseModule {
+class NvoosModule extends BaseModule {
 
 	/**
 	 * Initialise the module — register adapter components.

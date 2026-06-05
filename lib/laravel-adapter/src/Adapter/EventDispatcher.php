@@ -7,16 +7,16 @@
  * Translates oOS domain events to Laravel events and provides a
  * FilterBus for the filter() pattern.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Illuminate\Support\Facades\Event;
 
 class EventDispatcher implements EventDispatcherInterface {

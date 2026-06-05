@@ -5,16 +5,16 @@
  * Wraps WordPress option functions (get_option, update_option, delete_option)
  * behind the framework-agnostic SettingsStoreInterface.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class SettingsStore implements SettingsStoreInterface {
 

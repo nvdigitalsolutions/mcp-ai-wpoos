@@ -2,7 +2,7 @@
 /**
  * Create the oOS terms table (taxonomy).
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  */
 
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
 	public function up(): void {
-		Schema::create( 'oos_terms', function ( Blueprint $table ) {
+		Schema::create( 'nvoos_terms', function ( Blueprint $table ) {
 			$table->id();
 			$table->string( 'name' );
 			$table->string( 'taxonomy', 50 )->default( 'category' );
@@ -30,6 +30,6 @@ return new class extends Migration {
 	}
 
 	public function down(): void {
-		Schema::dropIfExists( 'oos_terms' );
+		Schema::dropIfExists( 'nvoos_terms' );
 	}
 };

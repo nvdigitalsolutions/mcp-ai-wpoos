@@ -6,7 +6,7 @@
  * can resolve IDs back to Flysystem paths. Applications that use
  * their own files/media models can skip this table.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  */
 
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
 	public function up(): void {
-		Schema::create( 'oos_files', function ( Blueprint $table ) {
+		Schema::create( 'nvoos_files', function ( Blueprint $table ) {
 			$table->id();
 			$table->string( 'path' );
 			$table->string( 'disk', 50 )->default( 'public' );
@@ -35,6 +35,6 @@ return new class extends Migration {
 	}
 
 	public function down(): void {
-		Schema::dropIfExists( 'oos_files' );
+		Schema::dropIfExists( 'nvoos_files' );
 	}
 };

@@ -6,19 +6,19 @@
  * and serialized payload. The handler is resolved and invoked when
  * the job is processed by the queue runner.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Jobs;
+namespace Nvoos\Craft\Jobs;
 
 use Craft;
 use craft\queue\BaseJob;
 
-class OosToolJob extends BaseJob {
+class NvoosToolJob extends BaseJob {
 
 	/**
 	 * @var string  Fully-qualified handler class name.

@@ -6,16 +6,16 @@
  * so that core services can create and inspect errors without importing
  * WordPress functions directly.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 class ErrorFactory implements ErrorFactoryInterface {
 

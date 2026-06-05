@@ -8,8 +8,8 @@ Context file for AI agents working on or near the framework-agnostic extraction 
 
 | File | Purpose |
 |---|---|
-| `lib/core/` | `oos/core` Composer package — framework-agnostic domain, application, infrastructure, and tool layers (PHP 8.1+, MIT) |
-| `lib/wordpress-adapter/` | `oos/wordpress-adapter` — WordPress implementations of all 8 domain contracts (PHP 7.4+, GPL-3.0) |
+| `lib/core/` | `nvoos/core` Composer package — framework-agnostic domain, application, infrastructure, and tool layers (PHP 8.1+, MIT) |
+| `lib/wordpress-adapter/` | `nvoos/wordpress-adapter` — WordPress implementations of all 8 domain contracts (PHP 7.4+, GPL-3.0) |
 | `includes/bootstrap/oos-bridge.php` | WordPress DI wiring — factory function `wp_mcp_ai_oos_orchestrator()`, PSR-4 autoloader, feature flag detection |
 | `includes/class-wp-mcp-ai-rest.php` | Chat REST controller — checks `wp_mcp_ai_oos_engine_enabled()` and delegates to `handle_chat_request_oos()` |
 
@@ -86,7 +86,7 @@ When the flag is off, the legacy `handle_chat_request()` path is completely unch
 
 ## Rules for Agents
 
-1. **When adding a new tool to `lib/core/src/Tool/`:** Inject domain contracts via constructor — never call WordPress functions directly. Extend `Oos\Core\Tool\AbstractTool`. Register in `wp_mcp_ai_oos_orchestrator()` in `oos-bridge.php`.
+1. **When adding a new tool to `lib/core/src/Tool/`:** Inject domain contracts via constructor — never call WordPress functions directly. Extend `Nvoos\Core\Tool\AbstractTool`. Register in `wp_mcp_ai_oos_orchestrator()` in `oos-bridge.php`.
 
 2. **When adding a new WordPress adapter:** Implement the corresponding interface from `lib/core/src/Domain/Contract/`. Place in `lib/wordpress-adapter/src/Adapter/`. Wire in `oos-bridge.php`.
 

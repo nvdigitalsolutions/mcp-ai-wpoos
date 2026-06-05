@@ -3,25 +3,25 @@
  * Term model for oOS taxonomy support.
  *
  * Terms belong to a taxonomy ('category', 'tag', or custom) and can be
- * attached to content items via the oos_post_term pivot table.
+ * attached to content items via the nvoos_post_term pivot table.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Models;
+namespace Nvoos\Laravel\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class OosTerm extends Model {
+class NvoosTerm extends Model {
 
 	/**
 	 * The table associated with the model.
 	 */
-	protected $table = 'oos_terms';
+	protected $table = 'nvoos_terms';
 
 	/**
 	 * Mass-assignable attributes.
@@ -42,8 +42,8 @@ class OosTerm extends Model {
 	 */
 	public function posts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany {
 		return $this->belongsToMany(
-			OosPost::class,
-			'oos_post_term',
+			NvoosPost::class,
+			'nvoos_post_term',
 			'term_id',
 			'post_id',
 		);

@@ -3,21 +3,21 @@
  * Craft adapter: SettingsStoreInterface implementation.
  *
  * Wraps Craft's config system behind the framework-agnostic
- * SettingsStoreInterface. Reads from `config/oos.php` via
+ * SettingsStoreInterface. Reads from `config/nvoos.php` via
  * `Craft::$app->config->getConfigFromFile()`, with env variable
  * resolution via `Craft::parseEnv()`.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
 use Craft;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class SettingsStore implements SettingsStoreInterface {
 
@@ -59,7 +59,7 @@ class SettingsStore implements SettingsStoreInterface {
 	/**
 	 * Get a single setting value.
 	 *
-	 * Resolution order: config/oos.php → self::DEFAULTS → $default.
+	 * Resolution order: config/nvoos.php → self::DEFAULTS → $default.
 	 *
 	 * @param string $key      Setting key.
 	 * @param mixed  $default  Fallback if not found in any layer.
@@ -74,7 +74,7 @@ class SettingsStore implements SettingsStoreInterface {
 	/**
 	 * Get all settings as an associative array.
 	 *
-	 * Merges: DEFAULTS → config/oos.php. Environment variables
+	 * Merges: DEFAULTS → config/nvoos.php. Environment variables
 	 * referenced via `Craft::parseEnv('$VAR')` are automatically
 	 * resolved by Craft's config system.
 	 *
@@ -108,7 +108,7 @@ class SettingsStore implements SettingsStoreInterface {
 	 */
 	public function set( string $key, mixed $value ): void {
 		// Runtime settings are stored in cache since Craft config is read-only.
-		$runtimeKey = 'oos_runtime_setting_' . $key;
+		$runtimeKey = 'nvoos_runtime_setting_' . $key;
 		Craft::$app->cache->set( $runtimeKey, $value, 86400 * 30 );
 
 		// Merge into the in-memory cache.
@@ -121,7 +121,7 @@ class SettingsStore implements SettingsStoreInterface {
 	 * @param string $key  Setting key.
 	 */
 	public function delete( string $key ): void {
-		Craft::$app->cache->delete( 'oos_runtime_setting_' . $key );
+		Craft::$app->cache->delete( 'nvoos_runtime_setting_' . $key );
 		$this->cached = null;
 	}
 

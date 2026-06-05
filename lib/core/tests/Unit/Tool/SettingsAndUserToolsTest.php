@@ -2,23 +2,23 @@
 /**
  * Tests for GetSettingTool, UpdateSettingTool, ListSettingsTool, and GetCurrentUserTool.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Oos\Core\Domain\Entity\UserInfo;
-use Oos\Core\Tool\GetCurrentUserTool;
-use Oos\Core\Tool\GetSettingTool;
-use Oos\Core\Tool\ListSettingsTool;
-use Oos\Core\Tool\UpdateSettingTool;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Tool\GetCurrentUserTool;
+use Nvoos\Core\Tool\GetSettingTool;
+use Nvoos\Core\Tool\ListSettingsTool;
+use Nvoos\Core\Tool\UpdateSettingTool;
 use PHPUnit\Framework\TestCase;
 
 final class SettingsAndUserToolsTest extends TestCase {

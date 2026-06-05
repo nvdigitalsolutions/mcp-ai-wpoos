@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class ParseCsvTool extends AbstractTool {
 	public function getSlug(): string { return 'parse_csv'; }

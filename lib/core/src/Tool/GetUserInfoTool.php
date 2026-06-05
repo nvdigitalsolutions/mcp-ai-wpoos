@@ -1,10 +1,10 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 class GetUserInfoTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly AuthProviderInterface $a ) {
 		parent::__construct( $e );}

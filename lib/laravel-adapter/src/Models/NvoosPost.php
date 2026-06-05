@@ -6,23 +6,23 @@
  * the 'oos.content_model' config key. Apps with their own content
  * models should configure that key to point to their model class.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Models;
+namespace Nvoos\Laravel\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class OosPost extends Model {
+class NvoosPost extends Model {
 
 	/**
 	 * The table associated with the model.
 	 */
-	protected $table = 'oos_posts';
+	protected $table = 'nvoos_posts';
 
 	/**
 	 * Mass-assignable attributes.
@@ -59,8 +59,8 @@ class OosPost extends Model {
 	 */
 	public function terms(): \Illuminate\Database\Eloquent\Relations\BelongsToMany {
 		return $this->belongsToMany(
-			OosTerm::class,
-			'oos_post_term',
+			NvoosTerm::class,
+			'nvoos_post_term',
 			'post_id',
 			'term_id',
 		);

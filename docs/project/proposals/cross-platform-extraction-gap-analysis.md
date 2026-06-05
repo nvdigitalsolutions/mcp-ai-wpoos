@@ -6,8 +6,8 @@
 
 **Key Files:**
 - [`lib/`](../../lib/) — extracted core + WordPress adapter packages
-- [`lib/core/`](../../lib/core/) — `oos/core` Composer package (PHP 8.1+, MIT)
-- [`lib/wordpress-adapter/`](../../lib/wordpress-adapter/) — `oos/wordpress-adapter` (PHP 7.4+, GPL-3.0)
+- [`lib/core/`](../../lib/core/) — `nvoos/core` Composer package (PHP 8.1+, MIT)
+- [`lib/wordpress-adapter/`](../../lib/wordpress-adapter/) — `nvoos/wordpress-adapter` (PHP 7.4+, GPL-3.0)
 - [`includes/bootstrap/oos-bridge.php`](../../includes/bootstrap/oos-bridge.php) — WordPress DI wiring + feature flag
 - [`cross-platform-extraction-architecture.md`](./cross-platform-extraction-architecture.md) — the vision proposal (2026-05-31)
 
@@ -15,7 +15,7 @@
 
 ## Executive Summary
 
-The cross-platform extraction is **far more advanced** than the proposal alone suggests. A fully functional `oos/core` package with 9 domain contracts, 10 entities, 5 error classes, 8 events, 4 application services, 12 provider clients, SSE streaming, cost calculation, and **43 migrated tools** already exists at `lib/core/`. A companion `oos/wordpress-adapter` package with 8 adapter implementations and a DI bridge in `includes/bootstrap/oos-bridge.php` wires everything into the WordPress plugin behind a feature flag (`?engine=oos`). The existing plugin path is completely unaffected — the extraction is additive.
+The cross-platform extraction is **far more advanced** than the proposal alone suggests. A fully functional `nvoos/core` package with 9 domain contracts, 10 entities, 5 error classes, 8 events, 4 application services, 12 provider clients, SSE streaming, cost calculation, and **43 migrated tools** already exists at `lib/core/`. A companion `nvoos/wordpress-adapter` package with 8 adapter implementations and a DI bridge in `includes/bootstrap/oos-bridge.php` wires everything into the WordPress plugin behind a feature flag (`?engine=oos`). The existing plugin path is completely unaffected — the extraction is additive.
 
 **What's operational:** A complete Hexagonal Architecture inside `lib/` running the agentic loop via `ChatOrchestrator` with 43 framework-agnostic tools, 12 AI providers, and WordPress adapters behind every port.
 
@@ -84,10 +84,10 @@ Mapped to existing WordPress hooks in `oos-bridge.php` via `EventDispatcher::map
 
 | Proposal Service | Implementation | Location |
 |---|---|---|
-| `ChatOrchestrator` | `Oos\Core\Application\Chat\ChatOrchestrator` | `lib/core/src/Application/Chat/` |
-| `ProviderRouter` | `Oos\Core\Application\Provider\ProviderRouter` | `lib/core/src/Application/Provider/` |
-| `ToolRegistry` | `Oos\Core\Application\Tool\ToolRegistry` | `lib/core/src/Application/Tool/` |
-| `SkillRegistry` | `Oos\Core\Application\Skill\SkillRegistry` | `lib/core/src/Application/Skill/` |
+| `ChatOrchestrator` | `Nvoos\Core\Application\Chat\ChatOrchestrator` | `lib/core/src/Application/Chat/` |
+| `ProviderRouter` | `Nvoos\Core\Application\Provider\ProviderRouter` | `lib/core/src/Application/Provider/` |
+| `ToolRegistry` | `Nvoos\Core\Application\Tool\ToolRegistry` | `lib/core/src/Application/Tool/` |
+| `SkillRegistry` | `Nvoos\Core\Application\Skill\SkillRegistry` | `lib/core/src/Application/Skill/` |
 
 All injected with domain contracts — zero WordPress references.
 
@@ -96,21 +96,21 @@ All injected with domain contracts — zero WordPress references.
 | Component | Implementation | Notes |
 |---|---|---|
 | 12 Provider Clients | OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace | All use PSR-18 `HttpClientInterface` |
-| SSE Handler | `Oos\Core\Infrastructure\Streaming\SseHandler` | RFC 6202 compliant |
-| Cost Calculator | `Oos\Core\Infrastructure\Cost\CostCalculator` | Per-model pricing for all 12 providers |
+| SSE Handler | `Nvoos\Core\Infrastructure\Streaming\SseHandler` | RFC 6202 compliant |
+| Cost Calculator | `Nvoos\Core\Infrastructure\Cost\CostCalculator` | Per-model pricing for all 12 providers |
 
 ### ✅ WordPress Adapters (8/8 — Complete)
 
 | Adapter | Implements | Wraps |
 |---|---|---|
-| `Oos\WordPress\Adapter\ContentStore` | `ContentStoreInterface` | `get_post`, `WP_Query`, `wp_insert_post`, `wp_update_post`, `wp_delete_post`, `get_post_meta`, `wp_get_post_terms` |
-| `Oos\WordPress\Adapter\AuthProvider` | `AuthProviderInterface` | `get_current_user_id`, `current_user_can`, credential verification, `get_userdata` |
-| `Oos\WordPress\Adapter\SettingsStore` | `SettingsStoreInterface` | `get_option`, `update_option`, `delete_option` |
-| `Oos\WordPress\Adapter\FileStore` | `FileStoreInterface` | `get_attached_file`, `wp_upload_dir`, `wp_insert_attachment` |
-| `Oos\WordPress\Adapter\CacheStore` | `CacheStoreInterface` | `get_transient`, `set_transient`, `wp_cache_*` |
-| `Oos\WordPress\Adapter\QueueClient` | `QueueClientInterface` | Action Scheduler / WP-Cron |
-| `Oos\WordPress\Adapter\EventDispatcher` | `EventDispatcherInterface` | `do_action`, `apply_filters` (with mapEventToHook bridge) |
-| `Oos\WordPress\Adapter\ErrorFactory` | `ErrorFactoryInterface` | `WP_Error` ↔ domain exceptions |
+| `Nvoos\WordPress\Adapter\ContentStore` | `ContentStoreInterface` | `get_post`, `WP_Query`, `wp_insert_post`, `wp_update_post`, `wp_delete_post`, `get_post_meta`, `wp_get_post_terms` |
+| `Nvoos\WordPress\Adapter\AuthProvider` | `AuthProviderInterface` | `get_current_user_id`, `current_user_can`, credential verification, `get_userdata` |
+| `Nvoos\WordPress\Adapter\SettingsStore` | `SettingsStoreInterface` | `get_option`, `update_option`, `delete_option` |
+| `Nvoos\WordPress\Adapter\FileStore` | `FileStoreInterface` | `get_attached_file`, `wp_upload_dir`, `wp_insert_attachment` |
+| `Nvoos\WordPress\Adapter\CacheStore` | `CacheStoreInterface` | `get_transient`, `set_transient`, `wp_cache_*` |
+| `Nvoos\WordPress\Adapter\QueueClient` | `QueueClientInterface` | Action Scheduler / WP-Cron |
+| `Nvoos\WordPress\Adapter\EventDispatcher` | `EventDispatcherInterface` | `do_action`, `apply_filters` (with mapEventToHook bridge) |
+| `Nvoos\WordPress\Adapter\ErrorFactory` | `ErrorFactoryInterface` | `WP_Error` ↔ domain exceptions |
 
 ### 🟡 Migrated Tools (43 / ~195 base — 22% Complete)
 
@@ -181,7 +181,7 @@ The existing `handle_chat_request()` in `class-wp-mcp-ai-rest.php` checks `wp_mc
 | **Craft adapter** | 0% — not started. Craft Commerce and element-type expertise needed. | Medium (4–6 weeks) |
 | **Pro addon tools** | ~765 pro tools not migrated. Many are external API tools (easy to migrate), some are plugin-specific (WooCommerce, JetEngine — harder). | High (ongoing) |
 | **Monorepo tooling** | `lib/` lives inside the WP plugin repo. Not yet a standalone monorepo with CI/CD across packages. | Low (1–2 weeks) |
-| **Composer package publishing** | Neither `oos/core` nor `oos/wordpress-adapter` are published to Packagist. | Low (setup + docs) |
+| **Composer package publishing** | Neither `nvoos/core` nor `nvoos/wordpress-adapter` are published to Packagist. | Low (setup + docs) |
 | **PHPStan/static analysis** | No PHPStan config for `lib/core` or `lib/wordpress-adapter`. | Low (1 week) |
 
 ### 🟢 Low Priority / Nice to Have
@@ -203,13 +203,13 @@ The implementation is **remarkably faithful** to the proposal's design:
 |---|---|---|---|
 | Hexagonal layers | Domain → Application → Infrastructure → Adapters | `lib/core/src/Domain/` → `Application/` → `Infrastructure/` → `lib/wordpress-adapter/src/Adapter/` | ✅ 100% |
 | PSR standards | PSR-3,7,11,14,16,18 | PSR-7 via nyholm/psr7, PSR-14 via psr/event-dispatcher, PSR-18 via Symfony, PSR-6 via psr/cache | ✅ |
-| PHP version split | Core 8.1+, Adapter 7.4+ | `oos/core`: `^8.1`, `oos/wordpress-adapter`: `^7.4` | ✅ |
+| PHP version split | Core 8.1+, Adapter 7.4+ | `nvoos/core`: `^8.1`, `nvoos/wordpress-adapter`: `^7.4` | ✅ |
 | Value objects | Immutable `final readonly` | All 10 entities use `final readonly class` with constructor promotion | ✅ |
 | Canonical error envelope | ErrorFactoryInterface normalization | `ErrorFactoryInterface::normalize()` → `{code, message, data}` | ✅ |
 | Event bridge | PSR-14 + filter support | `EventDispatcherInterface extends PsrEventDispatcher` with `filter()`. WordPress hook bridge via `mapEventToHook()` | ✅ |
 | Strangler Fig pattern | Incremental, additive migration | Feature flag (`?engine=oos`), legacy path untouched, tools migrated incrementally | ✅ |
 | DI container | PSR-11 wiring per platform | `wp_mcp_ai_oos_orchestrator()` factory wires all adapters and services | 🟡 No PSR-11 container yet, but factory pattern works |
-| Namespace mapping | `Oos\Core\` | `Oos\Core\Domain\Contract\*`, `Oos\Core\Application\*`, etc. | ✅ Exact match |
+| Namespace mapping | `Nvoos\Core\` | `Nvoos\Core\Domain\Contract\*`, `Nvoos\Core\Application\*`, etc. | ✅ Exact match |
 
 ---
 
@@ -242,7 +242,7 @@ The original proposal estimated 52 weeks at ~5.75 FTE. With 43 of 195 tools migr
 
 2. **Add PHPStan config for extracted packages** — Level 8 for `lib/core/src/`, Level 5 for `lib/wordpress-adapter/src/`.
 
-3. **Publish `oos/core` to Packagist** — even as `dev-master`. Enables `composer require oos/core` for Laravel adapter development.
+3. **Publish `nvoos/core` to Packagist** — even as `dev-master`. Enables `composer require nvoos/core` for Laravel adapter development.
 
 ### Short-Term (2–8 Weeks)
 
@@ -266,7 +266,7 @@ The original proposal estimated 52 weeks at ~5.75 FTE. With 43 of 195 tools migr
 
 11. **Sunset the legacy engine path** — once all tools are migrated and the OOS engine is default, remove the feature flag and legacy code paths.
 
-12. **Publish `oos/laravel-adapter` and `oos/craft-adapter`** — documentation, Packagist, marketing.
+12. **Publish `nvoos/laravel-adapter` and `nvoos/craft-adapter`** — documentation, Packagist, marketing.
 
 ---
 

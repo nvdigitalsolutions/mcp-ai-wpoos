@@ -6,14 +6,14 @@
  * and serialized payload. The handler is resolved from the container
  * and invoked with the deserialized payload.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Jobs;
+namespace Nvoos\Laravel\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,7 +21,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class OosToolJob implements ShouldQueue {
+class NvoosToolJob implements ShouldQueue {
 
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -38,7 +38,7 @@ class OosToolJob implements ShouldQueue {
 	 * Execute the job.
 	 *
 	 * Resolves the handler from the container and invokes it. The handler
-	 * is expected to implement OosToolHandlerInterface or be callable.
+	 * is expected to implement NvoosToolHandlerInterface or be callable.
 	 */
 	public function handle(): void {
 		$handlerInstance = app( $this->handler );

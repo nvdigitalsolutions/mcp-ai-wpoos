@@ -6,14 +6,14 @@
  * disclosure of tool capabilities to the LLM. Supports bundled
  * skills and remote catalogues (Pro).
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Application\Skill;
+namespace Nvoos\Core\Application\Skill;
 
 class SkillRegistry {
 

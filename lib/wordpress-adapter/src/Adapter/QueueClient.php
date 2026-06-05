@@ -7,17 +7,17 @@
  * or standalone), falling back to WP-Cron for scheduling and a simple
  * database table for status tracking.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\QueueClientInterface;
-use Oos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Entity\JobStatus;
 
 class QueueClient implements QueueClientInterface {
 

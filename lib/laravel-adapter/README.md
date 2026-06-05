@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by Laravel framework services. Each adapter wraps one Laravel subsystem behind the framework-agnostic contract — same pattern as `oos/wordpress-adapter`, different backing APIs.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by Laravel framework services. Each adapter wraps one Laravel subsystem behind the framework-agnostic contract — same pattern as `nvoos/wordpress-adapter`, different backing APIs.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/laravel-adapter` Composer package |
+| **Distribution** | `nvoos/laravel-adapter` Composer package |
 | **PHP target** | 8.1+ |
-| **Dependencies** | `oos/core`, `illuminate/*` |
+| **Dependencies** | `nvoos/core`, `illuminate/*` |
 
 ## Public Surface
 
@@ -36,7 +36,7 @@ Concrete implementations of the 9 domain interfaces from `oos/core`, backed by L
 ## Installation
 
 ```bash
-composer require oos/laravel-adapter
+composer require nvoos/laravel-adapter
 ```
 
 The package auto-discovers its service provider via Laravel's package discovery.
@@ -50,13 +50,13 @@ php artisan vendor:publish --tag=oos-config
 ```
 
 ```php
-// config/oos.php
+// config/nvoos.php
 return [
     'content_model'     => \App\Models\Post::class,
-    'cache_store'       => env('OOS_CACHE_STORE', 'redis'),
-    'queue_connection'  => env('OOS_QUEUE_CONNECTION', 'redis'),
-    'storage_disk'      => env('OOS_STORAGE_DISK', 'public'),
-    'settings_table'    => 'oos_settings',
+    'cache_store'       => env('NVOOS_CACHE_STORE', 'redis'),
+    'queue_connection'  => env('NVOOS_QUEUE_CONNECTION', 'redis'),
+    'storage_disk'      => env('NVOOS_STORAGE_DISK', 'public'),
+    'settings_table'    => 'nvoos_settings',
 ];
 ```
 

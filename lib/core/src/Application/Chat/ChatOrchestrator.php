@@ -14,25 +14,25 @@
  * WP_MCP_AI_REST::handle_chat_request() and
  * handle_chat_request_with_streaming().
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Application\Chat;
+namespace Nvoos\Core\Application\Chat;
 
-use Oos\Core\Application\Provider\ProviderRouter;
-use Oos\Core\Application\Tool\ToolRegistry;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
-use Oos\Core\Domain\Event\BeforeChatRequest;
-use Oos\Core\Domain\Event\AfterChatResponse;
-use Oos\Core\Domain\Event\AgenticIterationComplete;
-use Oos\Core\Domain\Event\AgenticLoopCompleted;
-use Oos\Core\Infrastructure\Cost\CostCalculator;
-use Oos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Event\BeforeChatRequest;
+use Nvoos\Core\Domain\Event\AfterChatResponse;
+use Nvoos\Core\Domain\Event\AgenticIterationComplete;
+use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
+use Nvoos\Core\Infrastructure\Cost\CostCalculator;
+use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 
 class ChatOrchestrator {
 

@@ -6,7 +6,7 @@
  * enabling findByMetadata() searches. Each file can have multiple
  * metadata rows.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  */
 
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
 	public function up(): void {
-		Schema::create( 'oos_file_metadata', function ( Blueprint $table ) {
+		Schema::create( 'nvoos_file_metadata', function ( Blueprint $table ) {
 			$table->id();
 			$table->unsignedBigInteger( 'file_id' );
 			$table->string( 'meta_key', 100 );
@@ -30,11 +30,11 @@ return new class extends Migration {
 			$table->index( 'meta_key' );
 			$table->index( array( 'meta_key', 'meta_value' ) );
 
-			$table->foreign( 'file_id' )->references( 'id' )->on( 'oos_files' )->onDelete( 'cascade' );
+			$table->foreign( 'file_id' )->references( 'id' )->on( 'nvoos_files' )->onDelete( 'cascade' );
 		} );
 	}
 
 	public function down(): void {
-		Schema::dropIfExists( 'oos_file_metadata' );
+		Schema::dropIfExists( 'nvoos_file_metadata' );
 	}
 };

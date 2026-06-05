@@ -7,14 +7,14 @@
  * PSR-14 only covers dispatch — this interface adds the filter pattern
  * for backward compatibility with the existing hook-based extensibility.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcher;
 

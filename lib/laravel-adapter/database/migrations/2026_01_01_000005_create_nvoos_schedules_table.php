@@ -5,7 +5,7 @@
  * Stores cron schedule definitions that a console command
  * or scheduler task reads to dispatch recurring jobs.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  */
 
@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
 	public function up(): void {
-		Schema::create( 'oos_schedules', function ( Blueprint $table ) {
+		Schema::create( 'nvoos_schedules', function ( Blueprint $table ) {
 			$table->string( 'id', 64 )->primary();
 			$table->string( 'handler', 255 );
 			$table->text( 'payload' )->nullable();
@@ -28,6 +28,6 @@ return new class extends Migration {
 	}
 
 	public function down(): void {
-		Schema::dropIfExists( 'oos_schedules' );
+		Schema::dropIfExists( 'nvoos_schedules' );
 	}
 };

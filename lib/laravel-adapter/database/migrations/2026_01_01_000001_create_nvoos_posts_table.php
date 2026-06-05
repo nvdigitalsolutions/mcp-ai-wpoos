@@ -6,7 +6,7 @@
  * when no custom model is configured. It mirrors the WordPress posts table
  * structure with Laravel conventions (timestamps, soft deletes optional).
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  */
 
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
 
 	public function up(): void {
-		Schema::create( 'oos_posts', function ( Blueprint $table ) {
+		Schema::create( 'nvoos_posts', function ( Blueprint $table ) {
 			$table->id();
 			$table->string( 'title' );
 			$table->longText( 'content' )->nullable();
@@ -41,6 +41,6 @@ return new class extends Migration {
 	}
 
 	public function down(): void {
-		Schema::dropIfExists( 'oos_posts' );
+		Schema::dropIfExists( 'nvoos_posts' );
 	}
 };

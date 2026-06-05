@@ -8,16 +8,16 @@
  * Uses Yii's `Event::on()` for registration and `Event::trigger()`
  * for dispatch. Filter support is implemented via a custom FilterBus.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use yii\base\Event;
 
 class EventDispatcher implements EventDispatcherInterface {
