@@ -21,4 +21,5 @@ jobs:
 
       - name: Push to nvoos-graphify
         run: |
+          git config --local --unset-all http.https://github.com/.extraheader
           git push https://x-access-token:${{ secrets.NVOOS_GRAPHIFY_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-graphify.git nvoos-graphify-split:main --force
