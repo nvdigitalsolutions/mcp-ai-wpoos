@@ -26,8 +26,14 @@ lib/
 │       │   └── Cost/              # CostCalculator (all providers)
 │       └── Tool/                  # 43 framework-agnostic tool classes
 │
-└── wordpress-adapter/             # nvoos/wordpress-adapter (PHP 7.4+)
-    └── src/Adapter/               # 8 WordPress adapter implementations
+├── wordpress-adapter/             # nvoos/wordpress-adapter (PHP 7.4+, GPL-3.0)
+│   └── src/Adapter/               # 8 WordPress adapter implementations
+│
+├── laravel-adapter/               # nvoos/laravel-adapter (PHP 8.1+, MIT)
+│   └── src/Adapter/               # 8 Laravel adapter implementations
+│
+└── craft-adapter/                 # nvoos/craft-adapter (PHP 8.1+, MIT)
+    └── src/Adapter/               # 8 Craft CMS adapter implementations
 ```
 
 ## Status
@@ -37,8 +43,23 @@ lib/
 - **Infrastructure:** 12 provider clients, SSE handler, cost calculator ✅
 - **Tools:** 43 migrated (Tier 1 + select Tier 2) ✅
 - **WordPress adapters:** All 8 implemented ✅
+- **Laravel adapters:** All 8 implemented ✅
+- **Craft adapters:** All 8 implemented ✅
 - **Feature flag:** `?engine=oos` activates the extracted engine ✅
-- **Remaining:** ~152 tools, Laravel adapter, Craft adapter
+- **Remaining:** ~152 tools
+
+## Monorepo Sync Workflows
+
+Each package under `lib/` is synced to its own standalone GitHub repo via `git subtree split` on push to `main` or `alpha-working`:
+
+| Source directory | Workflow | Target repo |
+|---|---|---|
+| `lib/core/` | `sync-nvoos-core.yml` | `nvdigitalsolutions/nvoos-core` |
+| `lib/wordpress-adapter/` | `sync-nvoos-wordpress-adapter.yml` | `nvdigitalsolutions/nvoos-wordpress-adapter` |
+| `lib/laravel-adapter/` | `sync-nvoos-laravel-adapter.yml` | `nvdigitalsolutions/nvoos-laravel-adapter` |
+| `lib/craft-adapter/` | `sync-nvoos-craft-adapter.yml` | `nvdigitalsolutions/nvoos-craft-adapter` |
+
+Each workflow requires a corresponding repo secret (`NVOOS_CORE_REPO_TOKEN`, `NVOOS_WORDPRESS_ADAPTER_REPO_TOKEN`, etc.) — a PAT with write access to the target repo.
 
 ## Also Load
 

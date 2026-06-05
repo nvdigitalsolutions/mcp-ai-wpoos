@@ -45,3 +45,5 @@ vendor/bin/phpunit tests/
 - [`lib/core/src/Domain/Entity/`](../../core/src/Domain/Entity/) — value objects returned by these adapters
 - [`lib/wordpress-adapter/src/Adapter/`](../../../wordpress-adapter/src/Adapter/) — sibling WordPress implementations
 - [`lib/laravel-adapter/src/Adapter/`](../../../laravel-adapter/src/Adapter/) — sibling Laravel implementations
+
+> **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-craft-adapter` via `.github/workflows/sync-nvoos-craft-adapter.yml` on push to `main` or `alpha-working`.
