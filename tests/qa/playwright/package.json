@@ -1,0 +1,20 @@
+{
+  "name": "nv-oos-qa-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright E2E test suite for NV oOS WordPress plugin",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:smoke": "npx playwright test --grep '@smoke'",
+    "test:visual": "npx playwright test --grep '@visual'",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
