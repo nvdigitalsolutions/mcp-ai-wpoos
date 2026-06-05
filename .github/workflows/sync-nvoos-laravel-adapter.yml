@@ -21,4 +21,5 @@ jobs:
 
       - name: Push to nvoos-laravel-adapter
         run: |
+          git config --local --unset-all http.https://github.com/.extraheader
           git push https://x-access-token:${{ secrets.NVOOS_LARAVEL_ADAPTER_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-laravel-adapter.git nvoos-laravel-adapter-split:main --force
