@@ -47,3 +47,4 @@ vendor/bin/phpunit tests/
 - [`lib/laravel-adapter/src/Adapter/`](../../../laravel-adapter/src/Adapter/) — sibling Laravel implementations
 
 > **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-craft-adapter` via `.github/workflows/sync-nvoos-craft-adapter.yml` on push to `main` or `alpha-working`.
+
