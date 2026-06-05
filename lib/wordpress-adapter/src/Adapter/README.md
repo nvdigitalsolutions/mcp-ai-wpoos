@@ -47,3 +47,4 @@ vendor/bin/phpunit tests/test-wp-content-store.php
 - [`includes/bootstrap/oos-bridge.php`](../../../includes/bootstrap/oos-bridge.php) — DI wiring that instantiates these adapters
 
 > **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-wordpress-adapter` via `.github/workflows/sync-nvoos-wordpress-adapter.yml` on push to `main` or `alpha-working`.
+

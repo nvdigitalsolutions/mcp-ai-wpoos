@@ -48,3 +48,4 @@ Uses Orchestra Testbench for a bootable Laravel test environment.
 - [`lib/wordpress-adapter/src/Adapter/`](../../../wordpress-adapter/src/Adapter/) — sibling WordPress implementations for reference
 
 > **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-laravel-adapter` via `.github/workflows/sync-nvoos-laravel-adapter.yml` on push to `main` or `alpha-working`.
+
