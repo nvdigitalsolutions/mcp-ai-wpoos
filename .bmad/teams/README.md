@@ -1,5 +1,7 @@
 # NV oOS BMAD Teams
 
+> The underlying GSD methodology is now standardised as [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core). These team definitions are the NV oOS-specific instantiation — mapping BMAD roles to NV oOS Pro assistants and WordPress-aware toolchains.
+
 This directory contains team composition definitions for the GSD × BMAD multi-agent workflow.
 
 ## Available Teams

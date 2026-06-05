@@ -91,8 +91,8 @@ GSD is a lightweight, AI-native development framework designed for solo develope
 | `/gsd:brainstorm` | Guided idea generation |
 
 **Sources:**
-- [GSD Official Repository](https://github.com/gsd-build/get-shit-done)
-- [GSD Overview](https://gsd.build/)
+- [GSD Core — open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) — the current upstream standard (`npx @opengsd/gsd-core@latest`)
+- [GSD Official Website](https://gsd.build/)
 - [Mastering GSD: Meta-prompting & Context Engineering](https://dev.to/arkacoc13/mastering-get-shit-done-integrating-meta-prompting-context-engineering-and-spec-driven-4dnl)
 
 ---

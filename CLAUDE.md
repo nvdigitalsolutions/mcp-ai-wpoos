@@ -393,6 +393,8 @@ This repository is developed by multiple AI coding agents. You (Claude Code) are
 
 **Layering rule for `.github/agents/`:** Those files hold only agent-specific metadata + behavior (frontmatter, scope, examples, refusals). They MUST NOT restate naming/security/PHP-compat/architecture rules — those live in `AGENTS.md`, `CLAUDE.md`, and `.context/`. If you (Claude Code) are asked to author or edit a `*.agent.md` file, keep it slim and link to the canonical sources. See [`AGENTS.md` §2 "Layering rule"](AGENTS.md) for the full rule.
 
+> **GSD Core upstream:** The GSD context-engineering methodology used by this project is now standardised as [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`). NV oOS was an early adopter and implementation proving ground for the Discuss→Plan→Execute→Verify→Ship phase loop that gsd-core productises. The `.bmad/` agent definitions and `.context/` files in this repo remain NV oOS-specific instantiations of those patterns.
+
 **Key points for Claude Code sessions:**
 - Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.
 - Load subsystem-specific context files (listed in "Context Engineering Files" above) only when working on that subsystem.

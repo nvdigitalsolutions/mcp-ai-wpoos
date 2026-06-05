@@ -35,6 +35,8 @@ These are the AI assistants that human maintainers invoke when working on the re
 
 The NV oOS plugin itself includes an agentic multi-agent system for structured feature development. These agents run **inside** NV oOS assistants and follow the 10-phase GSD × BMAD methodology documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+> The GSD half of the methodology is now standardised upstream in [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`) — NV oOS was an early adopter and proving ground. The `.bmad/` agent definitions and `.context/` files below are the NV oOS-specific instantiations.
+
 | Agent ID | BMAD Role | NV oOS Assistant | Phases | YAML Definition |
 |----------|-----------|-----------------|--------|-----------------|
 | `nv-oos-analyst` | Analyst (Mary) | The Research Operative | 1 | [`.bmad/agents/nv-oos-analyst.yaml`](.bmad/agents/nv-oos-analyst.yaml) |

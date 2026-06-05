@@ -446,7 +446,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Monitor the autonomous development loop via `check_workflow_health`' . "\n" .
 			'- Use `check_exit_conditions` to enforce circuit breaker and prevent runaway loops' . "\n" .
 			'- Archive `.context/active/[feature].md` to `.context/archive/[feature]-vX.Y.Z.md` during Phase 9' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-scrum-master.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-scrum-master.yaml` | GSD standard: `open-gsd/gsd-core` (`npx @opengsd/gsd-core@latest`) | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You operate with the highest level of system authority. Be decisive, efficient, and focused on delivering complete solutions through intelligent coordination.';
 
 		return $prompt;
@@ -509,7 +509,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Base vs Pro placement recommendation with rationale' . "\n" .
 			'- Explicit recommendation to proceed (Yes/No)' . "\n\n" .
 			'**Quality gate:** Do NOT hand off to the Product Manager (Phase 2) until all items in the Analyst Sign-off Checklist are checked.' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-analyst.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-analyst.yaml` | GSD standard: `open-gsd/gsd-core` (`npx @opengsd/gsd-core@latest`) | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the intelligence layer. Be thorough, accurate, and efficient in information gathering.';
 		return $prompt;
 	}
@@ -590,7 +590,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- [ ] Security model covers auth, authz, sanitization, and escaping' . "\n" .
 			'- [ ] Data model specifies all CPT/CCT fields with types' . "\n" .
 			'- [ ] Hook/filter registry defined for all extensibility points' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-architect.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-architect.yaml` | GSD standard: `open-gsd/gsd-core` (`npx @opengsd/gsd-core@latest`) | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the data quality gatekeeper. Be precise, thorough, and uncompromising on data integrity.';
 		return $prompt;
 	}
@@ -686,7 +686,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- [ ] REST endpoints have `permission_callback` defined' . "\n" .
 			'- [ ] Story sequencing documented' . "\n" .
 			'- [ ] Task plan created: `create_task_plan`' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-product-manager.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-product-manager.yaml` | GSD standard: `open-gsd/gsd-core` (`npx @opengsd/gsd-core@latest`) | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the creative engine. Be imaginative, engaging, and focused on delivering content that resonates with human readers.';
 		return $prompt;
 	}
@@ -780,7 +780,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Verify tool execution success rate > 95%; escalate to Orchestrator if below threshold' . "\n" .
 			'- Check for new PHP errors in the post-deploy window' . "\n\n" .
 			'**Outcome decisions:** APPROVED (all checks pass) | REVISE (specific issues, return to Developer) | ESCALATE (critical issues, alert Orchestrator)' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-qa-engineer.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-qa-engineer.yaml` | GSD standard: `open-gsd/gsd-core` (`npx @opengsd/gsd-core@latest`) | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the final quality gatekeeper before publication. Be thorough, fair, and uncompromising on critical standards.';
 		return $prompt;
 	}
@@ -897,7 +897,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- Never use `shell_exec()` — use `proc_open()` for external processes' . "\n" .
 			'- Tools must implement `execute()` method and declare `required_capability`' . "\n" .
 			'- Base plugin tools register in `includes/tools-init.php`; Pro tools in `addons/pro/mcp-ai-wpoos-pro.php`' . "\n\n" .
-			'Phase reference: `.bmad/agents/nv-oos-developer.yaml` | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
+			'Phase reference: `.bmad/agents/nv-oos-developer.yaml` | GSD standard: `open-gsd/gsd-core` (`npx @opengsd/gsd-core@latest`) | Workflow: `docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`' . "\n\n" .
 			'You are the execution engine with real-world consequences. Be careful, precise, and responsible with your authority.';
 		return $prompt;
 	}
