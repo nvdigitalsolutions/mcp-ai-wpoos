@@ -1,6 +1,6 @@
 {
-    "name": "nvoos/graphify",
-    "description": "Visual knowledge graph for WordPress — maps your content into an interactive, navigable graph. Zero API keys required.",
+    "name": "nvoos/graphify-ai",
+    "description": "AI chat assistant addon for NV oOS Graphify — chat, providers, AI tools, embeddings, and agent memory.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
     "authors": [
@@ -11,11 +11,7 @@
             "role": "Developer"
         }
     ],
-    "homepage": "https://github.com/nvdigitalsolutions/nvoos-graphify",
-    "support": {
-        "issues": "https://github.com/nvdigitalsolutions/nvoos-graphify/issues",
-        "source": "https://github.com/nvdigitalsolutions/nvoos-graphify"
-    },
+    "homepage": "https://github.com/nvdigitalsolutions/nvoos-graphify-ai",
     "require": {
         "php": "^8.1"
     },
@@ -29,12 +25,8 @@
     },
     "scripts": {
         "test": "phpunit",
-        "test:unit": "phpunit --testsuite=Unit",
-        "test:integration": "phpunit --testsuite=Integration",
         "lint": "phpcs",
-        "lint:wpcs": "phpcs --standard=WordPress",
-        "format": "phpcbf",
-        "format:wpcs": "phpcbf --standard=WordPress"
+        "format": "phpcbf"
     },
     "config": {
         "allow-plugins": {
@@ -44,12 +36,12 @@
     },
     "autoload": {
         "psr-4": {
-            "NvoosGraphify\\": "src/"
+            "NvoosGraphifyAi\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "NvoosGraphify\\Tests\\": "tests/"
+            "NvoosGraphifyAi\\Tests\\": "tests/"
         }
     }
 }

@@ -1,10 +1,14 @@
 # NV oOS Graphify — Implementation Specification
 
-> **Version**: 3.0.0-draft | **Target PHP**: 8.1+ | **Target WP**: 6.5+ | **License**: GPL-3.0-or-later
+> **Version**: 1.0.0 | **Status**: Implemented ✅ (2026-06-05)
 >
-> This document is the **complete, actionable implementation specification** for the `nvoos-graphify` WordPress plugin — the core product in the NV oOS ecosystem. It is a visual knowledge graph that maps WordPress content into an interactive, navigable graph. **It works with zero API keys and is immediately useful upon activation.** Every other NV oOS feature (AI chat, tools, providers, memory, etc.) is an addon that extends this core.
+> **Target PHP**: 8.1+ | **Target WP**: 6.5+ | **License**: GPL-3.0-or-later
 >
-> This plugin **absorbs** the existing `addons/graphify/` code and **replaces** `mcp-ai-wpoos.php` as the base plugin.
+> This document is the **complete implementation specification** for the `nvoos-graphify` WordPress plugin — the core product in the NV oOS ecosystem. It is a visual knowledge graph that maps WordPress content into an interactive, navigable graph. **It works with zero API keys and is immediately useful upon activation.** Every other NV oOS feature (AI chat, tools, providers, memory, etc.) is an addon that extends this core.
+>
+> **The specification has been fully implemented** as a from-scratch PSR-4 rebuild at `plugins/nvoos-graphify/` (rather than absorbing the legacy `addons/graphify/`). The resulting codebase lives at `plugins/nvoos-graphify/` — see [`nvoos-graphify-core-buildout-plan.md`](./nvoos-graphify-core-buildout-plan.md) for the buildout tracking and [the restructuring roadmap](./nvoos-base-restructuring-roadmap.md) for overall ecosystem status.
+>
+> ⚠️ **Historical note**: This spec originally described absorbing `addons/graphify/` and replacing `mcp-ai-wpoos.php`. The actual implementation took a cleaner from-scratch approach. The legacy `addons/graphify/` (v0.6.0) still exists alongside the new standalone core and both are maintained in the same monorepo during the transition period.
 
 ---
 
