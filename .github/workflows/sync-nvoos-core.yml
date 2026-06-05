@@ -1,0 +1,24 @@
+name: Sync nvoos-core
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'lib/core/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=lib/core --branch=nvoos-core-split
+
+      - name: Push to nvoos-core
+        run: |
+          git push https://x-access-token:${{ secrets.NVOOS_CORE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-core.git nvoos-core-split:main --force
