@@ -22,38 +22,47 @@ namespace NvoosGraphify\Graph;
  *
  * @since 1.0.0
  */
-class SemanticExtractor
-{
-    /**
-     * Extract semantic nodes and edges from posts.
-     *
-     * @param array $posts   Array of WP_Post objects.
-     * @param bool  $async   Whether to dispatch to WP Cron (unused in stub).
-     * @return array{nodes: array, edges: array}
-     */
-    public static function extract( array $posts, bool $async = false ): array {
-        return array( 'nodes' => array(), 'edges' => array() );
-    }
+class SemanticExtractor {
 
-    /**
-     * Extract semantic nodes and edges from JetEngine CCT items.
-     *
-     * @param array $ccts CCT rows from Detector::detectCcts().
-     * @param bool  $async Whether to dispatch to WP Cron.
-     * @return array{nodes: array, edges: array}
-     */
-    public static function extractCcts( array $ccts, bool $async = false ): array {
-        return array( 'nodes' => array(), 'edges' => array() );
-    }
+	/**
+	 * Extract semantic nodes and edges from posts.
+	 *
+	 * @param array $posts   Array of WP_Post objects.
+	 * @param bool  $async   Whether to dispatch to WP Cron (unused in stub).
+	 * @return array{nodes: array, edges: array}
+	 */
+	public static function extract( array $posts, bool $async = false ): array {
+		return array(
+			'nodes' => array(),
+			'edges' => array(),
+		);
+	}
 
-    /**
-     * Extract semantic nodes and edges from external table rows.
-     *
-     * @param array $externalRows Rows from external table detection.
-     * @param bool  $async        Whether to dispatch to WP Cron.
-     * @return array{nodes: array, edges: array}|null
-     */
-    public static function extractExternal( array $externalRows, bool $async = false ): ?array {
-        return array( 'nodes' => array(), 'edges' => array() );
-    }
+	/**
+	 * Extract semantic nodes and edges from JetEngine CCT items.
+	 *
+	 * @param array $ccts CCT rows from Detector::detectCcts().
+	 * @param bool  $async Whether to dispatch to WP Cron.
+	 * @return array{nodes: array, edges: array}
+	 */
+	public static function extractCcts( array $ccts, bool $async = false ): array {
+		return array(
+			'nodes' => array(),
+			'edges' => array(),
+		);
+	}
+
+	/**
+	 * Extract semantic nodes and edges from external table rows.
+	 *
+	 * @param array $externalRows Rows from external table detection.
+	 * @param bool  $async        Whether to dispatch to WP Cron.
+	 * @return array{nodes: array, edges: array}|null
+	 */
+	public static function extractExternal( array $externalRows, bool $async = false ): ?array {
+		return array(
+			'nodes' => array(),
+			'edges' => array(),
+		);
+	}
 }

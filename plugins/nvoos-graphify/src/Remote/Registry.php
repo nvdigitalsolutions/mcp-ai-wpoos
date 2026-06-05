@@ -14,66 +14,62 @@ use NvoosGraphify\Contracts\RemoteSource;
  *
  * @since 1.0.0
  */
-final class Registry
-{
-    /**
-     * Registered drivers, keyed by slug.
-     *
-     * @var array<string,RemoteSource>
-     */
-    private array $drivers = array();
+final class Registry {
 
-    /**
-     * Register a remote-source driver.
-     *
-     * @param RemoteSource $driver The driver instance.
-     * @return void
-     */
-    public function registerDriver( RemoteSource $driver ): void
-    {
-        $this->drivers[ $driver->getDriverId() ] = $driver;
-    }
+	/**
+	 * Registered drivers, keyed by slug.
+	 *
+	 * @var array<string,RemoteSource>
+	 */
+	private array $drivers = array();
 
-    /**
-     * Retrieve a driver by its slug.
-     *
-     * @param string $slug The driver identifier.
-     * @return RemoteSource|null
-     */
-    public function getDriver( string $slug ): ?RemoteSource
-    {
-        return $this->drivers[ $slug ] ?? null;
-    }
+	/**
+	 * Register a remote-source driver.
+	 *
+	 * @param RemoteSource $driver The driver instance.
+	 * @return void
+	 */
+	public function registerDriver( RemoteSource $driver ): void {
+		$this->drivers[ $driver->getDriverId() ] = $driver;
+	}
 
-    /**
-     * Return all registered drivers.
-     *
-     * @return array<string,RemoteSource>
-     */
-    public function allDrivers(): array
-    {
-        return $this->drivers;
-    }
+	/**
+	 * Retrieve a driver by its slug.
+	 *
+	 * @param string $slug The driver identifier.
+	 * @return RemoteSource|null
+	 */
+	public function getDriver( string $slug ): ?RemoteSource {
+		return $this->drivers[ $slug ] ?? null;
+	}
 
-    /**
-     * Return driver metadata suitable for the REST API and admin UI.
-     *
-     * Returns an array of arrays, each containing 'slug', 'label',
-     * 'capabilities', and 'config_schema'.
-     *
-     * @return array<int,array<string,mixed>>
-     */
-    public function listDrivers(): array
-    {
-        $list = array();
-        foreach ( $this->drivers as $slug => $driver ) {
-            $list[] = array(
-                'slug'          => $slug,
-                'label'         => $driver->getDriverLabel(),
-                'capabilities'  => $driver->getCapabilities(),
-                'config_schema' => $driver->getConfigSchema(),
-            );
-        }
-        return $list;
-    }
+	/**
+	 * Return all registered drivers.
+	 *
+	 * @return array<string,RemoteSource>
+	 */
+	public function allDrivers(): array {
+		return $this->drivers;
+	}
+
+	/**
+	 * Return driver metadata suitable for the REST API and admin UI.
+	 *
+	 * Returns an array of arrays, each containing 'slug', 'label',
+	 * 'capabilities', and 'config_schema'.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function listDrivers(): array {
+		$list = array();
+		foreach ( $this->drivers as $slug => $driver ) {
+			$list[] = array(
+				'slug'          => $slug,
+				'label'         => $driver->getDriverLabel(),
+				'capabilities'  => $driver->getCapabilities(),
+				'config_schema' => $driver->getConfigSchema(),
+			);
+		}
+		return $list;
+	}
 }

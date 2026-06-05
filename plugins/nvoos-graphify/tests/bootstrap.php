@@ -12,8 +12,8 @@ declare(strict_types=1);
 // Composer autoloader.
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if ( ! file_exists( $autoload ) ) {
-    fwrite( STDERR, "Composer autoloader not found. Run `composer install` first.\n" );
-    exit( 1 );
+	fwrite( STDERR, "Composer autoloader not found. Run `composer install` first.\n" );
+	exit( 1 );
 }
 require_once $autoload;
 
@@ -21,18 +21,18 @@ require_once $autoload;
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( ! $_tests_dir ) {
-    $_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
+	$_tests_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wordpress-tests-lib';
 }
 
 if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
-    fwrite(
-        STDERR,
-        sprintf(
-            "WordPress test suite not found at %s. Set WP_TESTS_DIR or run `composer run test:install`.\n",
-            $_tests_dir
-        )
-    );
-    exit( 1 );
+	fwrite(
+		STDERR,
+		sprintf(
+			"WordPress test suite not found at %s. Set WP_TESTS_DIR or run `composer run test:install`.\n",
+			$_tests_dir
+		)
+	);
+	exit( 1 );
 }
 
 // Give access to tests_add_filter() function.
@@ -42,7 +42,7 @@ require_once $_tests_dir . '/includes/functions.php';
  * Manually load the plugin.
  */
 function _manually_load_nvoos_graphify_plugin(): void {
-    require_once dirname( __DIR__ ) . '/nvoos-graphify.php';
+	require_once dirname( __DIR__ ) . '/nvoos-graphify.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_nvoos_graphify_plugin' );
 

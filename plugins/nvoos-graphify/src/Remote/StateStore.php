@@ -12,24 +12,24 @@ namespace NvoosGraphify\Remote;
  *
  * @since 1.0.0
  */
-class StateStore
-{
-    /**
-     * Get the last sync cursor for a source.
-     *
-     * @param string $slug Source slug.
-     * @return string|null
-     */
-    public function getCursor( string $slug ): ?string {
-        return null;
-    }
+class StateStore {
 
-    /**
-     * Set the sync cursor for a source.
-     *
-     * @param string $slug   Source slug.
-     * @param string $cursor Cursor value.
-     * @return void
-     */
-    public function setCursor( string $slug, string $cursor ): void {}
+	/**
+	 * Get the last sync cursor for a source.
+	 *
+	 * @param string $slug Source slug.
+	 * @return string|null
+	 */
+	public function getCursor( string $slug ): ?string {
+		return null;
+	}
+
+	/**
+	 * Set the sync cursor for a source.
+	 *
+	 * @param string $slug   Source slug.
+	 * @param string $cursor Cursor value.
+	 * @return void
+	 */
+	public function setCursor( string $slug, string $cursor ): void {}
 }

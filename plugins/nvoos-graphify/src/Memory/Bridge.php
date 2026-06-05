@@ -12,31 +12,29 @@ namespace NvoosGraphify\Memory;
  *
  * @since 1.0.0
  */
-class Bridge
-{
-    /**
-     * Register the memory subscriber hook.
-     *
-     * Idempotent — safe to call multiple times.
-     *
-     * @return void
-     */
-    public static function register(): void
-    {
-        if ( ! function_exists( 'add_action' ) ) {
-            return;
-        }
-        add_action( 'nvoos_graphify/memory_stored', array( __CLASS__, 'onMemoryStored' ), 10, 1 );
-    }
+class Bridge {
 
-    /**
-     * Handle a memory-stored event.
-     *
-     * @param array<string,mixed> $payload Event payload.
-     * @return void
-     */
-    public static function onMemoryStored( array $payload ): void
-    {
-        // Stub — full implementation in nvoos-graphify-ai addon.
-    }
+	/**
+	 * Register the memory subscriber hook.
+	 *
+	 * Idempotent — safe to call multiple times.
+	 *
+	 * @return void
+	 */
+	public static function register(): void {
+		if ( ! function_exists( 'add_action' ) ) {
+			return;
+		}
+		add_action( 'nvoos_graphify/memory_stored', array( __CLASS__, 'onMemoryStored' ), 10, 1 );
+	}
+
+	/**
+	 * Handle a memory-stored event.
+	 *
+	 * @param array<string,mixed> $payload Event payload.
+	 * @return void
+	 */
+	public static function onMemoryStored( array $payload ): void {
+		// Stub — full implementation in nvoos-graphify-ai addon.
+	}
 }

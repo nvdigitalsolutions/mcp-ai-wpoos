@@ -12,31 +12,29 @@ namespace NvoosGraphify\Memory;
  *
  * @since 1.0.0
  */
-class EmbeddingsOnIngest
-{
-    /** @var string Cron action for embedding generation. */
-    public const CRON_ACTION = 'nvoos_graphify/embed_node';
+class EmbeddingsOnIngest {
 
-    /**
-     * Register the cron handler.
-     *
-     * @return void
-     */
-    public static function register(): void
-    {
-        if ( function_exists( 'add_action' ) ) {
-            add_action( self::CRON_ACTION, array( __CLASS__, 'processNode' ), 10, 1 );
-        }
-    }
+	/** @var string Cron action for embedding generation. */
+	public const CRON_ACTION = 'nvoos_graphify/embed_node';
 
-    /**
-     * Process a single node for embedding generation.
-     *
-     * @param array<string,mixed> $node Node data.
-     * @return void
-     */
-    public static function processNode( array $node ): void
-    {
-        // Stub — full implementation in nvoos-graphify-embeddings addon.
-    }
+	/**
+	 * Register the cron handler.
+	 *
+	 * @return void
+	 */
+	public static function register(): void {
+		if ( function_exists( 'add_action' ) ) {
+			add_action( self::CRON_ACTION, array( __CLASS__, 'processNode' ), 10, 1 );
+		}
+	}
+
+	/**
+	 * Process a single node for embedding generation.
+	 *
+	 * @param array<string,mixed> $node Node data.
+	 * @return void
+	 */
+	public static function processNode( array $node ): void {
+		// Stub — full implementation in nvoos-graphify-embeddings addon.
+	}
 }

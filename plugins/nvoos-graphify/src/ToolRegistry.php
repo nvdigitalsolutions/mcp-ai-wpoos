@@ -14,68 +14,63 @@ use NvoosGraphify\Contracts\Tool;
  *
  * @since 1.0.0
  */
-final class ToolRegistry
-{
-    /**
-     * Registered tools, keyed by slug.
-     *
-     * @var array<string,Tool>
-     */
-    private array $tools = array();
+final class ToolRegistry {
 
-    /**
-     * Register a tool instance.
-     *
-     * If a tool with the same slug is already registered,
-     * it is silently replaced (last-registered wins).
-     *
-     * @param Tool $tool The tool instance to register.
-     * @return void
-     */
-    public function register( Tool $tool ): void
-    {
-        $this->tools[ $tool->getSlug() ] = $tool;
-    }
+	/**
+	 * Registered tools, keyed by slug.
+	 *
+	 * @var array<string,Tool>
+	 */
+	private array $tools = array();
 
-    /**
-     * Retrieve a tool by its slug.
-     *
-     * @param string $slug The tool slug.
-     * @return Tool|null The tool instance, or null if not found.
-     */
-    public function get( string $slug ): ?Tool
-    {
-        return $this->tools[ $slug ] ?? null;
-    }
+	/**
+	 * Register a tool instance.
+	 *
+	 * If a tool with the same slug is already registered,
+	 * it is silently replaced (last-registered wins).
+	 *
+	 * @param Tool $tool The tool instance to register.
+	 * @return void
+	 */
+	public function register( Tool $tool ): void {
+		$this->tools[ $tool->getSlug() ] = $tool;
+	}
 
-    /**
-     * Return all registered tools.
-     *
-     * @return array<string,Tool>
-     */
-    public function all(): array
-    {
-        return $this->tools;
-    }
+	/**
+	 * Retrieve a tool by its slug.
+	 *
+	 * @param string $slug The tool slug.
+	 * @return Tool|null The tool instance, or null if not found.
+	 */
+	public function get( string $slug ): ?Tool {
+		return $this->tools[ $slug ] ?? null;
+	}
 
-    /**
-     * Check whether a tool with the given slug is registered.
-     *
-     * @param string $slug The tool slug.
-     * @return bool
-     */
-    public function has( string $slug ): bool
-    {
-        return isset( $this->tools[ $slug ] );
-    }
+	/**
+	 * Return all registered tools.
+	 *
+	 * @return array<string,Tool>
+	 */
+	public function all(): array {
+		return $this->tools;
+	}
 
-    /**
-     * Return the total count of registered tools.
-     *
-     * @return int
-     */
-    public function count(): int
-    {
-        return count( $this->tools );
-    }
+	/**
+	 * Check whether a tool with the given slug is registered.
+	 *
+	 * @param string $slug The tool slug.
+	 * @return bool
+	 */
+	public function has( string $slug ): bool {
+		return isset( $this->tools[ $slug ] );
+	}
+
+	/**
+	 * Return the total count of registered tools.
+	 *
+	 * @return int
+	 */
+	public function count(): int {
+		return count( $this->tools );
+	}
 }

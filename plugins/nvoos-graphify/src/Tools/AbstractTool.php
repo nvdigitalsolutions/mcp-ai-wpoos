@@ -14,18 +14,17 @@ use NvoosGraphify\Contracts\Tool;
  *
  * @since 1.0.0
  */
-abstract class AbstractTool implements Tool
-{
-    /**
-     * Return the WordPress capability required to execute this tool.
-     *
-     * Defaults to 'edit_posts'. Override for tools that need
-     * 'manage_options' or other capabilities.
-     *
-     * @return string
-     */
-    public function getRequiredCapability(): string
-    {
-        return 'edit_posts';
-    }
+abstract class AbstractTool implements Tool {
+
+	/**
+	 * Return the WordPress capability required to execute this tool.
+	 *
+	 * Defaults to 'edit_posts'. Override for tools that need
+	 * 'manage_options' or other capabilities.
+	 *
+	 * @return string
+	 */
+	public function getRequiredCapability(): string {
+		return 'edit_posts';
+	}
 }

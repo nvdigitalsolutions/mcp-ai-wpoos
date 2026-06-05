@@ -14,221 +14,215 @@ use PHPUnit\Framework\TestCase;
  *
  * @since 1.0.0
  */
-class DbTest extends TestCase
-{
-    /** @var \wpdb&\PHPUnit\Framework\MockObject\MockObject */
-    private $mockWpdb;
+class DbTest extends TestCase {
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+	/** @var \wpdb&\PHPUnit\Framework\MockObject\MockObject */
+	private $mockWpdb;
 
-        // Mock global $wpdb.
-        $this->mockWpdb = $this->createMock( \wpdb::class );
-        $this->mockWpdb->prefix = 'wp_';
-        $GLOBALS['wpdb'] = $this->mockWpdb;
-    }
+	protected function setUp(): void {
+		parent::setUp();
 
-    protected function tearDown(): void
-    {
-        unset( $GLOBALS['wpdb'] );
-        parent::tearDown();
-    }
+		// Mock global $wpdb.
+		$this->mockWpdb         = $this->createMock( \wpdb::class );
+		$this->mockWpdb->prefix = 'wp_';
+		$GLOBALS['wpdb']        = $this->mockWpdb;
+	}
 
-    /** @test */
-    public function nodesTableReturnsPrefixedName(): void
-    {
-        $this->assertSame(
-            'wp_' . Schema::TABLE_NODES,
-            Db::nodesTable()
-        );
-    }
+	protected function tearDown(): void {
+		unset( $GLOBALS['wpdb'] );
+		parent::tearDown();
+	}
 
-    /** @test */
-    public function edgesTableReturnsPrefixedName(): void
-    {
-        $this->assertSame(
-            'wp_' . Schema::TABLE_EDGES,
-            Db::edgesTable()
-        );
-    }
+	/** @test */
+	public function nodesTableReturnsPrefixedName(): void {
+		$this->assertSame(
+			'wp_' . Schema::TABLE_NODES,
+			Db::nodesTable()
+		);
+	}
 
-    /** @test */
-    public function metaTableReturnsPrefixedName(): void
-    {
-        $this->assertSame(
-            'wp_' . Schema::TABLE_META,
-            Db::metaTable()
-        );
-    }
+	/** @test */
+	public function edgesTableReturnsPrefixedName(): void {
+		$this->assertSame(
+			'wp_' . Schema::TABLE_EDGES,
+			Db::edgesTable()
+		);
+	}
 
-    /** @test */
-    public function remoteSourcesTableReturnsPrefixedName(): void
-    {
-        $this->assertSame(
-            'wp_' . Schema::TABLE_REMOTE_SOURCES,
-            Db::remoteSourcesTable()
-        );
-    }
+	/** @test */
+	public function metaTableReturnsPrefixedName(): void {
+		$this->assertSame(
+			'wp_' . Schema::TABLE_META,
+			Db::metaTable()
+		);
+	}
 
-    /** @test */
-    public function embeddingsTableReturnsPrefixedName(): void
-    {
-        $this->assertSame(
-            'wp_' . Schema::TABLE_EMBEDDINGS,
-            Db::embeddingsTable()
-        );
-    }
+	/** @test */
+	public function remoteSourcesTableReturnsPrefixedName(): void {
+		$this->assertSame(
+			'wp_' . Schema::TABLE_REMOTE_SOURCES,
+			Db::remoteSourcesTable()
+		);
+	}
 
-    /** @test */
-    public function countNodesReturnsZeroWhenTableIsEmpty(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_var' )
-            ->with( $this->stringContains( 'SELECT COUNT(*)' ) )
-            ->willReturn( '0' );
+	/** @test */
+	public function embeddingsTableReturnsPrefixedName(): void {
+		$this->assertSame(
+			'wp_' . Schema::TABLE_EMBEDDINGS,
+			Db::embeddingsTable()
+		);
+	}
 
-        $this->assertSame( 0, Db::countNodes() );
-    }
+	/** @test */
+	public function countNodesReturnsZeroWhenTableIsEmpty(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_var' )
+			->with( $this->stringContains( 'SELECT COUNT(*)' ) )
+			->willReturn( '0' );
 
-    /** @test */
-    public function countEdgesReturnsZeroWhenTableIsEmpty(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_var' )
-            ->with( $this->stringContains( 'SELECT COUNT(*)' ) )
-            ->willReturn( '0' );
+		$this->assertSame( 0, Db::countNodes() );
+	}
 
-        $this->assertSame( 0, Db::countEdges() );
-    }
+	/** @test */
+	public function countEdgesReturnsZeroWhenTableIsEmpty(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_var' )
+			->with( $this->stringContains( 'SELECT COUNT(*)' ) )
+			->willReturn( '0' );
 
-    /** @test */
-    public function upsertNodeInsertsWhenNotFound(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_var' )
-            ->willReturn( null );
+		$this->assertSame( 0, Db::countEdges() );
+	}
 
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'insert' )
-            ->willReturn( true );
+	/** @test */
+	public function upsertNodeInsertsWhenNotFound(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_var' )
+			->willReturn( null );
 
-        $this->mockWpdb->insert_id = 42;
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'insert' )
+			->willReturn( true );
 
-        $result = Db::upsertNode( array(
-            'node_id' => 'post_1',
-            'label'   => 'Test Post',
-            'type'    => 'post',
-            'post_id' => 1,
-            'url'     => 'https://example.com/test',
-        ) );
+		$this->mockWpdb->insert_id = 42;
 
-        $this->assertSame( 42, $result );
-    }
+		$result = Db::upsertNode(
+			array(
+				'node_id' => 'post_1',
+				'label'   => 'Test Post',
+				'type'    => 'post',
+				'post_id' => 1,
+				'url'     => 'https://example.com/test',
+			)
+		);
 
-    /** @test */
-    public function upsertNodeUpdatesWhenFound(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_var' )
-            ->willReturn( '5' );
+		$this->assertSame( 42, $result );
+	}
 
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'update' );
+	/** @test */
+	public function upsertNodeUpdatesWhenFound(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_var' )
+			->willReturn( '5' );
 
-        $result = Db::upsertNode( array(
-            'node_id' => 'post_1',
-            'label'   => 'Updated Post',
-            'type'    => 'post',
-            'post_id' => 1,
-        ) );
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'update' );
 
-        $this->assertSame( 5, $result );
-    }
+		$result = Db::upsertNode(
+			array(
+				'node_id' => 'post_1',
+				'label'   => 'Updated Post',
+				'type'    => 'post',
+				'post_id' => 1,
+			)
+		);
 
-    /** @test */
-    public function getNodeReturnsNullWhenNotFound(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_row' )
-            ->willReturn( null );
+		$this->assertSame( 5, $result );
+	}
 
-        $this->assertNull( Db::getNode( 'nonexistent' ) );
-    }
+	/** @test */
+	public function getNodeReturnsNullWhenNotFound(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_row' )
+			->willReturn( null );
 
-    /** @test */
-    public function upsertEdgeInsertsWhenNotFound(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_row' )
-            ->willReturn( null );
+		$this->assertNull( Db::getNode( 'nonexistent' ) );
+	}
 
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'insert' )
-            ->willReturn( true );
+	/** @test */
+	public function upsertEdgeInsertsWhenNotFound(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_row' )
+			->willReturn( null );
 
-        $this->mockWpdb->insert_id = 99;
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'insert' )
+			->willReturn( true );
 
-        $result = Db::upsertEdge( array(
-            'source_node_id' => 'post_1',
-            'target_node_id' => 'term_5_category',
-            'relation'       => 'CATEGORIZED_BY',
-        ) );
+		$this->mockWpdb->insert_id = 99;
 
-        $this->assertSame( 99, $result );
-    }
+		$result = Db::upsertEdge(
+			array(
+				'source_node_id' => 'post_1',
+				'target_node_id' => 'term_5_category',
+				'relation'       => 'CATEGORIZED_BY',
+			)
+		);
 
-    /** @test */
-    public function upsertEdgeKeepsHighestConfidenceOnDuplicate(): void
-    {
-        $existing = new \stdClass();
-        $existing->id = 10;
-        $existing->confidence = 0.8;
+		$this->assertSame( 99, $result );
+	}
 
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_row' )
-            ->willReturn( $existing );
+	/** @test */
+	public function upsertEdgeKeepsHighestConfidenceOnDuplicate(): void {
+		$existing             = new \stdClass();
+		$existing->id         = 10;
+		$existing->confidence = 0.8;
 
-        // Should update with max(0.8, 0.6) = 0.8.
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'update' )
-            ->with(
-                $this->anything(),
-                $this->callback( function ( array $data ) {
-                    return $data['confidence'] === 0.8;
-                } ),
-                $this->anything(),
-                $this->anything(),
-                $this->anything()
-            );
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_row' )
+			->willReturn( $existing );
 
-        $result = Db::upsertEdge( array(
-            'source_node_id' => 'post_1',
-            'target_node_id' => 'term_5_category',
-            'relation'       => 'CATEGORIZED_BY',
-            'confidence'     => 0.6,
-        ) );
+		// Should update with max(0.8, 0.6) = 0.8.
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'update' )
+			->with(
+				$this->anything(),
+				$this->callback(
+					function ( array $data ) {
+						return $data['confidence'] === 0.8;
+					}
+				),
+				$this->anything(),
+				$this->anything(),
+				$this->anything()
+			);
 
-        $this->assertSame( 10, $result );
-    }
+		$result = Db::upsertEdge(
+			array(
+				'source_node_id' => 'post_1',
+				'target_node_id' => 'term_5_category',
+				'relation'       => 'CATEGORIZED_BY',
+				'confidence'     => 0.6,
+			)
+		);
 
-    /** @test */
-    public function getAllNodesReturnsArrayWhenEmpty(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_results' )
-            ->willReturn( array() );
+		$this->assertSame( 10, $result );
+	}
 
-        $this->assertSame( array(), Db::getAllNodes() );
-    }
+	/** @test */
+	public function getAllNodesReturnsArrayWhenEmpty(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_results' )
+			->willReturn( array() );
 
-    /** @test */
-    public function getEdgesForNodeReturnsArrayWhenEmpty(): void
-    {
-        $this->mockWpdb->expects( $this->once() )
-            ->method( 'get_results' )
-            ->willReturn( array() );
+		$this->assertSame( array(), Db::getAllNodes() );
+	}
 
-        $this->assertSame( array(), Db::getEdgesForNode( 'post_1' ) );
-    }
+	/** @test */
+	public function getEdgesForNodeReturnsArrayWhenEmpty(): void {
+		$this->mockWpdb->expects( $this->once() )
+			->method( 'get_results' )
+			->willReturn( array() );
+
+		$this->assertSame( array(), Db::getEdgesForNode( 'post_1' ) );
+	}
 }

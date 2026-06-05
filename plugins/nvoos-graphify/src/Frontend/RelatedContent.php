@@ -24,79 +24,77 @@ use function min;
  *
  * @since 1.0.0
  */
-class RelatedContent
-{
-    /**
-     * Register the `the_content` filter.
-     *
-     * @return void
-     */
-    public function register(): void
-    {
-        $allSettings = Settings::all();
-        if ( ! empty( $allSettings['related_content'] ) ) {
-            add_filter( 'the_content', array( $this, 'append' ) );
-        }
-    }
+class RelatedContent {
 
-    /**
-     * Append top-N graph-neighbor posts to singular content.
-     *
-     * @param string $content Post content.
-     * @return string Modified content.
-     */
-    public function append( string $content ): string
-    {
-        if ( ! is_singular() || ! in_the_loop() || ! is_main_query() ) {
-            return $content;
-        }
+	/**
+	 * Register the `the_content` filter.
+	 *
+	 * @return void
+	 */
+	public function register(): void {
+		$allSettings = Settings::all();
+		if ( ! empty( $allSettings['related_content'] ) ) {
+			add_filter( 'the_content', array( $this, 'append' ) );
+		}
+	}
 
-        // Guard against recursive apply_filters.
-        static $appended = false;
-        if ( $appended ) {
-            return $content;
-        }
+	/**
+	 * Append top-N graph-neighbor posts to singular content.
+	 *
+	 * @param string $content Post content.
+	 * @return string Modified content.
+	 */
+	public function append( string $content ): string {
+		if ( ! is_singular() || ! in_the_loop() || ! is_main_query() ) {
+			return $content;
+		}
 
-        $postId = get_the_ID();
-        if ( ! $postId ) {
-            return $content;
-        }
+		// Guard against recursive apply_filters.
+		static $appended = false;
+		if ( $appended ) {
+			return $content;
+		}
 
-        $node = Db::getNodeByPostId( $postId );
-        if ( ! $node ) {
-            return $content;
-        }
+		$postId = get_the_ID();
+		if ( ! $postId ) {
+			return $content;
+		}
 
-        $allSettings = Settings::all();
-        $maxRelated  = max( 1, min( 10, absint( $allSettings['max_related'] ?? 5 ) ) );
+		$node = Db::getNodeByPostId( $postId );
+		if ( ! $node ) {
+			return $content;
+		}
 
-        $neighborIds = Db::getNeighborIds( $node->node_id );
-        if ( empty( $neighborIds ) ) {
-            return $content;
-        }
+		$allSettings = Settings::all();
+		$maxRelated  = max( 1, min( 10, absint( $allSettings['max_related'] ?? 5 ) ) );
 
-        $neighbors  = array_slice( $neighborIds, 0, $maxRelated );
-        $postNodes  = array();
+		$neighborIds = Db::getNeighborIds( $node->node_id );
+		if ( empty( $neighborIds ) ) {
+			return $content;
+		}
 
-        foreach ( $neighbors as $nid ) {
-            $n = Db::getNode( $nid );
-            if ( $n && $n->post_id && $n->url ) {
-                $postNodes[] = $n;
-            }
-        }
+		$neighbors = array_slice( $neighborIds, 0, $maxRelated );
+		$postNodes = array();
 
-        if ( empty( $postNodes ) ) {
-            return $content;
-        }
+		foreach ( $neighbors as $nid ) {
+			$n = Db::getNode( $nid );
+			if ( $n && $n->post_id && $n->url ) {
+				$postNodes[] = $n;
+			}
+		}
 
-        $widget  = '<div class="nvoos-graphify-related">';
-        $widget .= '<h3>' . esc_html__( 'Related Content', 'nvoos-graphify' ) . '</h3><ul>';
-        foreach ( $postNodes as $n ) {
-            $widget .= '<li><a href="' . esc_url( $n->url ) . '">' . esc_html( $n->label ) . '</a></li>';
-        }
-        $widget .= '</ul></div>';
+		if ( empty( $postNodes ) ) {
+			return $content;
+		}
 
-        $appended = true;
-        return $content . $widget;
-    }
+		$widget  = '<div class="nvoos-graphify-related">';
+		$widget .= '<h3>' . esc_html__( 'Related Content', 'nvoos-graphify' ) . '</h3><ul>';
+		foreach ( $postNodes as $n ) {
+			$widget .= '<li><a href="' . esc_url( $n->url ) . '">' . esc_html( $n->label ) . '</a></li>';
+		}
+		$widget .= '</ul></div>';
+
+		$appended = true;
+		return $content . $widget;
+	}
 }

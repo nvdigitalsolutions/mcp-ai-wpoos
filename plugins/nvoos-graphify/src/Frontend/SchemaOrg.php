@@ -15,85 +15,83 @@ use NvoosGraphify\Settings;
  *
  * @since 1.0.0
  */
-class SchemaOrg
-{
-    /**
-     * Register the `wp_head` hook.
-     *
-     * @return void
-     */
-    public function register(): void
-    {
-        $allSettings = Settings::all();
-        if ( ! empty( $allSettings['schema_injection'] ) ) {
-            add_action( 'wp_head', array( $this, 'inject' ) );
-        }
-    }
+class SchemaOrg {
 
-    /**
-     * Inject Schema.org JSON-LD for the current singular view.
-     *
-     * @return void
-     */
-    public function inject(): void
-    {
-        if ( ! is_singular() ) {
-            return;
-        }
+	/**
+	 * Register the `wp_head` hook.
+	 *
+	 * @return void
+	 */
+	public function register(): void {
+		$allSettings = Settings::all();
+		if ( ! empty( $allSettings['schema_injection'] ) ) {
+			add_action( 'wp_head', array( $this, 'inject' ) );
+		}
+	}
 
-        $postId = get_the_ID();
-        if ( ! $postId ) {
-            return;
-        }
+	/**
+	 * Inject Schema.org JSON-LD for the current singular view.
+	 *
+	 * @return void
+	 */
+	public function inject(): void {
+		if ( ! is_singular() ) {
+			return;
+		}
 
-        $node = Db::getNodeByPostId( $postId );
-        if ( ! $node ) {
-            return;
-        }
+		$postId = get_the_ID();
+		if ( ! $postId ) {
+			return;
+		}
 
-        $edges = Db::getEdgesForNode( $node->node_id );
+		$node = Db::getNodeByPostId( $postId );
+		if ( ! $node ) {
+			return;
+		}
 
-        $about        = array();
-        $relatedLinks = array();
+		$edges = Db::getEdgesForNode( $node->node_id );
 
-        foreach ( $edges as $edge ) {
-            if ( in_array( $edge->relation, array( 'CATEGORIZED_BY', 'TAGGED_WITH' ), true ) ) {
-                $targetNode = Db::getNode( $edge->target_node_id );
-                if ( $targetNode ) {
-                    $about[] = array(
-                        '@type' => 'Thing',
-                        'name'  => esc_html( $targetNode->label ),
-                        'url'   => esc_url( $targetNode->url ),
-                    );
-                }
-            }
+		$about        = array();
+		$relatedLinks = array();
 
-            if ( 'LINKS_TO' === $edge->relation && $edge->source_node_id === $node->node_id ) {
-                $targetNode = Db::getNode( $edge->target_node_id );
-                if ( $targetNode && $targetNode->url ) {
-                    $relatedLinks[] = esc_url( $targetNode->url );
-                }
-            }
-        }
+		foreach ( $edges as $edge ) {
+			if ( in_array( $edge->relation, array( 'CATEGORIZED_BY', 'TAGGED_WITH' ), true ) ) {
+				$targetNode = Db::getNode( $edge->target_node_id );
+				if ( $targetNode ) {
+					$about[] = array(
+						'@type' => 'Thing',
+						'name'  => esc_html( $targetNode->label ),
+						'url'   => esc_url( $targetNode->url ),
+					);
+				}
+			}
 
-        if ( empty( $about ) && empty( $relatedLinks ) ) {
-            return;
-        }
+			if ( 'LINKS_TO' === $edge->relation && $edge->source_node_id === $node->node_id ) {
+				$targetNode = Db::getNode( $edge->target_node_id );
+				if ( $targetNode && $targetNode->url ) {
+					$relatedLinks[] = esc_url( $targetNode->url );
+				}
+			}
+		}
 
-        $schema = array(
-            '@context' => 'https://schema.org',
-            '@type'    => 'WebPage',
-            'url'      => esc_url( get_permalink( $postId ) ),
-        );
+		if ( empty( $about ) && empty( $relatedLinks ) ) {
+			return;
+		}
 
-        if ( $about ) {
-            $schema['about'] = $about;
-        }
-        if ( $relatedLinks ) {
-            $schema['relatedLink'] = $relatedLinks;
-        }
+		$schema = array(
+			'@context' => 'https://schema.org',
+			'@type'    => 'WebPage',
+			'url'      => esc_url( get_permalink( $postId ) ),
+		);
+
+		if ( $about ) {
+			$schema['about'] = $about;
+		}
+		if ( $relatedLinks ) {
+			$schema['relatedLink'] = $relatedLinks;
+		}
 
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "</script>\n";
-    }
+		echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "</script>\n";
+	}
 }
