@@ -24,6 +24,8 @@
       "create_crm_activity",
       "assign_lead_to_owner",
       "get_owner_workload",
+      "search_gmail",
+      "crm_email_search_leads",
       "get_workflow_inbox",
       "record_consent",
       "import_crm_csv"

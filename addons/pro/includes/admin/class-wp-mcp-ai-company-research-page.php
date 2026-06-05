@@ -187,6 +187,7 @@ class WP_MCP_AI_Company_Research_Page {
 			'manage_crm_contact',
 			'crm_capture_interaction',
 			// CRM email integration.
+			'crm_email_search_leads',
 			'crm_email_search_correspondence',
 			'crm_email_search_accounting',
 			// Activities.
