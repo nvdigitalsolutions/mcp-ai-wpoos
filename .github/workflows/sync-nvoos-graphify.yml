@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, alpha-working]
     paths:
-      - 'nvoos-graphify/**'
+      - 'plugins/nvoos-graphify/**'
 
 jobs:
   sync:
@@ -17,7 +17,7 @@ jobs:
 
       - name: Split subtree
         run: |
-          git subtree split --prefix=nvoos-graphify --branch=nvoos-graphify-split
+          git subtree split --prefix=plugins/nvoos-graphify --branch=nvoos-graphify-split
 
       - name: Push to nvoos-graphify
         run: |
