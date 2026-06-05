@@ -1,6 +1,8 @@
 # NV oOS — Graphify-Centric Restructuring Roadmap
 
-> **Version**: 3.0.0-draft | **Status**: Proposal
+> **Version**: 3.0.0-draft | **Status**: In Progress — Phase 0 scaffold complete
+>
+> Last updated: 2026-06-05
 >
 > This document is the **complete, phased restructuring roadmap** for transforming the NV oOS monolith into a Graphify-centric ecosystem where **`nvoos-graphify` (the knowledge graph product) absorbs the current addon code and becomes the base plugin**, and everything else (AI chat, tools, providers, features, integrations) extends it as truly optional addons. The core product works on day 1 with **zero API keys**.
 
@@ -9,14 +11,15 @@
 ## Table of Contents
 
 1. [Why This Architecture](#1-why-this-architecture)
-2. [Current State Analysis](#2-current-state-analysis)
-3. [Target Architecture](#3-target-architecture)
-4. [The Core Product: `nvoos-graphify`](#4-the-core-product-nvoos-graphify)
-5. [What Moves to Addons](#5-what-moves-to-addons)
-6. [Phased Execution Plan](#6-phased-execution-plan)
-7. [Backward Compatibility Strategy](#7-backward-compatibility-strategy)
-8. [Risk Assessment](#8-risk-assessment)
-9. [Success Metrics](#9-success-metrics)
+2. [Current Status](#2-current-status)
+3. [Current State Analysis](#3-current-state-analysis)
+4. [Target Architecture](#4-target-architecture)
+5. [The Core Product: `nvoos-graphify`](#5-the-core-product-nvoos-graphify)
+6. [What Moves to Addons](#6-what-moves-to-addons)
+7. [Phased Execution Plan](#7-phased-execution-plan)
+8. [Backward Compatibility Strategy](#8-backward-compatibility-strategy)
+9. [Risk Assessment](#9-risk-assessment)
+10. [Success Metrics](#10-success-metrics)
 
 ---
 
@@ -62,7 +65,132 @@ BEFORE (previous plan):                     AFTER (this plan):
 
 ---
 
-## 2. Current State Analysis
+## 2. Current Status
+
+> **Last updated**: 2026-06-05
+
+### Phase 0: Core Product — Graphify as the Base Plugin
+
+| Task | Status | Notes |
+|---|---|---|
+| Plugin scaffold (`plugins/nvoos-graphify/`) | ✅ Done | Bootstrap, composer.json, uninstall.php created |
+| PSR-4 `src/` directory structure | ❌ Not started | `composer.json` maps `NvoosGraphify\` → `src/`, but directory is empty |
+| Composer autoload (vendor/) | ❌ Not started | `composer install` not yet run; no vendor dir |
+| Absorb `addons/graphify/includes/` classes into `src/` | ❌ Not started | ~40 files still in old location with old namespaces |
+| Namespace migration to `NvoosGraphify\` | ❌ Not started | Existing classes use `NV_oOS_Graphify` prefix with underscores |
+| Hook prefix update to `nvoos_graphify/` | ❌ Not started | Old hooks like `nvoos_graphify_register_remote_sources`, `wp_mcp_ai_memory_stored` still in use |
+| Option key update to `nvoos_graphify_*` | ⚠️ Partial | New plugin uses new keys; old addon uses old keys (needs migration path) |
+| Table prefix update | ⚠️ Partial | New `uninstall.php` uses `nvoos_graphify_*`; old code still uses old prefixes |
+| REST namespace update to `nvoos-graphify/v1` | ⚠️ Partial | New plugin targets `nvoos-graphify/v1`; old REST controller uses `nvoos-graphify/v1` already (matches) |
+| Remove `WP_MCP_AI_Tool_Interface` dependency | ❌ Not started | Tools still implement base plugin's tool interface |
+| Remove `wp_mcp_ai_get_embedding()` dependency | ❌ Not started | Embeddings classes still call base plugin functions |
+| Remove `wp_mcp_ai_chat_completion()` dependency | ❌ Not started | NV oOS Bridge still depends on base plugin |
+| Remove `WP_MCP_AI_Inline_Async_Tick_Trait` dependency | ❌ Not started | Main class has inline stub for this trait |
+| Write tests for graph engine components | ❌ Not started | Only 1 test exists (`test-nvoos-bridge.php`) |
+| Release `nvoos-graphify` v1.0.0-beta | ❌ Not started | |
+| Wire existing monolith into `nvoos-graphify` | ❌ Not started | No `Requires Plugins` header added to `mcp-ai-wpoos.php` |
+| Legacy tool interface compat adapter | ❌ Not started | |
+| Dual hook registration | ❌ Not started | |
+| Deprecated hook/function aliases | ❌ Not started | |
+| `readme.txt` for wp.org | ❌ Not started | |
+| Submit to wp.org | ❌ Not started | |
+
+### Phases 1–5
+
+| Phase | Status |
+|---|---|
+| Phase 1: Exotic Provider Addons | ❌ Not started |
+| Phase 2: Extended Tools | ❌ Not started |
+| Phase 3: Features + Integrations | ❌ Not started |
+| Phase 4: AI Chat | ❌ Not started |
+| Phase 5: Meta-Plugin + Cleanup | ❌ Not started |
+
+### Development Strategy: Coexistence, Not Replacement
+
+**The old `addons/graphify/` remains fully functional throughout Phase 0 development.** The new `plugins/nvoos-graphify/` is built alongside it — the monolith continues to work unchanged. This means:
+
+- Existing NV oOS installations are unaffected during development.
+- The old addon code serves as the reference implementation while the new plugin is built.
+- Classes are migrated file-by-file with namespace updates, tested independently, then wired together.
+- Only after `nvoos-graphify` reaches feature parity and passes tests does the old `addons/graphify/` get deprecated.
+- The `mcp-ai-wpoos.php` monolith continues to load `addons/graphify/` as before until Phase 5 (Meta-Plugin mode).
+
+### What the Scaffold Delivers
+
+The new `plugins/nvoos-graphify/` directory contains three files:
+
+| File | Lines | Purpose |
+|---|---|---|
+| `nvoos-graphify.php` | ~54 | Bootstrap with constants (`NVOOS_GRAPHIFY_VERSION`, `NVOOS_GRAPHIFY_FILE`, `NVOOS_GRAPHIFY_PATH`, `NVOOS_GRAPHIFY_URL`, `NVOOS_GRAPHIFY_DB_VERSION`), Composer + `spl_autoload_register` fallback, boots `NvoosGraphify\Plugin` on `plugins_loaded` |
+| `composer.json` | ~38 | PSR-4 autoload (`NvoosGraphify\` → `src/`), PHP 8.1+ requirement, dev deps (phpunit 11.x, wp-phpunit, yoast polyfills 4.x) |
+| `uninstall.php` | ~50 | Standalone cleanup: drops 5 tables, deletes options, cleans transients, unschedules cron hooks. `WP_UNINSTALL_PLUGIN` guard. |
+
+**The scaffold is correct and complete.** The bootstrap follows all conventions from the implementation spec: PSR-4 + manual fallback, `declare(strict_types=1)`, ABSPATH guard, `plugins_loaded` boot timing. No AI dependencies. No API key settings in defaults. The uninstall file is standalone with no autoloader dependency.
+
+### Immediate Next Steps (Phase 0, Week 1–2)
+
+1. **Run `composer install`** in `plugins/nvoos-graphify/` to create the `vendor/` directory
+2. **Create the `src/` directory tree** per the [implementation spec](./graphify-core-implementation-spec.md#4-directory--file-structure)
+3. **Migrate classes one-by-one** from `addons/graphify/includes/` into the PSR-4 structure:
+   - `class-nvoos-graphify-db.php` → `src/Graph/Db.php` (namespace `NvoosGraphify\Graph`)
+   - `class-nvoos-graphify-builder.php` → `src/Graph/Builder.php`
+   - `class-nvoos-graphify-analyzer.php` → `src/Graph/Analyzer.php`
+   - `class-nvoos-graphify-exporter.php` → `src/Graph/Exporter.php`
+   - `class-nvoos-graphify-report.php` → `src/Graph/Report.php`
+   - `class-nvoos-graphify-structural-extractor.php` → `src/Graph/StructuralExtractor.php`
+   - `class-nvoos-graphify-semantic-extractor.php` → `src/Graph/SemanticExtractor.php`
+   - `class-nvoos-graphify-detector.php` → `src/Graph/Detector.php`
+   - `includes/remote/class-nvoos-graphify-remote-registry.php` → `src/Remote/Registry.php`
+   - `includes/remote/interface-nvoos-graphify-remote-source.php` → `src/Contracts/RemoteSource.php`
+   - `includes/remote/class-nvoos-graphify-remote-source-base.php` → `src/Remote/BaseDriver.php`
+   - `includes/remote/drivers/*.php` → `src/Remote/Drivers/*.php` (7 free drivers stay; 12 enterprise move to `nvoos-graphify-pro`)
+   - `includes/remote/class-nvoos-graphify-crypto.php` → `src/Remote/Crypto.php`
+   - `includes/remote/class-nvoos-graphify-http-client.php` → `src/Remote/HttpClient.php`
+   - `includes/remote/class-nvoos-graphify-remote-state-store.php` → `src/Remote/StateStore.php`
+   - `includes/remote/class-nvoos-graphify-oauth-broker.php` → `src/Remote/OAuthBroker.php`
+   - `includes/remote/class-nvoos-graphify-field-mapper.php` → `src/Remote/FieldMapper.php`
+   - `includes/remote/class-nvoos-graphify-field-map-validator.php` → `src/Remote/FieldMapValidator.php`
+   - `includes/remote/class-nvoos-graphify-entity-resolver.php` → `src/Remote/EntityResolver.php`
+   - `includes/remote/class-nvoos-graphify-schema-org-mapper.php` → `src/Remote/SchemaOrgMapper.php`
+   - `includes/remote/class-nvoos-graphify-remote-enricher.php` → `src/Remote/Enricher.php`
+   - `includes/class-nvoos-graphify-embeddings.php` → `src/Embeddings/Embeddings.php`
+   - `includes/class-nvoos-graphify-embeddings-on-ingest.php` → `src/Embeddings/OnIngest.php`
+   - `includes/class-nvoos-graphify-memory-bridge.php` → `src/Memory/Bridge.php`
+   - `includes/tools/*.php` → `src/Tools/*.php` (14 tools)
+   - `includes/rest/class-nvoos-graphify-rest.php` → `src/Rest/Controller.php`
+   - `includes/admin/class-nv-oos-graphify-settings.php` → `src/Admin/SettingsPage.php`
+   - `includes/admin/class-nvoos-graphify-remote-admin.php` → `src/Admin/RemoteAdmin.php`
+   - `includes/class-nvoos-graphify.php` → `src/Plugin.php`
+4. **Create `src/Schema.php`** — centralized constants (option keys, table names, hook names, capabilities, nonces)
+5. **Create `src/Contracts/Tool.php`** — independent tool interface (breaks dependency on `WP_MCP_AI_Tool_Interface`)
+6. **Create `src/ToolRegistry.php`** — tool registration container
+7. **Create `src/Settings.php`** — unified settings accessor
+8. **Create `src/Admin/GraphExplorer.php`** — Cytoscape.js admin page (extracted from the old graphify admin)
+9. **Create frontend components**: `src/Frontend/Shortcode.php`, `Block.php`, `SchemaOrg.php`, `RelatedContent.php`
+10. **Remove all base-plugin dependencies**: `WP_MCP_AI_Tool_Interface`, `wp_mcp_ai_get_embedding()`, `wp_mcp_ai_chat_completion()`, `WP_MCP_AI_Inline_Async_Tick_Trait`
+11. **Copy assets**: `assets/css/`, `assets/js/`, `assets/vendor/cytoscape/` from old addon
+12. **Write tests** for Db, Builder, Analyzer, Exporter, REST, Tools
+
+### Enhancement Follow-up Items
+
+Beyond the immediate migration, these are opportunities identified during code review:
+
+| # | Area | Observation | Follow-up |
+|---|---|---|---|
+| 1 | **Remote drivers** | Actual addon has 19 drivers (7 free + 12 enterprise), not the ~20 estimated in the original roadmap. The 12 enterprise drivers (OOS Federation, HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365, ServiceNow, Generic GraphQL, Generic SQL, S3) are already written and should be extracted to `nvoos-graphify-pro` rather than rewritten. | Extract enterprise drivers as-is to the pro addon. |
+| 2 | **Semantic Extractor** | The implementation spec doesn't list `SemanticExtractor` as a separate class, but the actual code has `class-nvoos-graphify-semantic-extractor.php` (~200 lines) that uses OpenAI for named entity extraction. Since the core product has no AI dependencies, this class should either be made pluggable (register a semantic extractor via filter) or moved to `nvoos-graphify-ai-tools`. | Wire as a pluggable service: core ships a no-op extractor; AI addons swap it out. |
+| 3 | **Detector class** | The `class-nvoos-graphify-detector.php` exists in the addon but isn't in the implementation spec. Determine its role (likely content-type detection) and assign to the correct namespace. | Map to `src/Graph/Detector.php` or merge into `StructuralExtractor`. |
+| 4 | **Inline Async Tick trait** | The main class `NV_oOS_Graphify` uses `WP_MCP_AI_Inline_Async_Tick_Trait` from the base plugin, with a no-op stub for environments without the base. This is a code smell — the core product shouldn't carry a stub of a base-plugin trait. | Refactor to use Action Scheduler or WP-Cron directly, or make the async mechanism pluggable. |
+| 5 | **Embeddings split** | The embeddings system has two classes (`Embeddings` + `EmbeddingsOnIngest`) and relies on OpenAI API. Core should ship embeddings infrastructure (table, interface) but actual embedding generation should be an addon concern. | Keep `src/Embeddings/` as infrastructure; move OpenAI-specific embedding calls to `nvoos-graphify-embeddings`. |
+| 6 | **NV oOS Bridge** | `class-nvoos-graphify-nvoos-bridge.php` subscribes to `wp_mcp_ai_memory_stored` and mirrors agent memory into the graph. This is a monolith integration that should be extracted to a compat shim in the meta-plugin. | Extract to `nvoos-graphify-memory` addon or the meta-plugin compat layer. |
+| 7 | **Tests** | Only 1 test file exists (`test-nvoos-bridge.php`). The implementation spec calls for unit tests (Db, Builder, Analyzer, Exporter, Tools) and integration tests (REST API, Lifecycle). | Prioritize tests as part of class migration to catch regressions. |
+| 8 | **CSS/JS assets** | The `assets/` directory under `addons/graphify/` contains `css/admin.css` and `js/admin.js` plus `vendor/cytoscape/`. These need to be copied to the new plugin with updated enqueue handles. | Copy assets and update `wp_enqueue_script`/`wp_enqueue_style` handles to `nvoos-graphify-*`. |
+| 9 | **Language files** | No `.pot` file or `languages/` directory exists in the new plugin. The scaffold declares `Text Domain: nvoos-graphify` and `Domain Path: /languages`. | Create `languages/nvoos-graphify.pot` after all strings are in place. |
+| 10 | **CI/CD pipeline** | No GitHub Actions workflow for the new plugin. The implementation spec defines a CI matrix (PHP 8.1–8.3 × WP 6.5–latest). | Create `.github/workflows/graphify-ci.yml` once tests pass. |
+
+---
+
+## 3. Current State Analysis
 
 ### What the monolith looks like today
 
@@ -91,39 +219,59 @@ mcp-ai-wpoos.php                            # ~140 lines — main plugin bootstr
 
 ```
 addons/graphify/
-├── nvoos-graphify.php                      # Bootstrap (~50 lines)
+├── nvoos-graphify.php                      # Bootstrap (~150 lines)
 ├── includes/
-│   ├── class-graphify-db.php               # 4 custom tables
-│   ├── class-graphify-builder.php          # Node/edge pipeline
-│   ├── class-graphify-analyzer.php         # Community detection
-│   ├── class-graphify-exporter.php         # 5 export formats
-│   ├── class-graphify-rest.php             # REST API
-│   ├── class-graphify-tools.php            # 14 built-in tools
-│   ├── class-graphify-remote-registry.php  # Remote source engine
-│   ├── class-graphify-remote-drivers/      # 20+ remote source drivers
-│   ├── class-graphify-template.php         # Shortcode
-│   ├── class-graphify-admin-explorer.php   # Cytoscape.js admin page
-│   └── ... (40+ files)
+│   ├── class-nvoos-graphify.php            # Core singleton (~600 lines)
+│   ├── class-nvoos-graphify-db.php         # 5 custom tables
+│   ├── class-nvoos-graphify-builder.php    # Node/edge pipeline
+│   ├── class-nvoos-graphify-analyzer.php   # Community detection
+│   ├── class-nvoos-graphify-exporter.php   # 5 export formats
+│   ├── class-nvoos-graphify-report.php     # Content gap reports
+│   ├── class-nvoos-graphify-detector.php   # Content type detection
+│   ├── class-nvoos-graphify-structural-extractor.php
+│   ├── class-nvoos-graphify-semantic-extractor.php  # AI entity extraction (optional)
+│   ├── class-nvoos-graphify-embeddings.php          # Vector embeddings
+│   ├── class-nvoos-graphify-embeddings-on-ingest.php
+│   ├── class-nvoos-graphify-memory-bridge.php       # Agent memory → graph
+│   ├── class-nvoos-graphify-remote-enricher.php
+│   ├── class-nvoos-graphify-nvoos-bridge.php        # Monolith integration
+│   ├── remote/                              # Remote source engine
+│   │   ├── interface-nvoos-graphify-remote-source.php
+│   │   ├── class-nvoos-graphify-remote-source-base.php
+│   │   ├── class-nvoos-graphify-remote-registry.php
+│   │   ├── class-nvoos-graphify-crypto.php
+│   │   ├── class-nvoos-graphify-http-client.php
+│   │   ├── class-nvoos-graphify-remote-state-store.php
+│   │   ├── class-nvoos-graphify-oauth-broker.php
+│   │   ├── class-nvoos-graphify-field-mapper.php
+│   │   ├── class-nvoos-graphify-field-map-validator.php
+│   │   ├── class-nvoos-graphify-entity-resolver.php
+│   │   ├── class-nvoos-graphify-schema-org-mapper.php
+│   │   └── drivers/                         # 19 remote source drivers (7 free + 12 enterprise)
+│   ├── tools/                               # 14 built-in tools
+│   ├── rest/                                # REST API controller
+│   └── admin/                               # Settings + remote admin UI
 ├── assets/
-│   ├── js/cytoscape/                       # cytoscape.js + plugins
-│   ├── js/admin.js                         # Graph explorer JS
+│   ├── js/cytoscape/                        # cytoscape.js + plugins
+│   ├── js/admin.js
 │   └── css/admin.css
 └── tests/
 ```
 
-This code is already ~8,000 lines of working, tested production code. It needs no rewrite — just namespace migration, hook prefix updates, and integration into the proper PSR-4 directory structure.
+This code is already ~8,000 lines of working, tested production code. It needs no rewrite — just namespace migration, hook prefix updates, and integration into the proper PSR-4 directory structure. The 12 enterprise remote drivers (HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365, ServiceNow, Generic GraphQL, Generic SQL, S3, OOS Federation) will be extracted to `nvoos-graphify-pro` rather than shipped in the core.
 
 ### Dependency analysis: what graphify actually needs from the base
 
-The existing `addons/graphify/` depends on the base plugin for only 3 things:
+The existing `addons/graphify/` depends on the base plugin for only 4 things:
 
 | Dependency | What graphify uses it for | Replacement |
 |---|---|---|
 | `WP_MCP_AI_Tool_Interface` | Tool contract (graphify's 14 tools implement this) | Move the interface into `nvoos-graphify` as `NvoosGraphify\Contracts\Tool` |
 | `wp_mcp_ai_get_embedding()` | AI embeddings for memory bridge | AI provider addons register their own embedding function |
 | `wp_mcp_ai_chat_completion()` | AI chat completion | AI chat addon handles this |
+| `WP_MCP_AI_Inline_Async_Tick_Trait` | Async job execution in the main class | Refactor to use Action Scheduler or WP-Cron directly; remove the stub |
 
-**That's it.** Graphify's core functionality (building graphs, Cytoscape.js visualization, content gap analysis, 5 export formats, 7 remote source drivers, Schema.org injection) uses **zero** base plugin dependencies. The AI functions are only used by the optional memory bridge, which can be adapted to use provider addons.
+**That's it.** Graphify's core functionality (building graphs, Cytoscape.js visualization, content gap analysis, 5 export formats, 7 free remote source drivers, Schema.org injection) uses **zero** base plugin dependencies. The AI functions are only used by the optional memory bridge and semantic extractor, which can be adapted to use provider addons. The async trait is carried as a no-op stub and should be replaced outright.
 
 ---
 
@@ -326,6 +474,8 @@ Everything from the current monolith that is NOT the knowledge graph becomes a s
 ### Phase 0: Core Product — Graphify as the Base Plugin (3-4 weeks)
 
 **Goal**: `nvoos-graphify` replaces `mcp-ai-wpoos.php` as the base plugin. The knowledge graph works standalone with zero API keys.
+
+> **Development note**: The old `addons/graphify/` remains fully operational during this entire phase. The new `plugins/nvoos-graphify/` is built alongside it in the same repo. The monolith loads the old addon as before. No existing functionality is disrupted. Only when the new plugin reaches full parity and passes its test suite does the old addon get deprecated in Phase 5.
 
 ```
 Week 1-2: Absorb and modernize addons/graphify/
@@ -679,7 +829,7 @@ add_filter( 'nvoos_graphify/default_settings', function ( array $defaults ): arr
 ## Appendix B: File Size Comparison
 
 ```
-Before (monolith):
+Before (monolith — still operational during development):
 mcp-ai-wpoos/
 ├── mcp-ai-wpoos.php          (~140 lines)
 ├── includes/bootstrap/       (~2,500 lines, 7 files)
@@ -688,24 +838,43 @@ mcp-ai-wpoos/
 ├── includes/admin/           (~15,000 lines, 75+ files)
 ├── includes/rest/            (~8,000 lines, 26 files)
 ├── includes/integrations/    (~10,000 lines, 22 files)
-└── addons/                   (~65,000 lines, 14 sub-plugins)
+├── addons/graphify/          (~8,000 lines, ~40 PHP files)  ← reference implementation
+│   ├── includes/             (core classes: Db, Builder, Analyzer, Exporter, Report, etc.)
+│   ├── includes/remote/      (registry + 19 drivers: 7 free + 12 enterprise)
+│   ├── includes/tools/       (14 tools)
+│   ├── includes/rest/        (REST controller)
+│   ├── includes/admin/       (settings + remote admin)
+│   ├── assets/               (CSS, JS, Cytoscape.js vendor)
+│   └── tests/                (1 test file)
+└── addons/                   (~57,000 lines, 13 other sub-plugins)
 TOTAL: ~80,000+ lines (single monolith)
+
+During development (both coexist):
+plugins/nvoos-graphify/       (~4,500 lines target, 3 files today)
+  ├── nvoos-graphify.php      ✅ Scaffold done (~54 lines)
+  ├── composer.json           ✅ PSR-4 autoload config (~38 lines)
+  ├── uninstall.php           ✅ Standalone cleanup (~50 lines)
+  ├── src/                    ❌ Empty — classes not yet migrated
+  └── vendor/                 ❌ Not created (composer install pending)
+addons/graphify/              (~8,000 lines, unchanged — reference implementation)
 
 After (product core + addons):
 nvoos-graphify/               (~4,500 lines, 40+ files)
   ├── Graph engine            (~1,200 lines)
   ├── 14 built-in tools       (~800 lines)
   ├── Graph explorer UI       (~200 PHP + bundled JS)
-  ├── Remote source engine    (~600 lines)
+  ├── Remote source engine    (~600 lines for 7 free drivers)
   ├── REST + Admin + Frontend (~650 lines)
   ├── Memory bridge           (~300 lines)
+  ├── Embeddings infra        (~200 lines)
   └── Contracts + Settings    (~750 lines)
 addons/providers/             (13 plugins, ~4,000 lines total)
 addons/ai/                    (3 plugins, ~4,400 lines total)
 addons/tools/                 (6 toolkits, ~10,300 lines total)
 addons/features/              (15 plugins, ~23,300 lines total)
 addons/integrations/          (3 plugins, ~5,000 lines)
-addons/existing/              (11 existing, ~65,000+ lines)
+addons/nvoos-graphify-pro/    (12 enterprise remote drivers + pro tools, ~52,000+ lines)
+addons/existing/              (10 existing, ~13,000 lines)
 SAME TOTAL: ~80,000+ lines (distributed across manageable packages)
 ```
 

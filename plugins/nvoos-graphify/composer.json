@@ -25,6 +25,11 @@
         "wp-phpunit/wp-phpunit": "*",
         "yoast/phpunit-polyfills": "^4.0"
     },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true
+        }
+    },
     "autoload": {
         "psr-4": {
             "NvoosGraphify\\": "src/"

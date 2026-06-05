@@ -2,9 +2,13 @@
 
 > **Version**: 3.0.0-draft | **Target PHP**: 8.1+ | **Target WP**: 6.5+ | **License**: GPL-3.0-or-later
 >
+> Last updated: 2026-06-05
+>
 > This document is the **complete, actionable implementation specification** for the `nvoos-graphify` WordPress plugin — the core product in the NV oOS ecosystem. It is a visual knowledge graph that maps WordPress content into an interactive, navigable graph. **It works with zero API keys and is immediately useful upon activation.** Every other NV oOS feature (AI chat, tools, providers, memory, etc.) is an addon that extends this core.
 >
 > This plugin **absorbs** the existing `addons/graphify/` code and **replaces** `mcp-ai-wpoos.php` as the base plugin.
+>
+> **Development note**: The old `addons/graphify/` remains fully operational during development. The new `plugins/nvoos-graphify/` is built alongside it in the same repository. No existing functionality is disrupted during Phase 0. See the [restructuring roadmap](./nvoos-base-restructuring-roadmap.md#2-current-status) for current status.
 
 ---
 
@@ -113,7 +117,9 @@ graph TD
         
         DB["NvoosGraphify\Graph\Db<br/>5 custom tables"]
         BUILDER["NvoosGraphify\Graph\Builder<br/>Node/edge pipeline"]
-        EXTRACTOR["NvoosGraphify\Graph\StructuralExtractor<br/>post→term, post→author"]
+        STRUCT["NvoosGraphify\Graph\StructuralExtractor<br/>post→term, post→author"]
+        SEMANTIC["NvoosGraphify\Graph\SemanticExtractor<br/>AI entity extraction (pluggable)"]
+        DETECTOR["NvoosGraphify\Graph\Detector<br/>Content type detection"]
         ANALYZER["NvoosGraphify\Graph\Analyzer<br/>Community detection"]
         EXPORTER["NvoosGraphify\Graph\Exporter<br/>JSON/GraphML/CSV/Neo4j/Obsidian"]
         REPORT["NvoosGraphify\Graph\Report<br/>Content gaps"]
@@ -168,7 +174,7 @@ graph TD
 
 | Component | Lines | Value |
 |---|---|---|
-| Graph engine (Db + Builder + Extractor) | ~1,200 | Converts WordPress content into nodes and edges |
+| Graph engine (Db + Builder + Extractor) | ~1,450 | Converts WordPress content into nodes and edges |
 | Graph explorer (Cytoscape.js) | ~200 PHP + bundled JS | Interactive visual graph |
 | 14 built-in tools | ~800 | Tool contract implementations for graph operations |
 | REST API | ~150 | Programmatic access to graph data |
@@ -178,7 +184,9 @@ graph TD
 | Agent memory bridge | ~300 | Connect AI agent memory to the knowledge graph |
 | Remote source engine + 7 free drivers | ~600 | Connect to external data |
 | Settings + Schema + ToolRegistry | ~250 | Infrastructure |
-| **Total** | **~4,400** | A complete, marketable product — **zero API keys required** |
+| **Total** | **~4,650** | A complete, marketable product — **zero API keys required** |
+
+> **Note on AI-dependent classes**: `SemanticExtractor` and `Embeddings` classes exist in the current `addons/graphify/` code and use OpenAI APIs. In the core product, `SemanticExtractor` is made pluggable (core ships a no-op; AI addons swap in an OpenAI-backed implementation). The `Embeddings` infrastructure (table, interface) stays in core but actual embedding generation moves to `nvoos-graphify-embeddings`.
 
 ---
 
@@ -208,6 +216,8 @@ nvoos-graphify/
 │   │   ├── Db.php                       # Custom table management (~400 lines)
 │   │   ├── Builder.php                  # Node/edge construction (~350 lines)
 │   │   ├── StructuralExtractor.php      # Post→term, post→author (~200 lines)
+│   │   ├── SemanticExtractor.php        # AI entity extraction — pluggable (~200 lines)
+│   │   ├── Detector.php                 # Content type detection (~80 lines)
 │   │   ├── Analyzer.php                 # Community detection, centrality (~300 lines)
 │   │   ├── Exporter.php                 # JSON/GraphML/CSV/Neo4j/Obsidian (~300 lines)
 │   │   └── Report.php                   # Content gap analysis (~200 lines)
@@ -826,6 +836,23 @@ Seven built-in free drivers:
 | `Csv.php` | `csv` | CSV file import with column-to-field mapping |
 | `Webhook.php` | `webhook` | Webhook receiver — creates nodes from incoming JSON |
 
+**Twelve enterprise drivers** exist in the current `addons/graphify/` codebase and are extracted to `nvoos-graphify-pro`:
+
+| Driver | Slug | Description |
+|---|---|---|
+| `OOS Federation` | `oos-federation` | Federates nodes from remote NV oOS/MCP sites |
+| `HubSpot` | `hubspot` | HubSpot CRM objects (contacts, companies, deals) |
+| `GitHub` | `github` | GitHub repos, issues, PRs |
+| `Slack` | `slack` | Slack channels, messages, users |
+| `Google Drive` | `google-drive` | Google Drive files and folders |
+| `Jira` | `jira` | Jira issues, projects, sprints |
+| `Zendesk` | `zendesk` | Zendesk tickets, users, organizations |
+| `Microsoft 365` | `m365` | M365/Graph API entities |
+| `ServiceNow` | `servicenow` | ServiceNow incidents, changes, CMDB |
+| `Generic GraphQL` | `generic-graphql` | Generic GraphQL endpoint ingestion |
+| `Generic SQL` | `generic-sql` | Generic SQL query ingestion |
+| `S3` | `s3` | AWS S3 bucket objects |
+
 ### 5.16 Built-in Tools (`src/Tools/`)
 
 Fourteen tools, each implementing `NvoosGraphify\Contracts\Tool`. Tool slugs are prefixed `nvoos_graphify_`:
@@ -1102,14 +1129,14 @@ add_action( 'nvoos_graphify/register_remote_sources', function ( $registry ): vo
 
 | Component | Lines |
 |---|---|
-| Bootstrap + Plugin + Schema | ~300 |
-| Graph engine (Db, Builder, Extractor) | ~950 |
+| Bootstrap + Plugin + Schema | ~330 |
+| Graph engine (Db, Builder, StructuralExtractor, SemanticExtractor, Detector) | ~1,400 |
 | Graph features (Analyzer, Exporter, Report) | ~800 |
 | 14 tools | ~800 |
 | Remote engine + 7 drivers | ~750 |
-| REST + Admin + Frontend + Memory | ~650 |
+| REST + Admin + Frontend + Memory + Embeddings infra | ~750 |
 | Contracts + Registry + Settings + uninstall | ~310 |
-| **Total** | **~4,560** |
+| **Total** | **~5,140** |
 | + Assets (CSS + JS + Cytoscape.js vendor) | ~200 + bundled |
 
 ---
