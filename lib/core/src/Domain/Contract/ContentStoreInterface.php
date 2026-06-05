@@ -11,20 +11,20 @@
  *  - Laravel:   wraps Eloquent models
  *  - Craft CMS:  wraps Element queries
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
-use Oos\Core\Domain\Entity\ContentCollection;
-use Oos\Core\Domain\Entity\ContentItem;
-use Oos\Core\Domain\Entity\ContentQuery;
-use Oos\Core\Domain\Entity\CreateContentCommand;
-use Oos\Core\Domain\Entity\UpdateContentCommand;
+use Nvoos\Core\Domain\Entity\ContentCollection;
+use Nvoos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Entity\CreateContentCommand;
+use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 
 interface ContentStoreInterface {
 
@@ -51,8 +51,8 @@ interface ContentStoreInterface {
 	 *
 	 * @return ContentItem  The newly created item with its assigned ID.
 	 *
-	 * @throws \Oos\Core\Domain\Error\AccessDeniedException  When user lacks permission.
-	 * @throws \Oos\Core\Domain\Error\ValidationException    When data fails validation.
+	 * @throws \Nvoos\Core\Domain\Error\AccessDeniedException  When user lacks permission.
+	 * @throws \Nvoos\Core\Domain\Error\ValidationException    When data fails validation.
 	 */
 	public function create( CreateContentCommand $command ): ContentItem;
 
@@ -64,16 +64,16 @@ interface ContentStoreInterface {
 	 *
 	 * @return ContentItem  The updated item.
 	 *
-	 * @throws \Oos\Core\Domain\Error\NotFoundException       When the item does not exist.
-	 * @throws \Oos\Core\Domain\Error\AccessDeniedException   When user lacks permission.
+	 * @throws \Nvoos\Core\Domain\Error\NotFoundException       When the item does not exist.
+	 * @throws \Nvoos\Core\Domain\Error\AccessDeniedException   When user lacks permission.
 	 */
 	public function update( int $id, UpdateContentCommand $command ): ContentItem;
 
 	/**
 	 * Delete a content item permanently.
 	 *
-	 * @throws \Oos\Core\Domain\Error\NotFoundException       When the item does not exist.
-	 * @throws \Oos\Core\Domain\Error\AccessDeniedException   When user lacks permission.
+	 * @throws \Nvoos\Core\Domain\Error\NotFoundException       When the item does not exist.
+	 * @throws \Nvoos\Core\Domain\Error\AccessDeniedException   When user lacks permission.
 	 */
 	public function delete( int $id, int $userId ): void;
 

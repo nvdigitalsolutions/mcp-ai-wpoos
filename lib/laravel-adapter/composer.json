@@ -1,11 +1,11 @@
 {
-    "name": "oos/laravel-adapter",
+    "name": "nvoos/laravel-adapter",
     "description": "Laravel adapter implementations for the oOS Core AI orchestration engine.",
     "type": "library",
     "license": "MIT",
     "require": {
         "php": "^8.1",
-        "oos/core": "^1.0",
+        "nvoos/core": "^1.0",
         "illuminate/support": "^10.0 || ^11.0",
         "illuminate/cache": "^10.0 || ^11.0",
         "illuminate/config": "^10.0 || ^11.0",
@@ -23,18 +23,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Oos\\Laravel\\": "src/"
+            "Nvoos\\Laravel\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Oos\\Laravel\\Tests\\": "tests/"
+            "Nvoos\\Laravel\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Oos\\Laravel\\ServiceProvider\\OosServiceProvider"
+                "Nvoos\\Laravel\\ServiceProvider\\NvoosServiceProvider"
             ]
         }
     },

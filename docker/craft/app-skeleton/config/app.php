@@ -10,7 +10,7 @@ use craft\helpers\App;
 
 return [
     'modules' => [
-        'oos-core' => \Oos\Craft\Module\OosModule::class,
+        'oos-core' => \Nvoos\Craft\Module\OosModule::class,
     ],
     'bootstrap' => [
         'oos-core',

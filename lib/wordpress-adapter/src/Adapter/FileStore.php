@@ -9,19 +9,19 @@
  * Patterned after Flysystem (thephpleague/flysystem) — one interface,
  * multiple filesystem adapters.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\FileStoreInterface;
-use Oos\Core\Domain\Entity\StoredFile;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
 
 class FileStore implements FileStoreInterface {
 

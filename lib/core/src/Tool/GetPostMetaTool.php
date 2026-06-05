@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tool;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+namespace Nvoos\Core\Tool;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 class GetPostMetaTool extends AbstractTool {
 	public function __construct(ErrorFactoryInterface $errors, private readonly ContentStoreInterface $content) { parent::__construct($errors); }

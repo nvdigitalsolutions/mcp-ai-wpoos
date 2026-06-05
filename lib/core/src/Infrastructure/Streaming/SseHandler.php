@@ -5,14 +5,14 @@
  * Sends properly framed SSE events to the client. Framework-agnostic:
  * relies on flush/echo, which works in any PHP SAPI.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Streaming;
+namespace Nvoos\Core\Infrastructure\Streaming;
 
 class SseHandler {
 

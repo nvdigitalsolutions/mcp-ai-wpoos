@@ -5,17 +5,17 @@
  * Wraps Craft's Yii cache component (supporting Redis, database, file,
  * APC, and memcached) behind the PSR-6-extending CacheStoreInterface.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
 use Craft;
-use Oos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Psr\Cache\CacheItemInterface;
 
 class CacheStore implements CacheStoreInterface {
@@ -23,7 +23,7 @@ class CacheStore implements CacheStoreInterface {
 	/**
 	 * Prefix added to all keys to avoid collisions.
 	 */
-	private const PREFIX = 'oos_cache_';
+	private const PREFIX = 'nvoos_cache_';
 
 	/**
 	 * Default TTL in seconds for items without an explicit TTL.

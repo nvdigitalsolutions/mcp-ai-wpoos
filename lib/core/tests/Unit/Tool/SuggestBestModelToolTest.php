@@ -2,17 +2,17 @@
 /**
  * Tests for SuggestBestModelTool — pure-logic tool with no external dependencies.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Tool\SuggestBestModelTool;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Tool\SuggestBestModelTool;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class SuggestBestModelToolTest extends TestCase {

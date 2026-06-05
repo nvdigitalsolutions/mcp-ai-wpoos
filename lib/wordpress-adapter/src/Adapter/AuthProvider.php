@@ -6,20 +6,20 @@
  * wp_verify_nonce, get_userdata) behind the framework-agnostic
  * AuthProviderInterface.
  *
- * @package Oos\WordPress
+ * @package Nvoos\WordPress
  * @since   1.0.0
  * @license GPL-3.0-or-later
  */
 
 declare(strict_types=1);
 
-namespace Oos\WordPress\Adapter;
+namespace Nvoos\WordPress\Adapter;
 
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Entity\AuthContext;
-use Oos\Core\Domain\Entity\Credential;
-use Oos\Core\Domain\Entity\UserInfo;
-use Oos\Core\Domain\Error\AuthenticationException;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Entity\AuthContext;
+use Nvoos\Core\Domain\Entity\Credential;
+use Nvoos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Domain\Error\AuthenticationException;
 
 class AuthProvider implements AuthProviderInterface {
 

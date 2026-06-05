@@ -5,14 +5,14 @@
  * Returned by ContentStoreInterface::query() to provide items,
  * total count, and pagination metadata in a single value object.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class ContentCollection implements \JsonSerializable {
 

@@ -5,17 +5,17 @@
  * Uses AuthProviderInterface::currentUserId() and userCan().
  * Framework-agnostic.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 class CheckCapabilityTool extends AbstractTool {
 

@@ -2,16 +2,16 @@
 /**
  * Tests for ContentItem value object.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Domain\Entity;
+namespace Nvoos\Core\Tests\Unit\Domain\Entity;
 
-use Oos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Domain\Entity\ContentItem;
 use PHPUnit\Framework\TestCase;
 use DateTimeImmutable;
 

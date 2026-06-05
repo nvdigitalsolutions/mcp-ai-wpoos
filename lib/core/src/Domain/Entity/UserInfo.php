@@ -5,14 +5,14 @@
  * Minimal, framework-agnostic representation of a user identity.
  * Returned by AuthProviderInterface::getUserInfo().
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class UserInfo implements \JsonSerializable {
 

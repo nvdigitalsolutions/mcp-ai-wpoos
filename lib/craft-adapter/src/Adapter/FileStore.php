@@ -6,22 +6,22 @@
  * FileStoreInterface. Uses Craft's asset service to create,
  * store, and retrieve files via configured volumes (local, S3, GCS).
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
 use Craft;
 use craft\elements\Asset;
 use craft\helpers\Assets;
-use Oos\Core\Domain\Contract\FileStoreInterface;
-use Oos\Core\Domain\Entity\StoredFile;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
 
 class FileStore implements FileStoreInterface {
 

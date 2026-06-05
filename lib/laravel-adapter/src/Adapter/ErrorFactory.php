@@ -12,16 +12,16 @@
  *
  * The caller decides whether to throw or return the error.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 class ErrorFactory implements ErrorFactoryInterface {
 

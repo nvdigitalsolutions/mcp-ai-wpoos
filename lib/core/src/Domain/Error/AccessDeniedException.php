@@ -2,14 +2,14 @@
 /**
  * Thrown when a user lacks permission to perform an operation.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Error;
+namespace Nvoos\Core\Domain\Error;
 
 class AccessDeniedException extends \RuntimeException {
 

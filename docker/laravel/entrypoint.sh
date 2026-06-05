@@ -26,7 +26,7 @@ if [ ! -f "artisan" ]; then
     # Add oOS path repos and require packages
     composer config repositories.oos-core path /workspace/oos/lib/core
     composer config repositories.oos-laravel path /workspace/oos/lib/laravel-adapter
-    composer require oos/core:"*" oos/laravel-adapter:"*" --no-interaction
+    composer require nvoos/core:"*" nvoos/laravel-adapter:"*" --no-interaction
 
     # Set up .env with DB credentials from Docker environment
     cp .env.example .env 2>/dev/null || true

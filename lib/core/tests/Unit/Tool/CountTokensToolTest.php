@@ -2,17 +2,17 @@
 /**
  * Tests for CountTokensTool — zero-dependency heuristic token counter.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Tool\CountTokensTool;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Tool\CountTokensTool;
 use PHPUnit\Framework\TestCase;
 
 final class CountTokensToolTest extends TestCase {

@@ -6,27 +6,27 @@
  * ContentStoreInterface. Uses Craft's core Entry elements
  * (or configurable element types) for content CRUD operations.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
 use Craft;
 use craft\elements\Entry;
 use craft\helpers\ElementHelper;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Entity\ContentCollection;
-use Oos\Core\Domain\Entity\ContentItem;
-use Oos\Core\Domain\Entity\ContentQuery;
-use Oos\Core\Domain\Entity\CreateContentCommand;
-use Oos\Core\Domain\Entity\UpdateContentCommand;
-use Oos\Core\Domain\Error\AccessDeniedException;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Entity\ContentCollection;
+use Nvoos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Entity\CreateContentCommand;
+use Nvoos\Core\Domain\Entity\UpdateContentCommand;
+use Nvoos\Core\Domain\Error\AccessDeniedException;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
 
 class ContentStore implements ContentStoreInterface {
 

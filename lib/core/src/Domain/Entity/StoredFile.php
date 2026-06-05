@@ -5,14 +5,14 @@
  * Framework-agnostic representation of a file stored in the
  * media library or file system. Returned by FileStoreInterface.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class StoredFile implements \JsonSerializable {
 

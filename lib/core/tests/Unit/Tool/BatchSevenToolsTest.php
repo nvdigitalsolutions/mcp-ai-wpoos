@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tests\Unit\Tool;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Entity\ContentCollection;
-use Oos\Core\Tool\ColorConvertTool;
-use Oos\Core\Tool\CountPostsTool;
-use Oos\Core\Tool\GetPostTaxonomiesTool;
-use Oos\Core\Tool\MathEvalTool;
-use Oos\Core\Tool\TruncateTextTool;
+namespace Nvoos\Core\Tests\Unit\Tool;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Entity\ContentCollection;
+use Nvoos\Core\Tool\ColorConvertTool;
+use Nvoos\Core\Tool\CountPostsTool;
+use Nvoos\Core\Tool\GetPostTaxonomiesTool;
+use Nvoos\Core\Tool\MathEvalTool;
+use Nvoos\Core\Tool\TruncateTextTool;
 use PHPUnit\Framework\TestCase;
 
 final class BatchSevenToolsTest extends TestCase {

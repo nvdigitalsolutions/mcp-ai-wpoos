@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tests\Unit\Tool;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Tool\FormatDateTool;
-use Oos\Core\Tool\GetPostMetaTool;
-use Oos\Core\Tool\MergeArraysTool;
-use Oos\Core\Tool\ParseCsvTool;
-use Oos\Core\Tool\TimeAgoTool;
+namespace Nvoos\Core\Tests\Unit\Tool;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Tool\FormatDateTool;
+use Nvoos\Core\Tool\GetPostMetaTool;
+use Nvoos\Core\Tool\MergeArraysTool;
+use Nvoos\Core\Tool\ParseCsvTool;
+use Nvoos\Core\Tool\TimeAgoTool;
 use PHPUnit\Framework\TestCase;
 
 final class BatchSixToolsTest extends TestCase {

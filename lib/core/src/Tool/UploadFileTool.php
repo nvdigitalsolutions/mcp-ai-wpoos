@@ -5,17 +5,17 @@
  * Uses FileStoreInterface — framework-agnostic. Supports local file
  * uploads, base64-encoded data, or URL fetching.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
 
 class UploadFileTool extends AbstractTool {
 
@@ -147,7 +147,7 @@ class UploadFileTool extends AbstractTool {
 	}
 
 	private function saveTemp( string $content ): string {
-		$path = tempnam( sys_get_temp_dir(), 'oos_upload_' );
+		$path = tempnam( sys_get_temp_dir(), 'nvoos_upload_' );
 		if ( false === $path ) {
 			throw new \RuntimeException( 'Could not create temporary file.' );
 		}

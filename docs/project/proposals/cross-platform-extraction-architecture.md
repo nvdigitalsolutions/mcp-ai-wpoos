@@ -8,7 +8,7 @@
 **Author:** AI Agent (via NV oOS)  
 **Audience:** Engineering leadership, architecture reviewers  
 
-> **📌 Implementation Status:** This proposal is **35–40% implemented**. The full `oos/core` package with 9 contracts, 10 entities, 5 errors, 8 events, 4 application services, 12 provider clients, and 43 migrated tools exists at `lib/core/`. All 8 WordPress adapters are complete. The extraction runs behind a feature flag (`?engine=oos`). See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for a detailed current-state assessment.
+> **📌 Implementation Status:** This proposal is **35–40% implemented**. The full `nvoos/core` package with 9 contracts, 10 entities, 5 errors, 8 events, 4 application services, 12 provider clients, and 43 migrated tools exists at `lib/core/`. All 8 WordPress adapters are complete. The extraction runs behind a feature flag (`?engine=oos`). See [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md) for a detailed current-state assessment.
 
 ---
 
@@ -38,7 +38,7 @@ This coupling blocks deployment to Laravel, CraftCMS, Symfony, or standalone PHP
 
 ### 1.2 The Proposal
 
-Extract the AI orchestration engine into a **framework-agnostic Composer package** (`oos/core`) using the **Hexagonal Architecture (Ports & Adapters)** pattern, where the existing WordPress plugin becomes one adapter among many. The core depends only on **PSR standards** (PSR-3 logging, PSR-7 HTTP messages, PSR-11 containers, PSR-14 events, PSR-16 caching) and custom domain interfaces for storage, authentication, file management, and error handling.
+Extract the AI orchestration engine into a **framework-agnostic Composer package** (`nvoos/core`) using the **Hexagonal Architecture (Ports & Adapters)** pattern, where the existing WordPress plugin becomes one adapter among many. The core depends only on **PSR standards** (PSR-3 logging, PSR-7 HTTP messages, PSR-11 containers, PSR-14 events, PSR-16 caching) and custom domain interfaces for storage, authentication, file management, and error handling.
 
 ### 1.3 Key Outcomes
 
@@ -115,7 +115,7 @@ The core package should depend on PHP-FIG standards rather than any framework:
 | PSR | Standard | Usage in oOS Core |
 |---|---|---|
 | **PSR-3** | Logger Interface | Replace `WP_MCP_AI_Logger` static calls with injected `LoggerInterface` |
-| **PSR-4** | Autoloading | Standard Composer autoloading for `Oos\Core\` namespace |
+| **PSR-4** | Autoloading | Standard Composer autoloading for `Nvoos\Core\` namespace |
 | **PSR-6** | Caching Interface | Replace `get_transient`/`set_transient` with `CacheItemPoolInterface` |
 | **PSR-7** | HTTP Message Interface | **Already used** — `nyholm/psr7` in `composer.json`. Provider clients use it for request/response objects |
 | **PSR-11** | Container Interface | Replace `WP_MCP_AI_Container` with PSR-11 compatible container (or make it implement `ContainerInterface`) |
@@ -262,13 +262,13 @@ Each platform boots the core with its own adapter set. The core never knows whic
 
 **WordPress** (`plugins_loaded`, priority 20):
 ```php
-$container = new Oos\Core\Container();  // PSR-11 implementation
+$container = new Nvoos\Core\Container();  // PSR-11 implementation
 
 // Framework-specific adapters
 $container->set(ContentStoreInterface::class,
-    fn() => new Oos\WordPress\Adapter\ContentStore());
+    fn() => new Nvoos\WordPress\Adapter\ContentStore());
 $container->set(AuthProviderInterface::class,
-    fn() => new Oos\WordPress\Adapter\AuthProvider());
+    fn() => new Nvoos\WordPress\Adapter\AuthProvider());
 // ... 7 more adapters ...
 
 // Core services (same across all platforms)
@@ -288,9 +288,9 @@ $orchestrator->registerRoutes();  // Delegates to WP REST API or Laravel routes
 ```php
 // Exact same interfaces, different implementations
 $this->app->singleton(ContentStoreInterface::class,
-    fn() => new Oos\Laravel\Adapter\ContentStore());
+    fn() => new Nvoos\Laravel\Adapter\ContentStore());
 $this->app->singleton(AuthProviderInterface::class,
-    fn() => new Oos\Laravel\Adapter\AuthProvider());
+    fn() => new Nvoos\Laravel\Adapter\AuthProvider());
 // ... same 7 adapters with Laravel implementations ...
 
 // Same core services, same wiring
@@ -320,7 +320,7 @@ All domain interfaces follow these rules:
 *Replaces:* `get_post()`, `wp_insert_post()`, `wp_delete_post()`, `get_post_meta()`, `update_post_meta()`, `wp_get_post_terms()`, `WP_Query`
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface ContentStoreInterface
 {
@@ -380,7 +380,7 @@ interface ContentStoreInterface
 **Value Objects:**
 
 ```php
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class ContentItem implements \JsonSerializable
 {
@@ -484,7 +484,7 @@ final readonly class UpdateContentCommand
 *Replaces:* `get_current_user_id()`, `current_user_can()`, `user_can()`, `wp_verify_nonce()`, `is_user_logged_in()`, `get_userdata()`, `wp_create_nonce()`
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface AuthProviderInterface
 {
@@ -546,7 +546,7 @@ interface AuthProviderInterface
 **Value Objects:**
 
 ```php
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class AuthContext implements \JsonSerializable
 {
@@ -598,7 +598,7 @@ final readonly class UserInfo
 *Replaces:* `get_option()`, `update_option()`, `delete_option()`, `WP_MCP_AI_Admin_Settings::get_settings()`
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface SettingsStoreInterface
 {
@@ -655,7 +655,7 @@ interface SettingsStoreInterface
 *Replaces:* `get_attached_file()`, `wp_upload_dir()`, `wp_insert_attachment()`, `get_post_mime_type()`, `WP_Filesystem`
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface FileStoreInterface
 {
@@ -718,7 +718,7 @@ final readonly class StoredFile implements \JsonSerializable
 *Replaces:* `get_transient()`, `set_transient()`, `delete_transient()`, `wp_cache_get()`, `wp_cache_set()`
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 use Psr\Cache\CacheItemPoolInterface;
 
@@ -764,7 +764,7 @@ interface CacheStoreInterface extends CacheItemPoolInterface
 *Replaces:* Action Scheduler (`as_enqueue_async_action`), WP-Cron (`wp_schedule_single_event`), Job queue manager
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface QueueClientInterface
 {
@@ -831,7 +831,7 @@ final readonly class JobStatus implements \JsonSerializable
 *Replaces:* `do_action()`, `apply_filters()`, 60+ WordPress hook registrations
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcher;
 
@@ -882,7 +882,7 @@ interface EventDispatcherInterface extends PsrEventDispatcher
 *Replaces:* `new WP_Error($code, $message, $data)`, `is_wp_error()`, `$error->get_error_code()`, `$error->get_error_message()`, `$error->get_error_data()`
 
 ```php
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface ErrorFactoryInterface
 {
@@ -892,7 +892,7 @@ interface ErrorFactoryInterface
      * @return mixed  The framework-specific error object.
      *                WordPress: WP_Error
      *                Laravel: throws an exception
-     *                Standalone: Oos\Core\Domain\Error\DomainError
+     *                Standalone: Nvoos\Core\Domain\Error\DomainError
      */
     public function create(string $code, string $message, array $data = []): mixed;
 
@@ -939,8 +939,8 @@ interface ErrorFactoryInterface
 ```
 o-os/
 ├── packages/
-│   ├── core/                          # oos/core — Composer package
-│   │   ├── composer.json              # { "name": "oos/core", "php": "^8.1" }
+│   ├── core/                          # nvoos/core — Composer package
+│   │   ├── composer.json              # { "name": "nvoos/core", "php": "^8.1" }
 │   │   ├── src/
 │   │   │   ├── Domain/
 │   │   │   │   ├── Contract/          # All interfaces (ports)
@@ -1039,8 +1039,8 @@ o-os/
 │   │   │       └── Streaming/
 │   │   └── phpunit.xml.dist
 │   │
-│   ├── wordpress-adapter/             # oos/wordpress-adapter
-│   │   ├── composer.json              # { "name": "oos/wordpress-adapter", "php": "^7.4" }
+│   ├── wordpress-adapter/             # nvoos/wordpress-adapter
+│   │   ├── composer.json              # { "name": "nvoos/wordpress-adapter", "php": "^7.4" }
 │   │   ├── src/
 │   │   │   ├── Adapter/
 │   │   │   │   ├── ContentStore.php
@@ -1056,8 +1056,8 @@ o-os/
 │   │   │       └── AdminPageRegistrar.php    # Maps core config to WP admin pages
 │   │   └── tests/
 │   │
-│   ├── laravel-adapter/               # oos/laravel-adapter
-│   │   ├── composer.json              # { "name": "oos/laravel-adapter", "php": "^8.1" }
+│   ├── laravel-adapter/               # nvoos/laravel-adapter
+│   │   ├── composer.json              # { "name": "nvoos/laravel-adapter", "php": "^8.1" }
 │   │   ├── src/
 │   │   │   ├── Adapter/
 │   │   │   │   ├── ContentStore.php          # Eloquent-backed
@@ -1083,8 +1083,8 @@ o-os/
 │   │   │           └── HealthCheck.php
 │   │   └── tests/
 │   │
-│   └── craft-adapter/                 # oos/craft-adapter
-│       ├── composer.json              # { "name": "oos/craft-adapter", "php": "^8.1" }
+│   └── craft-adapter/                 # nvoos/craft-adapter
+│       ├── composer.json              # { "name": "nvoos/craft-adapter", "php": "^8.1" }
 │       └── src/
 │           ├── Adapter/
 │           │   └── ...                          # Craft CMS element types, etc.
@@ -1094,7 +1094,7 @@ o-os/
 ├── plugins/
 │   └── mcp-ai-wpoos/                  # The existing WordPress plugin
 │       ├── mcp-ai-wpoos.php           # Plugin header (unchanged)
-│       ├── composer.json              # Depends on oos/core + oos/wordpress-adapter
+│       ├── composer.json              # Depends on nvoos/core + nvoos/wordpress-adapter
 │       ├── includes/
 │       │   ├── bootstrap/             # WordPress bootstrapping only
 │       │   ├── admin/                 # WordPress admin pages only
@@ -1117,7 +1117,7 @@ o-os/
 **`packages/core/composer.json`:**
 ```json
 {
-    "name": "oos/core",
+    "name": "nvoos/core",
     "description": "Framework-agnostic AI orchestration engine — agentic loop, tool registry, provider routing, SSE streaming.",
     "type": "library",
     "license": "MIT",
@@ -1148,9 +1148,9 @@ o-os/
         }
     },
     "suggest": {
-        "oos/wordpress-adapter": "WordPress integration via the adapter layer",
-        "oos/laravel-adapter": "Laravel integration via the adapter layer",
-        "oos/craft-adapter": "Craft CMS integration via the adapter layer"
+        "nvoos/wordpress-adapter": "WordPress integration via the adapter layer",
+        "nvoos/laravel-adapter": "Laravel integration via the adapter layer",
+        "nvoos/craft-adapter": "Craft CMS integration via the adapter layer"
     }
 }
 ```
@@ -1158,13 +1158,13 @@ o-os/
 **`packages/wordpress-adapter/composer.json`:**
 ```json
 {
-    "name": "oos/wordpress-adapter",
+    "name": "nvoos/wordpress-adapter",
     "description": "WordPress adapter implementations for the oOS Core engine.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
     "require": {
         "php": "^7.4",
-        "oos/core": "^1.0"
+        "nvoos/core": "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -1178,18 +1178,18 @@ o-os/
 
 | Current (WP Plugin) | Extracted Core |
 |---|---|
-| `WP_MCP_AI` | `Oos\Core\Application\Chat\ChatOrchestrator` |
-| `WP_MCP_AI_Tool_Registry` | `Oos\Core\Application\Tool\ToolRegistry` |
-| `WP_MCP_AI_OpenAI_Client` | `Oos\Core\Infrastructure\Provider\OpenAIClient` |
-| `WP_MCP_AI_SSE_Handler` | `Oos\Core\Infrastructure\Streaming\SseHandler` |
-| `WP_MCP_AI_Language_Model_Router` | `Oos\Core\Application\Provider\ProviderRouter` |
-| `WP_MCP_AI_Tool_Get_Post` | `Oos\Core\Tool\GetPostTool` |
-| `Interface_WP_MCP_AI_HTTP_Client` | `Oos\Core\Domain\Contract\HttpClientInterface` (PSR-18) |
-| `Interface_WP_MCP_AI_Options_Store` | `Oos\Core\Domain\Contract\SettingsStoreInterface` |
-| `WP_MCP_AI_Tool_Interface` | `Oos\Core\Domain\Contract\ToolInterface` |
-| `WP_MCP_AI_Cost_Calculator` | `Oos\Core\Infrastructure\Cost\CostCalculator` |
-| `WP_MCP_AI_ACP_Server` | `Oos\Core\Infrastructure\Protocol\AcpServer` |
-| `WP_MCP_AI_Prompt_Injection_Detector` | `Oos\Core\Infrastructure\Security\PromptInjectionDetector` |
+| `WP_MCP_AI` | `Nvoos\Core\Application\Chat\ChatOrchestrator` |
+| `WP_MCP_AI_Tool_Registry` | `Nvoos\Core\Application\Tool\ToolRegistry` |
+| `WP_MCP_AI_OpenAI_Client` | `Nvoos\Core\Infrastructure\Provider\OpenAIClient` |
+| `WP_MCP_AI_SSE_Handler` | `Nvoos\Core\Infrastructure\Streaming\SseHandler` |
+| `WP_MCP_AI_Language_Model_Router` | `Nvoos\Core\Application\Provider\ProviderRouter` |
+| `WP_MCP_AI_Tool_Get_Post` | `Nvoos\Core\Tool\GetPostTool` |
+| `Interface_WP_MCP_AI_HTTP_Client` | `Nvoos\Core\Domain\Contract\HttpClientInterface` (PSR-18) |
+| `Interface_WP_MCP_AI_Options_Store` | `Nvoos\Core\Domain\Contract\SettingsStoreInterface` |
+| `WP_MCP_AI_Tool_Interface` | `Nvoos\Core\Domain\Contract\ToolInterface` |
+| `WP_MCP_AI_Cost_Calculator` | `Nvoos\Core\Infrastructure\Cost\CostCalculator` |
+| `WP_MCP_AI_ACP_Server` | `Nvoos\Core\Infrastructure\Protocol\AcpServer` |
+| `WP_MCP_AI_Prompt_Injection_Detector` | `Nvoos\Core\Infrastructure\Security\PromptInjectionDetector` |
 
 ---
 
@@ -1202,7 +1202,7 @@ o-os/
 **Actions:**
 1. Initialize `packages/core/` with the domain interfaces only (no implementations)
 2. Initialize `packages/wordpress-adapter/` with empty adapter stubs
-3. Add `composer.json` dependencies so the existing WP plugin can `require "oos/core": "@dev"`
+3. Add `composer.json` dependencies so the existing WP plugin can `require "nvoos/core": "@dev"`
 4. CI/CD pipeline validates all packages pass PHPStan level 5+ and PHPCS
 
 **Outcome:** Zero user-facing change. The foundation exists for incremental migration.
@@ -1246,7 +1246,7 @@ class OpenAIClient extends AbstractProviderClient {
 
 ### 6.3 Phase 2: Core Services Extraction (Week 9–20)
 
-**Goal:** Core services (agentic loop, tool registry, SSE, ACP) move to `oos/core` package.
+**Goal:** Core services (agentic loop, tool registry, SSE, ACP) move to `nvoos/core` package.
 
 **Actions (by service, ordered by dependency):**
 
@@ -1272,7 +1272,7 @@ class OpenAIClient extends AbstractProviderClient {
 **GPT migration example:**
 ```php
 // Step 1: Core class with no WP dependencies
-namespace Oos\Core\Application\Chat;
+namespace Nvoos\Core\Application\Chat;
 
 class ChatOrchestrator
 {
@@ -1319,7 +1319,7 @@ class WP_MCP_AI_REST {
 **Goal:** Tools depend only on domain interfaces, not WordPress functions.
 
 **Migration per tool (repeat for each of ~195 base tools):**
-1. Create `Oos\Core\Tool\{ToolName}Tool` implementing `ToolInterface`
+1. Create `Nvoos\Core\Tool\{ToolName}Tool` implementing `ToolInterface`
 2. Use domain interfaces (ContentStore, AuthProvider, FileStore, etc.) instead of WP functions
 3. Write unit test with mocked adapters
 4. Create WP wrapper tool that delegates to core tool
@@ -1357,7 +1357,7 @@ class WP_MCP_AI_REST {
 - `includes/admin/` — WordPress admin pages (unchanged)
 - `includes/rest/` — Thin controllers that delegate to core
 - `includes/tools/` — WordPress-specific tools only (JetEngine, Elementor, WooCommerce, etc.)
-- Everything else lives in `oos/core` + `oos/wordpress-adapter`
+- Everything else lives in `nvoos/core` + `nvoos/wordpress-adapter`
 
 ---
 
@@ -1550,10 +1550,10 @@ class OpenAIClientIntegrationTest extends TestCase
 
 | Package | Versioning | Breaking Change Policy |
 |---|---|---|
-| `oos/core` | SemVer (MAJOR.MINOR.PATCH) | Interface changes = MAJOR bump. New methods on interfaces = MAJOR unless default implementation provided. |
-| `oos/wordpress-adapter` | SemVer | Must match core MAJOR version. |
-| `oos/laravel-adapter` | SemVer | Must match core MAJOR version. |
-| `oos/craft-adapter` | SemVer | Must match core MAJOR version. |
+| `nvoos/core` | SemVer (MAJOR.MINOR.PATCH) | Interface changes = MAJOR bump. New methods on interfaces = MAJOR unless default implementation provided. |
+| `nvoos/wordpress-adapter` | SemVer | Must match core MAJOR version. |
+| `nvoos/laravel-adapter` | SemVer | Must match core MAJOR version. |
+| `nvoos/craft-adapter` | SemVer | Must match core MAJOR version. |
 | `mcp-ai-wpoos` (WP plugin) | CalVer-ish (`1.X.Y`) | Backward compat with WordPress.org expectations. |
 
 ### 8.2 Interface Stability Guarantees
@@ -1568,7 +1568,7 @@ class OpenAIClientIntegrationTest extends TestCase
 During the migration, the existing WordPress plugin must continue to function:
 
 1. **All existing hooks** (`wp_mcp_ai_*`) continue to fire — the EventDispatcher adapter bridges them
-2. **Existing PHP classes** are preserved as wrappers — `class WP_MCP_AI_Tool_Get_Post extends Oos\Core\Tool\GetPostTool`
+2. **Existing PHP classes** are preserved as wrappers — `class WP_MCP_AI_Tool_Get_Post extends Nvoos\Core\Tool\GetPostTool`
 3. **Existing REST API routes** remain at the same URLs with the same response shapes
 4. **Integration tests from the existing test suite** continue to pass at every phase
 
@@ -1627,15 +1627,15 @@ Phase 5: Sunset WP-Specific Code   ░░░░░░░░░░░░░░░
 |---|---|---|---|
 | **2** | Monorepo booted | `packages/core/`, `packages/wordpress-adapter/`, CI passing | PHPStan Level 5 on all packages. Zero existing test regressions. |
 | **8** | WP adapters live | All 9 adapters implemented and used by at least 2 provider clients | Existing plugin functions identically. Provider clients get API keys via SettingsStore interface. |
-| **12** | Provider clients extracted | All 12 provider clients in `oos/core`, WP plugin delegates to them | Provider client unit tests pass with mocked adapters. Chat completions work identically. |
-| **16** | Agentic loop extracted | `ChatOrchestrator` in `oos/core`, WP REST layer is thin wrapper | Existing chat tests pass. Agentic loop behavior identical (iteration count, tool execution, TPM switching). |
+| **12** | Provider clients extracted | All 12 provider clients in `nvoos/core`, WP plugin delegates to them | Provider client unit tests pass with mocked adapters. Chat completions work identically. |
+| **16** | Agentic loop extracted | `ChatOrchestrator` in `nvoos/core`, WP REST layer is thin wrapper | Existing chat tests pass. Agentic loop behavior identical (iteration count, tool execution, TPM switching). |
 | **20** | Core services complete | SSE, ACP, Voice, Cost Calculator, Harness, Skills all in core | All integration tests pass. Feature parity with v1.1.25 WP plugin. |
 | **24** | Tier 1 tools migrated | ~40 tools in core, tested with mocked adapters | Tools work in WP plugin (via thin wrappers) and standalone PHP (via adapter stubs). |
 | **28** | Tier 2 tools migrated | ~50 WP-data tools migrated | Same tool class runs in WP and Laravel test harnesses. |
 | **34** | Laravel adapter alpha | Laravel chat endpoint works with Tier 1 tools | `POST /api/chat` returns AI response with tool execution in a fresh Laravel app. |
 | **40** | Tier 3 tools migrated | ~40 state-changing tools migrated | Create post, save post, etc. work in Laravel via the same tool classes. |
 | **48** | Craft adapter alpha | Craft CMS chat endpoint works with Tier 1 tools | `POST /actions/o-os/chat/chat` returns AI response in Craft CMS. |
-| **52** | Production-ready | WP plugin is thin shell. Laravel adapter is beta-quality. All Tier 1-3 tools work cross-platform. | Existing WP users see no change. Laravel users can install `oos/laravel-adapter` and start using AI agents. |
+| **52** | Production-ready | WP plugin is thin shell. Laravel adapter is beta-quality. All Tier 1-3 tools work cross-platform. | Existing WP users see no change. Laravel users can install `nvoos/laravel-adapter` and start using AI agents. |
 
 ### 10.3 Resource Estimate
 
@@ -1656,7 +1656,7 @@ Phase 5: Sunset WP-Specific Code   ░░░░░░░░░░░░░░░
 
 ### A. Deferred Decisions (Require Further Discussion)
 
-1. **License for `oos/core`:** Currently GPLv3 (inherited from WordPress). MIT or Apache 2.0 would be more permissive for non-GPL ecosystems. Legal review required.
+1. **License for `nvoos/core`:** Currently GPLv3 (inherited from WordPress). MIT or Apache 2.0 would be more permissive for non-GPL ecosystems. Legal review required.
 2. **Pro addon packaging:** Should the Pro addon be a separate composer package (`oos/pro`) or a paid addon to the core? Commercial licensing model TBD.
 3. **PHP 7.4 compat:** The core package targets PHP 8.1 for design cleanliness (enums, readonly, named args, fibers). The WordPress adapter remains PHP 7.4. Is this split acceptable?
 4. **Event system strategy:** PSR-14 covers dispatching but not filtering. Should we use a custom `EventDispatcherInterface` with filter support (proposed above) or adopt a different pattern (middleware pipeline, chain of responsibility)?

@@ -6,14 +6,14 @@
  * of prompt and completion tokens. Handles 12 providers with model-
  * specific pricing.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Cost;
+namespace Nvoos\Core\Infrastructure\Cost;
 
 class CostCalculator {
 

@@ -3,7 +3,7 @@
  * oOS Laravel configuration.
  *
  * Publish this file with: php artisan vendor:publish --tag=oos-config
- * Environment variables with the OOS_ prefix override these values.
+ * Environment variables with the NVOOS_ prefix override these values.
  */
 
 return array(
@@ -19,7 +19,7 @@ return array(
 	| author_id, created_at, updated_at columns.
 	|
 	*/
-	'content_model' => env( 'OOS_CONTENT_MODEL', \Oos\Laravel\Models\OosPost::class ),
+	'content_model' => env( 'NVNVOOS_CONTENT_MODEL', \Nvoos\Laravel\Models\NvoosPost::class ),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -49,12 +49,12 @@ return array(
 	|--------------------------------------------------------------------------
 	|
 	| The provider and model used when none is specified per-request.
-	| Override via environment: OOS_DEFAULT_PROVIDER, OOS_DEFAULT_MODEL.
+	| Override via environment: NVOOS_DEFAULT_PROVIDER, NVOOS_DEFAULT_MODEL.
 	|
 	*/
-	'default_provider'     => env( 'OOS_DEFAULT_PROVIDER', 'openai' ),
-	'default_model'        => env( 'OOS_DEFAULT_MODEL', 'gpt-4o-mini' ),
-	'default_gemini_model' => env( 'OOS_DEFAULT_GEMINI_MODEL', 'gemini-2.0-flash' ),
+	'default_provider'     => env( 'NVOOS_DEFAULT_PROVIDER', 'openai' ),
+	'default_model'        => env( 'NVOOS_DEFAULT_MODEL', 'gpt-4o-mini' ),
+	'default_gemini_model' => env( 'NVOOS_DEFAULT_GEMINI_MODEL', 'gemini-2.0-flash' ),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -64,27 +64,27 @@ return array(
 	| Timeout and retry settings for calls to AI provider APIs.
 	|
 	*/
-	'request_timeout' => (int) env( 'OOS_REQUEST_TIMEOUT', 60 ),
+	'request_timeout' => (int) env( 'NVOOS_REQUEST_TIMEOUT', 60 ),
 
 	/*
 	|--------------------------------------------------------------------------
 	| Rate Limiting
 	|--------------------------------------------------------------------------
 	*/
-	'enable_rate_limiting' => (bool) env( 'OOS_ENABLE_RATE_LIMITING', false ),
-	'rate_limit_requests'  => (int) env( 'OOS_RATE_LIMIT_REQUESTS', 100 ),
-	'rate_limit_window'    => (int) env( 'OOS_RATE_LIMIT_WINDOW', 3600 ),
+	'enable_rate_limiting' => (bool) env( 'NVOOS_ENABLE_RATE_LIMITING', false ),
+	'rate_limit_requests'  => (int) env( 'NVOOS_RATE_LIMIT_REQUESTS', 100 ),
+	'rate_limit_window'    => (int) env( 'NVOOS_RATE_LIMIT_WINDOW', 3600 ),
 
 	/*
 	|--------------------------------------------------------------------------
 	| Feature Flags
 	|--------------------------------------------------------------------------
 	*/
-	'enable_high_token_model_switch' => (bool) env( 'OOS_HIGH_TOKEN_MODEL_SWITCH', true ),
-	'enable_multi_agent_teams'       => (bool) env( 'OOS_MULTI_AGENT_TEAMS', true ),
-	'enable_acp_server'              => (bool) env( 'OOS_ACP_SERVER', false ),
-	'enable_a2a_server'              => (bool) env( 'OOS_A2A_SERVER', false ),
-	'enable_chat_memory'             => (bool) env( 'OOS_CHAT_MEMORY', true ),
+	'enable_high_token_model_switch' => (bool) env( 'NVOOS_HIGH_TOKEN_MODEL_SWITCH', true ),
+	'enable_multi_agent_teams'       => (bool) env( 'NVOOS_MULTI_AGENT_TEAMS', true ),
+	'enable_acp_server'              => (bool) env( 'NVOOS_ACP_SERVER', false ),
+	'enable_a2a_server'              => (bool) env( 'NVOOS_A2A_SERVER', false ),
+	'enable_chat_memory'             => (bool) env( 'NVOOS_CHAT_MEMORY', true ),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -100,9 +100,9 @@ return array(
 	| Cache & Queue Configuration
 	|--------------------------------------------------------------------------
 	*/
-	'cache_store'      => env( 'OOS_CACHE_STORE', 'redis' ),
-	'queue_connection' => env( 'OOS_QUEUE_CONNECTION', 'database' ),
-	'storage_disk'     => env( 'OOS_STORAGE_DISK', 'public' ),
+	'cache_store'      => env( 'NVOOS_CACHE_STORE', 'redis' ),
+	'queue_connection' => env( 'NVOOS_QUEUE_CONNECTION', 'database' ),
+	'storage_disk'     => env( 'NVOOS_STORAGE_DISK', 'public' ),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -113,7 +113,7 @@ return array(
 	| reads from config first, then this table for admin-saved overrides.
 	|
 	*/
-	'settings_table' => env( 'OOS_SETTINGS_TABLE', 'oos_settings' ),
+	'settings_table' => env( 'NVOOS_SETTINGS_TABLE', 'nvoos_settings' ),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -124,6 +124,6 @@ return array(
 	| requests have full administrative access.
 	|
 	*/
-	'mesh_api_key' => env( 'OOS_MESH_API_KEY', '' ),
+	'mesh_api_key' => env( 'NVOOS_MESH_API_KEY', '' ),
 
 );

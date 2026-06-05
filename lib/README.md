@@ -8,7 +8,7 @@ Framework-agnostic AI orchestration engine extracted from the NV oOS WordPress p
 
 ```
 lib/
-├── core/                          # oos/core — Composer package (PHP 8.1+)
+├── core/                          # nvoos/core — Composer package (PHP 8.1+)
 │   └── src/
 │       ├── Domain/
 │       │   ├── Contract/          # 9 ports (interfaces)
@@ -26,7 +26,7 @@ lib/
 │       │   └── Cost/              # CostCalculator (all providers)
 │       └── Tool/                  # 43 framework-agnostic tool classes
 │
-└── wordpress-adapter/             # oos/wordpress-adapter (PHP 7.4+)
+└── wordpress-adapter/             # nvoos/wordpress-adapter (PHP 7.4+)
     └── src/Adapter/               # 8 WordPress adapter implementations
 ```
 

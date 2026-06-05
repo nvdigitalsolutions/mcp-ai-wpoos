@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by Laravel framework APIs. Each adapter wraps one Laravel subsystem behind a framework-agnostic contract.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by Laravel framework APIs. Each adapter wraps one Laravel subsystem behind a framework-agnostic contract.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/laravel-adapter` Composer package |
+| **Distribution** | `nvoos/laravel-adapter` Composer package |
 | **PHP target** | 8.1+ |
-| **Dependencies** | `oos/core`, `illuminate/*` |
+| **Dependencies** | `nvoos/core`, `illuminate/*` |
 
 ## Public Surface
 

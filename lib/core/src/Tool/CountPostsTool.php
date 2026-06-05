@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tool;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Entity\ContentQuery;
+namespace Nvoos\Core\Tool;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Entity\ContentQuery;
 
 class CountPostsTool extends AbstractTool {
 	public function __construct(ErrorFactoryInterface $errors, private readonly ContentStoreInterface $content) { parent::__construct($errors); }

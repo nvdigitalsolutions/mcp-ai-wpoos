@@ -2,20 +2,20 @@
 /**
  * Tests for domain error classes.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Domain\Error;
+namespace Nvoos\Core\Tests\Unit\Domain\Error;
 
-use Oos\Core\Domain\Error\AccessDeniedException;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
-use Oos\Core\Domain\Error\AuthenticationException;
-use Oos\Core\Domain\Error\DomainError;
+use Nvoos\Core\Domain\Error\AccessDeniedException;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Error\AuthenticationException;
+use Nvoos\Core\Domain\Error\DomainError;
 use PHPUnit\Framework\TestCase;
 
 final class DomainErrorTest extends TestCase {

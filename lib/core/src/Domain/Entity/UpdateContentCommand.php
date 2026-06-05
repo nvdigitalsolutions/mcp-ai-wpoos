@@ -5,14 +5,14 @@
  * Only non-null fields are applied — null fields remain unchanged.
  * Meta fields are merged with existing meta, not replaced.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class UpdateContentCommand {
 

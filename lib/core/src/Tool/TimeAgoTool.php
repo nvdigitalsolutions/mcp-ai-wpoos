@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class TimeAgoTool extends AbstractTool {
 	private const I = array('year'=>31536000,'month'=>2592000,'week'=>604800,'day'=>86400,'hour'=>3600,'minute'=>60,'second'=>1);

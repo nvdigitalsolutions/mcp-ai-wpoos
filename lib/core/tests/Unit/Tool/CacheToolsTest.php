@@ -2,23 +2,23 @@
 /**
  * Tests for cache tools and DeleteSettingTool.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\CacheStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Oos\Core\Tool\GetCacheTool;
-use Oos\Core\Tool\SetCacheTool;
-use Oos\Core\Tool\DeleteCacheTool;
-use Oos\Core\Tool\IncrementCacheTool;
-use Oos\Core\Tool\DeleteSettingTool;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Tool\GetCacheTool;
+use Nvoos\Core\Tool\SetCacheTool;
+use Nvoos\Core\Tool\DeleteCacheTool;
+use Nvoos\Core\Tool\IncrementCacheTool;
+use Nvoos\Core\Tool\DeleteSettingTool;
 use PHPUnit\Framework\TestCase;
 
 final class CacheToolsTest extends TestCase {

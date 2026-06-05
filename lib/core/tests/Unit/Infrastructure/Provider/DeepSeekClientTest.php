@@ -6,19 +6,19 @@
  * and ErrorFactoryInterface via constructor injection. Tests mock the HTTP
  * client to control API responses without network dependency.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Infrastructure\Provider;
+namespace Nvoos\Core\Tests\Unit\Infrastructure\Provider;
 
 use Nyholm\Psr7\Stream;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
-use Oos\Core\Infrastructure\Provider\DeepSeekClient;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Infrastructure\Provider\DeepSeekClient;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 use Psr\Http\Message\RequestInterface;
