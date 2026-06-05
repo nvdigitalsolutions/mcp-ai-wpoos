@@ -116,6 +116,7 @@ composer run build && wp plugin-check mcp-ai-wpoos.zip
 | v1.1.21–v1.1.22 | May 19–23, 2026 | Pre-submission code review — 1 Critical + 5 Warnings resolved. Addons PHPCS 93% reduction. |
 | v1.1.25 | May 31, 2026 | Unified Blueprint System, Cloudways Toolkit, CRM Toolkit, Chat UI, Unix-theory reorg. All prior compliance maintained. |
 | v1.1.26 | June 3, 2026 | Cross-platform extraction engine (Phases 0–2), site-builder node-graph pipeline, SPA a11y hardening, screenshot & docs overhaul, form submissions data source, Cloudways Dashboard SPA, Laravel/Craft CMS adapters, pro toolkits security audit (9 HIGH fixed), reviewer onboarding docs, Docker/test/infra fixes. |
+| v1.1.27 | June 5, 2026 | Real-time SSE streaming, 35 new OOS core tools, JFB submission tools 8 fixes, Extended Cognition vision recognition, Graphify capability fence, DeepSeek agentic tool handling, doc link fixes, June 2026 model pricing update, restructuring proposals v3.0. |
 
 ---
 

@@ -4,16 +4,16 @@
  *
  * Calls the public GDACS API (no auth required). Zero WordPress dependencies.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class GetGdacsEventsTool extends AbstractTool {

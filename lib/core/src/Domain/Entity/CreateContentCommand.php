@@ -5,14 +5,14 @@
  * Encapsulates all required and optional fields for content creation.
  * The ContentStoreInterface::create() method consumes this.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class CreateContentCommand {
 

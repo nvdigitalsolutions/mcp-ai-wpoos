@@ -9,16 +9,16 @@
  * Patterned after Flysystem (thephpleague/flysystem) — the canonical
  * PHP Ports & Adapters implementation for file storage.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
-use Oos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Domain\Entity\StoredFile;
 
 interface FileStoreInterface {
 
@@ -35,7 +35,7 @@ interface FileStoreInterface {
 	 *
 	 * @return StoredFile  Metadata for the stored file.
 	 *
-	 * @throws \Oos\Core\Domain\Error\ValidationException  When file type/size is invalid.
+	 * @throws \Nvoos\Core\Domain\Error\ValidationException  When file type/size is invalid.
 	 */
 	public function store( string $localPath, string $filename, string $mimeType, int $userId ): StoredFile;
 

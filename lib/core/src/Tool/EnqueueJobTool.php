@@ -5,17 +5,17 @@
  * Uses QueueClientInterface — framework-agnostic. Adapters map this
  * to Action Scheduler (WordPress), Laravel Queues, or Yii Queue.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
 
 class EnqueueJobTool extends AbstractTool {
 

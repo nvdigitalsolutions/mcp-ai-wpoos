@@ -1,12 +1,12 @@
 <?php
 /** Crawl4AI Job — triggers a crawl job via Crawl4AI REST API.
  *
- * @package Oos\Core @since 1.0.0 @license MIT */
+ * @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 class RunCrawl4AiJobTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h ) {

@@ -63,7 +63,7 @@ if [ "$FRAMEWORK" == "laravel" ]; then
         docker compose -f docker/docker-compose.laravel.yml exec -T app sh -c '
             composer config repositories.oos-core path /workspace/oos/lib/core --working-dir=/var/www/html
             composer config repositories.oos-laravel path /workspace/oos/lib/laravel-adapter --working-dir=/var/www/html
-            composer require oos/core:"*" oos/laravel-adapter:"*" --no-interaction
+            composer require nvoos/core:"*" nvoos/laravel-adapter:"*" --no-interaction
         '
         # Publish oOS config & run migrations
         docker compose -f docker/docker-compose.laravel.yml exec -T app sh -c '
@@ -86,7 +86,7 @@ if [ "$FRAMEWORK" == "craft" ]; then
         docker compose -f docker/docker-compose.craft.yml exec -T app sh -c '
             composer config repositories.oos-core path /workspace/oos/lib/core --working-dir=/var/www/html
             composer config repositories.oos-craft path /workspace/oos/lib/craft-adapter --working-dir=/var/www/html
-            composer require oos/core:"*" oos/craft-adapter:"*" --no-interaction
+            composer require nvoos/core:"*" nvoos/craft-adapter:"*" --no-interaction
         '
         # Run Craft setup
         docker compose -f docker/docker-compose.craft.yml exec -T app sh -c '

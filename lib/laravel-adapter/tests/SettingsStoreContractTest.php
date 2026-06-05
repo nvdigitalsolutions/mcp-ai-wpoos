@@ -5,15 +5,15 @@
  * Verifies provider key resolution, default model handling,
  * feature flag mapping, and the config-file + DB merge strategy.
  *
- * @package Oos\Laravel\Tests
+ * @package Nvoos\Laravel\Tests
  * @since   1.0.0
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Tests\Adapter;
+namespace Nvoos\Laravel\Tests\Adapter;
 
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -50,7 +50,7 @@ class SettingsStoreContractTest extends TestCase {
 		);
 
 		// Read the DEFAULTS constant via reflection to avoid framework boot.
-		$ref    = new \ReflectionClass( \Oos\Laravel\Adapter\SettingsStore::class );
+		$ref    = new \ReflectionClass( \Nvoos\Laravel\Adapter\SettingsStore::class );
 		$const  = $ref->getReflectionConstant( 'DEFAULTS' );
 
 		$this->assertNotFalse( $const, 'DEFAULTS constant must exist.' );
@@ -70,7 +70,7 @@ class SettingsStoreContractTest extends TestCase {
 		);
 
 		// Read the private getApiKey() method body via reflection.
-		$ref    = new \ReflectionClass( \Oos\Laravel\Adapter\SettingsStore::class );
+		$ref    = new \ReflectionClass( \Nvoos\Laravel\Adapter\SettingsStore::class );
 		$method = $ref->getMethod( 'getApiKey' );
 
 		// The method reads from a $keyMap — validate it exists and covers providers.
@@ -94,7 +94,7 @@ class SettingsStoreContractTest extends TestCase {
 			'assistant_delete_rest',
 		);
 
-		$ref    = new \ReflectionClass( \Oos\Laravel\Adapter\SettingsStore::class );
+		$ref    = new \ReflectionClass( \Nvoos\Laravel\Adapter\SettingsStore::class );
 		$method = $ref->getMethod( 'isEnabled' );
 
 		$this->assertNotNull( $method, 'isEnabled method must exist.' );
@@ -106,7 +106,7 @@ class SettingsStoreContractTest extends TestCase {
 	}
 
 	public function test_default_provider_is_openai(): void {
-		$ref    = new \ReflectionClass( \Oos\Laravel\Adapter\SettingsStore::class );
+		$ref    = new \ReflectionClass( \Nvoos\Laravel\Adapter\SettingsStore::class );
 		$const  = $ref->getReflectionConstant( 'DEFAULTS' );
 		$defaults = $const->getValue();
 
@@ -114,7 +114,7 @@ class SettingsStoreContractTest extends TestCase {
 	}
 
 	public function test_default_model_is_gpt_4o_mini(): void {
-		$ref    = new \ReflectionClass( \Oos\Laravel\Adapter\SettingsStore::class );
+		$ref    = new \ReflectionClass( \Nvoos\Laravel\Adapter\SettingsStore::class );
 		$const  = $ref->getReflectionConstant( 'DEFAULTS' );
 		$defaults = $const->getValue();
 

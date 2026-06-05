@@ -3,23 +3,23 @@
  * Tests for GenerateUuidTool, HashStringTool, ValidateJsonTool,
  * EnqueueJobTool, and GetJobStatusTool.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\QueueClientInterface;
-use Oos\Core\Domain\Entity\JobStatus;
-use Oos\Core\Tool\GenerateUuidTool;
-use Oos\Core\Tool\HashStringTool;
-use Oos\Core\Tool\ValidateJsonTool;
-use Oos\Core\Tool\EnqueueJobTool;
-use Oos\Core\Tool\GetJobStatusTool;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Tool\GenerateUuidTool;
+use Nvoos\Core\Tool\HashStringTool;
+use Nvoos\Core\Tool\ValidateJsonTool;
+use Nvoos\Core\Tool\EnqueueJobTool;
+use Nvoos\Core\Tool\GetJobStatusTool;
 use PHPUnit\Framework\TestCase;
 
 final class MoreToolsTest extends TestCase {

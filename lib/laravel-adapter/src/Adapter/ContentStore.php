@@ -4,27 +4,27 @@
  *
  * Wraps Eloquent models behind the framework-agnostic ContentStoreInterface.
  * The content model class is configurable via the 'oos.content_model' config
- * key, defaulting to a generic OosPost model. Tools query and mutate content
+ * key, defaulting to a generic NvoosPost model. Tools query and mutate content
  * through this adapter without importing any Eloquent classes.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\ContentStoreInterface;
-use Oos\Core\Domain\Entity\ContentCollection;
-use Oos\Core\Domain\Entity\ContentItem;
-use Oos\Core\Domain\Entity\ContentQuery;
-use Oos\Core\Domain\Entity\CreateContentCommand;
-use Oos\Core\Domain\Entity\UpdateContentCommand;
-use Oos\Core\Domain\Error\AccessDeniedException;
-use Oos\Core\Domain\Error\NotFoundException;
-use Oos\Core\Domain\Error\ValidationException;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Entity\ContentCollection;
+use Nvoos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Entity\CreateContentCommand;
+use Nvoos\Core\Domain\Entity\UpdateContentCommand;
+use Nvoos\Core\Domain\Error\AccessDeniedException;
+use Nvoos\Core\Domain\Error\NotFoundException;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 
@@ -39,12 +39,12 @@ class ContentStore implements ContentStoreInterface {
 
 	/**
 	 * @param string $modelClass  Eloquent model FQCN for content items.
-	 *                            Defaults to the config value or OosPost.
+	 *                            Defaults to the config value or NvoosPost.
 	 */
 	public function __construct( string $modelClass = '' ) {
 		$this->modelClass = '' !== $modelClass
 			? $modelClass
-			: ( config( 'oos.content_model', \Oos\Laravel\Models\OosPost::class ) ?: \Oos\Laravel\Models\OosPost::class );
+			: ( config( 'oos.content_model', \Nvoos\Laravel\Models\NvoosPost::class ) ?: \Nvoos\Laravel\Models\NvoosPost::class );
 	}
 
 	/**
@@ -400,7 +400,7 @@ class ContentStore implements ContentStoreInterface {
 		foreach ( $taxonomyInput as $taxonomy => $termNames ) {
 			$termIds = array();
 			foreach ( $termNames as $name ) {
-				$term = \Oos\Laravel\Models\OosTerm::firstOrCreate(
+				$term = \Nvoos\Laravel\Models\NvoosTerm::firstOrCreate(
 					array(
 						'name'     => $name,
 						'taxonomy' => $taxonomy,

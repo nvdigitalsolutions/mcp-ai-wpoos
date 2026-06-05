@@ -11,14 +11,14 @@
  *  - Laravel:   wraps Cache facade / Redis / memcached
  *  - Standalone: wraps PSR-6 pool (Symfony Cache, etc.)
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 use Psr\Cache\CacheItemPoolInterface;
 

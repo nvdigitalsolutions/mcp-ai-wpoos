@@ -6,20 +6,20 @@
  * framework-agnostic AuthProviderInterface. Supports the same four
  * token types as the WordPress adapter: bearer, nonce, mesh, and guest.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Entity\AuthContext;
-use Oos\Core\Domain\Entity\Credential;
-use Oos\Core\Domain\Entity\UserInfo;
-use Oos\Core\Domain\Error\AuthenticationException;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Entity\AuthContext;
+use Nvoos\Core\Domain\Entity\Credential;
+use Nvoos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Domain\Error\AuthenticationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;

@@ -2,24 +2,24 @@
 /**
  * Tests for queue and event tools.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\EventDispatcherInterface;
-use Oos\Core\Domain\Contract\QueueClientInterface;
-use Oos\Core\Domain\Entity\JobStatus;
-use Oos\Core\Tool\CancelJobTool;
-use Oos\Core\Tool\DispatchEventTool;
-use Oos\Core\Tool\ListJobsTool;
-use Oos\Core\Tool\ScheduleJobTool;
-use Oos\Core\Tool\UnscheduleJobTool;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Tool\CancelJobTool;
+use Nvoos\Core\Tool\DispatchEventTool;
+use Nvoos\Core\Tool\ListJobsTool;
+use Nvoos\Core\Tool\ScheduleJobTool;
+use Nvoos\Core\Tool\UnscheduleJobTool;
 use PHPUnit\Framework\TestCase;
 
 final class QueueAndEventToolsTest extends TestCase {

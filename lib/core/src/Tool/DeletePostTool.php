@@ -1,10 +1,10 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 class DeletePostTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly ContentStoreInterface $c ) {
 		parent::__construct( $e );}
@@ -40,8 +40,8 @@ class DeletePostTool extends AbstractTool {
 		}
 		try {
 			$this->c->delete( $postId, $userId );
-			return $this->success( 'Post deleted.', array( 'id' => $postId ) ); } catch ( \Oos\Core\Domain\Error\NotFoundException $e ) {
-			return $this->errors->notFound( $e->getMessage() ); } catch ( \Oos\Core\Domain\Error\AccessDeniedException $e ) {
+			return $this->success( 'Post deleted.', array( 'id' => $postId ) ); } catch ( \Nvoos\Core\Domain\Error\NotFoundException $e ) {
+			return $this->errors->notFound( $e->getMessage() ); } catch ( \Nvoos\Core\Domain\Error\AccessDeniedException $e ) {
 				return $this->errors->forbidden( $e->getMessage() ); } catch ( \Throwable $e ) {
 				return $this->errors->create( 'delete_failed', $e->getMessage() ); }
 	}

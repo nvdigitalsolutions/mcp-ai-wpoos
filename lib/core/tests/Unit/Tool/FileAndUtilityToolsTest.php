@@ -2,22 +2,22 @@
 /**
  * Tests for file tools and utility tools.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\FileStoreInterface;
-use Oos\Core\Domain\Entity\StoredFile;
-use Oos\Core\Tool\GetFileInfoTool;
-use Oos\Core\Tool\DeleteFileTool;
-use Oos\Core\Tool\Base64Tool;
-use Oos\Core\Tool\ExtractDomainTool;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
+use Nvoos\Core\Tool\GetFileInfoTool;
+use Nvoos\Core\Tool\DeleteFileTool;
+use Nvoos\Core\Tool\Base64Tool;
+use Nvoos\Core\Tool\ExtractDomainTool;
 use PHPUnit\Framework\TestCase;
 use DateTimeImmutable;
 

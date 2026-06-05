@@ -6,16 +6,16 @@
  * ErrorFactoryInterface. Like the Laravel adapter, uses exceptions
  * for error signalling rather than return-value error objects.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 class ErrorFactory implements ErrorFactoryInterface {
 

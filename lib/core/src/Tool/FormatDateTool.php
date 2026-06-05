@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class FormatDateTool extends AbstractTool {
 	public function getSlug(): string { return 'format_date'; }

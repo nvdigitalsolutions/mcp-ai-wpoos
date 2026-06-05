@@ -6,19 +6,19 @@
  * QueueClientInterface. Supports any Yii Queue driver (Redis, DB,
  * Beanstalk, SQS). Jobs are dispatched via `Craft::$app->queue->push()`.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
 use Craft;
 use craft\queue\BaseJob;
-use Oos\Core\Domain\Contract\QueueClientInterface;
-use Oos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Entity\JobStatus;
 
 class QueueClient implements QueueClientInterface {
 
@@ -50,7 +50,7 @@ class QueueClient implements QueueClientInterface {
 		$delay    = isset( $options['delay_seconds'] ) ? (int) $options['delay_seconds'] : 0;
 		$ttr      = $options['ttr'] ?? $this->defaultTtr;
 
-		$job = new \Oos\Craft\Jobs\OosToolJob( array(
+		$job = new \Nvoos\Craft\Jobs\NvoosToolJob( array(
 			'handler' => $handler,
 			'payload' => $payload,
 		) );
@@ -158,7 +158,7 @@ class QueueClient implements QueueClientInterface {
 		$this->ensureSchedulesTable();
 
 		Craft::$app->getDb()->createCommand()
-			->insert( '{{%oos_schedules}}', array(
+			->insert( '{{%nvoos_schedules}}', array(
 				'id'              => $scheduleId,
 				'handler'         => $handler,
 				'payload'         => json_encode( $payload, JSON_UNESCAPED_SLASHES ),
@@ -178,9 +178,9 @@ class QueueClient implements QueueClientInterface {
 	 * @param string $scheduleId  Schedule identifier.
 	 */
 	public function unschedule( string $scheduleId ): void {
-		if ( Craft::$app->getDb()->tableExists( '{{%oos_schedules}}' ) ) {
+		if ( Craft::$app->getDb()->tableExists( '{{%nvoos_schedules}}' ) ) {
 			Craft::$app->getDb()->createCommand()
-				->delete( '{{%oos_schedules}}', array( 'id' => $scheduleId ) )
+				->delete( '{{%nvoos_schedules}}', array( 'id' => $scheduleId ) )
 				->execute();
 		}
 	}
@@ -226,12 +226,12 @@ class QueueClient implements QueueClientInterface {
 	// ─── Private helpers ──────────────────────────────────────────────
 
 	private function ensureSchedulesTable(): void {
-		if ( Craft::$app->getDb()->tableExists( '{{%oos_schedules}}' ) ) {
+		if ( Craft::$app->getDb()->tableExists( '{{%nvoos_schedules}}' ) ) {
 			return;
 		}
 
 		Craft::$app->getDb()->createCommand()
-			->createTable( '{{%oos_schedules}}', array(
+			->createTable( '{{%nvoos_schedules}}', array(
 				'id'              => Craft::$app->getDb()->getSchema()->createColumnSchemaBuilder( 'string', 64 )->notNull(),
 				'handler'         => Craft::$app->getDb()->getSchema()->createColumnSchemaBuilder( 'string', 255 )->notNull(),
 				'payload'         => Craft::$app->getDb()->getSchema()->createColumnSchemaBuilder( 'text' )->null(),

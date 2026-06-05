@@ -8,13 +8,13 @@ Framework-agnostic AI tool implementations — the canonical tool surface for th
 
 | | |
 |---|---|
-| **Distribution** | `oos/core` Composer package |
+| **Distribution** | `nvoos/core` Composer package |
 | **PHP target** | 8.1+ |
 | **Loaded by** | `includes/bootstrap/oos-bridge.php` via `ToolRegistry::register()` |
 
 ## Public Surface
 
-The folder's external contract is the **tool slug** registered with `Oos\Core\Application\Tool\ToolRegistry`.
+The folder's external contract is the **tool slug** registered with `Nvoos\Core\Application\Tool\ToolRegistry`.
 
 ### Base classes
 

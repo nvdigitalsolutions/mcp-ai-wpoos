@@ -6,22 +6,22 @@
  * AuthProviderInterface. Uses Craft's native user identity,
  * permissions, and session-based authentication.
  *
- * @package Oos\Craft
+ * @package Nvoos\Craft
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Craft\Adapter;
+namespace Nvoos\Craft\Adapter;
 
 use Craft;
 use craft\elements\User;
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Entity\AuthContext;
-use Oos\Core\Domain\Entity\Credential;
-use Oos\Core\Domain\Entity\UserInfo;
-use Oos\Core\Domain\Error\AuthenticationException;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Entity\AuthContext;
+use Nvoos\Core\Domain\Entity\Credential;
+use Nvoos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Domain\Error\AuthenticationException;
 
 class AuthProvider implements AuthProviderInterface {
 
@@ -232,7 +232,7 @@ class AuthProvider implements AuthProviderInterface {
 		// Try validating as an API token (HMAC-based).
 		try {
 			$decoded = Craft::$app->security->validateData( $token );
-			if ( is_string( $decoded ) && str_starts_with( $decoded, 'oos_api:' ) ) {
+			if ( is_string( $decoded ) && str_starts_with( $decoded, 'nvoos_api:' ) ) {
 				$parts   = explode( ':', $decoded );
 				$userId  = isset( $parts[1] ) ? (int) $parts[1] : 0;
 

@@ -4,7 +4,7 @@
  *
  * Published automatically by docker/setup.sh craft.
  *
- * @see \Oos\Craft\Module\OosModule
+ * @see \Nvoos\Craft\Module\OosModule
  */
 
 use craft\helpers\App;

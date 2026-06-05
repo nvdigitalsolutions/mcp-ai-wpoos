@@ -11,16 +11,16 @@
  *  - Symfony:   wraps Symfony Messenger
  *  - Standalone: wraps a simple database-backed queue
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
-use Oos\Core\Domain\Entity\JobStatus;
+use Nvoos\Core\Domain\Entity\JobStatus;
 
 interface QueueClientInterface
 {

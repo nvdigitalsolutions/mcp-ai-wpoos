@@ -5,17 +5,17 @@
  * Uses CacheStoreInterface::increment(). Useful for counters, rate
  * limiting, and usage tracking.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\CacheStoreInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 class IncrementCacheTool extends AbstractTool {
 

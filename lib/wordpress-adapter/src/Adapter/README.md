@@ -2,15 +2,15 @@
 
 ## Purpose
 
-Concrete implementations of the 9 domain interfaces from `oos/core`, backed by WordPress APIs. Each adapter wraps one WordPress subsystem behind a framework-agnostic contract.
+Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by WordPress APIs. Each adapter wraps one WordPress subsystem behind a framework-agnostic contract.
 
 ## Tier
 
 | | |
 |---|---|
-| **Distribution** | `oos/wordpress-adapter` Composer package |
+| **Distribution** | `nvoos/wordpress-adapter` Composer package |
 | **PHP target** | 7.4+ |
-| **Dependencies** | `oos/core`, WordPress core |
+| **Dependencies** | `nvoos/core`, WordPress core |
 
 ## Public Surface
 

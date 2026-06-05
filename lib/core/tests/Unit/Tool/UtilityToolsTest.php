@@ -4,19 +4,19 @@
  *
  * All three are zero-dependency pure-logic tools.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Tool;
+namespace Nvoos\Core\Tests\Unit\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Tool\GenerateSlugTool;
-use Oos\Core\Tool\FormatBytesTool;
-use Oos\Core\Tool\StripHtmlTool;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Tool\GenerateSlugTool;
+use Nvoos\Core\Tool\FormatBytesTool;
+use Nvoos\Core\Tool\StripHtmlTool;
 use PHPUnit\Framework\TestCase;
 
 final class UtilityToolsTest extends TestCase {

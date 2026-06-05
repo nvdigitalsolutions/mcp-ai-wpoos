@@ -1,10 +1,10 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 class GetSiteSummaryTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s ) {
 		parent::__construct( $e );}

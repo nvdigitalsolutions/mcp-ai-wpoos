@@ -8,14 +8,14 @@
  *
  * Zero external dependencies — only ErrorFactoryInterface.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 class CountTokensTool extends AbstractTool {
 

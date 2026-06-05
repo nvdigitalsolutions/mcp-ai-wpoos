@@ -5,18 +5,18 @@
  * Uses AuthProviderInterface::currentUserId() and getUserInfo().
  * Framework-agnostic — works with any auth system.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\AuthProviderInterface;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Entity\UserInfo;
 
 class GetCurrentUserTool extends AbstractTool {
 

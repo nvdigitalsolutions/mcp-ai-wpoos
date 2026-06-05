@@ -1,5 +1,63 @@
 # oOS – Changelog
 
+## [1.1.27] - 2026-06-05
+
+### Added — Real-Time SSE Streaming (PRs #5240, #5243, #5244)
+
+- Real-time SSE streaming enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers.
+- "Disable Native Streaming" setting added to Advanced → System tab, controllable per-site.
+- `wp_mcp_ai_disable_native_streaming` filter for programmatic control.
+- WPCS violations fixed in streaming provider clients.
+
+### Added — OOS Core Tool Migration: 35 New Tools (PR #5246)
+
+35 new OOS core tools migrated with full test coverage and documentation:
+- **Data Tools:** GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays.
+- **Format Tools:** FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert.
+- **Infrastructure Tools:** EventDispatcher (5 tools), Queue tools (5 tools, 5 tests).
+- **Cache Tools:** 5 cache-management tools + DeleteSettingTool (6 tests).
+- OOS/core test infrastructure established with 20 migrated base tools.
+
+### Added — Extended Cognition Vision Recognition (PR #5237)
+
+- Visual product/brand recognition added to Extended Cognition toolkit.
+- Camera viewfinder UI with real-time detection overlays and consent gate.
+- Viewfinder enhanced with camera switcher, torch control, scan region, and file upload.
+
+### Fixed — Graphify Tools (PRs #5237, #5238)
+
+- Added missing `WP_MCP_AI_Tool_Default_Capability` trait to all Graphify tools.
+- Added explicit `get_required_capability()` method to all Graphify tools for Capability Fence compliance.
+
+### Fixed — JetFormBuilder Submission Tools (PRs #5244, #5245, #5247, #5248, #5249, #5250, #5251, #5253)
+
+- Fixed `get_all_form_submissions` returning empty results for JetFormBuilder forms.
+- Fixed JFB submissions returning empty for non-admin users — direct DB fallback query.
+- Fixed `get_all_form_submissions` falling back to direct DB query for local form discovery.
+- Fixed JFB submission tools: capability ordering and form discovery pipeline.
+- Fixed PHPCS warnings across all JFB tool files.
+- Fixed JFB REST routes to match actual JetFormBuilder plugin endpoints.
+- Fixed form-type auto-detection for JetFormBuilder vs Elementor submissions.
+- Fixed JetFormBuilder plugin detection: use namespaced class `Jet_Form_Builder\Plugin` and add to status list.
+- Added JetFormBuilder integration reference documentation (`docs/features/integrations/jetformbuilder-integration-guide.md`).
+
+### Fixed — DeepSeek Agentic Tool Result Handling (PR #5247)
+
+- Added tool message filtering and payload normalisation to DeepSeek client for agentic multi-turn workflows.
+
+### Fixed — Documentation Links (PR #5239)
+
+- Fixed broken documentation links across the codebase after Unix-theory `docs/` reorganization.
+
+### Changed — Model Pricing Update (PR #5256)
+
+- Updated model pricing across all 13 providers to reflect June 2026 rates.
+
+### Changed — Plugin Restructuring Proposals (PRs #5252, #5255)
+
+- Added graphify-core specification and base plugin restructuring roadmap.
+- Updated restructuring proposals to v3.0 Graphify-centric architecture.
+
 ## [1.1.26] - 2026-06-03
 
 ### Added — Cross-Platform Extraction Engine Phases 0–2 (PRs #5193–#5201)
@@ -1303,7 +1361,7 @@ Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature 
   - Released QMS documents linked to a PARA Area refresh that Area's `_para_last_reviewed` timestamp.
   - Both subsystems write to the same audit table (`subsystem` column).
 
-- **Documentation**: `docs/qms-compliance.md`, `docs/para-methodology.md`.
+- **Documentation**: `docs/features/qms-compliance.md`, `docs/project/para-methodology.md`.
 
 - **Tests**: `tests/qms/test-qms-workflow.php`, `tests/qms/test-qms-audit-log.php`, `tests/para/test-para-taxonomy.php`, `tests/para/test-para-lifecycle.php`.
 
@@ -1498,7 +1556,7 @@ A small but tightly-scoped compliance pass to clear the remaining WordPress.org 
 - **`bin/review-zips.sh`** — New `check_wporg_readme_slug()` helper asserts the same readme invariants when auditing already-built `.zip` packages, so a stale build can no longer pass review even if the build script is bypassed.
 
 ### Documentation
-- **`docs/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status. Both note that source-level identifier prefix migration (`wp_mcp_ai_*` / `WP_MCP_AI_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
+- **`docs/operations/compliance/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status. Both note that source-level identifier prefix migration (`wp_mcp_ai_*` / `WP_MCP_AI_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
 
 ### Version
 - **Version** bumped to 1.1.11 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
@@ -1905,7 +1963,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
 
 ### Documentation
 - Added `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_03_24.md` — Pass 17 compliance verification report
-- Added `docs/03-wp-org-compliance.md` — compliance change log for this PR
+- Added `docs/operations/compliance/03-wp-org-compliance.md` — compliance change log for this PR
 
 ## [1.1.4] - 2026-03-15
 
@@ -2048,7 +2106,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Automatic Field Mapping**: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.) to form inputs
   - **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer for different API versions
   - **Settings**: Two independent toggles - "Enable AI Assistant for JetEngine CPTs" and "Enable Research & Add Pages for JetEngine CPTs"
-  - **Documentation**: Complete integration guide at [docs/jetengine-integration-guide.md](docs/jetengine-integration-guide.md)
+  - **Documentation**: Complete integration guide at [docs/features/integrations/jetengine-integration-guide.md](docs/features/integrations/jetengine-integration-guide.md)
   - **Testing**: Comprehensive test suite with 100% passing tests
   - Merge PR #3678
 - **Package Pre-Bundling System (February 12, 2026)**: Enhanced vendor directory pre-bundling for critical npm packages
@@ -2057,17 +2115,17 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Added core document generation packages: pdfkit, docx, exceljs, qrcode, turndown, cheerio
   - Updated package detection logic to check vendor directory before node_modules
   - Eliminates need for `npm install` on production servers, faster deployment
-  - See [FEBRUARY_2026_UPDATES.md](docs/FEBRUARY_2026_UPDATES.md)
+  - See [FEBRUARY_2026_UPDATES.md](docs/history/2026/implementations/FEBRUARY_2026_UPDATES.md)
 
 ### Fixed - February 2026
 - **Product Research Page Rendering (February 10, 2026)**: Fixed admin hook detection pattern causing CSS/JS not to load on Product Consolidate page
   - Changed from CPT pattern `product_page_*` to custom menu pattern `wp-mcp-ai-ecommerce-toolkit_page_*`
-  - See [docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md](docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md)
+  - See [docs/history/2026/fixes/product-page-admin-hook-detection-fix-2026-02-10.md](docs/history/2026/fixes/product-page-admin-hook-detection-fix-2026-02-10.md)
 - **Product Research Tab System (February 11, 2026)**: Fixed all workflow tabs displaying simultaneously
   - Changed hook matching to flexible strpos() check for reliability
   - Added inline display:none styles for defensive fallback
   - Enhanced CSS specificity with !important rules to prevent override
-  - See [docs/fixes/product-research-tab-system-fix-2026-02-11.md](docs/fixes/product-research-tab-system-fix-2026-02-11.md)
+  - See [docs/history/2026/fixes/product-research-tab-system-fix-2026-02-11.md](docs/history/2026/fixes/product-research-tab-system-fix-2026-02-11.md)
 - **Product Research CSS/JS Loading (February 11, 2026)**: Improved asset enqueuing priority and hook detection
 - **Duplicate Menu Item (February 10, 2026)**: Removed duplicate "Research & Add" tab from E-commerce Toolkit settings page
 - **Pro Workflow Builder Stability (February 4-5, 2026)**: Multiple fixes for React-based workflow builder
@@ -2076,7 +2134,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Fixed initialization timing race conditions
   - Fixed menu placement inconsistencies
   - Fixed empty page display issue
-  - See quick reference: `docs/fixes/pro-workflow-builder-fix-quick-reference-2026-02-05.md`
+  - See quick reference: `docs/history/2026/fixes/pro-workflow-builder-fix-quick-reference-2026-02-05.md`
 - **OAuth & API Connections (February 3, 2026)**:
   - Fixed Google OAuth approval prompt not displaying to users
   - Fixed Yahoo OAuth redirect URL construction issues
@@ -2085,7 +2143,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
 - **E-commerce Toolkit (February 10, 2026)**: Now enabled by default for new installations to reduce setup friction
 
 ### Documentation - February 2026
-- Added comprehensive February 2026 updates summary (`docs/FEBRUARY_2026_UPDATES.md`)
+- Added comprehensive February 2026 updates summary (`docs/history/2026/implementations/FEBRUARY_2026_UPDATES.md`)
 - Added detailed fix documentation for all product research page issues in `docs/fixes/`
 - Added Pro Workflow Builder fix quick reference guide with visual flow diagrams
 - Archived completed fix summaries to `archive/2025/fixes/` (product research, tab system, variable products)
@@ -2119,7 +2177,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Requirements**: WooCommerce for e-commerce commands; appropriate user capabilities
   - **Test Coverage**: 50+ test methods across 4 test files
   - **Documentation**: Complete command reference with workflow examples
-  - See [PRO_TOOLKIT_SLASH_COMMANDS.md](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+  - See [PRO_TOOLKIT_SLASH_COMMANDS.md](docs/user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & WebChat Integration
 - **Chat Channels Toolkit - Production Ready (February 3, 2026)**: Comprehensive integration with 6 major chat platforms
@@ -2135,7 +2193,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Authentication**: Secure API credential management with platform-specific configuration
   - **Testing**: PHP validation, PHPCS compliance, CodeQL security scan passed
   - **Documentation**: Complete implementation guides and troubleshooting
-  - See [CHAT_CHANNELS_TOOLKIT.md](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md) and [CHAT_CHANNELS_README.md](addons/pro/docs/CHAT_CHANNELS_README.md)
+  - See [CHAT_CHANNELS_TOOLKIT.md](addons/pro/addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md) and [CHAT_CHANNELS_README.md](addons/pro/addons/pro/docs/CHAT_CHANNELS_README.md)
 
 - **WebChat Rooms - Production Ready (February 2026)**: Real-time collaborative chat rooms with AI assistant integration
   - **Custom Post Type**: `mcp_ai_webchat` for room management
@@ -2150,7 +2208,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Admin Interface**: WebChat settings page with room management and configuration
   - **Security**: Capability-based access control, nonce verification, proper sanitization
   - **Documentation**: Complete setup guide, troubleshooting, and assistant assignment docs
-  - See [WEBCHAT_ASSISTANT_ASSIGNMENT.md](addons/pro/docs/WEBCHAT_ASSISTANT_ASSIGNMENT.md) and [WEBCHAT_TROUBLESHOOTING.md](addons/pro/docs/WEBCHAT_TROUBLESHOOTING.md)
+  - See [WEBCHAT_ASSISTANT_ASSIGNMENT.md](addons/pro/addons/pro/docs/WEBCHAT_ASSISTANT_ASSIGNMENT.md) and [WEBCHAT_TROUBLESHOOTING.md](addons/pro/addons/pro/docs/WEBCHAT_TROUBLESHOOTING.md)
 
 ### Toolkit Enhancements
 - **Pro Toolkit Infrastructure - Phase 3 Complete (January 22, 2026)**: Comprehensive settings infrastructure for all pro toolkits
@@ -2161,7 +2219,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Memory-Based Tracking**: Replaced hard toolkit limits with transparent memory usage tracking
   - **Test Coverage**: Comprehensive test suite for all toolkit features
   - **Documentation**: Complete toolkit architecture and implementation guides
-  - See [TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md](docs/TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md)
+  - See [TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md](docs/history/2026/implementations/TOOLKIT_ENHANCEMENT_FINAL_SUMMARY.md)
 
 - **Toolkit Enhancement System - Complete (January 30, 2026)**: Advanced toolkit registry and pattern-based orchestration
   - **12 Toolkit Categories**: Comprehensive taxonomy system with metadata-driven tool discovery
@@ -2170,7 +2228,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **12 Core Classes**: ~10,000 LOC implementing registry, patterns, workflows, and integration layer
   - **Test Coverage**: 79 tests across 5 test files (100% passing)
   - **Documentation**: 150KB+ including technical specs, executive summaries, and visual guides
-  - See [TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md](docs/TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md)
+  - See [TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md](docs/admin-guides/TOOLKIT_ARCHITECTURE_BEFORE_AFTER.md)
 
 ### Repository Organization
 - **Repository Root Cleanup (February 2, 2026)**: Archived historical status files and reorganized structure
@@ -2266,7 +2324,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Result**: Cleaner root directory; implementation history properly organized by year; no information lost; improved maintainability
 
 - **Documentation Consolidation (January 22, 2026)**: Organized and consolidated root-level documentation
-  - **Menu Fixes**: Consolidated 6 menu-related documents into single comprehensive guide at `docs/fixes/menu-fixes/MENU_FIXES_CONSOLIDATED.md`
+  - **Menu Fixes**: Consolidated 6 menu-related documents into single comprehensive guide at `docs/history/2026/fixes/menu-fixes/MENU_FIXES_CONSOLIDATED.md`
     - Removed: `MENU_FIX_SUMMARY.md`, `MENU_REORGANIZATION_SUMMARY.md`, `MENU_STRUCTURE_VISUAL.md`, `REMOTE_SITES_MENU_FIX.md`, `REMOTE_SITES_MENU_FIX_VISUAL.md`, `PR_SUMMARY.md` (temporary)
     - Consolidated: All menu structure fixes, Remote Sites reorganization, visual diagrams, and testing guidelines
   - **Feature Documentation**: Moved `TOOLKIT_MEMORY_TRACKING.md` to `docs/features/` for better organization
@@ -2298,7 +2356,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Documentation**: Complete documentation suite (55.3KB across 6 files) including usage guide, validation results, and workflow examples
   - **PHP Workaround Extension**: Extends core orchestration layer's "persistent-behavior illusion" to enable distributed agent coordination in stateless PHP environment
   - See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/developer/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical documentation
-  - See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview
+  - See [DEEPSEEK-V4-README.md](docs/reference/models/DEEPSEEK-V4-README.md) for documentation suite overview
 
 ### Fixed
 - **Token Manager Save Issue (January 21, 2026)**: Fixed tool settings not persisting despite success messages
@@ -2307,29 +2365,29 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Impact**: All tool limits, multipliers, and model preferences now save correctly
   - **Files Changed**: `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` (61 lines changed)
   - **Testing**: Manual testing verified all settings persist across page reloads
-  - See [docs/fixes/token-manager-save-issue-fix-2026-01-21.md](docs/fixes/token-manager-save-issue-fix-2026-01-21.md)
+  - See [docs/history/2026/fixes/token-manager-save-issue-fix-2026-01-21.md](docs/history/2026/fixes/token-manager-save-issue-fix-2026-01-21.md)
 
 - **Provider Keys Clearing on Tab Navigation (January 20, 2026)**: Fixed API keys being cleared when navigating between admin tabs
   - **Root Cause**: Double-sanitization via WordPress Settings API callback on `update_option()` clearing sensitive data
   - **Solution**: Removed `sanitize_callback` from `register_setting()`; manual sanitization only in save handler
   - **Impact**: Provider configurations persist across tab navigation; no data loss
   - **Files Changed**: `includes/admin/class-wp-mcp-ai-admin-settings.php`
-  - See [docs/fixes/provider-keys-clearing-fix-2026-01-20.md](docs/fixes/provider-keys-clearing-fix-2026-01-20.md)
+  - See [docs/history/2026/fixes/provider-keys-clearing-fix-2026-01-20.md](docs/history/2026/fixes/provider-keys-clearing-fix-2026-01-20.md)
 
 - **Unified Team Transcript Recording (January 18, 2026)**: Fixed transcripts failing to save for unified team chats and individual member chats
   - **Root Causes**: Missing pattern recognition for team member assistant IDs; endpoint validation only accepting integers
   - **Solution**: Updated `extract_profession_id()` to recognize both `profession_XXX` and `team_XXX_member_YYY` patterns; changed REST endpoint to accept string assistant IDs
   - **Impact**: Transcripts save correctly for all team chat types (unified_team_*, team_*_member_*)
   - **Files Changed**: `includes/class-wp-mcp-ai-transcript-manager.php`, REST endpoint registration
-  - See [docs/fixes/unified-team-transcript-recording-fix-2026-01-18.md](docs/fixes/unified-team-transcript-recording-fix-2026-01-18.md)
+  - See [docs/history/2026/fixes/unified-team-transcript-recording-fix-2026-01-18.md](docs/history/2026/fixes/unified-team-transcript-recording-fix-2026-01-18.md)
 
 - **Tool Preset Multiplier Application (January 18, 2026)**: Fixed broken "Apply Preset" button on Token Manager page (PR #2990)
   - **Root Cause**: `get_all_recommendations()` only queried tool registry which returned empty array during preset application
   - **Solution**: Modified method to iterate through `$tool_categories` static property first (200+ tools), then check registry for dynamic tools
   - **Impact**: Preset application now works correctly for Conservative, Balanced, Performance, and Aggressive presets
   - **Files Changed**: `includes/class-wp-mcp-ai-tool-recommendations.php` (refactored into 2 new private helper methods)
-  - **Testing**: Comprehensive manual testing plan in `docs/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md`
-  - **Documentation**: Complete fix details in `docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md`
+  - **Testing**: Comprehensive manual testing plan in `docs/history/2026/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md`
+  - **Documentation**: Complete fix details in `docs/history/2026/fixes/TOOL_PRESET_MULTIPLIER_FIX.md`
   - Broke after PR #2984 which updated tool recommendations system
   - Zero security vulnerabilities introduced, maintains backward compatibility
   - Better code organization and maintainability
@@ -2340,14 +2398,14 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Impact**: Qwen models now work correctly with proper token limits enforced
   - **Files Changed**: `includes/class-wp-mcp-ai-huggingface-client.php`, `includes/class-wp-mcp-ai-model-config.php` (added 4 Qwen models with limits)
   - **Tests**: 5 test cases added to verify the fix
-  - See [docs/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md](docs/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md)
+  - See [docs/history/2026/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md](docs/history/2026/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md)
 
 - **OAuth Redirect URI Mismatch (January 17, 2026)**: Fixed Gmail OAuth failing with `redirect_uri_mismatch` error
   - **Root Cause**: Inconsistent URL construction in OAuth flow (direct query string concatenation vs. WordPress URL helpers)
   - **Solution**: Standardized redirect URI generation using WordPress's `add_query_arg()` instead of direct concatenation
   - **Impact**: OAuth flows now consistent across all WordPress installations (subdirectory, subdomain, custom ports)
   - **Files Changed**: `includes/integrations/class-wp-mcp-ai-oauth-manager.php`, `includes/admin/sections/class-wp-mcp-ai-section-integrations.php`
-  - See [docs/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md](docs/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md)
+  - See [docs/history/2026/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md](docs/history/2026/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md)
 
 - **Model Dropdown in Base + Pro Mode (January 16, 2026)**: Fixed model dropdown failing when both base and pro plugins active
   - **Root Cause**: Script localization lost when multiple metaboxes enqueued same script (two separate plugin instances)
@@ -2355,7 +2413,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Impact**: Model dropdown works in all deployment modes (cloned repo, base+pro separate plugins, base only)
   - **Files Changed**: NEW `includes/admin/class-wp-mcp-ai-admin-scripts.php` (91 lines), updated 3 metabox files
   - **Code Improvement**: Simplified from 54 to 17 lines net reduction through centralization
-  - See [docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md](docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
+  - See [docs/history/2026/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md](docs/history/2026/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
 
 - **Audio Transcription MIME Type (January 11, 2026)**: Fixed transcription button creating video files instead of audio files
   - Added `getSupportedAudioMimeType()` helper function to check browser support
@@ -2437,7 +2495,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Enhanced error handling and observability
   - Public API for delegate access
   - 100% backward compatible
-  - See [INDUSTRY_STANDARDS_ENHANCEMENTS.md](docs/implementation-summaries/INDUSTRY_STANDARDS_ENHANCEMENTS.md)
+  - See [INDUSTRY_STANDARDS_ENHANCEMENTS.md](docs/history/2026/implementation-summaries/INDUSTRY_STANDARDS_ENHANCEMENTS.md)
 
 - **Text Domain Migration - January 6, 2026**: Complete migration from wp-mcp-ai to mcp-ai-wpoos (PR #2635)
   - Updated 12,773 instances across PHP and JavaScript
@@ -2503,8 +2561,8 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Moved 6 remote connection fix files from root to `docs/fixes/`
   - Moved 2 vectorizer implementation summaries from root to `docs/implementation-summaries/`
   - Root directory now contains only 7 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md, readme.txt, tool-status.txt)
-  - Updated `docs/fixes/README.md` with sections for remote connection and vectorizer fixes
-  - Added `docs/implementation-summaries/README.md` to document implementation summaries
+  - Updated `docs/history/2026/fixes/README.md` with sections for remote connection and vectorizer fixes
+  - Added `docs/history/2026/implementation-summaries/README.md` to document implementation summaries
   - Updated all cross-references to point to new file locations
   - Zero information loss during reorganization
 
@@ -2757,7 +2815,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Benefits**: Enhanced security, proper timeout handling, better error reporting, process control
   - Replaced 14 direct `exec()` calls across Pro addon
   - All migrated tools maintain backward compatibility
-  - See `docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md` for migration details
+  - See `docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md` for migration details
 
 #### Settings UI Enhancements (December 8, 2025, PR #2072)
 - **27 New Settings Exposed in Admin UI**: Made previously hidden settings accessible with proper UI organization
@@ -2775,7 +2833,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
     - Auto-generated inbound API key for peer authentication
   - Fixed naming inconsistencies between default settings and UI fields
   - Removed duplicate integration settings from Tools section
-  - See `docs/CODE_REVIEW_2025-12-08.md` for complete details
+  - See `docs/history/2025/code-reviews/CODE_REVIEW_2025-12-08.md` for complete details
 
 ### Changed
 
@@ -2793,28 +2851,28 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - **Note**: The Pro addon contains **38 total tools**, including these 6 exec-based tools plus 32 other Pro tools for social media, Google services, GitHub, WooCommerce, JetEngine, and more
   - **Breaking Change**: Base version users no longer have access to these 6 exec-based tools
   - Pro addon now required for exec-based media processing and WP-CLI tools
-  - See `docs/CODE_REVIEW_2025-12-08.md` for impact analysis
+  - See `docs/history/2025/code-reviews/CODE_REVIEW_2025-12-08.md` for impact analysis
 
 ### Documentation
 - **Documentation Status Updates (December 20, 2025)**: Systematic review and update of documentation completion status
   - Updated 8 major documentation files with accurate completion status
   - Quality scores updated: 95/100 → 98/100 (reflects December 2025 improvements)
   - High-priority gaps: 5 → 1 remaining (4 completed: output escaping, CI/CD gates, test env, integration tests)
-  - Created `docs/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md` - Tracking document for systematic review of 549 documentation files
-  - Updated `docs/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md` - Marked completed work, updated metrics
-  - Updated `docs/ACTION_ITEMS.md` - Security and JavaScript items marked complete
-  - Updated `docs/QUICK_WINS_GAP_FIXES.md` - CI/CD and error documentation sections completed
-  - Updated `docs/PLUGIN_GAP_ANALYSIS.md` - PHP and JavaScript sections marked resolved
-  - Updated `docs/REMAINING_ISSUES.md` - Current code quality score 98/100, ~40 issues remaining (97.5% reduction)
+  - Created `docs/history/2025/documentation/DOCUMENTATION_UPDATE_STATUS_2025-12-20.md` - Tracking document for systematic review of 549 documentation files
+  - Updated `docs/history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md` - Marked completed work, updated metrics
+  - Updated `docs/history/2025/summaries/ACTION_ITEMS.md` - Security and JavaScript items marked complete
+  - Updated `docs/history/2025/summaries/QUICK_WINS_GAP_FIXES.md` - CI/CD and error documentation sections completed
+  - Updated `docs/history/2025/summaries/PLUGIN_GAP_ANALYSIS.md` - PHP and JavaScript sections marked resolved
+  - Updated `docs/history/2025/summaries/REMAINING_ISSUES.md` - Current code quality score 98/100, ~40 issues remaining (97.5% reduction)
   - **Tool Count Correction**: Updated README.md from 71 → 95 core tools (total 109 → 133 tools)
   - Documented completion: Output escaping (66 fixes), CI/CD gates, security scanning (CodeQL), error documentation
 - **Code Review December 8, 2025**: Comprehensive review of recent commits with recommendations
-  - Created `docs/CODE_REVIEW_2025-12-08.md` - Analysis of PR #2073 and PR #2072
+  - Created `docs/history/2025/code-reviews/CODE_REVIEW_2025-12-08.md` - Analysis of PR #2073 and PR #2072
   - Overall grade: A - Excellent code quality, thorough testing
   - Identified documentation updates needed for tool changes and new settings
 - **Comprehensive Documentation Consolidation (December 7, 2025)**: Consolidated ALL bug reports, fixes, code reviews, and session summaries into master documents
-  - Created `docs/CONSOLIDATED_SESSION_SUMMARIES.md` - All development sessions from December 2025, November 2025, and archived sessions
-  - Updated `docs/CONSOLIDATED_BUGS_AND_FIXES.md` - Added output escaping work, site creator fix, December code review
+  - Created `docs/history/2025/summaries/CONSOLIDATED_SESSION_SUMMARIES.md` - All development sessions from December 2025, November 2025, and archived sessions
+  - Updated `docs/history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md` - Added output escaping work, site creator fix, December code review
   - Created `SESSION_SUMMARIES_ARCHIVE_NOTE.md` - Guide to consolidated documentation
   - Updated `docs/DOCUMENTATION_INDEX.md` - Added master documents section with ⭐ highlights
   - Updated `README.md` - Added new Documentation section with links to master documents
@@ -2837,7 +2895,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Dynamically create assistant message when `tool_results` present but no LLM message exists
   - Fixed `handleChatResponse()` to process tool results even when no `choices` array is returned
   - Added `startAsyncToolPolling` helper function to reduce code duplication
-  - See `docs/history/archive/fixes/ASYNC_TOOL_RESULT_FIX.md` for technical details
+  - See `docs/history/archive/2026/fixes/ASYNC_TOOL_RESULT_FIX.md` for technical details
 
 - **Async Tool ID Mismatch Fix (PR #1772)**: Fixed subsequent API failures after async video generation
   - Skip pending async tool results when adding to conversation (will be added on completion)
@@ -2951,7 +3009,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Preserves agentic workflow - no manual re-uploading needed
   - Added 2 comprehensive unit tests (`test_sanitize_messages_processes_input_image_segments` and `test_sanitize_messages_processes_input_file_segments`)
   - Backward compatible with all existing segment types
-  - See `docs/history/archive/fixes/CHAT_CLIENT_ATTACHMENT_FIX.md` for technical details
+  - See `docs/history/archive/2026/fixes/CHAT_CLIENT_ATTACHMENT_FIX.md` for technical details
 
 ### Documentation
 - **Documentation Organization (November 27, 2025)**: Continued documentation cleanup
@@ -2983,11 +3041,11 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - Comprehensive test coverage (21 new unit tests in `tests/test-gemini-file-service-caching.php`)
   - All features follow proper Separation of Concerns (Service layer handles business logic)
   - Reduces API costs and improves performance by avoiding duplicate uploads
-  - **Status**: Phase 2.1 Complete ✅ (see `docs/history/archive/VIDEO_ANALYSIS_ROADMAP.md`)
+  - **Status**: Phase 2.1 Complete ✅ (see `docs/history/archive/2026/VIDEO_ANALYSIS_ROADMAP.md`)
 
 ### Documentation
 - **Documentation Reorganization (November 18, 2025)**: Comprehensive cleanup and consolidation of documentation
-  - Consolidated bug reports into single comprehensive `docs/TESTING_AND_QUALITY_REPORT.md` (753 lines)
+  - Consolidated bug reports into single comprehensive `docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md` (753 lines)
     - Merged BUG_REPORT.md and BUG_REPORT_SUMMARY.md
     - Includes test suite results (2,106 tests, 73.4% pass rate)
     - Code quality analysis (2,120 linting issues categorized)
@@ -3050,7 +3108,7 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
   - JSON-RPC batching support for efficient parallel task processing
   - Multimodal content support (audio data streams)
   - Completions capability for argument autocompletion
-- **Root Security Key**: Optional wp-config.php constant (`WP_MCP_AI_ROOT_SECURITY_KEY`) that can be enabled during emergency shutdown to require authentication before re-initializing the plugin. Includes rate limiting (5 attempts per 5 minutes), automatic lockout (15 minutes), and comprehensive audit logging. Provides additional protection against unauthorized reactivation after security incidents.【F:docs/root-security-key.md†L1-L511】【F:includes/class-wp-mcp-ai-root-security-key.php†L1-L360】
+- **Root Security Key**: Optional wp-config.php constant (`WP_MCP_AI_ROOT_SECURITY_KEY`) that can be enabled during emergency shutdown to require authentication before re-initializing the plugin. Includes rate limiting (5 attempts per 5 minutes), automatic lockout (15 minutes), and comprehensive audit logging. Provides additional protection against unauthorized reactivation after security incidents.【F:docs/features/security/root-security-key.md†L1-L511】【F:includes/class-wp-mcp-ai-root-security-key.php†L1-L360】
 - **Token Usage Management Dashboard**: Admin settings page now displays comprehensive token usage statistics with per-user and global views, breakdown by provider and model, and reset capabilities for administrators
 - **Job Notification System**: Real-time SSE streaming and webhook notifications for async operations
 - **Message Bundling**: Client-side 800ms message bundling to reduce API calls and server load
@@ -3064,13 +3122,13 @@ on April 2, 2026, plus the compliance work from March 24, 2026.
 
 ### Changed
 - **Documentation Updates**: Comprehensive updates to MCP-related documentation files
-  - `docs/mcp-endpoint.md`: Added 2024-11-05 features, implementation status, and upgrade recommendations
-  - `docs/MCP-AND-SSE.md`: Added Streamable HTTP transport info, protocol enhancements, and migration guide
-  - `docs/mcp-server-authentication.md`: Added OAuth 2.1 security enhancements section
+  - `docs/reference/api/mcp-endpoint.md`: Added 2024-11-05 features, implementation status, and upgrade recommendations
+  - `docs/reference/api/MCP-AND-SSE.md`: Added Streamable HTTP transport info, protocol enhancements, and migration guide
+  - `docs/reference/api/mcp-server-authentication.md`: Added OAuth 2.1 security enhancements section
   - `docs/DOCUMENTATION_INDEX.md`: Updated with MCP version and enhanced documentation references
   - `README.md`: Added MCP version badge and enhanced MCP section with 2024-11-05 features
-  - `docs/jetengine-api-compatibility.md`: New comprehensive guide for JetEngine API compatibility
-  - `docs/deployment-troubleshooting.md`: Added JetEngine v3.3+ compatibility troubleshooting
+  - `docs/developer/architecture/integrations/jetengine-api-compatibility.md`: New comprehensive guide for JetEngine API compatibility
+  - `docs/getting-started/installation-setup/deployment-troubleshooting.md`: Added JetEngine v3.3+ compatibility troubleshooting
 - Chat interface now provides visual feedback for message bundling ("Preparing to send…", "Sending…")
 - Token overflow scenarios automatically switch to higher-capacity models (gpt-4o-mini → Gemini 2.0 Flash)
 - SSE endpoint modernized with automatic reconnection, event IDs, and HTTP/2 compatibility

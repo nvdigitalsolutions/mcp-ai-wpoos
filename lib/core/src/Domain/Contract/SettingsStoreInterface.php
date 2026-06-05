@@ -6,14 +6,14 @@
  * tools, and services never depend on WordPress get_option/update_option
  * or any other framework's config system.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Contract;
+namespace Nvoos\Core\Domain\Contract;
 
 interface SettingsStoreInterface {
 

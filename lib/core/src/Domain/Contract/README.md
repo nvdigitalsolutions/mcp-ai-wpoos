@@ -8,7 +8,7 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 
 | | |
 |---|---|
-| **Distribution** | `oos/core` Composer package |
+| **Distribution** | `nvoos/core` Composer package |
 | **PHP target** | 8.1+ (readonly classes, enums, fibers, named arguments) |
 | **Dependencies** | PSR-3, PSR-6, PSR-11, PSR-14, PSR-18 |
 | **Optional dependencies** | none |

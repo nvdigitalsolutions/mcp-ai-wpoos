@@ -82,7 +82,7 @@ host and changes reflect immediately.
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  oos/core (framework-agnostic)                   │
+│  nvoos/core (framework-agnostic)                   │
 │  ┌────────────────────────────────────────────┐  │
 │  │  ChatOrchestrator                           │  │
 │  │  ToolRegistry    ProviderRouter             │  │

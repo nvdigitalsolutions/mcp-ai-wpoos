@@ -2,16 +2,16 @@
 /**
  * Tests for AuthContext entity.
  *
- * @package Oos\Core\Tests
+ * @package Nvoos\Core\Tests
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tests\Unit\Domain\Entity;
+namespace Nvoos\Core\Tests\Unit\Domain\Entity;
 
-use Oos\Core\Domain\Entity\AuthContext;
+use Nvoos\Core\Domain\Entity\AuthContext;
 use PHPUnit\Framework\TestCase;
 
 final class AuthContextTest extends TestCase {

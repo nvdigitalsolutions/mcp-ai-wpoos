@@ -1,10 +1,10 @@
 <?php
-/** @package Oos\Core @since 1.0.0 @license MIT */
+/** @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Application\Skill\SkillRegistry;
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Application\Skill\SkillRegistry;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 class ListSkillsTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SkillRegistry $skills ) {
 		parent::__construct( $e );}

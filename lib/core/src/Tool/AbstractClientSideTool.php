@@ -1,9 +1,9 @@
 <?php
 /** Client-side AI tools base — server-side is parameter validation only.
  *
- * @package Oos\Core @since 1.0.0 @license MIT */
+ * @package Nvoos\Core @since 1.0.0 @license MIT */
 declare(strict_types=1);
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
 abstract class AbstractClientSideTool extends AbstractTool {
 

@@ -4,14 +4,14 @@
  *
  * Carries field-level error details for structured error responses.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Error;
+namespace Nvoos\Core\Domain\Error;
 
 class ValidationException extends \RuntimeException {
 

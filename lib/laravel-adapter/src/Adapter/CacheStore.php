@@ -8,16 +8,16 @@
  * simpler transient-style convenience methods used throughout the
  * oOS core.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\CacheStoreInterface;
+use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Psr\Cache\CacheItemInterface;
 use Illuminate\Support\Facades\Cache;
 
@@ -33,7 +33,7 @@ class CacheStore implements CacheStoreInterface {
 	/**
 	 * Prefix added to all keys to avoid collisions with other cache consumers.
 	 */
-	private const PREFIX = 'oos_cache_';
+	private const PREFIX = 'nvoos_cache_';
 
 	/**
 	 * @param string $storeName  Laravel cache store to use ('redis', 'memcached', etc.).

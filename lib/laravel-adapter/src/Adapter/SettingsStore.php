@@ -8,16 +8,16 @@
  * them. This mirrors the WordPress pattern where file-based defaults
  * are merged with runtime option values.
  *
- * @package Oos\Laravel
+ * @package Nvoos\Laravel
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Laravel\Adapter;
+namespace Nvoos\Laravel\Adapter;
 
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Schema;
 class SettingsStore implements SettingsStoreInterface {
 
 	/**
-	 * The config key prefix for oOS settings (config/oos.php).
+	 * The config key prefix for oOS settings (config/nvoos.php).
 	 */
 	private const CONFIG_KEY = 'oos';
 
@@ -65,9 +65,9 @@ class SettingsStore implements SettingsStoreInterface {
 	private ?array $cached = null;
 
 	/**
-	 * @param string $table  Database table for runtime settings. Defaults to 'oos_settings'.
+	 * @param string $table  Database table for runtime settings. Defaults to 'nvoos_settings'.
 	 */
-	public function __construct( string $table = 'oos_settings' ) {
+	public function __construct( string $table = 'nvoos_settings' ) {
 		$this->table = $table;
 	}
 
@@ -89,7 +89,7 @@ class SettingsStore implements SettingsStoreInterface {
 	/**
 	 * Get all settings as an associative array.
 	 *
-	 * Merges: DEFAULTS → config/oos.php → database overrides.
+	 * Merges: DEFAULTS → config/nvoos.php → database overrides.
 	 *
 	 * @return array<string, mixed>
 	 */

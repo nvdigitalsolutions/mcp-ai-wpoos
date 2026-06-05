@@ -5,17 +5,17 @@
  * Uses SettingsStoreInterface::all() to enumerate all configuration keys
  * and their current values. Framework-agnostic.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Tool;
+namespace Nvoos\Core\Tool;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class ListSettingsTool extends AbstractTool {
 

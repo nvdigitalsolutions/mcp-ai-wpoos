@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.26
+Stable tag: 1.1.27
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -297,6 +297,22 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.1.27 - June 5, 2026 =
+
+Bumped to 1.1.27 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+**Real-Time SSE Streaming, 35 New OOS Core Tools, JFB Submission Fixes, and Model Pricing Update**
+
+* **Real-Time SSE Streaming.** Enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers. "Disable Native Streaming" setting in Advanced → System tab. `wp_mcp_ai_disable_native_streaming` filter. WPCS violations fixed in streaming clients.
+* **35 New OOS Core Tools.** 35 tools migrated with full test coverage: Data Tools (GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays), Format Tools (FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert), Infrastructure (EventDispatcher, Queue), Cache Tools + DeleteSettingTool. OOS/core test infrastructure established.
+* **Extended Cognition Vision Recognition.** Visual product/brand recognition. Camera viewfinder UI with detection overlays, consent gate, camera switcher, torch, scan region, and file upload.
+* **Graphify Tools Fixes.** Missing `WP_MCP_AI_Tool_Default_Capability` trait added. Explicit `get_required_capability()` added to all Graphify tools.
+* **JetFormBuilder Submission Tools — 8 Fixes.** Empty results for non-admin users resolved (direct DB fallback). Form discovery pipeline fixed. PHPCS warnings resolved. REST routes matched to actual JFB endpoints. Form-type auto-detection fixed for JFB vs Elementor. Plugin detection fixed with namespaced class. Integration reference docs added.
+* **DeepSeek Agentic Tool Result Handling.** Tool message filtering and payload normalisation for agentic multi-turn workflows.
+* **Documentation Fixes.** Broken doc links after Unix-theory reorganization resolved.
+* **Model Pricing Update.** All 13 provider pricing updated to June 2026 rates.
+* **Plugin Restructuring Proposals.** Graphify-core spec and base restructuring roadmap added. Proposals updated to v3.0 Graphify-centric architecture.
+
 = 1.1.26 - June 3, 2026 =
 
 Bumped to 1.1.26 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`. Tool counts: ~195 base + ~765 Pro (~960 total; live registry via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
@@ -567,7 +583,7 @@ A new in-the-loop image / document markup system that lets tools pause the agent
 * **Telemetry** — bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
 * **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags.
 * **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
-* **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+* **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/reference/hooks/hooks-reference.md`.
 * **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
 * Reference: `docs/features/markup-subsystem.md`.
 
@@ -623,7 +639,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 *Documentation*
 
 * `docs/features/markup-subsystem.md` (new) walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
-* `docs/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
+* `docs/reference/hooks/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 * `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
 * `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 and reconciled tool counts (~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative).
 
@@ -704,7 +720,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* **`docs/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status table and a note that source-level identifier prefix migration (`wp_mcp_ai_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
+* **`docs/operations/compliance/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status table and a note that source-level identifier prefix migration (`wp_mcp_ai_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
 
 *Version*
 
@@ -773,7 +789,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 
 *Documentation*
 
-* New `docs/ORCHESTRATION_REFERENCE.md` — single authoritative reference for the orchestration layer (all 10 workflow presets, 13 resource presets with full settings matrices, PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service file index)
+* New `docs/reference/orchestration/ORCHESTRATION_REFERENCE.md` — single authoritative reference for the orchestration layer (all 10 workflow presets, 13 resource presets with full settings matrices, PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service file index)
 * Version bumped to 1.1.9 across plugin header, `WP_MCP_AI_VERSION` constant, readme.txt stable tag, and CHANGELOG.md
 
 = 1.1.8 - April 15, 2026 =
@@ -787,7 +803,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 * `erlang_c_concurrency_advisor` — reads plugin session telemetry and returns a data-driven recommendation for the Max Concurrent Sessions setting
 * `erlang_c_staffing_advisor` — multi-channel staffing with chat concurrency multiplier, bot-deflection-rate adjustment, and optional NICE WFM / Genesys / Verint / Calabrio endpoint integration
 * `erlang_c_queue_health` — real-time SLA monitoring: polls a contact-centre REST endpoint, fires `wp_mcp_ai_queue_alert` action on breach, stores snapshots in JetEngine CCT
-* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/hooks-reference.md`
+* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/reference/hooks/hooks-reference.md`
 * Shared helper class `WP_MCP_AI_Erlang_C` with `erlang_c()`, `avg_wait_time()`, `min_agents_for_service_level()`, and `service_level()` static methods
 
 *Documentation*
@@ -795,7 +811,7 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 * `docs/reference/tools/tool-reference.md` fully audited — all 250+ tools in `load_default_tools` (base + extended) now documented
 * 14 new sections added to tool-reference.md: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queuing tools
 * New feature guide `docs/features/erlang-c-staffing-tools.md` with industry standards table, usage scenarios, and helper class API reference
-* `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
+* `docs/reference/hooks/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
 * `docs/QUICK_REFERENCE.md` — updated to v1.1.8 with Erlang C in Recent Updates
 * `docs/DOCUMENTATION_INDEX.md` — added April 15 update block and new feature doc entry
 
@@ -1196,7 +1212,7 @@ Initial release. Welcome to Open Operator System!
 
 **IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. All external services used by this plugin are documented below.
 
-**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
+**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/EXTERNAL_SERVICES.md).
 
 = AI Provider Services (Required - At Least One Must Be Configured) =
 

@@ -4,17 +4,17 @@
  *
  * OpenAI-compatible API via HuggingFace's text-generation-inference endpoint.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Infrastructure\Provider;
+namespace Nvoos\Core\Infrastructure\Provider;
 
-use Oos\Core\Domain\Contract\ErrorFactoryInterface;
-use Oos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class HuggingFaceClient extends OpenAiCompatibleClient {

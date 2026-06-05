@@ -9,12 +9,14 @@
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
-[![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
+[![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.26  
-**Release Date:** 2026-06-03
+**Version:** 1.1.27  
+**Release Date:** 2026-06-05
 
-**Latest Updates:** June 3, 2026 (v1.1.26) — See [§ Latest Updates (v1.1.26 — June 2026)](#-latest-updates-v1126--june-2026) (Cross-Platform Extraction Engine Phases 0–2: framework-agnostic OOS core with 12 AI provider clients, 33 migrated tools, and WordPress bridge. Site-Builder Node-Graph Pipeline Phases 1–4: visual site construction subsystem. SPA a11y Hardening Phase 5: axe-core integration across all addons. Screenshot overhaul: 137 captures, inventory, maintenance plan. Docs reorganization: Unix-theory separation of concerns. Form Submissions data source: JFB + Elementor integration. Cloudways Dashboard SPA v0.1.0. Pro toolkits security audit: 9 HIGH findings fixed. Laravel & Craft CMS adapters for OOS core extraction. Reviewer onboarding documentation suite).
+**Latest Updates:** June 5, 2026 (v1.1.27) — See [§ Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026) (Real-time SSE streaming for OpenAI, DeepSeek, and all OpenAI-compatible providers. 35 new OOS core tools migrated. JetFormBuilder submission tools: 8 fixes for empty results, capability ordering, and form discovery. Extended Cognition vision recognition. Graphify tools capability compliance. DeepSeek agentic tool result handling. Documentation link fixes. June 2026 model pricing update. Plugin restructuring proposals v3.0).
+
+**Previous Updates (v1.1.26):** June 3, 2026 (v1.1.26) — See [§ Latest Updates (v1.1.26 — June 2026)](#-latest-updates-v1126--june-2026) (Cross-Platform Extraction Engine Phases 0–2, Site-Builder Node-Graph Pipeline, SPA a11y Hardening, Screenshot & Docs Overhaul).
 
 **Previous Updates (v1.1.25):** May 31, 2026 (v1.1.25) — See [§ Latest Updates (v1.1.25 — May 2026)](#-latest-updates-v1125--may-2026) (Unified Blueprint System, Cloudways Toolkit, CRM Toolkit Phases A–E, Chat UI enhancements, Unix-theory tool reorg Phase 4–5, Pro Toolkit MCP Server settings, Build infrastructure hardening).
 
@@ -31,7 +33,7 @@
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
 **Patent Status:** Patent Pending (Application #19/410,504)  
-**Documentation:** [Grade A (95/100)](docs/DOCUMENTATION_REVIEW_SUMMARY.md) — 1,617 files across 12 directories, 108 admin screenshots, 100% feature coverage
+**Documentation:** [Grade A (95/100)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md) — 1,617 files across 12 directories, 108 admin screenshots, 100% feature coverage
 
 ## 🔍 For Reviewers & Auditors
 
@@ -49,7 +51,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.26 — June 2026)](#-latest-updates-v1126--june-2026)
+- [🆕 Latest Updates (v1.1.27 — June 2026)](#-latest-updates-v1127--june-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -135,17 +137,17 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.26)
+### ✨ What's New at a Glance (v1.1.27)
 
-- 🔌 **Cross-Platform Extraction Engine (Phases 0–2).** Framework-agnostic OOS core extracted from WordPress: monorepo foundations, 8 domain interfaces with WordPress adapters, 12 AI provider clients, core application layer, AbstractTool base class, SkillRegistry, and 33 migrated tools. `lib/` excluded from plugin builds.
-- 🏗️ **Site-Builder Node-Graph Pipeline (Phases 1–4).** Visual site construction subsystem with node-graph architecture. SPA blueprint v3.0 generated from the pipeline.
-- ♿ **SPA a11y Hardening Phase 5.** axe-core accessibility testing integrated across all SPA addons. Keyboard navigation, ARIA labels, focus management, and screen-reader support hardened.
-- 📸 **Screenshot Overhaul.** 137 automated Playwright screenshots across base + Pro. Screenshot inventory, maintenance plan, and coverage checker.
-- 📁 **Docs Reorganization.** Unix-theory separation of concerns applied to `docs/`. Per-folder READMEs restored across all active doc directories.
-- 📝 **Form Submissions Data Source.** JFB + Elementor integration for AI-powered form submission analysis. Admin dashboard + tests.
-- ☁️ **Cloudways Dashboard SPA v0.1.0.** New React SPA addon for Cloudways server/app management.
-- 🔗 **Laravel & Craft CMS Adapters.** OOS core extraction adapters enabling the framework to run outside WordPress.
-- 🎭 **Blueprint Profession Roles.** 6 missing profession definitions + CRM/healthcare role assignments.
+- ⚡ **Real-Time SSE Streaming.** Real-time streaming enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers. "Disable Native Streaming" control in Settings.
+- 🧰 **35 New OOS Core Tools.** Data tools (GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays), format tools (FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert), infrastructure (EventDispatcher, Queue), and cache management tools.
+- 📸 **Extended Cognition Vision Recognition.** Visual product/brand recognition with camera viewfinder UI, detection overlays, and consent gate.
+- 🔧 **JetFormBuilder Submission Tools — 8 Fixes.** Empty results for non-admin users, form discovery pipeline, PHPCS warnings, REST route matching, form-type auto-detection, and plugin detection all fixed.
+- 🎯 **Graphify Tools Capability Compliance.** Missing trait and explicit `get_required_capability()` added to all Graphify tools.
+- 🤖 **DeepSeek Agentic Tool Handling.** Tool message filtering and payload normalisation for agentic multi-turn workflows.
+- 📝 **Docs Fixes.** Broken links after Unix-theory reorganization resolved.
+- 💰 **June 2026 Model Pricing.** All 13 provider pricing updated.
+- 📋 **Plugin Restructuring Proposals v3.0.** Graphify-centric architecture spec and roadmap.
 - 🛡️ **Pro Toolkits Security Audit.** 9 HIGH-severity security findings fixed.
 - 📋 **Reviewer Onboarding Docs.** Complete reviewer documentation suite (`docs/project/FOR_REVIEWERS.md`).
 - 🐳 **Docker Dev Environments.** WordPress, Laravel, and Craft CMS Docker environments all fixed.
@@ -409,6 +411,23 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 - Supporting services for video and audio processing
 
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
+
+---
+
+## 🆕 Latest Updates (v1.1.27 — June 2026)
+
+### June 4–5, 2026 — Real-Time SSE Streaming, 35 OOS Core Tools, JFB Fixes, and Model Pricing Update ⚡🧰🔧💰
+
+- ✅ **Real-Time SSE Streaming (PRs #5240, #5243, #5244).** Real-time SSE streaming enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers. New "Disable Native Streaming" toggle added to Advanced → System tab with per-site control. `wp_mcp_ai_disable_native_streaming` filter for programmatic override. WPCS violations fixed across all streaming provider clients.
+- ✅ **OOS Core Tool Migration — 35 New Tools (PR #5246).** 35 tools migrated from the OOS core framework with full test coverage and documentation. **Data Tools:** GetPostTaxonomies, CountPosts, GetPostMeta, TruncateText, MergeArrays. **Format Tools:** FormatDate, TimeAgo, ParseCsv, MathEval, ColorConvert. **Infrastructure:** EventDispatcher (5 tools), Queue tools (5 tools, 5 tests). **Cache:** 5 cache-management tools + DeleteSettingTool (6 tests). OOS/core test infrastructure established with 20 migrated base tools.
+- ✅ **Extended Cognition Vision Recognition (PR #5237).** Visual product/brand recognition added to Extended Cognition toolkit. Camera viewfinder UI with real-time detection overlays, consent gate for privacy compliance, camera switcher, torch control, scan region, and file upload support (`addons/pro/includes/ext-cog/`).
+- ✅ **Graphify Tools — Capability Fence Compliance (PRs #5237, #5238).** Added missing `WP_MCP_AI_Tool_Default_Capability` trait to all Graphify tools. Added explicit `get_required_capability()` method to every Graphify tool class for full Capability Fence P2b compliance.
+- ✅ **JetFormBuilder Submission Tools — 8 Fixes (PRs #5244, #5245, #5247, #5248, #5249, #5250, #5251, #5253).** Fixed `get_all_form_submissions` returning empty results — root cause was a field mismatch and capability gate ordering. JFB submissions now correctly return results for non-admin users via a direct DB fallback query. Form discovery pipeline improved with unified fallback for local form detection. JFB REST routes corrected to match actual JetFormBuilder plugin endpoints (`/wp-json/jet-form-builder/v1/`). Form-type auto-detection fixed to correctly distinguish JetFormBuilder vs Elementor submissions. JetFormBuilder plugin detection fixed to use the namespaced class `Jet_Form_Builder\Plugin` and added to the plugin status list. All PHPCS warnings resolved across JFB tool files (trailing commas, unused variables, Yoda conditions). JetFormBuilder integration reference documentation added at `docs/features/integrations/jetformbuilder-integration-guide.md`.
+- ✅ **DeepSeek Agentic Tool Result Handling (PR #5247).** Added tool message filtering and payload normalisation to the DeepSeek AI client to support agentic multi-turn tool-calling workflows. Prevents malformed tool result payloads from breaking subsequent turns.
+- ✅ **Documentation Link Fixes (PR #5239).** Fixed broken internal documentation links across the codebase that were introduced during the Unix-theory `docs/` directory reorganization.
+- 💰 **Model Pricing — June 2026 Update (PR #5256).** Updated model pricing across all 13 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama) to reflect June 2026 rates.
+- 📋 **Plugin Restructuring Proposals v3.0 (PRs #5252, #5255).** Added graphify-core specification and base plugin restructuring roadmap. Restructuring proposals updated to v3.0 Graphify-centric architecture.
+- 📦 **Versioning** — bumped to **1.1.27** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `README.md`. Provider count: **13** first-class language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama). Tool count: ~195 base + ~765 Pro (~960 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
 ---
 
@@ -1229,7 +1248,7 @@ A subsequent hardening pass on May 9, 2026 resolving findings B3, B8, B10, B13, 
 - ✅ **`test_connection()` stderr fix**: Builds b8479+ write `--version` output to stderr; `run_binary()` now has a `$use_stderr_fallback` parameter so the binary is correctly detected.
 - ✅ **Provider diagnostic page**: Now shows the resolved llama-cli binary path and all co-located shared library filenames.
 - ✅ **Re-install button**: New **Re-install llama.cpp Binary** button in embedded provider settings for easy recovery after failed extractions.
-- [Embedded LLM Setup Guide →](addons/embedded/docs/features/ai-providers/embedded/README.md)
+- [Embedded LLM Setup Guide →](addons/embedded/docs/admin-guides/README.md)
 
 ### Embedded Chat Client — SSE Streaming Reliability (March 22–24, 2026) 🔧 **FIXED**
 
@@ -1302,7 +1321,7 @@ All commands share the `WP_MCP_AI_Pro_CLI_Base_Command` base class with assertio
   - **Authors / Editors / Admins** (`edit_posts`+): see **all** members across the site for care-team management.
 - ✅ **Retry button on auth failure**: If the member list fetch fails (e.g. network error or unauthenticated first load outside Telegram), a **Retry** button replaces the infinite "Loading…" spinner so users are never stuck.
 - ✅ `wp_mcp_ai_get_member_id_by_user_id()` updated to return `0` for users above subscriber level so higher-role users always get the full member picker.
-- [Template developer reference →](docs/telegram-mini-app-templates.md)
+- [Template developer reference →](docs/features/telegram-mini-app-templates.md)
 
 ### WordPress.org Compliance — Final Audit Complete (March 3, 2026) ✅ **FULLY COMPLIANT**
 
@@ -1313,7 +1332,7 @@ All commands share the `WP_MCP_AI_Pro_CLI_Base_Command` base class with assertio
 - ✅ **Menu position**: Removed last hardcoded position (85 → null) from Pro Dashboard `add_menu_page()` 
 - ✅ **PR #4004 review**: Telegram Mini App media tab changes confirmed fully compliant (pathinfo() safely cast, JS uses escHtml(), CSS-only layout changes)
 - ✅ **WordPress.org submission status: 100% — READY** (was 82% in January 2026)
-- [Full Compliance Report →](docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md)
+- [Full Compliance Report →](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md)
 
 ### Telegram Mini App: File-Type Extension Badges (March 2, 2026) ⭐ **NEW**
 
@@ -1396,7 +1415,7 @@ All commands share the `WP_MCP_AI_Pro_CLI_Base_Command` base class with assertio
 - ✅ **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer
 - ✅ **Settings**: Two independent toggles for metaboxes and research pages
 - ✅ **Testing**: Comprehensive test suite with 100% passing tests
-- [Complete Integration Guide →](docs/jetengine-integration-guide.md)
+- [Complete Integration Guide →](docs/features/integrations/jetengine-integration-guide.md)
 
 ### Package Pre-Bundling System (February 12, 2026) ⭐ **NEW**
 
@@ -1424,7 +1443,7 @@ NV oOS Pro now pre-bundles critical npm packages in the vendor directory, dramat
 - `addons/pro/scripts/copy-dependencies.js` - Added document generation utility packages
 - `addons/pro/includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php` - Enhanced package detection
 
-[Complete February 2026 Updates →](docs/FEBRUARY_2026_UPDATES.md)
+[Complete February 2026 Updates →](docs/history/2026/implementations/FEBRUARY_2026_UPDATES.md)
 
 ### Product Research Page Fixes (February 10-11, 2026) ⭐ **NEW**
 
@@ -1435,13 +1454,13 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 **1. Admin Hook Detection Fix (Feb 10)**
 - Fixed CSS/JS not loading on Product Consolidate page
 - Corrected hook pattern from CPT to custom menu format
-- [Detailed Documentation →](docs/history/2026/fixes/product-page-admin-hook-detection-fix-2026-02-10.md) | [Summary →](docs/history/archive/2025/fixes/PRODUCT_RESEARCH_FIX_SUMMARY.md)
+- [Detailed Documentation →](docs/history/2026/fixes/product-page-admin-hook-detection-fix-2026-02-10.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_FIX_SUMMARY.md)
 
 **2. Tab System Fix (Feb 11)**
 - Fixed all workflow tabs displaying simultaneously
 - Added defensive inline styles and flexible hook matching
 - Enhanced CSS specificity to prevent overrides
-- [Detailed Documentation →](docs/history/2026/fixes/product-research-tab-system-fix-2026-02-11.md) | [Summary →](docs/history/archive/2025/fixes/PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
+- [Detailed Documentation →](docs/history/2026/fixes/product-research-tab-system-fix-2026-02-11.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
 
 **3. Additional Fixes:**
 - Improved asset enqueuing priority
@@ -1489,7 +1508,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - **Video Production (6)**: `/video-subtitle`, `/video-template`, `/video-analytics`, `/video-merge`, `/video-thumbnail`, `/video-compress`
 - **7 Automated Workflows**: Abandoned cart recovery, multi-platform campaigns, video marketing, inventory management, social planning, video post-production
 - **Test Coverage**: 50+ test methods across 4 test files (100% passing)
-- [Pro Toolkit Slash Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+- [Pro Toolkit Slash Commands →](docs/user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
 
@@ -1536,7 +1555,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **Root now contains only 3 essential files**: README.md, CHANGELOG.md, CONTRIBUTING.md
 - All configuration files remain in root (package.json, composer.json, phpunit.xml.dist, etc.)
 - Supporting documentation organized by type: guides, fixes, features, deployment
-- Complete organization documented in [REPOSITORY_ORGANIZATION.md](docs/REPOSITORY_ORGANIZATION.md)
+- Complete organization documented in [REPOSITORY_ORGANIZATION.md](docs/project/REPOSITORY_ORGANIZATION.md)
 
 **Previous Cleanup (January 30, 2026):**
 - Moved 7 implementation files to `docs/history/2026/january/`
@@ -1713,7 +1732,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - ✅ ~30% faster class loading with authoritative classmap
   - ✅ All distribution packages regenerated
   
-- **Documentation:** [BUILD.md](docs/BUILD.md#troubleshooting) includes troubleshooting section for this error
+- **Documentation:** [BUILD.md](docs/project/releases/BUILD.md#troubleshooting) includes troubleshooting section for this error
 - **Implementation:** Root directory cleaned - 9 planning/implementation docs moved to [`docs/history/2026/january/`](docs/history/2026/january/)
 
 > **Repository Maintenance:** Root now contains only 6 essential markdown files: README, CHANGELOG, CONTRIBUTING, SECURITY, BUILD, and DEPENDENCIES_BUNDLING.
@@ -1729,7 +1748,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - Step-by-step usage instructions
   - Troubleshooting guide and best practices
   
-- **[Quick Reference Card](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md)** - At-a-glance guide
+- **[Quick Reference Card](docs/admin-guides/settings/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md)** - At-a-glance guide
   - Feature summaries and workflows
   - Security checklist and backup strategy
   - Error message reference
@@ -1771,7 +1790,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 > **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](docs/history/2026/ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
 
-> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/history/2026/WEEKLY_SUMMARY_2026-01-06.md) - historical compliance-posture work, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment. For current compliance posture, see `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`.
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/history/2026/WEEKLY_SUMMARY_2026-01-06.md) - historical compliance-posture work, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment. For current compliance posture, see `docs/operations/security/HIPAA_POSTURE.md`, `docs/operations/compliance/03-wp-org-compliance.md`, and `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`.
 
 > **📌 DECEMBER 23, 2025 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
 
@@ -1787,7 +1806,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - [Proposals Status →](docs/project/proposals/PROPOSALS_COMPLETION_STATUS.md)
 
 ### 📅 Weekly Summary (Dec 30 - Jan 6, 2026)
-- **Compliance posture documentation** - historical ISO 27001, SOC 2, and HIPAA framework work landed; current docs avoid unbacked percentage claims and point operators to `docs/HIPAA_POSTURE.md`, `docs/03-wp-org-compliance.md`, and `docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`
+- **Compliance posture documentation** - historical ISO 27001, SOC 2, and HIPAA framework work landed; current docs avoid unbacked percentage claims and point operators to `docs/operations/security/HIPAA_POSTURE.md`, `docs/operations/compliance/03-wp-org-compliance.md`, and `docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`
 - **Pro Dashboard Modernization** - Singleton pattern with industry standards (lazy loading, type-safe constants)
 - **PM Assistant Fixes** - 6 critical modal and chat fixes (rendering, localization, validation, diagnostics)
 - **WordPress 6.7+ Compatibility** - Translation loading timing fixes
@@ -1874,7 +1893,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Language routing & knowledge management
 - 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
-- 🎯 Enhanced Gemini API integration: list models dynamically, count tokens for budget management, create embeddings for RAG/semantic search, and streaming support for real-time responses【F:docs/gemini-api-enhancements.md†L1-L100】
+- 🎯 Enhanced Gemini API integration: list models dynamically, count tokens for budget management, create embeddings for RAG/semantic search, and streaming support for real-time responses【F:docs/reference/api/gemini/gemini-api-enhancements.md†L1-L100】
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
 - 🔎 Perform lightweight web searches (DuckDuckGo or Brave) without leaving the assistant conversation
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
@@ -1904,7 +1923,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🎯 **7 Automated Workflows**: Pre-built workflow templates for abandoned cart recovery, social media campaigns, video marketing, inventory management, and more
 - 🔐 **Security**: Capability-based authorization, rate limiting, comprehensive audit logging
 - 💡 **Integration**: JavaScript autocomplete, REST API endpoint, WP-CLI support
-- [Documentation →](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+- [Documentation →](docs/user-guides/slash-commands/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/user-guides/slash-commands/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
 - 💬 **Chat Channels Toolkit (47 Tools)**: Integrate with 11 platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X, Office 365 (Outlook + OneDrive), iCloud Drive
@@ -1937,9 +1956,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🛰 Assistant directory endpoint that advertises MCP tool/resource capabilities and negotiates Server-Sent Events handshakes for clients such as LM Studio or Claude Desktop.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1772】
 - 📝 Full JSON-RPC 2.0 MCP endpoint (`/mcp`) for standards-compliant remote client communication
 - 🔑 Configurable API credentials and defaults for OpenAI, Gemini, and Anthropic (with subscription tier support for Team/Enterprise plans and custom base URLs)
-- 🤖 ChatGPT’s connector beta currently requires an Auth0 tenant; the plugin’s assistant credentials are compatible with LM Studio, Claude, and other MCP clients that support bearer headers directly.【F:docs/mcp-server-authentication.md†L22-L46】
-- 🌐 **Mesh networking** for distributed compute pooling across multiple WordPress sites. Server-to-server architecture enables anonymous and authenticated users to benefit from shared AI resources, budget pooling, and workload distribution across 100+ trusted peer sites. Backend assistants coordinate mesh operations via secure inter-site keys while maintaining user attribution and audit trails for compliance.【F:docs/mesh-compute-pooling.md†L1-L615】【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】
-- 🔗 **Federation & Discovery** - Decentralized AI capability network allowing WordPress sites to publish their capabilities via well-known endpoints (`/.well-known/ai-peer`) and discover peer sites through directory services. Supports peer registration, health verification, search & ranking by capability/region/policy, and automatic cron-based health monitoring. Enable federation to join the network or run your own directory service for private peer discovery.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
+- 🤖 ChatGPT’s connector beta currently requires an Auth0 tenant; the plugin’s assistant credentials are compatible with LM Studio, Claude, and other MCP clients that support bearer headers directly.【F:docs/reference/api/mcp-server-authentication.md†L22-L46】
+- 🌐 **Mesh networking** for distributed compute pooling across multiple WordPress sites. Server-to-server architecture enables anonymous and authenticated users to benefit from shared AI resources, budget pooling, and workload distribution across 100+ trusted peer sites. Backend assistants coordinate mesh operations via secure inter-site keys while maintaining user attribution and audit trails for compliance.【F:docs/features/federation/mesh-compute-pooling.md†L1-L615】【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】
+- 🔗 **Federation & Discovery** - Decentralized AI capability network allowing WordPress sites to publish their capabilities via well-known endpoints (`/.well-known/ai-peer`) and discover peer sites through directory services. Supports peer registration, health verification, search & ranking by capability/region/policy, and automatic cron-based health monitoring. Enable federation to join the network or run your own directory service for private peer discovery.【F:docs/features/federation/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
@@ -1947,13 +1966,13 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
 
 ### Performance & reliability
-- ⚡ Client-side message bundling (800ms window) to reduce API calls and server load【F:docs/message-bundling-feature.md†L1-L80】
-- 🎯 Intelligent token overflow handling with automatic model switching (gpt-4.1-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
-- 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/ENABLE-SSE-STREAMING.md†L1-L100】
-- 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
+- ⚡ Client-side message bundling (800ms window) to reduce API calls and server load【F:docs/user-guides/chat/message-bundling-feature.md†L1-L80】
+- 🎯 Intelligent token overflow handling with automatic model switching (gpt-4.1-mini → Gemini 2.0 Flash)【F:docs/features/tools/presets/high-token-tool-handling.md†L1-L80】
+- 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/features/streaming/ENABLE-SSE-STREAMING.md†L1-L100】
+- 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/features/async-jobs/job-notification-system.md†L1-L100】
 - 🔧 **Symfony Process Component** - Modern process execution framework replacing direct `exec()` calls in Pro addon tools for enhanced security, timeout management, and error handling【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
-- 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
+- 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/user-guides/chat/chat-history-persistence.md†L1-L50】
 - ⚙️ **Optimized settings page** with external CSS stylesheet (240 lines added to admin-settings.css) and request-level caching for improved admin performance【F:assets/css/admin-settings.css†L1-L984】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L27-L32】
 
 ### Settings Management ⭐ **NEW**
@@ -1968,7 +1987,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🛡️ **Data Protection** - 3-layer protection (section filtering, merge strategy, sensitive key filtering) prevents accidental data loss when saving from tabs/subtabs【F:docs/admin-guides/settings-management.md†L230-L280】
 - 📖 **Pro Toolkits** - Enable and configure 8 specialized Pro toolkits (650+ tools) including Project Management, Document Generation, Health & Wellness, CRE Debt & Securitization, and more【F:docs/admin-guides/pro-settings-toolkits.md†L1-L650】
 
-➡️ **Complete Documentation:** [Settings Management Guide](docs/admin-guides/settings-management.md) | [Quick Reference](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/admin-guides/pro-settings-toolkits.md)
+➡️ **Complete Documentation:** [Settings Management Guide](docs/admin-guides/settings-management.md) | [Quick Reference](docs/admin-guides/settings/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/admin-guides/pro-settings-toolkits.md)
 
 ## 🧠 Memory & Tool Stack Overview
 
@@ -2135,7 +2154,7 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Probe Assistant Chat | `probe_chat` | Issues a chat probe against a published assistant to confirm sanitisation, configuration, and REST handling without consuming model tokens.【F:includes/tools/class-wp-mcp-ai-tool-probe-chat.php†L12-L178】|
 | Probe Remote MCP REST | `probe_remote_mcp` | Reuses the remote connectivity tester to exercise `/assistants` and `/chat` on another site with optional bearer, guest, or nonce credentials.【F:includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php†L12-L164】|
 | **Mesh Networking** | | **Distributed compute pooling across WordPress sites** |
-| Query Remote Site | `query_remote_site` | Executes chat requests on peer WordPress sites in a mesh network. Requires `manage_options` capability and mesh networking to be enabled. Coordinates server-to-server compute pooling with secure inter-site key authentication, enabling distributed AI workloads across trusted peers while maintaining user attribution and audit trails. Backend assistants use this tool to fan out work across the mesh on behalf of anonymous or authenticated users.【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】【F:docs/mesh-compute-pooling.md†L1-L615】|
+| Query Remote Site | `query_remote_site` | Executes chat requests on peer WordPress sites in a mesh network. Requires `manage_options` capability and mesh networking to be enabled. Coordinates server-to-server compute pooling with secure inter-site key authentication, enabling distributed AI workloads across trusted peers while maintaining user attribution and audit trails. Backend assistants use this tool to fan out work across the mesh on behalf of anonymous or authenticated users.【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】【F:docs/features/federation/mesh-compute-pooling.md†L1-L615】|
 | Query Mesh (Intelligent Routing) | `query_mesh_intelligent` | Send a prompt to the mesh network with AI-powered peer selection and automatic failover. The system intelligently routes requests to the optimal peer site based on current load, response times, and task complexity. Provides resilient distributed compute with automatic retry logic.【F:includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php†L1-L300】|
 | **Provider Dashboards** | | |
 | Open OpenAI Logs | `open_openai_logs` | Returns dashboard shortcuts for reviewing OpenAI request logs in the provider console.【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】|
@@ -2174,7 +2193,7 @@ Jobs are automatically pruned when they complete (single-run) or are manually re
 
 Each tool inherits the assistant context and authenticated user from the REST layer, making it easy to layer custom permissions or extend behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
 
-Need per-tool prerequisites or capability callouts? Consult [`docs/tool-reference.md`](docs/reference/tools/tool-reference.md) for a detailed matrix of every bundled integration.
+Need per-tool prerequisites or capability callouts? Consult [`docs/reference/tools/tool-reference.md`](docs/reference/tools/tool-reference.md) for a detailed matrix of every bundled integration.
 
 ### Tool Status Labels
 
@@ -2253,7 +2272,7 @@ Without JetEngine, chat conversations are **only stored in browser localStorage*
 - ⚠️ No cross-device synchronization
 - ⚠️ Lost if browser data is cleared
 
-See [docs/chat-history-persistence.md](docs/user-guides/chat/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
+See [docs/user-guides/chat/chat-history-persistence.md](docs/user-guides/chat/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
 
 ---
 
@@ -2694,7 +2713,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Connect Gmail** under **Settings → NV oOS → Tools → Connections → Gmail** to enable Gmail search tools with OAuth 2.0. See [Google OAuth Setup Guide](docs/getting-started/installation-setup/google-oauth-setup.md) for complete configuration steps.
 - [ ] **Connect QuickBooks Online** under **Settings → NV oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → NV oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
-- [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
+- [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/features/federation/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/features/security/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/operations/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
@@ -2786,7 +2805,7 @@ The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships wi
 
 From the ChatKit dashboard configure the **NV oOS** integration and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:mcp-ai-wpoos.php†L25-L72】
 
-Consult [`docs/chatkit-integration.md`](docs/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
+Consult [`docs/developer/integration/chatkit-integration.md`](docs/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
 ## 🌐 Crawl4AI Integration
 
@@ -2798,7 +2817,7 @@ Supplying a Crawl4AI base URL (and optional API key) switches the tool back to p
 
 ## 📡 Job Notification System
 
-NV oOS includes a general-purpose infrastructure for real-time notifications on async WordPress jobs, providing SSE streaming and webhook support for external integrations.【F:docs/job-notification-system.md†L1-L100】
+NV oOS includes a general-purpose infrastructure for real-time notifications on async WordPress jobs, providing SSE streaming and webhook support for external integrations.【F:docs/features/async-jobs/job-notification-system.md†L1-L100】
 
 ### Architecture
 
@@ -2847,7 +2866,7 @@ WP_MCP_AI_Job_Notifier::register_webhook(
 );
 ```
 
-➡️ See [docs/job-notification-system.md](docs/features/async-jobs/job-notification-system.md) for complete implementation details.
+➡️ See [docs/features/async-jobs/job-notification-system.md](docs/features/async-jobs/job-notification-system.md) for complete implementation details.
 
 ## 🧊 Elementor Widgets
 
@@ -2942,7 +2961,7 @@ Administrators can override the default image and file MIME allowlists used by t
 
 ## ⚡ Message Bundling
 
-NV oOS implements client-side message bundling to optimize API usage and reduce server load. When enabled, messages sent within an 800ms window are automatically grouped into a single API request, reducing costs and improving performance for users who send multiple messages in quick succession.【F:docs/message-bundling-feature.md†L1-L80】
+NV oOS implements client-side message bundling to optimize API usage and reduce server load. When enabled, messages sent within an 800ms window are automatically grouped into a single API request, reducing costs and improving performance for users who send multiple messages in quick succession.【F:docs/user-guides/chat/message-bundling-feature.md†L1-L80】
 
 ### How It Works
 
@@ -2971,11 +2990,11 @@ Message bundling is enabled by default and requires no configuration. To disable
 window.wpMcpAiChatDebugMode = true;
 ```
 
-➡️ See [docs/message-bundling-feature.md](docs/user-guides/chat/message-bundling-feature.md) for configuration options and implementation details.
+➡️ See [docs/user-guides/chat/message-bundling-feature.md](docs/user-guides/chat/message-bundling-feature.md) for configuration options and implementation details.
 
 ## 🎯 Agentic Loop Token Management
 
-NV oOS includes intelligent handling for tools that return large responses, preventing token overflow errors during agentic loops (where the AI automatically calls multiple tools).【F:docs/high-token-tool-handling.md†L1-L80】
+NV oOS includes intelligent handling for tools that return large responses, preventing token overflow errors during agentic loops (where the AI automatically calls multiple tools).【F:docs/features/tools/presets/high-token-tool-handling.md†L1-L80】
 
 ### The Problem
 
@@ -3009,19 +3028,19 @@ Automatic model switching is enabled by default. Configure fallback model under 
 'fallback_model' => 'gemini-2.0-flash-exp'
 ```
 
-➡️ See [docs/high-token-tool-handling.md](docs/features/tools/presets/high-token-tool-handling.md) for complete technical details and examples.
+➡️ See [docs/features/tools/presets/high-token-tool-handling.md](docs/features/tools/presets/high-token-tool-handling.md) for complete technical details and examples.
 
 ## 🔄 Chat Performance Optimizations
 
 NV oOS includes several performance optimizations to enhance the chat experience:
 
 - **Message bundling** - Reduces API calls by grouping rapid user inputs
-- **Token budget management** - Prevents API limit overruns with safety margins【F:docs/tpm-limit-validation.md†L1-L50】
-- **Chat history persistence** - LocalStorage (24h) + optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
+- **Token budget management** - Prevents API limit overruns with safety margins【F:docs/features/performance/tpm-limit-validation.md†L1-L50】
+- **Chat history persistence** - LocalStorage (24h) + optional JetEngine CCT storage【F:docs/user-guides/chat/chat-history-persistence.md†L1-L50】
 - **Automatic model switching** - Seamlessly handles token overflow scenarios
-- **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/rate-limit-protection.md†L1-L50】
+- **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/features/performance/rate-limit-protection.md†L1-L50】
 
-➡️ See [docs/chat-performance-optimizations.md](docs/features/chat/chat-performance-optimizations.md) for detailed performance tuning guide.
+➡️ See [docs/features/chat/chat-performance-optimizations.md](docs/features/chat/chat-performance-optimizations.md) for detailed performance tuning guide.
 
 ## 🌐 Mesh Compute Routing
 
@@ -3054,8 +3073,8 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 - Automatic load balancing across peer sites
 - Cross-server compute pooling for Cloudways, SiteGround, etc.
 
-➡️ See [docs/mesh-routing-guide.md](docs/features/federation/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
-➡️ See [docs/mesh-compute-pooling.md](docs/features/federation/mesh-compute-pooling.md) for architecture and authentication details.
+➡️ See [docs/features/federation/mesh-routing-guide.md](docs/features/federation/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
+➡️ See [docs/features/federation/mesh-compute-pooling.md](docs/features/federation/mesh-compute-pooling.md) for architecture and authentication details.
 
 ## 🔗 Federation & Discovery System
 
@@ -3132,18 +3151,18 @@ The Federation & Discovery system provides three deployment modes:
 - **QPS Limit**: Queries per second (default: 5)
 - **Burst Capacity**: Simultaneous requests (default: 10)
 
-➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/features/federation/federation-discovery.md)
+➡️ **Complete Documentation:** [docs/features/federation/federation-discovery.md](docs/features/federation/federation-discovery.md)
 ➡️ **Implementation Summary:** FEDERATION-IMPLEMENTATION-SUMMARY.md
 
 ## 🕵️ Code Review
 
 The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds. These findings have been consolidated into the master code review document. One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.
 
-➡️ See [docs/CODE-REVIEW-MASTER.md](docs/developer/best-practices/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
+➡️ See [docs/developer/best-practices/CODE-REVIEW-MASTER.md](docs/developer/best-practices/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
 
 ## 🔒 MCP Server Authentication
 
-Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → NV oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/getting-started/installation-setup/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
+Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → NV oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/reference/api/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/getting-started/installation-setup/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
 
 ### Using NV oOS as an MCP server
 
@@ -3339,7 +3358,7 @@ For complete documentation, see [Token Management Guide](docs/features/performan
 ---
 
 ## 🤖 ChatGPT Connector
-OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because NV oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】
+OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because NV oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/reference/api/mcp-server-authentication.md†L22-L46】
 
 ## 🛰 REST API Endpoints
 
@@ -3350,7 +3369,7 @@ All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/
 - **`POST /chat`** – Normalises structured `messages`, injects assistant defaults, auto-enables the Submit Document Prompt tool when uploads are present, and forwards the request through the language model router. Responses include the assistant ID and the raw provider payload so clients can stream or render messages as needed.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1095】
 - **`POST /tools`** – Executes a specific registered tool outside of a chat turn. The endpoint enforces assistant tool allowlists, scopes credential-based requests to the issuing assistant, merges assistant defaults (such as external action identifiers), and returns the tool result with execution metadata.【F:includes/class-wp-mcp-ai-rest.php†L264-L322】【F:includes/class-wp-mcp-ai-rest.php†L1162-L1321】
 
-See [docs/rest-api.md](docs/reference/api/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
+See [docs/reference/api/rest-api.md](docs/reference/api/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
 
 ## 🌊 SSE Streaming Support
 
@@ -3484,7 +3503,7 @@ For complete SSE implementation details, configuration options, and troubleshoot
 
 ## 📝 MCP JSON-RPC 2.0 Endpoint
 
-NV oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
+NV oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/reference/api/mcp-endpoint.md†L1-L80】
 
 **MCP Version:** 2024-11-05  
 **Compliance:** Full MCP 2024-11-05 — all 11 protocol methods, OAuth 2.1, Streamable HTTP, JSON-RPC batching, tool annotations, session management
@@ -3826,7 +3845,7 @@ Test assistants, professions, and teams directly from the WordPress admin **befo
 
 **Documentation:**
 - [Test Assistant Feature Enhancements](docs/user-guides/assistants/test-assistant-enhancements.md) - Complete testing capabilities guide
-- [Dynamic Assistant Creation System](docs/history/archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
+- [Dynamic Assistant Creation System](docs/history/archive/2026/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md) - Visual guide to profession and team architecture
 
 ### Custom Professions & Teams
 
@@ -3951,7 +3970,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ### NPM Dependencies & Bundling
 
-For details on how NPM dependencies are managed and bundled for both the base plugin and Pro addon, see [DEPENDENCIES_BUNDLING.md](docs/DEPENDENCIES_BUNDLING.md).
+For details on how NPM dependencies are managed and bundled for both the base plugin and Pro addon, see [DEPENDENCIES_BUNDLING.md](docs/project/releases/DEPENDENCIES_BUNDLING.md).
 
 **Quick Reference:**
 - Base plugin dependencies: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`, `chart.js`, `@neplex/vectorizer`, `@langchain/*`, `@mlc-ai/web-llm`
@@ -4129,7 +4148,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 ## 🛰 JetEngine REST API Reference
 
-- 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/reference/api/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
+- 📄 Review the full endpoint catalogue in [`docs/reference/api/jet-engine-rest-routes.md`](docs/reference/api/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
 - 🤖 When JetEngine is active, assistants can invoke the **List JetEngine REST Routes** tool to retrieve the same metadata directly inside a conversation (requires a user with the `manage_options` capability).
 
 ---
@@ -4422,7 +4441,7 @@ Comprehensive documentation is available:
 - **[CONSOLIDATION_MAP.md](docs/history/2025/summaries/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
 - **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index (535+ files)
 - **[CODE-REVIEW-MASTER.md](docs/developer/best-practices/CODE-REVIEW-MASTER.md)** - Master code review (98/100)
-- **[TESTING_AND_QUALITY_REPORT.md](docs/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
+- **[TESTING_AND_QUALITY_REPORT.md](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Testing & quality analysis
 
 **For Historical Reference:**
 - [CONSOLIDATED_BUGS_AND_FIXES.md](docs/history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md) - All bugs and fixes (superseded by MASTER_CONSOLIDATION_2025.md)

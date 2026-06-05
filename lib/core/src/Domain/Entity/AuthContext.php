@@ -5,14 +5,14 @@
  * Returned by AuthProviderInterface::authenticate() to represent
  * the resolved identity and scope of a request.
  *
- * @package Oos\Core
+ * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
  */
 
 declare(strict_types=1);
 
-namespace Oos\Core\Domain\Entity;
+namespace Nvoos\Core\Domain\Entity;
 
 final readonly class AuthContext implements \JsonSerializable {
 
