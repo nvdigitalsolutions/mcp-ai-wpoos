@@ -53,3 +53,4 @@ $response = $orchestrator->handleChat($messages, $options);
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
