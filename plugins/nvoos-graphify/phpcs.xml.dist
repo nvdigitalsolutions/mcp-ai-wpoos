@@ -2,6 +2,9 @@
 <ruleset name="NV oOS Graphify">
     <description>WordPress Coding Standards for NV oOS Graphify</description>
 
+    <config name="text_domain" value="nvoos-graphify"/>
+    <config name="minimum_wp_version" value="6.5"/>
+
     <file>src/</file>
     <file>tests/</file>
     <file>nvoos-graphify.php</file>
@@ -18,6 +21,7 @@
     <!--
         PSR-4 architecture exemptions.
         This plugin uses PascalCase filenames, camelCase methods/variables,
+        namespace-level docblocks instead of file-level @package,
         and namespaced classes without a global function prefix.
     -->
     <rule ref="WordPress.Files.FileName">
@@ -32,10 +36,23 @@
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <severity>0</severity>
     </rule>
+    <rule ref="Squiz.Commenting.FileComment.Missing">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Generic.Commenting.DocComment.MissingShort">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Tool interfaces are documented in Contracts/; concrete tool methods
+        don't need redundant docblocks.
+    -->
+    <rule ref="Squiz.Commenting.FunctionComment.Missing">
+        <exclude-pattern>*/src/Tools/*</exclude-pattern>
+    </rule>
 
     <!--
         Graph engine exemptions.
-        The Graph namespace contains the data access layer.
         Direct database calls are intentional for custom table queries.
     -->
     <rule ref="WordPress.DB.PreparedSQL.InterpolatedNotPrepared">
@@ -43,6 +60,8 @@
     </rule>
     <rule ref="WordPress.DB.DirectDatabaseQuery">
         <exclude-pattern>*/src/Graph/*</exclude-pattern>
+        <exclude-pattern>*/src/Tools/ResolveExternal.php</exclude-pattern>
+        <exclude-pattern>*/src/Admin/RemoteAdmin.php</exclude-pattern>
     </rule>
 
     <!--
@@ -53,14 +72,22 @@
     </rule>
 
     <!--
-        Reserved keyword parameter names (e.g. $default, $class)
-        are idiomatic in PHP 8.1+ code.
+        Reserved keyword parameter names ($default, $class) are idiomatic in PHP 8.1+.
     -->
     <rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
         <severity>0</severity>
     </rule>
 
-    <config name="minimum_wp_version" value="6.5"/>
+    <!--
+        Test exemptions: global override and Yoda conditions are standard PHPUnit patterns.
+    -->
+    <rule ref="WordPress.WP.GlobalVariablesOverride">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.YodaConditions">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
     <arg name="colors"/>
     <arg value="ps"/>
 </ruleset>

@@ -19,6 +19,11 @@ class DbTest extends TestCase {
 	/** @var \wpdb&\PHPUnit\Framework\MockObject\MockObject */
 	private $mockWpdb;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -28,6 +33,11 @@ class DbTest extends TestCase {
 		$GLOBALS['wpdb']        = $this->mockWpdb;
 	}
 
+	/**
+	 * Tear down test fixtures.
+	 *
+	 * @return void
+	 */
 	protected function tearDown(): void {
 		unset( $GLOBALS['wpdb'] );
 		parent::tearDown();

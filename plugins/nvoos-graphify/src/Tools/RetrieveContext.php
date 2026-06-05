@@ -220,6 +220,7 @@ class RetrieveContext extends AbstractTool {
 	 */
 	private function buildContextText( $question, array $nodes, array $edges ) {
 		if ( empty( $nodes ) ) {
+			/* translators: %s: the question text */
 			return sprintf( __( 'No knowledge graph context found for: %s', 'nvoos-graphify' ), $question );
 		}
 

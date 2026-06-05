@@ -100,17 +100,19 @@ class ShortestPath extends AbstractTool {
 		if ( ! $start_node ) {
 			return array(
 				'success' => false,
+				/* translators: %s: node label that was not found */
 				'error'   => sprintf( __( 'Start node "%s" not found.', 'nvoos-graphify' ), $start_label ),
 			);
 		}
 		if ( ! $end_node ) {
 			return array(
 				'success' => false,
+				/* translators: %s: node label that was not found */
 				'error'   => sprintf( __( 'End node "%s" not found.', 'nvoos-graphify' ), $end_label ),
 			);
 		}
 
-		$path_ids = Analyzer::shortestPath( $start_node->node_id, $end_node->node_id, $max_depth );
+			$path_ids = Analyzer::shortestPath( $start_node->node_id, $end_node->node_id, $max_depth );
 
 		if ( null === $path_ids ) {
 			return array(
@@ -118,6 +120,7 @@ class ShortestPath extends AbstractTool {
 				'start'   => $start_node->label,
 				'end'     => $end_node->label,
 				'error'   => sprintf(
+					/* translators: 1: start label, 2: end label, 3: depth limit */
 					__( 'No path found between "%1$s" and "%2$s" within depth %3$d.', 'nvoos-graphify' ),
 					$start_node->label,
 					$end_node->label,
