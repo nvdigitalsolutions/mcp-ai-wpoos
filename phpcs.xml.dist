@@ -48,6 +48,10 @@
      variable names intentionally follow the upstream OOS\Core\* convention. -->
 <exclude-pattern>*/includes/bootstrap/oos-bridge.php</exclude-pattern>
 
+<!-- NV oOS Graphify is a standalone plugin with its own PSR-4 architecture
+     and phpcs.xml.dist. Exclude it from the base plugin's WPCS scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify/**</exclude-pattern>
+
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 <!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix
