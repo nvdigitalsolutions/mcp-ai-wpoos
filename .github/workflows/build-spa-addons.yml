@@ -125,9 +125,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # Don't cancel other addons if one fails
-
-    matrix:
-      addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
+      matrix:
+        addon: ${{ fromJSON(needs.matrix-prep.outputs.addons) }}
 
     steps:
       - name: Checkout repository
