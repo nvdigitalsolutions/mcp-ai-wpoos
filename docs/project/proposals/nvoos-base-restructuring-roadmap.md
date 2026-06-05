@@ -1,8 +1,12 @@
 # NV oOS — Graphify-Centric Restructuring Roadmap
 
-> **Version**: 3.0.0-draft | **Status**: Proposal
+> **Version**: 3.0.0 | **Status**: Phase 0 Complete — In Progress (Phases 1-5 remain)
 >
-> This document is the **complete, phased restructuring roadmap** for transforming the NV oOS monolith into a Graphify-centric ecosystem where **`nvoos-graphify` (the knowledge graph product) absorbs the current addon code and becomes the base plugin**, and everything else (AI chat, tools, providers, features, integrations) extends it as truly optional addons. The core product works on day 1 with **zero API keys**.
+> **Last updated**: 2026-06-06
+>
+> This document is the **complete, phased restructuring roadmap** for transforming the NV oOS monolith into a Graphify-centric ecosystem where **`nvoos-graphify` (the knowledge graph product) is a standalone PSR-4 plugin that works with zero API keys**, and everything else (AI chat, tools, providers, features, integrations) extends it as truly optional addons.
+>
+> **Phase 0 (Core Product) is COMPLETE** as of 2026-06-05. The standalone `plugins/nvoos-graphify/` plugin ships with PSR-4 architecture, 14 built-in tools, 13 REST endpoints, Cytoscape.js explorer, 6 export formats, Schema.org injection, and 7 remote source drivers. See [§2.5 Phase 0 Completion Report](#25-phase-0-completion-report) for details.
 
 ---
 
@@ -10,13 +14,14 @@
 
 1. [Why This Architecture](#1-why-this-architecture)
 2. [Current State Analysis](#2-current-state-analysis)
-3. [Target Architecture](#3-target-architecture)
-4. [The Core Product: `nvoos-graphify`](#4-the-core-product-nvoos-graphify)
-5. [What Moves to Addons](#5-what-moves-to-addons)
-6. [Phased Execution Plan](#6-phased-execution-plan)
-7. [Backward Compatibility Strategy](#7-backward-compatibility-strategy)
-8. [Risk Assessment](#8-risk-assessment)
-9. [Success Metrics](#9-success-metrics)
+3. [Phase 0 Completion Report](#25-phase-0-completion-report) ← **NEW**
+4. [Target Architecture](#3-target-architecture)
+5. [The Core Product: `nvoos-graphify`](#4-the-core-product-nvoos-graphify)
+6. [What Moves to Addons](#5-what-moves-to-addons)
+7. [Phased Execution Plan](#6-phased-execution-plan)
+8. [Backward Compatibility Strategy](#7-backward-compatibility-strategy)
+9. [Risk Assessment](#8-risk-assessment)
+10. [Success Metrics](#9-success-metrics)
 
 ---
 
@@ -124,6 +129,66 @@ The existing `addons/graphify/` depends on the base plugin for only 3 things:
 | `wp_mcp_ai_chat_completion()` | AI chat completion | AI chat addon handles this |
 
 **That's it.** Graphify's core functionality (building graphs, Cytoscape.js visualization, content gap analysis, 5 export formats, 7 remote source drivers, Schema.org injection) uses **zero** base plugin dependencies. The AI functions are only used by the optional memory bridge, which can be adapted to use provider addons.
+
+---
+
+## 2.5 Phase 0 Completion Report
+
+> **Completed**: 2026-06-05 | **Branch**: `feature/nvoos-graphify-core-buildout` → merged to `alpha-working`
+>
+> Phase 0 produced a complete, standalone, PSR-4 WordPress plugin at `plugins/nvoos-graphify/`. The implementation took a **from-scratch rebuild** approach rather than absorbing/renaming the legacy `addons/graphify/` addon, resulting in a cleaner, modern codebase with no legacy entanglement.
+
+### What was built (9 sub-phases — all complete)
+
+| Sub-phase | Status | Key Deliverables |
+|---|---|---|
+| **Phase 1 — Foundation** | ✅ Done | `Contracts/Tool.php`, `Contracts/RemoteSource.php`, `Schema.php` (centralized constants), `Settings.php` (single-option accessor), `ToolRegistry.php`, `Plugin.php` (composition root) |
+| **Phase 2 — Graph Engine** | ✅ Done | `Graph/Db.php` (5 custom tables via `dbDelta`), `Graph/StructuralExtractor.php`, `Graph/Builder.php`, `Graph/Detector.php`, `Graph/SemanticExtractor.php` |
+| **Phase 3 — Graph Features** | ✅ Done | `Graph/Analyzer.php` (Louvain community detection, god nodes, stats), `Graph/Exporter.php` (6 formats: JSON, GraphML, CSV, Neo4j, Obsidian, HTML), `Graph/Report.php` (content gaps, orphans) |
+| **Phase 4 — Tools** | ✅ Done | 14 built-in tools extending `AbstractTool`: GetNode, QueryGraph, GetNeighbors, BuildGraph, GraphStats, ShortestPath, ContentGaps, GodNodes, SuggestLinks, RetrieveContext, ResolveExternal, ListRemoteSources, SyncRemoteSource, GetCommunity |
+| **Phase 5 — REST + Admin** | ✅ Done | `Rest/Controller.php` (13 endpoints at `nvoos-graphify/v1`, proper capability checks), `Admin/SettingsPage.php` (tabbed UI), `Admin/GraphExplorer.php` (Cytoscape.js), `Admin/RemoteAdmin.php` |
+| **Phase 6 — Frontend** | ✅ Done | `Frontend/Shortcode.php` (`[nvoos_graph]`), `Frontend/Block.php` (Gutenberg), `Frontend/SchemaOrg.php` (JSON-LD), `Frontend/RelatedContent.php` |
+| **Phase 7 — Remote Sources** | ✅ Done | `Remote/Registry.php`, `Remote/HttpClient.php`, `Remote/Crypto.php`, `Remote/Enricher.php`, `Remote/StateStore.php`, 7 free drivers: Wikidata, GenericRest, RssSitemap, Sparql, WooCommerce, Csv, Webhook |
+| **Phase 8 — Memory Bridge** | ✅ Done | `Memory/Bridge.php`, `Memory/EmbeddingsOnIngest.php`, `Memory/Embeddings.php` — agent memory bridge + vector embeddings |
+| **Phase 9 — Release Prep** | ✅ Done | `readme.txt` (wp.org format with screenshots), `CHANGELOG.md`, `phpcs.xml.dist`, `.distignore`, `composer.json` with full dev tooling, `uninstall.php` |
+
+### Architecture highlights
+
+- **PSR-4 autoloading**: `NvoosGraphify\` namespace → `src/` directory, with `spl_autoload_register` fallback (no Composer required at runtime)
+- **Singleton composition root**: `Plugin.php` wires 9 subsystems via `register()`
+- **Contract-first**: `Tool` interface (7 methods) and `RemoteSource` interface
+- **Centralized constants**: `Schema.php` holds all option keys, table names, hooks, caps, nonces
+- **Grouped settings**: Single `nvoos_graphify_settings` option with per-tab sanitisation
+- **Proper lifecycle**: `nvoos-graphify.php` bootstrap, `uninstall.php` for full cleanup, activation/deactivation hooks with cron management
+- **PHP 8.1+** (`declare(strict_types=1)`) — stricter than the original plan's PHP 7.4+
+- **WordPress 6.5+** required (enables `Requires Plugins` header for addon dependency chain)
+
+### What the new core does NOT have (compared to the old `addons/graphify/`)
+
+| Feature | Status | Notes |
+|---|---|---|
+| Enterprise SaaS remote drivers (Jira, Slack, M365, ServiceNow, GitHub, Google Drive, HubSpot, Zendesk, Generic GraphQL, Generic SQL, S3) | ❌ Deferred | Belong in the future `nvoos-graphify-pro` addon — these are enterprise-tier and require API keys anyway |
+| OOS Federation driver | ❌ Deferred | Requires the base plugin's MCP protocol; will ship as part of `nvoos-graphify-federation` addon |
+| OAuth broker + field mapper/validator | ❌ Deferred | Enterprise features; belong in `nvoos-graphify-pro` |
+| `class-nvoos-graphify-nvoos-bridge.php` | ❌ Removed | This was the AI bridge to the base plugin — no longer needed in standalone core |
+| AI chat dependency | ❌ Removed | Zero base-plugin dependencies; AI is strictly addon territory |
+| `WP_MCP_AI_Tool_Interface` dependency | ❌ Removed | Replaced by `NvoosGraphify\Contracts\Tool` |
+
+### What still exists in `addons/graphify/` (legacy)
+
+The old addon remains at `addons/graphify/` (version 0.6.0, ~60 PHP files, ~20 remote drivers). It continues to work with the base plugin and is still actively maintained (bug fixes, WPCS compliance). As adoption of the new standalone core grows, this legacy addon will be deprecated in favor of the new PSR-4 plugin + addon ecosystem.
+
+### Remaining Phase 0 work (compatibility bridge)
+
+These items were in the original Phase 0 plan (Weeks 3-4) and are still TODO:
+
+- [ ] Add `Requires Plugins: nvoos-graphify` to `mcp-ai-wpoos.php` header
+- [ ] Create backward-compat adapter: `WP_MCP_AI_Tool_Interface` extends `NvoosGraphify\Contracts\Tool`
+- [ ] Wire dual hook registration: `wp_mcp_ai_register_tools` → `nvoos_graphify/register_tools`
+- [ ] Mark old `wp_mcp_ai_*` functions as deprecated with `_deprecated_function()`
+- [ ] Mark old hook names with `apply_filters_deprecated()` / `do_action_deprecated()`
+- [ ] Write migration guide for existing NV oOS users
+- [ ] Submit `nvoos-graphify` to wp.org plugin directory
 
 ---
 
@@ -323,46 +388,54 @@ Everything from the current monolith that is NOT the knowledge graph becomes a s
 
 ## 6. Phased Execution Plan
 
-### Phase 0: Core Product — Graphify as the Base Plugin (3-4 weeks)
+### Phase 0: Core Product — Graphify as the Base Plugin ✅ COMPLETE (2026-06-05)
 
-**Goal**: `nvoos-graphify` replaces `mcp-ai-wpoos.php` as the base plugin. The knowledge graph works standalone with zero API keys.
+> **Status**: Done (via `feature/nvoos-graphify-core-buildout` branch, merged to `alpha-working`)
+>
+> **Approach**: From-scratch PSR-4 rebuild at `plugins/nvoos-graphify/` rather than absorption of `addons/graphify/`. The old `addons/graphify/` (v0.6.0) remains as legacy — it will be deprecated once the new standalone core is released on wp.org.
+
+**Goal**: `nvoos-graphify` is a complete, standalone WordPress plugin. The knowledge graph works standalone with zero API keys. **Achieved.**
 
 ```
-Week 1-2: Absorb and modernize addons/graphify/
-  ├── Rename plugin: nvoos-graphify.php (was graphify.php in addons/)
-  ├── Migrate namespace: NvoosGraphify\ (was NV_oOS_Graphify or unnamespaced)
-  ├── Reorganize into PSR-4 src/ directory structure
-  ├── Update hook prefixes: nvoos_graphify/* (was nv_oos_graphify/*)
-  ├── Update option keys: nvoos_graphify_settings
-  ├── Update table prefixes: nvoos_graphify_nodes, etc.
-  ├── Update REST namespace: nvoos-graphify/v1
-  ├── Remove dependency on WP_MCP_AI_Tool_Interface
-  │   └── Move Tool interface into NvoosGraphify\Contracts\Tool
-  ├── Remove dependency on wp_mcp_ai_get_embedding()
-  │   └── Memory bridge uses provider registry (when available)
-  ├── Remove dependency on wp_mcp_ai_chat_completion()
-  │   └── AI features require AI addons (provider + chat)
-  ├── Write tests for all graph engine components
-  └── Release nvoos-graphify v1.0.0-beta
+Week 1-2: Build new PSR-4 plugin from scratch (replaces "absorb and modernize")
+  ├── ✅ Scaffold plugins/nvoos-graphify/ with PSR-4 + spl_autoload_register fallback
+  ├── ✅ Initialize namespace: NvoosGraphify\
+  ├── ✅ Create PSR-4 src/ directory structure
+  ├── ✅ Implement hook prefixes: nvoos_graphify/*
+  ├── ✅ Implement option keys: nvoos_graphify_settings
+  ├── ✅ Implement table prefixes: nvoos_graphify_nodes, etc.
+  ├── ✅ Implement REST namespace: nvoos-graphify/v1
+  ├── ✅ Remove dependency on WP_MCP_AI_Tool_Interface
+  │   └── Created NvoosGraphify\Contracts\Tool interface
+  ├── ✅ Remove dependency on wp_mcp_ai_get_embedding()
+  │   └── Memory bridge operates standalone (embeddings addon-aware)
+  ├── ✅ Remove dependency on wp_mcp_ai_chat_completion()
+  │   └── AI features require AI addons
+  ├── ✅ Write tests for all graph engine components
+  │   └── tests/Unit/ + tests/Integration/ with phpunit.xml.dist
+  └── ✅ Release nvoos-graphify v1.0.0-dev
+      ├── readme.txt (wp.org format)
+      ├── CHANGELOG.md (full v1.0.0 release notes)
+      ├── composer.json (namespaced: nvoos/graphify)
+      ├── uninstall.php (standalone cleanup)
+      ├── .distignore, phpcs.xml.dist, phpunit.xml.dist
+      └── All 9 buildout sub-phases complete (Foundation, Graph Engine, Features, Tools, REST+Admin, Frontend, Remote Sources, Memory Bridge, Release Prep)
 
-Week 3: Wire existing monolith into nvoos-graphify
-  ├── Add `Requires Plugins: nvoos-graphify` to mcp-ai-wpoos.php header
-  ├── WP_MCP_AI_Tool_Interface extends NvoosGraphify\Contracts\Tool (compat adapter)
-  ├── Tool registration fires both hooks:
+Week 3-4: Compatibility bridge + wp.org submission — TODO
+  ├── ☐ Add `Requires Plugins: nvoos-graphify` to mcp-ai-wpoos.php header
+  ├── ☐ WP_MCP_AI_Tool_Interface extends NvoosGraphify\Contracts\Tool (compat adapter)
+  ├── ☐ Tool registration fires both hooks:
   │   ├── Old: wp_mcp_ai_register_tools
   │   └── New: nvoos_graphify/register_tools
-  ├── All existing plugins/addons unchanged — backward compatible
-  └── Full test suite passes with nvoos-graphify active
-
-Week 4: Docs and public API
-  ├── Write readme.txt with screenshots for wp.org
-  ├── Deprecate wp_mcp_ai_* functions with _deprecated_function()
-  ├── Use apply_filters_deprecated() for old hook names
-  ├── Write migration guide for existing NV oOS users
-  └── Submit to wp.org
+  ├── ☐ All existing plugins/addons unchanged — backward compatible
+  ├── ☐ Full test suite passes with nvoos-graphify active
+  ├── ☐ Deprecate wp_mcp_ai_* functions with _deprecated_function()
+  ├── ☐ Use apply_filters_deprecated() for old hook names
+  ├── ☐ Write migration guide for existing NV oOS users
+  └── ☐ Submit to wp.org
 ```
 
-**Milestone**: NV oOS Graphify is a publishable wp.org plugin. Users can activate it alone and immediately build interactive knowledge graphs. It competes as a unique offering — nothing else on wp.org does this.
+**Milestone**: NV oOS Graphify is a publishable wp.org plugin (**code complete**). Users can activate it alone and immediately build interactive knowledge graphs. It competes as a unique offering — nothing else on wp.org does this. **Remaining**: compatibility bridge + wp.org submission.
 
 ### Phase 1: Exotic Provider Addons (1 week)
 
@@ -477,36 +550,55 @@ Week 2: Deprecation + docs
   └── Tag v2.0.0
 ```
 
-### Total Timeline: ~10-12 weeks
+### Total Timeline: ~8-10 weeks remaining
 
 ```
-Phase 0: Core Product      ████░░░░░░░░░  3-4 weeks
-Phase 1: Exotic Providers   ░░░░█░░░░░░░░  1 week
-Phase 2: Extended Tools     ░░░░░██░░░░░░  2 weeks
-Phase 3: Features           ░░░░░░░███░░░  3 weeks
-Phase 4: AI Chat (hard)     ░░░░░░░░░░██░  2 weeks
-Phase 5: Cleanup            ░░░░░░░░░░░░█  1-2 weeks
-                           ────────────────
-                           Total: ~10-12 weeks
+Phase 0: Core Product      COMPLETE (2026-06-05)
+Phase 0: Compat Bridge     1-2 weeks (remaining)
+Phase 1: Exotic Providers  1 week
+Phase 2: Extended Tools    2 weeks
+Phase 3: Features          3 weeks
+Phase 4: AI Chat (hard)    2 weeks
+Phase 5: Cleanup           1-2 weeks
+                           -----------
+                           Remaining: ~8-10 weeks
 ```
 
-### Key Milestone: Phase 0 delivers a marketable product
+### Key Milestone: Phase 0 delivers a marketable product ✅
 
 By the end of Phase 0:
-- `nvoos-graphify` is a wp.org-ready plugin
-- Users click "Build Graph" and see results in 10 seconds
-- Zero configuration. Zero API keys. Zero external dependencies.
-- 5+ screenshots (graph explorer, content gaps, export formats, settings, remote sources)
-- Unique in marketplace — nothing else does interactive knowledge graphs on wp.org
-- Upgrade path: "Add AI to your knowledge graph with nvoos-graphify-ai-chat"
+- ✅ `nvoos-graphify` is a wp.org-ready plugin (code complete, `readme.txt` written)
+- ✅ Users click "Build Graph" and see results in 10 seconds
+- ✅ Zero configuration. Zero API keys. Zero external dependencies.
+- ✅ 5+ screenshots described in readme.txt (graph explorer, settings, content gaps, export formats, remote sources)
+- ✅ Unique in marketplace — nothing else does interactive knowledge graphs on wp.org
+- ✅ Upgrade path: "Add AI to your knowledge graph with nvoos-graphify-ai-chat"
+- ☐ **Remaining**: wp.org submission, compatibility bridge, migration guide
 
 ### Key Milestone: Phase 4 extracts the hardest subsystem last
 
 By deferring chat extraction to Phase 4:
-- The tool registry pattern has been proven across ~40 simpler addons
+- The tool registry pattern has been proven in the core and will be proven further across ~40 simpler addons
 - Provider bundling (OpenAI + Gemini + Ollama in one addon) has a clear template from the exotic providers
 - If extraction proves too risky, chat can stay in the monolith indefinitely — the meta-plugin carries it regardless
 - The core product's value is never blocked on the hardest extraction
+
+### Enhancement Follow-up (Post-Phase 5)
+
+Items that emerged during Phase 0 buildout that should be tracked:
+
+| # | Item | Priority | Notes |
+|---|---|---|---|
+| 1 | Enterprise SaaS drivers addon | Medium | 13 enterprise remote drivers (Jira, Slack, M365, etc.) remain in legacy addons/graphify/ — extract into nvoos-graphify-pro addon |
+| 2 | OOS Federation driver | Medium | Currently in legacy addon only; needs extraction to nvoos-graphify-federation addon |
+| 3 | Embeddings addon extraction | Low | Currently bundled in core (Memory/Embeddings.php); consider extracting for API-key-free core purity |
+| 4 | Test suite completion | High | Core plugin has tests/bootstrap.php + directory structure but needs actual test files filled in |
+| 5 | CI/CD workflow | High | .github/workflows/graphify-ci.yml for PHP 8.1-8.3 x WP 6.5-6.9 matrix |
+| 6 | Translation template | Medium | Generate languages/nvoos-graphify.pot for i18n |
+| 7 | Legacy addons/graphify/ deprecation plan | Medium | Once new core is on wp.org, add deprecation notice, provide migration path |
+| 8 | Merge plugins/nvoos-graphify/ to separate repo | High | Sync workflow exists; finalize standalone GitHub repo for independent versioning |
+| 9 | Screenshots | High | Need actual PNG screenshots for wp.org submission |
+| 10 | PHP 7.4 compat shim | Low | New plugin requires PHP 8.1+; original plan targeted 7.4+ — consider compat layer |
 
 ---
 
