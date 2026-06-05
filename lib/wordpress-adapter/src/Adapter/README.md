@@ -45,3 +45,5 @@ vendor/bin/phpunit tests/test-wp-content-store.php
 - [`lib/core/src/Domain/Contract/`](../../core/src/Domain/Contract/) — the interfaces these implement
 - [`lib/core/src/Domain/Entity/`](../../core/src/Domain/Entity/) — value objects returned by these adapters
 - [`includes/bootstrap/oos-bridge.php`](../../../includes/bootstrap/oos-bridge.php) — DI wiring that instantiates these adapters
+
+> **Monorepo sync:** This directory is synced to `nvdigitalsolutions/nvoos-wordpress-adapter` via `.github/workflows/sync-nvoos-wordpress-adapter.yml` on push to `main` or `alpha-working`.
