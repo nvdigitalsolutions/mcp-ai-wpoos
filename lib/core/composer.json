@@ -1,9 +1,21 @@
 {
-    "name": "oos/core",
-    "version": "1.0.0",
-    "description": "Framework-agnostic AI orchestration engine \u00e2\u20ac\u201d agentic loop, tool registry, provider routing, SSE streaming.",
+    "name": "nvoos/core",
+    "description": "Framework-agnostic AI orchestration engine â€” agentic loop, tool registry, provider routing, SSE streaming.",
     "type": "library",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+    "support": {
+        "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
+        "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/lib/core"
+    },
     "require": {
         "php": "^8.1",
         "psr/container": "^2.0",
