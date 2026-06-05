@@ -13,10 +13,10 @@
     ],
     "homepage": "https://github.com/nvdigitalsolutions/nvoos-graphify-ai",
     "require": {
-        "php": "^8.1",
-        "composer/installers": "^2.0"
+        "php": "^8.1"
     },
     "require-dev": {
+        "composer/installers": "^2.0",
         "phpunit/phpunit": "^11.0",
         "wp-phpunit/wp-phpunit": "*",
         "yoast/phpunit-polyfills": "^4.0",
