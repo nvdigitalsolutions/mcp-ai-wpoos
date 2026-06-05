@@ -178,17 +178,15 @@ The existing `addons/graphify/` depends on the base plugin for only 3 things:
 
 The old addon remains at `addons/graphify/` (version 0.6.0, ~60 PHP files, ~20 remote drivers). It continues to work with the base plugin and is still actively maintained (bug fixes, WPCS compliance). As adoption of the new standalone core grows, this legacy addon will be deprecated in favor of the new PSR-4 plugin + addon ecosystem.
 
-### Remaining Phase 0 work (compatibility bridge)
+### Remaining Phase 0 work (separate-plugin path — no backward compat needed)
 
-These items were in the original Phase 0 plan (Weeks 3-4) and are still TODO:
+Because `nvoos-graphify` is a **brand new plugin** (not an upgrade of `mcp-ai-wpoos.php`), backward compatibility between the two is unnecessary. Users install either the monolith (`mcp-ai-wpoos`) or the new core (`nvoos-graphify`) — they are different plugins with different slugs, namespaces, hooks, options, and tables.
 
-- [ ] Add `Requires Plugins: nvoos-graphify` to `mcp-ai-wpoos.php` header
-- [ ] Create backward-compat adapter: `WP_MCP_AI_Tool_Interface` extends `NvoosGraphify\Contracts\Tool`
-- [ ] Wire dual hook registration: `wp_mcp_ai_register_tools` → `nvoos_graphify/register_tools`
-- [ ] Mark old `wp_mcp_ai_*` functions as deprecated with `_deprecated_function()`
-- [ ] Mark old hook names with `apply_filters_deprecated()` / `do_action_deprecated()`
-- [ ] Write migration guide for existing NV oOS users
-- [ ] Submit `nvoos-graphify` to wp.org plugin directory
+Remaining work:
+
+- [ ] Submit `nvoos-graphify` to wp.org plugin directory (screenshots, readme.txt, distignore)
+- [ ] Write migration guide for users switching from `mcp-ai-wpoos` + `addons/graphify/` to standalone `nvoos-graphify`
+- [ ] Optionally: enable existing addons (`addons/pro/`, `addons/algorave/`, etc.) to declare `Requires Plugins: nvoos-graphify` as an alternative to `mcp-ai-wpoos` (addon opt-in, not forced upgrade)
 
 ---
 
@@ -421,21 +419,15 @@ Week 1-2: Build new PSR-4 plugin from scratch (replaces "absorb and modernize")
       ├── .distignore, phpcs.xml.dist, phpunit.xml.dist
       └── All 9 buildout sub-phases complete (Foundation, Graph Engine, Features, Tools, REST+Admin, Frontend, Remote Sources, Memory Bridge, Release Prep)
 
-Week 3-4: Compatibility bridge + wp.org submission — TODO
-  ├── ☐ Add `Requires Plugins: nvoos-graphify` to mcp-ai-wpoos.php header
-  ├── ☐ WP_MCP_AI_Tool_Interface extends NvoosGraphify\Contracts\Tool (compat adapter)
-  ├── ☐ Tool registration fires both hooks:
-  │   ├── Old: wp_mcp_ai_register_tools
-  │   └── New: nvoos_graphify/register_tools
-  ├── ☐ All existing plugins/addons unchanged — backward compatible
-  ├── ☐ Full test suite passes with nvoos-graphify active
-  ├── ☐ Deprecate wp_mcp_ai_* functions with _deprecated_function()
-  ├── ☐ Use apply_filters_deprecated() for old hook names
-  ├── ☐ Write migration guide for existing NV oOS users
-  └── ☐ Submit to wp.org
+Week 3-4: wp.org prep — TODO
+  ├── ☐ Submit nvoos-graphify to wp.org plugin directory (screenshots pass required)
+  ├── ☐ Write migration guide for users switching from mcp-ai-wpoos + addons/graphify/ → standalone nvoos-graphify
+  └── ☐ Optionally: enable existing addons to declare dual Requires Plugins (nvoos-graphify OR mcp-ai-wpoos) for addon opt-in compatibility
+
+Note: Backward compat (deprecated hooks, function aliases, Requires Plugins on the monolith) is NOT needed. nvoos-graphify and mcp-ai-wpoos are separate plugins — users install one or the other, not upgrade from one to the other.
 ```
 
-**Milestone**: NV oOS Graphify is a publishable wp.org plugin (**code complete**). Users can activate it alone and immediately build interactive knowledge graphs. It competes as a unique offering — nothing else on wp.org does this. **Remaining**: compatibility bridge + wp.org submission.
+**Milestone**: NV oOS Graphify is a publishable wp.org plugin (**code complete**). Users can activate it alone and immediately build interactive knowledge graphs. It competes as a unique offering — nothing else on wp.org does this. **Remaining**: screenshots + wp.org submission.
 
 ### Phase 1: Exotic Provider Addons (1 week)
 
@@ -534,19 +526,19 @@ Week 2: AI tools + embeddings
 
 ### Phase 5: Meta-Plugin + Cleanup (1-2 weeks)
 
-**Goal**: The old `mcp-ai-wpoos.php` becomes a meta-plugin that bundles all addons for existing users.
+**Goal**: The old `mcp-ai-wpoos.php` optionally bundles the new ecosystem for convenience.
 
 ```
-Week 1: Meta-plugin mode
-  ├── mcp-ai-wpoos.php requires nvoos-graphify
-  ├── mcp-ai-wpoos.php auto-loads all addons from addons/ directory
+Week 1: Meta-plugin mode (convenience bundle, not compat layer)
+  ├── mcp-ai-wpoos.php can declare Requires Plugins: nvoos-graphify
+  ├── Auto-loads addons from addons/ directory for "all-in-one" convenience
   ├── Existing users see zero change — all tools and features still load
-  └── New users install only nvoos-graphify + desired addons
+  ├── New users install only nvoos-graphify + desired addons
+  └── Both plugins coexist — users choose their path (monolith or core+addons)
 
-Week 2: Deprecation + docs
-  ├── Deprecate wp_mcp_ai_* hooks with do_action_deprecated()
-  ├── Deprecate wp_mcp_ai_* functions with _deprecated_function()
+Week 2: Docs and ecosystem overview
   ├── Update readme.txt with addon ecosystem overview
+  ├── Show both paths in docs: monolith vs modular
   └── Tag v2.0.0
 ```
 
@@ -573,7 +565,7 @@ By the end of Phase 0:
 - ✅ 5+ screenshots described in readme.txt (graph explorer, settings, content gaps, export formats, remote sources)
 - ✅ Unique in marketplace — nothing else does interactive knowledge graphs on wp.org
 - ✅ Upgrade path: "Add AI to your knowledge graph with nvoos-graphify-ai-chat"
-- ☐ **Remaining**: wp.org submission, compatibility bridge, migration guide
+- ☐ **Remaining**: screenshots + wp.org submission, migration guide
 
 ### Key Milestone: Phase 4 extracts the hardest subsystem last
 
@@ -604,32 +596,51 @@ Items that emerged during Phase 0 buildout that should be tracked:
 
 ## 7. Backward Compatibility Strategy
 
-### Principle: Zero Breaking Changes Until v2.0
+### Principle: Separate Plugins, No Forced Upgrade
 
-Every change is additive during the transition. Old interfaces continue to work alongside new ones.
+`nvoos-graphify` and `mcp-ai-wpoos` are **different plugins**. They have different slugs, namespaces, hook prefixes, option keys, and table names. Users install one or the other — there is no upgrade path that overwrites one with the other.
 
-### Layer 1: Dual Interface Implementation
+This eliminates the need for:
+- `_deprecated_function()` aliases between the two plugins
+- `do_action_deprecated()` / `apply_filters_deprecated()` cross-plugin
+- Dual interface implementation (`WP_MCP_AI_Tool_Interface` extending `NvoosGraphify\Contracts\Tool`)
+- `Requires Plugins` header forcing the monolith to depend on the new core
+
+### What DOES remain
+
+Existing addons (`addons/pro/`, `addons/algorave/`, etc.) may eventually want to support both base plugins. This is optional and opt-in:
 
 ```php
-// During transition, existing tools implement both interfaces:
-class WP_MCP_AI_Tool_Web_Search
-    implements WP_MCP_AI_Tool_Interface,           // Old — still works
-               \NvoosGraphify\Contracts\Tool        // New — forward-compatible
-{
-    // Old methods (keep for backward compat)
-    public function get_slug() { return 'web_search'; }
-
-    // New methods (delegate to old or vice versa)
-    public function getSlug(): string { return $this->get_slug(); }
-}
+// An existing addon can declare compatibility with either base:
+/**
+ * Requires Plugins: nvoos-graphify
+ *
+ * OR
+ *
+ * Requires Plugins: mcp-ai-wpoos
+ */
 ```
 
-### Layer 2: Deprecated Hook Aliases
+Or register tools on both hooks during transition:
 
 ```php
-// Old hook: 'wp_mcp_ai_register_tools'
-// New hook: 'nvoos_graphify/register_tools'
+// Register on the new core's hook:
+add_action( 'nvoos_graphify/register_tools', function ( $registry ) {
+    $registry->register( new MyTool() );
+} );
 
+// Also register on the old monolith's hook (if still targeting it):
+add_action( 'wp_mcp_ai_register_tools', function ( $registry ) {
+    $registry->register( new MyTool() );
+} );
+```
+
+### Deprecation within the monolith
+
+Within `mcp-ai-wpoos` itself, hooks and functions that are superseded by addon equivalents may be deprecated over time using standard WordPress patterns:
+
+```php
+// Mark old hook as deprecated within the monolith:
 add_action( 'nvoos_graphify/register_tools', function ( $registry ): void {
     do_action_deprecated(
         'wp_mcp_ai_register_tools',
@@ -639,42 +650,15 @@ add_action( 'nvoos_graphify/register_tools', function ( $registry ): void {
         'Use nvoos_graphify/register_tools instead.'
     );
 } );
-```
 
-### Layer 3: Deprecated Function Aliases
-
-```php
-// Old function: wp_mcp_ai_get_embedding()
-// New: provider addon's embed() method
-
+// Mark old function as deprecated:
 function wp_mcp_ai_get_embedding( $text, $model = '' ) {
     _deprecated_function( 'wp_mcp_ai_get_embedding', '2.0.0', 'Provider addon embed()' );
-    // Fall back to old behavior if available.
-    if ( function_exists( 'old_embedding_logic' ) ) {
-        return old_embedding_logic( $text, $model );
-    }
     return array();
 }
 ```
 
-### Layer 4: Meta-Plugin Compat Mode
-
-```php
-// mcp-ai-wpoos.php v2.0 (meta-plugin mode):
-/**
- * Plugin Name:  NV oOS
- * Requires Plugins: nvoos-graphify
- */
-
-// Auto-load all addons from addons/ directory.
-$addon_dirs = glob( WP_MCP_AI_PATH . 'addons/*/nvoos-*.php' );
-foreach ( $addon_dirs as $addon_file ) {
-    require_once $addon_file;
-}
-
-// Existing users: everything loads as before.
-// New users: install only nvoos-graphify + desired addons.
-```
+But these apply **within the monolith's own lifecycle** — not as a bridge between the two separate plugins.
 
 ---
 
