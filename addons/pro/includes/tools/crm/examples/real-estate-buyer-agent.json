@@ -4,7 +4,7 @@
   "meta": {
     "profession": "sales_manager",
     "framework": "bant",
-    "available_tools": ["evaluate_inbound_message","extract_lead_from_message","qualify_lead_bant","send_lead_email","send_lead_sms","auto_reply_inbound","schedule_follow_up","record_consent","check_dnc_status","create_deal","list_leads","get_workflow_inbox"],
+    "available_tools": ["evaluate_inbound_message","extract_lead_from_message","qualify_lead_bant","send_lead_email","send_lead_sms","auto_reply_inbound","schedule_follow_up","record_consent","check_dnc_status","create_deal","list_leads","search_gmail","crm_email_search_leads","get_workflow_inbox"],
     "instructions": "You are a Real Estate Buyer Agent. Inbound messages may come via SMS, email, or web form. 1) Always check DNC and consent before outbound contact. 2) Auto-reply within TCPA business hours only. 3) Classify buyer intent (showing_request, pricing_inquiry, general). 4) Qualify using BANT. 5) Create a deal for qualified buyers. 6) Schedule follow-ups. Never send SMS before 9am or after 9pm local time.",
     "channels": ["email","sms","phone_call","web_form"],
     "auto_reply_enabled": true,

@@ -143,6 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				'maintenance'   => __( 'Site Maintenance & Cleanup', 'mcp-ai-wpoos-pro' ),
 				'marketing'     => __( 'Marketing Automation', 'mcp-ai-wpoos-pro' ),
 				'business'      => __( 'Business Operations', 'mcp-ai-wpoos-pro' ),
+				'lead_intake'   => __( 'Lead Intake & Qualification', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -1988,6 +1989,170 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						),
 					),
 				),
+
+				// -- Lead Intake & Qualification presets.
+
+				'lead_intake_inbox_scanner' => array(
+					'name'          => __( 'Lead Intake Inbox Scanner', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Scans all configured Gmail inboxes for new lead emails every hour. Uses multi-connection search to discover leads across business, support, and sales email accounts. Classifies inbound emails by inquiry type and flags high-intent leads (demo, trial, pricing, consultation) for immediate follow-up.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-email-alt2',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'hourly',
+					'tags'          => array( 'crm', 'email', 'leads', 'intake', 'gmail', 'multi-connection' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'           => 'search',
+									'include_external' => true,
+									'lead_status'      => 'new',
+									'inquiry_type'     => 'all',
+									'date_from'        => '1 hour ago',
+									'force_refresh'    => true,
+								),
+								'label'     => __( 'Scan all Gmail inboxes for new lead emails', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'high_intent_lead_alert' => array(
+					'name'          => __( 'High-Intent Lead Alert', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Hourly scan for high-intent inbound leads (demo requests, trial signups, pricing inquiries, consultation bookings) and immediately broadcasts alerts to the sales team via Slack. Ensures hot leads are never missed and receive prompt response.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-warning',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'hourly',
+					'tags'          => array( 'crm', 'leads', 'high-intent', 'alert', 'sales' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'        => 'search',
+									'lead_status'   => 'new',
+									'priority'      => 'high',
+									'date_from'     => '1 hour ago',
+									'force_refresh' => true,
+								),
+								'label'     => __( 'Find high-priority new leads', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'        => 'search',
+									'lead_status'   => 'new',
+									'inquiry_type'  => 'demo_request',
+									'date_from'     => '1 hour ago',
+									'force_refresh' => true,
+								),
+								'label'     => __( 'Find new demo requests', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'        => 'search',
+									'lead_status'   => 'new',
+									'inquiry_type'  => 'trial_request',
+									'date_from'     => '1 hour ago',
+									'force_refresh' => true,
+								),
+								'label'     => __( 'Find new trial signups', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'lead_qualification_queue' => array(
+					'name'          => __( 'Lead Qualification Queue', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily assistant run that qualifies all new leads ingested in the last 24 hours using BANT (Budget, Authority, Need, Timeline) or MEDDIC frameworks. Scores each lead, assigns MQL/SQL stages, and generates a prioritised qualification queue for the sales team.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-clipboard',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'leads', 'qualification', 'bant', 'meddic', 'mql', 'sql' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run the daily lead qualification queue. Use crm_email_search_leads to find all new leads from the last 24 hours (lead_status=new, date_from=yesterday). For each lead: 1) Classify the inquiry type (demo_request, trial_request, pricing_inquiry, partnership, support_request, referral, consultation_request, event_registration, content_download, general). 2) Score the lead (0-100) based on demographic fit, firmographic match, and behavioural signals. 3) Apply BANT qualification: Budget, Authority, Need, Timeline. 4) Assign MQL (Marketing Qualified Lead) or SQL (Sales Qualified Lead) stage. 5) Set priority (high/medium/low). Generate a prioritised queue table sorted by lead score descending, showing lead name, email, company, inquiry type, score, priority, MQL/SQL stage, and recommended next action. Flag leads scored 70+ as immediate sales handoff.',
+						),
+					),
+				),
+				'multi_account_lead_sync' => array(
+					'name'          => __( 'Multi-Account Lead Sync', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Hourly workflow that searches across all connected Gmail accounts for lead emails and syncs discovered contacts to the CRM. Uses the multi-connection search capability to aggregate leads from support@, sales@, info@, and other business email addresses into a unified lead pipeline.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-networking',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'hourly',
+					'tags'          => array( 'crm', 'leads', 'sync', 'multi-account', 'gmail', 'aggregation' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'           => 'search',
+									'include_external' => true,
+									'lead_status'      => 'all',
+									'date_from'        => '1 hour ago',
+									'force_refresh'    => true,
+								),
+								'label'     => __( 'Aggregate leads from all connected Gmail accounts', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'lead_scoring_refresh' => array(
+					'name'          => __( 'Lead Scoring Refresh', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily workflow that recalculates lead scores for all active leads based on recent engagement signals, email interactions, and demographic/firmographic data. Updates hot/warm/cold classifications and adjusts MQL/SQL pipeline stages accordingly.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-star-filled',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'leads', 'scoring', 'refresh', 'pipeline' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'      => 'search',
+									'lead_status' => 'all',
+									'per_page'    => 100,
+								),
+								'label'     => __( 'Load all active leads for re-scoring', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'crm_email_search_leads',
+								'arguments' => array(
+									'action'         => 'schedule',
+									'schedule'       => 'daily',
+									'lead_status'    => 'all',
+								),
+								'label'     => __( 'Schedule daily lead cache refresh', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'trial_conversion_tracker' => array(
+					'name'          => __( 'Trial-to-Paid Conversion Tracker', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Daily assistant run monitoring trial signups and tracking conversion progress. Identifies trial users approaching expiry, those who have engaged with key product features, and those who need outreach to convert. Generates a trial pipeline report with conversion probability estimates.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'lead_intake',
+					'icon'          => 'dashicons-update',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'leads', 'trial', 'conversion', 'saas' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run the daily trial-to-paid conversion tracker. Use crm_email_search_leads to find all leads with inquiry_type=trial_request from the last 30 days (date_from=30 days ago). For each trial lead: 1) Check engagement signals (email opens, feature usage, support tickets). 2) Calculate days remaining in trial. 3) Estimate conversion probability (high/medium/low) based on engagement depth. 4) Identify trial users with fewer than 7 days remaining who have NOT been contacted. 5) Flag power users (high engagement) for proactive upgrade outreach. Generate a trial pipeline report showing: lead name, company, trial start date, days remaining, engagement score, conversion probability, and recommended action (contact now / monitor / nurture). Highlight trials expiring within 3 days as urgent.',
+						),
+					),
+				),
+
 				'deal_velocity_tracker' => array(
 					'name'          => __( 'Deal Velocity Tracker', 'mcp-ai-wpoos-pro' ),
 					'description'   => __( 'Daily assistant run that tracks deal movement through pipeline stages, alerts when deals stall beyond 2x average stage duration.', 'mcp-ai-wpoos-pro' ),

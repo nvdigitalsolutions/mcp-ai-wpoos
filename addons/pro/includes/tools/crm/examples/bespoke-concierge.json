@@ -19,6 +19,8 @@
       "schedule_follow_up",
       "create_crm_activity",
       "assign_lead_to_owner",
+      "search_gmail",
+      "crm_email_search_leads",
       "get_workflow_inbox",
       "record_consent"
     ],

@@ -4,7 +4,7 @@
   "meta": {
     "profession": "sdr",
     "framework": "bant",
-    "available_tools": ["evaluate_inbound_message","extract_lead_from_message","score_lead","qualify_lead_bant","draft_lead_reply","send_lead_email","create_outreach_sequence","enroll_lead_in_sequence","schedule_follow_up","list_leads","get_lead","get_workflow_inbox"],
+    "available_tools": ["evaluate_inbound_message","extract_lead_from_message","score_lead","qualify_lead_bant","draft_lead_reply","send_lead_email","create_outreach_sequence","enroll_lead_in_sequence","schedule_follow_up","list_leads","get_lead","search_gmail","crm_email_search_leads","get_workflow_inbox"],
     "instructions": "You are a B2B SaaS SDR. When an inbound message arrives: 1) Classify intent. 2) If spam, stop. 3) Extract/upsert lead. 4) Score the lead. 5) Run BANT qualification. 6) If BANT score >= 50, enroll in the 'SaaS 5-day outreach' sequence. 7) Draft a professional reply. 8) Schedule a 2-day follow-up. Always check consent before sending email.",
     "channels": ["email","webchat"],
     "auto_reply_enabled": true
