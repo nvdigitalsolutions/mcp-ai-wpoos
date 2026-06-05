@@ -1,8 +1,10 @@
 # NV oOS BMAD Agent Definitions
 
-> **Last reviewed:** May 2026 (v1.1.19). All BMAD-role agents operate under the
+> **Last reviewed:** June 2026 (v1.1.27). The GSD half of the GSD × BMAD methodology is now standardized upstream in [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`). NV oOS was an early adopter and implementation proving ground for the concepts that gsd-core now productises: meta-prompting, context engineering, fresh-context subagents, phase-loop governance, and spec-driven development. The `.bmad/`, `.context/`, and BMAD agent definitions below remain the NV oOS-specific instantiation — the BMAD roles and NV oOS Pro tool mappings that make the methodology work inside WordPress.
+>
+> All BMAD-role agents operate under the
 > Unix Theory Compliance Phases P0–P7 constraints landed across the v1.1.15 →
-> v1.1.19 cycle: the canonical return envelope (forbid
+> v1.1.27 cycle: the canonical return envelope (forbid
 > `array( 'success' => false, ... )` for errors), the two-gate sanitisation
 > rule (`WPMCPAI.Tools.SanitizeAtEntry` Gate 1 + escape at exit Gate 2), the
 > optional `WP_MCP_AI_Tool_Data_Contract_Interface`, and the back-compat alias
@@ -13,7 +15,7 @@ This directory contains the **BMAD (Breakthrough Method for Agile AI-Driven Deve
 
 ## Overview
 
-NV oOS uses a hybrid **GSD × BMAD** methodology for AI-assisted feature development. The full workflow is documented in [`docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`](../docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
+NV oOS uses a hybrid **GSD × BMAD** methodology for AI-assisted feature development. The GSD half is now standardised as [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`); the NV oOS-specific BMAD workflow and agent definitions are documented in [`docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`](../docs/project/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
 
 Each agent definition (`.yaml` file) specifies a BMAD role with:
 - **Persona** — role identity, communication style

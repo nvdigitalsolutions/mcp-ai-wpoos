@@ -170,7 +170,7 @@ The plugin has evolved significantly from its AI-heavy early days:
 - **v1.1.21+**: Security audit with 50 findings, systematic remediation
 - **v1.1.24+**: Folder README convention (every PHP subdirectory documents its purpose)
 - **April 2026**: External security audit completed. 5 High findings identified, 3 fixed, 2 partially fixed.
-- **May–June 2026 (v1.1.22–v1.1.26)**: Pre-submission code review — 6-agent parallel audit, 1 Critical + 5 Warnings resolved. Addons PHPCS 93% reduction. Gate 2 output escaping hardened. 18 files fixed across 3 audit passes. v1.1.26: Cross-platform extraction engine (Phases 0–2), site-builder node-graph pipeline, SPA a11y hardening, screenshot & docs overhaul.
+- **May–June 2026 (v1.1.22–v1.1.27)**: Pre-submission code review — 6-agent parallel audit, 1 Critical + 5 Warnings resolved. Addons PHPCS 93% reduction. Gate 2 output escaping hardened. 18 files fixed across 3 audit passes. v1.1.26: Cross-platform extraction engine (Phases 0–2), site-builder node-graph pipeline, SPA a11y hardening, screenshot & docs overhaul. v1.1.27: Real-time SSE streaming for OpenAI/DeepSeek, 35 new OOS core tools, 8 JFB submission tool fixes, Extended Cognition vision recognition, June 2026 model pricing update.
 
 The project has moved from "AI wrote everything" to "AI writes, human reviews, CI enforces." The code quality and security posture have improved with each release.
 

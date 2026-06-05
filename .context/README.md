@@ -1,5 +1,9 @@
 # NV oOS GSD Context Files
 
+> The GSD context-engineering methodology is now standardised upstream in [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`). NV oOS was an early proving ground for the context-engineering principles that gsd-core now productises: keeping the main context window below 30% utilisation, spawning fresh-context subagents for heavy work, and persisting decisions across session boundaries via structured artefacts.
+>
+> The `.context/` files below remain NV oOS-specific — they encode the naming conventions, security rules, subsystem knowledge, and architectural decisions unique to this WordPress plugin codebase.
+
 This directory contains **GSD (Get Shit Done)** context engineering files for the NV oOS plugin development workflow. These lightweight files are loaded at the start of AI development sessions to preserve architectural knowledge and coding conventions across context windows.
 
 ## Purpose

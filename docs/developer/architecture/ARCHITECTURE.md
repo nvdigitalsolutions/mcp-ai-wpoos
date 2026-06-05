@@ -1,7 +1,7 @@
 # NV oOS Architecture Overview
 
 **Last Updated:** June 2026
-**Version:** 1.1.26
+**Version:** 1.1.27
 
 This document provides a high-level architectural overview of the Open Operator System (NV oOS) plugin. For detailed technical documentation, see the main [docs](../) directory. For a step-by-step trace of a chat request, see [REQUEST-FLOW-WALKTHROUGH.md](REQUEST-FLOW-WALKTHROUGH.md).
 

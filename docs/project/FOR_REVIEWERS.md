@@ -16,7 +16,7 @@ The repo is a **monorepo** containing:
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 - A **separate "Core" plugin** (lightweight MCP framework, v1.0.0) — `core/`
 
-**Current version:** 1.1.26 (June 2026)  
+**Current version:** 1.1.27 (June 2026)
 **Total PHP files:** ~3,000 (base + pro + addons)  
 **Total tools:** ~960 (~195 base + ~765 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
@@ -41,7 +41,7 @@ The repo is a **monorepo** containing:
 
 ### Base plugin (critical path — this is what .org would review)
 ```
-mcp-ai-wpoos.php              ← Main entry point (v1.1.26)
+mcp-ai-wpoos.php              ← Main entry point (v1.1.27)
 includes/
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← ~190 REST endpoints
@@ -103,9 +103,9 @@ See [ADDON_INVENTORY.md](ADDON_INVENTORY.md) for full details.
 
 ## 5. Known Issues (What Needs Attention)
 
-The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (16 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.26) resolved 1 Critical + 5 Warnings from code review.
+The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (16 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review.
 
-### Still open / partially fixed (as of v1.1.26):
+### Still open / partially fixed (as of v1.1.27):
 | ID | Severity | Status | What |
 |---|---|---|---|
 | F-AUTHZ-01 | High | 🟡 Partial | Webhook routes with `__return_true` permission callbacks — 4 fixed, remaining are legitimately public per webhook protocol |
