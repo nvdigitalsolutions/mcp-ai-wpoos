@@ -21,4 +21,5 @@ jobs:
 
       - name: Push to nvoos-core
         run: |
+          git config --local --unset-all http.https://github.com/.extraheader
           git push https://x-access-token:${{ secrets.NVOOS_CORE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-core.git nvoos-core-split:main --force

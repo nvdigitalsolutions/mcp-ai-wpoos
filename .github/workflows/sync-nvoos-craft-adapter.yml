@@ -21,4 +21,5 @@ jobs:
 
       - name: Push to nvoos-craft-adapter
         run: |
+          git config --local --unset-all http.https://github.com/.extraheader
           git push https://x-access-token:${{ secrets.NVOOS_CRAFT_ADAPTER_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-craft-adapter.git nvoos-craft-adapter-split:main --force
