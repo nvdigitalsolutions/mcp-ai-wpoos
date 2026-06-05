@@ -21,4 +21,5 @@ jobs:
 
       - name: Push to nvoos-wordpress-adapter
         run: |
+          git config --local --unset-all http.https://github.com/.extraheader
           git push https://x-access-token:${{ secrets.NVOOS_WORDPRESS_ADAPTER_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-wordpress-adapter.git nvoos-wordpress-adapter-split:main --force
