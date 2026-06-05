@@ -64,4 +64,4 @@ Subsystem-specific:
 
 > "The new `wp_mcp_ai_skill_catalogue_manifest_ttl` filter isn't documented anywhere. Add it."
 
-Expected behavior: agent reads the filter's source to confirm signature, adds a row in `docs/hooks-reference.md` with the filter name, signature, default, and a one-paragraph "when to use" note, cross-checks `CLAUDE.md`'s "Agent Skills" section to make sure the prose is consistent, and updates `docs/DOCUMENTATION_INDEX.md` if a new doc was added. It does not modify the filter's PHP source even if the filter name's casing is suboptimal — instead it reports the inconsistency and tags the appropriate writer agent.
+Expected behavior: agent reads the filter's source to confirm signature, adds a row in `docs/reference/hooks/hooks-reference.md` with the filter name, signature, default, and a one-paragraph "when to use" note, cross-checks `CLAUDE.md`'s "Agent Skills" section to make sure the prose is consistent, and updates `docs/DOCUMENTATION_INDEX.md` if a new doc was added. It does not modify the filter's PHP source even if the filter name's casing is suboptimal — instead it reports the inconsistency and tags the appropriate writer agent.
