@@ -72,7 +72,7 @@ class RemoteAdmin {
 	 *
 	 * @return void
 	 */
-	public function renderTab(): void {
+	public static function renderTab(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -172,10 +172,10 @@ class RemoteAdmin {
 				</table>
 			<?php endif; ?>
 
-			<?php $this->renderSourceModal(); ?>
+			<?php self::renderSourceModal(); ?>
 		</div>
 		<?php
-		$this->enqueueAdminJs();
+		self::enqueueAdminJs();
 	}
 
 	/**
@@ -185,7 +185,7 @@ class RemoteAdmin {
 	 *
 	 * @return void
 	 */
-	public function renderEmbeddingsPanel(): void {
+	public static function renderEmbeddingsPanel(): void {
 		global $wpdb;
 		$emb_table = \NvoosGraphify\Graph\Db::embeddingsTable();
         // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -452,7 +452,7 @@ class RemoteAdmin {
 	 *
 	 * @return void
 	 */
-	private function renderSourceModal(): void {
+	private static function renderSourceModal(): void {
 		?>
 		<div id="nvoos-remote-source-modal" style="display:none;">
 			<div class="nvoos-modal-overlay">
@@ -495,7 +495,7 @@ class RemoteAdmin {
 	 *
 	 * @return void
 	 */
-	private function enqueueAdminJs(): void {
+	private static function enqueueAdminJs(): void {
 		?>
 		<script>
 		(function($){

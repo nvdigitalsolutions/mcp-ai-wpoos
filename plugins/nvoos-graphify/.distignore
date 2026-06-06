@@ -45,6 +45,11 @@
 /CHANGELOG.md
 /CREDITS.md
 
+# JS tooling (vendor files are pre-bundled in assets/vendor/)
+/package.json
+/package-lock.json
+/scripts
+
 # Misc
 *.log
 .DS_Store
