@@ -227,6 +227,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			self::ORDERBY_OPTIONS
 		);
 		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		$algorithm = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
 		$is_relevance = ( 'relevance' === $orderby && '' !== $search_term );
 
 		$taxonomy_filters = $this->prepare_taxonomy_filters( $arguments );
@@ -290,7 +291,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Apply TF-IDF relevance ranking when orderby=relevance with a search term.
 		if ( $is_relevance ) {
-			$results = $this->rank_by_relevance( $results, $search_term );
+			$results = $this->rank_by_relevance( $results, $search_term, array(), $algorithm );
 			$results = array_slice( $results, 0, $limit );
 		}
 

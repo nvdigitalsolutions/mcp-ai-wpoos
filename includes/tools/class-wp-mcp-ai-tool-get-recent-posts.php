@@ -144,6 +144,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 			self::ORDERBY_OPTIONS
 		);
 		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		$algorithm = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
 		$is_relevance = ( 'relevance' === $orderby && '' !== $search );
 
 		$posts = get_posts(
@@ -183,7 +184,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Apply TF-IDF relevance ranking when orderby=relevance with a search term.
 		if ( $is_relevance ) {
-			$results = $this->rank_by_relevance( $results, $search );
+			$results = $this->rank_by_relevance( $results, $search, array(), $algorithm );
 			$results = array_slice( $results, 0, $limit );
 		}
 
