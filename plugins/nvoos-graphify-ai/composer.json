@@ -2,7 +2,7 @@
     "name": "nvoos/graphify-ai",
     "description": "AI chat assistant addon for NV oOS Graphify — chat, providers, AI tools, embeddings, and agent memory.",
     "type": "wordpress-plugin",
-    "license": "GPL-3.0-or-later",
+    "license": "proprietary",
     "authors": [
         {
             "name": "NV Digital Solutions",

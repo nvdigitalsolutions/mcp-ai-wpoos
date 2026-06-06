@@ -1,73 +1,59 @@
 # NV oOS Graphify — AI
 
-> **Version**: 1.0.0-dev | **Requires**: NV oOS Graphify 1.0+, PHP 8.1+, WordPress 6.5+
+## Purpose
 
-AI chat assistant addon for NV oOS Graphify. One install, one API key, complete AI experience.
+AI chat assistant addon for NV oOS Graphify — adds conversational AI with 13 provider backends, SSE streaming, tool-calling loop, 13 AI-powered tools, and agent memory to the knowledge graph. One install, one API key.
 
----
+## Tier
 
-## Features
+| | |
+|---|---|
+| **Distribution** | Addon plugin — requires `nvoos-graphify` |
+| **PHP target** | 8.1+ |
+| **License** | Proprietary (commercial license required) |
+| **Loaded by** | `nvoos-graphify-ai.php` → `plugins_loaded` priority 20 (after core plugin at priority 10) |
+| **Requires Plugins** | `nvoos-graphify` (WP 6.5+ header) |
 
-### AI Chat
-- Conversational AI chat with tool-calling loop
-- SSE streaming for real-time responses
-- REST API endpoints under `nvoos-graphify/v1/ai/`
+## Public Surface
 
-### Providers (13 total)
-- **Bundled**: OpenAI, Gemini, Ollama
-- **Exotic** (coming): Anthropic, DeepSeek, OpenRouter, HuggingFace, Cloudflare, LMStudio, NVIDIA, DigitalOcean, Kimi, Baseten
+| Symbol | File | Used by |
+|---|---|---|
+| `NvoosGraphifyAi\Plugin` | `src/Plugin.php` | Bootstrap (singleton composition root) |
+| `NvoosGraphifyAi\ProviderRegistry` | `src/ProviderRegistry.php` | Chat, REST, Tools |
+| `NvoosGraphifyAi\Settings` | `src/Settings.php` | All subsystems |
+| `NvoosGraphifyAi\Contracts\ProviderClient` | `src/Contracts/ProviderClient.php` | All 13 provider implementations |
+| `NvoosGraphifyAi\Chat\ChatService` | `src/Chat/ChatService.php` | REST controller, async jobs |
 
-### Coming in later sprints
-- ~30 AI-powered tools (content generation, image creation, SEO analysis, etc.)
-- Vector embeddings + semantic similarity search + RAG
-- Agent memory (store, recall, mine, decay, provenance)
+## Inputs / Outputs / Neighbors
 
----
+- **Reads from:** `nvoos_graphify_settings` option (AI keys merged via `nvoos_graphify/default_settings` filter), core `NvoosGraphify\ToolRegistry`
+- **Writes to:** REST responses, SSE streams, AI provider APIs (OpenAI, Gemini, Ollama, etc.)
+- **Upstream callers:** WordPress REST API, `nvoos-graphify` core (tool registration hook)
+- **Downstream collaborators:** `nvoos-graphify` core (`ToolRegistry`, `Contracts\Tool`), 13 provider APIs
+- **Events fired:** `nvoos_graphify_ai/continue_chat` (Action Scheduler)
+- **Events listened to:** `nvoos_graphify/register_tools`, `nvoos_graphify/default_settings`, `rest_api_init`
 
-## Installation
+## Conventions
 
-1. Ensure NV oOS Graphify is installed and activated
-2. Upload or copy the `nvoos-graphify-ai` folder to `/wp-content/plugins/`
-3. Activate **NV oOS Graphify — AI** in Plugins → Installed Plugins
-4. Go to Settings → NV oOS Graphify, enter your OpenAI API key
-5. Send a POST to `/wp-json/nvoos-graphify/v1/ai/chat`
+- Namespace: `NvoosGraphifyAi\` — PSR-4 mapped to `src/`.
+- All providers implement `NvoosGraphifyAi\Contracts\ProviderClient` for uniform routing.
+- AI settings (API keys, models, temperatures) are merged into the core's grouped `nvoos_graphify_settings` option via the `nvoos_graphify/default_settings` filter — no separate options table.
+- `ChatService::process()` implements a tool-calling loop with a max of 5 iterations to prevent runaway loops.
 
----
+## Tests
 
-## REST API
-
-Base path: `/wp-json/nvoos-graphify/v1`
-
-| Method | Path | Description | Auth |
-|---|---|---|---|
-| `POST` | `/ai/chat` | Send chat messages | `edit_posts` |
-| `GET` | `/ai/providers` | List available providers | `edit_posts` |
-
----
-
-## Architecture
-
-```
-nvoos-graphify-ai/
-├── nvoos-graphify-ai.php     Bootstrap + PSR-4 autoload
-├── composer.json              PSR-4: NvoosGraphifyAi\
-├── src/
-│   ├── Plugin.php             Composition root
-│   ├── Settings.php           Reads from core's grouped settings
-│   ├── ProviderRegistry.php   Provider container
-│   ├── Contracts/
-│   │   └── ProviderClient.php Provider interface
-│   ├── Providers/
-│   │   └── OpenAi/            OpenAI client
-│   ├── Chat/
-│   │   └── ChatService.php    Tool-calling loop orchestrator
-│   └── Rest/
-│       └── ChatController.php REST endpoints
-└── tests/
+```bash
+vendor/bin/phpunit tests/
 ```
 
----
+## Also Load
 
-## License
+- [`../../.context/conventions.md`](../../.context/conventions.md) — naming + style
+- [`../../.context/security-checklist.md`](../../.context/security-checklist.md) — API key handling, SSRF
+- [`../../.context/rest-api.md`](../../.context/rest-api.md) — REST patterns
+- [`../../CLAUDE.md`](../../CLAUDE.md) — PHP compat + tool patterns
 
-GPL-3.0-or-later. See LICENSE file.
+## See Also
+
+- Required parent: [`../nvoos-graphify/`](../nvoos-graphify/) — core knowledge graph plugin
+- [`src/`](src/) — source code root
