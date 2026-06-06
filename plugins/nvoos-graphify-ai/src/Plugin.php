@@ -3,16 +3,20 @@ declare(strict_types=1);
 
 namespace NvoosGraphifyAi;
 
-use NvoosGraphifyAi\Chat\ChatService;
-
+/**
+ * Plugin bootstrap — wires the addon into WordPress and the parent plugin.
+ *
+ * Replaces direct ProviderRegistry / ChatService management with
+ * CoreBridge, which delegates provider routing, tool execution, and
+ * chat orchestration to the framework-agnostic nvoos/core engine.
+ *
+ * @since 1.0.0
+ */
 final class Plugin {
 
 	private static ?self $instance = null;
-	private ProviderRegistry $providerRegistry;
 
-	private function __construct() {
-		$this->providerRegistry = new ProviderRegistry();
-	}
+	private function __construct() {}
 
 	public static function instance(): self {
 		if ( null === self::$instance ) {
@@ -22,9 +26,10 @@ final class Plugin {
 	}
 
 	public function register(): void {
+		// Bootstrap core services (providers, tools, orchestrator).
+		CoreBridge::instance();
+
 		add_filter( 'nvoos_graphify/default_settings', array( $this, 'addDefaultSettings' ) );
-		$this->registerBuiltinProviders();
-		add_action( 'nvoos_graphify/register_tools', array( $this, 'registerAiTools' ) );
 
 		add_action(
 			'rest_api_init',
@@ -35,9 +40,13 @@ final class Plugin {
 			}
 		);
 
-		if ( class_exists( 'NvoosGraphifyAi\Chat\ChatService' ) ) {
-			add_action( 'nvoos_graphify_ai/continue_chat', array( ChatService::class, 'continueChat' ), 10, 2 );
-		}
+		// Register the async chat continuation hook.
+		add_action(
+			'nvoos_graphify_ai/continue_chat',
+			array( $this, 'handleContinueChat' ),
+			10,
+			2
+		);
 	}
 
 	public function addDefaultSettings( array $defaults ): array {
@@ -74,58 +83,27 @@ final class Plugin {
 		);
 	}
 
-	private function registerBuiltinProviders(): void {
-		$providers = array(
-			'OpenAi\OpenAiProvider',
-			'Gemini\GeminiProvider',
-			'Ollama\OllamaProvider',
-			'Anthropic\AnthropicProvider',
-			'DeepSeek\DeepSeekProvider',
-			'OpenRouter\OpenRouterProvider',
-			'HuggingFace\HuggingFaceProvider',
-			'Cloudflare\CloudflareProvider',
-			'LMStudio\LMStudioProvider',
-			'Nvidia\NvidiaProvider',
-			'DigitalOcean\DigitalOceanProvider',
-			'Kimi\KimiProvider',
-			'Baseten\BasetenProvider',
-		);
+	/**
+	 * Handle async chat continuation via Action Scheduler.
+	 *
+	 * @param array  $messages Conversation history.
+	 * @param string $provider Provider slug.
+	 */
+	public function handleContinueChat( array $messages, string $provider = '' ): void {
+		$bridge  = CoreBridge::instance();
+		$options = array();
 
-		foreach ( $providers as $rel ) {
-			$cls = __NAMESPACE__ . '\Providers\\' . $rel;
-			if ( class_exists( $cls ) ) {
-				$this->providerRegistry->register( new $cls() );
-			}
+		if ( '' !== $provider ) {
+			$options['provider'] = $provider;
 		}
-	}
 
-	public function registerAiTools( \NvoosGraphify\ToolRegistry $registry ): void {
-		$tools = array(
-			'SummarizeText',
-			'TranslateText',
-			'AnalyzeSentiment',
-			'ExtractEntities',
-			'QuestionAnswering',
-			'GenerateExcerpt',
-			'GenerateImageAltText',
-			'AnalyzeImage',
-			'CategorizeContent',
-			'ContentRecommendation',
-			'ContentFreshness',
-			'SemanticSearch',
-			'CreateTextEmbeddings',
+		$bridge->chat->handleChat(
+			$messages,
+			array(),           // assistantConfig
+			0,                 // userId
+			0,                 // assistantId
+			$options,
 		);
-
-		foreach ( $tools as $name ) {
-			$cls = 'NvoosGraphifyAi\Tools\\' . $name;
-			if ( class_exists( $cls ) ) {
-				$registry->register( new $cls() );
-			}
-		}
-	}
-
-	public function getProviderRegistry(): ProviderRegistry {
-		return $this->providerRegistry;
 	}
 
 	private function __clone() {}
