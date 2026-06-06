@@ -13,8 +13,21 @@
     ],
     "homepage": "https://github.com/nvdigitalsolutions/nvoos-graphify-ai",
     "require": {
-        "php": "^8.1"
+        "php": "^8.1",
+        "nvoos/core": "dev-main",
+        "nvoos/wordpress-adapter": "@dev"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../lib/wordpress-adapter",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "require-dev": {
         "composer/installers": "^2.0",
         "phpunit/phpunit": "^9.0",
