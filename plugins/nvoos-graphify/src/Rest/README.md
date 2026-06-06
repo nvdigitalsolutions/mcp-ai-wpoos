@@ -1,0 +1,73 @@
+# REST
+
+## Purpose
+
+Exposes the knowledge graph via WordPress REST API under the `nvoos-graphify/v1` namespace — graph queries, node retrieval, search, build triggers, export, remote-source CRUD, and webhook ingestion.
+
+## Tier
+
+| | |
+|---|---|
+| **Distribution** | Core plugin |
+| **PHP target** | 8.1+ |
+| **License** | GPL-3.0-or-later |
+| **Loaded by** | `NvoosGraphify\Plugin::register()` on `rest_api_init` |
+| **Optional dependencies** | None |
+
+## Public Surface
+
+| Symbol | File | Used by |
+|---|---|---|
+| `NvoosGraphify\Rest\Controller` | `Controller.php` | `Plugin::register()` (REST route registration) |
+
+## Inputs / Outputs / Neighbors
+
+- **Reads from:** REST request params, custom DB tables (via `src/Graph/Db`), `nvoos_graphify_settings` option
+- **Writes to:** Custom DB tables (remote sources), triggers graph builds, `WP_REST_Response` / `WP_Error`
+- **Upstream callers:** WordPress REST API, frontend JS (Cytoscape viewer), AI addon chat
+- **Downstream collaborators:** `src/Graph/Db` (queries, mutations), `src/Graph/Builder` (build triggers), `src/Graph/Exporter` (export), `src/Remote/Registry` (source management)
+- **Events fired:** None (REST handlers return responses directly)
+- **Events listened to:** `rest_api_init`
+
+### REST Endpoints
+
+| Method | Path | Description | Auth |
+|---|---|---|---|
+| `GET` | `/graph` | Get full graph data | `edit_posts` |
+| `GET` | `/nodes` | List/paginate nodes | `edit_posts` |
+| `GET` | `/nodes/{id}` | Get single node with edges | `edit_posts` |
+| `POST` | `/build` | Trigger a graph build | `manage_options` |
+| `GET` | `/search` | Search nodes by label | `edit_posts` |
+| `GET` | `/export` | Export graph as JSON/Cytoscape | `edit_posts` |
+| `GET` | `/context` | Retrieve RAG context for a post | `edit_posts` |
+| `GET` | `/resolve` | Resolve external entity | `edit_posts` |
+| `GET` | `/sources` | List remote sources | `manage_options` |
+| `POST` | `/sources` | Create remote source | `manage_options` |
+| `DELETE` | `/sources/{id}` | Delete remote source | `manage_options` |
+| `POST` | `/sources/{id}/sync` | Trigger remote source sync | `manage_options` |
+| `POST` | `/sources/{id}/test` | Test remote source connection | `manage_options` |
+| `POST` | `/webhook/{slug}` | Receive webhook payload | Public (validated) |
+
+## Conventions
+
+- All routes use `permission_callback` — read endpoints require `edit_posts`, write endpoints require `manage_options`.
+- Webhook endpoint validates source configuration before accepting payloads.
+- Graph data responses use the canonical node/edge shape from `src/Graph/Db`.
+
+## Tests
+
+```bash
+vendor/bin/phpunit --filter '/REST|RestController/'
+```
+
+## Also Load
+
+- [`../../../.context/conventions.md`](../../../.context/conventions.md) — naming + style
+- [`../../../.context/security-checklist.md`](../../../.context/security-checklist.md) — nonces, caps, escaping
+- [`../../../.context/rest-api.md`](../../../.context/rest-api.md) — REST patterns
+
+## See Also
+
+- Parent: [`../`](../) — src root
+- Collaborators: [`../Graph/`](../Graph/), [`../Remote/`](../Remote/)
+- AI addon REST: [`../../nvoos-graphify-ai/src/Rest/ChatController.php`](../../nvoos-graphify-ai/src/Rest/ChatController.php)

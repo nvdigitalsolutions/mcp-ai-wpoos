@@ -9,8 +9,8 @@
  * Requires Plugins: nvoos-graphify
  * Author:       NV Digital Solutions
  * Author URI:   https://nvdigitalsolutions.com
- * License:      GPL-3.0-or-later
- * License URI:  https://www.gnu.org/licenses/gpl-3.0.html
+ * License:      Proprietary
+ * License URI:  https://nvdigitalsolutions.com/license
  * Text Domain:  nvoos-graphify-ai
  * Domain Path:  /languages
  *
