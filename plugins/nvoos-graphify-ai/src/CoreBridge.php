@@ -30,7 +30,7 @@ use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\WordPress\Adapter\ErrorFactory;
 use Nvoos\WordPress\Adapter\EventDispatcher;
-use Nvoos\WordPress\Adapter\SettingsStore;
+use NvoosGraphifyAi\Adapter\GraphifySettingsStore;
 use NvoosGraphifyAi\Adapter\WordPressHttpClient;
 use Psr\Http\Client\ClientInterface;
 
@@ -52,7 +52,9 @@ final class CoreBridge {
 	private function __construct() {
 		// 1. Create WordPress adapters.
 		$this->errors   = new ErrorFactory();
-		$this->settings = new SettingsStore();
+		// GraphifySettingsStore (v2) reads from nvoos_graphify_settings;
+		// the wordpress-adapter's SettingsStore (v1) reads from wp_mcp_ai_settings.
+		$this->settings = new GraphifySettingsStore();
 		$this->events   = new EventDispatcher();
 		$this->http     = new WordPressHttpClient();
 
