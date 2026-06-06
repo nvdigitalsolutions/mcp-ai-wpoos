@@ -1,0 +1,275 @@
+# Build NV oOS Graphify AI Addon Plugin
+#
+# Produces a distribution ZIP of the nvoos-graphify-ai plugin
+# (plugins/nvoos-graphify-ai/). This is a companion addon that adds AI chat,
+# 13 providers, AI tools, embeddings, and agent memory to the standalone
+# nvoos-graphify plugin. Requires nvoos-graphify to be installed.
+#
+# This workflow is intentionally separate from rebuild-all-zips.sh and
+# build-addon-zips.sh.
+#
+# Outputs:
+#   nvoos-graphify-ai-v{version}.zip
+#
+# Triggered by:
+#   - Manual workflow_dispatch with optional version input
+#   - Push to a tag matching "graphify-ai-v*.*.*"
+#   - Push to plugins/nvoos-graphify-ai/** on main/alpha-working
+
+name: Build NV oOS Graphify AI Plugin
+
+on:
+  push:
+    tags:
+      - 'graphify-ai-v*.*.*'
+    branches:
+      - main
+      - alpha-working
+    paths:
+      - 'plugins/nvoos-graphify-ai/**'
+  pull_request:
+    paths:
+      - 'plugins/nvoos-graphify-ai/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Graphify AI plugin version (e.g. 1.0.0)'
+        required: false
+        type: string
+      create_release:
+        description: 'Create a GitHub Release with the artifact'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ===========================================================================
+  # Build the graphify-ai plugin ZIP
+  # ===========================================================================
+  build:
+    name: Build Graphify AI Plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            # Extract version from tag (graphify-ai-v1.0.0 → 1.0.0)
+            VERSION="${GITHUB_REF_NAME#graphify-ai-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Read version from plugin header (for branch/PR pushes)
+            VERSION=$(grep -E "^\s*\*\s*Version:" plugins/nvoos-graphify-ai/nvoos-graphify-ai.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-graphify-ai-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install Composer dependencies (no-dev)
+        working-directory: plugins/nvoos-graphify-ai
+        run: composer install --no-dev --no-interaction --prefer-dist
+
+      - name: Assemble plugin directory for ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p "dist/${ARTIFACT}/nvoos-graphify-ai"
+
+          # Copy plugin source (exclude dev/test/build files)
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.gitignore' \
+            --exclude='.github/' \
+            --exclude='.distignore' \
+            --exclude='tests/' \
+            --exclude='phpcs.xml.dist' \
+            --exclude='phpunit.xml.dist' \
+            --exclude='composer.json' \
+            --exclude='composer.lock' \
+            --exclude='README.md' \
+            --exclude='.DS_Store' \
+            plugins/nvoos-graphify-ai/ "dist/${ARTIFACT}/nvoos-graphify-ai/"
+
+          echo "📁 Plugin directory contents:"
+          find "dist/${ARTIFACT}/nvoos-graphify-ai" -type f | sort
+
+      - name: Create ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          cd "dist/${ARTIFACT}"
+          zip -r "../../${ARTIFACT}.zip" nvoos-graphify-ai/
+          cd ../..
+          SIZE=$(du -sh "${ARTIFACT}.zip" | cut -f1)
+          echo "📦 ${ARTIFACT}.zip — ${SIZE}"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          cat "${ARTIFACT}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: |
+            ${{ steps.version.outputs.artifact }}.zip
+            ${{ steps.version.outputs.artifact }}.sha256
+          if-no-files-found: error
+
+  # ===========================================================================
+  # Publish ZIP to repository build/ directory
+  # Only on push to main/alpha-working or tag pushes — not on PRs.
+  # ===========================================================================
+  publish:
+    name: Publish ZIP to Repository
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/alpha-working' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#graphify-ai-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" plugins/nvoos-graphify-ai/nvoos-graphify-ai.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-graphify-ai-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Copy graphify-ai ZIP to build directory
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_SRC="artifacts/nvoos-graphify-ai-v${VERSION}.zip"
+
+          mkdir -p build
+
+          if [ -f "$ZIP_SRC" ]; then
+            cp "$ZIP_SRC" "build/"
+            SIZE=$(du -h "build/nvoos-graphify-ai-v${VERSION}.zip" | cut -f1)
+            echo "✅ build/nvoos-graphify-ai-v${VERSION}.zip — ${SIZE}"
+          else
+            echo "❌ $ZIP_SRC not found"
+            exit 1
+          fi
+
+      - name: Commit and push graphify-ai ZIP
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP="build/nvoos-graphify-ai-v${VERSION}.zip"
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          [ -f "$ZIP" ] && git add -f "$ZIP" 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "✅ Graphify AI plugin ZIP already up-to-date in build/ — nothing to commit"
+          else
+            echo "📝 Committing graphify AI plugin ZIP to build/..."
+            git diff --staged --stat
+
+            git commit -m "build: add nvoos-graphify-ai plugin ZIP v${VERSION} [skip ci]
+
+          - nvoos-graphify-ai-v${VERSION}.zip
+
+          Auto-generated by GitHub Actions"
+
+            git config core.autocrlf false
+            git pull --rebase --autostash origin ${{ github.ref_name }} || {
+              echo "⚠️ Rebase conflict detected. Resolving with ours strategy..."
+              ZIP="build/nvoos-graphify-ai-v${VERSION}.zip"
+              [ -f "$ZIP" ] && git checkout --ours "$ZIP" && git add -f "$ZIP" || true
+              git rebase --continue || {
+                echo "❌ Failed to resolve rebase conflicts"
+                git rebase --abort
+                exit 1
+              }
+            }
+            git push origin ${{ github.ref_name }}
+            echo "🎉 Graphify AI plugin ZIP published to build/"
+          fi
+
+  # ===========================================================================
+  # Create a GitHub Release (optional, triggered by tag or workflow_dispatch)
+  # ===========================================================================
+  release:
+    name: Create GitHub Release
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    if: |
+      inputs.create_release == true || startsWith(github.ref, 'refs/tags/graphify-ai-v')
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#graphify-ai-v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvoos-graphify-ai-v${{ steps.version.outputs.version }}
+          path: artifacts/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: graphify-ai-v${{ steps.version.outputs.version }}
+          name: "NV oOS Graphify AI v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS Graphify AI v${{ steps.version.outputs.version }}
+
+            AI chat assistant addon for NV oOS Graphify. Adds chat, 13 AI providers, AI tools, embeddings, and agent memory to your knowledge graph. One install, one API key.
+
+            ### Requirements
+
+            - WordPress 6.5+
+            - PHP 8.1+
+            - NV oOS Graphify plugin active
+
+            ### Checksum
+
+            See the `.sha256` file attached to this release.
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false
