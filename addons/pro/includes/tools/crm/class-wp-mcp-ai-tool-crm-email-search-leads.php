@@ -41,8 +41,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Freshsales & Zoho CRM lead qualification best practices.
  *
  * @since 2.1.0
+ * @since 2.4.0 Added free-text TF-IDF relevance search with configurable orderby/order parameters.
  */
 class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_CRM_Relevance_Search;
 
 	/**
 	 * WP Cron hook for scheduled cache refresh.
@@ -155,6 +158,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	const CRON_SCHEDULES = array( 'hourly', 'twicedaily', 'daily' );
 
 	/**
+	 * Allowed orderby values for lead sorting.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'lead_score', 'date', 'name', 'company' );
+
+	/**
 	 * Constructor – registers WP Cron callback.
 	 */
 	public function __construct() {
@@ -198,7 +210,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
  * {@inheritdoc}
  */
 	public function get_description() {
-		return __( 'Search CRM contacts for new leads by email-based criteria including lead score, email domain, inquiry type, source channel, priority, and date range. Supports multi-remote Gmail connection search via Remote Sites connection IDs for cross-account lead discovery. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring (HubSpot/Salesforce), 14 inquiry type categories, and pipeline-stage filtering (MQL/SQL).', 'mcp-ai-wpoos-pro' );
+		return __( 'Search CRM contacts for new leads by free-text search with TF-IDF relevance scoring, or by email-based criteria including lead score, email domain, inquiry type, source channel, priority, and date range. Sort results by relevance, lead_score, date, name, or company in ASC or DESC order. Supports multi-remote Gmail connection search via Remote Sites connection IDs for cross-account lead discovery. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring (HubSpot/Salesforce), 14 inquiry type categories, and pipeline-stage filtering (MQL/SQL).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -308,6 +320,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 					'items'       => array(
 						'type' => 'string',
 					),
+				),
+				'search'          => array(
+					'type'        => 'string',
+					'description' => __( 'Free-text search across lead name, company, and email. Supports partial matching with TF-IDF relevance scoring when orderby is set to relevance.', 'mcp-ai-wpoos-pro' ),
+				),
+				'orderby'         => array(
+					'type'        => 'string',
+					'enum'        => self::ORDERBY_OPTIONS,
+					'description' => __( 'Sort results by this field. Use "relevance" with the search parameter for TF-IDF scored results.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'lead_score',
+				),
+				'order'           => array(
+					'type'        => 'string',
+					'enum'        => array( 'ASC', 'DESC' ),
+					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'DESC',
 				),
 				'include_external' => array(
 					'type'        => 'boolean',
@@ -609,15 +637,43 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		$per_page    = min( max( absint( $filters['per_page'] ), 1 ), 100 );
 		$page        = max( absint( $filters['page'] ), 1 );
 		$lead_status = $filters['lead_status'];
+		$orderby     = isset( $filters['orderby'] ) ? $filters['orderby'] : 'lead_score';
+		$order       = isset( $filters['order'] ) ? $filters['order'] : 'DESC';
+		$search      = isset( $filters['search'] ) ? $filters['search'] : '';
+
+		$is_relevance = 'relevance' === $orderby && '' !== $search;
 
 		$query_args = array(
 			'post_type'      => 'mcp_crm_contacts',
 			'post_status'    => 'publish',
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
+			'posts_per_page' => $is_relevance ? 500 : $per_page,
+			'paged'          => $is_relevance ? 1 : $page,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
 		);
+
+		// Apply sort for non-relevance orderby values.
+		if ( ! $is_relevance ) {
+			switch ( $orderby ) {
+				case 'lead_score':
+					$query_args['meta_key'] = 'lead_score'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for sorting CRM leads by lead score.
+					$query_args['orderby']  = 'meta_value_num';
+					$query_args['order']    = $order;
+					break;
+				case 'name':
+					$query_args['orderby'] = 'title';
+					$query_args['order']   = $order;
+					break;
+				case 'company':
+					$query_args['meta_key'] = 'company'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for sorting CRM leads by company.
+					$query_args['orderby']  = 'meta_value';
+					$query_args['order']    = $order;
+					break;
+				default:
+					$query_args['orderby'] = 'date';
+					$query_args['order']   = $order;
+			}
+		}
 
 		$meta_query = array( 'relation' => 'AND' );
 
@@ -751,13 +807,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
+		// Apply TF-IDF relevance ranking post-query when using relevance sort with a search query.
+		if ( $is_relevance ) {
+			$leads = $this->rank_by_relevance( $leads, $search );
+			$total = count( $leads );
+			$pages = max( 1, (int) ceil( $total / $per_page ) );
+			$offset = ( $page - 1 ) * $per_page;
+			$leads  = array_slice( $leads, $offset, $per_page );
+		}
+
 		return array(
 			'success'  => true,
 			'leads'    => $leads,
-			'total'    => $query->found_posts,
+			'total'    => $is_relevance ? $total : $query->found_posts,
 			'per_page' => $per_page,
 			'page'     => $page,
-			'pages'    => max( 1, $query->max_num_pages ),
+			'pages'    => $is_relevance ? $pages : max( 1, $query->max_num_pages ),
 			'filters'  => $filters,
 			'scoring'  => array(
 				'cold' => '0–39',
@@ -838,6 +903,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			'date_to'       => isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : '',
 			'per_page'      => isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20,
 			'page'          => isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1,
+			'orderby'       => $this->sanitise_orderby(
+				isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'lead_score',
+				'lead_score',
+				self::ORDERBY_OPTIONS
+			),
+			'order'         => isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC',
+			'search'        => isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '',
 		);
 
 		if ( isset( $arguments['lead_score_min'] ) ) {

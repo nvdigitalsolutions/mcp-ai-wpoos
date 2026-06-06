@@ -664,6 +664,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * Get media items from remote site.
 	 *
 	 * @since 1.0.0
+	 * @since 2.4.0 Added 'search' parameter support.
 	 *
 	 * @param array $connection Connection data.
 	 * @param array $arguments  Query arguments.
@@ -687,6 +688,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'page'     => $page,
 			'_fields'  => self::MEDIA_FIELDS,
 		);
+
+		if ( ! empty( $arguments['search'] ) ) {
+			$params['search'] = sanitize_text_field( $arguments['search'] );
+		}
 
 		$endpoint = 'wp/v2/media';
 

@@ -8,9 +8,10 @@
  *  - Lead scoring (0–100 cold/warm/hot with factor decomposition).
  *  - Lifecycle stage progression (Subscriber → Lead → MQL → SAL → SQL → Opportunity → Customer).
  *  - Pipeline probability lookups (stage → win probability).
- *  - Routing strategy resolution (round_robin, weighted, territory, skill).
- *  - Currency formatting helpers.
- *  - DNC / suppression helper.
+	 *  - Routing strategy resolution (round_robin, weighted, territory, skill).
+	 *  - Currency formatting helpers.
+	 *  - DNC / suppression helper.
+	 *  - Search algorithm configuration (keyword_tfidf, fulltext).
  *
  * Mirrors WP_MCP_AI_Healthcare_Engine in the healthcare toolkit.
  *
@@ -28,9 +29,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Shared CRM engine.
  *
- * @since 2.3.0
- */
-class WP_MCP_AI_CRM_Engine {
+	 * @since 2.3.0
+	 * @since 2.4.0 Added 'search' settings block for configurable relevance algorithm.
+	 */
+	class WP_MCP_AI_CRM_Engine {
 
 	/**
 	 * Settings option key.
@@ -122,6 +124,17 @@ class WP_MCP_AI_CRM_Engine {
 				'gmail_oauth_handle'        => '',
 				'outlook_oauth_handle'      => '',
 			),
+			'search'                  => array(
+				'algorithm'        => 'keyword_tfidf',
+				'default_orderby'  => 'relevance',
+				'min_relevance'    => 0,
+				'field_weights'    => array(
+					'name'    => 3.0,
+					'company' => 2.0,
+					'email'   => 1.5,
+				),
+			),
+			'research_assistant'      => 'default',
 		);
 
 		$stored = get_option( self::SETTINGS_OPTION, array() );
