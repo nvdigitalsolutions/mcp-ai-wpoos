@@ -349,7 +349,12 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Apply TF-IDF relevance ranking when in relevance mode.
 		if ( $is_relevance_mode ) {
-			$policies = $this->rank_by_relevance( $policies, $search );
+			$field_weights = array(
+				'name'     => 3.0,
+				'provider' => 2.0,
+				'status'   => 1.5,
+			);
+			$policies = $this->rank_by_relevance( $policies, $search, $field_weights );
 
 			// Paginate the ranked results manually.
 			$total       = count( $policies );

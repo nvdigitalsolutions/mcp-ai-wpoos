@@ -37,20 +37,6 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 	const ORDERBY_OPTIONS = array( 'relevance', 'title', 'date', 'prescribing_doctor', 'status' );
 
 	/**
-	 * Default field weights for prescription TF-IDF scoring.
-	 *
-	 * @since 2.4.0
-	 * @var array<string,float>
-	 */
-	protected $default_field_weights = array(
-		'medication_name'    => 3.0,
-		'dosage'             => 1.5,
-		'frequency'          => 1.5,
-		'prescribing_doctor' => 2.0,
-		'notes'              => 1.0,
-	);
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -366,7 +352,14 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 
 		// Apply TF-IDF relevance ranking when in relevance mode.
 		if ( $relevance_mode ) {
-			$prescriptions = $this->rank_by_relevance( $prescriptions, $search );
+			$field_weights = array(
+				'medication_name'    => 3.0,
+				'dosage'             => 1.5,
+				'frequency'          => 1.5,
+				'prescribing_doctor' => 2.0,
+				'notes'              => 1.0,
+			);
+			$prescriptions = $this->rank_by_relevance( $prescriptions, $search, $field_weights );
 			$total_ranked  = count( $prescriptions );
 			$offset        = ( $page - 1 ) * $per_page;
 			$prescriptions = array_slice( $prescriptions, $offset, $per_page );

@@ -32,18 +32,6 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 	const ORDERBY_OPTIONS = array( 'relevance', 'date', 'title' );
 
 	/**
-	 * Default field weights for content TF-IDF scoring.
-	 *
-	 * @since 2.4.0
-	 * @var array<string,float>
-	 */
-	protected $default_field_weights = array(
-		'title'   => 3.0,
-		'content' => 2.0,
-		'excerpt' => 1.0,
-	);
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -184,7 +172,12 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Apply TF-IDF relevance ranking when orderby=relevance with a search term.
 		if ( $is_relevance ) {
-			$results = $this->rank_by_relevance( $results, $search, array(), $algorithm );
+			$field_weights = array(
+				'title'   => 3.0,
+				'content' => 2.0,
+				'excerpt' => 1.0,
+			);
+			$results = $this->rank_by_relevance( $results, $search, $field_weights, $algorithm );
 			$results = array_slice( $results, 0, $limit );
 		}
 

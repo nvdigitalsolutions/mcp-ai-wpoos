@@ -33,22 +33,6 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 	const ORDERBY_OPTIONS = array( 'relevance', 'date', 'title', 'provider' );
 
 	/**
-	 * Default field weights for medical record TF-IDF scoring.
-	 *
-	 * Higher weight = field contributes more to relevance score.
-	 *
-	 * @since 2.4.0
-	 * @var array<string,float>
-	 */
-	protected $default_field_weights = array(
-		'title'     => 3.0,
-		'diagnosis' => 3.0,
-		'provider'  => 2.0,
-		'facility'  => 1.5,
-		'summary'   => 1.0,
-	);
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -361,7 +345,14 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 		// Apply TF-IDF relevance ranking when active.
 		if ( $use_relevance ) {
 			$total_found = count( $records );
-			$records     = $this->rank_by_relevance( $records, $search );
+			$field_weights = array(
+				'title'     => 3.0,
+				'diagnosis' => 3.0,
+				'provider'  => 2.0,
+				'facility'  => 1.5,
+				'summary'   => 1.0,
+			);
+			$records = $this->rank_by_relevance( $records, $search, $field_weights );
 
 			// Paginate the relevance-ranked results.
 			$total_pages = $per_page > 0 ? (int) ceil( $total_found / $per_page ) : 1;

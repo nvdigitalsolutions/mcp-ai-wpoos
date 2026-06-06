@@ -33,22 +33,6 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	const ORDERBY_OPTIONS = array( 'relevance', 'date', 'title' );
 
 	/**
-	 * Default field weights for content TF-IDF scoring.
-	 *
-	 * Title: highest weight — exact match on title is the strongest signal.
-	 * Content: mid weight — body match is important but lower than title.
-	 * Excerpt: lowest weight — excerpt may duplicate title/content.
-	 *
-	 * @since 2.4.0
-	 * @var array<string,float>
-	 */
-	protected $default_field_weights = array(
-		'title'   => 3.0,
-		'content' => 2.0,
-		'excerpt' => 1.0,
-	);
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -291,7 +275,12 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Apply TF-IDF relevance ranking when orderby=relevance with a search term.
 		if ( $is_relevance ) {
-			$results = $this->rank_by_relevance( $results, $search_term, array(), $algorithm );
+			$field_weights = array(
+				'title'   => 3.0,
+				'content' => 2.0,
+				'excerpt' => 1.0,
+			);
+			$results = $this->rank_by_relevance( $results, $search_term, $field_weights, $algorithm );
 			$results = array_slice( $results, 0, $limit );
 		}
 
