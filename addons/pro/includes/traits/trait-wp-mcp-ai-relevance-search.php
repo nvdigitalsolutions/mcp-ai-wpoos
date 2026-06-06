@@ -1,22 +1,26 @@
 <?php
 /**
- * CRM Relevance Search Trait — lightweight TF-IDF relevance scoring and free-text search.
+ * Relevance Search Trait — lightweight TF-IDF relevance scoring and free-text search.
  *
- * Provides a PHP-native TF-IDF scorer that can be applied to CRM contact records
+ * Provides a PHP-native TF-IDF scorer that can be applied to any post-type records
  * after WP_Query filtering. When a `search` keyword is supplied, the standard
  * meta-filter query first narrows the candidate set, then this scorer ranks results
  * by weighted field relevance.
  *
+ * Shared across CRM, Healthcare, and other Pro toolkits. Each consuming class
+ * overrides `$default_field_weights` and `extract_searchable_text()` for its
+ * domain-specific fields.
+ *
  * Industry context:
- * - BM25 is the gold standard for production CRM search, but requires an external
+ * - BM25 is the gold standard for production search, but requires an external
  *   library (e.g. Meilisearch, Elasticsearch) or a FULLTEXT-indexed custom table.
  * - This trait provides a pragmatic TF-IDF implementation suitable for the typical
- *   CRM contact volume (hundreds to low thousands of records on a WordPress site).
- * - When the dataset grows past ~5 000 contacts, consider upgrading to MySQL
+ *   dataset volume (hundreds to low thousands of records on a WordPress site).
+ * - When the dataset grows past ~5 000 records, consider upgrading to MySQL
  *   FULLTEXT or a dedicated search engine.
  *
  * @package WP_MCP_AI_Pro
- * @subpackage CRM_Toolkit
+ * @subpackage Traits
  * @since 2.4.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
@@ -28,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Lightweight TF-IDF relevance scorer for CRM contact search.
+ * Lightweight TF-IDF relevance scorer for toolkit search tools.
  *
  * @since 2.4.0
  */
@@ -91,11 +95,12 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 	}
 
 	/**
-	 * Extract searchable text for a CRM contact by post ID.
+	 * Extract searchable text for a post by ID.
 	 *
 	 * Returns an associative array of field_name => text_value for scoring.
+	 * Override in consuming classes for domain-specific fields.
 	 *
-	 * @param int   $post_id        Contact post ID.
+	 * @param int   $post_id        Post ID.
 	 * @param array $field_weights  Map of field => weight (optional, uses defaults).
 	 * @return array<string,string>
 	 */
@@ -120,17 +125,17 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 	}
 
 	/**
-	 * Compute a simple TF-IDF relevance score for a contact against a query.
+	 * Compute a simple TF-IDF relevance score for a record against a query.
 	 *
 	 * Scoring:
-	 * - Term Frequency (TF): raw count of token occurrences in the contact's text fields.
+	 * - Term Frequency (TF): raw count of token occurrences in the record's text fields.
 	 * - Inverse Document Frequency (IDF): approximated as 1.0 since we don't have
 	 *   a full corpus; longer tokens get a small length bonus (they're more specific).
 	 * - Field weights: multiply the token score by the field's configured weight.
 	 * - Final score: sum of weighted token scores, normalised to 0–100.
 	 *
 	 * @param string $query          User's search query.
-	 * @param int    $post_id        Contact post ID.
+	 * @param int    $post_id        Post ID.
 	 * @param array  $field_weights  Field weight map (optional).
 	 * @return float Relevance score (0–100).
 	 */
@@ -173,17 +178,17 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 		}
 
 		// Normalise to 0–100.  The maximum theoretical score depends on field weights;
-		// 30 is a reasonable ceiling for typical CRM contact text length.
+		// 30 is a reasonable ceiling for typical record text length.
 		return min( 100.0, round( $total_score * ( 100.0 / 30.0 ), 1 ) );
 	}
 
 	/**
-	 * Rank an array of CRM contact records by relevance to a search query.
+	 * Rank an array of records by relevance to a search query.
 	 *
 	 * Adds a 'relevance_score' field to each record and sorts descending.
 	 * Records with the same relevance score preserve their original order.
 	 *
-	 * @param array  $records       Array of contact records (each must have 'id').
+	 * @param array  $records       Array of records (each must have 'id').
 	 * @param string $query         Search query.
 	 * @param array  $field_weights Field weight map (optional).
 	 * @return array Re-scored and sorted records.

@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once WP_MCP_AI_PRO_PATH . 'includes/tools/crm/trait-wp-mcp-ai-crm-relevance-search.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
 
 /**
  * Search and research insurance policies.
