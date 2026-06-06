@@ -76,14 +76,80 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 	 * @var string[]
 	 */
 	protected static $relevance_stop_words = array(
-		'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-		'of', 'with', 'by', 'from', 'is', 'it', 'its', 'as', 'be', 'was',
-		'are', 'been', 'has', 'have', 'had', 'do', 'does', 'did', 'will',
-		'would', 'could', 'should', 'may', 'might', 'that', 'this', 'these',
-		'those', 'i', 'me', 'my', 'we', 'our', 'you', 'your', 'he', 'she',
-		'they', 'them', 'their', 'what', 'which', 'who', 'whom', 'how',
-		'where', 'when', 'not', 'no', 'nor', 'so', 'if', 'then', 'than',
-		'too', 'very', 'can', 'just', 'about', 'also', 'some', 'any', 'all',
+		'a',
+		'an',
+		'the',
+		'and',
+		'or',
+		'but',
+		'in',
+		'on',
+		'at',
+		'to',
+		'for',
+		'of',
+		'with',
+		'by',
+		'from',
+		'is',
+		'it',
+		'its',
+		'as',
+		'be',
+		'was',
+		'are',
+		'been',
+		'has',
+		'have',
+		'had',
+		'do',
+		'does',
+		'did',
+		'will',
+		'would',
+		'could',
+		'should',
+		'may',
+		'might',
+		'that',
+		'this',
+		'these',
+		'those',
+		'i',
+		'me',
+		'my',
+		'we',
+		'our',
+		'you',
+		'your',
+		'he',
+		'she',
+		'they',
+		'them',
+		'their',
+		'what',
+		'which',
+		'who',
+		'whom',
+		'how',
+		'where',
+		'when',
+		'not',
+		'no',
+		'nor',
+		'so',
+		'if',
+		'then',
+		'than',
+		'too',
+		'very',
+		'can',
+		'just',
+		'about',
+		'also',
+		'some',
+		'any',
+		'all',
 	);
 
 	/**
@@ -173,8 +239,8 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 		$total_score = 0.0;
 
 		foreach ( $tokens as $token ) {
-			$token_len  = strlen( $token );
-			$idf_proxy  = 1.0 + log( max( 1, $token_len ) );
+			$token_len = strlen( $token );
+			$idf_proxy = 1.0 + log( max( 1, $token_len ) );
 
 			foreach ( $field_texts as $field => $text ) {
 				if ( '' === $text ) {
@@ -217,7 +283,7 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 
 		foreach ( $field_texts as $text ) {
 			if ( '' !== $text ) {
-				$words = preg_split( '/\s+/', trim( $text ), -1, PREG_SPLIT_NO_EMPTY );
+				$words        = preg_split( '/\s+/', trim( $text ), -1, PREG_SPLIT_NO_EMPTY );
 				$total_words += is_array( $words ) ? count( $words ) : 0;
 			}
 		}
@@ -232,9 +298,9 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param array  $records       Candidate records (each must have 'id').
-	 * @param array  $tokens        Query tokens.
-	 * @param array  $field_weights Field weight map (optional).
+	 * @param array $records       Candidate records (each must have 'id').
+	 * @param array $tokens        Query tokens.
+	 * @param array $field_weights Field weight map (optional).
 	 * @return array{ N: int, avgdl: float, idf: array<string,float>, doc_lengths: array<int,int> }
 	 */
 	protected function compute_corpus_stats( array $records, array $tokens, $field_weights = array() ) {
@@ -242,7 +308,7 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 			$field_weights = $this->default_field_weights;
 		}
 
-		$N           = count( $records );
+		$doc_count   = count( $records );
 		$doc_lengths = array();
 		$total_dl    = 0;
 		$token_df    = array();
@@ -252,10 +318,10 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 		}
 
 		foreach ( $records as $record ) {
-			$post_id = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
-			$dl = $post_id ? $this->compute_doc_length( $post_id, $field_weights ) : 1;
+			$post_id                 = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+			$dl                      = $post_id ? $this->compute_doc_length( $post_id, $field_weights ) : 1;
 			$doc_lengths[ $post_id ] = $dl;
-			$total_dl += $dl;
+			$total_dl               += $dl;
 
 			if ( 0 === $post_id ) {
 				continue;
@@ -265,7 +331,7 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 
 			foreach ( $tokens as $token ) {
 				if ( false !== strpos( $all_text, $token ) ) {
-					$token_df[ $token ]++;
+					++$token_df[ $token ];
 				}
 			}
 		}
@@ -276,13 +342,13 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 			if ( 0 === $df ) {
 				$idf[ $token ] = 0.0;
 			} else {
-				$idf[ $token ] = log( ( $N - $df + 0.5 ) / ( $df + 0.5 ) + 1.0 );
+				$idf[ $token ] = log( ( $doc_count - $df + 0.5 ) / ( $df + 0.5 ) + 1.0 );
 			}
 		}
 
 		return array(
-			'N'           => $N,
-			'avgdl'       => $N > 0 ? $total_dl / $N : 1.0,
+			'doc_count'   => $doc_count,
+			'avgdl'       => $doc_count > 0 ? $total_dl / $doc_count : 1.0,
 			'idf'         => $idf,
 			'doc_lengths' => $doc_lengths,
 		);
@@ -377,13 +443,13 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 
 		$scored = array();
 		foreach ( $records as $i => $record ) {
-			$post_id = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
-			$score   = $post_id
+			$post_id                   = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+			$score                     = $post_id
 				? $this->compute_bm25_score( $query, $post_id, $field_weights, $corpus['avgdl'], $corpus['idf'] )
 				: 0.0;
 			$record['relevance_score'] = $score;
 			$record['_original_index'] = $i;
-			$scored[] = $record;
+			$scored[]                  = $record;
 		}
 
 		usort(
@@ -430,11 +496,11 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 
 		$scored = array();
 		foreach ( $records as $i => $record ) {
-			$post_id = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
-			$score   = $post_id ? $this->compute_relevance_score( $query, $post_id, $field_weights ) : 0.0;
+			$post_id                   = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+			$score                     = $post_id ? $this->compute_relevance_score( $query, $post_id, $field_weights ) : 0.0;
 			$record['relevance_score'] = $score;
 			$record['_original_index'] = $i;
-			$scored[] = $record;
+			$scored[]                  = $record;
 		}
 
 		usort(
@@ -459,15 +525,15 @@ trait WP_MCP_AI_CRM_Relevance_Search {
 	/**
 	 * Sanitise and validate the orderby parameter.
 	 *
-	 * @param string $raw           Raw orderby value from arguments.
-	 * @param string $default       Default value if invalid.
+	 * @param string $raw            Raw orderby value from arguments.
+	 * @param string $default_value  Default value if invalid.
 	 * @param array  $allowed_keys  List of allowed orderby keys.
 	 * @return string Sanitised orderby value.
 	 */
-	protected function sanitise_orderby( $raw, $default, array $allowed_keys ) {
+	protected function sanitise_orderby( $raw, $default_value, array $allowed_keys ) {
 		$value = sanitize_key( $raw );
 		if ( ! in_array( $value, $allowed_keys, true ) ) {
-			return $default;
+			return $default_value;
 		}
 		return $value;
 	}

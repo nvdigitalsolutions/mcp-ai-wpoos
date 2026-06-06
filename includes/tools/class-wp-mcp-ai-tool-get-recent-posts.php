@@ -137,14 +137,14 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 		$limit     = $limit > 0 ? min( $limit, $max_limit ) : 5;
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
 
-		$search  = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
-		$orderby = $this->sanitise_orderby(
+		$search       = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
+		$orderby      = $this->sanitise_orderby(
 			isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'date',
 			'date',
 			self::ORDERBY_OPTIONS
 		);
-		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
-		$algorithm = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
+		$order        = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		$algorithm    = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
 		$is_relevance = ( 'relevance' === $orderby && '' !== $search );
 
 		$posts = get_posts(

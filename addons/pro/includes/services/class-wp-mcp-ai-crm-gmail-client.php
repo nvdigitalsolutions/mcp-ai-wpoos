@@ -95,7 +95,10 @@ class WP_MCP_AI_CRM_Gmail_Client {
 		$connection_ids = self::resolve_connection_ids( $arguments );
 
 		if ( empty( $connection_ids ) ) {
-			return array( 'leads' => array(), 'external' => array() );
+			return array(
+				'leads'    => array(),
+				'external' => array(),
+			);
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -103,7 +106,10 @@ class WP_MCP_AI_CRM_Gmail_Client {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			return array( 'leads' => array(), 'external' => array() );
+			return array(
+				'leads'    => array(),
+				'external' => array(),
+			);
 		}
 
 		$all_leads     = array();
@@ -190,7 +196,7 @@ class WP_MCP_AI_CRM_Gmail_Client {
 						__( 'HTTP %d from Gmail API.', 'mcp-ai-wpoos-pro' ),
 						$status_code
 					),
-					'label' => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
+					'label'  => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
 				);
 				continue;
 			}
@@ -247,28 +253,28 @@ class WP_MCP_AI_CRM_Gmail_Client {
 					}
 
 					$all_leads[] = array(
-						'id'             => 'gmail:' . $message_ref['id'],
-						'name'           => sanitize_text_field( $from_name ),
-						'email'          => sanitize_email( $from_email ),
-						'first_name'     => '',
-						'last_name'      => '',
-						'company'        => '',
-						'lead_status'    => 'new',
-						'inquiry_type'   => 'new_inquiry',
-						'mql_stage'      => '',
-						'priority'       => '',
-						'contact_owner'  => '',
-						'source'         => 'email_inbound',
-						'lead_score'     => null,
-						'score_label'    => __( 'unscored', 'mcp-ai-wpoos-pro' ),
-						'added_date'     => sanitize_text_field( $date ),
-						'edit_url'       => '',
-						'origin'         => 'external',
-						'origin_label'   => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-						'gmail_subject'  => sanitize_text_field( $subject ),
-						'gmail_snippet'  => $snippet,
+						'id'            => 'gmail:' . $message_ref['id'],
+						'name'          => sanitize_text_field( $from_name ),
+						'email'         => sanitize_email( $from_email ),
+						'first_name'    => '',
+						'last_name'     => '',
+						'company'       => '',
+						'lead_status'   => 'new',
+						'inquiry_type'  => 'new_inquiry',
+						'mql_stage'     => '',
+						'priority'      => '',
+						'contact_owner' => '',
+						'source'        => 'email_inbound',
+						'lead_score'    => null,
+						'score_label'   => __( 'unscored', 'mcp-ai-wpoos-pro' ),
+						'added_date'    => sanitize_text_field( $date ),
+						'edit_url'      => '',
+						'origin'        => 'external',
+						'origin_label'  => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
+						'gmail_subject' => sanitize_text_field( $subject ),
+						'gmail_snippet' => $snippet,
 					);
-					$messages_found++;
+					++$messages_found;
 				}
 			}
 
@@ -399,17 +405,17 @@ class WP_MCP_AI_CRM_Gmail_Client {
 		$inquiry_type = isset( $arguments['inquiry_type'] ) ? sanitize_key( $arguments['inquiry_type'] ) : 'all';
 		if ( 'all' !== $inquiry_type ) {
 			$keyword_map = array(
-				'demo_request'          => 'demo OR demonstration OR "book a demo"',
-				'pricing_inquiry'       => 'pricing OR price OR quote OR cost OR estimate',
-				'trial_request'         => 'trial OR "free trial" OR "try it"',
-				'support_request'       => 'support OR help OR issue OR problem OR "not working"',
-				'partnership'           => 'partnership OR partner OR collaboration OR affiliate',
-				'referral'              => 'referral OR referred OR "recommended by"',
-				'consultation_request'  => 'consultation OR consulting OR "book a call" OR assessment',
-				'event_registration'    => 'webinar OR event OR register OR registration OR rsvp',
-				'content_download'      => 'download OR whitepaper OR ebook OR guide OR pdf',
-				'newsletter_signup'     => 'newsletter OR subscribe OR subscription',
-				'account_management'    => 'account OR upgrade OR renew OR billing OR invoice',
+				'demo_request'         => 'demo OR demonstration OR "book a demo"',
+				'pricing_inquiry'      => 'pricing OR price OR quote OR cost OR estimate',
+				'trial_request'        => 'trial OR "free trial" OR "try it"',
+				'support_request'      => 'support OR help OR issue OR problem OR "not working"',
+				'partnership'          => 'partnership OR partner OR collaboration OR affiliate',
+				'referral'             => 'referral OR referred OR "recommended by"',
+				'consultation_request' => 'consultation OR consulting OR "book a call" OR assessment',
+				'event_registration'   => 'webinar OR event OR register OR registration OR rsvp',
+				'content_download'     => 'download OR whitepaper OR ebook OR guide OR pdf',
+				'newsletter_signup'    => 'newsletter OR subscribe OR subscription',
+				'account_management'   => 'account OR upgrade OR renew OR billing OR invoice',
 			);
 
 			if ( isset( $keyword_map[ $inquiry_type ] ) ) {

@@ -35,9 +35,9 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	/**
 	 * Default field weights for content TF-IDF scoring.
 	 *
-	 * title: highest weight — exact match on title is the strongest signal.
-	 * content: mid weight — body match is important but lower than title.
-	 * excerpt: lowest weight — excerpt may duplicate title/content.
+	 * Title: highest weight — exact match on title is the strongest signal.
+	 * Content: mid weight — body match is important but lower than title.
+	 * Excerpt: lowest weight — excerpt may duplicate title/content.
 	 *
 	 * @since 2.4.0
 	 * @var array<string,float>
@@ -221,13 +221,13 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
 		$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
 
-		$orderby = $this->sanitise_orderby(
+		$orderby      = $this->sanitise_orderby(
 			isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'date',
 			'date',
 			self::ORDERBY_OPTIONS
 		);
-		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
-		$algorithm = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
+		$order        = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		$algorithm    = isset( $arguments['search_algorithm'] ) && 'bm25' === $arguments['search_algorithm'] ? 'bm25' : 'tfidf';
 		$is_relevance = ( 'relevance' === $orderby && '' !== $search_term );
 
 		$taxonomy_filters = $this->prepare_taxonomy_filters( $arguments );
