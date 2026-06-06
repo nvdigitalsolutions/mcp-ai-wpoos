@@ -12,11 +12,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
+
 /**
- * Searches published content using WP_Query with optional filters.
+ * Searches published content using WP_Query with optional filters
+ * and TF-IDF relevance ranking.
+ *
+ * @since 2.4.0 Added configurable orderby/order and TF-IDF relevance.
  */
 class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Relevance_Search;
+
+	/**
+	 * Allowed orderby values for content search.
+	 *
+	 * @since 2.4.0
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'date', 'title' );
+
+	/**
+	 * Default field weights for content TF-IDF scoring.
+	 *
+	 * title: highest weight — exact match on title is the strongest signal.
+	 * content: mid weight — body match is important but lower than title.
+	 * excerpt: lowest weight — excerpt may duplicate title/content.
+	 *
+	 * @since 2.4.0
+	 * @var array<string,float>
+	 */
+	protected $default_field_weights = array(
+		'title'   => 3.0,
+		'content' => 2.0,
+		'excerpt' => 1.0,
+	);
 
 	/**
 	 * {@inheritdoc}
@@ -36,7 +66,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata.', 'mcp-ai-wpoos' );
+		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata. Supports configurable sort order (date, title) and TF-IDF relevance ranking via orderby=relevance.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -141,6 +171,18 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Logical relation between multiple meta filters.', 'mcp-ai-wpoos' ),
 					'default'     => 'AND',
 				),
+				'orderby'           => array(
+					'type'        => 'string',
+					'enum'        => self::ORDERBY_OPTIONS,
+					'description' => __( 'Sort results by this field. Use "relevance" for TF-IDF scored results (requires search_term).', 'mcp-ai-wpoos' ),
+					'default'     => 'date',
+				),
+				'order'             => array(
+					'type'        => 'string',
+					'enum'        => array( 'ASC', 'DESC' ),
+					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos' ),
+					'default'     => 'DESC',
+				),
 			),
 			'required'             => array( 'search_term' ),
 			'additionalProperties' => false,
@@ -179,6 +221,14 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
 		$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
 
+		$orderby = $this->sanitise_orderby(
+			isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'date',
+			'date',
+			self::ORDERBY_OPTIONS
+		);
+		$order = isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC';
+		$is_relevance = ( 'relevance' === $orderby && '' !== $search_term );
+
 		$taxonomy_filters = $this->prepare_taxonomy_filters( $arguments );
 		$meta_filters     = $this->prepare_meta_filters( $arguments );
 
@@ -189,15 +239,26 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$query_args = array(
 			'post_type'              => $post_type,
 			'post_status'            => 'publish',
-			'posts_per_page'         => $limit,
-			'orderby'                => 'date',
-			'order'                  => 'DESC',
+			'posts_per_page'         => $is_relevance ? 500 : $limit,
 			'ignore_sticky_posts'    => true,
 			'suppress_filters'       => false,
-			'no_found_rows'          => true,  // Performance: Skip counting total rows.
-			'update_post_term_cache' => false, // Performance: Skip term cache if not using taxonomy data.
-			'update_post_meta_cache' => true,  // Keep meta cache as we need post meta.
+			'no_found_rows'          => ! $is_relevance,  // Performance: skip when not paginating.
+			'update_post_term_cache' => false,
+			'update_post_meta_cache' => true,
 		);
+
+		// Dynamic orderby — date/title handled here; relevance applied post-query.
+		if ( ! $is_relevance ) {
+			if ( 'title' === $orderby ) {
+				$query_args['orderby'] = 'title';
+			} else {
+				$query_args['orderby'] = 'date';
+			}
+			$query_args['order'] = $order;
+		} else {
+			$query_args['orderby'] = 'date';
+			$query_args['order']   = 'DESC';
+		}
 
 		if ( '' !== $search_term ) {
 			$query_args['s'] = $search_term;
@@ -225,6 +286,12 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'date'      => get_the_date( DATE_W3C, $post_id ),
 				'post_type' => get_post_type( $post_id ),
 			);
+		}
+
+		// Apply TF-IDF relevance ranking when orderby=relevance with a search term.
+		if ( $is_relevance ) {
+			$results = $this->rank_by_relevance( $results, $search_term );
+			$results = array_slice( $results, 0, $limit );
 		}
 
 		// Use trait method to ensure proper message field for chat client.
