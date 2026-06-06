@@ -2,22 +2,38 @@
 /**
  * Tool for searching and researching policies.
  *
- * Allows AI assistants to search insurance policies with advanced filtering.
+ * Allows AI assistants to search insurance policies with advanced filtering
+ * and configurable orderby/order with TF-IDF relevance ranking.
  *
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ * @since     2.4.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/crm/trait-wp-mcp-ai-crm-relevance-search.php';
+
 /**
  * Search and research insurance policies.
+ *
+ * @since 2.4.0
  */
 class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_CRM_Relevance_Search;
+
+	/**
+	 * Allowed orderby options for policy search.
+	 *
+	 * @since 2.4.0
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'title', 'date', 'provider', 'status' );
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -36,7 +52,7 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search and research insurance policies with advanced filtering by member, policy type, provider, status, and coverage dates. Useful for finding active coverage, comparing policies, and verifying benefits.', 'mcp-ai-wpoos-pro' );
+		return __( 'Search and research insurance policies with advanced filtering by member, policy type, provider, status, coverage dates, and free-text search with optional TF-IDF relevance ranking. Supports ordering by relevance, title, date, provider, or status.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -75,6 +91,18 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'type'        => 'string',
 					'description' => __( 'Search policies by policy number or name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
+				),
+				'orderby'     => array(
+					'type'        => 'string',
+					'description' => __( 'Sort field for results. Use "relevance" with a search term for TF-IDF ranking (optional, default: title)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => self::ORDERBY_OPTIONS,
+					'default'     => 'title',
+				),
+				'order'       => array(
+					'type'        => 'string',
+					'description' => __( 'Sort direction (optional, default: ASC)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'ASC', 'DESC' ),
+					'default'     => 'ASC',
 				),
 				'per_page'    => array(
 					'type'        => 'integer',
@@ -118,11 +146,11 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 	}
 
-		/**
-		 * Get capability flags for this tool.
-		 *
-		 * @return array
-		 */
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
@@ -164,6 +192,16 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$per_page    = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;
 		$page        = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
+		// Extract orderby and order.
+		$orderby = isset( $arguments['orderby'] ) ? sanitize_key( $arguments['orderby'] ) : 'title';
+		if ( ! in_array( $orderby, self::ORDERBY_OPTIONS, true ) ) {
+			$orderby = 'title';
+		}
+		$order = isset( $arguments['order'] ) ? strtoupper( sanitize_key( $arguments['order'] ) ) : 'ASC';
+		if ( ! in_array( $order, array( 'ASC', 'DESC' ), true ) ) {
+			$order = 'ASC';
+		}
+
 		// Validate per_page.
 		if ( $per_page < 1 ) {
 			$per_page = 20;
@@ -172,6 +210,9 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$per_page = 100;
 		}
 
+		// Determine if we are in TF-IDF relevance mode.
+		$is_relevance_mode = ( 'relevance' === $orderby && ! empty( $search ) );
+
 		// Build query args.
 		$query_args = array(
 			'post_type'      => 'mcp_ai_policy',
@@ -179,8 +220,25 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'posts_per_page' => $per_page,
 			'paged'          => $page,
 			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'order'          => $order,
 		);
+
+		// Handle orderby.
+		if ( $is_relevance_mode ) {
+			// Relevance mode: fetch all candidates (up to 500), then rank via TF-IDF.
+			$query_args['posts_per_page'] = 500;
+			unset( $query_args['paged'] );
+			$query_args['orderby'] = 'title';
+			$query_args['order']   = 'ASC';
+		} elseif ( 'date' === $orderby ) {
+			$query_args['orderby'] = 'date';
+		} elseif ( 'provider' === $orderby ) {
+			$query_args['meta_key'] = '_policy_provider';
+			$query_args['orderby']  = 'meta_value';
+		} elseif ( 'status' === $orderby ) {
+			$query_args['meta_key'] = '_policy_status';
+			$query_args['orderby']  = 'meta_value';
+		}
 
 		// Add search if provided.
 		if ( $search ) {
@@ -287,6 +345,28 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 				);
 			}
 			wp_reset_postdata();
+		}
+
+		// Apply TF-IDF relevance ranking when in relevance mode.
+		if ( $is_relevance_mode ) {
+			$policies = $this->rank_by_relevance( $policies, $search );
+
+			// Paginate the ranked results manually.
+			$total       = count( $policies );
+			$total_pages = $total > 0 ? (int) ceil( $total / $per_page ) : 0;
+			$offset      = ( $page - 1 ) * $per_page;
+			$policies    = array_slice( $policies, $offset, $per_page );
+
+			return array(
+				'success'    => true,
+				'policies'   => $policies,
+				'pagination' => array(
+					'total'        => $total,
+					'total_pages'  => $total_pages,
+					'current_page' => $page,
+					'per_page'     => $per_page,
+				),
+			);
 		}
 
 		return array(
