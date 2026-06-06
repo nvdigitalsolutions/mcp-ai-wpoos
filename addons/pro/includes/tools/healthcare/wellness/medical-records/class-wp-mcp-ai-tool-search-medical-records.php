@@ -14,10 +14,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
+
 /**
  * Search and research medical records.
+ *
+ * @since 2.4.0
  */
 class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_CRM_Relevance_Search;
+
+	/**
+	 * Allowed orderby options.
+	 *
+	 * @since 2.4.0
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'date', 'title', 'provider' );
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -36,7 +50,7 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search and research medical records including procedures, diagnoses, lab results, treatments, vaccinations, imaging, and hospitalizations. Filter by member, record type, provider, date ranges, and keywords. Essential for medical history review and care coordination.', 'mcp-ai-wpoos-pro' );
+		return __( 'Search and research medical records including procedures, diagnoses, lab results, treatments, vaccinations, imaging, and hospitalizations. Filter by member, record type, provider, date ranges, and keywords. Supports configurable sort order (date, title, provider) and TF-IDF relevance ranking when searching by keyword. Essential for medical history review and care coordination.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -75,6 +89,18 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'string',
 					'description' => __( 'Search records by diagnosis, procedure name, or keywords (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
+				),
+				'orderby'     => array(
+					'type'        => 'string',
+					'description' => __( 'Sort records by field. Use "relevance" for TF-IDF ranked results when a search keyword is provided (optional, default: date)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => self::ORDERBY_OPTIONS,
+					'default'     => 'date',
+				),
+				'order'       => array(
+					'type'        => 'string',
+					'description' => __( 'Sort direction (optional, default: DESC)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'ASC', 'DESC' ),
+					'default'     => 'DESC',
 				),
 				'per_page'    => array(
 					'type'        => 'integer',
@@ -163,6 +189,11 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 		$search      = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
 		$per_page    = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;
 		$page        = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$raw_orderby = isset( $arguments['orderby'] ) ? (string) $arguments['orderby'] : 'date';
+		$raw_order   = isset( $arguments['order'] ) ? (string) $arguments['order'] : 'DESC';
+
+		$orderby = $this->sanitise_orderby( $raw_orderby, 'date', self::ORDERBY_OPTIONS );
+		$order   = strtoupper( $raw_order ) === 'ASC' ? 'ASC' : 'DESC';
 
 		// Validate per_page.
 		if ( $per_page < 1 ) {
@@ -172,15 +203,41 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 			$per_page = 100;
 		}
 
+		// Determine if TF-IDF relevance ranking is active.
+		$use_relevance = ( 'relevance' === $orderby && ! empty( $search ) );
+
 		// Build query args.
 		$query_args = array(
 			'post_type'      => 'mcp_ai_med_record',
 			'post_status'    => 'publish',
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'posts_per_page' => $use_relevance ? 500 : $per_page,
 		);
+
+		if ( ! $use_relevance ) {
+			$query_args['paged'] = $page;
+		}
+
+		// Set orderby and order.
+		if ( $use_relevance ) {
+			// Relevance mode: fetch a broad date-sorted candidate set for re-ranking.
+			$query_args['orderby'] = 'date';
+			$query_args['order']   = 'DESC';
+		} else {
+			switch ( $orderby ) {
+				case 'title':
+					$query_args['orderby'] = 'title';
+					break;
+				case 'provider':
+					$query_args['meta_key'] = '_record_provider';
+					$query_args['orderby']  = 'meta_value';
+					break;
+				case 'date':
+				default:
+					$query_args['orderby'] = 'date';
+					break;
+			}
+			$query_args['order'] = $order;
+		}
 
 		// Add search if provided.
 		if ( $search ) {
@@ -285,15 +342,74 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 			wp_reset_postdata();
 		}
 
+		// Apply TF-IDF relevance ranking when active.
+		if ( $use_relevance ) {
+			$total_found = count( $records );
+			$field_weights = array(
+				'title'     => 3.0,
+				'diagnosis' => 3.0,
+				'provider'  => 2.0,
+				'facility'  => 1.5,
+				'summary'   => 1.0,
+			);
+			$records = $this->rank_by_relevance( $records, $search, $field_weights );
+
+			// Paginate the relevance-ranked results.
+			$total_pages = $per_page > 0 ? (int) ceil( $total_found / $per_page ) : 1;
+			$offset      = ( $page - 1 ) * $per_page;
+			$records     = array_slice( $records, $offset, $per_page );
+		} else {
+			$total_found = $query->found_posts;
+			$total_pages = $query->max_num_pages;
+		}
+
 		return array(
 			'success'    => true,
 			'records'    => $records,
 			'pagination' => array(
-				'total'        => $query->found_posts,
-				'total_pages'  => $query->max_num_pages,
+				'total'        => $total_found,
+				'total_pages'  => $total_pages,
 				'current_page' => $page,
 				'per_page'     => $per_page,
 			),
 		);
+	}
+
+	/**
+	 * Extract searchable text for a medical record by post ID.
+	 *
+	 * Provides medical-record-specific fields for TF-IDF scoring: title,
+	 * diagnosis, provider, facility, and full content summary.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param int   $post_id        Medical record post ID.
+	 * @param array $field_weights  Map of field => weight (optional, uses defaults).
+	 * @return array<string,string>
+	 */
+	protected function extract_searchable_text( $post_id, $field_weights = array() ) {
+		if ( empty( $field_weights ) ) {
+			$field_weights = $this->default_field_weights;
+		}
+
+		$text = array();
+
+		if ( isset( $field_weights['title'] ) ) {
+			$text['title'] = strtolower( get_the_title( $post_id ) );
+		}
+		if ( isset( $field_weights['diagnosis'] ) ) {
+			$text['diagnosis'] = strtolower( (string) get_post_meta( $post_id, '_record_diagnosis', true ) );
+		}
+		if ( isset( $field_weights['provider'] ) ) {
+			$text['provider'] = strtolower( (string) get_post_meta( $post_id, '_record_provider', true ) );
+		}
+		if ( isset( $field_weights['facility'] ) ) {
+			$text['facility'] = strtolower( (string) get_post_meta( $post_id, '_record_facility', true ) );
+		}
+		if ( isset( $field_weights['summary'] ) ) {
+			$text['summary'] = strtolower( wp_strip_all_tags( get_the_content( null, false, $post_id ) ) );
+		}
+
+		return $text;
 	}
 }

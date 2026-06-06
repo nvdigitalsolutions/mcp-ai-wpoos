@@ -25,6 +25,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PRO_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.php';
+
 /**
  * CRM Email Search – New Leads Tool.
  *
@@ -41,8 +43,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Freshsales & Zoho CRM lead qualification best practices.
  *
  * @since 2.1.0
+ * @since 2.4.0 Added free-text TF-IDF relevance search with configurable orderby/order parameters.
  */
 class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_CRM_Relevance_Search;
 
 	/**
 	 * WP Cron hook for scheduled cache refresh.
@@ -155,6 +160,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	const CRON_SCHEDULES = array( 'hourly', 'twicedaily', 'daily' );
 
 	/**
+	 * Allowed orderby values for lead sorting.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @var string[]
+	 */
+	const ORDERBY_OPTIONS = array( 'relevance', 'lead_score', 'date', 'name', 'company' );
+
+	/**
 	 * Constructor – registers WP Cron callback.
 	 */
 	public function __construct() {
@@ -198,7 +212,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
  * {@inheritdoc}
  */
 	public function get_description() {
-		return __( 'Search CRM contacts for new leads by email-based criteria including lead score, email domain, inquiry type, source channel, priority, and date range. Supports multi-remote Gmail connection search via Remote Sites connection IDs for cross-account lead discovery. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring (HubSpot/Salesforce), 14 inquiry type categories, and pipeline-stage filtering (MQL/SQL).', 'mcp-ai-wpoos-pro' );
+		return __( 'Search CRM contacts for new leads by free-text search with TF-IDF relevance scoring, or by email-based criteria including lead score, email domain, inquiry type, source channel, priority, and date range. Sort results by relevance, lead_score, date, name, or company in ASC or DESC order. Supports multi-remote Gmail connection search via Remote Sites connection IDs for cross-account lead discovery. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring (HubSpot/Salesforce), 14 inquiry type categories, and pipeline-stage filtering (MQL/SQL).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -308,6 +322,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 					'items'       => array(
 						'type' => 'string',
 					),
+				),
+				'search'          => array(
+					'type'        => 'string',
+					'description' => __( 'Free-text search across lead name, company, and email. Supports partial matching with TF-IDF relevance scoring when orderby is set to relevance.', 'mcp-ai-wpoos-pro' ),
+				),
+				'orderby'         => array(
+					'type'        => 'string',
+					'enum'        => self::ORDERBY_OPTIONS,
+					'description' => __( 'Sort results by this field. Use "relevance" with the search parameter for TF-IDF scored results.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'lead_score',
+				),
+				'order'           => array(
+					'type'        => 'string',
+					'enum'        => array( 'ASC', 'DESC' ),
+					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'DESC',
 				),
 				'include_external' => array(
 					'type'        => 'boolean',
@@ -439,7 +469,9 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 
 		// Merge external Gmail search results when requested.
 		if ( $include_external ) {
-			$external_results = $this->search_external_gmail( $arguments );
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-crm-gmail-client.php';
+			$gmail_client    = new WP_MCP_AI_CRM_Gmail_Client();
+			$external_results = $gmail_client->search_leads( $arguments );
 			if ( is_array( $external_results ) && ! empty( $external_results['leads'] ) ) {
 				$results['leads'] = array_merge( $results['leads'], $external_results['leads'] );
 				$results['total'] = count( $results['leads'] );
@@ -609,15 +641,43 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		$per_page    = min( max( absint( $filters['per_page'] ), 1 ), 100 );
 		$page        = max( absint( $filters['page'] ), 1 );
 		$lead_status = $filters['lead_status'];
+		$orderby     = isset( $filters['orderby'] ) ? $filters['orderby'] : 'lead_score';
+		$order       = isset( $filters['order'] ) ? $filters['order'] : 'DESC';
+		$search      = isset( $filters['search'] ) ? $filters['search'] : '';
+
+		$is_relevance = 'relevance' === $orderby && '' !== $search;
 
 		$query_args = array(
 			'post_type'      => 'mcp_crm_contacts',
 			'post_status'    => 'publish',
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
+			'posts_per_page' => $is_relevance ? 500 : $per_page,
+			'paged'          => $is_relevance ? 1 : $page,
 			'orderby'        => 'date',
 			'order'          => 'DESC',
 		);
+
+		// Apply sort for non-relevance orderby values.
+		if ( ! $is_relevance ) {
+			switch ( $orderby ) {
+				case 'lead_score':
+					$query_args['meta_key'] = 'lead_score'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for sorting CRM leads by lead score.
+					$query_args['orderby']  = 'meta_value_num';
+					$query_args['order']    = $order;
+					break;
+				case 'name':
+					$query_args['orderby'] = 'title';
+					$query_args['order']   = $order;
+					break;
+				case 'company':
+					$query_args['meta_key'] = 'company'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required for sorting CRM leads by company.
+					$query_args['orderby']  = 'meta_value';
+					$query_args['order']    = $order;
+					break;
+				default:
+					$query_args['orderby'] = 'date';
+					$query_args['order']   = $order;
+			}
+		}
 
 		$meta_query = array( 'relation' => 'AND' );
 
@@ -751,13 +811,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
+		// Apply TF-IDF relevance ranking post-query when using relevance sort with a search query.
+		if ( $is_relevance ) {
+			$leads = $this->rank_by_relevance( $leads, $search );
+			$total = count( $leads );
+			$pages = max( 1, (int) ceil( $total / $per_page ) );
+			$offset = ( $page - 1 ) * $per_page;
+			$leads  = array_slice( $leads, $offset, $per_page );
+		}
+
 		return array(
 			'success'  => true,
 			'leads'    => $leads,
-			'total'    => $query->found_posts,
+			'total'    => $is_relevance ? $total : $query->found_posts,
 			'per_page' => $per_page,
 			'page'     => $page,
-			'pages'    => max( 1, $query->max_num_pages ),
+			'pages'    => $is_relevance ? $pages : max( 1, $query->max_num_pages ),
 			'filters'  => $filters,
 			'scoring'  => array(
 				'cold' => '0–39',
@@ -838,6 +907,13 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			'date_to'       => isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : '',
 			'per_page'      => isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20,
 			'page'          => isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1,
+			'orderby'       => $this->sanitise_orderby(
+				isset( $arguments['orderby'] ) ? $arguments['orderby'] : 'lead_score',
+				'lead_score',
+				self::ORDERBY_OPTIONS
+			),
+			'order'         => isset( $arguments['order'] ) && 'ASC' === strtoupper( $arguments['order'] ) ? 'ASC' : 'DESC',
+			'search'        => isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '',
 		);
 
 		if ( isset( $arguments['lead_score_min'] ) ) {
@@ -905,369 +981,6 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	// -------------------------------------------------------------------------
-	// Multi-remote external Gmail search.
+	// Cache helpers.
 	// -------------------------------------------------------------------------
-
-	/**
-	 * Search external Gmail accounts for lead emails via Remote Sites connections.
-	 *
-	 * Uses the Gmail API to search across one or more configured Gmail connections.
-	 * Results are normalised to the same lead format as local CRM contacts.
-	 *
-	 * @since 2.2.0
-	 *
-	 * @param array $arguments Tool arguments including connection_ids and search params.
-	 * @return array|WP_Error External leads or error.
-	 */
-	private function search_external_gmail( array $arguments ) {
-		$connection_ids = $this->resolve_connection_ids( $arguments );
-
-		if ( empty( $connection_ids ) ) {
-			return array( 'leads' => array(), 'external' => array() );
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_crm_remote_manager_missing',
-				__( 'Remote Site Manager is not available.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		$all_leads   = array();
-		$external_meta = array();
-
-		foreach ( $connection_ids as $connection_id ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			if ( empty( $connection ) || empty( $connection['connection_type'] ) || 'gmail' !== $connection['connection_type'] ) {
-				$external_meta[ $connection_id ] = array(
-					'status'  => 'skipped',
-					'reason'  => 'not_gmail_connection',
-				);
-				continue;
-			}
-
-			$client_id     = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
-			$client_secret = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
-			$refresh_token = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
-			$user_email    = isset( $connection['user_email'] ) ? trim( (string) $connection['user_email'] ) : '';
-
-			// Decrypt encrypted fields.
-			if ( ! empty( $client_secret ) ) {
-				$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $client_secret );
-			}
-			if ( ! empty( $refresh_token ) ) {
-				$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $refresh_token );
-			}
-
-			if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
-				$external_meta[ $connection_id ] = array(
-					'status'  => 'skipped',
-					'reason'  => 'missing_credentials',
-					'label'   => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-				);
-				continue;
-			}
-
-			// Build Gmail search query from lead filter arguments.
-			$gmail_query = $this->build_gmail_search_query( $arguments );
-
-			// Obtain access token.
-			$access_token = $this->request_gmail_access_token( $client_id, $client_secret, $refresh_token );
-			if ( is_wp_error( $access_token ) ) {
-				$external_meta[ $connection_id ] = array(
-					'status' => 'error',
-					'error'  => $access_token->get_error_message(),
-					'label'  => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-				);
-				continue;
-			}
-
-			$gmail_user = '' !== $user_email ? $user_email : 'me';
-			$max_results = isset( $arguments['per_page'] ) ? min( 50, absint( $arguments['per_page'] ) ) : 20;
-
-			$list_url = 'https://gmail.googleapis.com/gmail/v1/users/' . rawurlencode( $gmail_user ) . '/messages'
-				. '?q=' . rawurlencode( $gmail_query )
-				. '&maxResults=' . $max_results;
-
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
-
-			$response = wp_remote_get(
-				$list_url,
-				array(
-					'timeout' => $timeout,
-					'headers' => array(
-						'Accept'        => 'application/json',
-						'Authorization' => 'Bearer ' . $access_token,
-					),
-				)
-			);
-
-			if ( is_wp_error( $response ) ) {
-				$external_meta[ $connection_id ] = array(
-					'status' => 'error',
-					'error'  => $response->get_error_message(),
-					'label'  => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-				);
-				continue;
-			}
-
-			$status_code = (int) wp_remote_retrieve_response_code( $response );
-			if ( 200 !== $status_code ) {
-				$external_meta[ $connection_id ] = array(
-					'status' => 'error',
-					'error'  => sprintf( __( 'HTTP %d from Gmail API.', 'mcp-ai-wpoos-pro' ), $status_code ),
-					'label'  => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-				);
-				continue;
-			}
-
-			$body         = wp_remote_retrieve_body( $response );
-			$list_payload = json_decode( $body, true );
-			if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $list_payload ) ) {
-				$external_meta[ $connection_id ] = array(
-					'status' => 'error',
-					'error'  => __( 'Invalid JSON from Gmail API.', 'mcp-ai-wpoos-pro' ),
-					'label'  => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-				);
-				continue;
-			}
-
-			$messages_found = 0;
-			if ( ! empty( $list_payload['messages'] ) && is_array( $list_payload['messages'] ) ) {
-				foreach ( $list_payload['messages'] as $message_ref ) {
-					if ( empty( $message_ref['id'] ) ) {
-						continue;
-					}
-
-					// Fetch minimal details (headers only) for performance.
-					$detail_url = 'https://gmail.googleapis.com/gmail/v1/users/' . rawurlencode( $gmail_user )
-						. '/messages/' . rawurlencode( $message_ref['id'] )
-						. '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date';
-
-					$detail_response = wp_remote_get(
-						$detail_url,
-						array(
-							'timeout' => $timeout,
-							'headers' => array(
-								'Accept'        => 'application/json',
-								'Authorization' => 'Bearer ' . $access_token,
-							),
-						)
-					);
-
-					if ( is_wp_error( $detail_response ) || 200 !== (int) wp_remote_retrieve_response_code( $detail_response ) ) {
-						continue;
-					}
-
-					$detail_body = wp_remote_retrieve_body( $detail_response );
-					$msg_data    = json_decode( $detail_body, true );
-					if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $msg_data ) ) {
-						continue;
-					}
-
-					$from    = '';
-					$subject = '';
-					$date    = '';
-					$snippet = isset( $msg_data['snippet'] ) ? sanitize_text_field( $msg_data['snippet'] ) : '';
-
-					if ( ! empty( $msg_data['payload']['headers'] ) && is_array( $msg_data['payload']['headers'] ) ) {
-						foreach ( $msg_data['payload']['headers'] as $header ) {
-							$name  = isset( $header['name'] ) ? strtolower( $header['name'] ) : '';
-							$value = isset( $header['value'] ) ? $header['value'] : '';
-							if ( 'from' === $name ) {
-								$from = $value;
-							} elseif ( 'subject' === $name ) {
-								$subject = $value;
-							} elseif ( 'date' === $name ) {
-								$date = $value;
-							}
-						}
-					}
-
-					// Extract name and email from "From" header.
-					$from_name  = '';
-					$from_email = '';
-					if ( preg_match( '/^([^<]+)<([^>]+)>/', $from, $matches ) ) {
-						$from_name  = trim( $matches[1] );
-						$from_email = trim( $matches[2] );
-					} elseif ( '' !== $from ) {
-						$from_email = trim( $from );
-					}
-
-					$all_leads[] = array(
-						'id'           => 'gmail:' . $message_ref['id'],
-						'name'         => sanitize_text_field( $from_name ),
-						'email'        => sanitize_email( $from_email ),
-						'first_name'   => '',
-						'last_name'    => '',
-						'company'      => '',
-						'lead_status'  => 'new',
-						'inquiry_type' => 'new_inquiry',
-						'mql_stage'    => '',
-						'priority'     => '',
-						'contact_owner' => '',
-						'source'       => 'email_inbound',
-						'lead_score'   => null,
-						'score_label'  => __( 'unscored', 'mcp-ai-wpoos-pro' ),
-						'added_date'   => sanitize_text_field( $date ),
-						'edit_url'     => '',
-						'origin'       => 'external',
-						'origin_label' => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-						'gmail_subject' => sanitize_text_field( $subject ),
-						'gmail_snippet' => $snippet,
-					);
-					$messages_found++;
-				}
-			}
-
-			$external_meta[ $connection_id ] = array(
-				'status'        => 'success',
-				'label'         => isset( $connection['name'] ) ? $connection['name'] : $connection_id,
-				'messages_found' => $messages_found,
-				'query'         => $gmail_query,
-			);
-		}
-
-		return array(
-			'leads'    => $all_leads,
-			'external' => $external_meta,
-		);
-	}
-
-	/**
-	 * Resolve which Gmail connection IDs to query.
-	 *
-	 * If explicit connection_ids are provided, use those (validated).
-	 * If include_external is true but no specific IDs, use all configured Gmail connections.
-	 *
-	 * @since 2.2.0
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @return string[] Array of connection IDs.
-	 */
-	private function resolve_connection_ids( array $arguments ) {
-		if ( ! empty( $arguments['connection_ids'] ) && is_array( $arguments['connection_ids'] ) ) {
-			return array_map( 'sanitize_key', $arguments['connection_ids'] );
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			return array();
-		}
-
-		$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-		$gmail_ids       = array();
-
-		foreach ( $all_connections as $cid => $conn ) {
-			if ( ! empty( $conn['connection_type'] ) && 'gmail' === $conn['connection_type'] ) {
-				$gmail_ids[] = $cid;
-			}
-		}
-
-		return $gmail_ids;
-	}
-
-	/**
-	 * Build a Gmail search query string from lead filter arguments.
-	 *
-	 * Translates CRM lead filter parameters into Gmail search operators.
-	 *
-	 * @since 2.2.0
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @return string Gmail-compatible search query.
-	 */
-	private function build_gmail_search_query( array $arguments ) {
-		$parts = array( 'is:unread' );
-
-		// Filter by email domain.
-		if ( ! empty( $arguments['email_domain'] ) ) {
-			$parts[] = 'from:' . sanitize_text_field( $arguments['email_domain'] );
-		}
-
-		// Date range.
-		if ( ! empty( $arguments['date_from'] ) ) {
-			$parts[] = 'after:' . sanitize_text_field( $arguments['date_from'] );
-		}
-		if ( ! empty( $arguments['date_to'] ) ) {
-			$parts[] = 'before:' . sanitize_text_field( $arguments['date_to'] );
-		}
-
-		// Inquiry type → Gmail label/keyword mapping.
-		$inquiry_type = isset( $arguments['inquiry_type'] ) ? sanitize_key( $arguments['inquiry_type'] ) : 'all';
-		if ( 'all' !== $inquiry_type ) {
-			$keyword_map = array(
-				'demo_request'          => 'demo OR demonstration OR "book a demo"',
-				'pricing_inquiry'       => 'pricing OR price OR quote OR cost OR estimate',
-				'trial_request'         => 'trial OR "free trial" OR "try it"',
-				'support_request'       => 'support OR help OR issue OR problem OR "not working"',
-				'partnership'           => 'partnership OR partner OR collaboration OR affiliate',
-				'referral'              => 'referral OR referred OR "recommended by"',
-				'consultation_request'  => 'consultation OR consulting OR "book a call" OR assessment',
-				'event_registration'    => 'webinar OR event OR register OR registration OR rsvp',
-				'content_download'      => 'download OR whitepaper OR ebook OR guide OR pdf',
-				'newsletter_signup'     => 'newsletter OR subscribe OR subscription',
-				'account_management'    => 'account OR upgrade OR renew OR billing OR invoice',
-			);
-
-			if ( isset( $keyword_map[ $inquiry_type ] ) ) {
-				$parts[] = '{' . $keyword_map[ $inquiry_type ] . '}';
-			}
-		}
-
-		// Negative: exclude common non-lead emails.
-		$parts[] = '-{spam OR "out of office" OR "delivery failure" OR noreply OR no-reply OR "mailer daemon"}';
-
-		return implode( ' ', $parts );
-	}
-
-	/**
-	 * Request an OAuth 2.0 access token for a Gmail connection.
-	 *
-	 * @since 2.2.0
-	 *
-	 * @param string $client_id     Gmail API client ID.
-	 * @param string $client_secret Gmail API client secret.
-	 * @param string $refresh_token Gmail API refresh token.
-	 * @return string|WP_Error Access token or error.
-	 */
-	private function request_gmail_access_token( $client_id, $client_secret, $refresh_token ) {
-		$response = wp_remote_post(
-			'https://oauth2.googleapis.com/token',
-			array(
-				'timeout' => 30,
-				'body'    => array(
-					'client_id'     => $client_id,
-					'client_secret' => $client_secret,
-					'refresh_token' => $refresh_token,
-					'grant_type'    => 'refresh_token',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$status = (int) wp_remote_retrieve_response_code( $response );
-		$body   = wp_remote_retrieve_body( $response );
-		$data   = json_decode( $body, true );
-
-		if ( 200 !== $status || JSON_ERROR_NONE !== json_last_error() || empty( $data['access_token'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_crm_gmail_token_failed',
-				__( 'Failed to obtain Gmail access token.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		return (string) $data['access_token'];
-	}
 }
