@@ -1,3 +1,4 @@
 /vendor/
+/wp-content/
 /.phpunit.cache
 /.phpunit.result.cache
