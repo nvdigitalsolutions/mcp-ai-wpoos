@@ -24,6 +24,7 @@ final class Plugin {
 		$this->registerAgents();
 		$this->registerSkills();
 		$this->registerSlashCommands();
+		$this->registerHarness();
 	}
 
 	private function registerAdmin(): void {
@@ -47,6 +48,12 @@ final class Plugin {
 	private function registerSlashCommands(): void {
 		if ( class_exists( 'NvoosGraphifyPlatform\SlashCommands\SlashCommandService' ) ) {
 			\NvoosGraphifyPlatform\SlashCommands\SlashCommandService::instance()->register();
+		}
+	}
+
+	private function registerHarness(): void {
+		if ( class_exists( 'NvoosGraphifyPlatform\Harness\HarnessService' ) ) {
+			\NvoosGraphifyPlatform\Harness\HarnessService::instance()->register();
 		}
 	}
 

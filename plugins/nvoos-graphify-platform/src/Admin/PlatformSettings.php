@@ -1,8 +1,4 @@
 <?php
-/**
- * Registers Platform tabs and sections into the core's SettingsRegistry.
- */
-
 declare(strict_types=1);
 
 namespace NvoosGraphifyPlatform\Admin;
@@ -19,5 +15,6 @@ final class PlatformSettings {
 		SettingsRegistry::register_tab( 'agents', __( 'Agents', 'nvoos-graphify-platform' ) );
 		SettingsRegistry::register_tab( 'skills', __( 'Skills', 'nvoos-graphify-platform' ) );
 		SettingsRegistry::register_tab( 'slash_commands', __( 'Slash Commands', 'nvoos-graphify-platform' ) );
+		SettingsRegistry::register_tab( 'harness', __( 'Harness', 'nvoos-graphify-platform' ) );
 	}
 }
