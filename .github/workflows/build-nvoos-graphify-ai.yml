@@ -89,7 +89,7 @@ jobs:
           mkdir -p "dist/${ARTIFACT}/nvoos-graphify-ai"
 
           # Copy plugin source (exclude dev/test/build files)
-          rsync -a \
+          rsync -aL \
             --exclude='.git/' \
             --exclude='.gitignore' \
             --exclude='.github/' \
