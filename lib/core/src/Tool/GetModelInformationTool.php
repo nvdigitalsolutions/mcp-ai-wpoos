@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class GetModelInformationTool extends AbstractTool {
 
@@ -84,21 +84,20 @@ class GetModelInformationTool extends AbstractTool {
 		}
 
 		try {
-			$request  = new \Nyholm\Psr7\Request(
+			$response = $this->http->send(
 				'GET',
 				$baseUrl . '/models/' . \urlencode( $model ),
 				array( 'Authorization' => "Bearer {$apiKey}" ),
 			);
-			$response = $this->http->sendRequest( $request );
 
-			if ( $response->getStatusCode() >= 400 ) {
+			if ( $response->statusCode >= 400 ) {
 				return $this->errors->create(
 					'model_not_found',
-					"Model '{$model}' not found or not accessible. HTTP {$response->getStatusCode()}.",
+					"Model '{$model}' not found or not accessible. HTTP {$response->statusCode}.",
 				);
 			}
 
-			$data = \json_decode( (string) $response->getBody(), true );
+			$data = \json_decode( $response->body, true );
 
 			return $this->success( 'Model information retrieved.', $data );
 

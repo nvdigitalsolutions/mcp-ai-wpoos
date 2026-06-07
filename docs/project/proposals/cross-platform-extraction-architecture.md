@@ -38,7 +38,7 @@ This coupling blocks deployment to Laravel, CraftCMS, Symfony, or standalone PHP
 
 ### 1.2 The Proposal
 
-Extract the AI orchestration engine into a **framework-agnostic Composer package** (`nvoos/core`) using the **Hexagonal Architecture (Ports & Adapters)** pattern, where the existing WordPress plugin becomes one adapter among many. The core depends only on **PSR standards** (PSR-3 logging, PSR-7 HTTP messages, PSR-11 containers, PSR-14 events, PSR-16 caching) and custom domain interfaces for storage, authentication, file management, and error handling.
+Extract the AI orchestration engine into a **framework-agnostic Composer package** (`nvoos/core`) using the **Hexagonal Architecture (Ports & Adapters)** pattern, where the existing WordPress plugin becomes one adapter among many. The core owns every contract it defines — zero PSR or Symfony inheritance.
 
 ### 1.3 Key Outcomes
 
@@ -105,25 +105,29 @@ Per Eric Evans' *Domain-Driven Design* (2003), the following tactical patterns a
 | **Anti-Corruption Layer (ACL)** | Each framework adapter acts as an ACL, translating between the core's domain language (`ContentStoreInterface::find()`) and the framework's language (`WP_Query`, Eloquent `Model::find()`, Craft `Entry::find()`). |
 | **Repository Pattern** | `ContentStoreInterface`, `FileStoreInterface`, and `SettingsStoreInterface` are repositories — they abstract data access behind collection-like interfaces. |
 | **Entity/Value Object** | Tool definitions, assistant configurations, and chat messages are value objects. A tool execution result is an entity with identity (execution ID, timestamp). |
-| **Domain Event** | The existing 60+ WordPress action hooks (`wp_mcp_ai_before_tool_execution`) become PSR-14 domain events. |
+| **Domain Event** | The existing 60+ WordPress action hooks (`wp_mcp_ai_before_tool_execution`) become domain events dispatched through `EventDispatcherInterface`. |
 | **Application Service** | The agentic loop (`handle_chat_request`) is the primary application service, orchestrating tools, providers, and the event bus. |
 
-### 2.3 PSR Standards Compliance
+### 2.3 Domain-Owned Contracts (Zero External Dependencies)
 
-The core package should depend on PHP-FIG standards rather than any framework:
+The `lib/core` package defines its own contracts — it does not extend PSR or Symfony interfaces.
 
-| PSR | Standard | Usage in oOS Core |
+| Contract | Replaces | Adapter implements via |
 |---|---|---|
-| **PSR-3** | Logger Interface | Replace `WP_MCP_AI_Logger` static calls with injected `LoggerInterface` |
-| **PSR-4** | Autoloading | Standard Composer autoloading for `Nvoos\Core\` namespace |
-| **PSR-6** | Caching Interface | Replace `get_transient`/`set_transient` with `CacheItemPoolInterface` |
-| **PSR-7** | HTTP Message Interface | **Already used** — `nyholm/psr7` in `composer.json`. Provider clients use it for request/response objects |
-| **PSR-11** | Container Interface | Replace `WP_MCP_AI_Container` with PSR-11 compatible container (or make it implement `ContainerInterface`) |
-| **PSR-12** | Extended Coding Style | Coding standard for the extracted package |
-| **PSR-14** | Event Dispatcher | Replace `do_action`/`apply_filters` with `EventDispatcherInterface` |
-| **PSR-16** | Simple Cache | Simpler alternative to PSR-6 for key-value caching (transients replacement) |
-| **PSR-17** | HTTP Factories | Create PSR-7 request/response objects without coupling to a specific implementation |
-| **PSR-18** | HTTP Client | Replace `wp_remote_get`/`wp_remote_post` with `HttpClientInterface` (already partially abstracted) |
+| `HttpClientInterface` | `wp_remote_get` / PSR-18 / Guzzle | `send(method, url, headers, body): HttpResponse` |
+| `CacheStoreInterface` | `get_transient` / PSR-6 / Symfony Cache | `getValue`, `setValue`, `deleteValue`, `increment`, `remember` |
+| `EventDispatcherInterface` | `do_action` / PSR-14 / Symfony EventDispatcher | `dispatch`, `filter`, `listen`, `listenFilter`, `removeListener` |
+| `ErrorFactoryInterface` | `WP_Error` / framework exceptions | `create`, `isError`, `normalize`, `notFound`, `forbidden`, `validationFailed`, `rateLimited` |
+| `AuthProviderInterface` | `current_user_can` / Laravel Gates | `currentUserId`, `userCan`, `authenticate`, `issueCredential`, etc. |
+| `ContentStoreInterface` | `WP_Query` / Eloquent / Element queries | `find`, `query`, `create`, `update`, `delete`, etc. |
+| `SettingsStoreInterface` | `get_option` / Laravel Config | `get`, `all`, `set`, `delete`, `getApiKey`, `getDefaultProvider`, etc. |
+| `FileStoreInterface` | `wp_media_handle_upload` / Flysystem | `store`, `getPath`, `getMetadata`, `userCanAccess`, `delete`, `findByMetadata` |
+| `QueueClientInterface` | Action Scheduler / Laravel Queues | `enqueue`, `getStatus`, `cancel`, `schedule`, `unschedule`, `listJobs` |
+| `ToolInterface` | Tool execution contract | `getSlug`, `getName`, `getDescription`, `getParametersSchema`, `getRequiredCapability`, `execute` |
+
+The core `composer.json` requires only `php: ^8.1`. Adapters bring their own HTTP, cache, and event implementations.
+
+> **Historical note**: Earlier drafts of this document proposed extending PSR-6, PSR-14, PSR-18, and depending on `nyholm/psr7` + `symfony/validator`. These were removed in the domain-decoupling refactor (commit `7ace36732`) — the core now owns every contract it defines.
 
 ### 2.4 Dependency Inversion Principle (SOLID — 'D')
 
@@ -310,7 +314,7 @@ All domain interfaces follow these rules:
 2. **No `WP_Error` anywhere** — the `ErrorFactoryInterface` creates framework-appropriate errors. Core code checks with `$errors->isError($result)`.
 3. **`null` means "not found"** — not `false`, not `WP_Error`. Clarify semantics through the return type.
 4. **Immutable value objects for configuration** — `AssistantConfig`, `ToolDefinition`, `ChatMessage` are readonly value objects (PHP 8.1+).
-5. **Events for side effects** — use `EventDispatcherInterface` instead of WordPress action hooks.
+5. **Events for side effects** — use `EventDispatcherInterface` instead of WordPress action hooks. The domain event system uses fully domain-owned contracts.
 6. **No HTTP coupling in domain** — HTTP concerns stay in the infrastructure layer.
 
 ### 4.2 Core Interfaces
@@ -717,16 +721,12 @@ final readonly class StoredFile implements \JsonSerializable
 
 *Replaces:* `get_transient()`, `set_transient()`, `delete_transient()`, `wp_cache_get()`, `wp_cache_set()`
 
+Domain-owned contract — does not extend PSR-6. Platform adapters implement this interface directly.
+
 ```php
 namespace Nvoos\Core\Domain\Contract;
 
-use Psr\Cache\CacheItemPoolInterface;
-
-/**
- * Extends PSR-6 with convenience methods matching the transient pattern
- * used throughout the plugin.
- */
-interface CacheStoreInterface extends CacheItemPoolInterface
+interface CacheStoreInterface
 {
     /**
      * Get a cached value (simpler API wrapping PSR-6).
@@ -830,27 +830,19 @@ final readonly class JobStatus implements \JsonSerializable
 
 *Replaces:* `do_action()`, `apply_filters()`, 60+ WordPress hook registrations
 
+Domain-owned contract — does not extend PSR-14. Includes both dispatch and filter semantics.
+
 ```php
 namespace Nvoos\Core\Domain\Contract;
 
-use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcher;
-
-/**
- * Extends PSR-14 with filter capability (PSR-14 is dispatch-only).
- *
- * In WordPress, actions are one-way (do_action) and filters return values
- * (apply_filters). PSR-14 only covers dispatch. This interface adds the
- * filter pattern for compatibility with existing hook semantics.
- */
-interface EventDispatcherInterface extends PsrEventDispatcher
+interface EventDispatcherInterface
 {
     /**
      * Dispatch an event to all registered listeners.
-     * PSR-14: "dispatch" — returns the event for potential modification by listeners.
      *
      * @template T of object
      * @param T $event
-     * @return T
+     * @return T  The event, possibly modified by listeners.
      */
     public function dispatch(object $event): object;
 
@@ -1122,15 +1114,7 @@ o-os/
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": "^8.1",
-        "psr/container": "^2.0",
-        "psr/log": "^3.0",
-        "psr/cache": "^3.0",
-        "psr/event-dispatcher": "^1.0",
-        "psr/http-client": "^1.0",
-        "psr/http-factory": "^1.0",
-        "psr/http-message": "^1.0 || ^2.0",
-        "symfony/validator": "^6.4 || ^7.0"
+        "php": "^8.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0 || ^11.0",
@@ -1139,12 +1123,12 @@ o-os/
     },
     "autoload": {
         "psr-4": {
-            "Oos\\Core\\": "src/"
+            "Nvoos\\Core\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Oos\\Core\\Tests\\": "tests/"
+            "Nvoos\\Core\\Tests\\": "tests/"
         }
     },
     "suggest": {
@@ -1184,7 +1168,7 @@ o-os/
 | `WP_MCP_AI_SSE_Handler` | `Nvoos\Core\Infrastructure\Streaming\SseHandler` |
 | `WP_MCP_AI_Language_Model_Router` | `Nvoos\Core\Application\Provider\ProviderRouter` |
 | `WP_MCP_AI_Tool_Get_Post` | `Nvoos\Core\Tool\GetPostTool` |
-| `Interface_WP_MCP_AI_HTTP_Client` | `Nvoos\Core\Domain\Contract\HttpClientInterface` (PSR-18) |
+| `Interface_WP_MCP_AI_HTTP_Client` | `Nvoos\Core\Domain\Contract\HttpClientInterface` (domain-owned) |
 | `Interface_WP_MCP_AI_Options_Store` | `Nvoos\Core\Domain\Contract\SettingsStoreInterface` |
 | `WP_MCP_AI_Tool_Interface` | `Nvoos\Core\Domain\Contract\ToolInterface` |
 | `WP_MCP_AI_Cost_Calculator` | `Nvoos\Core\Infrastructure\Cost\CostCalculator` |
@@ -1659,7 +1643,7 @@ Phase 5: Sunset WP-Specific Code   ░░░░░░░░░░░░░░░
 1. **License for `nvoos/core`:** Currently GPLv3 (inherited from WordPress). MIT or Apache 2.0 would be more permissive for non-GPL ecosystems. Legal review required.
 2. **Pro addon packaging:** Should the Pro addon be a separate composer package (`oos/pro`) or a paid addon to the core? Commercial licensing model TBD.
 3. **PHP 7.4 compat:** The core package targets PHP 8.1 for design cleanliness (enums, readonly, named args, fibers). The WordPress adapter remains PHP 7.4. Is this split acceptable?
-4. **Event system strategy:** PSR-14 covers dispatching but not filtering. Should we use a custom `EventDispatcherInterface` with filter support (proposed above) or adopt a different pattern (middleware pipeline, chain of responsibility)?
+4. **Event system strategy:** The domain-owned `EventDispatcherInterface` supports both dispatch (actions) and filter semantics — no PSR-14 dependency needed.
 5. **Admin UI sharing:** Should admin/configuration pages be rebuilt per platform or share a common SPA (Vue/React) that communicates via the REST API?
 6. **Authentication token format:** Should cross-platform bearer tokens use a standardized format (JWT with standard claims) or remain custom per platform?
 

@@ -17,7 +17,6 @@ use function admin_url;
 use function class_exists;
 use function current_user_can;
 use function delete_transient;
-use function did_action;
 use function do_action;
 use function esc_attr;
 use function esc_attr__;
@@ -215,12 +214,6 @@ class SettingsPage {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'nvoos-graphify' ) );
 		}
 
-		// Ensure sections are registered before rendering (in case
-		// admin_menu fires before admin_init in some edge cases).
-		if ( ! did_action( 'nvoos_graphify/admin/register_sections' ) ) {
-			do_action( 'nvoos_graphify/admin/register_sections' );
-		}
-
 		$stats      = Db::getStats();
 		$last_build = Db::getMeta( 'last_build_completed', __( 'Never', 'nvoos-graphify' ) );
 		$status     = Db::getMeta( 'build_status', 'idle' );
@@ -228,14 +221,7 @@ class SettingsPage {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
-
-		// Core tabs only — AI tabs belong on the separate NV oOS AI page.
-		$tabs = array_filter(
-			SettingsRegistry::get_tabs(),
-			function ( $tab ) {
-				return strpos( $tab['id'], 'ai_' ) !== 0;
-			}
-		);
+		$tabs        = SettingsRegistry::get_tabs();
 		?>
 		<div class="wrap nvoos-graphify-admin">
 			<h1><?php esc_html_e( 'NV Graphify', 'nvoos-graphify' ); ?></h1>

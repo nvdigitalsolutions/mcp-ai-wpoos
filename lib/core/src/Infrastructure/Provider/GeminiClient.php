@@ -15,8 +15,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Infrastructure\Provider;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class GeminiClient extends AbstractProviderClient {
 
@@ -86,6 +86,65 @@ class GeminiClient extends AbstractProviderClient {
 		}
 
 		try {
+			$response   = $this->http->send( 'POST', $url, array( 'Content-Type' => 'application/json' ), $body );
+			$statusCode = $response->statusCode;
+			$respBody   = $response->body;
+
+			if ( $statusCode >= 400 ) {
+				return $this->errors->create( "http_{$statusCode}", $respBody, array( 'status' => $statusCode ) );
+			}
+
+			return $this->normalizeResponse( \json_decode( $respBody, true ) ?: array(), $model );
+
+		} catch ( \Exception $e ) {
+			return $this->errors->create( 'http_request_failed', $e->getMessage() );
+		}
+	}
+
+	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
+		$apiKey = $this->getApiKey();
+
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
+
+		$model   = $this->resolveModel( $options );
+		$baseUrl = $this->getBaseUrl();
+
+		// Convert OpenAI-format messages to Gemini format.
+		$contents   = $this->convertMessages( $messages );
+		$systemText = $this->extractSystemInstruction( $messages );
+
+		$payload = array(
+			'contents' => $contents,
+		);
+
+		if ( '' !== $systemText ) {
+			$payload['systemInstruction'] = array(
+				'parts' => array( array( 'text' => $systemText ) ),
+			);
+		}
+
+		$generationConfig = array();
+		if ( isset( $options['temperature'] ) ) {
+			$generationConfig['temperature'] = (float) $options['temperature'];
+		}
+		if ( isset( $options['max_tokens'] ) ) {
+			$generationConfig['maxOutputTokens'] = (int) $options['max_tokens'];
+		}
+		if ( array() !== $generationConfig ) {
+			$payload['generationConfig'] = $generationConfig;
+		}
+
+		$url = $baseUrl . '/models/' . \urlencode( $model ) . ':streamGenerateContent?alt=sse&key=' . \urlencode( $apiKey );
+
+		try {
+			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $e ) {
+			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
+		}
+
+		try {
 			$request    = new \Nyholm\Psr7\Request(
 				'POST',
 				$url,
@@ -100,15 +159,47 @@ class GeminiClient extends AbstractProviderClient {
 				return $this->errors->create( "http_{$statusCode}", $respBody, array( 'status' => $statusCode ) );
 			}
 
-			return $this->normalizeResponse( \json_decode( $respBody, true ) ?: array(), $model );
+			// Parse Gemini SSE stream.
+			$assembled = '';
+			foreach ( \preg_split( "/\r?\n/", $respBody ) as $line ) {
+				$line = \trim( $line );
+				if ( '' === $line || 0 !== \strpos( $line, 'data: ' ) ) {
+					continue;
+				}
+				$data = \substr( $line, 6 );
+				$chunk = \json_decode( $data, true );
+				if ( ! is_array( $chunk ) ) {
+					continue;
+				}
+				if ( isset( $chunk['candidates'][0]['content']['parts'] ) ) {
+					foreach ( $chunk['candidates'][0]['content']['parts'] as $part ) {
+						if ( isset( $part['text'] ) ) {
+							$assembled .= $part['text'];
+							if ( null !== $onChunk ) {
+								$onChunk( $part['text'] );
+							}
+						}
+					}
+				}
+			}
+
+			return $this->normalizeResponse(
+				array(
+					'candidates' => array(
+						array(
+							'content' => array(
+								'parts' => array( array( 'text' => $assembled ) ),
+							),
+							'finishReason' => 'STOP',
+						),
+					),
+				),
+				$model,
+			);
 
 		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
 			return $this->errors->create( 'http_request_failed', $e->getMessage() );
 		}
-	}
-
-	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
-		return $this->chat( $messages, $options );
 	}
 
 	public function listModels(): mixed {
@@ -120,9 +211,8 @@ class GeminiClient extends AbstractProviderClient {
 		$url = $this->getBaseUrl() . '/models?key=' . \urlencode( $apiKey );
 
 		try {
-			$request  = new \Nyholm\Psr7\Request( 'GET', $url );
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$response = $this->http->send( 'GET', $url );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || ! isset( $data['models'] ) ) {
 				return array();

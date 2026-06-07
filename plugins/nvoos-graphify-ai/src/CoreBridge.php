@@ -32,6 +32,9 @@ use Nvoos\WordPress\Adapter\ErrorFactory;
 use Nvoos\WordPress\Adapter\EventDispatcher;
 use NvoosGraphifyAi\Adapter\GraphifySettingsStore;
 use NvoosGraphifyAi\Adapter\WordPressHttpClient;
+use NvoosGraphifyAi\Embeddings\EmbeddingService;
+use NvoosGraphifyAi\Embeddings\RagRetriever;
+use NvoosGraphifyAi\Memory\AgentMemory;
 use Psr\Http\Client\ClientInterface;
 
 final class CoreBridge {
@@ -49,9 +52,14 @@ final class CoreBridge {
 	public readonly CoreToolRegistry $tools;
 	public readonly ChatOrchestrator $chat;
 
+	// ─── AI services ─────────────────────────────────────────────
+	public readonly Embeddings\EmbeddingService $embeddings;
+	public readonly Embeddings\RagRetriever $rag;
+	public readonly Memory\AgentMemory $memory;
+
 	private function __construct() {
 		// 1. Create WordPress adapters.
-		$this->errors   = new ErrorFactory();
+		$this->errors = new ErrorFactory();
 		// GraphifySettingsStore (v2) reads from nvoos_graphify_settings;
 		// the wordpress-adapter's SettingsStore (v1) reads from wp_mcp_ai_settings.
 		$this->settings = new GraphifySettingsStore();
@@ -79,6 +87,21 @@ final class CoreBridge {
 
 		// 4. Register AI tools.
 		$this->registerAiTools();
+
+		// 5. Wire embeddings + RAG + memory.
+		$this->embeddings = new Embeddings\EmbeddingService(
+			$this->settings,
+			$this->http,
+			$this->errors,
+		);
+		$this->rag        = new Embeddings\RagRetriever(
+			$this->embeddings,
+			$this->errors,
+		);
+		$this->memory     = new Memory\AgentMemory(
+			$this->rag,
+			$this->embeddings,
+		);
 	}
 
 	public static function instance(): self {
@@ -105,6 +128,7 @@ final class CoreBridge {
 			'nvidia_nim'   => \Nvoos\Core\Infrastructure\Provider\NvidiaNimClient::class,
 			'digitalocean' => \Nvoos\Core\Infrastructure\Provider\DigitalOceanClient::class,
 			'kimi'         => \Nvoos\Core\Infrastructure\Provider\KimiClient::class,
+			'baseten'      => \Nvoos\Core\Infrastructure\Provider\BasetenClient::class,
 		);
 
 		foreach ( $providerClasses as $slug => $class ) {

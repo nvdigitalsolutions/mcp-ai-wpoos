@@ -306,7 +306,25 @@ class ChatOrchestrator {
 			)
 		);
 
-		$response = $this->providers->chat( $messages, $options, $assistantConfig );
+		$onStreamChunk = function ( string $token ): void {
+			$this->sse->sendEvent(
+				'message',
+				array(
+					'choices' => array(
+						array(
+							'delta' => array( 'content' => $token ),
+						),
+					),
+				)
+			);
+		};
+
+		$response = $this->providers->stream(
+			$messages,
+			$options,
+			$assistantConfig,
+			$onStreamChunk,
+		);
 
 		if ( $this->errors->isError( $response ) ) {
 			$normalized = $this->errors->normalize( $response );
@@ -428,7 +446,12 @@ class ChatOrchestrator {
 				)
 			);
 
-			$response = $this->providers->chat( $messages, $options, $assistantConfig );
+			$response = $this->providers->stream(
+				$messages,
+				$options,
+				$assistantConfig,
+				$onStreamChunk,
+			);
 
 			if ( $this->errors->isError( $response ) ) {
 				break;
@@ -477,17 +500,6 @@ class ChatOrchestrator {
 			'tool_results' => $toolResultMessages,
 			'cost'         => $cost,
 		);
-
-		// Simulate streaming text chunks.
-		$text = $this->extractTextContent( $response );
-		if ( '' !== $text ) {
-			$this->sse->streamChunks(
-				$text,
-				function ( string $chunk ) {
-					return array( 'choices' => array( array( 'delta' => array( 'content' => $chunk ) ) ) );
-				}
-			);
-		}
 
 		$this->sse->sendEvent( 'message', $payload );
 		$this->sse->sendDone();

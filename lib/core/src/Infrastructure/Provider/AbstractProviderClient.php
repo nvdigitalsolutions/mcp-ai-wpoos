@@ -19,8 +19,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Infrastructure\Provider;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 abstract class AbstractProviderClient {
 

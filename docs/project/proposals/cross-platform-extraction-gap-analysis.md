@@ -33,9 +33,9 @@ The cross-platform extraction is **far more advanced** than the proposal alone s
 | `AuthProviderInterface` | `lib/core/src/Domain/Contract/AuthProviderInterface.php` | ✅ |
 | `SettingsStoreInterface` | `lib/core/src/Domain/Contract/SettingsStoreInterface.php` | ✅ |
 | `FileStoreInterface` | `lib/core/src/Domain/Contract/FileStoreInterface.php` | ✅ |
-| `CacheStoreInterface` | `lib/core/src/Domain/Contract/CacheStoreInterface.php` | ✅ (extends PSR-6) |
+| `CacheStoreInterface` | `lib/core/src/Domain/Contract/CacheStoreInterface.php` | ✅ (domain-owned — no longer extends PSR-6) |
 | `QueueClientInterface` | `lib/core/src/Domain/Contract/QueueClientInterface.php` | ✅ |
-| `EventDispatcherInterface` | `lib/core/src/Domain/Contract/EventDispatcherInterface.php` | ✅ (extends PSR-14 with filter support) |
+| `EventDispatcherInterface` | `lib/core/src/Domain/Contract/EventDispatcherInterface.php` | ✅ (domain-owned — no longer extends PSR-14) |
 | `ErrorFactoryInterface` | `lib/core/src/Domain/Contract/ErrorFactoryInterface.php` | ✅ |
 | `ToolInterface` | `lib/core/src/Domain/Contract/ToolInterface.php` | ✅ (with sub-interfaces) |
 
@@ -95,7 +95,7 @@ All injected with domain contracts — zero WordPress references.
 
 | Component | Implementation | Notes |
 |---|---|---|
-| 12 Provider Clients | OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace | All use PSR-18 `HttpClientInterface` |
+| 12 Provider Clients | OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace | All use domain-owned `HttpClientInterface::send()` |
 | SSE Handler | `Nvoos\Core\Infrastructure\Streaming\SseHandler` | RFC 6202 compliant |
 | Cost Calculator | `Nvoos\Core\Infrastructure\Cost\CostCalculator` | Per-model pricing for all 12 providers |
 
@@ -202,13 +202,13 @@ The implementation is **remarkably faithful** to the proposal's design:
 | Aspect | Proposal | Implementation | Match |
 |---|---|---|---|
 | Hexagonal layers | Domain → Application → Infrastructure → Adapters | `lib/core/src/Domain/` → `Application/` → `Infrastructure/` → `lib/wordpress-adapter/src/Adapter/` | ✅ 100% |
-| PSR standards | PSR-3,7,11,14,16,18 | PSR-7 via nyholm/psr7, PSR-14 via psr/event-dispatcher, PSR-18 via Symfony, PSR-6 via psr/cache | ✅ |
+| Domain contracts | PSR-based interfaces | `lib/core` uses domain-owned contracts — zero PSR/Symfony inheritance. `CacheStoreInterface` and `EventDispatcherInterface` no longer extend PSR-6/PSR-14. `HttpClientInterface` is domain-owned. | ✅ |
 | PHP version split | Core 8.1+, Adapter 7.4+ | `nvoos/core`: `^8.1`, `nvoos/wordpress-adapter`: `^7.4` | ✅ |
 | Value objects | Immutable `final readonly` | All 10 entities use `final readonly class` with constructor promotion | ✅ |
 | Canonical error envelope | ErrorFactoryInterface normalization | `ErrorFactoryInterface::normalize()` → `{code, message, data}` | ✅ |
-| Event bridge | PSR-14 + filter support | `EventDispatcherInterface extends PsrEventDispatcher` with `filter()`. WordPress hook bridge via `mapEventToHook()` | ✅ |
+| Event bridge | Domain-owned event system with filter support | `EventDispatcherInterface` with `dispatch()`, `filter()`, `listen()`, `listenFilter()`. WordPress hook bridge via `mapEventToHook()`. | ✅ |
 | Strangler Fig pattern | Incremental, additive migration | Feature flag (`?engine=oos`), legacy path untouched, tools migrated incrementally | ✅ |
-| DI container | PSR-11 wiring per platform | `wp_mcp_ai_oos_orchestrator()` factory wires all adapters and services | 🟡 No PSR-11 container yet, but factory pattern works |
+| DI container | Factory pattern per platform | `wp_mcp_ai_oos_orchestrator()` factory wires all adapters and services | 🟡 Factory pattern works — no DI container dependency |
 | Namespace mapping | `Nvoos\Core\` | `Nvoos\Core\Domain\Contract\*`, `Nvoos\Core\Application\*`, etc. | ✅ Exact match |
 
 ---

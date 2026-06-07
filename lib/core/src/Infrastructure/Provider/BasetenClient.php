@@ -1,9 +1,9 @@
 <?php
 /**
- * Kimi (Moonshot AI) provider client.
+ * Baseten provider client.
  *
- * OpenAI-compatible API at https://api.moonshot.cn/v1.
- * Supports kimi-k2.6 (256K context), kimi-k2-thinking (CoT).
+ * OpenAI-compatible API for deploying and serving open-source models.
+ * Default endpoint: https://api.baseten.co/v1.
  *
  * @package Nvoos\Core
  * @since   1.0.0
@@ -18,7 +18,7 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class KimiClient extends OpenAiCompatibleClient {
+class BasetenClient extends OpenAiCompatibleClient {
 
 	public function __construct(
 		SettingsStoreInterface $settings,
@@ -26,10 +26,10 @@ class KimiClient extends OpenAiCompatibleClient {
 		ErrorFactoryInterface $errors,
 	) {
 		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'kimi';
+		$this->providerSlug = 'baseten';
 	}
 
 	protected function getDefaultBaseUrl(): string {
-		return 'https://api.moonshot.cn/v1';
+		return 'https://api.baseten.co/v1';
 	}
 }

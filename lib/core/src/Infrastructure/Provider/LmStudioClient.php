@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Infrastructure\Provider;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class LmStudioClient extends OpenAiCompatibleClient {
 
@@ -32,6 +32,13 @@ class LmStudioClient extends OpenAiCompatibleClient {
 
 	protected function getDefaultBaseUrl(): string {
 		return 'http://localhost:1234/v1';
+	}
+
+	/**
+	 * LM Studio runs locally — never require an API key.
+	 */
+	protected function requiresApiKey(): bool {
+		return false;
 	}
 
 	protected function buildAuthHeaders( string $apiKey ): array {

@@ -10,7 +10,7 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 |---|---|
 | **Distribution** | `nvoos/core` Composer package |
 | **PHP target** | 8.1+ (readonly classes, enums, fibers, named arguments) |
-| **Dependencies** | PSR-3, PSR-6, PSR-11, PSR-14, PSR-18 |
+| **Dependencies** | none (zero external contract dependencies) |
 | **Optional dependencies** | none |
 
 ## Public Surface
@@ -22,9 +22,10 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 | `AuthProviderInterface` | `AuthProviderInterface.php` | `GetUserInfoTool`, agentic loop auth context |
 | `SettingsStoreInterface` | `SettingsStoreInterface.php` | All provider clients (API keys, base URLs) |
 | `FileStoreInterface` | `FileStoreInterface.php` | `SearchAttachmentsTool`, image/audio generation tools |
-| `CacheStoreInterface` | `CacheStoreInterface.php` | Extends PSR-6 with transient-style convenience API |
+| `CacheStoreInterface` | `CacheStoreInterface.php` | Domain-owned cache contract with transient-style API |
 | `QueueClientInterface` | `QueueClientInterface.php` | Async tool execution, cron scheduling |
-| `EventDispatcherInterface` | `EventDispatcherInterface.php` | Extends PSR-14 with filter semantics |
+| `EventDispatcherInterface` | `EventDispatcherInterface.php` | Domain-owned event dispatcher with filter semantics |
+| `HttpClientInterface` | `HttpClientInterface.php` | Domain-owned HTTP client contract |
 | `ToolInterface` + 5 sub-interfaces | `ToolInterface.php` | Every tool in `../../Tool/` |
 
 ## Inputs / Outputs / Neighbors

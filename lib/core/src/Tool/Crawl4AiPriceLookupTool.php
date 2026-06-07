@@ -6,8 +6,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 class Crawl4AiPriceLookupTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h ) {
 		parent::__construct( $e );}
@@ -38,9 +38,8 @@ class Crawl4AiPriceLookupTool extends AbstractTool {
 		}
 		$baseUrl = $this->s->getApiBaseUrl( 'crawl4ai' ) ?? 'http://localhost:11235';
 		try {
-			$request  = new \Nyholm\Psr7\Request( 'POST', $baseUrl . '/search', array( 'Content-Type' => 'application/json' ), json_encode( array( 'query' => $query ) ) );
-			$response = $this->h->sendRequest( $request );
-			$data     = json_decode( (string) $response->getBody(), true );
+			$response = $this->h->send( 'POST', $baseUrl . '/search', array( 'Content-Type' => 'application/json' ), json_encode( array( 'query' => $query ) ) );
+			$data     = json_decode( $response->body, true );
 			$results  = $data['results'] ?? array();
 			return $this->collection( 'Found ' . count( $results ) . ' results.', $results, count( $results ) );
 		} catch ( \Exception $e ) {

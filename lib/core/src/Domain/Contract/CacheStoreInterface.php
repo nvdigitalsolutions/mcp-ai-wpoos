@@ -2,14 +2,13 @@
 /**
  * Cache store contract for the oOS AI orchestration core.
  *
- * Extends PSR-6 (Caching Interface) with simpler convenience methods
- * that match the transient/option-cache pattern used throughout the
- * existing plugin. Adapters for each platform implement the full
- * interface.
+ * Domain-owned contract with a transient-style convenience API.
+ * Platform adapters implement this interface directly — no PSR-6
+ * or Symfony dependency in the core.
  *
  *  - WordPress: wraps get_transient / set_transient / wp_cache_*
  *  - Laravel:   wraps Cache facade / Redis / memcached
- *  - Standalone: wraps PSR-6 pool (Symfony Cache, etc.)
+ *  - Standalone: wraps PSR-6 pool or Symfony Cache
  *
  * @package Nvoos\Core
  * @since   1.0.0
@@ -20,9 +19,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-use Psr\Cache\CacheItemPoolInterface;
-
-interface CacheStoreInterface extends CacheItemPoolInterface {
+interface CacheStoreInterface {
 
 	/**
 	 * Get a cached value with a default fallback.

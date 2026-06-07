@@ -3,11 +3,10 @@
  * WordPress adapter: EventDispatcherInterface implementation.
  *
  * Wraps WordPress action hooks (do_action) and filter hooks (apply_filters)
- * behind the framework-agnostic EventDispatcherInterface, which extends
- * PSR-14 with filter semantics.
+ * behind the framework-agnostic, domain-owned EventDispatcherInterface.
  *
  * This adapter bridges two worlds:
- *  - PSR-14 dispatch → WordPress do_action
+ *  - Core dispatch()  → WordPress do_action
  *  - Core filter()    → WordPress apply_filters
  *  - Existing WP hooks (wp_mcp_ai_*) continue to work alongside both.
  *
@@ -25,7 +24,7 @@ use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 class EventDispatcher implements EventDispatcherInterface {
 
 	/**
-	 * Map of PSR-14 event class names to WordPress hook names.
+	 * Map of domain event class names to WordPress hook names.
 	 *
 	 * Translates domain event classes to the wp_mcp_ai_* hook names
 	 * that existing subscribers listen on.
@@ -35,7 +34,7 @@ class EventDispatcher implements EventDispatcherInterface {
 	private array $eventHookMap = array();
 
 	/**
-	 * Registered PSR-14 listeners keyed by event class name.
+	 * Registered domain listeners keyed by event class name.
 	 *
 	 * @var array<class-string, array<int, callable[]>>
 	 */
@@ -61,7 +60,7 @@ class EventDispatcher implements EventDispatcherInterface {
 	public function dispatch( object $event ): object {
 		$eventClass = \get_class( $event );
 
-		// 1. Notify PSR-14 registered listeners.
+		// 1. Notify registered domain listeners.
 		if ( isset( $this->listeners[ $eventClass ] ) ) {
 			foreach ( $this->getSortedCallbacks( $this->listeners[ $eventClass ] ) as $listener ) {
 				$listener( $event );
@@ -99,7 +98,7 @@ class EventDispatcher implements EventDispatcherInterface {
 			\add_action( $eventName, $listener, $priority, 99 );
 		}
 
-		// PSR-14 listener registration (keyed by event class name).
+		// Domain listener registration (keyed by event class name).
 		if ( \class_exists( $eventName ) || \interface_exists( $eventName ) ) {
 			$this->listeners[ $eventName ][ $priority ][] = $listener;
 			return;
@@ -126,7 +125,7 @@ class EventDispatcher implements EventDispatcherInterface {
 			$removed = \remove_action( $eventName, $listener ) || \remove_filter( $eventName, $listener );
 		}
 
-		// Remove from PSR-14 listeners.
+		// Remove from domain listeners.
 		if ( isset( $this->listeners[ $eventName ] ) ) {
 			foreach ( $this->listeners[ $eventName ] as $priority => &$callbacks ) {
 				foreach ( $callbacks as $index => $registered ) {

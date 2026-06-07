@@ -34,39 +34,39 @@ class ApiKeys extends Section {
 	public function get_fields(): array {
 		return array(
 			// ─── OpenAI ──────────────────────────────────────────
-			'ai_api_key_openai'       => array(
+			'ai_api_key_openai'        => array(
 				'type'        => 'password',
 				'label'       => __( 'OpenAI API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your OpenAI API key (sk-…).', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── Google Gemini ───────────────────────────────────
-			'ai_api_key_gemini'       => array(
+			'ai_api_key_gemini'        => array(
 				'type'        => 'password',
 				'label'       => __( 'Google Gemini API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Google AI Studio API key.', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── Anthropic Claude ────────────────────────────────
-			'ai_api_key_anthropic'    => array(
+			'ai_api_key_anthropic'     => array(
 				'type'        => 'password',
 				'label'       => __( 'Anthropic API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Anthropic API key (sk-ant-…).', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── Ollama (Local) ──────────────────────────────────
-			'ai_api_key_ollama'       => array(
+			'ai_api_key_ollama'        => array(
 				'type'        => 'password',
 				'label'       => __( 'Ollama API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Optional. Most local Ollama setups do not require an API key.', 'nvoos-graphify-ai' ),
 			),
-			'ollama_base_url'         => array(
+			'ollama_base_url'          => array(
 				'type'        => 'text',
 				'label'       => __( 'Ollama Base URL', 'nvoos-graphify-ai' ),
 				'description' => __( 'The base URL of your Ollama instance.', 'nvoos-graphify-ai' ),
 				'default'     => 'http://localhost:11434',
 			),
-			'ollama_model'            => array(
+			'ollama_model'             => array(
 				'type'        => 'text',
 				'label'       => __( 'Ollama Model', 'nvoos-graphify-ai' ),
 				'description' => __( 'Model name as known to Ollama (e.g. llama3.3, mistral).', 'nvoos-graphify-ai' ),
@@ -74,21 +74,21 @@ class ApiKeys extends Section {
 			),
 
 			// ─── DeepSeek ────────────────────────────────────────
-			'ai_api_key_deepseek'     => array(
+			'ai_api_key_deepseek'      => array(
 				'type'        => 'password',
 				'label'       => __( 'DeepSeek API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your DeepSeek API key.', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── OpenRouter ──────────────────────────────────────
-			'ai_api_key_openrouter'   => array(
+			'ai_api_key_openrouter'    => array(
 				'type'        => 'password',
 				'label'       => __( 'OpenRouter API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your OpenRouter API key.', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── Hugging Face ────────────────────────────────────
-			'ai_api_key_huggingface'  => array(
+			'ai_api_key_huggingface'   => array(
 				'type'        => 'password',
 				'label'       => __( 'Hugging Face API Token', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Hugging Face API token (hf_…).', 'nvoos-graphify-ai' ),
@@ -99,7 +99,7 @@ class ApiKeys extends Section {
 				'description' => __( 'The inference endpoint URL.', 'nvoos-graphify-ai' ),
 				'default'     => 'https://api-inference.huggingface.co',
 			),
-			'huggingface_model'       => array(
+			'huggingface_model'        => array(
 				'type'        => 'text',
 				'label'       => __( 'Hugging Face Model', 'nvoos-graphify-ai' ),
 				'description' => __( 'Model identifier on Hugging Face.', 'nvoos-graphify-ai' ),
@@ -107,17 +107,17 @@ class ApiKeys extends Section {
 			),
 
 			// ─── Cloudflare Workers AI ───────────────────────────
-			'ai_api_key_cloudflare'   => array(
+			'ai_api_key_cloudflare'    => array(
 				'type'        => 'password',
 				'label'       => __( 'Cloudflare API Token', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Cloudflare API token with Workers AI access.', 'nvoos-graphify-ai' ),
 			),
-			'cloudflare_account_id'   => array(
+			'cloudflare_account_id'    => array(
 				'type'        => 'text',
 				'label'       => __( 'Cloudflare Account ID', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Cloudflare account identifier.', 'nvoos-graphify-ai' ),
 			),
-			'cloudflare_model'        => array(
+			'cloudflare_model'         => array(
 				'type'        => 'text',
 				'label'       => __( 'Cloudflare Model', 'nvoos-graphify-ai' ),
 				'description' => __( 'Model identifier for Cloudflare Workers AI.', 'nvoos-graphify-ai' ),
@@ -125,18 +125,18 @@ class ApiKeys extends Section {
 			),
 
 			// ─── LM Studio (Local) ───────────────────────────────
-			'ai_api_key_lmstudio'     => array(
+			'ai_api_key_lmstudio'      => array(
 				'type'        => 'password',
 				'label'       => __( 'LM Studio API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Optional. Set only if you have configured an API key in LM Studio.', 'nvoos-graphify-ai' ),
 			),
-			'lmstudio_base_url'       => array(
+			'lmstudio_base_url'        => array(
 				'type'        => 'text',
 				'label'       => __( 'LM Studio Base URL', 'nvoos-graphify-ai' ),
 				'description' => __( 'The base URL of your LM Studio server.', 'nvoos-graphify-ai' ),
 				'default'     => 'http://localhost:1234/v1',
 			),
-			'lmstudio_model'          => array(
+			'lmstudio_model'           => array(
 				'type'        => 'text',
 				'label'       => __( 'LM Studio Model', 'nvoos-graphify-ai' ),
 				'description' => __( 'Model identifier for LM Studio.', 'nvoos-graphify-ai' ),
@@ -144,28 +144,28 @@ class ApiKeys extends Section {
 			),
 
 			// ─── NVIDIA NIM ──────────────────────────────────────
-			'ai_api_key_nvidia'       => array(
+			'ai_api_key_nvidia'        => array(
 				'type'        => 'password',
 				'label'       => __( 'NVIDIA NIM API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your NVIDIA NIM API key.', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── DigitalOcean ────────────────────────────────────
-			'ai_api_key_digitalocean' => array(
+			'ai_api_key_digitalocean'  => array(
 				'type'        => 'password',
 				'label'       => __( 'DigitalOcean API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your DigitalOcean API key.', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── Kimi (Moonshot) ─────────────────────────────────
-			'ai_api_key_kimi'         => array(
+			'ai_api_key_kimi'          => array(
 				'type'        => 'password',
 				'label'       => __( 'Kimi API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Kimi (Moonshot) API key.', 'nvoos-graphify-ai' ),
 			),
 
 			// ─── Baseten ─────────────────────────────────────────
-			'ai_api_key_baseten'      => array(
+			'ai_api_key_baseten'       => array(
 				'type'        => 'password',
 				'label'       => __( 'Baseten API Key', 'nvoos-graphify-ai' ),
 				'description' => __( 'Your Baseten API key.', 'nvoos-graphify-ai' ),

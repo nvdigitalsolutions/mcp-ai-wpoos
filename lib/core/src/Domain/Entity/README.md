@@ -26,6 +26,7 @@ Immutable value objects and command DTOs that carry data across the oOS core eng
 | `UserInfo` | `UserInfo.php` | `AuthProviderInterface::getUserInfo()` |
 | `StoredFile` | `StoredFile.php` | `FileStoreInterface` |
 | `JobStatus` | `JobStatus.php` | `QueueClientInterface` |
+| `HttpResponse` | `HttpResponse.php` | `HttpClientInterface` |
 
 ## Conventions
 

@@ -2,10 +2,9 @@
 /**
  * Event dispatcher contract for the oOS AI orchestration core.
  *
- * Extends PSR-14 (Event Dispatcher) with filter semantics, replacing
- * WordPress action hooks (do_action) and filter hooks (apply_filters).
- * PSR-14 only covers dispatch — this interface adds the filter pattern
- * for backward compatibility with the existing hook-based extensibility.
+ * Domain-owned contract that replaces WordPress action hooks (do_action)
+ * and filter hooks (apply_filters) with a framework-agnostic event system.
+ * Includes both dispatch semantics and filter chaining.
  *
  * @package Nvoos\Core
  * @since   1.0.0
@@ -16,9 +15,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcher;
-
-interface EventDispatcherInterface extends PsrEventDispatcher {
+interface EventDispatcherInterface {
 
 	/**
 	 * Dispatch an event to all registered listeners.
