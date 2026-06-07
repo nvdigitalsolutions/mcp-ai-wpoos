@@ -1,23 +1,17 @@
 <?php
-/**
- * Registers Platform tabs and sections into the core's SettingsRegistry.
- */
-
 declare(strict_types=1);
 
-namespace NvoosGraphifyPlatform\Admin;
+namespace NvoosGraphifyPlatform\SlashCommands\Admin;
 
 use NvoosGraphify\Admin\SettingsRegistry;
 
-final class PlatformSettings {
+final class SlashCommandsAdmin {
 
 	public function register(): void {
 		add_action( 'nvoos_graphify/admin/register_sections', array( $this, 'registerSections' ) );
 	}
 
 	public function registerSections(): void {
-		SettingsRegistry::register_tab( 'agents', __( 'Agents', 'nvoos-graphify-platform' ) );
-		SettingsRegistry::register_tab( 'skills', __( 'Skills', 'nvoos-graphify-platform' ) );
 		SettingsRegistry::register_tab( 'slash_commands', __( 'Slash Commands', 'nvoos-graphify-platform' ) );
 	}
 }

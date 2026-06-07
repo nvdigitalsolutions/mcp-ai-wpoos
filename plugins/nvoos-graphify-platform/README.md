@@ -34,7 +34,7 @@ Platform layer for NV oOS Graphify — adds agents, skills, slash-commands, harn
 |---|---|---|
 | Agent role system | `includes/assistants/` | ✅ Framework (2.2a) |
 | Skills | `includes/skills/` + skill-*.php | ✅ Bridged (2.2b) |
-| Slash-commands | `includes/slash-commands/` | To extract |
+| Slash Commands | `includes/slash-commands/` | ✅ Bridged (2.2c) |
 | Harness | `includes/harness/` | To extract |
 | Measurement | `includes/measurement/` | To extract |
 | Professions | `includes/professions/` | To extract |

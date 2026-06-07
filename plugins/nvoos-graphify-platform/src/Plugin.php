@@ -3,11 +3,6 @@ declare(strict_types=1);
 
 namespace NvoosGraphifyPlatform;
 
-/**
- * Plugin bootstrap — singleton composition root.
- *
- * @since 1.0.0
- */
 final class Plugin {
 
 	private static ?self $instance = null;
@@ -28,16 +23,7 @@ final class Plugin {
 
 		$this->registerAgents();
 		$this->registerSkills();
-
-		// Future subsystems:
-		// $this->registerSlashCommands();
-		// $this->registerHarness();
-		// $this->registerMeasurement();
-		// $this->registerProfessions();
-		// $this->registerA2A();
-		// $this->registerACP();
-		// $this->registerFederation();
-		// $this->registerBlueprints();
+		$this->registerSlashCommands();
 	}
 
 	private function registerAdmin(): void {
@@ -55,6 +41,12 @@ final class Plugin {
 	private function registerSkills(): void {
 		if ( class_exists( 'NvoosGraphifyPlatform\Skills\SkillService' ) ) {
 			\NvoosGraphifyPlatform\Skills\SkillService::instance()->register();
+		}
+	}
+
+	private function registerSlashCommands(): void {
+		if ( class_exists( 'NvoosGraphifyPlatform\SlashCommands\SlashCommandService' ) ) {
+			\NvoosGraphifyPlatform\SlashCommands\SlashCommandService::instance()->register();
 		}
 	}
 
