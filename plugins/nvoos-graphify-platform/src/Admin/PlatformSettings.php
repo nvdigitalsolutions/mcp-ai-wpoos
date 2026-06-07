@@ -40,15 +40,11 @@ final class PlatformSettings {
 	 * @return void
 	 */
 	public function registerSections(): void {
-		// Tabs are registered as subsystems are extracted.
-		// Example for future subsystems:
-		//
-		// SettingsRegistry::register_tab( 'agents', __( 'Agents', 'nvoos-graphify-platform' ) );
+		// ✅ Priority 2.2a: Agents
+		SettingsRegistry::register_tab( 'agents', __( 'Agents', 'nvoos-graphify-platform' ) );
+
+		// Future tabs as subsystems are extracted:
 		// SettingsRegistry::register_tab( 'skills', __( 'Skills', 'nvoos-graphify-platform' ) );
 		// SettingsRegistry::register_tab( 'federation', __( 'Federation', 'nvoos-graphify-platform' ) );
-		//
-		// if ( class_exists( 'NvoosGraphifyPlatform\Admin\Sections\Agents' ) ) {
-		//     SettingsRegistry::register_section( new \NvoosGraphifyPlatform\Admin\Sections\Agents() );
-		// }
 	}
 }

@@ -52,21 +52,23 @@ final class Plugin {
 		}
 
 		// ─── Platform subsystems ──────────────────────────────
-		// Each subsystem is registered via its own method below.
-		// Subsystems are extracted incrementally from the base
-		// plugin's includes/ directory per Priority 2.2.
-		//
-		// Future subsystems to wire here:
-		//   $this->registerAgents();
-		//   $this->registerSkills();
-		//   $this->registerSlashCommands();
-		//   $this->registerHarness();
-		//   $this->registerMeasurement();
-		//   $this->registerProfessions();
-		//   $this->registerA2A();
-		//   $this->registerACP();
-		//   $this->registerFederation();
-		//   $this->registerBlueprints();
+			// Each subsystem is registered via its own method below.
+			// Subsystems are extracted incrementally from the base
+			// plugin's includes/ directory per Priority 2.2.
+
+			// ✅ Priority 2.2a: Agent role system
+			$this->registerAgents();
+
+			// Future subsystems to wire here:
+			//   $this->registerSkills();
+			//   $this->registerSlashCommands();
+			//   $this->registerHarness();
+			//   $this->registerMeasurement();
+			//   $this->registerProfessions();
+			//   $this->registerA2A();
+			//   $this->registerACP();
+			//   $this->registerFederation();
+			//   $this->registerBlueprints();
 	}
 
 	// ───────────────────────────────────────────────────────────────
@@ -81,6 +83,23 @@ final class Plugin {
 	private function registerAdmin(): void {
 		if ( class_exists( 'NvoosGraphifyPlatform\Admin\PlatformSettings' ) ) {
 			( new \NvoosGraphifyPlatform\Admin\PlatformSettings() )->register();
+		}
+	}
+
+	// ───────────────────────────────────────────────────────────
+	// Subsystem: Agents (Priority 2.2a)
+	// ───────────────────────────────────────────────────────────
+
+	/**
+	 * Register the agent role system.
+	 *
+	 * Extracted from base plugin `includes/assistants/`.
+	 *
+	 * @return void
+	 */
+	private function registerAgents(): void {
+		if ( class_exists( 'NvoosGraphifyPlatform\Agents\Agents' ) ) {
+			\NvoosGraphifyPlatform\Agents\Agents::instance()->register();
 		}
 	}
 
