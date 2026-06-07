@@ -1,0 +1,15 @@
+/.github
+/tests
+/bin
+/.phpunit.cache
+/.phpunit.result.cache
+/phpunit.xml.dist
+/phpcs.xml.dist
+/composer.json
+/composer.lock
+/.gitignore
+/.distignore
+/.editorconfig
+/package.json
+/package-lock.json
+/node_modules
