@@ -36,12 +36,12 @@ Platform layer for NV oOS Graphify — adds agents, skills, slash-commands, harn
 | Skills | `includes/skills/` + skill-*.php | ✅ Bridged (2.2b) |
 | Slash Commands | `includes/slash-commands/` | ✅ Bridged (2.2c) |
 | Harness | `includes/harness/` | ✅ Bridged (2.2d) |
-| Measurement | `includes/measurement/` | To extract |
-| Professions | `includes/professions/` | To extract |
-| A2A | `includes/a2a/` | To extract |
-| ACP | `includes/acp/` | To extract |
-| Federation | `includes/federation/` | To extract |
-| Blueprints | `includes/blueprints/` | To extract |
+| Measurement | `includes/measurement/` | ✅ Bridged (2.2e) |
+| Professions | `includes/professions/` | ✅ Bridged (2.2f) |
+| A2A | `includes/a2a/` | ✅ Bridged (2.2g) |
+| ACP | `includes/acp/` | ✅ Bridged (2.2h) |
+| Federation | `includes/` federation-*.php | ✅ Bridged (2.2i) |
+| Blueprints | `includes/blueprints/` | ✅ Bridged (2.2j) |
 
 ## Conventions
 

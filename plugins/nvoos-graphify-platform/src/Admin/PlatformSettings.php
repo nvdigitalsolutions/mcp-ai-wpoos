@@ -12,9 +12,21 @@ final class PlatformSettings {
 	}
 
 	public function registerSections(): void {
-		SettingsRegistry::register_tab( 'agents', __( 'Agents', 'nvoos-graphify-platform' ) );
-		SettingsRegistry::register_tab( 'skills', __( 'Skills', 'nvoos-graphify-platform' ) );
-		SettingsRegistry::register_tab( 'slash_commands', __( 'Slash Commands', 'nvoos-graphify-platform' ) );
-		SettingsRegistry::register_tab( 'harness', __( 'Harness', 'nvoos-graphify-platform' ) );
+		$tabs = array(
+			'agents'          => __( 'Agents', 'nvoos-graphify-platform' ),
+			'skills'          => __( 'Skills', 'nvoos-graphify-platform' ),
+			'slash_commands'  => __( 'Slash Commands', 'nvoos-graphify-platform' ),
+			'harness'         => __( 'Harness', 'nvoos-graphify-platform' ),
+			'measurement'     => __( 'Measurement', 'nvoos-graphify-platform' ),
+			'professions'     => __( 'Professions', 'nvoos-graphify-platform' ),
+			'a2a'             => __( 'A2A', 'nvoos-graphify-platform' ),
+			'acp'             => __( 'ACP', 'nvoos-graphify-platform' ),
+			'federation'      => __( 'Federation', 'nvoos-graphify-platform' ),
+			'blueprints'      => __( 'Blueprints', 'nvoos-graphify-platform' ),
+		);
+
+		foreach ( $tabs as $slug => $label ) {
+			SettingsRegistry::register_tab( $slug, $label );
+		}
 	}
 }
