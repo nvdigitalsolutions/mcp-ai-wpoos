@@ -115,12 +115,14 @@ class EmbeddingsOnIngest {
 				continue;
 			}
 
-			Db::upsertEmbedding( array(
-				'node_id' => $node->node_id,
-				'model'   => $model,
-				'dim'     => $vectors[ $i ]['dim'],
-				'vector'  => \json_encode( $vectors[ $i ]['vector'] ),
-			) );
+			Db::upsertEmbedding(
+				array(
+					'node_id' => $node->node_id,
+					'model'   => $model,
+					'dim'     => $vectors[ $i ]['dim'],
+					'vector'  => \wp_json_encode( $vectors[ $i ]['vector'] ),
+				)
+			);
 		}
 
 		// Reschedule if there may be more.

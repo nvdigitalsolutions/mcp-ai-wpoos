@@ -77,13 +77,16 @@ class AgentMemory {
 
 		$expiresAt = \gmdate( 'Y-m-d H:i:s', \time() + $ttlSeconds );
 
-		$nodeProps = \array_merge( $metadata, array(
-			'session_id' => $sessionId,
-			'summary'    => $summary,
-			'stored_at'  => \current_time( 'mysql', true ),
-			'expires_at' => $expiresAt,
-			'source'     => 'agent_memory',
-		) );
+		$nodeProps = \array_merge(
+			$metadata,
+			array(
+				'session_id' => $sessionId,
+				'summary'    => $summary,
+				'stored_at'  => \current_time( 'mysql', true ),
+				'expires_at' => $expiresAt,
+				'source'     => 'agent_memory',
+			)
+		);
 
 		$nodeId = 'memory_' . \wp_generate_uuid4();
 		$label  = \mb_strlen( $summary ) > 120
@@ -100,7 +103,7 @@ class AgentMemory {
 				'type'         => self::NODE_TYPE,
 				'post_id'      => 0,
 				'url'          => '',
-				'properties'   => \json_encode( $nodeProps ),
+				'properties'   => \wp_json_encode( $nodeProps ),
 				'community_id' => 'memories',
 				'confidence'   => 1.0,
 				'expires_at'   => $expiresAt,
@@ -115,12 +118,15 @@ class AgentMemory {
 		}
 
 		// Fire the memory-stored event so the core bridge can link it.
-		\do_action( Schema::ACTION_MEMORY_STORED, array(
-			'node_id'    => $nodeId,
-			'session_id' => $sessionId,
-			'summary'    => $summary,
-			'ttl'        => $ttlSeconds,
-		) );
+		\do_action(
+			Schema::ACTION_MEMORY_STORED,
+			array(
+				'node_id'    => $nodeId,
+				'session_id' => $sessionId,
+				'summary'    => $summary,
+				'ttl'        => $ttlSeconds,
+			)
+		);
 
 		return $nodeId;
 	}
@@ -169,10 +175,10 @@ class AgentMemory {
 				continue;
 			}
 
-			$props     = \json_decode( $node->properties ?? '{}', true ) ?: array();
-			$summary   = $props['summary'] ?? $node->label;
-			$storedAt  = $props['stored_at'] ?? $node->created_at;
-			$ageDays   = $this->ageInDays( $storedAt );
+			$props    = \json_decode( $node->properties ?? '{}', true ) ?: array();
+			$summary  = $props['summary'] ?? $node->label;
+			$storedAt = $props['stored_at'] ?? $node->created_at;
+			$ageDays  = $this->ageInDays( $storedAt );
 
 			// Apply decay to the similarity score.
 			$decayedSimilarity = $this->applyDecay( $r['similarity'], $ageDays );
@@ -212,8 +218,8 @@ class AgentMemory {
 		$context = "You have memories from previous conversations that may be relevant:\n\n";
 
 		foreach ( $memories as $i => $m ) {
-			$num = $i + 1;
-			$age = $m['age_days'] > 0
+			$num      = $i + 1;
+			$age      = $m['age_days'] > 0
 				? " ({$m['age_days']} days ago)"
 				: ' (recent)';
 			$context .= "{$num}.{$age} {$m['summary']}\n";
@@ -241,9 +247,9 @@ class AgentMemory {
 			return $similarity;
 		}
 
-		$ageSeconds    = $ageDays * DAY_IN_SECONDS;
-		$halfLives     = $ageSeconds / self::DECAY_HALF_LIFE;
-		$decayFactor   = \pow( 0.5, $halfLives );
+		$ageSeconds  = $ageDays * DAY_IN_SECONDS;
+		$halfLives   = $ageSeconds / self::DECAY_HALF_LIFE;
+		$decayFactor = \pow( 0.5, $halfLives );
 
 		return $similarity * \max( 0.1, $decayFactor ); // Floor at 10% of original.
 	}
@@ -300,9 +306,9 @@ class AgentMemory {
 			return '';
 		}
 
-		return "After responding to the user, also produce a brief summary of this conversation "
-			. "for future memory. Include: (1) key topics discussed, (2) any decisions made, "
-			. "(3) user preferences or facts learned. Keep it under 3 sentences. "
+		return 'After responding to the user, also produce a brief summary of this conversation '
+			. 'for future memory. Include: (1) key topics discussed, (2) any decisions made, '
+			. '(3) user preferences or facts learned. Keep it under 3 sentences. '
 			. "Session ID: {$sessionId}";
 	}
 

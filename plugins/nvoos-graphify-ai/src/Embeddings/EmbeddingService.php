@@ -62,10 +62,9 @@ class EmbeddingService {
 			'model' => $model,
 		);
 
-		try {
-			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $e ) {
-			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
+		$body = \wp_json_encode( $payload, \JSON_UNESCAPED_SLASHES );
+		if ( false === $body ) {
+			return $this->errors->create( 'json_encode_failed', 'Failed to encode embedding request payload.' );
 		}
 
 		$headers = array(
@@ -128,19 +127,21 @@ class EmbeddingService {
 			return $this->errors->create( 'missing_api_key', "No API key for {$provider}.", array( 'status' => 400 ) );
 		}
 
-		$baseUrl   = $this->resolveBaseUrl( $provider );
-		$filtered  = \array_values( \array_filter( $texts, static fn( $t ) => '' !== \trim( $t ) ) );
+		$baseUrl  = $this->resolveBaseUrl( $provider );
+		$filtered = \array_values( \array_filter( $texts, static fn( $t ) => '' !== \trim( $t ) ) );
 
 		if ( array() === $filtered ) {
 			return array();
 		}
 
-		$payload = array( 'input' => $filtered, 'model' => $model );
+		$payload = array(
+			'input' => $filtered,
+			'model' => $model,
+		);
 
-		try {
-			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $e ) {
-			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
+		$body = \wp_json_encode( $payload, \JSON_UNESCAPED_SLASHES );
+		if ( false === $body ) {
+			return $this->errors->create( 'json_encode_failed', 'Failed to encode batch embedding request payload.' );
 		}
 
 		$headers = array(

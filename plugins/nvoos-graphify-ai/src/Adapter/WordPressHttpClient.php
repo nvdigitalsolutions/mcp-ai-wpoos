@@ -38,7 +38,7 @@ class WordPressHttpClient implements ClientInterface {
 		$wpResponse = \wp_remote_request( (string) $request->getUri(), $args );
 
 		if ( \is_wp_error( $wpResponse ) ) {
-			throw new class ( $wpResponse->get_error_message(), $request ) extends \RuntimeException implements NetworkExceptionInterface {
+			throw new class( $wpResponse->get_error_message(), $request ) extends \RuntimeException implements NetworkExceptionInterface {
 				private RequestInterface $req;
 
 				public function __construct( string $message, RequestInterface $request ) {

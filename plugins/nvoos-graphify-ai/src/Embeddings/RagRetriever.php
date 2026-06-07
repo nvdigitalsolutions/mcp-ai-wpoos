@@ -19,7 +19,7 @@ use NvoosGraphify\Graph\Db;
 
 class RagRetriever {
 
-	private const DEFAULT_TOP_K = 5;
+	private const DEFAULT_TOP_K  = 5;
 	private const MIN_SIMILARITY = 0.3;
 
 	public function __construct(
@@ -114,7 +114,7 @@ class RagRetriever {
 		$context = "The following content from the website's knowledge graph may be relevant to the user's query:\n\n";
 
 		foreach ( $results as $i => $r ) {
-			$num = $i + 1;
+			$num      = $i + 1;
 			$context .= "{$num}. [{$r['type']}] {$r['label']} (relevance: {$r['similarity']})\n";
 		}
 
@@ -144,10 +144,13 @@ class RagRetriever {
 		}
 
 		// Prepend context as a system message.
-		\array_unshift( $messages, array(
-			'role'    => 'system',
-			'content' => $context,
-		) );
+		\array_unshift(
+			$messages,
+			array(
+				'role'    => 'system',
+				'content' => $context,
+			)
+		);
 
 		return $messages;
 	}
@@ -203,14 +206,10 @@ class RagRetriever {
 			return $decoded;
 		}
 
-		// Try unpacking binary floats (pack('f*', ...)).
-		try {
-			$unpacked = \unpack( 'f*', $raw );
-			if ( false !== $unpacked ) {
-				return \array_values( $unpacked );
-			}
-		} catch ( \Throwable $e ) {
-			// Unreadable — skip.
+		// Try unpacking binary floats.
+		$unpacked = \unpack( 'f*', $raw );
+		if ( false !== $unpacked ) {
+			return \array_values( $unpacked );
 		}
 
 		return null;

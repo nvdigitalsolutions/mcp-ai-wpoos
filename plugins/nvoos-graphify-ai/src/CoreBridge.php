@@ -59,7 +59,7 @@ final class CoreBridge {
 
 	private function __construct() {
 		// 1. Create WordPress adapters.
-		$this->errors   = new ErrorFactory();
+		$this->errors = new ErrorFactory();
 		// GraphifySettingsStore (v2) reads from nvoos_graphify_settings;
 		// the wordpress-adapter's SettingsStore (v1) reads from wp_mcp_ai_settings.
 		$this->settings = new GraphifySettingsStore();
@@ -94,11 +94,11 @@ final class CoreBridge {
 			$this->http,
 			$this->errors,
 		);
-		$this->rag = new Embeddings\RagRetriever(
+		$this->rag        = new Embeddings\RagRetriever(
 			$this->embeddings,
 			$this->errors,
 		);
-		$this->memory = new Memory\AgentMemory(
+		$this->memory     = new Memory\AgentMemory(
 			$this->rag,
 			$this->embeddings,
 		);

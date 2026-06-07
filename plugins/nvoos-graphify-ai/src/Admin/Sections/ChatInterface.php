@@ -51,10 +51,10 @@ class ChatInterface extends Section {
 	// ─── Asset enqueue ──────────────────────────────────────────────
 
 	private function enqueueAssets(): void {
-		$cssUrl  = NVOOS_GRAPHIFY_AI_URL . 'assets/css/graphify-ai-chat.css';
-		$cssVer  = NVOOS_GRAPHIFY_AI_VERSION;
-		$jsUrl   = NVOOS_GRAPHIFY_AI_URL . 'assets/js/graphify-ai-chat.js';
-		$jsVer   = NVOOS_GRAPHIFY_AI_VERSION;
+		$cssUrl = NVOOS_GRAPHIFY_AI_URL . 'assets/css/graphify-ai-chat.css';
+		$cssVer = NVOOS_GRAPHIFY_AI_VERSION;
+		$jsUrl  = NVOOS_GRAPHIFY_AI_URL . 'assets/js/graphify-ai-chat.js';
+		$jsVer  = NVOOS_GRAPHIFY_AI_VERSION;
 
 		\wp_enqueue_style(
 			'nvoos-graphify-ai-chat',
@@ -80,12 +80,12 @@ class ChatInterface extends Section {
 					'nonce'     => \wp_create_nonce( 'wp_rest' ),
 					'providers' => $this->getAvailableProviders(),
 					'i18n'      => array(
-						'placeholder' => __( 'Type your message…', 'nvoos-graphify-ai' ),
-						'send'        => __( 'Send', 'nvoos-graphify-ai' ),
-						'thinking'    => __( 'Thinking…', 'nvoos-graphify-ai' ),
-						'error'       => __( 'Something went wrong. Check the console for details.', 'nvoos-graphify-ai' ),
-						'toolsUsed'   => __( 'Tools used', 'nvoos-graphify-ai' ),
-						'cost'        => __( 'Cost', 'nvoos-graphify-ai' ),
+						'placeholder'    => __( 'Type your message…', 'nvoos-graphify-ai' ),
+						'send'           => __( 'Send', 'nvoos-graphify-ai' ),
+						'thinking'       => __( 'Thinking…', 'nvoos-graphify-ai' ),
+						'error'          => __( 'Something went wrong. Check the console for details.', 'nvoos-graphify-ai' ),
+						'toolsUsed'      => __( 'Tools used', 'nvoos-graphify-ai' ),
+						'cost'           => __( 'Cost', 'nvoos-graphify-ai' ),
 						'selectProvider' => __( 'Provider', 'nvoos-graphify-ai' ),
 					),
 				),

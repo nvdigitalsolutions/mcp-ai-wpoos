@@ -47,11 +47,11 @@ final class Plugin {
 		);
 
 		// Register embeddings-on-ingest and agent memory hooks.
-		(new \NvoosGraphifyAi\Embeddings\EmbeddingsOnIngest(
+		( new \NvoosGraphifyAi\Embeddings\EmbeddingsOnIngest(
 			$bridge->embeddings,
 			$bridge->settings,
 			$bridge->errors,
-		))->register();
+		) )->register();
 
 		$bridge->memory->register();
 
