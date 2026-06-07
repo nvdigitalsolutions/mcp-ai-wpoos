@@ -33,7 +33,7 @@ class QuestionAnswering extends AbstractAiTool {
 			'required'   => array( 'question' ),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$question = sanitize_text_field( $arguments['question'] ?? '' );
 		$ctx      = sanitize_textarea_field( $arguments['context'] ?? '' );
 		if ( empty( $question ) ) {

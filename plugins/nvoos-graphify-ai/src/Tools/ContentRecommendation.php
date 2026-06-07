@@ -37,7 +37,7 @@ class ContentRecommendation extends AbstractAiTool {
 			),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$topic  = sanitize_text_field( $arguments['topic'] ?? '' );
 		$postId = absint( $arguments['post_id'] ?? 0 );
 		$count  = absint( $arguments['count'] ?? 5 );

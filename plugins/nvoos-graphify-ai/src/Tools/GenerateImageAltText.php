@@ -31,7 +31,7 @@ class GenerateImageAltText extends AbstractAiTool {
 			),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$attachmentId = absint( $arguments['attachment_id'] ?? 0 );
 		$imageUrl     = esc_url_raw( $arguments['image_url'] ?? '' );
 

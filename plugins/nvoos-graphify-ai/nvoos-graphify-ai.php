@@ -48,27 +48,53 @@ spl_autoload_register(
 	}
 );
 
-// Activation guard: nvoos-graphify must be active.
-if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) {
-	add_action(
-		'admin_notices',
-		static function (): void {
-			printf(
-				'<div class="notice notice-error"><p>%s</p></div>',
-				esc_html__( 'NV oOS Graphify — AI requires the NV oOS Graphify plugin to be installed and activated.', 'nvoos-graphify-ai' )
-			);
+// ─── Lib autoloader (nvoos/core + nvoos/wordpress-adapter) ─────
+// Autoload framework libraries from the monorepo lib/ directory so
+// the addon works without requiring its own composer install.
+// lib/ is at the repo root, a sibling of plugins/ — go up 2 levels.
+$libRoot = dirname( NVOOS_GRAPHIFY_AI_PATH, 2 ) . '/lib/';
+spl_autoload_register(
+	static function ( string $class ) use ( $libRoot ): void {
+		$prefixes = array(
+			'Nvoos\\Core\\'      => $libRoot . 'core/src/',
+			'Nvoos\\WordPress\\' => $libRoot . 'wordpress-adapter/src/',
+		);
+		foreach ( $prefixes as $prefix => $baseDir ) {
+			if ( 0 === strpos( $class, $prefix ) ) {
+				$relative = substr( $class, strlen( $prefix ) );
+				$file     = $baseDir . str_replace( '\\', '/', $relative ) . '.php';
+				if ( file_exists( $file ) ) {
+					require_once $file;
+				}
+				return;
+			}
 		}
-	);
-	return;
-}
+	}
+);
 
-// Boot — after nvoos-graphify (priority 10).
+// Boot — checks run at plugins_loaded (priority 5) so all plugin files
+// have been included, avoiding false errors from alphabetical load order
+// (nvoos-graphify-ai/ loads before nvoos-graphify/ because '-' < '/' in ASCII).
 add_action(
 	'plugins_loaded',
 	static function (): void {
+		// Activation guard: nvoos-graphify must be active.
+		if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) {
+			add_action(
+				'admin_notices',
+				static function (): void {
+					printf(
+						'<div class="notice notice-error"><p>%s</p></div>',
+						esc_html__( 'NV oOS Graphify — AI requires the NV oOS Graphify plugin to be installed and activated.', 'nvoos-graphify-ai' )
+					);
+				}
+			);
+			return;
+		}
+
 		if ( class_exists( 'NvoosGraphifyAi\\Plugin' ) ) {
 			\NvoosGraphifyAi\Plugin::instance()->register();
 		}
 	},
-	20
+	5
 );

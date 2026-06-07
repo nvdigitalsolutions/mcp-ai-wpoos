@@ -29,6 +29,11 @@ final class Plugin {
 		// Bootstrap core services (providers, tools, orchestrator).
 		CoreBridge::instance();
 
+		// Admin UI (standalone "NV oOS AI" menu page).
+		if ( is_admin() ) {
+			$this->registerAdmin();
+		}
+
 		add_filter( 'nvoos_graphify/default_settings', array( $this, 'addDefaultSettings' ) );
 
 		add_action(
@@ -47,6 +52,18 @@ final class Plugin {
 			10,
 			2
 		);
+	}
+
+	/**
+	 * Register admin components.
+	 *
+	 * @return void
+	 */
+	private function registerAdmin(): void {
+		if ( class_exists( 'NvoosGraphifyAi\Admin\AiSettingsPage' ) ) {
+			$aiSettings = new \NvoosGraphifyAi\Admin\AiSettingsPage();
+			$aiSettings->register();
+		}
 	}
 
 	public function addDefaultSettings( array $defaults ): array {

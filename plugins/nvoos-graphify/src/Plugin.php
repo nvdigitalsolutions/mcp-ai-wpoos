@@ -143,11 +143,6 @@ final class Plugin {
 			$settings->register();
 		}
 
-		if ( class_exists( 'NvoosGraphify\Admin\GraphExplorer' ) ) {
-			$explorer = new \NvoosGraphify\Admin\GraphExplorer();
-			$explorer->register();
-		}
-
 		if ( class_exists( 'NvoosGraphify\Admin\RemoteAdmin' ) ) {
 			$remoteAdmin = new \NvoosGraphify\Admin\RemoteAdmin();
 			$remoteAdmin->register();
@@ -327,7 +322,7 @@ final class Plugin {
 		}
 
 		$settings = Settings::all();
-		if ( empty( $settings['enable_graph'] ) ) {
+		if ( empty( $settings['enabled'] ) ) {
 			printf(
 				'<div class="notice notice-warning"><p>%s</p></div>',
 				esc_html__( 'NV oOS Graphify is installed but the graph is not enabled. Go to Settings → NV oOS Graphify to enable it.', 'nvoos-graphify' )

@@ -32,7 +32,7 @@ class AnalyzeImage extends AbstractAiTool {
 			'required'   => array( 'image_url' ),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$imageUrl = esc_url_raw( $arguments['image_url'] ?? '' );
 		$question = sanitize_text_field( $arguments['question'] ?? '' );
 
