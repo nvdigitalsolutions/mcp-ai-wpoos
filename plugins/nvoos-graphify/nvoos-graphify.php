@@ -142,6 +142,6 @@ if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) :
 	 */
 	function nvoos_graphify_is_enabled(): bool {
 		$settings = \NvoosGraphify\Settings::all();
-		return ! empty( $settings['enable_graph'] );
+		return ! empty( $settings['enabled'] );
 	}
 endif;

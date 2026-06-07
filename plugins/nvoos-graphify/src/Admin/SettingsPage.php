@@ -26,6 +26,7 @@ use function check_ajax_referer;
 use function checked;
 use function class_exists;
 use function current_user_can;
+use function delete_transient;
 use function do_settings_fields;
 use function esc_attr;
 use function esc_attr__;
@@ -34,7 +35,9 @@ use function esc_html__;
 use function esc_js;
 use function esc_url;
 use function esc_url_raw;
+use function get_option;
 use function get_post_types;
+use function get_transient;
 use function in_array;
 use function is_array;
 use function max;
@@ -46,10 +49,12 @@ use function rest_url;
 use function sanitize_key;
 use function sanitize_text_field;
 use function selected;
+use function set_transient;
 use function settings_errors;
 use function submit_button;
 use function wp_create_nonce;
 use function wp_die;
+use function wp_date;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_localize_script;
@@ -883,6 +888,44 @@ class SettingsPage {
 
 			<?php settings_errors(); ?>
 
+			<?php
+			// Display last build error if present.
+			$last_error = get_transient( Schema::TRANSIENT_PREFIX . 'last_build_error' );
+			if ( is_array( $last_error ) && ! empty( $last_error['message'] ) ) :
+				$error_time = isset( $last_error['timestamp'] )
+					? wp_date(
+						get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
+						$last_error['timestamp']
+					)
+					: __( 'Unknown', 'nvoos-graphify' );
+				$error_file = isset( $last_error['file'] ) ? $last_error['file'] : '';
+				$error_line = isset( $last_error['line'] ) ? $last_error['line'] : '';
+				?>
+				<div class="notice notice-error is-dismissible">
+					<p>
+						<strong><?php esc_html_e( 'Build Error', 'nvoos-graphify' ); ?></strong>
+						(<?php echo esc_html( $error_time ); ?>)
+					</p>
+					<p>
+						<code><?php echo esc_html( $last_error['message'] ); ?></code>
+					</p>
+					<?php if ( '' !== $error_file ) : ?>
+						<p class="description">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: 1: file path, 2: line number */
+									__( 'File: %1$s, line %2$d', 'nvoos-graphify' ),
+									$error_file,
+									$error_line
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+
 			<?php /* Graph overview card */ ?>
 			<div class="nvoos-graphify-stats-card">
 				<h2><?php esc_html_e( 'Graph Overview', 'nvoos-graphify' ); ?></h2>
@@ -1062,17 +1105,58 @@ class SettingsPage {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'nvoos-graphify' ) ), 403 );
 		}
 
+		// Catch fatal errors (TypeError, etc.) so the AJAX response is never garbage.
+		register_shutdown_function(
+			function (): void {
+				$error = error_get_last();
+				if ( null === $error || ! in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR ), true ) ) {
+					return;
+				}
+				set_transient(
+					Schema::TRANSIENT_PREFIX . 'last_build_error',
+					array(
+						'message'   => $error['message'],
+						'file'      => $error['file'],
+						'line'      => $error['line'],
+						'timestamp' => time(),
+					),
+					DAY_IN_SECONDS
+				);
+			}
+		);
+
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already checked above.
 		$incremental = ! empty( $_POST['incremental'] );
 
-		$result = Builder::build(
-			array(
-				'incremental'    => $incremental,
-				'semantic'       => true,
-				'async_semantic' => true,
-			)
-		);
+		try {
+			$result = Builder::build(
+				array(
+					'incremental'    => $incremental,
+					'semantic'       => true,
+					'async_semantic' => true,
+				)
+			);
 
-		wp_send_json_success( $result );
+			// Clear any previous error on success.
+			delete_transient( Schema::TRANSIENT_PREFIX . 'last_build_error' );
+
+			wp_send_json_success( $result );
+		} catch ( \Throwable $e ) {
+			set_transient(
+				Schema::TRANSIENT_PREFIX . 'last_build_error',
+				array(
+					'message'   => $e->getMessage(),
+					'file'      => $e->getFile(),
+					'line'      => $e->getLine(),
+					'timestamp' => time(),
+				),
+				DAY_IN_SECONDS
+			);
+			wp_send_json_error(
+				array(
+					'message' => __( 'Build failed due to an unexpected error. See the error notice on the settings page for details.', 'nvoos-graphify' ),
+				)
+			);
+		}
 	}
 }

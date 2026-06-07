@@ -229,7 +229,7 @@ class Db {
 			return absint( $existingId );
 		}
 
-		$result = $wpdb->insert( $table, $data, array( '%s', '%s', '%s', '%d', '%s', '%s', '%s' ) );
+		$result = $wpdb->insert( $table, $data, array( '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%f', '%s' ) );
 		return $result ? $wpdb->insert_id : false;
 	}
 
