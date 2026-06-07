@@ -48,6 +48,30 @@ spl_autoload_register(
 	}
 );
 
+// ─── Lib autoloader (nvoos/core + nvoos/wordpress-adapter) ─────
+// Autoload framework libraries from the monorepo lib/ directory so
+// the addon works without requiring its own composer install.
+// lib/ is at the repo root, a sibling of plugins/ — go up 2 levels.
+$libRoot = dirname( NVOOS_GRAPHIFY_AI_PATH, 2 ) . '/lib/';
+spl_autoload_register(
+	static function ( string $class ) use ( $libRoot ): void {
+		$prefixes = array(
+			'Nvoos\\Core\\'      => $libRoot . 'core/src/',
+			'Nvoos\\WordPress\\' => $libRoot . 'wordpress-adapter/src/',
+		);
+		foreach ( $prefixes as $prefix => $baseDir ) {
+			if ( 0 === strpos( $class, $prefix ) ) {
+				$relative = substr( $class, strlen( $prefix ) );
+				$file     = $baseDir . str_replace( '\\', '/', $relative ) . '.php';
+				if ( file_exists( $file ) ) {
+					require_once $file;
+				}
+				return;
+			}
+		}
+	}
+);
+
 // Boot — checks run at plugins_loaded (priority 5) so all plugin files
 // have been included, avoiding false errors from alphabetical load order
 // (nvoos-graphify-ai/ loads before nvoos-graphify/ because '-' < '/' in ASCII).
