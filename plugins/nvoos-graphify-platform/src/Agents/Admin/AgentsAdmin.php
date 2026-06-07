@@ -56,5 +56,8 @@ final class AgentsAdmin {
 		if ( class_exists( 'NvoosGraphifyPlatform\Agents\Admin\CreateAgentButton' ) ) {
 			( new CreateAgentButton() )->register();
 		}
+		if ( class_exists( 'NvoosGraphifyPlatform\Agents\Admin\BuildAgentPage' ) ) {
+			( new BuildAgentPage() )->register();
+		}
 	}
 }
