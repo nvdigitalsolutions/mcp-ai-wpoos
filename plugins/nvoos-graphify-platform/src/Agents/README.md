@@ -38,10 +38,10 @@ Agent role system for NV oOS Graphify — registers and manages AI agents (forme
 | Source file (base plugin) | Target | Status |
 |---|---|---|
 | `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` | `Cpt.php` | To extract |
-| `includes/admin/class-wp-mcp-ai-add-assistant-page.php` | `Admin/AddAgentPage.php` | To extract |
+| `includes/admin/class-wp-mcp-ai-add-assistant-page.php` | `Admin/AddAgentPage.php` | ✅ Extracted |
 | `includes/admin/class-wp-mcp-ai-build-assistant-page.php` | `Admin/BuildAgentPage.php` | To extract |
 | `includes/admin/class-wp-mcp-ai-admin-test-assistant.php` | `Admin/TestAgentPage.php` | To extract |
-| `includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php` | `Admin/CreateAgentButton.php` | To extract |
+| `includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php` | `Admin/CreateAgentButton.php` | ✅ Extracted |
 | `includes/assistants/metaboxes/` | `Metaboxes/` | To extract |
 
 ## Dependencies
