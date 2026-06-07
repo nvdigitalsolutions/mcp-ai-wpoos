@@ -27,23 +27,23 @@ namespace NvoosGraphifyAiPlatform\Agents;
 final class MetaKeys {
 
 	// ─── Core configuration ────────────────────────────────────
-	public const TOOLS                   = '_wp_mcp_ai_tools';
-	public const PROVIDER                = '_wp_mcp_ai_provider';
-	public const MODEL                   = '_wp_mcp_ai_model';
-	public const TEMPERATURE             = '_wp_mcp_ai_temperature';
-	public const SYSTEM_PROMPT           = '_wp_mcp_ai_system_prompt';
-	public const REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
+	public const TOOLS               = '_wp_mcp_ai_tools';
+	public const PROVIDER            = '_wp_mcp_ai_provider';
+	public const MODEL               = '_wp_mcp_ai_model';
+	public const TEMPERATURE         = '_wp_mcp_ai_temperature';
+	public const SYSTEM_PROMPT       = '_wp_mcp_ai_system_prompt';
+	public const REQUIRED_CAPABILITY = 'mcp_ai_required_capability';
 
 	// ─── Agent identity ────────────────────────────────────────
-	public const PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
-	public const SKILLS                  = '_wp_mcp_ai_skills';
-	public const SKILLS_PROGRESSIVE      = '_wp_mcp_ai_skills_progressive';
-	public const PREFERRED_DATASETS      = '_wp_mcp_ai_preferred_datasets';
+	public const PRIMARY_ROLES      = '_wp_mcp_ai_primary_roles';
+	public const SKILLS             = '_wp_mcp_ai_skills';
+	public const SKILLS_PROGRESSIVE = '_wp_mcp_ai_skills_progressive';
+	public const PREFERRED_DATASETS = '_wp_mcp_ai_preferred_datasets';
 
 	// ─── Knowledge & memory ────────────────────────────────────
-	public const MEMORY_FILES            = '_wp_mcp_ai_memory_files';
-	public const VECTOR_STORE_ID         = '_wp_mcp_ai_vector_store_id';
-	public const CORPUS_NAME             = '_wp_mcp_ai_corpus_name';
+	public const MEMORY_FILES    = '_wp_mcp_ai_memory_files';
+	public const VECTOR_STORE_ID = '_wp_mcp_ai_vector_store_id';
+	public const CORPUS_NAME     = '_wp_mcp_ai_corpus_name';
 
 	// ─── Tool shortcuts ────────────────────────────────────────
 	public const TOOL_SHORTCUTS          = '_wp_mcp_ai_tool_shortcuts';
@@ -52,13 +52,13 @@ final class MetaKeys {
 	public const TOOL_ROLE_RULES         = '_wp_mcp_ai_tool_role_rules';
 
 	// ─── Credentials (delegates to WP_MCP_AI_Credentials) ─────
-	public const CREDENTIALS             = '_wp_mcp_ai_assistant_credential';
+	public const CREDENTIALS = '_wp_mcp_ai_assistant_credential';
 
 	// ─── Integrations ──────────────────────────────────────────
-	public const EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
-	public const EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
-	public const MCP_APPS                = '_wp_mcp_ai_mcp_apps';
-	public const PROMPT_CACHING          = '_wp_mcp_ai_prompt_caching';
+	public const EXTERNAL_ACTION_ID   = '_wp_mcp_ai_external_action_id';
+	public const EXTERNAL_ACTION_TYPE = '_wp_mcp_ai_external_action_type';
+	public const MCP_APPS             = '_wp_mcp_ai_mcp_apps';
+	public const PROMPT_CACHING       = '_wp_mcp_ai_prompt_caching';
 
 	/** Private constructor — not instantiable. */
 	private function __construct() {}

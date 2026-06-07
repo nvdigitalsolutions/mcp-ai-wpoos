@@ -146,7 +146,7 @@ final class BuildAgentPage {
 			true
 		);
 
-		$rest_namespace  = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? \WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
+		$rest_namespace   = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? \WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
 		$async_timeout_ms = class_exists( 'WP_MCP_AI_Shortcode' )
 			? \WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
 			: 300000;
@@ -210,44 +210,44 @@ final class BuildAgentPage {
 	 */
 	private function getChatStrings(): array {
 		return array(
-			'placeholder'                   => __( 'Describe the agent you want to create…', 'nvoos-graphify-ai-platform' ),
-			'send'                          => __( 'Send', 'nvoos-graphify-ai-platform' ),
-			'bundlingMessages'              => __( 'Preparing to send…', 'nvoos-graphify-ai-platform' ),
-			'sending'                       => __( 'Sending message…', 'nvoos-graphify-ai-platform' ),
-			'waiting'                       => __( 'Waiting for the AI builder…', 'nvoos-graphify-ai-platform' ),
-			'error'                         => __( 'Something went wrong. Please try again.', 'nvoos-graphify-ai-platform' ),
-			'missingAssistant'              => __( 'Builder agent configuration was not found.', 'nvoos-graphify-ai-platform' ),
-			'notAuthorized'                 => __( 'You do not have permission to use the builder.', 'nvoos-graphify-ai-platform' ),
+			'placeholder'               => __( 'Describe the agent you want to create…', 'nvoos-graphify-ai-platform' ),
+			'send'                      => __( 'Send', 'nvoos-graphify-ai-platform' ),
+			'bundlingMessages'          => __( 'Preparing to send…', 'nvoos-graphify-ai-platform' ),
+			'sending'                   => __( 'Sending message…', 'nvoos-graphify-ai-platform' ),
+			'waiting'                   => __( 'Waiting for the AI builder…', 'nvoos-graphify-ai-platform' ),
+			'error'                     => __( 'Something went wrong. Please try again.', 'nvoos-graphify-ai-platform' ),
+			'missingAssistant'          => __( 'Builder agent configuration was not found.', 'nvoos-graphify-ai-platform' ),
+			'notAuthorized'             => __( 'You do not have permission to use the builder.', 'nvoos-graphify-ai-platform' ),
 			/* translators: %s: tool name */
-			'toolExecuting'                 => __( 'Running tool: %s', 'nvoos-graphify-ai-platform' ),
-			'toolSuccess'                   => __( 'Tool completed successfully.', 'nvoos-graphify-ai-platform' ),
-			'toolError'                     => __( 'The tool request failed.', 'nvoos-graphify-ai-platform' ),
-			'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'nvoos-graphify-ai-platform' ),
-			'toolPolling'                   => __( 'Tool is processing…', 'nvoos-graphify-ai-platform' ),
-			'toolTimeout'                   => __( 'Tool timed out before completing.', 'nvoos-graphify-ai-platform' ),
+			'toolExecuting'             => __( 'Running tool: %s', 'nvoos-graphify-ai-platform' ),
+			'toolSuccess'               => __( 'Tool completed successfully.', 'nvoos-graphify-ai-platform' ),
+			'toolError'                 => __( 'The tool request failed.', 'nvoos-graphify-ai-platform' ),
+			'toolQueued'                => __( 'Tool queued. Results will appear shortly.', 'nvoos-graphify-ai-platform' ),
+			'toolPolling'               => __( 'Tool is processing…', 'nvoos-graphify-ai-platform' ),
+			'toolTimeout'               => __( 'Tool timed out before completing.', 'nvoos-graphify-ai-platform' ),
 			/* translators: %s: error message */
-			'toolFailed'                    => __( 'Tool failed: %s', 'nvoos-graphify-ai-platform' ),
-			'emptyMessage'                  => __( 'Enter a description before sending.', 'nvoos-graphify-ai-platform' ),
-			'attachFile'                    => __( 'Attach file', 'nvoos-graphify-ai-platform' ),
-			'transcribe'                    => __( 'Transcribe', 'nvoos-graphify-ai-platform' ),
-			'transcribing'                  => __( 'Transcribing audio…', 'nvoos-graphify-ai-platform' ),
-			'recording'                     => __( 'Recording… tap to stop.', 'nvoos-graphify-ai-platform' ),
-			'recordingError'                => __( 'Could not access your microphone.', 'nvoos-graphify-ai-platform' ),
-			'transcriptionError'            => __( 'The transcription request failed.', 'nvoos-graphify-ai-platform' ),
-			'transcriptionFileTooLarge'     => __( 'The selected audio file is too large.', 'nvoos-graphify-ai-platform' ),
-			'uploadingFile'                 => __( 'Uploading…', 'nvoos-graphify-ai-platform' ),
-			'uploadError'                   => __( 'The file could not be uploaded.', 'nvoos-graphify-ai-platform' ),
-			'uploadInProgress'              => __( 'Please wait for uploads to finish.', 'nvoos-graphify-ai-platform' ),
-			'unsupportedFileType'           => __( 'Unsupported file type.', 'nvoos-graphify-ai-platform' ),
-			'newConversation'               => __( 'Start new conversation', 'nvoos-graphify-ai-platform' ),
-			'loadConversation'              => __( 'Load conversation', 'nvoos-graphify-ai-platform' ),
-			'historyLoading'                => __( 'Loading conversations…', 'nvoos-graphify-ai-platform' ),
-			'historyEmpty'                  => __( 'No previous conversations yet.', 'nvoos-graphify-ai-platform' ),
-			'historyError'                  => __( 'Unable to load conversation history.', 'nvoos-graphify-ai-platform' ),
-			'historySessionError'           => __( 'Unable to load this conversation.', 'nvoos-graphify-ai-platform' ),
-			'deleteConversation'            => __( 'Delete this conversation', 'nvoos-graphify-ai-platform' ),
-			'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation?', 'nvoos-graphify-ai-platform' ),
-			'roleLabels'                    => array(
+			'toolFailed'                => __( 'Tool failed: %s', 'nvoos-graphify-ai-platform' ),
+			'emptyMessage'              => __( 'Enter a description before sending.', 'nvoos-graphify-ai-platform' ),
+			'attachFile'                => __( 'Attach file', 'nvoos-graphify-ai-platform' ),
+			'transcribe'                => __( 'Transcribe', 'nvoos-graphify-ai-platform' ),
+			'transcribing'              => __( 'Transcribing audio…', 'nvoos-graphify-ai-platform' ),
+			'recording'                 => __( 'Recording… tap to stop.', 'nvoos-graphify-ai-platform' ),
+			'recordingError'            => __( 'Could not access your microphone.', 'nvoos-graphify-ai-platform' ),
+			'transcriptionError'        => __( 'The transcription request failed.', 'nvoos-graphify-ai-platform' ),
+			'transcriptionFileTooLarge' => __( 'The selected audio file is too large.', 'nvoos-graphify-ai-platform' ),
+			'uploadingFile'             => __( 'Uploading…', 'nvoos-graphify-ai-platform' ),
+			'uploadError'               => __( 'The file could not be uploaded.', 'nvoos-graphify-ai-platform' ),
+			'uploadInProgress'          => __( 'Please wait for uploads to finish.', 'nvoos-graphify-ai-platform' ),
+			'unsupportedFileType'       => __( 'Unsupported file type.', 'nvoos-graphify-ai-platform' ),
+			'newConversation'           => __( 'Start new conversation', 'nvoos-graphify-ai-platform' ),
+			'loadConversation'          => __( 'Load conversation', 'nvoos-graphify-ai-platform' ),
+			'historyLoading'            => __( 'Loading conversations…', 'nvoos-graphify-ai-platform' ),
+			'historyEmpty'              => __( 'No previous conversations yet.', 'nvoos-graphify-ai-platform' ),
+			'historyError'              => __( 'Unable to load conversation history.', 'nvoos-graphify-ai-platform' ),
+			'historySessionError'       => __( 'Unable to load this conversation.', 'nvoos-graphify-ai-platform' ),
+			'deleteConversation'        => __( 'Delete this conversation', 'nvoos-graphify-ai-platform' ),
+			'confirmDeleteConversation' => __( 'Are you sure you want to delete this conversation?', 'nvoos-graphify-ai-platform' ),
+			'roleLabels'                => array(
 				'assistant' => __( 'AI Builder', 'nvoos-graphify-ai-platform' ),
 				'user'      => __( 'You', 'nvoos-graphify-ai-platform' ),
 				'system'    => __( 'System', 'nvoos-graphify-ai-platform' ),
@@ -349,7 +349,7 @@ final class BuildAgentPage {
 						),
 						admin_url( 'edit.php' )
 					);
-					$active = ( $tab_id === $active_tab ) ? 'nav-tab-active' : '';
+					$active  = ( $tab_id === $active_tab ) ? 'nav-tab-active' : '';
 					?>
 					<a href="<?php echo esc_url( $tab_url ); ?>" class="nav-tab <?php echo esc_attr( $active ); ?>">
 						<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>

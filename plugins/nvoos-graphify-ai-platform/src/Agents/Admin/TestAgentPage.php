@@ -110,12 +110,12 @@ final class TestAgentPage {
 			true
 		);
 
-		$rest_namespace  = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? \WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
+		$rest_namespace   = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? \WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
 		$async_timeout_ms = class_exists( 'WP_MCP_AI_Shortcode' )
 			? \WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
 			: 300000;
 
-		$show_usage_costs     = false;
+		$show_usage_costs      = false;
 		$show_capability_flags = false;
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings              = \WP_MCP_AI_Admin_Settings::get_settings();
@@ -191,12 +191,14 @@ final class TestAgentPage {
 			'error'                     => __( 'Something went wrong.', 'nvoos-graphify-ai-platform' ),
 			'missingAssistant'          => __( 'Configuration was not found.', 'nvoos-graphify-ai-platform' ),
 			'notAuthorized'             => __( 'You do not have permission to chat.', 'nvoos-graphify-ai-platform' ),
+			/* translators: %s: tool name */
 			'toolExecuting'             => __( 'Running tool: %s', 'nvoos-graphify-ai-platform' ),
 			'toolSuccess'               => __( 'Tool completed successfully.', 'nvoos-graphify-ai-platform' ),
 			'toolError'                 => __( 'The tool request failed.', 'nvoos-graphify-ai-platform' ),
 			'toolQueued'                => __( 'Tool queued.', 'nvoos-graphify-ai-platform' ),
 			'toolPolling'               => __( 'Tool is processing…', 'nvoos-graphify-ai-platform' ),
 			'toolTimeout'               => __( 'Tool timed out.', 'nvoos-graphify-ai-platform' ),
+			/* translators: %s: error message */
 			'toolFailed'                => __( 'Tool failed: %s', 'nvoos-graphify-ai-platform' ),
 			'emptyMessage'              => __( 'Enter a message before sending.', 'nvoos-graphify-ai-platform' ),
 			'attachFile'                => __( 'Attach file', 'nvoos-graphify-ai-platform' ),

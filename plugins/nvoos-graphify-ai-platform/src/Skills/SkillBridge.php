@@ -120,7 +120,11 @@ final class SkillBridge {
 	public static function installBundled(): array {
 		$registry = self::registry();
 		if ( ! $registry ) {
-			return array( 'installed' => 0, 'skipped' => 0, 'errors' => array( __( 'Skill registry not available.', 'nvoos-graphify-ai-platform' ) ) );
+			return array(
+				'installed' => 0,
+				'skipped'   => 0,
+				'errors'    => array( __( 'Skill registry not available.', 'nvoos-graphify-ai-platform' ) ),
+			);
 		}
 		return $registry->install_bundled_skills();
 	}

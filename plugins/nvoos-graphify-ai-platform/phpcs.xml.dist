@@ -1,22 +1,19 @@
 <?xml version="1.0"?>
 <ruleset name="NvoosGraphifyAiPlatform">
-    <description>PHPCS rules for NV oOS Graphify — AI Platform</description>
+    <description>NV oOS Graphify — AI Platform WordPress Coding Standards</description>
 
-    <arg name="extensions" value="php"/>
-    <arg name="parallel" value="4"/>
-    <arg value="sp"/>
-
-    <file>./src/</file>
-    <file>./nvoos-graphify-ai-platform.php</file>
-
-    <exclude-pattern>./vendor/</exclude-pattern>
-    <exclude-pattern>./tests/</exclude-pattern>
-
-    <rule ref="WordPress">
+    <rule ref="WordPress-Extra">
+        <!-- PSR-4 autoloaded — file names match class names, not WP conventions. -->
         <exclude name="WordPress.Files.FileName"/>
-        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
-        <exclude name="Squiz.Commenting.FileComment"/>
+        <!-- camelCase variables for modern PHP, consistent with class names. -->
+        <exclude name="WordPress.NamingConventions.ValidVariableName"/>
+        <!-- camelCase method names for modern PHP, consistent with PSR-4. -->
+        <exclude name="WordPress.NamingConventions.ValidFunctionName"/>
+        <!-- Short ternaries are perfectly fine in modern PHP. -->
+        <exclude name="Universal.Operators.DisallowShortTernary.Found"/>
     </rule>
+
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
 
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
@@ -35,6 +32,14 @@
             </property>
         </properties>
     </rule>
+
+    <file>./nvoos-graphify-ai-platform.php</file>
+    <file>./src/</file>
+    <file>./tests/</file>
+
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+    <exclude-pattern>/assets/*</exclude-pattern>
 
     <config name="minimum_supported_wp_version" value="6.5"/>
     <config name="testVersion" value="8.1-"/>

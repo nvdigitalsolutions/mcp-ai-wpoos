@@ -29,9 +29,9 @@ define( 'NVOOS_GRAPHIFY_AI_PLATFORM_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_GRAPHIFY_AI_PLATFORM_URL', plugin_dir_url( __FILE__ ) );
 
 // Autoloader — Composer primary, spl fallback.
-$autoload = NVOOS_GRAPHIFY_AI_PLATFORM_PATH . 'vendor/autoload.php';
-if ( file_exists( $autoload ) ) {
-	require_once $autoload;
+$nvoos_graphify_ai_platform_autoload = NVOOS_GRAPHIFY_AI_PLATFORM_PATH . 'vendor/autoload.php';
+if ( file_exists( $nvoos_graphify_ai_platform_autoload ) ) {
+	require_once $nvoos_graphify_ai_platform_autoload;
 }
 
 spl_autoload_register(
