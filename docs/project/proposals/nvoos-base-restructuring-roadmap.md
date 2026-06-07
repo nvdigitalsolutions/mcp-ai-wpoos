@@ -515,6 +515,16 @@ Week 3: Agent memory + integration ✅
 
 **Milestone**: Users install `nvoos-graphify` + `nvoos-graphify-ai` (2 plugins) and get everything AI — chat, content gen, embeddings, memory, 13 providers, RAG semantic search. One API key, one install. ✅
 
+**Additional Phase 1 work — Domain contract decoupling** ✅
+
+The `lib/core` package was decoupled from all PSR and Symfony contract inheritance:
+  ├── ✅ Removed `extends CacheItemPoolInterface` (PSR-6) from `CacheStoreInterface`
+  ├── ✅ Removed `extends PsrEventDispatcher` (PSR-14) from `EventDispatcherInterface`
+  ├── ✅ Created domain-owned `HttpClientInterface::send()` to replace PSR-18 + Nyholm/PSR-7
+  ├── ✅ Created `HttpResponse` immutable value object
+  ├── ✅ Updated all 13 provider clients, 14 tools, and 1 test
+  └── ✅ Removed 9 unused deps from `composer.json` — core now requires only `php: ^8.1`
+
 ### Phase 2: Extended Tools — `nvoos-graphify-tools` (2 weeks)
 
 **Goal**: All ~165 extended tools become one addon. Register via `nvoos_graphify/register_tools`.

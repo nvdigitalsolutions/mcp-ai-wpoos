@@ -74,7 +74,7 @@ All 13 provider clients are fully implemented in `lib/core/src/Infrastructure/Pr
 | 13 | Baseten | `BasetenClient` | OpenAI-compatible — newly created |
 
 **Implementation highlights**:
-- `OpenAiCompatibleClient` base handles 10 providers with shared `chat()`, `stream()`, and `listModels()` implementations, real HTTP requests via PSR-18 `ClientInterface`
+- `OpenAiCompatibleClient` base handles 10 providers with shared `chat()`, `stream()`, and `listModels()` implementations, real HTTP requests via domain-owned `HttpClientInterface::send()`
 - `requiresApiKey()` hook lets local providers (Ollama, LM Studio) skip API key checks
 - Cloudflare `getDefaultBaseUrl()` resolves `cloudflare_account_id` from settings at runtime
 - All provider responses are normalized to an OpenAI-compatible shape (`choices[0].message.content`)
@@ -315,6 +315,10 @@ All other pro addons depend on this.
 | `lib/core/.../Provider/AnthropicClient.php` | SSE streaming with `content_block_delta` |
 | `lib/core/.../Chat/ChatOrchestrator.php` | True token-by-token streaming via `stream()` + `$onChunk` |
 | `lib/core/.../Streaming/SseHandler.php` | Centralized PHP buffering setup |
+| `lib/core/.../Contract/HttpClientInterface.php` | **New** — domain-owned HTTP client contract (`send()`) |
+| `lib/core/.../Entity/HttpResponse.php` | **New** — immutable HTTP response value object |
+
+**Dependencies removed**: `lib/core/composer.json` now requires only `php: ^8.1`. Removed 9 unused packages: `psr/container`, `psr/log`, `psr/cache`, `psr/event-dispatcher`, `psr/http-client`, `psr/http-factory`, `psr/http-message`, `nyholm/psr7`, `symfony/validator`. All 13 providers, 14 tools, and 1 test updated to use domain-owned contracts. See [#5280](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5280).
 
 ### AI addon new files
 

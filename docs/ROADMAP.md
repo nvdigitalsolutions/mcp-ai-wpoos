@@ -494,7 +494,7 @@ Potential future toolkits based on community demand:
 - [x] Domain contracts (9 interfaces) — `lib/core/src/Domain/Contract/`
 - [x] Domain entities (10 value objects) — `lib/core/src/Domain/Entity/`
 - [x] Domain errors (5 typed exceptions) — `lib/core/src/Domain/Error/`
-- [x] Domain events (8 PSR-14 events) — `lib/core/src/Domain/Event/`
+- [x] Domain events (8 events) — `lib/core/src/Domain/Event/`
 - [x] Application services (ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry)
 - [x] 12 provider clients (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi, Ollama, LM Studio, DigitalOcean, Nvidia Nim, Cloudflare, HuggingFace)
 - [x] SSE streaming handler + cost calculator

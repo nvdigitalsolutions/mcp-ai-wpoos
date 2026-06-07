@@ -4,6 +4,8 @@
 
 Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by WordPress APIs. Each adapter wraps one WordPress subsystem behind a framework-agnostic contract — same pattern as `nvoos/laravel-adapter` and `nvoos/craft-adapter`, using WordPress's procedural API layer.
 
+All domain contracts are fully domain-owned — none extend PSR or Symfony interfaces.
+
 ## Tier
 
 | | |
@@ -18,9 +20,10 @@ Concrete implementations of the 9 domain interfaces from `nvoos/core`, backed by
 | Adapter | Implements | WordPress APIs Wrapped |
 |---|---|---|
 | `ErrorFactory` | `ErrorFactoryInterface` | `WP_Error` |
-| `CacheStore` | `CacheStoreInterface` (extends PSR-6) | `get_transient` / `set_transient`, `wp_cache_*` |
+| `CacheStore` | `CacheStoreInterface` (domain-owned) | `get_transient` / `set_transient`, `wp_cache_*` |
 | `SettingsStore` | `SettingsStoreInterface` | `get_option` / `update_option` |
-| `EventDispatcher` | `EventDispatcherInterface` (extends PSR-14) | `do_action` / `apply_filters` |
+| `EventDispatcher` | `EventDispatcherInterface` (domain-owned) | `do_action` / `apply_filters` |
+| `HttpClient` | `HttpClientInterface` (domain-owned) | `wp_remote_request` |
 | `FileStore` | `FileStoreInterface` | `wp_insert_attachment`, `get_attached_file`, `wp_generate_attachment_metadata` |
 | `QueueClient` | `QueueClientInterface` | Action Scheduler (primary), WP-Cron (fallback) |
 | `AuthProvider` | `AuthProviderInterface` | `get_current_user_id`, `user_can`, `wp_verify_nonce` |

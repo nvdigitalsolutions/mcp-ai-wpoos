@@ -13,7 +13,7 @@ The following production dependencies contain exec/shell_exec/proc_open calls, b
 **Package**: `symfony/http-client` (HTTP client library)
 - **Files**: `CurlHttpClient.php`
 - **Usage**: Internal cURL process management (not used by our code)
-- **Our Usage**: We use the PSR-18 HTTP client interface only
+- **Our Usage**: We use the HTTP client interface for outbound API calls only
 
 **Package**: `symfony/filesystem` (File operations)
 - **Files**: `Filesystem.php`  
@@ -48,8 +48,7 @@ All shell execution features have been moved to the separately-distributed Pro a
 ## Production Dependencies (Actually Used)
 
 1. **rahul900day/tiktoken-php** - Token counting for AI models (no exec)
-2. **symfony/http-client** - HTTP requests to AI APIs (PSR-18 interface, no exec)
-3. **nyholm/psr7** - PSR-7 HTTP message implementation (no exec)
+2. **symfony/http-client** - HTTP requests to AI APIs (no exec)
 
 ## Verification
 

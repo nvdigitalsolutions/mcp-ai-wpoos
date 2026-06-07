@@ -50,7 +50,7 @@ All 12 AI providers work identically — the provider clients in `lib/core/src/I
 
 ### Events
 
-WordPress hooks continue to fire. The `EventDispatcher` adapter bridges PSR-14 domain events to `wp_mcp_ai_*` hooks via `mapEventToHook()`.
+WordPress hooks continue to fire. The `EventDispatcher` adapter bridges domain events to `wp_mcp_ai_*` hooks via `mapEventToHook()`. The domain event system no longer extends PSR-14 — it uses fully domain-owned contracts.
 
 ## Performance
 
