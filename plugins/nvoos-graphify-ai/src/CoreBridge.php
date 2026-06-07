@@ -24,14 +24,16 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ToolRegistry as CoreToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\WordPress\Adapter\ErrorFactory;
 use Nvoos\WordPress\Adapter\EventDispatcher;
+use Nvoos\WordPress\Adapter\HttpClient as WordPressHttpClient;
 use NvoosGraphifyAi\Adapter\GraphifySettingsStore;
-use NvoosGraphifyAi\Adapter\WordPressHttpClient;
+use NvoosGraphifyAi\Adapter\WordPressHttpClient as Psr18HttpClient;
 use NvoosGraphifyAi\Embeddings\EmbeddingService;
 use NvoosGraphifyAi\Embeddings\RagRetriever;
 use NvoosGraphifyAi\Memory\AgentMemory;
@@ -45,7 +47,8 @@ final class CoreBridge {
 	public readonly ErrorFactoryInterface $errors;
 	public readonly SettingsStoreInterface $settings;
 	public readonly EventDispatcherInterface $events;
-	public readonly ClientInterface $http;
+	public readonly HttpClientInterface $http;
+	public readonly ClientInterface $psrHttp;
 
 	// ─── Core services ───────────────────────────────────────────
 	public readonly ProviderRouter $providers;
@@ -65,13 +68,14 @@ final class CoreBridge {
 		$this->settings = new GraphifySettingsStore();
 		$this->events   = new EventDispatcher();
 		$this->http     = new WordPressHttpClient();
+		$this->psrHttp  = new Psr18HttpClient();
 
 		// 2. Wire core application services.
 		$this->providers = new ProviderRouter( $this->settings, $this->errors );
 		$this->tools     = new CoreToolRegistry( $this->events, $this->errors );
 
 		$costs = new CostCalculator();
-		$sse   = new SseHandler( $this->events );
+		$sse   = new SseHandler();
 
 		$this->chat = new ChatOrchestrator(
 			$this->tools,
@@ -91,7 +95,7 @@ final class CoreBridge {
 		// 5. Wire embeddings + RAG + memory.
 		$this->embeddings = new Embeddings\EmbeddingService(
 			$this->settings,
-			$this->http,
+			$this->psrHttp,
 			$this->errors,
 		);
 		$this->rag        = new Embeddings\RagRetriever(
