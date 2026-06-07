@@ -68,14 +68,29 @@ final class Schema {
 	 */
 	public static function defaultSettings(): array {
 		$defaults = array(
-			'enable_graph'     => true,
-			'auto_rebuild'     => true,
-			'rebuild_schedule' => 'weekly',
-			'post_types'       => array( 'post', 'page' ),
-			'include_terms'    => true,
-			'include_users'    => true,
-			'schema_injection' => true,
-			'related_content'  => true,
+			'enabled'                 => true,
+			'auto_rebuild'             => true,
+			'rebuild_schedule'         => 'weekly',
+			'post_types'               => array( 'post', 'page' ),
+			'include_terms'            => true,
+			'include_users'            => true,
+			'schema_injection'         => true,
+			'related_content'          => true,
+			'semantic_extraction'      => false,
+			'incremental_builds'       => false,
+			'openai_api_key'           => '',
+			'cytoscape_height'         => '600px',
+			'max_display_nodes'        => 300,
+			'max_related'              => 5,
+			'remote_enrich_enabled'    => false,
+			'remote_enrich_budget'     => 50,
+			'remote_enrich_async'      => false,
+			'embeddings_enabled'       => false,
+			'embeddings_model'         => 'text-embedding-3-small',
+			'excluded_post_types'      => array(),
+			'extra_post_types'         => array(),
+			'external_tables'          => array(),
+			'disabled_external_tables' => array(),
 		);
 
 		return apply_filters( self::FILTER_DEFAULT_SETTINGS, $defaults );

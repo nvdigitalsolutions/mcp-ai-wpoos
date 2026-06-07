@@ -102,7 +102,7 @@ class StructuralExtractor {
 
 			// --- AUTHORED_BY ---
 			if ( $post->post_author ) {
-				$author_node_id = Detector::userNodeId( $post->post_author );
+				$author_node_id = Detector::userNodeId( (int) $post->post_author );
 				$edges[]        = array(
 					'source_node_id' => $node_id,
 					'target_node_id' => $author_node_id,
@@ -173,7 +173,7 @@ class StructuralExtractor {
 
 		// Build user nodes.
 		foreach ( $detected['users'] as $user ) {
-			$user_node_id = Detector::userNodeId( $user->ID );
+			$user_node_id = Detector::userNodeId( (int) $user->ID );
 			$nodes[]      = array(
 				'node_id'    => $user_node_id,
 				'label'      => $user->display_name,
@@ -242,7 +242,7 @@ class StructuralExtractor {
 
 				// AUTHORED_BY edge when the CCT carries an author column.
 				if ( ! empty( $item['cct_author_id'] ) ) {
-					$author_node_id = Detector::userNodeId( $item['cct_author_id'] );
+					$author_node_id = Detector::userNodeId( (int) $item['cct_author_id'] );
 					$edges[]        = array(
 						'source_node_id' => $node_id,
 						'target_node_id' => $author_node_id,

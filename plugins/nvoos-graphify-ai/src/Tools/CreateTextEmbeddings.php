@@ -47,7 +47,7 @@ class CreateTextEmbeddings extends AbstractAiTool {
 			'required'   => array( 'input' ),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$input = $arguments['input'] ?? '';
 		if ( empty( $input ) ) {
 			return new \WP_Error( 'nvoos_graphify_ai', __( 'Input text is required.', 'nvoos-graphify-ai' ) );

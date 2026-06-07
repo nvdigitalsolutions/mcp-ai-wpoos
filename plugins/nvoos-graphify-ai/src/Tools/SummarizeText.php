@@ -38,7 +38,7 @@ class SummarizeText extends AbstractAiTool {
 			'required'   => array( 'text' ),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$text = sanitize_text_field( $arguments['text'] ?? '' );
 		if ( empty( $text ) ) {
 			return new \WP_Error( 'nvoos_graphify_ai', __( 'Text is required.', 'nvoos-graphify-ai' ) );
