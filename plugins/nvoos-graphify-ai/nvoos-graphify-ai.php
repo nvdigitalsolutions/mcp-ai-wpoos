@@ -48,27 +48,29 @@ spl_autoload_register(
 	}
 );
 
-// Activation guard: nvoos-graphify must be active.
-if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) {
-	add_action(
-		'admin_notices',
-		static function (): void {
-			printf(
-				'<div class="notice notice-error"><p>%s</p></div>',
-				esc_html__( 'NV oOS Graphify — AI requires the NV oOS Graphify plugin to be installed and activated.', 'nvoos-graphify-ai' )
-			);
-		}
-	);
-	return;
-}
-
-// Boot — after nvoos-graphify (priority 10).
+// Boot — checks run at plugins_loaded (priority 5) so all plugin files
+// have been included, avoiding false errors from alphabetical load order
+// (nvoos-graphify-ai/ loads before nvoos-graphify/ because '-' < '/' in ASCII).
 add_action(
 	'plugins_loaded',
 	static function (): void {
+		// Activation guard: nvoos-graphify must be active.
+		if ( ! function_exists( 'nvoos_graphify_is_enabled' ) ) {
+			add_action(
+				'admin_notices',
+				static function (): void {
+					printf(
+						'<div class="notice notice-error"><p>%s</p></div>',
+						esc_html__( 'NV oOS Graphify — AI requires the NV oOS Graphify plugin to be installed and activated.', 'nvoos-graphify-ai' )
+					);
+				}
+			);
+			return;
+		}
+
 		if ( class_exists( 'NvoosGraphifyAi\\Plugin' ) ) {
 			\NvoosGraphifyAi\Plugin::instance()->register();
 		}
 	},
-	20
+	5
 );
