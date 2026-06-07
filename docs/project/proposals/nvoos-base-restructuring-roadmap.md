@@ -263,9 +263,10 @@ nvoos-graphify (core — works alone, zero API keys, ~7,000 lines)
 │       │   PLATFORM bundled with AI (Platform needs AI to function):
 │       │   Agents → Skills, Slash-commands, Harness
 │       │   Harness → Measurement
+│       │   Professions → Teams → Knowledge-base
 │       │   A2A → ACP → Federation
 │       │   Blueprints (standalone but platform-tier)
-│       │   ~14,000 lines | "Platform features" = 1 install
+│       │   ~14,800 lines | "Platform features" = 1 install
 │       │   NOTE: Platform depends on AI addon for LLM access.
 │       │         Installing platform without AI triggers a notice.
 │       │
@@ -277,9 +278,9 @@ nvoos-graphify (core — works alone, zero API keys, ~7,000 lines)
 │   │
 ├── nvoos-graphify-engine ────── requires: nvoos-graphify
 │   │   CROSS-PLATFORM ENGINE in ONE addon (interdependent stack):
-│   │   OOS Engine → Professions → Markup → Paper-store
+│   │   OOS Engine → Markup → Paper-store
 │   │   + Crawl4AI integration (crawler)
-│   │   ~10,800 lines | "Cross-platform engine" = 1 install
+│   │   ~10,000 lines | "Cross-platform engine" = 1 install
 │   │
 ├── nvoos-graphify-pro ───────── requires: nvoos-graphify
 │   │   ENTERPRISE BUNDLE:
@@ -328,7 +329,7 @@ A complete, marketable WordPress plugin that delivers immediate value. ~7,000 li
 - ❌ AI chat assistant + all providers + AI tools + embeddings + agent memory → addon: `nvoos-graphify-ai` (one install for all AI)
 - ❌ Platform features (agents, skills, measurement, federation) → addon: `nvoos-graphify-platform` (depends on `nvoos-graphify-ai`)
 - ❌ Extended tools (content, media, dev, SEO, workflow, misc) → addon: `nvoos-graphify-tools` (one install for all tools)
-- ❌ Cross-platform engine (OOS engine, professions, markup, paper-store, crawler) → addon: `nvoos-graphify-engine`
+- ❌ Cross-platform engine (OOS engine, markup, paper-store, crawler) → addon: `nvoos-graphify-engine`
 - ❌ Enterprise SaaS drivers + 765+ pro tools → addon: `nvoos-graphify-pro`
 - ❌ Elementor, WooCommerce, JetEngine integrations → addon: `nvoos-graphify-extensions` (each self-gates on plugin active)
 
@@ -350,11 +351,11 @@ Everything from the current monolith that is NOT the knowledge graph becomes a c
 |---|---|---|---|---|
 | **AI + PLATFORM — bundled pair** (Platform needs AI for LLM access) | | | | |
 | 1 | `nvoos-graphify-ai` | AI Chat + SSE + tool-calling + OpenAI + Gemini + Ollama + 10 exotic providers (Anthropic, DeepSeek, OpenRouter, HuggingFace, Cloudflare, LMStudio, NVIDIA, DigitalOcean, Kimi, Baseten) + 30 AI tools + embeddings + agent memory (store, recall, mine, RAG, decay, provenance) | `nvoos-graphify` | ~10,000 |
-| 1b | `nvoos-graphify-platform` | Agents (role system, approval gate) + Skills (SKILL.md parsing, catalogue) + Slash-commands (/help, /ship, /compact) + Harness (eval, self-refine loop) + Measurement (budgets, eval suites, verifiers, OTEL) + A2A (Agent-to-Agent) + ACP (Agent Client Protocol) + Federation (mesh, directory, routing, sync) + Blueprints (unified installer) | `nvoos-graphify-ai` | ~14,000 |
+| 1b | `nvoos-graphify-platform` | Agents (role system, approval gate) + Skills (SKILL.md parsing, catalogue) + Slash-commands (/help, /ship, /compact) + Harness (eval, self-refine loop) + Measurement (budgets, eval suites, verifiers, OTEL) + Professions (teams, knowledge-base) + A2A (Agent-to-Agent) + ACP (Agent Client Protocol) + Federation (mesh, directory, routing, sync) + Blueprints (unified installer) | `nvoos-graphify-ai` | ~14,800 |
 | **TOOLS — ONE addon** (all independent Tool implementations, no internal deps) | | | | |
 | 2 | `nvoos-graphify-tools` | Content tools (~40) + Media tools (~30) + Dev tools (~25) + SEO tools (~15) + Workflow tools (~20) + misc tools (~35) | `nvoos-graphify` | ~10,300 |
-| **ENGINE — ONE addon** (interdependent stack: OOS Engine → Professions → Markup → Paper-store) | | | | |
-| 3 | `nvoos-graphify-engine` | OOS cross-platform engine + Professions/teams/knowledge-base + Markup subsystem + Paper-store + Crawl4AI integration | `nvoos-graphify` | ~10,800 |
+| **ENGINE — ONE addon** (interdependent stack: OOS Engine → Markup → Paper-store) | | | | |
+| 3 | `nvoos-graphify-engine` | OOS cross-platform engine + Markup subsystem + Paper-store + Crawl4AI integration | `nvoos-graphify` | ~10,000 |
 | **PRO — ONE addon** (enterprise tier) | | | | |
 | 4 | `nvoos-graphify-pro` | Enterprise SaaS drivers (Jira, Slack, M365, HubSpot, ServiceNow, GitHub, Google Drive, Zendesk, Generic GraphQL, Generic SQL, S3) + 765+ pro tools | `nvoos-graphify` | ~55,000+ |
 | **EXTENSIONS — ONE addon** (WordPress plugin integrations — each self-gates) | | | | |
@@ -446,13 +447,14 @@ Week 2-3: AI tools + embeddings + memory
   ├── ☐ Graphify memory bridge detects embeddings when addon is active
   └── ☐ Remove AI-related code from monolith
 
-Week 3: Platform addon — agents + skills + slash-commands + measurement
+Week 3: Platform addon — agents + skills + slash-commands + measurement + professions
   ├── ☐ Scaffold `plugins/nvoos-graphify-platform/`
   ├── ☐ Agent role system + approval gate
   ├── ☐ SKILL.md parsing + progressive disclosure + skill catalogue
   ├── ☐ Slash-commands (/help, /ship, /compact, /context, /status)
   ├── ☐ Eval harness + self-refine loop
   ├── ☐ Measurement (budgets, eval suites, verifiers, OTEL export)
+  ├── ☐ Professions (teams, knowledge-base)
   ├── ☐ A2A (Agent-to-Agent) + ACP (Agent Client Protocol)
   ├── ☐ Federation (mesh peer, directory, routing, sync)
   ├── ☐ Blueprints (unified installer)
@@ -484,9 +486,8 @@ Week 2: SEO + Workflow + misc tools (~70 tools)
 **Goal**: The OOS cross-platform engine becomes a standalone addon.
 
 ```
-Week 1: Engine — OOS + professions + markup + paper-store + crawler
+Week 1: Engine — OOS + markup + paper-store + crawler
   ├── Extract OOS cross-platform engine (lib/core + lib/wordpress-adapter)
-  ├── Extract profession/team/knowledge-base system
   ├── Extract markup subsystem + paper store
   ├── Extract Crawl4AI integration
   └── Remove all engine code from monolith
