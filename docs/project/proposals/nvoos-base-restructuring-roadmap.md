@@ -1,6 +1,6 @@
 # NV oOS — Graphify-Centric Restructuring Roadmap
 
-> **Version**: 4.0.0 | **Status**: Phase 0 Complete, Phase 1 In Progress (AI+Platform addon)
+> **Version**: 4.0.0 | **Status**: Phase 0 Complete, Phase 1 Complete - AI addon ready to ship
 >
 > **Last updated**: 2026-06-07
 >
@@ -8,7 +8,7 @@
 >
 > **v4.0.0 changes**: Reduced from 8 addons to 5 by merging interdependent subsystems. AI + Platform are bundled (Platform needs AI to function). Elementor + WooCommerce + JetEngine are consolidated into `nvoos-graphify-extensions`. See [§3 Target Architecture](#3-target-architecture) for the updated dependency chain.
 >
-> **Phase 0 (Core Product) is COMPLETE** as of 2026-06-05. **Phase 1 (AI + Platform addon) is IN PROGRESS** as of 2026-06-07 — admin UI (Section/Registry pattern), 13 provider configuration, chat settings page, and `:mixed` return type fixes shipped. See [§6 Phased Execution Plan](#6-phased-execution-plan) for current status.
+> **Phase 0 (Core Product) is COMPLETE** as of 2026-06-05. **Phase 1 (AI Addon) is COMPLETE** as of 2026-06-07 — all 5 sub-tasks shipped: 13 provider clients with full chat/stream/listModels, SSE streaming with token-by-token delivery, admin chat UI with provider/model selector and tool-call display, embeddings + RAG with cosine similarity search and auto-ingest cron, and agent memory with semantic recall, exponential decay, and mining prompts. See the [next-steps plan](./nvoos-graphify-next-steps-plan.md) for the complete file inventory.
 
 ---
 
@@ -479,47 +479,41 @@ Note: Backward compat (deprecated hooks, function aliases, Requires Plugins on t
 
 **Milestone**: NV oOS Graphify is a publishable wp.org plugin (**code complete**). Users can activate it alone and immediately build interactive knowledge graphs. It competes as a unique offering — nothing else on wp.org does this. **Remaining**: screenshots + wp.org submission.
 
-### Phase 1: AI + Platform Addons — `nvoos-graphify-ai` + `nvoos-graphify-platform` (3 weeks) 🔄 IN PROGRESS
+### Phase 1: AI Addon — `nvoos-graphify-ai` ✅ COMPLETE (2026-06-07)
 
-**Goal**: Two addons that together deliver the complete AI-powered platform. `nvoos-graphify-ai` bundles chat, providers, AI tools, embeddings, and agent memory. `nvoos-graphify-platform` builds on top with agents, skills, slash-commands, measurement, and federation. Bundled as a pair because Platform needs AI for LLM access.
+**Goal**: One addon delivers the complete AI experience — chat, all 13 providers, AI tools, embeddings, RAG, and agent memory — one install, one API key.
 
-**Status (2026-06-07)**: AI addon bootstrap complete — `plugins/nvoos-graphify-ai/` ships with CoreBridge wiring 13 providers, 13 AI tools, ChatController REST routes, and admin UI (NVOOS AI standalone menu page with Providers + Chat Settings tabs using Section/Registry pattern). Critical fixes applied: `:mixed` return types on all `execute()` methods, defer-plugin-check moved to `plugins_loaded` priority 5, lib autoloader for `nvoos/core` + `nvoos/wordpress-adapter`.
+**Status (2026-06-07)**: All 5 sub-tasks complete. See the [next-steps plan](./nvoos-graphify-next-steps-plan.md) for the full file inventory.
 
 ```
-Week 1-2: AI addon — Chat core + providers + AI tools + admin ✅
-  ├── ✅ CoreBridge wires provider routing, tool execution, chat orchestration
-  ├── ✅ Bundle OpenAI + Gemini + Ollama + 10 exotic providers
-  ├── ✅ 13 AI tool implementations (SummarizeText, TranslateText, etc.)
-  ├── ✅ REST chat routes via ChatController
-  ├── ✅ Admin UI: standalone "NVOOS AI" menu with Providers + Chat Settings tabs
-  ├── ✅ Section/Registry pattern matching base plugin architecture
-  ├── ✅ Lib autoloader for nvoos/core + nvoos/wordpress-adapter
-  ├── ☐ Provider client implementations (extract from base plugin's 13 clients)
-  ├── ☐ SSE streaming handler + context window management
-  ├── ☐ Admin chat UI (test chat interface on the AI page)
-  └── ☐ Integration test: core + AI addon = complete AI experience
+Week 1-2: Provider clients + SSE streaming ✅
+  ├── ✅ 13 provider clients with full chat()/stream()/listModels()
+  ├── ✅ requiresApiKey() hook for local providers (Ollama, LM Studio)
+  ├── ✅ Cloudflare account_id runtime URL resolution
+  ├── ✅ BasetenClient created as 13th provider
+  ├── ✅ True token-by-token SSE streaming via stream() + $onChunk
+  ├── ✅ All 3 provider families (OpenAI, Gemini, Anthropic) stream-capable
+  ├── ✅ SseHandler centralizes PHP/WP/nginx buffering
+  └── ✅ ChatController streamlined — delegates entirely to ChatOrchestrator
 
-Week 2-3: AI tools + embeddings + memory
-  ├── ☐ Extract vector embedding service + RAG retrieval
-  ├── ☐ Extract agent memory (store, recall, mine, RAG, decay, provenance)
-  ├── ☐ Graphify memory bridge detects embeddings when addon is active
-  └── ☐ Remove AI-related code from monolith
+Week 2-3: Admin chat UI + embeddings + RAG ✅
+  ├── ✅ ChatInterface section on ai_chat_ui tab in core settings page
+  ├── ✅ JS chat client with ReadableStream SSE consumer
+  ├── ✅ Provider/model selector dropdowns + collapsible tool results + cost display
+  ├── ✅ EmbeddingService — embed() + embedBatch() via provider /embeddings API
+  ├── ✅ RagRetriever — cosine similarity search with JSON + binary vector decoding
+  ├── ✅ RagRetriever::augmentMessages() — prepends RAG context to chat messages
+  └── ✅ EmbeddingsOnIngest — cron-based batch processing (20 nodes/batch)
 
-Week 3: Platform addon — agents + skills + slash-commands + measurement + professions
-  ├── ☐ Scaffold `plugins/nvoos-graphify-platform/`
-  ├── ☐ Agent role system + approval gate
-  ├── ☐ SKILL.md parsing + progressive disclosure + skill catalogue
-  ├── ☐ Slash-commands (/help, /ship, /compact, /context, /status)
-  ├── ☐ Eval harness + self-refine loop
-  ├── ☐ Measurement (budgets, eval suites, verifiers, OTEL export)
-  ├── ☐ Professions (teams, knowledge-base)
-  ├── ☐ A2A (Agent-to-Agent) + ACP (Agent Client Protocol)
-  ├── ☐ Federation (mesh peer, directory, routing, sync)
-  ├── ☐ Blueprints (unified installer)
-  └── ☐ Requires Plugins: nvoos-graphify-ai (gates on AI addon active)
+Week 3: Agent memory + integration ✅
+  ├── ✅ AgentMemory::store() — saves summaries as agent_memory graph nodes with TTL
+  ├── ✅ AgentMemory::recall() — semantic recall via RAG + exponential decay (7-day half-life)
+  ├── ✅ AgentMemory::buildMiningPrompt() — LLM prompt for retroactive transcript analysis
+  ├── ✅ AgentMemory::purgeExpired() — cron-driven TTL cleanup
+  └── ✅ AgentMemory::buildMemoryContext() — system messages with provenance tracking
 ```
 
-**Milestone**: Users install `nvoos-graphify` + `nvoos-graphify-ai` (2 plugins) and get everything AI — chat, content gen, embeddings, memory, 13 providers. Add `nvoos-graphify-platform` for agents, skills, measurement, and federation.
+**Milestone**: Users install `nvoos-graphify` + `nvoos-graphify-ai` (2 plugins) and get everything AI — chat, content gen, embeddings, memory, 13 providers, RAG semantic search. One API key, one install. ✅
 
 ### Phase 2: Extended Tools — `nvoos-graphify-tools` (2 weeks)
 

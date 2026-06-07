@@ -26,10 +26,11 @@ final class Plugin {
 	}
 
 	public function register(): void {
-		// Bootstrap core services (providers, tools, orchestrator).
-		CoreBridge::instance();
+		// Bootstrap core services (providers, tools, orchestrator,
+		// embeddings, RAG, agent memory).
+		$bridge = CoreBridge::instance();
 
-		// Admin UI (standalone "NV oOS AI" menu page).
+		// Admin UI.
 		if ( is_admin() ) {
 			$this->registerAdmin();
 		}
@@ -44,6 +45,15 @@ final class Plugin {
 				}
 			}
 		);
+
+		// Register embeddings-on-ingest and agent memory hooks.
+		(new \NvoosGraphifyAi\Embeddings\EmbeddingsOnIngest(
+			$bridge->embeddings,
+			$bridge->settings,
+			$bridge->errors,
+		))->register();
+
+		$bridge->memory->register();
 
 		// Register the async chat continuation hook.
 		add_action(

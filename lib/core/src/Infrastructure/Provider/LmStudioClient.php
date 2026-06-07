@@ -34,6 +34,13 @@ class LmStudioClient extends OpenAiCompatibleClient {
 		return 'http://localhost:1234/v1';
 	}
 
+	/**
+	 * LM Studio runs locally — never require an API key.
+	 */
+	protected function requiresApiKey(): bool {
+		return false;
+	}
+
 	protected function buildAuthHeaders( string $apiKey ): array {
 		$headers = array( 'Content-Type' => 'application/json' );
 

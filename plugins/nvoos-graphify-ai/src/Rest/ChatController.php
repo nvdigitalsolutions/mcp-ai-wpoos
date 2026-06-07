@@ -90,22 +90,9 @@ class ChatController {
 		$assistantId = 0; // Not tied to a specific assistant post.
 
 		if ( $stream ) {
-			// SSE streaming via ChatOrchestrator.
-			header( 'Content-Type: text/event-stream' );
-			header( 'Cache-Control: no-cache' );
-			header( 'Connection: keep-alive' );
-			header( 'X-Accel-Buffering: no' );
-
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions,WordPress.PHP.IniSet.Risky,Generic.PHP.NoSilencedErrors.Discouraged
-			@ini_set( 'output_buffering', 'off' );
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions,WordPress.PHP.IniSet.Risky,Generic.PHP.NoSilencedErrors.Discouraged
-			@ini_set( 'zlib.output_compression', 'off' );
-
-			if ( function_exists( 'wp_ob_end_flush_all' ) ) {
-				wp_ob_end_flush_all();
-			}
-
-			$result = $bridge->chat->handleChatStreaming(
+			// Delegate all streaming to ChatOrchestrator which uses
+			// SseHandler for header setup, event dispatch, and DONE signal.
+			$bridge->chat->handleChatStreaming(
 				$messages,
 				array(),       // assistantConfig
 				$userId,
@@ -113,14 +100,6 @@ class ChatController {
 				$options,
 			);
 
-			// handleChatStreaming already sends SSE events and calls $sse->finish().
-			// If there was an error, send it as an SSE event.
-			if ( isset( $result['response'] ) && $bridge->errors->isError( $result['response'] ) ) {
-				$normalized = $bridge->errors->normalize( $result['response'] );
-				echo "data: " . wp_json_encode( array( 'error' => $normalized['message'] ) ) . "\n\n";
-			}
-
-			echo "data: [DONE]\n\n";
 			exit;
 		}
 

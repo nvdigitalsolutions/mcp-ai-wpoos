@@ -37,6 +37,7 @@ final class AiSettingsPage {
 	public function registerSections(): void {
 		SettingsRegistry::register_tab( 'ai_providers', __( 'AI Providers', 'nvoos-graphify-ai' ) );
 		SettingsRegistry::register_tab( 'ai_chat', __( 'Chat Settings', 'nvoos-graphify-ai' ) );
+		SettingsRegistry::register_tab( 'ai_chat_ui', __( 'Chat Tester', 'nvoos-graphify-ai' ) );
 
 		if ( class_exists( 'NvoosGraphifyAi\Admin\Sections\ProviderSelection' ) ) {
 			SettingsRegistry::register_section( new \NvoosGraphifyAi\Admin\Sections\ProviderSelection() );
@@ -46,6 +47,9 @@ final class AiSettingsPage {
 		}
 		if ( class_exists( 'NvoosGraphifyAi\Admin\Sections\ChatSettings' ) ) {
 			SettingsRegistry::register_section( new \NvoosGraphifyAi\Admin\Sections\ChatSettings() );
+		}
+		if ( class_exists( 'NvoosGraphifyAi\Admin\Sections\ChatInterface' ) ) {
+			SettingsRegistry::register_section( new \NvoosGraphifyAi\Admin\Sections\ChatInterface() );
 		}
 	}
 }

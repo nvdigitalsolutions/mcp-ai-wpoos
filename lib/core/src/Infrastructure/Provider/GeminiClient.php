@@ -108,7 +108,104 @@ class GeminiClient extends AbstractProviderClient {
 	}
 
 	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
-		return $this->chat( $messages, $options );
+		$apiKey = $this->getApiKey();
+
+		if ( '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
+
+		$model   = $this->resolveModel( $options );
+		$baseUrl = $this->getBaseUrl();
+
+		// Convert OpenAI-format messages to Gemini format.
+		$contents   = $this->convertMessages( $messages );
+		$systemText = $this->extractSystemInstruction( $messages );
+
+		$payload = array(
+			'contents' => $contents,
+		);
+
+		if ( '' !== $systemText ) {
+			$payload['systemInstruction'] = array(
+				'parts' => array( array( 'text' => $systemText ) ),
+			);
+		}
+
+		$generationConfig = array();
+		if ( isset( $options['temperature'] ) ) {
+			$generationConfig['temperature'] = (float) $options['temperature'];
+		}
+		if ( isset( $options['max_tokens'] ) ) {
+			$generationConfig['maxOutputTokens'] = (int) $options['max_tokens'];
+		}
+		if ( array() !== $generationConfig ) {
+			$payload['generationConfig'] = $generationConfig;
+		}
+
+		$url = $baseUrl . '/models/' . \urlencode( $model ) . ':streamGenerateContent?alt=sse&key=' . \urlencode( $apiKey );
+
+		try {
+			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $e ) {
+			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
+		}
+
+		try {
+			$request    = new \Nyholm\Psr7\Request(
+				'POST',
+				$url,
+				array( 'Content-Type' => 'application/json' ),
+				$body,
+			);
+			$response   = $this->http->sendRequest( $request );
+			$statusCode = $response->getStatusCode();
+			$respBody   = (string) $response->getBody();
+
+			if ( $statusCode >= 400 ) {
+				return $this->errors->create( "http_{$statusCode}", $respBody, array( 'status' => $statusCode ) );
+			}
+
+			// Parse Gemini SSE stream.
+			$assembled = '';
+			foreach ( \preg_split( "/\r?\n/", $respBody ) as $line ) {
+				$line = \trim( $line );
+				if ( '' === $line || 0 !== \strpos( $line, 'data: ' ) ) {
+					continue;
+				}
+				$data = \substr( $line, 6 );
+				$chunk = \json_decode( $data, true );
+				if ( ! is_array( $chunk ) ) {
+					continue;
+				}
+				if ( isset( $chunk['candidates'][0]['content']['parts'] ) ) {
+					foreach ( $chunk['candidates'][0]['content']['parts'] as $part ) {
+						if ( isset( $part['text'] ) ) {
+							$assembled .= $part['text'];
+							if ( null !== $onChunk ) {
+								$onChunk( $part['text'] );
+							}
+						}
+					}
+				}
+			}
+
+			return $this->normalizeResponse(
+				array(
+					'candidates' => array(
+						array(
+							'content' => array(
+								'parts' => array( array( 'text' => $assembled ) ),
+							),
+							'finishReason' => 'STOP',
+						),
+					),
+				),
+				$model,
+			);
+
+		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+			return $this->errors->create( 'http_request_failed', $e->getMessage() );
+		}
 	}
 
 	public function listModels(): mixed {

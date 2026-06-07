@@ -24,10 +24,19 @@ namespace Nvoos\Core\Infrastructure\Provider;
  */
 abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 
+	/**
+	 * Whether this provider requires an API key.
+	 *
+	 * Local providers (Ollama, LM Studio) override to return false.
+	 */
+	protected function requiresApiKey(): bool {
+		return true;
+	}
+
 	public function chat( array $messages, array $options = array() ): mixed {
 		$apiKey = $this->getApiKey();
 
-		if ( '' === $apiKey ) {
+		if ( $this->requiresApiKey() && '' === $apiKey ) {
 			return $this->missingApiKeyError();
 		}
 
@@ -103,14 +112,168 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 	}
 
 	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
-		$options['stream'] = true;
-		return $this->chat( $messages, $options );
+		$apiKey = $this->getApiKey();
+
+		if ( $this->requiresApiKey() && '' === $apiKey ) {
+			return $this->missingApiKeyError();
+		}
+
+		$model   = $this->resolveModel( $options );
+		$baseUrl = $this->getBaseUrl();
+
+		$payload = array(
+			'model'    => $model,
+			'messages' => $messages,
+			'stream'   => true,
+		);
+
+		if ( isset( $options['temperature'] ) ) {
+			$payload['temperature'] = (float) $options['temperature'];
+		}
+		if ( isset( $options['max_tokens'] ) ) {
+			$payload['max_tokens'] = (int) $options['max_tokens'];
+		}
+		if ( ! empty( $options['tools'] ) ) {
+			$payload['tools'] = $options['tools'];
+		}
+		if ( ! empty( $options['tool_choice'] ) ) {
+			$payload['tool_choice'] = $options['tool_choice'];
+		}
+		if ( isset( $options['top_p'] ) ) {
+			$payload['top_p'] = (float) $options['top_p'];
+		}
+
+		try {
+			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+		} catch ( \JsonException $e ) {
+			return $this->errors->create(
+				'json_encode_failed',
+				'Failed to encode stream request payload.',
+				array( 'error' => $e->getMessage() ),
+			);
+		}
+
+		$headers = $this->buildAuthHeaders( $apiKey );
+
+		try {
+			$request  = new \Nyholm\Psr7\Request(
+				'POST',
+				$baseUrl . '/chat/completions',
+				$headers,
+				$body,
+			);
+			$response = $this->http->sendRequest( $request );
+
+			$statusCode = $response->getStatusCode();
+
+			if ( $statusCode >= 400 ) {
+				return $this->parseError( $statusCode, (string) $response->getBody() );
+			}
+
+			// Parse SSE stream.
+			$streamBody = (string) $response->getBody();
+			$assembled  = '';
+			$finish     = 'stop';
+			$toolCalls  = array();
+
+			foreach ( \preg_split( "/\r?\n/", $streamBody ) as $line ) {
+				$line = \trim( $line );
+
+				if ( '' === $line || 0 === \strpos( $line, ':' ) ) {
+					continue;
+				}
+
+				if ( 0 === \strpos( $line, 'data: ' ) ) {
+					$data = \substr( $line, 6 );
+
+					if ( '[DONE]' === $data ) {
+						break;
+					}
+
+					$chunk = \json_decode( $data, true );
+					if ( ! is_array( $chunk ) ) {
+						continue;
+					}
+
+					$delta  = $chunk['choices'][0]['delta'] ?? array();
+					$token  = $delta['content'] ?? '';
+					$finish = $chunk['choices'][0]['finish_reason'] ?? null;
+
+					if ( '' !== $token ) {
+						$assembled .= $token;
+
+						if ( null !== $onChunk ) {
+							$onChunk( $token );
+						}
+					}
+
+					// Accumulate tool call deltas.
+					if ( ! empty( $delta['tool_calls'] ) ) {
+						foreach ( $delta['tool_calls'] as $tc ) {
+							$idx = (int) ( $tc['index'] ?? 0 );
+							if ( ! isset( $toolCalls[ $idx ] ) ) {
+								$toolCalls[ $idx ] = array(
+									'id'       => $tc['id'] ?? '',
+									'type'     => 'function',
+									'function' => array(
+										'name'      => '',
+										'arguments' => '',
+									),
+								);
+							}
+							if ( ! empty( $tc['id'] ) ) {
+								$toolCalls[ $idx ]['id'] = $tc['id'];
+							}
+							if ( ! empty( $tc['function']['name'] ) ) {
+								$toolCalls[ $idx ]['function']['name'] = $tc['function']['name'];
+							}
+							if ( isset( $tc['function']['arguments'] ) ) {
+								$toolCalls[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
+							}
+						}
+					}
+				}
+			}
+
+			// Build the final normalised message.
+			$message = array(
+				'role'    => 'assistant',
+				'content' => $assembled,
+			);
+
+			// Re-index tool calls.
+			$toolCalls = \array_values( $toolCalls );
+			if ( array() !== $toolCalls ) {
+				$message['tool_calls'] = $toolCalls;
+			}
+
+			$finish = $finish ?? 'stop';
+
+			return array(
+				'id'      => '',
+				'object'  => 'chat.completion',
+				'model'   => $model,
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => $message,
+						'finish_reason' => $finish,
+					),
+				),
+			);
+
+		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+			return $this->errors->create(
+				'http_request_failed',
+				"Stream request failed: {$e->getMessage()}",
+			);
+		}
 	}
 
 	public function listModels(): mixed {
 		$apiKey = $this->getApiKey();
 
-		if ( '' === $apiKey ) {
+		if ( $this->requiresApiKey() && '' === $apiKey ) {
 			return $this->missingApiKeyError();
 		}
 
