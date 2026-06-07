@@ -99,8 +99,8 @@ class SettingsPage {
 	 */
 	public function addMenuPage(): void {
 		add_menu_page(
-			__( 'Knowledge Graph', 'nvoos-graphify' ),
-			__( 'Knowledge Graph', 'nvoos-graphify' ),
+			__( 'NV Graphify', 'nvoos-graphify' ),
+			__( 'NV Graphify', 'nvoos-graphify' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'renderPage' ),
@@ -238,7 +238,7 @@ class SettingsPage {
 		);
 		?>
 		<div class="wrap nvoos-graphify-admin">
-			<h1><?php esc_html_e( 'Knowledge Graph', 'nvoos-graphify' ); ?></h1>
+			<h1><?php esc_html_e( 'NV Graphify', 'nvoos-graphify' ); ?></h1>
 
 			<?php settings_errors(); ?>
 

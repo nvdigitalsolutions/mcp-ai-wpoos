@@ -38,8 +38,8 @@ final class AiSettingsPage {
 	 */
 	public function addMenuPage(): void {
 		add_menu_page(
-			__( 'NV oOS AI', 'nvoos-graphify-ai' ),
-			__( 'NV oOS AI', 'nvoos-graphify-ai' ),
+			__( 'NVoOS AI', 'nvoos-graphify-ai' ),
+			__( 'NVoOS AI', 'nvoos-graphify-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'renderPage' ),
@@ -171,7 +171,7 @@ final class AiSettingsPage {
 		);
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'NV oOS AI', 'nvoos-graphify-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NVoOS AI', 'nvoos-graphify-ai' ); ?></h1>
 			<?php settings_errors(); ?>
 
 			<h2 class="nav-tab-wrapper">
