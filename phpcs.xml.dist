@@ -56,6 +56,10 @@
      architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
 <exclude-pattern>*/plugins/nvoos-graphify-ai/**</exclude-pattern>
 
+<!-- NV oOS Graphify — AI Platform is a standalone addon plugin with its own
+     PSR-4 architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
+<exclude-pattern>*/plugins/nvoos-graphify-ai-platform/**</exclude-pattern>
+
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 <!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix

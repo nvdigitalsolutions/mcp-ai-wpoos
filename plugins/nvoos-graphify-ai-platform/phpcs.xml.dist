@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
-<ruleset name="NvoosGraphifyPlatform">
-    <description>PHPCS rules for NV oOS Graphify — Platform</description>
+<ruleset name="NvoosGraphifyAiPlatform">
+    <description>PHPCS rules for NV oOS Graphify — AI Platform</description>
 
     <arg name="extensions" value="php"/>
     <arg name="parallel" value="4"/>
     <arg value="sp"/>
 
     <file>./src/</file>
-    <file>./nvoos-graphify-platform.php</file>
+    <file>./nvoos-graphify-ai-platform.php</file>
 
     <exclude-pattern>./vendor/</exclude-pattern>
     <exclude-pattern>./tests/</exclude-pattern>
@@ -15,14 +15,23 @@
     <rule ref="WordPress">
         <exclude name="WordPress.Files.FileName"/>
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="Squiz.Commenting.FileComment"/>
     </rule>
 
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
-                <element value="NvoosGraphifyPlatform"/>
-                <element value="nvoos_graphify_platform"/>
-                <element value="NVOOS_GRAPHIFY_PLATFORM"/>
+                <element value="NvoosGraphifyAiPlatform"/>
+                <element value="nvoos_graphify_ai_platform"/>
+                <element value="NVOOS_GRAPHIFY_AI_PLATFORM"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="nvoos-graphify-ai-platform"/>
             </property>
         </properties>
     </rule>
