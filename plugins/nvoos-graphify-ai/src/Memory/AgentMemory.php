@@ -16,6 +16,7 @@ namespace NvoosGraphifyAi\Memory;
 
 use NvoosGraphify\Graph\Db;
 use NvoosGraphify\Schema;
+use NvoosGraphifyAi\Embeddings\EmbeddingService;
 use NvoosGraphifyAi\Embeddings\RagRetriever;
 
 class AgentMemory {
