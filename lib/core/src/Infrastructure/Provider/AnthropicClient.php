@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Infrastructure\Provider;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class AnthropicClient extends AbstractProviderClient {
 
@@ -96,15 +96,9 @@ class AnthropicClient extends AbstractProviderClient {
 		);
 
 		try {
-			$request    = new \Nyholm\Psr7\Request(
-				'POST',
-				$this->getBaseUrl() . '/messages',
-				$headers,
-				$body,
-			);
-			$response   = $this->http->sendRequest( $request );
-			$statusCode = $response->getStatusCode();
-			$respBody   = (string) $response->getBody();
+			$response   = $this->http->send( 'POST', $this->getBaseUrl() . '/messages', $headers, $body );
+			$statusCode = $response->statusCode;
+			$respBody   = $response->body;
 
 			if ( $statusCode >= 400 ) {
 				return $this->parseError( $statusCode, $respBody );
@@ -115,7 +109,7 @@ class AnthropicClient extends AbstractProviderClient {
 				$model,
 			);
 
-		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+		} catch ( \Exception $e ) {
 			return $this->errors->create( 'http_request_failed', $e->getMessage() );
 		}
 	}

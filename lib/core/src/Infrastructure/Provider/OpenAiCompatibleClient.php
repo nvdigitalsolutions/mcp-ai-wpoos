@@ -80,16 +80,9 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		$headers = $this->buildAuthHeaders( $apiKey );
 
 		try {
-			$request  = new \Nyholm\Psr7\Request(
-				'POST',
-				$baseUrl . '/chat/completions',
-				$headers,
-				$body,
-			);
-			$response = $this->http->sendRequest( $request );
-
-			$body       = (string) $response->getBody();
-			$statusCode = $response->getStatusCode();
+			$response   = $this->http->send( 'POST', $baseUrl . '/chat/completions', $headers, $body );
+			$body       = $response->body;
+			$statusCode = $response->statusCode;
 
 			if ( $statusCode >= 400 ) {
 				return $this->parseError( $statusCode, $body );
@@ -103,7 +96,7 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 				array( 'raw' => $body ),
 			);
 
-		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+		} catch ( \Exception $e ) {
 			return $this->errors->create(
 				'http_request_failed',
 				"API request failed: {$e->getMessage()}",
@@ -281,9 +274,8 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		$headers = $this->buildAuthHeaders( $apiKey );
 
 		try {
-			$request  = new \Nyholm\Psr7\Request( 'GET', $baseUrl . '/models', $headers );
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$response = $this->http->send( 'GET', $baseUrl . '/models', $headers );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || ! isset( $data['data'] ) ) {
 				return array();

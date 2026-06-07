@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 
 class ReliefwebReportsTool extends AbstractTool {
 
@@ -99,14 +99,13 @@ class ReliefwebReportsTool extends AbstractTool {
 		);
 
 		try {
-			$request  = new \Nyholm\Psr7\Request(
+			$response = $this->http->send(
 				'POST',
 				self::API_URL,
 				array( 'Content-Type' => 'application/json' ),
 				$body,
 			);
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || ! isset( $data['data'] ) ) {
 				return $this->emptyResult( 'No ReliefWeb reports found.' );

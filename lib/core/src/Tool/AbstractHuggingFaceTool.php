@@ -16,8 +16,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 abstract class AbstractHuggingFaceTool extends AbstractTool {
 
@@ -57,18 +57,17 @@ abstract class AbstractHuggingFaceTool extends AbstractTool {
 			$url .= '?' . \http_build_query( $query );
 		}
 
-		$request  = new \Nyholm\Psr7\Request( 'GET', $url, $this->buildHeaders() );
-		$response = $this->http->sendRequest( $request );
+		$response = $this->http->send( 'GET', $url, $this->buildHeaders() );
 
-		if ( $response->getStatusCode() >= 400 ) {
+		if ( $response->statusCode >= 400 ) {
 			return $this->errors->create(
 				'hf_api_error',
-				"HuggingFace API returned HTTP {$response->getStatusCode()}.",
-				array( 'status' => $response->getStatusCode() ),
+				"HuggingFace API returned HTTP {$response->statusCode}.",
+				array( 'status' => $response->statusCode ),
 			);
 		}
 
-		return \json_decode( (string) $response->getBody(), true );
+		return \json_decode( $response->body, true );
 	}
 
 	/**

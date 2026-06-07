@@ -15,8 +15,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Infrastructure\Provider;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class GeminiClient extends AbstractProviderClient {
 
@@ -86,15 +86,9 @@ class GeminiClient extends AbstractProviderClient {
 		}
 
 		try {
-			$request    = new \Nyholm\Psr7\Request(
-				'POST',
-				$url,
-				array( 'Content-Type' => 'application/json' ),
-				$body,
-			);
-			$response   = $this->http->sendRequest( $request );
-			$statusCode = $response->getStatusCode();
-			$respBody   = (string) $response->getBody();
+			$response   = $this->http->send( 'POST', $url, array( 'Content-Type' => 'application/json' ), $body );
+			$statusCode = $response->statusCode;
+			$respBody   = $response->body;
 
 			if ( $statusCode >= 400 ) {
 				return $this->errors->create( "http_{$statusCode}", $respBody, array( 'status' => $statusCode ) );
@@ -102,7 +96,7 @@ class GeminiClient extends AbstractProviderClient {
 
 			return $this->normalizeResponse( \json_decode( $respBody, true ) ?: array(), $model );
 
-		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
+		} catch ( \Exception $e ) {
 			return $this->errors->create( 'http_request_failed', $e->getMessage() );
 		}
 	}
@@ -217,9 +211,8 @@ class GeminiClient extends AbstractProviderClient {
 		$url = $this->getBaseUrl() . '/models?key=' . \urlencode( $apiKey );
 
 		try {
-			$request  = new \Nyholm\Psr7\Request( 'GET', $url );
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$response = $this->http->send( 'GET', $url );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || ! isset( $data['models'] ) ) {
 				return array();

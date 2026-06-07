@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
 
 class ModerateContentTool extends AbstractTool {
 
@@ -88,7 +88,7 @@ class ModerateContentTool extends AbstractTool {
 					'input' => $text,
 				)
 			);
-			$request  = new \Nyholm\Psr7\Request(
+			$response = $this->http->send(
 				'POST',
 				$baseUrl . '/moderations',
 				array(
@@ -97,8 +97,7 @@ class ModerateContentTool extends AbstractTool {
 				),
 				$body,
 			);
-			$response = $this->http->sendRequest( $request );
-			$data     = \json_decode( (string) $response->getBody(), true );
+			$data     = \json_decode( $response->body, true );
 
 			if ( ! is_array( $data ) || ! isset( $data['results'][0] ) ) {
 				return $this->errors->create( 'moderation_failed', 'OpenAI Moderation returned an unexpected response.' );

@@ -1,8 +1,8 @@
 <?php
 /**
- * Tests for DeepSeekClient — demonstrates the PSR-18 mock test pattern.
+ * Tests for DeepSeekClient — demonstrates the HTTP mock test pattern.
  *
- * Provider clients receive SettingsStoreInterface, HttpClientInterface (PSR-18),
+ * Provider clients receive SettingsStoreInterface, HttpClientInterface,
  * and ErrorFactoryInterface via constructor injection. Tests mock the HTTP
  * client to control API responses without network dependency.
  *
@@ -15,14 +15,12 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tests\Unit\Infrastructure\Provider;
 
-use Nyholm\Psr7\Stream;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Entity\HttpResponse;
 use Nvoos\Core\Infrastructure\Provider\DeepSeekClient;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Client\ClientInterface as HttpClientInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 final class DeepSeekClientTest extends TestCase {
 
@@ -79,7 +77,7 @@ final class DeepSeekClientTest extends TestCase {
 	}
 
 	public function testChatSendsCorrectRequest(): void {
-		$responseBody = Stream::create( json_encode( array(
+		$response = new HttpResponse( 200, json_encode( array(
 			'id'      => 'chatcmpl-123',
 			'object'  => 'chat.completion',
 			'model'   => 'deepseek-chat',
@@ -100,16 +98,9 @@ final class DeepSeekClientTest extends TestCase {
 			),
 		) ) ?: '' );
 
-		$response = $this->createMock( ResponseInterface::class );
-		$response->method( 'getStatusCode' )->willReturn( 200 );
-		$response->method( 'getBody' )->willReturn( $responseBody );
-
 		$this->httpClient->expects( $this->once() )
-			->method( 'sendRequest' )
-			->with( $this->callback( function ( RequestInterface $request ): bool {
-				return 'POST' === $request->getMethod()
-					&& str_contains( (string) $request->getUri(), 'api.deepseek.com' );
-			} ) )
+			->method( 'send' )
+			->with( 'POST', $this->stringContains( 'api.deepseek.com' ), $this->anything(), $this->anything() )
 			->willReturn( $response );
 
 		$result = $this->client->chat(
