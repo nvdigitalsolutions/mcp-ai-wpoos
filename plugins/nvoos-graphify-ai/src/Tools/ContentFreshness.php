@@ -31,7 +31,7 @@ class ContentFreshness extends AbstractAiTool {
 			),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$postId   = absint( $arguments['post_id'] ?? 0 );
 		$content  = sanitize_textarea_field( $arguments['content'] ?? '' );
 		$postDate = '';

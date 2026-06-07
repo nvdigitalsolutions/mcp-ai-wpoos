@@ -34,7 +34,7 @@ class SemanticSearch extends AbstractAiTool {
 			'required'   => array( 'query' ),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$query = sanitize_text_field( $arguments['query'] ?? '' );
 		$limit = absint( $arguments['limit'] ?? 10 );
 		if ( empty( $query ) ) {

@@ -32,7 +32,7 @@ class GenerateExcerpt extends AbstractAiTool {
 			'required'   => array( 'content' ),
 		);
 	}
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$content = sanitize_textarea_field( $arguments['content'] ?? '' );
 		$postId  = absint( $arguments['post_id'] ?? 0 );
 		if ( empty( $content ) ) {
