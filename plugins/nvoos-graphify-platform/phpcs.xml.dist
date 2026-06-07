@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<ruleset name="NvoosGraphifyPlatform">
+    <description>PHPCS rules for NV oOS Graphify — Platform</description>
+
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="4"/>
+    <arg value="sp"/>
+
+    <file>./src/</file>
+    <file>./nvoos-graphify-platform.php</file>
+
+    <exclude-pattern>./vendor/</exclude-pattern>
+    <exclude-pattern>./tests/</exclude-pattern>
+
+    <rule ref="WordPress">
+        <exclude name="WordPress.Files.FileName"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+    </rule>
+
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="NvoosGraphifyPlatform"/>
+                <element value="nvoos_graphify_platform"/>
+                <element value="NVOOS_GRAPHIFY_PLATFORM"/>
+            </property>
+        </properties>
+    </rule>
+
+    <config name="minimum_supported_wp_version" value="6.5"/>
+    <config name="testVersion" value="8.1-"/>
+</ruleset>
