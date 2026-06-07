@@ -3,6 +3,31 @@
 > **Date**: 2026-06-07 | **Status**: Phase 1 In Progress
 >
 > This document is the actionable next-steps plan derived from the [restructuring roadmap](./nvoos-base-restructuring-roadmap.md). It prioritises concrete, shippable milestones.
+>
+> **Architecture principle (Unix)**: Each addon depends only on what it actually uses. Core works alone with zero API keys. Tools and Extensions don't need AI — they never load a provider. AI is the gateway only for things that call an LLM.
+
+---
+
+## Architecture at a glance
+
+```
+nvoos-graphify (core — zero API keys, works alone)
+│
+├── nvoos-graphify-tools       ← needs core ONLY (165 tools, zero AI)
+├── nvoos-graphify-extensions  ← needs core ONLY (widgets, zero AI)
+│
+└── nvoos-graphify-ai          ← needs core + API key
+    ├── nvoos-graphify-platform  ← needs AI (agents, skills, measurement, federation)
+    ├── nvoos-graphify-engine    ← needs AI (OOS engine, markup, paper-store, crawler)
+    └── nvoos-graphify-pro-*     ← needs AI (10 enterprise addons)
+```
+
+| Tier | Addons | User story | Install count |
+|---|---|---|---|
+| Free | core + tools + extensions | "Build a graph, get more tools, integrate my plugins" | 1-3 plugins, zero keys |
+| AI | + ai | "Add AI chat and content generation to my graph" | +1 plugin, 1 API key |
+| Platform | + platform + engine | "Agents, skills, measurement, cross-platform engine" | +2 plugins |
+| Enterprise | + pro-* | "CRM, legal, healthcare, e-commerce toolkits" | +1-10 plugins |
 
 ---
 
@@ -12,7 +37,7 @@
 |---|---|---|
 | Core plugin (`nvoos-graphify`) | ✅ Complete | `alpha-working` |
 | AI addon bootstrap | ✅ Done | [#5279](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5279) |
-| Roadmap v4.0 | ✅ Done | [#5280](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5280) |
+| Roadmap v4.0 (Unix honesty) | ✅ Done | [#5280](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5280) |
 | Admin architecture (Section/Registry) | ✅ Done | [#5279](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/pull/5279) |
 
 ---
@@ -21,25 +46,27 @@
 
 **Goal**: A user installs `nvoos-graphify` + `nvoos-graphify-ai` and can chat with an AI agent that has access to the knowledge graph.
 
+**Can parallel with**: Tools addon (Priority 3) and Extensions (Priority 4) — these don't need AI.
+
 ### 1.1 Provider clients (week 1)
 
 Extract 13 provider client implementations from the base plugin's `includes/infrastructure/providers/` into the AI addon. These already exist as `Nvoos\Core\Infrastructure\Provider\*Client` classes in `lib/core/` — the task is wiring them with real HTTP requests and settings.
 
-| # | Task | Source (base plugin) | Target (AI addon) |
-|---|---|---|---|
-| 1 | OpenAI client | `class-wp-mcp-ai-openai-client.php` | Wire `OpenAiClient` with API key from settings |
-| 2 | Google Gemini client | `class-wp-mcp-ai-gemini-client.php` | Wire `GeminiClient` |
-| 3 | Anthropic client | `class-wp-mcp-ai-anthropic-client.php` | Wire `AnthropicClient` |
-| 4 | Ollama client | `class-wp-mcp-ai-ollama-client.php` | Wire `OllamaClient` |
-| 5 | DeepSeek client | `class-wp-mcp-ai-deepseek-client.php` | Wire `DeepSeekClient` |
-| 6 | OpenRouter client | `class-wp-mcp-ai-openrouter-client.php` | Wire `OpenRouterClient` |
-| 7 | HuggingFace client | `class-wp-mcp-ai-huggingface-client.php` | Wire `HuggingFaceClient` |
-| 8 | Cloudflare client | `class-wp-mcp-ai-cloudflare-client.php` | Wire `CloudflareClient` |
-| 9 | LM Studio client | `class-wp-mcp-ai-lmstudio-client.php` | Wire `LmStudioClient` |
-| 10 | NVIDIA NIM client | `class-wp-mcp-ai-nvidia-client.php` | Wire `NvidiaNimClient` |
-| 11 | DigitalOcean client | `class-wp-mcp-ai-digitalocean-client.php` | Wire `DigitalOceanClient` |
-| 12 | Kimi client | `class-wp-mcp-ai-kimi-client.php` | Wire `KimiClient` |
-| 13 | Baseten client | `class-wp-mcp-ai-baseten-client.php` | Wire `BasetenClient` |
+| # | Task | Source (base plugin) |
+|---|---|---|
+| 1 | OpenAI client | `class-wp-mcp-ai-openai-client.php` |
+| 2 | Google Gemini client | `class-wp-mcp-ai-gemini-client.php` |
+| 3 | Anthropic client | `class-wp-mcp-ai-anthropic-client.php` |
+| 4 | Ollama client | `class-wp-mcp-ai-ollama-client.php` |
+| 5 | DeepSeek client | `class-wp-mcp-ai-deepseek-client.php` |
+| 6 | OpenRouter client | `class-wp-mcp-ai-openrouter-client.php` |
+| 7 | HuggingFace client | `class-wp-mcp-ai-huggingface-client.php` |
+| 8 | Cloudflare client | `class-wp-mcp-ai-cloudflare-client.php` |
+| 9 | LM Studio client | `class-wp-mcp-ai-lmstudio-client.php` |
+| 10 | NVIDIA NIM client | `class-wp-mcp-ai-nvidia-client.php` |
+| 11 | DigitalOcean client | `class-wp-mcp-ai-digitalocean-client.php` |
+| 12 | Kimi client | `class-wp-mcp-ai-kimi-client.php` |
+| 13 | Baseten client | `class-wp-mcp-ai-baseten-client.php` |
 
 **Approach**: Each provider client extends `AbstractProviderClient` from `lib/core`. The AI addon's `CoreBridge::registerBuiltinProviders()` already instantiates them. The gap is the actual HTTP request logic — each client needs its `send()` method implemented.
 
@@ -103,25 +130,27 @@ Then:  AI can answer "What are the most connected nodes in my graph?"
        AI can answer "What did we discuss last time about [topic]?"
 ```
 
+**Milestone**: AI addon ships. 2 plugins → full AI knowledge graph experience.
+
 ---
 
-## Priority 2: Platform addon scaffold
+## Priority 2: Platform + Engine (under AI)
 
-Once the AI addon ships, scaffold the Platform addon. Most of this is existing code in `addons/pro/` — the task is extraction and namespace migration, not rewrite.
+These depend on AI for LLM access. Platform and Engine can be built in parallel with each other.
 
-### 2.1 Scaffold (1 day)
+### 2.1 Platform scaffold (1 day)
 
 ```
 plugins/nvoos-graphify-platform/
-├── nvoos-graphify-platform.php     # Bootstrap
-├── composer.json                    # Requires: nvoos-graphify-ai
+├── nvoos-graphify-platform.php     # Bootstrap, Requires Plugins: nvoos-graphify-ai
+├── composer.json
 ├── src/
-│   ├── Plugin.php                   # Composition root
+│   ├── Plugin.php
 │   └── Admin/
 │       └── PlatformSettings.php     # Registers sections via registry
 ```
 
-### 2.2 Extract subsystems (2 weeks)
+### 2.2 Platform subsystems (2 weeks)
 
 | Subsystem | Source (base plugin) | Target |
 |---|---|---|
@@ -136,13 +165,24 @@ plugins/nvoos-graphify-platform/
 | Federation | `includes/federation/` | `src/Federation/` |
 | Blueprints | `includes/blueprints/` | `src/Blueprints/` |
 
-**Deliverable**: Install Platform addon → agents, skills, slash-commands, measurement, and federation all work.
+### 2.3 Engine (1 week)
+
+Engine is the AI addon's cross-platform foundation — it already autoloads `nvoos/core` and `nvoos/wordpress-adapter`. Formalising this as an addon adds markup, paper-store, and crawler.
+
+| Subsystem | Source | Target |
+|---|---|---|
+| OOS Engine | `lib/core/` + `lib/wordpress-adapter/` | Already loaded by AI |
+| Markup subsystem | Base plugin markup classes | `src/Markup/` |
+| Paper-store | `addons/paper-store/` | `src/PaperStore/` |
+| Crawl4AI | `includes/crawler/` | `src/Crawler/` |
+
+**Milestone**: Platform + Engine addons ship. 4 plugins → full AI platform.
 
 ---
 
 ## Priority 3: Tools addon
 
-165+ standalone tools. All independent — no internal dependencies between tools. Register via `nvoos_graphify/register_tools`.
+165+ standalone tools. **Zero AI dependency** — only needs core. Can be built in parallel with AI.
 
 ### 3.1 Scaffold + extract (2 weeks)
 
@@ -155,13 +195,13 @@ plugins/nvoos-graphify-platform/
 | Workflow tools | ~20 | `includes/tools/class-wp-mcp-ai-tool-workflow-*.php` |
 | Misc | ~35 | Various specialized tools |
 
-**Deliverable**: Install Tools addon → 165+ extra tools available in the tool registry.
+**Deliverable**: Install Tools addon → 165+ extra tools available. Zero API keys needed.
 
 ---
 
 ## Priority 4: Extensions addon
 
-Three WordPress plugin integrations in one addon. Each self-gates.
+Three WordPress plugin integrations in one addon. **Zero AI dependency** — only needs core. Each self-gates. Can be built in parallel with AI.
 
 ### 4.1 Elementor (2 days)
 
@@ -193,55 +233,62 @@ Three WordPress plugin integrations in one addon. Each self-gates.
 
 ---
 
-## Priority 5: Engine + Pro (deferred)
+## Priority 5: Pro addons (under AI)
 
-These are lower priority — extract when demand exists.
+30 toolkits consolidated into 10 addons. All under AI because they call the LLM. Each installs independently — a user picks the toolkits they need.
 
-### Engine (1 week)
+### Pro core (infrastructure — week 1)
 
-| Subsystem | Source |
-|---|---|
-| OOS Engine | `lib/core/` + `lib/wordpress-adapter/` |
-| Markup subsystem | Base plugin markup classes |
-| Paper-store | `addons/paper-store/` |
-| Crawl4AI | `includes/crawler/` |
+| Addon | Toolkits | Lines |
+|---|---|---|
+| `nvoos-graphify-pro-core` | Vault, vector-storage, skills-manager | ~2,500 |
 
-### Pro (2 weeks)
+All other pro addons depend on this.
 
-| Subsystem | Source |
-|---|---|
-| Enterprise SaaS drivers | `includes/remote/drivers/` (Jira, Slack, M365, HubSpot, etc.) |
-| 765+ pro tools | `addons/pro/` |
-| OAuth broker | `includes/remote/class-*-oauth-*.php` |
+### Pro addons (extract — 2 weeks each, parallelisable)
+
+| # | Addon | Toolkits | Lines |
+|---|---|---|---|
+| 1 | `pro-core` | Vault, vector-storage, skills-manager (infrastructure) | 2,500 |
+| 2 | `pro-business` | CRM (17K), E-commerce (26K), Project Management (4K), Financial Planner (13K), Calendar (6K), Social Media (15K) | 81,000 |
+| 3 | `pro-media` | Image Production (10K), Video Production (4K), Comic Creation (4K), Media Toolkit (2K) | 20,000 |
+| 4 | `pro-dev` | Architect Agent (4K), Architectural Design (16K), Site Creator (11K), AI Tool Builder (5K), Developer Tools (5K), Math & Logic (3K) | 44,000 |
+| 5 | `pro-healthcare` | Health & Wellness (29K), Imaging, Medical Vitals | 29,000 |
+| 6 | `pro-legal` | Law Firm (19K), CRE Debt (20K), Regulatory Registration (15K) | 54,000 |
+| 7 | `pro-education` | Quiz System (5K), ECA Management (15K) | 20,000 |
+| 8 | `pro-content` | Document Generation (11K), Multilingual (2K), Chat Channels (17K) | 30,000 |
+| 9 | `pro-data` | Analytics (6K), Extended Cognition (3K), Places Management (3K) | 12,000 |
+| 10 | `pro-platform` | Orchestration (10K), Research (8K), Cloudways (7K), Google Workspace (3K), Email Marketing (3K), Remote Connections (2K), Capture (2K), misc (~9K) | 44,000 |
+
+**Deliverable**: Install any pro addon → that toolkit's tools appear in the AI chat.
 
 ---
 
 ## Timeline summary
 
-| Week | Deliverable |
-|---|---|
-| 1-2 | Provider clients working, SSE streaming, chat endpoint |
-| 2-3 | Admin chat UI, embeddings + RAG |
-| 3-4 | Agent memory, integration test → **AI addon ships** |
-| 4-5 | Platform addon scaffold + extract subsystems |
-| 5-6 | Tools addon scaffold + extract 165 tools |
-| 6-7 | Extensions addon (Elementor + WooCommerce + JetEngine) |
-| 7+ | Engine + Pro (as demand dictates) |
+| Week | Deliverable | Parallel? |
+|---|---|---|
+| 1-2 | AI: provider clients, SSE streaming, chat endpoint | Tools start (week 1) |
+| 2-3 | AI: admin chat UI, embeddings + RAG | Extensions start (week 2) |
+| 3-4 | AI: agent memory, integration test → **AI addon ships** | Platform + Engine start (week 3) |
+| 4-5 | Platform: agents, skills, measurement, federation | Engine continues |
+| 5-7 | Engine: markup, paper-store, crawler → **Platform + Engine ship** | Pro-core starts (week 5) |
+| 7+ | Pro addons: extract toolkits on demand | — |
 
 ---
 
 ## Dependency order
 
 ```
-nvoos-graphify (core) ← must ship first
+nvoos-graphify (core) ← must ship first (✅ done)
 │
-├── nvoos-graphify-ai ← Priority 1 (in progress)
-│   └── nvoos-graphify-platform ← Priority 2 (can start during AI Week 3)
+├── nvoos-graphify-tools ──────── ✅ no AI dep — can parallel with AI
+├── nvoos-graphify-extensions ─── ✅ no AI dep — can parallel with AI
 │
-├── nvoos-graphify-tools ← Priority 3 (independent — can parallel with AI)
-├── nvoos-graphify-extensions ← Priority 4 (independent)
-├── nvoos-graphify-engine ← Priority 5 (deferred)
-└── nvoos-graphify-pro ← Priority 5 (deferred)
+└── nvoos-graphify-ai ─────────── 🔄 in progress
+    ├── nvoos-graphify-platform ── needs AI
+    ├── nvoos-graphify-engine ──── needs AI
+    └── nvoos-graphify-pro-* ───── needs AI
 ```
 
-Tools and Extensions can be worked on in parallel with AI completion — they have no AI dependency and only need the core.
+**Unix honesty**: Nothing loads what it doesn't use. A content manager installing `nvoos-graphify` + `nvoos-graphify-tools` never touches an AI provider class.
