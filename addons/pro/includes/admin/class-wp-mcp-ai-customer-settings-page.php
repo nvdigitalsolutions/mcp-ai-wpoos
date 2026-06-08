@@ -123,7 +123,7 @@ class WP_MCP_AI_Customer_Settings_Page {
 	 */
 	private function get_settings() {
 		$defaults = array(
-			'research_assistant'     => 'default',
+			'research_assistant'      => 'default',
 			'default_lifecycle_stage' => 'customer',
 			'default_currency'        => 'USD',
 			'auto_create_company'     => false,
@@ -175,11 +175,11 @@ class WP_MCP_AI_Customer_Settings_Page {
 	 */
 	private function get_customer_tools() {
 		return array(
-			'create_customer'         => __( 'Create Customer', 'mcp-ai-wpoos-pro' ),
-			'get_customer'            => __( 'Get Customer', 'mcp-ai-wpoos-pro' ),
-			'list_customers'          => __( 'List Customers', 'mcp-ai-wpoos-pro' ),
-			'update_customer'         => __( 'Update Customer', 'mcp-ai-wpoos-pro' ),
-			'delete_customer'         => __( 'Delete Customer', 'mcp-ai-wpoos-pro' ),
+			'create_customer'          => __( 'Create Customer', 'mcp-ai-wpoos-pro' ),
+			'get_customer'             => __( 'Get Customer', 'mcp-ai-wpoos-pro' ),
+			'list_customers'           => __( 'List Customers', 'mcp-ai-wpoos-pro' ),
+			'update_customer'          => __( 'Update Customer', 'mcp-ai-wpoos-pro' ),
+			'delete_customer'          => __( 'Delete Customer', 'mcp-ai-wpoos-pro' ),
 			'convert_lead_to_customer' => __( 'Convert Lead to Customer', 'mcp-ai-wpoos-pro' ),
 		);
 	}
@@ -215,7 +215,7 @@ class WP_MCP_AI_Customer_Settings_Page {
 				<?php
 				switch ( $active_tab ) {
 					case 'configuration':
-						$this->render_configuration_tab( $post_type );
+						$this->render_configuration_tab();
 						break;
 					case 'tools':
 						$this->render_tools_tab();
@@ -344,10 +344,8 @@ class WP_MCP_AI_Customer_Settings_Page {
 
 	/**
 	 * Render AI Configuration tab.
-	 *
-	 * @param string $post_type The customer CPT slug.
 	 */
-	protected function render_configuration_tab( $post_type ) {
+	protected function render_configuration_tab() {
 		$settings = get_option( self::OPTION_NAME, array() );
 
 		$current_assistant = isset( $settings['research_assistant'] ) ? $settings['research_assistant'] : 'default';

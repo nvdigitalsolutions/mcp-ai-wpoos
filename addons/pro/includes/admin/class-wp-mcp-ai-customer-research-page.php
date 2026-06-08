@@ -412,8 +412,8 @@ class WP_MCP_AI_Customer_Research_Page {
 	 * with Salesforce Customer 360, HubSpot Service Hub, and Gainsight patterns.
 	 */
 	protected static function render_review_workflow() {
-		$total_customers     = wp_count_posts( 'mcp_ai_customer' );
-		$published_count     = isset( $total_customers->publish ) ? $total_customers->publish : 0;
+		$total_customers = wp_count_posts( 'mcp_ai_customer' );
+		$published_count = isset( $total_customers->publish ) ? $total_customers->publish : 0;
 
 		$customers = get_posts(
 			array(
@@ -424,15 +424,15 @@ class WP_MCP_AI_Customer_Research_Page {
 		);
 
 		// --- Compute industry-standard customer health metrics ---
-		$total_revenue     = 0;
-		$total_ltv         = 0;
-		$with_revenue      = 0;
-		$with_email        = 0;
-		$with_ltv          = 0;
-		$complete_count    = 0;
-		$at_risk_count     = 0;
-		$healthy_count     = 0;
-		$high_value_count  = 0; // LTV > $50k
+		$total_revenue    = 0;
+		$total_ltv        = 0;
+		$with_revenue     = 0;
+		$with_email       = 0;
+		$with_ltv         = 0;
+		$complete_count   = 0;
+		$at_risk_count    = 0;
+		$healthy_count    = 0;
+		$high_value_count = 0; // LTV above $50k.
 
 		// Lifecycle stage buckets.
 		$stages = array(
@@ -443,9 +443,9 @@ class WP_MCP_AI_Customer_Research_Page {
 
 		// Revenue tier segmentation.
 		$revenue_tiers = array(
-			'enterprise' => 0, // $100k+
-			'mid_market' => 0, // $10k-$100k
-			'smb'        => 0, // < $10k
+			'enterprise' => 0, // Above $100k.
+			'mid_market' => 0, // $10k to $100k.
+			'smb'        => 0, // Below $10k.
 			'unknown'    => 0,
 		);
 
@@ -509,12 +509,12 @@ class WP_MCP_AI_Customer_Research_Page {
 		}
 
 		// --- Derived KPIs ---
-		$completeness     = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		$avg_revenue      = $with_revenue > 0 ? round( $total_revenue / $with_revenue, 2 ) : 0;
-		$avg_ltv          = $with_ltv > 0 ? round( $total_ltv / $with_ltv, 2 ) : 0;
-		$health_score     = $published_count > 0 ? round( ( $healthy_count / $published_count ) * 100 ) : 0;
-		$churn_risk_pct   = $published_count > 0 ? round( ( $at_risk_count / $published_count ) * 100 ) : 0;
-		$evangelist_pct   = $published_count > 0 ? round( ( $stages['evangelist'] / $published_count ) * 100 ) : 0;
+		$completeness   = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		$avg_revenue    = $with_revenue > 0 ? round( $total_revenue / $with_revenue, 2 ) : 0;
+		$avg_ltv        = $with_ltv > 0 ? round( $total_ltv / $with_ltv, 2 ) : 0;
+		$health_score   = $published_count > 0 ? round( ( $healthy_count / $published_count ) * 100 ) : 0;
+		$churn_risk_pct = $published_count > 0 ? round( ( $at_risk_count / $published_count ) * 100 ) : 0;
+		$evangelist_pct = $published_count > 0 ? round( ( $stages['evangelist'] / $published_count ) * 100 ) : 0;
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Customer 360 — Health & Insights', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -731,15 +731,15 @@ class WP_MCP_AI_Customer_Research_Page {
 
 		// Save customer metadata.
 		$meta_fields = array(
-			'email'             => 'email',
-			'phone'             => 'phone',
-			'company'           => 'company',
-			'total_revenue'     => 'total_revenue',
-			'lifetime_value'    => 'ltv',
-			'customer_since'    => 'customer_since',
-			'source_lead_id'    => 'source_lead_id',
-			'lifecycle_stage'   => 'lifecycle_stage',
-			'notes'             => 'notes',
+			'email'           => 'email',
+			'phone'           => 'phone',
+			'company'         => 'company',
+			'total_revenue'   => 'total_revenue',
+			'lifetime_value'  => 'ltv',
+			'customer_since'  => 'customer_since',
+			'source_lead_id'  => 'source_lead_id',
+			'lifecycle_stage' => 'lifecycle_stage',
+			'notes'           => 'notes',
 		);
 
 		foreach ( $meta_fields as $meta_key => $post_key ) {
