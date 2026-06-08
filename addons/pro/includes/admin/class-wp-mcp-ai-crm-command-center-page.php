@@ -202,6 +202,84 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					grid-template-columns: 1fr 1fr;
 					gap: 16px;
 				}
+				.crm-cc-muted { color: #646970; font-style: italic; }
+				.crm-cc-related-link {
+					color: #2271b1;
+					text-decoration: none;
+				}
+				.crm-cc-related-link:hover {
+					color: #135e96;
+					text-decoration: underline;
+				}
+				.crm-cc-badge-score {
+					display: inline-block;
+					min-width: 28px;
+					padding: 1px 6px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 700;
+					text-align: center;
+				}
+				.crm-cc-badge-score.hot  { background: #d4edda; color: #155724; }
+				.crm-cc-badge-score.warm { background: #fff3cd; color: #856404; }
+				.crm-cc-badge-score.cold { background: #f8d7da; color: #721c24; }
+				.crm-cc-badge-lifecycle {
+					display: inline-block;
+					padding: 1px 7px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+					background: #e7e8ea;
+					color: #3c434a;
+				}
+				.crm-cc-badge-lifecycle.sql,
+				.crm-cc-badge-lifecycle.opportunity { background: #d4edda; color: #155724; }
+				.crm-cc-badge-lifecycle.customer { background: #cce5ff; color: #004085; }
+				.crm-cc-source-link {
+					color: #2271b1;
+					text-decoration: none;
+					white-space: nowrap;
+				}
+				.crm-cc-source-link:hover { color: #135e96; text-decoration: underline; }
+				.crm-cc-source-link .dashicons { font-size: 14px; width: 14px; height: 14px; vertical-align: text-bottom; }
+				.crm-cc-ext-link {
+					color: #2271b1;
+					text-decoration: none;
+				}
+				.crm-cc-ext-link:hover { color: #135e96; text-decoration: underline; }
+				.crm-cc-ext-link .dashicons { font-size: 14px; width: 14px; height: 14px; vertical-align: text-bottom; }
+				.crm-cc-badge-status {
+					display: inline-block;
+					padding: 1px 7px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+				}
+				.crm-cc-badge-status.client { background: #d4edda; color: #155724; }
+				.crm-cc-badge-status.prospect { background: #e7e8ea; color: #3c434a; }
+				.crm-cc-badge-status.target { background: #cce5ff; color: #004085; }
+				.crm-cc-badge-status.in_discussion { background: #fff3cd; color: #856404; }
+				.crm-cc-badge-status.not_interested { background: #f8d7da; color: #721c24; }
+				.crm-cc-sortable a {
+					color: #2271b1;
+					text-decoration: none;
+					white-space: nowrap;
+				}
+				.crm-cc-sortable a:hover { color: #135e96; }
+				.crm-cc-completeness-bar-wrap {
+					background: #f0f0f1;
+					border-radius: 3px;
+					height: 8px;
+					margin: 8px 0 4px;
+					overflow: hidden;
+				}
+				.crm-cc-completeness-bar {
+					height: 100%;
+					border-radius: 3px;
+					transition: width 0.4s ease;
+					min-width: 2px;
+				}
 				@media (max-width: 768px) {
 					.crm-cc-inline-cards { grid-template-columns: 1fr; }
 					.crm-cc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
@@ -222,7 +300,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-		$valid_tabs  = array( 'overview', 'pipeline', 'activities', 'sequences', 'analytics', 'configuration' );
+		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'activities', 'sequences', 'analytics', 'configuration' );
 		if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 			$current_tab = 'overview';
 		}
@@ -248,6 +326,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					<?php
 					$tabs = array(
 						'overview'      => __( 'Overview', 'mcp-ai-wpoos-pro' ),
+						'leads'         => __( 'Leads', 'mcp-ai-wpoos-pro' ),
 						'pipeline'      => __( 'Pipeline', 'mcp-ai-wpoos-pro' ),
 						'activities'    => __( 'Activities', 'mcp-ai-wpoos-pro' ),
 						'sequences'     => __( 'Sequences', 'mcp-ai-wpoos-pro' ),
@@ -279,6 +358,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					case 'sequences':
 						self::render_sequences_tab();
 						break;
+					case 'leads':
+						self::render_leads_tab();
+						break;
 					case 'analytics':
 						self::render_analytics_tab();
 						break;
@@ -299,14 +381,17 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	 * Render the Overview tab with CRM KPIs and quick links.
 	 */
 	private static function render_overview_tab() {
-		$leads_count       = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
-		$deals_count       = self::get_cpt_count( 'mcp_ai_deal', 'publish' );
-		$companies_count   = self::get_cpt_count( 'mcp_ai_company', 'publish' );
-		$sequences_count   = self::get_cpt_count( 'mcp_ai_sequence', 'publish' );
-		$pipeline_value    = self::get_pipeline_value();
-		$won_deals         = self::get_cpt_count_by_meta( 'mcp_ai_deal', 'publish', '_deal_stage', 'closed_won' );
-		$recent_activities = self::get_recent_activities( 5 );
-		$active_sequences  = self::get_active_sequences( 5 );
+			$leads_count       = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
+			$deals_count       = self::get_cpt_count( 'mcp_ai_deal', 'publish' );
+			$companies_count   = self::get_cpt_count( 'mcp_ai_company', 'publish' );
+			$sequences_count   = self::get_cpt_count( 'mcp_ai_sequence', 'publish' );
+			$pipeline_value    = self::get_pipeline_value();
+			$won_deals         = self::get_cpt_count_by_meta( 'mcp_ai_deal', 'publish', '_deal_stage', 'closed_won' );
+			$recent_activities = self::get_recent_activities( 5 );
+			$active_sequences  = self::get_active_sequences( 5 );
+			$recent_leads      = self::get_recent_leads_enriched( 10 );
+			$recent_companies  = self::get_recent_companies_enriched( 10 );
+			$completeness      = self::get_data_completeness();
 		?>
 		<div class="crm-cc-kpi-grid">
 			<div class="crm-cc-kpi">
@@ -339,11 +424,164 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $sequences_count ) ); ?></div>
 				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Active automations', 'mcp-ai-wpoos-pro' ); ?></div>
 			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Data Completeness', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value <?php echo esc_attr( $completeness['pct'] >= 80 ? 'win' : ( $completeness['pct'] >= 50 ? 'warn' : 'danger' ) ); ?>">
+					<?php echo esc_html( $completeness['pct'] ); ?>%
+				</div>
+				<div class="crm-cc-completeness-bar-wrap">
+					<div class="crm-cc-completeness-bar" style="width: <?php echo esc_attr( $completeness['pct'] ); ?>%; background: <?php echo esc_attr( $completeness['pct'] >= 80 ? '#00a32a' : ( $completeness['pct'] >= 50 ? '#dba617' : '#d63638' ) ); ?>;"></div>
+				</div>
+				<div class="crm-cc-kpi-sub">
+					<?php
+					printf(
+						/* translators: 1: complete count, 2: total count */
+						esc_html__( '%1$d / %2$d leads complete', 'mcp-ai-wpoos-pro' ),
+						(int) $completeness['complete'],
+						(int) $completeness['total']
+					);
+					?>
+				</div>
+			</div>
 		</div>
 
-		<div class="crm-cc-inline-cards">
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'Recent Leads', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<?php if ( empty( $recent_leads ) ) : ?>
+				<p><?php esc_html_e( 'No leads yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat striped" style="border: none;">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Lead', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Company', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Score', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Stage', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $recent_leads as $lead ) : ?>
+							<tr>
+								<td>
+									<a href="<?php echo esc_url( $lead['edit_url'] ); ?>">
+										<strong><?php echo esc_html( $lead['title'] ); ?></strong>
+									</a>
+									<?php if ( ! empty( $lead['email'] ) ) : ?>
+										<br><small><a href="<?php echo esc_url( 'mailto:' . $lead['email'] ); ?>" class="crm-cc-muted"><?php echo esc_html( $lead['email'] ); ?></a></small>
+									<?php endif; ?>
+									<?php if ( ! empty( $lead['phone'] ) ) : ?>
+										<br><small class="crm-cc-muted"><?php echo esc_html( $lead['phone'] ); ?></small>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( ! empty( $lead['company_name'] ) ? $lead['company_name'] : '—' ); ?></td>
+								<td>
+									<span class="crm-cc-badge-score <?php echo esc_attr( $lead['score_tier'] ); ?>">
+										<?php echo esc_html( $lead['lead_score'] ); ?>
+									</span>
+								</td>
+								<td>
+									<span class="crm-cc-badge-lifecycle <?php echo esc_attr( $lead['lifecycle_stage'] ); ?>">
+										<?php echo esc_html( $lead['lifecycle_label'] ); ?>
+									</span>
+								</td>
+								<td>
+									<?php if ( ! empty( $lead['source_link']['url'] ) ) : ?>
+										<a href="<?php echo esc_url( $lead['source_link']['url'] ); ?>"
+											class="crm-cc-source-link"
+											title="<?php echo esc_attr( $lead['source_link']['label'] ); ?>"
+											<?php echo $lead['source_link']['is_external'] ? 'target="_blank" rel="noopener noreferrer"' : ''; ?>>
+											<?php echo wp_kses_post( $lead['source_link']['icon'] ); ?>
+											<?php echo esc_html( $lead['source_link']['label'] ); ?>
+										</a>
+									<?php else : ?>
+										—
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+				<p style="margin-top: 12px;">
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_lead' ) ); ?>">
+						<?php esc_html_e( 'View all leads →', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			<?php endif; ?>
+			</div>
+
 			<div class="crm-cc-section">
-				<h2><?php esc_html_e( 'Recent Activities', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<h2><?php esc_html_e( 'Recent Companies', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<?php if ( empty( $recent_companies ) ) : ?>
+					<p><?php esc_html_e( 'No companies yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<?php else : ?>
+					<table class="widefat striped" style="border: none;">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Company', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Industry', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Size', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Location', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Links', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $recent_companies as $company ) : ?>
+								<tr>
+									<td>
+										<a href="<?php echo esc_url( $company['edit_url'] ); ?>">
+											<strong><?php echo esc_html( $company['title'] ); ?></strong>
+										</a>
+									</td>
+									<td><?php echo esc_html( ! empty( $company['industry'] ) ? $company['industry'] : '—' ); ?></td>
+									<td><?php echo esc_html( ! empty( $company['size_label'] ) ? $company['size_label'] : '—' ); ?></td>
+									<td><?php echo esc_html( ! empty( $company['location'] ) ? $company['location'] : '—' ); ?></td>
+									<td>
+										<?php if ( ! empty( $company['target_status'] ) ) : ?>
+											<span class="crm-cc-badge-status <?php echo esc_attr( $company['target_status'] ); ?>">
+												<?php echo esc_html( $company['target_status_label'] ); ?>
+											</span>
+										<?php else : ?>
+											—
+										<?php endif; ?>
+									</td>
+									<td>
+										<?php if ( ! empty( $company['website'] ) ) : ?>
+											<a href="<?php echo esc_url( $company['website'] ); ?>"
+												class="crm-cc-ext-link"
+												target="_blank" rel="noopener noreferrer"
+												title="<?php esc_attr_e( 'Open website', 'mcp-ai-wpoos-pro' ); ?>">
+												<span class="dashicons dashicons-admin-links"></span>
+											</a>
+										<?php endif; ?>
+										<?php if ( ! empty( $company['linkedin'] ) ) : ?>
+											<a href="<?php echo esc_url( $company['linkedin'] ); ?>"
+												class="crm-cc-ext-link"
+												target="_blank" rel="noopener noreferrer"
+												title="<?php esc_attr_e( 'Open LinkedIn profile', 'mcp-ai-wpoos-pro' ); ?>">
+												<span class="dashicons dashicons-linkedin" style="color:#0A66C2;"></span>
+											</a>
+										<?php endif; ?>
+										<?php if ( empty( $company['website'] ) && empty( $company['linkedin'] ) ) : ?>
+											—
+										<?php endif; ?>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+					<p style="margin-top: 12px;">
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_company' ) ); ?>">
+							<?php esc_html_e( 'View all companies →', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
+			</div>
+
+			<div class="crm-cc-inline-cards">
+				<div class="crm-cc-section">
+					<h2><?php esc_html_e( 'Recent Activities', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<?php if ( empty( $recent_activities ) ) : ?>
 					<p><?php esc_html_e( 'No recent activities.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<?php else : ?>
@@ -353,6 +591,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 								<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
 								<th><?php esc_html_e( 'Subject', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Related', 'mcp-ai-wpoos-pro' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -360,7 +599,29 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 								<tr>
 									<td><?php echo esc_html( $activity['date'] ); ?></td>
 									<td><?php echo esc_html( $activity['type'] ); ?></td>
-									<td><?php echo esc_html( $activity['subject'] ); ?></td>
+									<td>
+										<?php if ( ! empty( $activity['related_url'] ) ) : ?>
+											<a href="<?php echo esc_url( $activity['related_url'] ); ?>">
+												<?php echo esc_html( $activity['subject'] ); ?>
+											</a>
+										<?php else : ?>
+											<?php echo esc_html( $activity['subject'] ); ?>
+										<?php endif; ?>
+									</td>
+									<td>
+										<?php if ( ! empty( $activity['related_label'] ) && ! empty( $activity['related_url'] ) ) : ?>
+											<a href="<?php echo esc_url( $activity['related_url'] ); ?>" class="crm-cc-related-link">
+												<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>:
+												<?php echo esc_html( $activity['related_label'] ); ?>
+											</a>
+										<?php elseif ( ! empty( $activity['related_type'] ) ) : ?>
+											<span class="crm-cc-muted">
+												<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>
+											</span>
+										<?php else : ?>
+											—
+										<?php endif; ?>
+									</td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
@@ -422,9 +683,325 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		<?php
 	}
 
-	/**
-	 * Render the Pipeline tab.
-	 */
+		/**
+		 * Render the Leads tab with filtering, sorting, and pagination.
+		 */
+	private static function render_leads_tab() {
+		// --- Read filter/sort/page from URL ---
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$lifecycle_filter = isset( $_GET['lead_lifecycle'] ) ? sanitize_key( $_GET['lead_lifecycle'] ) : '';
+		$status_filter    = isset( $_GET['lead_status'] ) ? sanitize_key( $_GET['lead_status'] ) : '';
+		$orderby          = isset( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'date';
+		$order            = isset( $_GET['order'] ) && 'ASC' === strtoupper( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) ? 'ASC' : 'DESC';
+		$paged            = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
+		// phpcs:enable
+
+		$per_page = 20;
+
+		// --- Build query ---
+		$args = array(
+			'post_type'      => 'mcp_ai_lead',
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $paged,
+			'orderby'        => 'date',
+			'order'          => $order,
+		);
+
+		// Meta query for filters.
+		$meta_queries = array();
+		if ( $lifecycle_filter ) {
+			$meta_queries[] = array(
+				'key'   => 'lifecycle_stage',
+				'value' => $lifecycle_filter,
+			);
+		}
+		if ( $status_filter ) {
+			$meta_queries[] = array(
+				'key'   => 'lead_status',
+				'value' => $status_filter,
+			);
+		}
+		if ( ! empty( $meta_queries ) ) {
+			$args['meta_query'] = $meta_queries; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		}
+
+		// Sorting.
+		$allowed_orderby = array( 'date', 'title', 'lead_score', 'lifecycle_stage' );
+		if ( in_array( $orderby, $allowed_orderby, true ) ) {
+			if ( 'lead_score' === $orderby ) {
+				$args['meta_key'] = 'lead_score'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				$args['orderby']  = 'meta_value_num';
+			} else {
+				$args['orderby'] = $orderby;
+			}
+		}
+
+		$query = new WP_Query( $args );
+		$leads = $query->posts;
+
+		$total_pages = $query->max_num_pages;
+		$total_items = (int) $query->found_posts;
+
+		// --- Lookups ---
+		$lifecycle_labels = array(
+			'lead'        => __( 'Lead', 'mcp-ai-wpoos-pro' ),
+			'mql'         => __( 'MQL', 'mcp-ai-wpoos-pro' ),
+			'sal'         => __( 'SAL', 'mcp-ai-wpoos-pro' ),
+			'sql'         => __( 'SQL', 'mcp-ai-wpoos-pro' ),
+			'opportunity' => __( 'Opp', 'mcp-ai-wpoos-pro' ),
+			'customer'    => __( 'Customer', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$status_options = array(
+			''             => __( 'All Statuses', 'mcp-ai-wpoos-pro' ),
+			'new'          => __( 'New', 'mcp-ai-wpoos-pro' ),
+			'contacted'    => __( 'Contacted', 'mcp-ai-wpoos-pro' ),
+			'engaged'      => __( 'Engaged', 'mcp-ai-wpoos-pro' ),
+			'qualified'    => __( 'Qualified', 'mcp-ai-wpoos-pro' ),
+			'unqualified'  => __( 'Unqualified', 'mcp-ai-wpoos-pro' ),
+			'disqualified' => __( 'Disqualified', 'mcp-ai-wpoos-pro' ),
+			'converted'    => __( 'Converted', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$base_url = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=leads' );
+		?>
+			<div class="crm-cc-section">
+				<h2><?php esc_html_e( 'All Leads', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+			<?php if ( $total_items > 0 ) : ?>
+					<p class="crm-cc-muted" style="margin-bottom: 12px;">
+						<?php
+						printf(
+							/* translators: %d: total number of matching leads */
+							esc_html( _n( '%d lead found', '%d leads found', $total_items, 'mcp-ai-wpoos-pro' ) ),
+							(int) $total_items
+						);
+						?>
+					</p>
+				<?php endif; ?>
+
+				<!-- Filters -->
+				<form method="get" style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+					<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>">
+					<input type="hidden" name="tab" value="leads">
+
+					<select name="lead_lifecycle">
+						<option value=""><?php esc_html_e( 'All Lifecycle Stages', 'mcp-ai-wpoos-pro' ); ?></option>
+						<?php foreach ( $lifecycle_labels as $val => $lbl ) : ?>
+							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $lifecycle_filter, $val ); ?>>
+								<?php echo esc_html( $lbl ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+
+					<select name="lead_status">
+						<?php foreach ( $status_options as $val => $lbl ) : ?>
+							<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $status_filter, $val ); ?>>
+								<?php echo esc_html( $lbl ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+
+					<?php submit_button( __( 'Filter', 'mcp-ai-wpoos-pro' ), 'secondary', 'filter_action', false ); ?>
+
+					<a href="<?php echo esc_url( $base_url ); ?>" class="button" style="margin-left: 4px;">
+						<?php esc_html_e( 'Reset', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</form>
+
+				<?php if ( empty( $leads ) ) : ?>
+					<p><?php esc_html_e( 'No leads match your filters.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<?php else : ?>
+					<table class="widefat striped">
+						<thead>
+							<tr>
+								<?php
+								$sort_cols = array(
+									array(
+										'key'   => 'date',
+										'label' => __( 'Date', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'title',
+										'label' => __( 'Name', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => '',
+										'label' => __( 'Email / Phone', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => '',
+										'label' => __( 'Company', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'lead_score',
+										'label' => __( 'Score', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => 'lifecycle_stage',
+										'label' => __( 'Stage', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => '',
+										'label' => __( 'Status', 'mcp-ai-wpoos-pro' ),
+									),
+									array(
+										'key'   => '',
+										'label' => __( 'Source', 'mcp-ai-wpoos-pro' ),
+									),
+								);
+								foreach ( $sort_cols as $col_def ) :
+									$col_key = $col_def['key'];
+									$col_lbl = $col_def['label'];
+									if ( $col_key ) :
+										$sort_url = add_query_arg(
+											array(
+												'orderby' => $col_key,
+												'order'   => ( $orderby === $col_key && 'ASC' === $order ) ? 'DESC' : 'ASC',
+											),
+											$base_url
+										);
+										$arrow    = '';
+										if ( $orderby === $col_key ) {
+											$arrow = 'ASC' === $order ? ' ↑' : ' ↓';
+										}
+										?>
+										<th class="crm-cc-sortable">
+											<a href="<?php echo esc_url( $sort_url ); ?>">
+												<?php echo esc_html( $col_lbl . $arrow ); ?>
+											</a>
+										</th>
+										<?php
+									else :
+										?>
+										<th><?php echo esc_html( $col_lbl ); ?></th>
+										<?php
+									endif;
+								endforeach;
+								?>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							foreach ( $leads as $lead ) :
+								$email        = get_post_meta( $lead->ID, 'email', true );
+								$phone        = get_post_meta( $lead->ID, 'phone', true );
+								$company_name = get_post_meta( $lead->ID, 'company', true );
+								if ( ! $company_name ) {
+									$company_name = get_post_meta( $lead->ID, 'company_name', true );
+								}
+																	$score     = (int) get_post_meta( $lead->ID, 'lead_score', true );
+																	$lifecycle = get_post_meta( $lead->ID, 'lifecycle_stage', true );
+								if ( ! $lifecycle ) {
+									$lifecycle = 'lead';
+								}
+																	$status = get_post_meta( $lead->ID, 'lead_status', true );
+								if ( ! $status ) {
+									$status = 'new';
+								}
+								$source        = get_post_meta( $lead->ID, 'source', true );
+								$connection_id = get_post_meta( $lead->ID, '_source_connection_id', true );
+
+								$score_tier      = $score >= 70 ? 'hot' : ( $score >= 30 ? 'warm' : 'cold' );
+								$lifecycle_label = isset( $lifecycle_labels[ $lifecycle ] ) ? $lifecycle_labels[ $lifecycle ] : ucfirst( $lifecycle );
+								$source_link     = self::resolve_source_link( $source, $connection_id );
+								$status_label    = isset( $status_options[ $status ] ) ? $status_options[ $status ] : ucfirst( $status );
+								?>
+								<tr>
+									<td><?php echo esc_html( get_the_date( 'Y-m-d', $lead ) ); ?></td>
+									<td>
+										<a href="<?php echo esc_url( get_edit_post_link( $lead->ID, 'raw' ) ); ?>">
+											<strong><?php echo esc_html( get_the_title( $lead ) ); ?></strong>
+										</a>
+									</td>
+									<td>
+										<?php if ( $email ) : ?>
+											<a href="<?php echo esc_url( 'mailto:' . $email ); ?>"><?php echo esc_html( $email ); ?></a>
+										<?php endif; ?>
+										<?php if ( $phone ) : ?>
+											<br><small class="crm-cc-muted"><?php echo esc_html( $phone ); ?></small>
+										<?php endif; ?>
+										<?php if ( ! $email && ! $phone ) : ?>
+											—
+										<?php endif; ?>
+									</td>
+									<td><?php echo esc_html( ! empty( $company_name ) ? $company_name : '—' ); ?></td>
+									<td>
+										<span class="crm-cc-badge-score <?php echo esc_attr( $score_tier ); ?>">
+											<?php echo esc_html( $score ); ?>
+										</span>
+									</td>
+									<td>
+										<span class="crm-cc-badge-lifecycle <?php echo esc_attr( $lifecycle ); ?>">
+											<?php echo esc_html( $lifecycle_label ); ?>
+										</span>
+									</td>
+									<td><?php echo esc_html( $status_label ); ?></td>
+									<td>
+										<?php if ( ! empty( $source_link['url'] ) ) : ?>
+											<a href="<?php echo esc_url( $source_link['url'] ); ?>"
+												class="crm-cc-source-link"
+												<?php echo $source_link['is_external'] ? 'target="_blank" rel="noopener noreferrer"' : ''; ?>>
+												<?php echo wp_kses_post( $source_link['icon'] ); ?>
+												<?php echo esc_html( $source_link['label'] ); ?>
+											</a>
+										<?php elseif ( $source ) : ?>
+											<span class="crm-cc-muted"><?php echo esc_html( ucfirst( $source ) ); ?></span>
+										<?php else : ?>
+											—
+										<?php endif; ?>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<?php if ( $total_pages > 1 ) : ?>
+						<div class="tablenav" style="margin-top: 12px;">
+							<div class="tablenav-pages">
+								<span class="displaying-num">
+									<?php
+									printf(
+										/* translators: %s: total items count */
+										esc_html__( '%s items', 'mcp-ai-wpoos-pro' ),
+										esc_html( number_format_i18n( $total_items ) )
+									);
+									?>
+								</span>
+								<?php
+								$page_links = paginate_links(
+									array(
+										'base'      => add_query_arg( 'paged', '%#%', $base_url ),
+										'format'    => '',
+										'prev_text' => '&laquo;',
+										'next_text' => '&raquo;',
+										'total'     => $total_pages,
+										'current'   => $paged,
+									)
+								);
+								if ( $page_links ) {
+									echo '<span class="pagination-links">' . wp_kses_post( $page_links ) . '</span>';
+								}
+								?>
+							</div>
+						</div>
+					<?php endif; ?>
+				<?php endif; ?>
+			</div>
+
+			<p>
+				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_lead' ) ); ?>" class="button button-primary">
+					<?php esc_html_e( 'Add New Lead', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+			</p>
+			<?php
+			wp_reset_postdata();
+	}
+
+		/**
+		 * Render the Pipeline tab.
+		 */
 	private static function render_pipeline_tab() {
 		$stages = self::get_pipeline_stages();
 		?>
@@ -474,6 +1051,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 							<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Subject', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Related', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
 						</tr>
 					</thead>
@@ -482,7 +1060,29 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 							<tr>
 								<td><?php echo esc_html( $activity['date'] ); ?></td>
 								<td><?php echo esc_html( $activity['type'] ); ?></td>
-								<td><?php echo esc_html( $activity['subject'] ); ?></td>
+								<td>
+									<?php if ( ! empty( $activity['related_url'] ) ) : ?>
+										<a href="<?php echo esc_url( $activity['related_url'] ); ?>">
+											<?php echo esc_html( $activity['subject'] ); ?>
+										</a>
+									<?php else : ?>
+										<?php echo esc_html( $activity['subject'] ); ?>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( ! empty( $activity['related_label'] ) && ! empty( $activity['related_url'] ) ) : ?>
+										<a href="<?php echo esc_url( $activity['related_url'] ); ?>" class="crm-cc-related-link">
+											<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>:
+											<?php echo esc_html( $activity['related_label'] ); ?>
+										</a>
+									<?php elseif ( ! empty( $activity['related_type'] ) ) : ?>
+										<span class="crm-cc-muted">
+											<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>
+										</span>
+									<?php else : ?>
+										—
+									<?php endif; ?>
+								</td>
 								<td><?php echo esc_html( $activity['description'] ?? '' ); ?></td>
 							</tr>
 						<?php endforeach; ?>
@@ -775,16 +1375,321 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		$result = array();
 		foreach ( $activities as $activity ) {
-			$activity_type = get_post_meta( $activity->ID, '_activity_type', true );
-			$result[]      = array(
-				'date'        => get_the_date( 'Y-m-d H:i', $activity ),
-				'type'        => $activity_type ? $activity_type : __( 'Activity', 'mcp-ai-wpoos-pro' ),
-				'subject'     => get_the_title( $activity ),
-				'description' => wp_trim_words( $activity->post_content, 15 ),
+			$activity_type = get_post_meta( $activity->ID, 'activity_type', true );
+			if ( ! $activity_type ) {
+				$activity_type = get_post_meta( $activity->ID, '_activity_type', true );
+			}
+
+			$related_type = get_post_meta( $activity->ID, 'related_type', true );
+			$related_id   = (int) get_post_meta( $activity->ID, 'related_id', true );
+
+			$related_label = '';
+			$related_url   = '';
+			if ( $related_id && in_array( $related_type, array( 'lead', 'deal', 'contact', 'company' ), true ) ) {
+				$related_post = get_post( $related_id );
+				if ( $related_post ) {
+					$related_label = get_the_title( $related_post );
+					$related_url   = get_edit_post_link( $related_id, 'raw' );
+				}
+			}
+
+			$result[] = array(
+				'id'            => $activity->ID,
+				'date'          => get_the_date( 'Y-m-d H:i', $activity ),
+				'type'          => $activity_type ? $activity_type : __( 'Activity', 'mcp-ai-wpoos-pro' ),
+				'subject'       => get_the_title( $activity ),
+				'description'   => wp_trim_words( $activity->post_content, 15 ),
+				'related_type'  => $related_type,
+				'related_id'    => $related_id,
+				'related_label' => $related_label,
+				'related_url'   => $related_url,
 			);
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Get recent leads with enriched data for the smart table.
+	 *
+	 * @param int $limit Maximum number of leads to return.
+	 * @return array
+	 */
+	private static function get_recent_leads_enriched( $limit = 10 ) {
+		$leads = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lead',
+				'post_status'    => 'publish',
+				'posts_per_page' => $limit,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$lifecycle_labels = array(
+			'lead'        => __( 'Lead', 'mcp-ai-wpoos-pro' ),
+			'mql'         => __( 'MQL', 'mcp-ai-wpoos-pro' ),
+			'sal'         => __( 'SAL', 'mcp-ai-wpoos-pro' ),
+			'sql'         => __( 'SQL', 'mcp-ai-wpoos-pro' ),
+			'opportunity' => __( 'Opp', 'mcp-ai-wpoos-pro' ),
+			'customer'    => __( 'Customer', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$result = array();
+		foreach ( $leads as $lead ) {
+			$score     = (int) get_post_meta( $lead->ID, 'lead_score', true );
+			$lifecycle = get_post_meta( $lead->ID, 'lifecycle_stage', true );
+			if ( ! $lifecycle ) {
+				$lifecycle = 'lead';
+			}
+			$email        = get_post_meta( $lead->ID, 'email', true );
+			$phone        = get_post_meta( $lead->ID, 'phone', true );
+			$company_name = get_post_meta( $lead->ID, 'company', true );
+			if ( ! $company_name ) {
+				$company_name = get_post_meta( $lead->ID, 'company_name', true );
+			}
+			$source        = get_post_meta( $lead->ID, 'source', true );
+			$connection_id = get_post_meta( $lead->ID, '_source_connection_id', true );
+
+			// Score tier for color badge.
+			if ( $score >= 70 ) {
+				$score_tier = 'hot';
+			} elseif ( $score >= 30 ) {
+				$score_tier = 'warm';
+			} else {
+				$score_tier = 'cold';
+			}
+
+			$lifecycle_label = isset( $lifecycle_labels[ $lifecycle ] )
+				? $lifecycle_labels[ $lifecycle ]
+				: ucfirst( $lifecycle );
+
+			$source_link = self::resolve_source_link( $source, $connection_id );
+
+			$result[] = array(
+				'id'              => $lead->ID,
+				'title'           => get_the_title( $lead ),
+				'email'           => $email,
+				'phone'           => $phone,
+				'company_name'    => $company_name,
+				'lead_score'      => $score,
+				'score_tier'      => $score_tier,
+				'lifecycle_stage' => $lifecycle,
+				'lifecycle_label' => $lifecycle_label,
+				'source'          => $source,
+				'source_link'     => $source_link,
+				'edit_url'        => get_edit_post_link( $lead->ID, 'raw' ),
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Resolve a source/connection link for a lead.
+	 *
+	 * @param string $source        Raw source meta value.
+	 * @param string $connection_id Remote Site Manager connection ID.
+	 * @return array{url: string, label: string, icon: string, is_external: bool}
+	 */
+	private static function resolve_source_link( $source, $connection_id ) {
+		$result = array(
+			'url'         => '',
+			'label'       => '',
+			'icon'        => '',
+			'is_external' => false,
+		);
+
+		// If we have a remote connection, link to its settings page.
+		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $connection ) {
+				$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
+				$connection_name = isset( $connection['name'] ) ? $connection['name'] : $connection_id;
+
+				$result['url']   = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+				$result['label'] = $connection_name;
+				$result['icon']  = self::get_source_icon( $connection_type );
+				return $result;
+			}
+		}
+
+		// Fall back to source string for display.
+		if ( $source ) {
+			$result['label'] = ucfirst( $source );
+			$result['icon']  = self::get_source_icon( $source );
+
+			// If source looks like a URL, make it an external link.
+			if ( filter_var( $source, FILTER_VALIDATE_URL ) ) {
+				$result['url']         = $source;
+				$result['is_external'] = true;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Get an icon span for a source/channel type.
+	 *
+	 * @param string $type Source or connection type slug.
+	 * @return string HTML span with dashicon.
+	 */
+	private static function get_source_icon( $type ) {
+		$type  = strtolower( $type );
+		$icons = array(
+			'whatsapp'        => '<span class="dashicons dashicons-whatsapp" style="color:#25D366;"></span>',
+			'whatsapp_cloud'  => '<span class="dashicons dashicons-whatsapp" style="color:#25D366;"></span>',
+			'telegram'        => '<span class="dashicons dashicons-email-alt" style="color:#0088cc;"></span>',
+			'slack'           => '<span class="dashicons dashicons-groups" style="color:#4A154B;"></span>',
+			'discord'         => '<span class="dashicons dashicons-microphone" style="color:#5865F2;"></span>',
+			'microsoft_teams' => '<span class="dashicons dashicons-video-alt3" style="color:#6264A7;"></span>',
+			'google_chat'     => '<span class="dashicons dashicons-google" style="color:#4285F4;"></span>',
+			'messenger'       => '<span class="dashicons dashicons-format-chat" style="color:#00B2FF;"></span>',
+			'email'           => '<span class="dashicons dashicons-email"></span>',
+			'gmail'           => '<span class="dashicons dashicons-email" style="color:#EA4335;"></span>',
+			'web_form'        => '<span class="dashicons dashicons-admin-site"></span>',
+			'wordpress'       => '<span class="dashicons dashicons-wordpress"></span>',
+			'sms'             => '<span class="dashicons dashicons-smartphone"></span>',
+			'chat_channel'    => '<span class="dashicons dashicons-format-chat"></span>',
+			'website'         => '<span class="dashicons dashicons-admin-links"></span>',
+			'referral'        => '<span class="dashicons dashicons-networking"></span>',
+			'event'           => '<span class="dashicons dashicons-calendar"></span>',
+			'cold_outreach'   => '<span class="dashicons dashicons-email-alt"></span>',
+		);
+
+		if ( isset( $icons[ $type ] ) ) {
+			return $icons[ $type ];
+		}
+
+		return '<span class="dashicons dashicons-networking"></span>';
+	}
+
+	/**
+	 * Get recent companies with enriched data.
+	 *
+	 * @param int $limit Maximum number of companies to return.
+	 * @return array
+	 */
+	private static function get_recent_companies_enriched( $limit = 10 ) {
+		$companies = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_company',
+				'post_status'    => 'publish',
+				'posts_per_page' => $limit,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$size_labels = array(
+			'1-10'      => '1-10',
+			'11-50'     => '11-50',
+			'51-200'    => '51-200',
+			'201-500'   => '201-500',
+			'501-1000'  => '501-1K',
+			'1001-5000' => '1K-5K',
+			'5001+'     => '5K+',
+		);
+
+		$status_labels = array(
+			'prospect'       => __( 'Prospect', 'mcp-ai-wpoos-pro' ),
+			'target'         => __( 'Target', 'mcp-ai-wpoos-pro' ),
+			'in_discussion'  => __( 'In Discussion', 'mcp-ai-wpoos-pro' ),
+			'client'         => __( 'Client', 'mcp-ai-wpoos-pro' ),
+			'not_interested' => __( 'Not Interested', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$result = array();
+		foreach ( $companies as $company ) {
+			$industry = get_post_meta( $company->ID, '_company_industry', true );
+			$size     = get_post_meta( $company->ID, '_company_size', true );
+			$city     = get_post_meta( $company->ID, '_company_city', true );
+			$state    = get_post_meta( $company->ID, '_company_state', true );
+			$country  = get_post_meta( $company->ID, '_company_country', true );
+			$website  = get_post_meta( $company->ID, '_company_website', true );
+			$linkedin = get_post_meta( $company->ID, '_company_linkedin', true );
+			$target   = get_post_meta( $company->ID, '_company_target_status', true );
+
+			// Build location string.
+			$location_parts = array_filter( array( $city, $state, $country ) );
+			$location       = ! empty( $location_parts ) ? implode( ', ', $location_parts ) : '';
+
+			// Human-readable size.
+			$size_label = isset( $size_labels[ $size ] ) ? $size_labels[ $size ] : $size;
+
+			// Target status label.
+			$target_label = isset( $status_labels[ $target ] ) ? $status_labels[ $target ] : '';
+
+			// Normalise website URL (prepend https:// if missing).
+			if ( $website && ! preg_match( '#^https?://#', $website ) ) {
+				$website = 'https://' . $website;
+			}
+
+			$result[] = array(
+				'id'                  => $company->ID,
+				'title'               => get_the_title( $company ),
+				'industry'            => $industry,
+				'size'                => $size,
+				'size_label'          => $size_label,
+				'city'                => $city,
+				'state'               => $state,
+				'country'             => $country,
+				'location'            => $location,
+				'website'             => $website,
+				'linkedin'            => $linkedin,
+				'target_status'       => $target,
+				'target_status_label' => $target_label,
+				'edit_url'            => get_edit_post_link( $company->ID, 'raw' ),
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Calculate lead data completeness.
+	 *
+	 * A lead is "complete" when it has all three core fields:
+	 * email, phone, and company.
+	 *
+	 * @return array{pct: int, complete: int, total: int}
+	 */
+	private static function get_data_completeness() {
+		$leads = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_lead',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		$total    = count( $leads );
+		$complete = 0;
+
+		if ( $total > 0 ) {
+			foreach ( $leads as $lead_id ) {
+				$email   = get_post_meta( $lead_id, 'email', true );
+				$phone   = get_post_meta( $lead_id, 'phone', true );
+				$company = get_post_meta( $lead_id, 'company', true );
+				if ( ! $company ) {
+					$company = get_post_meta( $lead_id, 'company_name', true );
+				}
+
+				if ( $email && $phone && $company ) {
+					++$complete;
+				}
+			}
+		}
+
+		$pct = $total > 0 ? (int) round( ( $complete / $total ) * 100 ) : 100;
+
+		return array(
+			'pct'      => $pct,
+			'complete' => $complete,
+			'total'    => $total,
+		);
 	}
 
 	/**
