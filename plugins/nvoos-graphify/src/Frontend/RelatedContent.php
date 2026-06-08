@@ -49,14 +49,16 @@ class RelatedContent {
 			return $content;
 		}
 
-		// Guard against recursive apply_filters.
-		static $appended = false;
-		if ( $appended ) {
+		$postId = get_the_ID();
+		if ( ! $postId ) {
 			return $content;
 		}
 
-		$postId = get_the_ID();
-		if ( ! $postId ) {
+		// Only append to the main queried post — not to synthetic
+		// `apply_filters( 'the_content', … )` calls made inside the
+		// main loop by shortcodes, blocks, or other plugins.
+		$queriedId = get_queried_object_id();
+		if ( $postId !== $queriedId ) {
 			return $content;
 		}
 
@@ -94,7 +96,11 @@ class RelatedContent {
 		}
 		$widget .= '</ul></div>';
 
-		$appended = true;
+		// Remove the filter so that nested `apply_filters( 'the_content', … )`
+		// calls (e.g. from shortcodes rendered inside this same content)
+		// cannot leak the widget into other page sections.
+		remove_filter( 'the_content', array( $this, 'append' ) );
+
 		return $content . $widget;
 	}
 }

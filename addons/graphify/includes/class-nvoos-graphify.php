@@ -836,19 +836,16 @@ class NV_oOS_Graphify {
 			return $content;
 		}
 
-		// Only append once per request. Without this guard, any recursive
-		// `apply_filters( 'the_content', $other_content )` call made from
-		// inside the main loop (for example the NV oOS chat shortcode
-		// rendering the assistant description in its header) would also
-		// receive the Related Content widget, causing graphify content to
-		// leak into the assistant header in the chat client.
-		static $appended = false;
-		if ( $appended ) {
+		$post_id = get_the_ID();
+		if ( ! $post_id ) {
 			return $content;
 		}
 
-		$post_id = get_the_ID();
-		if ( ! $post_id ) {
+		// Only append to the main queried post — not to synthetic
+		// `apply_filters( 'the_content', … )` calls made inside the
+		// main loop by shortcodes, blocks, or other plugins.
+		$queried_id = get_queried_object_id();
+		if ( $post_id !== $queried_id ) {
 			return $content;
 		}
 
@@ -891,7 +888,10 @@ class NV_oOS_Graphify {
 		}
 		$widget .= '</ul></div>';
 
-		$appended = true;
+		// Remove the filter so that nested `apply_filters( 'the_content', … )`
+		// calls (e.g. from shortcodes rendered inside this same content)
+		// cannot leak the widget into other page sections.
+		remove_filter( 'the_content', array( __CLASS__, 'append_related_content' ) );
 
 		return $content . $widget;
 	}
