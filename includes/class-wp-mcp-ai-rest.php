@@ -3758,22 +3758,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// When disabled via the wp_mcp_ai_disable_native_streaming filter or the
 					// Disable Native Streaming setting (Advanced → System), the system falls
 					// back to simulated chunking (full response split into pieces with delays).
-					$disable_native  = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
-					$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-					$disable_native  = $disable_native || ( ! empty( $settings['disable_native_streaming'] ) );
-				if ( ! $disable_native ) {
-					$native_streaming_providers = apply_filters(
-						'wp_mcp_ai_native_streaming_providers',
-						array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
-					);
-					if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
-						$native_streaming_used      = true;
-						$options['stream']          = true;
-						$options['stream_callback'] = function ( $chunk ) {
-							$this->send_sse_event( 'message', $chunk );
-						};
-					}
+					$disable_native = (bool) apply_filters( 'wp_mcp_ai_disable_native_streaming', false );
+					$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+					$disable_native = $disable_native || ( ! empty( $settings['disable_native_streaming'] ) );
+			if ( ! $disable_native ) {
+				$native_streaming_providers = apply_filters(
+					'wp_mcp_ai_native_streaming_providers',
+					array( 'lm_studio', 'deepseek', 'openai', 'openrouter', 'digitalocean', 'kimi', 'baseten', 'nvidia', 'huggingface' )
+				);
+				if ( function_exists( 'curl_init' ) && in_array( $resolved_provider, $native_streaming_providers, true ) ) {
+					$native_streaming_used      = true;
+					$options['stream']          = true;
+					$options['stream_callback'] = function ( $chunk ) {
+						$this->send_sse_event( 'message', $chunk );
+					};
 				}
+			}
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -7851,6 +7851,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( empty( $allowed_tool_slugs ) ) {
 				return array();
+			}
+
+			/**
+			 * Filter tool slugs before they are converted to LLM function payloads.
+			 *
+			 * This is the primary hook for attention-based tool selection.
+			 * Plugins or addons can reduce the tool list based on semantic
+			 * relevance, user capabilities, dependency availability, or
+			 * risk-tier assessment — the Transformer-inspired "attention
+			 * heads" that score tools on multiple dimensions.
+			 *
+			 * Return an empty array to use all allowed tools (bypass filtering).
+			 *
+			 * @since 1.8.0
+			 *
+			 * @param string[] $filtered_slugs   Filtered tool slugs (empty = use all).
+			 * @param string[] $allowed_tool_slugs Original tool slugs from assistant config.
+			 * @param array    $assistant_config   Full assistant configuration.
+			 */
+			$filtered_slugs = apply_filters( 'wp_mcp_ai_attention_tool_slugs', array(), $allowed_tool_slugs, $assistant_config );
+			if ( ! empty( $filtered_slugs ) && is_array( $filtered_slugs ) ) {
+				$allowed_tool_slugs = array_values( array_intersect( $filtered_slugs, $allowed_tool_slugs ) );
 			}
 
 			$chat_provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : 'openai';

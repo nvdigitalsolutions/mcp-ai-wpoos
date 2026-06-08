@@ -396,6 +396,7 @@ See [CHANGELOG.md](../CHANGELOG.md) for complete details.
 - [ ] Gemini context caching (68% cost savings)
 - [ ] Gemini thinking mode support
 - [ ] OpenAI batch embeddings
+- [x] Transformer-inspired attention routing — semantic tool selection via QKV embedding similarity, 5-head multi-head scoring, pre-computed tool embedding KV cache, sliding-window conversation compression, Reciprocal Rank Fusion (RRF) into harness Layer C (delivered June 2026, PR #5290)
 
 **Developer Experience:**
 - [ ] Improved error messages
