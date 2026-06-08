@@ -32,24 +32,24 @@ final class Defaults {
 	public static function platformSettings(): array {
 		$defaults = array(
 			// ─── General ─────────────────────────────────────────
-			'default_provider'       => 'openai',
-			'enable_agent_auto_seed' => true,
-			'max_agents'             => 50,
-			'log_level'              => 'warning',
+			'default_provider'           => 'openai',
+			'enable_agent_auto_seed'     => true,
+			'max_agents'                 => 50,
+			'log_level'                  => 'warning',
 
 			// ─── Federation ──────────────────────────────────────
-			'federation_enabled'     => false,
-			'federation_sync_freq'   => 'daily',
+			'federation_enabled'         => false,
+			'federation_sync_freq'       => 'daily',
 
 			// ─── Protocols ───────────────────────────────────────
-			'a2a_enabled'            => true,
-			'acp_enabled'            => true,
+			'a2a_enabled'                => true,
+			'acp_enabled'                => true,
 
 			// ─── Blueprints ──────────────────────────────────────
-			'blueprint_auto_apply'   => false,
+			'blueprint_auto_apply'       => false,
 
 			// ─── Harness ─────────────────────────────────────────
-			'harness_default_timeout' => 30,
+			'harness_default_timeout'    => 30,
 
 			// ─── Measurement ─────────────────────────────────────
 			'measurement_retention_days' => 90,
@@ -64,7 +64,7 @@ final class Defaults {
 		 *
 		 * @param array<string,mixed> $defaults Key-value pairs.
 		 */
-		return apply_filters( 'ai_platform/default_settings', $defaults );
+		return apply_filters( 'nvoos_graphify_ai_platform_default_settings', $defaults );
 	}
 
 	/** Private constructor — not instantiable. */

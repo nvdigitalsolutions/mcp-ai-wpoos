@@ -64,30 +64,30 @@ final class TemplateCpt {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'description'         => __( 'Reusable templates — agent blueprints, workflow templates, and prompt packs.', 'nvoos-graphify-ai-platform' ),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => true,
-			'show_in_menu'        => PlatformDashboard::PAGE_SLUG,
-			'show_in_rest'        => true,
-			'rest_base'           => 'ai-platform-templates',
-			'query_var'           => true,
-			'rewrite'             => array( 'slug' => 'ai-template' ),
-			'capability_type'     => 'post',
-			'has_archive'         => false,
-			'hierarchical'        => false,
-			'menu_position'       => null,
-			'menu_icon'           => 'dashicons-editor-table',
-			'supports'            => array(
+			'labels'             => $labels,
+			'description'        => __( 'Reusable templates — agent blueprints, workflow templates, and prompt packs.', 'nvoos-graphify-ai-platform' ),
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => PlatformDashboard::PAGE_SLUG,
+			'show_in_rest'       => true,
+			'rest_base'          => 'ai-platform-templates',
+			'query_var'          => true,
+			'rewrite'            => array( 'slug' => 'ai-template' ),
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'menu_position'      => null,
+			'menu_icon'          => 'dashicons-editor-table',
+			'supports'           => array(
 				'title',
 				'editor',
 				'thumbnail',
 				'custom-fields',
 				'revisions',
 			),
-			'show_in_nav_menus'   => false,
-			'delete_with_user'    => true,
+			'show_in_nav_menus'  => false,
+			'delete_with_user'   => true,
 		);
 
 		register_post_type( self::POST_TYPE, $args );

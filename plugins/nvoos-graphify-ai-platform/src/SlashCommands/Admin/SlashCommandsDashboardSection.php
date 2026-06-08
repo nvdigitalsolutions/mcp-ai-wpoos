@@ -42,8 +42,8 @@ final class SlashCommandsDashboardSection extends PlatformSection {
 	}
 
 	public function render_wrapper( string $page_slug = '' ): void {
-		$commands = SlashCommandBridge::getAll( false );
-		$user_commands = SlashCommandBridge::getAll( true );
+		$commands       = SlashCommandBridge::getAll( false );
+		$user_commands  = SlashCommandBridge::getAll( true );
 		$base_available = function_exists( 'wp_mcp_ai_get_slash_commands' );
 
 		?>

@@ -44,8 +44,8 @@ final class SkillsDashboardSection extends PlatformSection {
 	 * Render the skills overview panel.
 	 */
 	public function render_wrapper( string $page_slug = '' ): void {
-		$skill_count = $this->countSkills();
-		$skill_packs = $this->getSkillPacks();
+		$skill_count      = $this->countSkills();
+		$skill_packs      = $this->getSkillPacks();
 		$profession_count = $this->countProfessions();
 
 		?>

@@ -80,7 +80,7 @@ final class PlatformDashboard {
 	/**
 	 * Register sections and tabs with the Platform registry.
 	 *
-	 * Subsystem sections hook into the `ai_platform/admin/register_sections`
+	 * Subsystem sections hook into the `nvoos_graphify_ai_platform_admin_register_sections`
 	 * action to self-register. This method fires that action after all
 	 * plugins are loaded but before the dashboard renders.
 	 *
@@ -97,7 +97,7 @@ final class PlatformDashboard {
 		 *
 		 * @since 1.0.0
 		 */
-		do_action( 'ai_platform/admin/register_sections' );
+		do_action( 'nvoos_graphify_ai_platform_admin_register_sections' );
 	}
 
 	// ─────────────────────────────────────────────────────────
@@ -248,20 +248,20 @@ final class PlatformDashboard {
 	 *
 	 * @param string $key     Setting key.
 	 * @param mixed  $value   Raw value.
-	 * @param mixed  $default Default value (used to infer type).
+	 * @param mixed  $default_value Default value (used to infer type).
 	 * @return mixed Sanitized value.
 	 */
-	private function sanitizeByType( string $key, $value, $default ) {
-		if ( is_bool( $default ) ) {
+	private function sanitizeByType( string $key, $value, $default_value ) {
+		if ( is_bool( $default_value ) ) {
 			return (bool) $value;
 		}
-		if ( is_int( $default ) ) {
+		if ( is_int( $default_value ) ) {
 			return absint( $value );
 		}
-		if ( is_float( $default ) ) {
+		if ( is_float( $default_value ) ) {
 			return (float) $value;
 		}
-		if ( is_array( $default ) ) {
+		if ( is_array( $default_value ) ) {
 			return is_array( $value ) ? array_values( $value ) : array();
 		}
 		return sanitize_text_field( (string) $value );
@@ -311,8 +311,8 @@ final class PlatformDashboard {
 
 		$new_values = array();
 		foreach ( $raw_input as $key => $value ) {
-			$defaults = Defaults::platformSettings();
-			$default  = $defaults[ $key ] ?? '';
+			$defaults           = Defaults::platformSettings();
+			$default            = $defaults[ $key ] ?? '';
 			$new_values[ $key ] = $this->sanitizeByType( $key, $value, $default );
 		}
 
@@ -329,7 +329,7 @@ final class PlatformDashboard {
 		 * @param array<string,mixed> $merged     The full merged settings.
 		 * @param array<string,mixed> $new_values Only the changed keys.
 		 */
-		do_action( 'ai_platform/after_settings_saved', $merged, $new_values );
+		do_action( 'nvoos_graphify_ai_platform_after_settings_saved', $merged, $new_values );
 
 		// Redirect with success message.
 		$redirect_args = array(
@@ -370,8 +370,8 @@ final class PlatformDashboard {
 			$active_tab = 'overview';
 			// If overview doesn't exist either, use the first registered tab.
 			if ( ! isset( $tabs[ $active_tab ] ) && ! empty( $tabs ) ) {
-				$first       = array_key_first( $tabs );
-				$active_tab  = is_string( $first ) ? $first : 'overview';
+				$first      = array_key_first( $tabs );
+				$active_tab = is_string( $first ) ? $first : 'overview';
 			}
 		}
 
@@ -387,7 +387,19 @@ final class PlatformDashboard {
 
 			<nav class="nav-tab-wrapper">
 				<?php foreach ( $tabs as $tab_id => $tab ) : ?>
-					<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::PAGE_SLUG, 'tab' => $tab_id ), admin_url( 'admin.php' ) ) ); ?>"
+					<a href="
+					<?php
+					echo esc_url(
+						add_query_arg(
+							array(
+								'page' => self::PAGE_SLUG,
+								'tab'  => $tab_id,
+							),
+							admin_url( 'admin.php' )
+						)
+					);
+					?>
+								"
 						class="nav-tab <?php echo $active_tab === $tab_id ? 'nav-tab-active' : ''; ?>">
 						<?php echo esc_html( $tab['label'] ); ?>
 					</a>

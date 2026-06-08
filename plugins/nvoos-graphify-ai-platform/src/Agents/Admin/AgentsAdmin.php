@@ -31,7 +31,7 @@ final class AgentsAdmin {
 	 */
 	public function register(): void {
 		// Primary: NV Platform dashboard section.
-		add_action( 'ai_platform/admin/register_sections', array( $this, 'registerPlatformSections' ) );
+		add_action( 'nvoos_graphify_ai_platform_admin_register_sections', array( $this, 'registerPlatformSections' ) );
 
 		// Courtesy: also appear under NV Graphify.
 		add_action( 'nvoos_graphify/admin/register_sections', array( $this, 'registerGraphifySections' ) );

@@ -59,7 +59,7 @@ final class FederationDashboardSection extends PlatformSection {
 	}
 
 	public function render_wrapper( string $page_slug = '' ): void {
-		$settings          = $this->get_settings();
+		$settings           = $this->get_settings();
 		$federation_enabled = ! empty( $settings['federation_enabled'] );
 		$sync_freq          = $settings['federation_sync_freq'] ?? 'daily';
 		$base_available     = class_exists( 'WP_MCP_AI_Federation_Manager' );

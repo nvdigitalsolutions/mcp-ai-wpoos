@@ -78,9 +78,9 @@ final class OverviewSection extends PlatformSection {
 		$resource_count = $this->countPosts( 'ai_platform_resource' );
 		$template_count = $this->countPosts( 'ai_platform_template' );
 
-		$graphify_version  = defined( 'NVOOS_GRAPHIFY_VERSION' ) ? NVOOS_GRAPHIFY_VERSION : __( 'Unknown', 'nvoos-graphify-ai-platform' );
-		$ai_version        = defined( 'NVOOS_GRAPHIFY_AI_VERSION' ) ? NVOOS_GRAPHIFY_AI_VERSION : __( 'Unknown', 'nvoos-graphify-ai-platform' );
-		$platform_version  = NVOOS_GRAPHIFY_AI_PLATFORM_VERSION;
+		$graphify_version = defined( 'NVOOS_GRAPHIFY_VERSION' ) ? NVOOS_GRAPHIFY_VERSION : __( 'Unknown', 'nvoos-graphify-ai-platform' );
+		$ai_version       = defined( 'NVOOS_GRAPHIFY_AI_VERSION' ) ? NVOOS_GRAPHIFY_AI_VERSION : __( 'Unknown', 'nvoos-graphify-ai-platform' );
+		$platform_version = NVOOS_GRAPHIFY_AI_PLATFORM_VERSION;
 
 		$graph_enabled = function_exists( 'nvoos_graphify_is_enabled' ) && nvoos_graphify_is_enabled();
 		$ai_active     = class_exists( 'NvoosGraphifyAi\\Plugin' );
@@ -90,7 +90,8 @@ final class OverviewSection extends PlatformSection {
 
 		<div class="ai-platform-status-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem;">
 
-			<?php $this->renderStatusCard(
+			<?php
+			$this->renderStatusCard(
 				__( 'Knowledge Graph', 'nvoos-graphify-ai-platform' ),
 				$graph_enabled ? __( 'Active', 'nvoos-graphify-ai-platform' ) : __( 'Inactive', 'nvoos-graphify-ai-platform' ),
 				$graph_enabled ? 'green' : 'red',
@@ -100,9 +101,11 @@ final class OverviewSection extends PlatformSection {
 					__( 'Version %s', 'nvoos-graphify-ai-platform' ),
 					$graphify_version
 				)
-			); ?>
+			);
+			?>
 
-			<?php $this->renderStatusCard(
+			<?php
+			$this->renderStatusCard(
 				__( 'AI Addon', 'nvoos-graphify-ai-platform' ),
 				$ai_active ? __( 'Active', 'nvoos-graphify-ai-platform' ) : __( 'Missing', 'nvoos-graphify-ai-platform' ),
 				$ai_active ? 'green' : 'red',
@@ -112,15 +115,18 @@ final class OverviewSection extends PlatformSection {
 					__( 'Version %s', 'nvoos-graphify-ai-platform' ),
 					$ai_version
 				)
-			); ?>
+			);
+			?>
 
-			<?php $this->renderStatusCard(
+			<?php
+			$this->renderStatusCard(
 				__( 'Platform Version', 'nvoos-graphify-ai-platform' ),
 				$platform_version,
 				'blue',
 				'dashicons-layout',
 				__( 'NV Platform addon', 'nvoos-graphify-ai-platform' )
-			); ?>
+			);
+			?>
 		</div>
 
 		<h3><?php esc_html_e( 'Inventory', 'nvoos-graphify-ai-platform' ); ?></h3>

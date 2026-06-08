@@ -47,10 +47,10 @@ final class BlueprintsDashboardSection extends PlatformSection {
 	}
 
 	public function render_wrapper( string $page_slug = '' ): void {
-		$settings          = $this->get_settings();
-		$auto_apply        = ! empty( $settings['blueprint_auto_apply'] );
-		$base_available    = class_exists( 'WP_MCP_AI_Blueprint_Registry' );
-		$template_count    = $this->countTemplates();
+		$settings       = $this->get_settings();
+		$auto_apply     = ! empty( $settings['blueprint_auto_apply'] );
+		$base_available = class_exists( 'WP_MCP_AI_Blueprint_Registry' );
+		$template_count = $this->countTemplates();
 
 		?>
 		<h2><?php echo esc_html( $this->get_title() ); ?></h2>

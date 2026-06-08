@@ -48,7 +48,7 @@ abstract class PlatformSection extends \NvoosGraphify\Admin\Section {
 	 * @return array<string,mixed>
 	 */
 	protected function get_settings(): array {
-		$option  = get_option( $this->get_option_name(), array() );
+		$option   = get_option( $this->get_option_name(), array() );
 		$defaults = \NvoosGraphifyAiPlatform\Schema\Defaults::platformSettings();
 
 		if ( ! is_array( $option ) ) {
@@ -64,29 +64,11 @@ abstract class PlatformSection extends \NvoosGraphify\Admin\Section {
 	 * @since 1.0.0
 	 *
 	 * @param string $key     Setting key.
-	 * @param mixed  $default Fallback value.
+	 * @param mixed  $fallback Fallback value.
 	 * @return mixed
 	 */
-	protected function get_setting( string $key, $default = null ) {
+	protected function get_setting( string $key, $fallback = null ) {
 		$settings = $this->get_settings();
-		return $settings[ $key ] ?? $default;
-	}
-
-	/**
-	 * Render the section wrapper with custom HTML content.
-	 *
-	 * Override this in subclasses that need bespoke admin UI
-	 * (status cards, data tables, charts) rather than standard
-	 * form-table settings fields.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $page_slug The settings page slug (for form action URLs).
-	 * @return void
-	 */
-	public function render_wrapper( string $page_slug = '' ): void {
-		// Default: use the standard form-table rendering from the parent.
-		// Subsystems with custom UI override this entirely.
-		parent::render_wrapper( $page_slug );
+		return $settings[ $key ] ?? $fallback;
 	}
 }

@@ -10,6 +10,8 @@
  * @since 1.0.0
  */
 
+declare(strict_types=1);
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
@@ -18,24 +20,26 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'ai_platform_settings' );
 
 // ─── CPT posts ───────────────────────────────────────────────────
-$post_types = array(
+$nvoos_graphify_ai_platform_post_types = array(
 	'ai_platform_project',
 	'ai_platform_resource',
 	'ai_platform_template',
 );
 
-foreach ( $post_types as $post_type ) {
-	$posts = get_posts(
+foreach ( $nvoos_graphify_ai_platform_post_types as $nvoos_graphify_ai_platform_cpt ) {
+	$nvoos_graphify_ai_platform_posts = get_posts(
 		array(
-			'post_type'      => $post_type,
+			'post_type'      => $nvoos_graphify_ai_platform_cpt,
 			'posts_per_page' => -1,
 			'post_status'    => 'any',
 			'fields'         => 'ids',
 		)
 	);
 
-	foreach ( $posts as $post_id ) {
-		wp_delete_post( (int) $post_id, true );
+	if ( ! empty( $nvoos_graphify_ai_platform_posts ) ) {
+		foreach ( $nvoos_graphify_ai_platform_posts as $nvoos_graphify_ai_platform_post_id ) {
+			wp_delete_post( (int) $nvoos_graphify_ai_platform_post_id, true );
+		}
 	}
 }
 

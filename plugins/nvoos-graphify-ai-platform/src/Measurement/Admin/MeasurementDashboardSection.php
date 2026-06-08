@@ -54,10 +54,10 @@ final class MeasurementDashboardSection extends PlatformSection {
 	 * Render both form-table fields and telemetry status cards.
 	 */
 	public function render_wrapper( string $page_slug = '' ): void {
-		$settings        = $this->get_settings();
-		$retention_days  = (int) ( $settings['measurement_retention_days'] ?? 90 );
-		$base_available  = function_exists( 'wp_mcp_ai_get_telemetry_stats' );
-		$stats           = $base_available ? $this->getTelemetryStats() : array();
+		$settings       = $this->get_settings();
+		$retention_days = (int) ( $settings['measurement_retention_days'] ?? 90 );
+		$base_available = function_exists( 'wp_mcp_ai_get_telemetry_stats' );
+		$stats          = $base_available ? $this->getTelemetryStats() : array();
 
 		?>
 		<h2><?php echo esc_html( $this->get_title() ); ?></h2>

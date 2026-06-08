@@ -64,30 +64,30 @@ final class ResourceCpt {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'description'         => __( 'Platform resources — datasets, models, API connections, and tool configurations.', 'nvoos-graphify-ai-platform' ),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => true,
-			'show_in_menu'        => PlatformDashboard::PAGE_SLUG,
-			'show_in_rest'        => true,
-			'rest_base'           => 'ai-platform-resources',
-			'query_var'           => true,
-			'rewrite'             => array( 'slug' => 'ai-resource' ),
-			'capability_type'     => 'post',
-			'has_archive'         => false,
-			'hierarchical'        => false,
-			'menu_position'       => null,
-			'menu_icon'           => 'dashicons-database',
-			'supports'            => array(
+			'labels'             => $labels,
+			'description'        => __( 'Platform resources — datasets, models, API connections, and tool configurations.', 'nvoos-graphify-ai-platform' ),
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => PlatformDashboard::PAGE_SLUG,
+			'show_in_rest'       => true,
+			'rest_base'          => 'ai-platform-resources',
+			'query_var'          => true,
+			'rewrite'            => array( 'slug' => 'ai-resource' ),
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'menu_position'      => null,
+			'menu_icon'          => 'dashicons-database',
+			'supports'           => array(
 				'title',
 				'editor',
 				'thumbnail',
 				'custom-fields',
 				'revisions',
 			),
-			'show_in_nav_menus'   => false,
-			'delete_with_user'    => true,
+			'show_in_nav_menus'  => false,
+			'delete_with_user'   => true,
 		);
 
 		register_post_type( self::POST_TYPE, $args );

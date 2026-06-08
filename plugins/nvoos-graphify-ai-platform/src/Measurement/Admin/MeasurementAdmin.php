@@ -15,7 +15,7 @@ use NvoosGraphify\Admin\SettingsRegistry as GraphifyRegistry;
 final class MeasurementAdmin {
 
 	public function register(): void {
-		add_action( 'ai_platform/admin/register_sections', array( $this, 'registerPlatformSections' ) );
+		add_action( 'nvoos_graphify_ai_platform_admin_register_sections', array( $this, 'registerPlatformSections' ) );
 		add_action( 'nvoos_graphify/admin/register_sections', array( $this, 'registerGraphifySections' ) );
 	}
 

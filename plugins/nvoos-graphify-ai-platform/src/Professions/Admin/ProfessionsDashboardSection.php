@@ -148,13 +148,15 @@ final class ProfessionsDashboardSection extends PlatformSection {
 		if ( ! post_type_exists( 'mcp_ai_profession' ) ) {
 			return array();
 		}
-		return get_posts( array(
-			'post_type'      => 'mcp_ai_profession',
-			'posts_per_page' => $limit,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-			'post_status'    => 'publish',
-		) );
+		return get_posts(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'posts_per_page' => $limit,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+				'post_status'    => 'publish',
+			)
+		);
 	}
 
 	/**

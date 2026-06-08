@@ -56,7 +56,7 @@ final class Plugin {
 	 *
 	 * Overview and General are core sections that always render.
 	 * Subsystem sections self-register via the
-	 * `ai_platform/admin/register_sections` action.
+	 * `nvoos_graphify_ai_platform_admin_register_sections` action.
 	 *
 	 * @since 1.0.0
 	 *
@@ -64,7 +64,7 @@ final class Plugin {
 	 */
 	private function registerBuiltinSections(): void {
 		add_action(
-			'ai_platform/admin/register_sections',
+			'nvoos_graphify_ai_platform_admin_register_sections',
 			static function (): void {
 				if ( class_exists( 'NvoosGraphifyAiPlatform\Admin\Sections\OverviewSection' ) ) {
 					\NvoosGraphifyAiPlatform\Admin\PlatformSettingsRegistry::register_section(
