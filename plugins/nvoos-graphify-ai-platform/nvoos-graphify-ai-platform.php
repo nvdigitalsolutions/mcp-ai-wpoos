@@ -48,7 +48,30 @@ spl_autoload_register(
 	}
 );
 
-// Boot — checks run at plugins_loaded (priority 10) after AI addon (priority 5).
+// ─── Lifecycle hooks ──────────────────────────────────────────────
+
+register_activation_hook(
+	__FILE__,
+	static function (): void {
+		// Seed default platform settings (autoload = no; fetched per page load).
+		if ( class_exists( 'NvoosGraphifyAiPlatform\Schema\Defaults' ) ) {
+			$defaults = \NvoosGraphifyAiPlatform\Schema\Defaults::platformSettings();
+			add_option( 'ai_platform_settings', $defaults, '', false );
+		}
+
+		// Flush rewrite rules so CPT permalinks are recognised.
+		flush_rewrite_rules();
+	}
+);
+
+register_deactivation_hook(
+	__FILE__,
+	static function (): void {
+		flush_rewrite_rules();
+	}
+);
+
+// ─── Boot — checks run at plugins_loaded (priority 10) after AI addon (priority 5).
 add_action(
 	'plugins_loaded',
 	static function (): void {
@@ -80,7 +103,7 @@ add_action(
 			return;
 		}
 
-		if ( class_exists( 'NvoosGraphifyAiPlatform\\Plugin' ) ) {
+		if ( class_exists( 'NvoosGraphifyAiPlatform\Plugin' ) ) {
 			\NvoosGraphifyAiPlatform\Plugin::instance()->register();
 		}
 	},
