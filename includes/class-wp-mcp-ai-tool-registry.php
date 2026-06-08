@@ -211,6 +211,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			$this->tools[ $slug ] = $tool;
 
+			/**
+			 * Fires after a tool is successfully registered.
+			 *
+			 * Used by the attention router to trigger async embedding
+			 * pre-computation so the semantic head can score tools immediately
+			 * on the next request.
+			 *
+			 * @since 1.8.0
+			 *
+			 * @param string $slug Tool slug.
+			 * @param WP_MCP_AI_Tool_Interface $tool Tool instance.
+			 */
+			do_action( 'wp_mcp_ai_tool_registered', $slug, $tool );
+
 			return true;
 		}
 

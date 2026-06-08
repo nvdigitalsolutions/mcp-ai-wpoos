@@ -1289,6 +1289,26 @@ class WP_MCP_AI_Chat_Service {
 	 * @return array Messages (compressed if enabled, original otherwise).
 	 */
 	private function maybe_compress_messages( $messages, $options = array() ) {
+		// If pre-compressed messages are available (from the conversation
+		// compressor's sliding-window attention), use them directly.
+		if ( ! empty( $options['_compressed_messages'] ) && is_array( $options['_compressed_messages'] ) ) {
+			$compressed = $options['_compressed_messages'];
+			unset( $options['_compressed_messages'] ); // Consume once.
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'conversation_compression',
+					'Using sliding-window compressed conversation messages.',
+					array(
+						'original_count' => count( $messages ),
+						'compressed_count' => count( $compressed ),
+					)
+				);
+			}
+
+			return $compressed;
+		}
+
 		// Check if semantic compression is enabled.
 		$enabled = (bool) get_option( 'wp_mcp_ai_enable_semantic_compression', false );
 
