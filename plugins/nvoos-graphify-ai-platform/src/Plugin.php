@@ -17,6 +17,9 @@ final class Plugin {
 	}
 
 	public function register(): void {
+		// Post types register on init — must be hooked before admin_menu fires.
+		$this->registerPostTypes();
+
 		if ( is_admin() ) {
 			$this->registerAdmin();
 		}
@@ -34,8 +37,67 @@ final class Plugin {
 	}
 
 	private function registerAdmin(): void {
+		// 1. Own top-level "NV Platform" menu + tabbed dashboard.
+		if ( class_exists( __NAMESPACE__ . '\Admin\PlatformDashboard' ) ) {
+			( new \NvoosGraphifyAiPlatform\Admin\PlatformDashboard() )->register();
+		}
+
+		// 2. Built-in dashboard sections (Overview + General).
+		$this->registerBuiltinSections();
+
+		// 3. (Optional) Keep Graphify tab-injection as courtesy.
 		if ( class_exists( __NAMESPACE__ . '\Admin\PlatformSettings' ) ) {
 			( new \NvoosGraphifyAiPlatform\Admin\PlatformSettings() )->register();
+		}
+	}
+
+	/**
+	 * Register built-in dashboard sections.
+	 *
+	 * Overview and General are core sections that always render.
+	 * Subsystem sections self-register via the
+	 * `ai_platform/admin/register_sections` action.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	private function registerBuiltinSections(): void {
+		add_action(
+			'ai_platform/admin/register_sections',
+			static function (): void {
+				if ( class_exists( 'NvoosGraphifyAiPlatform\Admin\Sections\OverviewSection' ) ) {
+					\NvoosGraphifyAiPlatform\Admin\PlatformSettingsRegistry::register_section(
+						new \NvoosGraphifyAiPlatform\Admin\Sections\OverviewSection()
+					);
+				}
+				if ( class_exists( 'NvoosGraphifyAiPlatform\Admin\Sections\GeneralSection' ) ) {
+					\NvoosGraphifyAiPlatform\Admin\PlatformSettingsRegistry::register_section(
+						new \NvoosGraphifyAiPlatform\Admin\Sections\GeneralSection()
+					);
+				}
+			}
+		);
+	}
+
+	/**
+	 * Register custom post types owned by the Platform addon.
+	 *
+	 * All CPTs appear under the "NV Platform" admin menu.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	private function registerPostTypes(): void {
+		if ( class_exists( __NAMESPACE__ . '\PostTypes\ProjectCpt' ) ) {
+			( new \NvoosGraphifyAiPlatform\PostTypes\ProjectCpt() )->register();
+		}
+		if ( class_exists( __NAMESPACE__ . '\PostTypes\ResourceCpt' ) ) {
+			( new \NvoosGraphifyAiPlatform\PostTypes\ResourceCpt() )->register();
+		}
+		if ( class_exists( __NAMESPACE__ . '\PostTypes\TemplateCpt' ) ) {
+			( new \NvoosGraphifyAiPlatform\PostTypes\TemplateCpt() )->register();
 		}
 	}
 
