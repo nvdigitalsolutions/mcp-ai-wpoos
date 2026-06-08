@@ -585,54 +585,67 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<?php if ( empty( $recent_activities ) ) : ?>
 					<p><?php esc_html_e( 'No recent activities.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<?php else : ?>
-					<table class="widefat striped" style="border: none;">
-						<thead>
-							<tr>
-								<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
-								<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
-								<th><?php esc_html_e( 'Subject', 'mcp-ai-wpoos-pro' ); ?></th>
-								<th><?php esc_html_e( 'Related', 'mcp-ai-wpoos-pro' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php foreach ( $recent_activities as $activity ) : ?>
-								<tr>
-									<td><?php echo esc_html( $activity['date'] ); ?></td>
-									<td><?php echo esc_html( $activity['type'] ); ?></td>
-									<td>
-										<?php if ( ! empty( $activity['related_url'] ) ) : ?>
-											<a href="<?php echo esc_url( $activity['related_url'] ); ?>">
-												<?php echo esc_html( $activity['subject'] ); ?>
-											</a>
+					<div class="crm-cc-activity-feed" style="max-height: 400px; overflow-y: auto;">
+					<?php foreach ( $recent_activities as $activity ) : ?>
+						<div class="crm-cc-activity-item" style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f1; align-items: flex-start;">
+							<div class="crm-cc-activity-icon" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: #f0f0f1; display: flex; align-items: center; justify-content: center;">
+								<span class="dashicons <?php echo esc_attr( $activity['type_icon'] ); ?>"></span>
+							</div>
+							<div class="crm-cc-activity-body" style="flex: 1; min-width: 0;">
+								<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+									<strong style="color: #1d2327;">
+										<?php if ( ! empty( $activity['edit_url'] ) ) : ?>
+											<a href="<?php echo esc_url( $activity['edit_url'] ); ?>"><?php echo esc_html( $activity['subject'] ); ?></a>
 										<?php else : ?>
 											<?php echo esc_html( $activity['subject'] ); ?>
 										<?php endif; ?>
-									</td>
-									<td>
-										<?php if ( ! empty( $activity['related_label'] ) && ! empty( $activity['related_url'] ) ) : ?>
-											<a href="<?php echo esc_url( $activity['related_url'] ); ?>" class="crm-cc-related-link">
-												<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>:
-												<?php echo esc_html( $activity['related_label'] ); ?>
-											</a>
-										<?php elseif ( ! empty( $activity['related_type'] ) ) : ?>
-											<span class="crm-cc-muted">
-												<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>
-											</span>
-										<?php else : ?>
-											—
-										<?php endif; ?>
-									</td>
-								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
+									</strong>
+									<span class="crm-cc-badge-status" style="display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #f0f0f1; color: #50575e;">
+										<?php echo esc_html( $activity['type_label'] ); ?>
+									</span>
+									<?php if ( ! empty( $activity['disposition'] ) ) : ?>
+										<span style="font-size: 11px; color: #50575e;">— <?php echo esc_html( $activity['disposition'] ); ?></span>
+									<?php endif; ?>
+									<span style="font-size: 11px; color: #8c8f94; margin-left: auto;">
+										<span title="<?php echo esc_attr( $activity['date'] ); ?>"><?php echo esc_html( $activity['date_relative'] ); ?></span>
+									</span>
+								</div>
+								<?php if ( ! empty( $activity['description'] ) ) : ?>
+									<p style="margin: 4px 0 0; color: #50575e; font-size: 13px;"><?php echo esc_html( $activity['description'] ); ?></p>
+								<?php endif; ?>
+								<div style="margin-top: 4px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+									<?php if ( ! empty( $activity['related_label'] ) && ! empty( $activity['related_url'] ) ) : ?>
+										<a href="<?php echo esc_url( $activity['related_url'] ); ?>" class="crm-cc-related-link" style="font-size: 12px;">
+											<span class="dashicons dashicons-admin-links" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></span>
+											<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>:
+											<?php echo esc_html( $activity['related_label'] ); ?>
+										</a>
+									<?php elseif ( ! empty( $activity['related_type'] ) ) : ?>
+										<span style="font-size: 12px; color: #8c8f94;">
+											<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>
+										</span>
+									<?php endif; ?>
+									<?php if ( ! empty( $activity['due_date'] ) ) : ?>
+										<span style="font-size: 12px; <?php echo $activity['is_overdue'] ? 'color: #d63638; font-weight: 600;' : 'color: #50575e;'; ?>">
+											<span class="dashicons dashicons-calendar" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></span>
+											<?php echo esc_html( $activity['due_date'] ); ?>
+											<?php if ( $activity['is_overdue'] ) : ?>
+												<?php esc_html_e( '(Overdue)', 'mcp-ai-wpoos-pro' ); ?>
+											<?php endif; ?>
+										</span>
+									<?php endif; ?>
+								</div>
+							</div>
+						</div>
+					<?php endforeach; ?>
+					</div>
 					<p style="margin-top: 12px;">
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=activities' ) ); ?>">
 							<?php esc_html_e( 'View all activities →', 'mcp-ai-wpoos-pro' ); ?>
 						</a>
 					</p>
 				<?php endif; ?>
-			</div>
+				</div>
 
 			<div class="crm-cc-section">
 				<h2><?php esc_html_e( 'Active Sequences', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -1048,21 +1061,30 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<table class="widefat striped">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th style="width: 140px;"><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Subject', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Related', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Due', 'mcp-ai-wpoos-pro' ); ?></th>
 							<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $activities as $activity ) : ?>
 							<tr>
-								<td><?php echo esc_html( $activity['date'] ); ?></td>
-								<td><?php echo esc_html( $activity['type'] ); ?></td>
 								<td>
-									<?php if ( ! empty( $activity['related_url'] ) ) : ?>
-										<a href="<?php echo esc_url( $activity['related_url'] ); ?>">
+									<span title="<?php echo esc_attr( $activity['date'] ); ?>"><?php echo esc_html( $activity['date_relative'] ); ?></span>
+								</td>
+								<td>
+									<span class="dashicons <?php echo esc_attr( $activity['type_icon'] ); ?>" style="vertical-align: middle;"></span>
+									<?php echo esc_html( $activity['type_label'] ); ?>
+									<?php if ( ! empty( $activity['disposition'] ) ) : ?>
+										<br><small style="color: #50575e;"><?php echo esc_html( $activity['disposition'] ); ?></small>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( ! empty( $activity['edit_url'] ) ) : ?>
+										<a href="<?php echo esc_url( $activity['edit_url'] ); ?>">
 											<?php echo esc_html( $activity['subject'] ); ?>
 										</a>
 									<?php else : ?>
@@ -1078,6 +1100,18 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 									<?php elseif ( ! empty( $activity['related_type'] ) ) : ?>
 										<span class="crm-cc-muted">
 											<?php echo esc_html( ucfirst( $activity['related_type'] ) ); ?>
+										</span>
+									<?php else : ?>
+										—
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( ! empty( $activity['due_date'] ) ) : ?>
+										<span style="<?php echo $activity['is_overdue'] ? 'color: #d63638; font-weight: 600;' : ''; ?>">
+											<?php echo esc_html( $activity['due_date'] ); ?>
+											<?php if ( $activity['is_overdue'] ) : ?>
+												<br><small><?php esc_html_e( '(Overdue)', 'mcp-ai-wpoos-pro' ); ?></small>
+											<?php endif; ?>
 										</span>
 									<?php else : ?>
 										—
@@ -1373,11 +1407,30 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 			)
 		);
 
+		$type_labels = array(
+			'call'    => __( 'Call', 'mcp-ai-wpoos-pro' ),
+			'email'   => __( 'Email', 'mcp-ai-wpoos-pro' ),
+			'meeting' => __( 'Meeting', 'mcp-ai-wpoos-pro' ),
+			'task'    => __( 'Task', 'mcp-ai-wpoos-pro' ),
+			'note'    => __( 'Note', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$type_icons = array(
+			'call'    => 'dashicons-phone',
+			'email'   => 'dashicons-email',
+			'meeting' => 'dashicons-calendar',
+			'task'    => 'dashicons-yes',
+			'note'    => 'dashicons-edit',
+		);
+
 		$result = array();
 		foreach ( $activities as $activity ) {
 			$activity_type = get_post_meta( $activity->ID, 'activity_type', true );
 			if ( ! $activity_type ) {
 				$activity_type = get_post_meta( $activity->ID, '_activity_type', true );
+			}
+			if ( ! $activity_type ) {
+				$activity_type = 'note';
 			}
 
 			$related_type = get_post_meta( $activity->ID, 'related_type', true );
@@ -1393,16 +1446,28 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				}
 			}
 
+			$due_date    = get_post_meta( $activity->ID, 'due_date', true );
+			$disposition = get_post_meta( $activity->ID, 'disposition', true );
+			$timestamp   = get_the_time( 'U', $activity );
+
 			$result[] = array(
 				'id'            => $activity->ID,
 				'date'          => get_the_date( 'Y-m-d H:i', $activity ),
-				'type'          => $activity_type ? $activity_type : __( 'Activity', 'mcp-ai-wpoos-pro' ),
+				'date_raw'      => $timestamp,
+				'date_relative' => self::get_relative_time( $timestamp ),
+				'type'          => $activity_type,
+				'type_label'    => isset( $type_labels[ $activity_type ] ) ? $type_labels[ $activity_type ] : ucfirst( $activity_type ),
+				'type_icon'     => isset( $type_icons[ $activity_type ] ) ? $type_icons[ $activity_type ] : 'dashicons-yes',
 				'subject'       => get_the_title( $activity ),
 				'description'   => wp_trim_words( $activity->post_content, 15 ),
 				'related_type'  => $related_type,
 				'related_id'    => $related_id,
 				'related_label' => $related_label,
 				'related_url'   => $related_url,
+				'edit_url'      => get_edit_post_link( $activity->ID ),
+				'due_date'      => $due_date,
+				'is_overdue'    => $due_date ? ( strtotime( $due_date ) < time() ) : false,
+				'disposition'   => $disposition,
 			);
 		}
 
@@ -1877,5 +1942,54 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 
 		wp_send_json_success( self::get_pipeline_stages() );
+	}
+
+	/**
+	 * Get relative time string (e.g. "2 hours ago").
+	 *
+	 * @since 2.5.0
+	 * @param int $timestamp Unix timestamp.
+	 * @return string Relative time description.
+	 */
+	private static function get_relative_time( $timestamp ) {
+		if ( ! $timestamp ) {
+			return '';
+		}
+
+		$diff = time() - $timestamp;
+
+		if ( $diff < 60 ) {
+			return __( 'Just now', 'mcp-ai-wpoos-pro' );
+		} elseif ( $diff < HOUR_IN_SECONDS ) {
+			$mins = round( $diff / MINUTE_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of minutes */
+				_n( '%d min ago', '%d mins ago', $mins, 'mcp-ai-wpoos-pro' ),
+				$mins
+			);
+		} elseif ( $diff < DAY_IN_SECONDS ) {
+			$hours = round( $diff / HOUR_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of hours */
+				_n( '%d hour ago', '%d hours ago', $hours, 'mcp-ai-wpoos-pro' ),
+				$hours
+			);
+		} elseif ( $diff < WEEK_IN_SECONDS ) {
+			$days = round( $diff / DAY_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of days */
+				_n( '%d day ago', '%d days ago', $days, 'mcp-ai-wpoos-pro' ),
+				$days
+			);
+		} elseif ( $diff < 30 * DAY_IN_SECONDS ) {
+			$weeks = round( $diff / WEEK_IN_SECONDS );
+			return sprintf(
+				/* translators: %d: number of weeks */
+				_n( '%d week ago', '%d weeks ago', $weeks, 'mcp-ai-wpoos-pro' ),
+				$weeks
+			);
+		}
+
+		return date_i18n( 'M j, Y', $timestamp );
 	}
 }
