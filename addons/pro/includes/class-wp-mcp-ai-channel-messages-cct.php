@@ -198,7 +198,8 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				$row['channel_contact_id'],
 				$row['contact_name'],
 				$row['content'],
-				$row['message_type']
+				$row['message_type'],
+				$row['connection_id']
 			);
 		}
 

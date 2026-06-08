@@ -49,6 +49,10 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 					'default'     => 'email',
 					'description' => __( 'Message channel.', 'mcp-ai-wpoos-pro' ),
 				),
+				'channel_contact_id'      => array(
+					'type'        => 'string',
+					'description' => __( 'Platform-side contact/user ID for source traceability.', 'mcp-ai-wpoos-pro' ),
+				),
 				'sender_email'            => array(
 					'type'        => 'string',
 					'description' => __( 'Sender email address.', 'mcp-ai-wpoos-pro' ),
@@ -74,6 +78,14 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 					'type'    => 'string',
 					'enum'    => array( 'bant', 'meddic' ),
 					'default' => 'bant',
+				),
+				'connection_id'           => array(
+					'type'        => 'string',
+					'description' => __( 'Remote Site Manager connection ID for source attribution.', 'mcp-ai-wpoos-pro' ),
+				),
+				'message_id'              => array(
+					'type'        => 'string',
+					'description' => __( 'Platform message ID for source traceability.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'message_body' ),
@@ -205,6 +217,19 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		}
 		$result['pipeline']['contact_id']  = $contact_id;
 		$result['pipeline']['is_new_lead'] = empty( $arguments['existing_contact_id'] );
+
+		// Store source connection metadata for traceability.
+		$connection_id_arg = isset( $arguments['connection_id'] ) ? sanitize_text_field( $arguments['connection_id'] ) : '';
+		$message_id_arg    = isset( $arguments['message_id'] ) ? sanitize_text_field( $arguments['message_id'] ) : '';
+		if ( $contact_id && $connection_id_arg ) {
+			update_post_meta( $contact_id, '_source_connection_id', $connection_id_arg );
+		}
+		if ( $contact_id && $message_id_arg ) {
+			update_post_meta( $contact_id, '_source_message_id', $message_id_arg );
+		}
+		if ( $contact_id && ! empty( $arguments['channel_contact_id'] ) ) {
+			update_post_meta( $contact_id, '_source_channel_contact_id', sanitize_text_field( $arguments['channel_contact_id'] ) );
+		}
 
 		// --- Step 4: Score lead ---
 		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
