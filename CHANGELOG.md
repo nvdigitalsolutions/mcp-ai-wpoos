@@ -2,6 +2,16 @@
 
 ## [1.1.27] - 2026-06-05
 
+### Added — Funiq Bridge Addon (`addons/funiq-bridge/`, v1.0.0)
+
+- New standalone addon bridging the Funiq React PWA frontend (built for Payload CMS) to WordPress.
+- **Payload-compatible REST API** at `/wp-json/funiq/v1/` — 7 collections (products, categories, brands, colors, statuses, promotions, promocodes) plus 2 globals (banner, carousel) with Payload-paginated response shapes.
+- **Custom Post Types** (`funiq_product`, `funiq_promotion`, `funiq_promocode`) and **Custom Taxonomies** (`funiq_category`, `funiq_brand`, `funiq_color`, `funiq_status`).
+- **React SPA Admin Panel** embedded in WP Admin (`Funiq CMS` menu) — config-driven list/create/edit/delete for all collections, WordPress Media Library image picker, relationship selectors. Ships pre-compiled; no build step required.
+- Public GET endpoints; `manage_funiq` capability gate on writes (granted to Admin + Editor on activation).
+- Full `uninstall.php` cleanup (posts, terms, options, capabilities).
+- PHP 8.1+, WordPress 6.7+.
+
 ### Added — Real-Time SSE Streaming (PRs #5240, #5243, #5244)
 
 - Real-time SSE streaming enabled for OpenAI, DeepSeek, and all OpenAI-compatible providers.
