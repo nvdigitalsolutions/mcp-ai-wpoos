@@ -61,6 +61,7 @@ Dual-purpose folder:
 | `wp_mcp_ai_attention_tool_slugs` | 20 | Filters tool slugs before `build_tools_payload()` converts them |
 | `wp_mcp_ai_chat_options` | 1 | Captures last user message for attention query |
 | `wp_mcp_ai_chat_options` | 15 | Conversation compressor applies sliding-window |
+| `wp_mcp_ai_harness_tool_score` | 5 | Bridge: feeds cached attention scores into harness scoring pipeline for RRF fusion |
 | `wp_mcp_ai_tool_embedding_compute` | — | WP-Cron action: computes one tool's embedding |
 | `wp_mcp_ai_after_activation` | — | Installs the `wp_mcp_ai_tool_embeddings` table |
 
@@ -107,6 +108,8 @@ vendor/bin/phpunit tests/test-model-catalog.php
 - [`.context/conventions.md`](../../.context/conventions.md) — naming, style (always)
 - [`.context/security-checklist.md`](../../.context/security-checklist.md)
 - [`includes/services/README.md`](../services/README.md) — upstream `Vector_Context_Service`
+- [`includes/harness/README.md`](../harness/README.md) — harness Layer C consumes attention scores via RRF fusion
+- [`docs/features/ai/transformer-attention-routing.md`](../../docs/features/ai/transformer-attention-routing.md) — full feature documentation, remaining phases
 - [`CLAUDE.md`](../../CLAUDE.md) — PHP-compat policy
 
 ## See Also
@@ -114,3 +117,4 @@ vendor/bin/phpunit tests/test-model-catalog.php
 - Generator: [`bin/generate-compliance-data.php`](../../bin/generate-compliance-data.php)
 - Sources: [`docs/compliance/iso27001/Statement-of-Applicability.md`](../../docs/compliance/iso27001/Statement-of-Applicability.md)
 - Consumers: [`../admin/class-wp-mcp-ai-pro-dashboard.php`](../admin/class-wp-mcp-ai-pro-dashboard.php), [`../class-wp-mcp-ai-model-rate-limits-cct.php`](../class-wp-mcp-ai-model-rate-limits-cct.php)
+- Harness integration: [`../harness/class-wp-mcp-ai-tool-router-harness.php`](../harness/class-wp-mcp-ai-tool-router-harness.php) (RRF fusion with k=60)
