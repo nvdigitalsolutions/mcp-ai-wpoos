@@ -267,3 +267,10 @@ docker/craft/app/*
 !docker/craft/app/.gitkeep
 lib/core/.phpstan-cache/
 lib/core/.phpunit.cache/
+
+# Demo video output (build artifacts — regenerated on each release)
+docs/videos/base/*.webm
+docs/videos/base/*.mp4
+docs/videos/pro/*.webm
+docs/videos/pro/*.mp4
+docs/videos/narration/audio/

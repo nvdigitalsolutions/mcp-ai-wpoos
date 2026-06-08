@@ -1,0 +1,25 @@
+# Narration: Add Assistant & Assign Tools
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Total target: ~90 seconds
+
+Welcome to NV oOS. In this video, we will create a new AI assistant and assign tools to it.
+
+First, navigate to AI Assistants in the WordPress admin menu. This is where all your AI assistants are listed and managed.
+
+Click Add New to open the assistant editor.
+
+Give your assistant a descriptive name. We will call this one Demo Support Assistant.
+
+Write a system prompt. This defines the AI's personality and how it responds to users.
+
+Choose a default model. GPT-4o is a great choice for most use cases.
+
+Now let's assign tools. Open the Tools tab and search for the capabilities your assistant needs.
+
+Check the boxes to enable tools. Your assistant can now search posts, manage content, and interact with your WordPress site.
+
+Click Publish to save your new assistant.
+
+Return to the Assistants list to verify your assistant was created successfully.
+
+That's it. Your AI assistant with tools is ready to use in chat pages and workflows.
