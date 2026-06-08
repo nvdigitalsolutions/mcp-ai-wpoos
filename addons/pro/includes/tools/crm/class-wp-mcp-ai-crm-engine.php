@@ -152,6 +152,28 @@ class WP_MCP_AI_CRM_Engine {
 			'research_assistant'      => 'default',
 			// Storage backend preference: 'auto', 'cct', or 'cpt'.
 			'storage_backend'         => 'auto',
+			// SLA targets for support tickets (P1–P4, minutes).
+			'sla'                     => array(
+				'p1_first_response_minutes'  => 15,
+				'p1_resolution_minutes'      => 240,
+				'p2_first_response_minutes'  => 60,
+				'p2_resolution_minutes'      => 480,
+				'p3_first_response_minutes'  => 240,
+				'p3_resolution_minutes'      => 1440,
+				'p4_first_response_minutes'  => 480,
+				'p4_resolution_minutes'      => 4320,
+				'business_hours_start'       => '09:00',
+				'business_hours_end'         => '17:00',
+				'business_days'              => array( 1, 2, 3, 4, 5 ), // Mon–Fri.
+				'auto_close_resolved_days'   => 3,
+				'auto_escalate_waiting_days' => 3,
+			),
+			// Support module settings.
+			'support'                 => array(
+				'default_assignee_id' => 0,
+				'ticket_categories'   => array( 'Bug', 'Question', 'Feature Request', 'Account', 'Billing', 'Other' ),
+				'resolution_types'    => array( 'Solved', 'Not Reproducible', "Won't Fix", 'Duplicate', 'Third Party' ),
+			),
 		);
 
 		$stored = get_option( self::SETTINGS_OPTION, array() );
@@ -198,9 +220,9 @@ class WP_MCP_AI_CRM_Engine {
 	const LIFECYCLE_STAGES = array(
 		'subscriber',
 		'lead',
-		'mql',     // Marketing Qualified Lead
-		'sal',     // Sales Accepted Lead
-		'sql',     // Sales Qualified Lead
+		'mql',     // Marketing Qualified Lead.
+		'sal',     // Sales Accepted Lead.
+		'sql',     // Sales Qualified Lead.
 		'opportunity',
 		'customer',
 		'evangelist',
@@ -272,10 +294,10 @@ class WP_MCP_AI_CRM_Engine {
 	 */
 	public static function calculate_lead_score( array $factors ) {
 		$default_weights = array(
-			'fit'        => 0.35,   // company size, industry fit
-			'intent'     => 0.30,   // signals: pricing-page visit, demo request
-			'engagement' => 0.20,   // email opens, click-throughs, replies
-			'recency'    => 0.15,   // recent activity decay
+			'fit'        => 0.35,   // company size, industry fit.
+			'intent'     => 0.30,   // signals: pricing-page visit, demo request.
+			'engagement' => 0.20,   // email opens, click-throughs, replies.
+			'recency'    => 0.15,   // recent activity decay.
 		);
 
 		/**

@@ -269,6 +269,27 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 				'channel' => $channel,
 				'message' => $auto_msg,
 			);
+
+			// If this is a support request, include ticket info in auto-reply.
+			if ( isset( $classification['intent'] ) && 'support_request' === $classification['intent'] && $contact_id ) {
+				/**
+				 * Fires when an inbound support request is detected.
+				 *
+				 * Hook WP_MCP_AI_CRM_Ticket_Notifications::auto_create_support_ticket
+				 * to auto-create a support ticket.
+				 *
+				 * @since 2.6.0
+				 * @param int   $contact_id Lead/contact ID of the sender.
+				 * @param array $message    Message context.
+				 */
+				$support_message = array(
+					'body'    => $message_body,
+					'subject' => isset( $arguments['message_subject'] ) ? sanitize_text_field( $arguments['message_subject'] ) : '',
+					'channel' => $channel,
+					'email'   => $sender_email,
+				);
+				do_action( 'wp_mcp_ai_crm_inbound_support_detected', $contact_id, $support_message );
+			}
 		}
 
 		// --- Step 7: Schedule follow-up ---

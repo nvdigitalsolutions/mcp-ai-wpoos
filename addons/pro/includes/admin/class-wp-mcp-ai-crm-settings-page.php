@@ -77,7 +77,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				</p>
 				<p>
 					<strong><?php esc_html_e( 'Architecture:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier. Phases A, B, D & E are complete; Phase C has 1 integration stub remaining.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Mirrors the Healthcare Toolkit pattern — shared engine, standards registry, audit ledger, capability map, consent ledger, pipeline stage registry, and classifier. Phases A, B, D, E & F are complete; Phase C has 1 integration stub remaining.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 
@@ -532,6 +532,20 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'import_crm_csv'          => __( 'Import CRM CSV', 'mcp-ai-wpoos-pro' ),
 			'connect_to_external_crm' => __( 'Connect to External CRM', 'mcp-ai-wpoos-pro' ),
 			'import_crm_blueprint'    => __( 'Import CRM Blueprint', 'mcp-ai-wpoos-pro' ),
+		);
+
+		// ---- Phase F: Support Ticket Management (10 tools) ----
+		$tools[ __( 'Phase F — Support Ticket Management (10 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
+			'create_support_ticket'   => __( 'Create Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'get_support_ticket'      => __( 'Get Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'list_support_tickets'    => __( 'List Support Tickets', 'mcp-ai-wpoos-pro' ),
+			'update_support_ticket'   => __( 'Update Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'resolve_support_ticket'  => __( 'Resolve Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'reopen_support_ticket'   => __( 'Reopen Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'escalate_support_ticket' => __( 'Escalate Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'merge_support_tickets'   => __( 'Merge Support Tickets', 'mcp-ai-wpoos-pro' ),
+			'classify_support_ticket' => __( 'Classify Support Ticket', 'mcp-ai-wpoos-pro' ),
+			'get_ticket_sla_report'   => __( 'Get Ticket SLA Report', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $tools;
