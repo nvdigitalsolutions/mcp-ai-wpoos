@@ -424,7 +424,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 							<?php endforeach; ?>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Select which AI assistant to use as the default for all Research & Add pages (Company, Lead, Deal). Each CPT settings page can override this default.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Select which AI assistant to use as the default for all Research & Add pages (Company, Lead, Deal, Customer). Each CPT settings page can override this default.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
