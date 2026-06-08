@@ -173,10 +173,10 @@ class WP_MCP_AI_CRM_SMS_Webhook_Listener {
 
 		$tool      = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
 		$arguments = array(
-			'channel'       => 'sms',
-			'message_body'  => $body_text,
-			'sender_phone'  => $from_phone,
-			'source'        => 'twilio_webhook',
+			'channel'      => 'sms',
+			'message_body' => $body_text,
+			'sender_phone' => $from_phone,
+			'source'       => 'twilio_webhook',
 		);
 		$context   = array( 'user_id' => 0 );
 		$tool->execute( $arguments, $context );

@@ -10,6 +10,7 @@
  * @since 2.3.0
  * @since 2.4.0 Wired to real Meta Cloud API; stub removed. Added consent/DNC/audit.
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
@@ -171,11 +172,11 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'      => true,
-			'message'      => __( 'WhatsApp message sent via Meta Cloud API.', 'mcp-ai-wpoos-pro' ),
-			'lead_id'      => $lead_id,
-			'to'           => $phone,
-			'activity_id'  => $activity_id,
+			'success'       => true,
+			'message'       => __( 'WhatsApp message sent via Meta Cloud API.', 'mcp-ai-wpoos-pro' ),
+			'lead_id'       => $lead_id,
+			'to'            => $phone,
+			'activity_id'   => $activity_id,
 			'wa_message_id' => $send_result,
 		);
 	}
@@ -247,7 +248,7 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'whatsapp_api_error', $err_msg, array( 'http_code' => $code ) );
 		}
 
-		// Extract WhatsApp message ID from response: { "messages": [ { "id": "wamid.xxx" } ] }
+		// Extract WhatsApp message ID from response: { "messages": [ { "id": "wamid.xxx" } ] }.
 		if ( isset( $decoded['messages'][0]['id'] ) ) {
 			return $decoded['messages'][0]['id'];
 		}

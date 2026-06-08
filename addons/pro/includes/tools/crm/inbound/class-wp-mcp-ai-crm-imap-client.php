@@ -123,7 +123,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 		$port = 143;
 		if ( strpos( $host_part, ':' ) !== false ) {
 			list( $host, $port ) = explode( ':', $host_part, 2 );
-			$port = (int) $port;
+			$port                = (int) $port;
 		}
 
 		// Determine SSL/TLS from flags.
@@ -176,13 +176,15 @@ class WP_MCP_AI_CRM_IMAP_Client {
 			$errstr,
 			self::TIMEOUT,
 			STREAM_CLIENT_CONNECT,
-			stream_context_create( array(
-				'ssl' => array(
-					'verify_peer'      => true,
-					'verify_peer_name' => true,
-					'allow_self_signed' => false,
-				),
-			) )
+			stream_context_create(
+				array(
+					'ssl' => array(
+						'verify_peer'       => true,
+						'verify_peer_name'  => true,
+						'allow_self_signed' => false,
+					),
+				)
+			)
 		);
 
 		if ( ! $socket ) {
@@ -201,7 +203,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 
 		// If TLS flag and not already SSL, upgrade the connection.
 		if ( $this->params['tls'] && ! $this->params['ssl'] ) {
-			$tag = $this->send_command( 'STARTTLS' );
+			$tag  = $this->send_command( 'STARTTLS' );
 			$resp = $this->read_response( $tag );
 			if ( ! $this->is_ok( $resp ) ) {
 				$this->close();
@@ -234,8 +236,8 @@ class WP_MCP_AI_CRM_IMAP_Client {
 
 		// Try AUTHENTICATE PLAIN.
 		$auth_string = base64_encode( "\0" . $this->username . "\0" . $this->password );
-		$tag  = $this->send_command( 'AUTHENTICATE PLAIN' );
-		$line = $this->read_line();
+		$tag         = $this->send_command( 'AUTHENTICATE PLAIN' );
+		$line        = $this->read_line();
 
 		// Server should respond with continuation request (+).
 		if ( $line && '+' === $line[0] ) {
@@ -434,7 +436,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 	 * @return string Tag used.
 	 */
 	private function send_command( $command ) {
-		$this->tag++;
+		++$this->tag;
 		$tag  = 'A' . str_pad( (string) $this->tag, 4, '0', STR_PAD_LEFT );
 		$line = $tag . ' ' . $command . "\r\n";
 		$this->write_line( $line );
@@ -479,7 +481,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 			if ( false === $line ) {
 				break;
 			}
-			$line = rtrim( $line, "\r\n" );
+			$line    = rtrim( $line, "\r\n" );
 			$lines[] = $line;
 
 			// Stop on tagged response.

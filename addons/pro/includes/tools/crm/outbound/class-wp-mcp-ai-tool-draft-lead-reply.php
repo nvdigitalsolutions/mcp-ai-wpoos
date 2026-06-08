@@ -10,6 +10,7 @@
  * @since 2.3.0
  * @since 2.4.0 Uses wp_mcp_ai_chat_completion for real AI drafting; template fallback retained.
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
@@ -84,11 +85,11 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		if ( ! is_wp_error( $ai_draft ) && ! empty( $ai_draft ) ) {
 			return array(
-				'success'  => true,
-				'draft'    => $ai_draft,
-				'tone'     => $tone,
-				'channel'  => $channel,
-				'message'  => __( 'AI-generated reply draft. Review before sending.', 'mcp-ai-wpoos-pro' ),
+				'success'    => true,
+				'draft'      => $ai_draft,
+				'tone'       => $tone,
+				'channel'    => $channel,
+				'message'    => __( 'AI-generated reply draft. Review before sending.', 'mcp-ai-wpoos-pro' ),
 				'powered_by' => 'ai',
 			);
 		}
@@ -97,11 +98,11 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 		$template_draft = $this->get_template_draft( $tone, $channel );
 
 		return array(
-			'success'  => true,
-			'draft'    => $template_draft,
-			'tone'     => $tone,
-			'channel'  => $channel,
-			'message'  => __( 'Template-based reply draft (AI provider unavailable). Review before sending.', 'mcp-ai-wpoos-pro' ),
+			'success'    => true,
+			'draft'      => $template_draft,
+			'tone'       => $tone,
+			'channel'    => $channel,
+			'message'    => __( 'Template-based reply draft (AI provider unavailable). Review before sending.', 'mcp-ai-wpoos-pro' ),
 			'powered_by' => 'template',
 		);
 	}
@@ -128,7 +129,7 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			'whatsapp' => 1000,
 			'email'    => 2000,
 		);
-		$max_length = $max_length_map[ $channel ] ?? 2000;
+		$max_length     = $max_length_map[ $channel ] ?? 2000;
 
 		// Tone instructions.
 		$tone_instructions = array(
@@ -137,12 +138,12 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 			'concise'      => 'Be very brief and to the point. Maximum 2-3 short sentences.',
 			'urgent'       => 'Be prompt and direct. Convey urgency without being pushy.',
 		);
-		$tone_guide = $tone_instructions[ $tone ] ?? $tone_instructions['professional'];
+		$tone_guide        = $tone_instructions[ $tone ] ?? $tone_instructions['professional'];
 
 		// Build the prompt.
 		$prompt = sprintf(
 			"You are a CRM assistant drafting a %s reply to a lead via %s channel. %s\n\n"
-			. "Keep the reply under %d characters. Do NOT include a subject line. "
+			. 'Keep the reply under %d characters. Do NOT include a subject line. '
 			. "Return ONLY the draft text — no markdown, no explanations, no meta-commentary.\n\n",
 			$tone,
 			$channel,
@@ -197,26 +198,31 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$name = get_post_meta( $lead_id, 'first_name', true );
 		if ( $name ) {
+			/* translators: %s: lead name */
 			$parts[] = sprintf( __( 'Name: %s', 'mcp-ai-wpoos-pro' ), $name );
 		}
 
 		$company = get_post_meta( $lead_id, 'company', true );
 		if ( $company ) {
+			/* translators: %s: company name */
 			$parts[] = sprintf( __( 'Company: %s', 'mcp-ai-wpoos-pro' ), $company );
 		}
 
 		$role = get_post_meta( $lead_id, 'role', true );
 		if ( $role ) {
+			/* translators: %s: job role */
 			$parts[] = sprintf( __( 'Role: %s', 'mcp-ai-wpoos-pro' ), $role );
 		}
 
 		$lifecycle = get_post_meta( $lead_id, 'lifecycle_stage', true );
 		if ( $lifecycle ) {
+			/* translators: %s: lifecycle stage */
 			$parts[] = sprintf( __( 'Lifecycle: %s', 'mcp-ai-wpoos-pro' ), $lifecycle );
 		}
 
 		$score = get_post_meta( $lead_id, 'lead_score', true );
 		if ( '' !== $score && null !== $score ) {
+			/* translators: %s: lead score value */
 			$parts[] = sprintf( __( 'Lead Score: %s', 'mcp-ai-wpoos-pro' ), $score );
 		}
 

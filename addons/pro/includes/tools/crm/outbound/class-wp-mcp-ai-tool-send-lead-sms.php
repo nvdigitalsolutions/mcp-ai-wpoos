@@ -10,6 +10,7 @@
  * @since 2.3.0
  * @since 2.4.0 Wired to real Twilio and notify.lk APIs; stub removed.
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
@@ -110,10 +111,10 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$message = sanitize_textarea_field( $arguments['message'] );
 
 		// Determine SMS provider and send.
-		$settings  = class_exists( 'WP_MCP_AI_CRM_Engine' )
+		$settings    = class_exists( 'WP_MCP_AI_CRM_Engine' )
 			? WP_MCP_AI_CRM_Engine::get_toolkit_settings()
 			: array();
-		$provider  = sanitize_key( $settings['integrations']['sms_provider'] ?? 'twilio' );
+		$provider    = sanitize_key( $settings['integrations']['sms_provider'] ?? 'twilio' );
 		$send_result = null;
 
 		if ( 'notifylk' === $provider ) {
@@ -172,16 +173,16 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array(
-			'success'      => true,
-			'message'      => sprintf(
+			'success'         => true,
+			'message'         => sprintf(
 				/* translators: %s: SMS provider name */
 				__( 'SMS sent via %s.', 'mcp-ai-wpoos-pro' ),
 				'twilio' === $provider ? 'Twilio' : 'notify.lk'
 			),
-			'lead_id'      => $lead_id,
-			'to'           => $phone,
-			'activity_id'  => $activity_id,
-			'provider'     => $provider,
+			'lead_id'         => $lead_id,
+			'to'              => $phone,
+			'activity_id'     => $activity_id,
+			'provider'        => $provider,
 			'provider_msg_id' => $send_result,
 		);
 	}
@@ -214,7 +215,7 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$endpoint,
 			array(
 				'headers' => array(
-					'Authorization' => 'Basic ' . base64_encode( $account_sid . ':' . $auth_token ),
+					'Authorization' => 'Basic ' . base64_encode( $account_sid . ':' . $auth_token ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Twilio Basic auth
 				),
 				'timeout' => self::HTTP_TIMEOUT,
 				'body'    => array(
@@ -272,11 +273,11 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			array(
 				'timeout' => self::HTTP_TIMEOUT,
 				'body'    => array(
-					'user_id'    => $user_id,
-					'api_key'    => $api_key,
-					'sender_id'  => $sender_id,
-					'message'    => $message,
-					'to'         => $to,
+					'user_id'   => $user_id,
+					'api_key'   => $api_key,
+					'sender_id' => $sender_id,
+					'message'   => $message,
+					'to'        => $to,
 				),
 			)
 		);

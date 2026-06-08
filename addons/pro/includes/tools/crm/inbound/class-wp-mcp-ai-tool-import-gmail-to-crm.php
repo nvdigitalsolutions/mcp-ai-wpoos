@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 
-		$query      = sanitize_text_field( $arguments['query'] ?? '' );
+		$query       = sanitize_text_field( $arguments['query'] ?? '' );
 		$max_results = min( 25, max( 1, absint( $arguments['max_results'] ?? 10 ) ) );
 		$auto_reply  = ! empty( $arguments['auto_reply'] );
 
@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			$settings = class_exists( 'WP_MCP_AI_CRM_Engine' )
 				? WP_MCP_AI_CRM_Engine::get_toolkit_settings()
 				: array();
-			$query = $settings['integrations']['gmail_default_query'] ?? 'newer_than:7d is:unread';
+			$query    = $settings['integrations']['gmail_default_query'] ?? 'newer_than:7d is:unread';
 		}
 
 		if ( '' === $query ) {
@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Load the evaluate_inbound_message tool.
-		$_eval_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php';
+		$_eval_file  = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php';
 		$eval_loaded = false;
 		if ( file_exists( $_eval_file ) ) {
 			require_once $_eval_file;
@@ -164,19 +164,19 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			$gmail_id     = $msg['id'] ?? '';
 
 			if ( empty( $body ) && empty( $subject ) ) {
-				$stats['skipped_noise']++;
+				++$stats['skipped_noise'];
 				$results[] = array(
-					'gmail_id'     => $gmail_id,
-					'subject'      => $subject,
-					'from'         => $sender_email,
-					'status'       => 'skipped_empty',
-					'reason'       => __( 'Email has no content.', 'mcp-ai-wpoos-pro' ),
+					'gmail_id' => $gmail_id,
+					'subject'  => $subject,
+					'from'     => $sender_email,
+					'status'   => 'skipped_empty',
+					'reason'   => __( 'Email has no content.', 'mcp-ai-wpoos-pro' ),
 				);
 				continue;
 			}
 
-			$tool      = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
-			$eval_args = array(
+			$tool        = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
+			$eval_args   = array(
 				'channel'         => 'email',
 				'message_body'    => $body,
 				'message_subject' => $subject,
@@ -188,7 +188,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			$eval_result = $tool->execute( $eval_args, $context );
 
 			if ( is_wp_error( $eval_result ) ) {
-				$stats['errors']++;
+				++$stats['errors'];
 				$results[] = array(
 					'gmail_id' => $gmail_id,
 					'subject'  => $subject,
@@ -203,8 +203,8 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			$classification = isset( $eval_result['pipeline']['classification'] )
 				? $eval_result['pipeline']['classification']
 				: array();
-			$is_spam = ! empty( $classification['is_spam'] );
-			$intent  = $classification['intent'] ?? '';
+			$is_spam        = ! empty( $classification['is_spam'] );
+			$intent         = $classification['intent'] ?? '';
 
 			// Check if a lead was created or matched.
 			$contact_id  = $eval_result['pipeline']['contact_id'] ?? 0;
@@ -213,14 +213,14 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			$score_label = $eval_result['pipeline']['score_label'] ?? '';
 
 			if ( $is_spam ) {
-				$stats['skipped_spam']++;
+				++$stats['skipped_spam'];
 				$results[] = array(
-					'gmail_id'      => $gmail_id,
-					'subject'       => $subject,
-					'from'          => $sender_email,
-					'status'        => 'skipped_spam',
-					'intent'        => $intent,
-					'spam_score'    => $classification['spam_probability'] ?? null,
+					'gmail_id'   => $gmail_id,
+					'subject'    => $subject,
+					'from'       => $sender_email,
+					'status'     => 'skipped_spam',
+					'intent'     => $intent,
+					'spam_score' => $classification['spam_probability'] ?? null,
 				);
 				continue;
 			}
@@ -228,7 +228,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			// Check if the message was just noise (not a sales inquiry).
 			$is_sales_intent = in_array( $intent, array( 'new_inquiry', 'demo_request', 'pricing_inquiry', 'support' ), true );
 			if ( ! $is_sales_intent && 'general' === $intent ) {
-				$stats['skipped_noise']++;
+				++$stats['skipped_noise'];
 				$results[] = array(
 					'gmail_id' => $gmail_id,
 					'subject'  => $subject,
@@ -241,27 +241,27 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			if ( $is_new_lead ) {
-				$stats['leads_created']++;
+				++$stats['leads_created'];
 			} elseif ( $contact_id ) {
-				$stats['leads_updated']++;
+				++$stats['leads_updated'];
 			}
 
 			$results[] = array(
-				'gmail_id'      => $gmail_id,
-				'subject'       => $subject,
-				'from'          => $sender_email,
-				'status'        => $is_new_lead ? 'lead_created' : 'lead_updated',
-				'contact_id'    => $contact_id,
-				'intent'        => $intent,
-				'lead_score'    => $lead_score,
-				'score_label'   => $score_label,
+				'gmail_id'       => $gmail_id,
+				'subject'        => $subject,
+				'from'           => $sender_email,
+				'status'         => $is_new_lead ? 'lead_created' : 'lead_updated',
+				'contact_id'     => $contact_id,
+				'intent'         => $intent,
+				'lead_score'     => $lead_score,
+				'score_label'    => $score_label,
 				'buying_signals' => $eval_result['pipeline']['buying_signals'] ?? array(),
 			);
 		}
 
 		return array(
-			'success'       => true,
-			'message'       => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: total found, 2: leads created, 3: leads updated, 4: skipped spam, 5: skipped noise */
 				__( 'Processed %1$d emails: %2$d leads created, %3$d updated, %4$d spam filtered, %5$d noise skipped.', 'mcp-ai-wpoos-pro' ),
 				$stats['total_found'],
@@ -270,8 +270,8 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 				$stats['skipped_spam'],
 				$stats['skipped_noise']
 			),
-			'stats'         => $stats,
-			'results'       => $results,
+			'stats'   => $stats,
+			'results' => $results,
 		);
 	}
 
@@ -372,9 +372,9 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		// List message IDs.
 		$list_url = add_query_arg(
 			array(
-				'q'           => $query,
-				'maxResults'  => $max_results,
-				'fields'      => 'messages(id)',
+				'q'          => $query,
+				'maxResults' => $max_results,
+				'fields'     => 'messages(id)',
 			),
 			self::GMAIL_API_BASE . '/users/' . rawurlencode( $gmail_user ) . '/messages'
 		);

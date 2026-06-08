@@ -149,8 +149,8 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 		}
 
 		// Select the mailbox specified in the connection string.
-		$settings  = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
-		$mailbox   = apply_filters( 'wp_mcp_ai_crm_imap_mailbox', 'INBOX', $settings );
+		$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$mailbox  = apply_filters( 'wp_mcp_ai_crm_imap_mailbox', 'INBOX', $settings );
 		if ( ! $client->select( $mailbox ) ) {
 			$client->close();
 			return;
@@ -227,7 +227,7 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 				$sender_email = isset( $header->from[0]->mailbox, $header->from[0]->host )
 					? strtolower( $header->from[0]->mailbox . '@' . $header->from[0]->host )
 					: '';
-				$sender_name = isset( $header->from[0]->personal )
+				$sender_name  = isset( $header->from[0]->personal )
 					? self::decode_mime_header_ext( $header->from[0]->personal )
 					: '';
 			}

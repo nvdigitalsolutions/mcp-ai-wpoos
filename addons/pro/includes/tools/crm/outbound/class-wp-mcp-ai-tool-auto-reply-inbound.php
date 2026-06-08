@@ -12,6 +12,7 @@
  * @since 2.3.0
  * @since 2.4.0 Wired to real transport; no longer just a stub logger.
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
@@ -104,7 +105,7 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 			'complaint'       => __( "We're sorry to hear about your experience. A member of our team will personally follow up with you within 24 hours.", 'mcp-ai-wpoos-pro' ),
 			'general'         => __( "Thanks for getting in touch! We'll respond to your message shortly.", 'mcp-ai-wpoos-pro' ),
 		);
-		$msg = ! empty( $arguments['custom_message'] )
+		$msg       = ! empty( $arguments['custom_message'] )
 			? sanitize_textarea_field( $arguments['custom_message'] )
 			: ( $templates[ $intent ] ?? $templates['general'] );
 
@@ -139,9 +140,9 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 				'lead',
 				$lead_id,
 				array(
-					'intent'   => $intent,
-					'channel'  => $channel,
-					'success'  => ! is_wp_error( $send_result ),
+					'intent'  => $intent,
+					'channel' => $channel,
+					'success' => ! is_wp_error( $send_result ),
 				)
 			);
 		}
@@ -255,7 +256,7 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'tool_missing', __( 'send_lead_sms tool not loaded.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Send_Lead_SMS();
+		$tool   = new WP_MCP_AI_Tool_Send_Lead_SMS();
 		$result = $tool->execute(
 			array(
 				'lead_id' => $lead_id,
@@ -291,7 +292,7 @@ class WP_MCP_AI_Tool_Auto_Reply_Inbound implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'tool_missing', __( 'send_lead_whatsapp tool not loaded.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Send_Lead_Whatsapp();
+		$tool   = new WP_MCP_AI_Tool_Send_Lead_Whatsapp();
 		$result = $tool->execute(
 			array(
 				'lead_id' => $lead_id,

@@ -113,10 +113,10 @@ class WP_MCP_AI_CRM_WhatsApp_Webhook_Listener {
 				// Process messages (inbound texts).
 				$messages = isset( $value['messages'] ) ? (array) $value['messages'] : array();
 				foreach ( $messages as $msg ) {
-					$from_phone  = sanitize_text_field( $msg['from'] ?? '' );
-					$msg_id      = sanitize_text_field( $msg['id'] ?? '' );
-					$msg_type    = sanitize_key( $msg['type'] ?? 'text' );
-					$timestamp   = isset( $msg['timestamp'] ) ? absint( $msg['timestamp'] ) : 0;
+					$from_phone = sanitize_text_field( $msg['from'] ?? '' );
+					$msg_id     = sanitize_text_field( $msg['id'] ?? '' );
+					$msg_type   = sanitize_key( $msg['type'] ?? 'text' );
+					$timestamp  = isset( $msg['timestamp'] ) ? absint( $msg['timestamp'] ) : 0;
 
 					// Extract message content based on type.
 					$content = '';
@@ -246,10 +246,10 @@ class WP_MCP_AI_CRM_WhatsApp_Webhook_Listener {
 
 		$tool      = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
 		$arguments = array(
-			'channel'       => 'whatsapp',
-			'message_body'  => $body_text,
-			'sender_phone'  => $from_phone,
-			'source'        => 'whatsapp_webhook',
+			'channel'      => 'whatsapp',
+			'message_body' => $body_text,
+			'sender_phone' => $from_phone,
+			'source'       => 'whatsapp_webhook',
 		);
 		$context   = array( 'user_id' => 0 );
 		$tool->execute( $arguments, $context );

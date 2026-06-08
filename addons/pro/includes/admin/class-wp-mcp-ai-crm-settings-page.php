@@ -718,7 +718,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 			// SMS provider.
 			if ( isset( $integrations['sms_provider'] ) ) {
-				$valid_providers = array( 'twilio', 'notifylk' );
+				$valid_providers                           = array( 'twilio', 'notifylk' );
 				$sanitized['integrations']['sms_provider'] = in_array( $integrations['sms_provider'], $valid_providers, true )
 					? $integrations['sms_provider']
 					: 'twilio';
