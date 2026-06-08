@@ -54,12 +54,13 @@ if ( $is_enabled && ! $is_base ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
 
-	// Phase B: Load Lead, Deal, Activity, and Support Ticket CPTs.
+	// Phase B: Load Lead, Deal, Activity, Support Ticket, and Customer CPTs.
 	$_phase_b_cpts = array(
 		'class-wp-mcp-ai-lead-cpt.php',
 		'class-wp-mcp-ai-deal-cpt.php',
 		'class-wp-mcp-ai-crm-activity-cpt.php',
 		'class-wp-mcp-ai-support-ticket-cpt.php',
+		'class-wp-mcp-ai-customer-cpt.php',
 	);
 	foreach ( $_phase_b_cpts as $_cpt_file ) {
 		$_cpt_path = WP_MCP_AI_PRO_PATH . 'includes/' . $_cpt_file;
@@ -71,6 +72,7 @@ if ( $is_enabled && ! $is_base ) {
 	WP_MCP_AI_Deal_CPT::init();
 	WP_MCP_AI_CRM_Activity_CPT::init();
 	WP_MCP_AI_Support_Ticket_CPT::init();
+	WP_MCP_AI_Customer_CPT::init();
 
 	// Phase D: Load Sequence and Workflow Rule CPTs.
 	$_phase_d_cpts = array(
@@ -105,6 +107,7 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-lead-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-customer-settings-page.php';
 
 		// Load Research & Add pages (per-CPT, under individual CPT menus).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
@@ -128,6 +131,9 @@ if ( $is_enabled && ! $is_base ) {
 
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php';
 		WP_MCP_AI_Support_Ticket_Settings_Page::init();
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-customer-settings-page.php';
+		WP_MCP_AI_Customer_Settings_Page::init();
 
 		// Load CRM Blueprints page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';

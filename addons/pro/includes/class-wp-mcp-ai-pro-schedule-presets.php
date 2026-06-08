@@ -2245,6 +2245,65 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					),
 				),
 
+				// -- Customer Management presets (v2.6.0) --
+				'customer_lifetime_value_refresh' => array(
+					'name'          => __( 'Customer LTV Refresh', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monthly workflow that recalculates lifetime value for all customers based on total revenue, deal history, and engagement data. Updates LTV and total_revenue fields on customer records.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'business',
+					'icon'          => 'dashicons-money-alt',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'monthly',
+					'tags'          => array( 'crm', 'customers', 'ltv', 'revenue', 'analytics' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'list_customers',
+								'arguments' => array(
+									'action'   => 'list',
+									'per_page' => 200,
+								),
+								'label'     => __( 'Load all active customers', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'forecast_pipeline_revenue',
+								'arguments' => array(),
+								'label'     => __( 'Calculate revenue forecasts per customer', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'customer_health_dashboard' => array(
+					'name'          => __( 'Customer Health Dashboard', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly assistant run generating a customer health report: active customers, recent conversions, revenue trends, at-risk accounts, and engagement metrics.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-dashboard',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'customers', 'health', 'reporting', 'dashboard' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a weekly customer health dashboard. Use list_customers to pull all active customer records. Analyse: 1) Total active customers and net change from last week. 2) New customers converted this week (use convert_lead_to_customer if needed to find recent conversions). 3) Customers by lifecycle stage breakdown. 4) Top 10 customers by total revenue and LTV. 5) Average customer tenure. 6) Customers with no deals in the last 90 days (at-risk). 7) Revenue trend (week-over-week change). Summarise in a dashboard format with key metrics and actionable insights.',
+						),
+					),
+				),
+				'customer_conversion_retrospective' => array(
+					'name'          => __( 'Customer Conversion Retrospective', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monthly assistant run analysing lead-to-customer conversion patterns: time-to-convert, conversion source effectiveness, deal velocity, and revenue attribution.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-analytics',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'monthly',
+					'tags'          => array( 'crm', 'customers', 'conversion', 'analytics', 'retrospective' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Run a monthly customer conversion retrospective. Use list_customers to find all customers created this month. For each: 1) Trace back to the source lead via source_lead_id. 2) Calculate time from lead creation to customer conversion. 3) Identify the conversion source (lead_conversion vs manual). 4) Sum total deal revenue associated with each new customer. Analyse patterns: average time-to-convert, most effective lead sources, revenue per new customer, and conversion rate by sales owner. Generate a retrospective report with recommendations for improving the conversion pipeline.',
+						),
+					),
+				),
+
 				// -- Support Ticket Management --
 				'support_ticket_sla_monitor'  => array(
 					'name'          => __( 'Support Ticket SLA Monitor', 'mcp-ai-wpoos-pro' ),

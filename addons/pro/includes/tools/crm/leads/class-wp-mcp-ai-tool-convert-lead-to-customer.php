@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Convert a lead to a customer by advancing the lifecycle stage. Optionally creates a deal record for pipeline tracking. Fires before/after hooks for automation integrations.', 'mcp-ai-wpoos-pro' );
+		return __( 'Convert a lead to a customer by creating a dedicated customer record, migrating data from the lead, advancing the lifecycle stage, and optionally creating a deal. Links the customer back to the originating lead for full traceability.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -262,7 +262,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		// Build update data to advance to customer.
+		// Build update data to advance lead lifecycle stage.
 		$update_data = array(
 			'lifecycle_stage' => 'customer',
 		);
@@ -280,7 +280,58 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 		 */
 		do_action( 'wp_mcp_ai_crm_before_lead_create', $lead_id, $lead, $update_data, $arguments, $context );
 
-		// Persist the lifecycle stage change.
+		// --- Create a dedicated Customer CPT record ---
+		$customer_id = 0;
+		if ( post_type_exists( 'mcp_ai_customer' ) && class_exists( 'WP_MCP_AI_Tool_Create_Customer' ) ) {
+			// Build customer data from the lead.
+			$customer_tool = new WP_MCP_AI_Tool_Create_Customer();
+
+			$customer_args = array(
+				'email'           => isset( $lead['email'] ) ? $lead['email'] : '',
+				'first_name'      => isset( $lead['first_name'] ) ? $lead['first_name'] : '',
+				'last_name'       => isset( $lead['last_name'] ) ? $lead['last_name'] : '',
+				'phone'           => isset( $lead['phone'] ) ? $lead['phone'] : '',
+				'company_name'    => isset( $lead['company_name'] ) ? $lead['company_name'] : '',
+				'job_title'       => isset( $lead['job_title'] ) ? $lead['job_title'] : '',
+				'source'          => 'lead_conversion',
+				'lifecycle_stage' => 'customer',
+				'contact_owner'   => isset( $lead['contact_owner'] ) ? absint( $lead['contact_owner'] ) : 0,
+				'source_lead_id'  => $lead_id,
+				'tags'            => isset( $lead['tags'] ) ? $lead['tags'] : array(),
+				'notes'           => isset( $lead['notes'] ) ? $lead['notes'] : '',
+			);
+
+			$customer_result = $customer_tool->execute( $customer_args, $context );
+
+			if ( is_wp_error( $customer_result ) ) {
+				// Customer CPT creation failed — still update the lead stage
+				// but report the partial failure.
+				$result = $this->lead_data_store->update_item( $lead_id, $update_data );
+
+				return $this->format_success_response(
+					sprintf(
+						/* translators: %1$d: lead ID, %2$s: error message */
+						__( 'Lead #%1$d lifecycle advanced to customer, but customer record creation failed: %2$s', 'mcp-ai-wpoos-pro' ),
+						$lead_id,
+						$customer_result->get_error_message()
+					),
+					array(
+						'lead_id'          => $lead_id,
+						'new_stage'        => 'customer',
+						'customer_created' => false,
+						'customer_error'   => $customer_result->get_error_message(),
+						'storage_type'     => $this->lead_data_store->get_storage_type(),
+					)
+				);
+			}
+
+			// Extract customer ID from the success response.
+			if ( isset( $customer_result['customer_id'] ) ) {
+				$customer_id = absint( $customer_result['customer_id'] );
+			}
+		}
+
+		// Persist the lifecycle stage change on the lead.
 		$result = $this->lead_data_store->update_item( $lead_id, $update_data );
 
 		if ( is_wp_error( $result ) ) {
@@ -350,6 +401,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 							'new_stage'    => 'customer',
 							'deal_created' => false,
 							'deal_error'   => $deal_id->get_error_message(),
+							'customer_id'  => $customer_id,
 							'storage_type' => $this->lead_data_store->get_storage_type(),
 						)
 					);
@@ -361,14 +413,16 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 		 * Fires after a lead is converted to a customer.
 		 *
 		 * @since 2.3.0
+		 * @since 2.6.0 Added `$customer_id` parameter.
 		 *
 		 * @param int   $lead_id      ID of the converted lead.
 		 * @param array $update_data  Fields that were updated.
 		 * @param int   $deal_id      ID of the created deal (0 if no deal was created).
+		 * @param int   $customer_id  ID of the created customer record (0 if creation was skipped).
 		 * @param array $arguments    Original tool arguments.
 		 * @param array $context      Execution context.
 		 */
-		do_action( 'wp_mcp_ai_crm_after_lead_create', $lead_id, $update_data, $deal_id, $arguments, $context );
+		do_action( 'wp_mcp_ai_crm_after_lead_create', $lead_id, $update_data, $deal_id, $customer_id, $arguments, $context );
 
 		// Record lifecycle change and PII access in audit log.
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
@@ -380,6 +434,9 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 			);
 			if ( $deal_id > 0 ) {
 				$audit_meta['deal_id'] = $deal_id;
+			}
+			if ( $customer_id > 0 ) {
+				$audit_meta['customer_id'] = $customer_id;
 			}
 			WP_MCP_AI_CRM_Audit::record(
 				'lead_converted',
@@ -393,6 +450,7 @@ class WP_MCP_AI_Tool_Convert_Lead_To_Customer implements WP_MCP_AI_Tool_Interfac
 		$response_data = array(
 			'lead_id'      => $lead_id,
 			'new_stage'    => 'customer',
+			'customer_id'  => $customer_id,
 			'deal_created' => $create_deal && $deal_id > 0,
 			'storage_type' => $this->lead_data_store->get_storage_type(),
 		);

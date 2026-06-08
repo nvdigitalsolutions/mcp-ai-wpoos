@@ -57,6 +57,7 @@ class WP_MCP_AI_CRM_Admin_Menu {
 			return;
 		}
 		add_action( 'admin_menu', array( __CLASS__, 'register_parent_menu' ), 25 );
+		add_action( 'admin_menu', array( __CLASS__, 'register_submenus' ), 28 );
 		self::$registered = true;
 	}
 
@@ -76,6 +77,26 @@ class WP_MCP_AI_CRM_Admin_Menu {
 			'dashicons-groups',
 			30
 		);
+	}
+
+	/**
+	 * Register additional submenu pages under NV CRM.
+	 *
+	 * @since 2.6.0
+	 */
+	public static function register_submenus() {
+		// Customers submenu — links to the Customer CPT listing.
+		if ( post_type_exists( 'mcp_ai_customer' ) ) {
+			add_submenu_page(
+				self::PARENT_SLUG,
+				__( 'Customers', 'mcp-ai-wpoos-pro' ),
+				__( 'Customers', 'mcp-ai-wpoos-pro' ),
+				'edit_posts',
+				'edit.php?post_type=mcp_ai_customer',
+				'',
+				28
+			);
+		}
 	}
 
 	/**
