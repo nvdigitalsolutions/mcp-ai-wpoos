@@ -300,7 +300,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'activities', 'sequences', 'analytics', 'configuration' );
+		$valid_tabs  = array( 'overview', 'leads', 'pipeline', 'support', 'activities', 'sequences', 'analytics', 'configuration' );
 		if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 			$current_tab = 'overview';
 		}
@@ -328,11 +328,13 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 						'overview'      => __( 'Overview', 'mcp-ai-wpoos-pro' ),
 						'leads'         => __( 'Leads', 'mcp-ai-wpoos-pro' ),
 						'pipeline'      => __( 'Pipeline', 'mcp-ai-wpoos-pro' ),
+						'support'       => __( 'Support', 'mcp-ai-wpoos-pro' ),
 						'activities'    => __( 'Activities', 'mcp-ai-wpoos-pro' ),
 						'sequences'     => __( 'Sequences', 'mcp-ai-wpoos-pro' ),
 						'analytics'     => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
 						'configuration' => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
 					);
+
 					foreach ( $tabs as $slug => $label ) {
 						$class = 'nav-tab' . ( $current_tab === $slug ? ' nav-tab-active' : '' );
 						printf(
@@ -361,6 +363,9 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					case 'leads':
 						self::render_leads_tab();
 						break;
+					case 'support':
+						self::render_support_tab();
+						break;
 					case 'analytics':
 						self::render_analytics_tab();
 						break;
@@ -383,6 +388,7 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 	private static function render_overview_tab() {
 			$leads_count       = self::get_cpt_count( 'mcp_ai_lead', 'publish' );
 			$deals_count       = self::get_cpt_count( 'mcp_ai_deal', 'publish' );
+			$tickets_count     = self::get_cpt_count( 'mcp_ai_support_ticket', 'publish' );
 			$companies_count   = self::get_cpt_count( 'mcp_ai_company', 'publish' );
 			$sequences_count   = self::get_cpt_count( 'mcp_ai_sequence', 'publish' );
 			$pipeline_value    = self::get_pipeline_value();
@@ -423,6 +429,11 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Sequences', 'mcp-ai-wpoos-pro' ); ?></div>
 				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $sequences_count ) ); ?></div>
 				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Active automations', 'mcp-ai-wpoos-pro' ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Open Tickets', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $tickets_count ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php esc_html_e( 'Support tickets', 'mcp-ai-wpoos-pro' ); ?></div>
 			</div>
 			<div class="crm-cc-kpi">
 				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Data Completeness', 'mcp-ai-wpoos-pro' ); ?></div>
@@ -1168,6 +1179,308 @@ class WP_MCP_AI_CRM_Command_Center_Page {
 					</tbody>
 				</table>
 			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Support tab with ticket pipeline funnel and sortable ticket table.
+	 *
+	 * @since 2.6.0
+	 */
+	private static function render_support_tab() {
+		// --- Read filter/sort/page from URL ---
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$status_filter   = isset( $_GET['ticket_stage'] ) ? sanitize_key( $_GET['ticket_stage'] ) : '';
+		$priority_filter = isset( $_GET['ticket_priority_cc'] ) ? sanitize_key( $_GET['ticket_priority_cc'] ) : '';
+		$sla_filter      = isset( $_GET['ticket_sla'] ) ? sanitize_key( $_GET['ticket_sla'] ) : '';
+		$orderby         = isset( $_GET['orderby'] ) ? sanitize_key( $_GET['orderby'] ) : 'date';
+		$order           = isset( $_GET['order'] ) && 'ASC' === strtoupper( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) ? 'ASC' : 'DESC';
+		$paged           = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
+		// phpcs:enable
+
+		$per_page = 20;
+
+		// Build query.
+		$args = array(
+			'post_type'      => 'mcp_ai_support_ticket',
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $paged,
+			'orderby'        => 'date',
+			'order'          => $order,
+		);
+
+		$meta_queries = array();
+		if ( $status_filter ) {
+			$meta_queries[] = array(
+				'key'   => '_ticket_status',
+				'value' => $status_filter,
+			);
+		}
+		if ( $priority_filter ) {
+			$meta_queries[] = array(
+				'key'   => '_ticket_priority',
+				'value' => $priority_filter,
+			);
+		}
+		if ( $sla_filter ) {
+			$meta_queries[] = array(
+				'key'   => '_ticket_sla_status',
+				'value' => $sla_filter,
+			);
+		}
+		if ( ! empty( $meta_queries ) ) {
+			$args['meta_query'] = $meta_queries; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		}
+
+		// Sorting by priority.
+		if ( 'priority' === $orderby ) {
+			$args['meta_key'] = '_ticket_priority'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			$args['orderby']  = 'meta_value';
+		}
+
+		$query       = new WP_Query( $args );
+		$tickets     = $query->posts;
+		$total_pages = $query->max_num_pages;
+		$total_items = (int) $query->found_posts;
+
+		// Pipeline funnel data.
+		$stage_counts = array();
+		$stage_colors = array(
+			'new'                    => '#50575e',
+			'triaged'                => '#2271b1',
+			'in_progress'            => '#dba617',
+			'waiting_on_customer'    => '#9a5c12',
+			'waiting_on_third_party' => '#826eb4',
+			'resolved'               => '#00a32a',
+			'closed'                 => '#50575e',
+		);
+		$stage_labels = array(
+			'new'                    => __( 'New', 'mcp-ai-wpoos-pro' ),
+			'triaged'                => __( 'Triaged', 'mcp-ai-wpoos-pro' ),
+			'in_progress'            => __( 'In Progress', 'mcp-ai-wpoos-pro' ),
+			'waiting_on_customer'    => __( 'Waiting on Customer', 'mcp-ai-wpoos-pro' ),
+			'waiting_on_third_party' => __( 'Waiting on 3rd Party', 'mcp-ai-wpoos-pro' ),
+			'resolved'               => __( 'Resolved', 'mcp-ai-wpoos-pro' ),
+			'closed'                 => __( 'Closed', 'mcp-ai-wpoos-pro' ),
+		);
+
+		foreach ( array_keys( $stage_labels ) as $stage ) {
+			$stage_counts[ $stage ] = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_status', $stage );
+		}
+		$max_stage = max( 1, max( $stage_counts ) );
+
+		// SLA overview.
+		$on_track  = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_sla_status', 'on_track' );
+		$at_risk   = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_sla_status', 'at_risk' );
+		$breached  = self::get_cpt_count_by_meta( 'mcp_ai_support_ticket', 'publish', '_ticket_sla_status', 'breached' );
+		$total_sla = $on_track + $at_risk + $breached;
+
+		$priority_map = array(
+			'p1_critical' => __( 'P1', 'mcp-ai-wpoos-pro' ),
+			'p2_high'     => __( 'P2', 'mcp-ai-wpoos-pro' ),
+			'p3_medium'   => __( 'P3', 'mcp-ai-wpoos-pro' ),
+			'p4_low'      => __( 'P4', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$sla_labels = array(
+			'on_track' => __( 'On Track', 'mcp-ai-wpoos-pro' ),
+			'at_risk'  => __( 'At Risk', 'mcp-ai-wpoos-pro' ),
+			'breached' => __( 'Breached', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$base_url = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=support' );
+		?>
+		<!-- Pipeline Funnel -->
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'Ticket Pipeline Funnel', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<?php foreach ( $stage_labels as $slug => $label ) : ?>
+				<div class="crm-cc-pipeline-stage">
+					<div class="crm-cc-pipeline-stage-name"><?php echo esc_html( $label ); ?></div>
+					<div class="crm-cc-pipeline-bar-wrap">
+						<div class="crm-cc-pipeline-bar" style="width: <?php echo esc_attr( round( ( $stage_counts[ $slug ] / $max_stage ) * 100 ) ); ?>%; background: <?php echo esc_attr( $stage_colors[ $slug ] ); ?>;"></div>
+					</div>
+					<div class="crm-cc-pipeline-count"><?php echo esc_html( number_format_i18n( $stage_counts[ $slug ] ) ); ?></div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+
+		<!-- SLA KPIs -->
+		<div class="crm-cc-kpi-grid" style="margin-bottom: 24px;">
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'On Track', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value win"><?php echo esc_html( number_format_i18n( $on_track ) ); ?></div>
+				<div class="crm-cc-kpi-sub"><?php echo $total_sla > 0 ? esc_html( round( ( $on_track / $total_sla ) * 100 ) . '%' ) : '—'; ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'At Risk', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value warn"><?php echo esc_html( number_format_i18n( $at_risk ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Breached', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value danger"><?php echo esc_html( number_format_i18n( $breached ) ); ?></div>
+			</div>
+			<div class="crm-cc-kpi">
+				<div class="crm-cc-kpi-label"><?php esc_html_e( 'Total', 'mcp-ai-wpoos-pro' ); ?></div>
+				<div class="crm-cc-kpi-value"><?php echo esc_html( number_format_i18n( $total_sla ) ); ?></div>
+			</div>
+		</div>
+
+		<!-- Tickets Table -->
+		<div class="crm-cc-section">
+			<h2><?php esc_html_e( 'All Support Tickets', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+			<?php if ( $total_items > 0 ) : ?>
+				<p class="crm-cc-muted" style="margin-bottom: 12px;">
+					<?php
+					printf(
+						/* translators: %d: total number of matching tickets */
+						esc_html( _n( '%d ticket found', '%d tickets found', $total_items, 'mcp-ai-wpoos-pro' ) ),
+						(int) $total_items
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
+			<!-- Filters -->
+			<form method="get" style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+				<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>">
+				<input type="hidden" name="tab" value="support">
+
+				<select name="ticket_stage">
+					<option value=""><?php esc_html_e( 'All Stages', 'mcp-ai-wpoos-pro' ); ?></option>
+					<?php foreach ( $stage_labels as $val => $lbl ) : ?>
+						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $status_filter, $val ); ?>><?php echo esc_html( $lbl ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<select name="ticket_priority_cc">
+					<option value=""><?php esc_html_e( 'All Priorities', 'mcp-ai-wpoos-pro' ); ?></option>
+					<?php foreach ( $priority_map as $val => $lbl ) : ?>
+						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $priority_filter, $val ); ?>><?php echo esc_html( $lbl ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<select name="ticket_sla">
+					<option value=""><?php esc_html_e( 'All SLA', 'mcp-ai-wpoos-pro' ); ?></option>
+					<?php foreach ( $sla_labels as $val => $lbl ) : ?>
+						<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $sla_filter, $val ); ?>><?php echo esc_html( $lbl ); ?></option>
+					<?php endforeach; ?>
+				</select>
+
+				<?php submit_button( __( 'Filter', 'mcp-ai-wpoos-pro' ), 'secondary', 'filter_action', false ); ?>
+				<a href="<?php echo esc_url( $base_url ); ?>" class="button" style="margin-left: 4px;"><?php esc_html_e( 'Reset', 'mcp-ai-wpoos-pro' ); ?></a>
+			</form>
+
+			<?php if ( empty( $tickets ) ) : ?>
+				<p><?php esc_html_e( 'No tickets match your filters.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Ticket', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th>
+								<a href="
+								<?php
+								echo esc_url(
+									add_query_arg(
+										array(
+											'orderby' => 'priority',
+											'order'   => ( 'priority' === $orderby && 'ASC' === $order ) ? 'DESC' : 'ASC',
+										),
+										$base_url
+									)
+								);
+								?>
+											" class="crm-cc-sortable">
+									<?php esc_html_e( 'Priority', 'mcp-ai-wpoos-pro' ); ?>
+									<?php echo 'priority' === $orderby ? ( 'ASC' === $order ? ' ↑' : ' ↓' ) : ''; ?>
+								</a>
+							</th>
+							<th><?php esc_html_e( 'Assignee', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'SLA', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Created', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						foreach ( $tickets as $ticket ) :
+							$t_status    = get_post_meta( $ticket->ID, '_ticket_status', true );
+							$t_status    = $t_status ? $t_status : 'new';
+							$t_priority  = get_post_meta( $ticket->ID, '_ticket_priority', true );
+							$t_priority  = $t_priority ? $t_priority : 'p2_high';
+							$t_sla       = get_post_meta( $ticket->ID, '_ticket_sla_status', true );
+							$t_sla       = $t_sla ? $t_sla : 'on_track';
+							$t_assignee  = (int) get_post_meta( $ticket->ID, '_ticket_assignee_id', true );
+							$t_stage_col = $stage_colors[ $t_status ] ?? '#50575e';
+							$t_sla_col   = array(
+								'on_track' => '#00a32a',
+								'at_risk'  => '#dba617',
+								'breached' => '#d63638',
+							);
+							?>
+							<tr>
+								<td>
+									<a href="<?php echo esc_url( get_edit_post_link( $ticket->ID ) ); ?>">
+										<strong><?php echo esc_html( $ticket->post_title ); ?></strong>
+									</a>
+								</td>
+								<td>
+									<span style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:<?php echo esc_attr( $t_stage_col ); ?>15;color:<?php echo esc_attr( $t_stage_col ); ?>;">
+										<?php echo esc_html( $stage_labels[ $t_status ] ?? $t_status ); ?>
+									</span>
+								</td>
+								<td><?php echo esc_html( $priority_map[ $t_priority ] ?? $t_priority ); ?></td>
+								<td>
+									<?php if ( $t_assignee ) : ?>
+										<?php $user = get_userdata( $t_assignee ); ?>
+										<?php echo esc_html( $user ? $user->display_name : '#' . $t_assignee ); ?>
+									<?php else : ?>
+										<em><?php esc_html_e( 'Unassigned', 'mcp-ai-wpoos-pro' ); ?></em>
+									<?php endif; ?>
+								</td>
+								<td>
+									<span style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;background:<?php echo esc_attr( $t_sla_col[ $t_sla ] ?? '#50575e' ); ?>15;color:<?php echo esc_attr( $t_sla_col[ $t_sla ] ?? '#50575e' ); ?>;">
+										<?php echo esc_html( $sla_labels[ $t_sla ] ?? $t_sla ); ?>
+									</span>
+								</td>
+								<td><?php echo esc_html( get_the_date( 'Y-m-d', $ticket ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+
+				<?php if ( $total_pages > 1 ) : ?>
+					<div class="tablenav" style="margin-top: 12px;">
+						<div class="tablenav-pages">
+							<?php
+							$big = 999999999;
+							echo paginate_links( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								array(
+									'base'      => str_replace( $big, '%#%', esc_url( add_query_arg( 'paged', '%#%', $base_url ) ) ),
+									'format'    => '?paged=%#%',
+									'current'   => $paged,
+									'total'     => $total_pages,
+									'prev_text' => '&laquo;',
+									'next_text' => '&raquo;',
+								)
+							);
+							?>
+						</div>
+					</div>
+				<?php endif; ?>
+			<?php endif; ?>
+
+			<p style="margin-top: 12px;">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_support_ticket' ) ); ?>" class="button">
+					<?php esc_html_e( 'Manage All Tickets →', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_support_ticket' ) ); ?>" class="button">
+					<?php esc_html_e( 'Add New Ticket', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+			</p>
 		</div>
 		<?php
 	}

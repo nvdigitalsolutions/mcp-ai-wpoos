@@ -54,11 +54,12 @@ if ( $is_enabled && ! $is_base ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
 
-	// Phase B: Load Lead, Deal, and Activity CPTs.
+	// Phase B: Load Lead, Deal, Activity, and Support Ticket CPTs.
 	$_phase_b_cpts = array(
 		'class-wp-mcp-ai-lead-cpt.php',
 		'class-wp-mcp-ai-deal-cpt.php',
 		'class-wp-mcp-ai-crm-activity-cpt.php',
+		'class-wp-mcp-ai-support-ticket-cpt.php',
 	);
 	foreach ( $_phase_b_cpts as $_cpt_file ) {
 		$_cpt_path = WP_MCP_AI_PRO_PATH . 'includes/' . $_cpt_file;
@@ -69,6 +70,7 @@ if ( $is_enabled && ! $is_base ) {
 	WP_MCP_AI_Lead_CPT::init();
 	WP_MCP_AI_Deal_CPT::init();
 	WP_MCP_AI_CRM_Activity_CPT::init();
+	WP_MCP_AI_Support_Ticket_CPT::init();
 
 	// Phase D: Load Sequence and Workflow Rule CPTs.
 	$_phase_d_cpts = array(
@@ -102,6 +104,7 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-lead-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php';
 
 		// Load Research & Add pages (per-CPT, under individual CPT menus).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-research-page.php';
@@ -123,6 +126,9 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-settings-page.php';
 		WP_MCP_AI_Deal_Settings_Page::init();
 
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php';
+		WP_MCP_AI_Support_Ticket_Settings_Page::init();
+
 		// Load CRM Blueprints page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';
 		WP_MCP_AI_CRM_Blueprints_Page::init();
@@ -135,6 +141,12 @@ if ( $is_enabled && ! $is_base ) {
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-crm-research-add.php';
 	new WP_MCP_AI_CRM_Research_Add();
+
+	// Load support ticket tools.
+	$_support_tools_init = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/support/init.php';
+	if ( file_exists( $_support_tools_init ) ) {
+		require_once $_support_tools_init;
+	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/crm/.
@@ -217,7 +229,7 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_crm_toolkit_admin_styles
 	 * @param string $message_type      Message type (text, image, etc.).
 	 * @param string $connection_id     Remote Site Manager connection ID.
 	 */
-	function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type, $connection_id = '' ) {
+function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type, $connection_id = '' ) {
 	// Only process text messages.
 	if ( 'text' !== $message_type ) {
 		return;
