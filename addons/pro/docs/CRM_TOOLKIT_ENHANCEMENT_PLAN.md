@@ -201,6 +201,7 @@ To keep CRM modular and lean by default:
 | Slug | Purpose |
 |---|---|
 | `mcp_ai_lead` *(or: enrich `mcp_crm_contacts`)* | Lifecycle-stage entity with BANT/MEDDIC fields, score, owner, source |
+| `mcp_ai_customer` | Post-conversion customer record with billing, LTV, and source-lead linkage |
 | `mcp_ai_deal` | Opportunity / pipeline record |
 | `mcp_ai_crm_activity` | Calls, meetings, tasks, follow-ups |
 | `mcp_ai_sequence` | Cadence definition (steps, channels, waits) |
@@ -208,7 +209,7 @@ To keep CRM modular and lean by default:
 | `mcp_ai_crm_workflow_rule` | If-this-then-that rules (used by Command Center) |
 | `mcp_ai_crm_consent_log` *(CCT)* | Channel-specific consent + revocation events |
 
-> **Migration note.** We will not break the existing `mcp_crm_contacts` schema. `mcp_ai_lead` is conceptually an enriched view of a contact in a pre-customer lifecycle stage; the engine resolves "contact → lead → deal" via stored references. A `migrate_contacts_to_leads` WP-CLI command will be provided.
+> **Migration note.** We will not break the existing `mcp_crm_contacts` schema. `mcp_ai_lead` is conceptually an enriched view of a contact in a pre-customer lifecycle stage; `mcp_ai_customer` is the post-conversion entity created by `convert_lead_to_customer`. A `migrate_contacts_to_leads` WP-CLI command will be provided.
 
 ### 4.5 Reuse map
 

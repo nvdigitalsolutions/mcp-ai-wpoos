@@ -30,6 +30,7 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | Lead CRUD + qualification | `leads/` | Lead Management | Phase B ✅ |
 | Deal / opportunity CRUD | `deals/` | Pipeline | Phase B ✅ |
 | Activity CRUD (calls, meetings, tasks) | `activities/` | Core | Phase B ✅ |
+| Customer CRUD | `customers/` | Customer Management | Phase B ✅ (v2.6.0) |
 | Outreach sequences | `sequences/` | Automation | Phase D ✅ |
 | Inbound triage | `inbound/` | Multichannel (IMAP/SMS/WA webhooks + Gmail import) | Phase C ✅ |
 | Outbound send | `outbound/` | Multichannel (Twilio/notify.lk/WhatsApp/email) | Phase C ✅ |
@@ -58,6 +59,11 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_CRM_Email_Search_Accounting` | `class-wp-mcp-ai-tool-crm-email-search-accounting.php` | tool registry |
 | `WP_MCP_AI_Tool_CRM_Email_Search_Correspondence` | `class-wp-mcp-ai-tool-crm-email-search-correspondence.php` | tool registry |
 | `WP_MCP_AI_Tool_CRM_Email_Search_Leads` | `class-wp-mcp-ai-tool-crm-email-search-leads.php` | tool registry |
+| `WP_MCP_AI_Tool_Create_Customer` | `customers/class-wp-mcp-ai-tool-create-customer.php` | tool registry |
+| `WP_MCP_AI_Tool_Get_Customer` | `customers/class-wp-mcp-ai-tool-get-customer.php` | tool registry |
+| `WP_MCP_AI_Tool_Update_Customer` | `customers/class-wp-mcp-ai-tool-update-customer.php` | tool registry |
+| `WP_MCP_AI_Tool_Delete_Customer` | `customers/class-wp-mcp-ai-tool-delete-customer.php` | tool registry |
+| `WP_MCP_AI_Tool_List_Customers` | `customers/class-wp-mcp-ai-tool-list-customers.php` | tool registry |
 | `WP_MCP_AI_Tool_Draft_Upwork_Proposal` | `upwork/class-wp-mcp-ai-tool-draft-upwork-proposal.php` | tool registry |
 | `WP_MCP_AI_Tool_Score_Upwork_Job` | `upwork/class-wp-mcp-ai-tool-score-upwork-job.php` | tool registry |
 | `WP_MCP_AI_Tool_Search_Upwork_Jobs` | `upwork/class-wp-mcp-ai-tool-search-upwork-jobs.php` | tool registry |

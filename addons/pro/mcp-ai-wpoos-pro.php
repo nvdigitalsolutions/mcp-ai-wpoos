@@ -1050,6 +1050,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 				// ── Phase E: Blueprint (1) ──
 				'WP_MCP_AI_Tool_Import_CRM_Blueprint'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/examples/class-wp-mcp-ai-tool-import-crm-blueprint.php',
+
+				// ── Phase B: Customers (5) — v2.6.0 ──
+				'WP_MCP_AI_Tool_Create_Customer'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/customers/class-wp-mcp-ai-tool-create-customer.php',
+				'WP_MCP_AI_Tool_Get_Customer'              => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/customers/class-wp-mcp-ai-tool-get-customer.php',
+				'WP_MCP_AI_Tool_Update_Customer'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/customers/class-wp-mcp-ai-tool-update-customer.php',
+				'WP_MCP_AI_Tool_Delete_Customer'           => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/customers/class-wp-mcp-ai-tool-delete-customer.php',
+				'WP_MCP_AI_Tool_List_Customers'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/customers/class-wp-mcp-ai-tool-list-customers.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $crm_tools );
 		}
@@ -2228,6 +2235,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['search_upwork_jobs']    = 'wordpress-core';
 			$pro_tools['score_upwork_job']      = 'wordpress-core';
 			$pro_tools['draft_upwork_proposal'] = 'wordpress-core';
+
+			// Customer CRUD tools (v2.6.0).
+			$pro_tools['create_customer'] = 'wordpress-core';
+			$pro_tools['get_customer']    = 'wordpress-core';
+			$pro_tools['update_customer'] = 'wordpress-core';
+			$pro_tools['delete_customer'] = 'wordpress-core';
+			$pro_tools['list_customers']  = 'wordpress-core';
 		}
 
 		// Add project management tool mappings if enabled.
