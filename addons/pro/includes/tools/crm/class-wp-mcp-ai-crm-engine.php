@@ -8,10 +8,10 @@
  *  - Lead scoring (0–100 cold/warm/hot with factor decomposition).
  *  - Lifecycle stage progression (Subscriber → Lead → MQL → SAL → SQL → Opportunity → Customer).
  *  - Pipeline probability lookups (stage → win probability).
-	 *  - Routing strategy resolution (round_robin, weighted, territory, skill).
-	 *  - Currency formatting helpers.
-	 *  - DNC / suppression helper.
-	 *  - Search algorithm configuration (keyword_tfidf, fulltext).
+ *  - Routing strategy resolution (round_robin, weighted, territory, skill).
+ *  - Currency formatting helpers.
+ *  - DNC / suppression helper.
+ *  - Search algorithm configuration (keyword_tfidf, fulltext).
  *
  * Mirrors WP_MCP_AI_Healthcare_Engine in the healthcare toolkit.
  *
@@ -29,10 +29,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Shared CRM engine.
  *
-	 * @since 2.3.0
-	 * @since 2.4.0 Added 'search' settings block for configurable relevance algorithm.
-	 */
-	class WP_MCP_AI_CRM_Engine {
+ * @since 2.3.0
+ * @since 2.4.0 Added 'search' settings block for configurable relevance algorithm.
+ */
+class WP_MCP_AI_CRM_Engine {
 
 	/**
 	 * Settings option key.
@@ -50,9 +50,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Toolkit settings
-	 * ------------------------------------------------------------------
-	 */
+	* Toolkit settings
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Get resolved CRM toolkit settings.
@@ -119,22 +119,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 				),
 			),
 			'integrations'            => array(
+				// Twilio (SMS outbound + inbound webhook).
 				'twilio_account_sid_secret' => '',
+				'twilio_auth_token_secret'  => '',
+				'twilio_from_number'        => '', // E.164 format, e.g. +1234567890
+				// WhatsApp (Meta Cloud API outbound + inbound webhook).
+				'whatsapp_access_token'     => '',
 				'whatsapp_phone_number_id'  => '',
+				'whatsapp_app_secret'       => '', // For webhook signature validation
+				// notify.lk (Sri Lanka SMS gateway).
+				'notifylk_user_id'          => '',
+				'notifylk_api_key'          => '',
+				'notifylk_sender_id'        => '',
+				// OAuth handles for IMAP/Gmail/Outlook.
 				'gmail_oauth_handle'        => '',
 				'outlook_oauth_handle'      => '',
+				// Default SMS provider: 'twilio' | 'notifylk'.
+				'sms_provider'              => 'twilio',
+				// Default Gmail import query (Gmail search syntax).
+				'gmail_default_query'       => 'newer_than:7d is:unread',
 			),
 			'search'                  => array(
-				'algorithm'        => 'keyword_tfidf',
-				'default_orderby'  => 'relevance',
-				'min_relevance'    => 0,
-				'field_weights'    => array(
+				'algorithm'       => 'keyword_tfidf',
+				'default_orderby' => 'relevance',
+				'min_relevance'   => 0,
+				'field_weights'   => array(
 					'name'    => 3.0,
 					'company' => 2.0,
 					'email'   => 1.5,
 				),
 			),
 			'research_assistant'      => 'default',
+			// Storage backend preference: 'auto', 'cct', or 'cpt'.
+			'storage_backend'         => 'auto',
 		);
 
 		$stored = get_option( self::SETTINGS_OPTION, array() );
@@ -169,9 +186,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Lifecycle stages
-	 * ------------------------------------------------------------------
-	 */
+	* Lifecycle stages
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Canonical lifecycle stages (HubSpot-aligned).
@@ -217,9 +234,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Lead scoring
-	 * ------------------------------------------------------------------
-	 */
+	* Lead scoring
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Score label by numeric score bucket.
@@ -291,9 +308,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Pipeline helpers
-	 * ------------------------------------------------------------------
-	 */
+	* Pipeline helpers
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Get pipeline stages definition.
@@ -329,9 +346,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Routing
-	 * ------------------------------------------------------------------
-	 */
+	* Routing
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Resolve the next owner for a lead based on the active routing strategy.
@@ -426,9 +443,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Suppression / DNC
-	 * ------------------------------------------------------------------
-	 */
+	* Suppression / DNC
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Internal DNC / suppression list.
@@ -483,9 +500,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	/*
 	---------------------------------------------------------------------
-	 * Currency helpers
-	 * ------------------------------------------------------------------
-	 */
+	* Currency helpers
+	* ------------------------------------------------------------------
+	*/
 
 	/**
 	 * Format an amount in the default currency.

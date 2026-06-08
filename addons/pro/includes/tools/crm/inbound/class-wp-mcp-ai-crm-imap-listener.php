@@ -5,8 +5,12 @@
  * Periodically polls an IMAP inbox and routes new messages to the CRM
  * inbound evaluation pipeline. Uses the Schedule Manager for cron scheduling.
  *
+ * Primary driver: WP_MCP_AI_CRM_IMAP_Client (pure PHP, no extension needed).
+ * Fallback: PHP ext-imap (imap_open / imap_* functions) when available.
+ *
  * @package WP_MCP_AI_Pro
  * @since  2.3.0
+ * @since  2.4.0 Added pure PHP IMAP client as primary driver; ext-imap is now fallback.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,10 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Registers a recurring Schedule Manager job that checks an IMAP inbox
  * for new messages and feeds them into evaluate_inbound_message.
  *
- * @todo Wire up to real IMAP credentials from the CRM settings integrations
- *       section (gmail_oauth_handle / outlook_oauth_handle).
- * @todo Add IMAP connection via PHP imap_* functions or a library.
- * @todo Parse inbound email into the message format expected by evaluate_inbound_message.
+ * @since 2.3.0
  */
 class WP_MCP_AI_CRM_IMAP_Listener {
 
@@ -76,18 +77,14 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 	/**
 	 * Poll the IMAP inbox and route new messages.
 	 *
-	 * Hooked into the Schedule Manager action. Uses PHP's native imap_*
-	 * functions. Connection parameters are supplied via filters so no
-	 * settings schema changes are needed.
+	 * Uses the pure PHP IMAP client (WP_MCP_AI_CRM_IMAP_Client) as the
+	 * primary driver. Falls back to ext-imap when available and the pure
+	 * client is not loaded.
 	 *
 	 * @since 2.3.0
+	 * @since 2.4.0 Pure PHP primary driver with ext-imap fallback.
 	 */
 	public static function poll() {
-		// Bail if IMAP extension is not loaded.
-		if ( ! function_exists( 'imap_open' ) ) {
-			return;
-		}
-
 		$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
 
 		// Connection parameters supplied via filters.
@@ -100,6 +97,112 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 			return;
 		}
 
+		// Load the evaluate_inbound_message tool early.
+		$_tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php';
+		if ( ! file_exists( $_tool_file ) ) {
+			return;
+		}
+		require_once $_tool_file;
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Evaluate_Inbound_Message' ) ) {
+			return;
+		}
+
+		// ---- Primary driver: Pure PHP IMAP client ----
+		$_client_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-imap-client.php';
+		if ( file_exists( $_client_file ) ) {
+			require_once $_client_file;
+			if ( class_exists( 'WP_MCP_AI_CRM_IMAP_Client' ) ) {
+				self::poll_with_pure_php( $conn_string, $imap_user, $imap_pass );
+				return;
+			}
+		}
+
+		// ---- Fallback: PHP ext-imap functions ----
+		if ( function_exists( 'imap_open' ) ) {
+			self::poll_with_ext_imap( $conn_string, $imap_user, $imap_pass );
+			return;
+		}
+
+		// Neither driver is available — log and bail.
+		if ( function_exists( 'WP_MCP_AI_Logger' ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'CRM IMAP polling skipped: no IMAP driver available.',
+				array( 'conn_string' => self::mask_conn_string( $conn_string ) )
+			);
+		}
+	}
+
+	/**
+	 * Poll using the pure PHP IMAP client.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param string $conn_string IMAP connection string.
+	 * @param string $imap_user   IMAP username.
+	 * @param string $imap_pass   IMAP password.
+	 */
+	private static function poll_with_pure_php( $conn_string, $imap_user, $imap_pass ) {
+		$client = new WP_MCP_AI_CRM_IMAP_Client( $conn_string, $imap_user, $imap_pass );
+
+		if ( ! $client->open() ) {
+			return;
+		}
+
+		// Select the mailbox specified in the connection string.
+		$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+		$mailbox  = apply_filters( 'wp_mcp_ai_crm_imap_mailbox', 'INBOX', $settings );
+		if ( ! $client->select( $mailbox ) ) {
+			$client->close();
+			return;
+		}
+
+		// Search for unseen messages.
+		$message_nos = $client->search( 'UNSEEN' );
+		if ( empty( $message_nos ) ) {
+			$client->close();
+			return;
+		}
+
+		foreach ( $message_nos as $msg_no ) {
+			$header = $client->fetch_header( $msg_no );
+			if ( ! $header ) {
+				continue;
+			}
+
+			// Fetch plain-text body (section 1). Falls back to full body.
+			$body = $client->fetch_body( $msg_no, '1' );
+			if ( empty( trim( $body ) ) ) {
+				$body = $client->fetch_body( $msg_no, '' );
+			}
+
+			$tool      = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
+			$arguments = array(
+				'channel'         => 'email',
+				'message_body'    => $body,
+				'message_subject' => $header['subject'],
+				'sender_email'    => $header['from_email'],
+				'sender_name'     => $header['from_name'],
+				'source'          => 'imap_poll',
+			);
+			$tool->execute( $arguments, array( 'user_id' => 0 ) );
+
+			// Mark as seen so it isn't re-processed on next poll.
+			$client->mark_seen( $msg_no );
+		}
+
+		$client->close();
+	}
+
+	/**
+	 * Poll using the PHP ext-imap extension (legacy fallback).
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $conn_string IMAP connection string.
+	 * @param string $imap_user   IMAP username.
+	 * @param string $imap_pass   IMAP password.
+	 */
+	private static function poll_with_ext_imap( $conn_string, $imap_user, $imap_pass ) {
 		// Suppress PHP warnings; we handle failure via return value.
 		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$mailbox = @imap_open( $conn_string, $imap_user, $imap_pass, 0, 1 );
@@ -114,18 +217,6 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 			return;
 		}
 
-		// Load the evaluate_inbound_message tool.
-		$_tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-evaluate-inbound-message.php';
-		if ( ! file_exists( $_tool_file ) ) {
-			imap_close( $mailbox );
-			return;
-		}
-		require_once $_tool_file;
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Evaluate_Inbound_Message' ) ) {
-			imap_close( $mailbox );
-			return;
-		}
-
 		foreach ( $message_nos as $msg_no ) {
 			$header = imap_headerinfo( $mailbox, (int) $msg_no );
 
@@ -136,13 +227,13 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 				$sender_email = isset( $header->from[0]->mailbox, $header->from[0]->host )
 					? strtolower( $header->from[0]->mailbox . '@' . $header->from[0]->host )
 					: '';
-				$sender_name = isset( $header->from[0]->personal )
-					? self::decode_mime_header( $header->from[0]->personal )
+				$sender_name  = isset( $header->from[0]->personal )
+					? self::decode_mime_header_ext( $header->from[0]->personal )
 					: '';
 			}
 
 			$subject = isset( $header->subject )
-				? self::decode_mime_header( $header->subject )
+				? self::decode_mime_header_ext( $header->subject )
 				: '';
 
 			// Fetch plain-text body (section 1). Falls back to full body.
@@ -150,7 +241,7 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 			if ( empty( trim( $body ) ) ) {
 				$body = imap_body( $mailbox, (int) $msg_no );
 			}
-			$body = self::decode_quoted_printable( $body );
+			$body = quoted_printable_decode( $body );
 
 			$tool      = new WP_MCP_AI_Tool_Evaluate_Inbound_Message();
 			$arguments = array(
@@ -171,12 +262,12 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 	}
 
 	/**
-	 * Decode an RFC 2047 MIME-encoded header value.
+	 * Decode an RFC 2047 MIME-encoded header value (ext-imap version).
 	 *
 	 * @param string $value Raw header value.
 	 * @return string Decoded value.
 	 */
-	private static function decode_mime_header( $value ) {
+	private static function decode_mime_header_ext( $value ) {
 		$decoded = imap_mime_header_decode( $value );
 		if ( ! is_array( $decoded ) ) {
 			return $value;
@@ -189,13 +280,16 @@ class WP_MCP_AI_CRM_IMAP_Listener {
 	}
 
 	/**
-	 * Decode quoted-printable content.
+	 * Mask the connection string for safe logging (hide credentials).
 	 *
-	 * @param string $text Quoted-printable encoded text.
-	 * @return string Decoded text.
+	 * @param string $conn_string Raw connection string.
+	 * @return string Masked string.
 	 */
-	private static function decode_quoted_printable( $text ) {
-		return quoted_printable_decode( $text );
+	private static function mask_conn_string( $conn_string ) {
+		if ( preg_match( '/\{([^}]+)\}/', $conn_string, $m ) ) {
+			return '{' . $m[1] . '}***';
+		}
+		return '***';
 	}
 }
 

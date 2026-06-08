@@ -156,6 +156,20 @@ if ( $is_enabled && ! $is_base ) {
 		require_once $_webform_file;
 		WP_MCP_AI_CRM_Web_Form_Listener::init();
 	}
+
+	// ---- Phase C: Twilio SMS inbound webhook ----
+	$_sms_webhook_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-sms-webhook-listener.php';
+	if ( file_exists( $_sms_webhook_file ) ) {
+		require_once $_sms_webhook_file;
+		add_action( 'rest_api_init', array( 'WP_MCP_AI_CRM_SMS_Webhook_Listener', 'register_route' ) );
+	}
+
+	// ---- Phase C: Meta WhatsApp inbound webhook ----
+	$_wa_webhook_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-crm-whatsapp-webhook-listener.php';
+	if ( file_exists( $_wa_webhook_file ) ) {
+		require_once $_wa_webhook_file;
+		add_action( 'rest_api_init', array( 'WP_MCP_AI_CRM_WhatsApp_Webhook_Listener', 'register_route' ) );
+	}
 }
 
 /**

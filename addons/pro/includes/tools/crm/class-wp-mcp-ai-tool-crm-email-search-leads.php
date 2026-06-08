@@ -195,145 +195,145 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
 		return 'crm_email_search_leads';
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
 		return __( 'CRM Email Search: New Leads', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
 		return __( 'Search CRM contacts for new leads by free-text search with TF-IDF relevance scoring, or by email-based criteria including lead score, email domain, inquiry type, source channel, priority, and date range. Sort results by relevance, lead_score, date, name, or company in ASC or DESC order. Supports multi-remote Gmail connection search via Remote Sites connection IDs for cross-account lead discovery. Results are cached for efficient throughout-the-day querying and can be auto-refreshed on a WP Cron schedule. Implements industry-standard lead scoring (HubSpot/Salesforce), 14 inquiry type categories, and pipeline-stage filtering (MQL/SQL).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'          => array(
+				'action'           => array(
 					'type'        => 'string',
-					'enum'        => array( 'search', 'get_cached', 'clear_cache', 'schedule', 'unschedule' ),
-					'description' => __( 'Action to perform: search (execute and cache), get_cached (return cached results), clear_cache (invalidate), schedule (register WP Cron refresh), unschedule (remove schedule).', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'search', 'get_cached', 'clear_cache', 'schedule', 'unschedule', 'import_from_gmail' ),
+					'description' => __( 'Action to perform: search (execute and cache), get_cached (return cached results), clear_cache (invalidate), schedule (register WP Cron refresh), unschedule (remove schedule), import_from_gmail (search Gmail inbox and import matching emails into CRM pipeline).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'search',
 				),
-				'lead_status'     => array(
+				'lead_status'      => array(
 					'type'        => 'string',
 					'enum'        => self::LEAD_STATUSES,
 					'description' => __( 'Pipeline stage filter. "new" = freshly added, "nurturing" = in drip sequence, "converted" = won. Defaults to "new".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'new',
 				),
-				'inquiry_type'    => array(
+				'inquiry_type'     => array(
 					'type'        => 'string',
 					'enum'        => self::INQUIRY_TYPES,
 					'description' => __( 'Email category/inquiry type. Industry-standard categories: new_inquiry, demo_request, pricing_inquiry, partnership, trial_request, support_request, referral, consultation_request, event_registration, content_download, newsletter_signup, account_management, general. High-intent: demo_request, trial_request, pricing_inquiry, consultation_request. MQL signals: event_registration, content_download.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'all',
 				),
-				'email_domain'    => array(
+				'email_domain'     => array(
 					'type'        => 'string',
 					'description' => __( 'Filter leads by email domain (e.g. "acmecorp.com"). Supports partial match.', 'mcp-ai-wpoos-pro' ),
 				),
-				'source'          => array(
-						'type'        => 'string',
-						'enum'        => self::SOURCE_CHANNELS,
-						'description' => __( 'Lead source channel. Industry-standard HubSpot/Salesforce categories: web_form, email_inbound, phone_call, chat, social_media, referral, event, campaign, import, api, manual, partner, organic_search, paid_search.', 'mcp-ai-wpoos-pro' ),
-						'default'     => 'all',
-					),
-				'lead_score_min'  => array(
+				'source'           => array(
+					'type'        => 'string',
+					'enum'        => self::SOURCE_CHANNELS,
+					'description' => __( 'Lead source channel. Industry-standard HubSpot/Salesforce categories: web_form, email_inbound, phone_call, chat, social_media, referral, event, campaign, import, api, manual, partner, organic_search, paid_search.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'all',
+				),
+				'lead_score_min'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Minimum lead score (0-100). Industry standard: 0-39 cold, 40-69 warm, 70-100 hot.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'lead_score_max'  => array(
+				'lead_score_max'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum lead score (0-100).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'date_from'       => array(
+				'date_from'        => array(
 					'type'        => 'string',
 					'description' => __( 'Include contacts added on or after this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'         => array(
+				'date_to'          => array(
 					'type'        => 'string',
 					'description' => __( 'Include contacts added on or before this date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
-				'per_page'        => array(
+				'per_page'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Results per page (1–100).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
-				'page'            => array(
+				'page'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 1,
 				),
-				'cache_ttl'       => array(
+				'cache_ttl'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Cache lifetime in seconds (minimum 60, default 3600).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 60,
 					'default'     => HOUR_IN_SECONDS,
 				),
-				'schedule'        => array(
+				'schedule'         => array(
 					'type'        => 'string',
 					'enum'        => self::CRON_SCHEDULES,
 					'description' => __( 'WP Cron recurrence for automatic cache refresh (hourly, twicedaily, daily). Used with action=schedule.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'hourly',
 				),
-				'force_refresh'   => array(
+				'force_refresh'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true, bypass any cached results and execute a fresh database query. Useful for on-demand data refreshes during the day.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'contact_owner'   => array(
+				'contact_owner'    => array(
 					'type'        => 'string',
 					'description' => __( 'Filter leads by assigned contact owner (WordPress username or email of the sales rep). Industry standard: HubSpot Contact Owner / Salesforce Lead Owner field.', 'mcp-ai-wpoos-pro' ),
 				),
-				'mql_stage'       => array(
+				'mql_stage'        => array(
 					'type'        => 'string',
 					'enum'        => self::MQL_STAGES,
 					'description' => __( 'Lead qualification stage filter. "mql" = Marketing Qualified Lead (engaged with marketing content); "sql" = Sales Qualified Lead (accepted by sales for active pursuit); "all" = no stage filter. Industry standard: HubSpot lifecycle stages, Salesforce lead qualification workflow.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'all',
 				),
-				'priority'        => array(
+				'priority'         => array(
 					'type'        => 'string',
 					'enum'        => self::LEAD_PRIORITY,
 					'description' => __( 'Lead priority/urgency filter. "high" = immediate action required (hot leads), "medium" = this week, "low" = nurture queue. Industry standard across HubSpot, Salesforce, and Zoho CRM.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'all',
 				),
-				'connection_ids'  => array(
+				'connection_ids'   => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of Remote Sites Gmail connection IDs to search for leads across multiple email accounts. When provided, the tool queries each Gmail account for matching inbound emails and merges the results with local CRM contacts. Each connection must be of type "gmail".', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'search'          => array(
+				'search'           => array(
 					'type'        => 'string',
 					'description' => __( 'Free-text search across lead name, company, and email. Supports partial matching with TF-IDF relevance scoring when orderby is set to relevance.', 'mcp-ai-wpoos-pro' ),
 				),
-				'orderby'         => array(
+				'orderby'          => array(
 					'type'        => 'string',
 					'enum'        => self::ORDERBY_OPTIONS,
 					'description' => __( 'Sort results by this field. Use "relevance" with the search parameter for TF-IDF scored results.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'lead_score',
 				),
-				'order'           => array(
+				'order'            => array(
 					'type'        => 'string',
 					'enum'        => array( 'ASC', 'DESC' ),
 					'description' => __( 'Sort direction: ASC (ascending) or DESC (descending).', 'mcp-ai-wpoos-pro' ),
@@ -351,22 +351,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_required_capability() {
 		return 'edit_posts';
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function requires_base_pro() {
 		return true;
 	}
 
 	/**
- * {@inheritdoc}
- */
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',
@@ -427,10 +427,12 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 				return $this->schedule_search( $arguments );
 			case 'unschedule':
 				return $this->unschedule_search();
+			case 'import_from_gmail':
+				return $this->import_from_gmail( $arguments, $context );
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_invalid_action',
-					__( 'Invalid action. Must be one of: search, get_cached, clear_cache, schedule, unschedule.', 'mcp-ai-wpoos-pro' )
+					__( 'Invalid action. Must be one of: search, get_cached, clear_cache, schedule, unschedule, import_from_gmail.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -449,10 +451,10 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	 * @return array
 	 */
 	private function run_search( array $arguments ) {
-		$filters       = $this->extract_filters( $arguments );
-		$cache_key     = $this->build_cache_key( $filters );
-		$cache_ttl     = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
-		$force_refresh = ! empty( $arguments['force_refresh'] );
+		$filters          = $this->extract_filters( $arguments );
+		$cache_key        = $this->build_cache_key( $filters );
+		$cache_ttl        = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$force_refresh    = ! empty( $arguments['force_refresh'] );
 		$include_external = ! empty( $arguments['include_external'] );
 
 		// External search is never cached (always live).
@@ -470,11 +472,11 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 		// Merge external Gmail search results when requested.
 		if ( $include_external ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-crm-gmail-client.php';
-			$gmail_client    = new WP_MCP_AI_CRM_Gmail_Client();
+			$gmail_client     = new WP_MCP_AI_CRM_Gmail_Client();
 			$external_results = $gmail_client->search_leads( $arguments );
 			if ( is_array( $external_results ) && ! empty( $external_results['leads'] ) ) {
-				$results['leads'] = array_merge( $results['leads'], $external_results['leads'] );
-				$results['total'] = count( $results['leads'] );
+				$results['leads']    = array_merge( $results['leads'], $external_results['leads'] );
+				$results['total']    = count( $results['leads'] );
 				$results['external'] = $external_results['external'] ?? array();
 			}
 		}
@@ -587,6 +589,52 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			'success' => true,
 			'message' => __( 'Lead search schedule removed.', 'mcp-ai-wpoos-pro' ),
 		);
+	}
+
+	/**
+	 * Bridge: search Gmail inbox and import matching emails into the CRM pipeline.
+	 *
+	 * Uses the import_gmail_to_crm tool to fetch emails from Gmail, classify
+	 * intent, detect buying signals, extract/upsert leads, score, and qualify.
+	 * Spam and newsletters are automatically filtered out by the SDR pipeline.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $arguments Tool arguments (query, max_results, auto_reply).
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	private function import_from_gmail( array $arguments, array $context ) {
+		$_tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
+		if ( ! file_exists( $_tool_file ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_crm_import_unavailable',
+				__( 'Gmail import bridge is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		require_once $_tool_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Gmail_To_CRM' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_crm_import_unavailable',
+				__( 'Gmail import bridge class not loaded.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Build arguments for the import tool.
+		$default_query = '';
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$crm_settings  = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			$default_query = $crm_settings['integrations']['gmail_default_query'] ?? 'newer_than:7d is:unread';
+		}
+		$import_args = array(
+			'query'       => $arguments['search'] ?? $arguments['email_domain'] ?? $default_query,
+			'max_results' => $arguments['max_results'] ?? $arguments['per_page'] ?? 10,
+			'auto_reply'  => ! empty( $arguments['auto_reply'] ),
+		);
+
+		$tool = new WP_MCP_AI_Tool_Import_Gmail_To_CRM();
+		return $tool->execute( $import_args, $context );
 	}
 
 	// -------------------------------------------------------------------------
@@ -813,9 +861,9 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 
 		// Apply TF-IDF relevance ranking post-query when using relevance sort with a search query.
 		if ( $is_relevance ) {
-			$leads = $this->rank_by_relevance( $leads, $search );
-			$total = count( $leads );
-			$pages = max( 1, (int) ceil( $total / $per_page ) );
+			$leads  = $this->rank_by_relevance( $leads, $search );
+			$total  = count( $leads );
+			$pages  = max( 1, (int) ceil( $total / $per_page ) );
 			$offset = ( $page - 1 ) * $per_page;
 			$leads  = array_slice( $leads, $offset, $per_page );
 		}

@@ -129,11 +129,11 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 						<td>~22</td>
 						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
-					<tr style="background-color: #fff3cd;">
+					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase C', 'mcp-ai-wpoos-pro' ); ?></strong></td>
 						<td><?php esc_html_e( 'Inbound triage (email/SMS/WhatsApp), multichannel outbound send, auto-reply, AI draft', 'mcp-ai-wpoos-pro' ); ?></td>
-						<td>15 tools built</td>
-						<td><span style="color: #856404;">⚠ <?php esc_html_e( 'In Progress — IMAP polling depends on ext-imap', 'mcp-ai-wpoos-pro' ); ?></span></td>
+						<td>15 tools + 3 listeners (IMAP/SMS/WhatsApp webhooks)</td>
+						<td><span style="color: #155724;">✓ <?php esc_html_e( 'Done — Pure PHP IMAP (no ext-imap), Twilio + notify.lk SMS, Meta WhatsApp API, AI-powered drafts', 'mcp-ai-wpoos-pro' ); ?></span></td>
 					</tr>
 					<tr style="background-color: #d4edda;">
 						<td><strong><?php esc_html_e( 'Phase D', 'mcp-ai-wpoos-pro' ); ?></strong></td>
@@ -276,32 +276,138 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					</td>
 				</tr>
 
+				<!-- Integrations (Phase C) -->
+				<tr><td colspan="2"><h3><?php esc_html_e( 'Channel Integrations', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description" style="margin: 4px 0 8px 0;">
+					<?php esc_html_e( 'Gmail and WhatsApp credentials can also be managed via', 'mcp-ai-wpoos-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>"><?php esc_html_e( 'Remote Sites', 'mcp-ai-wpoos-pro' ); ?></a>.
+					<?php esc_html_e( 'The CRM tools automatically discover Gmail and WhatsApp connections configured there. Twilio and notify.lk direct entry is provided below until Remote Sites types are added for them.', 'mcp-ai-wpoos-pro' ); ?>
+				</p></td></tr>
+
+				<!-- Gmail Import Default Query -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default Gmail Import Query', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][gmail_default_query]" value="<?php echo esc_attr( $settings['integrations']['gmail_default_query'] ?? '' ); ?>" class="large-text" placeholder="newer_than:7d is:unread -category:promotions -category:social" />
+						<p class="description">
+							<?php esc_html_e( 'Default Gmail search query used by import_gmail_to_crm and crm_email_search_leads when no query is provided. Uses Gmail search syntax.', 'mcp-ai-wpoos-pro' ); ?><br>
+							<?php esc_html_e( 'Examples:', 'mcp-ai-wpoos-pro' ); ?>
+							<code>newer_than:7d is:unread</code>,
+							<code>from:client.com newer_than:3d</code>,
+							<code>subject:demo OR subject:pricing is:unread</code>,
+							<code>newer_than:14d -category:promotions -category:social -category:forums</code>
+						</p>
+					</td>
+				</tr>
+
+				<!-- SMS Provider -->
+				<tr>
+					<th scope="row"><?php esc_html_e( 'SMS Provider', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $option_name ); ?>[integrations][sms_provider]">
+							<option value="twilio" <?php selected( $settings['integrations']['sms_provider'] ?? 'twilio', 'twilio' ); ?>>Twilio</option>
+							<option value="notifylk" <?php selected( $settings['integrations']['sms_provider'] ?? '', 'notifylk' ); ?>>notify.lk (Sri Lanka)</option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Select which SMS gateway to use for outbound SMS and auto-reply.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Twilio -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'Twilio (SMS)', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Account SID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_account_sid_secret]" value="<?php echo esc_attr( $settings['integrations']['twilio_account_sid_secret'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your Twilio Account SID from the Twilio Console dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auth Token', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_auth_token_secret]" value="<?php echo esc_attr( $settings['integrations']['twilio_auth_token_secret'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Your Twilio Auth Token. Stored securely in the WordPress options table.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'From Number', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][twilio_from_number]" value="<?php echo esc_attr( $settings['integrations']['twilio_from_number'] ?? '' ); ?>" class="regular-text" placeholder="+1234567890" />
+						<p class="description"><?php esc_html_e( 'Your Twilio phone number in E.164 format (e.g. +1234567890). Used as the sender for outbound SMS.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- WhatsApp -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'WhatsApp (Meta Cloud API)', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_access_token]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_access_token'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'System User Access Token from Meta Business Suite → Business Settings → System Users. Must have whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_phone_number_id]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_phone_number_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'WhatsApp Business phone number ID from the WABA settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][whatsapp_app_secret]" value="<?php echo esc_attr( $settings['integrations']['whatsapp_app_secret'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Meta App Secret for webhook signature validation. Used to verify inbound WhatsApp messages are authentic.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- notify.lk -->
+				<tr><td colspan="2"><h4 style="margin: 0; padding-top: 8px;"><?php esc_html_e( 'notify.lk (Sri Lanka SMS Gateway)', 'mcp-ai-wpoos-pro' ); ?></h4></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'User ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_user_id]" value="<?php echo esc_attr( $settings['integrations']['notifylk_user_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your notify.lk User ID from the API Keys page at app.notify.lk.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="password" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_api_key]" value="<?php echo esc_attr( $settings['integrations']['notifylk_api_key'] ?? '' ); ?>" class="regular-text" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e( 'Your notify.lk API Key.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Sender ID', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $option_name ); ?>[integrations][notifylk_sender_id]" value="<?php echo esc_attr( $settings['integrations']['notifylk_sender_id'] ?? '' ); ?>" class="regular-text" />
+						<p class="description"><?php esc_html_e( 'Your pre-approved sender ID for outbound SMS (e.g. your business name).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- Storage & Audit -->
 				<tr><td colspan="2"><h3><?php esc_html_e( 'Storage & Auditing', 'mcp-ai-wpoos-pro' ); ?></h3></td></tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Storage Backend', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$jetengine_active = function_exists( 'jet_engine' );
+						?>
+						<p>
+							<strong><?php esc_html_e( 'WordPress CPT', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php if ( $jetengine_active ) : ?>
+								<br /><span style="color: #856404;">&#9888; <?php esc_html_e( 'JetEngine is active but CRM entities (Company, Lead, Deal, Activity) currently use WordPress CPTs. CCT migration is on the roadmap.', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php else : ?>
+								<br /><span style="color: blue;">&#9711; <?php esc_html_e( 'Using WordPress Custom Post Types. Install JetEngine to enable CCT migration in a future release.', 'mcp-ai-wpoos-pro' ); ?></span>
+							<?php endif; ?>
+						</p>
+						<p class="description"><?php esc_html_e( 'CRM entities (Company, Lead, Deal, Activity) are stored as WordPress custom post types. JetEngine CCT storage for high-performance is planned for a future release.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Audit Retention (days)', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<input type="number" name="<?php echo esc_attr( $option_name ); ?>[audit_retention_days]" value="<?php echo esc_attr( $settings['audit_retention_days'] ?? 365 ); ?>" min="30" max="2555" class="small-text" />
 						<p class="description"><?php esc_html_e( 'How long PII/consent audit entries are retained in the rolling buffer.  For long-term storage, use the wp_mcp_ai_crm_after_audit action to forward to an external SIEM.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Storage Backend', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<?php
-						$storage_type = class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' )
-							? WP_MCP_AI_Toolkit_Data_Store_Factory::get_storage_type()
-							: 'cpt';
-						?>
-						<p>
-							<strong><?php echo esc_html( 'cct' === $storage_type ? __( 'JetEngine CCT', 'mcp-ai-wpoos-pro' ) : __( 'WordPress CPT', 'mcp-ai-wpoos-pro' ) ); ?></strong>
-							<?php if ( 'cct' === $storage_type ) : ?>
-								<br /><span style="color: green;">✓ Using JetEngine Custom Content Types for enhanced performance</span>
-							<?php else : ?>
-								<br /><span style="color: blue;">○ Using WordPress Custom Post Types (standard storage)</span>
-							<?php endif; ?>
-						</p>
-						<p class="description"><?php esc_html_e( 'Storage backend is automatically selected based on JetEngine availability.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -603,6 +709,59 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 				$sanitized['research_assistant'] = 'default';
 			} else {
 				$sanitized['research_assistant'] = absint( $input['research_assistant'] );
+			}
+		}
+
+		// --- Channel Integrations (Phase C) ---
+		if ( isset( $input['integrations'] ) && is_array( $input['integrations'] ) ) {
+			$integrations = $input['integrations'];
+
+			// SMS provider.
+			if ( isset( $integrations['sms_provider'] ) ) {
+				$valid_providers                           = array( 'twilio', 'notifylk' );
+				$sanitized['integrations']['sms_provider'] = in_array( $integrations['sms_provider'], $valid_providers, true )
+					? $integrations['sms_provider']
+					: 'twilio';
+			}
+
+			// Twilio.
+			if ( isset( $integrations['twilio_account_sid_secret'] ) ) {
+				$sanitized['integrations']['twilio_account_sid_secret'] = sanitize_text_field( $integrations['twilio_account_sid_secret'] );
+			}
+			if ( isset( $integrations['twilio_auth_token_secret'] ) ) {
+				// Auth tokens must not be mangled by sanitize_text_field — trim only.
+				$sanitized['integrations']['twilio_auth_token_secret'] = trim( (string) $integrations['twilio_auth_token_secret'] );
+			}
+			if ( isset( $integrations['twilio_from_number'] ) ) {
+				$sanitized['integrations']['twilio_from_number'] = sanitize_text_field( $integrations['twilio_from_number'] );
+			}
+
+			// WhatsApp.
+			if ( isset( $integrations['whatsapp_access_token'] ) ) {
+				// Access tokens must not be sanitized with sanitize_text_field — trim only.
+				$sanitized['integrations']['whatsapp_access_token'] = trim( (string) $integrations['whatsapp_access_token'] );
+			}
+			if ( isset( $integrations['whatsapp_phone_number_id'] ) ) {
+				$sanitized['integrations']['whatsapp_phone_number_id'] = sanitize_text_field( $integrations['whatsapp_phone_number_id'] );
+			}
+			if ( isset( $integrations['whatsapp_app_secret'] ) ) {
+				$sanitized['integrations']['whatsapp_app_secret'] = trim( (string) $integrations['whatsapp_app_secret'] );
+			}
+
+			// notify.lk.
+			if ( isset( $integrations['notifylk_user_id'] ) ) {
+				$sanitized['integrations']['notifylk_user_id'] = sanitize_text_field( $integrations['notifylk_user_id'] );
+			}
+			if ( isset( $integrations['notifylk_api_key'] ) ) {
+				$sanitized['integrations']['notifylk_api_key'] = trim( (string) $integrations['notifylk_api_key'] );
+			}
+			if ( isset( $integrations['notifylk_sender_id'] ) ) {
+				$sanitized['integrations']['notifylk_sender_id'] = sanitize_text_field( $integrations['notifylk_sender_id'] );
+			}
+
+			// Gmail default import query.
+			if ( isset( $integrations['gmail_default_query'] ) ) {
+				$sanitized['integrations']['gmail_default_query'] = sanitize_text_field( $integrations['gmail_default_query'] );
 			}
 		}
 
