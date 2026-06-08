@@ -201,22 +201,23 @@ function wp_mcp_ai_enqueue_crm_toolkit_admin_styles() {
 }
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_crm_toolkit_admin_styles' );
 
-/**
- * Handle an inbound chat channel message by routing it to the CRM evaluation pipeline.
- *
- * Hooks into 'wp_mcp_ai_chat_channel_message_received' fired by
- * WP_MCP_AI_Channel_Messages_CCT::insert() for every inbound message.
- *
- * @since 2.3.0
- *
- * @param int    $message_id        Row ID of the persisted message.
- * @param string $channel           Channel slug (whatsapp, telegram, etc.).
- * @param string $channel_contact_id Platform-side contact/user ID.
- * @param string $contact_name      Display name of the sender.
- * @param string $content           Message body.
- * @param string $message_type      Message type (text, image, etc.).
- */
-function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type ) {
+	/**
+	 * Handle an inbound chat channel message by routing it to the CRM evaluation pipeline.
+	 *
+	 * Hooks into 'wp_mcp_ai_chat_channel_message_received' fired by
+	 * WP_MCP_AI_Channel_Messages_CCT::insert() for every inbound message.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int    $message_id        Row ID of the persisted message.
+	 * @param string $channel           Channel slug (whatsapp, telegram, etc.).
+	 * @param string $channel_contact_id Platform-side contact/user ID.
+	 * @param string $contact_name      Display name of the sender.
+	 * @param string $content           Message body.
+	 * @param string $message_type      Message type (text, image, etc.).
+	 * @param string $connection_id     Remote Site Manager connection ID.
+	 */
+	function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $channel_contact_id, $contact_name, $content, $message_type, $connection_id = '' ) {
 	// Only process text messages.
 	if ( 'text' !== $message_type ) {
 		return;
@@ -240,6 +241,7 @@ function wp_mcp_ai_crm_handle_chat_channel_message( $message_id, $channel, $chan
 		'sender_name'        => $contact_name,
 		'message_body'       => $content,
 		'message_id'         => $message_id,
+		'connection_id'      => $connection_id,
 		'source'             => 'chat_channel',
 	);
 

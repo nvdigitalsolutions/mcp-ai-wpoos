@@ -18,13 +18,25 @@ class WP_MCP_AI_Tool_Extract_Lead_From_Message implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'message_body' => array( 'type' => 'string' ),
-				'sender_email' => array( 'type' => 'string' ),
-				'sender_phone' => array( 'type' => 'string' ),
-				'sender_name'  => array( 'type' => 'string' ),
-				'channel'      => array(
+				'message_body'     => array( 'type' => 'string' ),
+				'sender_email'     => array( 'type' => 'string' ),
+				'sender_phone'     => array( 'type' => 'string' ),
+				'sender_name'      => array( 'type' => 'string' ),
+				'channel'          => array(
 					'type'    => 'string',
 					'default' => 'email',
+				),
+				'channel_contact_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Platform-side contact/user ID for source traceability.', 'mcp-ai-wpoos-pro' ),
+				),
+				'connection_id'    => array(
+					'type'        => 'string',
+					'description' => __( 'Remote Site Manager connection ID for source attribution.', 'mcp-ai-wpoos-pro' ),
+				),
+				'message_id'       => array(
+					'type'        => 'string',
+					'description' => __( 'Platform message ID for source traceability.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'message_body' ),
@@ -118,6 +130,19 @@ class WP_MCP_AI_Tool_Extract_Lead_From_Message implements WP_MCP_AI_Tool_Interfa
 				if ( $o ) {
 					update_post_meta( $contact_id, 'contact_owner', $o ); }
 			}
+		}
+
+		// Store source connection metadata for traceability (both new and existing leads).
+		$connection_id_arg = isset( $arguments['connection_id'] ) ? sanitize_text_field( $arguments['connection_id'] ) : '';
+		$message_id_arg    = isset( $arguments['message_id'] ) ? sanitize_text_field( $arguments['message_id'] ) : '';
+		if ( $contact_id && $connection_id_arg ) {
+			update_post_meta( $contact_id, '_source_connection_id', $connection_id_arg );
+		}
+		if ( $contact_id && $message_id_arg ) {
+			update_post_meta( $contact_id, '_source_message_id', $message_id_arg );
+		}
+		if ( $contact_id && ! empty( $arguments['channel_contact_id'] ) ) {
+			update_post_meta( $contact_id, '_source_channel_contact_id', sanitize_text_field( $arguments['channel_contact_id'] ) );
 		}
 
 		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
