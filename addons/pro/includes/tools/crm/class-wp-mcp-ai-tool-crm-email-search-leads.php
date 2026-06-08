@@ -224,8 +224,8 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'action'          => array(
 					'type'        => 'string',
-					'enum'        => array( 'search', 'get_cached', 'clear_cache', 'schedule', 'unschedule' ),
-					'description' => __( 'Action to perform: search (execute and cache), get_cached (return cached results), clear_cache (invalidate), schedule (register WP Cron refresh), unschedule (remove schedule).', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'search', 'get_cached', 'clear_cache', 'schedule', 'unschedule', 'import_from_gmail' ),
+					'description' => __( 'Action to perform: search (execute and cache), get_cached (return cached results), clear_cache (invalidate), schedule (register WP Cron refresh), unschedule (remove schedule), import_from_gmail (search Gmail inbox and import matching emails into CRM pipeline).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'search',
 				),
 				'lead_status'     => array(
@@ -427,10 +427,12 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 				return $this->schedule_search( $arguments );
 			case 'unschedule':
 				return $this->unschedule_search();
+			case 'import_from_gmail':
+				return $this->import_from_gmail( $arguments, $context );
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_invalid_action',
-					__( 'Invalid action. Must be one of: search, get_cached, clear_cache, schedule, unschedule.', 'mcp-ai-wpoos-pro' )
+					__( 'Invalid action. Must be one of: search, get_cached, clear_cache, schedule, unschedule, import_from_gmail.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -587,6 +589,52 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			'success' => true,
 			'message' => __( 'Lead search schedule removed.', 'mcp-ai-wpoos-pro' ),
 		);
+	}
+
+	/**
+	 * Bridge: search Gmail inbox and import matching emails into the CRM pipeline.
+	 *
+	 * Uses the import_gmail_to_crm tool to fetch emails from Gmail, classify
+	 * intent, detect buying signals, extract/upsert leads, score, and qualify.
+	 * Spam and newsletters are automatically filtered out by the SDR pipeline.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $arguments Tool arguments (query, max_results, auto_reply).
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	private function import_from_gmail( array $arguments, array $context ) {
+		$_tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/inbound/class-wp-mcp-ai-tool-import-gmail-to-crm.php';
+		if ( ! file_exists( $_tool_file ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_crm_import_unavailable',
+				__( 'Gmail import bridge is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		require_once $_tool_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Gmail_To_CRM' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_crm_import_unavailable',
+				__( 'Gmail import bridge class not loaded.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Build arguments for the import tool.
+		$default_query = '';
+		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$crm_settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
+			$default_query = $crm_settings['integrations']['gmail_default_query'] ?? 'newer_than:7d is:unread';
+		}
+		$import_args = array(
+			'query'       => $arguments['search'] ?? $arguments['email_domain'] ?? $default_query,
+			'max_results' => $arguments['max_results'] ?? $arguments['per_page'] ?? 10,
+			'auto_reply'  => ! empty( $arguments['auto_reply'] ),
+		);
+
+		$tool = new WP_MCP_AI_Tool_Import_Gmail_To_CRM();
+		return $tool->execute( $import_args, $context );
 	}
 
 	// -------------------------------------------------------------------------

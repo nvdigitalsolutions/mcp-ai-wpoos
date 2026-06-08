@@ -1,7 +1,7 @@
 # CRM Toolkit
 
 > Unified umbrella for the CRM & Email Marketing toolkits in NV oOS Pro.
-> **Phases A–E deployed.** Shared engine, lead/deal/activity CRUD, inbound triage, outbound multichannel, sequences, command centre, compliance, and assistant blueprints are all in place. See the [enhancement plan](../../../docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md) for the full roadmap and design rationale.
+> **Phases A–E deployed.** Shared engine, lead/deal/activity CRUD, inbound triage (email/SMS/WhatsApp webhooks), outbound multichannel (Twilio + notify.lk SMS, Meta WhatsApp API, email), AI-powered draft replies, auto-reply dispatch, sequences, command centre, compliance, and assistant blueprints are all in place. See the [enhancement plan](../../../docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md) for the full roadmap and design rationale.
 
 This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 
@@ -31,8 +31,8 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | Deal / opportunity CRUD | `deals/` | Pipeline | Phase B ✅ |
 | Activity CRUD (calls, meetings, tasks) | `activities/` | Core | Phase B ✅ |
 | Outreach sequences | `sequences/` | Automation | Phase D ✅ |
-| Inbound triage | `inbound/` | Multichannel | Phase C ✅ |
-| Outbound send | `outbound/` | Multichannel | Phase C ✅ |
+| Inbound triage | `inbound/` | Multichannel (IMAP/SMS/WA webhooks + Gmail import) | Phase C ✅ |
+| Outbound send | `outbound/` | Multichannel (Twilio/notify.lk/WhatsApp/email) | Phase C ✅ |
 | Lead routing | `routing/` | Core | Phase B ✅ |
 | Pipeline analytics | `analytics/` | Reporting | Phase B ✅ |
 | Consent, DNC, opt-out | `compliance/` | Compliance | Phase E ✅ |
@@ -112,10 +112,23 @@ array(
         'stages' => array( /* qualification → discovery → proposal → ... → closed_won/lost */ ),
     ),
     'integrations'             => array(
+        // Twilio (SMS outbound + inbound webhook).
         'twilio_account_sid_secret' => '',
+        'twilio_auth_token_secret'  => '',
+        'twilio_from_number'        => '', // E.164, e.g. +1234567890
+        // WhatsApp (Meta Cloud API outbound + inbound webhook).
+        'whatsapp_access_token'     => '',
         'whatsapp_phone_number_id'  => '',
+        'whatsapp_app_secret'       => '',
+        // notify.lk (Sri Lanka SMS gateway).
+        'notifylk_user_id'          => '',
+        'notifylk_api_key'          => '',
+        'notifylk_sender_id'        => '',
+        // OAuth handles for IMAP/Gmail/Outlook.
         'gmail_oauth_handle'        => '',
         'outlook_oauth_handle'      => '',
+        // Default SMS provider: 'twilio' | 'notifylk'.
+        'sms_provider'              => 'twilio',
     ),
 );
 ```
@@ -150,7 +163,7 @@ Programmatic access: `WP_MCP_AI_CRM_Engine::get_toolkit_settings()`.  Filterable
 - **Upstream callers:** Pro tool registry, orchestrator
 - **Downstream collaborators:** `WP_MCP_AI_Toolkit_Data_Store_Factory`, `WP_MCP_AI_Validator_Service` (email/phone validation), `WP_MCP_AI_Memory_Capture_Service`, `WP_MCP_AI_Upwork_Client`
 - **Events fired:** `wp_mcp_ai_crm_lead_score_calculated`, `wp_mcp_ai_crm_after_audit`
-- **Events listened to:** None (Phase C+ will add `wp_mcp_ai_chat_channel_message_received` listener)
+- **Events listened to:** `wp_mcp_ai_chat_channel_message_received` (chat channel → CRM pipeline), `rest_api_init` (SMS/WhatsApp webhook routes)
 
 ## Conventions
 

@@ -119,10 +119,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 				),
 			),
 			'integrations'            => array(
+				// Twilio (SMS outbound + inbound webhook).
 				'twilio_account_sid_secret' => '',
+				'twilio_auth_token_secret'  => '',
+				'twilio_from_number'        => '', // E.164 format, e.g. +1234567890
+				// WhatsApp (Meta Cloud API outbound + inbound webhook).
+				'whatsapp_access_token'     => '',
 				'whatsapp_phone_number_id'  => '',
+				'whatsapp_app_secret'       => '', // For webhook signature validation
+				// notify.lk (Sri Lanka SMS gateway).
+				'notifylk_user_id'          => '',
+				'notifylk_api_key'          => '',
+				'notifylk_sender_id'        => '',
+				// OAuth handles for IMAP/Gmail/Outlook.
 				'gmail_oauth_handle'        => '',
 				'outlook_oauth_handle'      => '',
+				// Default SMS provider: 'twilio' | 'notifylk'.
+				'sms_provider'              => 'twilio',
+				// Default Gmail import query (Gmail search syntax).
+				'gmail_default_query'       => 'newer_than:7d is:unread',
 			),
 			'search'                  => array(
 				'algorithm'        => 'keyword_tfidf',
@@ -135,6 +150,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 				),
 			),
 			'research_assistant'      => 'default',
+			// Storage backend preference: 'auto', 'cct', or 'cpt'.
+			'storage_backend'         => 'auto',
 		);
 
 		$stored = get_option( self::SETTINGS_OPTION, array() );
