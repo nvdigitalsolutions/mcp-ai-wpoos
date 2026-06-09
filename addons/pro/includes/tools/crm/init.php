@@ -119,6 +119,9 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-deal-research-page.php';
 		WP_MCP_AI_Deal_Research_Page::init();
 
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-customer-research-page.php';
+		WP_MCP_AI_Customer_Research_Page::init();
+
 		// Load per-CPT Settings pages (under each CPT submenu).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-company-settings-page.php';
 		WP_MCP_AI_Company_Settings_Page::init();

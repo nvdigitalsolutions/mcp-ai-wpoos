@@ -79,6 +79,14 @@ class WP_MCP_AI_CRM_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 				'bound_assistant_id' => 0,
 				'label'              => __( 'Research & Add Deals', 'mcp-ai-wpoos-pro' ),
 			),
+			array(
+				'type'               => 'research_add',
+				'page_slug'          => 'research-customer',
+				'entity_type'        => 'mcp_ai_customer',
+				'class_ref'          => 'WP_MCP_AI_Customer_Research_Page',
+				'bound_assistant_id' => 0,
+				'label'              => __( 'Research & Add Customers', 'mcp-ai-wpoos-pro' ),
+			),
 		);
 	}
 
