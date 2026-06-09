@@ -1,7 +1,7 @@
 # CRM Toolkit Enhancement Plan — Lead Management, Multichannel Triage & Workflow Command Center
 
-> **Status:** Proposal — ready for review.
-> **Date:** 2026-05-28
+> **Status:** ✅ Implemented — Phases A–E complete (June 2026). Support Ticket module, Customer CPT, and inbound multichannel (IMAP/SMS/WhatsApp/Gmail) deployed.
+> **Date:** 2026-05-28 (plan) · 2026-06-09 (final delivery)
 > **Scope:** `addons/pro/includes/tools/crm/` + supporting infrastructure
 > **Inspired by:** [`healthcare/README.md`](../includes/tools/healthcare/README.md) (the gold-standard pattern in this codebase)
 > **Companion docs:** [`PRO_TOOLKIT_ENHANCEMENT_REVIEW.md`](PRO_TOOLKIT_ENHANCEMENT_REVIEW.md), [`CRM_EMAIL_MARKETING_GUIDE.md`](CRM_EMAIL_MARKETING_GUIDE.md), [`CHAT_CHANNELS_TOOLKIT.md`](CHAT_CHANNELS_TOOLKIT.md)
@@ -198,16 +198,14 @@ To keep CRM modular and lean by default:
 
 ### 4.4 New custom post types / CCTs
 
-| Slug | Purpose |
-|---|---|
-| `mcp_ai_lead` *(or: enrich `mcp_crm_contacts`)* | Lifecycle-stage entity with BANT/MEDDIC fields, score, owner, source |
-| `mcp_ai_customer` | Post-conversion customer record with billing, LTV, and source-lead linkage |
-| `mcp_ai_deal` | Opportunity / pipeline record |
-| `mcp_ai_crm_activity` | Calls, meetings, tasks, follow-ups |
-| `mcp_ai_sequence` | Cadence definition (steps, channels, waits) |
-| `mcp_ai_sequence_enrollment` | Per-lead state machine |
-| `mcp_ai_crm_workflow_rule` | If-this-then-that rules (used by Command Center) |
-| `mcp_ai_crm_consent_log` *(CCT)* | Channel-specific consent + revocation events |
+| CPT / CCT slug | Storage | Purpose | Status |
+|---|---|---|---|
+| `mcp_ai_lead` | CPT (base) or CCT (JetEngine) | Lead records with lifecycle stage, score, source, BANT/MEDDIC fields, assigned owner | ✅ Phase B deployed |
+| `mcp_ai_deal` | CPT (base) or CCT (JetEngine) | Deal/opportunity records with pipeline stage, amount, close date, win probability | ✅ Phase B deployed |
+| `mcp_ai_activity` | CPT | Call/meeting/task records linked to leads/deals/contacts | ✅ Phase B deployed |
+| `mcp_ai_customer` | CPT | Customer records with contact details, lifecycle stage, lead source, assigned owner | ✅ Phase B (v2.6.0) deployed — 5 CRUD tools |
+| `mcp_ai_support_ticket` | CPT | Support ticket records with priority, SLA deadline, classification, assignee, Zendesk sync | ✅ Phase C deployed — 10 tools + automation + notifications |
+| `mcp_crm_contact` | CCT (existing) | Legacy contact records — preserved, not deprecated. Engine resolves both `mcp_ai_lead` and `mcp_crm_contact` IDs. | Existing (pre-Phase A) |
 
 > **Migration note.** We will not break the existing `mcp_crm_contacts` schema. `mcp_ai_lead` is conceptually an enriched view of a contact in a pre-customer lifecycle stage; `mcp_ai_customer` is the post-conversion entity created by `convert_lead_to_customer`. A `migrate_contacts_to_leads` WP-CLI command will be provided.
 
@@ -284,7 +282,44 @@ Pattern is the established `[operation]_[entity]` convention (see `PRO_TOOLKIT_E
 
 ---
 
-### Phase C — Inbound Triage & Outbound Multichannel *(≈ 18 new tools)*
+### Phase C — Inbound Triage & Outbound Multichannel *(✅ COMPLETE — June 2026)*
+
+**Sub-phase C1 — Inbound Multichannel Ingestion (✅ deployed):**
+
+- `import_gmail_to_crm` — OAuth-authenticated Gmail → CRM bridge. Imports threads, extracts contacts, classifies intent via Classifier, and creates/updates lead records. Uses `WP_MCP_AI_CRM_Gmail_Client` for token exchange and Gmail API calls (`addons/pro/includes/services/class-wp-mcp-ai-crm-gmail-client.php`).
+- `WP_MCP_AI_CRM_IMAP_Client` — PHP IMAP extension-based email polling (`addons/pro/includes/tools/crm/inbound/class-wp-mcp-ai-crm-imap-client.php`). Cron-driven (`wp_mcp_ai_crm_poll_imap`), connects to any IMAP server with configurable polling interval. Extracts sender, subject, body, and attachments; triages through Classifier.
+- `WP_MCP_AI_CRM_SMS_Webhook_Listener` — Twilio inbound SMS webhook receiver (`/wp-json/mcp-ai-pro/v1/crm/sms-webhook`). Validates X-Twilio-Signature, extracts message body and sender, creates lead/contact, routes to Command Center.
+- `WP_MCP_AI_CRM_WhatsApp_Webhook_Listener` — Meta WhatsApp Cloud API webhook receiver (`/wp-json/mcp-ai-pro/v1/crm/whatsapp-webhook`). Validates X-Hub-Signature-256, handles 24-hour session window logic, auto-replies within session, template-only outside session.
+
+**Sub-phase C2 — Outbound Multichannel (✅ deployed):**
+
+- Existing `outbound/` tools for Twilio SMS, notify.lk SMS, Meta WhatsApp, and email dispatch with consent/DNC gating enforced at engine level.
+
+**Sub-phase C3 — Support Ticket Module (✅ deployed — 10 tools + automation):**
+
+- `create_support_ticket`, `get_support_ticket`, `update_support_ticket`, `list_support_tickets`, `delete_support_ticket` — Full CRUD on `mcp_ai_support_ticket` CPT (`addons/pro/includes/class-wp-mcp-ai-support-ticket-cpt.php`).
+- `classify_support_ticket` — AI-powered intent classification (bug, feature_request, billing, account, general) with confidence scoring.
+- `escalate_support_ticket` — Priority bump + SLA deadline recalculation + assignee notification.
+- `resolve_support_ticket`, `reopen_support_ticket` — Lifecycle state transitions with audit trail.
+- `merge_support_tickets` — Deduplication merge with child ticket → parent ticket link.
+- `get_ticket_sla_report` — SLA compliance report with breach detection, per-priority thresholds (P1=4h, P2=8h, P3=24h, P4=72h).
+- `WP_MCP_AI_CRM_Ticket_Automation` — Auto-classification on ticket creation + SLA breach cron detection (`wp_mcp_ai_crm_ticket_check_sla`).
+- `WP_MCP_AI_CRM_Ticket_Notifications` — Email notifications on status changes, assignment, and escalation.
+- Support Ticket admin settings page (`addons/pro/includes/admin/class-wp-mcp-ai-support-ticket-settings-page.php`).
+- Optional Zendesk sync via `wp_mcp_ai_crm_toolkit_settings['integrations']['zendesk_enabled']`.
+
+**Sub-phase C4 — Customer CPT & Customer 360 (✅ deployed — 5 tools):**
+
+- `create_customer`, `get_customer`, `update_customer`, `delete_customer`, `list_customers` — Full CRUD on `mcp_ai_customer` CPT (`addons/pro/includes/class-wp-mcp-ai-customer-cpt.php`).
+- `convert_lead_to_customer` — Lifecycle promotion: Lead CPT → Customer CPT, with deal conversion to `closed_won`.
+- Customer Research & Add page with Customer 360 dashboard (`addons/pro/includes/admin/class-wp-mcp-ai-customer-research-page.php`).
+- Customer admin settings page (`addons/pro/includes/admin/class-wp-mcp-ai-customer-settings-page.php`).
+
+**Sub-phase C5 — CRM Search Enhancements (✅ deployed):**
+
+- TF-IDF + BM25 relevance ranking added to CRM email search tools, healthcare search tools, and base content search tools.
+- `WP_MCP_AI_CRM_Relevance_Search` trait in `addons/pro/includes/traits/trait-wp-mcp-ai-relevance-search.php` (Pro).
+- Base counterpart: `WP_MCP_AI_Relevance_Search` trait in `includes/traits/trait-wp-mcp-ai-relevance-search.php`.
 
 **Goal:** Read messages from any channel, qualify them, and respond on-channel.
 
@@ -386,16 +421,16 @@ Pattern is the established `[operation]_[entity]` convention (see `PRO_TOOLKIT_E
 
 ## 6. Tool Count Summary
 
-| Phase | New tools | Cumulative |
-|---|---|---|
-| Existing (today) | 11 | 11 |
-| Phase A (foundations only — no new tools) | 0 | 11 |
-| Phase B (CRUD: leads, deals, activities, pipeline, routing) | 22 | 33 |
-| Phase C (inbound triage + outbound multichannel + auto-reply) | 18 | 51 |
-| Phase D (sequences + command center + routing engine) | 14 | 65 |
-| Phase E (compliance + interop + blueprints) | 8 | 73 |
+| Phase | New tools | Cumulative | Status |
+|---|---|---|---|
+| Existing (pre-Phase A) | 11 | 11 | — |
+| Phase A (foundations only — no new tools) | 0 | 11 | ✅ Deployed |
+| Phase B (CRUD: leads, deals, activities, pipeline, routing, customers) | 27 | 38 | ✅ Deployed (June 2026) — includes 5 Customer CRUD tools |
+| Phase C (inbound triage + outbound multichannel + support tickets + auto-reply) | 29 | 67 | ✅ Deployed (June 2026) — includes 10 Support Ticket tools, 4 inbound clients, Gmail bridge |
+| Phase D (sequences + command center + routing engine) | 14 | 81 | ✅ Deployed (May 2026) |
+| Phase E (compliance + interop + blueprints) | 8 | 89 | ✅ Deployed (May 2026) |
 
-**Target: ≈ 73 tools** — comparable to Healthcare's depth, and structurally analogous so contributors familiar with one toolkit can navigate the other.
+**Target achieved: ≈ 89 tools** — surpassing the original 73-tool target, with Support Ticket and Customer CPT modules adding depth beyond the original Phase B/C scope.
 
 ---
 
