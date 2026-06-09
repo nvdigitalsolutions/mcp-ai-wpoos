@@ -115,8 +115,8 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// ─── HTTP Client (PSR-18) ──────────────────────────────────────
 
-	// Use Symfony HttpClient with PSR-18 adapter since it's already a dependency.
-	$http_client = new \Symfony\Component\HttpClient\Psr18Client();
+	// Use WordPress-native HTTP adapter that implements HttpClientInterface.
+	$http_client = new Nvoos\WordPress\Adapter\HttpClient();
 
 	// ─── Provider Clients ──────────────────────────────────────────
 

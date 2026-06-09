@@ -135,7 +135,6 @@ class WP_MCP_AI_SSE_Handler {
 	public function finish() {
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			fastcgi_finish_request();
-			return;
 		}
 		exit;
 	}
