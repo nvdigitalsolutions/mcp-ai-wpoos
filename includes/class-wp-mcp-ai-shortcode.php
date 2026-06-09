@@ -362,6 +362,13 @@ class WP_MCP_AI_Shortcode {
 
 		$user_id = get_current_user_id();
 
+		// Preserve chatDebugMode from the initial register_assets() call
+		// so the second wp_localize_script call (which WordPress appends
+		// as a new `var wpMcpAiChat = {...}` declaration) does not strip
+		// the debugging flag from the JS global.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$chat_debug_mode  = ! empty( $settings['enable_extended_logging'] ) && current_user_can( 'manage_options' );
+
 		// Overwrite the nonce and current user ID that were set (with user 0)
 		// during register_assets() on init.
 		wp_localize_script(
@@ -370,6 +377,7 @@ class WP_MCP_AI_Shortcode {
 			array(
 				'nonce'         => wp_create_nonce( 'wp_rest' ),
 				'currentUserId' => $user_id,
+				'chatDebugMode' => $chat_debug_mode,
 			)
 		);
 
