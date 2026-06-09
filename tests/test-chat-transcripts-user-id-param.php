@@ -62,6 +62,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $user_id );
 		$request->set_param( 'per_page', 20 );
 
@@ -88,6 +89,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		// Intentionally NOT setting user_id parameter.
 		$request->set_param( 'per_page', 20 );
 
@@ -111,6 +113,8 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'user_id', 0 ); // Guest users should pass 0.
 		$request->set_param( 'per_page', 20 );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
@@ -139,6 +143,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $user1_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $user1_id );
 		$request->set_param( 'per_page', 20 );
 
@@ -171,6 +176,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $user_id );
 		$request->set_param( 'per_page', 20 );
 
@@ -188,6 +194,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', $user_id );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'per_page', 20 );
@@ -208,6 +215,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'user_id', 'invalid' ); // Invalid user ID.
 		$request->set_param( 'per_page', 20 );
 

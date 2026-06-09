@@ -42,6 +42,9 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
+		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
 		}
@@ -61,6 +64,7 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
 	}
@@ -102,6 +106,7 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-cct-author-id-session' );
 		$request->set_param(
@@ -162,6 +167,7 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-guest-cct-author-session' );

@@ -23,7 +23,11 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
-		$rest = new WP_MCP_AI_REST();
+		// Provide test doubles for the required constructor dependencies.
+		$rest = new WP_MCP_AI_REST(
+			$this->createMock( WP_MCP_AI_Tool_Registry::class ),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// Create a mock transcript row with an image-only message.
 		$messages = array(
@@ -101,7 +105,10 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
-		$rest = new WP_MCP_AI_REST();
+		$rest = new WP_MCP_AI_REST(
+			$this->createMock( WP_MCP_AI_Tool_Registry::class ),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// Create a mock response payload with an image-only message.
 		$response_payload = wp_json_encode(
@@ -150,7 +157,10 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
-		$rest = new WP_MCP_AI_REST();
+		$rest = new WP_MCP_AI_REST(
+			$this->createMock( WP_MCP_AI_Tool_Registry::class ),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $rest );
@@ -315,7 +325,10 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
-		$rest = new WP_MCP_AI_REST();
+		$rest = new WP_MCP_AI_REST(
+			$this->createMock( WP_MCP_AI_Tool_Registry::class ),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// Create a mock transcript row.
 		$request_payload = wp_json_encode(
@@ -356,7 +369,10 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
-		$rest = new WP_MCP_AI_REST();
+		$rest = new WP_MCP_AI_REST(
+			$this->createMock( WP_MCP_AI_Tool_Registry::class ),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// Create messages with user sending an image.
 		$messages = array(
@@ -418,7 +434,10 @@ class WP_MCP_AI_Chat_Image_Only_Messages_Test extends WP_UnitTestCase {
 		// Load the REST class.
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
 
-		$rest = new WP_MCP_AI_REST();
+		$rest = new WP_MCP_AI_REST(
+			$this->createMock( WP_MCP_AI_Tool_Registry::class ),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// User sends only an image, no text.
 		$messages = array(
