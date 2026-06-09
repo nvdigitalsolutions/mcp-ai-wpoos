@@ -51,12 +51,15 @@ class WP_MCP_AI_WebLLM_Enqueue {
 		$plugin_version = defined( 'NVOOS_EMBEDDED_VERSION' ) ? NVOOS_EMBEDDED_VERSION : '1.0.0';
 		$plugin_file    = defined( 'NVOOS_EMBEDDED_FILE' ) ? NVOOS_EMBEDDED_FILE : __FILE__;
 
+		// Use minified assets in production, source files when SCRIPT_DEBUG is on.
+		$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
+
 		// Core WebLLM loader (already exists, loads from CDN)
 		// This is already registered in WP_MCP_AI_Shortcode, but we check here for safety.
 		if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
 			wp_register_script(
 				'webllm-loader',
-				plugins_url( 'assets/js/webllm-loader.js', $plugin_file ),
+				plugins_url( 'assets/js/webllm-loader' . $suffix, $plugin_file ),
 				array(),
 				$plugin_version,
 				true
@@ -67,7 +70,7 @@ class WP_MCP_AI_WebLLM_Enqueue {
 		if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
 			wp_register_script(
 				'wp-mcp-ai-embedded-llm-client',
-				plugins_url( 'assets/js/embedded-llm-client.js', $plugin_file ),
+				plugins_url( 'assets/js/embedded-llm-client' . $suffix, $plugin_file ),
 				array( 'webllm-loader' ),
 				$plugin_version,
 				true
@@ -75,7 +78,6 @@ class WP_MCP_AI_WebLLM_Enqueue {
 		}
 
 		// NEW: Tool adapter (Phase 1 - thin wrapper, ~1.7KB minified).
-		$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
 		wp_register_script(
 			'wp-mcp-ai-webllm-tool-adapter',
 			plugins_url( 'assets/js/webllm-tool-adapter' . $suffix, $plugin_file ),
