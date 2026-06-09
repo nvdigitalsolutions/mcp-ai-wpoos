@@ -1,0 +1,29 @@
+# Schedule Anything — Tenant Router (Cloudflare Worker)
+
+name = "sa-tenant-router"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# KV namespace for tenant→origin mapping
+# Create with: wrangler kv:namespace create "SA_TENANT_KV"
+# Then paste the binding below.
+# kv_namespaces = [
+#   { binding = "TENANT_KV", id = "..." }
+# ]
+
+# Rate limiter (free tier: 10,000 requests per 10 seconds per key)
+# Uncomment after running: wrangler ratelimit create "SA_RATE_LIMITER"
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "..."
+
+[env.production]
+# Production environment overrides
+# kv_namespaces = [
+#   { binding = "TENANT_KV", id = "..." }
+# ]
+
+[[routes]]
+pattern = "*.scheduleanything.com/*"
+zone_name = "scheduleanything.com"

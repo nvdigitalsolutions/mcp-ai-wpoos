@@ -486,6 +486,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
 
+		// Load Pro Schedule REST CRUD controller (Schedule Anything SPA backend).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-rest-controller.php';
+		WP_MCP_AI_Pro_Schedule_REST_Controller::init();
+
 		// Load Quiz Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
 
