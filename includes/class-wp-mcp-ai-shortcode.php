@@ -192,7 +192,7 @@ class WP_MCP_AI_Shortcode {
 		);
 
 		// Register realtime voice service (standalone, loaded on demand).
-		$voice_realtime_relative = $js_dir . 'chat-voice-realtime-service' . $js_ext;
+		$voice_realtime_relative = $this->resolve_js_asset_path( $js_dir, 'chat-voice-realtime-service', $js_ext );
 		wp_register_script(
 			'wp-mcp-ai-voice-realtime',
 			WP_MCP_AI_URL . $voice_realtime_relative,
@@ -202,7 +202,7 @@ class WP_MCP_AI_Shortcode {
 		);
 
 		// Register browser voice service (standalone, loaded on demand).
-		$voice_browser_relative = $js_dir . 'chat-browser-voice-service' . $js_ext;
+		$voice_browser_relative = $this->resolve_js_asset_path( $js_dir, 'chat-browser-voice-service', $js_ext );
 		wp_register_script(
 			'wp-mcp-ai-voice-browser',
 			WP_MCP_AI_URL . $voice_browser_relative,
@@ -212,7 +212,7 @@ class WP_MCP_AI_Shortcode {
 		);
 
 		// Register voice mode integration (glues voice services to chat UI).
-		$voice_integration_relative = $js_dir . 'chat-voice-mode-integration' . $js_ext;
+		$voice_integration_relative = $this->resolve_js_asset_path( $js_dir, 'chat-voice-mode-integration', $js_ext );
 		wp_register_script(
 			'wp-mcp-ai-voice-integration',
 			WP_MCP_AI_URL . $voice_integration_relative,
@@ -411,6 +411,34 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		return WP_MCP_AI_VERSION;
+	}
+
+	/**
+	 * Resolve the best available JS file extension for a given basename.
+	 *
+	 * When the build system produces .min.js files but one is missing on disk,
+	 * gracefully fall back to the non-minified .js source to prevent MIME-type
+	 * errors (404s served as text/html by the web server).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $js_dir   Directory path relative to plugin root (e.g. 'assets/js/').
+	 * @param string $basename File basename without extension.
+	 * @param string $js_ext   Preferred extension (e.g. '.min.js' or '.js').
+	 * @return string Relative path with the best available extension.
+	 */
+	protected function resolve_js_asset_path( $js_dir, $basename, $js_ext ) {
+		$relative = $js_dir . $basename . $js_ext;
+
+		// If we prefer .min.js but it doesn't exist, try .js.
+		if ( '.min.js' === $js_ext && ! file_exists( WP_MCP_AI_PATH . $relative ) ) {
+			$fallback = $js_dir . $basename . '.js';
+			if ( file_exists( WP_MCP_AI_PATH . $fallback ) ) {
+				return $fallback;
+			}
+		}
+
+		return $relative;
 	}
 
 	/**

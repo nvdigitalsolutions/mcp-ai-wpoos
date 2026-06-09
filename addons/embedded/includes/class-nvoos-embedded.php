@@ -195,11 +195,14 @@ class NV_oOS_Embedded {
 	public static function register_embedded_scripts() {
 		$version = NVOOS_EMBEDDED_VERSION;
 
+		// Use minified assets in production, source files when SCRIPT_DEBUG is on.
+		$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
+
 		// Core WebLLM loader.
 		if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
 			wp_register_script(
 				'webllm-loader',
-				NVOOS_EMBEDDED_URL . 'assets/js/webllm-loader.js',
+				NVOOS_EMBEDDED_URL . 'assets/js/webllm-loader' . $suffix,
 				array(),
 				$version,
 				true
@@ -210,7 +213,7 @@ class NV_oOS_Embedded {
 		if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
 			wp_register_script(
 				'wp-mcp-ai-embedded-llm-client',
-				NVOOS_EMBEDDED_URL . 'assets/js/embedded-llm-client.js',
+				NVOOS_EMBEDDED_URL . 'assets/js/embedded-llm-client' . $suffix,
 				array( 'webllm-loader' ),
 				$version,
 				true
@@ -219,10 +222,9 @@ class NV_oOS_Embedded {
 
 		// Tool adapter.
 		if ( ! wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'registered' ) ) {
-			$tool_adapter_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
 			wp_register_script(
 				'wp-mcp-ai-webllm-tool-adapter',
-				NVOOS_EMBEDDED_URL . 'assets/js/webllm-tool-adapter' . $tool_adapter_suffix,
+				NVOOS_EMBEDDED_URL . 'assets/js/webllm-tool-adapter' . $suffix,
 				array(),
 				$version,
 				true
@@ -231,10 +233,9 @@ class NV_oOS_Embedded {
 
 		// Function calling client.
 		if ( ! wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'registered' ) ) {
-			$fc_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
 			wp_register_script(
 				'wp-mcp-ai-webllm-function-calling',
-				NVOOS_EMBEDDED_URL . 'assets/js/webllm-function-calling-client' . $fc_suffix,
+				NVOOS_EMBEDDED_URL . 'assets/js/webllm-function-calling-client' . $suffix,
 				array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
 				$version,
 				true
