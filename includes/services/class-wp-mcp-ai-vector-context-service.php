@@ -165,10 +165,16 @@ class WP_MCP_AI_Vector_Context_Service {
 			);
 		}
 
+		// Resolve the embedding provider for cache-key scoping.
+		$provider    = $this->get_embedding_provider();
+		$provider_id = is_wp_error( $provider ) ? 'openai' : $provider->get_id();
+		$model       = is_wp_error( $provider ) ? self::EMBEDDING_MODEL : $provider->get_model();
+		$use_store   = class_exists( 'WP_MCP_AI_Context_Embedding_Store' );
+
 		// Calculate similarity scores for each context.
 		$scored_contexts = array();
 		foreach ( $contexts as $context ) {
-			// Generate embedding for context content.
+			// Build the context text.
 			$context_text = '';
 			if ( isset( $context['data']['title'] ) ) {
 				$context_text .= $context['data']['title'] . ' ';
@@ -177,7 +183,48 @@ class WP_MCP_AI_Vector_Context_Service {
 				$context_text .= $context['data']['content'];
 			}
 
-			$context_embedding = $this->embed_context( $context_text );
+			// Prefer the persistent embedding store over per-request API calls.
+			$context_embedding = null;
+			$context_id        = isset( $context['context_id'] ) ? $context['context_id'] : '';
+			$embedding_fresh   = false;
+
+			if ( $use_store && '' !== $context_id ) {
+				// Check if a fresh embedding exists in the store.
+				if ( WP_MCP_AI_Context_Embedding_Store::is_fresh(
+					$context_id,
+					absint( $agent_id ),
+					$provider_id,
+					$model,
+					$context_text
+				) ) {
+					$context_embedding = WP_MCP_AI_Context_Embedding_Store::get(
+						$context_id,
+						absint( $agent_id ),
+						$provider_id,
+						$model
+					);
+					$embedding_fresh   = null !== $context_embedding;
+				}
+
+				// Store a newly-generated embedding for future reuse.
+				if ( ! $embedding_fresh ) {
+					$context_embedding = $this->embed_context( $context_text );
+					if ( ! is_wp_error( $context_embedding ) ) {
+						WP_MCP_AI_Context_Embedding_Store::store(
+							$context_id,
+							absint( $agent_id ),
+							$context_embedding,
+							$provider_id,
+							$model,
+							$context_text
+						);
+					}
+				}
+			} else {
+				// Fallback: generate embedding via API (legacy path).
+				$context_embedding = $this->embed_context( $context_text );
+			}
+
 			if ( is_wp_error( $context_embedding ) ) {
 				continue; // Skip contexts that fail to embed.
 			}
@@ -319,6 +366,12 @@ class WP_MCP_AI_Vector_Context_Service {
 			return array();
 		}
 
+		// Resolve the embedding provider for cache-key scoping.
+		$provider    = $this->get_embedding_provider();
+		$provider_id = is_wp_error( $provider ) ? 'openai' : $provider->get_id();
+		$model       = is_wp_error( $provider ) ? self::EMBEDDING_MODEL : $provider->get_model();
+		$use_store   = class_exists( 'WP_MCP_AI_Context_Embedding_Store' );
+
 		$scored = array();
 		foreach ( $contexts as $context ) {
 			$text = '';
@@ -333,7 +386,45 @@ class WP_MCP_AI_Vector_Context_Service {
 				continue;
 			}
 
-			$ctx_embedding = $this->embed_context( $text );
+			// Prefer the persistent embedding store over per-request API calls.
+			$ctx_embedding   = null;
+			$context_id      = isset( $context['context_id'] ) ? $context['context_id'] : '';
+			$embedding_fresh = false;
+
+			if ( $use_store && '' !== $context_id ) {
+				if ( WP_MCP_AI_Context_Embedding_Store::is_fresh(
+					$context_id,
+					absint( $agent_id ),
+					$provider_id,
+					$model,
+					$text
+				) ) {
+					$ctx_embedding   = WP_MCP_AI_Context_Embedding_Store::get(
+						$context_id,
+						absint( $agent_id ),
+						$provider_id,
+						$model
+					);
+					$embedding_fresh = null !== $ctx_embedding;
+				}
+
+				if ( ! $embedding_fresh ) {
+					$ctx_embedding = $this->embed_context( $text );
+					if ( ! is_wp_error( $ctx_embedding ) ) {
+						WP_MCP_AI_Context_Embedding_Store::store(
+							$context_id,
+							absint( $agent_id ),
+							$ctx_embedding,
+							$provider_id,
+							$model,
+							$text
+						);
+					}
+				}
+			} else {
+				$ctx_embedding = $this->embed_context( $text );
+			}
+
 			if ( is_wp_error( $ctx_embedding ) ) {
 				continue;
 			}
@@ -341,7 +432,7 @@ class WP_MCP_AI_Vector_Context_Service {
 			$similarity = $this->cosine_similarity( $query_embedding, $ctx_embedding );
 
 			$context['_vector_similarity'] = (float) $similarity;
-			$scored[] = array(
+			$scored[]                      = array(
 				'record'     => $context,
 				'similarity' => (float) $similarity,
 			);
@@ -549,10 +640,10 @@ class WP_MCP_AI_Vector_Context_Service {
 		 *
 		 * @param int $half_life Half-life in seconds.
 		 */
-		$half_life       = (int) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal_half_life', 30 * DAY_IN_SECONDS );
-		$temporal_score  = 0.0;
-		$stored_at_iso   = isset( $context['stored_at'] ) ? (string) $context['stored_at'] : '';
-		$stored_ts       = $stored_at_iso ? strtotime( $stored_at_iso ) : 0;
+		$half_life      = (int) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal_half_life', 30 * DAY_IN_SECONDS );
+		$temporal_score = 0.0;
+		$stored_at_iso  = isset( $context['stored_at'] ) ? (string) $context['stored_at'] : '';
+		$stored_ts      = $stored_at_iso ? strtotime( $stored_at_iso ) : 0;
 		if ( $temporal_weight > 0 && $stored_ts > 0 && $half_life > 0 ) {
 			$age_seconds    = max( 0, time() - $stored_ts );
 			$decay          = pow( 0.5, $age_seconds / $half_life );
@@ -600,9 +691,9 @@ class WP_MCP_AI_Vector_Context_Service {
 			}
 			if ( ! empty( $filters['tags'] ) && is_array( $filters['tags'] ) ) {
 				++$signals;
-				$tags_lower         = array_map( 'strtolower', array_map( 'strval', $tags ) );
-				$filter_tags_lower  = array_map( 'strtolower', array_map( 'strval', $filters['tags'] ) );
-				$tag_intersect      = array_intersect( $tags_lower, $filter_tags_lower );
+				$tags_lower        = array_map( 'strtolower', array_map( 'strval', $tags ) );
+				$filter_tags_lower = array_map( 'strtolower', array_map( 'strval', $filters['tags'] ) );
+				$tag_intersect     = array_intersect( $tags_lower, $filter_tags_lower );
 				if ( ! empty( $tag_intersect ) ) {
 					++$matched;
 				}
@@ -653,7 +744,7 @@ class WP_MCP_AI_Vector_Context_Service {
 	 * @param array $vec_b Second vector.
 	 * @return float Similarity score (0-1).
 	 */
-	private function cosine_similarity( $vec_a, $vec_b ) {
+	public function cosine_similarity( $vec_a, $vec_b ) {
 		if ( count( $vec_a ) !== count( $vec_b ) ) {
 			return 0.0;
 		}
@@ -774,11 +865,11 @@ class WP_MCP_AI_Vector_Context_Service {
 	 * @return WP_MCP_AI_Embedding_Provider_Interface|null
 	 */
 	private function resolve_default_provider() {
-		$settings        = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
-		$has_openai      = ! empty( $settings['openai_api_key'] );
-		$has_ollama      = ! empty( $settings['ollama_endpoint_url'] );
+		$settings         = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$has_openai       = ! empty( $settings['openai_api_key'] );
+		$has_ollama       = ! empty( $settings['ollama_endpoint_url'] );
 		$has_digitalocean = ! empty( $settings['digitalocean_api_key'] );
-		$preference      = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
+		$preference       = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
 
 		// Honour an explicit preference if its backend is available.
 		if ( 'ollama' === $preference && $has_ollama ) {
