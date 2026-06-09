@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** June 5, 2026  
-**Plugin Version:** 1.1.27  
+**Last Updated:** June 9, 2026  
+**Plugin Version:** 1.1.28  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -1318,15 +1318,27 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md](../addons/pro/docs/CRM_TOOLKIT_ENHANCEMENT_PLAN.md)** ⭐ **UPDATED (Jun 2026)** | **CRM Toolkit Enhancement Plan** — Phases A–E complete: Customer CPT (5 tools + Customer 360), Support Ticket module (10 tools + SLA + Zendesk), inbound multichannel (IMAP/SMS/WhatsApp/Gmail), TF-IDF + BM25 relevance search. 89 CRM tools total. | Developers/Admins |
 | **[features/pro-schedule-manager.md](features/pro-schedule-manager.md)** ⭐ **NEW (Mar 2026)** | **Pro Schedule Manager** — 5 schedule types (task / workflow / assistant_run / channel_broadcast / workflow_builder), Symfony Cache & Validator, MJML email, ical + CSV export, chart.js sparkline, retry logic, JetEngine CCT history, 6 AI tools, full admin UI | Developers/Admins |
 | **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
 | [telegram-mini-app-templates.md](features/telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 
 **Pro Custom Post Types:**
+- **Customers** (5 tools) — Customer CPT with full CRUD, Customer 360 dashboard, lead-to-customer conversion
+- **Support Tickets** (10 tools) — Ticket lifecycle, SLA enforcement, AI classification, Zendesk sync
 - **Events** (5 tools) - Calendar management, Google Calendar integration
 - **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
 - **Places** (7 tools) - Location management, Google Places API integration
+
+**New Addons (June 2026):**
+- **Funiq Bridge** (`addons/funiq-bridge/`) — Payload-to-WordPress bridge with React admin SPA, REST controllers, transformers, post types (Product, Promocode, Promotion), taxonomies (Brand, Category, Color, Status)
+- **NV Platform** (`addons/ai-platform/`) — Top-level admin dashboard + CPTs (Project, Resource, Template)
+
+**Standalone Graphify Plugins:**
+- **NVOOS Graphify** (`plugins/nvoos-graphify/`) — Visual knowledge graph (Cytoscape.js), 14 graph tools, remote sources, REST API
+- **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/`) — AI addon: 13 providers, streaming chat, RAG, embeddings, 14 AI tools
+- **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/`) — Platform addon: Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, Slash Commands
 
 **Telegram Mini App Health Templates:**
 - **Health & Wellness** (`health_wellness`) – Daily metrics (steps, sleep, hydration, sodium, mood), streak gamification, Chart.js charts, AI coach

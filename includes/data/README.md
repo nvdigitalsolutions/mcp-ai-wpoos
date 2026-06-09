@@ -97,10 +97,28 @@ Table: `{prefix}wp_mcp_ai_tool_embeddings`
 | `vector` | LONGBLOB | Float32-packed embedding |
 | `text_hash` | VARCHAR(64) | MD5 of source text (for invalidation) |
 
+## Inputs / Outputs / Neighbors
+
+- **Reads from:** `wp_mcp_ai_settings` (attention routing toggle, compression toggle), `wp_mcp_ai_tool_embeddings` DB table (pre-computed KV cache), compliance data JSON files (`model-catalog.json`, generated compliance controls), `wp_mcp_ai_chat_options` filter (last user message for attention query), tool registry (tool slugs + definitions for embedding computation)
+- **Writes to:** `wp_mcp_ai_tool_embeddings` table (float32-packed vectors, one row per tool slug × provider), WP-Cron scheduling (`wp_mcp_ai_tool_embedding_compute`), `wp_mcp_ai_harness_tool_score` filter (cached attention scores fed into harness scoring pipeline for RRF fusion)
+- **Upstream callers:** `wp_mcp_ai_tool_registered` action (triggers async embedding pre-computation), `build_tools_payload()` (consumes `wp_mcp_ai_attention_tool_slugs` filter output), `wp_mcp_ai_chat_options` filter (conversation compressor), `chat_handler` (attention router selects top-K tools per query)
+- **Downstream collaborators:** `WP_MCP_AI_Vector_Context_Service` (optional — embedding API calls for tool vectors and query vectors), `WP_MCP_AI_Model_Discovery_Service` (model catalog lookups), harness Layer C scoring pipeline (RRF fusion with k=60), `WP_MCP_AI_Model_Rate_Limits_CCT` (rate-limit lookups)
+- **Events fired:** `wp_mcp_ai_attention_tool_slugs` (filter), `wp_mcp_ai_harness_tool_score` (filter), `wp_mcp_ai_tool_embedding_compute` (cron action)
+- **Events listened to:** `wp_mcp_ai_tool_registered` (schedules embedding compute), `wp_mcp_ai_chat_options` (captures query + applies compression), `wp_mcp_ai_after_activation` (installs `wp_mcp_ai_tool_embeddings` table)
+
+## Conventions
+
+- Compliance data files (`class-wp-mcp-ai-compliance-data.php`, `model-catalog.json`) are **auto-generated** — do not hand-edit. Regenerate via `bin/generate-compliance-data.php` and `WP_MCP_AI_Model_Catalog_Migration`.
+- Attention routing features always degrade gracefully when dependencies are absent (no vector service → returns all tools; no embedding API key → semantic head scores neutral; no audit trail → recency head scores neutral).
+- The `wp_mcp_ai_tool_embeddings` table is created on plugin activation and never dropped on deactivation (preserved for faster warm-up on re-activation).
+- Tool embedding vectors are Float32-packed `LONGBLOB` columns — dimension and provider metadata stored in companion columns for cross-provider portability.
+- Attention router is a singleton (`WP_MCP_AI_Tool_Attention_Router`); embedding store is static (`WP_MCP_AI_Tool_Embedding_Store`).
+
 ## Tests
 
 ```bash
 vendor/bin/phpunit tests/test-model-catalog.php
+vendor/bin/phpunit --filter '/Attention|Compression|Embedding/'
 ```
 
 ## Also Load
