@@ -6,6 +6,7 @@ export interface Env {
 	// Bindings.
 	NVOOS_DB: D1Database;
 	RATE_KV: KVNamespace;
+	TENANT_KV?: KVNamespace;
 
 	// Public vars.
 	WORKER_VERSION: string;
@@ -21,6 +22,10 @@ export interface Env {
 	STRIPE_SECRET_KEY: string;
 	STRIPE_WEBHOOK_SECRET: string;
 	CF_AI_GATEWAY_URL: string;
+
+	// SaaS-specific (Schedule Anything).
+	PLATFORM_ORIGIN?: string;
+	SAAS_API_KEY?: string;
 }
 
 /** A row from the `wallets` table. Balances stored in micro-USD (1 USD = 1_000_000). */

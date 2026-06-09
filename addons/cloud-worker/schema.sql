@@ -86,3 +86,58 @@ CREATE TABLE IF NOT EXISTS topup_sessions (
 
 CREATE INDEX IF NOT EXISTS idx_topup_sessions_wallet
     ON topup_sessions (wallet_id, created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- tenants — SaaS tenant records for Schedule Anything.
+-- One row per subscribed tenant workspace.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tenants (
+    id                     TEXT PRIMARY KEY,                  -- uuid
+    slug                   TEXT NOT NULL UNIQUE,              -- subdomain slug
+    tier                   TEXT NOT NULL
+        CHECK (tier IN ('starter', 'professional', 'enterprise')),
+    stripe_customer_id     TEXT NOT NULL,
+    stripe_subscription_id TEXT,
+    wp_origin_url          TEXT NOT NULL DEFAULT '',          -- WP instance origin
+    wp_blog_id             INTEGER,                           -- Multisite subsite ID
+    admin_email            TEXT,
+    status                 TEXT NOT NULL DEFAULT 'provisioning'
+        CHECK (status IN ('provisioning', 'active', 'suspended', 'cancelled')),
+    created_at             INTEGER NOT NULL,
+    updated_at             INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tenants_slug ON tenants (slug);
+CREATE INDEX IF NOT EXISTS idx_tenants_stripe_customer ON tenants (stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants (status);
+
+-- ---------------------------------------------------------------------------
+-- webhook_events — idempotency guard for Stripe events.
+-- Prevents double-processing of webhook deliveries.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS webhook_events (
+    event_id   TEXT PRIMARY KEY,                               -- stripe event id
+    event_type TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- tenant_usage — daily aggregated usage metrics per tenant.
+-- Populated by the usage heartbeat from each WP instance.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tenant_usage (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id            TEXT NOT NULL,
+    date                 TEXT NOT NULL,                        -- YYYY-MM-DD
+    blog_id              INTEGER NOT NULL,
+    active_schedules     INTEGER NOT NULL DEFAULT 0,
+    total_appointments   INTEGER NOT NULL DEFAULT 0,
+    total_posts          INTEGER NOT NULL DEFAULT 0,
+    storage_bytes        INTEGER NOT NULL DEFAULT 0,
+    user_count           INTEGER NOT NULL DEFAULT 0,
+    reported_at          INTEGER NOT NULL,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_usage_date
+    ON tenant_usage (tenant_id, date);

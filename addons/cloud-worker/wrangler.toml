@@ -17,6 +17,15 @@ database_id = "REPLACE_WITH_DATABASE_ID"
 binding = "RATE_KV"
 id = "REPLACE_WITH_KV_NAMESPACE_ID"
 
+# ---------------------------------------------------------------------------
+# SaaS-specific bindings (Schedule Anything).
+# Create with: wrangler kv:namespace create "SA_TENANT_KV"
+# ---------------------------------------------------------------------------
+
+[[kv_namespaces]]
+binding = "TENANT_KV"
+id = "REPLACE_WITH_TENANT_KV_NAMESPACE_ID"
+
 # Custom domain — bound via the Cloudflare dashboard in production.
 # routes = [
 #   { pattern = "nvoos.cloud/*", custom_domain = true }
@@ -31,12 +40,15 @@ MIN_TOPUP_USD = "25"
 LOW_BALANCE_THRESHOLD_USD = "2"
 STRIPE_FEE_PERCENT = "0.029"
 STRIPE_FEE_FIXED_USD = "0.30"
+# SaaS-specific (Schedule Anything).
+PLATFORM_ORIGIN = "https://scheduleanything.com"
 
 # Secrets — set via `wrangler secret put <NAME>`:
 #   OPENROUTER_API_KEY     — master OpenRouter key (never exposed)
 #   STRIPE_SECRET_KEY      — Stripe restricted key (Checkout + Customers)
 #   STRIPE_WEBHOOK_SECRET  — `whsec_...` from Stripe webhook endpoint
 #   CF_AI_GATEWAY_URL      — https://gateway.ai.cloudflare.com/v1/<acct>/<gw>/openrouter
+#   SAAS_API_KEY           — shared secret between Cloud Worker and WP platform plugin
 
 [env.staging]
 name = "nvoos-cloud-worker-staging"
