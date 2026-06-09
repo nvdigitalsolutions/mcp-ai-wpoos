@@ -26,7 +26,7 @@ subscriptions.post('/webhook', async (c) => {
 
   let event: Stripe.Event;
   try {
-    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, { apiVersion: '2025-06-01' });
+    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, { apiVersion: '2025-02-24.acacia' });
     event = await stripe.webhooks.constructEventAsync(
       rawBody,
       sig,
