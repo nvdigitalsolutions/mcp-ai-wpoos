@@ -464,6 +464,54 @@ class WP_MCP_AI_Lead_CPT {
 	}
 
 	/**
+	 * Render a "View in Gmail" link when the lead was imported from Gmail.
+	 *
+	 * Uses the stored Gmail message ID and connection ID to build a direct
+	 * link to the original email in Gmail.
+	 *
+	 * @since 2.8.0
+	 * @param int   $post_id Lead post ID.
+	 * @param array $meta    Lead meta array (from get_lead_meta).
+	 */
+	private static function render_source_message_link( $post_id, $meta ) {
+		$message_id    = isset( $meta['_source_message_id'] ) ? $meta['_source_message_id'] : '';
+		$connection_id = isset( $meta['_source_connection_id'] ) ? $meta['_source_connection_id'] : '';
+
+		if ( empty( $message_id ) ) {
+			return;
+		}
+
+		// Determine if this is a Gmail-sourced lead.
+		$is_gmail = false;
+		$gmail_url = '';
+
+		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $connection && isset( $connection['connection_type'] ) && 'gmail' === $connection['connection_type'] ) {
+				$is_gmail = true;
+				// Gmail message URL: https://mail.google.com/mail/u/0/#inbox/<message_id>
+				$gmail_url = 'https://mail.google.com/mail/u/0/#inbox/' . rawurlencode( $message_id );
+			}
+		}
+
+		// Fallback: check if message ID looks like a Gmail ID (hex string).
+		if ( ! $is_gmail && preg_match( '/^[a-f0-9]{12,}$/i', $message_id ) ) {
+			$is_gmail  = true;
+			$gmail_url = 'https://mail.google.com/mail/u/0/#inbox/' . rawurlencode( $message_id );
+		}
+
+		if ( ! $is_gmail ) {
+			return;
+		}
+
+		echo '<br><a href="' . esc_url( $gmail_url ) . '" target="_blank" rel="noopener noreferrer" class="button button-small" style="margin-top: 6px;">';
+		echo '<span class="dashicons dashicons-email" style="color:#EA4335; vertical-align: middle;"></span> ';
+		esc_html_e( 'View in Gmail', 'mcp-ai-wpoos-pro' );
+		echo ' <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>';
+		echo '</a>';
+	}
+
+	/**
 	 * Register meta boxes for the lead edit screen.
 	 *
 	 * @since 2.5.0
@@ -668,6 +716,7 @@ class WP_MCP_AI_Lead_CPT {
 				<label><?php esc_html_e( 'Channel', 'mcp-ai-wpoos-pro' ); ?></label>
 				<div style="padding-top: 8px;">
 					<?php self::render_channel_column( $post->ID ); ?>
+					<?php self::render_source_message_link( $post->ID, $meta ); ?>
 				</div>
 			</div>
 
@@ -1033,6 +1082,8 @@ class WP_MCP_AI_Lead_CPT {
 			'need',
 			'timeline',
 			'score_factors',
+			'_source_message_id',
+			'_source_connection_id',
 		);
 
 		$meta = array();

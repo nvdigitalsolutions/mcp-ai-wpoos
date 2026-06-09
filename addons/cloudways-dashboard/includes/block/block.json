@@ -1,5 +1,5 @@
 {
-  "apiVersion": 2,
+  "apiVersion": 3,
   "name": "nvoos/cloudways-dashboard",
   "title": "NV oOS Cloudways Dashboard",
   "category": "widgets",

@@ -184,6 +184,8 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 				'sender_name'     => $sender_name,
 				'source'          => 'gmail_import',
 				'auto_reply'      => $auto_reply,
+				'message_id'      => $gmail_id,
+				'connection_id'   => $creds['connection_id'] ?? '',
 			);
 			$eval_result = $tool->execute( $eval_args, $context );
 
@@ -285,7 +287,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 			if ( is_array( $connections ) ) {
-				foreach ( $connections as $conn ) {
+				foreach ( $connections as $cid => $conn ) {
 					if ( isset( $conn['connection_type'] ) && 'gmail' === $conn['connection_type']
 						&& ! empty( $conn['client_id'] ) && ! empty( $conn['refresh_token'] )
 					) {
@@ -299,6 +301,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 							'client_secret' => $client_secret,
 							'refresh_token' => $refresh_token,
 							'user_email'    => isset( $conn['user_email'] ) ? trim( (string) $conn['user_email'] ) : '',
+							'connection_id' => $cid,
 						);
 					}
 				}

@@ -45,6 +45,7 @@ class WP_MCP_AI_Performance_Blocks {
 		register_block_type(
 			'mcp-ai-wpoos/performance-test-runner',
 			array(
+				'api_version'     => 3,
 				'render_callback' => array( __CLASS__, 'render_test_runner_block' ),
 				'attributes'      => array(
 					'title'        => array(
@@ -63,6 +64,7 @@ class WP_MCP_AI_Performance_Blocks {
 		register_block_type(
 			'mcp-ai-wpoos/performance-metrics',
 			array(
+				'api_version'     => 3,
 				'render_callback' => array( __CLASS__, 'render_metrics_block' ),
 				'attributes'      => array(
 					'title'      => array(
@@ -85,6 +87,7 @@ class WP_MCP_AI_Performance_Blocks {
 		register_block_type(
 			'mcp-ai-wpoos/system-health-status',
 			array(
+				'api_version'     => 3,
 				'render_callback' => array( __CLASS__, 'render_health_status_block' ),
 				'attributes'      => array(
 					'title'         => array(
@@ -103,6 +106,7 @@ class WP_MCP_AI_Performance_Blocks {
 		register_block_type(
 			'mcp-ai-wpoos/test-results-table',
 			array(
+				'api_version'     => 3,
 				'render_callback' => array( __CLASS__, 'render_test_results_block' ),
 				'attributes'      => array(
 					'title'    => array(
@@ -125,6 +129,7 @@ class WP_MCP_AI_Performance_Blocks {
 		register_block_type(
 			'mcp-ai-wpoos/performance-recommendations',
 			array(
+				'api_version'     => 3,
 				'render_callback' => array( __CLASS__, 'render_recommendations_block' ),
 				'attributes'      => array(
 					'title'    => array(
@@ -147,6 +152,7 @@ class WP_MCP_AI_Performance_Blocks {
 		register_block_type(
 			'mcp-ai-wpoos/performance-trends',
 			array(
+				'api_version'     => 3,
 				'render_callback' => array( __CLASS__, 'render_trends_block' ),
 				'attributes'      => array(
 					'title'      => array(

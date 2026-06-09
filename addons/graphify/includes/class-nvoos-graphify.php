@@ -691,6 +691,7 @@ class NV_oOS_Graphify {
 		register_block_type(
 			'nvoos-graphify/graph',
 			array(
+				'api_version'     => 3,
 				'attributes'      => array(
 					'mode'         => array(
 						'type'    => 'string',

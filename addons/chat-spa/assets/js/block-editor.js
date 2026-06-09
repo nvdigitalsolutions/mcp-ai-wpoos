@@ -39,6 +39,7 @@
 	};
 
 	registerBlockType( blockJson.name, {
+		apiVersion: blockJson.apiVersion,
 		title: blockJson.title,
 		category: blockJson.category,
 		icon: blockJson.icon,

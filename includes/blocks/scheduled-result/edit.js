@@ -20,6 +20,7 @@
 	const { __ } = wp.i18n;
 
 	registerBlockType( 'mcp-ai-wpoos/scheduled-result', {
+		apiVersion: 3,
 		edit: function ( props ) {
 			const { attributes, setAttributes } = props;
 			const [ schedules, setSchedules ] = useState( [] );
