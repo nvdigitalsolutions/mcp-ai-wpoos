@@ -34,6 +34,9 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
+		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
 		}
@@ -49,6 +52,7 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
 			)
 		);
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
 	}

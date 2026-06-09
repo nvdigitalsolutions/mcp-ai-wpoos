@@ -43,6 +43,7 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			)
 		);
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
 	}

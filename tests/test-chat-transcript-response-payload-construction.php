@@ -62,8 +62,14 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
+
+		// Tests that save and retrieve transcripts need JetEngine CCT.
+		if ( ! function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine for transcript storage' );
+		}
 	}
 
 	/**
@@ -127,6 +133,7 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -225,6 +232,7 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -288,6 +296,7 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -348,6 +357,7 @@ class Test_Chat_Transcript_Response_Payload_Construction extends WP_UnitTestCase
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(

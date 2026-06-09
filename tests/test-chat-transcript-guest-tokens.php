@@ -27,6 +27,9 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
+		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
 		}
@@ -46,6 +49,7 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
+		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
 		do_action( 'init' );
 	}
@@ -102,6 +106,7 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'messages', $messages );
@@ -130,6 +135,7 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'messages', $messages );
@@ -148,6 +154,7 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $guest_token, 'Guest token should be generated' );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'per_page', 20 );
 		$request->set_param( 'user_id', 0 ); // Guest users have user_id = 0.
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
@@ -172,6 +179,7 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 		$session_key = 'test-session-' . wp_generate_uuid4();
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'session_key', $session_key );
 		$request->set_param( 'user_id', 0 ); // Guest users have user_id = 0.
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
@@ -188,6 +196,7 @@ class WP_MCP_AI_Chat_Transcript_Guest_Tokens_Test extends WP_UnitTestCase {
 	 */
 	public function test_guest_user_cannot_get_transcripts_without_token() {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'per_page', 20 );
 
 		$response = rest_get_server()->dispatch( $request );
